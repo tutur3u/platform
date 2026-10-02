@@ -1,4 +1,7 @@
-import { reserveSecurityBudget } from '@tuturuuu/storage-core/security-budget';
+import {
+  ProfileUploadError,
+  reserveProfileUploadBudget,
+} from '@tuturuuu/storage-core/profile-upload-budget';
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -33,28 +36,7 @@ export const POST = withSessionAuth(
 
       // Reserve the maximum Storage-enforced size before issuing a ticket;
       // failed or unused tickets are not refunded, so retries cannot evade caps.
-      const day = new Date().toISOString().slice(0, 10);
-      const avatarBytes = 2 * 1024 * 1024;
-      const [accepted] = await reserveSecurityBudget([
-        [
-          `api-cost:v1:avatar-ticket:user:${user.id}:${day}`,
-          avatarBytes,
-          20 * avatarBytes,
-          172800,
-        ],
-        [
-          `api-cost:v1:avatar-ticket:global:${day}`,
-          avatarBytes,
-          1024 * 1024 * 1024,
-          172800,
-        ],
-      ]);
-      if (!accepted) {
-        return NextResponse.json(
-          { message: 'Avatar upload limit reached' },
-          { status: 429 }
-        );
-      }
+      await reserveProfileUploadBudget(user.id, 'avatar');
       // Raw authenticated Storage writes are denied by the shared media policy.
       // Only this authenticated, budgeted API issues privileged scoped tickets.
       const supabase = await createDynamicAdminClient();
@@ -83,6 +65,21 @@ export const POST = withSessionAuth(
         token: signedUrlData.token,
       });
     } catch (error) {
+      if (error instanceof ProfileUploadError) {
+        return NextResponse.json(
+          {
+            message: error.message,
+            code: 'profile_upload_limit',
+            retryAfter: error.retryAfter,
+          },
+          {
+            status: error.status,
+            headers: error.retryAfter
+              ? { 'Retry-After': String(error.retryAfter) }
+              : undefined,
+          }
+        );
+      }
       if (error instanceof z.ZodError) {
         return NextResponse.json(
           { message: 'Invalid request data', errors: error.issues },

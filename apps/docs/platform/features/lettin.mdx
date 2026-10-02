@@ -200,15 +200,20 @@ atomic rollback, byte/MIME ceilings, and raw upload denial.
 Existing current-user avatar uploads keep their `/api/v1/users/me/avatar/upload-url`
 request and response contract across Web, mobile, and satellite app sessions. The
 API reserves the full 2 MiB ceiling before issuing an admin-backed signed ticket:
-20 tickets per account and 1 GiB across this endpoint per UTC day, for every tier. Unused or
-failed tickets consume that reservation; budget failure prevents ticket issuance.
+The shared media contract permits two tickets per account per UTC hour, three
+avatar tickets or two banner tickets per UTC day, and ten combined tickets per
+Monday-start UTC week. Combined byte ceilings are 16 MiB per account per day and
+32 MiB per week; global ceilings are 10,000 tickets and 16 GiB per UTC day. All
+tiers use these limits. Unused or failed tickets consume their full bucket ceiling;
+budget failure prevents ticket issuance.
 Storage still checks actual MIME type and bytes. Raw handle reservations are
 blocked for ordinary clients; existing reservations and unchanged legacy handles
 remain available, while new claims use the atomic authenticated server RPC.
 Regression evidence: `public-creator-identity.sql` and the current-user avatar
-upload handler's colocated tests.
+upload handler's colocated tests and `profile-upload-budget.test.ts`.
 
-Those ticket reservation bounds cover current-user avatar uploads. Existing
+The shared contract applies to current-user media ticket issuers, including the
+avatar endpoint in this foundation and the dependent banner endpoint. Existing
 workspace and shared profile-link ticket endpoints retain their own authorization
 and API abuse budgets; the shared avatar bucket byte/MIME ceilings also apply
 to their uploads.

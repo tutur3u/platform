@@ -6,6 +6,7 @@ on:
       - 'apps/database/supabase/seed.sql'
       - 'apps/database/supabase/tests/public-creator-identity.sql'
       - 'apps/database/supabase/tests/profile-media-upload-limits.sql'
+      - 'packages/storage-core/src/lib/profile-upload-budget*'
       - 'packages/utils/src/username-policy*'
       - 'packages/utils/src/__tests__/username-policy.test.ts'
       - 'apps/database/scripts/verify-creator-identity-contract.mjs'

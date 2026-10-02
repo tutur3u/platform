@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createDynamicAdminClient: mocks.admin,
 }));
+vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/storage-core/security-budget', () => ({
   reserveSecurityBudget: mocks.budget,
 }));
@@ -83,16 +84,14 @@ describe('budgeted current-user avatar tickets', () => {
       filePath: expect.stringMatching(new RegExp(`^${actor}/\\d+\\.png$`)),
       token: 'synthetic-ticket',
     });
-    const day = new Date().toISOString().slice(0, 10);
-    expect(mocks.budget).toHaveBeenCalledWith([
-      [
-        `api-cost:v1:avatar-ticket:user:${actor}:${day}`,
-        2097152,
-        41943040,
-        172800,
-      ],
-      [`api-cost:v1:avatar-ticket:global:${day}`, 2097152, 1073741824, 172800],
-    ]);
+    const dimensions = mocks.budget.mock.calls[0]![0];
+    expect(dimensions).toHaveLength(7);
+    expect(
+      dimensions.map((dimension: unknown[]) => dimension[0]).join()
+    ).not.toContain(actor);
+    expect(dimensions[0].slice(1, 3)).toEqual([1, 2]);
+    expect(dimensions[1].slice(1, 3)).toEqual([1, 3]);
+    expect(dimensions[3].slice(1, 3)).toEqual([2097152, 16777216]);
     expect(mocks.budget.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.admin.mock.invocationCallOrder[0]!
     );
@@ -108,7 +107,7 @@ describe('budgeted current-user avatar tickets', () => {
 
   it('fails closed when the authoritative budget is unavailable', async () => {
     mocks.budget.mockRejectedValue(new Error('Synthetic budget outage'));
-    expect((await invoke()).status).toBe(500);
+    expect((await invoke()).status).toBe(503);
     expect(mocks.admin).not.toHaveBeenCalled();
     expect(mocks.sign).not.toHaveBeenCalled();
   });
