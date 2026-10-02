@@ -1,10 +1,8 @@
 import type { ReactNode } from 'react';
-import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const generateMetadata = createMarketingMetadata({
-  title: 'Brand Guidelines',
-  description:
-    'Download Tuturuuu brand assets and learn how to use them consistently.',
+export const generateMetadata = createLocalizedMarketingMetadata({
+  namespace: 'marketingSeo.branding',
   pathname: '/branding',
 });
 

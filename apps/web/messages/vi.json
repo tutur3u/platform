@@ -8870,11 +8870,11 @@
       }
     },
     "cta": {
-      "description": "Miễn phí để bắt đầu, mã nguồn mở, và bạn có thể tự vận hành. Không cần thẻ, không cần gọi tư vấn, không bị ràng buộc.",
+      "description": "Bắt đầu với những công cụ đội nhóm cần hôm nay. Khám phá không gian làm việc mã nguồn mở, dùng thử gói miễn phí và mở rộng theo nhu cầu.",
       "note": "Không cần thẻ. Miễn phí mãi mãi.",
       "primary": "Dùng Thử Miễn Phí",
       "secondary": "Nói Chuyện Với Mình",
-      "title": "Thử ngay đi—miễn phí mà!",
+      "title": "Kết nối công việc của cả đội nhóm",
       "trust": {
         "openSource": "Mã nguồn mở & minh bạch",
         "security": "Bảo mật cấp doanh nghiệp",
@@ -9244,18 +9244,18 @@
         "subtitle": "Thêm những gì bạn cần, bỏ qua phần còn lại. Một không gian làm việc, một lần đăng nhập, một hoá đơn.",
         "title": "Và phần còn lại của bộ sản phẩm"
       },
-      "subtitle": "Mười tám ứng dụng cùng chia sẻ ngữ cảnh của bạn, thay vì mười tám gói thuê bao không biết gì về nhau.",
+      "subtitle": "Kết nối công việc, lịch, tài liệu và công cụ kinh doanh hằng ngày trong một không gian làm việc chung để đội nhóm giảm thời gian chuyển đổi ứng dụng.",
       "title": "Một không gian làm việc. Mọi phần của công việc."
     },
     "hero": {
       "cta": {
         "primary": "Bắt Đầu Miễn Phí",
-        "secondary": "Xem Demo"
+        "secondary": "Khám phá không gian làm việc"
       },
-      "description": "Một không gian làm việc cho mọi thứ bạn đang xoay xở, và một trợ lý sắp xếp ngày của bạn quanh cuộc sống bạn thật sự muốn.",
+      "description": "Quản lý dự án, lên lịch cho đội nhóm và kết nối tài liệu cùng công cụ kinh doanh. Mira giúp bạn biến kế hoạch thành hành động.",
       "title": {
-        "line1": "Làm ít hơn.",
-        "line2": "Đạt nhiều hơn."
+        "line1": "Đội nhóm của bạn.",
+        "line2": "Một nơi làm việc."
       },
       "trust": {
         "free": "Gói miễn phí trọn đời",
@@ -9548,6 +9548,27 @@
         }
       },
       "title": "Build in public"
+    },
+    "teamFaq": {
+      "items": {
+        "ai": {
+          "answer": "Mira là trợ lý AI của Tuturuuu. Bạn có thể đặt câu hỏi, lên kế hoạch và nhận hỗ trợ với công việc trong không gian làm việc. Các thao tác khả dụng phụ thuộc vào quyền của bạn và công cụ đã kết nối.",
+          "question": "Mira hỗ trợ những gì?"
+        },
+        "openSource": {
+          "answer": "Có. Mã nguồn Tuturuuu được công khai trên GitHub. Bạn có thể xem mã nguồn, đóng góp cho dự án và tham khảo tài liệu tự lưu trữ.",
+          "question": "Tuturuuu có phải mã nguồn mở không?"
+        },
+        "start": {
+          "answer": "Tạo không gian làm việc, mời đồng đội và bắt đầu với công việc cùng lịch dùng chung. Khám phá các trang sản phẩm để chọn công cụ phù hợp với quy trình của đội nhóm.",
+          "question": "Đội nhóm của tôi bắt đầu như thế nào?"
+        },
+        "workspace": {
+          "answer": "Tuturuuu là không gian làm việc mã nguồn mở kết nối công việc dự án, lịch, tài liệu và công cụ kinh doanh. Đội nhóm có thể tổ chức công việc tại một nơi và sử dụng trợ lý AI Mira.",
+          "question": "Tuturuuu là gì?"
+        }
+      },
+      "title": "Tìm không gian làm việc phù hợp cho đội nhóm"
     }
   },
   "link-shortener": {
@@ -10137,6 +10158,129 @@
         "description": "Tự động hoá các bước chuyển giao giữa công cụ.",
         "label": "Quy trình"
       }
+    }
+  },
+  "marketingSeo": {
+    "about": {
+      "description": "Tìm hiểu lý do chúng tôi xây dựng Tuturuuu: không gian làm việc mã nguồn mở kết nối cộng tác nhóm, vận hành hằng ngày và trợ lý AI.",
+      "title": "Về Tuturuuu và không gian làm việc kết nối"
+    },
+    "acceptable_use": {
+      "description": "Đọc các quy định sử dụng Tuturuuu có trách nhiệm, những hoạt động bị cấm và cách thực thi chính sách sử dụng.",
+      "title": "Chính sách sử dụng chấp nhận được"
+    },
+    "blog": {
+      "description": "Khám phá định hướng blog Tuturuuu, đọc cập nhật sản phẩm đã phát hành, theo dõi phát triển mã nguồn mở và kết nối với đội ngũ.",
+      "title": "Hướng dẫn làm việc và câu chuyện sản phẩm"
+    },
+    "branding": {
+      "description": "Tìm logo, tài nguyên hình ảnh và hướng dẫn thương hiệu Tuturuuu để sử dụng nhất quán, chính xác trong dự án và truyền thông.",
+      "title": "Tài nguyên và hướng dẫn thương hiệu Tuturuuu"
+    },
+    "careers": {
+      "description": "Khám phá cơ hội xây dựng Tuturuuu, không gian làm việc mã nguồn mở cho đội nhóm, và tìm hiểu cách chúng tôi làm việc và cộng tác.",
+      "title": "Cơ hội nghề nghiệp tại Tuturuuu"
+    },
+    "changelog": {
+      "description": "Xem những thay đổi trong Tuturuuu. Đọc cập nhật sản phẩm và tra cứu ghi chú phát hành theo ứng dụng, phiên bản, tính năng và bản sửa lỗi.",
+      "title": "Cập nhật sản phẩm và ghi chú phát hành"
+    },
+    "community_guidelines": {
+      "description": "Tìm hiểu các nguyên tắc tham gia, cộng tác và đóng góp trên tinh thần tôn trọng trong cộng đồng Tuturuuu.",
+      "title": "Nguyên tắc cộng đồng"
+    },
+    "contact": {
+      "description": "Trao đổi với đội ngũ Tuturuuu về không gian làm việc, sản phẩm, hợp tác hoặc góp ý. Tìm kênh liên hệ phù hợp để bắt đầu.",
+      "title": "Liên hệ Tuturuuu"
+    },
+    "contributors": {
+      "description": "Tìm hiểu những người cùng xây dựng Tuturuuu và khám phá các đóng góp cho không gian làm việc mã nguồn mở.",
+      "title": "Cộng tác viên mã nguồn mở Tuturuuu"
+    },
+    "home": {
+      "description": "Kết nối công việc, lịch, tài liệu và công cụ kinh doanh trong một không gian làm việc mã nguồn mở. Lập kế hoạch và cộng tác với trợ lý AI Mira.",
+      "title": "Không gian làm việc tất cả trong một cho đội nhóm"
+    },
+    "legal_dpa": {
+      "description": "Đọc phụ lục xử lý dữ liệu Tuturuuu và các trách nhiệm áp dụng khi xử lý dữ liệu cá nhân.",
+      "title": "Phụ lục xử lý dữ liệu"
+    },
+    "legal_sla": {
+      "description": "Xem thỏa thuận mức độ dịch vụ Tuturuuu về tính sẵn sàng, hỗ trợ và các cam kết áp dụng.",
+      "title": "Thỏa thuận mức độ dịch vụ"
+    },
+    "legal_subprocessors": {
+      "description": "Xem các bên xử lý phụ và nhà cung cấp tham gia cung cấp Tuturuuu và xử lý dữ liệu.",
+      "title": "Bên xử lý phụ và nhà cung cấp dịch vụ"
+    },
+    "meet": {
+      "description": "Khám phá Tuturuuu Meet để phối hợp thời gian rảnh và lên lịch họp nhóm trong không gian làm việc kết nối.",
+      "title": "Họp nhóm và lên kế hoạch thời gian"
+    },
+    "partners": {
+      "description": "Khám phá cơ hội hợp tác cùng Tuturuuu về tích hợp, phát triển sản phẩm và đưa không gian làm việc kết nối đến nhiều đội nhóm hơn.",
+      "title": "Hợp tác với Tuturuuu"
+    },
+    "privacy": {
+      "description": "Đọc cách Tuturuuu thu thập, sử dụng và bảo vệ thông tin cá nhân, cùng các lựa chọn và quyền riêng tư của bạn.",
+      "title": "Chính sách quyền riêng tư"
+    },
+    "security": {
+      "description": "Tìm hiểu cách Tuturuuu bảo vệ không gian làm việc và dữ liệu, tiếp nhận báo cáo lỗ hổng có trách nhiệm và duy trì sự minh bạch của nền tảng mã nguồn mở.",
+      "title": "Bảo mật và quyền riêng tư của không gian làm việc"
+    },
+    "security_bug_bounty": {
+      "description": "Tìm hiểu phạm vi, quy trình báo cáo và hướng dẫn công bố có trách nhiệm các lỗ hổng bảo mật cho Tuturuuu.",
+      "title": "Báo cáo lỗ hổng bảo mật"
+    },
+    "solutions_construction": {
+      "description": "Phối hợp dự án xây dựng, công việc nhóm, lịch trình, tài liệu và hồ sơ vận hành trong không gian làm việc Tuturuuu kết nối.",
+      "title": "Không gian làm việc cho dự án xây dựng"
+    },
+    "solutions_education": {
+      "description": "Quản lý công việc, lịch trình, tài liệu và hoạt động đào tạo của đội ngũ giáo dục trong một không gian làm việc Tuturuuu kết nối.",
+      "title": "Không gian làm việc cho đội ngũ giáo dục"
+    },
+    "solutions_healthcare": {
+      "description": "Khám phá Tuturuuu để phối hợp công việc, lịch trình, tồn kho và hoạt động vận hành hằng ngày của đội ngũ y tế.",
+      "title": "Không gian làm việc cho vận hành y tế"
+    },
+    "solutions_hospitality": {
+      "description": "Kết nối công việc, lịch trình, tồn kho và hồ sơ vận hành của đội ngũ dịch vụ lưu trú trong không gian làm việc Tuturuuu dùng chung.",
+      "title": "Không gian làm việc cho đội ngũ dịch vụ lưu trú"
+    },
+    "solutions_manufacturing": {
+      "description": "Phối hợp công việc, tồn kho, lịch trình và tài liệu của đội ngũ sản xuất với các công cụ kinh doanh Tuturuuu kết nối.",
+      "title": "Không gian làm việc cho vận hành sản xuất"
+    },
+    "solutions_pharmacies": {
+      "description": "Khám phá không gian làm việc kết nối để phối hợp đội ngũ, quản lý tồn kho, lịch trình và hoạt động kinh doanh nhà thuốc với Tuturuuu.",
+      "title": "Không gian làm việc cho vận hành nhà thuốc"
+    },
+    "solutions_realestate": {
+      "description": "Kết nối danh bạ, công việc nhóm, lịch trình và tài liệu bất động sản trong một không gian làm việc Tuturuuu.",
+      "title": "Không gian làm việc cho đội ngũ bất động sản"
+    },
+    "solutions_restaurants": {
+      "description": "Quản lý công việc nhóm, tồn kho, lịch trình và hồ sơ tài chính của nhà hàng trong không gian làm việc Tuturuuu kết nối.",
+      "title": "Không gian làm việc cho vận hành nhà hàng"
+    },
+    "solutions_retail": {
+      "description": "Kết nối tồn kho, hồ sơ khách hàng, công việc nhóm và tài chính bán lẻ với các công cụ quản lý kinh doanh Tuturuuu.",
+      "title": "Không gian làm việc cho đội ngũ bán lẻ"
+    },
+    "terms": {
+      "description": "Xem các điều khoản áp dụng khi sử dụng Tuturuuu, bao gồm tài khoản, trách nhiệm và điều kiện cung cấp dịch vụ.",
+      "title": "Điều khoản dịch vụ"
+    },
+    "visualizations_horse_racing": {
+      "bodyDescription": "Mô phỏng tương tác này minh họa cách xếp hạng N con ngựa khi mỗi lần chỉ có thể cho M con đua. Thuật toán xác định toàn bộ thứ hạng một cách hiệu quả với số cuộc đua ít nhất.",
+      "description": "Khám phá mô phỏng đua ngựa tương tác và so sánh các thuật toán được sử dụng trong mô phỏng.",
+      "title": "Trực quan hóa thuật toán đua ngựa"
+    },
+    "women_in_tech": {
+      "description": "Tôn vinh những người phụ nữ góp phần xây dựng Tuturuuu. Khám phá câu chuyện của kỹ sư, lãnh đạo và đối tác định hình công nghệ tại Việt Nam và thế giới.",
+      "title": "Ngày Phụ nữ Việt Nam 2025: Phụ nữ trong công nghệ"
     }
   },
   "meet-together": {
@@ -13384,8 +13528,8 @@
         "title": "Thứ đang thật sự chạy bên dưới"
       },
       "seo": {
-        "description": "Xem cách Tuturuuu AI tăng tốc tự động hoá và công việc hằng ngày.",
-        "title": "Không gian làm việc AI"
+        "description": "Lập kế hoạch, đặt câu hỏi và nhận hỗ trợ từ Mira trong không gian làm việc Tuturuuu kết nối, với các thao tác theo quyền của bạn.",
+        "title": "Trợ lý AI cho không gian làm việc nhóm"
       },
       "title": "Năm hệ thống, một trợ lý để bạn trò chuyện",
       "useCases": {
@@ -13463,8 +13607,8 @@
         "title": "Xếp lịch mà không phải hỏi tới hỏi lui"
       },
       "seo": {
-        "description": "Sắp xếp lịch làm việc cùng nhau với lịch chia sẻ của Tuturuuu.",
-        "title": "Lịch chung cho đội ngũ"
+        "description": "Lên kế hoạch họp, thời hạn và thời gian tập trung với lịch nhóm dùng chung. Kết nối lịch trình với công việc trong Tuturuuu.",
+        "title": "Lịch dùng chung và lên lịch cho đội nhóm"
       },
       "title": "Cuốn lịch biết giữ ngày của bạn",
       "useCases": {
@@ -13621,8 +13765,8 @@
         "title": "Mối quan hệ, được ghi lại"
       },
       "seo": {
-        "description": "Theo dõi quan hệ và cơ hội bán hàng ngay trong CRM liên thông của Tuturuuu.",
-        "title": "Quản lý quan hệ khách hàng"
+        "description": "Quản lý liên hệ và hồ sơ quan hệ khách hàng trong Tuturuuu. Kết nối công việc chăm sóc khách hàng với nhiệm vụ và công cụ làm việc nhóm.",
+        "title": "CRM và quản lý liên hệ cho đội nhóm"
       },
       "title": "Mọi khách hàng, và mọi điều bạn đã hứa với họ",
       "useCases": {
@@ -13700,8 +13844,8 @@
         }
       },
       "seo": {
-        "description": "Cùng soạn tài liệu với quy trình có AI hỗ trợ trong Tuturuuu.",
-        "title": "Tài liệu cộng tác"
+        "description": "Soạn thảo và tổ chức tài liệu nhóm trong Tuturuuu. Kết nối bối cảnh dự án, công việc và tệp dùng chung với hoạt động liên quan.",
+        "title": "Tài liệu cộng tác cho đội nhóm"
       },
       "title": "Viết ngay tại nơi công việc đang diễn ra",
       "useCases": {
@@ -13858,8 +14002,8 @@
         "title": "Phần sổ sách, gần như đã có người lo"
       },
       "seo": {
-        "description": "Quản lý hoá đơn, ngân sách và kiểm soát chi tiêu với Tuturuuu Finance.",
-        "title": "Quản lý tài chính và chi phí"
+        "description": "Theo dõi giao dịch, quản lý ví và tổ chức ngân sách trong Tuturuuu. Giúp đội nhóm nắm rõ thu nhập, chi phí và hồ sơ tài chính.",
+        "title": "Tài chính nhóm, ngân sách và theo dõi chi phí"
       },
       "title": "Biết tiền đã đi đâu, không cần bảng tính",
       "useCases": {
@@ -14253,8 +14397,8 @@
         "title": "Ít hộp thư hơn, xong việc nhiều hơn"
       },
       "seo": {
-        "description": "Vận hành liên hệ khách hàng và hộp thư chung với Tuturuuu Mail.",
-        "title": "Email nhóm và hộp thư chung"
+        "description": "Tổ chức email cùng công việc, lịch và công cụ làm việc nhóm với Tuturuuu Mail.",
+        "title": "Quản lý email trong không gian làm việc nhóm"
       },
       "title": "Hộp thư biết chuyển việc sang phần còn lại của ngày",
       "useCases": {
@@ -14413,8 +14557,8 @@
         "title": "Đủ tùy chỉnh để in một lần là xong"
       },
       "seo": {
-        "description": "Tạo và theo dõi mã QR gắn với chính công việc phía sau chúng.",
-        "title": "Mã QR cho không gian làm việc"
+        "description": "Tạo mã QR tùy chỉnh với màu sắc, logo và tùy chọn xuất bằng Tuturuuu Tools. Khám phá mã QR cho liên kết, sự kiện và tài liệu kinh doanh.",
+        "title": "Trình tạo mã QR tùy chỉnh"
       },
       "title": "Một mã cho thứ bạn phải lặp đi lặp lại",
       "useCases": {
@@ -14571,8 +14715,8 @@
         }
       },
       "seo": {
-        "description": "Giữ dự án đúng tiến độ với Tuturuuu Tasks và bảng cộng tác.",
-        "title": "Quản lý dự án và công việc"
+        "description": "Tổ chức dự án với bảng công việc dùng chung, người phụ trách, mức ưu tiên và thời hạn. Giúp đội nhóm nắm rõ bước tiếp theo với Tuturuuu Tasks.",
+        "title": "Quản lý dự án và công việc cho đội nhóm"
       },
       "title": "Công việc nằm đúng chỗ bạn để lại",
       "useCases": {
@@ -14650,8 +14794,8 @@
         "title": "Bộ đếm giờ nằm ngay cạnh công việc"
       },
       "seo": {
-        "description": "Biết thời gian thực sự đã đi đâu, theo từng người và từng dự án.",
-        "title": "Theo dõi thời gian"
+        "description": "Ghi nhận thời gian theo công việc thực tế và xem đội nhóm phân bổ thời gian ra sao. Kết nối bản ghi thời gian với dự án trong Tuturuuu.",
+        "title": "Theo dõi thời gian nhóm và bộ đếm công việc"
       },
       "title": "Số giờ bạn có thể giải trình",
       "useCases": {

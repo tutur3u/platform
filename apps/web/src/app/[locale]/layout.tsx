@@ -39,8 +39,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return generateCommonMetadata({
     config: {
       description: {
-        en: 'Take control of your workflow, supercharged by AI.',
-        vi: 'Quản lý công việc của bạn, siêu tốc độ cùng AI.',
+        en: 'Connect team tasks, calendars, documents, and business tools in one open-source workspace with AI assistance.',
+        vi: 'Kết nối công việc nhóm, lịch, tài liệu và công cụ kinh doanh trong một không gian làm việc mã nguồn mở với trợ lý AI.',
       },
       indexable: true,
       keywords: [
