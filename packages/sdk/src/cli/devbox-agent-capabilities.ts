@@ -13,6 +13,10 @@ import {
 } from 'node:os';
 import packageJson from '../../package.json';
 import { getJudgeReadiness } from './devbox-judge-sandbox';
+import {
+  getPlaygroundReadiness,
+  playgroundEnvironmentCount,
+} from './devbox-playground-sandbox';
 
 const VERSION_TIMEOUT_MS = 1500;
 let staticCapabilitiesPromise: Promise<{
@@ -37,6 +41,11 @@ let judgeReadinessPromise: Promise<
   Awaited<ReturnType<typeof getJudgeReadiness>>
 > | null = null;
 let judgeReadinessAt = 0;
+let readinessSnapshot: {
+  judge: Awaited<ReturnType<typeof getJudgeReadiness>>;
+  playground: Awaited<ReturnType<typeof getPlaygroundReadiness>>;
+} | null = null;
+let refreshing: Promise<void> | null = null;
 
 function firstLine(value: string) {
   return value.trim().split(/\r?\n/u)[0]?.trim() || null;
@@ -110,18 +119,34 @@ async function readStaticCapabilities() {
 
 export async function createDevboxAgentCapabilities() {
   staticCapabilitiesPromise ??= readStaticCapabilities();
-  if (!judgeReadinessPromise || Date.now() - judgeReadinessAt > 60_000) {
+  if (!readinessSnapshot) {
+    judgeReadinessPromise ??= getJudgeReadiness();
+    const [judge, playground] = await Promise.all([
+      judgeReadinessPromise,
+      getPlaygroundReadiness(),
+    ]);
+    readinessSnapshot = { judge, playground };
     judgeReadinessAt = Date.now();
-    judgeReadinessPromise = getJudgeReadiness();
+  } else if (Date.now() - judgeReadinessAt > 600_000 && !refreshing) {
+    refreshing = Promise.all([getJudgeReadiness(), getPlaygroundReadiness()])
+      .then(([judge, playground]) => {
+        readinessSnapshot = { judge, playground };
+        judgeReadinessAt = Date.now();
+      })
+      .catch(() => {
+        judgeReadinessAt = Date.now();
+      })
+      .finally(() => {
+        refreshing = null;
+      });
   }
-  const [staticCapabilities, judge] = await Promise.all([
-    staticCapabilitiesPromise,
-    judgeReadinessPromise,
-  ]);
+  const staticCapabilities = await staticCapabilitiesPromise;
+  const { judge, playground } = readinessSnapshot;
 
   return {
     ...staticCapabilities,
     judge,
+    playground: { ...playground, environments: playgroundEnvironmentCount() },
     reportedAt: new Date().toISOString(),
     resources: {
       cpu: {

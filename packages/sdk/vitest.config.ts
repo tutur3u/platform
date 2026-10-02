@@ -8,7 +8,7 @@ export default defineConfig({
   resolve: {
     alias: [
       {
-        find: '@tuturuuu/types',
+        find: /^@tuturuuu\/types$/,
         replacement: resolve(__dirname, '../types/src/index.ts'),
       },
       {

@@ -376,6 +376,29 @@ queue the app devbox with `--database-url-env DEVBOX_DATABASE_URL`. This lets a
 database-heavy runner and a Next.js runner share work while the current machine
 only brokers commands and opens previews.
 
+## Runner scheduling and hosted environments
+
+Agents keep heartbeats on a 20-second cadence while dispatching independent jobs
+concurrently, with at most eight active jobs. Judge cases share a process-wide
+sandbox budget and always use fresh isolated containers. Maintenance and CLI
+restart jobs drain active work before changing the agent. Readiness probes are
+cached for ten minutes and refreshed in the background; execution still fails
+closed if required isolation or language images are unavailable.
+
+Platform-managed playground workers opt in through operator configuration. They
+require gVisor and pinned language image digests, run unprivileged without host
+credentials, and disable network access by default. Project environments retain
+dependencies while warm, expire after fifteen idle minutes and have a two-hour
+maximum lifetime. Environment count is bounded by the runner's resource limits.
+File inventories and changed bytes are exported separately; credentials and
+runner metadata never enter project files. The platform must provide its signed
+file-save callback before enabling the hosted playground workload.
+
+Use focused SDK agent, Judge and sandbox-slot tests for scheduling changes. A
+passing mock test does not establish real sandbox startup latency; measure cold
+and warm execution on a configured gVisor runner before advertising timings.
+Do not fall back to ordinary Docker isolation when gVisor is missing.
+
 ## Cache Policy
 
 Runners use named cache volumes for Bun installs, Turbo, Playwright browsers,

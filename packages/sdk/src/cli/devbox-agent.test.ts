@@ -18,6 +18,8 @@ import { runDevboxAgentLoop } from './devbox-agent';
 describe('Devbox agent upgrade handoff', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    executeJob.mockReset();
+    pollJobs.mockReset();
     vi.stubEnv('TUTURUUU_DEVBOX_CONTROL_URL', '');
     vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'));
@@ -93,5 +95,78 @@ describe('Devbox agent upgrade handoff', () => {
     expect(process.stdout.write).toHaveBeenCalledWith(
       'Restart requested. Exiting for service manager restart.\n'
     );
+  });
+  it('starts independent jobs together and drains them before maintenance', async () => {
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const started: string[] = [];
+    executeJob.mockImplementation(async (job: { runId: string }) => {
+      started.push(job.runId);
+      if (job.runId !== 'maintenance') await pending;
+      return { exitCode: 0, status: 'succeeded' };
+    });
+    pollJobs.mockResolvedValue({
+      ok: true,
+      jobs: [
+        { runId: 'first', command: ['echo', 'first'] },
+        { runId: 'second', command: ['echo', 'second'] },
+        { runId: 'maintenance', command: ['__ttr_restart_agent_v1__'] },
+      ],
+    });
+    const loop = runDevboxAgentLoop({
+      baseUrl: 'https://example.test',
+      once: true,
+      token: 'fixture',
+    });
+    await vi.waitFor(() => expect(started).toEqual(['first', 'second']));
+    release();
+    await loop;
+    expect(started).toEqual(['first', 'second', 'maintenance']);
+  });
+  it('bounds a multi-job claim at eight active jobs without leaving heartbeat timers behind', async () => {
+    vi.useFakeTimers();
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let active = 0;
+    let maximum = 0;
+    let started = 0;
+    executeJob.mockImplementation(async () => {
+      started++;
+      active++;
+      maximum = Math.max(maximum, active);
+      await pending;
+      active--;
+      return { exitCode: 0, status: 'succeeded' };
+    });
+    pollJobs.mockResolvedValue({
+      ok: true,
+      jobs: Array.from({ length: 12 }, (_, index) => ({
+        runId: String(index),
+        command: ['echo', 'fixture'],
+      })),
+    });
+    try {
+      const loop = runDevboxAgentLoop({
+        baseUrl: 'https://example.test',
+        once: true,
+        token: 'fixture',
+      });
+      await vi.waitFor(() => expect(started).toBe(8));
+      await vi.advanceTimersByTimeAsync(20000);
+      expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+      expect(started).toBe(8);
+      release();
+      await loop;
+      expect(started).toBe(12);
+      expect(maximum).toBe(8);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      release();
+      vi.useRealTimers();
+    }
   });
 });
