@@ -40,6 +40,16 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+    if target.name == 'flutter_webrtc'
+      # Replace only the socket implementation in this generated Pods project.
+      # Never mutate the shared Pub cache used by other worktrees.
+      sockets = target.source_build_phase.files.select do |file|
+        file.file_ref && File.basename(file.file_ref.path) == 'FlutterSocketConnection.m'
+      end
+      raise 'Expected one WebRTC socket source for Meet cleanup patch' unless sockets.length == 1
+      sockets.first.file_ref.path = File.join(__dir__, 'MeetSocketConnection.m')
+      sockets.first.file_ref.source_tree = '<absolute>'
+    end
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
       config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'

@@ -1,6 +1,6 @@
 ---
 title: Meet calls
-updatedAt: '2026-09-15'
+updatedAt: '2026-10-02'
 description: Run Tuturuuu Meet video calls on Cloudflare Realtime SFU, including room signaling, host controls, and in-call recording.
 ---
 
@@ -974,3 +974,96 @@ adapter configuration.
 After a Meet deployment, verify a fresh browser load as well as the signaling
 checks. Check page errors and the rendered interface; a successful HTTP response
 or a page that recovers after refreshing does not prove server rendering passed.
+
+## Mobile screen sharing and notifications
+
+Native Meet presents join, room chat, and host admission-request notices with a
+shortcut to the relevant sheet. Initial presence and replayed chat stay quiet;
+reconnecting does not repeat previously seen messages or pending requests.
+Hidden browser tabs retain at most the newest 50 notices and display them once
+when the tab becomes visible; disconnect, room end and lost admission discard
+that queue. Obsolete admission requests are omitted.
+
+Notification sound can be disabled separately from meeting audio. OS volume,
+silent mode, and Do Not Disturb may suppress the sound.
+
+The floating navigation bar owns Leave. Hosts retain the leave/end decision;
+ending the meeting remains restricted by server authorization.
+
+| Runtime | Capture capability | Acceptance evidence |
+| --- | --- | --- |
+| Desktop web | Browser display chooser; source/audio depend on browser | Synthetic regression fixtures; exact-head CI required |
+| Android/iPhone browser | Requires `getDisplayMedia`; unavailable runtimes receive a supported-desktop hint | No mobile browser capture promised |
+| Native Android | Fresh system consent, then a dedicated media-projection foreground service; video only | Physical Android 14+ consent, cancel, Stop, revoke, repeat, reconnect QA required |
+| Native iPhone | Existing ReplayKit Broadcast Upload Extension sends video to WebRTC via the existing App Group socket; video only | Physical iPhone consent, app switching, receiver frames, stop, repeat QA required |
+
+Run synthetic fixtures without joining real meetings or publishing real screen,
+voice, or chat. Validate failed publication, interrupted consent, removal, room
+end, denied admission, reconnect, and repeated start/stop. Device testing must
+use controlled fixtures and explicit capture consent. No signing entitlement or developer-account capability is added. A returned WebRTC
+track alone does not prove ReplayKit produced frames; verify actual receiver frames
+before declaring native capture acceptance complete.
+
+References: [Android media projection](https://developer.android.com/media/grow/media-projection),
+[Apple ReplayKit](https://developer.apple.com/documentation/replaykit), and
+[browser display capture](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getDisplayMedia).
+
+The installed WebRTC socket implementation previously left a listener open when
+capture stopped before its first connection. `ios/MeetSocketConnection.m` is a
+repository-owned copy with bounded cleanup changes. The Podfile selects it in
+the generated `flutter_webrtc` target and fails closed if the expected source
+layout changes; it does not mutate shared Pub cache files. Revalidate this patch
+when upgrading the plugin. Native CI must compile/link this replacement.
+
+The iOS reader requires a minimum 10 KiB body to avoid overreading coalesced tiny
+frames. Meet pads JPEG trailing bytes; an independent reader model passed 100
+synthetic fragmentation/coalescing cases with 10 frames each. The installed
+macOS CoreImage runtime decoded a synthetic 8×8 JPEG padded from 707 bytes to
+10 KiB and rendered the expected red pixel. iOS receiver-frame decoding and
+interruption on physical devices remain release acceptance gates.
+
+The draft parity implementation at `fe6b020b95b2799fad8314969784d06ccd7fadda`
+passed exact-head Android, iOS simulator, macOS, Linux, and Windows CI builds,
+mobile analysis/tests, TypeScript type checks, and lint. Android artifact
+`11182160313` belongs to run `36899884533`; iOS artifact `11181837360` belongs
+to run `36899884528`. Build success confirms native compilation and linkage,
+but does not establish capture acceptance. Revalidate subsequent changes at
+their own exact head.
+
+Those development CI artifacts use the default localhost API/Supabase settings
+and do not inject a Supabase public key. They have no authenticated synthetic
+Meet room or SFU fixture. Two-peer acceptance therefore requires a separate
+fixture artifact configured for an isolated test service, synthetic host/guest
+sessions, and its existing authorized SFU credentials. Do not create accounts,
+change production settings, or substitute a real meeting to bypass this gate.
+The available local runtime inventory contains an Android 11/API 30 image and
+iOS 27 simulators, with no attached physical devices. Android 14+ OS-chip/lock
+revocation and physical iPhone ReplayKit background/rotation/receiver-frame
+acceptance remain explicit release gates.
+
+Android's installed WebRTC plugin ignores `MediaProjection.Callback.onStop`.
+The repository-owned `android/overlays/flutter_webrtc` capturer forwards that
+callback to the Meet bridge and releases the capture. Each capturer claims an
+immutable owner; repeated callbacks and callbacks from a previous share cannot
+stop a new share. The assistant's separate projection service does not claim
+this owner. Gradle copies plugin Java sources into generated build storage,
+replacing exactly this file after checking the reviewed version and upstream
+SHA256. It fails closed on an upstream change and never modifies the Pub cache.
+Revalidate this overlay when upgrading WebRTC, and require exact-head Android
+CI plus OS Stop/lock/restart fixture acceptance for overlay changes.
+
+Capture stops are generation-scoped and preempt media negotiation. Native revoke
+and track-ended events trigger one cleanup per capture; a stalled screen track
+does not discard the camera. Android engine detach stops its claimed capturer.
+The iOS listener accepts one broadcast connection and closes owned descriptors
+with Core Foundation socket ownership enabled. Browser Stop retains its capture
+until unpublication succeeds, so a failed unpublish can be retried. Regression
+coverage lives in `meet_screen_capture_test.dart`, `meet_media_health_test.dart`,
+`local-media-controls.test.ts` and `use-call-notifications.test.ts`.
+
+The iOS notice uses an app-owned short WAV loaded through Flutter's asset lookup
+and registered as a UI System Sound, rather than a private numeric system-tone
+identifier. It plays only while the app is active and does not change the call's
+audio session. [Apple's System Sound Services](https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/MultimediaPG/UsingAudio/UsingAudio.html)
+owns sound-effects policy. Device mute/Focus behavior remains part of the user's
+post-merge physical acceptance.

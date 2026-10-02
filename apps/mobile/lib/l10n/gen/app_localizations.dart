@@ -18163,6 +18163,60 @@ abstract class AppLocalizations {
   /// **'Show more loaded days'**
   String get profileTimelineMoreDays;
 
+  /// No description provided for @meetNoticeJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} joined the meeting'**
+  String meetNoticeJoined(String name);
+
+  /// No description provided for @meetNoticeWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is asking to join'**
+  String meetNoticeWaiting(String name);
+
+  /// No description provided for @meetNoticeChat.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} sent a message'**
+  String meetNoticeChat(String name);
+
+  /// No description provided for @meetNoticeView.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get meetNoticeView;
+
+  /// No description provided for @meetNotificationSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification sound'**
+  String get meetNotificationSound;
+
+  /// No description provided for @meetShareScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Share screen'**
+  String get meetShareScreen;
+
+  /// No description provided for @meetStopSharing.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop sharing'**
+  String get meetStopSharing;
+
+  /// No description provided for @meetScreenShareHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your selected screen will be visible to everyone in this meeting until you stop sharing. Use the system chooser to select what to share. System audio is not shared.'**
+  String get meetScreenShareHint;
+
+  /// No description provided for @meetScreenShareFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen sharing did not start. Check capture permissions and try again.'**
+  String get meetScreenShareFailed;
+
   /// No description provided for @inventoryStockHealthTitle.
   ///
   /// In en, this message translates to:

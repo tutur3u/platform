@@ -3969,6 +3969,36 @@
     "profileTimelineDayEmpty": "Không có hoạt động nào được trả về cho ngày này.",
     "profileTimelineHasActivity": "Có hoạt động trong dữ liệu đã tải",
     "profileTimelineMoreDays": "Hiện thêm ngày đã tải",
+    "meetNoticeJoined": "{name} đã tham gia cuộc họp",
+    "meetNoticeWaiting": "{name} đang yêu cầu tham gia",
+    "meetNoticeChat": "{name} đã gửi tin nhắn",
+    "meetNoticeView": "Xem",
+    "meetNotificationSound": "Âm thanh thông báo",
+    "meetShareScreen": "Chia sẻ màn hình",
+    "meetStopSharing": "Dừng chia sẻ",
+    "meetScreenShareHint": "Màn hình bạn chọn sẽ hiển thị với mọi người trong cuộc họp cho đến khi bạn dừng chia sẻ. Dùng hộp thoại hệ thống để chọn nội dung cần chia sẻ. Âm thanh hệ thống không được chia sẻ.",
+    "meetScreenShareFailed": "Chưa thể chia sẻ màn hình. Kiểm tra quyền ghi màn hình và thử lại.",
+    "@meetNoticeJoined": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "@meetNoticeWaiting": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "@meetNoticeChat": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
     "inventoryStockHealthTitle": "Tình trạng tồn kho",
     "inventoryStockHealthScope": "Sản phẩm đang hoạt động · mọi dòng tồn kho, gồm kho đã lưu trữ",
     "inventoryStockHealthAsOf": "Ảnh chụp từ máy chủ: {timestamp} UTC",

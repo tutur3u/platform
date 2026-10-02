@@ -9514,6 +9514,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileTimelineMoreDays => 'Show more loaded days';
 
   @override
+  String meetNoticeJoined(String name) {
+    return '$name joined the meeting';
+  }
+
+  @override
+  String meetNoticeWaiting(String name) {
+    return '$name is asking to join';
+  }
+
+  @override
+  String meetNoticeChat(String name) {
+    return '$name sent a message';
+  }
+
+  @override
+  String get meetNoticeView => 'View';
+
+  @override
+  String get meetNotificationSound => 'Notification sound';
+
+  @override
+  String get meetShareScreen => 'Share screen';
+
+  @override
+  String get meetStopSharing => 'Stop sharing';
+
+  @override
+  String get meetScreenShareHint => 'Your selected screen will be visible to everyone in this meeting until you stop sharing. Use the system chooser to select what to share. System audio is not shared.';
+
+  @override
+  String get meetScreenShareFailed => 'Screen sharing did not start. Check capture permissions and try again.';
+
+  @override
   String get inventoryStockHealthTitle => 'Stock health';
 
   @override

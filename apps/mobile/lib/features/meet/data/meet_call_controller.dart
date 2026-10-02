@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
+import 'package:mobile/features/meet/data/meet_call_notices.dart';
 import 'package:mobile/features/meet/data/meet_native_media.dart';
 import 'package:mobile/features/meet/data/meet_personal_chat.dart';
 import 'package:mobile/features/meet/data/meet_room_assistant.dart';
@@ -72,6 +73,8 @@ class MeetCallController extends ChangeNotifier {
   bool _mediaSyncQueued = false;
   int _mediaFailures = 0;
   Timer? _mediaRetryTimer;
+  final notices = <MeetCallNotice>[];
+  final _noticeTracker = MeetCallNotices();
   final participants = <String, Map<String, dynamic>>{};
   final waiting = <Map<String, dynamic>>[];
   final messages = <Map<String, dynamic>>[];
@@ -156,6 +159,10 @@ class MeetCallController extends ChangeNotifier {
   void _onStatus(String next) {
     if (_disposed) return;
     status = next;
+    if (next != 'open') {
+      _noticeTracker.resetConnection();
+      _lastPresenceMedia = null;
+    }
     if (next == 'open') {
       if (error == 'connection') error = null;
       if (_connectedBefore) {
@@ -166,6 +173,14 @@ class MeetCallController extends ChangeNotifier {
       error = 'connection';
     }
     if (next == 'reconnecting' || next == 'error' || next == 'closed') {
+      if (media.screenEnabled) {
+        media.screenCapture.cancel();
+        unawaited(
+          media
+              .setScreenEnabled(enabled: false, title: '', stopLabel: '')
+              .catchError((Object _) {}),
+        );
+      }
       roomAudio.reset();
     }
     notifyListeners();
@@ -251,6 +266,14 @@ class MeetCallController extends ChangeNotifier {
           if (kinds.contains('audio')) {
             unawaited(setMicrophone(enabled: false));
           }
+          if (kinds.contains('screen')) {
+            media.screenCapture.cancel();
+            unawaited(
+              media
+                  .setScreenEnabled(enabled: false, title: '', stopLabel: '')
+                  .catchError((Object _) {}),
+            );
+          }
           if (kinds.contains('video')) {
             unawaited(setCamera(enabled: false));
           }
@@ -296,6 +319,15 @@ class MeetCallController extends ChangeNotifier {
       case 'error':
         error = message['error'] as String?;
     }
+    notices.addAll(
+      _noticeTracker.handle(
+        message,
+        selfUserId: selfUserId,
+        admitted: admission == 'admitted' && !ended,
+        host: role == 'host',
+      ),
+    );
+    if (ended || admission == 'denied') unawaited(media.stopCapture());
     _syncMedia();
     notifyListeners();
   }
@@ -384,13 +416,22 @@ class MeetCallController extends ChangeNotifier {
     }
   }
 
+  (bool, bool, bool)? _lastPresenceMedia;
+
   void _sendPresence({bool join = false}) {
+    final current = (
+      media.audioEnabled,
+      media.videoEnabled,
+      media.screenEnabled,
+    );
+    if (!join && current == _lastPresenceMedia) return;
+    _lastPresenceMedia = current;
     _signaling.send({
       'type': join ? 'presence.join' : 'presence.update',
       'media': {
         'audioEnabled': media.audioEnabled,
         'videoEnabled': media.videoEnabled,
-        'screenEnabled': false,
+        'screenEnabled': media.screenEnabled,
       },
     });
   }
@@ -424,6 +465,25 @@ class MeetCallController extends ChangeNotifier {
       error = 'media';
       notifyListeners();
       rethrow;
+    }
+  }
+
+  Future<void> setScreen({
+    required bool enabled,
+    required String title,
+    required String stopLabel,
+  }) async {
+    if (admission != 'admitted' || ended || status != 'open') return;
+    if (enabled && role == 'viewer') return;
+    try {
+      await media.setScreenEnabled(
+        enabled: enabled,
+        title: title,
+        stopLabel: stopLabel,
+      );
+    } finally {
+      _sendPresence();
+      if (!_disposed) notifyListeners();
     }
   }
 
@@ -510,6 +570,7 @@ class MeetCallController extends ChangeNotifier {
       _repository.getRoomCosts(workspaceId, meetingId);
 
   void _notify() {
+    if (!_disposed && admission == 'admitted') _sendPresence();
     if (!_disposed) notifyListeners();
   }
 

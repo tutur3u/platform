@@ -8,6 +8,7 @@ class MeetParticipantTile extends StatelessWidget {
     super.key,
     this.renderer,
     this.local = false,
+    this.screen = false,
     this.handRaised = false,
     this.reaction,
   });
@@ -16,6 +17,7 @@ class MeetParticipantTile extends StatelessWidget {
   final bool microphoneOn;
   final RTCVideoRenderer? renderer;
   final bool local;
+  final bool screen;
   final bool handRaised;
   final String? reaction;
 
@@ -42,8 +44,10 @@ class MeetParticipantTile extends StatelessWidget {
             if (renderer?.srcObject?.getVideoTracks().isNotEmpty == true)
               RTCVideoView(
                 renderer!,
-                mirror: local,
-                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                mirror: local && !screen,
+                objectFit: screen
+                    ? RTCVideoViewObjectFit.RTCVideoViewObjectFitContain
+                    : RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
               )
             else
               Center(
