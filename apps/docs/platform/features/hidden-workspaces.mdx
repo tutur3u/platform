@@ -1,5 +1,5 @@
 ---
-updatedAt: "2026-10-01"
+updatedAt: "2026-10-03"
 title: 'Hidden workspaces'
 description: 'Private workspace choices, recovery and membership separation.'
 ---
@@ -14,6 +14,17 @@ The web and mobile picker fills the screen, with the Tuturuuu logo, Workspaces
 heading, floating Search/Create controls, close and Back support. Search and
 sorting retain workspace IDs and the objects from the rendered results. Duplicate
 names cannot substitute a different workspace when a list refreshes.
+
+The Flutter picker reuses the normal Apps header's brand size, title typography,
+and shared app-bar metrics, and the normal shell's floating action pills. Personal,
+system, and team rows use the existing theme's semantic accents. Header, errors,
+and results occupy one full-height scrollable body; a failed preference save keeps
+retained results usable, while an unresolved preference load still conceals choices.
+Retry revalidates preferences; hiding or restoring a row explicitly retries that
+change. The default and Hidden editors keep their existing selection semantics.
+Regression coverage: `apps/mobile/test/features/workspace/widgets/workspace_picker_sheet_test.dart`
+checks narrow screens, large text, keyboard insets, long labels, error-state scroll
+clearance, shared header geometry, and normal dock action styling.
 
 Hidden workspaces are absent from current/default choices and workspace filters.
 Settings → Hidden workspaces opens a focused restore editor; restoring changes
