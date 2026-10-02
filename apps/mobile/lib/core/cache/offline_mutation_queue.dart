@@ -346,7 +346,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
       }
 
       for (final record in records) {
-        if (record.userId != _userId()) continue;
+        if (record.userId == null || record.userId != _userId()) continue;
         final scope = (record.feature, record.workspaceId);
         if (record.status != PendingMutationStatus.queued) {
           blockedScopes.add(scope);
