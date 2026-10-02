@@ -4,7 +4,7 @@ import type { NextRequest, NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME } from '@/constants/common';
 import { defaultLocale, type Locale, supportedLocales } from '@/i18n/routing';
-import { PUBLIC_SEO_ROUTES } from './seo/public-routes';
+import { isPublicSeoPathname } from './seo/public-routes';
 
 const getSupportedLocale = (locale: string): Locale | null => {
   return supportedLocales.includes(locale as Locale)
@@ -118,9 +118,7 @@ export const handleLocale = ({ req }: { req: NextRequest }): NextResponse => {
 
   const pathname =
     req.nextUrl.pathname.replace(/^\/(?:en|vi)(?=\/|$)/u, '') || '/';
-  const isMarketingPage = PUBLIC_SEO_ROUTES.some(
-    (route) => route.pathname === pathname
-  );
+  const isMarketingPage = isPublicSeoPathname(pathname);
   const nextIntlMiddleware = createIntlMiddleware({
     locales: supportedLocales,
     // Sitemap and canonical URLs use English as the fixed unprefixed locale.

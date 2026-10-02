@@ -3,6 +3,33 @@ import { describe, expect, it } from 'vitest';
 import { handleLocale } from './locale-proxy';
 
 describe('public marketing locale URLs', () => {
+  it.each(['en', 'vi'] as const)(
+    'keeps published changelog %s URLs canonical under either language preference',
+    (locale) => {
+      const pathname = `${locale === 'vi' ? '/vi' : ''}/changelog/synthetic-release`;
+      for (const cookieLocale of ['en', 'vi']) {
+        for (const language of ['en', 'vi']) {
+          const response = handleLocale({
+            req: new NextRequest(`https://tuturuuu.com${pathname}`, {
+              headers: {
+                cookie: `NEXT_LOCALE=${cookieLocale}`,
+                'accept-language': language,
+              },
+            }),
+          });
+          expect(response.status).toBe(200);
+          expect(response.headers.get('location')).toBeNull();
+          expect(
+            response.headers.get('x-middleware-request-x-next-intl-locale')
+          ).toBe(locale);
+          if (locale === 'en')
+            expect(response.headers.get('x-middleware-rewrite')).toBe(
+              'https://tuturuuu.com/en/changelog/synthetic-release'
+            );
+        }
+      }
+    }
+  );
   it.each(['/vi', '/vi/products/tasks', '/vi/legal/dpa'])(
     'keeps %s accessible at its Vietnamese canonical URL',
     (pathname) => {
