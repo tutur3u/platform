@@ -35,46 +35,27 @@ extension InventoryProductMutations on InventoryRepository {
     String? financeCategoryId,
   }) async {
     final path = InventoryEndpoints.createProduct(wsId);
-    final payload = await _confirmedProductPayload(
-      wsId,
-      _buildProductPayload(
-        name: name,
-        categoryId: categoryId,
-        ownerId: ownerId,
-        inventory: inventory,
-        manufacturerId: manufacturerId,
-        description: description,
-        usage: usage,
-        financeCategoryId: financeCategoryId,
-      ),
+    final payload = _buildProductPayload(
+      name: name,
+      categoryId: categoryId,
+      ownerId: ownerId,
+      inventory: inventory,
+      manufacturerId: manufacturerId,
+      description: description,
+      usage: usage,
+      financeCategoryId: financeCategoryId,
     );
-    final id = newLocalMutationId();
-    if (await _mutationQueue.enqueueIfOffline(
+    await queueOrSendVoid(
+      queue: _mutationQueue,
       feature: 'inventory',
       method: 'POST',
       path: path,
       workspaceId: wsId,
       payload: payload,
-      entityId: id,
-    )) {
-      return;
-    }
-    try {
-      await _api.postJson(path, payload);
-    } on ApiException catch (error) {
-      if (!await _mutationQueue.enqueueAfterNetworkFailure(
-        error: error,
-        feature: 'inventory',
-        method: 'POST',
-        path: path,
-        workspaceId: wsId,
-        payload: payload,
-        entityId: id,
-        replaySafe: false,
-      )) {
-        rethrow;
-      }
-    }
+      send: () async {
+        throw StateError('Inventory create uses durable replay');
+      },
+    );
     await _invalidateInventory(wsId, const [
       'inventory:overview',
       'inventory:catalog',
@@ -94,45 +75,28 @@ extension InventoryProductMutations on InventoryRepository {
     String? financeCategoryId,
   }) async {
     final path = InventoryEndpoints.product(wsId, productId);
-    final payload = await _confirmedProductPayload(
-      wsId,
-      _buildProductPayload(
-        name: name,
-        categoryId: categoryId,
-        ownerId: ownerId,
-        inventory: inventory,
-        manufacturerId: manufacturerId,
-        description: description,
-        usage: usage,
-        financeCategoryId: financeCategoryId,
-      ),
+    final payload = _buildProductPayload(
+      name: name,
+      categoryId: categoryId,
+      ownerId: ownerId,
+      inventory: inventory,
+      manufacturerId: manufacturerId,
+      description: description,
+      usage: usage,
+      financeCategoryId: financeCategoryId,
     );
-    if (await _mutationQueue.enqueueIfOffline(
+    await queueOrSendVoid(
+      queue: _mutationQueue,
       feature: 'inventory',
       method: 'PATCH',
       path: path,
       workspaceId: wsId,
       payload: payload,
       entityId: productId,
-    )) {
-      return;
-    }
-    try {
-      await _api.patchJson(path, payload);
-    } on ApiException catch (error) {
-      if (!await _mutationQueue.enqueueAfterNetworkFailure(
-        error: error,
-        feature: 'inventory',
-        method: 'PATCH',
-        path: path,
-        workspaceId: wsId,
-        payload: payload,
-        entityId: productId,
-        replaySafe: false,
-      )) {
-        rethrow;
-      }
-    }
+      send: () async {
+        throw StateError('Inventory edit uses durable replay');
+      },
+    );
     await _invalidateInventory(wsId, const [
       'inventory:overview',
       'inventory:catalog',

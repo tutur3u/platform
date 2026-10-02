@@ -12,6 +12,7 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_storage_snapshot.dart';
 import 'package:mobile/core/cache/cached_resource_record.dart';
+import 'package:mobile/core/cache/offline_resource_reference.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/cache/replica_entity_record.dart';
 import 'package:path_provider/path_provider.dart';
@@ -20,6 +21,7 @@ part 'cache_store_refresh.dart';
 part 'cache_store_revalidation.dart';
 part 'cache_store_storage.dart';
 part 'cache_store_replica.dart';
+part 'cache_store_pending.dart';
 part 'cache_store_scopes.dart';
 part 'cache_store_reconciliation.dart';
 
@@ -39,6 +41,8 @@ class CacheStore {
     required CacheDirectoryResolver directoryResolver,
   }) : _secureStorage = secureStorage,
        _directoryResolver = directoryResolver;
+
+  final Map<String, Future<void>> _pendingWrites = {};
 
   static final CacheStore instance = CacheStore._();
 
@@ -596,29 +600,6 @@ class CacheStore {
 
   Future<void> clearResources({String? userId}) =>
       clearScope(userId: userId, resourceOnly: true);
-
-  Future<void> savePendingMutation(PendingMutationRecord record) async {
-    await init();
-    await _mutationBox.put(record.id, record.toJson());
-  }
-
-  Future<void> deletePendingMutation(String id) async {
-    await init();
-    await _mutationBox.delete(id);
-  }
-
-  Future<List<PendingMutationRecord>> listPendingMutations() async {
-    await init();
-    final records = <PendingMutationRecord>[];
-    for (final key in _mutationBox.keys) {
-      final raw = _mutationBox.get(key);
-      if (raw is Map<dynamic, dynamic>) {
-        records.add(PendingMutationRecord.fromJson(raw));
-      }
-    }
-    records.sort((left, right) => left.createdAt.compareTo(right.createdAt));
-    return records;
-  }
 
   CachedResourceRecord _markRecordStale(
     CachedResourceRecord record, {

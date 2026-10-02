@@ -135,6 +135,16 @@ class _PendingChangeCard extends StatelessWidget {
       PendingMutationStatus.conflict => l10n.offlineEditConflict,
       PendingMutationStatus.failed => l10n.offlineEditFailed,
     };
+    final diagnostic = switch (record.dependencyIssue) {
+      OfflineDependencyIssue.waiting => l10n.offlineDependencyWaiting,
+      OfflineDependencyIssue.missing => l10n.offlineDependencyMissing,
+      OfflineDependencyIssue.cycle => l10n.offlineDependencyCycle,
+      OfflineDependencyIssue.ambiguous => l10n.offlineDependencyAmbiguous,
+      OfflineDependencyIssue.invalidPayload => l10n.offlineDependencyInvalid,
+      OfflineDependencyIssue.contractUnavailable =>
+        l10n.offlineDependencyContract,
+      null => record.lastError,
+    };
     final color = record.status == PendingMutationStatus.queued
         ? Theme.of(context).colorScheme.primary
         : Theme.of(context).colorScheme.error;
@@ -155,12 +165,8 @@ class _PendingChangeCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               Text(status, style: TextStyle(color: color)),
-              if (record.lastError != null)
-                Text(
-                  record.lastError!,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              if (diagnostic != null)
+                Text(diagnostic, maxLines: 2, overflow: TextOverflow.ellipsis),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [

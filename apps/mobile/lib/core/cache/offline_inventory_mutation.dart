@@ -149,7 +149,9 @@ class OfflineInventoryMutation {
       field(payload, 'manufacturer_id', 'manufacturer');
       field(payload, 'finance_category_id', 'finance_category');
       for (final row in (payload['inventory'] as List<dynamic>? ?? [])) {
-        if (row is! Map) continue;
+        if (row is! Map) {
+          throw const FormatException('Invalid retained inventory row');
+        }
         field(row, 'unit_id', 'unit');
         field(row, 'warehouse_id', 'warehouse');
         field(row, 'revenue_share_partner_id', 'owner');
@@ -157,10 +159,15 @@ class OfflineInventoryMutation {
     }
     if (resource == 'period') {
       for (final id in (payload['product_ids'] as List<dynamic>? ?? [])) {
-        if (id is String) result.add(_reference('product', id));
+        if (id is! String) {
+          throw const FormatException('Invalid retained product reference');
+        }
+        result.add(_reference('product', id));
       }
       for (final row in (payload['prices'] as List<dynamic>? ?? [])) {
-        if (row is! Map) continue;
+        if (row is! Map) {
+          throw const FormatException('Invalid retained inventory row');
+        }
         field(row, 'product_id', 'product');
         field(row, 'unit_id', 'unit');
         field(row, 'warehouse_id', 'warehouse');
@@ -172,7 +179,9 @@ class OfflineInventoryMutation {
       field(payload, 'inventory_period_id', 'period');
       field(payload, 'period_id', 'period');
       for (final row in (payload['products'] as List<dynamic>? ?? [])) {
-        if (row is! Map) continue;
+        if (row is! Map) {
+          throw const FormatException('Invalid retained inventory row');
+        }
         field(row, 'product_id', 'product');
         field(row, 'unit_id', 'unit');
         field(row, 'warehouse_id', 'warehouse');
@@ -185,6 +194,7 @@ class OfflineInventoryMutation {
   OfflineDependencyNode get node => OfflineDependencyNode(
     record: record,
     produces: isCreate ? identity : null,
+    deletes: record.method.toUpperCase() == 'DELETE' ? identity : null,
     serialIdentity: identity,
     references: references,
     requiredReferences: record.requiredReferences,
@@ -211,7 +221,9 @@ class OfflineInventoryMutation {
         field(payload, 'manufacturer_id', 'manufacturer');
         field(payload, 'finance_category_id', 'finance_category');
         for (final row in (payload['inventory'] as List<dynamic>? ?? [])) {
-          if (row is! Map) continue;
+          if (row is! Map) {
+            throw const FormatException('Invalid retained inventory row');
+          }
           field(row, 'unit_id', 'unit');
           field(row, 'warehouse_id', 'warehouse');
           field(row, 'revenue_share_partner_id', 'owner');
@@ -228,7 +240,9 @@ class OfflineInventoryMutation {
               .toList();
         }
         for (final row in (payload['prices'] as List<dynamic>? ?? [])) {
-          if (row is! Map) continue;
+          if (row is! Map) {
+            throw const FormatException('Invalid retained inventory row');
+          }
           field(row, 'product_id', 'product');
           field(row, 'unit_id', 'unit');
           field(row, 'warehouse_id', 'warehouse');
@@ -240,7 +254,9 @@ class OfflineInventoryMutation {
         field(payload, 'inventory_period_id', 'period');
         field(payload, 'period_id', 'period');
         for (final row in (payload['products'] as List<dynamic>? ?? [])) {
-          if (row is! Map) continue;
+          if (row is! Map) {
+            throw const FormatException('Invalid retained inventory row');
+          }
           field(row, 'product_id', 'product');
           field(row, 'unit_id', 'unit');
           field(row, 'warehouse_id', 'warehouse');

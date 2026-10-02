@@ -5,6 +5,7 @@ class OfflineDependencyNode {
   const OfflineDependencyNode({
     required this.record,
     this.produces,
+    this.deletes,
     this.serialIdentity,
     this.references = const {},
     this.requiredReferences = const {},
@@ -12,6 +13,7 @@ class OfflineDependencyNode {
 
   final PendingMutationRecord record;
   final OfflineResourceReference? produces;
+  final OfflineResourceReference? deletes;
   final OfflineResourceReference? serialIdentity;
   final Set<OfflineResourceReference> references;
 
@@ -44,11 +46,18 @@ class OfflineDependencyGraph {
     for (final ids in producers.values) {
       if (ids.length > 1) ambiguous.addAll(ids);
     }
+    final deletions = <OfflineResourceReference, Set<String>>{};
+    for (final node in nodes) {
+      if (node.deletes != null) {
+        deletions.putIfAbsent(node.deletes!, () => {}).add(node.record.id);
+      }
+    }
     final previous = <OfflineResourceReference, String>{};
     for (final node in nodes) {
       final edges = <String>{};
       final required = {...node.requiredReferences};
       for (final ref in node.references) {
+        if (node.serialIdentity != ref) edges.addAll(deletions[ref] ?? {});
         final creators = producers[ref];
         if (creators != null) {
           required.add(ref);

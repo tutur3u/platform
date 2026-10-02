@@ -537,6 +537,7 @@ class InventoryRepository {
       workspaceId: wsId,
       entityId: saleId,
       payload: payload,
+      acknowledgedValue: InventorySalesPeriod.fromJson,
       pendingValue: (_) => null,
       send: () async {
         final response = await _api.putJson(path, payload);
@@ -586,6 +587,7 @@ class InventoryRepository {
       workspaceId: wsId,
       entityId: saleId,
       payload: payload,
+      acknowledgedValue: InventorySaleDetail.fromJson,
       pendingValue: (_) => InventorySaleDetail(
         id: saleId,
         notice: notice,

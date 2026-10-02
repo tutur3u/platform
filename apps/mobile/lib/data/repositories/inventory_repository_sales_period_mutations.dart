@@ -86,6 +86,7 @@ extension InventorySalesPeriodMutations on InventoryRepository {
       path: path,
       workspaceId: wsId,
       payload: payload,
+      acknowledgedValue: InventorySalesPeriod.fromJson,
       pendingValue: (id) => InventorySalesPeriod(
         id: id,
         name: name,
@@ -142,6 +143,7 @@ extension InventorySalesPeriodMutations on InventoryRepository {
       workspaceId: wsId,
       entityId: periodId,
       payload: payload,
+      acknowledgedValue: InventorySalesPeriod.fromJson,
       pendingValue: (_) => InventorySalesPeriod(
         id: periodId,
         name: name ?? previous?.name ?? '',

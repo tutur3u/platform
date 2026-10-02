@@ -9335,6 +9335,24 @@ class AppLocalizationsVi extends AppLocalizations {
   String get cacheCategoryOther => 'Dữ liệu khác';
 
   @override
+  String get offlineDependencyWaiting => 'Đang chờ các thay đổi liên quan. Đồng bộ sẽ tự động tiếp tục.';
+
+  @override
+  String get offlineDependencyMissing => 'Một mục cục bộ liên quan đã bị hủy hoặc xóa. Hãy kiểm tra thay đổi này.';
+
+  @override
+  String get offlineDependencyCycle => 'Các thay đổi liên quan phụ thuộc lẫn nhau. Hãy kiểm tra các mục tham chiếu.';
+
+  @override
+  String get offlineDependencyAmbiguous => 'Nhiều thao tác tạo đang chờ dùng cùng một mục cục bộ. Hãy kiểm tra thay đổi này.';
+
+  @override
+  String get offlineDependencyInvalid => 'Thay đổi đã lưu có dữ liệu không hợp lệ. Hãy kiểm tra trước khi đồng bộ.';
+
+  @override
+  String get offlineDependencyContract => 'Đang chờ máy chủ hỗ trợ. Thay đổi đã được lưu và sẽ tự động thử lại.';
+
+  @override
   String get offlineEditSyncing => 'Đang đồng bộ…';
 
   @override

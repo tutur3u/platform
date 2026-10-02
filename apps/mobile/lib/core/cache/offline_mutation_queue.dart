@@ -11,7 +11,12 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/chat_attachment_delivery.dart';
 import 'package:mobile/core/cache/crm_avatar_delivery.dart';
 import 'package:mobile/core/cache/drive_upload_delivery.dart';
+import 'package:mobile/core/cache/offline_dependency_graph.dart';
 import 'package:mobile/core/cache/offline_id_reconciliation.dart';
+import 'package:mobile/core/cache/offline_inventory_create.dart';
+import 'package:mobile/core/cache/offline_inventory_mutation.dart';
+import 'package:mobile/core/cache/offline_inventory_persistence.dart';
+import 'package:mobile/core/cache/offline_resource_reference.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/cache/profile_avatar_delivery.dart';
 import 'package:mobile/core/cache/task_description_image_delivery.dart';
@@ -24,6 +29,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 part 'offline_mutation_dispatch.dart';
 part 'offline_mutation_dependencies.dart';
+part 'offline_inventory_replay.dart';
 
 typedef OfflineMutationDispatcher =
     Future<void> Function(PendingMutationRecord record);
@@ -47,7 +53,8 @@ class OfflineMutationQueue with WidgetsBindingObserver {
       _userId = currentCacheUserId,
       _checkConnectivity = Connectivity().checkConnectivity,
       _connectivityChanges = Connectivity().onConnectivityChanged,
-      _authChanges = null;
+      _authChanges = null,
+      _apiFactory = null;
 
   @visibleForTesting
   OfflineMutationQueue.forTesting({
@@ -56,13 +63,16 @@ class OfflineMutationQueue with WidgetsBindingObserver {
     required Future<List<ConnectivityResult>> Function() checkConnectivity,
     required Stream<List<ConnectivityResult>> connectivityChanges,
     Stream<supa.AuthState>? authChanges,
+    ApiClient Function(String userId)? apiFactory,
   }) : _store = store,
        _userId = userId,
        _checkConnectivity = checkConnectivity,
        _connectivityChanges = connectivityChanges,
-       _authChanges = authChanges;
+       _authChanges = authChanges,
+       _apiFactory = apiFactory;
 
   final CacheStore _store;
+  final ApiClient Function(String userId)? _apiFactory;
   final String? Function() _userId;
   final Future<List<ConnectivityResult>> Function() _checkConnectivity;
   final Stream<List<ConnectivityResult>> _connectivityChanges;
@@ -72,6 +82,8 @@ class OfflineMutationQueue with WidgetsBindingObserver {
 
   final Map<String, OfflineMutationDispatcher> _dispatchers = {};
   final Set<String> _cancelingIds = {};
+  final Map<String, Map<String, dynamic>?> _foregroundInventoryResults = {};
+  final Map<String, Exception> _foregroundInventoryErrors = {};
   final ValueNotifier<List<PendingMutationRecord>> pending = ValueNotifier([]);
   final ValueNotifier<Set<String>> syncingIds = ValueNotifier({});
   final ValueNotifier<int> syncRevision = ValueNotifier(0);
@@ -80,6 +92,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
   Timer? _retryTimer;
   Future<void>? _drainFuture;
   DateTime? _serverCooldownUntil;
+  DateTime? _contractUnavailableUntil;
   Future<void>? _initialization;
   Future<void>? _syncFuture;
   bool _syncRequested = false;
@@ -242,7 +255,10 @@ class OfflineMutationQueue with WidgetsBindingObserver {
     required String entityId,
     required bool replaySafe,
   }) async {
-    if (error.statusCode != 0) return false;
+    if (error.statusCode != 0 &&
+        !(replaySafe && error.code == 'OFFLINE_CONTRACT_UNAVAILABLE')) {
+      return false;
+    }
     await enqueue(
       PendingMutationRecord(
         id: newLocalMutationId(),
@@ -277,7 +293,9 @@ class OfflineMutationQueue with WidgetsBindingObserver {
     if (record.userId == null || record.userId != _userId()) {
       throw StateError('An authenticated account is required to queue edits');
     }
+    await _registerInventoryProvenance(record);
     await _store.savePendingMutation(record);
+    await _pinInventoryDependencies(await listPending());
     await refresh();
     _drainRequested = true;
     _scheduleSync();
@@ -285,6 +303,16 @@ class OfflineMutationQueue with WidgetsBindingObserver {
 
   Future<bool> cancel(String id) async {
     await init();
+    if (syncingIds.value.contains(id)) return false;
+    final existing = (await listPending())
+        .where((record) => record.id == id)
+        .firstOrNull;
+    if (existing?.acknowledgedServerId != null ||
+        existing?.acknowledgedDeletedId != null ||
+        existing?.acknowledgedWrite == true) {
+      _scheduleSync();
+      return false;
+    }
     if (syncingIds.value.contains(id)) return false;
     _cancelingIds.add(id);
     try {
@@ -357,6 +385,12 @@ class OfflineMutationQueue with WidgetsBindingObserver {
       return;
     }
     try {
+      final inventoryRecords = (await listPending())
+          .where(
+            (record) => OfflineInventoryMutation.fromRecord(record) != null,
+          )
+          .toList();
+      if (await _drainInventoryDependencies(inventoryRecords)) return;
       final records = await listPending();
       final blockedScopes = <(String, String?)>{};
       final unresolvedEarlier = <(String?, String)>{};
@@ -366,6 +400,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
       }
 
       for (final record in records) {
+        if (OfflineInventoryMutation.fromRecord(record) != null) continue;
         if (_cancelingIds.contains(record.id) ||
             record.userId == null ||
             record.userId != _userId()) {
