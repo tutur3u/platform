@@ -51,7 +51,9 @@ hardware-normalized benchmark or rank users by these numbers. Hidden-case
 timings are omitted from learner responses.
 
 `packages/education-core` contains reusable server-only education domain logic;
-it does not own HTTP traffic. The Tulearn helpers in
+it does not own HTTP traffic. Programming catalog clients are exposed through
+`@tuturuuu/internal-api/programming`; keep new catalog consumers on that scoped
+entry point instead of extending the legacy education client module. The Tulearn helpers in
 `packages/internal-api/src/tulearn.ts` select the Learn origin for learner
 contracts. Explicit exceptions such as platform profile updates keep the Web
 origin.
@@ -177,3 +179,21 @@ Preview dispatch is manual-only. Run `vercel-preview-learn.yaml` from `main`, se
 `apps/learn/vercel.json` disables Vercel Git deployments and GitHub integration so preview and production deploys only happen through the CI workflows.
 
 The full-bleed shell measures its mobile navigation header, including safe-area padding and wrapped rows, and reserves bottom safe-area space inside the viewport. Disabled Run and Submit controls expose their tooltips to keyboard focus. Font loading failures retain fallback editor metrics without unhandled rejections. Source regression coverage is in `apps/learn/tests/programming-workspace/review-regressions.node-test.mjs`; real mobile and Next build checks remain separate verification gates.
+
+### Programming database acceptance
+
+The enabled `programming-database-contract.yaml` pull request gate checks out the
+exact source head and replays all repository migrations in an owned disposable
+Supabase project. `learn-programming-full-schema.sql` requires strict pgTAP success
+for grants, workspace boundaries, hidden-case redaction, stale revisions, invalid
+case visibility, and complete transaction rollback. Actual public schema types
+are uploaded under that source SHA after scoped cleanup succeeds; they are not
+committed by the workflow. The job has read-only repository permissions and a
+45-minute deadline. This gate validates the current catalog contract without
+activating the separate inert hosted typegen proposals.
+
+Run the finite parser and session regressions with
+`node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/tests/programming-disposable/session.test.mjs`.
+Use the repository isolated lifecycle for local schema acceptance, never a shared
+or production database. A failed migration, TAP assertion, type generation, or
+owned-project cleanup blocks acceptance.

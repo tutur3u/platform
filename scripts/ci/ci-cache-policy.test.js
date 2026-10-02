@@ -69,6 +69,71 @@ function readStepBlocks(source) {
   );
 }
 
+function readCacheKeyFields(step) {
+  const lines = step.split('\n');
+  const start = lines.findIndex((line) => /^\s*with:\s*$/u.test(line));
+  if (start < 0) return '';
+  const withIndent = lines[start].match(/^ */u)[0].length;
+  const fields = [];
+  for (let index = start + 1; index < lines.length; index += 1) {
+    const line = lines[index];
+    const indent = line.match(/^ */u)[0].length;
+    if (!line.trim() || line.trimStart().startsWith('#')) continue;
+    if (indent <= withIndent) break;
+    if (!/^\s*(?:key|restore-keys):/u.test(line)) continue;
+    fields.push(line);
+    // Include block scalars and folded/quoted continuations, stopping at the
+    // next sibling field or the end of this step's with mapping.
+    for (let cursor = index + 1; cursor < lines.length; cursor += 1) {
+      const next = lines[cursor];
+      if (
+        next.trim() &&
+        !next.trimStart().startsWith('#') &&
+        next.match(/^ */u)[0].length <= indent
+      )
+        break;
+      fields.push(next);
+      index = cursor;
+    }
+  }
+  return fields.join('\n');
+}
+
+test('cache key extraction covers every field and continuation without later job env', () => {
+  const step = `      - uses: actions/cache/restore@v6
+        with:
+          path: tmp/cache
+          key: >-
+            cache-
+            \${{ github.run_id }}
+          restore-keys: |
+            cache-\${{ github.run_attempt }}-
+          key: second-\${{ github.run_id }}
+  next-job:
+    env:
+      KEY: \${{ github.run_id }}
+      key: unrelated-job-value
+    steps:
+      - run: echo ignored`;
+  const fields = readCacheKeyFields(step);
+  assert.match(fields, /github\.run_id/u);
+  assert.match(fields, /github\.run_attempt/u);
+  assert.match(fields, /second-/u);
+  assert.doesNotMatch(
+    fields,
+    /KEY:|unrelated-job-value|next-job|echo ignored/u
+  );
+  assert.equal(readCacheKeyFields('      - uses: actions/cache@v6'), '');
+  assert.doesNotMatch(
+    readCacheKeyFields(
+      step
+        .replaceAll('github.run_id', 'runner.os')
+        .replaceAll('github.run_attempt', 'runner.arch')
+    ),
+    /github\.(?:run_id|run_attempt)/u
+  );
+});
+
 function findBroadEnvCredentials(source) {
   const lines = source.split('\n');
   const violations = [];
@@ -407,14 +472,47 @@ test('Actions caches use stable platform keys and mobile caches omit outputs', (
         continue;
       }
 
+      const keyFields = readCacheKeyFields(step);
+      assert.notEqual(
+        keyFields,
+        '',
+        `${workflowName} must declare cache key fields`
+      );
       assert.doesNotMatch(
-        step,
-        /github\.(?:run_id|run_attempt)/u,
+        keyFields,
+        /github\s*\.\s*(?:run_id|run_attempt)/u,
         workflowName
       );
-      assert.match(step, /runner\.os/u, `${workflowName} cache key needs OS`);
+      if (
+        workflowName === 'e2e-tests.yaml' &&
+        /key: \$\{\{ (matrix\.cache_key|needs\.relevance\.outputs\.inventory_key) \}\}/u.test(
+          keyFields
+        )
+      ) {
+        const { fingerprint, DEFAULT_MATRIX } = require('./e2e-result-plan');
+        const platform = { os: 'Linux', arch: 'X64', image: 'test' };
+        const key = fingerprint([], DEFAULT_MATRIX[0], platform);
+        assert.notEqual(
+          key,
+          fingerprint([], DEFAULT_MATRIX[0], { ...platform, os: 'Windows' })
+        );
+        assert.notEqual(
+          key,
+          fingerprint([], DEFAULT_MATRIX[0], { ...platform, arch: 'ARM64' })
+        );
+        assert.notEqual(
+          key,
+          fingerprint([], DEFAULT_MATRIX[0], { ...platform, image: 'new' })
+        );
+        continue;
+      }
       assert.match(
-        step,
+        keyFields,
+        /runner\.os/u,
+        `${workflowName} cache key needs OS`
+      );
+      assert.match(
+        keyFields,
         /runner\.arch/u,
         `${workflowName} cache key needs arch`
       );

@@ -87,6 +87,11 @@
       "import": "./dist/education.js",
       "require": "./dist/education.js"
     },
+    "./programming": {
+      "types": "./dist/programming.d.ts",
+      "import": "./dist/programming.js",
+      "require": "./dist/programming.js"
+    },
     "./external-project-team": {
       "types": "./dist/external-project-team.d.ts",
       "import": "./dist/external-project-team.js",
