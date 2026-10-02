@@ -18037,6 +18037,90 @@ abstract class AppLocalizations {
   /// **'Could not confirm your response. Retry the same response to check its status.'**
   String get mailInvitationFailed;
 
+  /// No description provided for @mailCalendarLinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Link to Calendar'**
+  String get mailCalendarLinkTitle;
+
+  /// No description provided for @mailCalendarLinkUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar event link'**
+  String get mailCalendarLinkUrl;
+
+  /// No description provided for @mailCalendarLinkPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview link'**
+  String get mailCalendarLinkPreview;
+
+  /// No description provided for @mailCalendarLinkConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm link'**
+  String get mailCalendarLinkConfirm;
+
+  /// No description provided for @mailCalendarLinkOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Original invitation'**
+  String get mailCalendarLinkOriginal;
+
+  /// No description provided for @mailCalendarLinkSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected Calendar event'**
+  String get mailCalendarLinkSelected;
+
+  /// No description provided for @mailCalendarLinkNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Linking keeps both records. Replies still go to the original organizer.'**
+  String get mailCalendarLinkNotice;
+
+  /// No description provided for @mailCalendarLinkChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The invitation or event changed. Preview again.'**
+  String get mailCalendarLinkChanged;
+
+  /// No description provided for @mailCalendarLinkUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This event is unavailable in your account.'**
+  String get mailCalendarLinkUnavailable;
+
+  /// No description provided for @mailCalendarLinkFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to update the link. Try again.'**
+  String get mailCalendarLinkFailed;
+
+  /// No description provided for @mailCalendarLinkInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a Calendar event link containing the selected event.'**
+  String get mailCalendarLinkInvalid;
+
+  /// No description provided for @mailCalendarLinkLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar event linked'**
+  String get mailCalendarLinkLinked;
+
+  /// No description provided for @mailCalendarLinkUnlink.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove link'**
+  String get mailCalendarLinkUnlink;
+
+  /// No description provided for @mailCalendarLinkOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open linked event'**
+  String get mailCalendarLinkOpen;
+
   /// No description provided for @remindersOccurrenceDetails.
   ///
   /// In en, this message translates to:

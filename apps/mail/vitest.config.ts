@@ -8,6 +8,10 @@ export default defineConfig({
   oxc: false,
   resolve: {
     alias: [
+      {
+        find: /^@tuturuuu\/internal-api\/(calendar|client|mail)$/,
+        replacement: `${resolve(__dirname, '../../packages/internal-api/src')}/$1`,
+      },
       { find: '@', replacement: resolve(__dirname, './src') },
       {
         find: '@tuturuuu/internal-api',

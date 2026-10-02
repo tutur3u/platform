@@ -41,3 +41,14 @@ series/occurrence updates, cancellations and out-of-order sequences; same UID in
 separate accounts; renamed/moved provider events; permission revocation, account
 switch, preview cancellation and concurrent confirmations; no duplicate provider
 insert, reply or destructive event mutation. Exercise web and Flutter components.
+
+
+Integration child branch `feat/mail-calendar-integration` inherits reviewed Mail
+foundation5671 and final Calendar authority5672 a8e5cd05 unchanged. Owned Mail
+routes, concrete actor-scoped metadata CAS adapter and web/mobile controls now
+implement preview/confirm/get/unlink; no destructive Calendar operations. Both
+clients accept an explicit Calendar permalink, show both authorities before
+confirmation and reset state on source scope changes. This is metadata linking,
+not a provider event merge. Exact-head integration tests, review and builds remain
+required before release; browser build dispatch is blocked on unapproved browser
+permissions owned by the parent/user decision.
