@@ -289,9 +289,7 @@ describe('kind-specific scope and limits', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data).not.toHaveProperty('finance_category_id');
-      expect(
-        (result.data as { inventory: { amount: null }[] }).inventory[0]?.amount
-      ).toBeNull();
+      expect(result.data).toMatchObject({ inventory: [{ amount: null }] });
     }
   });
   it('retains period scope, date, product rule and scheduled pricing validation', () => {

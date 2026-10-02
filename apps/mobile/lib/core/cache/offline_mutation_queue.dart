@@ -84,6 +84,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
   final Set<String> _cancelingIds = {};
   final Map<String, Map<String, dynamic>?> _foregroundInventoryResults = {};
   final Map<String, Exception> _foregroundInventoryErrors = {};
+  final Map<String, ApiClient> _foregroundInventoryClients = {};
   final ValueNotifier<List<PendingMutationRecord>> pending = ValueNotifier([]);
   final ValueNotifier<Set<String>> syncingIds = ValueNotifier({});
   final ValueNotifier<int> syncRevision = ValueNotifier(0);

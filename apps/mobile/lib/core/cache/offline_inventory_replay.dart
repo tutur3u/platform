@@ -11,6 +11,7 @@ extension OfflineInventoryReplay on OfflineMutationQueue {
     required String entityId,
     Map<String, dynamic>? payload,
     bool replaySafe = false,
+    ApiClient? apiClient,
   }) async {
     final owner = _userId();
     if (owner == null) {
@@ -19,6 +20,7 @@ extension OfflineInventoryReplay on OfflineMutationQueue {
         statusCode: 401,
       );
     }
+    apiClient?.checkUser(owner);
     final record = PendingMutationRecord(
       id: newLocalMutationId(),
       feature: feature,
@@ -36,6 +38,7 @@ extension OfflineInventoryReplay on OfflineMutationQueue {
       throw const FormatException('Unsupported inventory mutation');
     }
     _foregroundInventoryResults[record.id] = null;
+    if (apiClient != null) _foregroundInventoryClients[record.id] = apiClient;
     try {
       await enqueue(record);
       await synchronize();
@@ -72,6 +75,7 @@ extension OfflineInventoryReplay on OfflineMutationQueue {
     } finally {
       _foregroundInventoryResults.remove(record.id);
       _foregroundInventoryErrors.remove(record.id);
+      _foregroundInventoryClients.remove(record.id);
     }
   }
 

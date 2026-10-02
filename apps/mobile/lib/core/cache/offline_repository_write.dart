@@ -20,6 +20,7 @@ Future<void> queueOrSendVoid({
   String? entityId,
   bool replaySafe = false,
   OfflineMutationQueue? queue,
+  ApiClient? apiClient,
 }) async {
   final mutations = queue ?? OfflineMutationQueue.instance;
   final localId = entityId ?? newLocalMutationId();
@@ -32,6 +33,7 @@ Future<void> queueOrSendVoid({
       entityId: localId,
       payload: payload,
       replaySafe: replaySafe,
+      apiClient: apiClient,
     );
     return;
   }
@@ -95,6 +97,7 @@ Future<T> queueOrSendValue<T>({
   String? entityId,
   bool replaySafe = false,
   OfflineMutationQueue? queue,
+  ApiClient? apiClient,
 }) async {
   final mutations = queue ?? OfflineMutationQueue.instance;
   final localId = entityId ?? newLocalMutationId();
@@ -107,6 +110,7 @@ Future<T> queueOrSendValue<T>({
       entityId: localId,
       payload: payload,
       replaySafe: replaySafe,
+      apiClient: apiClient,
     );
     if (data != null && acknowledgedValue != null) {
       return acknowledgedValue(data);

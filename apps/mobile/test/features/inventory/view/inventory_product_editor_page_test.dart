@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -8,7 +9,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_store.dart';
-import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
@@ -26,6 +26,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/helpers.dart';
+import '../../../helpers/offline_inventory_harness.dart';
 
 class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
     implements WorkspaceCubit {}
@@ -33,8 +34,6 @@ class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
 class _MockApiClient extends Mock implements ApiClient {}
 
 class _MockCacheStore extends Mock implements CacheStore {}
-
-class _OnlineMutationQueue extends Mock implements OfflineMutationQueue {}
 
 class _FakeInventoryRepository extends InventoryRepository {
   _FakeInventoryRepository({
@@ -288,25 +287,12 @@ void main() {
               Set<String>.from(call.positionalArguments[0] as Iterable),
             ));
           });
-          final mutations = _OnlineMutationQueue();
-          when(mutations.listPending).thenAnswer((_) async => []);
-          when(
-            () => mutations.enqueueIfOffline(
-              feature: 'inventory',
-              method: 'PATCH',
-              path: '/api/v1/workspaces/ws_1/products/synthetic-product',
-              workspaceId: 'ws_1',
-              payload: any(named: 'payload'),
-              entityId: 'synthetic-product',
-            ),
-          ).thenAnswer((call) async {
-            if (testCase.offline) {
-              payload = Map<String, dynamic>.from(
-                call.namedArguments[#payload] as Map,
-              );
-            }
-            return testCase.offline;
-          });
+          final harness = (await tester.runAsync(
+            () =>
+                OfflineInventoryHarness.create(api, online: !testCase.offline),
+          ))!;
+          final mutations = harness.queue;
+          addTearDown(harness.dispose);
           when(() => api.patchJson(any(), any())).thenAnswer((call) async {
             payload = Map<String, dynamic>.from(
               call.positionalArguments[1] as Map,
@@ -323,9 +309,7 @@ void main() {
                   apiClient: api,
                   cacheStore: cache,
                   mutationQueue: mutations,
-                  // This payload fixture has no authenticated ID-mapping store.
-                  // Owner-scoped mapping is covered by repository tests.
-                  cacheUserId: () => null,
+                  cacheUserId: () => 'actor',
                   amount: amount,
                 ),
                 financeRepository: financeRepository,
@@ -342,20 +326,41 @@ void main() {
             await tester.enterText(_amountField(), '');
             await tester.pumpAndSettle();
           }
-          await tester.tap(find.text('Save product').hitTestable());
+          await tester.runAsync(() async {
+            final persisted = Completer<void>();
+            void observedPending() {
+              if (mutations.pending.value.isNotEmpty &&
+                  !persisted.isCompleted) {
+                persisted.complete();
+              }
+            }
+
+            mutations.pending.addListener(observedPending);
+            await tester.tap(find.text('Save product').hitTestable());
+            await persisted.future.timeout(const Duration(seconds: 10));
+            await mutations.synchronize();
+            mutations.pending.removeListener(observedPending);
+            if (testCase.offline) {
+              payload = (await mutations.listPending()).single.payload;
+            }
+          });
+          // Hive completes on real I/O; give those continuations time while
+          // advancing frames until the save actually closes the editor.
+          final saveDeadline = DateTime.now().add(const Duration(seconds: 10));
+          while (find
+                  .byType(InventoryProductEditorPage)
+                  .evaluate()
+                  .isNotEmpty &&
+              DateTime.now().isBefore(saveDeadline)) {
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 10)),
+            );
+            await tester.pump(const Duration(milliseconds: 16));
+          }
+          expect(find.byType(InventoryProductEditorPage), findsNothing);
           await tester.pumpAndSettle();
           expect(payload, isNotNull);
           expect(payload!['name'], 'Renamed synthetic product');
-          verify(
-            () => mutations.enqueueIfOffline(
-              feature: 'inventory',
-              method: 'PATCH',
-              path: '/api/v1/workspaces/ws_1/products/synthetic-product',
-              workspaceId: 'ws_1',
-              payload: payload,
-              entityId: 'synthetic-product',
-            ),
-          ).called(1);
           if (testCase.offline) {
             verifyNever(() => api.patchJson(any(), any()));
           } else {
@@ -365,13 +370,14 @@ void main() {
                 payload!,
               ),
             ).called(1);
+            expect(await tester.runAsync(mutations.listPending), isEmpty);
           }
           final savedStock = Map<String, dynamic>.from(
             (payload!['inventory'] as List).single as Map,
           );
           expect(savedStock['amount'], expectedAmount);
-          expect(invalidations, hasLength(testCase.offline ? 0 : 1));
-          if (!testCase.offline) {
+          expect(invalidations, hasLength(1));
+          {
             expect(invalidations.single.$1, 'ws_1');
             expect(invalidations.single.$2, {
               'inventory:overview',

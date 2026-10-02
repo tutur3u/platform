@@ -292,6 +292,7 @@ class FinanceRepository
     final payload = {'value': currency.trim().toUpperCase()};
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'finance',
       method: 'PUT',
       path: path,
@@ -397,6 +398,7 @@ class FinanceRepository
     final id = newLocalMutationId();
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'finance',
       method: 'POST',
       path: FinanceEndpoints.wallets(wsId),
@@ -438,6 +440,7 @@ class FinanceRepository
     final path = FinanceEndpoints.wallet(wsId, walletId);
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'finance',
       method: 'PUT',
       path: path,
@@ -457,6 +460,7 @@ class FinanceRepository
     final path = FinanceEndpoints.wallet(wsId, walletId);
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'finance',
       method: 'DELETE',
       path: path,

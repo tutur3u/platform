@@ -297,7 +297,7 @@ Atomic pricing-aware edit routing also applies before a product has its first au
 
 ### Transactional offline create validation
 
-The proposed automatic dependency sync uses a separate deduplicated create
+Automatic dependency sync uses a separate deduplicated create
 contract. Its private receipt and all resource, stock, history and audit effects
 commit together. Reusing an operation identity with different input is rejected.
 The service authorizes the captured account, workspace and resource permission
@@ -307,8 +307,11 @@ before invoking this contract; customers cannot read receipts or forge actors.
 by applying the complete schema in a disposable hosted database, running strict
 `inventory-offline-create.sql` pgTAP assertions, and generating
 `packages/types/src/supabase.ts` as an artifact. A queued workflow is not schema
-or type parity evidence. This contract checkpoint alone does not enable the
-native scheduler or replace the current sync-first safety guard.
+or type parity evidence. The native scheduler persists operation identities before
+sending, orders prerequisites, and rewrites acknowledged references automatically.
+An unavailable server contract retains queued work and retries automatically; it
+never falls back to an unsafe legacy create. Release readiness still requires the
+exact-source database, generated-type, native, and owning-app CI gates.
 
 The new `/api/v1/workspaces/:wsId/inventory/offline-mutations` POST route
 accepts an operation identity, an explicit create kind and a strictly validated

@@ -2,12 +2,17 @@ part of 'offline_mutation_queue.dart';
 
 extension OfflineMutationDispatch on OfflineMutationQueue {
   Future<void> _dispatchHttpMutation(PendingMutationRecord record) async {
+    final borrowed = _foregroundInventoryClients[record.id];
     final api =
+        borrowed ??
         _apiFactory?.call(record.userId!) ??
         ApiClient(expectedUserId: record.userId);
     try {
       if (OfflineInventoryMutation.fromRecord(record) != null) {
-        await _dispatchInventoryHttp(record, api);
+        await ApiClient.runForUser(
+          record.userId!,
+          () => _dispatchInventoryHttp(record, api),
+        );
         return;
       }
       final userId = record.userId;
@@ -391,7 +396,7 @@ extension OfflineMutationDispatch on OfflineMutationQueue {
           throw StateError('Unsupported queued method: ${record.method}');
       }
     } finally {
-      api.dispose();
+      if (borrowed == null) api.dispose();
     }
   }
 }

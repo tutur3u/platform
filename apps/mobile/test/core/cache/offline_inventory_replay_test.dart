@@ -574,6 +574,63 @@ void main() {
     },
   );
 
+  test(
+    'foreground injected transport is used and remains caller owned',
+    () async {
+      online = true;
+      final borrowed = _Api();
+      when(() => borrowed.postJson(any(), any())).thenAnswer(
+        (_) async => {
+          'contract': 'inventory-offline-create-v1',
+          'resource': 'category',
+          'data': {'id': '11111111-1111-4111-8111-111111111111'},
+        },
+      );
+      await queueOrSendVoid(
+        queue: queue,
+        apiClient: borrowed,
+        feature: 'inventory',
+        method: 'POST',
+        workspaceId: 'ws-1',
+        path: '/api/v1/workspaces/ws-1/product-categories',
+        payload: {'name': 'Synthetic'},
+        send: () async => throw StateError('No legacy'),
+      );
+      verify(() => borrowed.postJson(any(), any())).called(1);
+      verifyNever(borrowed.dispose);
+      verifyNever(() => api.postJson(any(), any()));
+      expect(await queue.listPending(), isEmpty);
+    },
+  );
+
+  test(
+    'repository client owner fence runs before persisting a foreground write',
+    () async {
+      final borrowed = _Api();
+      const mismatch = ApiException(
+        message: 'Account changed',
+        statusCode: 401,
+      );
+      when(() => borrowed.checkUser(any())).thenThrow(mismatch);
+      await expectLater(
+        queueOrSendVoid(
+          queue: queue,
+          apiClient: borrowed,
+          feature: 'inventory',
+          method: 'POST',
+          workspaceId: 'ws-1',
+          path: '/api/v1/workspaces/ws-1/product-categories',
+          payload: {'name': 'Synthetic'},
+          send: () async => throw StateError('No legacy'),
+        ),
+        throwsA(same(mismatch)),
+      );
+      expect(await queue.listPending(), isEmpty);
+      verifyNever(() => borrowed.postJson(any(), any()));
+      verifyNever(() => api.postJson(any(), any()));
+    },
+  );
+
   test('atomic acknowledgment cannot resurrect a canceled record', () async {
     final create = record('local', 'products');
     await queue.enqueue(create);

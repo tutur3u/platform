@@ -33,6 +33,7 @@ extension InventorySetupOfflineWrites on InventoryRepository {
     final payload = {'name': name};
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'inventory',
       method: patch ? 'PATCH' : 'PUT',
       path: path,
@@ -61,6 +62,7 @@ extension InventorySetupOfflineWrites on InventoryRepository {
     final path = '${_setupPath(wsId, kind)}/$id';
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'inventory',
       method: 'DELETE',
       path: path,
@@ -84,6 +86,7 @@ extension InventorySetupOfflineWrites on InventoryRepository {
     final payload = {'name': name};
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'inventory',
       method: 'POST',
       path: path,

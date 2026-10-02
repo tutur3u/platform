@@ -531,6 +531,7 @@ class InventoryRepository {
     final payload = {'period_id': periodId, 'source': source};
     final period = await queueOrSendValue<InventorySalesPeriod?>(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'inventory',
       method: 'PUT',
       path: path,
@@ -581,6 +582,7 @@ class InventoryRepository {
     };
     final sale = await queueOrSendValue<InventorySaleDetail>(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'inventory',
       method: 'PUT',
       path: path,
@@ -621,6 +623,7 @@ class InventoryRepository {
     final path = InventoryEndpoints.sale(wsId, saleId);
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'inventory',
       method: 'DELETE',
       path: path,

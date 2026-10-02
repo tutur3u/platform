@@ -8,6 +8,7 @@ extension InventoryProductMutations on InventoryRepository {
     final path = InventoryEndpoints.product(wsId, productId);
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'inventory',
       method: 'DELETE',
       path: path,
@@ -47,6 +48,7 @@ extension InventoryProductMutations on InventoryRepository {
     );
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'inventory',
       method: 'POST',
       path: path,
@@ -87,6 +89,7 @@ extension InventoryProductMutations on InventoryRepository {
     );
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'inventory',
       method: 'PATCH',
       path: path,

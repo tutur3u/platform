@@ -81,6 +81,7 @@ extension InventorySalesPeriodMutations on InventoryRepository {
     };
     final period = await queueOrSendValue<InventorySalesPeriod>(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'inventory',
       method: 'POST',
       path: path,
@@ -137,6 +138,7 @@ extension InventorySalesPeriodMutations on InventoryRepository {
     };
     final period = await queueOrSendValue<InventorySalesPeriod>(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'inventory',
       method: 'PATCH',
       path: path,
