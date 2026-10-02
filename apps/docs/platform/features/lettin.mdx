@@ -34,18 +34,18 @@ preselect their matching starter. Starters save normal editable rich-text prompt
 and a matching tag through the existing create-world API. Nothing is published
 until the creator explicitly publishes. Spaces add no new access privileges.
 Public space cards preserve the chosen space through central
-login and default workspace selection. Unknown space names return a 404.
+login, default workspace selection, and pending workspace invitation acceptance. Unknown space names return a 404.
 Regression coverage: `apps/lettin/src/components/creative-spaces.test.ts` verifies
 legacy placement, multiple-space tags, unknown route rejection, and valid starter
 content in both languages. `creator-experience.test.tsx` covers shelf search/filter recovery and
-workspace-aware tool links.
+workspace-aware tool links, invitation destinations, and nested navigation.
 
 `/{wsId}/toolkit` gives workspace-aware links to Tasks, Drive, Calendar, Chat,
-Mind, Finance, and platform AI chat, plus Meet and the complete app directory.
+Mind, Finance, Meet, and platform AI chat, plus the complete app directory.
 Tools open in their existing apps and enforce their own permissions, authentication,
 and any billing rules. These are navigation integrations; project content is not
-copied into those services or automatically synchronized. Meet and the app directory
-are global destinations. Public toolkit links open each app's entry point.
+copied into those services or automatically synchronized. The app directory
+is a global destination. Public toolkit links open each app's entry point.
 
 The homepage uses a small wordmark, restrained serif headings, a brief introduction,
 and a single set of space cards. Slogans, workflow explanations, duplicate calls to
