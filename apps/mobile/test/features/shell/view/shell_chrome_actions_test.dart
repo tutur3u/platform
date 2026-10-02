@@ -104,6 +104,73 @@ class _ShellChromeActionsHarnessState
 }
 
 void main() {
+  test('section resets are scoped and disappear on unregister', () async {
+    final cubit = ShellChromeActionsCubit();
+    var resets = 0;
+    cubit.register(
+      registrationId: 'profile',
+      ownerId: 'profile',
+      locations: {Routes.profileRoot},
+      actions: const [],
+      onResetSection: () => resets++,
+    );
+    expect(cubit.state.resetSectionForLocation(Routes.notifications), isNull);
+    cubit.state.resetSectionForLocation(Routes.profileRoot)?.call();
+    expect(resets, 1);
+    cubit.unregister('profile');
+    expect(cubit.state.resetSectionForLocation(Routes.profileRoot), isNull);
+    await cubit.close();
+  });
+
+  testWidgets('section switch stays rightmost when actions overflow', (
+    tester,
+  ) async {
+    final cubit = ShellChromeActionsCubit();
+    addTearDown(cubit.close);
+    await tester.pumpApp(
+      BlocProvider.value(
+        value: cubit,
+        child: Material(
+          child: Column(
+            children: [
+              ShellChromeActions(
+                ownerId: 'profile',
+                locations: const {Routes.profileRoot},
+                actions: [
+                  for (var i = 0; i < 4; i++)
+                    ShellActionSpec(id: 'action-$i', icon: Icons.star),
+                  const ShellActionSpec(
+                    id: 'overview',
+                    icon: Icons.person,
+                    segmentGroup: 'profile-sections',
+                    highlighted: true,
+                  ),
+                  const ShellActionSpec(
+                    id: 'timeline',
+                    icon: Icons.history,
+                    segmentGroup: 'profile-sections',
+                  ),
+                ],
+              ),
+              const ShellInjectedActionsHost(
+                matchedLocation: Routes.profileRoot,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await _pumpFrames(tester);
+    final sections = find.byKey(const ValueKey('profile-sections'));
+    final overflow = find.byKey(const ValueKey('shell-actions-overflow'));
+    expect(sections, findsOneWidget);
+    expect(overflow, findsOneWidget);
+    expect(
+      tester.getTopLeft(sections).dx,
+      greaterThanOrEqualTo(tester.getTopRight(overflow).dx),
+    );
+  });
+
   test('room back callback is scoped to its active registration', () async {
     final cubit = ShellChromeActionsCubit();
     var leaves = 0;

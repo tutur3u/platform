@@ -84,7 +84,7 @@ void main() {
             .highlighted,
         isTrue,
       );
-      await tester.tap(gridControl);
+      chrome.state.resetSectionForLocation(Routes.apps)!();
       await tester.pumpAndSettle();
       expect(find.byType(AppsReorderGrid), findsOneWidget);
       expect(find.byType(SegmentedButton<bool>), findsNothing);

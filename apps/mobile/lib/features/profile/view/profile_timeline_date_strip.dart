@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-/// The same slot is reserved in both modes so content never moves vertically.
+/// Date controls reserve a stable slot when their inline toggle is visible.
 class ProfileTimelineDateStrip extends StatelessWidget {
   const ProfileTimelineDateStrip({
     required this.open,
@@ -14,10 +14,12 @@ class ProfileTimelineDateStrip extends StatelessWidget {
     required this.onSelect,
     required this.onWeek,
     required this.onToday,
+    this.showToggle = true,
     super.key,
   });
 
   final bool open;
+  final bool showToggle;
   final DateTime selected;
   final DateTime week;
   final Set<DateTime> activityDays;
@@ -45,16 +47,17 @@ class ProfileTimelineDateStrip extends StatelessWidget {
           height: 48,
           child: Row(
             children: [
-              IconButton(
-                key: const ValueKey('timeline-date-toggle'),
-                tooltip: open
-                    ? l10n.profileTimelineHideDates
-                    : l10n.profileTimelineShowDates,
-                onPressed: onToggle,
-                icon: Icon(
-                  open ? Icons.view_agenda_outlined : Icons.date_range,
+              if (showToggle)
+                IconButton(
+                  key: const ValueKey('timeline-date-toggle'),
+                  tooltip: open
+                      ? l10n.profileTimelineHideDates
+                      : l10n.profileTimelineShowDates,
+                  onPressed: onToggle,
+                  icon: Icon(
+                    open ? Icons.view_agenda_outlined : Icons.date_range,
+                  ),
                 ),
-              ),
               Expanded(
                 child: Text(
                   DateFormat.yMMM(locale).format(headerDate),
@@ -87,7 +90,7 @@ class ProfileTimelineDateStrip extends StatelessWidget {
         ),
         SizedBox(
           key: const ValueKey('timeline-date-slot'),
-          height: slotHeight(context),
+          height: open || showToggle ? slotHeight(context) : 0,
           child: open
               ? _TimelineWeek(
                   selected: selected,

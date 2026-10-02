@@ -7,7 +7,6 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/profile/profile_timeline_repository.dart';
 import 'package:mobile/features/profile/view/profile_timeline_browser.dart';
-import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -16,10 +15,14 @@ class ProfileTimelineSection extends StatefulWidget {
   const ProfileTimelineSection({
     required this.replayToken,
     this.repository,
+    this.datesOpen,
+    this.onDatesChanged,
     super.key,
   });
 
   final int replayToken;
+  final bool? datesOpen;
+  final ValueChanged<bool>? onDatesChanged;
   final ProfileTimelineRepository? repository;
 
   @override
@@ -152,60 +155,57 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
     final l10n = context.l10n;
     if (_scope == null) return const SizedBox.shrink();
     final items = _items;
-    final theme = shad.Theme.of(context);
-    return SettingsPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            l10n.profileTimelineDescription,
-            style: theme.typography.textSmall.copyWith(
-              color: theme.colorScheme.mutedForeground,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (_limited || _failed || _partial)
+          Row(
+            children: [
+              if (_limited)
+                Tooltip(
+                  message: l10n.profileTimelineLimited,
+                  child: Icon(
+                    Icons.info_outline_rounded,
+                    size: 18,
+                    semanticLabel: l10n.profileTimelineLimited,
+                  ),
+                ),
+              if (_failed || _partial) ...[
+                const shad.Gap(8),
+                Expanded(
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      _partial
+                          ? l10n.profileTimelinePartial
+                          : l10n.profileTimelineUnavailable,
+                    ),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: _refreshing ? null : _retry,
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: Text(l10n.commonRetry),
+                ),
+              ],
+            ],
           ),
-          const shad.Gap(16),
-          if (_limited) ...[
-            const shad.Gap(12),
-            Text(
-              l10n.profileTimelineLimited,
-              style: theme.typography.textSmall.copyWith(
-                color: theme.colorScheme.mutedForeground,
-              ),
-            ),
-          ],
-          if (_failed || _partial) ...[
-            const shad.Gap(12),
-            Semantics(
-              liveRegion: true,
-              child: Text(
-                _partial
-                    ? l10n.profileTimelinePartial
-                    : l10n.profileTimelineUnavailable,
-              ),
-            ),
-            const shad.Gap(8),
-            shad.OutlineButton(
-              onPressed: _refreshing ? null : _retry,
-              leading: const Icon(Icons.refresh_rounded, size: 18),
-              child: Text(l10n.commonRetry),
-            ),
-          ],
-          const shad.Gap(12),
-          ProfileTimelineBrowser(
-            key: ValueKey(_scope),
-            items: items ?? const [],
-            loading: items == null && !_failed,
-            refreshing: _refreshing,
-            statusReportedByParent: _failed || _partial,
-            availability: _failed || items == null
-                ? ProfileTimelineAvailability.unavailable
-                : _partial || _limited
-                ? ProfileTimelineAvailability.partial
-                : ProfileTimelineAvailability.complete,
-            onOpen: _open,
-          ),
-        ],
-      ),
+        ProfileTimelineBrowser(
+          key: ValueKey(_scope),
+          datesOpen: widget.datesOpen,
+          onDatesChanged: widget.onDatesChanged,
+          items: items ?? const [],
+          loading: items == null && !_failed,
+          refreshing: _refreshing,
+          statusReportedByParent: _failed || _partial,
+          availability: _failed || items == null
+              ? ProfileTimelineAvailability.unavailable
+              : _partial || _limited
+              ? ProfileTimelineAvailability.partial
+              : ProfileTimelineAvailability.complete,
+          onOpen: _open,
+        ),
+      ],
     );
   }
 }

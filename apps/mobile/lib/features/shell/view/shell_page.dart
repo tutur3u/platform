@@ -83,7 +83,6 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
 
   final Stopwatch _tapStopwatch = Stopwatch();
   Timer? _longPressTimer;
-  DateTime? _lastAppsTabPointerUpAt;
   late final PageController _layerController;
   Widget? _cachedGlobalBody;
   int _activeLayerPage = 1;
@@ -107,6 +106,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     Routes.apps: 0,
   };
   final Map<String, WeakReference<ScrollableState>> _pageScrollables = {};
+  String? _lastScrolledDockRoute;
   shad.ToastOverlay? _exitConfirmationToast;
 
   void _markBackDispatch({required String source}) {
@@ -183,6 +183,9 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   @override
   void didUpdateWidget(covariant ShellPage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.matchedLocation != widget.matchedLocation) {
+      _lastScrolledDockRoute = null;
+    }
     final isRoot = _isRootTabLocation(widget.matchedLocation);
     if (isRoot) {
       _lastRootLocation = widget.matchedLocation;
@@ -611,7 +614,10 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   }
 
   static int _calculateSelectedIndex(String location) {
-    if (location == Routes.notifications) return 3;
+    if (location == Routes.notifications ||
+        location == Routes.notificationsArchive) {
+      return 3;
+    }
     if (location == Routes.profileRoot) return 4;
     if (location.startsWith(Routes.assistant)) return 1;
     if (location.startsWith(Routes.apps)) return 2;

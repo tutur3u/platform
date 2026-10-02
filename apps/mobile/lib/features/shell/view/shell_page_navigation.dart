@@ -218,7 +218,8 @@ extension _ShellPageNavigation on _ShellPageState {
     if (location == Routes.assistant) {
       return _ShellPageState._assistantKey;
     }
-    if (location == Routes.notifications) {
+    if (location == Routes.notifications ||
+        location == Routes.notificationsArchive) {
       return _ShellPageState._notificationsKey;
     }
     if (location == Routes.profileRoot) {

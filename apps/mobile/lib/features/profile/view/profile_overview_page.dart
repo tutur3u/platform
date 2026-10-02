@@ -6,19 +6,18 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/profile/view/profile_account_actions.dart';
 import 'package:mobile/features/profile/view/profile_activity_section.dart';
 import 'package:mobile/features/profile/view/profile_timeline_section.dart';
 import 'package:mobile/features/profile/view/workspace_activity_section.dart';
-import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
+import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -36,16 +35,12 @@ class ProfileOverviewPage extends StatefulWidget {
 
 class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
   bool _timeline = false;
+  bool _dates = false;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
-    final palette = AppCardPalette.resolve(
-      context,
-      index: 0,
-      moduleId: 'tasks',
-    );
     final userId = context.watch<AuthCubit>().state.user?.id;
     final workspace = context.watch<WorkspaceCubit>().state.currentWorkspace;
     return BlocBuilder<ShellProfileCubit, ShellProfileState>(
@@ -55,10 +50,43 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
             profile?.displayName ?? profile?.fullName ?? l10n.profileTitle;
         return Stack(
           children: [
+            ShellTitleOverride(
+              ownerId: 'profile-overview',
+              locations: const {Routes.profileRoot},
+              title: _timeline
+                  ? l10n.profileTimelineTitle
+                  : l10n.profileOverviewTab,
+            ),
             ShellChromeActions(
               ownerId: 'profile-overview',
               locations: const {Routes.profileRoot},
+              onResetSection: _timeline
+                  ? () => setState(() {
+                      _timeline = false;
+                      _dates = false;
+                    })
+                  : null,
               actions: [
+                ShellActionSpec(
+                  id: 'profile-switch-account',
+                  icon: Icons.switch_account_outlined,
+                  tooltip: l10n.authSwitchAccount,
+                  onPressed: () =>
+                      unawaited(showProfileAccountSwitcher(context)),
+                ),
+                if (_timeline)
+                  ShellActionSpec(
+                    id: 'profile-day-trail',
+                    icon: _dates
+                        ? Icons.view_agenda_outlined
+                        : Icons.date_range,
+                    tooltip: _dates
+                        ? l10n.profileTimelineHideDates
+                        : l10n.profileTimelineShowDates,
+                    highlighted: _dates,
+                    callbackToken: _dates,
+                    onPressed: () => setState(() => _dates = !_dates),
+                  ),
                 ShellActionSpec(
                   id: 'profile-view-overview',
                   segmentGroup: 'profile-views',
@@ -84,13 +112,6 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                   tooltip: l10n.navSettings,
                   onPressed: () => context.go(Routes.settings),
                 ),
-                ShellActionSpec(
-                  id: 'profile-switch-account',
-                  icon: Icons.switch_account_outlined,
-                  tooltip: l10n.authSwitchAccount,
-                  onPressed: () =>
-                      unawaited(showProfileAccountSwitcher(context)),
-                ),
               ],
             ),
             LayoutBuilder(
@@ -113,114 +134,119 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                   ),
                   key: ValueKey(_timeline),
                   children: [
-                    Semantics(
-                      header: true,
-                      child: Text(
-                        _timeline
-                            ? l10n.profileTimelineTitle
-                            : l10n.profileOverviewTab,
-                        style: theme.typography.h3,
-                      ),
-                    ),
-                    const shad.Gap(16),
                     if (_timeline)
-                      ProfileTimelineSection(replayToken: widget.replayToken)
+                      ProfileTimelineSection(
+                        replayToken: widget.replayToken,
+                        datesOpen: _dates,
+                        onDatesChanged: (open) => setState(() => _dates = open),
+                      )
                     else ...[
                       Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              palette.background,
-                              theme.colorScheme.card,
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(22),
-                          border: Border.all(color: palette.border),
-                        ),
-                        child: Row(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(24),
-                              child: SizedBox.square(
-                                dimension: 68,
-                                child:
-                                    state.profile == null && state.error == null
-                                    ? const FinanceSkeletonBlock(
-                                        height: 68,
-                                        radius: 24,
-                                      )
-                                    : state.avatarUrl == null
-                                    ? const Icon(Icons.person_outline, size: 48)
-                                    : Image.network(
-                                        state.avatarUrl!,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, error, stack) =>
-                                            const Icon(
-                                              Icons.person_outline,
-                                              size: 48,
-                                            ),
-                                      ),
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (state.profile == null &&
-                                      state.error == null)
-                                    const FinanceSkeletonBlock(
-                                      height: 24,
-                                      width: 150,
-                                    )
-                                  else
-                                    Text(name, style: theme.typography.h3),
-                                  if (profile?.email != null)
-                                    Text(
-                                      profile!.email!,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  shad.OutlineButton(
-                                    onPressed: () =>
-                                        context.go(Routes.profileEdit),
-                                    leading: const Icon(
-                                      Icons.edit_outlined,
-                                      size: 18,
-                                    ),
-                                    child: Text(
-                                      l10n.profileIdentitySectionTitle,
-                                    ),
+                        key: const ValueKey('profile-overview-content'),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final scale =
+                                MediaQuery.textScalerOf(context).scale(14) / 14;
+                            final stacked = constraints.maxWidth < 360 * scale;
+                            return Wrap(
+                              spacing: 14,
+                              runSpacing: 12,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(24),
+                                  child: SizedBox.square(
+                                    dimension: 68,
+                                    child:
+                                        state.profile == null &&
+                                            state.error == null
+                                        ? const FinanceSkeletonBlock(
+                                            height: 68,
+                                            radius: 24,
+                                          )
+                                        : state.avatarUrl == null
+                                        ? const Icon(
+                                            Icons.person_outline,
+                                            size: 48,
+                                          )
+                                        : Image.network(
+                                            state.avatarUrl!,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, error, stack) =>
+                                                const Icon(
+                                                  Icons.person_outline,
+                                                  size: 48,
+                                                ),
+                                          ),
                                   ),
-                                ],
-                              ),
-                            ),
-                          ],
+                                ),
+                                SizedBox(
+                                  width: stacked
+                                      ? constraints.maxWidth
+                                      : constraints.maxWidth - 82,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      if (state.profile == null &&
+                                          state.error == null)
+                                        const FinanceSkeletonBlock(
+                                          height: 24,
+                                          width: 150,
+                                        )
+                                      else
+                                        Text(
+                                          name,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: theme.typography.large
+                                              .copyWith(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                        ),
+                                      if (profile?.email != null)
+                                        Text(
+                                          profile!.email!,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      shad.GhostButton(
+                                        onPressed: () =>
+                                            context.go(Routes.profileEdit),
+                                        leading: const Icon(
+                                          Icons.edit_outlined,
+                                          size: 18,
+                                        ),
+                                        child: Text(
+                                          l10n.profileIdentitySectionTitle,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ),
                       if (userId != null && workspace != null) ...[
                         const SizedBox(height: 14),
                         LayoutBuilder(
                           builder: (context, constraints) {
-                            final activity = SettingsPanel(
-                              child: ProfileActivitySection(
-                                replayToken: widget.replayToken,
-                              ),
+                            final activity = ProfileActivitySection(
+                              replayToken: widget.replayToken,
                             );
                             if (workspace.personal) {
                               return activity;
                             }
-                            final workspaceActivity = SettingsPanel(
-                              child: WorkspaceActivitySection(
-                                key: ValueKey('$userId:${workspace.id}'),
-                                workspaceId: workspace.id,
-                                replayToken: widget.replayToken,
-                                workspaceName: displayWorkspaceNameOrFallback(
-                                  context,
-                                  workspace,
-                                ),
+                            final workspaceActivity = WorkspaceActivitySection(
+                              key: ValueKey('$userId:${workspace.id}'),
+                              workspaceId: workspace.id,
+                              replayToken: widget.replayToken,
+                              workspaceName: displayWorkspaceNameOrFallback(
+                                context,
+                                workspace,
                               ),
                             );
                             if (constraints.maxWidth < 840) {

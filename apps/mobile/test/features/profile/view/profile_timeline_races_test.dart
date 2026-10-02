@@ -120,7 +120,14 @@ void main() {
       expect(find.text('Cached task'), findsOneWidget);
       expect(find.text('Some activity is unavailable.'), findsOneWidget);
       expect(
-        find.textContaining('Some sources reached the display limit'),
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Tooltip &&
+              widget.message?.contains(
+                    'Some sources reached the display limit',
+                  ) ==
+                  true,
+        ),
         findsOneWidget,
       );
       repository.requests.single.completeError(Exception('Offline'));
@@ -128,7 +135,14 @@ void main() {
       expect(find.text('Cached task'), findsOneWidget);
       expect(find.text('Some activity is unavailable.'), findsOneWidget);
       expect(
-        find.textContaining('Some sources reached the display limit'),
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Tooltip &&
+              widget.message?.contains(
+                    'Some sources reached the display limit',
+                  ) ==
+                  true,
+        ),
         findsOneWidget,
       );
       await tester.tap(find.text('Retry'));
@@ -139,7 +153,14 @@ void main() {
       expect(find.text('Fresh task'), findsOneWidget);
       expect(find.text('Some activity is unavailable.'), findsNothing);
       expect(
-        find.textContaining('Some sources reached the display limit'),
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Tooltip &&
+              widget.message?.contains(
+                    'Some sources reached the display limit',
+                  ) ==
+                  true,
+        ),
         findsNothing,
       );
       expect(tester.takeException(), isNull);
@@ -166,7 +187,14 @@ void main() {
     expect(find.text('Old cached task'), findsNothing);
     expect(find.text('Some activity is unavailable.'), findsNothing);
     expect(
-      find.textContaining('Some sources reached the display limit'),
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Tooltip &&
+            widget.message?.contains(
+                  'Some sources reached the display limit',
+                ) ==
+                true,
+      ),
       findsNothing,
     );
     expect(repository.requests, isEmpty);
@@ -196,7 +224,14 @@ void main() {
     await tester.pump();
     expect(find.text('Old task'), findsNothing);
     expect(
-      find.textContaining('Some sources reached the display limit'),
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Tooltip &&
+            widget.message?.contains(
+                  'Some sources reached the display limit',
+                ) ==
+                true,
+      ),
       findsNothing,
     );
     expect(repository.requests.length, 2);
@@ -218,7 +253,14 @@ void main() {
     await tester.pump();
     expect(find.text('Private task'), findsNothing);
     expect(
-      find.textContaining('Some sources reached the display limit'),
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Tooltip &&
+            widget.message?.contains(
+                  'Some sources reached the display limit',
+                ) ==
+                true,
+      ),
       findsNothing,
     );
     repository.requests.single.complete(snapshot('Late private task'));
@@ -230,7 +272,7 @@ void main() {
     tester,
   ) async {
     await mount(tester);
-    expect(find.bySemanticsLabel('Loading profile...'), findsOneWidget);
+    expect(find.bySemanticsLabel('Loading'), findsOneWidget);
     repository.requests.single.complete(
       snapshot('Partial task', partial: true),
     );
@@ -336,7 +378,10 @@ void main() {
         );
         await mount(tester);
         await tester.pumpAndSettle();
-        expect(find.text('Loading profile...'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('timeline-refreshing')),
+          findsOneWidget,
+        );
         expect(find.text('No recent activity in this workspace'), findsNothing);
         final before = tester.getRect(
           find.byKey(const ValueKey('timeline-browser')),
@@ -353,7 +398,7 @@ void main() {
               : snapshot('Fresh response activity'),
         );
         await tester.pumpAndSettle();
-        expect(find.text('Loading profile...'), findsNothing);
+        expect(find.byKey(const ValueKey('timeline-refreshing')), findsNothing);
         expect(
           tester.getRect(find.byKey(const ValueKey('timeline-browser'))),
           before,

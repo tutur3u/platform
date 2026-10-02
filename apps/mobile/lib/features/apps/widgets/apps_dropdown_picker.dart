@@ -174,6 +174,7 @@ class _AppsScreenState extends State<AppsScreen> {
           ShellChromeActions(
             ownerId: 'apps-screen',
             locations: const {Routes.apps},
+            onResetSection: () => setState(() => _showGrid = true),
             actions: [
               ShellActionSpec(
                 id: 'apps-search',
