@@ -25,6 +25,7 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
   String? _userId;
   String? _workspaceId;
   bool _starting = false;
+  bool _restoring = true;
   bool _failed = false;
 
   @override
@@ -36,11 +37,19 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
         .state
         .currentWorkspace
         ?.id;
-    if (_userId != userId || _workspaceId != workspaceId) _failed = false;
+    if (_userId == userId && _workspaceId == workspaceId) return;
+    _failed = false;
     _userId = userId;
     _workspaceId = workspaceId;
+    _restoring = true;
     unawaited(
-      _coordinator.setScope(userId: _userId, workspaceId: _workspaceId),
+      _coordinator
+          .setScope(userId: userId, workspaceId: workspaceId)
+          .whenComplete(() {
+            if (mounted && _userId == userId && _workspaceId == workspaceId) {
+              setState(() => _restoring = false);
+            }
+          }),
     );
   }
 
@@ -105,7 +114,8 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
             Align(
               alignment: Alignment.centerLeft,
               child: FilledButton.icon(
-                onPressed: enabled && !state.running && !_starting
+                onPressed:
+                    enabled && !state.running && !_starting && !_restoring
                     ? _download
                     : null,
                 icon: const Icon(Icons.download_for_offline_outlined),
@@ -140,7 +150,7 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
                 product:
                     state.products[id] ?? const OfflineProductPreparation(),
                 running: state.running,
-                onRetry: enabled && !state.running && !_starting
+                onRetry: enabled && !state.running && !_starting && !_restoring
                     ? () => _download(productId: id)
                     : null,
               ),

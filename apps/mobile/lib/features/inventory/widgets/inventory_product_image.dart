@@ -48,8 +48,9 @@ class _InventoryProductImageState extends State<InventoryProductImage> {
   void _onRemoved() {
     if (!mounted) return;
     final retained = _cache.peek(widget.product);
-    if (retained == null) {
+    if (retained == null && _bytes != null) {
       _generation++;
+      _scope = null;
       setState(() => _bytes = null);
     }
   }

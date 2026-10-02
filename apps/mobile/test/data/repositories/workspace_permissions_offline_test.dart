@@ -69,12 +69,14 @@ void main() {
       postgrestOptions: const PostgrestClientOptions(retryEnabled: false),
       httpClient: MockClient((request) async {
         reads.add(request.url);
+        final granted = grant;
+        final responseStatus = status;
         await gate?.future;
         if (offline) throw const SocketException('Offline');
-        if (status != 200) {
+        if (responseStatus != 200) {
           return http.Response(
-            jsonEncode({'message': 'Denied', 'code': '$status'}),
-            status,
+            jsonEncode({'message': 'Denied', 'code': '$responseStatus'}),
+            responseStatus,
             request: request,
             headers: {'content-type': 'application/json'},
           );
@@ -85,7 +87,7 @@ void main() {
             {
               'workspace_roles': {
                 'workspace_role_permissions': [
-                  if (grant) {'permission': 'manage_inventory'},
+                  if (granted) {'permission': 'manage_inventory'},
                 ],
               },
             },
@@ -251,7 +253,31 @@ void main() {
     );
     await expectLater(
       repository.prepareOffline('ws'),
-      throwsA(isA<Exception>()),
+      throwsA(isA<SocketException>()),
     );
   });
+  test(
+    'a late older grant cannot replace a newer permission revocation',
+    () async {
+      final blocked = Completer<void>();
+      gate = blocked;
+      final older = repository.getPermissions(wsId: 'ws');
+      while (reads.length < 3) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      gate = null;
+      grant = false;
+      final newer = await repository.getPermissions(wsId: 'ws');
+      expect(newer.containsPermission('manage_inventory'), isFalse);
+      blocked.complete();
+      expect((await older).containsPermission('manage_inventory'), isFalse);
+      networkAvailable = false;
+      expect(
+        (await repository.getPermissions(
+          wsId: 'ws',
+        )).containsPermission('manage_inventory'),
+        isFalse,
+      );
+    },
+  );
 }

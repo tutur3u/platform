@@ -8,6 +8,43 @@ import 'package:mobile/widgets/pending_sync_frame.dart';
 void main() {
   tearDown(() => OfflineMutationQueue.instance.pending.value = []);
 
+  testWidgets('later matching syncing edit takes status priority', (
+    tester,
+  ) async {
+    final queue = OfflineMutationQueue.instance;
+    addTearDown(() => queue.syncingIds.value = {});
+    queue.pending.value = [
+      for (final id in ['queued', 'active'])
+        PendingMutationRecord(
+          id: id,
+          feature: 'notes',
+          method: 'PUT',
+          path: '/api/v1/workspaces/ws-1/notes/note-1',
+          createdAt: DateTime.utc(2026, 9, 28),
+          workspaceId: 'ws-1',
+          userId: 'user-1',
+          optimisticPatch: const {'entityId': 'note-1'},
+        ),
+    ];
+    queue.syncingIds.value = {'active'};
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: PendingSyncFrame(
+            workspaceId: 'ws-1',
+            entityId: 'note-1',
+            feature: 'notes',
+            child: Text('Edited note'),
+          ),
+        ),
+      ),
+    );
+    expect(find.text('Syncing…'), findsOneWidget);
+    expect(find.text('Waiting to sync'), findsNothing);
+  });
+
   testWidgets('queued item is visibly muted and outlined until synced', (
     tester,
   ) async {

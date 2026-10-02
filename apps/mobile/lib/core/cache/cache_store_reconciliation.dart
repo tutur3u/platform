@@ -26,9 +26,9 @@ extension CacheStoreCompletedDownload on CacheStore {
       checkScope();
       _advanceKey(record.key);
       _refreshTasks.remove(record.key);
+      _dropRecord(record.key);
       await _resourceBox.delete(record.key);
       await _removeReplicaSource(record.key);
-      _dropRecord(record.key);
     }
     checkScope();
   }

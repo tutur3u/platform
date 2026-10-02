@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
@@ -90,6 +92,9 @@ void main() {
     await repository.prepareOffline('ws');
     online = false;
     when(
+      () => api.getJsonList(any()),
+    ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));
+    when(
       () => api.getJson(any()),
     ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));
   }
@@ -113,6 +118,31 @@ void main() {
       expect((await repository.getAuditLogs('ws')).count, 0);
     },
   );
+
+  test('completed download removes stale product option variants', () async {
+    const key = CacheKey(
+      namespace: 'inventory.product-options',
+      userId: 'user',
+      workspaceId: 'ws',
+      params: {'path': 'stale'},
+    );
+    await store.write(
+      key: key,
+      policy: CachePolicies.offlineCatalog,
+      payload: {
+        'data': [
+          {'id': 'removed', 'name': 'Removed', 'ws_id': 'ws'},
+        ],
+      },
+    );
+    expect(
+      (await store.read(key: key, decode: (value) => value)).data,
+      isNotNull,
+    );
+    await download();
+    expect((await store.read(key: key, decode: (value) => value)).data, isNull);
+    expect(await repository.getProductOptions('ws'), isEmpty);
+  });
 
   for (final verification in [false, true]) {
     test(

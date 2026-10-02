@@ -120,7 +120,7 @@ Read only the section relevant to the current feature; paths are repository-rela
 - **Atomic Assistant Widgets**: In `features/assistant`, default to reusable stateless widgets under `widgets/` before adding more `part` files or growing a page-level state class. Keep the page/view focused on orchestration only.
 - **Small File Bias**: Treat ~200 LOC for Flutter widgets and ~300 LOC for pages/views as guidance for identifying cohesive extractions. Extract shared badges, bubbles, banners, sheets, and cards into dedicated widget files early.
 
-### Offline downloads and compact shell conventions
+### Offline downloads
 
 Use the product decisions in
 `apps/docs/platform/features/mobile-workspace-tools.mdx` for offline preparation,

@@ -50,6 +50,21 @@ class WorkspacePermissionsRepository {
        _currentUserId = currentUserId,
        _networkAvailable = networkAvailable ?? hasNetworkConnection;
 
+  final Map<String, int> _generations = {};
+  Future<void> _hintWrites = Future<void>.value();
+
+  Future<void> _updateHint(
+    String scope,
+    int generation,
+    Future<void> Function() write,
+  ) {
+    final pending = _hintWrites.then((_) async {
+      if (_generations[scope] == generation) await write();
+    });
+    _hintWrites = pending.then<void>((_) {}, onError: (Object _) {});
+    return pending;
+  }
+
   final SupabaseClient _client;
   final CacheStore _store;
   final String? Function()? _currentUserId;
@@ -106,6 +121,7 @@ class WorkspacePermissionsRepository {
       final manifest = OfflineDownloadManifest(_store, actor, () => _actorId);
       await manifest.save(_key(wsId, actor), _payload(permissions));
       await manifest.verify();
+      _checkActor(actor);
       manifest.retain('permissions', wsId);
     } on Object catch (error) {
       if (_isAuthDenial(error) || _actorId != actor) {
@@ -125,6 +141,8 @@ class WorkspacePermissionsRepository {
       return _denied;
     }
     final key = _key(wsId, actor);
+    final generation = (_generations[key.value] ?? 0) + 1;
+    _generations[key.value] = generation;
     if (!await _networkAvailable()) {
       return await _readHint(wsId, actor);
     }
@@ -132,12 +150,18 @@ class WorkspacePermissionsRepository {
     try {
       // Always refresh online; a stored grant never bypasses the server read.
       final permissions = await _resolvePermissions(wsId, actor);
-      if (_actorId != actor) return _denied;
+      if (_actorId != actor || _generations[key.value] != generation) {
+        return _denied;
+      }
       try {
-        await _store.write(
-          key: key,
-          policy: CachePolicies.offlineCatalog,
-          payload: _payload(permissions),
+        await _updateHint(
+          key.value,
+          generation,
+          () => _store.write(
+            key: key,
+            policy: CachePolicies.offlineCatalog,
+            payload: _payload(permissions),
+          ),
         );
         if (_actorId != actor) {
           await _store.remove(key);
@@ -149,7 +173,7 @@ class WorkspacePermissionsRepository {
       return _actorId == actor ? permissions : _denied;
     } on Object catch (error) {
       if (_isAuthDenial(error)) {
-        await _store.remove(key);
+        await _updateHint(key.value, generation, () => _store.remove(key));
         return _denied;
       }
       if (_actorId != actor || !isOfflineTransportFailure(error)) {

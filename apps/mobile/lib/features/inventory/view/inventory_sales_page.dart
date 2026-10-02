@@ -373,7 +373,6 @@ class _InventorySalesPageState extends State<InventorySalesPage>
         saleId: saleId,
         currency: currency,
         inventoryRepository: _inventoryRepository,
-        financeRepository: _financeRepository,
         canUpdateSales: canUpdateSales,
         canDeleteSales: canDeleteSales,
       ),

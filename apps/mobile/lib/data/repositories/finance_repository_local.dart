@@ -10,27 +10,29 @@ extension _FinanceLocalReads on FinanceRepository {
         DateTime.now().difference(last) < const Duration(minutes: 15)) {
       return;
     }
-    FinanceRepository._historyBackfillTimes[scope] = DateTime.now();
     unawaited(
       FinanceRepository._historyBackfills.putIfAbsent(
         scope,
         () =>
-            ApiClient.offlinePreparation(
-              () => _backfillHistory(wsId, userId),
-              allowChallenge: false,
-            ).whenComplete(() {
+            ApiClient.offlinePreparation(() async {
+              if (await _backfillHistory(wsId, userId)) {
+                FinanceRepository._historyBackfillTimes[scope] = DateTime.now();
+              }
+            }, allowChallenge: false).whenComplete(() {
               unawaited(FinanceRepository._historyBackfills.remove(scope));
             }),
       ),
     );
   }
 
-  Future<void> _backfillHistory(String wsId, String userId) async {
+  Future<bool> _backfillHistory(String wsId, String userId) async {
     String? cursor;
     final seen = <String>{};
     try {
       for (var index = 0; index < 5; index++) {
-        if (_cacheUserId() != userId || !await _networkAvailable()) return;
+        if (_cacheUserId() != userId || !await _networkAvailable()) {
+          return false;
+        }
         final query = Uri(
           queryParameters: {
             'limit': '100',
@@ -66,14 +68,16 @@ extension _FinanceLocalReads on FinanceRepository {
           },
           tags: ['module:finance', 'workspace:$wsId'],
         );
-        if (_cacheUserId() != userId || response.data == null) return;
+        if (_cacheUserId() != userId || response.data == null) return false;
         final page = InfiniteTransactionResponse.fromJson(response.data!);
         cursor = page.hasMore ? page.nextCursor : null;
-        if (cursor != null && !seen.add(cursor)) return;
+        if (cursor != null && !seen.add(cursor)) return false;
         if (cursor == null) break;
       }
+      return true;
     } on Object {
       // Optional history fill pauses on failure; next visit/reconnect retries.
+      return false;
     }
   }
 
@@ -117,6 +121,44 @@ extension _FinanceLocalReads on FinanceRepository {
         .toList(growable: false);
   }
 
+  CacheKey _cursorAnchorKey(
+    String wsId,
+    String? userId,
+    String cursor,
+    String? search,
+    String? walletId,
+  ) => CacheKey(
+    namespace: 'finance.cursorAnchors',
+    userId: userId,
+    workspaceId: wsId,
+    params: {
+      'cursor': cursor,
+      'search': search ?? '',
+      'walletId': walletId ?? '',
+    },
+  );
+
+  Future<void> _rememberTransactionCursor(
+    String wsId,
+    String? userId,
+    InfiniteTransactionResponse page,
+    String? search,
+    String? walletId,
+  ) async {
+    if (userId == null ||
+        _cacheUserId() != userId ||
+        page.nextCursor == null ||
+        page.data.isEmpty) {
+      return;
+    }
+    await _cacheStore.write(
+      key: _cursorAnchorKey(wsId, userId, page.nextCursor!, search, walletId),
+      policy: CachePolicies.moduleData,
+      payload: {'anchorId': page.data.last.id},
+      tags: ['module:finance', 'workspace:$wsId'],
+    );
+  }
+
   Future<InfiniteTransactionResponse> _localTransactionPage(
     String wsId, {
     required int limit,
@@ -129,10 +171,21 @@ extension _FinanceLocalReads on FinanceRepository {
       walletId: walletId,
       search: search,
     );
-    // Local cursors identify an exact row; never reinterpret a server cursor.
+    String? anchor;
+    if (cursor != null && !cursor.startsWith('local:')) {
+      final cached = await _cacheStore.read<String>(
+        key: _cursorAnchorKey(wsId, _cacheUserId(), cursor, search, walletId),
+        decode: (value) => (value! as Map)['anchorId'] as String,
+      );
+      anchor = cached.data;
+    }
     final after = cursor == null
         ? -1
-        : rows.indexWhere((row) => 'local:${row.id}' == cursor);
+        : rows.indexWhere(
+            (row) => cursor.startsWith('local:')
+                ? 'local:${row.id}' == cursor
+                : row.id == anchor,
+          );
     final page = cursor != null && after < 0
         ? <Transaction>[]
         : rows.skip(after + 1).take(limit).toList(growable: false);

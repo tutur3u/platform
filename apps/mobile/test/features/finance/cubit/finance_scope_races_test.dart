@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/cached_resource_record.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
@@ -43,7 +45,9 @@ class _Store extends Mock implements CacheStore {
     String? etag,
     List<String> tags = const <String>[],
     int? expectedRevision,
+    void Function()? checkScope,
   }) async {
+    checkScope?.call();
     writes.add(key);
     snapshots[key.value] = payload;
   }
@@ -66,6 +70,7 @@ void main() {
 
   setUp(() {
     repo = _Repository();
+    when(() => repo.mutationQueue).thenReturn(OfflineMutationQueue.instance);
     store = _Store();
     user = 'actor';
     FinanceCubit.clearUserCache(null);
@@ -258,5 +263,70 @@ void main() {
     await more;
     expect(cubit.state.transactions.map((row) => row.id), ['first']);
     expect(store.writes, isEmpty);
+  });
+  test('sync during initial metadata load keeps currency and rates', () async {
+    final metadata = Completer<String>();
+    when(
+      () => repo.getWorkspaceDefaultCurrency('sync-metadata'),
+    ).thenAnswer((_) => metadata.future);
+    final cubit = transactions();
+    addTearDown(cubit.close);
+    final load = cubit.load('sync-metadata');
+    await _settle();
+    OfflineMutationQueue.instance.syncRevision.value++;
+    await _settle();
+    metadata.complete('VND');
+    await load;
+    for (var i = 0; i < 8; i++) {
+      await _settle();
+    }
+    expect(cubit.state.workspaceCurrency, 'VND');
+    expect(cubit.state.status, TransactionListStatus.loaded);
+  });
+
+  test('same workspace refresh preserves current search', () async {
+    final cubit = transactions();
+    addTearDown(cubit.close);
+    await cubit.load('preserve-search');
+    await cubit.setSearch('coffee');
+    await cubit.load('preserve-search', forceRefresh: true);
+    expect(cubit.state.search, 'coffee');
+    expect(store.writes.last.params, {'search': 'coffee'});
+  });
+
+  test(
+    'finance sync does not reload the previous accounts workspace',
+    () async {
+      final cubit = finance();
+      addTearDown(cubit.close);
+      await cubit.loadFinanceData('previous-owner');
+      clearInteractions(repo);
+      user = 'other';
+      OfflineMutationQueue.instance.syncRevision.value++;
+      await _settle();
+      verifyNever(() => repo.getWallets('previous-owner'));
+    },
+  );
+  test('finance listens to the repositorys injected sync queue', () async {
+    final otherQueue = OfflineMutationQueue.forTesting(
+      store: store,
+      userId: () => user,
+      checkConnectivity: () async => [ConnectivityResult.none],
+      connectivityChanges: const Stream<List<ConnectivityResult>>.empty(),
+    );
+    addTearDown(otherQueue.dispose);
+    when(() => repo.mutationQueue).thenReturn(otherQueue);
+    final cubit = finance();
+    addTearDown(cubit.close);
+    await cubit.loadFinanceData('injected-sync');
+    clearInteractions(repo);
+    OfflineMutationQueue.instance.syncRevision.value++;
+    await _settle();
+    verifyNever(() => repo.getWallets('injected-sync'));
+    otherQueue.syncRevision.value++;
+    for (var i = 0; i < 8; i++) {
+      await _settle();
+    }
+    verify(() => repo.getWallets('injected-sync')).called(1);
   });
 }

@@ -73,6 +73,22 @@ void main() {
   });
 
   test(
+    'null snapshot is retained and unknown scope cannot claim verification',
+    () async {
+      final manifest = OfflineDownloadManifest(store, 'user', () => userId);
+      await manifest.save(key('nullable'), null);
+      await manifest.verify();
+      await expectLater(
+        OfflineDownloadManifest.verifyScope(
+          'unknown-user',
+          'unknown-workspace',
+        ),
+        throwsStateError,
+      );
+    },
+  );
+
+  test(
     'completed authoritative pages remove obsolete snapshots and rows',
     () async {
       final oldPage = key('old');

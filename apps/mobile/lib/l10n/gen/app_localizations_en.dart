@@ -9404,6 +9404,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineEditSyncing => 'Syncing…';
 
   @override
+  String get inventorySetupSyncFirst => 'Sync this new item before editing or deleting it.';
+
+  @override
   String get offlineEditQueued => 'Waiting to sync';
 
   @override
@@ -9748,7 +9751,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String inventoryCheckoutCartRemoved(int count) {
-    return 'Removed $count unavailable items. Review the cart before submitting.';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Removed $count unavailable items. Review the cart before submitting.',
+      one: 'Removed $count unavailable item. Review the cart before submitting.',
+    );
+    return '$_temp0';
   }
 
   @override

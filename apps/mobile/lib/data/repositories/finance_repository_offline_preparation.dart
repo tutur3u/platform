@@ -5,6 +5,17 @@ extension FinanceOfflinePreparation on FinanceRepository {
     final user = _cacheUserId();
     if (user == null) throw StateError('Sign in to download finance.');
     final manifest = OfflineDownloadManifest(_cacheStore, user, _cacheUserId);
+    final staged = <(OfflineDownloadManifest, CacheKey, Object?)>[];
+    var stagedBytes = 0;
+    void stage(OfflineDownloadManifest target, CacheKey key, Object? payload) {
+      target.checkScope();
+      stagedBytes += utf8.encode(jsonEncode(payload)).length;
+      if (stagedBytes > 32 * 1024 * 1024 || staged.length >= 10000) {
+        throw StateError('Finance download exceeds the staging limit.');
+      }
+      staged.add((target, key, payload));
+    }
+
     Future<Object> download(
       String namespace,
       String path, {
@@ -12,9 +23,10 @@ extension FinanceOfflinePreparation on FinanceRepository {
     }) async {
       manifest.checkScope();
       final response = list
-          ? await _api.getJsonList(path)
-          : await _api.getJson(path);
-      await manifest.save(
+          ? await ApiClient.runForUser(user, () => _api.getJsonList(path))
+          : await ApiClient.runForUser(user, () => _api.getJson(path));
+      stage(
+        manifest,
         CacheKey(
           namespace: 'finance.$namespace',
           userId: user,
@@ -32,8 +44,12 @@ extension FinanceOfflinePreparation on FinanceRepository {
       _cacheUserId,
     );
     manifest.checkScope();
-    final rates = await _api.getJson(FinanceEndpoints.exchangeRates);
-    await rateManifest.save(
+    final rates = await ApiClient.runForUser(
+      user,
+      () => _api.getJson(FinanceEndpoints.exchangeRates),
+    );
+    stage(
+      rateManifest,
       CacheKey(
         namespace: 'finance.exchangeRates',
         userId: user,
@@ -42,18 +58,16 @@ extension FinanceOfflinePreparation on FinanceRepository {
       ),
       rates,
     );
-    final summary = await _api.getJson(
-      FinanceEndpoints.walletCheckpointSummary(wsId),
+    final summary = await ApiClient.runForUser(
+      user,
+      () => _api.getJson(FinanceEndpoints.walletCheckpointSummary(wsId)),
     );
-    await manifest.save(_checkpointKey(wsId), summary);
-    final currency = await _fetchWorkspaceDefaultCurrencyRemote(wsId);
-    await manifest.save(_workspaceCurrencyCacheKey(wsId), currency);
-    FinanceRepository._workspaceCurrencyCache[_workspaceCurrencyMemoryKey(
-      wsId,
-    )] = _WorkspaceCurrencyCacheEntry(
-      currency: currency,
-      fetchedAt: DateTime.now(),
+    stage(manifest, _checkpointKey(wsId), summary);
+    final currency = await ApiClient.runForUser(
+      user,
+      () => _fetchWorkspaceDefaultCurrencyRemote(wsId),
     );
+    stage(manifest, _workspaceCurrencyCacheKey(wsId), currency);
     final wallets =
         await download('wallets', FinanceEndpoints.wallets(wsId), list: true)
             as List<dynamic>;
@@ -68,10 +82,14 @@ extension FinanceOfflinePreparation on FinanceRepository {
         '${FinanceEndpoints.transactionStats(wsId)}?$statsQuery',
       );
       await download('walletDetail', FinanceEndpoints.wallet(wsId, id));
-      final checkpoints = await _api.getJson(
-        '${FinanceEndpoints.walletCheckpoints(wsId, id)}?limit=50',
+      final checkpoints = await ApiClient.runForUser(
+        user,
+        () => _api.getJson(
+          '${FinanceEndpoints.walletCheckpoints(wsId, id)}?limit=50',
+        ),
       );
-      await manifest.save(
+      stage(
+        manifest,
         _checkpointKey(wsId, walletId: id, limit: 50),
         checkpoints,
       );
@@ -93,6 +111,10 @@ extension FinanceOfflinePreparation on FinanceRepository {
         );
       }
       if (!transactions.hasMore) {
+        manifest.checkScope();
+        for (final (target, key, payload) in staged) {
+          await target.save(key, payload);
+        }
         await manifest.verify();
         await rateManifest.verify();
         await manifest.reconcile(
@@ -103,6 +125,11 @@ extension FinanceOfflinePreparation on FinanceRepository {
             'finance.walletDetail',
           },
         );
+        FinanceRepository._workspaceCurrencyCache['$user:$wsId'] =
+            _WorkspaceCurrencyCacheEntry(
+              currency: currency,
+              fetchedAt: DateTime.now(),
+            );
         manifest.retain('finance', wsId);
         rateManifest.retain('finance-rates', wsId);
         return;

@@ -91,6 +91,26 @@ void main() {
     await queue.synchronize();
   });
 
+  test('discard cannot delete an edit already being sent', () async {
+    final entered = Completer<void>();
+    final release = Completer<void>();
+    queue.registerDispatcher('notes', (_) async {
+      if (!entered.isCompleted) entered.complete();
+      await release.future;
+      throw const ApiException(message: 'Offline', statusCode: 0);
+    });
+    await queue.enqueue(edit('sending'));
+    online = true;
+    final drain = queue.drain();
+    await entered.future;
+    expect(await queue.cancel('sending'), isFalse);
+    expect((await queue.listPending()).single.id, 'sending');
+    online = false;
+    release.complete();
+    await drain;
+    expect((await queue.listPending()).single.id, 'sending');
+  });
+
   tearDown(() async {
     await queue.synchronize();
     await queue.dispose();
@@ -274,7 +294,9 @@ void main() {
   });
 
   test('captcha pauses automatic replay without discarding the edit', () async {
+    var sends = 0;
     queue.registerDispatcher('notes', (_) async {
+      sends++;
       throw const ApiException(
         message: 'Verify',
         statusCode: 403,
@@ -285,6 +307,7 @@ void main() {
     await queue.synchronize();
     online = true;
     await queue.synchronize();
+    expect(sends, 1);
     expect(
       (await queue.listPending()).single.status,
       PendingMutationStatus.queued,

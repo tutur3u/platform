@@ -81,15 +81,32 @@ extension _InventoryLocalReads on InventoryRepository {
       workspaceId: wsId,
       namespaces: const ['inventory.sales', 'inventory.sale-detail'],
     );
+    final pending = await _mutationQueue.listPending();
+    final assignments = <String, String?>{
+      for (final edit in pending)
+        if (edit.feature == 'inventory' &&
+            edit.workspaceId == wsId &&
+            edit.method == 'PUT' &&
+            edit.path.endsWith('/period') &&
+            edit.entityId != null)
+          edit.entityId!: edit.payload?['period_id'] as String?,
+    };
     final sales = rows
         .map(InventorySaleSummary.fromJson)
-        .where((sale) => periodId == null || sale.period?.id == periodId)
+        .where(
+          (sale) =>
+              periodId == null ||
+              (assignments.containsKey(sale.id)
+                      ? assignments[sale.id]
+                      : sale.period?.id) ==
+                  periodId,
+        )
         .toList(growable: false);
     final result = _overlayPendingInventorySales(
       wsId,
       (data: sales, count: sales.length, realtimeEnabled: false),
       periodId: periodId,
-      pending: _mutationQueue.pending.value,
+      pending: pending,
     );
     final sorted = result.data.toList()
       ..sort(
@@ -116,7 +133,11 @@ extension _InventoryLocalReads on InventoryRepository {
               edit.entityId == saleId,
         )
         .toList(growable: false);
-    if (edits.any((edit) => edit.method == 'DELETE')) {
+    if (edits.any(
+      (edit) =>
+          edit.method == 'DELETE' &&
+          edit.path == InventoryEndpoints.sale(wsId, saleId),
+    )) {
       throw const ApiException(
         message: 'Sale removed locally',
         statusCode: 404,

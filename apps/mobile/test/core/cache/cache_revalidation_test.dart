@@ -68,6 +68,165 @@ void main() {
     await Hive.close();
     await directory.delete(recursive: true);
   });
+  test('local snapshot cannot replace reconnect network refresher', () async {
+    when(() => api.getJsonList(path)).thenAnswer(
+      (_) async => [
+        {'id': 'network'},
+      ],
+    );
+    await CacheStore.awaitRevalidation(read);
+    await store.prefetch<List<dynamic>>(
+      key: key,
+      policy: CachePolicies.moduleData,
+      registerRefresh: false,
+      forceRefresh: true,
+      decode: (raw) => List<dynamic>.from(raw! as List),
+      fetch: () async => [
+        {'id': 'local'},
+      ],
+    );
+    await store.refreshCachedResources(currentUserId: () => 'user');
+    verify(() => api.getJsonList(path)).called(2);
+    final saved = await store.read<List<dynamic>>(
+      key: key,
+      decode: (raw) => List<dynamic>.from(raw! as List),
+    );
+    expect(_firstId(saved.data!), 'network');
+  });
+
+  test(
+    'stable cache owner still checks live API identity before persistence',
+    () async {
+      var authenticatedOwner = 'user';
+      when(() => api.checkUser('user')).thenAnswer((_) {
+        if (authenticatedOwner != 'user') {
+          throw const ApiException(message: 'Account changed', statusCode: 401);
+        }
+      });
+      final response = Completer<List<dynamic>>();
+      when(() => api.getJsonList(path)).thenAnswer((_) => response.future);
+      final result = CacheStore.awaitRevalidation(read);
+      await Future<void>.delayed(Duration.zero);
+      authenticatedOwner = 'other';
+      response.complete([
+        {'id': 'other-secret'},
+      ]);
+      await expectLater(
+        result,
+        throwsA(
+          isA<ApiException>().having((e) => e.statusCode, 'statusCode', 401),
+        ),
+      );
+      final saved = await store.read<List<dynamic>>(
+        key: key,
+        decode: (raw) => List<dynamic>.from(raw! as List),
+      );
+      expect(saved.data?.toString().contains('other-secret') ?? false, isFalse);
+    },
+  );
+
+  test(
+    'JSON object read rejects an account switch before cache publication',
+    () async {
+      var owner = 'user';
+      final response = Completer<Map<String, dynamic>>();
+      when(() => api.getJson(path)).thenAnswer((_) => response.future);
+      final result = readThroughJson(
+        api: api,
+        namespace: 'finance.summary',
+        workspaceId: 'ws',
+        path: path,
+        cacheStore: store,
+        cacheUserId: () => owner,
+      );
+      await Future<void>.delayed(Duration.zero);
+      owner = 'other';
+      response.complete({'id': 'other-secret'});
+      await expectLater(
+        result,
+        throwsA(
+          isA<ApiException>().having((e) => e.statusCode, 'statusCode', 401),
+        ),
+      );
+      final saved = await store.read<Map<String, dynamic>>(
+        key: const CacheKey(
+          namespace: 'finance.summary',
+          userId: 'user',
+          workspaceId: 'ws',
+          params: {'path': path},
+        ),
+        decode: (raw) => Map<String, dynamic>.from(raw! as Map),
+      );
+      expect(saved.hasValue, isFalse);
+    },
+  );
+
+  test(
+    'account switch rejects fresh list and never caches new-account data',
+    () async {
+      var owner = 'user';
+      final response = Completer<List<dynamic>>();
+      when(() => api.getJsonList(path)).thenAnswer((_) => response.future);
+      final result = CacheStore.awaitRevalidation(
+        () => readThroughJsonList(
+          api: api,
+          namespace: key.namespace,
+          workspaceId: 'ws',
+          path: path,
+          cacheStore: store,
+          cacheUserId: () => owner,
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      owner = 'other';
+      response.complete([
+        {'id': 'other-secret'},
+      ]);
+      await expectLater(
+        result,
+        throwsA(
+          isA<ApiException>().having((e) => e.statusCode, 'statusCode', 401),
+        ),
+      );
+      final cached = await store.read<List<dynamic>>(
+        key: key,
+        decode: (raw) => List<dynamic>.from(raw! as List),
+      );
+      expect(
+        cached.data?.toString().contains('other-secret') ?? false,
+        isFalse,
+      );
+    },
+  );
+
+  test(
+    'account switch cannot fall back to prior cached list on transport failure',
+    () async {
+      var owner = 'user';
+      final response = Completer<List<dynamic>>();
+      when(() => api.getJsonList(path)).thenAnswer((_) => response.future);
+      final result = CacheStore.awaitRevalidation(
+        () => readThroughJsonList(
+          api: api,
+          namespace: key.namespace,
+          workspaceId: 'ws',
+          path: path,
+          cacheStore: store,
+          cacheUserId: () => owner,
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      owner = 'other';
+      response.completeError(const SocketException('offline'));
+      await expectLater(
+        result,
+        throwsA(
+          isA<ApiException>().having((e) => e.statusCode, 'statusCode', 401),
+        ),
+      );
+    },
+  );
+
   test(
     'cached phase is immediate and revalidation awaits shared fresh response',
     () async {

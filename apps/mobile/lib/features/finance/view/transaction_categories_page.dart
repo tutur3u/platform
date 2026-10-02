@@ -575,10 +575,6 @@ class _TransactionCategoriesViewState
     }
 
     final repository = context.read<FinanceRepository>();
-    final currencyFuture = repository.getWorkspaceDefaultCurrency(
-      wsId,
-      forceRefresh: forceRefresh,
-    );
     final cached = _categoriesCache[_memoryCacheKey(wsId)];
     final diskCached = await CacheStore.instance
         .read<List<TransactionCategory>>(
@@ -591,7 +587,9 @@ class _TransactionCategoriesViewState
     if (!mounted || requestId != _categoriesRequestId) return;
 
     if (!forceRefresh && resolvedCategories != null) {
-      final currency = await currencyFuture;
+      final currency = await repository
+          .getWorkspaceDefaultCurrency(wsId)
+          .catchError((_) => _workspaceCurrency ?? 'USD');
       if (!mounted || requestId != _categoriesRequestId) return;
       setState(() {
         _categories = resolvedCategories;
@@ -677,10 +675,6 @@ class _TransactionCategoriesViewState
     }
 
     final repository = context.read<FinanceRepository>();
-    final currencyFuture = repository.getWorkspaceDefaultCurrency(
-      wsId,
-      forceRefresh: forceRefresh,
-    );
     final cached = _tagsCache[_memoryCacheKey(wsId)];
     final diskCached = await CacheStore.instance.read<List<FinanceTag>>(
       key: _tagsStoreKey(wsId),
@@ -692,7 +686,9 @@ class _TransactionCategoriesViewState
     if (!mounted || requestId != _tagsRequestId) return;
 
     if (!forceRefresh && resolvedTags != null) {
-      final currency = await currencyFuture;
+      final currency = await repository
+          .getWorkspaceDefaultCurrency(wsId)
+          .catchError((_) => _workspaceCurrency ?? 'USD');
       if (!mounted || requestId != _tagsRequestId) return;
       setState(() {
         _tags = resolvedTags;

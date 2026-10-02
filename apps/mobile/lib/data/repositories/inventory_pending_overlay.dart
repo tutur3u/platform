@@ -46,7 +46,14 @@ List<InventoryProduct> overlayPendingProducts(
       'archived': payload['archived'] ?? previous?.archived ?? false,
       'owner': previous?.owner == null
           ? null
-          : {'id': previous!.owner!.id, 'name': previous.owner!.name},
+          : {
+              'id': previous!.owner!.id,
+              'name': previous.owner!.name,
+              'avatar_url': previous.owner!.avatarUrl,
+              'linked_workspace_user_id': previous.owner!.linkedWorkspaceUserId,
+              'archived': previous.owner!.archived,
+              'created_at': previous.owner!.createdAt?.toIso8601String(),
+            },
       'created_at':
           previous?.createdAt?.toIso8601String() ??
           mutation.createdAt.toIso8601String(),

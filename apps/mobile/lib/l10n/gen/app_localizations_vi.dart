@@ -9338,6 +9338,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get offlineEditSyncing => 'Đang đồng bộ…';
 
   @override
+  String get inventorySetupSyncFirst => 'Đồng bộ mục mới này trước khi chỉnh sửa hoặc xóa.';
+
+  @override
   String get offlineEditQueued => 'Đang chờ đồng bộ';
 
   @override
@@ -9682,7 +9685,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String inventoryCheckoutCartRemoved(int count) {
-    return 'Đã loại bỏ $count sản phẩm không còn khả dụng. Kiểm tra giỏ hàng trước khi tạo đơn.';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Đã loại bỏ $count sản phẩm không còn khả dụng. Kiểm tra giỏ hàng trước khi tạo đơn.',
+    );
+    return '$_temp0';
   }
 
   @override

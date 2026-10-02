@@ -4,7 +4,9 @@ Future<List<dynamic>> _financeSetupRows(Future<List<dynamic>> read) async {
   try {
     return await read;
   } on Object catch (error) {
-    if (!isOfflineTransportFailure(error)) rethrow;
+    if (CacheStore.awaitingRevalidation || !isOfflineTransportFailure(error)) {
+      rethrow;
+    }
     return const [];
   }
 }
@@ -63,6 +65,9 @@ mixin FinanceRepositoryTaxonomy {
       payload: payload,
       send: () async {
         await _api.postJson(path, payload);
+        await _cacheStore.invalidateTags(const [
+          'module:finance',
+        ], workspaceId: wsId);
       },
     );
   }
@@ -93,6 +98,9 @@ mixin FinanceRepositoryTaxonomy {
       entityId: categoryId,
       send: () async {
         await _api.putJson(path, body);
+        await _cacheStore.invalidateTags(const [
+          'module:finance',
+        ], workspaceId: wsId);
       },
     );
   }
@@ -111,6 +119,9 @@ mixin FinanceRepositoryTaxonomy {
       entityId: categoryId,
       send: () async {
         await _api.deleteJson(path);
+        await _cacheStore.invalidateTags(const [
+          'module:finance',
+        ], workspaceId: wsId);
       },
     );
   }
@@ -161,6 +172,9 @@ mixin FinanceRepositoryTaxonomy {
       payload: payload,
       send: () async {
         await _api.postJson(path, payload);
+        await _cacheStore.invalidateTags(const [
+          'module:finance',
+        ], workspaceId: wsId);
       },
     );
   }
@@ -188,6 +202,9 @@ mixin FinanceRepositoryTaxonomy {
       entityId: tagId,
       send: () async {
         await _api.putJson(path, payload);
+        await _cacheStore.invalidateTags(const [
+          'module:finance',
+        ], workspaceId: wsId);
       },
     );
   }
@@ -203,6 +220,9 @@ mixin FinanceRepositoryTaxonomy {
       entityId: tagId,
       send: () async {
         await _api.deleteJson(path);
+        await _cacheStore.invalidateTags(const [
+          'module:finance',
+        ], workspaceId: wsId);
       },
     );
   }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -55,11 +56,11 @@ class InventoryProductImageCache {
     final user = currentUserId();
     if (user == null || !_hasImage(product)) return null;
     final cacheKey = key(product, user);
-    final removalRevision = store.resourceRemovalRevision.value;
+    final removalRevision = store.resourceRevisionFor(cacheKey);
     void checkScope() {
       manifest?.checkScope();
       if (currentUserId() != user ||
-          store.resourceRemovalRevision.value != removalRevision) {
+          store.resourceRevisionFor(cacheKey) != removalRevision) {
         throw StateError('Product image cache scope changed.');
       }
     }
@@ -70,6 +71,7 @@ class InventoryProductImageCache {
     if (bytes == null) {
       final loaded = await store.prefetch<Uint8List>(
         key: cacheKey,
+        checkScope: checkScope,
         policy: const CachePolicy(
           staleAfter: Duration(days: 365),
           expireAfter: Duration(days: 365),
@@ -142,15 +144,30 @@ class InventoryProductImageCache {
   static Future<Uint8List> downloadBytes(
     String url, {
     http.Client? client,
+    Duration maxDuration = const Duration(seconds: 60),
   }) async {
+    if (maxDuration <= Duration.zero ||
+        maxDuration > const Duration(seconds: 60)) {
+      throw ArgumentError.value(maxDuration, 'maxDuration');
+    }
     var uri = _imageUri(url);
     final transport = client ?? http.Client();
     final started = Stopwatch()..start();
+    Duration remaining() {
+      final budget = maxDuration - started.elapsed;
+      if (budget <= Duration.zero) {
+        throw TimeoutException('Product image download timed out');
+      }
+      return budget < const Duration(seconds: 30)
+          ? budget
+          : const Duration(seconds: 30);
+    }
+
     try {
       for (var redirects = 0; redirects <= 3; redirects++) {
         final response = await transport
             .send(http.Request('GET', uri)..followRedirects = false)
-            .timeout(const Duration(seconds: 30));
+            .timeout(remaining());
         if ({301, 302, 303, 307, 308}.contains(response.statusCode)) {
           await response.stream.listen(null).cancel();
           final location = response.headers['location'];
@@ -166,16 +183,19 @@ class InventoryProductImageCache {
           throw StateError('Product image download failed.');
         }
         final bytes = BytesBuilder(copy: false);
-        await for (final chunk in response.stream.timeout(
-          const Duration(seconds: 30),
-        )) {
-          if (bytes.length + chunk.length > maxImageBytes ||
-              started.elapsed > const Duration(seconds: 60)) {
-            throw const FormatException(
-              'Product image exceeds download limit.',
-            );
+        final chunks = StreamIterator(response.stream);
+        try {
+          while (await chunks.moveNext().timeout(remaining())) {
+            final chunk = chunks.current;
+            if (bytes.length + chunk.length > maxImageBytes) {
+              throw const FormatException(
+                'Product image exceeds download limit.',
+              );
+            }
+            bytes.add(chunk);
           }
-          bytes.add(chunk);
+        } finally {
+          await chunks.cancel();
         }
         return bytes.takeBytes();
       }

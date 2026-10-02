@@ -65,6 +65,7 @@ class _CreateManageItemDialogState extends State<_CreateManageItemDialog> {
   }
 
   Future<void> _handleConfirm() async {
+    if (_saving) return;
     final value = _controller.text.trim();
     if (value.isEmpty) {
       showInventoryToast(
@@ -86,7 +87,13 @@ class _CreateManageItemDialogState extends State<_CreateManageItemDialog> {
       if (!mounted) {
         return;
       }
-      showInventoryToast(context, error.toString(), destructive: true);
+      showInventoryToast(
+        context,
+        error is InventorySetupAwaitingSync
+            ? context.l10n.inventorySetupSyncFirst
+            : error.toString(),
+        destructive: true,
+      );
     } finally {
       if (mounted) {
         setState(() => _saving = false);

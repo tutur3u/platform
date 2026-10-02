@@ -30,7 +30,9 @@ _overlayPendingInventorySales(
     if (includeCreates &&
         edit.method == 'POST' &&
         edit.path == InventoryEndpoints.invoices(wsId)) {
-      final assigned = assignedPeriods[saleId];
+      final assigned = assignedPeriods.containsKey(saleId)
+          ? assignedPeriods[saleId]
+          : payload['inventory_period_id'] as String?;
       if (periodId != null && assigned != periodId) continue;
       final products = payload['products'] as List<dynamic>? ?? const [];
       rows[saleId] = InventorySaleSummary(

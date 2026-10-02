@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_download_manifest.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
@@ -99,6 +100,53 @@ void main() {
       expect(offline.peek(product), _png);
     },
   );
+
+  test(
+    'unrelated resource eviction cannot cancel a pending product image',
+    () async {
+      final product = InventoryProduct.fromJson(_productJson());
+      final started = Completer<void>();
+      final bytes = Completer<Uint8List>();
+      final images = cache((_) {
+        started.complete();
+        return bytes.future;
+      });
+      final other = images.key(
+        InventoryProduct.fromJson({..._productJson(), 'id': 'other'}),
+        'user',
+      );
+      await store.write(
+        key: other,
+        policy: CachePolicies.detail,
+        payload: {'bytes': base64Encode(_png)},
+      );
+      final load = images.load(product);
+      await started.future;
+      await store.remove(other);
+      bytes.complete(_png);
+      expect(await load, _png);
+      expect(images.peek(product), _png);
+    },
+  );
+
+  test('redirect chain shares one overall image download deadline', () async {
+    final client = MockClient((request) async {
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      return http.Response(
+        '',
+        302,
+        headers: {'location': 'https://media.example.com/next'},
+      );
+    });
+    await expectLater(
+      InventoryProductImageCache.downloadBytes(
+        'https://storage.example.com/start',
+        client: client,
+        maxDuration: const Duration(milliseconds: 100),
+      ),
+      throwsA(isA<TimeoutException>()),
+    );
+  });
 
   test('signed media URL tokens stay out of unencrypted cache keys', () {
     const signedUrl = 'https://media.example/image?token=private-token';

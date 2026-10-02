@@ -37,7 +37,9 @@ class CalendarCubit extends Cubit<CalendarState> {
 
   void _onSynchronized() {
     final wsId = _wsId;
-    if (!isClosed && wsId != null) unawaited(loadEvents(wsId));
+    if (!isClosed && wsId != null) {
+      unawaited(loadEvents(wsId).then<void>((_) {}, onError: (Object _) {}));
+    }
   }
 
   @override

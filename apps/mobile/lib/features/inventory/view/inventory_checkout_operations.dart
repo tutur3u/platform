@@ -1,14 +1,18 @@
 part of 'inventory_checkout_page.dart';
 
 extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
-  String _saleFeedback(String wsId, String confirmed) {
+  String _saleFeedback(String wsId, String confirmed, String saleId) {
     final edits = OfflineMutationQueue.instance.pending.value.where(
       (edit) =>
           edit.feature == 'inventory' &&
           edit.workspaceId == wsId &&
+          edit.entityId == saleId &&
           (edit.path.contains('/invoices') || edit.path.contains('/sales/')),
     );
-    if (edits.any((edit) => edit.status != PendingMutationStatus.queued)) {
+    if (edits.any((edit) => edit.status == PendingMutationStatus.failed)) {
+      return context.l10n.offlineEditFailed;
+    }
+    if (edits.any((edit) => edit.status == PendingMutationStatus.conflict)) {
       return context.l10n.offlineEditConflict;
     }
     return edits.isEmpty ? confirmed : context.l10n.offlineEditQueued;
@@ -115,7 +119,7 @@ extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
                   ? defaults.walletId
                   : _walletId ?? (_wallets.isEmpty ? null : _wallets.first.id));
         }
-        if (!availableWallets.contains(_walletId)) {
+        if (widget.sale == null && !availableWallets.contains(_walletId)) {
           _walletId = null;
         }
         final availableCategoryIds = _categories
@@ -128,16 +132,16 @@ extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
               availableCategoryIds.contains(defaults.financeCategoryId)
               ? defaults.financeCategoryId
               : null;
-          _categoryOverride = configured != null;
-          _manualCategoryId =
-              availableCategoryIds.contains(widget.sale?.categoryId)
-              ? widget.sale?.categoryId
+          _categoryOverride = widget.sale != null || configured != null;
+          _manualCategoryId = widget.sale != null
+              ? widget.sale!.categoryId
               : configured ??
                     (availableCategoryIds.contains(lastCategoryId)
                         ? lastCategoryId
                         : (_categories.isEmpty ? null : _categories.first.id));
         }
-        if (!availableCategoryIds.contains(_manualCategoryId)) {
+        if (widget.sale == null &&
+            !availableCategoryIds.contains(_manualCategoryId)) {
           _manualCategoryId = null;
         }
         final sale = widget.sale;
@@ -243,14 +247,15 @@ extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
         }
         showInventoryToast(
           context,
-          _saleFeedback(wsId, context.l10n.inventorySaleUpdated),
+          _saleFeedback(wsId, context.l10n.inventorySaleUpdated, sale.id),
         );
         context.pop(updated);
         return;
       }
 
+      final String submittedSaleId;
       if (_scheduled) {
-        await _season.submit(
+        submittedSaleId = await _season.submit(
           walletId: walletId,
           categoryId: resolvedCategoryId,
           content: _titleController.text.trim().isEmpty
@@ -281,7 +286,7 @@ extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
               .toList(growable: false),
         );
       } else {
-        await _inventoryRepository.createSale(
+        submittedSaleId = await _inventoryRepository.createSale(
           wsId: wsId,
           walletId: walletId,
           categoryId: resolvedCategoryId,
@@ -314,7 +319,7 @@ extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
       if (_scheduled) unawaited(_acknowledgeReceipt());
       showInventoryToast(
         context,
-        _saleFeedback(wsId, context.l10n.inventorySaleCreated),
+        _saleFeedback(wsId, context.l10n.inventorySaleCreated, submittedSaleId),
       );
       if (context.canPop()) context.pop(true);
     } on ApiException catch (error) {

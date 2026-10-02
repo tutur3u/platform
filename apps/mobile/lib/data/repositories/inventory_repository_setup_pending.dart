@@ -9,6 +9,8 @@ Future<List<T>> _setupRows<T>(Future<List<T>> request) async {
   }
 }
 
+class InventorySetupAwaitingSync implements Exception {}
+
 enum InventorySetupKind { owner, manufacturer, category, unit, warehouse }
 
 extension InventorySetupOfflineWrites on InventoryRepository {
@@ -20,12 +22,31 @@ extension InventorySetupOfflineWrites on InventoryRepository {
     InventorySetupKind.warehouse => InventoryEndpoints.productWarehouses(wsId),
   };
 
+  Future<void> _requireConfirmedSetupItem(
+    String wsId,
+    String path,
+    String id,
+  ) async {
+    final pending = await _mutationQueue.listPending();
+    if (pending.any(
+      (item) =>
+          item.feature == 'inventory' &&
+          item.workspaceId == wsId &&
+          item.path == path &&
+          item.method == 'POST' &&
+          item.entityId == id,
+    )) {
+      throw InventorySetupAwaitingSync();
+    }
+  }
+
   Future<void> updateSetupItem({
     required String wsId,
     required InventorySetupKind kind,
     required String id,
     required String name,
   }) async {
+    await _requireConfirmedSetupItem(wsId, _setupPath(wsId, kind), id);
     final path = '${_setupPath(wsId, kind)}/$id';
     final patch =
         kind == InventorySetupKind.owner ||
@@ -58,6 +79,7 @@ extension InventorySetupOfflineWrites on InventoryRepository {
     required InventorySetupKind kind,
     required String id,
   }) async {
+    await _requireConfirmedSetupItem(wsId, _setupPath(wsId, kind), id);
     final path = '${_setupPath(wsId, kind)}/$id';
     await queueOrSendVoid(
       queue: _mutationQueue,

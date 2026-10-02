@@ -919,22 +919,15 @@ A required image that cannot be retained makes the product download fail rather
 than claiming full offline readiness. Cache keys digest image URLs so signed
 read tokens are not exposed in plaintext keys.
 
-Provider authorization, live calls, AI execution, and uncached attachment bytes
-still require connectivity; Download all is scoped to these four product data
-collections, not every external service or file.
+Offline inventory acceptance is scoped to the current account and workspace. A queued checkout receives a local pending identifier, never a committed invoice receipt; pending local catalog/setup edits must synchronize before checkout. Read-through helpers retain their default compatibility behavior while pinning an available account at entry, checking it at request and cache publication boundaries, and rejecting late responses after account changes. Request generations also prevent older workspace loads from replacing the active screen.
 
-Regression evidence: `offline_sync_test.dart`, `local_search_test.dart`,
-`offline_preparation_coordinator_test.dart`, `offline_download_manifest_test.dart`,
-`offline_preparation_repository_test.dart`, `finance_inventory_offline_test.dart`,
-`inventory_audit_offline_test.dart`,
-`season_pricing_controller_test.dart`, and
-`packages/utils/src/__tests__/offline-download-guard.test.ts` cover replay,
-scope changes, strict persistence, search rules, offline draft state, and server
-rate/challenge enforcement. `cache_revalidation_test.dart`,
-`workspace_permissions_offline_test.dart`, and `finance_scope_races_test.dart`
-cover fresh visible data, permission hints, scoped invalidation, and late-response
-rejection. Native airplane-mode and real Turnstile verification remain release
-checks beyond unit tests.
+The authenticated gateway uses a session budget when the client IP is unknown; an anonymous request without an attributable IP fails closed. Known-IP requests retain their existing IP budget. These controls do not grant offline clients server authorization. Product images share one 60-second deadline across redirects and body streaming, and unrelated resource eviction does not cancel their fetch.
+
+Deferred cache transaction/refresh sharing, transport draining, search performance, and cosmetic improvements are tracked in [#5737](https://github.com/tutur3u/platform/issues/5737). App disposal invalidates preparation readiness immediately; an already-started read may fail when its HTTP client closes. Graceful draining remains a followup and does not permit a disposed preparation to publish readiness or replay writes. Regression coverage includes `inventory_product_image_cache_test.dart`, `inventory_product_editor_page_test.dart`, `api_client_account_test.dart`, and `packages/utils/src/__tests__/api-proxy-offline-response.test.ts`.
+
+Provider authorization, live calls, AI execution, and uncached attachment bytes still require connectivity; Download all is scoped to these four product data collections, not every external service or file.
+
+Regression evidence: `offline_sync_test.dart`, `local_search_test.dart`, `offline_preparation_coordinator_test.dart`, `offline_download_manifest_test.dart`, `offline_preparation_repository_test.dart`, `finance_inventory_offline_test.dart`, `inventory_audit_offline_test.dart`, `season_pricing_controller_test.dart`, and `packages/utils/src/__tests__/offline-download-guard.test.ts` cover replay, scope changes, strict persistence, search rules, offline draft state, and server rate/challenge enforcement. `cache_revalidation_test.dart`, `workspace_permissions_offline_test.dart`, and `finance_scope_races_test.dart` cover fresh visible data, permission hints, scoped invalidation, and late-response rejection. Native airplane-mode and real Turnstile verification remain release checks beyond unit tests.
 
 Synthetic render evidence for the offline status and targeted retry surface:
 

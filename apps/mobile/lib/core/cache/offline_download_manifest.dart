@@ -14,7 +14,11 @@ class OfflineDownloadManifest {
       {};
 
   static Future<void> verifyScope(String userId, String workspaceId) async {
-    for (final manifest in (_completed['$userId:$workspaceId'] ?? {}).values) {
+    final manifests = _completed['$userId:$workspaceId'];
+    if (manifests == null) {
+      throw StateError('Offline download retention is not verified.');
+    }
+    for (final manifest in manifests.values) {
       await manifest.verify();
     }
   }
@@ -49,10 +53,7 @@ class OfflineDownloadManifest {
   Future<void> verify() async {
     checkScope();
     for (final key in _keys) {
-      final cached = await store.read<Object?>(
-        key: key,
-        decode: (value) => value,
-      );
+      final cached = await store.read<bool>(key: key, decode: (_) => true);
       if (!cached.hasValue) {
         throw StateError('Offline download exceeds available cache storage.');
       }

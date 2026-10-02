@@ -104,6 +104,8 @@ class CacheStore {
 
   final ValueNotifier<int> resourceRemovalRevision = ValueNotifier(0);
 
+  int resourceRevisionFor(CacheKey key) => _revisionFor(key);
+
   void _dropRecord(String key) {
     final previous = _memory.remove(key);
     if (previous != null) {
@@ -432,8 +434,10 @@ class CacheStore {
     String? etag,
     List<String> tags = const <String>[],
     int? expectedRevision,
+    void Function()? checkScope,
   }) async {
     await init();
+    checkScope?.call();
     if (_isClearing(key)) return;
     if (expectedRevision != null && expectedRevision != _revisionFor(key)) {
       return;

@@ -23,16 +23,25 @@ extension _InventoryCheckoutCart on _InventoryCheckoutPageState {
             ),
             const shad.Gap(12),
             DropdownButtonFormField<String>(
+              isExpanded: true,
               key: ValueKey('wallet:$_walletId'),
               initialValue: _walletId,
-              items: _wallets
-                  .map(
-                    (wallet) => DropdownMenuItem<String>(
-                      value: wallet.id,
-                      child: Text(wallet.name ?? ''),
-                    ),
-                  )
-                  .toList(growable: false),
+              items: [
+                if (_walletId != null &&
+                    !_wallets.any((item) => item.id == _walletId))
+                  DropdownMenuItem<String>(
+                    value: _walletId,
+                    child: Text(widget.sale?.walletName ?? _walletId!),
+                  ),
+                ..._wallets
+                    .map(
+                      (wallet) => DropdownMenuItem<String>(
+                        value: wallet.id,
+                        child: Text(wallet.name ?? ''),
+                      ),
+                    )
+                    .toList(growable: false),
+              ],
               onChanged: _saving || _reviewingCart || _season.hasPending
                   ? null
                   : (value) {
@@ -48,6 +57,7 @@ extension _InventoryCheckoutCart on _InventoryCheckoutPageState {
             ),
             const shad.Gap(12),
             DropdownButtonFormField<String>(
+              isExpanded: true,
               key: ValueKey('period:$_periodId'),
               initialValue: _selectedPeriod?.id ?? '',
               items: [
@@ -95,16 +105,27 @@ extension _InventoryCheckoutCart on _InventoryCheckoutPageState {
             const shad.Gap(12),
             if (_requiresManualCategory)
               DropdownButtonFormField<String>(
+                isExpanded: true,
                 key: ValueKey('category:$_manualCategoryId'),
                 initialValue: _manualCategoryId,
-                items: _categories
-                    .map(
-                      (category) => DropdownMenuItem<String>(
-                        value: category.id,
-                        child: Text(category.name ?? ''),
+                items: [
+                  if (_manualCategoryId != null &&
+                      !_categories.any((item) => item.id == _manualCategoryId))
+                    DropdownMenuItem<String>(
+                      value: _manualCategoryId,
+                      child: Text(
+                        widget.sale?.categoryName ?? _manualCategoryId!,
                       ),
-                    )
-                    .toList(growable: false),
+                    ),
+                  ..._categories
+                      .map(
+                        (category) => DropdownMenuItem<String>(
+                          value: category.id,
+                          child: Text(category.name ?? ''),
+                        ),
+                      )
+                      .toList(growable: false),
+                ],
                 onChanged: _saving || _reviewingCart || _season.hasPending
                     ? null
                     : (value) => _update(() {
