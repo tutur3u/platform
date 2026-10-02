@@ -113,11 +113,28 @@ export function createPlaygroundDockerArgs(
     'exec sleep 7200',
   ];
 }
+async function removeContainer(target: string, filter: string) {
+  const removed = await sandboxDocker(['rm', '--force', target]);
+  if (removed.code === 0 && !removed.exceeded && !removed.timedOut) return;
+  // A missing container is idempotent success only after a healthy inventory
+  // confirms absence. Engine/permission failures must retain capacity ownership.
+  const remaining = await sandboxDocker(['ps', '-aq', '--filter', filter]);
+  if (
+    remaining.code !== 0 ||
+    remaining.exceeded ||
+    remaining.timedOut ||
+    remaining.output.trim()
+  )
+    throw new Error('Could not remove isolated playground');
+}
 async function removeEnvironment(projectId: string) {
   const entry = environments.get(projectId);
-  if (entry) clearTimeout(entry.timer);
-  environments.delete(projectId);
-  await sandboxDocker(['rm', '--force', PREFIX + projectId]);
+  const name = entry?.name ?? PREFIX + projectId;
+  await removeContainer(name, `name=^/${name}$`);
+  if (entry && environments.get(projectId) === entry) {
+    clearTimeout(entry.timer);
+    environments.delete(projectId);
+  }
 }
 function touch(projectId: string) {
   const entry = environments.get(projectId);
@@ -141,8 +158,7 @@ async function clearOrphanedEnvironments() {
   ]);
   if (result.code !== 0) throw new Error('Playground Docker inventory failed');
   for (const id of result.output.trim().split('\n').filter(Boolean)) {
-    if (/^[0-9a-f]{12,64}$/.test(id))
-      await sandboxDocker(['rm', '--force', id]);
+    if (/^[0-9a-f]{12,64}$/.test(id)) await removeContainer(id, `id=${id}`);
   }
 }
 async function ensureEnvironment(
@@ -253,7 +269,7 @@ export async function getPlaygroundReadiness() {
         '',
         15000
       );
-      await sandboxDocker(['rm', '--force', name]);
+      await removeContainer(name, `name=^/${name}$`);
       if (run.code === 0) languages.push(language as PlaygroundLanguage);
     }
     return {
@@ -285,6 +301,7 @@ export async function runPlaygroundJob(
   const payload = PlaygroundJob.parse(
     JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8'))
   );
+  validatePoolOwner();
   if (payload.operation === 'stop') {
     await removeEnvironment(payload.projectId);
     return { code: 0, output: '', files: null, preview: null };
