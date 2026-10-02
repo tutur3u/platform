@@ -12,6 +12,7 @@ const workflow = fs.readFileSync(
 );
 const productionSha = 'a'.repeat(40);
 const stagingSha = 'b'.repeat(40);
+const workflowSha = 'c'.repeat(40);
 
 function stepScript(name) {
   const block = workflow.split(`      - name: ${name}\n`)[1];
@@ -43,28 +44,44 @@ function fixture(t, overrides = {}) {
     path.join(directory, 'gh'),
     `#!${process.execPath}
 const fs = require('node:fs');
+const {execFileSync} = require('node:child_process');
 const request = process.argv[3];
+let response;
 fs.appendFileSync(process.env.REQUEST_LOG, request + '\\n');
 if (process.env.API_FAILURE === 'true') process.exit(1);
 const sha = process.env.PRODUCTION_SHA;
 if (request.endsWith('/git/ref/heads/production')) {
-  process.stdout.write(sha);
+  response = {object: {type: process.env.PRODUCTION_TYPE, sha}};
 } else if (request.includes('/actions/workflows/')) {
   if (!request.includes('head_sha=' + sha)) process.exit(9);
   const staging = request.includes('supabase-staging');
-  process.stdout.write(JSON.stringify({
+  response = {workflow_runs: [{
     head_sha: staging ? process.env.STAGING_SHA : process.env.PLANNER_SHA,
     head_branch: staging ? process.env.STAGING_BRANCH : process.env.PLANNER_BRANCH,
     conclusion: staging ? process.env.STAGING_RESULT : process.env.PLANNER_RESULT,
     status: staging ? process.env.STAGING_STATUS : 'completed'
-  }));
+  }]};
 } else if (request.includes('/deployments?')) {
-  process.stdout.write(JSON.stringify([{id: 17, sha: process.env.MARKER_SHA, payload: {
-    sha: process.env.MARKER_SHA, markerKind: 'deployment', workflowName: 'vercel-production-platform.yaml'
-  }}]));
+  const marker = (id, markerSha, created_at, payload = {}) => ({
+    id, sha: markerSha, created_at, payload: {
+      sha: markerSha, markerKind: 'deployment',
+      workflowName: 'vercel-production-platform.yaml', ...payload
+    }
+  });
+  response = [
+    marker(99, 'b'.repeat(40), '2026-01-05'),
+    marker(16, process.env.MARKER_SHA, '2026-01-01'),
+    marker(17, process.env.MARKER_SHA, '2026-01-02'),
+    marker(98, sha, '2026-01-04', {workflowName: 'other-workflow.yaml'}),
+    marker(97, sha, '2026-01-03', {markerKind: 'build'}),
+  ];
 } else if (request.endsWith('/deployments/17/statuses')) {
-  process.stdout.write(JSON.stringify([{state: process.env.MARKER_STATE}]));
+  response = [{state: process.env.MARKER_STATE}];
 } else process.exit(8);
+const projection = process.argv.indexOf('--jq');
+const json = JSON.stringify(response);
+process.stdout.write(projection < 0 ? json : execFileSync('jq',
+  ['-rc', process.argv[projection + 1]], {input: json, encoding: 'utf8'}));
 `,
     { mode: 0o755 }
   );
@@ -84,6 +101,7 @@ if (request.endsWith('/git/ref/heads/production')) {
     TRIGGER_SHA: stagingSha,
     TRIGGER_WORKFLOW: 'Supabase Staging Migration',
     PRODUCTION_SHA: productionSha,
+    PRODUCTION_TYPE: 'commit',
     DATABASE_AFFECTED: 'true',
     STAGING_RESULT: 'success',
     STAGING_SHA: productionSha,
@@ -112,7 +130,7 @@ const resolveStep = 'Resolve immutable production migration target';
 const evaluateStep = 'Evaluate prerequisite status';
 
 test('newer unpromoted staging completion resolves and gates only current production', (t) => {
-  const setup = fixture(t);
+  const setup = fixture(t, { CURRENT_SHA: workflowSha });
   assert.equal(setup.run(resolveStep).status, 0);
   assert.equal(setup.output(), `target_sha=${productionSha}\n`);
   assert.equal(
@@ -121,6 +139,7 @@ test('newer unpromoted staging completion resolves and gates only current produc
   );
   assert.match(setup.output(), /should_deploy=true/);
   assert.doesNotMatch(setup.requests(), new RegExp(stagingSha));
+  assert.doesNotMatch(setup.requests(), new RegExp(workflowSha));
   assert.match(setup.requests(), /git\/ref\/heads\/production/);
   assert.match(
     setup.requests(),
@@ -175,6 +194,7 @@ for (const [label, overrides, target] of [
 for (const overrides of [
   { PRODUCTION_SHA: '' },
   { PRODUCTION_SHA: 'short' },
+  { PRODUCTION_TYPE: 'tag' },
   { API_FAILURE: 'true' },
 ]) {
   test(`untrusted production resolution fails closed: ${JSON.stringify(overrides)}`, (t) => {
