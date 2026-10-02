@@ -406,3 +406,60 @@ test('store API and failed localization writes fail distribution', async () => {
     );
   }
 });
+
+test('exact build notes omit merge bookkeeping from an older original artifact', () => {
+  const original = {
+    ...history,
+    releases: [
+      {
+        version: identity.version,
+        changes: [
+          "Merge remote-tracking branch 'origin/main'",
+          'merge duplicate contacts',
+        ],
+      },
+    ],
+  };
+  assert.equal(
+    renderBuildTestNotes(original, identity),
+    `Please test ${identity.version}:\n- merge duplicate contacts`
+  );
+  assert.throws(
+    () =>
+      renderBuildTestNotes(
+        {
+          ...original,
+          releases: [
+            {
+              version: identity.version,
+              changes: ["Merge remote-tracking branch 'origin/main'"],
+            },
+          ],
+        },
+        identity
+      ),
+    /no product test notes/
+  );
+});
+
+test('repairs only known bookkeeping in existing English metadata, preserving genuine notes and other locales', async () => {
+  const initial = {
+    id: 'english',
+    attributes: {
+      locale: 'en-US',
+      whatsNew:
+        "Please test 0.20.4:\n- Merge remote-tracking branch 'origin/main'\n- merge duplicate contacts",
+    },
+  };
+  const api = localizationApi(initial);
+  const result = await ensureBuildWhatsNew(api.apple, 'build', () => {
+    throw new Error('Existing product notes must be preserved');
+  });
+  assert.equal(result, 'filled');
+  const write = api.calls.find((call) => call.options.method === 'PATCH');
+  assert.equal(
+    JSON.parse(write.options.body).data.attributes.whatsNew,
+    'Please test 0.20.4:\n- merge duplicate contacts'
+  );
+  assert.equal(api.calls.filter((call) => call.options.method).length, 1);
+});

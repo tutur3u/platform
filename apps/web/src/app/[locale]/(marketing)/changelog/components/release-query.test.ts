@@ -342,3 +342,25 @@ describe('facets', () => {
     ]);
   });
 });
+
+it('filters historical Git bookkeeping while preserving product merge changes', () => {
+  const notes = parseReleaseNotes(
+    "### Bug Fixes\n* **mobile:** Merge remote-tracking branch 'origin/main'\n* **contacts:** merge duplicate contacts"
+  );
+  expect(
+    notes
+      .flatMap((section) => section.changes)
+      .map((change) => change.description)
+  ).toEqual(['merge duplicate contacts']);
+});
+
+it('omits bookkeeping even when deduplication retained multiple commit links', () => {
+  const notes = parseReleaseNotes(
+    "### Bug Fixes\n* Merge remote-tracking branch 'origin/main' ([abc1234](https://github.com/tutur3u/platform/commit/abc1234)) ([def5678](https://github.com/tutur3u/platform/commit/def5678))\n* merge duplicate contacts"
+  );
+  expect(
+    notes
+      .flatMap((section) => section.changes)
+      .map((change) => change.description)
+  ).toEqual(['merge duplicate contacts']);
+});

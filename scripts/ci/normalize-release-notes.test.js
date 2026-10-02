@@ -61,3 +61,11 @@ test('supports an initial release with no previous headings', () => {
     `${header}* Fix ${commit(hash)}\n`
   );
 });
+
+test('omits known Git bookkeeping in new notes but preserves published originals and product merges', () => {
+  const input = `${header}* **mobile:** Merge remote-tracking branch 'origin/main' ${commit(hash)}\n* **contacts:** merge duplicate contacts ${commit(second)}\n${old}`;
+  assert.equal(
+    normalizeReleaseNotes(input, old),
+    `${header}* **contacts:** merge duplicate contacts ${commit(second)}\n${old}`
+  );
+});

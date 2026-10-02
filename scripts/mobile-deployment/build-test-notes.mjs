@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import policy from '../ci/release-note-policy.js';
 
 export class BetaHistoryUnavailableError extends Error {}
 
@@ -29,16 +30,23 @@ export function renderBuildTestNotes(history, identity) {
     throw new BetaHistoryUnavailableError(
       'Exact beta version history is unavailable'
     );
-  const changes = entries[0].changes;
+  const sourceChanges = entries[0].changes;
   if (
-    !Array.isArray(changes) ||
-    !changes.length ||
-    changes.some((item) => typeof item !== 'string' || !item.trim())
+    !Array.isArray(sourceChanges) ||
+    !sourceChanges.length ||
+    sourceChanges.some((item) => typeof item !== 'string' || !item.trim())
   ) {
     throw new BetaHistoryUnavailableError(
       'Exact beta version has no test notes'
     );
   }
+  const changes = sourceChanges.filter(
+    (change) => !policy.isReleaseBookkeeping(change)
+  );
+  if (!changes.length)
+    throw new BetaHistoryUnavailableError(
+      'Exact beta version has no product test notes'
+    );
   let notes = `Please test ${identity.version}:`;
   for (const change of changes) {
     const bullet = `\n- ${change.trim()}`;
@@ -70,13 +78,22 @@ export async function ensureBuildWhatsNew(apple, buildId, notes) {
       typeof english[0]?.attributes?.whatsNew === 'string' &&
       english[0].attributes.whatsNew.trim()
     ) {
-      return null;
+      const current = english[0].attributes.whatsNew;
+      if (policy.filterReleaseBookkeeping(current) === current) return null;
     }
     return english;
   };
   let english = await readEnglish();
   if (english === null) return 'preserved';
-  notes = typeof notes === 'function' ? await notes() : notes;
+  const retainedNotes = (resources) => {
+    const current = resources[0]?.attributes?.whatsNew;
+    if (typeof current !== 'string') return null;
+    const filtered = policy.filterReleaseBookkeeping(current);
+    return /(?:^|\n)\s*[-*]\s+\S/u.test(filtered) ? filtered : null;
+  };
+  notes =
+    retainedNotes(english) ??
+    (typeof notes === 'function' ? await notes() : notes);
   if (typeof notes !== 'string' || !notes.trim() || notes.length > 4000) {
     throw new BetaHistoryUnavailableError(
       'Version-specific beta test notes are unavailable'
@@ -84,6 +101,7 @@ export async function ensureBuildWhatsNew(apple, buildId, notes) {
   }
   english = await readEnglish();
   if (english === null) return 'preserved';
+  notes = retainedNotes(english) ?? notes;
   const existing = english[0];
   if (existing && !existing.id)
     throw new Error('Beta localization identity is missing');
