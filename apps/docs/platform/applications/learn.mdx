@@ -145,21 +145,54 @@ Learn metadata and auth return URLs must resolve to absolute HTTP(S) app URLs. P
 
 Do not configure Learn return URLs with the retired `tulearn.tuturuuu.com` origin. Production learner redirects should use `https://learn.tuturuuu.com`, and teacher-facing redirects should use `https://teach.tuturuuu.com`.
 
+## Programming problem catalog
+
+Programming opens its authorized catalog at `/[wsId]/programming` and each problem
+at `/[wsId]/programming/problems/[problemId]`. The legacy `/coding` entry redirects
+only after learner access is checked. Catalog pages return at most 50 summaries
+and expose a UUID continuation cursor; a selected problem remains accessible even
+when it is outside the first catalog page.
+
+Workspace authors require workspace membership, `manage_users`, and enabled
+education. Author forms can create and revise workspace problems; imported global
+problems remain read-only. Up to nine cases can be stored per problem, reserving
+the existing runner's tenth slot for a learner's custom test. Revision conflicts
+preserve the author's form so another author's changes are not overwritten.
+Learners receive published problem data and visible cases; hidden cases remain
+behind the authorized server boundary.
+
+Editor code, language, custom input, and inspected result selection persist per
+tab in session storage scoped to actor, workspace, learner, and problem. When
+storage is unavailable, drafts use memory for the current tab. History and polling
+bind to the opaque problem UUID; only the three audited imported global problems
+may read never-bound legacy slug history. Deleting a problem preserves existing
+submission history through its permanent identity binding.
+
+These decisions apply to the Learn catalog, problem workspace, author forms, and
+shared Programming lab. Backend access, case capacity, pagination, history, and
+subject regressions live in `packages/education-core/src/education/programming-*.test.ts`
+and `apps/web/src/lib/programming-api.test.ts`. Learn actor/history regressions
+live in `apps/learn/src/lib/programming/server.test.ts` and
+`apps/learn/src/lib/coding/programming-store.test.ts`; scoped draft regressions
+live in `apps/learn/src/lib/programming/drafts.test.ts`. The mounted canonical
+harness in `apps/learn/tests/programming-workspace/run-canonical.mjs` uses synthetic
+Next navigation and server-action adapters and does not replace authenticated
+Next/API/database integration evidence.
+
 ## Verification
 
-After changing Learn routes, run focused route tests first. Finish Learn API or
-UI changes with the app typecheck, repository checks, and the owning app build:
+After changing Learn routes, run focused non-build route or component tests
+locally. Run applicable typecheck, lint, tests, and the owning Learn build in CI for
+the exact candidate commit. Do not run `bun check` or a product build locally;
+their task graphs may compile workspace dependencies.
 
-```bash
-bun type-check:learn
-bun check
-bun run --cwd apps/learn build
-```
-
-Schema changes additionally require `bun sb:up` and `bun sb:typegen`; message
-changes require `bun i18n:sort`. Run focused route or component tests around
-parent read-only access, student-only writes, XP idempotency, assignment
-completion, marks, and reports when those behaviors change.
+For the owning Learn build, dispatch `.github/workflows/vercel-preview-learn.yaml`
+on trusted `main` with `preview_ref` set to the immutable candidate SHA. Verify
+the checked-out source SHA and successful build step separately from preview
+deployment. Schema changes require disposable full-schema replay and generated
+types before integration; message changes require `bun i18n:sort`. Cover parent
+read-only access, student-only writes, XP idempotency, assignments, marks, and
+reports when those behaviors change.
 
 ## CI and deployment
 
@@ -168,7 +201,7 @@ Learn has dedicated Vercel workflows:
 - `.github/workflows/vercel-preview-learn.yaml`
 - `.github/workflows/vercel-production-learn.yaml`
 
-Both workflows are registered in `tuturuuu.ts` and use the shared `ci-check.yml` switchboard. They require environment-scoped Vercel credentials plus `VERCEL_LEARN_PROJECT_ID`; production Supabase values should live in the Vercel project environment rather than GitHub Actions.
+Production uses the shared workflow switchboard. Preview runs only by trusted manual dispatch on `main`, then checks out the supplied `preview_ref`. They require environment-scoped Vercel credentials plus `VERCEL_LEARN_PROJECT_ID`; production Supabase values should live in the Vercel project environment rather than GitHub Actions.
 
 Deployment credentials must stay environment-scoped in GitHub Actions. The preview job is bound to the `vercel-preview-learn` GitHub Environment, and the production job is bound to `vercel-production-learn`. Store `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_LEARN_PROJECT_ID` in those environments instead of repository-wide or organization-wide secrets. Production Supabase values remain in the Vercel project environment pulled by `vercel pull`. The repository-level `TURBO_TOKEN` and `TURBO_TEAM` variable are passed only to the wrapped `vercel build` step; never place them at workflow or job scope, and never expose the token to pull-request or Dependabot code.
 
