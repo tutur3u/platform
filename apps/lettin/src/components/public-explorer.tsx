@@ -76,7 +76,7 @@ export function PublicExplorer({
               <h2 className="break-words text-4xl leading-none">
                 {world.published.title}
               </h2>
-              <p className="lettin-serif my-4 line-clamp-3 text-sm leading-relaxed">
+              <p className="lettin-summary my-4 line-clamp-3 text-sm leading-relaxed">
                 {world.published.description}
               </p>
               <p className="border-border border-t-2 pt-3 font-bold text-xs uppercase tracking-wider">

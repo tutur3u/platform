@@ -3,10 +3,7 @@ import {
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
-import {
-  getPendingWorkspaceInvitation,
-  SatelliteWorkspaceInvitationCard,
-} from '@tuturuuu/satellite/workspace-invitation';
+import { getPendingWorkspaceInvitation } from '@tuturuuu/satellite/workspace-invitation';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -14,6 +11,7 @@ import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { Brand } from '@/components/brand';
+import { WorkspaceInvitation } from '@/components/workspace-invitation';
 import { WorkspaceNavigation } from '@/components/workspace-navigation';
 import { WorkspacePicker } from '@/components/workspace-picker';
 import { WEB_APP_URL } from '@/constants/common';
@@ -40,11 +38,7 @@ export default async function Layout({
       return (
         <div className="notebook-theme min-h-screen">
           <Brand />
-          <SatelliteWorkspaceInvitationCard
-            invitation={invitation}
-            afterDeclineHref="/dashboard"
-            workspaceHref={`/${invitation.workspace.id}`}
-          />
+          <WorkspaceInvitation invitation={invitation} />
         </div>
       );
     redirect('/dashboard');

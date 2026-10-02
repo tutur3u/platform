@@ -94,7 +94,10 @@ export function CreatorToolkit({
             </div>
             <ArrowUpRight size={16} />
           </a>
-          <a className="toolkit-link" href={appOrigin('meet')}>
+          <a
+            className="toolkit-link"
+            href={`${appOrigin('meet')}${workspacePath}`}
+          >
             <Video size={22} />
             <div>
               <h3>{t('toolMeet')}</h3>

@@ -52,10 +52,9 @@
   border-radius: 0.8rem;
   overflow: hidden;
   background: var(--card);
-  transition: transform 300ms ease;
+  transition: border-color 300ms ease;
 }
 .space-door:hover {
-  transform: none;
   border-color: var(--accent);
 }
 .space-door:focus-visible {
@@ -81,10 +80,6 @@
 }
 .space-door-art > svg {
   position: relative;
-  transition: transform 350ms ease;
-}
-.space-door:hover .space-door-art > svg {
-  transform: none;
 }
 .space-door-for-story .space-door-art {
   background: var(--secondary);
@@ -104,12 +99,6 @@
 }
 .space-door-copy {
   padding: 1.5rem;
-}
-.space-door-copy > p {
-  font-size: 0.55rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--muted-foreground);
 }
 .space-door-copy h3 {
   display: flex;
@@ -166,12 +155,6 @@
   }
   .space-door-art {
     height: 10rem;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .space-door:hover,
-  .space-door:hover .space-door-art > svg {
-    transform: none;
   }
 }
 .workspace-creative-nav {

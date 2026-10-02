@@ -12,6 +12,10 @@ describe('creative spaces and saved starters', () => {
     expect(belongsToSpace(draft, 'art')).toBe(false);
     expect(draft.tags).toEqual(['fantasy']);
   });
+  it('places historical drafts without tags in worldbuilding', () => {
+    expect(belongsToSpace({}, 'world')).toBe(true);
+    expect(belongsToSpace({}, 'art')).toBe(false);
+  });
   it('allows a project in multiple spaces and handles mixed-case tags', () => {
     const draft = { tags: ['ART', 'Story'] };
     expect(belongsToSpace(draft, 'art')).toBe(true);

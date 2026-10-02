@@ -41,7 +41,6 @@
   letter-spacing: -0.025em;
 }
 
-.lettin-serif,
 .lettin-prose,
 .lettin-editor .tiptap {
   font-family: var(--font-lettin-editorial), Georgia, serif;

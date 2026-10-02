@@ -251,7 +251,7 @@
   font-size: clamp(2rem, 4vw, 3rem);
   line-height: 1.12;
 }
-.lettin-serif {
+.lettin-summary {
   font-family: var(--font-lettin-body), sans-serif;
 }
 .lettin-workspace-bar {
@@ -320,4 +320,12 @@
   .notebook-theme button {
     transition: none;
   }
+}
+
+.lettin-kicker {
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }

@@ -63,7 +63,7 @@ export function Studio({
         {space && <SpaceArtwork space={space} />}
         <div>
           <h1>{t(space ? `space${space}Title` : 'myWorlds')}</h1>
-          <p className="lettin-serif mt-4 max-w-xl text-lg">
+          <p className="lettin-summary mt-4 max-w-xl text-lg">
             {t(space ? `space${space}Hint` : 'studioDescription')}
           </p>
         </div>

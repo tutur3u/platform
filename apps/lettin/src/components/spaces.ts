@@ -6,10 +6,10 @@ export function isCreativeSpace(value: string): value is CreativeSpace {
 }
 /** Editable tags keep spaces additive without changing content or access storage. */
 export function belongsToSpace(
-  draft: Pick<LettinDraft, 'tags'>,
+  draft: Partial<Pick<LettinDraft, 'tags'>>,
   space: CreativeSpace
 ) {
-  const tags = draft.tags.map((tag) => tag.toLowerCase());
+  const tags = (draft.tags ?? []).map((tag) => tag.toLowerCase());
   if (space === 'world')
     return (
       tags.includes('world') ||

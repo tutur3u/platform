@@ -4,7 +4,7 @@ import type { LettinOverview } from '@tuturuuu/internal-api/lettin';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from '@/i18n/navigation';
 export function WorldShelf({
   wsId,
@@ -23,11 +23,16 @@ export function WorldShelf({
       (filter === 'published' ? !!world.published_at : !world.published_at);
     return (
       matchesStatus &&
-      `${world.draft.title} ${world.draft.description} ${world.draft.tags.join(' ')}`
+      `${world.draft.title} ${world.draft.description} ${(world.draft.tags ?? []).join(' ')}`
         .toLocaleLowerCase()
         .includes(search.toLocaleLowerCase())
     );
   });
+  const [announcedCount, setAnnouncedCount] = useState(worlds.length);
+  useEffect(() => {
+    const timer = setTimeout(() => setAnnouncedCount(worlds.length), 500);
+    return () => clearTimeout(timer);
+  }, [worlds.length]);
   return (
     <section aria-label={t('myWorlds')}>
       <div className="studio-stats mb-6">
@@ -72,7 +77,7 @@ export function WorldShelf({
         </fieldset>
       </div>
       <p role="status" className="sr-only">
-        {t('worldCount', { count: worlds.length })}
+        {t('worldCount', { count: announcedCount })}
       </p>
       {!worlds.length && (
         <div className="notebook-paper p-8">
@@ -121,12 +126,12 @@ export function WorldShelf({
               <h2 className="mt-3 break-words text-4xl leading-none">
                 {world.draft.title}
               </h2>
-              <p className="lettin-serif mt-3 line-clamp-2 text-sm leading-relaxed">
+              <p className="lettin-summary mt-3 line-clamp-2 text-sm leading-relaxed">
                 {world.draft.description || t('worldWaiting')}
               </p>
               <div className="mt-5 flex flex-wrap gap-2 border-border/20 border-t pt-3 text-xs">
                 <span>{t(world.role)}</span>
-                {world.draft.tags.slice(0, 3).map((tag, index) => (
+                {(world.draft.tags ?? []).slice(0, 3).map((tag, index) => (
                   <span
                     key={`${index}-${tag}`}
                     className="rounded-full bg-muted px-2 py-0.5"
