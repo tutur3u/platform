@@ -108,7 +108,14 @@ export function command(
         {
           docker: 'docker-command',
           git: 'git-command',
-          sudo: 'policy-command',
+          sudo:
+            {
+              cat: 'policy-daemon',
+              bpftool: 'policy-kernel',
+              systemctl: 'policy-slice',
+              iptables: 'policy-firewall',
+              ip6tables: 'policy-firewall',
+            }[args[1]] ?? 'policy-command',
         }[binary] ?? 'command';
       throw new CliProbeFailure(phase, error.outcome);
     }

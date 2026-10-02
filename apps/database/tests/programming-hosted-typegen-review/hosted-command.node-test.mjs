@@ -9,6 +9,7 @@ import {
   hostedDockerEndpoint,
 } from './cli-environment.mjs';
 import { runHostedCommand } from './hosted-command.mjs';
+import { CliProbeFailure, verificationFailureStatus } from './native-cli.mjs';
 import {
   firewallRules,
   networkPolicy,
@@ -197,3 +198,23 @@ test('actual policy verifier routes every read through the admitted proposal com
   assert.equal(observed.length, 10);
   assert.deepEqual(result.programIds, [1, 2]);
 });
+
+for (const [binary, args, phase] of [
+  ['docker', ['ps'], 'docker-command'],
+  ['git', ['rev-parse', 'HEAD'], 'git-command'],
+  ['sudo', ['-n', 'bpftool'], 'policy-kernel'],
+  ['sudo', ['-n', 'iptables'], 'policy-firewall'],
+]) {
+  test(`failed ${binary} command exposes only its fixed phase`, async (t) => {
+    const { context } = await fixture(t);
+    await assert.rejects(
+      command(binary, args, 5000, 1024, {
+        context: () => context,
+        execute: () => Promise.reject(new CliProbeFailure('command', 'failed')),
+      }),
+      (error) =>
+        verificationFailureStatus('prepare', error) ===
+        `Programming verification phase=${phase} outcome=failed`
+    );
+  });
+}
