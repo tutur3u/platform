@@ -1,14 +1,11 @@
 import type { MetadataRoute } from 'next';
 import { siteConfig } from '@/constants/configs';
 
-const PRIVATE_OR_TRANSITIONAL_PATHS = [
+// Leave redirect aliases crawlable so search engines can consolidate canonicals.
+const PRIVATE_PATHS = [
   '/api/',
   '/account/delete',
   '/vi/account/delete',
-  '/calendar/meet-together',
-  '/vi/calendar/meet-together',
-  '/calendar/meet-together/',
-  '/vi/calendar/meet-together/',
   '/invite/',
   '/vi/invite/',
   '/login',
@@ -17,12 +14,6 @@ const PRIVATE_OR_TRANSITIONAL_PATHS = [
   '/vi/logout',
   '/onboarding',
   '/vi/onboarding',
-  '/pricing',
-  '/vi/pricing',
-  '/products/meet-together',
-  '/vi/products/meet-together',
-  '/qr-generator',
-  '/vi/qr-generator',
   '/share/',
   '/vi/share/',
   '/users/',
@@ -34,7 +25,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: PRIVATE_OR_TRANSITIONAL_PATHS,
+      disallow: PRIVATE_PATHS,
     },
     sitemap: new URL('/sitemap.xml', siteConfig.url).toString(),
     host: siteConfig.url,

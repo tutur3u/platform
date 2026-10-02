@@ -18462,6 +18462,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save other changes before changing the Google color.'**
   String get calendarProviderColorSeparateEdit;
+
+  /// No description provided for @workspaceHiddenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden workspaces'**
+  String get workspaceHiddenTitle;
+
+  /// No description provided for @workspaceHideAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get workspaceHideAction;
+
+  /// No description provided for @workspaceRestoreAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get workspaceRestoreAction;
+
+  /// No description provided for @workspaceHiddenDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you can see this list. Hiding does not change membership or notifications.'**
+  String get workspaceHiddenDescription;
+
+  /// No description provided for @workspaceHiddenEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No Hidden workspaces'**
+  String get workspaceHiddenEmpty;
+
+  /// No description provided for @workspaceHiddenLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to refresh Hidden workspaces. Your saved list is kept.'**
+  String get workspaceHiddenLoadError;
+
+  /// No description provided for @workspaceHiddenUpdateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to save this change. Try again when connected.'**
+  String get workspaceHiddenUpdateError;
+
+  /// No description provided for @workspaceAllHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Your workspaces are hidden. Restore one to continue.'**
+  String get workspaceAllHidden;
+
+  /// No description provided for @workspacePickerClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close workspace picker'**
+  String get workspacePickerClose;
+
+  /// No description provided for @offlineEditSyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing…'**
+  String get offlineEditSyncing;
+
+  /// No description provided for @inventoryProductDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this product? If existing sales reference it, the server will archive it when syncing.'**
+  String get inventoryProductDeleteConfirm;
+
+  /// No description provided for @inventorySeasonPriceCached.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline draft using saved season prices. Prices and availability will be checked when syncing.'**
+  String get inventorySeasonPriceCached;
+
+  /// No description provided for @offlinePreparationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Available offline'**
+  String get offlinePreparationTitle;
+
+  /// No description provided for @offlinePreparationCacheAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Download all'**
+  String get offlinePreparationCacheAll;
+
+  /// No description provided for @offlinePreparationDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Download workspace data for offline use. Cached data uses your storage limit; files and online services may still need connectivity.'**
+  String get offlinePreparationDescription;
+
+  /// No description provided for @offlinePreparationQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Not downloaded'**
+  String get offlinePreparationQueued;
+
+  /// No description provided for @offlinePreparationWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued'**
+  String get offlinePreparationWaiting;
+
+  /// No description provided for @offlinePreparationDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading'**
+  String get offlinePreparationDownloading;
+
+  /// No description provided for @offlinePreparationReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded'**
+  String get offlinePreparationReady;
+
+  /// No description provided for @offlinePreparationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Download failed'**
+  String get offlinePreparationFailed;
+
+  /// No description provided for @offlinePreparationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get offlinePreparationUnavailable;
+
+  /// No description provided for @offlinePreparationLastSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Last downloaded: {time}'**
+  String offlinePreparationLastSuccess(String time);
+
+  /// No description provided for @offlinePreparationProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{completed} of {total} modules downloaded'**
+  String offlinePreparationProgress(int completed, int total);
+
+  /// No description provided for @offlinePreparationNeedsRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs refresh'**
+  String get offlinePreparationNeedsRefresh;
+
+  /// No description provided for @inventoryCheckoutReconcileCart.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconcile cart'**
+  String get inventoryCheckoutReconcileCart;
+
+  /// No description provided for @inventoryCheckoutReconcileCartHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh prices and remove items that no longer match this period.'**
+  String get inventoryCheckoutReconcileCartHelp;
+
+  /// No description provided for @inventoryCheckoutCartReconciled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cart updated. Review the total before submitting.'**
+  String get inventoryCheckoutCartReconciled;
+
+  /// No description provided for @inventoryCheckoutCartRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed {count} unavailable items. Review the cart before submitting.'**
+  String inventoryCheckoutCartRemoved(int count);
+
+  /// No description provided for @inventoryCheckoutPeriodRulesChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Some items do not match this period. Reconcile the cart to continue.'**
+  String get inventoryCheckoutPeriodRulesChanged;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

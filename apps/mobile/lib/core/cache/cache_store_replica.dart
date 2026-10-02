@@ -107,19 +107,21 @@ extension CacheStoreReplica on CacheStore {
   Iterable<Map<String, dynamic>> _extractReplicaRows(Object? value) sync* {
     if (value is List) {
       for (final row in value.take(1000)) {
-        if (row is Map && row['id'] is String) {
-          yield Map<String, dynamic>.from(row);
+        if (row is Map) {
+          final id = row['id'] ?? row['auditRecordId'];
+          if (id is String) yield {...Map<String, dynamic>.from(row), 'id': id};
         }
       }
       return;
     }
     if (value is! Map) return;
-    if (value['id'] is String) {
-      yield Map<String, dynamic>.from(value);
+    final id = value['id'] ?? value['auditRecordId'];
+    if (id is String) {
+      yield {...Map<String, dynamic>.from(value), 'id': id};
       return;
     }
     for (final nested in value.values) {
-      if (nested is List) yield* _extractReplicaRows(nested);
+      if (nested is List || nested is Map) yield* _extractReplicaRows(nested);
     }
   }
 
@@ -279,6 +281,7 @@ extension CacheStoreReplica on CacheStore {
     await _mutationBox.close();
     await _entityBox.close();
     _memory.clear();
+    _refreshTasks.clear();
     _resourceBytes = 0;
     _entityBytes = 0;
     _initialized = false;

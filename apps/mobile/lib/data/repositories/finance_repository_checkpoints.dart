@@ -13,7 +13,7 @@ extension FinanceRepositoryCheckpoints on FinanceRepository {
         namespace: walletId == null
             ? 'finance.checkpointSummary'
             : 'finance.checkpointList',
-        userId: currentCacheUserId(),
+        userId: _cacheUserId(),
         workspaceId: wsId,
         params: {
           if (walletId != null) 'walletId': walletId,
@@ -27,21 +27,44 @@ extension FinanceRepositoryCheckpoints on FinanceRepository {
     T Function(Map<String, dynamic>) decode, {
     bool forceRefresh = false,
   }) async {
-    final cached = await CacheStore.instance.prefetch<T>(
-      key: key,
-      policy: _checkpointPolicy,
-      tags: ['finance:checkpoints', 'workspace:${key.workspaceId}'],
-      decode: (json) => decode(Map<String, dynamic>.from(json! as Map)),
-      fetch: fetch,
-      forceRefresh: forceRefresh,
-    );
+    T decodePayload(Object? json) =>
+        decode(Map<String, dynamic>.from(json! as Map));
+    CacheReadResult<T> cached;
+    try {
+      cached = await _cacheStore.prefetch<T>(
+        key: key,
+        policy: _checkpointPolicy,
+        tags: [
+          'module:finance',
+          'finance:checkpoints',
+          'workspace:${key.workspaceId}',
+        ],
+        decode: decodePayload,
+        fetch: () async {
+          try {
+            return await fetch();
+          } on ApiException catch (error) {
+            if (error.statusCode == 401 ||
+                (error.statusCode == 403 && !error.isVerificationRequired)) {
+              await _cacheStore.remove(key);
+            }
+            rethrow;
+          }
+        },
+        forceRefresh: forceRefresh,
+      );
+    } on Object catch (error) {
+      if (!isOfflineTransportFailure(error)) rethrow;
+      cached = await _cacheStore.read<T>(key: key, decode: decodePayload);
+      if (!cached.hasValue) rethrow;
+    }
     if (cached.data == null) {
       throw StateError('Wallet checkpoints are unavailable.');
     }
     return cached.data as T;
   }
 
-  Future<void> _invalidateCheckpoints(String wsId) => CacheStore.instance
+  Future<void> _invalidateCheckpoints(String wsId) => _cacheStore
       .invalidateTags(const ['finance:checkpoints'], workspaceId: wsId);
 
   Future<WalletCheckpointSummaryResponse> getWalletCheckpointSummary({
@@ -74,10 +97,7 @@ extension FinanceRepositoryCheckpoints on FinanceRepository {
         forceRefresh: forceRefresh,
       );
     } on Object catch (error) {
-      if (error is ApiException && error.statusCode != 0 ||
-          error is! ApiException && error is! StateError) {
-        rethrow;
-      }
+      if (!isOfflineTransportFailure(error)) rethrow;
       confirmed = const WalletCheckpointListResponse(data: [], intervals: []);
     }
     return _overlayPendingCheckpoints(wsId, walletId, confirmed);
@@ -97,6 +117,7 @@ extension FinanceRepositoryCheckpoints on FinanceRepository {
       'note': note,
     };
     final checkpoint = await queueOrSendValue<WalletCheckpoint>(
+      queue: _mutationQueue,
       feature: 'finance',
       method: 'POST',
       path: path,
@@ -127,6 +148,7 @@ extension FinanceRepositoryCheckpoints on FinanceRepository {
       'entries': entries.map((entry) => entry.toJson()).toList(),
     };
     final batch = await queueOrSendValue<WalletCheckpointBatchResponse>(
+      queue: _mutationQueue,
       feature: 'finance',
       method: 'POST',
       path: path,
@@ -161,6 +183,7 @@ extension FinanceRepositoryCheckpoints on FinanceRepository {
       'note': note,
     };
     final checkpoint = await queueOrSendValue<WalletCheckpoint>(
+      queue: _mutationQueue,
       feature: 'finance',
       method: 'PATCH',
       path: path,
@@ -192,6 +215,7 @@ extension FinanceRepositoryCheckpoints on FinanceRepository {
       checkpointId,
     );
     await queueOrSendVoid(
+      queue: _mutationQueue,
       feature: 'finance',
       method: 'DELETE',
       path: path,
@@ -224,6 +248,7 @@ extension FinanceRepositoryCheckpoints on FinanceRepository {
     };
     final response =
         await queueOrSendValue<WalletCheckpointReconciliationResponse>(
+          queue: _mutationQueue,
           feature: 'finance',
           method: 'POST',
           path: path,

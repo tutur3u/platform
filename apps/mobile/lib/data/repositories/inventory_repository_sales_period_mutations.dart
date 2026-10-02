@@ -79,6 +79,7 @@ extension InventorySalesPeriodMutations on InventoryRepository {
       'product_ids': productScope == 'all' ? <String>[] : productIds,
     };
     final period = await queueOrSendValue<InventorySalesPeriod>(
+      queue: _mutationQueue,
       feature: 'inventory',
       method: 'POST',
       path: path,
@@ -133,6 +134,7 @@ extension InventorySalesPeriodMutations on InventoryRepository {
       if (status != null) 'status': status,
     };
     final period = await queueOrSendValue<InventorySalesPeriod>(
+      queue: _mutationQueue,
       feature: 'inventory',
       method: 'PATCH',
       path: path,

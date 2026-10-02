@@ -1,4 +1,13 @@
 {
+  "account_switcher": {
+    "accounts": "Accounts",
+    "current_account": "Current Account",
+    "manage_accounts": "Manage Accounts",
+    "please_wait": "Please wait...",
+    "remove_account": "Remove account",
+    "switch_account": "Switch Account",
+    "unknown_user": "Unknown User"
+  },
   "ai_chat": {
     "incorrect": "incorrect"
   },
@@ -161,6 +170,7 @@
     "add_option": "Add option",
     "affected-product-required": "Affected Product *",
     "all": "All",
+    "all_workspaces_hidden": "All your workspaces are Hidden. Restore one to choose a workspace.",
     "apply_filters": "Apply filters",
     "ascending": "Ascending",
     "attempt": "Attempt",
@@ -173,6 +183,7 @@
       "unchecked": "To do"
     },
     "clear": "Clear",
+    "clear_search": "Clear search",
     "close": "Close",
     "collapsed": "Collapsed",
     "completed": "Completed",
@@ -181,9 +192,11 @@
     "context": "Context",
     "continue": "Continue",
     "correct": "Correct",
+    "current_workspace": "Current workspace",
     "dark": "Dark",
     "dashboard": "Dashboard",
     "date": "Date",
+    "default_workspace": "Default workspace",
     "delete": "Delete",
     "descending": "Descending",
     "duration": "Duration",
@@ -200,7 +213,13 @@
     "generate_explanation": "Generate explanation",
     "generate_with_ai": "Generate with AI",
     "hidden": "Hidden",
+    "hidden_workspaces": "Hidden workspaces",
+    "hidden_workspaces_description": "Only you can see this list. Restore a workspace to show it in your workspace lists. Your access and other members are unchanged.",
+    "hidden_workspaces_empty": "You have no Hidden workspaces",
+    "hidden_workspaces_load_error": "Unable to load Hidden workspaces. Retry when you are online.",
+    "hidden_workspaces_update_error": "Unable to update Hidden workspaces. Your previous choice was restored.",
     "hide_sidebar": "Hide sidebar",
+    "hide_workspace": "Hide workspace",
     "home": "Home",
     "language": "Language",
     "light": "Light",
@@ -210,6 +229,7 @@
     "media-optional": "Media Files (Optional)",
     "next": "Next",
     "no_content_yet": "No content yet",
+    "no_workspace_found": "No workspaces found",
     "open": "Open",
     "option": "Option",
     "order": "Order",
@@ -223,11 +243,13 @@
     "report-problem": "Leave a Feedback",
     "report-problem-description": "Help us improve by reporting issues you've encountered. Your feedback is valuable to us.",
     "report-submitted-success": "Report submitted successfully! Thank you for your feedback.",
+    "restore_workspace": "Restore workspace",
     "retry": "Retry",
     "save": "Save",
     "saved": "All changes saved",
     "saving": "Saving...",
     "score": "Score",
+    "search_workspace": "Search workspaces",
     "select-product-placeholder": "Select the product with the issue",
     "selected": "selected",
     "settings": "Settings",
@@ -1366,14 +1388,5 @@
       "private": "Private",
       "workspace": "Workspace"
     }
-  },
-  "account_switcher": {
-    "accounts": "Accounts",
-    "current_account": "Current Account",
-    "manage_accounts": "Manage Accounts",
-    "please_wait": "Please wait...",
-    "remove_account": "Remove account",
-    "switch_account": "Switch Account",
-    "unknown_user": "Unknown User"
   }
 }

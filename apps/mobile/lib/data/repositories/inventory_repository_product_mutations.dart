@@ -1,6 +1,28 @@
 part of 'inventory_repository.dart';
 
 extension InventoryProductMutations on InventoryRepository {
+  Future<void> deleteProduct({
+    required String wsId,
+    required String productId,
+  }) async {
+    final path = InventoryEndpoints.product(wsId, productId);
+    await queueOrSendVoid(
+      queue: _mutationQueue,
+      feature: 'inventory',
+      method: 'DELETE',
+      path: path,
+      workspaceId: wsId,
+      entityId: productId,
+      send: () async {
+        await _api.deleteJson(path);
+      },
+    );
+    await _invalidateInventory(wsId, const [
+      'inventory:overview',
+      'inventory:catalog',
+    ]);
+  }
+
   Future<void> createProduct({
     required String wsId,
     required String name,
@@ -24,7 +46,7 @@ extension InventoryProductMutations on InventoryRepository {
       financeCategoryId: financeCategoryId,
     );
     final id = newLocalMutationId();
-    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+    if (await _mutationQueue.enqueueIfOffline(
       feature: 'inventory',
       method: 'POST',
       path: path,
@@ -37,7 +59,7 @@ extension InventoryProductMutations on InventoryRepository {
     try {
       await _api.postJson(path, payload);
     } on ApiException catch (error) {
-      if (!await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+      if (!await _mutationQueue.enqueueAfterNetworkFailure(
         error: error,
         feature: 'inventory',
         method: 'POST',
@@ -79,7 +101,7 @@ extension InventoryProductMutations on InventoryRepository {
       usage: usage,
       financeCategoryId: financeCategoryId,
     );
-    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+    if (await _mutationQueue.enqueueIfOffline(
       feature: 'inventory',
       method: 'PATCH',
       path: path,
@@ -92,7 +114,7 @@ extension InventoryProductMutations on InventoryRepository {
     try {
       await _api.patchJson(path, payload);
     } on ApiException catch (error) {
-      if (!await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+      if (!await _mutationQueue.enqueueAfterNetworkFailure(
         error: error,
         feature: 'inventory',
         method: 'PATCH',

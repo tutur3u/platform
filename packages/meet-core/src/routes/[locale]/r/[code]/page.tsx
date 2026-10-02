@@ -11,6 +11,7 @@ import { getMeetingPublicInfo } from '@tuturuuu/meet-core/features/call/lib/meet
 import { decodeRoomCode } from '@tuturuuu/meet-core/features/call/lib/room-code';
 import { readMeetingRoomPolicy } from '@tuturuuu/meet-core/features/meeting-ai/server/room-access';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
@@ -96,21 +97,23 @@ export default async function RoomPage({
   });
   if (policy.ended)
     return (
-      <CallEnded
-        accountId={user.id}
-        initialShowNotes={(await searchParams)?.notes === '1'}
-        canManage={isHost}
-        canReadNotes={policy.canReadNotes}
-        shareNotesAfterMeeting={policy.settings?.shareNotesAfterMeeting}
-        meetingId={meetingId}
-        wsId={wsId}
-        meetingName={meeting.name ?? t('untitled_meeting')}
-        backHref={
-          MEETING_APP !== 'parley' && canReadWorkspace
-            ? `/${workspaceSlug}/meetings`
-            : '/'
-        }
-      />
+      <WorkspaceVisibilityProvider actorId={user.id}>
+        <CallEnded
+          accountId={user.id}
+          initialShowNotes={(await searchParams)?.notes === '1'}
+          canManage={isHost}
+          canReadNotes={policy.canReadNotes}
+          shareNotesAfterMeeting={policy.settings?.shareNotesAfterMeeting}
+          meetingId={meetingId}
+          wsId={wsId}
+          meetingName={meeting.name ?? t('untitled_meeting')}
+          backHref={
+            MEETING_APP !== 'parley' && canReadWorkspace
+              ? `/${workspaceSlug}/meetings`
+              : '/'
+          }
+        />
+      </WorkspaceVisibilityProvider>
     );
   if (access.needsDisplayName)
     return (
@@ -122,15 +125,17 @@ export default async function RoomPage({
     );
 
   return (
-    <CallShell
-      accountId={user.id}
-      defaultDisplayName={displayName}
-      defaultAvatarUrl={avatarUrl}
-      leaveHref={leaveHref}
-      canReadWorkspace={canReadWorkspace}
-      meetingId={meeting.id}
-      meetingName={meeting.name ?? t('untitled_meeting')}
-      wsId={wsId}
-    />
+    <WorkspaceVisibilityProvider actorId={user.id}>
+      <CallShell
+        accountId={user.id}
+        defaultDisplayName={displayName}
+        defaultAvatarUrl={avatarUrl}
+        leaveHref={leaveHref}
+        canReadWorkspace={canReadWorkspace}
+        meetingId={meeting.id}
+        meetingName={meeting.name ?? t('untitled_meeting')}
+        wsId={wsId}
+      />
+    </WorkspaceVisibilityProvider>
   );
 }

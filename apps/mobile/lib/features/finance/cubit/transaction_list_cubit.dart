@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:mobile/core/cache/cache_context.dart';
@@ -16,17 +18,57 @@ class TransactionListCubit extends Cubit<TransactionListState> {
   TransactionListCubit({
     required FinanceRepository financeRepository,
     TransactionListState? initialState,
+    CacheStore? cacheStore,
+    String? Function()? currentUserId,
   }) : _repo = financeRepository,
-       super(initialState ?? const TransactionListState());
+       _store = cacheStore ?? CacheStore.instance,
+       _currentUserId = currentUserId ?? currentCacheUserId,
+       super(initialState ?? const TransactionListState()) {
+    OfflineMutationQueue.instance.syncRevision.addListener(_onOfflineSync);
+  }
+
+  void _onOfflineSync() {
+    if (isClosed || _wsId.isEmpty) {
+      return;
+    }
+    unawaited(
+      _fetch(replaceExisting: true).then<void>((_) {}, onError: (Object _) {}),
+    );
+  }
+
+  @override
+  Future<void> close() {
+    _generation++;
+    OfflineMutationQueue.instance.syncRevision.removeListener(_onOfflineSync);
+    return super.close();
+  }
 
   final FinanceRepository _repo;
+  final CacheStore _store;
+  final String? Function() _currentUserId;
+  int _generation = 0;
+  String? _loadedUserId;
+
+  bool _isCurrent(int generation, String? userId, String wsId, String search) =>
+      !isClosed &&
+      generation == _generation &&
+      _currentUserId() == userId &&
+      _wsId == wsId &&
+      state.search == search;
+
+  CacheKey _requestKey(String wsId, String? userId, String search) => CacheKey(
+    namespace: 'finance.transactions',
+    userId: userId,
+    workspaceId: wsId,
+    locale: currentCacheLocaleTag(),
+    params: {'search': search},
+  );
   static const CachePolicy _cachePolicy = CachePolicies.moduleData;
   static const _cacheTag = 'finance:transactions';
   static final Map<String, _TransactionListCacheEntry> _cache = {};
 
   String _wsId = '';
   String? _loadedWorkspaceId;
-  String get _cacheKey => userScopedCacheKey('$_wsId::${state.search}');
 
   static Map<String, dynamic> _decodeCacheJson(Object? json) {
     if (json is! Map) {
@@ -62,18 +104,37 @@ class TransactionListCubit extends Cubit<TransactionListState> {
 
   /// Initialise with workspace ID and load the first page.
   Future<void> load(String wsId, {bool forceRefresh = false}) async {
+    if (isClosed) {
+      return;
+    }
+    final generation = ++_generation;
+    final userId = _currentUserId();
+    final hasVisibleData =
+        _loadedWorkspaceId == wsId && _loadedUserId == userId;
     _wsId = wsId;
-    final cacheId = userScopedCacheKey('$wsId::');
+    emit(
+      hasVisibleData
+          ? state.copyWith(
+              search: '',
+              status: TransactionListStatus.loading,
+              clearCursor: true,
+              clearError: true,
+            )
+          : const TransactionListState(status: TransactionListStatus.loading),
+    );
+    final cacheId = '${userId ?? 'anonymous'}::$wsId::';
     final cached = _cache[cacheId];
-    final diskCached = await CacheStore.instance.read<TransactionListState>(
-      key: _storeKey(wsId),
+    final diskCached = await _store.read<TransactionListState>(
+      key: _requestKey(wsId, userId, ''),
       decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
     );
+    if (!_isCurrent(generation, userId, wsId, '')) {
+      return;
+    }
     final resolvedCached = cached?.state ?? diskCached.data;
-    final hasResolvedCache = resolvedCached != null;
-
-    if (!forceRefresh && hasResolvedCache) {
+    if (resolvedCached != null && (!forceRefresh || !hasVisibleData)) {
       _loadedWorkspaceId = wsId;
+      _loadedUserId = userId;
       emit(resolvedCached);
       emit(
         resolvedCached.copyWith(
@@ -83,48 +144,53 @@ class TransactionListCubit extends Cubit<TransactionListState> {
           clearError: true,
         ),
       );
-    } else if (_loadedWorkspaceId != wsId) {
-      emit(
-        state.copyWith(
-          status: TransactionListStatus.loading,
-          transactions: [],
-          workspaceCurrency: '',
-          exchangeRates: const <ExchangeRate>[],
-          hasMore: true,
-          clearCursor: true,
-          clearError: true,
-          search: '',
-        ),
-      );
-    } else {
-      emit(
-        state.copyWith(status: TransactionListStatus.loading, clearError: true),
-      );
     }
 
-    final workspaceCurrencyFuture = _repo.getWorkspaceDefaultCurrency(wsId);
-    final exchangeRatesFuture = _repo.getExchangeRates().catchError(
-      (_) => <ExchangeRate>[],
-    );
+    try {
+      final workspaceCurrencyFuture = CacheStore.awaitRevalidation(
+        () => _repo.getWorkspaceDefaultCurrency(wsId),
+      );
+      final exchangeRatesFuture = CacheStore.awaitRevalidation(
+        _repo.getExchangeRates,
+      ).catchError((_) => <ExchangeRate>[]);
 
-    final (workspaceCurrency, exchangeRates) = await (
-      workspaceCurrencyFuture,
-      exchangeRatesFuture,
-    ).wait;
+      final (workspaceCurrency, exchangeRates) = await (
+        workspaceCurrencyFuture,
+        exchangeRatesFuture,
+      ).wait;
+      if (!_isCurrent(generation, userId, wsId, '')) {
+        return;
+      }
 
-    emit(
-      state.copyWith(
-        workspaceCurrency: workspaceCurrency,
-        exchangeRates: exchangeRates,
-      ),
-    );
+      _loadedUserId = userId;
+      emit(
+        state.copyWith(
+          workspaceCurrency: workspaceCurrency,
+          exchangeRates: exchangeRates,
+        ),
+      );
 
-    await _fetch(replaceExisting: true);
+      await _fetch(replaceExisting: true, generation: generation);
+    } on Object catch (error) {
+      if (!_isCurrent(generation, userId, wsId, '')) {
+        return;
+      }
+      emit(
+        state.copyWith(
+          status: state.transactions.isEmpty
+              ? TransactionListStatus.error
+              : TransactionListStatus.loaded,
+          error: error.toString(),
+        ),
+      );
+    }
   }
 
   /// Load the next page (no-op if already loading or no more pages).
   Future<void> loadMore() async {
-    if (state.status == TransactionListStatus.loading || !state.hasMore) {
+    if (isClosed ||
+        state.status == TransactionListStatus.loading ||
+        !state.hasMore) {
       return;
     }
     emit(
@@ -135,12 +201,33 @@ class TransactionListCubit extends Cubit<TransactionListState> {
 
   /// Update the search query and reload from scratch.
   Future<void> setSearch(String query) async {
-    if (query == state.search) return;
-    final cached = _cache[userScopedCacheKey('$_wsId::$query')];
-    final diskCached = await CacheStore.instance.read<TransactionListState>(
-      key: _storeKey(_wsId, search: query),
+    if (isClosed || query == state.search) {
+      return;
+    }
+    final generation = ++_generation;
+    final userId = _currentUserId();
+    final wsId = _wsId;
+    if (_loadedUserId != userId) {
+      emit(const TransactionListState());
+    }
+    emit(
+      state.copyWith(
+        search: query,
+        status: TransactionListStatus.loading,
+        transactions: [],
+        hasMore: true,
+        clearCursor: true,
+        clearError: true,
+      ),
+    );
+    final cached = _cache['${userId ?? 'anonymous'}::$wsId::$query'];
+    final diskCached = await _store.read<TransactionListState>(
+      key: _requestKey(wsId, userId, query),
       decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
     );
+    if (!_isCurrent(generation, userId, wsId, query)) {
+      return;
+    }
     final resolvedCached = cached?.state ?? diskCached.data;
     if (resolvedCached != null) {
       emit(resolvedCached);
@@ -164,11 +251,23 @@ class TransactionListCubit extends Cubit<TransactionListState> {
         ),
       );
     }
-    await _fetch(replaceExisting: true);
+    await _fetch(replaceExisting: true, generation: generation);
   }
 
-  Future<void> _fetch({required bool replaceExisting}) async {
-    if (_wsId.isEmpty) {
+  Future<void> _fetch({required bool replaceExisting, int? generation}) async {
+    if (isClosed) {
+      return;
+    }
+    final requestGeneration = generation ?? ++_generation;
+    final userId = _currentUserId();
+    final wsId = _wsId;
+    final search = state.search;
+    if (_loadedUserId != userId) {
+      emit(TransactionListState(search: search));
+    }
+    final requestState = state;
+    final storeKey = _requestKey(wsId, userId, search);
+    if (wsId.isEmpty) {
       emit(
         state.copyWith(
           status: TransactionListStatus.loaded,
@@ -180,15 +279,20 @@ class TransactionListCubit extends Cubit<TransactionListState> {
       return;
     }
     try {
-      final result = await _repo.getTransactionsInfinite(
-        wsId: _wsId,
-        cursor: replaceExisting ? null : state.cursor,
-        search: state.search.isEmpty ? null : state.search,
+      final result = await CacheStore.awaitRevalidation(
+        () => _repo.getTransactionsInfinite(
+          wsId: wsId,
+          cursor: replaceExisting ? null : requestState.cursor,
+          search: search.isEmpty ? null : search,
+        ),
       );
 
+      if (!_isCurrent(requestGeneration, userId, wsId, search)) {
+        return;
+      }
       final allTransactions = replaceExisting
           ? result.data
-          : [...state.transactions, ...result.data];
+          : [...requestState.transactions, ...result.data];
       final normalizedTransactions = collapseTransferTransactions(
         allTransactions,
       );
@@ -200,19 +304,27 @@ class TransactionListCubit extends Cubit<TransactionListState> {
         clearError: true,
       );
 
-      _cache[_cacheKey] = _TransactionListCacheEntry(
-        state: nextState,
-        fetchedAt: DateTime.now(),
-      );
-      await CacheStore.instance.write(
-        key: _storeKey(_wsId, search: state.search),
+      _cache['${userId ?? 'anonymous'}::$wsId::$search'] =
+          _TransactionListCacheEntry(
+            state: nextState,
+            fetchedAt: DateTime.now(),
+          );
+      await _store.write(
+        key: storeKey,
         policy: _cachePolicy,
         payload: _stateToCacheJson(nextState),
-        tags: [_cacheTag, 'workspace:$_wsId', 'module:finance'],
+        tags: [_cacheTag, 'workspace:$wsId', 'module:finance'],
       );
-      _loadedWorkspaceId = _wsId;
+      if (!_isCurrent(requestGeneration, userId, wsId, search)) {
+        return;
+      }
+      _loadedWorkspaceId = wsId;
+      _loadedUserId = userId;
       emit(nextState);
-    } on Exception catch (e) {
+    } on Object catch (e) {
+      if (!_isCurrent(requestGeneration, userId, wsId, search)) {
+        return;
+      }
       final visible = overlayPendingTransactions(
         _wsId,
         state.transactions,

@@ -1,13 +1,4 @@
 export {
-  type AccountDeleteBlockingWorkspace,
-  type AccountDeleteCleanupSummary,
-  type AccountDeletePrecheckResponse,
-  type DeleteCurrentUserAccountPayload,
-  type DeleteCurrentUserAccountResponse,
-  deleteCurrentUserAccount,
-  getCurrentUserAccountDeletePrecheck,
-} from './account-delete';
-export {
   type AiChatFileMutationResponse,
   type CreateAiChatUploadUrlPayload,
   type CreateAiChatUploadUrlResponse,
@@ -322,6 +313,12 @@ export {
   upsertWorkspaceChatParticipant,
   upsertWorkspaceChatTyping,
 } from './chat';
+export {
+  type ChatGPTConnections,
+  createChatGPTChat,
+  disconnectChatGPT,
+  getChatGPTConnections,
+} from './chatgpt';
 export type {
   InternalApiClientOptions,
   InternalApiFetchInit,
@@ -1274,6 +1271,7 @@ export {
   type WorkspaceUserLinkedPromotion,
   type WorkspaceUserReferralDiscount,
 } from './promotions';
+export * from './public-account-api';
 export {
   getPublicWorkspacePrices,
   type PublicWorkspacePrices,

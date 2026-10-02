@@ -572,6 +572,60 @@ describe('workspace calendar event collection authorization', () => {
     );
   });
 
+  it('bounds full-history pages and advances past equal start times before deduplication', async () => {
+    const events = Array.from({ length: 3 }, (_, index) => ({
+      id: `00000000-0000-4000-8000-00000000000${index + 1}`,
+      start_at: '2026-08-10T09:00:00.000Z',
+      title: `Event ${index}`,
+    }));
+    const query = getQueryResult(events);
+    mocks.createAdminClient.mockResolvedValue({ from: vi.fn(() => query) });
+    mocks.deduplicateEvents.mockImplementation((rows) => rows.slice(0, 1));
+    const url = new URL(request('GET').url);
+    url.searchParams.set('start_at', '0001-01-01T00:00:00Z');
+    url.searchParams.set('end_at', '9999-12-31T23:59:59Z');
+    url.searchParams.set('page_size', '2');
+    const first = await GET(new Request(url), params());
+    const body = await first.json();
+    expect(body).toEqual({
+      data: [events[0]],
+      count: 1,
+      has_more: true,
+      next_cursor: JSON.stringify({
+        start_at: events[1]!.start_at,
+        id: events[1]!.id,
+      }),
+    });
+    expect(query.limit.mock.calls).toEqual([[3]]);
+    url.searchParams.set('cursor', body.next_cursor);
+    const second = await GET(new Request(url), params());
+    expect(await second.json()).toEqual({
+      data: [events[2]],
+      count: 1,
+      has_more: false,
+      next_cursor: null,
+    });
+    expect(query.limit.mock.calls).toEqual([[3], [3]]);
+  });
+
+  it('rejects malformed or unbounded reads before querying event data', async () => {
+    const query = getQueryResult();
+    const from = vi.fn(() => query);
+    mocks.createAdminClient.mockResolvedValue({ from });
+    for (const extra of [
+      { start_at: 'invalid' },
+      { end_at: '9999-12-31T23:59:59Z' },
+      { page_size: '501' },
+      { page_size: '2', cursor: '{}' },
+    ]) {
+      const url = new URL(request('GET').url);
+      for (const [key, value] of Object.entries(extra))
+        url.searchParams.set(key, value);
+      expect((await GET(new Request(url), params())).status).toBe(400);
+    }
+    expect(from).not.toHaveBeenCalled();
+  });
+
   it('preserves authorized POST response and writes only after authorization', async () => {
     const stored = { id: 'event-1', title: 'Planning' };
     const query = insertQueryResult(stored);

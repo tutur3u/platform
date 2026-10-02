@@ -1,11 +1,9 @@
 import type { ReactNode } from 'react';
-import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const generateMetadata = createMarketingMetadata({
-  description:
-    'Tuturuuu Data Processing Addendum covering instructions, safeguards, subprocessors, transfers, incidents, audits, and deletion.',
+export const generateMetadata = createLocalizedMarketingMetadata({
+  namespace: 'marketingSeo.legal_dpa',
   pathname: '/legal/dpa',
-  title: 'Data Processing Addendum',
 });
 
 export default function DpaLayout({ children }: { children: ReactNode }) {

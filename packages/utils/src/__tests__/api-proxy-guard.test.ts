@@ -3,6 +3,12 @@ vi.mock('../required-mfa-runtime', () => ({
 }));
 
 import { NextRequest } from 'next/server';
+import { makeRequest } from './api-proxy-test-request';
+
+vi.mock('../offline-download-guard', () => ({
+  guardOfflineDownloadRequest: async () => null,
+}));
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -73,19 +79,6 @@ vi.mock('../request-emoji-limit', () => ({
     }
   ) => mocks.validateEmoji(req, options),
 }));
-
-function makeRequest(
-  pathname = '/api/test',
-  method = 'POST',
-  headers?: Record<string, string>,
-  body = '{}'
-) {
-  return new NextRequest(`http://localhost${pathname}`, {
-    method,
-    headers,
-    body: method === 'GET' || method === 'HEAD' ? undefined : body,
-  });
-}
 
 function singleReadRoutePolicies() {
   return [

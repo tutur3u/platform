@@ -9676,4 +9676,97 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarProviderColorSeparateEdit => 'Save other changes before changing the Google color.';
+
+  @override
+  String get workspaceHiddenTitle => 'Hidden workspaces';
+
+  @override
+  String get workspaceHideAction => 'Hide';
+
+  @override
+  String get workspaceRestoreAction => 'Restore';
+
+  @override
+  String get workspaceHiddenDescription => 'Only you can see this list. Hiding does not change membership or notifications.';
+
+  @override
+  String get workspaceHiddenEmpty => 'No Hidden workspaces';
+
+  @override
+  String get workspaceHiddenLoadError => 'Unable to refresh Hidden workspaces. Your saved list is kept.';
+
+  @override
+  String get workspaceHiddenUpdateError => 'Unable to save this change. Try again when connected.';
+
+  @override
+  String get workspaceAllHidden => 'Your workspaces are hidden. Restore one to continue.';
+
+  @override
+  String get workspacePickerClose => 'Close workspace picker';
+
+  @override
+  String get offlineEditSyncing => 'Syncing…';
+
+  @override
+  String get inventoryProductDeleteConfirm => 'Remove this product? If existing sales reference it, the server will archive it when syncing.';
+
+  @override
+  String get inventorySeasonPriceCached => 'Offline draft using saved season prices. Prices and availability will be checked when syncing.';
+
+  @override
+  String get offlinePreparationTitle => 'Available offline';
+
+  @override
+  String get offlinePreparationCacheAll => 'Download all';
+
+  @override
+  String get offlinePreparationDescription => 'Download workspace data for offline use. Cached data uses your storage limit; files and online services may still need connectivity.';
+
+  @override
+  String get offlinePreparationQueued => 'Not downloaded';
+
+  @override
+  String get offlinePreparationWaiting => 'Queued';
+
+  @override
+  String get offlinePreparationDownloading => 'Downloading';
+
+  @override
+  String get offlinePreparationReady => 'Downloaded';
+
+  @override
+  String get offlinePreparationFailed => 'Download failed';
+
+  @override
+  String get offlinePreparationUnavailable => 'Unavailable';
+
+  @override
+  String offlinePreparationLastSuccess(String time) {
+    return 'Last downloaded: $time';
+  }
+
+  @override
+  String offlinePreparationProgress(int completed, int total) {
+    return '$completed of $total modules downloaded';
+  }
+
+  @override
+  String get offlinePreparationNeedsRefresh => 'Needs refresh';
+
+  @override
+  String get inventoryCheckoutReconcileCart => 'Reconcile cart';
+
+  @override
+  String get inventoryCheckoutReconcileCartHelp => 'Refresh prices and remove items that no longer match this period.';
+
+  @override
+  String get inventoryCheckoutCartReconciled => 'Cart updated. Review the total before submitting.';
+
+  @override
+  String inventoryCheckoutCartRemoved(int count) {
+    return 'Removed $count unavailable items. Review the cart before submitting.';
+  }
+
+  @override
+  String get inventoryCheckoutPeriodRulesChanged => 'Some items do not match this period. Reconcile the cart to continue.';
 }

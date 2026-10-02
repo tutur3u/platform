@@ -77,7 +77,11 @@ DateTime serverInstant(String value) {
 }
 
 class InventorySeasonQuote {
-  const InventorySeasonQuote({required this.asOf, required this.prices});
+  const InventorySeasonQuote({
+    required this.asOf,
+    required this.prices,
+    this.isCached = false,
+  });
   factory InventorySeasonQuote.fromJson(Map<String, dynamic> json) {
     if (json['as_of'] is! String || json['data'] is! List) {
       throw const FormatException('Missing season quote');
@@ -94,6 +98,7 @@ class InventorySeasonQuote {
       prices: List.unmodifiable(rows),
     );
   }
+  final bool isCached;
   final DateTime asOf;
   final List<InventorySeasonPrice> prices;
 

@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_sync_refresh.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
@@ -25,7 +27,10 @@ class InventoryAuditLogsPage extends StatefulWidget {
   State<InventoryAuditLogsPage> createState() => _InventoryAuditLogsPageState();
 }
 
-class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
+class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage>
+    with OfflineSyncRefresh<InventoryAuditLogsPage> {
+  @override
+  Future<void> refreshAfterOfflineSync() => _loadInitial();
   static const int _pageSize = 24;
 
   late final InventoryRepository _repository;
@@ -71,10 +76,21 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
     });
 
     try {
-      final result = await _repository.getAuditLogs(
-        wsId,
-        limit: _pageSize,
-        forceRefresh: forceRefresh,
+      final result = await CacheStore.readWithRevalidation(
+        () => _repository.getAuditLogs(
+          wsId,
+          limit: _pageSize,
+          forceRefresh: forceRefresh,
+        ),
+        onSnapshot: (result) {
+          if (!mounted || requestToken != _requestToken) return;
+          setState(() {
+            _entries = result.data;
+            _count = result.count;
+            _hasMore = _entries.length < _count;
+            _isLoadingInitial = false;
+          });
+        },
       );
 
       if (!mounted || requestToken != _requestToken) {
@@ -92,6 +108,12 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
         return;
       }
       setState(() {
+        if (error.statusCode == 401 ||
+            (error.statusCode == 403 && !error.isVerificationRequired)) {
+          _entries = const [];
+          _count = 0;
+          _hasMore = false;
+        }
         _error = error.message.isNotEmpty
             ? error.message
             : context.l10n.commonSomethingWentWrong;

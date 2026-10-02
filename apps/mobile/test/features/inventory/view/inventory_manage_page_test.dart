@@ -158,6 +158,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Owner A'), findsOneWidget);
       expect(find.byTooltip('Add owner'), findsOneWidget);
+      expect(find.byTooltip('Edit'), findsOneWidget);
+      expect(find.byTooltip('Delete'), findsOneWidget);
       h.workspaceStream.add(_workspace('b'));
       await tester.pump();
       await tester.pump();
@@ -167,6 +169,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Owner B'), findsOneWidget);
       expect(find.byTooltip('Add owner'), findsNothing);
+      expect(find.byTooltip('Edit'), findsNothing);
+      expect(find.byTooltip('Delete'), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );

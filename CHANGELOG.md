@@ -1,5 +1,61 @@
 # Changelog
 
+## [0.65.0](https://github.com/tutur3u/platform/compare/platform-v0.64.0...platform-v0.65.0) (2026-10-02)
+
+
+### Features
+
+* **auth:** prefer password for exact Tuturuuu email domains ([#5690](https://github.com/tutur3u/platform/issues/5690)) ([7ff4f6b](https://github.com/tutur3u/platform/commit/7ff4f6bdcc6fdd992785b8a3212c7cfe842185f7))
+* **mobile:** add scoped inventory stock health ([3c6f226](https://github.com/tutur3u/platform/commit/3c6f22668c1674f29a76385dc6c08f18cbb10715))
+* **mobile:** add scoped inventory stock health counts ([#5700](https://github.com/tutur3u/platform/issues/5700)) ([6410809](https://github.com/tutur3u/platform/commit/64108097682b2f97c723c70b7df664d4b259bdcb))
+* **mobile:** browse Profile activity by date or agenda ([ad9332f](https://github.com/tutur3u/platform/commit/ad9332fec4c0f14ad7cce86b399c9bc43c7600d4))
+* **mobile:** browse Profile Timeline by date or agenda ([#5706](https://github.com/tutur3u/platform/issues/5706)) ([2b4336d](https://github.com/tutur3u/platform/commit/2b4336de79604db8045839f55b828d04eb74be73))
+* **mobile:** compact Inventory workflows and stock summaries ([#5696](https://github.com/tutur3u/platform/issues/5696)) ([b9e0757](https://github.com/tutur3u/platform/commit/b9e075757cc83d2b0131f607a8ff521d3b7516c3))
+* **mobile:** consolidate Settings into compact nested controls ([#5692](https://github.com/tutur3u/platform/issues/5692)) ([0bb5a31](https://github.com/tutur3u/platform/commit/0bb5a3130449fb4e101db0ea5f456585e88ad760))
+* **mobile:** launch a unique Apps search result on submit ([#5691](https://github.com/tutur3u/platform/issues/5691)) ([d5e7a64](https://github.com/tutur3u/platform/commit/d5e7a64efab0eca4f95eb3732b1bfb322ecf6579))
+
+
+### Bug Fixes
+
+* align plan, attachment, and storage access checks ([#5688](https://github.com/tutur3u/platform/issues/5688)) ([1987984](https://github.com/tutur3u/platform/commit/1987984c65dd37aff4ea545de894edbf76442d5e))
+* **calendar:** bind source color hydration to persisted identity ([00269c3](https://github.com/tutur3u/platform/commit/00269c315cd2ac8e1c9607f450100db8537cada2))
+* **calendar:** preserve month hover color contrast ([6fd591c](https://github.com/tutur3u/platform/commit/6fd591c46f4c90d6f4c685c63b140728dd0339fe))
+* **calendar:** preserve opaque rendering cues and hydrate source colors ([33847dd](https://github.com/tutur3u/platform/commit/33847ddcd8a3cf2b5cef8ebf50ca4c1700424a27))
+* **calendar:** preserve read availability and multi-day contrast ([0cfa6b5](https://github.com/tutur3u/platform/commit/0cfa6b5496633dd6f9da4ad9522b5d7a4c769b8a))
+* **calendar:** preserve resolved contrast during event hover ([79001b3](https://github.com/tutur3u/platform/commit/79001b32ad1c813119f8f7df934e7142bbbd7585))
+* **calendar:** render opaque readable event colors ([#5694](https://github.com/tutur3u/platform/issues/5694)) ([6e3d81d](https://github.com/tutur3u/platform/commit/6e3d81d6fdd6f8155f12e36ede58d31fde0ac362))
+* **calendar:** restore timer restart and metadata color refresh ([58c17ff](https://github.com/tutur3u/platform/commit/58c17ff6a89624678cc207cd9551bc54f15f53d2)) ([#5722](https://github.com/tutur3u/platform/issues/5722)) ([8954e54](https://github.com/tutur3u/platform/commit/8954e5476fd04ada4cb846e909fa26b8a669cda3))
+* **calendar:** retain source scope for legacy primary rows ([550d5d0](https://github.com/tutur3u/platform/commit/550d5d07b69c5b9ab16eb423c2d0d7eb54cea9a8))
+* **ci:** address singleton preflight review ([b201aed](https://github.com/tutur3u/platform/commit/b201aed161ea4d0a053c1e59f07bb8ee818eb694))
+* **ci:** record accurate Learn preview builds ([57258bc](https://github.com/tutur3u/platform/commit/57258bccbd09212b5928f9f1713df6497c35f233)) ([#5718](https://github.com/tutur3u/platform/issues/5718)) ([bed1dff](https://github.com/tutur3u/platform/commit/bed1dfff261945dc1871fd031fcd02337fa1fe74))
+* **ci:** restrict singleton type check token ([f40bbe7](https://github.com/tutur3u/platform/commit/f40bbe7d88bce66a87742015982a95daf4531bb7))
+* **mobile:** address inventory compact review findings ([18d3b46](https://github.com/tutur3u/platform/commit/18d3b46c5ca6eef060a932377edb06c5e94e00e2))
+* **mobile:** clarify stock health scope and capture evidence ([4b800e7](https://github.com/tutur3u/platform/commit/4b800e7f0a943f9f212433fe9cdd1847d282b922))
+* **mobile:** contain scrolling in both dialog bodies ([4ab938f](https://github.com/tutur3u/platform/commit/4ab938f3e0faab07b11bd15794acbf8fdf50d3c6))
+* **mobile:** fit scaled navbar titles without resizing icons ([68e50bd](https://github.com/tutur3u/platform/commit/68e50bda5750a4922f5a933caedf2e34d9a1054e)) ([#5701](https://github.com/tutur3u/platform/issues/5701)) ([2c80e9b](https://github.com/tutur3u/platform/commit/2c80e9bdb556a8454b952f6034307c202d547f98))
+* **mobile:** guard inventory manage ownership and completion scope ([ee59239](https://github.com/tutur3u/platform/commit/ee59239e45254a7eca3f97a9764fc0ea1adb920f))
+* **mobile:** harden timezone retry recovery ([264b4b8](https://github.com/tutur3u/platform/commit/264b4b89ab9e1cb4194374a3714b46832c5e486a))
+* **mobile:** keep scaled Settings choices scrollable ([b61807c](https://github.com/tutur3u/platform/commit/b61807c2daf8c0ee828364d7335c1ae6e1f61f1c))
+* **mobile:** keep timeline loading and date selection provisional ([510a96e](https://github.com/tutur3u/platform/commit/510a96ee56a3724f6e55a9adfbc78f679cb45073))
+* **mobile:** measure accessible titles and complete graphemes ([6c42abe](https://github.com/tutur3u/platform/commit/6c42abe17b04b0100a9aac036529123f6037080a))
+* **mobile:** preserve fractional inventory stock precision ([528579e](https://github.com/tutur3u/platform/commit/528579e59d2705a977c0d226c3a5c8bb844a28af)) ([#5723](https://github.com/tutur3u/platform/issues/5723)) ([71d82c9](https://github.com/tutur3u/platform/commit/71d82c9f100a17ce76251c9123d9935616803cb0))
+* **mobile:** preserve injected inventory repository ownership ([22a33bd](https://github.com/tutur3u/platform/commit/22a33bd229d3294d7ecbf3d8057aace0b14709ff))
+* **mobile:** preserve unlimited inventory stock and setup scope ([#5698](https://github.com/tutur3u/platform/issues/5698)) ([2021cb8](https://github.com/tutur3u/platform/commit/2021cb8ac8338003c863f37b87f6d708a90540c2))
+* **mobile:** resolve timezone settings with verified native sessions ([#5720](https://github.com/tutur3u/platform/issues/5720)) ([5640ca2](https://github.com/tutur3u/platform/commit/5640ca22bcbfda6cd0470f39171ffa2366af779e))
+* **mobile:** restore verified timezone resolution ([462c68b](https://github.com/tutur3u/platform/commit/462c68bf22b2b412dd1825c12c3558b10b028a40))
+* **mobile:** retain navbar title ink and cache scroll geometry ([78057b9](https://github.com/tutur3u/platform/commit/78057b92d517f5eab9df977169f8be9250ec8238))
+* **mobile:** retain timezone snapshots during overlapping loads ([eff42e2](https://github.com/tutur3u/platform/commit/eff42e2cf9d3159ee6fc68be1079df5f50fd92e2))
+* **mobile:** reveal selected timeline dates and retain uncertainty ([3c6dee4](https://github.com/tutur3u/platform/commit/3c6dee418f484118c582e83dce022176f6183018))
+* **storefront:** compose header locale links in the client graph ([52d6918](https://github.com/tutur3u/platform/commit/52d691884fa24aed0d9fbc55541601441c7df71f)) ([#5695](https://github.com/tutur3u/platform/issues/5695)) ([0aea2e2](https://github.com/tutur3u/platform/commit/0aea2e2675a2d6ead8b74ef6228cfcb239396298))
+* **tasks:** assert plan route response in regression test ([fdda420](https://github.com/tutur3u/platform/commit/fdda42001582119c6cee581ee97a29f33876c02c))
+
+
+### Performance Improvements
+
+* **ci:** inline read-only singleton type check preflight ([#5703](https://github.com/tutur3u/platform/issues/5703)) ([09c1184](https://github.com/tutur3u/platform/commit/09c11845bd3265dc340ece0354b8d2628efa7b75))
+* **ci:** inline singleton type check preflight ([4298ca3](https://github.com/tutur3u/platform/commit/4298ca39c720320bbb3c5f24bfd64b19a0c92ff3))
+* **ci:** share release relevance preflight ([#5697](https://github.com/tutur3u/platform/issues/5697)) ([0fb6dcd](https://github.com/tutur3u/platform/commit/0fb6dcd57b572ec8f4eedb68628f3eb1e48d9cda))
+
 ## [0.64.0](https://github.com/tutur3u/platform/compare/platform-v0.63.0...platform-v0.64.0) (2026-10-01)
 
 

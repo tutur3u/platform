@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Card, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
@@ -221,6 +222,19 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
 
   Future<void> _loadInitial({bool showLoader = true}) async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    await CacheStore.readWithRevalidation(() async {
+      if (!mounted ||
+          context.read<WorkspaceCubit>().state.currentWorkspace?.id != wsId) {
+        return;
+      }
+      await _loadInitialPhase(
+        showLoader: showLoader && !CacheStore.awaitingRevalidation,
+      );
+    }, onSnapshot: (_) {});
+  }
+
+  Future<void> _loadInitialPhase({bool showLoader = true}) async {
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
     final requestToken = ++_requestToken;
     final repository = context.read<FinanceRepository>();
@@ -255,7 +269,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
 
       final workspaceCurrencyFuture = repository.getWorkspaceDefaultCurrency(
         wsId,
-        forceRefresh: showLoader,
+        forceRefresh: showLoader && CacheStore.awaitingRevalidation,
       );
       final exchangeRatesFuture = repository.getExchangeRates().catchError(
         (_) => const <ExchangeRate>[],

@@ -1,4 +1,3 @@
-import { match } from '@formatjs/intl-localematcher';
 import { verifyCliAccessToken } from '@tuturuuu/auth/cli-session';
 import {
   createCentralizedAuthProxy,
@@ -38,11 +37,9 @@ import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import createIntlMiddleware from 'next-intl/middleware';
-import { BASE_URL, LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
+import { BASE_URL, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 import { getChatAppOrigin } from './lib/chat-app-url';
 import { getContactsAppOrigin } from './lib/contacts-app-url';
@@ -50,6 +47,7 @@ import { getDriveAppOrigin } from './lib/drive-app-url';
 import { isVersionedExternalProjectAssetDeliveryRequest } from './lib/external-projects/asset-delivery-request';
 import { getFinanceAppOrigin } from './lib/finance-app-url';
 import { getFormsAppOrigin } from './lib/forms-app-url';
+import { handleLocale } from './lib/locale-proxy';
 import { getMailAppOrigin } from './lib/mail-app-url';
 import { getMeetAppOrigin } from './lib/meet-app-url';
 import { getToolsAppOrigin } from './lib/tools-app-url';
@@ -446,13 +444,12 @@ function handlePublicMarketingRedirectRoute(
   }
 
   if (
-    locale &&
-    (pathnameWithoutLocale === '/calendar/meet-together' ||
-      pathnameWithoutLocale.startsWith('/calendar/meet-together/'))
+    pathnameWithoutLocale === '/calendar/meet-together' ||
+    pathnameWithoutLocale.startsWith('/calendar/meet-together/')
   ) {
     return redirectToPath(
       req,
-      pathnameWithoutLocale.replace('/calendar/meet-together', '/meet-together')
+      `${pathnameWithoutLocale.replace('/calendar/meet-together', '/meet-together')}${req.nextUrl.search}${req.nextUrl.hash}`
     );
   }
 
@@ -1471,124 +1468,4 @@ export const config = {
 
     '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|manifest.webmanifest|sw.js|serwist|monitoring|\\.well-known|.*\\.(?:svg|png|jpg|jpeg|mp3|wav|ogg|m4a|pdf|gif|webp)$).*)',
   ],
-};
-
-const getSupportedLocale = (locale: string): Locale | null => {
-  return supportedLocales.includes(locale as Locale)
-    ? (locale as Locale)
-    : null;
-};
-
-const getExistingLocale = (
-  req: NextRequest
-): {
-  locale: Locale | null;
-  cookie: string | null;
-  pathname: string | null;
-} => {
-  // Get raw locale from pathname and cookie
-  const rawLocaleFromPathname = req.nextUrl.pathname.split('/')[1] || '';
-  const rawRocaleFromCookie = req.cookies.get(LOCALE_COOKIE_NAME)?.value || '';
-
-  // Get supported locale from pathname and cookie
-  const localeFromPathname = getSupportedLocale(rawLocaleFromPathname);
-  const localeFromCookie = getSupportedLocale(rawRocaleFromCookie);
-
-  const locale = localeFromPathname || localeFromCookie;
-
-  return {
-    locale,
-    cookie: localeFromCookie,
-    pathname: localeFromPathname,
-  };
-};
-
-const getDefaultLocale = (
-  req: NextRequest
-): {
-  locale: Locale;
-} => {
-  // Get browser languages
-  const headers = {
-    'accept-language': req.headers.get('accept-language') ?? 'en-US,en;q=0.5',
-  };
-
-  const languages = new Negotiator({ headers })
-    .languages()
-    .flatMap((language) => {
-      if (!language || language === '*') {
-        return [];
-      }
-
-      try {
-        const [canonicalLocale] = Intl.getCanonicalLocales(language);
-        return canonicalLocale ? [canonicalLocale] : [];
-      } catch {
-        return [];
-      }
-    });
-
-  let detectedLocale: string;
-
-  try {
-    detectedLocale = match(
-      languages.length > 0 ? languages : [defaultLocale],
-      supportedLocales,
-      defaultLocale
-    );
-  } catch {
-    detectedLocale = defaultLocale;
-  }
-
-  return {
-    locale: supportedLocales.includes(detectedLocale as Locale)
-      ? (detectedLocale as Locale)
-      : defaultLocale,
-  };
-};
-
-const getLocale = (
-  req: NextRequest
-): {
-  locale: string;
-  cookie: string | null;
-  pathname: string | null;
-  default: boolean;
-} => {
-  // Get locale from pathname and cookie
-  const { locale: existingLocale, cookie, pathname } = getExistingLocale(req);
-
-  // If locale is found, return it
-  if (existingLocale) {
-    return {
-      locale: existingLocale,
-      cookie,
-      pathname,
-      default: false,
-    };
-  }
-
-  // If locale is not found, return default locale
-  const { locale: defaultLocale } = getDefaultLocale(req);
-
-  return {
-    locale: defaultLocale,
-    cookie,
-    pathname,
-    default: true,
-  };
-};
-
-const handleLocale = ({ req }: { req: NextRequest }): NextResponse => {
-  // Get locale from cookie or browser languages
-  const { locale } = getLocale(req);
-
-  const nextIntlMiddleware = createIntlMiddleware({
-    locales: supportedLocales,
-    defaultLocale: locale as Locale,
-    localeDetection: false,
-    localePrefix: 'as-needed',
-  });
-
-  return nextIntlMiddleware(req);
 };

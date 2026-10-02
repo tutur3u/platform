@@ -1,10 +1,8 @@
 import type { ReactNode } from 'react';
-import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const generateMetadata = createMarketingMetadata({
-  title: 'Acceptable Use Policy',
-  description:
-    'Acceptable Use Policy for Tuturuuu JSC — permitted and prohibited uses of our platform and services.',
+export const generateMetadata = createLocalizedMarketingMetadata({
+  namespace: 'marketingSeo.acceptable_use',
   pathname: '/acceptable-use',
 });
 

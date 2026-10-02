@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.33.3](https://github.com/tutur3u/platform/compare/utils-v0.33.2...utils-v0.33.3) (2026-10-02)
+
+
+### Bug Fixes
+
+* **calendar:** preserve opaque rendering cues and hydrate source colors ([33847dd](https://github.com/tutur3u/platform/commit/33847ddcd8a3cf2b5cef8ebf50ca4c1700424a27))
+* **calendar:** render opaque readable event colors ([#5694](https://github.com/tutur3u/platform/issues/5694)) ([6e3d81d](https://github.com/tutur3u/platform/commit/6e3d81d6fdd6f8155f12e36ede58d31fde0ac362))
+* **mobile:** harden timezone retry recovery ([264b4b8](https://github.com/tutur3u/platform/commit/264b4b89ab9e1cb4194374a3714b46832c5e486a))
+* **mobile:** resolve timezone settings with verified native sessions ([#5720](https://github.com/tutur3u/platform/issues/5720)) ([5640ca2](https://github.com/tutur3u/platform/commit/5640ca22bcbfda6cd0470f39171ffa2366af779e))
+* **mobile:** restore verified timezone resolution ([462c68b](https://github.com/tutur3u/platform/commit/462c68bf22b2b412dd1825c12c3558b10b028a40))
+* **mobile:** retain timezone snapshots during overlapping loads ([eff42e2](https://github.com/tutur3u/platform/commit/eff42e2cf9d3159ee6fc68be1079df5f50fd92e2))
+
 ## [0.33.2](https://github.com/tutur3u/platform/compare/utils-v0.33.1...utils-v0.33.2) (2026-10-01)
 
 

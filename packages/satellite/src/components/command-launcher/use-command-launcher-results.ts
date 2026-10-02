@@ -2,6 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { listWorkspaces } from '@tuturuuu/internal-api';
+import {
+  useWorkspaceActor,
+  useWorkspaceVisibility,
+} from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { searchIntent } from '@tuturuuu/utils/search';
 import { useDeferredValue, useMemo } from 'react';
 import {
@@ -32,25 +36,38 @@ export function useCommandLauncherResults({
   query: string;
   showApps: boolean;
 }) {
+  const actor = useWorkspaceActor();
+  const visibility = useWorkspaceVisibility();
   const deferredWorkspaceQuery = useDeferredValue(query);
   const workspaceQuery = useQuery({
-    enabled: open,
-    queryFn: () => listWorkspaces(),
-    queryKey: ['global-command-launcher', 'workspaces'],
+    enabled: open && Boolean(actor),
+    queryFn: async () => {
+      actor!.assertActive();
+      const result = await listWorkspaces();
+      actor!.assertActive();
+      return result;
+    },
+    queryKey: ['workspace-ui-list', actor?.actorId],
     retry: false,
     staleTime: 60_000,
   });
   const remoteWorkspaceQuery = useQuery({
-    enabled: open && showApps && deferredWorkspaceQuery.length > 0,
-    queryFn: () =>
-      listWorkspaces({
+    enabled:
+      Boolean(actor) && open && showApps && deferredWorkspaceQuery.length > 0,
+    queryFn: async () => {
+      actor!.assertActive();
+      const result = await listWorkspaces({
         limit: REMOTE_WORKSPACE_SEARCH_LIMIT,
         q: deferredWorkspaceQuery,
-      }),
+      });
+      actor!.assertActive();
+      return result;
+    },
     queryKey: [
       'global-command-launcher',
       'workspaces',
       'search',
+      actor?.actorId,
       deferredWorkspaceQuery,
     ],
     retry: false,
@@ -62,11 +79,18 @@ export function useCommandLauncherResults({
     | undefined;
   const searchableWorkspaces = useMemo(
     () =>
-      mergeWorkspaces(
-        launcherWorkspaces ?? [],
-        (remoteWorkspaceQuery.data ?? []) as LauncherWorkspace[]
-      ),
-    [launcherWorkspaces, remoteWorkspaceQuery.data]
+      visibility.known
+        ? mergeWorkspaces(
+            launcherWorkspaces ?? [],
+            (remoteWorkspaceQuery.data ?? []) as LauncherWorkspace[]
+          ).filter((workspace) => !visibility.hiddenIds.includes(workspace.id))
+        : [],
+    [
+      launcherWorkspaces,
+      remoteWorkspaceQuery.data,
+      visibility.hiddenIds,
+      visibility.known,
+    ]
   );
   const currentWorkspace = useMemo(
     () =>

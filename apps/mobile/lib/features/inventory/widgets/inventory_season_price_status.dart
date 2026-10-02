@@ -24,7 +24,9 @@ class InventorySeasonPriceStatus extends StatelessWidget {
         : controller.loading
         ? l10n.inventorySeasonPriceLoading
         : controller.ready
-        ? provenance
+        ? (controller.offlineDraft
+              ? l10n.inventorySeasonPriceCached
+              : provenance)
         : l10n.inventorySeasonPriceUnavailable;
     return Semantics(
       liveRegion: true,
@@ -45,7 +47,8 @@ class InventorySeasonPriceStatus extends StatelessWidget {
               ],
             ),
             Text(text),
-            if (controller.hasPending && provenance.isNotEmpty)
+            if ((controller.hasPending || controller.offlineDraft) &&
+                provenance.isNotEmpty)
               Text(provenance),
           ],
         ),

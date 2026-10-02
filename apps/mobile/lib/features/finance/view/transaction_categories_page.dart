@@ -34,6 +34,7 @@ import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:mobile/widgets/platform_icon_picker.dart';
 
 part 'transaction_categories_cards.dart';
+part 'transaction_categories_fields.dart';
 
 class TransactionCategoriesPage extends StatelessWidget {
   const TransactionCategoriesPage({super.key});
@@ -609,8 +610,12 @@ class _TransactionCategoriesViewState
     }
 
     try {
-      final currency = await currencyFuture;
-      final categories = await repository.getCategories(wsId);
+      final currency = await CacheStore.awaitRevalidation(
+        () => repository.getWorkspaceDefaultCurrency(wsId),
+      );
+      final categories = await CacheStore.awaitRevalidation(
+        () => repository.getCategories(wsId),
+      );
       if (!mounted ||
           requestId != _categoriesRequestId ||
           !_isWorkspaceRequestCurrent(wsId)) {
@@ -706,8 +711,12 @@ class _TransactionCategoriesViewState
     }
 
     try {
-      final currency = await currencyFuture;
-      final tags = await repository.getTags(wsId);
+      final currency = await CacheStore.awaitRevalidation(
+        () => repository.getWorkspaceDefaultCurrency(wsId),
+      );
+      final tags = await CacheStore.awaitRevalidation(
+        () => repository.getTags(wsId),
+      );
       if (!mounted ||
           requestId != _tagsRequestId ||
           !_isWorkspaceRequestCurrent(wsId)) {
@@ -1588,84 +1597,6 @@ class _TaxonomyFieldLabel extends StatelessWidget {
         color: theme.colorScheme.mutedForeground,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.35,
-      ),
-    );
-  }
-}
-
-class _TaxonomyTextField extends StatelessWidget {
-  const _TaxonomyTextField({
-    required this.controller,
-    required this.placeholder,
-    required this.onChanged,
-    this.autofocus = false,
-    this.errorText,
-  });
-
-  final TextEditingController controller;
-  final String placeholder;
-  final ValueChanged<String> onChanged;
-  final bool autofocus;
-  final String? errorText;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        shad.TextField(
-          contextMenuBuilder: platformTextContextMenuBuilder(),
-          controller: controller,
-          placeholder: Text(placeholder),
-          autofocus: autofocus,
-          onChanged: onChanged,
-        ),
-        if (errorText != null) ...[
-          const shad.Gap(4),
-          _TaxonomyFieldErrorText(message: errorText!),
-        ],
-      ],
-    );
-  }
-}
-
-class _TaxonomyTextArea extends StatelessWidget {
-  const _TaxonomyTextArea({
-    required this.controller,
-    required this.placeholder,
-    required this.onChanged,
-  });
-
-  final TextEditingController controller;
-  final String placeholder;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return shad.TextArea(
-      contextMenuBuilder: platformTextContextMenuBuilder(),
-      controller: controller,
-      placeholder: Text(placeholder),
-      initialHeight: 96,
-      minHeight: 96,
-      maxHeight: 156,
-      onChanged: onChanged,
-    );
-  }
-}
-
-class _TaxonomyFieldErrorText extends StatelessWidget {
-  const _TaxonomyFieldErrorText({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      message,
-      style: shad.Theme.of(context).typography.xSmall.copyWith(
-        color: shad.Theme.of(context).colorScheme.destructive,
-        fontWeight: FontWeight.w600,
       ),
     );
   }

@@ -1,11 +1,17 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
 import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/local_replica_query.dart';
+import 'package:mobile/core/cache/offline_download_manifest.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_network.dart';
 import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/cache/pending_collection_overlay.dart';
@@ -26,10 +32,14 @@ import 'package:mobile/data/models/task_project_update.dart';
 import 'package:mobile/data/models/task_relationships.dart';
 import 'package:mobile/data/models/user_tasks_page.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
+import 'package:mobile/data/repositories/task_pending_user_overlay.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 
 part 'task_repository_helpers.dart';
+part 'task_repository_local.dart';
+part 'task_repository_mine.dart';
+part 'task_repository_offline_preparation.dart';
 part 'task_repository_planning.dart';
 part 'task_repository_project_updates.dart';
 part 'task_repository_estimation.dart';
@@ -43,17 +53,13 @@ class TaskRepository {
 
   final ApiClient _apiClient;
   final http.Client _httpClient;
+  final Map<String, DateTime> _historyWarmups = {};
 
   Future<Map<String, dynamic>> _read(
     String wsId,
     String namespace,
     String path,
-  ) => readThroughJson(
-    api: _apiClient,
-    namespace: 'tasks.$namespace',
-    workspaceId: wsId,
-    path: path,
-  );
+  ) => _readTaskResource(wsId, namespace, path);
 
   Future<void> _writeTaskVoid(
     String wsId,
@@ -87,23 +93,17 @@ class TaskRepository {
     }, workspaceId: wsId);
   }
 
-  /// Fetches the current user's task buckets from the shared web API.
   Future<UserTasksPage> getMyTasks({
     required String wsId,
     required bool isPersonal,
     int completedPage = 0,
     int completedLimit = 20,
-  }) async {
-    final query = _encodeQueryParameters({
-      'wsId': wsId,
-      'isPersonal': isPersonal.toString(),
-      'completedPage': completedPage.toString(),
-      'completedLimit': completedLimit.toString(),
-    });
-
-    final response = await _read(wsId, 'mine', '/api/v1/users/me/tasks?$query');
-    return UserTasksPage.fromJson(response);
-  }
+  }) => _getMyTasks(
+    wsId: wsId,
+    isPersonal: isPersonal,
+    completedPage: completedPage,
+    completedLimit: completedLimit,
+  );
 
   Future<List<Task>> getTasks(String wsId) async {
     final path = '/api/v1/workspaces/$wsId/tasks';
@@ -955,11 +955,10 @@ class TaskRepository {
   Future<List<TaskLinkOption>> getWorkspaceTasksForProjectLinking(
     String wsId,
   ) async {
-    final response = await readThroughJson(
-      api: _apiClient,
-      namespace: 'tasks.projectLinkOptions',
-      workspaceId: wsId,
-      path: '/api/v1/workspaces/$wsId/tasks',
+    final response = await _read(
+      wsId,
+      'projectLinkOptions',
+      '/api/v1/workspaces/$wsId/tasks',
     );
     final tasks = response['tasks'] as List<dynamic>? ?? const [];
 
@@ -989,11 +988,10 @@ class TaskRepository {
       if (normalizedSearch != null && normalizedSearch.isNotEmpty)
         'q': normalizedSearch,
     });
-    final response = await readThroughJson(
-      api: _apiClient,
-      namespace: 'tasks.timeLinkOptions',
-      workspaceId: wsId,
-      path: '/api/v1/workspaces/$wsId/tasks?$query',
+    final response = await _read(
+      wsId,
+      'timeLinkOptions',
+      '/api/v1/workspaces/$wsId/tasks?$query',
     );
     final tasksRaw = response['tasks'] as List<dynamic>? ?? const [];
     final tasks = tasksRaw

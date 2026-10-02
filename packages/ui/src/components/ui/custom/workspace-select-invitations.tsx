@@ -55,6 +55,9 @@ export function useWorkspaceInvitations({
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['workspace-invitations'] }),
         queryClient.invalidateQueries({ queryKey: ['workspaces'] }),
+        queryClient.invalidateQueries({
+          queryKey: ['workspace-ui-list', cacheScope],
+        }),
         queryClient.invalidateQueries({ queryKey: ['user-workspaces'] }),
         queryClient.invalidateQueries({ queryKey: ['workspace-user'] }),
         queryClient.invalidateQueries({ queryKey: ['current-user'] }),

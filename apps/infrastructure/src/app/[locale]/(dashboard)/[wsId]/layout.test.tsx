@@ -1,4 +1,6 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -207,31 +209,45 @@ describe('Infrastructure dashboard layout', () => {
     expect(mocks.notFound).toHaveBeenCalled();
   });
 
-  it('renders the satellite structure for the root infrastructure workspace', async () => {
-    const result = await renderLayout();
+  it.each(['user-1', 'user-2'])(
+    'renders the satellite structure for verified actor %s',
+    async (actorId) => {
+      mocks.getSatelliteAppSessionUser.mockResolvedValue({ id: actorId });
+      const result = await renderLayout();
 
-    render(result);
+      expect(result.type).toBe(WorkspaceVisibilityProvider);
+      expect(result.props.actorId).toBe(actorId);
+      render(
+        <QueryClientProvider
+          client={
+            new QueryClient({ defaultOptions: { queries: { retry: false } } })
+          }
+        >
+          {result}
+        </QueryClientProvider>
+      );
 
-    expect(screen.getByTestId('sidebar-provider')).toHaveAttribute(
-      'data-behavior',
-      'hover'
-    );
-    expect(screen.getByTestId('structure')).toHaveAttribute(
-      'data-ws-id',
-      'internal'
-    );
-    expect(screen.getByTestId('structure')).toHaveAttribute(
-      'data-collapsed',
-      'true'
-    );
-    expect(screen.getByTestId('realtime-provider')).toHaveAttribute(
-      'data-ws-id',
-      mocks.rootId
-    );
-    expect(screen.getByText('dashboard child')).toBeInTheDocument();
-    expect(mocks.getNavigationLinks).toHaveBeenCalledWith({
-      canManageInternalAccounts: true,
-      personalOrWsId: 'internal',
-    });
-  });
+      expect(screen.getByTestId('sidebar-provider')).toHaveAttribute(
+        'data-behavior',
+        'hover'
+      );
+      expect(screen.getByTestId('structure')).toHaveAttribute(
+        'data-ws-id',
+        'internal'
+      );
+      expect(screen.getByTestId('structure')).toHaveAttribute(
+        'data-collapsed',
+        'true'
+      );
+      expect(screen.getByTestId('realtime-provider')).toHaveAttribute(
+        'data-ws-id',
+        mocks.rootId
+      );
+      expect(screen.getByText('dashboard child')).toBeInTheDocument();
+      expect(mocks.getNavigationLinks).toHaveBeenCalledWith({
+        canManageInternalAccounts: true,
+        personalOrWsId: 'internal',
+      });
+    }
+  );
 });

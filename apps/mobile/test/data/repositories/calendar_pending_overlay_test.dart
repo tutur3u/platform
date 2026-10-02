@@ -82,4 +82,44 @@ void main() {
       isEmpty,
     );
   });
+  test(
+    'local range fallback excludes cached events outside requested range',
+    () {
+      final events = [
+        CalendarEvent(
+          id: 'inside',
+          startAt: now.add(const Duration(hours: 1)),
+          endAt: now.add(const Duration(hours: 2)),
+        ),
+        CalendarEvent(
+          id: 'outside',
+          startAt: now.add(const Duration(days: 2)),
+          endAt: now.add(const Duration(days: 2, hours: 1)),
+        ),
+      ];
+      expect(
+        overlayPendingCalendarEvents(
+          'ws_1',
+          events,
+          const [],
+          start: now,
+          end: now.add(const Duration(days: 1)),
+        ).single.id,
+        'inside',
+      );
+    },
+  );
+  test('calendar connection edits never become event rows', () {
+    final pending = PendingMutationRecord(
+      id: 'connection',
+      feature: 'calendar',
+      method: 'POST',
+      path: '/api/v1/workspaces/ws_1/calendar/connections',
+      workspaceId: 'ws_1',
+      createdAt: now,
+      payload: {'provider': 'google'},
+      optimisticPatch: {'entityId': 'local_connection'},
+    );
+    expect(overlayPendingCalendarEvents('ws_1', const [], [pending]), isEmpty);
+  });
 }

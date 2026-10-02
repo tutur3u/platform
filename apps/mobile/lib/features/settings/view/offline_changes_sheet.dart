@@ -33,9 +33,10 @@ class _OfflineChangesSheet extends StatelessWidget {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
-            ValueListenableBuilder(
-              valueListenable: queue.pending,
-              builder: (context, records, _) {
+            ListenableBuilder(
+              listenable: Listenable.merge([queue.pending, queue.syncingIds]),
+              builder: (context, _) {
+                final records = queue.pending.value;
                 if (records.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24),
@@ -126,7 +127,10 @@ class _PendingChangeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final status = switch (record.status) {
-      PendingMutationStatus.queued => l10n.offlineEditQueued,
+      PendingMutationStatus.queued =>
+        OfflineMutationQueue.instance.syncingIds.value.contains(record.id)
+            ? l10n.offlineEditSyncing
+            : l10n.offlineEditQueued,
       PendingMutationStatus.conflict => l10n.offlineEditConflict,
       PendingMutationStatus.failed => l10n.offlineEditFailed,
     };
@@ -160,7 +164,12 @@ class _PendingChangeCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: () => _discard(context),
+                    onPressed:
+                        OfflineMutationQueue.instance.syncingIds.value.contains(
+                          record.id,
+                        )
+                        ? null
+                        : () => _discard(context),
                     child: Text(l10n.offlineChangesDiscard),
                   ),
                   if (record.status != PendingMutationStatus.queued)
