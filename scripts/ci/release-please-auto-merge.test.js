@@ -537,15 +537,39 @@ test('initial and advanced setup use the same step-scoped remote cache wrapper',
 });
 
 test('release setup refuses local invocation before running a build', () => {
-  const result = spawnSync(
-    process.execPath,
-    ['scripts/ci/build-release-setup.mjs', '--concurrency=2'],
-    {
-      cwd: repoRoot,
-      env: { ...process.env, CI: 'false' },
-      encoding: 'utf8',
-    }
+  const root = fs.mkdtempSync(
+    path.join(require('node:os').tmpdir(), 'release-setup-refusal-')
   );
-  assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /Release setup build is CI-only/);
+  try {
+    fs.writeFileSync(
+      path.join(root, 'bun'),
+      '#!/bin/sh\necho UNEXPECTED_BUILD >&2\nexit 97\n',
+      { mode: 0o755 }
+    );
+    for (const ciEnv of [
+      { CI: 'false', GITHUB_ACTIONS: 'false' },
+      { CI: 'true', GITHUB_ACTIONS: 'false' },
+      { CI: 'false', GITHUB_ACTIONS: 'true' },
+    ]) {
+      const result = spawnSync(
+        process.execPath,
+        ['scripts/ci/build-release-setup.mjs', '--concurrency=2'],
+        {
+          cwd: repoRoot,
+          env: {
+            ...process.env,
+            ...ciEnv,
+            PATH: `${root}:${process.env.PATH}`,
+          },
+          encoding: 'utf8',
+          timeout: 5000,
+        }
+      );
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, /Release setup build is CI-only/);
+      assert.doesNotMatch(result.stderr, /UNEXPECTED_BUILD/);
+    }
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });

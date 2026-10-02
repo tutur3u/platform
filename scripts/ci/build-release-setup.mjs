@@ -45,6 +45,9 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
+  // biome-ignore lint/suspicious/noUndeclaredEnvVars: This CI launcher runs outside Turbo; the admission flag does not affect cached build outputs.
+  if (process.env.GITHUB_ACTIONS !== 'true' || process.env.CI !== 'true')
+    throw new Error('Release setup build is CI-only');
   if (
     process.argv.length !== 3 ||
     !/^--concurrency=[1-8]$/u.test(process.argv[2])
