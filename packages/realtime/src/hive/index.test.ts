@@ -73,6 +73,33 @@ describe('@tuturuuu/realtime Hive CRDT helpers', () => {
     expect(merged.stateVector.byteLength).toBeGreaterThan(0);
   });
 
+  it('reports each deep observer target before delivering nested CRDT updates', () => {
+    const doc = new Y.Doc();
+    const world = doc.getMap('world');
+    const block = new Y.Map();
+    world.set('block', block);
+    const deliveredToWorld: Array<{ target: unknown; path: unknown }> = [];
+    const deliveredToBlock: typeof deliveredToWorld = [];
+    world.observeDeep((events) => {
+      deliveredToWorld.push({
+        target: events[0]?.currentTarget,
+        path: events[0]?.path,
+      });
+    });
+    block.observeDeep((events) => {
+      deliveredToBlock.push({
+        target: events[0]?.currentTarget,
+        path: events[0]?.path,
+      });
+    });
+
+    block.set('color', '#7cba62');
+
+    expect(deliveredToBlock).toEqual([{ target: block, path: [] }]);
+    expect(deliveredToWorld).toEqual([{ target: world, path: ['block'] }]);
+    doc.destroy();
+  });
+
   it('round-trips binary updates through base64 protocol payloads', () => {
     const update = encodeHiveWorldUpdate(baseWorld).update;
     expect(base64ToBytes(bytesToBase64(update))).toEqual(update);

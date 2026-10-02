@@ -205,17 +205,13 @@ abstract final class Routes {
       if (normalized == profileRoot || normalized.startsWith('$profileRoot/')) {
         return profileRoot;
       }
-      if (normalized == settingsWorkspace ||
-          normalized.startsWith('$settingsWorkspace/')) {
-        return settingsWorkspace;
-      }
       return settings;
     }
 
     return null;
   }
 
-  /// Routes that share the settings hub bottom navigation (app / workspace / you).
+  /// Settings and legacy Profile locations belong to the Settings family.
   static bool isSettingsHubLocation(String location) {
     final normalized = normalizeLocation(location);
     return normalized == settings ||

@@ -886,19 +886,6 @@ function parseCookieHeaderEdge(
     );
 }
 
-function getSessionAuthCookie(
-  req: NextRequest
-): { name: string; value: string } | null {
-  const cookies = parseCookieHeaderEdge(req.headers.get('cookie'));
-  return (
-    cookies.find(
-      (cookie) =>
-        cookie.name === 'tuturuuu_app_session' ||
-        GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN.test(cookie.name)
-    ) ?? null
-  );
-}
-
 export async function getProxySessionSubjectKeyFromCookieHeader(
   cookieHeader: string | null
 ): Promise<string | null> {
@@ -969,10 +956,15 @@ async function resolveProxyIdentity(
   ip: string
 ): Promise<ProxyIdentity> {
   const normalizedIp = ip && ip !== 'unknown' ? ip : null;
-  const sessionCookie = getSessionAuthCookie(req);
-  const sessionKey = sessionCookie
-    ? await buildProxySessionSubjectKey(sessionCookie.name, sessionCookie.value)
-    : null;
+  // Match the server's verified session cache key; header presence grants no trust.
+  const bearer = req.headers
+    .get('authorization')
+    ?.match(/^Bearer ([^\s]+)$/i)?.[1];
+  const sessionKey = bearer
+    ? await buildProxySessionSubjectKey('bearer', bearer)
+    : await getProxySessionSubjectKeyFromCookieHeader(
+        req.headers.get('cookie')
+      );
 
   return {
     cidrKey: getCidrSubjectKeyEdge(normalizedIp),

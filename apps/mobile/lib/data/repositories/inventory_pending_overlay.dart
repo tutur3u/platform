@@ -38,7 +38,25 @@ List<InventoryProduct> overlayPendingProducts(
           previous?.createdAt?.toIso8601String() ??
           mutation.createdAt.toIso8601String(),
       'inventory':
-          payload['inventory'] ??
+          (payload['inventory'] is List
+              ? (payload['inventory'] as List)
+                    .whereType<Map<dynamic, dynamic>>()
+                    .map((entry) {
+                      final row = Map<String, dynamic>.from(entry);
+                      row['unit_name'] ??= previous?.inventory
+                          .where((known) => known.unitId == row['unit_id'])
+                          .firstOrNull
+                          ?.unitName;
+                      row['warehouse_name'] ??= previous?.inventory
+                          .where(
+                            (known) => known.warehouseId == row['warehouse_id'],
+                          )
+                          .firstOrNull
+                          ?.warehouseName;
+                      return row;
+                    })
+                    .toList(growable: false)
+              : payload['inventory']) ??
           previous?.inventory
               .map(
                 (row) => {

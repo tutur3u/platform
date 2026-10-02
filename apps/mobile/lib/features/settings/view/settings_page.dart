@@ -10,14 +10,12 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/onboarding/view/onboarding_page.dart';
-import 'package:mobile/features/profile/cubit/profile_cubit.dart';
-import 'package:mobile/features/profile/cubit/profile_state.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
@@ -31,7 +29,6 @@ import 'package:mobile/features/settings/view/settings_session_section.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/settings/view/timezone_settings_tile.dart';
 import 'package:mobile/features/settings/view/workspace_timezone_settings_tile.dart';
-import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
@@ -64,27 +61,9 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (section != SettingsSectionDestination.overview) {
-      return _SettingsView(
-        section: section,
-        permissionsRepository: permissionsRepository,
-      );
-    }
-    return BlocProvider(
-      create: (_) {
-        final cubit = ProfileCubit(
-          profileRepository: ProfileRepository(
-            ownsApiClient: true,
-            ownsHttpClient: true,
-          ),
-        );
-        unawaited(cubit.loadProfile());
-        return cubit;
-      },
-      child: _SettingsView(
-        section: section,
-        permissionsRepository: permissionsRepository,
-      ),
+    return _SettingsView(
+      section: section,
+      permissionsRepository: permissionsRepository,
     );
   }
 }
@@ -143,6 +122,23 @@ class _SettingsViewState extends State<_SettingsView> {
     final horizontalPadding = ResponsivePadding.horizontal(context.deviceClass);
     return MultiBlocListener(
       listeners: [
+        if (widget.section == SettingsSectionDestination.overview)
+          BlocListener<AuthCubit, AuthState>(
+            listenWhen: (previous, current) =>
+                previous.user?.id != current.user?.id ||
+                previous.status != current.status,
+            listener: (context, state) {
+              _loadedWorkspaceId = null;
+              _mobileVersionsAccessWorkspaceId = null;
+              setState(() => _timezonePermissionsRevision++);
+              unawaited(
+                _loadMobileVersionsAccess(
+                  context.read<WorkspaceCubit>().state.currentWorkspace?.id,
+                  forceReload: true,
+                ),
+              );
+            },
+          ),
         BlocListener<WorkspaceCubit, WorkspaceState>(
           listenWhen: (previous, current) =>
               previous.currentWorkspace?.id != current.currentWorkspace?.id,
@@ -158,25 +154,6 @@ class _SettingsViewState extends State<_SettingsView> {
             }
           },
         ),
-        if (widget.section == SettingsSectionDestination.overview)
-          BlocListener<ProfileCubit, ProfileState>(
-            listenWhen: (previous, current) =>
-                previous.profile != current.profile ||
-                previous.lastUpdatedAt != current.lastUpdatedAt,
-            listener: (context, state) {
-              final profile = state.profile;
-              if (profile == null) {
-                return;
-              }
-              unawaited(
-                context.read<ShellProfileCubit>().applyExternalProfile(
-                  profile,
-                  lastUpdatedAt: state.lastUpdatedAt,
-                  isFromCache: state.isFromCache,
-                ),
-              );
-            },
-          ),
       ],
       child: shad.Scaffold(
         child: FutureBuilder<PackageInfo>(
@@ -322,17 +299,15 @@ class _SettingsViewState extends State<_SettingsView> {
         if (financePreferencesCubit == null) {
           return;
         }
-        unawaited(financePreferencesCubit.toggleShowAmounts());
+        unawaited(_showFinanceAmountsDialog(financePreferencesCubit));
       },
       disableDefaultTaskBoardNavigation: _disableDefaultTaskBoardNavigation,
-      onToggleDefaultTaskBoardNavigation: _toggleDefaultTaskBoardNavigation,
+      onToggleDefaultTaskBoardNavigation: () =>
+          unawaited(_showDefaultTaskBoardDialog()),
       onChangeTheme: () => unawaited(_showThemeDialog()),
       onChangeFirstDayOfWeek: () => unawaited(_showCalendarDialog()),
       hapticsEnabled: AppHaptics.enabled,
-      onToggleHaptics: () {
-        setState(() => AppHaptics.enabled = !AppHaptics.enabled);
-        unawaited(AppHaptics.setEnabled(value: AppHaptics.enabled));
-      },
+      onToggleHaptics: () => unawaited(_showHapticsDialog()),
     );
   }
 
@@ -399,12 +374,85 @@ class _SettingsViewState extends State<_SettingsView> {
     setState(() => _disableDefaultTaskBoardNavigation = value);
   }
 
-  Future<void> _toggleDefaultTaskBoardNavigation() async {
-    final nextValue = !_disableDefaultTaskBoardNavigation;
-    setState(() => _disableDefaultTaskBoardNavigation = nextValue);
-    await _settingsRepository.setDisableDefaultTaskBoardNavigation(
-      value: nextValue,
+  Future<void> _showDefaultTaskBoardDialog() async {
+    final l10n = context.l10n;
+    final selected = await showSettingsChoiceDialog<bool>(
+      context: context,
+      title: l10n.settingsDefaultTaskBoardNavigation,
+      description: l10n.settingsDefaultTaskBoardNavigationDescription,
+      currentValue: _disableDefaultTaskBoardNavigation,
+      options: [
+        SettingsChoiceOption(
+          value: false,
+          label: l10n.settingsDefaultTaskBoardNavigationDefaultBoard,
+          icon: Icons.view_kanban_outlined,
+        ),
+        SettingsChoiceOption(
+          value: true,
+          label: l10n.settingsDefaultTaskBoardNavigationBoardPicker,
+          icon: Icons.dashboard_outlined,
+        ),
+      ],
     );
+    if (selected == null ||
+        !mounted ||
+        selected == _disableDefaultTaskBoardNavigation) {
+      return;
+    }
+    await _settingsRepository.setDisableDefaultTaskBoardNavigation(
+      value: selected,
+    );
+    if (mounted) setState(() => _disableDefaultTaskBoardNavigation = selected);
+  }
+
+  Future<void> _showFinanceAmountsDialog(FinancePreferencesCubit cubit) async {
+    final l10n = context.l10n;
+    final selected = await showSettingsChoiceDialog<bool>(
+      context: context,
+      title: l10n.settingsFinanceAmounts,
+      description: l10n.settingsFinanceAmountsDescription,
+      currentValue: cubit.state.showAmounts,
+      options: [
+        SettingsChoiceOption(
+          value: true,
+          label: l10n.financeShowAmounts,
+          icon: Icons.visibility_outlined,
+        ),
+        SettingsChoiceOption(
+          value: false,
+          label: l10n.financeHideAmounts,
+          icon: Icons.visibility_off_outlined,
+        ),
+      ],
+    );
+    if (selected != null && mounted && selected != cubit.state.showAmounts) {
+      await cubit.setShowAmounts(value: selected);
+    }
+  }
+
+  Future<void> _showHapticsDialog() async {
+    final l10n = context.l10n;
+    final selected = await showSettingsChoiceDialog<bool>(
+      context: context,
+      title: l10n.settingsHaptics,
+      currentValue: AppHaptics.enabled,
+      options: [
+        SettingsChoiceOption(
+          value: true,
+          label: l10n.commonOn,
+          icon: Icons.vibration_rounded,
+        ),
+        SettingsChoiceOption(
+          value: false,
+          label: l10n.commonOff,
+          icon: Icons.notifications_off_outlined,
+        ),
+      ],
+    );
+    if (selected != null && mounted && selected != AppHaptics.enabled) {
+      await AppHaptics.setEnabled(value: selected);
+      if (mounted) setState(() {});
+    }
   }
 
   void _toggleExperimentalApp(String moduleId) {
@@ -426,7 +474,13 @@ class _SettingsViewState extends State<_SettingsView> {
     _mobileVersionsAccessWorkspaceId = workspaceId;
     final requestToken = ++_mobileVersionsAccessLoadToken;
 
-    if (workspaceId == null || !isSystemWorkspaceId(workspaceId)) {
+    final auth = context.read<AuthCubit?>()?.state;
+    final userId = auth?.user?.id;
+    setState(() => _canManageMobileVersions = false);
+    if (userId == null ||
+        auth?.status != AuthStatus.authenticated ||
+        workspaceId == null ||
+        !isSystemWorkspaceId(workspaceId)) {
       if (!mounted || requestToken != _mobileVersionsAccessLoadToken) {
         return;
       }
@@ -434,19 +488,18 @@ class _SettingsViewState extends State<_SettingsView> {
       return;
     }
 
-    final permissions = await _workspacePermissionsRepository.getPermissions(
-      wsId: rootWorkspaceId,
-    );
-
-    if (!mounted || requestToken != _mobileVersionsAccessLoadToken) {
-      return;
+    var allowed = false;
+    try {
+      final permissions = await _workspacePermissionsRepository.getPermissions(
+        wsId: rootWorkspaceId,
+        userId: userId,
+      );
+      allowed = permissions.containsPermission(manageWorkspaceRolesPermission);
+    } on Exception {
+      // Loading or failed access never exposes an administrative destination.
     }
-
-    setState(
-      () => _canManageMobileVersions = permissions.containsPermission(
-        manageWorkspaceRolesPermission,
-      ),
-    );
+    if (!mounted || requestToken != _mobileVersionsAccessLoadToken) return;
+    setState(() => _canManageMobileVersions = allowed);
   }
 
   Future<void> _refresh(BuildContext context) async {
@@ -456,8 +509,6 @@ class _SettingsViewState extends State<_SettingsView> {
     final currentWorkspaceId = workspaceCubit.state.currentWorkspace?.id;
 
     await Future.wait([
-      if (widget.section == SettingsSectionDestination.overview)
-        context.read<ProfileCubit>().loadProfile(forceRefresh: true),
       workspaceCubit.loadWorkspaces(forceRefresh: true),
       workspaceCubit.refreshLimits(),
       if (widget.section == SettingsSectionDestination.preferences ||

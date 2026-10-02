@@ -221,7 +221,7 @@ class _MonthDayCell extends StatelessWidget {
                           width: 6,
                           height: 6,
                           decoration: BoxDecoration(
-                            color: EventColors.fromString(event.color),
+                            color: EventColors.forEvent(event),
                             shape: BoxShape.circle,
                           ),
                         ),

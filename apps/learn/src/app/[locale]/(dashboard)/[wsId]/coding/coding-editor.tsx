@@ -117,7 +117,8 @@ export function CodingEditor({
         if (disposed) return;
         monaco.editor.remeasureFonts();
         editor.layout();
-      });
+      })
+      .catch(() => undefined);
     editor.focus();
   }, []);
 
