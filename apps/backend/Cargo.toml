@@ -31,7 +31,7 @@ serde_json = "1.0.151"
 sha2 = "0.11.0"
 tokio = { version = "1.53.1", features = ["macros", "net", "rt-multi-thread", "signal"], optional = true }
 url = "2.5.8"
-worker = { version = "0.8.5", optional = true }
+worker = { version = "0.8.7", optional = true }
 
 [profile.release]
 codegen-units = 1
