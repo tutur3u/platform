@@ -40,7 +40,25 @@ jobs:
           test "$(docker info --format '{{.CgroupDriver}}')" = systemd
           test -z "$(docker ps -aq)"
           test -z "$(docker volume ls -q)"
+          printf 'SUPABASE_CLI_BINARY_OVERRIDE=%s\n' "$(command -v supabase)" >> "$GITHUB_ENV"
           command -v bpftool
+          if ! sudo bpftool version >/dev/null 2>&1; then
+            sudo python3 - <<'PYBPF'
+          import glob, os, shutil, stat
+          candidates = sorted(glob.glob('/usr/lib/linux-tools/*/bpftool'))
+          native = []
+          for candidate in candidates:
+              info = os.stat(candidate)
+              if stat.S_ISREG(info.st_mode) and info.st_mode & 0o111:
+                  with open(candidate, 'rb') as source:
+                      if source.read(4) == b'\x7fELF':
+                          native.append(candidate)
+          if not native:
+              raise SystemExit('Native kernel inspection tool unavailable.')
+          shutil.copy2(native[-1], '/usr/local/bin/bpftool')
+          PYBPF
+          fi
+          sudo bpftool version >/dev/null 2>&1
           sudo mkdir -p /etc/systemd/system/tuturuuu-typegen.slice.d
           printf '[Slice]\nCPUQuota=200%%\nMemoryMax=6G\nMemorySwapMax=0\nIPAddressDeny=any\nIPAddressAllow=localhost 172.28.0.0/16\n' | sudo tee /etc/systemd/system/tuturuuu-typegen.slice.d/limits.conf >/dev/null
           sudo systemctl daemon-reload
