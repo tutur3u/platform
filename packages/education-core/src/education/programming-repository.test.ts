@@ -75,6 +75,16 @@ beforeEach(() => {
   });
 });
 describe('Programming actual repository cursor pages', () => {
+  it.each(['invalid', `${wsId},ws_id.not.is.null`, `${wsId})`])(
+    'rejects malformed workspace %s before filter construction',
+    async (invalid) => {
+      const repo = await createProgrammingRepository();
+      await expect(
+        repo.list({ wsId: invalid, publishedOnly: true })
+      ).rejects.toMatchObject({ status: 400 });
+      expect(calls).toEqual([]);
+    }
+  );
   it('returns a bounded deterministic page and an honest continuation', async () => {
     const repo = await createProgrammingRepository();
     const access = { wsId, actorId: 'actor', mode: 'learner' as const };
