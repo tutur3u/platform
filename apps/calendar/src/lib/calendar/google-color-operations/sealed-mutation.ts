@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { getWorkspaceKey } from '../../workspace-encryption';
 import { type ColorOperationAccess, ColorOperationError } from './protocol';
 
-const Identity = z
+export const MutationIdentitySchema = z
   .object({
     wsId: z.guid(),
     eventId: z.guid(),
@@ -14,11 +14,11 @@ const Identity = z
     providerEventId: z.string().min(1),
   })
   .strict();
-const Binding = z
+export const MutationBindingSchema = z
   .object({
     operationId: z.guid(),
     generation: z.string().regex(/^[1-9][0-9]*$/),
-    identity: Identity,
+    identity: MutationIdentitySchema,
     action: z.enum(['patch', 'delete']),
     baseETag: z.string().min(1),
   })
@@ -27,17 +27,25 @@ const Payload = z
   .object({
     providerPatch: z.record(z.string(), z.unknown()),
     localPatch: z.record(z.string(), z.unknown()),
+    providerOptions: z
+      .object({ sendUpdates: z.enum(['all', 'externalOnly', 'none']) })
+      .strict()
+      .optional(),
   })
   .strict();
 const Envelope = z
-  .object({ version: z.literal(1), binding: Binding, payload: Payload })
+  .object({
+    version: z.literal(1),
+    binding: MutationBindingSchema,
+    payload: Payload,
+  })
   .strict();
-const Journal = z
+export const SealedMutationSchema = z
   .object({ version: z.literal(1), ciphertext: z.string().min(1) })
   .strict();
-export type MutationBinding = z.infer<typeof Binding>;
+export type MutationBinding = z.infer<typeof MutationBindingSchema>;
 export type MutationPayload = z.infer<typeof Payload>;
-export type SealedMutation = z.infer<typeof Journal>;
+export type SealedMutation = z.infer<typeof SealedMutationSchema>;
 
 function unavailable(): never {
   throw new ColorOperationError(
@@ -46,7 +54,7 @@ function unavailable(): never {
   );
 }
 
-/** Candidate only, deliberately unwired. The journal contains ciphertext only.
+/** The journal contains ciphertext only.
  * Existing getWorkspaceKey never creates a key; missing keys fail before dispatch.
  * Both sealing and every replay reauthorize the current exact source identity.
  * The server supplies binding/payload; neither is a request recovery-body field. */
@@ -78,8 +86,8 @@ export function createSealedMutationCodec(args: {
       binding: MutationBinding,
       journal: SealedMutation
     ): Promise<MutationPayload> {
-      const expected = Binding.safeParse(binding);
-      const sealed = Journal.safeParse(journal);
+      const expected = MutationBindingSchema.safeParse(binding);
+      const sealed = SealedMutationSchema.safeParse(journal);
       if (!expected.success || !sealed.success) unavailable();
       const key = await authorizedKey(expected.data);
       // Same iv(12) + AES-256-GCM ciphertext + tag(16) format as encryptField.

@@ -42315,6 +42315,16 @@ export type Database = {
         };
         Returns: Json;
       };
+      calendar_google_mutation_operation: {
+        Args: {
+          p_action: string;
+          p_actor_id: string;
+          p_event_id: string;
+          p_input?: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       can_access_task_plan: {
         Args: {
           p_plan_id: string;

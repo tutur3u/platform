@@ -54,6 +54,11 @@ declare
 begin
   guarded_event := case when tg_op = 'INSERT' then new.id else old.id end;
   guarded_workspace := case when tg_op = 'INSERT' then new.ws_id else old.ws_id end;
+  -- Parent workspace deletion revokes every source/token and cascades this
+  -- ledger. Its child-row FK cleanup must not demand a per-event permit.
+  if tg_op = 'DELETE' and not exists (select 1 from public.workspaces w where w.id = guarded_workspace) then
+    return old;
+  end if;
   select * into op from private.calendar_google_color_operations
     where ws_id = guarded_workspace and event_id = guarded_event;
   if not found then
