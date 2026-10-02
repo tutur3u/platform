@@ -4011,6 +4011,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventorySearchProducts => 'Tìm sản phẩm';
 
   @override
+  String get inventoryLoadedLowStock => 'Tồn kho thấp trong sản phẩm đã tải';
+
+  @override
+  String get inventoryStockNoRows => 'Chưa cấu hình dòng tồn kho.';
+
+  @override
+  String get inventoryStockUnlimited => 'Không giới hạn';
+
+  @override
+  String get inventoryStockUnlimitedHint => 'Để trống số lượng để không giới hạn tồn kho.';
+
+  @override
   String get inventoryTitle => 'Tồn kho';
 
   @override
@@ -8714,6 +8726,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profilePrivateActivity => 'Hoạt động riêng tư của bạn';
 
   @override
+  String get profileTimelineDescription => 'Hoạt động tạo trong không gian làm việc này trong 30 ngày qua. Sự kiện lịch là hoạt động của không gian làm việc.';
+
+  @override
+  String get profileTimelineLimited => 'Chỉ hiển thị hoạt động gần đây. Một số nguồn đã đạt giới hạn hiển thị.';
+
+  @override
+  String get profileTimelineUnavailable => 'Không thể làm mới hoạt động.';
+
+  @override
   String get profileTimelineTitle => 'Dòng thời gian hoạt động';
 
   @override
@@ -8726,7 +8747,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileTimelineEmpty => 'Không có hoạt động gần đây trong không gian này';
 
   @override
-  String get profileTimelinePartial => 'Một số hoạt động chưa hiển thị. Thử lại';
+  String get profileTimelinePartial => 'Một số hoạt động chưa hiển thị.';
 
   @override
   String profileTimelineTasks(int count) {
@@ -9436,6 +9457,9 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get settingsTimezoneRateLimited => 'Quá nhiều yêu cầu. Vui lòng chờ trước khi thử lại.';
+
+  @override
   String get settingsTimezoneError => 'Không thể tải hoặc lưu múi giờ. Nhấn để thử lại.';
 
   @override
@@ -9446,4 +9470,66 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get profileTimelineTab => 'Dòng thời gian';
+
+  @override
+  String get profileTimelineShowDates => 'Hiện thanh chọn ngày';
+
+  @override
+  String get profileTimelineHideDates => 'Đóng thanh ngày và xem dòng hoạt động';
+
+  @override
+  String get profileTimelineAgenda => 'Những ngày có hoạt động';
+
+  @override
+  String get profileTimelineDayEmpty => 'Không có hoạt động nào được trả về cho ngày này.';
+
+  @override
+  String get profileTimelineHasActivity => 'Có hoạt động trong dữ liệu đã tải';
+
+  @override
+  String get profileTimelineMoreDays => 'Hiện thêm ngày đã tải';
+
+  @override
+  String get inventoryStockHealthTitle => 'Tình trạng tồn kho';
+
+  @override
+  String get inventoryStockHealthScope => 'Sản phẩm đang hoạt động · mọi dòng tồn kho, gồm kho đã lưu trữ';
+
+  @override
+  String inventoryStockHealthAsOf(String timestamp) {
+    return 'Ảnh chụp từ máy chủ: $timestamp UTC';
+  }
+
+  @override
+  String get inventoryStockHealthIncomplete => 'Ảnh chụp chưa đầy đủ: một vài số đếm hoặc thời gian máy chủ bị thiếu.';
+
+  @override
+  String get inventoryStockHealthUnavailable => 'Không thể tải tình trạng tồn kho. Kéo để làm mới và thử lại.';
+
+  @override
+  String get inventoryStockHealthDenied => 'Bạn không có quyền xem phân tích tồn kho.';
+
+  @override
+  String get inventoryStockHealthLoading => 'Đang tải tình trạng tồn kho…';
+
+  @override
+  String get inventoryStockHealthActive => 'Sản phẩm đang hoạt động';
+
+  @override
+  String get inventoryStockHealthUnconfigured => 'Sản phẩm chưa có dòng tồn kho';
+
+  @override
+  String get inventoryStockHealthLow => 'Dòng tồn kho thấp';
+
+  @override
+  String get inventoryStockHealthOut => 'Dòng hết hàng';
+
+  @override
+  String get inventoryStockHealthUnlimited => 'Dòng tồn kho không giới hạn';
+
+  @override
+  String get inventoryStockHealthOverlap => 'Số dòng thấp/hết hàng có thể trùng nhau. Kiểm tra thấp/hết hàng theo số lượng không tính dòng không giới hạn; các dòng này được đếm riêng. Biểu đồ so sánh số dòng.';
+
+  @override
+  String get inventoryStockHealthUnknown => 'Chưa có dữ liệu';
 }

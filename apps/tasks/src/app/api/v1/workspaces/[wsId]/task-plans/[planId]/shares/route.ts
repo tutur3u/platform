@@ -59,7 +59,7 @@ export async function POST(request: NextRequest, context: Context) {
   const access = await requireTaskPlanAccess({
     auth,
     planId,
-    permission: 'edit',
+    permission: 'owner',
   });
   if ('schemaUnavailable' in access) return taskPlanSchemaUnavailableResponse();
   if ('error' in access) return access.error;
@@ -110,7 +110,7 @@ export async function PATCH(request: NextRequest, context: Context) {
   const access = await requireTaskPlanAccess({
     auth,
     planId,
-    permission: 'edit',
+    permission: 'owner',
   });
   if ('schemaUnavailable' in access) return taskPlanSchemaUnavailableResponse();
   if ('error' in access) return access.error;
@@ -144,7 +144,7 @@ export async function DELETE(request: NextRequest, context: Context) {
   const access = await requireTaskPlanAccess({
     auth,
     planId,
-    permission: 'edit',
+    permission: 'owner',
   });
   if ('schemaUnavailable' in access) return taskPlanSchemaUnavailableResponse();
   if ('error' in access) return access.error;

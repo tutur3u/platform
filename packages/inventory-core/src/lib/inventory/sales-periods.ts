@@ -5,10 +5,18 @@ import type {
   InventorySaleSource,
   InventorySaleSummary,
   InventorySalesPeriod,
-  InventorySalesPeriodProductScope,
+  InventorySalesPeriodPayload,
 } from '@tuturuuu/internal-api/inventory';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { summarizeInventorySales } from './commerce/summary';
+import {
+  preparePeriodPricingPayload,
+  updateScheduledPeriod,
+} from './period-pricing';
+import {
+  replacePeriodProducts,
+  validatePeriodProducts,
+} from './period-product-rules';
 
 type SalesPeriodRow = Omit<InventorySalesPeriod, 'product_ids' | 'sale_count'>;
 type SalesPeriodAssignmentRow = {
@@ -27,8 +35,7 @@ type InventorySaleReference = {
   source: InventorySaleSource;
 };
 
-const SALES_PERIOD_SELECT =
-  'id, ws_id, name, description, starts_at, ends_at, status, product_scope, created_at, updated_at';
+const SALES_PERIOD_SELECT = '*';
 
 export class InventorySalesPeriodProductRuleError extends Error {
   constructor() {
@@ -75,61 +82,6 @@ async function getPeriodProducts({
     .in('period_id', periodIds);
   if (error) throw error;
   return (data ?? []) as unknown as SalesPeriodProductRow[];
-}
-
-async function validatePeriodProducts({
-  productIds,
-  sbAdmin,
-  wsId,
-}: {
-  productIds: string[];
-  sbAdmin: TypedSupabaseClient;
-  wsId: string;
-}) {
-  const uniqueIds = [...new Set(productIds)];
-  if (uniqueIds.length === 0) return uniqueIds;
-  const { data, error } = await sbAdmin
-    .from('workspace_products')
-    .select('id')
-    .eq('ws_id', wsId)
-    .in('id', uniqueIds);
-  if (error) throw error;
-  if ((data ?? []).length !== uniqueIds.length) {
-    throw new Error('One or more sales period products were not found');
-  }
-  return uniqueIds;
-}
-
-async function replacePeriodProducts({
-  periodId,
-  productIds,
-  sbAdmin,
-  wsId,
-}: {
-  periodId: string;
-  productIds: string[];
-  sbAdmin: TypedSupabaseClient;
-  wsId: string;
-}) {
-  const uniqueIds = await validatePeriodProducts({ productIds, sbAdmin, wsId });
-  const table = privateInventory(sbAdmin).from(
-    'inventory_sales_period_products' as never
-  );
-  const { error: deleteError } = await table
-    .delete()
-    .eq('ws_id', wsId)
-    .eq('period_id', periodId);
-  if (deleteError) throw deleteError;
-  if (uniqueIds.length === 0) return;
-
-  const { error } = await table.insert(
-    uniqueIds.map((productId) => ({
-      period_id: periodId,
-      product_id: productId,
-      ws_id: wsId,
-    })) as never
-  );
-  if (error) throw error;
 }
 
 async function getPeriodWithCount({
@@ -221,18 +173,12 @@ export async function createInventorySalesPeriod({
   wsId,
 }: {
   actorId: string;
-  payload: {
-    description?: string | null;
-    ends_at?: string | null;
-    name: string;
-    product_ids?: string[];
-    product_scope?: InventorySalesPeriodProductScope;
-    starts_at?: string | null;
-  };
+  payload: InventorySalesPeriodPayload;
   sbAdmin: TypedSupabaseClient;
   wsId: string;
 }) {
-  const { product_ids: productIds = [], ...periodPayload } = payload;
+  const { product_ids: productIds = [], ...periodPayload } =
+    await preparePeriodPricingPayload(sbAdmin, payload);
   await validatePeriodProducts({ productIds, sbAdmin, wsId });
   const { data, error } = await privateInventory(sbAdmin)
     .from('inventory_sales_periods' as never)
@@ -259,20 +205,15 @@ export async function updateInventorySalesPeriod({
   sbAdmin,
   wsId,
 }: {
-  payload: Partial<{
-    description: string | null;
-    ends_at: string | null;
-    name: string;
-    product_ids: string[];
-    product_scope: InventorySalesPeriodProductScope;
-    starts_at: string | null;
-    status: 'active' | 'archived';
-  }>;
+  payload: Partial<
+    InventorySalesPeriodPayload & { status: 'active' | 'archived' }
+  >;
   periodId: string;
   sbAdmin: TypedSupabaseClient;
   wsId: string;
 }) {
-  const { product_ids: productIds, ...periodPayload } = payload;
+  const { product_ids: productIds, ...periodPayload } =
+    await preparePeriodPricingPayload(sbAdmin, payload);
   if (productIds !== undefined) {
     await validatePeriodProducts({ productIds, sbAdmin, wsId });
   }
@@ -282,6 +223,17 @@ export async function updateInventorySalesPeriod({
       ? {}
       : { name: periodPayload.name.trim() }),
   };
+  if (
+    await updateScheduledPeriod(
+      sbAdmin,
+      wsId,
+      periodId,
+      nextPayload,
+      productIds
+    )
+  ) {
+    return getPeriodWithCount({ periodId, sbAdmin, wsId });
+  }
   const { data, error } = await privateInventory(sbAdmin)
     .from('inventory_sales_periods' as never)
     .update(nextPayload as never)

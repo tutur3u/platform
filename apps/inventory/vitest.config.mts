@@ -9,6 +9,15 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: '@', replacement: resolve(__dirname, './src') },
+      // Test current workspace source without requiring package builds.
+      {
+        find: '@tuturuuu/internal-api',
+        replacement: resolve(__dirname, '../../packages/internal-api/src'),
+      },
+      {
+        find: '@tuturuuu/supabase/next',
+        replacement: resolve(__dirname, '../../packages/supabase/src/next'),
+      },
       {
         find: 'server-only',
         replacement: resolve(__dirname, './src/test/server-only-stub.ts'),

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:mobile/data/repositories/timezone_settings_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 
 class TimezoneSettingsState {
   const TimezoneSettingsState({
@@ -12,6 +13,9 @@ class TimezoneSettingsState {
     this.saving = false,
     this.failed = false,
     this.resolved = false,
+    this.retryAt,
+    this.personalLoaded = false,
+    this.workspaceLoaded = false,
   });
   final String personal;
   final String workspace;
@@ -20,6 +24,9 @@ class TimezoneSettingsState {
   final bool saving;
   final bool failed;
   final bool resolved;
+  final DateTime? retryAt;
+  final bool personalLoaded;
+  final bool workspaceLoaded;
   String get effective => personal != 'auto'
       ? personal
       : workspace != 'auto'
@@ -33,7 +40,11 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
     required this.repository,
     required this.deviceLoader,
     this.loadTimeout = const Duration(seconds: 15),
-  }) : super(const TimezoneSettingsState());
+    DateTime Function()? clock,
+  }) : _clock = clock ?? DateTime.now,
+       super(const TimezoneSettingsState());
+  final DateTime Function() _clock;
+  DateTime? _retryAt;
   final Duration loadTimeout;
   final TimezoneSettingsRepository repository;
   final Future<String> Function() deviceLoader;
@@ -46,23 +57,69 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
   }) async {
     final generation = ++_generation;
     final previous = state;
+    final sameUser = userId != null && _userId == userId;
     final sameScope = _userId == userId && _workspaceId == workspaceId;
+    if (_userId != userId) _retryAt = null;
     _userId = userId;
     _workspaceId = workspaceId;
+    if (_retryAt?.isAfter(_clock()) ?? false) {
+      emit(
+        TimezoneSettingsState(
+          personal: sameUser ? previous.personal : 'auto',
+          workspace: sameScope ? previous.workspace : 'auto',
+          device: sameScope ? previous.device : 'UTC',
+          resolved: sameScope && previous.resolved,
+          personalLoaded:
+              sameUser && (previous.resolved || previous.personalLoaded),
+          workspaceLoaded: sameScope && previous.workspaceLoaded,
+          loading: false,
+          failed: true,
+          retryAt: _retryAt,
+        ),
+      );
+      return;
+    }
+    _retryAt = null;
     emit(
-      sameScope && previous.resolved
-          ? TimezoneSettingsState(
-              personal: previous.personal,
-              workspace: previous.workspace,
-              device: previous.device,
-              resolved: true,
-            )
-          : const TimezoneSettingsState(),
+      TimezoneSettingsState(
+        personal: sameUser ? previous.personal : 'auto',
+        workspace: sameScope ? previous.workspace : 'auto',
+        device: sameScope ? previous.device : 'UTC',
+        resolved: sameScope && previous.resolved,
+        personalLoaded:
+            sameUser && (previous.resolved || previous.personalLoaded),
+        workspaceLoaded:
+            sameScope && (previous.resolved || previous.workspaceLoaded),
+      ),
     );
     if (userId == null) {
       emit(const TimezoneSettingsState(loading: false));
       return;
     }
+    String? personalRead;
+    String? workspaceRead;
+    ApiException? rateLimit;
+    Future<String> readPreference(
+      Future<String> read, {
+      bool personal = false,
+    }) async {
+      try {
+        final zone = await read;
+        if (personal) {
+          personalRead = zone;
+        } else {
+          workspaceRead = zone;
+        }
+        return zone;
+      } on ApiException catch (error) {
+        if (error.statusCode == 429 &&
+            (error.retryAfter ?? 0) > (rateLimit?.retryAfter ?? 0)) {
+          rateLimit = error;
+        }
+        rethrow;
+      }
+    }
+
     try {
       Future<List<String>> resolve() async {
         // A named preference does not depend on a working native plugin.
@@ -71,12 +128,12 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
           deviceLoader,
         ).then<String?>((zone) => zone, onError: (Object _) => null);
         final preferences = await Future.wait<String>([
-          repository.loadPersonal(),
+          readPreference(repository.loadPersonal(), personal: true),
           if (workspaceId != null)
-            repository.loadWorkspace(workspaceId)
+            readPreference(repository.loadWorkspace(workspaceId))
           else
-            Future.value('auto'),
-        ], eagerError: true);
+            Future.value(workspaceRead = 'auto'),
+        ]);
         if (preferences.any((zone) => zone != 'auto')) {
           return [...preferences, ''];
         }
@@ -98,8 +155,15 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
           resolved: true,
         ),
       );
-    } on Object {
+    } on Object catch (error) {
       if (!isClosed && generation == _generation) {
+        final failure = rateLimit ?? error;
+        if (failure is ApiException && failure.statusCode == 429) {
+          final seconds = failure.retryAfter;
+          if (seconds != null && seconds > 0) {
+            _retryAt = _clock().add(Duration(seconds: seconds));
+          }
+        }
         emit(
           sameScope && previous.resolved
               ? TimezoneSettingsState(
@@ -109,8 +173,31 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
                   loading: false,
                   resolved: true,
                   failed: true,
+                  retryAt: _retryAt,
                 )
-              : const TimezoneSettingsState(loading: false, failed: true),
+              : TimezoneSettingsState(
+                  personal:
+                      personalRead ??
+                      (sameUser &&
+                              (previous.resolved || previous.personalLoaded)
+                          ? previous.personal
+                          : 'auto'),
+                  workspace:
+                      workspaceRead ??
+                      (sameScope && previous.workspaceLoaded
+                          ? previous.workspace
+                          : 'auto'),
+                  personalLoaded:
+                      personalRead != null ||
+                      (sameUser &&
+                          (previous.resolved || previous.personalLoaded)),
+                  workspaceLoaded:
+                      workspaceRead != null ||
+                      (sameScope && previous.workspaceLoaded),
+                  loading: false,
+                  failed: true,
+                  retryAt: _retryAt,
+                ),
         );
       }
     }
@@ -124,7 +211,8 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
     bool workspace = false,
     bool canManageWorkspace = false,
   }) async {
-    if (_userId == null ||
+    if ((_retryAt?.isAfter(_clock()) ?? false) ||
+        _userId == null ||
         state.loading ||
         state.saving ||
         !state.resolved ||
@@ -168,8 +256,13 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
           resolved: true,
         ),
       );
-    } on Exception {
+    } on Exception catch (error) {
       if (!isClosed && generation == _generation) {
+        if (error is ApiException &&
+            error.statusCode == 429 &&
+            (error.retryAfter ?? 0) > 0) {
+          _retryAt = _clock().add(Duration(seconds: error.retryAfter!));
+        }
         emit(
           TimezoneSettingsState(
             personal: previous.personal,
@@ -178,6 +271,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
             loading: false,
             resolved: true,
             failed: true,
+            retryAt: _retryAt,
           ),
         );
       }

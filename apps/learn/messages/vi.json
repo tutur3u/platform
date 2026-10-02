@@ -92,7 +92,7 @@
     "actualOutput": "Đầu ra của bạn",
     "case": "Bộ kiểm thử {number}",
     "caseTime": "Thời gian bộ kiểm thử",
-    "challengeList": "Danh sách bài tập lập trình",
+    "challengeList": "Bài tập lập trình",
     "challenges": {
       "balanced-brackets": {
         "prompt": "Cho một chuỗi chỉ gồm (), [] và {}. In YES nếu mọi dấu ngoặc mở được đóng đúng thứ tự. Ngược lại in NO.",
@@ -107,6 +107,7 @@
         "title": "Tổng hai số"
       }
     },
+    "collapseConsole": "Thu gọn bảng kiểm thử",
     "console": "Bảng kiểm thử và chạy mã",
     "customCase": "Bộ kiểm thử tùy chỉnh",
     "customCaseHint": "Thêm đầu vào và đầu ra mong đợi để chạy cùng các bộ công khai. Bộ tùy chỉnh được lưu trong lịch sử chạy.",
@@ -118,6 +119,7 @@
     "editor": "Lời giải của bạn",
     "emptyHistory": "Chưa có lần chạy nào cho bài này.",
     "emptyOutput": "Không có đầu ra",
+    "expandConsole": "Mở bảng kiểm thử",
     "expectedOutput": "Đầu ra mong đợi",
     "eyebrow": "Thuật toán và cấu trúc dữ liệu",
     "hiddenCase": "Bộ ẩn {number}",
@@ -179,7 +181,6 @@
     },
     "submit": "Nộp bài",
     "submitting": "Đang nộp…",
-    "syntaxHighlighting": "Tô màu cú pháp · Ctrl/⌘ Enter để chạy",
     "tabs": {
       "cases": "Bộ kiểm thử",
       "history": "Lịch sử",
@@ -187,7 +188,7 @@
     },
     "timeRange": "Khoảng bộ công khai: {min}–{max}.",
     "timingNote": "Thời gian gồm khởi động sandbox và biên dịch với ngôn ngữ cần biên dịch. Hãy so sánh cả khoảng thời gian giữa các lần chạy; dao động nhỏ là bình thường.",
-    "title": "Phòng luyện lập trình",
+    "title": "Lập trình",
     "topics": {
       "arrays": "Mảng",
       "search": "Tìm kiếm",
@@ -701,7 +702,7 @@
   "navigation": {
     "aiChat": "AI Chat",
     "assignments": "Bài tập",
-    "coding": "Luyện lập trình",
+    "coding": "Lập trình",
     "courses": "Khóa học",
     "home": "Trang chủ",
     "marks": "Điểm",

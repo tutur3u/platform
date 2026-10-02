@@ -226,6 +226,14 @@ export async function findLastSuccessfulDeploymentSha({
       continue;
     }
 
+    // Learn preview validates artifacts only; it never advances a deployed baseline.
+    if (
+      workflowName === 'vercel-preview-learn.yaml' &&
+      payload.markerKind === 'build'
+    ) {
+      continue;
+    }
+
     if (!deployment.sha || !deployment.statuses_url) {
       continue;
     }

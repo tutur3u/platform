@@ -1,5 +1,5 @@
 {
-  "commonLoading": "Loading",
+    "commonLoading": "Loading",
     "@@locale": "en",
     "appTitle": "Tuturuuu",
     "chatAccept": "Accept",
@@ -71,7 +71,6 @@
     "@counterAppBarTitle": {
         "description": "Text shown in the AppBar of the Counter Page"
     },
-
     "loginTitle": "Welcome back",
     "loginSubtitle": "Sign in to continue",
     "loginContinueWithEmail": "Continue with email",
@@ -218,7 +217,6 @@
     "loginSignUpPrompt": "Don't have an account? Sign up",
     "emailLabel": "Email",
     "passwordLabel": "Password",
-
     "signUpTitle": "Create account",
     "signUpButton": "Create account",
     "signUpSubtitle": "Choose a provider to continue.",
@@ -233,7 +231,6 @@
     "signUpBackToLogin": "Back to login",
     "signUpAlreadyHaveAccountPrompt": "Already have an account?",
     "signUpSignIn": "Sign in",
-
     "forgotPasswordTitle": "Password help",
     "forgotPasswordDescription": "Use the web app to update your password.",
     "forgotPasswordInstructions": "Sign in on the web with a social account already linked to your email, then change your password from account settings.",
@@ -242,7 +239,6 @@
     "forgotPasswordSentTitle": "Email sent",
     "forgotPasswordSentMessage": "Check your inbox for the password reset link.",
     "forgotPasswordBackToLogin": "Back to login",
-
     "workspaceSelectTitle": "Select workspace",
     "workspaceSelectEmpty": "No workspaces found",
     "workspaceSelectError": "Failed to switch workspace",
@@ -253,7 +249,6 @@
     "appUpdateRecommendedMessage": "A newer version of the app is available. Update now for the latest fixes and improvements.",
     "appUpdateRequiredTitle": "Update required",
     "appUpdateRequiredMessage": "This app version is no longer supported. Update to continue using the app.",
-
     "navHome": "Home",
     "navTasks": "Tasks",
     "navHabits": "Habits",
@@ -498,7 +493,6 @@
     "habitsQuickLogValueRequired": "Enter a value before saving",
     "habitsMetricMet": "Met",
     "habitsMetricPending": "Pending",
-
     "assistantComingSoon": "Coming Soon",
     "assistantSelectWorkspace": "Select a workspace",
     "assistantWorkspaceAwareDescription": "Your AI assistant for planning, questions, and quick actions.",
@@ -707,7 +701,6 @@
             }
         }
     },
-
     "dashboardGreeting": "Welcome back!",
     "dashboardQuickActions": "Quick actions",
     "dashboardTodayTitle": "Today at a glance",
@@ -733,7 +726,6 @@
     "dashboardTasksMetric": "{count} active",
     "dashboardOverdueMetric": "{count} overdue",
     "dashboardEventsMetric": "{count} next up",
-
     "tasksTitle": "Tasks",
     "tasksEmpty": "No tasks yet",
     "tasksLoadError": "Couldn't load tasks right now",
@@ -799,22 +791,22 @@
     "taskBoardsPageSize": "Page size",
     "taskBoardsPageSizeOption": "{count} items",
     "@taskBoardsPageSizeOption": {
-      "placeholders": {
-        "count": {
-          "type": "int"
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
         }
-      }
     },
     "taskBoardsPageInfo": "Page {current} of {total}",
     "@taskBoardsPageInfo": {
-      "placeholders": {
-        "current": {
-          "type": "int"
-        },
-        "total": {
-          "type": "int"
+        "placeholders": {
+            "current": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
         }
-      }
     },
     "taskBoardsListsCount": "{count, plural, one{{count} list} other{{count} lists}}",
     "@taskBoardsListsCount": {
@@ -1320,8 +1312,12 @@
     "taskPortfolioProjectTasksProgress": "{completed} of {total} tasks",
     "@taskPortfolioProjectTasksProgress": {
         "placeholders": {
-            "completed": {"type": "int"},
-            "total": {"type": "int"}
+            "completed": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
         }
     },
     "taskPortfolioLinkProject": "Link project",
@@ -1402,8 +1398,12 @@
     "calendarAllDayProgress": "Day {current} of {total}",
     "@calendarAllDayProgress": {
         "placeholders": {
-            "current": { "type": "int" },
-            "total": { "type": "int" }
+            "current": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
         }
     },
     "calendarConnectionsTitle": "Manage Calendar Accounts",
@@ -1415,10 +1415,11 @@
     "calendarConnectionsDisconnectConfirm": "Disconnect {account}? Associated calendars will be disabled.",
     "@calendarConnectionsDisconnectConfirm": {
         "placeholders": {
-            "account": { "type": "String" }
+            "account": {
+                "type": "String"
+            }
         }
     },
-
     "financeTitle": "Finance",
     "inventoryAddCategory": "Add category",
     "inventoryAddManufacturer": "Add manufacturer",
@@ -1440,7 +1441,9 @@
     "inventoryAuditChanges": "{count} changes",
     "@inventoryAuditChanges": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "inventoryAuditRecentSubtitle": "Follow product, stock, setup, and sale changes across the workspace.",
@@ -1535,8 +1538,12 @@
     "inventoryProductAvailableSummary": "{amount} available • {price}",
     "@inventoryProductAvailableSummary": {
         "placeholders": {
-            "amount": { "type": "String" },
-            "price": { "type": "String" }
+            "amount": {
+                "type": "String"
+            },
+            "price": {
+                "type": "String"
+            }
         }
     },
     "inventoryProductSaved": "Product saved.",
@@ -1565,14 +1572,18 @@
     "inventorySalesItemsCount": "{count} items",
     "@inventorySalesItemsCount": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "inventorySalesLabel": "Sales",
     "inventorySalesCreatorBadge": "By {name}",
     "@inventorySalesCreatorBadge": {
         "placeholders": {
-            "name": { "type": "String" }
+            "name": {
+                "type": "String"
+            }
         }
     },
     "inventorySalesLineItems": "Line items",
@@ -1628,6 +1639,10 @@
     "inventoryCheckoutOptionsUnavailable": "Some checkout choices could not be refreshed. Existing periods stay available; retry to restore missing wallets, categories, products, or periods.",
     "inventorySaveProduct": "Save product",
     "inventorySearchProducts": "Search products",
+    "inventoryLoadedLowStock": "Low stock in loaded products",
+    "inventoryStockNoRows": "No stock rows configured.",
+    "inventoryStockUnlimited": "Unlimited",
+    "inventoryStockUnlimitedHint": "Leave quantity empty for unlimited stock.",
     "inventoryTitle": "Inventory",
     "financeOverviewLabel": "Overview",
     "financeActivityLabel": "Activity",
@@ -1651,14 +1666,18 @@
     "financeCheckpointsRecordDescription": "Save the actual balance visible in {wallet}.",
     "@financeCheckpointsRecordDescription": {
         "placeholders": {
-            "wallet": { "type": "String" }
+            "wallet": {
+                "type": "String"
+            }
         }
     },
     "financeCheckpointsActualBalance": "Actual balance",
     "financeCheckpointsActualBalanceWithCurrency": "Actual balance ({currency})",
     "@financeCheckpointsActualBalanceWithCurrency": {
         "placeholders": {
-            "currency": { "type": "String" }
+            "currency": {
+                "type": "String"
+            }
         }
     },
     "financeCheckpointsLedgerBalance": "Ledger balance",
@@ -1669,7 +1688,9 @@
     "financeCheckpointsVarianceValue": "Variance: {value}",
     "@financeCheckpointsVarianceValue": {
         "placeholders": {
-            "value": { "type": "String" }
+            "value": {
+                "type": "String"
+            }
         }
     },
     "financeCheckpointsCheckedAt": "Checked at",
@@ -1691,7 +1712,9 @@
     "financeCheckpointsReconcileDefaultDescription": "Wallet reconciliation for {wallet}",
     "@financeCheckpointsReconcileDefaultDescription": {
         "placeholders": {
-            "wallet": { "type": "String" }
+            "wallet": {
+                "type": "String"
+            }
         }
     },
     "financeCheckpointsCategory": "Category",
@@ -1721,9 +1744,21 @@
     },
     "financeWallets": "Wallets",
     "financeOverviewWalletCount": "{count, plural, one{1 wallet} other{{count} wallets}}",
-    "@financeOverviewWalletCount": {"placeholders": {"count": {"type": "int"}}},
+    "@financeOverviewWalletCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "financeOverviewRecentCount": "{count, plural, one{1 recent transaction} other{{count} recent transactions}}",
-    "@financeOverviewRecentCount": {"placeholders": {"count": {"type": "int"}}},
+    "@financeOverviewRecentCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "financeTransactions": "Transactions",
     "financeCategories": "Categories",
     "financeRecentTransactions": "Recent transactions",
@@ -1948,7 +1983,6 @@
     "financeDestinationAmountAutoHint": "Auto-filled from live exchange rate",
     "financeDestinationAmountOverrideHint": "Using custom amount — tap to switch to auto",
     "financeInvertRate": "Invert rate",
-
     "timerTitle": "Timer",
     "timerStart": "Start",
     "timerStop": "Stop",
@@ -2092,11 +2126,11 @@
     "timerHeatmapActiveDaysLabel": "Active days",
     "timerHeatmapLessThanMinute": "<1m",
     "timerHeatmapNoActivityYet": "No activity yet",
-     "timerViewSessionDetails": "Session details",
-     "timerEditSession": "Edit session",
-     "timerSessionUpdated": "Session updated",
-     "timerSessionDeleted": "Session deleted",
-     "timerDeleteSession": "Delete session",
+    "timerViewSessionDetails": "Session details",
+    "timerEditSession": "Edit session",
+    "timerSessionUpdated": "Session updated",
+    "timerSessionDeleted": "Session deleted",
+    "timerDeleteSession": "Delete session",
     "timerDeleteConfirm": "Delete this session?",
     "timerAddMissedEntry": "Add missed entry",
     "timerStartTime": "Start time",
@@ -2158,11 +2192,11 @@
     "timerRequestActivityUpdated": "updated this request",
     "taskBoardDetailTaskAssigneeCount": "{count, plural, one{{count} assignee} other{{count} assignees}}",
     "@taskBoardDetailTaskAssigneeCount": {
-      "placeholders": {
-        "count": {
-          "type": "int"
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
         }
-      }
     },
     "timerRequestActivityFeedbackLabel": "Feedback",
     "timerRequestActivityTitleLabel": "Title",
@@ -2171,8 +2205,12 @@
     "timerRequestActivityPageInfo": "Page {current} of {total}",
     "@timerRequestActivityPageInfo": {
         "placeholders": {
-            "current": { "type": "int" },
-            "total": { "type": "int" }
+            "current": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
         }
     },
     "timerRequestActivityActionCreated": "created",
@@ -2327,7 +2365,6 @@
             }
         }
     },
-
     "settingsTitle": "Settings",
     "settingsNavApp": "App",
     "settingsNavWorkspace": "Workspace",
@@ -2476,7 +2513,6 @@
     "settingsLicenseViewerDescription": "Browse Flutter, plugin, and package licenses included in this build.",
     "settingsLicenseVersionDescription": "Reference the installed version while reviewing notices.",
     "settingsMinutesUnit": "min",
-
     "profileTitle": "Profile",
     "profileIdentitySectionTitle": "Identity",
     "profileIdentitySectionDescription": "Keep the core details people see about your account up to date.",
@@ -2534,7 +2570,6 @@
     "profileLoading": "Loading profile...",
     "profileSave": "Save",
     "profileCancel": "Cancel",
-
     "workspacePickerTitle": "Workspaces",
     "workspacePickerSearchHint": "Search workspaces",
     "workspaceDefaultPickerTitle": "Default workspace",
@@ -2560,16 +2595,21 @@
     "workspaceCreateLimitInfo": "{current} of {limit} workspaces used",
     "@workspaceCreateLimitInfo": {
         "placeholders": {
-            "current": { "type": "int" },
-            "limit": { "type": "int" }
+            "current": {
+                "type": "int"
+            },
+            "limit": {
+                "type": "int"
+            }
         }
     },
-
     "notificationsTitle": "Notifications",
     "notificationsSubtitle": "{count} unread",
     "@notificationsSubtitle": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "notificationsInbox": "Inbox",
@@ -2597,38 +2637,40 @@
     "notificationsMinutesAgo": "{count}m ago",
     "@notificationsMinutesAgo": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "notificationsHoursAgo": "{count}h ago",
     "@notificationsHoursAgo": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "notificationsDaysAgo": "{count}d ago",
     "@notificationsDaysAgo": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
-
     "mfaTitle": "Two-factor authentication",
     "mfaSubtitle": "Enter the code from your authenticator app",
     "mfaCodeLabel": "6-digit code",
     "mfaVerify": "Verify",
     "mfaInvalidCode": "Invalid verification code. Please try again.",
     "mfaSignOut": "Sign out",
-
     "captchaError": "Security check failed. Please try again.",
-
     "commonOff": "Off",
     "commonOn": "On",
     "commonSomethingWentWrong": "Something went wrong",
     "selectImageSource": "Select image source",
     "camera": "Camera",
     "gallery": "Gallery",
-
     "commonRetry": "Retry",
     "commonShowLess": "Show less",
     "commonShowMore": "Show more",
@@ -2636,7 +2678,6 @@
     "commonPressBackAgainToExitHint": "Press back again within 2 seconds to close the app.",
     "commonPrevious": "Previous",
     "commonNext": "Next",
-
     "onboardingSlide1Title": "Meet Mira",
     "onboardingSlide1Subtitle": "Your AI companion for work and life. Mira connects your tasks, calendar, and finances.",
     "onboardingSlide2Title": "Everything in One App",
@@ -2644,21 +2685,24 @@
     "onboardingSlide3Title": "Intelligence That Grows",
     "onboardingSlide3Subtitle": "Mira remembers your preferences and gets smarter the more you use her.",
     "onboardingGetStarted": "Get Started",
-
     "settingsWorkspaceMembersTitle": "Members",
     "settingsWorkspaceMembersSubtitle": "Invite people, review access, and manage links.",
     "settingsWorkspaceMembersAccessDenied": "You need member access to manage this workspace.",
     "settingsWorkspaceMembersActiveSection": "Members ({count})",
     "@settingsWorkspaceMembersActiveSection": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "settingsWorkspaceMembersEmpty": "No members yet.",
     "settingsWorkspaceMembersPendingSection": "Pending ({count})",
     "@settingsWorkspaceMembersPendingSection": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "settingsWorkspaceMembersPendingEmpty": "No pending invites.",
@@ -2671,7 +2715,9 @@
     "settingsWorkspaceMembersRemoveMessage": "Remove {name} from this workspace?",
     "@settingsWorkspaceMembersRemoveMessage": {
         "placeholders": {
-            "name": { "type": "String" }
+            "name": {
+                "type": "String"
+            }
         }
     },
     "settingsWorkspaceMembersLinkDeleteTitle": "Delete link",
@@ -2691,7 +2737,6 @@
     "settingsWorkspaceMembersLinkFull": "Full",
     "settingsWorkspaceMembersLinkActive": "Active",
     "settingsWorkspaceMembersLinkCopy": "Copy",
-
     "settingsWorkspaceRolesTitle": "Roles",
     "settingsWorkspaceRolesSubtitle": "Control default access and workspace roles.",
     "settingsWorkspaceRolesAccessDenied": "You need role access to manage permissions.",
@@ -2703,13 +2748,17 @@
     "settingsWorkspaceRolesDeleteMessage": "Delete {name}?",
     "@settingsWorkspaceRolesDeleteMessage": {
         "placeholders": {
-            "name": { "type": "String" }
+            "name": {
+                "type": "String"
+            }
         }
     },
     "settingsWorkspaceRolesPermissionCount": "{count} permissions enabled",
     "@settingsWorkspaceRolesPermissionCount": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "settingsWorkspaceRolesEdit": "Edit role",
@@ -2730,7 +2779,9 @@
     "settingsWorkspaceSecretsPageDescription": "Manage secrets and storage rollout for {workspaceName}.",
     "@settingsWorkspaceSecretsPageDescription": {
         "placeholders": {
-            "workspaceName": { "type": "String" }
+            "workspaceName": {
+                "type": "String"
+            }
         }
     },
     "settingsWorkspaceSecretsTotalSecrets": "All secrets",
@@ -2755,7 +2806,9 @@
     "settingsWorkspaceSecretsCopyInto": "Copy into {provider}",
     "@settingsWorkspaceSecretsCopyInto": {
         "placeholders": {
-            "provider": { "type": "String" }
+            "provider": {
+                "type": "String"
+            }
         }
     },
     "settingsWorkspaceSecretsAutoExtractTitle": "Auto extract",
@@ -2793,7 +2846,9 @@
     "settingsWorkspaceSecretsDeleteMessage": "Delete {name}?",
     "@settingsWorkspaceSecretsDeleteMessage": {
         "placeholders": {
-            "name": { "type": "String" }
+            "name": {
+                "type": "String"
+            }
         }
     },
     "settingsWorkspaceSecretsDeleteSuccess": "Secret deleted.",
@@ -2812,8 +2867,12 @@
     "settingsWorkspaceSecretsMigrationSuccess": "Copied {filesCopied} files into {provider}.",
     "@settingsWorkspaceSecretsMigrationSuccess": {
         "placeholders": {
-            "filesCopied": { "type": "int" },
-            "provider": { "type": "String" }
+            "filesCopied": {
+                "type": "int"
+            },
+            "provider": {
+                "type": "String"
+            }
         }
     },
     "settingsWorkspaceSecretsMigrationError": "Failed to migrate workspace storage.",
@@ -2868,7 +2927,9 @@
     "crmDuplicateResults": "{count} duplicate clusters found",
     "@crmDuplicateResults": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "crmEmptyAudit": "No audit events found",
@@ -2879,7 +2940,9 @@
     "crmFeedbackFor": "Feedback for {name}",
     "@crmFeedbackFor": {
         "placeholders": {
-            "name": { "type": "String" }
+            "name": {
+                "type": "String"
+            }
         }
     },
     "crmFullName": "Full name",
@@ -2890,13 +2953,17 @@
     "crmImportPreview": "Ready to import {count} users",
     "@crmImportPreview": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "crmImportSuccess": "Imported {count} users.",
     "@crmImportSuccess": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "crmImportUsers": "Import users",
@@ -2935,7 +3002,9 @@
     "educationDeleteCourseConfirm": "Delete {name}?",
     "@educationDeleteCourseConfirm": {
         "placeholders": {
-            "name": { "type": "String" }
+            "name": {
+                "type": "String"
+            }
         }
     },
     "educationDeleteFlashcardConfirm": "Delete this flashcard?",
@@ -2943,7 +3012,9 @@
     "educationDeleteQuizSetConfirm": "Delete {name}?",
     "@educationDeleteQuizSetConfirm": {
         "placeholders": {
-            "name": { "type": "String" }
+            "name": {
+                "type": "String"
+            }
         }
     },
     "educationEditCourse": "Edit course",
@@ -2974,7 +3045,9 @@
     "educationQuizOptionLabel": "Option {index}",
     "@educationQuizOptionLabel": {
         "placeholders": {
-            "index": { "type": "int" }
+            "index": {
+                "type": "int"
+            }
         }
     },
     "educationQuizOptionValueLabel": "Option text",
@@ -2990,13 +3063,17 @@
     "driveDeleteManyConfirm": "Delete {count} selected items?",
     "@driveDeleteManyConfirm": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "driveDeleteSelected": "Delete selected ({count})",
     "@driveDeleteSelected": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "driveDeleteSingleConfirm": "Delete this item?",
@@ -3110,7 +3187,9 @@
     "storefrontListingCount": "{count, plural, =1{1 listing} other{{count} listings}}",
     "@storefrontListingCount": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "storefrontListingCreate": "Add listing",
@@ -3159,13 +3238,17 @@
     "meetMinutes": "{count} minutes",
     "@meetMinutes": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "meetRecordingSessions": "{count, plural, =1{1 recording} other{{count} recordings}}",
     "@meetRecordingSessions": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "meetSearchHint": "Search meetings",
@@ -3385,146 +3468,212 @@
     "mailSelectAll": "Select all loaded messages",
     "mailDeleteDraft": "Delete draft",
     "mailDeleteDraftConfirmation": "Permanently delete this draft and its attachments?",
-  "deviceMfaTitle": "Device authenticator",
-  "deviceMfaDescription": "Use this device to verify sign-ins, show a one-time code, or approve another device.",
-  "deviceMfaEnroll": "Register this device",
-  "deviceMfaEnrollWarning": "Keep another authenticator as a backup. Registration may require signing in again on your other devices. This device’s secret stays in its secure storage.",
-  "deviceMfaName": "Device name",
-  "deviceMfaDefaultName": "Tuturuuu mobile",
-  "deviceMfaReady": "This device is registered",
-  "deviceMfaShowCode": "Show verification code",
-  "deviceMfaCodeHint": "Enter this code on your other device. It changes every 30 seconds.",
-  "deviceMfaVerifyReason": "Verify your identity to use your Tuturuuu authenticator",
-  "deviceMfaRemove": "Remove this authenticator",
-  "deviceMfaRemoveHint": "This device will stop generating valid codes. Keep another sign-in method available.",
-  "deviceMfaError": "Could not complete verification. Check your connection and authenticator, then try again.",
-  "deviceMfaUseDevice": "Verify with this device",
-  "deviceMfaNumberTitle": "Is this your sign-in?",
-  "deviceMfaNumberHint": "Enter the six-digit number shown on the device you are signing in to. Only approve a request you started.",
-  "deviceMfaDeny": "Deny request",
-  "deviceMfaExpired": "This request expired. Start again on the other device.",
-  "deviceMfaReview": "Review sign-in request",
-  "deviceMfaNoRequests": "No sign-in requests. Start a sign-in on your other device.",
-  "deviceMfaHideCode": "Hide code",
-  "deviceMfaQrPaste": "Enter a sign-in link",
-  "deviceMfaQrPasteHint": "Paste the Tuturuuu sign-in QR link from your other device.",
-  "appsShowBottomTab": "Show Apps in bottom navigation",
-  "appsNoMatches": "No matching apps",
-  "securitySessionsTitle": "Sessions and connections",
-  "securitySessionsDescription": "Review devices signed in to your account. Signing out another session keeps this device signed in.",
-  "securityUnknownDevice": "Unknown device",
-  "securityCurrentSession": "This session",
-  "securityRevokeSession": "Sign out this session",
-  "securityRevokeOthers": "Sign out other sessions",
-  "securityRevokeDescription": "The selected devices will need to sign in again.",
-  "securityConnectionsTitle": "Connected accounts",
-  "securityConnectionsDescription": "Choose how you sign in. Keep at least one connected account.",
-  "securityDisconnect": "Disconnect",
-  "securityDisconnectDescription": "You will no longer be able to sign in with this connected account.",
-  "securityConnect": "Connect",
-  "deviceMfaTrustedTitle": "Trusted authenticators",
-  "deviceMfaLockTitle": "Lock new registrations",
-  "deviceMfaLockHint": "Only your registered devices can approve sign-ins. Unlock here before registering another device.",
-  "deviceMfaLocked": "New registrations are locked. Open these settings on an existing trusted device to unlock them.",
-  "deviceMfaLockRecoveryHint": "Keep a second trusted device before locking registrations. If you lose every trusted device, you cannot unlock this setting from a new device.",
-  "deviceMfaCurrentDevice": "This device",
-  "deviceMfaPending": "Setup incomplete",
-  "deviceMfaRemoveTrusted": "Remove trusted device",
-  "deviceMfaSuggestTitle": "Make this your authenticator?",
-  "deviceMfaSuggestBody": "Approve your sign-ins with device verification and generate codes for your other devices. You can manage trusted devices in Security settings.",
-  "deviceMfaNotNow": "Not now",
-  "deviceMfaManage": "Set up authenticator",
-  "deviceMfaRemoveDeviceHint": "This device will no longer approve sign-ins or generate valid codes.",
-  "deviceMfaNeedBackup": "Register a second trusted device before locking new registrations.",
+    "deviceMfaTitle": "Device authenticator",
+    "deviceMfaDescription": "Use this device to verify sign-ins, show a one-time code, or approve another device.",
+    "deviceMfaEnroll": "Register this device",
+    "deviceMfaEnrollWarning": "Keep another authenticator as a backup. Registration may require signing in again on your other devices. This device’s secret stays in its secure storage.",
+    "deviceMfaName": "Device name",
+    "deviceMfaDefaultName": "Tuturuuu mobile",
+    "deviceMfaReady": "This device is registered",
+    "deviceMfaShowCode": "Show verification code",
+    "deviceMfaCodeHint": "Enter this code on your other device. It changes every 30 seconds.",
+    "deviceMfaVerifyReason": "Verify your identity to use your Tuturuuu authenticator",
+    "deviceMfaRemove": "Remove this authenticator",
+    "deviceMfaRemoveHint": "This device will stop generating valid codes. Keep another sign-in method available.",
+    "deviceMfaError": "Could not complete verification. Check your connection and authenticator, then try again.",
+    "deviceMfaUseDevice": "Verify with this device",
+    "deviceMfaNumberTitle": "Is this your sign-in?",
+    "deviceMfaNumberHint": "Enter the six-digit number shown on the device you are signing in to. Only approve a request you started.",
+    "deviceMfaDeny": "Deny request",
+    "deviceMfaExpired": "This request expired. Start again on the other device.",
+    "deviceMfaReview": "Review sign-in request",
+    "deviceMfaNoRequests": "No sign-in requests. Start a sign-in on your other device.",
+    "deviceMfaHideCode": "Hide code",
+    "deviceMfaQrPaste": "Enter a sign-in link",
+    "deviceMfaQrPasteHint": "Paste the Tuturuuu sign-in QR link from your other device.",
+    "appsShowBottomTab": "Show Apps in bottom navigation",
+    "appsNoMatches": "No matching apps",
+    "securitySessionsTitle": "Sessions and connections",
+    "securitySessionsDescription": "Review devices signed in to your account. Signing out another session keeps this device signed in.",
+    "securityUnknownDevice": "Unknown device",
+    "securityCurrentSession": "This session",
+    "securityRevokeSession": "Sign out this session",
+    "securityRevokeOthers": "Sign out other sessions",
+    "securityRevokeDescription": "The selected devices will need to sign in again.",
+    "securityConnectionsTitle": "Connected accounts",
+    "securityConnectionsDescription": "Choose how you sign in. Keep at least one connected account.",
+    "securityDisconnect": "Disconnect",
+    "securityDisconnectDescription": "You will no longer be able to sign in with this connected account.",
+    "securityConnect": "Connect",
+    "deviceMfaTrustedTitle": "Trusted authenticators",
+    "deviceMfaLockTitle": "Lock new registrations",
+    "deviceMfaLockHint": "Only your registered devices can approve sign-ins. Unlock here before registering another device.",
+    "deviceMfaLocked": "New registrations are locked. Open these settings on an existing trusted device to unlock them.",
+    "deviceMfaLockRecoveryHint": "Keep a second trusted device before locking registrations. If you lose every trusted device, you cannot unlock this setting from a new device.",
+    "deviceMfaCurrentDevice": "This device",
+    "deviceMfaPending": "Setup incomplete",
+    "deviceMfaRemoveTrusted": "Remove trusted device",
+    "deviceMfaSuggestTitle": "Make this your authenticator?",
+    "deviceMfaSuggestBody": "Approve your sign-ins with device verification and generate codes for your other devices. You can manage trusted devices in Security settings.",
+    "deviceMfaNotNow": "Not now",
+    "deviceMfaManage": "Set up authenticator",
+    "deviceMfaRemoveDeviceHint": "This device will no longer approve sign-ins or generate valid codes.",
+    "deviceMfaNeedBackup": "Register a second trusted device before locking new registrations.",
     "mfaReviewSignIn": "Review sign-in",
-  "deviceMfaClose": "Close authenticator",
-  "deviceMfaWorking": "Checking device security…",
-  "deviceMfaActionFailed": "Could not finish this step",
-  "deviceMfaCancelled": "Device verification was cancelled. Try again and confirm with Face ID, fingerprint, or your device passcode.",
-  "deviceMfaExistingRequired": "Verify your existing authenticator in your account sign-in flow, then return here to finish setup.",
-  "deviceMfaSessionExpired": "Your session could not be verified. Sign in again before changing authenticators.",
-  "deviceMfaRateLimited": "Too many attempts. Wait a minute before trying again.",
-  "deviceMfaUnavailable": "Authenticator registration is temporarily unavailable. Try again shortly.",
-  "deviceMfaOffline": "Could not reach Tuturuuu. Check your connection and try again.",
-  "securityCheckTitle": "Security check",
-  "appsCustomize": "Customize apps",
-  "appsHide": "Hide app",
-  "appsShow": "Show app",
-  "appsHiddenSection": "Hidden apps",
-  "appsHiddenExperimentsSection": "Hidden experiments",
-  "appsUnavailableWithCurrentAccess": "Unavailable with current access",
-  "appsHideConfirmTitle": "Hide this app?",
-  "appsHideConfirmDescription": "It will move below your shown apps. You can show it again at any time.",
-  "appsReorder": "Drag to reorder",
-  "homeCustomize": "Customize Home",
-  "homeHideWidget": "Hide widget",
-  "homeShowWidget": "Show widget",
-  "homeHiddenWidgets": "Hidden widgets",
-  "voiceMessage": "Voice message",
-  "voiceRecord": "Record",
-  "voiceStop": "Stop",
-  "voicePreview": "Preview recording",
-  "voiceAttach": "Attach recording",
-  "voiceRetake": "Record again",
-  "voiceSendNow": "Send now",
-  "voicePermission": "Allow microphone access to record.",
-  "voiceRecordingError": "Could not record audio. Please try again.",
-  "remindersTitle": "Reminders",
-  "remindersDescription": "Task deadlines and calendar events, kept ready on this device.",
-  "notificationTaskAppLabel": "Task",
-  "notificationWorkspaceAppLabel": "Workspace",
-  "notificationSecurityAppLabel": "Security",
-  "remindersTaskTitle": "Task deadlines",
-  "remindersEventTitle": "Calendar events",
-  "remindersCalendarTiming": "Calendar: {when}",
-  "@remindersCalendarTiming": {"placeholders": {"when": {"type": "String"}}},
-  "calendarEventUnavailable": "This event is no longer available.",
-  "remindersAllDayEvent": "All-day event: {title}",
-  "@remindersAllDayEvent": {"placeholders": {"title": {"type": "String"}}},
-  "remindersUpcomingEvent": "{when}: {title}",
-  "@remindersUpcomingEvent": {"placeholders": {"when": {"type": "String"}, "title": {"type": "String"}}},
-  "remindersIn3d": "In 3 days",
-  "remindersIn1d": "Tomorrow",
-  "remindersIn12h": "In 12 hours",
-  "remindersIn3h": "In 3 hours",
-  "remindersIn1h": "In 1 hour",
-  "remindersTiming": "Remind me",
-  "reminders3d": "3 days before",
-  "reminders1d": "1 day before",
-  "reminders12h": "12 hours before",
-  "reminders3h": "3 hours before",
-  "reminders1h": "1 hour before",
-  "remindersStatusTitle": "Reminder status",
-  "remindersPermissionOn": "Device notifications enabled",
-  "remindersPermissionOff": "Device notifications disabled",
-  "remindersScheduledCount": "{count} scheduled",
-  "@remindersScheduledCount": {"placeholders": {"count": {"type": "int"}}},
-  "remindersLastChecked": "Last checked: {time}",
-  "@remindersLastChecked": {"placeholders": {"time": {"type": "String"}}},
-  "remindersNext": "Next reminder: {time}",
-  "@remindersNext": {"placeholders": {"time": {"type": "String"}}},
-  "remindersNeverChecked": "Waiting for the first refresh",
-  "remindersRefresh": "Refresh now",
-  "remindersEnableNotifications": "Enable notifications",
-  "remindersRefreshing": "Checking tasks and events…",
-  "remindersRefreshFailed": "Could not refresh reminders. Scheduled reminders are retained.",
-  "remindersSystemNote": "Scheduled alerts can arrive while the app is closed. New or changed items are checked when the app opens or resumes; background refresh timing depends on the device.",
+    "deviceMfaClose": "Close authenticator",
+    "deviceMfaWorking": "Checking device security…",
+    "deviceMfaActionFailed": "Could not finish this step",
+    "deviceMfaCancelled": "Device verification was cancelled. Try again and confirm with Face ID, fingerprint, or your device passcode.",
+    "deviceMfaExistingRequired": "Verify your existing authenticator in your account sign-in flow, then return here to finish setup.",
+    "deviceMfaSessionExpired": "Your session could not be verified. Sign in again before changing authenticators.",
+    "deviceMfaRateLimited": "Too many attempts. Wait a minute before trying again.",
+    "deviceMfaUnavailable": "Authenticator registration is temporarily unavailable. Try again shortly.",
+    "deviceMfaOffline": "Could not reach Tuturuuu. Check your connection and try again.",
+    "securityCheckTitle": "Security check",
+    "appsCustomize": "Customize apps",
+    "appsHide": "Hide app",
+    "appsShow": "Show app",
+    "appsHiddenSection": "Hidden apps",
+    "appsHiddenExperimentsSection": "Hidden experiments",
+    "appsUnavailableWithCurrentAccess": "Unavailable with current access",
+    "appsHideConfirmTitle": "Hide this app?",
+    "appsHideConfirmDescription": "It will move below your shown apps. You can show it again at any time.",
+    "appsReorder": "Drag to reorder",
+    "homeCustomize": "Customize Home",
+    "homeHideWidget": "Hide widget",
+    "homeShowWidget": "Show widget",
+    "homeHiddenWidgets": "Hidden widgets",
+    "voiceMessage": "Voice message",
+    "voiceRecord": "Record",
+    "voiceStop": "Stop",
+    "voicePreview": "Preview recording",
+    "voiceAttach": "Attach recording",
+    "voiceRetake": "Record again",
+    "voiceSendNow": "Send now",
+    "voicePermission": "Allow microphone access to record.",
+    "voiceRecordingError": "Could not record audio. Please try again.",
+    "remindersTitle": "Reminders",
+    "remindersDescription": "Task deadlines and calendar events, kept ready on this device.",
+    "notificationTaskAppLabel": "Task",
+    "notificationWorkspaceAppLabel": "Workspace",
+    "notificationSecurityAppLabel": "Security",
+    "remindersTaskTitle": "Task deadlines",
+    "remindersEventTitle": "Calendar events",
+    "remindersCalendarTiming": "Calendar: {when}",
+    "@remindersCalendarTiming": {
+        "placeholders": {
+            "when": {
+                "type": "String"
+            }
+        }
+    },
+    "calendarEventUnavailable": "This event is no longer available.",
+    "remindersAllDayEvent": "All-day event: {title}",
+    "@remindersAllDayEvent": {
+        "placeholders": {
+            "title": {
+                "type": "String"
+            }
+        }
+    },
+    "remindersUpcomingEvent": "{when}: {title}",
+    "@remindersUpcomingEvent": {
+        "placeholders": {
+            "when": {
+                "type": "String"
+            },
+            "title": {
+                "type": "String"
+            }
+        }
+    },
+    "remindersIn3d": "In 3 days",
+    "remindersIn1d": "Tomorrow",
+    "remindersIn12h": "In 12 hours",
+    "remindersIn3h": "In 3 hours",
+    "remindersIn1h": "In 1 hour",
+    "remindersTiming": "Remind me",
+    "reminders3d": "3 days before",
+    "reminders1d": "1 day before",
+    "reminders12h": "12 hours before",
+    "reminders3h": "3 hours before",
+    "reminders1h": "1 hour before",
+    "remindersStatusTitle": "Reminder status",
+    "remindersPermissionOn": "Device notifications enabled",
+    "remindersPermissionOff": "Device notifications disabled",
+    "remindersScheduledCount": "{count} scheduled",
+    "@remindersScheduledCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "remindersLastChecked": "Last checked: {time}",
+    "@remindersLastChecked": {
+        "placeholders": {
+            "time": {
+                "type": "String"
+            }
+        }
+    },
+    "remindersNext": "Next reminder: {time}",
+    "@remindersNext": {
+        "placeholders": {
+            "time": {
+                "type": "String"
+            }
+        }
+    },
+    "remindersNeverChecked": "Waiting for the first refresh",
+    "remindersRefresh": "Refresh now",
+    "remindersEnableNotifications": "Enable notifications",
+    "remindersRefreshing": "Checking tasks and events…",
+    "remindersRefreshFailed": "Could not refresh reminders. Scheduled reminders are retained.",
+    "remindersSystemNote": "Scheduled alerts can arrive while the app is closed. New or changed items are checked when the app opens or resumes; background refresh timing depends on the device.",
     "settingsGeneralGroup": "Personalize",
     "settingsSupportGroup": "Help and account",
     "profilePrivateActivity": "Your private activity",
+    "profileTimelineDescription": "Creation activity in this workspace over the last 30 days. Calendar events are workspace activity.",
+    "profileTimelineLimited": "Showing recent activity only. Some sources reached the display limit.",
+    "profileTimelineUnavailable": "Activity could not be refreshed.",
     "profileTimelineTitle": "Activity timeline",
     "profileTimelineToday": "Today",
     "profileTimelineYesterday": "Yesterday",
     "profileTimelineEmpty": "No recent activity in this workspace",
-    "profileTimelinePartial": "Some activity is unavailable. Retry",
+    "profileTimelinePartial": "Some activity is unavailable.",
     "profileTimelineTasks": "{count, plural, one{Created 1 task} other{Created {count} tasks}}",
-    "@profileTimelineTasks": {"placeholders": {"count": {"type": "int"}}},
+    "@profileTimelineTasks": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "profileTimelineTransactions": "{count, plural, one{Created 1 transaction} other{Created {count} transactions}}",
-    "@profileTimelineTransactions": {"placeholders": {"count": {"type": "int"}}},
+    "@profileTimelineTransactions": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "profileTimelineNotes": "{count, plural, one{Added 1 note} other{Added {count} notes}}",
-    "@profileTimelineNotes": {"placeholders": {"count": {"type": "int"}}},
+    "@profileTimelineNotes": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "profileTimelineWorkspaceEvents": "{count, plural, one{1 workspace event added} other{{count} workspace events added}}",
-    "@profileTimelineWorkspaceEvents": {"placeholders": {"count": {"type": "int"}}},
+    "@profileTimelineWorkspaceEvents": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "profileTrackedMinutes": "{minutes} min tracked",
     "@profileTrackedMinutes": {
         "placeholders": {
@@ -3560,14 +3709,14 @@
     "assistantCreditsUnavailable": "Could not load your credit sources. Please try again.",
     "assistantMicrophoneUnavailable": "Microphone unavailable. Check microphone access or reconnect your headset, then try again.",
     "assistantAudioUnavailable": "Audio was interrupted. Reconnect to continue this conversation.",
-  "mailSwipeActions": "Swipe actions",
-  "mailSwipeLeft": "Swipe left",
-  "mailSwipeRight": "Swipe right",
-  "mailSwipeRead": "Read / unread",
-  "mailSwipeStar": "Star / unstar",
-  "mailSwipeMove": "Move to folder",
-  "mailSwipeNone": "None",
-  "mailSwipeUndo": "Undo",
+    "mailSwipeActions": "Swipe actions",
+    "mailSwipeLeft": "Swipe left",
+    "mailSwipeRight": "Swipe right",
+    "mailSwipeRead": "Read / unread",
+    "mailSwipeStar": "Star / unstar",
+    "mailSwipeMove": "Move to folder",
+    "mailSwipeNone": "None",
+    "mailSwipeUndo": "Undo",
     "adminAccountsTitle": "Internal accounts",
     "adminAccountsDescription": "Manage Tuturuuu accounts and account security.",
     "adminAccountsSearch": "Search accounts",
@@ -3586,17 +3735,17 @@
     "adminAccountsEditProfile": "Edit profile",
     "adminAccountsDisplayName": "Display name",
     "adminAccountsUsername": "Username",
-  "adminAccountsResetMfa": "Reset authenticators",
-  "adminAccountsResetMfaDescription": "Remove all MFA factors and trusted device registrations. The user will need to register their authenticators again.",
-  "assistantLiveShareScreen": "Share screen",
-  "assistantLiveStopScreen": "Stop sharing",
-  "assistantLiveScreenActive": "Your screen is shared with Live",
-  "assistantLiveScreenPending": "Waiting for screen-sharing permission",
-  "assistantLiveScreenStopped": "Screen sharing ended.",
-  "assistantLiveScreenUnavailable": "Screen sharing could not start. Please try again.",
-  "assistantLiveScreenMicrophoneRequired": "Turn on the microphone before sharing your screen. Live needs the voice session to continue while you switch apps.",
-  "assistantLiveScreenConnectionRequired": "Connect to Live before sharing your screen.",
-  "assistantLiveScreenPrivacy": "Anything visible on your screen may be shared with Live. Hide private information before continuing.",
+    "adminAccountsResetMfa": "Reset authenticators",
+    "adminAccountsResetMfaDescription": "Remove all MFA factors and trusted device registrations. The user will need to register their authenticators again.",
+    "assistantLiveShareScreen": "Share screen",
+    "assistantLiveStopScreen": "Stop sharing",
+    "assistantLiveScreenActive": "Your screen is shared with Live",
+    "assistantLiveScreenPending": "Waiting for screen-sharing permission",
+    "assistantLiveScreenStopped": "Screen sharing ended.",
+    "assistantLiveScreenUnavailable": "Screen sharing could not start. Please try again.",
+    "assistantLiveScreenMicrophoneRequired": "Turn on the microphone before sharing your screen. Live needs the voice session to continue while you switch apps.",
+    "assistantLiveScreenConnectionRequired": "Connect to Live before sharing your screen.",
+    "assistantLiveScreenPrivacy": "Anything visible on your screen may be shared with Live. Hide private information before continuing.",
     "desktopUpdateReady": "Tuturuuu {version} is ready to install.",
     "desktopUpdateFailed": "Update could not be installed. Your current version is still available.",
     "desktopUpdateScheduled": "This update will install the next time you open Tuturuuu.",
@@ -3663,7 +3812,13 @@
     "notesTransferTitle": "Unlock on web",
     "notesTransferScanDescription": "Scan the QR code shown on the locked note on web.",
     "notesTransferConfirmDescription": "Share this note's unlock key with {host}?",
-    "@notesTransferConfirmDescription": {"placeholders": {"host": {"type": "String"}}},
+    "@notesTransferConfirmDescription": {
+        "placeholders": {
+            "host": {
+                "type": "String"
+            }
+        }
+    },
     "notesTransferInvalidCode": "This code does not match the current note.",
     "notesTransferApprove": "Share unlock key",
     "notesTransferFailed": "Could not transfer this note's key. Try a new QR code.",
@@ -3807,6 +3962,7 @@
     "settingsTimezoneAccountPending": "Waiting for your account.",
     "settingsTimezoneUnknown": "Unknown",
     "settingsTimezoneEffective": "Effective timezone: {timezone}",
+    "settingsTimezoneRateLimited": "Too many requests. Please wait before retrying.",
     "settingsTimezoneError": "Could not load or save timezone. Tap to retry.",
     "@settingsTimezoneEffective": {
         "placeholders": {
@@ -3817,5 +3973,32 @@
     },
     "calendarInvalidLocalTime": "Choose a valid start and end time. Some times do not exist when daylight saving time changes.",
     "profileOverviewTab": "Overview",
-    "profileTimelineTab": "Timeline"
+    "profileTimelineTab": "Timeline",
+    "profileTimelineShowDates": "Show date selector",
+    "profileTimelineHideDates": "Close dates and browse agenda",
+    "profileTimelineAgenda": "Days with activity",
+    "profileTimelineDayEmpty": "No activity was returned for this day.",
+    "profileTimelineHasActivity": "Activity in loaded snapshot",
+    "profileTimelineMoreDays": "Show more loaded days",
+    "inventoryStockHealthTitle": "Stock health",
+    "inventoryStockHealthScope": "Current active products · all stock rows, including archived warehouses",
+    "inventoryStockHealthAsOf": "Server snapshot: {timestamp} UTC",
+    "inventoryStockHealthIncomplete": "Partial snapshot: some counts or the server timestamp are unavailable.",
+    "inventoryStockHealthUnavailable": "Stock health is unavailable. Pull to refresh to try again.",
+    "inventoryStockHealthDenied": "You do not have access to stock analytics.",
+    "inventoryStockHealthLoading": "Loading stock health…",
+    "inventoryStockHealthActive": "Active products",
+    "inventoryStockHealthUnconfigured": "Products without stock rows",
+    "inventoryStockHealthLow": "Low stock rows",
+    "inventoryStockHealthOut": "Out of stock rows",
+    "inventoryStockHealthUnlimited": "Unlimited stock rows",
+    "inventoryStockHealthOverlap": "Low/out counts can overlap. Low/out quantity checks exclude Unlimited rows; Unlimited rows are counted separately. Bars compare row counts.",
+    "inventoryStockHealthUnknown": "Unavailable",
+    "@inventoryStockHealthAsOf": {
+        "placeholders": {
+            "timestamp": {
+                "type": "String"
+            }
+        }
+    }
 }
