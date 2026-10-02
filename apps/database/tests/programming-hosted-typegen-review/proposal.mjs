@@ -384,6 +384,7 @@ export async function resumeRecordedProject(
     read = readOwnedMetadata,
     runner = runHostedHelper,
     onTick,
+    onDiagnostic,
     repositoryRoot = repo,
   } = {}
 ) {
@@ -398,6 +399,7 @@ export async function resumeRecordedProject(
     {
       timeoutMs: limits.executionMs,
       onTick,
+      onDiagnostic,
     }
   );
 }

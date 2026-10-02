@@ -75,7 +75,6 @@ export function runOwnedProcess(
     const finish = async (error) => {
       if (settled) return;
       settled = true;
-      child.stderr?.destroy();
       clearTimeout(deadline);
       clearInterval(monitor);
       signalSource.off('SIGTERM', interrupt);
@@ -85,6 +84,21 @@ export function runOwnedProcess(
       } catch (killError) {
         error ??= killError;
       }
+      const stderr = child.stderr;
+      if (stderr && !stderr.destroyed && !stderr.readableEnded) {
+        await new Promise((done) => {
+          const finishDrain = () => {
+            clearTimeout(timer);
+            stderr.off('end', finishDrain);
+            stderr.off('close', finishDrain);
+            done();
+          };
+          const timer = setTimeout(finishDrain, 250);
+          stderr.once('end', finishDrain);
+          stderr.once('close', finishDrain);
+        });
+      }
+      stderr?.destroy();
       if (tick) await tick;
       error ??= failure;
       if (error) reject(error);

@@ -69,12 +69,17 @@ test('failed ownership write removes exactly the staged root', async () => {
 });
 test('resume checks actual validator and passes only recorded root to helper', async () => {
   const calls = [];
+  const diagnostics = [];
+  const onDiagnostic = (kind) => diagnostics.push(kind);
   await resumeRecordedProject(
     { metadata },
     {
       read: async () => metadata,
-      runner: async (binary, args, options) =>
-        calls.push({ binary, args, options }),
+      onDiagnostic,
+      runner: async (binary, args, options) => {
+        calls.push({ binary, args, options });
+        options.onDiagnostic?.('database');
+      },
     }
   );
   assert.equal(calls.length, 1);
@@ -84,6 +89,8 @@ test('resume checks actual validator and passes only recorded root to helper', a
     metadata.disposableRoot,
   ]);
   assert.equal(calls[0].options.timeoutMs, limits.executionMs);
+  assert.equal(calls[0].options.onDiagnostic, onDiagnostic);
+  assert.deepEqual(diagnostics, ['database']);
   await assert.rejects(
     resumeRecordedProject(
       { metadata },
@@ -310,4 +317,50 @@ test('owned process startup diagnostics expose only fixed kinds from bounded std
     }
   );
   assert.deepEqual(observed, ['image-pull', 'database']);
+});
+
+test('diagnostic drain is bounded when an escaped fixture retains stderr', async () => {
+  const root = await mkdtemp(
+    path.join(os.tmpdir(), 'typegen-stderr-contract-')
+  );
+  const marker = path.join(root, 'escaped-pid');
+  const observed = [];
+  let escapedPid;
+  try {
+    const started = Date.now();
+    await runOwnedProcess(
+      process.execPath,
+      [
+        '-e',
+        `
+      const { spawn } = require('node:child_process');
+      const { writeFileSync } = require('node:fs');
+      const holder = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], {
+        detached: true, stdio: ['ignore', 'ignore', process.stderr],
+      });
+      holder.once('spawn', () => {
+        writeFileSync(process.argv[1], String(holder.pid));
+        process.stderr.write('FATAL: synthetic fixture diagnostic\\n', () => holder.unref());
+      });
+    `,
+        marker,
+      ],
+      {
+        timeoutMs: 5000,
+        onDiagnostic: (kind) => observed.push(kind),
+      }
+    );
+    escapedPid = Number(await readFile(marker, 'utf8'));
+    assert.ok(alive(escapedPid), 'fixture must keep the stderr pipe open');
+    assert.ok(
+      Date.now() - started < 2000,
+      'diagnostic draining must stay bounded'
+    );
+    assert.deepEqual(observed, ['database']);
+  } finally {
+    if (!escapedPid && existsSync(marker))
+      escapedPid = Number(await readFile(marker, 'utf8'));
+    if (escapedPid && alive(escapedPid)) process.kill(escapedPid, 'SIGKILL');
+    await rm(root, { recursive: true, force: true });
+  }
 });

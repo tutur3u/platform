@@ -3,7 +3,10 @@
 This proposal remains inert. The original source `077b8a9a` is frozen. Its only
 approved run failed before staging; lifecycle and effective kernel/firewall
 preflight were not reached, and successful cleanup was a no-state early return.
-The retired workflow is not re-registered here. No further run is authorized.
+The retired workflow is not re-registered here; no further run of that frozen
+source is authorized. The later admitted hosted run staged the project, then
+failed during Supabase startup. See [Hosted startup verification limit](./REVIEW.md#hosted-startup-verification-limit)
+for that distinct run's outcome and verification boundary.
 
 The pinned CLI 2.117.0 source at
 [`21db8559`](https://github.com/supabase/cli/tree/21db855916f2c2b12f61cde923a27094b8528b23)
