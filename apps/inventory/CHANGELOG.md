@@ -5,8 +5,7 @@
 
 ### Features
 
-* **inventory:** add effective season prices and atomic checkout ([3131afc](https://github.com/tutur3u/platform/commit/3131afce8c0ad910e1156c5034201f9cfdd15e88))
-* **inventory:** effective season prices and atomic checkout ([#5669](https://github.com/tutur3u/platform/issues/5669)) ([ac6c605](https://github.com/tutur3u/platform/commit/ac6c605eb75b440bfd0b8072c23b5cc974c46069))
+* **inventory:** effective season prices and atomic checkout ([#5669](https://github.com/tutur3u/platform/issues/5669)) ([ac6c605](https://github.com/tutur3u/platform/commit/ac6c605eb75b440bfd0b8072c23b5cc974c46069)) ([3131afc](https://github.com/tutur3u/platform/commit/3131afce8c0ad910e1156c5034201f9cfdd15e88))
 
 
 ### Bug Fixes
