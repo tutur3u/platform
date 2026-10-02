@@ -1,34 +1,27 @@
-@import "./landing.css";
-
 .notebook-theme {
-  --background: oklch(0.955 0.018 92);
-  --foreground: oklch(0.19 0.04 285);
+  --background: oklch(0.978 0.012 80);
+  --font-lettin-display: var(--font-lettin-editorial);
+  --foreground: oklch(0.31 0.025 60);
   --card: oklch(0.985 0.012 92);
   --card-foreground: var(--foreground);
   --popover: var(--card);
   --popover-foreground: var(--foreground);
-  --primary: oklch(0.23 0.055 284);
+  --primary: var(--foreground);
   --primary-foreground: oklch(0.97 0.015 92);
-  --secondary: oklch(0.88 0.16 122);
-  --secondary-foreground: oklch(0.2 0.04 285);
-  --muted: oklch(0.9 0.025 290);
-  --muted-foreground: oklch(0.43 0.035 282);
-  --accent: oklch(0.65 0.21 31);
+  --secondary: oklch(0.91 0.03 130);
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(0.93 0.012 80);
+  --muted-foreground: oklch(0.48 0.022 70);
+  --accent: oklch(0.48 0.065 150);
   --accent-foreground: oklch(0.985 0.012 92);
-  --border: oklch(0.3 0.045 283);
-  --input: oklch(0.48 0.035 283);
-  --ring: oklch(0.65 0.21 31);
-  --lettin-lilac: oklch(0.77 0.12 296);
-  --lettin-sky: oklch(0.81 0.12 222);
+  --border: oklch(0.82 0.02 80);
+  --input: var(--border);
+  --ring: var(--accent);
+  --lettin-lilac: oklch(0.84 0.028 80);
+  --lettin-sky: oklch(0.82 0.035 150);
   --radius: 0.35rem;
   min-height: 100dvh;
   background-color: var(--background);
-  background-image: radial-gradient(
-    circle at center,
-    rgb(29 27 49 / 9%) 0 0.6px,
-    transparent 0.7px
-  );
-  background-size: 5px 5px;
   color: var(--foreground);
   font-family: var(--font-lettin-body), system-ui, sans-serif;
 }
@@ -44,11 +37,10 @@
 .notebook-title,
 .lettin-display {
   font-family: var(--font-lettin-display), sans-serif;
-  font-weight: 800;
+  font-weight: 450;
   letter-spacing: -0.025em;
 }
 
-.lettin-serif,
 .lettin-prose,
 .lettin-editor .tiptap {
   font-family: var(--font-lettin-editorial), Georgia, serif;
@@ -263,7 +255,7 @@
 }
 
 :lang(vi) .lettin-section-heading h1 {
-  font-size: clamp(2.8rem, 6vw, 5.4rem);
+  font-size: clamp(2rem, 4vw, 3rem);
   line-height: 1.04;
 }
 

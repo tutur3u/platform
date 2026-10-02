@@ -1,3 +1,5 @@
+import { isReleaseBookkeeping } from '@tuturuuu/utils/release-note-policy';
+
 import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 
 /**
@@ -143,7 +145,7 @@ export function parseReleaseNotes(body: string | null): ReleaseSection[] {
     if (!bullet?.groups) continue;
 
     const description = bullet.groups.description?.trim();
-    if (!description) continue;
+    if (!description || isReleaseBookkeeping(description)) continue;
 
     current.changes.push({
       description,
