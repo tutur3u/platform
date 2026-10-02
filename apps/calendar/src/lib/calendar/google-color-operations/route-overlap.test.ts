@@ -150,24 +150,43 @@ describe('actual recoverable color route vertical slice', () => {
       (await RECOVER(request('POST', { operationId }), params())).status
     ).toBe(200);
   });
-  it.each([
-    { title: 'cleartext-must-never-be-persisted' },
-    { source: { provider: 'tuturuuu' } },
-    { locked: true },
-  ])(
-    'rejects competing content/move/local updates before provider and encryption effects',
+  it.each([{ title: 'cleartext-must-never-be-persisted' }, { locked: true }])(
+    'blocks content/local successors behind an unsettled color operation',
     async (updates) => {
+      const f = m.fixture as ReturnType<typeof recoverableColorRouteFixture>;
+      f.failPatch(true);
+      expect((await PUT(request('PUT', choice('7')), params())).status).toBe(
+        503
+      );
+      const attempts = f.patch.mock.calls.length;
+      m.legacy.mockClear();
       const response = await PUT(request('PUT', updates), params());
       expect(response.status).toBe(409);
       expect(m.legacy).not.toHaveBeenCalled();
-      expect(m.fixture.patch).not.toHaveBeenCalled();
-      expect(m.fixture.rpc).not.toHaveBeenCalled();
+      expect(f.patch).toHaveBeenCalledTimes(attempts);
+      expect(f.rowWrites).not.toHaveBeenCalled();
     }
   );
-  it('rejects competing DELETE before provider and habit/task side effects', async () => {
+  it('keeps source movement fail closed until its durable saga is wired', async () => {
+    const response = await PUT(
+      request('PUT', { source: { provider: 'tuturuuu' } }),
+      params()
+    );
+    expect(response.status).toBe(409);
+    expect(m.legacy).not.toHaveBeenCalled();
+    expect(m.fixture.patch).not.toHaveBeenCalled();
+    expect(m.fixture.rpc).not.toHaveBeenCalled();
+  });
+  it('blocks deletion behind a pending color operation before habit/task side effects', async () => {
+    const f = m.fixture as ReturnType<typeof recoverableColorRouteFixture>;
+    f.failPatch(true);
+    await PUT(request('PUT', choice('7')), params());
+    const attempts = f.patch.mock.calls.length;
+    m.legacy.mockClear();
     expect((await DELETE(request('DELETE'), params())).status).toBe(409);
     expect(m.legacy).not.toHaveBeenCalled();
-    expect(m.fixture.rowWrites).not.toHaveBeenCalled();
+    expect(f.patch).toHaveBeenCalledTimes(attempts);
+    expect(f.rowWrites).not.toHaveBeenCalled();
   });
   it('refuses forged source/generation/force recovery fields', async () => {
     const response = await RECOVER(

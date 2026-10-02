@@ -15,8 +15,8 @@ import {
 } from '@/lib/calendar/google-color-choices';
 import {
   googleColorOperationModeEnabled,
-  handleRecoverableGoogleColorPut,
-  unsupportedGoogleMutation,
+  handleRecoverableGoogleDelete,
+  handleRecoverableGooglePut,
 } from '@/lib/calendar/google-color-operations/route-handlers';
 import { refreshOwnedGoogleSourceColor } from '@/lib/calendar/google-source-color-refresh';
 import { upsertHabitSkip } from '@/lib/calendar/habit-skips';
@@ -212,7 +212,7 @@ export async function PUT(request: Request, { params }: Params) {
       googleColorOperationModeEnabled() &&
       existingEvent.provider === 'google'
     ) {
-      return handleRecoverableGoogleColorPut({
+      return handleRecoverableGooglePut({
         request,
         rawWsId,
         eventId,
@@ -589,7 +589,7 @@ export async function DELETE(request: Request, { params }: Params) {
       googleColorOperationModeEnabled() &&
       existingEvent.provider === 'google'
     )
-      return unsupportedGoogleMutation();
+      return handleRecoverableGoogleDelete({ request, rawWsId, eventId });
 
     if (
       existingEvent.provider === 'google' ||

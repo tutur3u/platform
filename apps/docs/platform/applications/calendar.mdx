@@ -1,7 +1,7 @@
 ---
 title: "Calendar"
 description: "Shared Calendar product surface across apps/web and apps/calendar."
-updatedAt: "2026-09-30"
+updatedAt: "2026-10-02"
 ---
 
 ## Calendar editor timezone
@@ -461,22 +461,31 @@ owner and exact token/calendar/event identity. Only definitely-unsent reserved o
 prepared operations can cancel. Local commit failures remain recoverable.
 
 This is an unpublished implementation stage. A bounded route slice now connects
-same-calendar color-only PUT to reservation, immutable conditional dispatch and
-atomic finalization. Dedicated authenticated `color-operation` GET/POST/DELETE
+same-calendar color PUT, encrypted content/time/local-lock PUT and conditional
+DELETE to reservation, immutable conditional dispatch and atomic finalization.
+The generic operation stores sensitive request content only in an authenticated
+encrypted journal. Finalization encrypts the authoritative provider projection;
+route callers do not perform a second local write. Conditional deletion settles
+habit skips and task/habit links in the same transaction and retains an authorized
+tombstone for recovery after the event row is gone. Dedicated authenticated `color-operation` GET/POST/DELETE
 handlers expose only operation ID/phase, execute recovery, or safely cancel an
 unsent operation. Recovery bodies accept only `operationId`; source, generation,
 prepared patches and force-clear overrides are never caller inputs. Reservation
 state is private and never added to generic event scheduling metadata.
 
 The candidate slice is disabled unless the server-only
-`CALENDAR_GOOGLE_COLOR_OPERATIONS_ENABLED` setting is `true`. In that mode all
-other updates to existing Google events, moves and deletes return 409 before
-provider, encryption or habit/task side effects. This deliberate limitation
-keeps decrypted content out of durable color records; encrypted content replay
-and conditional delete/move recovery are not implemented. Native/Microsoft
-routes retain their existing behavior. This mode is not approved for normal
-production mutation behavior. Mixed enabled/disabled API versions are also not
-a safe rollout: every provider writer must cooperate before color writes enable.
+`CALENDAR_GOOGLE_COLOR_OPERATIONS_ENABLED` setting is `true`. That candidate
+mode supports same-source color, content/time/local-lock edits and deletion
+through the shared generation boundary. Source movement still returns 409 before
+side effects until its durable saga is implemented. A pending operation blocks
+content, color and delete successors. Attendee updates are `all` for content/time
+edits and deletion; color/local-lock-only edits use `none`. Recovery executes the
+server-stored operation kind and original conditional request, never a new
+caller-supplied mutation. Status GET may accept a strict `operationId` query to
+reauthorize an already-deleted event's retained operation. Native/Microsoft routes
+retain their existing behavior. This mode remains disabled by default and is not
+approved for normal production mutation behavior: every provider writer must
+cooperate before enabling it; mixed enabled/disabled API versions are unsafe.
 
 The private RPC and transaction capability atomically merge Google color into
 latest metadata and commit sync/completion together. Generation persists after
@@ -487,9 +496,10 @@ state, rather than saving old content or credentials. The new SQL/types and
 combined route/import contracts still require isolated validation.
 
 Do not release either migration or enable the candidate setting on its own.
-Complete durable encrypted replay for normal competing PUTs and coherent
-delete/habit/task behavior, or explicitly approve the narrower color-only
-product limitation, before enabling writes. The sync coordination cooldown is
+Complete adoption by Web, Tasks, outbound sync, RSVP and all other competing
+writers, plus the source move/create saga, before enabling writes. Regression
+evidence is in `mutation-routes.test.ts`, `route-overlap.test.ts`, the encrypted
+mutation executor/provider suites and `calendar-google-mutation-replay.sql`. The sync coordination cooldown is
 not a lock. Google ETags are opaque equality tokens, not sortable revisions.
 Google moves lack a documented conditional fence and remain a separate recovery
 scope. Synthetic controlled overlapping routes demonstrate the intended
