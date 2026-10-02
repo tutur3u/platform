@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { buildLocalProof, main } from './proposal.mjs';
@@ -17,7 +18,10 @@ const state = {
 test('local proof retains hashes and provenance without embedding generated contents', () => {
   const proof = buildLocalProof(state, types);
   assert.equal(proof.typesBytes, types.length);
-  assert.match(proof.typesSha256, /^[a-f0-9]{64}$/);
+  assert.equal(
+    proof.typesSha256,
+    createHash('sha256').update(types).digest('hex')
+  );
   assert.equal(proof.headSha, state.metadata.headSha);
   assert.deepEqual(proof.images, state.images);
   assert.equal(JSON.stringify(proof).includes('export type'), false);

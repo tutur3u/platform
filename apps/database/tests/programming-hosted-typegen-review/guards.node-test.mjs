@@ -51,6 +51,7 @@ test('execution rejects non-hosted environments before Docker or installation', 
   const original = process.env.GITHUB_ACTIONS;
   try {
     delete process.env.GITHUB_ACTIONS;
+    await assert.rejects(main('prepare'), /Requires isolated Linux/);
     await assert.rejects(main('run'), /Requires isolated Linux/);
     await assert.rejects(main('cleanup'), /Requires isolated Linux/);
   } finally {
