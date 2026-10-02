@@ -6,7 +6,6 @@ import type {
 } from '@tuturuuu/types/primitives/programming';
 import {
   encodePathSegment,
-  getConfiguredInternalApiBaseUrl,
   getInternalApiClient,
   type InternalApiClientOptions,
 } from './client';
@@ -15,11 +14,7 @@ function catalogPath(wsId: string) {
   return `/api/v1/workspaces/${encodePathSegment(wsId)}/programming/problems`;
 }
 function webClient(options: InternalApiClientOptions = {}) {
-  // These first-class routes live on web, unlike existing satellite Tulearn APIs.
-  return getInternalApiClient({
-    ...options,
-    baseUrl: options.baseUrl ?? getConfiguredInternalApiBaseUrl(),
-  });
+  return getInternalApiClient(options);
 }
 export function programmingQueryKey(scope: {
   actorId: string;

@@ -211,7 +211,9 @@ try {
     sql(
       'select count(*) from private.learn_programming_problems where ws_id is null;',
       'fixture_empty'
-    ).includes('3')
+    )
+      .split(/\r?\n/u)
+      .some((line) => line.trim() === '3')
   );
   evidence.assertions.push('empty synthetic baseline migration');
   // Two psql sessions, still inside this single admitted FIFO/container budget.
