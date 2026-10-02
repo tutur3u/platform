@@ -7,30 +7,37 @@ import { signRealtimePayload } from '../../../packages/realtime/src/core/token';
 
 export const repositoryRoot = resolve(import.meta.dir, '../../..');
 /** Disposable Worker fixture. No deployed Cloudflare account or credentials. */
-export async function startLocalWorker() {
+export async function startLocalWorker(spawn = Bun.spawn) {
   const secret = `local-${randomUUID()}`;
   const persistence = await mkdtemp(resolve(tmpdir(), 'ttr-realtime-'));
-  const worker = Bun.spawn(
-    [
-      'bunx',
-      'wrangler',
-      'dev',
-      '--local',
-      '--config',
-      'apps/meet-realtime/wrangler.jsonc',
-      '--ip',
-      '127.0.0.1',
-      '--port',
-      '8876',
-      '--persist-to',
-      persistence,
-      '--var',
-      `MEET_REALTIME_TOKEN_SECRET:${secret}`,
-      '--var',
-      'PLATFORM_API_BASE_URL:http://127.0.0.1:8877',
-    ],
-    { cwd: repositoryRoot, stdout: 'pipe', stderr: 'pipe' }
-  );
+  let worker: ReturnType<typeof Bun.spawn>;
+  try {
+    worker = spawn(
+      [
+        process.execPath,
+        'x',
+        'wrangler',
+        'dev',
+        '--local',
+        '--config',
+        'apps/meet-realtime/wrangler.jsonc',
+        '--ip',
+        '127.0.0.1',
+        '--port',
+        '8876',
+        '--persist-to',
+        persistence,
+        '--var',
+        `MEET_REALTIME_TOKEN_SECRET:${secret}`,
+        '--var',
+        'PLATFORM_API_BASE_URL:http://127.0.0.1:8877',
+      ],
+      { cwd: repositoryRoot, stdout: 'pipe', stderr: 'pipe' }
+    );
+  } catch (error) {
+    await rm(persistence, { recursive: true, force: true });
+    throw error;
+  }
   const output = new Response(worker.stdout).text();
   const errors = new Response(worker.stderr).text();
   const stop = async () => {

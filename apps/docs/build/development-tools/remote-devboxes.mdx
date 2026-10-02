@@ -399,7 +399,10 @@ wait bound; a timeout reports an unconfirmed stop and retains capacity ownership
 It does not wait for the arbitrary project command to finish.
 File inventories and changed bytes are exported separately; credentials and
 runner metadata never enter project files. The platform must provide its signed
-file-save callback before enabling the hosted playground workload.
+file-save callback before enabling the hosted playground workload. The scheduling
+primitives alone reject the reserved hosted Playground envelope without running a
+host command; its HTTP adapter ships together with the canonical file-save API.
+The typed-adapter regression in `devbox-runner-judge.test.ts` verifies hosted execution uses the sandbox and canonical authenticated callback, while malformed envelopes never fall through to host execution.
 
 Use focused SDK agent, Judge and sandbox-slot tests for scheduling changes. A
 passing mock test does not establish real sandbox startup latency; measure cold

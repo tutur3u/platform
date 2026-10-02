@@ -28,6 +28,7 @@ import { useState } from 'react';
 import * as Y from 'yjs';
 import { ProgrammingEditor } from './programming-editor';
 import { useProgrammingRoom } from './use-programming-room';
+import { workbenchPermissions } from './workbench-permissions';
 
 export function ProgrammingWorkbench({
   projectId,
@@ -69,11 +70,11 @@ export function ProgrammingWorkbench({
   const [preview, setPreview] = useState(false);
   const [testOutput, setTestOutput] = useState('');
   const project = room.ticket.data?.project;
-  const owner = room.ticket.data?.role === 'owner';
-  const canExecute =
-    owner || (!!execution && room.ticket.data?.role === 'editor');
-  const editable =
-    room.status === 'open' && room.ticket.data?.role !== 'viewer';
+  const { owner, canExecute, editable } = workbenchPermissions(
+    room.ticket.data?.role,
+    room.status,
+    !!execution
+  );
   const active =
     room.snapshot.files.find((file) => file.path === selected) ??
     room.snapshot.files[0];

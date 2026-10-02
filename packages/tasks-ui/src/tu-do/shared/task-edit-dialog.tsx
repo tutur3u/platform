@@ -1,6 +1,4 @@
-import { scrollToCollaborationCaret } from '@tuturuuu/ui/text-editor/collaboration-carets';
-
-('use client');
+'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
@@ -21,6 +19,7 @@ import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
 import { getTaskApiUrl } from '@tuturuuu/ui/lib/tasks-app-url';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
+import { scrollToCollaborationCaret } from '@tuturuuu/ui/text-editor/collaboration-carets';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { MAX_TASK_DESCRIPTION_LENGTH } from '@tuturuuu/utils/constants';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
