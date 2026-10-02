@@ -80,7 +80,7 @@ jobs:
           echo "TUTURUUU_PLAYGROUND_IMAGES={\"python\":\"$digest\"}" >> "$GITHUB_ENV"
       - name: Execute actual SDK sandbox and checkpoint acceptance
         working-directory: packages/sdk
-        run: bunx vitest run --config vitest.playground-acceptance.config.ts
+        run: bun x --no-install vitest run --config vitest.playground-acceptance.config.ts
       - name: Always remove only this run's owned containers and registry volume
         if: always()
         run: |
