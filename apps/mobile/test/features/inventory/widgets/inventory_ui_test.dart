@@ -5,6 +5,39 @@ import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import '../../../helpers/helpers.dart';
 
 void main() {
+  testWidgets('stock formatting preserves parsed fractional precision', (
+    tester,
+  ) async {
+    final values = <double?, String>{
+      null: 'Unlimited',
+      0: '0',
+      7: '7',
+      2.5: '2.5',
+      0.04: '0.04',
+      0.004: '0.004',
+      0.1: '0.1',
+      1.23456789012345: '1.23456789012345',
+      0.0000001: '1e-7',
+      double.parse('1000000000000000100'): '1000000000000000100',
+    };
+    await tester.pumpApp(
+      Builder(
+        builder: (context) {
+          expect(inventoryStockAmount(context, double.parse('-0.0')), '0');
+          for (final entry in values.entries) {
+            final rendered = inventoryStockAmount(context, entry.key);
+            expect(rendered, entry.value);
+            if (entry.key != null) {
+              expect(double.parse(rendered), entry.key);
+            }
+          }
+          return const SizedBox.shrink();
+        },
+      ),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('inventory hero actions stay compact on a narrow phone', (
     tester,
   ) async {

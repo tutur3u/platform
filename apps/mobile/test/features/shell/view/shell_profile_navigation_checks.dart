@@ -128,27 +128,34 @@ void _registerProfileNavigationChecks(
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Workspace settings back returns to the opening root tab', (
-    tester,
-  ) async {
-    final router = _buildRouter(initialLocation: Routes.profileRoot);
-    addTearDown(router.dispose);
-    await tester.pumpWidget(
-      _buildTestApp(
-        router: router,
-        appTabCubit: appTabCubit(),
-        authCubit: authCubit(),
-        workspaceCubit: workspaceCubit(),
-        shellProfileCubit: shellProfileCubit(),
-      ),
-    );
-    await _pumpForTransitions(tester);
-    router.go(Routes.settings);
-    await _pumpForTransitions(tester);
-    router.go(Routes.settingsWorkspace);
-    await _pumpForTransitions(tester);
-    await tester.binding.handlePopRoute();
-    await _pumpForTransitions(tester);
-    expect(router.routeInformationProvider.value.uri.path, Routes.profileRoot);
-  });
+  testWidgets(
+    'Workspace settings returns through Settings to its opening tab',
+    (tester) async {
+      final router = _buildRouter(initialLocation: Routes.profileRoot);
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        _buildTestApp(
+          router: router,
+          appTabCubit: appTabCubit(),
+          authCubit: authCubit(),
+          workspaceCubit: workspaceCubit(),
+          shellProfileCubit: shellProfileCubit(),
+        ),
+      );
+      await _pumpForTransitions(tester);
+      router.go(Routes.settings);
+      await _pumpForTransitions(tester);
+      router.go(Routes.settingsWorkspace);
+      await _pumpForTransitions(tester);
+      await tester.binding.handlePopRoute();
+      await _pumpForTransitions(tester);
+      expect(router.routeInformationProvider.value.uri.path, Routes.settings);
+      await tester.binding.handlePopRoute();
+      await _pumpForTransitions(tester);
+      expect(
+        router.routeInformationProvider.value.uri.path,
+        Routes.profileRoot,
+      );
+    },
+  );
 }

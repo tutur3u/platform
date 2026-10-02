@@ -297,7 +297,7 @@ async fn create_signed_url(
     let Some(storage_base) = storage_base_url(contact_data) else {
         return Err(());
     };
-    let sign_url = format!("{storage_base}/object/sign/{WORKSPACES_BUCKET}/{full_path}");
+    let sign_url = storage_sign_url(&storage_base, full_path)?;
     let service_role_key = contact_data.service_role_key().ok_or(())?;
     let authorization = format!("Bearer {service_role_key}");
 
@@ -309,7 +309,7 @@ async fn create_signed_url(
 
     let response = outbound
         .send(
-            OutboundRequest::new(OutboundMethod::Post, &sign_url)
+            OutboundRequest::new(OutboundMethod::Post, sign_url.as_str())
                 .with_header("Accept", APPLICATION_JSON)
                 .with_header("Authorization", &authorization)
                 .with_header("apikey", service_role_key)
@@ -330,6 +330,21 @@ async fn create_signed_url(
     //   encodeURI(`${storageUrl}${data.signedURL}`)
     // where storageUrl = "{supabase_url}/storage/v1" and signedURL starts with "/".
     Ok(format!("{storage_base}{relative}"))
+}
+
+// Treat object keys as data, never as a URL suffix. Both native reqwest and
+// Worker URL parsing receive the same already-encoded path representation.
+fn storage_sign_url(storage_base: &str, full_path: &str) -> Result<url::Url, ()> {
+    if sanitize_path(full_path).as_deref() != Some(full_path) {
+        return Err(());
+    }
+    let mut url = url::Url::parse(storage_base).map_err(|_| ())?;
+    url.path_segments_mut()
+        .map_err(|_| ())?
+        .pop_if_empty()
+        .extend(["object", "sign", WORKSPACES_BUCKET])
+        .extend(full_path.split('/'));
+    Ok(url)
 }
 
 /// Derive the Supabase Storage base URL (`{supabase_url}/storage/v1`) from the
