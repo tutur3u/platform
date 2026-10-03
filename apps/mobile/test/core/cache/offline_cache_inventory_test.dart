@@ -71,6 +71,30 @@ void main() {
     ],
   );
 
+  test(
+    'namespace revision ignores unrelated refreshes and tracks source content',
+    () async {
+      await seed('actor', 'workspace', '1', ['one']);
+      Future<String> revision() async =>
+          (await store.offlineInventory(
+                userId: 'actor',
+                workspaceId: 'workspace',
+                moduleId: 'inventory',
+              )).namespaces
+              .firstWhere((row) => row.namespace == 'inventory.products')
+              .contentRevision;
+      final initial = await revision();
+      expect(await revision(), initial);
+      await seed('actor', 'workspace', '1', [
+        'unrelated',
+      ], namespace: 'inventory.categories');
+      await seed('other', 'workspace', '1', ['private']);
+      expect(await revision(), initial);
+      await seed('actor', 'workspace', '1', ['two']);
+      expect(await revision(), isNot(initial));
+    },
+  );
+
   test('ordinary persisted fetches deduplicate overlapping pages '
       'and retain expired rows', () async {
     await seed('actor', 'workspace', '1', ['one', 'two']);

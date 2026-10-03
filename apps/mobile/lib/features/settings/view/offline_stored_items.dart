@@ -16,6 +16,7 @@ class OfflineStoredItems extends StatefulWidget {
     required this.workspaceId,
     required this.namespace,
     required this.revision,
+    this.loadItems,
     super.key,
   });
 
@@ -25,13 +26,17 @@ class OfflineStoredItems extends StatefulWidget {
   final String namespace;
   final Object revision;
 
+  /// Injectable scoped local source; production reads the encrypted store.
+  final Future<List<ReplicaEntityRecord>> Function()? loadItems;
+
   @override
   State<OfflineStoredItems> createState() => _OfflineStoredItemsState();
 }
 
 class _OfflineStoredItemsState extends State<OfflineStoredItems> {
-  List<ReplicaEntityRecord>? _items;
+  List<_StoredItem>? _items;
   String _query = '';
+  final _expandedIds = <String>{};
   bool _failed = false;
   bool _expanded = false;
   int _generation = 0;
@@ -39,12 +44,17 @@ class _OfflineStoredItemsState extends State<OfflineStoredItems> {
   @override
   void didUpdateWidget(OfflineStoredItems oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.userId != widget.userId ||
+    final scopeChanged =
+        oldWidget.userId != widget.userId ||
         oldWidget.workspaceId != widget.workspaceId ||
         oldWidget.namespace != widget.namespace ||
-        oldWidget.revision != widget.revision) {
+        oldWidget.store != widget.store;
+    if (scopeChanged) {
       _items = null;
       _query = '';
+      _expandedIds.clear();
+    }
+    if (scopeChanged || oldWidget.revision != widget.revision) {
       _generation++;
       if (_expanded) unawaited(_load());
     }
@@ -54,13 +64,18 @@ class _OfflineStoredItemsState extends State<OfflineStoredItems> {
     final generation = ++_generation;
     setState(() => _failed = false);
     try {
-      final items = await widget.store.queryReplica(
-        userId: widget.userId,
-        workspaceId: widget.workspaceId,
-        namespace: widget.namespace,
-      );
+      // Complete search requires every scoped row. queryReplica's limit is
+      // applied after its scan, so it cannot bound I/O and would hide matches.
+      // Read once per content revision and index labels once; render lazily.
+      final items =
+          await (widget.loadItems?.call() ??
+              widget.store.queryReplica(
+                userId: widget.userId,
+                workspaceId: widget.workspaceId,
+                namespace: widget.namespace,
+              ));
       if (!mounted || generation != _generation) return;
-      setState(() => _items = items);
+      setState(() => _items = items.map(_StoredItem.new).toList());
     } on Object {
       if (mounted && generation == _generation) {
         setState(() => _failed = true);
@@ -68,21 +83,12 @@ class _OfflineStoredItemsState extends State<OfflineStoredItems> {
     }
   }
 
-  String _label(ReplicaEntityRecord item) {
-    for (final key in ['name', 'title', 'summary', 'display_name']) {
-      final value = item.payload[key];
-      if (value is String && value.trim().isNotEmpty) return value.trim();
-    }
-    return item.id;
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final items = _items?.where((item) {
-      return _label(item).toLowerCase().contains(_query) ||
-          item.id.toLowerCase().contains(_query);
-    }).toList();
+    final items = _items
+        ?.where((item) => item.searchText.contains(_query))
+        .toList();
     return ExpansionTile(
       key: ValueKey(('offline-stored-items', widget.namespace)),
       title: Text(l10n.offlineBrowseStoredItems),
@@ -106,31 +112,77 @@ class _OfflineStoredItemsState extends State<OfflineStoredItems> {
                   setState(() => _query = value.toLowerCase().trim()),
             ),
           ),
-          if (items.isEmpty) Text(l10n.offlineNoMatchingItems),
-          for (final item in items)
-            ExpansionTile(
-              key: ValueKey(('offline-stored-item', item.id)),
-              title: Text(_label(item)),
-              childrenPadding: const EdgeInsets.all(16),
-              expandedCrossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(l10n.offlineStoredItemId(item.id)),
-                Text(
-                  l10n.offlineLogicalBytes(
-                    '${utf8.encode(jsonEncode(item.payload)).length}',
-                  ),
-                ),
-                Text(
-                  l10n.offlineLastFetch(
-                    DateFormat.yMd(
-                      Localizations.localeOf(context).toString(),
-                    ).add_jm().format(item.fetchedAt.toLocal()),
-                  ),
-                ),
-              ],
+          if (items.isEmpty)
+            Text(l10n.offlineNoMatchingItems)
+          else
+            SizedBox(
+              height: 320,
+              child: ListView.builder(
+                key: ValueKey(('offline-item-list', widget.namespace)),
+                primary: false,
+                itemCount: items.length,
+                itemBuilder: (context, index) => _itemTile(items[index]),
+              ),
             ),
         ],
       ],
     );
   }
+
+  Widget _itemTile(_StoredItem item) {
+    final l10n = context.l10n;
+    final expanded = _expandedIds.contains(item.record.id);
+    if (expanded && item.bytes == null) {
+      item.bytes = utf8.encode(jsonEncode(item.record.payload)).length;
+    }
+    return ExpansionTile(
+      key: ValueKey(('offline-stored-item', item.record.id)),
+      initiallyExpanded: expanded,
+      title: Text(item.label),
+      onExpansionChanged: (expanded) {
+        setState(() {
+          if (expanded) {
+            _expandedIds.add(item.record.id);
+          } else {
+            _expandedIds.remove(item.record.id);
+          }
+        });
+      },
+      childrenPadding: const EdgeInsets.all(16),
+      expandedCrossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (item.bytes != null) ...[
+          Text(l10n.offlineStoredItemId(item.record.id)),
+          Text(l10n.offlineLogicalBytes('${item.bytes}')),
+          Text(
+            l10n.offlineLastFetch(
+              DateFormat.yMd(
+                Localizations.localeOf(context).toString(),
+              ).add_jm().format(item.record.fetchedAt.toLocal()),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _StoredItem {
+  _StoredItem(this.record) {
+    var resolvedLabel = record.id;
+    for (final key in ['name', 'title', 'summary', 'display_name']) {
+      final value = record.payload[key];
+      if (value is String && value.trim().isNotEmpty) {
+        resolvedLabel = value.trim();
+        break;
+      }
+    }
+    label = resolvedLabel;
+    searchText = '${label.toLowerCase()}\n${record.id.toLowerCase()}';
+  }
+
+  final ReplicaEntityRecord record;
+  late final String searchText;
+  late final String label;
+  int? bytes;
 }

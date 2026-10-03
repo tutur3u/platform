@@ -3,6 +3,7 @@
 class OfflineNamespaceInventory {
   const OfflineNamespaceInventory({
     required this.namespace,
+    required this.contentRevision,
     required this.items,
     required this.snapshots,
     required this.logicalBytes,
@@ -12,6 +13,9 @@ class OfflineNamespaceInventory {
     this.serverReportedTotal,
   });
   final String namespace;
+
+  /// Stable for identical persisted sources, independent of pending/status updates.
+  final String contentRevision;
   final int items;
   final int snapshots;
   final int logicalBytes;

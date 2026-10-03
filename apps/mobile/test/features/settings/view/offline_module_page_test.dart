@@ -253,6 +253,33 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('same namespace refresh preserves active stored item search', (
+    tester,
+  ) async {
+    await pump(tester);
+    await browseItems(tester);
+    final search = find.byKey(
+      const ValueKey(('offline-item-search', 'inventory.products')),
+    );
+    await tester.enterText(search, 'synthetic-item');
+    await tester.pumpAndSettle();
+    await tester.runAsync(
+      tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Synthetic stored product'), findsOneWidget);
+    expect(
+      tester
+          .widget<EditableText>(
+            find.descendant(of: search, matching: find.byType(EditableText)),
+          )
+          .controller
+          .text,
+      'synthetic-item',
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('loss of access removes expanded stored item details', (
     tester,
   ) async {

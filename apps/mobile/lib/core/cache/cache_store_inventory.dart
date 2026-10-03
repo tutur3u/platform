@@ -80,6 +80,7 @@ extension CacheStoreInventory on CacheStore {
         for (final name in groups.keys.toList()..sort())
           OfflineNamespaceInventory(
             namespace: name,
+            contentRevision: _namespaceContentRevision(groups[name]!),
             serverReportedTotal: _consistentQueryTotal(
               groups[name]!,
               identities[name]?.length ?? 0,
@@ -137,4 +138,16 @@ int? _consistentQueryTotal(
           totals.single >= availableItems
       ? totals.single
       : null;
+}
+
+String _namespaceContentRevision(List<CachedResourceRecord> sources) {
+  final versions = [
+    for (final source in sources)
+      jsonEncode([
+        source.key,
+        source.fetchedAt.toIso8601String(),
+        sha256.convert(utf8.encode(source.jsonPayload)).toString(),
+      ]),
+  ]..sort();
+  return sha256.convert(utf8.encode(jsonEncode(versions))).toString();
 }

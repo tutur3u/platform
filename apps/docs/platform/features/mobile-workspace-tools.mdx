@@ -1177,6 +1177,10 @@ timezone, Notifications & interaction, and App preferences. Downloads, cache
 limits, cache removal, and unsynchronized changes belong to a dedicated Offline
 section. Account, workspace, experiments, and help retain their existing access
 rules. Each stored namespace expands to a local-only item list, searchable by name or ID.
+Rows render lazily in a bounded viewport; search covers the complete scoped local
+collection and survives unrelated coordinator updates. Namespace source-content
+identity triggers rereads only when that namespace changes. Payload sizing is
+deferred until visible item details open and is memoized for that content version.
 Item details show its stored identity, logical payload bytes and last fetch time;
 these persisted rows exclude queued-only edits. Account/workspace changes and loss
 of module access immediately remove the list and its expanded details.

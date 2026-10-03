@@ -282,7 +282,7 @@ class _OfflineModulePageState extends State<OfflineModulePage> {
                         userId: _userId!,
                         workspaceId: _workspaceId!,
                         namespace: row.namespace,
-                        revision: inventory,
+                        revision: row.contentRevision,
                       ),
                     ],
                   ),
