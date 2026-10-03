@@ -938,17 +938,17 @@ Profile to Overview within at most three taps; scrolling manually restarts the
 sequence. Apps resets to Grid, Finance taxonomy to Categories, and Calendar to
 Three days on phones or Week on tablets. Notes returns to Inbox and Assistant
 to Chat through their existing guarded handlers. Time Tracker sections remain
-separate routed destinations. Home defaults to Home; its second tab is Personal
-Agenda, scoped to the signed-in user's personal membership without switching the
-global workspace. It never falls back to a shared workspace. It retains authorized
-cached events during retry and offers read-only event details; Calendar remains
-the editing surface. Apps defaults to Grid, ordered before List. Shared search
-replaces the top navbar; empty submission dismisses and unfocuses. IME visibility
+separate routed destinations. Home defaults to Home; its second tab, Personal
+Agenda, uses only the signed-in user's personal membership, with no shared fallback or global scope change.
+Agenda resolves user, personal workspace, then
+device timezone and reloads after preference changes; Home retains its mounted
+dashboard state across tabs. Agenda retains cached events during retry and offers
+read-only details; Calendar remains the editing surface. Apps defaults to Grid
+before List. Shared search replaces the top navbar; empty submission dismisses and unfocuses. IME visibility
 and hardware search focus animate the whole dock and its actions out together;
-route changes clear focus. Workspace visibility uses an understated icon inside
-a 44-pixel target with a named tooltip. Regression coverage:
-`personal_agenda_test.dart`, `shell_keyboard_chrome_test.dart`, and
-`apps_search_submit_test.dart`. Apps opens the Apps tab on one tap and keeps its picker on long press.
+route changes clear focus. Workspace visibility has a subtle icon, a named tooltip,
+and a 44-pixel target. Regression coverage: `personal_agenda_test.dart`, `personal_agenda_scope_test.dart`, `shell_keyboard_chrome_test.dart`,
+and `apps_search_submit_test.dart`. Apps opens with one tap and keeps its picker on long press.
 
 Profile uses the shell title for Overview and Timeline, with no duplicate
 body heading. Place the day-trail action before the rightmost Overview/Timeline
