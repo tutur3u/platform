@@ -39,6 +39,7 @@ const request = (body: unknown) =>
 beforeEach(() => {
   vi.clearAllMocks();
   vi.unstubAllEnvs();
+  vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://example.test');
   f.reserve.mockResolvedValue(undefined);
   f.bucket.mockReturnValue({
     createSignedUploadUrl: f.sign,
@@ -69,13 +70,14 @@ it.each(['avatar', 'banner'] as const)(
     expect(f.bucket).toHaveBeenCalledWith(
       kind === 'avatar' ? 'avatars' : 'banners'
     );
-    expect(f.sign).toHaveBeenCalledWith(
-      expect.stringMatching(/^resolved-actor\/[0-9a-f-]+\.png$/),
-      { upsert: false }
+    const data = await response.json();
+    expect(data.filePath).toMatch(/^resolved-actor\/[0-9a-f-]+\.webp$/);
+    expect(data.uploadUrl).toMatch(
+      new RegExp(
+        `^https://example.test/api/v1/users/me/${kind}/upload\\?token=`
+      )
     );
-    expect(f.reserve.mock.invocationCallOrder[0]).toBeLessThan(
-      f.sign.mock.invocationCallOrder[0]!
-    );
+    expect(f.sign).not.toHaveBeenCalled();
   }
 );
 it.each(['../art.png', 'art.svg', 'art.exe', `${'a'.repeat(201)}.png`])(
@@ -114,28 +116,22 @@ it.each([429, 503])(
   }
 );
 
-it('uses a configured HTTPS public Storage origin while preserving scoped signed tokens', async () => {
+it('uses a configured HTTPS public Storage origin only for the final optimized object', async () => {
   vi.stubEnv(
     'SUPABASE_PUBLIC_STORAGE_ORIGIN',
     'https://supabase.tuturuuu.localhost:1355'
   );
-  f.sign.mockResolvedValue({
-    data: {
-      signedUrl:
-        'http://internal:8001/storage/v1/object/upload/sign/avatars/actor/art.png?token=synthetic',
-      token: 'synthetic',
-    },
-    error: null,
-  });
   const response = await createProfileMediaUploadHandler('avatar')(
     request({ filename: 'art.png' }),
     undefined as never
   );
-  expect(response.status).toBe(200);
-  expect(await response.json()).toMatchObject({
-    uploadUrl:
-      'https://supabase.tuturuuu.localhost:1355/storage/v1/object/upload/sign/avatars/actor/art.png?token=synthetic',
-  });
+  const data = await response.json();
+  expect(data.publicUrl).toMatch(
+    /^https:\/\/supabase.tuturuuu.localhost:1355\/resolved-actor\/[0-9a-f-]+\.webp$/
+  );
+  expect(data.uploadUrl).toMatch(
+    /^https:\/\/example.test\/api\/v1\/users\/me\/avatar\/upload/
+  );
 });
 it('does not return insecure or malformed public Storage endpoints', async () => {
   vi.stubEnv('SUPABASE_PUBLIC_STORAGE_ORIGIN', 'http://untrusted.test');

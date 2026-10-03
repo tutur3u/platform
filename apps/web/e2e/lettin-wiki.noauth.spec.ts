@@ -477,6 +477,12 @@ test.describe
           bucket: 'banners',
           path: bannerTicket.filePath,
         });
+        const storedBanner = await page.request.get(bannerTicket.publicUrl);
+        expect(storedBanner.status()).toBe(200);
+        expect((await storedBanner.body()).length).toBeLessThanOrEqual(
+          2_000_000
+        );
+        expect(storedBanner.headers()['content-type']).toContain('image/webp');
         await expect(
           page.getByRole('button', { name: 'Save profile', exact: true })
         ).toBeEnabled();

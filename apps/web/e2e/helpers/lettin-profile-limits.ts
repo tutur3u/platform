@@ -1,4 +1,5 @@
 import { type APIRequestContext, expect } from '@playwright/test';
+import sharp from 'sharp';
 
 export async function assertLettinProfileLimits(
   request: APIRequestContext,
@@ -45,12 +46,36 @@ export async function assertLettinProfileLimits(
   expect(secondTicket.status(), await secondTicket.text()).toBe(200);
   const avatarTicket = await secondTicket.json();
   onTicket({ bucket: 'avatars', path: avatarTicket.filePath as string });
-  const oversized = await request.put(avatarTicket.uploadUrl, {
+  const source = await sharp({
+    create: {
+      width: 2048,
+      height: 1024,
+      channels: 4,
+      background: { r: 20, g: 30, b: 40, alpha: 0.5 },
+    },
+  })
+    .png()
+    .withMetadata({ orientation: 6 })
+    .toBuffer();
+  const uploaded = await request.put(avatarTicket.uploadUrl, {
     headers: { 'Content-Type': 'image/png' },
-    data: Buffer.alloc(2 * 1024 ** 2 + 1),
+    data: source,
   });
-  expect([400, 413]).toContain(oversized.status());
-  expect(await oversized.text()).toMatch(/size|too large|maximum/i);
+  expect(uploaded.status(), await uploaded.text()).toBe(200);
+  const stored = await request.get(avatarTicket.publicUrl);
+  expect(stored.status()).toBe(200);
+  const optimized = await stored.body();
+  expect(optimized.length).toBeLessThanOrEqual(1_000_000);
+  const metadata = await sharp(optimized).metadata();
+  expect(metadata.format).toBe('webp');
+  expect(metadata.width).toBeLessThanOrEqual(1024);
+  expect(metadata.height).toBeLessThanOrEqual(1024);
+  expect(metadata.exif).toBeUndefined();
+  const replay = await request.put(avatarTicket.uploadUrl, {
+    headers: { 'Content-Type': 'image/png' },
+    data: source,
+  });
+  expect(replay.status()).toBe(409);
   const deniedTicket = await request.post(
     `${origin}/api/v1/users/me/banner/upload-url`,
     { data: { filename: 'extra.png' } }

@@ -3,7 +3,7 @@
 //! Ported from `apps/web/src/app/api/v1/workspaces/[wsId]/users/avatar/route.ts`.
 //!
 //! ONLY the `GET` method is migrated here. The legacy route also defines a
-//! `POST` (signed upload URL creation, gated on `manage_users`) which is NOT
+//! `POST` (budgeted optimized upload capability, gated on `manage_users`) which is NOT
 //! migrated yet — this handler returns `None` for every non-`GET` method so the
 //! Cloudflare Worker falls through to the still-active Next.js route for `POST`.
 //!

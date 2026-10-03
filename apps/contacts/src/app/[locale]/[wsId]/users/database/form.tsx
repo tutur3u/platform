@@ -2,6 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { Info, Loader2, UserIcon } from '@tuturuuu/icons';
+import { uploadWorkspaceUserAvatar } from '@tuturuuu/internal-api/profile-media';
 import {
   createWorkspaceUser,
   updateWorkspaceUser,
@@ -29,7 +30,6 @@ import { ImageCropper } from '@tuturuuu/users-ui/components/image-cropper';
 import { DatePicker } from '@tuturuuu/users-ui/components/user-date-picker';
 import { useUserStatusLabels } from '@tuturuuu/users-ui/hooks/use-user-status-labels';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import React, { useState } from 'react';
@@ -281,34 +281,7 @@ export default function UserForm({
       );
     }
 
-    const fileName = `${generateRandomUUID()}.jpg`;
-    const contentType = file.type;
-
-    // Get signed upload URL from backend
-    const res = await fetch(`/api/v1/workspaces/${wsId}/users/avatar`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fileName, contentType }),
-    });
-
-    if (!res.ok) {
-      throw new Error('Failed to get signed upload URL');
-    }
-
-    const { signedUrl, publicUrl } = await res.json();
-
-    // Upload file using the signed URL
-    const uploadRes = await fetch(signedUrl, {
-      method: 'PUT',
-      body: file,
-      headers: { 'Content-Type': contentType },
-    });
-
-    if (!uploadRes.ok) {
-      throw new Error('Failed to upload image');
-    }
-
-    return publicUrl;
+    return uploadWorkspaceUserAvatar(wsId, file);
   }
 
   const onSubmit = async (formData: z.infer<typeof FormSchema>) => {
