@@ -4065,7 +4065,7 @@
     "meetCollaboration": "Collaborate",
     "meetCollaborationUnavailable": "Collaboration is unavailable. Rejoin the meeting and try again.",
     "meetScreenFixtureTitle": "Native screen capture test",
-    "meetScreenFixtureHint": "This test sends your selected screen only to a receiver on this device. It does not join a hosted meeting. Stop sharing when finished.",
+    "meetScreenFixtureHint": "Join the synthetic local meeting and share your screen. Media stays on this device; watch the receiver frame counter.",
     "meetScreenFixtureFrames": "Decoded receiver frames: {count}",
     "@meetScreenFixtureFrames": {
         "placeholders": {
@@ -4073,5 +4073,8 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "meetFixtureConnected": "Local meeting connected",
+    "meetFixtureRevoke": "Host: stop screen share",
+    "meetFixtureReconnect": "Reconnect meeting"
 }

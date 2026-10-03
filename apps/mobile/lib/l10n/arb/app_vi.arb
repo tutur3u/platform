@@ -4068,7 +4068,7 @@
     "meetCollaboration": "Cộng tác",
     "meetCollaborationUnavailable": "Cộng tác hiện không khả dụng. Hãy vào lại cuộc họp rồi thử lại.",
     "meetScreenFixtureTitle": "Kiểm thử chia sẻ màn hình gốc",
-    "meetScreenFixtureHint": "Kiểm thử chỉ gửi màn hình bạn chọn đến bộ nhận trên thiết bị này, không tham gia cuộc họp trực tuyến. Dừng chia sẻ khi hoàn tất.",
+    "meetScreenFixtureHint": "Tham gia cuộc họp giả lập cục bộ và chia sẻ màn hình. Nội dung chỉ ở trên thiết bị này; theo dõi số khung hình nhận được.",
     "meetScreenFixtureFrames": "Số khung hình đã giải mã: {count}",
     "@meetScreenFixtureFrames": {
         "placeholders": {
@@ -4076,5 +4076,8 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "meetFixtureConnected": "Đã kết nối cuộc họp cục bộ",
+    "meetFixtureRevoke": "Chủ phòng: dừng chia sẻ màn hình",
+    "meetFixtureReconnect": "Kết nối lại cuộc họp"
 }
