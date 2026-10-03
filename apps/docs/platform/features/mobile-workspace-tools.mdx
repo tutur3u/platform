@@ -935,6 +935,38 @@ Synthetic render evidence for the offline status and targeted retry surface:
 
 These images come from Flutter widget fixtures, not an installed-device build.
 
+## Floating navigation and compact Profile
+
+The first floating navigation tap opens its destination. Reselecting the active
+destination scrolls its content to the top. Reselecting again resets its top
+section to the default; if already at the top, reset happens immediately. Rapid
+third taps during scrolling must also reset. Notifications returns to Inbox and
+Profile to Overview within at most three taps; scrolling manually restarts the
+sequence. Apps resets to Grid, Finance taxonomy to Categories, and Calendar to
+Three days on phones or Week on tablets. Notes returns to Inbox and Assistant
+to Chat through their existing guarded handlers. Time Tracker sections remain
+separate routed destinations; Dashboard has no secondary section. Apps opens the Apps tab on one tap and keeps its picker on long press.
+
+Profile uses the shell title for Overview and Activity timeline, with no duplicate
+body heading. Place the day-trail action before the rightmost Overview/Timeline
+switch, including compact/overflow layouts. Identity and metric layouts adapt to
+available width and text scale; avoid nested bordered panels and fixed three-column
+cards on small screens. Timeline uses short rows and a compact retry/status
+line. Preserve privacy and incomplete-source information in accessible tooltips
+or concise status, rather than long explanatory paragraphs. These are defaults
+for the mobile Profile and comparable shell section switches; semantic borders
+for unsynchronized drafts and destructive confirmation dialogs remain intentional.
+
+Regression evidence: `shell_dock_reselection_checks.dart`,
+`shell_chrome_actions_test.dart`, `profile_overview_shell_test.dart`,
+`profile_timeline_section_test.dart`, and `profile_timeline_races_test.dart`.
+
+Synthetic Profile renders use placeholder identity and activity data:
+
+![Compact Profile Overview, synthetic Flutter fixture](/images/mobile-profile-overview-synthetic.png)
+
+![Profile Timeline at double text scale, synthetic Flutter fixture](/images/mobile-profile-timeline-large-text-synthetic.png)
+
 
 ## Profile activity privacy
 

@@ -16,11 +16,13 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/notifications/widgets/notifications_action_button.dart';
 import 'package:mobile/features/profile/view/profile_navigation_avatar.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/avatar_dropdown.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
@@ -33,6 +35,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../helpers/helpers.dart';
 import 'shell_viewport_checks.dart';
 
+part 'shell_dock_reselection_checks.dart';
 part 'shell_navigation_harness.dart';
 part 'shell_peer_section_checks.dart';
 part 'shell_profile_navigation_checks.dart';
@@ -75,6 +78,11 @@ void main() {
       await shellProfileCubit.close();
     });
 
+    _registerDockReselectionChecks(
+      () => appTabCubit,
+      () => authCubit,
+      () => workspaceCubit,
+    );
     registerShellViewportChecks((tester) async {
       final router = _buildRouter(initialLocation: Routes.apps);
       addTearDown(router.dispose);
@@ -558,47 +566,6 @@ void main() {
 
       expect(systemPopCalls, 1);
       await tester.drainShadToastTimers();
-    });
-
-    testWidgets('apps tab opens picker even when a mini-app is selected', (
-      tester,
-    ) async {
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = const Size(390, 844);
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-
-      final router = _buildRouter(initialLocation: Routes.home);
-      addTearDown(router.dispose);
-
-      final timerModule = AppRegistry.moduleById('timer');
-      expect(
-        timerModule,
-        isNotNull,
-        reason: 'Timer module should be registered.',
-      );
-      if (timerModule == null) {
-        fail('AppRegistry.moduleById("timer") returned null.');
-      }
-      await appTabCubit.select(timerModule);
-      await appTabCubit.setShowAppsTab(value: true);
-
-      await tester.pumpWidget(
-        _buildTestApp(
-          router: router,
-          appTabCubit: appTabCubit,
-          authCubit: authCubit,
-          workspaceCubit: workspaceCubit,
-        ),
-      );
-      await _pumpForTransitions(tester);
-
-      await tester.tap(find.byIcon(Icons.apps_outlined).first);
-      await _pumpForTransitions(tester);
-
-      _expectAppsScreen(tester, router);
     });
 
     testWidgets(

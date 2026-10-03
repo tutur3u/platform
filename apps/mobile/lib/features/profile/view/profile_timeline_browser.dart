@@ -22,6 +22,8 @@ class ProfileTimelineBrowser extends StatefulWidget {
     required this.items,
     required this.onOpen,
     this.loading = false,
+    this.datesOpen,
+    this.onDatesChanged,
     this.refreshing = false,
     this.availability = ProfileTimelineAvailability.complete,
     this.statusReportedByParent = false,
@@ -34,6 +36,8 @@ class ProfileTimelineBrowser extends StatefulWidget {
   final List<ProfileTimelineItem> items;
   final ValueChanged<ProfileTimelineItem> onOpen;
   final bool loading;
+  final bool? datesOpen;
+  final ValueChanged<bool>? onDatesChanged;
   final bool refreshing;
   final ProfileTimelineAvailability availability;
   final bool statusReportedByParent;
@@ -76,6 +80,7 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
   @override
   void initState() {
     super.initState();
+    _dates = widget.datesOpen ?? false;
     _selected = _groups.keys.firstOrNull ?? _today;
     _week = _monday(_selected);
     _shown = widget.pageSize;
@@ -84,6 +89,11 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
   @override
   void didUpdateWidget(covariant ProfileTimelineBrowser oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.datesOpen != null &&
+        widget.datesOpen != oldWidget.datesOpen &&
+        widget.datesOpen != _dates) {
+      _toggle();
+    }
     if (!_selectedByUser &&
         oldWidget.items.isEmpty &&
         widget.items.isNotEmpty) {
@@ -169,6 +179,7 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
       _week = _monday(day);
       _dates = true;
     });
+    widget.onDatesChanged?.call(true);
     if (_scroll.hasClients) _scroll.jumpTo(0);
     _animate();
   }
@@ -199,6 +210,7 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
         children: [
           ProfileTimelineDateStrip(
             open: _dates,
+            showToggle: widget.datesOpen == null,
             selected: _selected,
             week: _week,
             activityDays: groups.keys.toSet(),
@@ -217,8 +229,13 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
             height: 24,
             child: widget.refreshing
                 ? Semantics(
+                    key: const ValueKey('timeline-refreshing'),
+                    label: context.l10n.commonLoading,
                     liveRegion: true,
-                    child: Text(context.l10n.profileLoading),
+                    child: const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Icon(Icons.sync, size: 16),
+                    ),
                   )
                 : null,
           ),
