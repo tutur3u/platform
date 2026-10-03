@@ -1,5 +1,8 @@
 import { authorizeCalendarEventManagement } from '../../calendar-event-permission';
-import { resolveCalendarSource } from '../source-resolver';
+import {
+  resolveCalendarSource,
+  resolveCalendarSourceForEvent,
+} from '../source-resolver';
 import { ColorOperationError } from './protocol';
 import {
   type SagaBinding,
@@ -113,10 +116,28 @@ export function createRequestProviderSagaAccess(
         'storage',
         'Provider saga event unavailable'
       );
+    let sourceCalendarId = row?.source_calendar_id;
+    if (row?.provider === 'tuturuuu' && sourceCalendarId === null) {
+      // Historical native rows belong to the workspace primary, never whichever
+      // native calendar the caller supplied. Reuse the actor-scoped resolver.
+      try {
+        sourceCalendarId = (
+          await resolveCalendarSourceForEvent({
+            ...authorized,
+            event: row,
+          })
+        ).workspaceCalendarId;
+      } catch {
+        throw new ColorOperationError(
+          'identity',
+          'Provider saga primary calendar unavailable'
+        );
+      }
+    }
     const matches = (endpoint: SagaEndpoint, assignedEventId?: string) =>
       row &&
       row.provider === endpoint.provider &&
-      row.source_calendar_id === endpoint.workspaceCalendarId &&
+      sourceCalendarId === endpoint.workspaceCalendarId &&
       (endpoint.provider === 'tuturuuu' ||
         ((row.external_calendar_id ?? row.google_calendar_id) ===
           endpoint.identity.calendarId &&
