@@ -6,12 +6,12 @@
         "acceptedRemoval": 12,
         "key": "api",
         "label": "api",
-        "legacyNext": 537,
+        "legacyNext": 538,
         "migrated": 62,
-        "percentComplete": 12.11,
-        "remaining": 537,
+        "percentComplete": 12.09,
+        "remaining": 538,
         "terminal": 74,
-        "total": 611,
+        "total": 612,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 12,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 547,
+        "legacyNext": 548,
         "migrated": 67,
-        "percentComplete": 12.62,
-        "remaining": 547,
+        "percentComplete": 12.6,
+        "remaining": 548,
         "terminal": 79,
-        "total": 626,
+        "total": 627,
         "unknownStatus": 0
       },
       {
@@ -363,12 +363,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 625,
+      "legacyNext": 626,
       "migrated": 215,
-      "percentComplete": 26.81,
-      "remaining": 625,
+      "percentComplete": 26.78,
+      "remaining": 626,
       "terminal": 229,
-      "total": 854,
+      "total": 855,
       "unknownStatus": 0
     }
   },
@@ -4691,6 +4691,18 @@
       ],
       "routePath": "/api/v1/workspaces/:wsId/integrations/sepay/sync-bank-accounts",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/integrations/sepay/sync-bank-accounts/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/inventory/merges:apps/web/src/app/api/v1/workspaces/[wsId]/inventory/merges/route.ts",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "routePath": "/api/v1/workspaces/:wsId/inventory/merges",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/inventory/merges/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -9683,20 +9695,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 611,
+    "apiRoutes": 612,
     "cronRoutes": 10,
     "layouts": 68,
     "pages": 156,
-    "routeHandlers": 626,
+    "routeHandlers": 627,
     "methodCounts": {
-      "GET": 314,
+      "GET": 315,
       "HEAD": 11,
-      "POST": 307,
+      "POST": 308,
       "PUT": 58,
       "PATCH": 64,
       "DELETE": 101,
       "OPTIONS": 24
     },
-    "total": 854
+    "total": 855
   }
 }
