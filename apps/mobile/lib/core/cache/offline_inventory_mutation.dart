@@ -15,7 +15,12 @@ class OfflineInventoryMutation {
         !{'inventory', 'finance'}.contains(record.feature)) {
       return null;
     }
-    final parts = Uri.parse(record.path).pathSegments;
+    final List<String> parts;
+    try {
+      parts = Uri.parse(record.path).pathSegments;
+    } on FormatException {
+      return null;
+    }
     final at = parts.indexOf('workspaces');
     if (at < 0 ||
         parts.length <= at + 2 ||

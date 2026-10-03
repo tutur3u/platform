@@ -28,8 +28,17 @@ extension CacheStoreReplica on CacheStore {
               raw['userId'] == userId &&
               raw['workspaceId'] == workspaceId,
         )
-        .map(OfflineResourceReference.fromJson)
+        .map(_parseOfflineReference)
+        .whereType<OfflineResourceReference>()
         .toSet();
+  }
+
+  OfflineResourceReference? _parseOfflineReference(Map<dynamic, dynamic> raw) {
+    try {
+      return OfflineResourceReference.fromJson(raw);
+    } on Object {
+      return null;
+    }
   }
 
   Future<void> saveLocalIdMapping({
@@ -81,7 +90,8 @@ extension CacheStoreReplica on CacheStore {
               raw['userId'] == userId &&
               raw['workspaceId'] == workspaceId,
         )
-        .map(OfflineResourceReference.fromJson)
+        .map(_parseOfflineReference)
+        .whereType<OfflineResourceReference>()
         .toSet();
   }
 

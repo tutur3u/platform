@@ -48,7 +48,7 @@ const schemas = {
   unit: named,
   warehouse: named,
   finance_category: z.strictObject({
-    name: z.string().min(1).max(MAX_NAME_LENGTH),
+    name: z.string().trim().min(1).max(MAX_NAME_LENGTH),
     is_expense: z.boolean(),
     description: z.string().max(MAX_LONG_TEXT_LENGTH).nullable().optional(),
     icon: z.string().max(MAX_MEDIUM_TEXT_LENGTH).nullable().optional(),

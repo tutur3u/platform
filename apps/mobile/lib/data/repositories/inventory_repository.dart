@@ -538,7 +538,10 @@ class InventoryRepository {
       workspaceId: wsId,
       entityId: saleId,
       payload: payload,
-      acknowledgedValue: InventorySalesPeriod.fromJson,
+      acknowledgedValue: (data) =>
+          data.containsKey('data') && data['data'] == null
+          ? null
+          : InventorySalesPeriod.fromJson(data),
       pendingValue: (_) => null,
       send: () async {
         final response = await _api.putJson(path, payload);

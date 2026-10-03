@@ -183,6 +183,54 @@ describe('deduplicated native create boundary', () => {
 });
 
 describe('kind-specific scope and limits', () => {
+  it.each([
+    ['warehouse', 'create_inventory'],
+    ['period', 'create_inventory_sales'],
+  ] as const)(
+    '%s requires its owning permission before RPC',
+    async (kind, permission) => {
+      expect(
+        parseOfflineCreatePayload(kind, { name: 'Synthetic' }).success
+      ).toBe(true);
+      expect(parseOfflineCreatePayload(kind, { name: '   ' }).success).toBe(
+        false
+      );
+      expect(
+        canCreateOfflineResource(kind, {}, permissions([permission]))
+      ).toBe(true);
+      expect(canCreateOfflineResource(kind, {}, permissions([]))).toBe(false);
+      rpc.mockResolvedValue(acknowledged(kind));
+      authorize.mockResolvedValue({
+        ok: true,
+        value: {
+          userId: 'captured-actor',
+          wsId: 'ws',
+          permissions: permissions([permission]),
+        },
+      });
+      const allowed = await handleOfflineCreate(request(kind), 'ws');
+      expect(allowed.status).toBe(201);
+      expect(rpc).toHaveBeenCalledWith(
+        'apply_inventory_offline_create',
+        expect.objectContaining({ p_resource: kind })
+      );
+      rpc.mockClear();
+      admin.mockClear();
+      authorize.mockResolvedValue({
+        ok: true,
+        value: {
+          userId: 'captured-actor',
+          wsId: 'ws',
+          permissions: permissions([]),
+        },
+      });
+      const denied = await handleOfflineCreate(request(kind), 'ws');
+      expect(denied.status).toBe(403);
+      expect(rpc).not.toHaveBeenCalled();
+      expect(admin).not.toHaveBeenCalled();
+    }
+  );
+
   it('Finance payloads apply repository text limits before any effect', () => {
     for (const [key, length] of [
       ['name', 256],

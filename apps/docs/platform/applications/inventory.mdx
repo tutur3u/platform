@@ -1,7 +1,7 @@
 ---
 title: 'Inventory'
 description: 'How inventory.tuturuuu.com is wired as the inventory satellite app, operator console, public storefront, checkout reservation, and audit operations surface.'
-updatedAt: '2026-10-01'
+updatedAt: '2026-10-03'
 ---
 
 Inventory lives in `apps/inventory` and runs locally through Portless at
@@ -60,6 +60,18 @@ of enqueue order. Dependencies and mappings belong to the authenticated account,
 workspace and resource type. Related mutations retain their per-entity order;
 independent ready writes can progress. Missing prerequisites and dependency
 cycles remain visible without deleting queued work.
+
+Account/workspace purges serialize with durable pending writes. Malformed encrypted
+pending records remain visible as conflicts while independent valid records can
+continue; corrupt reference metadata cannot abort the entire replay pass. Online
+sale-period clearing preserves the nullable server response. These boundaries are
+covered by `offline_inventory_review_regression_test.dart` and the foreground
+verification regressions in `offline_inventory_verification_test.dart`.
+
+Product create permits at most 500 stock rows. Stock quantity and minimum quantity
+must be integers, matching their database columns; unit prices preserve fractional
+major currency amounts. Schema tests and `inventory-offline-create.sql` cover these
+limits for both online and offline create contracts.
 
 The dedicated setup/product/period create contract returns authoritative IDs and
 deduplicates the original operation identity before the client retries an uncertain

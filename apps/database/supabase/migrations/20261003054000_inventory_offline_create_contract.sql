@@ -133,9 +133,20 @@ begin
       if jsonb_typeof(coalesce(p_payload->'inventory','[]'::jsonb)) <> 'array' then
         raise exception 'Invalid stock rows' using errcode = '22023';
       end if;
+      if jsonb_array_length(coalesce(p_payload->'inventory','[]'::jsonb)) > 500 then
+        raise exception 'Too many stock rows' using errcode = '22023';
+      end if;
       -- Validate every scoped relation before creating the product or stock.
       for v_item in select value from jsonb_array_elements(
         coalesce(p_payload->'inventory','[]'::jsonb)) loop
+        if exists (
+          select 1 from jsonb_each(v_item) as stock_field(key, value)
+          where key in ('amount', 'min_amount')
+            and value <> 'null'::jsonb
+            and (value #>> '{}')::numeric <> trunc((value #>> '{}')::numeric)
+        ) then
+          raise exception 'Stock values must be integers' using errcode = '22023';
+        end if;
         perform 1 from private.inventory_units where ws_id = p_ws_id
           and id = (v_item->>'unit_id')::uuid for share;
         if not found then

@@ -31,7 +31,7 @@ extension OfflineInventoryReplay on OfflineMutationQueue {
       feature: feature,
       method: method,
       path: path,
-      createdAt: DateTime.now().toUtc(),
+      createdAt: _now().toUtc(),
       userId: owner,
       workspaceId: workspaceId,
       payload: payload,
@@ -323,7 +323,7 @@ extension OfflineInventoryReplay on OfflineMutationQueue {
                     )!.usesCreateContract &&
                     node.record.acknowledgedServerId == null &&
                     _contractUnavailableUntil != null &&
-                    DateTime.now().isBefore(_contractUnavailableUntil!)),
+                    _now().isBefore(_contractUnavailableUntil!)),
           )
           .firstOrNull;
       if (next == null) {
@@ -457,14 +457,10 @@ extension OfflineInventoryReplay on OfflineMutationQueue {
               ? max(60, error.retryAfter ?? 60)
               : min(120, 1 << changed.attemptCount.clamp(1, 6));
           if (unavailable) {
-            _contractUnavailableUntil = DateTime.now().add(
-              Duration(seconds: seconds),
-            );
+            _contractUnavailableUntil = _now().add(Duration(seconds: seconds));
           }
           if (error is ApiException && error.statusCode == 429) {
-            _serverCooldownUntil = DateTime.now().add(
-              Duration(seconds: seconds),
-            );
+            _serverCooldownUntil = _now().add(Duration(seconds: seconds));
           }
           _retryTimer?.cancel();
           _retryTimer = Timer(Duration(seconds: seconds), _scheduleSync);

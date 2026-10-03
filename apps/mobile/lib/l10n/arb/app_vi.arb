@@ -3904,7 +3904,6 @@
     "offlineDependencyInvalid": "Thay đổi đã lưu có dữ liệu không hợp lệ. Hãy kiểm tra trước khi đồng bộ.",
     "offlineDependencyContract": "Đang chờ máy chủ hỗ trợ. Thay đổi đã được lưu và sẽ tự động thử lại.",
     "offlineEditSyncing": "Đang đồng bộ…",
-    "inventorySetupSyncFirst": "Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa.",
     "offlineEditQueued": "Đang chờ đồng bộ",
     "offlineEditConflict": "Cần xem lại trước khi đồng bộ",
     "offlineEditFailed": "Đồng bộ thất bại",

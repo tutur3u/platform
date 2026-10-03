@@ -1,21 +1,19 @@
 part of 'cache_store.dart';
 
 extension CacheStorePending on CacheStore {
-  Future<T> _serializePending<T>(
-    String id,
-    Future<T> Function() operation,
-  ) async {
-    final previous = _pendingWrites[id];
+  // One barrier also serializes account/workspace purges against every record.
+  Future<T> _serializePending<T>(Future<T> Function() operation) async {
+    final previous = _pendingWrite;
     final released = Completer<void>();
-    _pendingWrites[id] = released.future;
+    _pendingWrite = released.future;
     try {
       await previous;
       await init();
       return await operation();
     } finally {
       released.complete();
-      if (identical(_pendingWrites[id], released.future)) {
-        unawaited(_pendingWrites.remove(id));
+      if (identical(_pendingWrite, released.future)) {
+        _pendingWrite = null;
       }
     }
   }
@@ -25,7 +23,7 @@ extension CacheStorePending on CacheStore {
   Future<PendingMutationRecord?> updatePendingMutation(
     String id,
     PendingMutationRecord Function(PendingMutationRecord) update,
-  ) => _serializePending(id, () async {
+  ) => _serializePending(() async {
     final raw = _mutationBox.get(id);
     if (raw is! Map) return null;
     final record = update(PendingMutationRecord.fromJson(raw));
@@ -34,13 +32,10 @@ extension CacheStorePending on CacheStore {
   });
 
   Future<void> savePendingMutation(PendingMutationRecord record) =>
-      _serializePending(
-        record.id,
-        () => _mutationBox.put(record.id, record.toJson()),
-      );
+      _serializePending(() => _mutationBox.put(record.id, record.toJson()));
 
   Future<void> deletePendingMutation(String id) =>
-      _serializePending(id, () => _mutationBox.delete(id));
+      _serializePending(() => _mutationBox.delete(id));
 
   Future<List<PendingMutationRecord>> listPendingMutations() async {
     await init();
@@ -48,7 +43,28 @@ extension CacheStorePending on CacheStore {
     for (final key in _mutationBox.keys) {
       final raw = _mutationBox.get(key);
       if (raw is Map<dynamic, dynamic>) {
-        records.add(PendingMutationRecord.fromJson(raw));
+        try {
+          records.add(PendingMutationRecord.fromJson(raw));
+        } on Object {
+          // Preserve the encrypted original while isolating it from replay.
+          records.add(
+            PendingMutationRecord(
+              id: key.toString(),
+              feature: raw['feature'] is String
+                  ? raw['feature'] as String
+                  : 'unknown',
+              method: 'INVALID',
+              path: '',
+              createdAt: DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+              userId: raw['userId'] is String ? raw['userId'] as String : null,
+              workspaceId: raw['workspaceId'] is String
+                  ? raw['workspaceId'] as String
+                  : null,
+              status: PendingMutationStatus.conflict,
+              dependencyIssue: OfflineDependencyIssue.invalidPayload,
+            ),
+          );
+        }
       }
     }
     final positions = {

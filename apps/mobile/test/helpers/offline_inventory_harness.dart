@@ -61,10 +61,22 @@ class OfflineInventoryHarness {
   }
 
   Future<void> dispose() async {
-    await queue.synchronize();
-    await queue.dispose();
-    await store.closeForTesting();
-    await Hive.close();
-    if (directory.existsSync()) await directory.delete(recursive: true);
+    try {
+      await queue.synchronize();
+    } finally {
+      try {
+        await queue.dispose();
+      } finally {
+        try {
+          await store.closeForTesting();
+        } finally {
+          try {
+            await Hive.close();
+          } finally {
+            if (directory.existsSync()) await directory.delete(recursive: true);
+          }
+        }
+      }
+    }
   }
 }

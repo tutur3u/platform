@@ -454,18 +454,21 @@ void main() {
           if (testCase.verification) {
             final singleton = OfflineMutationQueue.instance;
             final originalPending = singleton.pending.value;
-            singleton.pending.value = mutations.pending.value;
-            await tester.pumpApp(
-              const PendingSyncFrame(
-                workspaceId: 'ws_1',
-                entityId: 'synthetic-product',
-                feature: 'inventory',
-                child: Text('Locally saved product'),
-              ),
-            );
-            await tester.pump();
-            expect(find.text('Waiting to sync'), findsOneWidget);
-            singleton.pending.value = originalPending;
+            try {
+              singleton.pending.value = mutations.pending.value;
+              await tester.pumpApp(
+                const PendingSyncFrame(
+                  workspaceId: 'ws_1',
+                  entityId: 'synthetic-product',
+                  feature: 'inventory',
+                  child: Text('Locally saved product'),
+                ),
+              );
+              await tester.pump();
+              expect(find.text('Waiting to sync'), findsOneWidget);
+            } finally {
+              singleton.pending.value = originalPending;
+            }
           }
           final reloadKey = await _mountModal(
             tester,

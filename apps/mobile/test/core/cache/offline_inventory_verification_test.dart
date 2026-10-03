@@ -88,7 +88,7 @@ void main() {
     api.dispose();
   });
 
-  Future<Map<String, dynamic>?> create() =>
+  Future<Map<String, dynamic>?> create({bool borrowed = true}) =>
       harness.queue.performInventoryMutation(
         feature: 'inventory',
         method: 'POST',
@@ -96,7 +96,7 @@ void main() {
         workspaceId: workspace,
         entityId: localId,
         payload: {'name': 'Synthetic'},
-        apiClient: api,
+        apiClient: borrowed ? api : null,
       );
 
   test(
@@ -117,6 +117,28 @@ void main() {
       final body = jsonDecode(requests.first.body) as Map<String, dynamic>;
       expect(body['operation_id'], localId);
       expect(await harness.queue.listPending(), isEmpty);
+      expect(ApiVerification.token, isNull);
+    },
+  );
+
+  test(
+    'foreground factory client also verifies and never persists token',
+    () async {
+      respond = (_) async => requests.length == 1
+          ? challenge()
+          : http.Response('{"message":"Temporarily unavailable"}', 503);
+      expect(await create(borrowed: false), isNull);
+      expect(prompts, 1);
+      expect(requests, hasLength(3));
+      expect(
+        requests[1].headers['x-tuturuuu-turnstile-token'],
+        'synthetic-one-use-token',
+      );
+      final retained = (await harness.queue.listPending()).single;
+      expect(
+        retained.toJson().toString(),
+        isNot(contains('synthetic-one-use-token')),
+      );
       expect(ApiVerification.token, isNull);
     },
   );
@@ -143,10 +165,6 @@ void main() {
       final record = (await harness.queue.listPending()).single;
       expect(record.status, PendingMutationStatus.queued);
       expect(record.id, localId);
-      expect(
-        record.toJson().toString(),
-        isNot(contains('synthetic-one-use-token')),
-      );
     },
   );
 

@@ -14,9 +14,7 @@ extension OfflineMutationDispatch on OfflineMutationQueue {
             record.userId!,
             () => _dispatchInventoryHttp(record, api),
           ),
-          allowChallenge:
-              borrowed != null &&
-              _foregroundInventoryResults.containsKey(record.id),
+          allowChallenge: _foregroundInventoryResults.containsKey(record.id),
           markBulk: false,
         );
         return;

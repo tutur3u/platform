@@ -31,44 +31,60 @@ void main() {
     await queue.dispose();
     debugClearFinanceRepositoryWorkspaceCurrencyCache();
   });
-  test('createWallet posts payload to wallets endpoint', () async {
-    when(
-      () => apiClient.postJson(any(), any()),
-    ).thenAnswer((_) async => {'message': 'success'});
+  test(
+    'createWallet durably persists before sending and acknowledges client ID',
+    () async {
+      when(() => apiClient.postJson(any(), any())).thenAnswer((call) async {
+        final retained = (await queue.listPending()).single;
+        final payload = call.positionalArguments[1] as Map;
+        expect(retained.entityId, payload['id']);
+        expect(retained.payload, payload);
+        expect(retained.acknowledgedServerId, isNull);
+        return {'id': payload['id']};
+      });
 
-    await repository.createWallet(
-      wsId: 'ws_1',
-      name: 'Main wallet',
-      description: 'Everyday spending',
-      type: 'CREDIT',
-      currency: 'USD',
-      icon: 'Wallet',
-      limit: 1000,
-      statementDate: 10,
-      paymentDate: 20,
-    );
+      await repository.createWallet(
+        wsId: 'ws_1',
+        name: 'Main wallet',
+        description: 'Everyday spending',
+        type: 'CREDIT',
+        currency: 'USD',
+        icon: 'Wallet',
+        limit: 1000,
+        statementDate: 10,
+        paymentDate: 20,
+      );
 
-    final payload =
-        verify(
-              () => apiClient.postJson(
-                '/api/workspaces/ws_1/wallets',
-                captureAny(),
-              ),
-            ).captured.single
-            as Map<String, dynamic>;
-    expect(payload['id'], isA<String>());
-    expect(payload..remove('id'), {
-      'name': 'Main wallet',
-      'description': 'Everyday spending',
-      'type': 'CREDIT',
-      'currency': 'USD',
-      'icon': 'Wallet',
-      'image_src': null,
-      'limit': 1000,
-      'statement_date': 10,
-      'payment_date': 20,
-    });
-  });
+      final payload =
+          verify(
+                () => apiClient.postJson(
+                  '/api/workspaces/ws_1/wallets',
+                  captureAny(),
+                ),
+              ).captured.single
+              as Map<String, dynamic>;
+      expect(payload['id'], isA<String>());
+      expect(await queue.listPending(), isEmpty);
+      expect(
+        (await CacheStore.instance.localIdMappingsForScope(
+          userId: 'user',
+          workspaceId: 'ws_1',
+        )).values,
+        contains(payload['id']),
+      );
+      expect(payload..remove('id'), {
+        'name': 'Main wallet',
+        'description': 'Everyday spending',
+        'type': 'CREDIT',
+        'currency': 'USD',
+        'icon': 'Wallet',
+        'image_src': null,
+        'limit': 1000,
+        'statement_date': 10,
+        'payment_date': 20,
+      });
+    },
+  );
 
   test('updateWallet puts payload to wallet endpoint', () async {
     when(

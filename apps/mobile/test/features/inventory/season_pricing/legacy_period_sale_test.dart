@@ -78,6 +78,7 @@ void main() {
       ),
     );
     expect(body['products'], products);
+    verifyNever(() => api.getJson(any()));
     verifyNever(() => api.putJson(any(), any()));
     verifyNever(() => api.patchJson(any(), any()));
     verifyNever(() => api.deleteJson(any()));
@@ -96,6 +97,7 @@ void main() {
     verify(
       () => api.postJson(InventoryEndpoints.invoices('ws'), any()),
     ).called(1);
+    verifyNever(() => api.getJson(any()));
     verifyNever(() => api.putJson(any(), any()));
     verifyNever(() => api.patchJson(any(), any()));
     verifyNever(() => api.deleteJson(any()));

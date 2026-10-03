@@ -3901,7 +3901,6 @@
     "offlineDependencyInvalid": "The saved change has invalid data. Review it before syncing.",
     "offlineDependencyContract": "Waiting for server support. This change is saved and retries automatically.",
     "offlineEditSyncing": "Syncing…",
-    "inventorySetupSyncFirst": "Sync this new item before using, editing, or deleting it.",
     "offlineEditQueued": "Waiting to sync",
     "offlineEditConflict": "Needs review before syncing",
     "offlineEditFailed": "Sync failed",

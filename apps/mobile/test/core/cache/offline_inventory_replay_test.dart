@@ -28,6 +28,7 @@ void main() {
   late String? user;
   late _Api api;
   var sequence = 0;
+  late DateTime now;
 
   PendingMutationRecord record(
     String id,
@@ -62,6 +63,7 @@ void main() {
       ],
       connectivityChanges: connectivity.stream,
       apiFactory: (_) => api,
+      now: () => now,
     );
     await queue.init();
     await queue.synchronize();
@@ -89,6 +91,7 @@ void main() {
     );
     api = _Api();
     online = false;
+    now = DateTime.utc(2026, 10, 3);
     user = 'user-1';
     connectivity = StreamController<List<ConnectivityResult>>.broadcast();
     await makeQueue();
@@ -136,11 +139,21 @@ void main() {
 
   test('same entity writes retain original order after creator', () async {
     await queue.enqueue(record('edit-1', 'products/local', method: 'PUT'));
-    await queue.enqueue(record('edit-2', 'products/local', method: 'PUT'));
+    await queue.enqueue(record('edit-2', 'products/local', method: 'DELETE'));
     await queue.enqueue(record('local', 'products'));
     final sends = <String>[];
     queue.registerDispatcher('inventory', (item) async {
       sends.add(item.id);
+      if (item.id.startsWith('edit-')) {
+        final mutation = OfflineInventoryMutation.fromRecord(item)!;
+        final ids = await OfflineInventoryPersistence(
+          store,
+        ).mappings(mutation.references);
+        expect(
+          mutation.resolve(ids).path,
+          '/api/v1/workspaces/ws-1/products/server',
+        );
+      }
       if (item.method == 'POST') {
         await queue.acknowledgeInventoryCreate(item, 'server');
       }
@@ -356,7 +369,7 @@ void main() {
         (await queue.listPending()).single.dependencyIssue,
         OfflineDependencyIssue.contractUnavailable,
       );
-      await Future<void>.delayed(const Duration(milliseconds: 2200));
+      now = now.add(const Duration(minutes: 3));
       await queue.synchronize();
       expect(calls, 2);
       expect(await queue.listPending(), isEmpty);

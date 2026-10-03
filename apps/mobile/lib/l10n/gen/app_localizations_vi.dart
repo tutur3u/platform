@@ -9356,9 +9356,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get offlineEditSyncing => 'Đang đồng bộ…';
 
   @override
-  String get inventorySetupSyncFirst => 'Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa.';
-
-  @override
   String get offlineEditQueued => 'Đang chờ đồng bộ';
 
   @override

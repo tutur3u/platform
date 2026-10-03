@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(63);
+select plan(69);
 
 insert into auth.users(id) values
  ('00005743-0000-4000-8000-000000000001'),
@@ -94,10 +94,15 @@ language sql as $$
   'inventory',jsonb_build_array(jsonb_build_object(
    'unit_id',(select response->'data'->>'id' from contract_results where kind='unit'),
    'warehouse_id',(select response->'data'->>'id' from contract_results where kind='warehouse'),
-   'amount',5,'min_amount',1,'price',123,
+   'amount',5,'min_amount',1,'price',123.125,
    'revenue_share_partner_id',(select response->'data'->>'id' from contract_results where kind='owner'),
    'revenue_share_bps',1000)));
 $$;
+select throws_ok($$select public.fixture_inventory_create(119,'product',jsonb_set(public.fixture_inventory_product_payload(),'{inventory,0,amount}','1.5'))$$, '22023', 'Stock values must be integers', 'fractional amount is rejected before product effects');
+select throws_ok($$select public.fixture_inventory_create(119,'product',jsonb_set(public.fixture_inventory_product_payload(),'{inventory,0,min_amount}','1.5'))$$, '22023', 'Stock values must be integers', 'fractional min_amount is rejected before product effects');
+select throws_ok($$select public.fixture_inventory_create(119,'product',jsonb_set(public.fixture_inventory_product_payload(),'{inventory}',(select jsonb_agg(public.fixture_inventory_product_payload()->'inventory'->0) from generate_series(1,501))))$$, '22023', 'Too many stock rows', 'oversized inventory is rejected before relation locks and writes');
+select is((select count(*) from private.inventory_offline_create_receipts where resource='product'), 0::bigint, 'invalid stock never publishes a receipt');
+select is((select count(*) from public.workspace_products where ws_id='00005743-0000-4000-8000-000000000011'), 0::bigint, 'invalid stock never creates a product');
 insert into contract_results values ('product',
  public.fixture_inventory_create(120,'product',public.fixture_inventory_product_payload()));
 select ok((select response->'data'->>'id' from contract_results where kind='product') is not null, 'product returns an authoritative ID');
@@ -105,6 +110,7 @@ select is(public.fixture_inventory_create(120,'product',public.fixture_inventory
 select is((select count(*) from public.workspace_products where ws_id='00005743-0000-4000-8000-000000000011'), 1::bigint, 'product retry does not duplicate the catalog row');
 select is((select count(*) from private.inventory_products where product_id=(select (response->'data'->>'id')::uuid from contract_results where kind='product')), 1::bigint, 'product retry does not duplicate stock rows');
 select is((select sum(amount)::numeric from public.product_stock_changes where product_id=(select (response->'data'->>'id')::uuid from contract_results where kind='product')), 5::numeric, 'product retry records initial stock exactly once');
+select is((select price::numeric from private.inventory_products where product_id=(select (response->'data'->>'id')::uuid from contract_results where kind='product')), 123.125::numeric, 'fractional major-unit prices are preserved exactly');
 select is((select amount::numeric from private.inventory_products where product_id=(select (response->'data'->>'id')::uuid from contract_results where kind='product')), 5::numeric, 'initial stock history does not apply the amount twice');
 select is((select count(*) from private.inventory_audit_logs where entity_id=(select (response->'data'->>'id')::uuid from contract_results where kind='product')), 1::bigint, 'product retry writes one transactional audit event');
 select throws_ok($$select public.fixture_inventory_create(121,'product',jsonb_set(public.fixture_inventory_product_payload(),'{inventory,0,warehouse_id}','"00005743-0000-4000-8000-000000009999"'))$$, '23503', null, 'missing prerequisite rolls back product creation');

@@ -54,7 +54,8 @@ class OfflineMutationQueue with WidgetsBindingObserver {
       _checkConnectivity = Connectivity().checkConnectivity,
       _connectivityChanges = Connectivity().onConnectivityChanged,
       _authChanges = null,
-      _apiFactory = null;
+      _apiFactory = null,
+      _now = DateTime.now;
 
   @visibleForTesting
   OfflineMutationQueue.forTesting({
@@ -64,13 +65,16 @@ class OfflineMutationQueue with WidgetsBindingObserver {
     required Stream<List<ConnectivityResult>> connectivityChanges,
     Stream<supa.AuthState>? authChanges,
     ApiClient Function(String userId)? apiFactory,
+    DateTime Function()? now,
   }) : _store = store,
        _userId = userId,
        _checkConnectivity = checkConnectivity,
        _connectivityChanges = connectivityChanges,
        _authChanges = authChanges,
-       _apiFactory = apiFactory;
+       _apiFactory = apiFactory,
+       _now = now ?? DateTime.now;
 
+  final DateTime Function() _now;
   final CacheStore _store;
   final ApiClient Function(String userId)? _apiFactory;
   final String? Function() _userId;
@@ -180,7 +184,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
         return;
       }
       if (_serverCooldownUntil != null &&
-          DateTime.now().isBefore(_serverCooldownUntil!)) {
+          _now().isBefore(_serverCooldownUntil!)) {
         continue;
       }
       await ApiClient.offlinePreparation(
@@ -233,7 +237,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
         feature: feature,
         method: method,
         path: path,
-        createdAt: DateTime.now().toUtc(),
+        createdAt: _now().toUtc(),
         userId: _userId(),
         workspaceId: workspaceId,
         payload: payload,
@@ -266,7 +270,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
         feature: feature,
         method: method,
         path: path,
-        createdAt: DateTime.now().toUtc(),
+        createdAt: _now().toUtc(),
         userId: _userId(),
         workspaceId: workspaceId,
         payload: payload,
@@ -374,7 +378,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
 
   Future<void> _drainOnce() async {
     if (_serverCooldownUntil != null &&
-        DateTime.now().isBefore(_serverCooldownUntil!)) {
+        _now().isBefore(_serverCooldownUntil!)) {
       return;
     }
     try {
@@ -477,9 +481,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
                 ? max(60, error.retryAfter ?? 60)
                 : min(120, 1 << exponent);
             if (error is ApiException && error.statusCode == 429) {
-              _serverCooldownUntil = DateTime.now().add(
-                Duration(seconds: seconds),
-              );
+              _serverCooldownUntil = _now().add(Duration(seconds: seconds));
             }
             _retryTimer?.cancel();
             _retryTimer = Timer(Duration(seconds: seconds), _scheduleSync);
