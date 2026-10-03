@@ -14,6 +14,7 @@ void main() {
     Size size = const Size(390, 844),
     bool showHeader = false,
     bool scrollableHeader = false,
+    bool keepNavigationVisible = false,
     ScrollController? scrollController,
     ValueChanged<bool>? onVisibilityChanged,
   }) async {
@@ -27,6 +28,7 @@ void main() {
           body: FloatingShellDock(
             location: '/settings',
             bottomInset: 68,
+            keepNavigationVisible: keepNavigationVisible,
             header: showHeader
                 ? Padding(
                     padding: EdgeInsets.only(
@@ -74,6 +76,21 @@ void main() {
       ),
     );
   }
+
+  testWidgets('closing composer restores navigation after a hidden scroll', (
+    tester,
+  ) async {
+    await mount(tester, keepNavigationVisible: true);
+    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await tester.pump(const Duration(milliseconds: 300));
+    final opacity = find.byKey(const ValueKey('floating-shell-dock-opacity'));
+    expect(tester.widget<AnimatedOpacity>(opacity).opacity, 1);
+    await mount(tester);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(tester.widget<AnimatedOpacity>(opacity).opacity, 1);
+    await tester.pump(const Duration(seconds: 2));
+    expect(tester.takeException(), isNull);
+  });
 
   for (final size in [const Size(390, 844), const Size(1194, 834)]) {
     testWidgets('last explicit-padding row clears dock at $size', (

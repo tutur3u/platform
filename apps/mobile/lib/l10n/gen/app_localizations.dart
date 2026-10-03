@@ -18666,6 +18666,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Some items do not match this period. Reconcile the cart to continue.'**
   String get inventoryCheckoutPeriodRulesChanged;
+
+  /// No description provided for @assistantExpandNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Show navigation'**
+  String get assistantExpandNavigation;
+
+  /// No description provided for @assistantCollapseNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide navigation'**
+  String get assistantCollapseNavigation;
+
+  /// No description provided for @assistantCloseComposer.
+  ///
+  /// In en, this message translates to:
+  /// **'Close prompt'**
+  String get assistantCloseComposer;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

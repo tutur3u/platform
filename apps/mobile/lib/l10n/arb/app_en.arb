@@ -4114,5 +4114,8 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "assistantExpandNavigation": "Show navigation",
+    "assistantCollapseNavigation": "Hide navigation",
+    "assistantCloseComposer": "Close prompt"
 }

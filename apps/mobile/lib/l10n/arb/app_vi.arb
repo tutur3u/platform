@@ -4117,5 +4117,8 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "assistantExpandNavigation": "Hiện điều hướng",
+    "assistantCollapseNavigation": "Ẩn điều hướng",
+    "assistantCloseComposer": "Đóng ô nhập"
 }
