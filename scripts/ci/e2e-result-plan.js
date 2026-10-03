@@ -43,6 +43,41 @@ const SATELLITES = new Set([
 ]);
 const NON_RUNTIME_APPS = new Set(['docs', 'mobile', 'backend', 'tanstack-web']);
 
+const INERT_PROPOSAL = 'apps/database/tests/programming-hosted-typegen-review/';
+
+// The proposal is excluded only while tracked runtime/CI has no caller. Quiet Git
+// inspection reads the same immutable ref as ls-tree and never emits source blobs.
+function inspectInertProposal(ref, runGit = execFileSync) {
+  if (!/^[a-f0-9]{40}$/u.test(ref ?? ''))
+    return { inertProposal: false, inspection: 'uncertain' };
+  try {
+    runGit(
+      'git',
+      [
+        'grep',
+        '--quiet',
+        '--fixed-strings',
+        'programming-hosted-typegen-review',
+        ref,
+        '--',
+        '.',
+        `:(exclude)${INERT_PROPOSAL}**`,
+        ':(exclude)apps/docs/**',
+        ':(exclude)docs/**',
+        // These declarations/tests describe the policy, not an active caller.
+        ':(exclude)scripts/ci/e2e-result-plan.js',
+        ':(exclude)scripts/ci/e2e-result-plan.test.js',
+      ],
+      { stdio: 'ignore', timeout: 10000 }
+    );
+    return { inertProposal: false, inspection: 'active' };
+  } catch (error) {
+    return error.status === 1 && !error.signal
+      ? { inertProposal: true, inspection: 'inactive' }
+      : { inertProposal: false, inspection: 'uncertain' };
+  }
+}
+
 function parseTree(output) {
   return output
     .split('\0')
@@ -58,7 +93,9 @@ function parseTree(output) {
 
 // Runtime ownership is deliberately conservative. Unknown apps, scripts and
 // configuration participate in every digest; new code cannot silently escape it.
-function participates(file, suite) {
+function participates(file, suite, policy = {}) {
+  if (policy.inertProposal === true && file.startsWith(INERT_PROPOSAL))
+    return false;
   if (/(^|\/)AGENTS\.md$/u.test(file) || /^[^/]+\.md$/u.test(file))
     return false;
   if (/^(docs|plans|plugins|skills|conductor)\//u.test(file)) return false;
@@ -85,8 +122,10 @@ function participates(file, suite) {
   return true;
 }
 
-function fingerprint(entries, suite, context) {
-  const selected = entries.filter((entry) => participates(entry.path, suite));
+function fingerprint(entries, suite, context, policy = {}) {
+  const selected = entries.filter((entry) =>
+    participates(entry.path, suite, policy)
+  );
   const digest = crypto.createHash('sha256');
   digest.update(JSON.stringify({ version: 1, suite, ...context }));
   for (const entry of [...selected].sort((a, b) =>
@@ -232,15 +271,16 @@ async function plan({
   env = process.env,
   now = new Date(),
   lookup = lookupTrustedCache,
+  policy = {},
 }) {
   const context = cacheContext(env, now);
   const safe = context && Array.isArray(entries) && hasRequiredInputs(entries);
   const disabled = env.E2E_ENABLED === 'false';
-  const force = env.EVENT_NAME !== 'push';
+  const force = env.EVENT_NAME !== 'push' || policy.inspection === 'uncertain';
   const suites = [...DEFAULT_MATRIX, 'inventory-storefront'];
   const provenance = suites.map((suite) => ({
     suite: typeof suite === 'string' ? suite : suite.id,
-    key: safe ? fingerprint(entries, suite, context) : '',
+    key: safe ? fingerprint(entries, suite, context, policy) : '',
     cache: null,
     run: !disabled,
   }));
@@ -284,17 +324,24 @@ async function plan({
 
 async function main(env = process.env) {
   let entries = null;
+  let policy = { inertProposal: false, inspection: 'uncertain' };
   try {
+    const ref = execFileSync('git', ['rev-parse', '--verify', 'HEAD'], {
+      encoding: 'utf8',
+      maxBuffer: 1024,
+    }).trim();
+    if (!/^[a-f0-9]{40}$/u.test(ref)) throw new Error('Uncertain source ref');
     entries = parseTree(
-      execFileSync('git', ['ls-tree', '-rz', '--full-tree', 'HEAD'], {
+      execFileSync('git', ['ls-tree', '-rz', '--full-tree', ref], {
         encoding: 'utf8',
         maxBuffer: 32_000_000,
       })
     );
+    policy = inspectInertProposal(ref);
   } catch {
     /* Sparse checkout is supported; missing Git evidence runs everything. */
   }
-  const result = await plan({ entries, env });
+  const result = await plan({ entries, env, policy });
   if (env.GITHUB_OUTPUT)
     fs.appendFileSync(
       env.GITHUB_OUTPUT,
@@ -309,6 +356,8 @@ async function main(env = process.env) {
       (item) =>
         `| ${item.suite} | ${item.run ? 'Run' : item.cache ? 'Reuse unchanged inputs' : 'Disabled'} | ${item.cache ? `main cache ${item.cache.id}; ${item.cache.createdAt}` : 'No reused proof'} |`
     ),
+    '',
+    `Inactive database proposal: ${policy.inspection === 'inactive' ? 'excluded after bounded caller inspection' : 'included; active or uncertain caller evidence'}.`,
     '',
     'Only exact input keys from main are reusable. Keys expire daily; manual runs execute all suites. Missing inputs, runner identity, or cache history execute tests.',
     '',
@@ -329,6 +378,7 @@ module.exports = {
   DEFAULT_MATRIX,
   parseTree,
   participates,
+  inspectInertProposal,
   fingerprint,
   cacheContext,
   hasRequiredInputs,
