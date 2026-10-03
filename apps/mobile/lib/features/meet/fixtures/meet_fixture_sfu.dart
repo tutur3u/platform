@@ -6,7 +6,14 @@ import 'package:mobile/features/meet/data/meet_peer_negotiation.dart';
 /// Synthetic SFU contract: receives the production publisher's actual media.
 /// It deliberately does not emulate Cloudflare routing, TURN or billing.
 class MeetFixtureSfu {
-  MeetFixtureSfu(this.renderer);
+  MeetFixtureSfu(
+    this.renderer, {
+    Future<RTCPeerConnection> Function(Map<String, dynamic>)? createPeer,
+    Future<MediaStream> Function(String)? createStream,
+  }) : _createPeer = createPeer ?? createPeerConnection,
+       _createStream = createStream ?? createLocalMediaStream;
+  final Future<RTCPeerConnection> Function(Map<String, dynamic>) _createPeer;
+  final Future<MediaStream> Function(String) _createStream;
   final RTCVideoRenderer renderer;
   final _sessions = <String, RTCPeerConnection>{};
   final _streams = <String, MediaStream>{};
@@ -18,7 +25,7 @@ class MeetFixtureSfu {
     final type = message['type'];
     if (type == 'sfu.session.create') {
       if (_sessions.length >= 8) throw StateError('Fixture session limit');
-      final peer = await createPeerConnection({
+      final peer = await _createPeer({
         'sdpSemantics': 'unified-plan',
         'bundlePolicy': 'max-bundle',
         'iceServers': <dynamic>[],
@@ -28,7 +35,13 @@ class MeetFixtureSfu {
         throw StateError('Fixture SFU closed');
       }
       final id = 'fixture-${++_next}';
-      final stream = await createLocalMediaStream(id);
+      final MediaStream stream;
+      try {
+        stream = await _createStream(id);
+      } catch (_) {
+        await peer.dispose();
+        rethrow;
+      }
       if (_closed) {
         await stream.dispose();
         await peer.dispose();
