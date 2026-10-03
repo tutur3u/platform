@@ -537,3 +537,26 @@ parent-schema defect: the invoice product unit foreign key attempts a null defau
 against a non-null column. An isolated parent-schema control reproduced that
 error before applying the new season migrations. The expected-defect control is
 retained as local validation evidence, outside the passing season CI contract. Season merging does not alter that existing schema.
+
+
+Season merge previews and review pages are scoped to the authenticated Inventory
+actor and workspace. Switching accounts resets the visible review and prevents
+late responses from completing another account's dialog. Before submitting,
+Inventory saves one immutable actor/workspace-bound request (original source,
+destination, policies and preview token) in the current tab's session storage.
+Storage failure prevents sending. Closing/reopening or reloading that tab
+restores an unresolved request; it is never replaced by a fresh preview.
+
+For an ambiguous response or authentication pause, Check original merge replays
+the exact saved request. The existing apply RPC checks its committed receipt
+before preview expiry or merged-source validation, so a lost success response
+can be reconciled after the token expires or source is archived. A conflict or
+validation response allows fresh review only for a first known attempt. Once
+uncertainty exists, even a retry409 retains the original request: a lock timeout
+can occur while its earlier transaction still commits. Recovery is manual and
+per tab; it does not claim a cross-tab journal or new offline navigation support.
+Mounted regressions in `use-season-merge-recovery.test.tsx` and
+`use-inventory-season-merge-review.test.tsx` cover scope changes, late responses,
+remount recovery, storage failures and lost-response/conflict/receipt sequences
+with synthetic transport. Existing isolated SQL receipt replay coverage remains
+the database evidence; browser/device and exact-CI evidence remain separate.

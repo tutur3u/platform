@@ -17,6 +17,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import { InventorySeasonMergePreviewContent } from './inventory-season-merge-preview';
+import { useInventoryActor } from './inventory-session-scope';
 import {
   OperatorDialogBody,
   OperatorDialogContent,
@@ -37,6 +38,7 @@ export function InventorySeasonMergeDialog({
 }) {
   const t = useTranslations('inventory.operator.seasonMerge');
   const client = useQueryClient();
+  const actorId = useInventoryActor();
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   return (
@@ -59,6 +61,7 @@ export function InventorySeasonMergeDialog({
       </DialogTrigger>
       {open ? (
         <SeasonMergeReview
+          key={`${actorId}:${wsId}`}
           wsId={wsId}
           periods={periods}
           onPending={setPending}
@@ -117,7 +120,9 @@ function SeasonMergeReview({
     ruleConflicts,
     ready,
     pending,
-    mutation,
+    recovery,
+    reviewLocked,
+    submit,
     refresh,
     change,
   } = useInventorySeasonMergeReview({ wsId, onComplete, onPending });
@@ -169,7 +174,7 @@ function SeasonMergeReview({
                     typeof next === 'string' ? next : ''
                   )
                 }
-                disabled={pending}
+                disabled={reviewLocked}
                 options={periods
                   .filter(
                     (p) =>
@@ -188,12 +193,43 @@ function SeasonMergeReview({
           ))}
         </div>
         {valid && query.isFetching ? <p role="status">{t('loading')}</p> : null}
-        {query.isError ||
-        mutation.isError ||
-        expired ||
-        (data && !labelsReady) ? (
+        {recovery.request ? (
+          <div
+            role="status"
+            className="grid gap-2 rounded-md border border-dashed p-3 text-sm opacity-80"
+          >
+            <p>
+              {t(recovery.authPaused ? 'authPaused' : 'unknownOutcome', {
+                source: recovery.request.sourceName,
+                target: recovery.request.targetName,
+              })}
+            </p>
+            <Button
+              className="min-h-11"
+              variant="outline"
+              disabled={pending}
+              onClick={recovery.retry}
+            >
+              {t(pending ? 'saving' : 'checkOutcome')}
+            </Button>
+          </div>
+        ) : null}
+        {!recovery.request &&
+        (query.isError ||
+          !!recovery.error ||
+          recovery.storageError ||
+          expired ||
+          (data && !labelsReady)) ? (
           <div role="alert" className="grid gap-2 text-sm">
-            <p>{t(expired ? 'expired' : 'error')}</p>
+            <p>
+              {t(
+                recovery.storageError
+                  ? 'storageError'
+                  : expired
+                    ? 'expired'
+                    : 'error'
+              )}
+            </p>
             <Button
               className="min-h-11"
               variant="outline"
@@ -324,7 +360,7 @@ function SeasonMergeReview({
         <Button
           className="min-h-11"
           disabled={!ready || confirmed !== token || pending}
-          onClick={() => mutation.mutate()}
+          onClick={submit}
         >
           {t(pending ? 'saving' : 'confirm')}
         </Button>

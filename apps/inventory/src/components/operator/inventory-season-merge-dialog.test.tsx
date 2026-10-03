@@ -11,31 +11,41 @@ import { InventorySeasonMergeDialog } from './inventory-season-merge-dialog';
 
 const state = vi.hoisted(() => ({
   data: {} as Record<string, unknown>,
+  recovery: null as Record<string, unknown> | null,
   paged: undefined as unknown,
   error: false,
   fetching: false,
   mutationError: false,
   refetch: vi.fn(),
   mutate: vi.fn(),
-  queries: [] as { enabled: boolean }[],
+  queries: [] as { enabled: boolean; queryKey: unknown[] }[],
+}));
+vi.mock('./inventory-session-scope', () => ({
+  useInventoryActor: () => 'actor-test',
 }));
 vi.mock('@tanstack/react-query', () => ({
   useQuery: (options: { enabled: boolean; queryKey: unknown[] }) => {
     state.queries.push(options);
     return {
       data:
-        options.queryKey[2] === 'season-merge-page' ? state.paged : state.data,
-      isError: state.error,
+        options.queryKey[2] === 'season-merge-recovery'
+          ? state.recovery
+          : options.queryKey[2] === 'season-merge-page'
+            ? state.paged
+            : state.data,
+      isError: options.queryKey[2] !== 'season-merge-recovery' && state.error,
       isFetching: state.fetching,
       refetch: state.refetch,
     };
   },
-  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+  useQueryClient: () => ({ invalidateQueries: vi.fn(), setQueryData: vi.fn() }),
   useMutation: () => ({
     mutate: state.mutate,
     reset: vi.fn(),
     isPending: false,
     isError: state.mutationError,
+    error: state.mutationError ? new Error('synthetic failed apply') : null,
+    variables: { actorId: 'actor-test', wsId: 'ws' },
   }),
 }));
 vi.mock('@tuturuuu/internal-api/inventory', () => ({
@@ -172,6 +182,7 @@ beforeEach(() => {
   state.error = false;
   state.fetching = false;
   state.mutationError = false;
+  state.recovery = null;
   state.paged = undefined;
   state.data = {
     version: 'frozen',
@@ -205,7 +216,11 @@ describe('bounded season merge review', () => {
     render(<InventorySeasonMergeDialog wsId="ws" periods={periods} />);
     expect(state.queries).toHaveLength(0);
     fireEvent.click(screen.getByRole('button', { name: 'title' }));
-    expect(state.queries.every((q) => !q.enabled)).toBe(true);
+    expect(
+      state.queries
+        .filter((q) => q.queryKey[2] !== 'season-merge-recovery')
+        .every((q) => !q.enabled)
+    ).toBe(true);
     expect(screen.queryByText('Old alias')).toBeNull();
   });
   it('requires every policy and acknowledgment before applying', () => {
@@ -248,6 +263,35 @@ describe('bounded season merge review', () => {
     policies();
     expect(screen.getByRole('checkbox')).toHaveProperty('disabled', true);
     expect(screen.getByRole('button', { name: 'refresh' })).not.toBeNull();
+  });
+  it('checks the captured original request instead of offering fresh review on unknown commit', () => {
+    state.recovery = {
+      actorId: 'actor-test',
+      wsId: 'ws',
+      sourceName: 'Source',
+      targetName: 'Target',
+      payload: {
+        sourceId: 'a',
+        targetId: 'b',
+        version: 'frozen',
+        descriptionPolicy: 'source',
+        rulePolicy: 'target',
+        pricePolicy: 'block',
+      },
+    };
+    open();
+    expect(screen.getByText('unknownOutcome')).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'refresh' })).toBeNull();
+    expect(screen.getByRole('combobox', { name: 'source' })).toHaveProperty(
+      'disabled',
+      true
+    );
+    expect(screen.getByRole('button', { name: 'confirm' })).toHaveProperty(
+      'disabled',
+      true
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'checkOutcome' }));
+    expect(state.mutate).toHaveBeenCalledWith(state.recovery);
   });
   it('expires acknowledgment and exposes refresh without changing fingerprint', () => {
     vi.useFakeTimers();
