@@ -15,12 +15,14 @@ class ProfileTimelineSection extends StatefulWidget {
   const ProfileTimelineSection({
     required this.replayToken,
     this.repository,
+    this.fullSurface = false,
     this.datesOpen,
     this.onDatesChanged,
     super.key,
   });
 
   final int replayToken;
+  final bool fullSurface;
   final bool? datesOpen;
   final ValueChanged<bool>? onDatesChanged;
   final ProfileTimelineRepository? repository;
@@ -158,11 +160,6 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          l10n.profileTimelineDescription,
-          style: shad.Theme.of(context).typography.textSmall,
-        ),
-        const shad.Gap(8),
         if (_limited || _failed || _partial)
           Row(
             children: [
@@ -195,22 +192,28 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
               ],
             ],
           ),
-        ProfileTimelineBrowser(
-          key: ValueKey(_scope),
-          datesOpen: widget.datesOpen,
-          onDatesChanged: widget.onDatesChanged,
-          items: items ?? const [],
-          loading: items == null && !_failed,
-          refreshing: _refreshing,
-          statusReportedByParent: _failed || _partial,
-          availability: _failed || items == null
-              ? ProfileTimelineAvailability.unavailable
-              : _partial || _limited
-              ? ProfileTimelineAvailability.partial
-              : ProfileTimelineAvailability.complete,
-          onOpen: _open,
-        ),
+        if (widget.fullSurface)
+          Expanded(child: _browser(items))
+        else
+          _browser(items),
       ],
     );
   }
+
+  Widget _browser(List<ProfileTimelineItem>? items) => ProfileTimelineBrowser(
+    key: ValueKey(_scope),
+    fullSurface: widget.fullSurface,
+    datesOpen: widget.datesOpen,
+    onDatesChanged: widget.onDatesChanged,
+    items: items ?? const [],
+    loading: items == null && !_failed,
+    refreshing: _refreshing,
+    statusReportedByParent: _failed || _partial,
+    availability: _failed || items == null
+        ? ProfileTimelineAvailability.unavailable
+        : _partial || _limited
+        ? ProfileTimelineAvailability.partial
+        : ProfileTimelineAvailability.complete,
+    onOpen: _open,
+  );
 }

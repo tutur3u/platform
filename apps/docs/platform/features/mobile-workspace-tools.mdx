@@ -938,9 +938,19 @@ Profile to Overview within at most three taps; scrolling manually restarts the
 sequence. Apps resets to Grid, Finance taxonomy to Categories, and Calendar to
 Three days on phones or Week on tablets. Notes returns to Inbox and Assistant
 to Chat through their existing guarded handlers. Time Tracker sections remain
-separate routed destinations; Dashboard has no secondary section. Apps opens the Apps tab on one tap and keeps its picker on long press.
+separate routed destinations. Home defaults to Home; its second tab, Personal
+Agenda, uses only the signed-in user's personal membership, with no shared fallback or global scope change.
+Agenda resolves user, personal workspace, then
+device timezone and reloads after preference changes; Home retains its mounted
+dashboard state across tabs. Agenda retains cached events during retry and offers
+read-only details; Calendar remains the editing surface. Apps defaults to Grid
+before List. Shared search replaces the top navbar; empty submission dismisses and unfocuses. IME visibility
+and hardware search focus animate the whole dock and its actions out together;
+route changes clear focus. Workspace visibility has a subtle icon, a named tooltip,
+and a 44-pixel target. Regression coverage: `personal_agenda_test.dart`, `personal_agenda_scope_test.dart`, `shell_keyboard_chrome_test.dart`,
+and `apps_search_submit_test.dart`. Apps opens with one tap and keeps its picker on long press.
 
-Profile uses the shell title for Overview and Activity timeline, with no duplicate
+Profile uses the shell title for Overview and Timeline, with no duplicate
 body heading. Place the day-trail action before the rightmost Overview/Timeline
 switch, including compact/overflow layouts. Identity and metric layouts adapt to
 available width and text scale; avoid nested bordered panels and fixed three-column
@@ -1048,7 +1058,8 @@ stutter is resolved.
 
 Submitting a nonempty Apps query with exactly one current matching app clears
 the field, closes search mode, and opens that app. Zero or multiple matches
-keep the current search unchanged. Submission uses the same current localized
+keep the query and results visible while unfocusing the keyboard. Empty queries
+close search mode. Submission uses the same current localized
 results as the hub, and repeated submissions cannot launch the app twice.
 
 Apps discovery retains its case-insensitive substring matching over the localized
@@ -1111,27 +1122,21 @@ when they fit. Full title semantics remain available in either overflow mode.
 
 ## Profile Timeline date navigation
 
-Profile Timeline has two browsing modes in the same reserved viewport. The
-closed date strip is a newest-first agenda containing only returned activity
-days. Opening the strip selects the currently visible activity day; choosing a
-date browses that one day, including an explicit empty-snapshot state. Closing
-the strip returns to the agenda without inserting long runs of empty days.
-Repeated toggles preserve the selected date and visible activity anchor, with
-scroll correction bounded by the available content. Transitions fade without
-changing the reserved header/body geometry and honor reduced motion.
+Timeline fills Profile's content surface with one primary scroll and bottom
+clearance above the floating dock. It has no account-switch button, redundant
+body description, outer box or parent scroll. Overview retains account switching.
+One navbar toggle controls the week trail; toggling changes decoration and date
+navigation, never filters the activity list. Selecting a returned day scrolls to
+its activity, expanding the loaded days when necessary. A selected day with no
+returned activity can show a provisional empty-day label alongside the list.
 
-The circular week strip takes its date-led structure from the supplied reference
-image; it uses Tuturuuu theme surfaces and the existing compact Profile navbar
-switch. Dots indicate activity actually present in the loaded scoped snapshot.
-Agenda pages append five returned days at a time; they do not request older
-server history. The existing API returns a 30-day snapshot, has no cursor, and
-caps each source at 200 rows. Partial and limited warnings remain visible, and
-an empty selected day says no activity was returned rather than claiming a
-complete absence of activity. Date groups and timestamps use device-local
-calendar dates; calendar arithmetic and IANA boundary/DST regressions prevent
-UTC-date and fixed-duration-day mistakes. User/workspace changes reset navigation
-state and reject stale cache/refresh results. No milestones or activity are
-fabricated.
+Dots represent real scoped activity. Five returned days are appended per page;
+the API still returns a 30-day snapshot capped at 200 rows per source. Partial
+and limited warnings and retry remain visible, including when reopening offline.
+User/workspace changes reset navigation and reject stale responses. Personal
+rows retain signed-in-user attribution; calendar rows remain workspace activity.
+Device-local calendar grouping, reduced motion and DST behavior are preserved.
+No API errors are suppressed and no milestones are fabricated.
 
 Regression targets: `profile_timeline_browser_test.dart` covers sparse days,
 selected empty days, repeated toggles and item pixels, appended pages, fixed
@@ -1145,7 +1150,7 @@ that week does not contain the selection. Calendar-day comparison uses UTC date
 carriers rather than elapsed DST-length days. Unknown cold failures and empty
 partial/capped snapshots show unavailable/partial state, never a confirmed
 absence of activity. A successful complete empty response can confirm the
-empty state. Actual padded Profile/Shell regressions cover the nested activity
+empty state. Actual padded Profile/Shell regressions cover the single activity
 viewport, selected-date bounds and existing compact navbar at 320px/3×.
 
 Opening date controls before the first activity response does not lock the
@@ -1154,12 +1159,6 @@ chooses a date. Empty stored snapshots stay provisional while revalidation is
 pending, using the fixed skeleton viewport rather than announcing absence.
 The section owns its failure/partial retry banner; the embedded browser does
 not repeat that status. Standalone browsers still report incomplete state.
-
-Synthetic Timeline captures use their tested logical viewport at pixel ratio
-one: 393px for ordinary cases and 320px for the narrow large-text case. They
-are geometry/pixel regression evidence, not uniformly 942px documentation
-renders or installed-device QA. Historical PNGs are not regenerated by the
-fixture-only correction; their original source and dimensions remain recorded.
 
 Mounted Profile regressions locate the lazy activity section by its rendered
 position and wait within a bounded interval for fetched statistics. Fixed pixel
