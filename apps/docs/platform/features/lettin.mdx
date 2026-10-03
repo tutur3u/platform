@@ -288,11 +288,11 @@ no-op save without consuming another allowance.
 ### Support API parity safeguards
 
 The support form and Web/Rust support creation APIs enforce the existing database
-ceilings:64 characters for a name,128 for a subject, and512 for a message. Invalid
-payloads, including addresses with multiple email separators, return400 before
+ceilings: 64 characters for a name, 128 for a subject, and 512 for a message. Invalid
+payloads, including addresses with multiple email separators, return 400 before
 storage. Cookie-authenticated creation and updates require a matching Origin or
 Referer; explicit Bearer requests retain their independent authentication checks.
-Cross-origin cookie updates return403 before Supabase access. Regression evidence:
+Cross-origin cookie updates return 403 before Supabase access. Regression evidence:
 `support-inquiry-guard.test.ts`, the first-class inquiry route tests, and Rust
 support/g12 regressions. Profile HEAD follows GET authentication/cache/status but
 emits no response body; its Rust regression verifies the same boundary.
