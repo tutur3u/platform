@@ -112,6 +112,11 @@
       "import": "./dist/finance.js",
       "require": "./dist/finance.js"
     },
+    "./finance-exchange-rates": {
+      "types": "./dist/finance-exchange-rates.d.ts",
+      "import": "./dist/finance-exchange-rates.js",
+      "require": "./dist/finance-exchange-rates.js"
+    },
     "./finance-subscription-analytics": {
       "types": "./dist/finance-subscription-analytics.d.ts",
       "import": "./dist/finance-subscription-analytics.js",

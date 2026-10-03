@@ -1,11 +1,14 @@
-import { createWorkspaceAvatarUploadTarget } from '@tuturuuu/internal-api';
+import {
+  createWorkspaceAvatarUploadTarget,
+  InternalApiError,
+} from '@tuturuuu/internal-api';
 
-vi.mock('@tuturuuu/internal-api', () => ({
+vi.mock('@tuturuuu/internal-api', async () => ({
   createWorkspaceAvatarUploadTarget: vi.fn(),
-  InternalApiError: class extends Error {},
+  ...(await import('../../../internal-api/src/internal-api-error')),
 }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createSatelliteAiCreditsRouteHandler,
   createSatelliteWorkspaceAvatarRouteHandlers,
@@ -43,6 +46,10 @@ const context = { params: Promise.resolve({ wsId: 'workspace-one' }) };
 describe('satellite workspace settings route handlers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv(
+      'TUTURUUU_APP_COORDINATION_SECRET',
+      'synthetic-satellite-avatar-test'
+    );
     getSatelliteAppSessionUser.mockResolvedValue({
       email: 'member@example.com',
       id: 'user-1',
@@ -55,6 +62,8 @@ describe('satellite workspace settings route handlers', () => {
       wsId: 'resolved-workspace-id',
     });
   });
+
+  afterEach(() => vi.unstubAllEnvs());
 
   it('authenticates workspace reads against the owning satellite app', async () => {
     const single = vi.fn().mockResolvedValue({
@@ -216,6 +225,57 @@ describe('satellite workspace settings route handlers', () => {
     );
     expect(createDynamicAdminClient).not.toHaveBeenCalled();
   });
+
+  for (const status of [429, 503]) {
+    it(`does not issue a ticket after central upload protection returns ${status}`, async () => {
+      vi.mocked(createWorkspaceAvatarUploadTarget).mockRejectedValueOnce(
+        new InternalApiError(
+          'Profile upload protection rejected ticket',
+          status
+        )
+      );
+      const response = await createSatelliteWorkspaceAvatarUploadRouteHandler(
+        'finance'
+      )(
+        new Request('https://finance.test/api/avatar/upload-url', {
+          method: 'POST',
+          body: JSON.stringify({ filename: 'avatar.webp' }),
+        }),
+        context
+      );
+      expect(response.status).toBe(status);
+      expect(await response.json()).toEqual({
+        message: 'Avatar upload unavailable',
+      });
+      expect(createDynamicAdminClient).not.toHaveBeenCalled();
+      expect(createAdminClient).not.toHaveBeenCalled();
+    });
+  }
+
+  for (const rejected of ['session', 'permission', 'filename']) {
+    it(`does not request a central ticket after ${rejected} rejection`, async () => {
+      if (rejected === 'session')
+        getSatelliteAppSessionUser.mockResolvedValue(null);
+      if (rejected === 'permission')
+        getPermissions.mockResolvedValue({ containsPermission: () => false });
+      const response = await createSatelliteWorkspaceAvatarUploadRouteHandler(
+        'contacts'
+      )(
+        new Request('https://contacts.test/api/avatar/upload-url', {
+          method: 'POST',
+          body: JSON.stringify({
+            filename: rejected === 'filename' ? '../avatar.png' : 'avatar.png',
+          }),
+        }),
+        context
+      );
+      expect(response.status).toBe(
+        rejected === 'session' ? 401 : rejected === 'permission' ? 403 : 400
+      );
+      expect(createWorkspaceAvatarUploadTarget).not.toHaveBeenCalled();
+      expect(createDynamicAdminClient).not.toHaveBeenCalled();
+    });
+  }
 
   it('updates a workspace avatar through the owning satellite session', async () => {
     const updateEq = vi.fn().mockResolvedValue({ error: null });

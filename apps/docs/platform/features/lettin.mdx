@@ -278,6 +278,26 @@ reserved names, rolling-window boundaries, no-ops, direct-write enforcement,
 atomic rollback, byte/MIME ceilings, and raw upload denial.
 
 
+The shared contract applies to current-user media ticket issuers, including the
+avatar endpoint in this foundation and the dependent banner endpoint. Existing
+workspace avatar tickets retain workspace-settings authorization and additionally
+reserve the resolved account media ceilings and the shared global ceilings before
+signing. Registered satellites delegate workspace avatar tickets to the central
+optimized media endpoint, which reserves the same actor budget before issuing a
+ticket; changing apps cannot bypass the shared account or global limits.
+Permission denials reserve nothing; quota exhaustion and unavailable
+protection return 429 and 503 without issuing a ticket.
+Shared public profile-link avatar tickets reserve the account media ceilings above
+against the verified workspace and link identity, plus the shared global ceilings,
+before issuing a signed URL; revoked or unauthorized links cannot reserve tickets.
+These tickets do not charge the link creator's account. Reservation failure prevents
+signing; quota exhaustion returns 429 with a bounded retry delay, while protection
+outages return 503 without retry timing. The shared avatar byte/MIME ceilings
+also apply. Regression evidence: the public profile-link and workspace avatar
+handlers' colocated tests and `packages/satellite/src/routes/workspace-settings.test.ts`,
+plus `profile-media-upload-limits.sql` for authenticated
+INSERT and UPDATE restrictions.
+
 ## Wiki, About profiles, and themes
 
 Workspace wiki pages have dedicated directories for characters, worlds, stories,
