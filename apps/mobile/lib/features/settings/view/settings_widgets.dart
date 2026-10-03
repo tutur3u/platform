@@ -185,6 +185,7 @@ class SettingsTile extends StatelessWidget {
     this.showChevron = true,
     this.trailing,
     this.grouped = false,
+    this.wrapSupportingText = false,
     super.key,
   });
 
@@ -197,6 +198,7 @@ class SettingsTile extends StatelessWidget {
   final bool showChevron;
   final Widget? trailing;
   final bool grouped;
+  final bool wrapSupportingText;
 
   @override
   Widget build(BuildContext context) {
@@ -284,8 +286,10 @@ class SettingsTile extends StatelessWidget {
                         const shad.Gap(2),
                         Text(
                           subtitle!,
-                          maxLines: onTap != null ? 1 : null,
-                          overflow: onTap != null
+                          maxLines: onTap != null && !wrapSupportingText
+                              ? 1
+                              : null,
+                          overflow: onTap != null && !wrapSupportingText
                               ? TextOverflow.ellipsis
                               : null,
                           style: theme.typography.textSmall.copyWith(

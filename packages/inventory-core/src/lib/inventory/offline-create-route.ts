@@ -74,6 +74,20 @@ function rpcFailure(error: unknown) {
     typeof error === 'object' && error && 'code' in error
       ? String(error.code)
       : 'UNKNOWN';
+  if (
+    code === '23514' &&
+    typeof error === 'object' &&
+    error &&
+    'message' in error &&
+    String(error.message).startsWith('Inventory identity was merged')
+  ) {
+    return new TuturuuuEffectError({
+      code: 'MERGED_INVENTORY_IDENTITY',
+      message:
+        'Inventory was merged. Refresh and select its destination before retrying.',
+      status: 409,
+    });
+  }
   if (code === 'OFFLINE_CONTRACT_RESPONSE_MISMATCH') {
     return new TuturuuuEffectError({
       code,

@@ -308,6 +308,8 @@ void main() {
       h.zones.add(const TimezoneSettingsState(loading: false, failed: true));
       await _settle(tester);
       expect(find.text('Unknown'), findsNWidgets(2));
+      await tester.ensureVisible(find.text('Personal timezone'));
+      await _settle(tester);
       await tester.tap(find.text('Personal timezone'));
       await _settle(tester);
       verify(h.timezone.reload).called(1);
@@ -452,6 +454,8 @@ void main() {
       await h.dispose();
     });
     await h.pump(tester);
+    await tester.ensureVisible(find.text('Personal timezone'));
+    await _settle(tester);
     await tester.tap(find.text('Personal timezone'));
     await _settle(tester);
     expect(find.byType(ListTile).evaluate().length, lessThan(30));
@@ -471,7 +475,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('expanded Settings preserves two compact preference groups', (
+  testWidgets('expanded Settings preserves four preference categories', (
     tester,
   ) async {
     _viewport(tester, const Size(1024, 768));
@@ -483,17 +487,22 @@ void main() {
     });
     await h.pump(tester);
     final preferences = find.byWidgetPredicate(
-      (w) => w is SettingsCompactSection && w.title == 'Preferences',
+      (w) =>
+          w is SettingsCompactSection &&
+          const {
+            'Appearance & language',
+            'Calendar & timezone',
+            'Notifications & interaction',
+            'App preferences',
+          }.contains(w.title),
     );
     expect(
       find.descendant(of: preferences, matching: find.byType(SettingsGroup)),
-      findsNWidgets(2),
+      findsNWidgets(4),
     );
     expect(
       tester.getRect(find.byKey(const ValueKey('settings-haptics-row'))).left,
-      greaterThan(
-        tester.getRect(find.byKey(const ValueKey('settings-finance-row'))).left,
-      ),
+      greaterThan(tester.getRect(find.text('Theme')).left),
     );
     expect(find.byType(shad.Switch), findsNothing);
     await _capture(tester, 'settings-root-expanded');
@@ -521,6 +530,8 @@ void main() {
 
     await h.pump(tester, scale: 2);
     expect(dockOpacity(), 1);
+    await tester.ensureVisible(find.text('Personal timezone'));
+    await _settle(tester);
     await tester.tap(find.text('Personal timezone'));
     await _settle(tester);
     tester.view.viewInsets = const FakeViewPadding(bottom: 280);

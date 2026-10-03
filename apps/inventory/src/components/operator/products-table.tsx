@@ -19,6 +19,7 @@ import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { InventoryMergeDialog } from './inventory-merge-dialog';
 import {
   OperationsTable,
   type OperationsTableColumn,
@@ -87,9 +88,35 @@ export function ProductsTable({
   const [editing, setEditing] = useState<InventoryProductSummary | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
 
+  const mergeAction = (
+    <div className="flex justify-end">
+      <InventoryMergeDialog
+        labels={{
+          products: rows,
+          warehouses: formOptions?.warehouses,
+          units: formOptions?.units,
+          categories: formOptions?.categories,
+          owners: formOptions?.owners,
+          manufacturers: formOptions?.manufacturers,
+          financeCategories: formOptions?.financeCategories?.flatMap(
+            ({ id, name }) => (id ? [{ id, name }] : [])
+          ),
+        }}
+        kind="product"
+        options={rows}
+        wsId={wsId}
+        onComplete={() => {
+          setSelectedIds(new Set());
+          setEditing(null);
+        }}
+      />
+    </div>
+  );
+
   if (rows.length === 0) {
     return (
       <div className="grid gap-3">
+        {mergeAction}
         <EmptyRow label={t('empty')} />
         {pagination?.hasNextPage ? (
           <InfiniteListFooter
@@ -132,6 +159,7 @@ export function ProductsTable({
 
   return (
     <div className="grid min-w-0 gap-3">
+      {mergeAction}
       <ProductBulkToolbar
         allSelected={
           tableRows.length > 0 && selectedRows.length === tableRows.length

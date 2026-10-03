@@ -335,6 +335,8 @@ export async function PATCH(req: Request, { params }: Params) {
       inventory,
     });
   } catch (error) {
+    const conflict = mergedIdentityConflict(error);
+    if (conflict) return conflict;
     console.error('Error updating priced product', error);
     return NextResponse.json(
       { message: 'Error updating product and inventory' },
@@ -352,6 +354,8 @@ export async function PATCH(req: Request, { params }: Params) {
         .maybeSingle();
 
   if (product.error) {
+    const conflict = mergedIdentityConflict(product.error);
+    if (conflict) return conflict;
     console.error('Error updating product', product.error);
     return NextResponse.json(
       { message: 'Error updating product' },
@@ -499,6 +503,8 @@ export async function DELETE(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
+    const conflict = mergedIdentityConflict(error);
+    if (conflict) return conflict;
     if (error.code === '23503') {
       const { data: archivedProduct, error: archiveError } = await sbAdmin
         .from('workspace_products')
@@ -509,6 +515,8 @@ export async function DELETE(req: Request, { params }: Params) {
         .maybeSingle();
 
       if (archiveError || !archivedProduct) {
+        const conflict = mergedIdentityConflict(archiveError);
+        if (conflict) return conflict;
         console.error(
           'Error archiving referenced workspace product',
           archiveError
@@ -567,4 +575,24 @@ export async function DELETE(req: Request, { params }: Params) {
   await safelyRevalidateWorkspaceStorefronts(wsId);
 
   return NextResponse.json({ disposition: 'deleted', message: 'success' });
+}
+
+function mergedIdentityConflict(error: unknown) {
+  if (
+    typeof error !== 'object' ||
+    error === null ||
+    !('code' in error) ||
+    error.code !== '23514' ||
+    !('message' in error) ||
+    !String(error.message).startsWith('Inventory identity was merged')
+  )
+    return null;
+  return NextResponse.json(
+    {
+      code: 'MERGED_INVENTORY_IDENTITY',
+      message:
+        'Inventory was merged. Refresh and select its destination before retrying.',
+    },
+    { status: 409 }
+  );
 }

@@ -37,12 +37,13 @@
 //! routes. The 404-vs-403 distinction for "member but lacking permission" is
 //! preserved (Forbidden -> 403; not-a-member/unknown-workspace -> 404).
 
+pub(crate) mod warehouse_read;
+
 use serde_json::{Value, json};
 
 use crate::{
-    APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact, json_response,
-    no_store_response,
-    outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest},
+    BackendConfig, BackendRequest, BackendResponse, contact, json_response, no_store_response,
+    outbound::OutboundHttpClient,
     workspace_permission_check::{
         WorkspacePermissionAuthorizationError, authorize_workspace_permission,
     },
@@ -50,8 +51,6 @@ use crate::{
 
 const WORKSPACES_PRODUCT_WAREHOUSES_PATH_PREFIX: &str = "/api/v1/workspaces/";
 const WORKSPACES_PRODUCT_WAREHOUSES_PATH_SUFFIX: &str = "/product-warehouses";
-const INVENTORY_WAREHOUSES_TABLE: &str = "inventory_warehouses";
-const PRIVATE_SCHEMA: &str = "private";
 
 const VIEW_INVENTORY_PERMISSION: &str = "view_inventory";
 
@@ -144,7 +143,7 @@ async fn warehouses_response(
     }
 }
 
-/// Reads warehouse rows from `private.inventory_warehouses` via service-role
+/// Reads warehouse rows from the anti-joined `private.inventory_active_warehouses` via service-role
 /// REST (matching `createAdminClient().schema('private')`). When paginating,
 /// requests `count=exact` and parses the total from the PostgREST
 /// `Content-Range` header; otherwise returns all matching rows with count 0
@@ -179,23 +178,14 @@ async fn fetch_warehouses(
         query.push(("limit", limit.to_string()));
     }
 
-    let url = contact_data
-        .rest_url(INVENTORY_WAREHOUSES_TABLE, &query)
-        .ok_or(())?;
-    let service_role_key = contact_data.service_role_key().ok_or(())?;
-    let authorization = format!("Bearer {service_role_key}");
-
-    let mut request = OutboundRequest::new(OutboundMethod::Get, &url)
-        .with_header("Accept", APPLICATION_JSON)
-        .with_header("Authorization", &authorization)
-        .with_header("apikey", service_role_key)
-        .with_header("Accept-Profile", PRIVATE_SCHEMA);
-
-    if should_paginate {
-        request = request.with_header("Prefer", "count=exact");
-    }
-
-    let response = outbound.send(request).await.map_err(|_| ())?;
+    let response = crate::workspaces_product_warehouses::warehouse_read::fetch(
+        contact_data,
+        outbound,
+        ws_id,
+        &query,
+        should_paginate,
+    )
+    .await?;
 
     if !is_success(response.status) {
         return Err(());
@@ -393,3 +383,9 @@ fn workspaces_product_warehouses_ws_id(path: &str) -> Option<&str> {
 
     (!ws_id.is_empty() && !ws_id.contains('/')).then_some(ws_id)
 }
+
+#[cfg(test)]
+mod list_tests;
+
+#[cfg(test)]
+pub(crate) mod list_test_support;
