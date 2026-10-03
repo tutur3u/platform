@@ -47,15 +47,34 @@ async fn exchange_rates_response(
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
 ) -> BackendResponse {
-    let Some(access_token) = supabase_auth::request_access_token(request) else {
-        return error_response(401, UNAUTHORIZED_MESSAGE);
-    };
-    let Some(_user_id) =
-        supabase_auth::fetch_supabase_auth_user(&config.contact_data, &access_token, outbound)
+    // Verified satellite sessions have no Supabase JWT. Currency rates are
+    // global reference data; only this branch may use the server read client.
+    let access_token = if contact::request_has_app_session_token(request) {
+        if contact::resolve_app_session_identity(
+            config,
+            request,
+            contact::current_user_app_session_targets(),
+        )
+        .is_err()
+        {
+            return error_response(401, UNAUTHORIZED_MESSAGE);
+        }
+        let Some(key) = config.contact_data.service_role_key() else {
+            return error_response(500, INTERNAL_SERVER_ERROR_MESSAGE);
+        };
+        key.to_owned()
+    } else {
+        let Some(token) = supabase_auth::request_access_token(request) else {
+            return error_response(401, UNAUTHORIZED_MESSAGE);
+        };
+        if supabase_auth::fetch_supabase_auth_user(&config.contact_data, &token, outbound)
             .await
             .and_then(|user| user.id.filter(|id| !id.trim().is_empty()))
-    else {
-        return error_response(401, UNAUTHORIZED_MESSAGE);
+            .is_none()
+        {
+            return error_response(401, UNAUTHORIZED_MESSAGE);
+        }
+        token
     };
 
     // Get the latest date's exchange rates for the USD base currency.
