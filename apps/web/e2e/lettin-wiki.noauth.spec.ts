@@ -2,15 +2,13 @@ import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
-import {
-  APP_SESSION_COOKIE_NAME,
-  createAppSessionToken,
-} from '@tuturuuu/auth/app-session';
+import { createAppSessionToken } from '@tuturuuu/auth/app-session';
 import {
   assertSafeE2EEnvironment,
   LOCAL_E2E_APP_COORDINATION_SECRET,
 } from './helpers/environment';
 import { assertLettinProfileLimits } from './helpers/lettin-profile-limits';
+import { createLettinBrowserContext } from './helpers/lettin-session';
 import {
   deleteRestRows,
   postRestRow,
@@ -147,13 +145,11 @@ test.describe
     }) => {
       test.setTimeout(180000);
       const session = token();
-      const context = await browser.newContext({
-        ignoreHTTPSErrors: true,
-        extraHTTPHeaders: { authorization: `Bearer ${session}` },
-      });
-      await context.addCookies([
-        { name: APP_SESSION_COOKIE_NAME, value: session, url: origin! },
-      ]);
+      const context = await createLettinBrowserContext(
+        browser,
+        origin!,
+        session
+      );
       try {
         const page = await context.newPage();
         const errors: string[] = [];
@@ -266,10 +262,11 @@ test.describe
         version: 2,
       });
       await command({ action: 'publishWorld', worldId: world.id, version: 1 });
-      const context = await browser.newContext({
-        ignoreHTTPSErrors: true,
-        extraHTTPHeaders: headers,
-      });
+      const context = await createLettinBrowserContext(
+        browser,
+        origin!,
+        headers.authorization.slice(7)
+      );
       try {
         const page = await context.newPage();
         await page.goto(`${origin}/${workspaceId}/wiki/${world.id}/timeline`);
@@ -324,10 +321,11 @@ test.describe
     }) => {
       test.setTimeout(180000);
       const headers = { authorization: `Bearer ${token()}` };
-      const context = await browser.newContext({
-        ignoreHTTPSErrors: true,
-        extraHTTPHeaders: headers,
-      });
+      const context = await createLettinBrowserContext(
+        browser,
+        origin!,
+        headers.authorization.slice(7)
+      );
       try {
         const page = await context.newPage();
         await page.goto(`${origin}/${workspaceId}/moderation`);
@@ -360,10 +358,11 @@ test.describe
       browser,
     }) => {
       test.setTimeout(180000);
-      const context = await browser.newContext({
-        ignoreHTTPSErrors: true,
-        extraHTTPHeaders: { authorization: `Bearer ${token()}` },
-      });
+      const context = await createLettinBrowserContext(
+        browser,
+        origin!,
+        token()
+      );
       try {
         const page = await context.newPage();
         await page.goto(`${origin}/${workspaceId}/wiki`);
@@ -436,10 +435,11 @@ test.describe
       browser,
     }) => {
       test.setTimeout(180000);
-      const context = await browser.newContext({
-        ignoreHTTPSErrors: true,
-        extraHTTPHeaders: { authorization: `Bearer ${token()}` },
-      });
+      const context = await createLettinBrowserContext(
+        browser,
+        origin!,
+        token()
+      );
       try {
         const page = await context.newPage();
         await page.goto(`${origin}/${workspaceId}/profile`);
@@ -627,10 +627,7 @@ test.describe
               LOCAL_E2E_APP_COORDINATION_SECRET,
           }
         ).token;
-        context = await browser.newContext({
-          ignoreHTTPSErrors: true,
-          extraHTTPHeaders: { authorization: `Bearer ${session}` },
-        });
+        context = await createLettinBrowserContext(browser, origin!, session);
         const page = await context.newPage();
         await page.goto(`${origin}/${workspaceId}/wiki`);
         await expect(
