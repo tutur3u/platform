@@ -36,6 +36,7 @@ class OfflineStoredItems extends StatefulWidget {
 class _OfflineStoredItemsState extends State<OfflineStoredItems> {
   List<_StoredItem>? _items;
   String _query = '';
+  final _searchController = TextEditingController();
   final _expandedIds = <String>{};
   bool _failed = false;
   bool _expanded = false;
@@ -52,12 +53,20 @@ class _OfflineStoredItemsState extends State<OfflineStoredItems> {
     if (scopeChanged) {
       _items = null;
       _query = '';
+      _searchController.clear();
       _expandedIds.clear();
     }
     if (scopeChanged || oldWidget.revision != widget.revision) {
+      _items = null;
       _generation++;
       if (_expanded) unawaited(_load());
     }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -107,6 +116,7 @@ class _OfflineStoredItemsState extends State<OfflineStoredItems> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: TextField(
               key: ValueKey(('offline-item-search', widget.namespace)),
+              controller: _searchController,
               decoration: InputDecoration(hintText: l10n.offlineSearchItems),
               onChanged: (value) =>
                   setState(() => _query = value.toLowerCase().trim()),

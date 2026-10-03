@@ -99,6 +99,26 @@ void main() {
       'synthetic-1999',
     );
     expect(payloads.fold<int>(0, (sum, row) => sum + row.calls), 2);
+    await tester.tap(find.text('Browse stored items'));
+    await tester.pumpAndSettle();
+    rows[1999] = ReplicaEntityRecord(
+      id: 'synthetic-1999',
+      namespace: 'inventory.products',
+      sourceKey: 'synthetic-source',
+      fetchedAt: DateTime.utc(2031),
+      payload: {'name': 'Updated product'},
+    );
+    await pump('content-c');
+    await tester.pumpAndSettle();
+    expect(reads, 2);
+    await tester.tap(find.text('Browse stored items'));
+    await tester.pumpAndSettle();
+    expect(reads, 3);
+    expect(find.text('Updated product'), findsOneWidget);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'synthetic-1999',
+    );
     expect(tester.takeException(), isNull);
   });
 }
