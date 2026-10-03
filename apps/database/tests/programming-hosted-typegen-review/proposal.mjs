@@ -1,9 +1,10 @@
-import { execFileSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import {
   existsSync,
+  lstatSync,
   mkdirSync,
   readFileSync,
+  realpathSync,
   renameSync,
   rmSync,
   statfsSync,
@@ -16,6 +17,7 @@ import {
   chooseAvailablePortBlock,
   deriveIsolatedIdentity,
   isPortAvailable,
+  METADATA_FILE,
   readLifecycleMetadata,
   removeDisposableRoot,
   stageDisposableProject,
@@ -24,6 +26,17 @@ import {
   APPROVED_TYPEGEN_OUTPUT,
   validateTypegenOutputPath,
 } from '../../scripts/run-supabase-isolated-typegen.js';
+import {
+  assertSyntheticCliEnvironment,
+  createSyntheticCliContext,
+} from './cli-environment.mjs';
+import { runHostedCommand } from './hosted-command.mjs';
+import {
+  CliProbeFailure,
+  resolveHostedNativeCli,
+  runCliProbe,
+  verificationFailureStatus,
+} from './native-cli.mjs';
 import { verifyNetworkPolicy } from './network-policy.mjs';
 import { runOwnedProcess } from './process-group.mjs';
 
@@ -68,26 +81,66 @@ const output = path.join(
 );
 const statePath = path.join(output, 'state.json');
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
-function command(binary, args, timeout = limits.commandMs) {
-  return execFileSync(binary, args, {
-    encoding: 'utf8',
-    timeout,
-    maxBuffer: 4 * 1024 ** 2,
-    stdio: ['ignore', 'pipe', 'pipe'],
-  }).trim();
+export function command(
+  binary,
+  args,
+  timeout = limits.commandMs,
+  maxBuffer = 4 * 1024 ** 2,
+  {
+    nativeBinary = configuredNativeBinary,
+    context = syntheticCliContext,
+    execute,
+    repositoryRoot = repo,
+  } = {}
+) {
+  // Git selects its source explicitly while the subprocess stays in admitted cwd.
+  return runHostedCommand(
+    binary,
+    binary === 'git' ? ['-C', repositoryRoot, ...args] : args,
+    {
+      context: context(nativeBinary),
+      execute,
+      timeout,
+      maxBuffer,
+    }
+  ).catch((error) => {
+    if (error instanceof CliProbeFailure) {
+      const phase =
+        {
+          docker: 'docker-command',
+          git: 'git-command',
+          sudo:
+            {
+              cat: 'policy-daemon',
+              bpftool: 'policy-kernel',
+              systemctl: 'policy-slice',
+              iptables: 'policy-firewall',
+              ip6tables: 'policy-firewall',
+            }[args[1]] ?? 'policy-command',
+        }[binary] ?? 'command';
+      throw new CliProbeFailure(phase, error.outcome);
+    }
+    throw error;
+  });
 }
+function checkNetworkPolicy() {
+  return verifyNetworkPolicy((args) =>
+    command('sudo', ['-n', ...args], limits.commandMs, 1024 ** 2)
+  );
+}
+
 function freeBytes() {
   const disk = statfsSync(repo);
   return disk.bavail * disk.bsize;
 }
-function names(kind) {
+async function names(kind) {
   const args = {
     container: ['ps', '-a', '--format', '{{.Names}}'],
     volume: ['volume', 'ls', '--format', '{{.Name}}'],
     network: ['network', 'ls', '--format', '{{.Name}}'],
   }[kind];
   if (!args) throw new Error('Unknown inventory kind');
-  return command('docker', args).split('\n').filter(Boolean);
+  return (await command('docker', args)).split('\n').filter(Boolean);
 }
 
 function readState() {
@@ -115,11 +168,10 @@ function assertHosted() {
     );
   }
 }
-function migrationFingerprint() {
-  const files = command('git', [
-    'ls-files',
-    'apps/database/supabase/migrations',
-  ])
+async function migrationFingerprint() {
+  const files = (
+    await command('git', ['ls-files', 'apps/database/supabase/migrations'])
+  )
     .split('\n')
     .filter(Boolean)
     .sort();
@@ -127,55 +179,159 @@ function migrationFingerprint() {
     files.map((file) => `${file}\0${hash(readFileSync(file))}`).join('\n')
   );
 }
-async function prepare() {
-  assertHosted();
-  if (existsSync(statePath))
-    throw new Error('Refusing existing lifecycle state');
-  if (names('container').length || names('volume').length)
+let configuredNativeBinary;
+export function configureNativeCli({
+  env = process.env,
+  resolver = resolveHostedNativeCli,
+} = {}) {
+  const binary = resolver(env.SUPABASE_CLI_BINARY_OVERRIDE);
+  env.SUPABASE_CLI_BINARY_OVERRIDE = binary;
+  if (env === process.env) configuredNativeBinary = binary;
+  return binary;
+}
+function lifecycleTemporaryRoot(outputRoot = output) {
+  if (existsSync(outputRoot) && lstatSync(outputRoot).isSymbolicLink())
+    throw new Error('Hosted helper context unavailable');
+  mkdirSync(outputRoot, { recursive: true, mode: 0o700 });
+  const root = path.join(realpathSync(outputRoot), 'lifecycle-tmp');
+  // Use the same private, admitted temp root in staging and unchanged helper processes.
+  const safe = createSyntheticCliContext({
+    root,
+    nativeBinary: configuredNativeBinary ?? process.execPath,
+  });
+  return safe.env.TMPDIR;
+}
+function readOwnedMetadata(root) {
+  return readLifecycleMetadata(root, {
+    temporaryRoot: lifecycleTemporaryRoot(),
+  });
+}
+export function syntheticCliContext(
+  nativeBinary,
+  workdir,
+  { outputRoot = output } = {}
+) {
+  if (existsSync(outputRoot) && lstatSync(outputRoot).isSymbolicLink())
+    throw new Error('Hosted helper context unavailable');
+  mkdirSync(outputRoot, { recursive: true, mode: 0o700 });
+  return createSyntheticCliContext({
+    root: path.join(outputRoot, `cli-isolation-${randomUUID()}`),
+    nativeBinary,
+    temporaryRoot: workdir ? lifecycleTemporaryRoot(outputRoot) : undefined,
+    workdir,
+  });
+}
+export async function runHostedHelper(
+  binary,
+  args,
+  options,
+  {
+    nativeBinary = configuredNativeBinary,
+    context = syntheticCliContext,
+    runner = runOwnedProcess,
+  } = {}
+) {
+  if (!nativeBinary || !['--resume', '--cleanup'].includes(args[1]))
+    throw new Error('Hosted helper context unavailable');
+  const safe = context(nativeBinary, args[2]);
+  assertSyntheticCliEnvironment(safe.env, safe.cwd);
+  await runner(binary, args, { ...options, env: safe.env, cwd: safe.cwd });
+}
+export async function prepare({
+  hosted = assertHosted,
+  existingState = () => existsSync(statePath),
+  configure = configureNativeCli,
+  inventory = names,
+  disk = freeBytes,
+  context = syntheticCliContext,
+  probe = runCliProbe,
+  commandRunner = command,
+  repositoryRoot = repo,
+  ports = chooseAvailablePortBlock,
+  fingerprint = migrationFingerprint,
+  policy = checkNetworkPolicy,
+  createOutput = () => mkdirSync(output, { recursive: true }),
+  stage = stageAndRecord,
+  temporaryRoot = lifecycleTemporaryRoot,
+} = {}) {
+  hosted();
+  if (existingState()) throw new Error('Refusing existing lifecycle state');
+  const binary = configure();
+  if (
+    (await inventory('container')).length ||
+    (await inventory('volume')).length
+  )
     throw new Error('Requires empty dedicated Docker runner');
   if (
-    names('network').some((name) => !['bridge', 'host', 'none'].includes(name))
+    (await inventory('network')).some(
+      (name) => !['bridge', 'host', 'none'].includes(name)
+    )
   )
     throw new Error('Requires runner without custom Docker networks');
-  const free = freeBytes();
+  const free = disk();
   assertDisk(free, free);
-  const binary = process.env.SUPABASE_CLI_BINARY_OVERRIDE;
-  const cliVersion = command(binary, ['--version']);
+  const cliContext = context(binary);
+  const cliVersion = await probe(binary, ['--version'], {
+    ...cliContext,
+    phase: 'cli-version',
+    timeoutMs: limits.commandMs,
+  });
   const expectedVersion = JSON.parse(
     readFileSync('apps/database/package.json', 'utf8')
   ).devDependencies.supabase;
   if (cliVersion !== expectedVersion)
     throw new Error('Supabase CLI pin mismatch');
-  const services = JSON.parse(command(binary, ['services', '-o', 'json']));
-  const headSha = command('git', ['rev-parse', 'HEAD']);
+  const services = JSON.parse(
+    await probe(binary, ['services', '-o', 'json'], {
+      ...cliContext,
+      phase: 'cli-services',
+      timeoutMs: limits.commandMs,
+    })
+  );
+  const headSha = await commandRunner('git', ['rev-parse', 'HEAD']);
+  const trackedFiles = (
+    await commandRunner('git', [
+      'ls-files',
+      '-z',
+      '--',
+      'apps/database/supabase',
+    ])
+  )
+    .split('\0')
+    .filter(Boolean);
   const identity = deriveIsolatedIdentity({
     headSha,
     repositoryPath: path.join(
-      repo,
+      repositoryRoot,
       `run-${process.env.GITHUB_RUN_ID}-${process.env.GITHUB_RUN_ATTEMPT}`
     ),
   });
-  const block = await chooseAvailablePortBlock(identity);
+  const block = await ports(identity);
+  console.info('Programming preparation checkpoint=policy-validation');
+  const policyIdentity = await policy();
   const fields = {
     cliVersion,
     services,
     limits,
     initialFreeBytes: free,
     minimumFreeBytesObserved: free,
-    migrationFingerprint: migrationFingerprint(),
-    network: verifyNetworkPolicy(),
+    migrationFingerprint: await fingerprint(),
+    network: policyIdentity,
     images: {},
     runSucceeded: false,
     cleanupVerified: false,
   };
-  mkdirSync(output, { recursive: true });
-  await stageAndRecord(
+  createOutput();
+  console.info('Programming preparation checkpoint=project-staging');
+  return stage(
     {
       basePort: block.basePort,
       headSha,
       projectId: identity.projectId,
-      repositoryRoot: repo,
-      typegenOutput: typegenOutputForRepository(repo),
+      repositoryRoot,
+      typegenOutput: typegenOutputForRepository(repositoryRoot),
+      trackedFiles,
+      temporaryRoot: temporaryRoot(),
     },
     fields
   );
@@ -186,7 +342,8 @@ export async function stageAndRecord(
   {
     stage = stageDisposableProject,
     record = saveState,
-    remove = removeDisposableRoot,
+    remove = (root) =>
+      removeDisposableRoot(root, { temporaryRoot: options.temporaryRoot }),
   } = {}
 ) {
   let metadata;
@@ -224,9 +381,10 @@ function assertMetadata(state, metadata, repositoryRoot = repo) {
 export async function resumeRecordedProject(
   state,
   {
-    read = readLifecycleMetadata,
-    runner = runOwnedProcess,
+    read = readOwnedMetadata,
+    runner = runHostedHelper,
     onTick,
+    onDiagnostic,
     repositoryRoot = repo,
   } = {}
 ) {
@@ -241,33 +399,64 @@ export async function resumeRecordedProject(
     {
       timeoutMs: limits.executionMs,
       onTick,
+      onDiagnostic,
     }
   );
 }
 
 async function run() {
   assertHosted();
+  configureNativeCli();
   const state = readState();
-  verifyNetworkPolicy(); // Fail closed before the CLI can start/apply SQL.
+  await checkNetworkPolicy(); // Fail closed before the CLI can start/apply SQL.
   try {
     await resumeRecordedProject(state, {
-      onTick: () => {
+      onDiagnostic: (kind) =>
+        console.info(`Programming lifecycle diagnostic=${kind}`),
+      onTick: async () => {
+        if (
+          existsSync(path.join(state.metadata.disposableRoot, METADATA_FILE))
+        ) {
+          const metadata = await readOwnedMetadata(
+            state.metadata.disposableRoot
+          ).catch((error) => {
+            if (error.code === 'ENOENT') return {};
+            throw error;
+          });
+          if (
+            ['starting', 'resetting', 'testing', 'typegen'].includes(
+              metadata.status
+            ) &&
+            metadata.status !== state.lifecyclePhase
+          ) {
+            state.lifecyclePhase = metadata.status;
+            console.info(`Programming lifecycle checkpoint=${metadata.status}`);
+          }
+        }
         const free = freeBytes();
         state.minimumFreeBytesObserved = Math.min(
           state.minimumFreeBytesObserved,
           free
         );
         assertDisk(state.initialFreeBytes, free);
-        const owned = ownedNames(names('container'), state.metadata.projectId);
+        const owned = ownedNames(
+          await names('container'),
+          state.metadata.projectId
+        );
         if (owned.length > 32)
           throw new Error('Disposable service count budget exceeded');
         if (owned.length) {
           let inspected = [];
           try {
-            inspected = JSON.parse(command('docker', ['inspect', ...owned]));
+            inspected = JSON.parse(
+              await command('docker', ['inspect', ...owned])
+            );
           } catch (error) {
             // The supported helper removes containers during successful cleanup.
-            if (ownedNames(names('container'), state.metadata.projectId).length)
+            if (
+              ownedNames(await names('container'), state.metadata.projectId)
+                .length
+            )
               throw error;
           }
           for (const inspect of inspected) {
@@ -292,15 +481,19 @@ async function run() {
 
 async function cleanup() {
   assertHosted();
-  if (!existsSync(statePath)) return;
+  if (!existsSync(statePath)) {
+    console.log('Programming verification phase=cleanup outcome=no-state');
+    return;
+  }
+  configureNativeCli();
   await cleanupRecordedProject(readState());
 }
 export async function cleanupRecordedProject(
   state,
   {
     exists = existsSync,
-    read = readLifecycleMetadata,
-    runner = runOwnedProcess,
+    read = readOwnedMetadata,
+    runner = runHostedHelper,
     inventory = names,
     portAvailable = isPortAvailable,
     record = saveState,
@@ -319,9 +512,9 @@ export async function cleanupRecordedProject(
     );
   }
   if (
-    ownedNames(inventory('container'), state.metadata.projectId).length ||
-    ownedNames(inventory('volume'), state.metadata.projectId).length ||
-    ownedNames(inventory('network'), state.metadata.projectId).length ||
+    ownedNames(await inventory('container'), state.metadata.projectId).length ||
+    ownedNames(await inventory('volume'), state.metadata.projectId).length ||
+    ownedNames(await inventory('network'), state.metadata.projectId).length ||
     exists(state.metadata.disposableRoot)
   ) {
     throw new Error('Owned disposable resources remain');
@@ -405,7 +598,7 @@ if (
   try {
     await main(process.argv[2]);
   } catch (error) {
-    console.error(error.message);
+    console.error(verificationFailureStatus(process.argv[2], error));
     process.exitCode = 1;
   }
 }
