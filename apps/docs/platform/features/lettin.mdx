@@ -148,6 +148,13 @@ Local development initializes Cloudflare bindings through OpenNext. For runtime
 verification, use the collaborative preview or a previously CI-built Worker.
 Do not run app or package builds on the agent machine. The exact-commit Lettin
 Cloudflare CI workflow provides the real build and type-check evidence.
+The private wiki shelf and world routes provide localized route-level loading
+boundaries. Their request-time pages stream into these placeholders during client
+navigation; the locale layout's Suspense boundary sits above the shared workspace
+layout and cannot cover those transitions. The mounted `rich-editor.test.tsx`
+exercises the actual shared TipTap editor and Markdown parser. The authenticated
+wiki E2E retains creation, save, and reload assertions, with named, bounded editor
+actions so a pending control is reported before the overall test deadline.
 The storage tests use disposable Miniflare D1 and R2 resources and cover creator
 access, invitation delegation, conflicting writes, published snapshots, private
 relationships, and artwork publication/revocation.

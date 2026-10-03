@@ -16,6 +16,9 @@ export default defineConfig({
         )
       ),
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@tuturuuu/supabase/next/client': fileURLToPath(
+        new URL('../../packages/supabase/src/next/client.ts', import.meta.url)
+      ),
       '@tuturuuu/internal-api/lettin': fileURLToPath(
         new URL('../../packages/internal-api/src/lettin.ts', import.meta.url)
       ),

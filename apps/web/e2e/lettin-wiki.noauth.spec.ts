@@ -180,31 +180,36 @@ test.describe
         );
         await page
           .getByRole('button', { name: 'World notebook', exact: true })
-          .click();
-        await page
-          .getByRole('button', { name: 'Markdown', exact: true })
-          .click();
+          .click({ timeout: 15_000 });
+        await test.step('Open the initialized Markdown editor', async () => {
+          await page
+            .getByRole('button', { name: 'Markdown', exact: true })
+            .click({ timeout: 15_000 });
+        });
         await page
           .getByLabel('Markdown source', { exact: true })
           .fill(
-            '# Synthetic chapter\n\n**A memorable opening.**\n\n- First scene\n- Second scene'
+            '# Synthetic chapter\n\n**A memorable opening.**\n\n- First scene\n- Second scene',
+            { timeout: 15_000 }
           );
         await expect(
           page.getByRole('button', { name: 'Save draft', exact: true })
         ).toBeDisabled();
-        await page
-          .getByRole('button', { name: 'Apply Markdown', exact: true })
-          .click();
-        await page
-          .getByRole('button', { name: 'Save draft', exact: true })
-          .click();
+        await test.step('Apply Markdown and save its draft', async () => {
+          await page
+            .getByRole('button', { name: 'Apply Markdown', exact: true })
+            .click({ timeout: 15_000 });
+          await page
+            .getByRole('button', { name: 'Save draft', exact: true })
+            .click({ timeout: 15_000 });
+        });
         await expect(
           page.getByText('Draft saved', { exact: true })
         ).toBeVisible();
         await page.reload();
         await page
           .getByRole('button', { name: 'World notebook', exact: true })
-          .click();
+          .click({ timeout: 15_000 });
         await expect(page.locator('.wiki-text-editor')).toContainText(
           'A memorable opening.'
         );
