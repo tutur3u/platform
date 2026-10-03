@@ -332,6 +332,8 @@ export function EventModal() {
     closeModal,
     setIsSaving,
     isSaving,
+    source: selectedSourceOption,
+    wsId,
     onError: () =>
       toast({
         title: 'Error',

@@ -4,12 +4,17 @@ import { expect, it, vi } from 'vitest';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendarDraftSave } from './use-calendar-draft-save';
 
+const query = vi.hoisted(() => ({
+  data: { connectionId: 'owned', providerColorWrites: true },
+}));
+vi.mock('@tanstack/react-query', () => ({ useQuery: () => query }));
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 vi.mock('@tuturuuu/ui/button', () => ({
   Button: (props: any) => <button {...props} />,
 }));
 
 function fixture() {
+  query.data = { connectionId: 'owned', providerColorWrites: true };
   const draft = {
     requestId: '01900000-0000-7000-8000-000000000001',
     ws_id: 'workspace',
@@ -17,6 +22,8 @@ function fixture() {
   };
   const args = {
     draft,
+    wsId: 'workspace',
+    source: { provider: 'google' as const, connectionId: 'owned' } as any,
     original: { id: 'new' } as CalendarEvent,
     buildPayload: () => ({ title: args.draft.title }),
     addEvent: vi.fn().mockRejectedValueOnce(new Error('lost response')),
@@ -97,5 +104,16 @@ it('does not close or recover another draft after a stale retry response', async
   });
   expect(args.closeModal).not.toHaveBeenCalled();
   expect(result.current.recoveryNotice).toBeNull();
+  expect(args.updateEvent).not.toHaveBeenCalled();
+});
+
+it('keeps legacy unconfirmed creates out of automatic retry', async () => {
+  const args = fixture();
+  query.data.providerColorWrites = false;
+  const { result } = renderHook(() => useCalendarDraftSave(args));
+  await act(() => result.current.save());
+  expect(result.current.recoveryNotice!.props.children[1]).toBe(false);
+  await act(() => result.current.save());
+  expect(args.addEvent).toHaveBeenCalledTimes(1);
   expect(args.updateEvent).not.toHaveBeenCalled();
 });

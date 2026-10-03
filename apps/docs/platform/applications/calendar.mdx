@@ -675,7 +675,11 @@ UTC+07 offset assertion prevents a UTC runner from silently weakening the
 wall-clock double-conversion regression.
 
 Creation recovery on the shared Calendar form keeps the original submitted request
-ID and body immutable after an uncertain failure. The original retry action preserves
+ID and body immutable after an uncertain failure. Automatic original retry is available
+only when the initially submitted Google source advertised durable provider writes;
+legacy/native or unknown-capability failures require checking the calendar first.
+An unavailable capability cannot later turn an uncertain legacy create into a retry.
+The original retry action preserves
 the edited form. Only a confirmed creation ID allows its next explicit Save to update
 that event; edited drafts never silently start another creation. This applies to
 shared web Calendar forms; legacy creation payloads keep optional IDs while explicit

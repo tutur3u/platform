@@ -1,3 +1,8 @@
+import { useQuery } from '@tanstack/react-query';
+import {
+  getGoogleCalendarColorOptions,
+  type CalendarSourceOption,
+} from '@tuturuuu/internal-api';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
@@ -19,10 +24,19 @@ type SaveArgs = {
   setIsSaving: (saving: boolean) => void;
   onError: () => void;
   isSaving: boolean;
+  source?: CalendarSourceOption;
+  wsId?: string;
 };
 
 export function useCalendarDraftSave(args: SaveArgs) {
   const t = useTranslations('calendar');
+  const connectionId =
+    args.source?.provider === 'google' ? args.source.connectionId : null;
+  const { data: capabilities } = useQuery({
+    queryKey: ['google-calendar-color-options', args.wsId, connectionId],
+    enabled: !!args.wsId && !!connectionId,
+    queryFn: () => getGoogleCalendarColorOptions(args.wsId!, connectionId!),
+  });
   const scope = `${args.draft.ws_id}:${args.draft.requestId ?? args.original?.id}`;
   const state = useRef({ scope, recovery: createCalendarDraftRecovery() });
   if (state.current.scope !== scope)
@@ -34,7 +48,7 @@ export function useCalendarDraftSave(args: SaveArgs) {
 
   async function retryOriginal() {
     const submission = recovery.submitted();
-    if (!submission) return;
+    if (!submission?.recoverable) return;
     args.setIsSaving(true);
     try {
       const saved = await args.addEvent(
@@ -72,7 +86,13 @@ export function useCalendarDraftSave(args: SaveArgs) {
       } else if (args.original?.id === 'new') {
         if (!args.draft.requestId)
           throw new Error('Missing creation request ID');
-        const submission = recovery.capture(payload, args.draft.requestId);
+        const submission = recovery.capture(
+          payload,
+          args.draft.requestId,
+          !!connectionId &&
+            capabilities?.connectionId === connectionId &&
+            capabilities.providerColorWrites === true
+        );
         const saved = await args.addEvent(
           submission.payload as Omit<CalendarEvent, 'id'>,
           {
@@ -100,15 +120,21 @@ export function useCalendarDraftSave(args: SaveArgs) {
     recoveryNotice: uncertain ? (
       <div role="status" className="mb-2 space-y-2">
         <p className="text-muted-foreground text-sm">
-          {t('creation_recovery_notice')}
+          {t(
+            recovery.submitted()?.recoverable
+              ? 'creation_recovery_notice'
+              : 'creation_recovery_unavailable'
+          )}
         </p>
-        <Button
-          variant="outline"
-          onClick={retryOriginal}
-          disabled={args.isSaving}
-        >
-          {t('creation_recovery_retry')}
-        </Button>
+        {recovery.submitted()?.recoverable && (
+          <Button
+            variant="outline"
+            onClick={retryOriginal}
+            disabled={args.isSaving}
+          >
+            {t('creation_recovery_retry')}
+          </Button>
+        )}
       </div>
     ) : null,
   };
