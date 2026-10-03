@@ -2717,6 +2717,11 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "First-class inventory product and warehouse merge preview/apply with verified workspace membership, combined update/delete/stock permissions, mandatory conflict choices, version-bound private service-role RPC and actor scoping. Preview/apply require repair-generation schema readiness; missing/false readiness returns retryable 503 before merge RPCs. Rust parity pending."
+    },
+    "api:/api/v1/workspaces/:wsId/inventory/sales-periods/merges:apps/web/src/app/api/v1/workspaces/[wsId]/inventory/sales-periods/merges/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Web remains live. Source Rust mirror owns GET/POST; inventory-only authenticated actor/workspace role conjunction, readiness, bounded actor-bound expiring preview pages, explicit policies, sanitized statuses/no-store. Future backend compile/runtime coverage and exact app build required before cutover."
     }
   }
 }

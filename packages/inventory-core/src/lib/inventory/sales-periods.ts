@@ -1,4 +1,7 @@
 import 'server-only';
+import { InventorySeasonMergedError } from './season-merge-errors';
+
+export { isInventorySeasonMergedError } from './season-merge-errors';
 
 import type {
   InventoryCommerceSummary,
@@ -138,7 +141,9 @@ export async function listInventorySalesPeriods({
   const { data: periods, error: periodsError } = await periodsQuery;
   if (periodsError) throw periodsError;
 
-  const rows = (periods ?? []) as unknown as SalesPeriodRow[];
+  const rows = ((periods ?? []) as unknown as SalesPeriodRow[]).filter(
+    (period) => !period.merged_into_id
+  );
   const [productRows, visibleCounts] = await Promise.all([
     getPeriodProducts({
       periodIds: rows.map((period) => period.id),
@@ -446,6 +451,7 @@ export async function setInventorySalePeriod({
 
   const period = await getPeriodWithCount({ periodId, sbAdmin, wsId });
   if (!period) return null;
+  if (period.merged_into_id) throw new InventorySeasonMergedError();
   if (period.product_scope !== 'all') {
     const saleProductIds = await getSaleProductIds({
       saleId,
@@ -514,6 +520,7 @@ export async function setInventorySalesPeriodBulk({
 
   const period = await getPeriodWithCount({ periodId, sbAdmin, wsId });
   if (!period) return null;
+  if (period.merged_into_id) throw new InventorySeasonMergedError();
   await validatePeriodEligibility({ period, sales: uniqueSales, sbAdmin });
 
   const assignedAt = new Date().toISOString();

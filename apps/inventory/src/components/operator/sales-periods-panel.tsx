@@ -27,6 +27,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
+import { InventorySeasonMergeDialog } from './inventory-season-merge-dialog';
 import {
   OperatorDialogBody,
   OperatorDialogContent,
@@ -96,7 +97,7 @@ export function SalesPeriodsPanel({
           </p>
         </div>
       </div>
-      <div className="flex min-w-0 items-center gap-1.5 sm:flex-wrap sm:justify-end sm:gap-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:flex-wrap sm:justify-end sm:gap-2">
         <SelectValueField
           allowEmpty={false}
           className="w-full min-w-0 flex-1 sm:w-56 sm:flex-none"
@@ -108,10 +109,12 @@ export function SalesPeriodsPanel({
               label: t('unassigned'),
               value: UNASSIGNED_SALES_PERIOD_FILTER,
             },
-            ...periods.map((period) => ({
-              label: `${period.name} · ${period.sale_count}`,
-              value: period.id,
-            })),
+            ...periods
+              .filter((period) => !period.merged_into_id)
+              .map((period) => ({
+                label: `${period.name} · ${period.sale_count}`,
+                value: period.id,
+              })),
           ]}
           placeholder={t('all')}
           searchPlaceholder={t('title')}
@@ -128,6 +131,7 @@ export function SalesPeriodsPanel({
             isFetchingNextProductsPage={isFetchingNextProductsPage}
           />
         ) : null}
+        <InventorySeasonMergeDialog wsId={wsId} periods={periods} />
         <SalesExportDropdown
           canExport={canExport}
           period={selected}
@@ -453,10 +457,12 @@ export function SalePeriodPicker({
       onChange={(value) => mutation.mutate(value)}
       options={[
         { label: t('unassigned'), value: NO_PERIOD },
-        ...periods.map((period) => ({
-          label: period.name,
-          value: period.id,
-        })),
+        ...periods
+          .filter((period) => !period.merged_into_id)
+          .map((period) => ({
+            label: period.name,
+            value: period.id,
+          })),
       ]}
       placeholder={t('unassigned')}
       searchPlaceholder={t('assignmentLabel')}

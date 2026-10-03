@@ -45,7 +45,7 @@ test('runs all focused SQL and owned concurrency before success', () => {
   assert.equal(
     calls.filter(([cmd, args]) => cmd === 'docker' && args[0] === 'exec')
       .length,
-    5
+    6
   );
   const copied = calls.filter(
     ([cmd, args]) => cmd === 'docker' && args[0] === 'cp'
@@ -54,13 +54,22 @@ test('runs all focused SQL and owned concurrency before success', () => {
     copied.map(([, args]) => path.basename(args[1])),
     INVENTORY_SQL_FIXTURES
   );
+  assert.deepEqual(
+    calls
+      .filter(([cmd]) => cmd === process.execPath)
+      .map(([, args]) => path.basename(args[0])),
+    [
+      'inventory-merge-concurrency.mjs',
+      'inventory-season-merge-concurrency.mjs',
+    ]
+  );
   const [command, args, options] = calls.at(-1);
   assert.equal(command, process.execPath);
   assert.equal(
     args[0],
     path.resolve(
       metadata.repositoryRoot,
-      'apps/database/supabase/tests/inventory-merge-concurrency.mjs'
+      'apps/database/supabase/tests/inventory-season-merge-concurrency.mjs'
     )
   );
   assert.equal(args[1], metadata.disposableRoot);

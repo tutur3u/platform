@@ -7437,6 +7437,7 @@ export type Database = {
           description: string | null;
           ends_at: string | null;
           id: string;
+          merged_into_id: string | null;
           name: string;
           pricing_mode: string;
           product_scope: string;
@@ -7452,6 +7453,7 @@ export type Database = {
           description?: string | null;
           ends_at?: string | null;
           id?: string;
+          merged_into_id?: string | null;
           name: string;
           pricing_mode?: string;
           product_scope?: string;
@@ -7467,6 +7469,7 @@ export type Database = {
           description?: string | null;
           ends_at?: string | null;
           id?: string;
+          merged_into_id?: string | null;
           name?: string;
           pricing_mode?: string;
           product_scope?: string;
@@ -7476,7 +7479,215 @@ export type Database = {
           updated_at?: string;
           ws_id?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_period_merge_destination';
+            columns: ['merged_into_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_sales_periods';
+            referencedColumns: ['id', 'ws_id'];
+          },
+        ];
+      };
+      inventory_season_merge_assignments: {
+        Row: {
+          merge_source_id: string;
+          original_assigned_at: string;
+          original_assigned_by: string | null;
+          original_period_id: string;
+          sale_id: string;
+          sale_source: string;
+          ws_id: string;
+        };
+        Insert: {
+          merge_source_id: string;
+          original_assigned_at: string;
+          original_assigned_by?: string | null;
+          original_period_id: string;
+          sale_id: string;
+          sale_source: string;
+          ws_id: string;
+        };
+        Update: {
+          merge_source_id?: string;
+          original_assigned_at?: string;
+          original_assigned_by?: string | null;
+          original_period_id?: string;
+          sale_id?: string;
+          sale_source?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_season_merge_assignments_merge_source_id_fkey';
+            columns: ['merge_source_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_season_merges';
+            referencedColumns: ['source_id'];
+          },
+        ];
+      };
+      inventory_season_merge_previews: {
+        Row: {
+          actor_id: string;
+          cutoff: string;
+          expires_at: string;
+          fingerprint: string;
+          id: string;
+          source_id: string;
+          target_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          cutoff: string;
+          expires_at: string;
+          fingerprint: string;
+          id?: string;
+          source_id: string;
+          target_id: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          cutoff?: string;
+          expires_at?: string;
+          fingerprint?: string;
+          id?: string;
+          source_id?: string;
+          target_id?: string;
+          ws_id?: string;
+        };
         Relationships: [];
+      };
+      inventory_season_merge_prices: {
+        Row: {
+          imported_price_id: string;
+          merge_source_id: string;
+          original_price_id: string;
+        };
+        Insert: {
+          imported_price_id: string;
+          merge_source_id: string;
+          original_price_id: string;
+        };
+        Update: {
+          imported_price_id?: string;
+          merge_source_id?: string;
+          original_price_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_season_merge_prices_imported_price_id_fkey';
+            columns: ['imported_price_id'];
+            isOneToOne: true;
+            referencedRelation: 'inventory_product_prices';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_season_merge_prices_merge_source_id_fkey';
+            columns: ['merge_source_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_season_merges';
+            referencedColumns: ['source_id'];
+          },
+          {
+            foreignKeyName: 'inventory_season_merge_prices_original_price_id_fkey';
+            columns: ['original_price_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_product_prices';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_season_merge_rules: {
+        Row: {
+          merge_source_id: string;
+          original_created_at: string;
+          original_period_id: string;
+          original_product_id: string;
+          original_product_name: string;
+        };
+        Insert: {
+          merge_source_id: string;
+          original_created_at: string;
+          original_period_id: string;
+          original_product_id: string;
+          original_product_name: string;
+        };
+        Update: {
+          merge_source_id?: string;
+          original_created_at?: string;
+          original_period_id?: string;
+          original_product_id?: string;
+          original_product_name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_season_merge_rules_merge_source_id_fkey';
+            columns: ['merge_source_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_season_merges';
+            referencedColumns: ['source_id'];
+          },
+        ];
+      };
+      inventory_season_merges: {
+        Row: {
+          actor_id: string;
+          created_at: string;
+          description_policy: string;
+          imported_price_count: number;
+          preview: Json;
+          price_policy: string;
+          rule_policy: string;
+          source_id: string;
+          target_id: string;
+          version: string;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          created_at?: string;
+          description_policy: string;
+          imported_price_count?: number;
+          preview: Json;
+          price_policy: string;
+          rule_policy: string;
+          source_id: string;
+          target_id: string;
+          version: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          created_at?: string;
+          description_policy?: string;
+          imported_price_count?: number;
+          preview?: Json;
+          price_policy?: string;
+          rule_policy?: string;
+          source_id?: string;
+          target_id?: string;
+          version?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_season_merges_source_id_ws_id_fkey';
+            columns: ['source_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_sales_periods';
+            referencedColumns: ['id', 'ws_id'];
+          },
+          {
+            foreignKeyName: 'inventory_season_merges_target_id_ws_id_fkey';
+            columns: ['target_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_sales_periods';
+            referencedColumns: ['id', 'ws_id'];
+          },
+        ];
       };
       inventory_settlement_ledger_entries: {
         Row: {
@@ -16466,6 +16677,19 @@ export type Database = {
         };
         Returns: Json;
       };
+      apply_inventory_season_merge: {
+        Args: {
+          p_actor_id: string;
+          p_description_policy: string;
+          p_price_policy: string;
+          p_rule_policy: string;
+          p_source_id: string;
+          p_target_id: string;
+          p_version: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       assert_finance_chart_date_range: {
         Args: { _end_date: string; _max_days: number; _start_date: string };
         Returns: undefined;
@@ -18724,6 +18948,16 @@ export type Database = {
         }[];
       };
       inventory_merge_schema_ready: { Args: never; Returns: boolean };
+      inventory_season_merge_fingerprint: {
+        Args: {
+          p_cutoff: string;
+          p_source_id: string;
+          p_target_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
+      inventory_season_merge_schema_ready: { Args: never; Returns: boolean };
       inventory_stock_available_quantity: {
         Args: {
           p_now?: string;
@@ -19263,6 +19497,17 @@ export type Database = {
       preview_inventory_merge: {
         Args: {
           p_kind: string;
+          p_source_id: string;
+          p_target_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      preview_inventory_season_merge: {
+        Args: {
+          p_actor_id: string;
+          p_page?: number;
+          p_preview_id?: string;
           p_source_id: string;
           p_target_id: string;
           p_ws_id: string;
