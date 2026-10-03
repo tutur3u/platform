@@ -93,7 +93,9 @@ class WorkspaceResultTile extends StatelessWidget {
                 IconButton(
                   style: IconButton.styleFrom(
                     foregroundColor: accent,
-                    backgroundColor: accent.withValues(alpha: 0.12),
+                    minimumSize: const Size(44, 44),
+                    padding: EdgeInsets.zero,
+                    tapTargetSize: MaterialTapTargetSize.padded,
                   ),
                   tooltip:
                       '$actionLabel: '
@@ -109,6 +111,7 @@ class WorkspaceResultTile extends StatelessWidget {
                           actionLabel == context.l10n.workspaceRestoreAction
                               ? Icons.visibility_outlined
                               : Icons.visibility_off_outlined,
+                          size: 18,
                         ),
                 ),
             ],

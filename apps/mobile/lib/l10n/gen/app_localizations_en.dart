@@ -8633,6 +8633,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appsReorder => 'Drag to reorder';
 
   @override
+  String get homePersonalAgenda => 'Personal Agenda';
+
+  @override
+  String get homePersonalAgendaUnavailable => 'Personal calendar is unavailable.';
+
+  @override
   String get homeCustomize => 'Customize Home';
 
   @override
@@ -8804,7 +8810,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileTimelineUnavailable => 'Activity could not be refreshed.';
 
   @override
-  String get profileTimelineTitle => 'Activity timeline';
+  String get profileTimelineTitle => 'Timeline';
 
   @override
   String get profileTimelineToday => 'Today';
@@ -9780,4 +9786,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryCheckoutPeriodRulesChanged => 'Some items do not match this period. Reconcile the cart to continue.';
+
+  @override
+  String get assistantExpandNavigation => 'Show navigation';
+
+  @override
+  String get assistantCollapseNavigation => 'Hide navigation';
+
+  @override
+  String get assistantCloseComposer => 'Close prompt';
 }

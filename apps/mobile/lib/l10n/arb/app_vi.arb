@@ -3551,6 +3551,8 @@
     "appsHideConfirmTitle": "Ẩn ứng dụng này?",
     "appsHideConfirmDescription": "Ứng dụng sẽ chuyển xuống dưới các ứng dụng đang hiện. Bạn có thể hiện lại bất cứ lúc nào.",
     "appsReorder": "Kéo để sắp xếp",
+    "homePersonalAgenda": "Lịch cá nhân",
+    "homePersonalAgendaUnavailable": "Lịch cá nhân hiện không khả dụng.",
     "homeCustomize": "Tùy chỉnh Trang chủ",
     "homeHideWidget": "Ẩn tiện ích",
     "homeShowWidget": "Hiện tiện ích",
@@ -3649,7 +3651,7 @@
     "profileTimelineDescription": "Hoạt động tạo trong không gian làm việc này trong 30 ngày qua. Sự kiện lịch là hoạt động của không gian làm việc.",
     "profileTimelineLimited": "Chỉ hiển thị hoạt động gần đây. Một số nguồn đã đạt giới hạn hiển thị.",
     "profileTimelineUnavailable": "Không thể làm mới hoạt động.",
-    "profileTimelineTitle": "Dòng thời gian hoạt động",
+    "profileTimelineTitle": "Dòng thời gian",
     "profileTimelineToday": "Hôm nay",
     "profileTimelineYesterday": "Hôm qua",
     "profileTimelineEmpty": "Không có hoạt động gần đây trong không gian này",
@@ -4115,5 +4117,8 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "assistantExpandNavigation": "Hiện điều hướng",
+    "assistantCollapseNavigation": "Ẩn điều hướng",
+    "assistantCloseComposer": "Đóng ô nhập"
 }

@@ -67,13 +67,14 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                     })
                   : null,
               actions: [
-                ShellActionSpec(
-                  id: 'profile-switch-account',
-                  icon: Icons.switch_account_outlined,
-                  tooltip: l10n.authSwitchAccount,
-                  onPressed: () =>
-                      unawaited(showProfileAccountSwitcher(context)),
-                ),
+                if (!_timeline)
+                  ShellActionSpec(
+                    id: 'profile-switch-account',
+                    icon: Icons.switch_account_outlined,
+                    tooltip: l10n.authSwitchAccount,
+                    onPressed: () =>
+                        unawaited(showProfileAccountSwitcher(context)),
+                  ),
                 if (_timeline)
                   ShellActionSpec(
                     id: 'profile-day-trail',
@@ -125,6 +126,22 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                       double.infinity,
                     ) +
                     ResponsivePadding.horizontal(context.deviceClass);
+                if (_timeline) {
+                  return Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      horizontal,
+                      floatingShellHeaderInset(context) + 10,
+                      horizontal,
+                      0,
+                    ),
+                    child: ProfileTimelineSection(
+                      replayToken: widget.replayToken,
+                      fullSurface: true,
+                      datesOpen: _dates,
+                      onDatesChanged: (open) => setState(() => _dates = open),
+                    ),
+                  );
+                }
                 return ListView(
                   padding: EdgeInsets.fromLTRB(
                     horizontal,
@@ -134,141 +151,131 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                   ),
                   key: ValueKey(_timeline),
                   children: [
-                    if (_timeline)
-                      ProfileTimelineSection(
-                        replayToken: widget.replayToken,
-                        datesOpen: _dates,
-                        onDatesChanged: (open) => setState(() => _dates = open),
-                      )
-                    else ...[
-                      Container(
-                        key: const ValueKey('profile-overview-content'),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            final scale =
-                                MediaQuery.textScalerOf(context).scale(14) / 14;
-                            final stacked = constraints.maxWidth < 360 * scale;
-                            return Wrap(
-                              spacing: 14,
-                              runSpacing: 12,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(24),
-                                  child: SizedBox.square(
-                                    dimension: 68,
-                                    child:
-                                        state.profile == null &&
-                                            state.error == null
-                                        ? const FinanceSkeletonBlock(
-                                            height: 68,
-                                            radius: 24,
-                                          )
-                                        : state.avatarUrl == null
-                                        ? const Icon(
-                                            Icons.person_outline,
-                                            size: 48,
-                                          )
-                                        : Image.network(
-                                            state.avatarUrl!,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (_, error, stack) =>
-                                                const Icon(
-                                                  Icons.person_outline,
-                                                  size: 48,
-                                                ),
-                                          ),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: stacked
-                                      ? constraints.maxWidth
-                                      : constraints.maxWidth - 82,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      if (state.profile == null &&
-                                          state.error == null)
-                                        const FinanceSkeletonBlock(
-                                          height: 24,
-                                          width: 150,
+                    Container(
+                      key: const ValueKey('profile-overview-content'),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final scale =
+                              MediaQuery.textScalerOf(context).scale(14) / 14;
+                          final stacked = constraints.maxWidth < 360 * scale;
+                          return Wrap(
+                            spacing: 14,
+                            runSpacing: 12,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(24),
+                                child: SizedBox.square(
+                                  dimension: 68,
+                                  child:
+                                      state.profile == null &&
+                                          state.error == null
+                                      ? const FinanceSkeletonBlock(
+                                          height: 68,
+                                          radius: 24,
                                         )
-                                      else
-                                        Text(
-                                          name,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: theme.typography.large
-                                              .copyWith(
-                                                fontWeight: FontWeight.w700,
+                                      : state.avatarUrl == null
+                                      ? const Icon(
+                                          Icons.person_outline,
+                                          size: 48,
+                                        )
+                                      : Image.network(
+                                          state.avatarUrl!,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, error, stack) =>
+                                              const Icon(
+                                                Icons.person_outline,
+                                                size: 48,
                                               ),
                                         ),
-                                      if (profile?.email != null)
-                                        Text(
-                                          profile!.email!,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      shad.GhostButton(
-                                        onPressed: () =>
-                                            context.go(Routes.profileEdit),
-                                        leading: const Icon(
-                                          Icons.edit_outlined,
-                                          size: 18,
-                                        ),
-                                        child: Text(
-                                          l10n.profileIdentitySectionTitle,
+                                ),
+                              ),
+                              SizedBox(
+                                width: stacked
+                                    ? constraints.maxWidth
+                                    : constraints.maxWidth - 82,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (state.profile == null &&
+                                        state.error == null)
+                                      const FinanceSkeletonBlock(
+                                        height: 24,
+                                        width: 150,
+                                      )
+                                    else
+                                      Text(
+                                        name,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: theme.typography.large.copyWith(
+                                          fontWeight: FontWeight.w700,
                                         ),
                                       ),
-                                    ],
-                                  ),
+                                    if (profile?.email != null)
+                                      Text(
+                                        profile!.email!,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    shad.GhostButton(
+                                      onPressed: () =>
+                                          context.go(Routes.profileEdit),
+                                      leading: const Icon(
+                                        Icons.edit_outlined,
+                                        size: 18,
+                                      ),
+                                      child: Text(
+                                        l10n.profileIdentitySectionTitle,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-                      if (userId != null && workspace != null) ...[
-                        const SizedBox(height: 14),
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            final activity = ProfileActivitySection(
-                              replayToken: widget.replayToken,
-                            );
-                            if (workspace.personal) {
-                              return activity;
-                            }
-                            final workspaceActivity = WorkspaceActivitySection(
-                              key: ValueKey('$userId:${workspace.id}'),
-                              workspaceId: workspace.id,
-                              replayToken: widget.replayToken,
-                              workspaceName: displayWorkspaceNameOrFallback(
-                                context,
-                                workspace,
                               ),
-                            );
-                            if (constraints.maxWidth < 840) {
-                              return Column(
-                                children: [
-                                  activity,
-                                  const shad.Gap(16),
-                                  workspaceActivity,
-                                ],
-                              );
-                            }
-                            return Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                    if (userId != null && workspace != null) ...[
+                      const SizedBox(height: 14),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final activity = ProfileActivitySection(
+                            replayToken: widget.replayToken,
+                          );
+                          if (workspace.personal) {
+                            return activity;
+                          }
+                          final workspaceActivity = WorkspaceActivitySection(
+                            key: ValueKey('$userId:${workspace.id}'),
+                            workspaceId: workspace.id,
+                            replayToken: widget.replayToken,
+                            workspaceName: displayWorkspaceNameOrFallback(
+                              context,
+                              workspace,
+                            ),
+                          );
+                          if (constraints.maxWidth < 840) {
+                            return Column(
                               children: [
-                                Expanded(child: activity),
-                                const SizedBox(width: 20),
-                                Expanded(child: workspaceActivity),
+                                activity,
+                                const shad.Gap(16),
+                                workspaceActivity,
                               ],
                             );
-                          },
-                        ),
-                      ],
+                          }
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: activity),
+                              const SizedBox(width: 20),
+                              Expanded(child: workspaceActivity),
+                            ],
+                          );
+                        },
+                      ),
                     ],
                   ],
                 );
