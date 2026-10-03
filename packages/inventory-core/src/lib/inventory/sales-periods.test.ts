@@ -1,9 +1,12 @@
+import type { InventorySalesPeriod } from '@tuturuuu/internal-api/inventory';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
 import { preparePeriodPricingPayload } from './period-pricing';
 import { listInventorySalesPeriods } from './sales-periods';
+
+type PeriodFixture = Omit<InventorySalesPeriod, 'product_ids' | 'sale_count'>;
 
 function chain(result: unknown) {
   const query: Record<string, unknown> = {};
@@ -17,7 +20,7 @@ function chain(result: unknown) {
 
 describe('listInventorySalesPeriods', () => {
   it('counts only sales that the authoritative sales list can render', async () => {
-    const periods = [
+    const periods: PeriodFixture[] = [
       {
         created_at: '2026-07-01T00:00:00.000Z',
         description: null,
@@ -48,7 +51,7 @@ describe('listInventorySalesPeriods', () => {
       id: 'merged-source',
       name: 'Historical alias',
       merged_into_id: 'period-visible',
-    } as (typeof periods)[number]);
+    });
     const from = vi.fn((table: string) =>
       table === 'inventory_sales_periods'
         ? chain({ data: periods, error: null })
