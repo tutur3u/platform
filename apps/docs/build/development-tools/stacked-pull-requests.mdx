@@ -85,6 +85,23 @@ extension's broad staging shortcuts.
 See the upstream [worktree and command reference](https://github.com/github/gh-stack)
 for version-specific behavior and recovery.
 
+### Repository corrections to upstream examples
+
+Read these constraints together with the installed v0.2.0 skill; keep its vendored
+files unchanged so source tracking remains accurate:
+
+- A failed `gh stack sync` restores the cascade's stack branches on conflict,
+  but does not undo completed fetches or trunk fast-forwards. Inspect trunk and
+  affected branch refs/worktrees after failure; recovery is not proof that the
+  entire invocation left the clone unchanged.
+- A push rejection can come from remote movement, permissions, or server-side
+  rules. Inspect the reported error and all affected remote heads, resolve its
+  actual cause, and only then retry. Do not treat every rejection as a lease race
+  or assume a multi-branch push completed atomically.
+- `unstack` and `init` rebuild grouping metadata; they do not reorder existing
+  Git ancestry. Preserve old boundary SHAs and deliberately reorder/rebase the
+  commits first, then rebuild membership and rerun every affected gate.
+
 ## Create and submit a native stack
 
 Create dependent branches in their owning worktrees, then adopt them in bottom-up

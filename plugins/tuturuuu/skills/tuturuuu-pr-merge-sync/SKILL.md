@@ -13,7 +13,8 @@ Use exact-head CI for builds; do not run builds or build-triggering setup locall
 Read `references/merge-procedure.md` for Required Gates, watcher commands, and
 failure recovery when preparing a merge or sync. Native GitHub stacks are the
 standard for dependent PR work. Load `.agents/skills/gh-stack/SKILL.md` for
-upstream command mechanics; repository ownership and gates take precedence.
+upstream command mechanics; read the stack policy's repository corrections
+before recovery or restructuring. Repository ownership and gates take precedence.
 Verify native membership and the complete
 contiguous prefix selected for merge; run every gate for each included PR.
 Use `gh stack merge <highest-verified-pr> --merge --yes` for native stacks,
