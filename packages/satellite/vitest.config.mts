@@ -17,6 +17,17 @@ export default defineConfig({
     silent,
   },
   resolve: {
-    alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
+    // Server helpers expose built CommonJS entries to Node. Resolve their source
+    // so Vitest can apply server-only and client mocks without building locally.
+    alias: [
+      { find: '@', replacement: resolve(__dirname, './src') },
+      {
+        find: '@tuturuuu/supabase/next/server',
+        replacement: resolve(
+          import.meta.dirname,
+          '../supabase/src/next/server.ts'
+        ),
+      },
+    ],
   },
 });
