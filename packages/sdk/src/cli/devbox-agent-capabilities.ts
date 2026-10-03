@@ -37,6 +37,9 @@ let judgeReadinessPromise: Promise<
   Awaited<ReturnType<typeof getJudgeReadiness>>
 > | null = null;
 let judgeReadinessAt = 0;
+let readinessSnapshot: Awaited<ReturnType<typeof getJudgeReadiness>> | null =
+  null;
+let refreshing: Promise<void> | null = null;
 
 function firstLine(value: string) {
   return value.trim().split(/\r?\n/u)[0]?.trim() || null;
@@ -110,14 +113,25 @@ async function readStaticCapabilities() {
 
 export async function createDevboxAgentCapabilities() {
   staticCapabilitiesPromise ??= readStaticCapabilities();
-  if (!judgeReadinessPromise || Date.now() - judgeReadinessAt > 60_000) {
+  if (!readinessSnapshot) {
+    judgeReadinessPromise ??= getJudgeReadiness();
+    readinessSnapshot = await judgeReadinessPromise;
     judgeReadinessAt = Date.now();
-    judgeReadinessPromise = getJudgeReadiness();
+  } else if (Date.now() - judgeReadinessAt > 600_000 && !refreshing) {
+    refreshing = getJudgeReadiness()
+      .then((judge) => {
+        readinessSnapshot = judge;
+        judgeReadinessAt = Date.now();
+      })
+      .catch(() => {
+        judgeReadinessAt = Date.now();
+      })
+      .finally(() => {
+        refreshing = null;
+      });
   }
-  const [staticCapabilities, judge] = await Promise.all([
-    staticCapabilitiesPromise,
-    judgeReadinessPromise,
-  ]);
+  const staticCapabilities = await staticCapabilitiesPromise;
+  const judge = readinessSnapshot;
 
   return {
     ...staticCapabilities,

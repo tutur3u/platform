@@ -69,12 +69,17 @@ test('failed ownership write removes exactly the staged root', async () => {
 });
 test('resume checks actual validator and passes only recorded root to helper', async () => {
   const calls = [];
+  const diagnostics = [];
+  const onDiagnostic = (kind) => diagnostics.push(kind);
   await resumeRecordedProject(
     { metadata },
     {
       read: async () => metadata,
-      runner: async (binary, args, options) =>
-        calls.push({ binary, args, options }),
+      onDiagnostic,
+      runner: async (binary, args, options) => {
+        calls.push({ binary, args, options });
+        options.onDiagnostic?.('database');
+      },
     }
   );
   assert.equal(calls.length, 1);
@@ -84,6 +89,8 @@ test('resume checks actual validator and passes only recorded root to helper', a
     metadata.disposableRoot,
   ]);
   assert.equal(calls[0].options.timeoutMs, limits.executionMs);
+  assert.equal(calls[0].options.onDiagnostic, onDiagnostic);
+  assert.deepEqual(diagnostics, ['database']);
   await assert.rejects(
     resumeRecordedProject(
       { metadata },
@@ -218,7 +225,7 @@ async function assertProcessesGone(pids) {
     'owned fake subprocess descendants remain'
   );
 }
-for (const mode of ['timeout', 'interruption', 'monitor']) {
+for (const mode of ['timeout', 'interruption', 'monitor', 'diagnostic']) {
   test(`owned process group kills fake helper and fake CLI on ${mode}`, async () => {
     const root = await mkdtemp(
       path.join(os.tmpdir(), 'typegen-process-contract-')
@@ -234,7 +241,7 @@ for (const mode of ['timeout', 'interruption', 'monitor']) {
         import { spawn } from 'node:child_process';
         import { writeFileSync } from 'node:fs';
         const child = spawn(process.execPath, ['-e', 'process.on("SIGTERM",()=>{});setInterval(()=>{},1000)'], { stdio:'ignore' });
-        child.once('spawn',()=>writeFileSync(process.argv[2],JSON.stringify([process.pid,child.pid])));
+        child.once('spawn',()=>{writeFileSync(process.argv[2],JSON.stringify([process.pid,child.pid]));process.stderr.write('FATAL: synthetic diagnostic');});
         process.on('SIGTERM',()=>{});
         setInterval(()=>{},1000);
       `
@@ -244,6 +251,13 @@ for (const mode of ['timeout', 'interruption', 'monitor']) {
           timeoutMs: mode === 'timeout' ? 2500 : 3000,
           intervalMs: 20,
           signalSource: signals,
+          ...(mode === 'diagnostic'
+            ? {
+                onDiagnostic: () => {
+                  throw new Error('synthetic diagnostic callback failure');
+                },
+              }
+            : {}),
           onTick: () => {
             if (existsSync(marker)) {
               if (mode === 'interruption') signals.emit('SIGTERM');
@@ -256,11 +270,15 @@ for (const mode of ['timeout', 'interruption', 'monitor']) {
           ? /time budget exceeded/
           : mode === 'monitor'
             ? /resource violation/
-            : /interrupted/
+            : mode === 'diagnostic'
+              ? /diagnostic callback failure/
+              : /interrupted/
       );
       pids = JSON.parse(await readFile(marker, 'utf8'));
       await assertProcessesGone(pids);
     } finally {
+      if (!pids && existsSync(marker))
+        pids = JSON.parse(await readFile(marker, 'utf8'));
       if (pids)
         for (const pid of pids) if (alive(pid)) process.kill(pid, 'SIGKILL');
       await rm(root, { recursive: true, force: true });
@@ -294,4 +312,68 @@ test('bridge policy rejects missing drop rules or an earlier accept', () => {
       forward: `-A FORWARD -j ACCEPT\n${policy.forward}`,
     })
   );
+});
+
+test('owned process startup diagnostics expose only fixed kinds from bounded stderr', async () => {
+  const observed = [];
+  await runOwnedProcess(
+    process.execPath,
+    [
+      '-e',
+      'process.stderr.write("private-fixture " + "x".repeat(5000) + " failed to pull image: secret-fixture-token\\nFATAL: private database text\\n");',
+    ],
+    {
+      timeoutMs: 5000,
+      onDiagnostic: (kind) => observed.push(kind),
+    }
+  );
+  assert.deepEqual(observed, ['image-pull', 'database']);
+});
+
+test('diagnostic drain is bounded when an escaped fixture retains stderr', async () => {
+  const root = await mkdtemp(
+    path.join(os.tmpdir(), 'typegen-stderr-contract-')
+  );
+  const marker = path.join(root, 'escaped-pid');
+  const observed = [];
+  let escapedPid;
+  try {
+    const started = Date.now();
+    await runOwnedProcess(
+      process.execPath,
+      [
+        '-e',
+        `
+      const { spawn } = require('node:child_process');
+      const { writeFileSync } = require('node:fs');
+      const holder = spawn(process.execPath, ['-e',
+        'setTimeout(() => process.stderr.write("FATAL: synthetic late diagnostic"), 80); setInterval(() => {}, 1000)'
+      ], {
+        detached: true, stdio: ['ignore', 'ignore', process.stderr],
+      });
+      holder.once('spawn', () => {
+        writeFileSync(process.argv[1], String(holder.pid));
+        holder.unref();
+      });
+    `,
+        marker,
+      ],
+      {
+        timeoutMs: 5000,
+        onDiagnostic: (kind) => observed.push(kind),
+      }
+    );
+    escapedPid = Number(await readFile(marker, 'utf8'));
+    assert.ok(alive(escapedPid), 'fixture must keep the stderr pipe open');
+    assert.ok(
+      Date.now() - started < 2000,
+      'diagnostic draining must stay bounded'
+    );
+    assert.deepEqual(observed, ['database']);
+  } finally {
+    if (!escapedPid && existsSync(marker))
+      escapedPid = Number(await readFile(marker, 'utf8'));
+    if (escapedPid && alive(escapedPid)) process.kill(escapedPid, 'SIGKILL');
+    await rm(root, { recursive: true, force: true });
+  }
 });

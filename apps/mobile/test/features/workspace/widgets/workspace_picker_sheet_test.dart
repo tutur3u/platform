@@ -13,6 +13,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/hidden_workspaces_settings_row.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
+import 'package:mobile/features/workspace/widgets/workspace_result_tile.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -464,30 +465,52 @@ void main() {
         expect(add.onPressed, isNull);
       },
     );
-    testWidgets('shows one private load error and an accessible retry', (
-      tester,
-    ) async {
-      when(() => workspaceCubit.hasAuthenticatedActor).thenReturn(true);
-      await openPicker(
-        tester,
-        const WorkspaceState(
-          status: WorkspaceStatus.loaded,
-          workspaces: [proWorkspace],
-          visibilityStatus: WorkspaceStatus.error,
-          visibilityError: 'offline',
-        ),
-      );
-      expect(
-        find.text(
-          'Unable to refresh Hidden workspaces. Your saved list is kept.',
-        ),
-        findsOneWidget,
-      );
-      clearInteractions(workspaceCubit);
-      await tester.tap(find.text('Retry'));
-      verify(() => workspaceCubit.refreshHiddenWorkspaces()).called(1);
-      expect(find.text('Product'), findsNothing);
-    });
+    testWidgets(
+      'preference failure warns without blocking membership or retry',
+      (tester) async {
+        when(() => workspaceCubit.hasAuthenticatedActor).thenReturn(true);
+        await openPicker(
+          tester,
+          const WorkspaceState(
+            status: WorkspaceStatus.loaded,
+            workspaces: [proWorkspace],
+            visibilityStatus: WorkspaceStatus.error,
+            visibilityError: 'offline',
+          ),
+        );
+        expect(
+          find.text(
+            'Workspace visibility preferences are unavailable. '
+            'Saved hidden choices are kept.',
+          ),
+          findsOneWidget,
+        );
+        clearInteractions(workspaceCubit);
+        await tester.tap(find.text('Retry'));
+        verify(() => workspaceCubit.refreshHiddenWorkspaces()).called(1);
+        expect(find.text('Product'), findsOneWidget);
+        expect(
+          tester
+              .widget<WorkspaceResultTile>(
+                find.byKey(const ValueKey('workspace-result-ws_1')),
+              )
+              .onVisibility,
+          isNull,
+        );
+        when(
+          () => workspaceCubit.selectWorkspace(proWorkspace),
+        ).thenAnswer((_) async {});
+        await tester.tap(find.byKey(const ValueKey('workspace-result-ws_1')));
+        await tester.pumpAndSettle();
+        verify(() => workspaceCubit.selectWorkspace(proWorkspace)).called(1);
+        verifyNever(
+          () => workspaceCubit.setWorkspaceHidden(
+            any(),
+            hidden: any(named: 'hidden'),
+          ),
+        );
+      },
+    );
     testWidgets('recovers all-Hidden choices in the same fullscreen route '
         'and returns in place', (tester) async {
       const state = WorkspaceState(

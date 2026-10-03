@@ -21,6 +21,7 @@ class ShellChromeActions extends StatefulWidget {
     required this.actions,
     this.immersive = false,
     this.onBack,
+    this.onResetSection,
     super.key,
   });
 
@@ -29,6 +30,7 @@ class ShellChromeActions extends StatefulWidget {
   final Set<String> locations;
   final List<ShellActionSpec> actions;
   final Future<void> Function()? onBack;
+  final VoidCallback? onResetSection;
 
   @override
   State<ShellChromeActions> createState() => _ShellChromeActionsState();
@@ -56,6 +58,7 @@ class _ShellChromeActionsState extends State<ShellChromeActions> {
     if (!setEquals(oldWidget.locations, widget.locations) ||
         oldWidget.ownerId != widget.ownerId ||
         oldWidget.onBack != widget.onBack ||
+        oldWidget.onResetSection != widget.onResetSection ||
         oldWidget.immersive != widget.immersive ||
         !listEquals(oldWidget.actions, widget.actions)) {
       _syncRegistration();
@@ -70,6 +73,7 @@ class _ShellChromeActionsState extends State<ShellChromeActions> {
       locations: widget.locations,
       actions: widget.actions,
       onBack: widget.onBack,
+      onResetSection: widget.onResetSection,
     );
   }
 
@@ -211,18 +215,31 @@ class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
             shouldShowNotificationsActionForLocation(widget.matchedLocation);
         final extraActionCount = actions.length + (showNotifications ? 1 : 0);
 
-        if (extraActionCount > 3) {
-          const visibleCount = 2;
+        final segmentActions = actions
+            .where((action) => action.segmentGroup != null)
+            .toList();
+        final ordinaryActions = actions
+            .where((action) => action.segmentGroup == null)
+            .toList();
+        final segmentGroups = segmentActions
+            .map((action) => action.segmentGroup)
+            .toSet();
+        final slotCount =
+            ordinaryActions.length +
+            segmentGroups.length +
+            (showNotifications ? 1 : 0);
+        if (slotCount > 3) {
+          final visibleCount = (2 - segmentGroups.length).clamp(0, 2);
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              for (final action in actions.take(visibleCount))
+              for (final action in ordinaryActions.take(visibleCount))
                 _ShellActionButton(action: action),
-              if (actions.length > visibleCount || showNotifications)
-                _ShellActionsOverflow(
-                  actions: actions.skip(visibleCount).toList(),
-                  showNotifications: showNotifications,
-                ),
+              _ShellActionsOverflow(
+                actions: ordinaryActions.skip(visibleCount).toList(),
+                showNotifications: showNotifications,
+              ),
+              ..._groupedActionButtons(segmentActions),
             ],
           );
         }
@@ -236,11 +253,12 @@ class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
               : Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    ..._groupedActionButtons(actions),
+                    ..._groupedActionButtons(ordinaryActions),
                     if (showNotifications)
                       ShellNotificationsActionSlot(
                         matchedLocation: widget.matchedLocation,
                       ),
+                    ..._groupedActionButtons(segmentActions),
                   ],
                 ),
         );

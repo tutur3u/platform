@@ -11,6 +11,9 @@ export function runOwnedProcess(
     intervalMs = 2000,
     signalSource = process,
     onSpawn = () => {},
+    onDiagnostic,
+    env = process.env,
+    cwd,
   } = {}
 ) {
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1) {
@@ -19,13 +22,53 @@ export function runOwnedProcess(
   return new Promise((resolve, reject) => {
     const child = spawn(binary, args, {
       detached: true,
-      stdio: 'ignore',
-      env: process.env,
+      stdio: onDiagnostic ? ['ignore', 'ignore', 'pipe'] : 'ignore',
+      env,
+      cwd,
     });
+    if (onDiagnostic) {
+      let pending = '';
+      const observed = new Set();
+      const patterns = [
+        [
+          'image-pull',
+          /failed to pull|pull access denied|manifest unknown|no matching manifest/i,
+        ],
+        [
+          'container-runtime',
+          /OCI runtime|failed to create.*container|Error response from daemon/i,
+        ],
+        ['service-health', /not healthy|health check failed|unhealthy/i],
+        [
+          'connection',
+          /connection refused|failed to connect|network.*unreachable/i,
+        ],
+        ['database', /SQLSTATE|ERROR:|FATAL:/],
+        [
+          'configuration',
+          /missing.*environment|invalid.*config|config.*invalid/i,
+        ],
+      ];
+      child.stderr.on('data', (chunk) => {
+        pending = (pending + chunk.toString('utf8')).slice(-4096);
+        for (const [kind, pattern] of patterns) {
+          if (!observed.has(kind) && pattern.test(pending)) {
+            observed.add(kind);
+            try {
+              onDiagnostic(kind);
+            } catch (error) {
+              abort(error);
+              return;
+            }
+          }
+        }
+      });
+    }
     let failure;
     let settled = false;
     let deadline;
     let monitor;
+    let tick;
     const killGroup = () => {
       if (!child.pid) return;
       try {
@@ -34,7 +77,7 @@ export function runOwnedProcess(
         if (error.code !== 'ESRCH') throw error;
       }
     };
-    const finish = (error) => {
+    const finish = async (error) => {
       if (settled) return;
       settled = true;
       clearTimeout(deadline);
@@ -46,6 +89,23 @@ export function runOwnedProcess(
       } catch (killError) {
         error ??= killError;
       }
+      const stderr = child.stderr;
+      if (stderr && !stderr.destroyed && !stderr.readableEnded) {
+        await new Promise((done) => {
+          const finishDrain = () => {
+            clearTimeout(timer);
+            stderr.off('end', finishDrain);
+            stderr.off('close', finishDrain);
+            done();
+          };
+          const timer = setTimeout(finishDrain, 250);
+          stderr.once('end', finishDrain);
+          stderr.once('close', finishDrain);
+        });
+      }
+      stderr?.destroy();
+      if (tick) await tick;
+      error ??= failure;
       if (error) reject(error);
       else resolve();
     };
@@ -79,11 +139,16 @@ export function runOwnedProcess(
     );
     if (onTick) {
       monitor = setInterval(() => {
-        try {
-          onTick();
-        } catch (error) {
-          abort(error);
-        }
+        if (tick || settled) return;
+        tick = Promise.resolve()
+          .then(onTick)
+          .catch((error) => {
+            failure ??= error;
+            abort(error);
+          })
+          .finally(() => {
+            tick = undefined;
+          });
       }, intervalMs);
     }
   });

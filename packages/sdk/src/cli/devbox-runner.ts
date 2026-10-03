@@ -183,6 +183,27 @@ export async function executeDevboxAgentJob(
     return { exitCode: 0, status: 'succeeded' as const };
   }
 
+  // The hosted Playground adapter ships with its canonical API in the child PR.
+  // Reserved envelopes must never fall through to arbitrary host execution.
+  if (command[0] === '__ttr_playground_v1__') {
+    await postAgentEvents({
+      ...eventOptions,
+      events: [
+        {
+          eventType: 'error',
+          message:
+            'Hosted Playground execution is not available in this runner.',
+        },
+      ],
+    });
+    await postAgentCompletion({
+      ...eventOptions,
+      exitCode: 1,
+      status: 'failed',
+    });
+    return { exitCode: 1, status: 'failed' as const };
+  }
+
   if (command[0] === '__ttr_judge_v1__') {
     try {
       if (command.length !== 2 || job.envFiles?.length) {

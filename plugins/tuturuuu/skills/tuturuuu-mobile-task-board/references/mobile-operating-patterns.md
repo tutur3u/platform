@@ -124,7 +124,7 @@ Read only the section relevant to the current feature; paths are repository-rela
 
 Use the product decisions in
 `apps/docs/platform/features/mobile-workspace-tools.mdx` for offline preparation,
-and local search parity. Download all must remain explicit,
+local search parity, and repeated dock taps. Download all must remain explicit,
 scoped, sequential, paced, server-limited, and verified against durable storage;
 client delays never substitute for server enforcement. Keep cache reads and
 outbox overlays account/workspace scoped, preserve snapshots on verification
@@ -132,3 +132,10 @@ challenges, and leave uncertain writes in review. Reuse ApiClient's preparation
 Zone so background work does not open captcha modals. Full downloads must use
 the same cache keys and payload shapes as normal reads; test first offline visits
 with normal UI page sizes rather than only the prepared request parameters.
+
+Use shell titles rather than duplicate body titles. Put grouped section switches
+rightmost and auxiliary actions before them. Profile sections should adapt to
+width and text scale, avoid nested bordered panels, and keep timeline copy compact
+while retaining privacy and partial-result status. Dock reselect scrolls to top,
+then returns to the default section; an already-top view skips the scroll step.
+See the linked feature page for regression tests and intentional exceptions.

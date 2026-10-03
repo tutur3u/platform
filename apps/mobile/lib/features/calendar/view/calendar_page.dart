@@ -245,6 +245,11 @@ class _CalendarViewState extends State<_CalendarView> {
                   ?.id;
               return ShellChromeActions(
                 ownerId: 'calendar-root',
+                onResetSection: () => unawaited(
+                  context.read<CalendarCubit>().setViewMode(
+                    _defaultCalendarMode(context),
+                  ),
+                ),
                 locations: {
                   Routes.calendar,
                   if (widget.initialEventId case final eventId?)
