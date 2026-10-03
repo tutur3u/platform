@@ -63,13 +63,11 @@ import {
   shouldUseChunkedTaskDescriptionUpdate,
   updateTaskDescriptionWithBestTransport,
 } from './task-description';
+import { runTaskTemplateCliCommand } from './task-template-command';
 import {
   isLocalTaskTemplateReference,
-  listLocalTaskTemplates,
   parseLocalTaskTemplateFile,
   resolveLocalTaskTemplatePath,
-  taskTemplateToMarkdown,
-  writeLocalTaskTemplate,
 } from './task-templates';
 import { runTiptapCommand } from './tiptap';
 import { checkForCliUpdate, isCliUpdateCheckDisabled } from './update';
@@ -933,7 +931,7 @@ export function getTaskClosePayload(
   return payload;
 }
 
-function getTaskTemplatePayloadFromFlags(
+export function getTaskTemplatePayloadFromFlags(
   flags: Record<string, FlagValue>,
   fallbackName?: string
 ) {
@@ -991,7 +989,7 @@ function getTaskTemplatePayloadFromFlags(
   };
 }
 
-function getTaskTemplateCreateOverrides(
+export function getTaskTemplateCreateOverrides(
   flags: Record<string, FlagValue>,
   listId: string,
   fallbackName?: string
@@ -1033,7 +1031,7 @@ function getTaskTemplateCreateOverrides(
   };
 }
 
-async function createTaskFromLocalTemplate({
+export async function createTaskFromLocalTemplate({
   client,
   flags,
   listId,
@@ -1246,6 +1244,750 @@ export function normalizeLabelColor(value?: string) {
   }
 
   return LABEL_COLOR_ALIASES[color.toLowerCase()] ?? color;
+}
+
+interface WorkspaceCommandContext {
+  client: TuturuuuUserClient;
+  config: CliConfig;
+  flags: Record<string, FlagValue>;
+  json: boolean;
+  workspaceId: string;
+  group: string;
+  action: string;
+  firstId?: string;
+  positionalValue: string;
+  positionals: string[];
+}
+
+async function runBoardsCliCommand(context: WorkspaceCommandContext) {
+  let {
+    client,
+    config,
+    flags,
+    json,
+    workspaceId,
+    group,
+    action,
+    firstId,
+    positionalValue,
+  } = context;
+
+  if (action === 'list') {
+    render(
+      await client.tasks.listBoards(workspaceId, {
+        page: getFlag(flags, 'page')
+          ? Number(getFlag(flags, 'page'))
+          : undefined,
+        pageSize: getFlag(flags, 'page-size')
+          ? Number(getFlag(flags, 'page-size'))
+          : undefined,
+        q: getFlag(flags, 'q'),
+        status: getBoardListStatus(flags),
+      }),
+      { group, json }
+    );
+    return true;
+  }
+  if (action === 'use' || action === 'select') {
+    const board = firstId
+      ? ({ id: firstId } as ListedBoard)
+      : await chooseBoard(client, workspaceId, config, json);
+    config = {
+      ...config,
+      currentBoardId: board.id,
+      currentListId: undefined,
+      currentTaskId: undefined,
+    };
+    await writeCliConfig(config);
+    process.stdout.write(`Current board set to ${board.id}\n`);
+    return true;
+  }
+  if (action === 'create') {
+    render(
+      await client.tasks.createBoard(workspaceId, {
+        icon: (getFlag(flags, 'icon') || null) as never,
+        name: getFlag(flags, 'name') || positionalValue || 'Untitled Board',
+        template_id: getFlag(flags, 'template-id'),
+      }),
+      { group, json }
+    );
+    return true;
+  }
+  if (action === 'update') {
+    const selection = firstId
+      ? { boardId: firstId, config }
+      : await selectBoardId(client, config, workspaceId, flags, json);
+    render(
+      await client.tasks.updateBoard(
+        workspaceId,
+        selection.boardId,
+        getPayload(flags)
+      ),
+      { group, json }
+    );
+    return true;
+  }
+  if (action === 'delete') {
+    const selection = firstId
+      ? { boardId: firstId, config }
+      : await selectBoardId(client, config, workspaceId, flags, json);
+    config = {
+      ...selection.config,
+      currentBoardId: undefined,
+      currentListId: undefined,
+      currentTaskId: undefined,
+    };
+    await writeCliConfig(config);
+    render(await client.tasks.deleteBoard(workspaceId, selection.boardId), {
+      group,
+      json,
+    });
+    return true;
+  }
+
+  return false;
+}
+
+async function runListsCliCommand(context: WorkspaceCommandContext) {
+  let {
+    client,
+    config,
+    flags,
+    json,
+    workspaceId,
+    group,
+    action,
+    firstId,
+    positionalValue,
+  } = context;
+
+  const boardSelection = await selectBoardId(
+    client,
+    config,
+    workspaceId,
+    flags,
+    json
+  );
+  config = boardSelection.config;
+  const boardId = boardSelection.boardId;
+  if (action === 'list') {
+    render(await client.tasks.listLists(workspaceId, boardId), {
+      group,
+      json,
+    });
+    return true;
+  }
+  if (action === 'use' || action === 'select') {
+    const list = firstId
+      ? ({ id: firstId } as ListedList)
+      : await chooseList(client, workspaceId, boardId, config, json);
+    config = {
+      ...config,
+      currentBoardId: boardId,
+      currentListId: list.id,
+      currentTaskId: undefined,
+    };
+    await writeCliConfig(config);
+    process.stdout.write(`Current list set to ${list.id}\n`);
+    return true;
+  }
+  if (action === 'create') {
+    render(
+      await client.tasks.createList(workspaceId, boardId, {
+        color: getFlag(flags, 'color'),
+        name: getFlag(flags, 'name') || positionalValue || 'Untitled List',
+        status: getFlag(flags, 'status'),
+      }),
+      { group, json }
+    );
+    return true;
+  }
+  if (action === 'update') {
+    const listSelection = firstId
+      ? { config, listId: firstId }
+      : await selectListId(client, config, workspaceId, flags, json);
+    render(
+      await client.tasks.updateList(
+        workspaceId,
+        boardId,
+        listSelection.listId,
+        getPayload(flags)
+      ),
+      { group, json }
+    );
+    return true;
+  }
+
+  return false;
+}
+
+async function runTaskCreateCliCommand({
+  client,
+  config,
+  flags,
+  json,
+  workspaceId,
+  group,
+  positionalValue,
+}: WorkspaceCommandContext) {
+  const listSelection = await selectListId(
+    client,
+    config,
+    workspaceId,
+    flags,
+    json
+  );
+  const templateReference = getFlag(flags, 'template');
+  const descriptionPayload = await getTaskDescriptionPayloadFromFlags(flags);
+  const chunkDescriptionAfterCreate =
+    shouldUseChunkedTaskDescriptionUpdate(descriptionPayload);
+
+  if (templateReference) {
+    const createOverrides = {
+      ...getTaskTemplateCreateOverrides(
+        flags,
+        listSelection.listId,
+        positionalValue
+      ),
+      ...(descriptionPayload && !chunkDescriptionAfterCreate
+        ? descriptionPayload
+        : {}),
+    };
+    const response =
+      flags.local === true || isLocalTaskTemplateReference(templateReference)
+        ? await createTaskFromLocalTemplate({
+            client,
+            flags,
+            listId: listSelection.listId,
+            reference: templateReference,
+            workspaceId,
+          })
+        : await client.tasks.useTemplate(
+            workspaceId,
+            templateReference,
+            createOverrides as never
+          );
+
+    if (
+      descriptionPayload &&
+      (chunkDescriptionAfterCreate ||
+        flags.local === true ||
+        isLocalTaskTemplateReference(templateReference))
+    ) {
+      await updateTaskDescriptionWithBestTransport({
+        client,
+        payload: descriptionPayload,
+        taskId: response.task.id,
+        workspaceId,
+      });
+    }
+
+    render(response, { group, json });
+    return true;
+  }
+
+  const createPayload = {
+    assignee_ids: parseCsv(getFlag(flags, 'assignees')),
+    end_date: getFlag(flags, 'end-date') || null,
+    label_ids: parseCsv(getFlag(flags, 'labels')),
+    listId: listSelection.listId,
+    name: getFlag(flags, 'name') || positionalValue || 'Untitled Task',
+    priority: (getFlag(flags, 'priority') as never) || null,
+    project_ids: parseCsv(getFlag(flags, 'projects')),
+    start_date: getFlag(flags, 'start-date') || null,
+    ...(descriptionPayload && !chunkDescriptionAfterCreate
+      ? descriptionPayload
+      : {}),
+  };
+  const response = await client.tasks.create(workspaceId, createPayload);
+
+  if (descriptionPayload && chunkDescriptionAfterCreate) {
+    await updateTaskDescriptionWithBestTransport({
+      client,
+      payload: descriptionPayload,
+      taskId: response.task.id,
+      workspaceId,
+    });
+  }
+
+  render(response, { group, json });
+  return true;
+}
+
+async function runTasksCliCommand(context: WorkspaceCommandContext) {
+  let {
+    client,
+    config,
+    flags,
+    json,
+    workspaceId,
+    group,
+    action,
+    firstId,
+    positionals,
+  } = context;
+
+  if (
+    action === 'description' ||
+    action === 'descriptions' ||
+    action === 'desc'
+  ) {
+    await runTaskDescriptionCommand({
+      client,
+      config,
+      flags,
+      json,
+      positionals,
+      workspaceId,
+    });
+    return true;
+  }
+
+  if (action === 'list') {
+    const { response: taskResponse, workspaceName } = await listTasksForCli(
+      client,
+      config,
+      workspaceId,
+      flags
+    );
+    render(sortTaskResponseForCli(taskResponse), {
+      compact: flags.compact === true,
+      currentWorkspaceId: workspaceId,
+      group,
+      json,
+      workspaceName,
+    });
+    return true;
+  }
+  if (action === 'search') {
+    const { response: taskResponse, workspaceName } = await searchTasksForCli(
+      client,
+      config,
+      workspaceId,
+      flags,
+      positionals
+    );
+    render(taskResponse, {
+      compact: flags.compact === true,
+      currentWorkspaceId: workspaceId,
+      group,
+      json,
+      preserveTaskOrder: true,
+      showTaskScore: true,
+      workspaceName,
+    });
+    return true;
+  }
+  if (action === 'use' || action === 'select') {
+    const selection = await selectTaskId(
+      client,
+      config,
+      workspaceId,
+      flags,
+      json,
+      firstId
+    );
+    process.stdout.write(`Current task set to ${selection.taskId}\n`);
+    return true;
+  }
+  if (action === 'get') {
+    const selection = await selectTaskId(
+      client,
+      config,
+      workspaceId,
+      flags,
+      json,
+      firstId
+    );
+    render(
+      withTaskDisplayKey(
+        await client.tasks.get(workspaceId, selection.taskId),
+        getIdentifierDisplayKey(firstId)
+      ),
+      {
+        group,
+        json,
+      }
+    );
+    return true;
+  }
+  if (action === 'create') {
+    await runTaskCreateCliCommand(context);
+    return true;
+  }
+  if (action === 'update') {
+    const selection = await selectTaskId(
+      client,
+      config,
+      workspaceId,
+      flags,
+      json,
+      firstId
+    );
+    const descriptionPayload = await getTaskDescriptionPayloadFromFlags(flags);
+    const taskUpdatePayload = getTaskUpdatePayload(flags);
+    const hasTaskUpdatePayload = Object.keys(taskUpdatePayload).length > 0;
+    let response: unknown;
+
+    if (hasTaskUpdatePayload || !descriptionPayload) {
+      response = await client.tasks.update(
+        workspaceId,
+        selection.taskId,
+        taskUpdatePayload
+      );
+    }
+
+    if (descriptionPayload) {
+      response = await updateTaskDescriptionWithBestTransport({
+        client,
+        payload: descriptionPayload,
+        taskId: selection.taskId,
+        workspaceId,
+      });
+    }
+
+    await renderTaskMutationResult({
+      client,
+      displayKey: getIdentifierDisplayKey(firstId),
+      fallback: response,
+      group,
+      json,
+      taskId: selection.taskId,
+      workspaceId,
+    });
+    return true;
+  }
+  if (doneActions.has(action || '')) {
+    const selection = await selectTaskId(
+      client,
+      config,
+      workspaceId,
+      flags,
+      json,
+      firstId
+    );
+    config = selection.config;
+    if (
+      await maybeMovePersonalExternalTaskToTerminal({
+        client,
+        config,
+        displayKey: getIdentifierDisplayKey(firstId),
+        flags,
+        group,
+        json,
+        selection,
+        status: 'done',
+        workspaceId,
+      })
+    ) {
+      return true;
+    }
+
+    const doneListId = await getDefaultStatusListId({
+      client,
+      config,
+      flags,
+      json,
+      status: 'done',
+      taskId: selection.taskId,
+      workspaceId,
+    });
+    const response = await client.tasks.update(
+      workspaceId,
+      selection.taskId,
+      getTaskDonePayload(flags, doneListId)
+    );
+    await renderTaskMutationResult({
+      client,
+      displayKey: getIdentifierDisplayKey(firstId),
+      fallback: response,
+      group,
+      json,
+      taskId: selection.taskId,
+      workspaceId,
+    });
+    return true;
+  }
+  if (closeActions.has(action || '')) {
+    const selection = await selectTaskId(
+      client,
+      config,
+      workspaceId,
+      flags,
+      json,
+      firstId
+    );
+    config = selection.config;
+    if (
+      await maybeMovePersonalExternalTaskToTerminal({
+        client,
+        config,
+        displayKey: getIdentifierDisplayKey(firstId),
+        flags,
+        group,
+        json,
+        selection,
+        status: 'closed',
+        workspaceId,
+      })
+    ) {
+      return true;
+    }
+
+    const closedListId = await getDefaultStatusListId({
+      client,
+      config,
+      flags,
+      json,
+      status: 'closed',
+      taskId: selection.taskId,
+      workspaceId,
+    });
+    const response = await client.tasks.update(
+      workspaceId,
+      selection.taskId,
+      getTaskClosePayload(flags, closedListId)
+    );
+    await renderTaskMutationResult({
+      client,
+      displayKey: getIdentifierDisplayKey(firstId),
+      fallback: response,
+      group,
+      json,
+      taskId: selection.taskId,
+      workspaceId,
+    });
+    return true;
+  }
+  if (action === 'delete') {
+    const selection = await selectTaskId(
+      client,
+      config,
+      workspaceId,
+      flags,
+      json,
+      firstId
+    );
+    config = { ...selection.config, currentTaskId: undefined };
+    await writeCliConfig(config);
+    render(await client.tasks.delete(workspaceId, selection.taskId), {
+      group,
+      json,
+    });
+    return true;
+  }
+  if (action === 'move') {
+    const taskSelection = await selectTaskId(
+      client,
+      config,
+      workspaceId,
+      flags,
+      json,
+      firstId
+    );
+    config = taskSelection.config;
+    const targetFlags: Record<string, FlagValue> = { ...flags };
+    const targetBoardId =
+      getFlag(flags, 'target-board') || getFlag(flags, 'board');
+    const targetListId = getFlag(flags, 'list');
+    if (targetBoardId) {
+      targetFlags.board = targetBoardId;
+    }
+    if (targetListId) {
+      targetFlags.list = targetListId;
+    }
+    const listSelection = await selectListId(
+      client,
+      config,
+      workspaceId,
+      targetFlags,
+      json
+    );
+    config = listSelection.config;
+    const currentUserTask = await client.tasks
+      .getCurrentUserTask(taskSelection.taskId)
+      .catch(() => null);
+    const shouldUsePersonalPlacement =
+      isPersonalExternalTask(currentUserTask?.task) &&
+      (await isPersonalWorkspaceSelection(client, workspaceId));
+
+    if (shouldUsePersonalPlacement) {
+      const personalBoardId =
+        targetBoardId ||
+        config.currentBoardId ||
+        taskSelection.config.currentBoardId;
+
+      if (!personalBoardId) {
+        throw new Error(
+          'Personal external task moves require a target board. Pass --target-board or select a board first.'
+        );
+      }
+
+      render(
+        await client.tasks.upsertPersonalPlacement(taskSelection.taskId, {
+          personal_board_id: personalBoardId,
+          personal_list_id: listSelection.listId,
+        }),
+        { group, json }
+      );
+      return true;
+    }
+
+    render(
+      await client.tasks.move(workspaceId, taskSelection.taskId, {
+        list_id: listSelection.listId,
+        target_board_id: getFlag(flags, 'target-board'),
+      }),
+      { group, json }
+    );
+    return true;
+  }
+  if (action === 'bulk') {
+    render(
+      await client.tasks.bulk(workspaceId, {
+        operation: getPayload(flags) as never,
+        taskIds: parseCsv(getFlag(flags, 'ids')),
+      }),
+      { group, json }
+    );
+    return true;
+  }
+
+  return false;
+}
+
+async function runLabelsCliCommand(context: WorkspaceCommandContext) {
+  let { client, config, flags, json, workspaceId, group, action, firstId } =
+    context;
+
+  if (action === 'list') {
+    render(await client.tasks.listLabels(workspaceId), { group, json });
+    return true;
+  }
+  if (action === 'use' || action === 'select') {
+    const label = firstId
+      ? ({ id: firstId } as ListedLabel)
+      : await chooseLabel(client, workspaceId, config, json);
+    config = { ...config, currentLabelId: label.id };
+    await writeCliConfig(config);
+    process.stdout.write(`Current label set to ${label.id}\n`);
+    return true;
+  }
+  if (action === 'create') {
+    render(
+      await client.tasks.createLabel(workspaceId, {
+        color: normalizeLabelColor(getFlag(flags, 'color')),
+        name: getFlag(flags, 'name') || 'Untitled Label',
+      }),
+      { group, json }
+    );
+    return true;
+  }
+
+  return false;
+}
+
+async function runProjectsCliCommand(context: WorkspaceCommandContext) {
+  let { client, config, flags, json, workspaceId, group, action, firstId } =
+    context;
+
+  if (action === 'list') {
+    render(await client.tasks.listProjects(workspaceId), { group, json });
+    return true;
+  }
+  if (action === 'use' || action === 'select') {
+    const project = firstId
+      ? ({ id: firstId } as ListedProject)
+      : await chooseProject(client, workspaceId, config, json);
+    config = { ...config, currentProjectId: project.id };
+    await writeCliConfig(config);
+    process.stdout.write(`Current project set to ${project.id}\n`);
+    return true;
+  }
+  if (action === 'create') {
+    render(
+      await client.tasks.createProject(workspaceId, {
+        description: getFlag(flags, 'description'),
+        name: getFlag(flags, 'name') || 'Untitled Project',
+      }),
+      { group, json }
+    );
+    return true;
+  }
+  if (action === 'get') {
+    const projectId =
+      firstId ||
+      config.currentProjectId ||
+      (await chooseProject(client, workspaceId, config, json)).id;
+    config = { ...config, currentProjectId: projectId };
+    await writeCliConfig(config);
+    render(await client.tasks.getProject(workspaceId, projectId), {
+      group,
+      json,
+    });
+    return true;
+  }
+  if (action === 'tasks') {
+    const projectId =
+      firstId ||
+      config.currentProjectId ||
+      (await chooseProject(client, workspaceId, config, json)).id;
+    config = { ...config, currentProjectId: projectId };
+    await writeCliConfig(config);
+    render(await client.tasks.getProjectTasks(workspaceId, projectId), {
+      group,
+      json,
+    });
+    return true;
+  }
+
+  return false;
+}
+
+async function runRelationshipsCliCommand(context: WorkspaceCommandContext) {
+  const { client, config, flags, json, workspaceId, group, action, firstId } =
+    context;
+
+  const taskSelection = await selectTaskId(
+    client,
+    config,
+    workspaceId,
+    flags,
+    json,
+    firstId || getFlag(flags, 'task')
+  );
+  const taskId = taskSelection.taskId;
+  if (action === 'list') {
+    render(await client.tasks.getRelationships(workspaceId, taskId), {
+      group,
+      json,
+    });
+    return true;
+  }
+  if (action === 'create') {
+    render(
+      await client.tasks.createRelationship(
+        workspaceId,
+        taskId,
+        getPayload(flags) as never
+      ),
+      { group, json }
+    );
+    return true;
+  }
+  if (action === 'delete') {
+    render(
+      await client.tasks.deleteRelationship(
+        workspaceId,
+        taskId,
+        getPayload(flags) as never
+      ),
+      { group, json }
+    );
+    return true;
+  }
+
+  return false;
 }
 
 export async function runCli(argv = process.argv.slice(2)) {
@@ -1465,844 +2207,43 @@ export async function runCli(argv = process.argv.slice(2)) {
     return;
   }
 
-  if (group === 'boards') {
-    if (action === 'list') {
-      render(
-        await client.tasks.listBoards(workspaceId, {
-          page: getFlag(flags, 'page')
-            ? Number(getFlag(flags, 'page'))
-            : undefined,
-          pageSize: getFlag(flags, 'page-size')
-            ? Number(getFlag(flags, 'page-size'))
-            : undefined,
-          q: getFlag(flags, 'q'),
-          status: getBoardListStatus(flags),
-        }),
-        { group, json }
-      );
-      return;
-    }
-    if (action === 'use' || action === 'select') {
-      const board = firstId
-        ? ({ id: firstId } as ListedBoard)
-        : await chooseBoard(client, workspaceId, config, json);
-      config = {
-        ...config,
-        currentBoardId: board.id,
-        currentListId: undefined,
-        currentTaskId: undefined,
-      };
-      await writeCliConfig(config);
-      process.stdout.write(`Current board set to ${board.id}\n`);
-      return;
-    }
-    if (action === 'create') {
-      render(
-        await client.tasks.createBoard(workspaceId, {
-          icon: (getFlag(flags, 'icon') || null) as never,
-          name: getFlag(flags, 'name') || positionalValue || 'Untitled Board',
-          template_id: getFlag(flags, 'template-id'),
-        }),
-        { group, json }
-      );
-      return;
-    }
-    if (action === 'update') {
-      const selection = firstId
-        ? { boardId: firstId, config }
-        : await selectBoardId(client, config, workspaceId, flags, json);
-      render(
-        await client.tasks.updateBoard(
-          workspaceId,
-          selection.boardId,
-          getPayload(flags)
-        ),
-        { group, json }
-      );
-      return;
-    }
-    if (action === 'delete') {
-      const selection = firstId
-        ? { boardId: firstId, config }
-        : await selectBoardId(client, config, workspaceId, flags, json);
-      config = {
-        ...selection.config,
-        currentBoardId: undefined,
-        currentListId: undefined,
-        currentTaskId: undefined,
-      };
-      await writeCliConfig(config);
-      render(await client.tasks.deleteBoard(workspaceId, selection.boardId), {
-        group,
-        json,
-      });
-      return;
-    }
-  }
-
-  if (group === 'lists') {
-    const boardSelection = await selectBoardId(
-      client,
-      config,
-      workspaceId,
-      flags,
-      json
-    );
-    config = boardSelection.config;
-    const boardId = boardSelection.boardId;
-    if (action === 'list') {
-      render(await client.tasks.listLists(workspaceId, boardId), {
-        group,
-        json,
-      });
-      return;
-    }
-    if (action === 'use' || action === 'select') {
-      const list = firstId
-        ? ({ id: firstId } as ListedList)
-        : await chooseList(client, workspaceId, boardId, config, json);
-      config = {
-        ...config,
-        currentBoardId: boardId,
-        currentListId: list.id,
-        currentTaskId: undefined,
-      };
-      await writeCliConfig(config);
-      process.stdout.write(`Current list set to ${list.id}\n`);
-      return;
-    }
-    if (action === 'create') {
-      render(
-        await client.tasks.createList(workspaceId, boardId, {
-          color: getFlag(flags, 'color'),
-          name: getFlag(flags, 'name') || positionalValue || 'Untitled List',
-          status: getFlag(flags, 'status'),
-        }),
-        { group, json }
-      );
-      return;
-    }
-    if (action === 'update') {
-      const listSelection = firstId
-        ? { config, listId: firstId }
-        : await selectListId(client, config, workspaceId, flags, json);
-      render(
-        await client.tasks.updateList(
-          workspaceId,
-          boardId,
-          listSelection.listId,
-          getPayload(flags)
-        ),
-        { group, json }
-      );
-      return;
-    }
-  }
-
-  if (group === 'task-templates') {
-    if (action === 'list') {
-      if (flags.local === true) {
-        const localTemplates = listLocalTaskTemplates().map((template) => ({
-          path: template.path,
-          ...template.payload,
-        }));
-        render(localTemplates, { group, json });
-        return;
-      }
-
-      const payload = await client.tasks.listTemplates(workspaceId, {
-        includeArchived: flags.all === true || flags.archived === true,
-        q: getFlag(flags, 'q'),
-        visibility: getFlag(flags, 'visibility') as never,
-      });
-      render(json ? payload : payload.templates, { group, json });
-      return;
-    }
-
-    if (action === 'show' || action === 'get') {
-      if (!firstId) throw new Error('Missing task template key.');
-
-      if (flags.local === true || isLocalTaskTemplateReference(firstId)) {
-        render(
-          parseLocalTaskTemplateFile(resolveLocalTaskTemplatePath(firstId)),
-          {
-            group,
-            json,
-          }
-        );
-        return;
-      }
-
-      render(await client.tasks.getTemplate(workspaceId, firstId), {
-        group,
-        json,
-      });
-      return;
-    }
-
-    if (action === 'create') {
-      const payload = getTaskTemplatePayloadFromFlags(
-        flags,
-        positionalValue || 'Untitled Template'
-      );
-
-      if (flags.local === true || getFlag(flags, 'file')) {
-        const file =
-          getFlag(flags, 'file') ||
-          resolveLocalTaskTemplatePath(
-            String(
-              getFlag(flags, 'key') || getFlag(flags, 'slug') || payload.name
-            )
-          );
-        const path = writeLocalTaskTemplate(file, payload as never);
-        render({ path, template: payload }, { group, json });
-        return;
-      }
-
-      render(await client.tasks.createTemplate(workspaceId, payload as never), {
-        group,
-        json,
-      });
-      return;
-    }
-
-    if (action === 'update') {
-      if (!firstId) throw new Error('Missing task template key.');
-      render(
-        await client.tasks.updateTemplate(
-          workspaceId,
-          firstId,
-          getTaskTemplatePayloadFromFlags(flags) as never
-        ),
-        { group, json }
-      );
-      return;
-    }
-
-    if (action === 'delete' || action === 'archive') {
-      if (!firstId) throw new Error('Missing task template key.');
-      render(
-        await client.tasks.deleteTemplate(workspaceId, firstId, {
-          permanent: flags.permanent === true,
-        }),
-        { group, json }
-      );
-      return;
-    }
-
-    if (action === 'use') {
-      if (!firstId) throw new Error('Missing task template key or file.');
-      const listSelection = await selectListId(
-        client,
-        config,
-        workspaceId,
-        flags,
-        json
-      );
-
-      if (flags.local === true || isLocalTaskTemplateReference(firstId)) {
-        render(
-          await createTaskFromLocalTemplate({
-            client,
-            flags,
-            listId: listSelection.listId,
-            reference: firstId,
-            workspaceId,
-          }),
-          { group: 'tasks', json }
-        );
-        return;
-      }
-
-      render(
-        await client.tasks.useTemplate(
-          workspaceId,
-          firstId,
-          getTaskTemplateCreateOverrides(
-            flags,
-            listSelection.listId,
-            getFlag(flags, 'name')
-          ) as never
-        ),
-        { group: 'tasks', json }
-      );
-      return;
-    }
-
-    if (action === 'import') {
-      if (!firstId) throw new Error('Missing local task template file.');
-      const localTemplate = parseLocalTaskTemplateFile(
-        resolveLocalTaskTemplatePath(firstId)
-      );
-      render(
-        await client.tasks.createTemplate(workspaceId, {
-          ...localTemplate.payload,
-          ...getTaskTemplatePayloadFromFlags(flags),
-        } as never),
-        { group, json }
-      );
-      return;
-    }
-
-    if (action === 'export') {
-      if (!firstId) throw new Error('Missing task template key.');
-      const { template } = await client.tasks.getTemplate(workspaceId, firstId);
-      const file = getFlag(flags, 'file');
-      if (file) {
-        const path = writeLocalTaskTemplate(file, template);
-        render({ path, template }, { group, json });
-        return;
-      }
-
-      process.stdout.write(taskTemplateToMarkdown(template));
-      return;
-    }
-
-    if (action === 'save-from-task') {
-      const taskId =
-        firstId || getFlag(flags, 'task') || getFlag(flags, 'task-id');
-      if (!taskId) throw new Error('Missing task id.');
-      render(
-        await client.tasks.saveTemplateFromTask(workspaceId, {
-          name: getFlag(flags, 'name') || getFlag(flags, 'template-name'),
-          taskId,
-          visibility: (getFlag(flags, 'visibility') as never) || 'private',
-        }),
-        { group, json }
-      );
-      return;
-    }
-  }
-
-  if (group === 'tasks') {
-    if (
-      action === 'description' ||
-      action === 'descriptions' ||
-      action === 'desc'
-    ) {
-      await runTaskDescriptionCommand({
-        client,
-        config,
-        flags,
-        json,
-        positionals,
-        workspaceId,
-      });
-      return;
-    }
-
-    if (action === 'list') {
-      const { response: taskResponse, workspaceName } = await listTasksForCli(
-        client,
-        config,
-        workspaceId,
-        flags
-      );
-      render(sortTaskResponseForCli(taskResponse), {
-        compact: flags.compact === true,
-        currentWorkspaceId: workspaceId,
-        group,
-        json,
-        workspaceName,
-      });
-      return;
-    }
-    if (action === 'search') {
-      const { response: taskResponse, workspaceName } = await searchTasksForCli(
-        client,
-        config,
-        workspaceId,
-        flags,
-        positionals
-      );
-      render(taskResponse, {
-        compact: flags.compact === true,
-        currentWorkspaceId: workspaceId,
-        group,
-        json,
-        preserveTaskOrder: true,
-        showTaskScore: true,
-        workspaceName,
-      });
-      return;
-    }
-    if (action === 'use' || action === 'select') {
-      const selection = await selectTaskId(
-        client,
-        config,
-        workspaceId,
-        flags,
-        json,
-        firstId
-      );
-      process.stdout.write(`Current task set to ${selection.taskId}\n`);
-      return;
-    }
-    if (action === 'get') {
-      const selection = await selectTaskId(
-        client,
-        config,
-        workspaceId,
-        flags,
-        json,
-        firstId
-      );
-      render(
-        withTaskDisplayKey(
-          await client.tasks.get(workspaceId, selection.taskId),
-          getIdentifierDisplayKey(firstId)
-        ),
-        {
-          group,
-          json,
-        }
-      );
-      return;
-    }
-    if (action === 'create') {
-      const listSelection = await selectListId(
-        client,
-        config,
-        workspaceId,
-        flags,
-        json
-      );
-      const templateReference = getFlag(flags, 'template');
-      const descriptionPayload =
-        await getTaskDescriptionPayloadFromFlags(flags);
-      const chunkDescriptionAfterCreate =
-        shouldUseChunkedTaskDescriptionUpdate(descriptionPayload);
-
-      if (templateReference) {
-        const createOverrides = {
-          ...getTaskTemplateCreateOverrides(
-            flags,
-            listSelection.listId,
-            positionalValue
-          ),
-          ...(descriptionPayload && !chunkDescriptionAfterCreate
-            ? descriptionPayload
-            : {}),
-        };
-        const response =
-          flags.local === true ||
-          isLocalTaskTemplateReference(templateReference)
-            ? await createTaskFromLocalTemplate({
-                client,
-                flags,
-                listId: listSelection.listId,
-                reference: templateReference,
-                workspaceId,
-              })
-            : await client.tasks.useTemplate(
-                workspaceId,
-                templateReference,
-                createOverrides as never
-              );
-
-        if (
-          descriptionPayload &&
-          (chunkDescriptionAfterCreate ||
-            flags.local === true ||
-            isLocalTaskTemplateReference(templateReference))
-        ) {
-          await updateTaskDescriptionWithBestTransport({
-            client,
-            payload: descriptionPayload,
-            taskId: response.task.id,
-            workspaceId,
-          });
-        }
-
-        render(response, { group, json });
-        return;
-      }
-
-      const createPayload = {
-        assignee_ids: parseCsv(getFlag(flags, 'assignees')),
-        end_date: getFlag(flags, 'end-date') || null,
-        label_ids: parseCsv(getFlag(flags, 'labels')),
-        listId: listSelection.listId,
-        name: getFlag(flags, 'name') || positionalValue || 'Untitled Task',
-        priority: (getFlag(flags, 'priority') as never) || null,
-        project_ids: parseCsv(getFlag(flags, 'projects')),
-        start_date: getFlag(flags, 'start-date') || null,
-        ...(descriptionPayload && !chunkDescriptionAfterCreate
-          ? descriptionPayload
-          : {}),
-      };
-      const response = await client.tasks.create(workspaceId, createPayload);
-
-      if (descriptionPayload && chunkDescriptionAfterCreate) {
-        await updateTaskDescriptionWithBestTransport({
-          client,
-          payload: descriptionPayload,
-          taskId: response.task.id,
-          workspaceId,
-        });
-      }
-
-      render(response, { group, json });
-      return;
-    }
-    if (action === 'update') {
-      const selection = await selectTaskId(
-        client,
-        config,
-        workspaceId,
-        flags,
-        json,
-        firstId
-      );
-      const descriptionPayload =
-        await getTaskDescriptionPayloadFromFlags(flags);
-      const taskUpdatePayload = getTaskUpdatePayload(flags);
-      const hasTaskUpdatePayload = Object.keys(taskUpdatePayload).length > 0;
-      let response: unknown;
-
-      if (hasTaskUpdatePayload || !descriptionPayload) {
-        response = await client.tasks.update(
-          workspaceId,
-          selection.taskId,
-          taskUpdatePayload
-        );
-      }
-
-      if (descriptionPayload) {
-        response = await updateTaskDescriptionWithBestTransport({
-          client,
-          payload: descriptionPayload,
-          taskId: selection.taskId,
-          workspaceId,
-        });
-      }
-
-      await renderTaskMutationResult({
-        client,
-        displayKey: getIdentifierDisplayKey(firstId),
-        fallback: response,
-        group,
-        json,
-        taskId: selection.taskId,
-        workspaceId,
-      });
-      return;
-    }
-    if (doneActions.has(action || '')) {
-      const selection = await selectTaskId(
-        client,
-        config,
-        workspaceId,
-        flags,
-        json,
-        firstId
-      );
-      config = selection.config;
-      if (
-        await maybeMovePersonalExternalTaskToTerminal({
-          client,
-          config,
-          displayKey: getIdentifierDisplayKey(firstId),
-          flags,
-          group,
-          json,
-          selection,
-          status: 'done',
-          workspaceId,
-        })
-      ) {
-        return;
-      }
-
-      const doneListId = await getDefaultStatusListId({
-        client,
-        config,
-        flags,
-        json,
-        status: 'done',
-        taskId: selection.taskId,
-        workspaceId,
-      });
-      const response = await client.tasks.update(
-        workspaceId,
-        selection.taskId,
-        getTaskDonePayload(flags, doneListId)
-      );
-      await renderTaskMutationResult({
-        client,
-        displayKey: getIdentifierDisplayKey(firstId),
-        fallback: response,
-        group,
-        json,
-        taskId: selection.taskId,
-        workspaceId,
-      });
-      return;
-    }
-    if (closeActions.has(action || '')) {
-      const selection = await selectTaskId(
-        client,
-        config,
-        workspaceId,
-        flags,
-        json,
-        firstId
-      );
-      config = selection.config;
-      if (
-        await maybeMovePersonalExternalTaskToTerminal({
-          client,
-          config,
-          displayKey: getIdentifierDisplayKey(firstId),
-          flags,
-          group,
-          json,
-          selection,
-          status: 'closed',
-          workspaceId,
-        })
-      ) {
-        return;
-      }
-
-      const closedListId = await getDefaultStatusListId({
-        client,
-        config,
-        flags,
-        json,
-        status: 'closed',
-        taskId: selection.taskId,
-        workspaceId,
-      });
-      const response = await client.tasks.update(
-        workspaceId,
-        selection.taskId,
-        getTaskClosePayload(flags, closedListId)
-      );
-      await renderTaskMutationResult({
-        client,
-        displayKey: getIdentifierDisplayKey(firstId),
-        fallback: response,
-        group,
-        json,
-        taskId: selection.taskId,
-        workspaceId,
-      });
-      return;
-    }
-    if (action === 'delete') {
-      const selection = await selectTaskId(
-        client,
-        config,
-        workspaceId,
-        flags,
-        json,
-        firstId
-      );
-      config = { ...selection.config, currentTaskId: undefined };
-      await writeCliConfig(config);
-      render(await client.tasks.delete(workspaceId, selection.taskId), {
-        group,
-        json,
-      });
-      return;
-    }
-    if (action === 'move') {
-      const taskSelection = await selectTaskId(
-        client,
-        config,
-        workspaceId,
-        flags,
-        json,
-        firstId
-      );
-      config = taskSelection.config;
-      const targetFlags: Record<string, FlagValue> = { ...flags };
-      const targetBoardId =
-        getFlag(flags, 'target-board') || getFlag(flags, 'board');
-      const targetListId = getFlag(flags, 'list');
-      if (targetBoardId) {
-        targetFlags.board = targetBoardId;
-      }
-      if (targetListId) {
-        targetFlags.list = targetListId;
-      }
-      const listSelection = await selectListId(
-        client,
-        config,
-        workspaceId,
-        targetFlags,
-        json
-      );
-      config = listSelection.config;
-      const currentUserTask = await client.tasks
-        .getCurrentUserTask(taskSelection.taskId)
-        .catch(() => null);
-      const shouldUsePersonalPlacement =
-        isPersonalExternalTask(currentUserTask?.task) &&
-        (await isPersonalWorkspaceSelection(client, workspaceId));
-
-      if (shouldUsePersonalPlacement) {
-        const personalBoardId =
-          targetBoardId ||
-          config.currentBoardId ||
-          taskSelection.config.currentBoardId;
-
-        if (!personalBoardId) {
-          throw new Error(
-            'Personal external task moves require a target board. Pass --target-board or select a board first.'
-          );
-        }
-
-        render(
-          await client.tasks.upsertPersonalPlacement(taskSelection.taskId, {
-            personal_board_id: personalBoardId,
-            personal_list_id: listSelection.listId,
-          }),
-          { group, json }
-        );
-        return;
-      }
-
-      render(
-        await client.tasks.move(workspaceId, taskSelection.taskId, {
-          list_id: listSelection.listId,
-          target_board_id: getFlag(flags, 'target-board'),
-        }),
-        { group, json }
-      );
-      return;
-    }
-    if (action === 'bulk') {
-      render(
-        await client.tasks.bulk(workspaceId, {
-          operation: getPayload(flags) as never,
-          taskIds: parseCsv(getFlag(flags, 'ids')),
-        }),
-        { group, json }
-      );
-      return;
-    }
-  }
-
-  if (group === 'labels') {
-    if (action === 'list') {
-      render(await client.tasks.listLabels(workspaceId), { group, json });
-      return;
-    }
-    if (action === 'use' || action === 'select') {
-      const label = firstId
-        ? ({ id: firstId } as ListedLabel)
-        : await chooseLabel(client, workspaceId, config, json);
-      config = { ...config, currentLabelId: label.id };
-      await writeCliConfig(config);
-      process.stdout.write(`Current label set to ${label.id}\n`);
-      return;
-    }
-    if (action === 'create') {
-      render(
-        await client.tasks.createLabel(workspaceId, {
-          color: normalizeLabelColor(getFlag(flags, 'color')),
-          name: getFlag(flags, 'name') || 'Untitled Label',
-        }),
-        { group, json }
-      );
-      return;
-    }
-  }
-
-  if (group === 'projects') {
-    if (action === 'list') {
-      render(await client.tasks.listProjects(workspaceId), { group, json });
-      return;
-    }
-    if (action === 'use' || action === 'select') {
-      const project = firstId
-        ? ({ id: firstId } as ListedProject)
-        : await chooseProject(client, workspaceId, config, json);
-      config = { ...config, currentProjectId: project.id };
-      await writeCliConfig(config);
-      process.stdout.write(`Current project set to ${project.id}\n`);
-      return;
-    }
-    if (action === 'create') {
-      render(
-        await client.tasks.createProject(workspaceId, {
-          description: getFlag(flags, 'description'),
-          name: getFlag(flags, 'name') || 'Untitled Project',
-        }),
-        { group, json }
-      );
-      return;
-    }
-    if (action === 'get') {
-      const projectId =
-        firstId ||
-        config.currentProjectId ||
-        (await chooseProject(client, workspaceId, config, json)).id;
-      config = { ...config, currentProjectId: projectId };
-      await writeCliConfig(config);
-      render(await client.tasks.getProject(workspaceId, projectId), {
-        group,
-        json,
-      });
-      return;
-    }
-    if (action === 'tasks') {
-      const projectId =
-        firstId ||
-        config.currentProjectId ||
-        (await chooseProject(client, workspaceId, config, json)).id;
-      config = { ...config, currentProjectId: projectId };
-      await writeCliConfig(config);
-      render(await client.tasks.getProjectTasks(workspaceId, projectId), {
-        group,
-        json,
-      });
-      return;
-    }
-  }
-
-  if (group === 'relationships') {
-    const taskSelection = await selectTaskId(
-      client,
-      config,
-      workspaceId,
-      flags,
-      json,
-      firstId || getFlag(flags, 'task')
-    );
-    const taskId = taskSelection.taskId;
-    if (action === 'list') {
-      render(await client.tasks.getRelationships(workspaceId, taskId), {
-        group,
-        json,
-      });
-      return;
-    }
-    if (action === 'create') {
-      render(
-        await client.tasks.createRelationship(
-          workspaceId,
-          taskId,
-          getPayload(flags) as never
-        ),
-        { group, json }
-      );
-      return;
-    }
-    if (action === 'delete') {
-      render(
-        await client.tasks.deleteRelationship(
-          workspaceId,
-          taskId,
-          getPayload(flags) as never
-        ),
-        { group, json }
-      );
-      return;
-    }
-  }
+  const context: WorkspaceCommandContext = {
+    client,
+    config,
+    flags,
+    json,
+    workspaceId,
+    group,
+    action,
+    firstId,
+    positionalValue,
+    positionals,
+  };
+  const handlers: Record<
+    string,
+    (context: WorkspaceCommandContext) => Promise<boolean>
+  > = {
+    boards: runBoardsCliCommand,
+    lists: runListsCliCommand,
+    tasks: runTasksCliCommand,
+    labels: runLabelsCliCommand,
+    projects: runProjectsCliCommand,
+    relationships: runRelationshipsCliCommand,
+  };
+  const handler = Object.hasOwn(handlers, group) ? handlers[group] : undefined;
+  if (handler && (await handler(context))) return;
+  if (
+    group === 'task-templates' &&
+    (await runTaskTemplateCliCommand({
+      ...context,
+      helpers: {
+        getTaskTemplatePayloadFromFlags,
+        getTaskTemplateCreateOverrides,
+        createTaskFromLocalTemplate,
+      },
+    }))
+  )
+    return;
 
   if (group === 'finance') {
     await runFinanceCommand({
