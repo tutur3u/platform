@@ -50,6 +50,7 @@ pub(super) fn validate_email(errors: &mut Vec<String>, value: &str) {
 
     if local.is_empty()
         || domain.is_empty()
+        || domain.contains('@')
         || !domain.contains('.')
         || value.chars().any(char::is_whitespace)
     {
@@ -61,5 +62,19 @@ pub(super) fn validate_email(errors: &mut Vec<String>, value: &str) {
 pub(super) fn validate_enum(errors: &mut Vec<String>, field: &str, value: &str, allowed: &[&str]) {
     if !allowed.contains(&value) {
         errors.push(format!("{field} is not supported"));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn rejects_multiple_email_separators() {
+        let mut errors = vec![];
+        validate_email(&mut errors, "a@b.com@evil");
+        assert!(!errors.is_empty());
+        errors.clear();
+        validate_email(&mut errors, "synthetic@example.test");
+        assert!(errors.is_empty());
     }
 }

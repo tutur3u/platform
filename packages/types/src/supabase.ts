@@ -13135,6 +13135,21 @@ export type Database = {
         };
         Relationships: [];
       };
+      reserved_usernames: {
+        Row: {
+          category: string;
+          value: string;
+        };
+        Insert: {
+          category: string;
+          value: string;
+        };
+        Update: {
+          category?: string;
+          value?: string;
+        };
+        Relationships: [];
+      };
       security_budget_counters: {
         Row: {
           expires_at: string;
@@ -14425,6 +14440,42 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'workspace_promotions';
             referencedColumns: ['id'];
+          },
+        ];
+      };
+      user_profile_change_events: {
+        Row: {
+          changed_at: string;
+          field: string;
+          id: number;
+          user_id: string;
+        };
+        Insert: {
+          changed_at?: string;
+          field: string;
+          id?: never;
+          user_id: string;
+        };
+        Update: {
+          changed_at?: string;
+          field?: string;
+          id?: never;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_profile_change_events_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'user_profile_change_events_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
           },
         ];
       };
@@ -19462,6 +19513,7 @@ export type Database = {
         Args: { p_author?: boolean; p_problem_id: string; p_ws_id: string };
         Returns: Json;
       };
+      reconcile_creator_handle_owners: { Args: never; Returns: undefined };
       reconcile_orphaned_approved_post_email_queue: {
         Args: {
           p_cutoff?: string;
@@ -33330,6 +33382,7 @@ export type Database = {
       users: {
         Row: {
           avatar_url: string | null;
+          banner_url: string | null;
           bio: string | null;
           created_at: string | null;
           display_name: string | null;
@@ -33338,6 +33391,7 @@ export type Database = {
         };
         Insert: {
           avatar_url?: string | null;
+          banner_url?: string | null;
           bio?: string | null;
           created_at?: string | null;
           display_name?: string | null;
@@ -33346,6 +33400,7 @@ export type Database = {
         };
         Update: {
           avatar_url?: string | null;
+          banner_url?: string | null;
           bio?: string | null;
           created_at?: string | null;
           display_name?: string | null;
@@ -45618,6 +45673,7 @@ export type Database = {
       };
       is_personal_workspace: { Args: { p_ws_id: string }; Returns: boolean };
       is_project_member: { Args: { _project_id: string }; Returns: boolean };
+      is_reserved_username: { Args: { p_value: string }; Returns: boolean };
       is_root_external_project_admin: {
         Args: { p_user_id?: string };
         Returns: boolean;
@@ -46515,6 +46571,10 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      update_public_user_profile: {
+        Args: { p_patch: Json; p_user_id: string };
+        Returns: undefined;
       };
       update_task_fields_with_actor: {
         Args: {

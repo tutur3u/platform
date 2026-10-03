@@ -4,6 +4,10 @@ import {
   getAiCreditsStatus,
 } from '@tuturuuu/payment-core/ai-credits-helper';
 import {
+  ProfileUploadError,
+  reserveProfileUploadBudget,
+} from '@tuturuuu/storage-core/profile-upload-budget';
+import {
   createAdminClient,
   createDynamicAdminClient,
 } from '@tuturuuu/supabase/next/server';
@@ -334,6 +338,27 @@ export function createSatelliteWorkspaceAvatarUploadRouteHandler(
       return NextResponse.json(
         { message: 'Invalid avatar filename' },
         { status: 400 }
+      );
+    }
+
+    try {
+      await reserveProfileUploadBudget(authorization.user.id, 'avatar');
+    } catch (error) {
+      if (error instanceof ProfileUploadError) {
+        return NextResponse.json(
+          { message: error.message },
+          {
+            status: error.status,
+            headers: error.retryAfter
+              ? { 'Retry-After': String(error.retryAfter) }
+              : undefined,
+          }
+        );
+      }
+      console.error('Failed to reserve satellite avatar upload budget:', error);
+      return NextResponse.json(
+        { message: 'Profile upload protection is unavailable' },
+        { status: 503 }
       );
     }
 

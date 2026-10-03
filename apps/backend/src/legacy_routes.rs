@@ -116,6 +116,9 @@ pub fn route_request(config: &BackendConfig, request: BackendRequest<'_>) -> Bac
         ("POST", contact::SUPPORT_INQUIRIES_PATH) => {
             contact::support_inquiry_post_response(config, request)
         }
+        ("GET" | "HEAD", contact::SUPPORT_INQUIRIES_PATH) => {
+            json_response(404, json!({ "error": "not found" }))
+        }
         (method, contact::SUPPORT_INQUIRIES_PATH) => method_not_allowed(method, "POST"),
         ("OPTIONS", path) if is_auth_cors_preflight_path(path) => {
             mobile_auth_cors_preflight_response()

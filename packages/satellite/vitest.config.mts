@@ -17,6 +17,24 @@ export default defineConfig({
     silent,
   },
   resolve: {
-    alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
+    // Server helpers expose built CommonJS entries to Node. Resolve their source
+    // so Vitest can apply server-only and client mocks without building locally.
+    alias: [
+      { find: '@', replacement: resolve(__dirname, './src') },
+      {
+        find: /^@tuturuuu\/storage-core\/profile-upload-budget$/,
+        replacement: resolve(
+          import.meta.dirname,
+          '../storage-core/src/lib/profile-upload-budget.ts'
+        ),
+      },
+      {
+        find: '@tuturuuu/supabase/next/server',
+        replacement: resolve(
+          import.meta.dirname,
+          '../supabase/src/next/server.ts'
+        ),
+      },
+    ],
   },
 });

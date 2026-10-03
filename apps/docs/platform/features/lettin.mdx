@@ -195,3 +195,116 @@ unrelated repository blockers separately from Lettin's focused validation.
 Artwork cleanup runs before uploads and claims at most ten unused objects in that world per request after a seven-day grace period. Draft and published references are retained. Claimed objects cannot be newly referenced; failed R2 deletions remain queued for the next upload. A world with no further uploads retains its unused artwork.
 
 Public catalogues use 24-card pages with server-side search and creator filters; full entry documents are loaded only when opening one world.
+
+
+## Shared creator identity
+
+Tulletin uses Tuturuuu's canonical `users.display_name`, `avatar_url`, `bio`,
+`handle`, and additive `banner_url` fields. A username is globally reserved in
+`handles`; renaming retains earlier reservations. Existing legacy usernames
+remain readable. Public creator surfaces select only public fields and require
+published notebooks; they never expose email or private account details.
+
+`update_public_user_profile` is a service-role-only transaction. The API must
+resolve the authenticated actor before calling it. A conflicting username or
+invalid image rejects the complete patch and reserves no new username. Image
+URLs use HTTPS; avatar, banner, bio, and username can be cleared explicitly.
+Changed avatar URLs are checked by the database trigger on every update path;
+unchanged legacy URLs remain readable and do not block unrelated saves.
+The database contract fixture `public-creator-identity.sql` covers actor grants,
+claims, conflicts, rollback, rename, clearing, and private-field rejection.
+
+The `Creator identity database contract` PR workflow applies the complete schema
+in a disposable Supabase project, runs strict pgTAP assertions, and generates
+actual database types. Its exact-head artifact is the type-generation source;
+manual production schema pushes are prohibited. This contract does not authorize
+production migration or deployment.
+
+
+New usernames require 5–32 lowercase letters, digits, or underscores and start
+with a letter or digit. Common platform/service names and major brands are
+reserved; separator variants and obvious official/support/admin/team/numeric
+aliases are reserved for both service names and brands. Ordinary names containing a brand syllable, such as
+`pineapple`, remain valid. The canonical pool lives in
+`packages/utils/src/username-policy.json` and is checked against the database
+migration in regression tests. Existing usernames remain readable and unchanged
+legacy values do not consume a change.
+
+Every actual username change, including clearing it, starts a rolling 14-day
+cooldown. Display names can change twice in a rolling 7-day window. No-op saves
+consume neither allowance. Row triggers enforce both rules on direct writes as
+well as the shared RPC; conflicting, invalid, or rate-limited saves roll back the
+whole patch. The private per-user change history is pruned to 28 days when a
+change succeeds. Public identity read surfaces never select this private history.
+
+Avatar uploads have a Storage-enforced 2 MiB ceiling; banners use 5 MiB. Both
+allow PNG, JPEG, WebP, and GIF and retain shared public identity semantics.
+Restrictive Storage policies require server-issued, budgeted upload tickets;
+ordinary authenticated bucket uploads cannot bypass quotas. These changes build
+on the shared Postgres counter foundation in storage anti-abuse PR #5736 and
+require the complete dependent release. The identity contract additionally tests
+reserved names, rolling-window boundaries, no-ops, direct-write enforcement,
+atomic rollback, byte/MIME ceilings, and raw upload denial.
+
+Existing current-user avatar uploads keep their `/api/v1/users/me/avatar/upload-url`
+request and response contract across Web, mobile, and satellite app sessions. The
+API reserves the full 2 MiB ceiling before issuing an admin-backed signed ticket:
+The shared media contract permits two tickets per account per UTC hour, three
+avatar tickets or two banner tickets per UTC day, and ten combined tickets per
+Monday-start UTC week. Combined byte ceilings are 16 MiB per account per day and
+32 MiB per week; global ceilings are 10,000 tickets and 16 GiB per UTC day. All
+tiers use these limits. Unused or failed tickets consume their full bucket ceiling;
+budget failure prevents ticket issuance.
+Storage still checks actual MIME type and bytes. Raw handle reservations are
+blocked for ordinary clients; existing reservations and unchanged legacy handles
+remain available, while new claims use the atomic authenticated server RPC.
+Regression evidence: `public-creator-identity.sql` and the current-user avatar
+upload handler's colocated tests and `profile-upload-budget.test.ts`.
+
+The shared contract applies to current-user media ticket issuers, including the
+avatar endpoint in this foundation and the dependent banner endpoint. Existing
+workspace avatar tickets retain workspace-settings authorization and additionally
+reserve the resolved account media ceilings and the shared global ceilings before
+signing. Registered satellites use the same actor reservation before their local
+admin-backed workspace avatar signer; changing apps cannot bypass the shared
+account or global limits. Permission denials reserve nothing; quota exhaustion and unavailable
+protection return 429 and 503 without issuing a ticket.
+Shared public profile-link avatar tickets reserve the account media ceilings above
+against the verified workspace and link identity, plus the shared global ceilings,
+before issuing a signed URL; revoked or unauthorized links cannot reserve tickets.
+These tickets do not charge the link creator's account. Reservation failure prevents
+signing; quota exhaustion returns 429 with a bounded retry delay, while protection
+outages return 503 without retry timing. The shared avatar byte/MIME ceilings
+also apply. Regression evidence: the public profile-link and workspace avatar
+handlers' colocated tests and `packages/satellite/src/routes/workspace-settings.test.ts`,
+plus `profile-media-upload-limits.sql` for authenticated
+INSERT and UPDATE restrictions.
+
+Legacy handle rows with no recorded owner are attributed only when an existing
+canonical profile references that handle; explicitly owned reservations are never
+reassigned. Full-schema local seeds assign each synthetic reservation to its
+profile actor before updating the profile, so bootstrap obeys the same ownership
+and cooldown checks. The identity pgTAP fixture covers seeded ownership and a
+no-op save without consuming another allowance.
+
+
+### Support API parity safeguards
+
+The support form and Web/Rust support creation APIs enforce the existing database
+ceilings: 64 characters for a name, 128 for a subject, and 512 for a message. Invalid
+payloads, including addresses with multiple email separators, return 400 before
+storage. Cookie-authenticated creation and updates require a matching Origin or
+Referer; explicit Bearer requests retain their independent authentication checks.
+Cross-origin cookie updates return 403 before Supabase access. Regression evidence:
+`support-inquiry-guard.test.ts`, the first-class inquiry route tests, and Rust
+support/g12 regressions. Profile HEAD follows GET authentication/cache/status but
+emits no response body; its Rust regression verifies the same boundary.
+
+Support inquiry string limits count Unicode code points consistently in the live
+Zod schema and Rust source. The contact form bounds its disabled profile-name
+prefill to 64 code points without splitting astral characters. Both API sources
+trim inquiry messages before validating the 10–512 character range and persisting
+them, so blank-looking messages are rejected. Regression coverage includes
+`support-inquiry-guard.test.ts`, `contact-form-values.test.ts`, and the Rust
+support payload boundary tests. Unported inquiry GET/HEAD methods retain the
+backend dispatcher’s fall-through sentinel instead of claiming a 405 response.

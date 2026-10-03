@@ -1,3 +1,4 @@
+import { ProfileUploadError } from '@tuturuuu/storage-core/profile-upload-budget';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createSatelliteAiCreditsRouteHandler,
@@ -12,13 +13,24 @@ const {
   getAiCreditsStatus,
   getPermissions,
   getSatelliteAppSessionUser,
+  reserveProfileUploadBudget,
 } = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
   createDynamicAdminClient: vi.fn(),
   getAiCreditsStatus: vi.fn(),
   getPermissions: vi.fn(),
   getSatelliteAppSessionUser: vi.fn(),
+  reserveProfileUploadBudget: vi.fn(),
 }));
+
+vi.mock('server-only', () => ({}));
+vi.mock(
+  '@tuturuuu/storage-core/profile-upload-budget',
+  async (importOriginal) => ({
+    ...(await importOriginal<object>()),
+    reserveProfileUploadBudget,
+  })
+);
 
 vi.mock('../auth', () => ({ getSatelliteAppSessionUser }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({ getPermissions }));
@@ -36,6 +48,7 @@ const context = { params: Promise.resolve({ wsId: 'workspace-one' }) };
 describe('satellite workspace settings route handlers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    reserveProfileUploadBudget.mockReset().mockResolvedValue(undefined);
     getSatelliteAppSessionUser.mockResolvedValue({
       email: 'member@example.com',
       id: 'user-1',
@@ -204,6 +217,10 @@ describe('satellite workspace settings route handlers', () => {
     const payload = await response.json();
 
     expect(response.status).toBe(200);
+    expect(reserveProfileUploadBudget).toHaveBeenCalledWith('user-1', 'avatar');
+    expect(reserveProfileUploadBudget.mock.invocationCallOrder[0]).toBeLessThan(
+      createDynamicAdminClient.mock.invocationCallOrder[0]!
+    );
     expect(payload.filePath).toMatch(
       /^workspaces\/resolved-workspace-id\/avatar-\d+\.png$/
     );
@@ -211,6 +228,54 @@ describe('satellite workspace settings route handlers', () => {
       upsert: false,
     });
   });
+
+  for (const failure of [
+    new ProfileUploadError('Profile upload limit reached', 429, 60),
+    new ProfileUploadError('Profile upload protection is unavailable', 503),
+  ]) {
+    it(`does not sign a satellite avatar after budget failure ${failure.status}`, async () => {
+      reserveProfileUploadBudget.mockRejectedValue(failure);
+      const response = await createSatelliteWorkspaceAvatarUploadRouteHandler(
+        'finance'
+      )(
+        new Request('https://finance.test/api/avatar/upload-url', {
+          method: 'POST',
+          body: JSON.stringify({ filename: 'avatar.webp' }),
+        }),
+        context
+      );
+      expect(response.status).toBe(failure.status);
+      expect(response.headers.get('Retry-After')).toBe(
+        failure.retryAfter ? '60' : null
+      );
+      expect(createDynamicAdminClient).not.toHaveBeenCalled();
+    });
+  }
+
+  for (const rejected of ['session', 'permission', 'filename']) {
+    it(`does not reserve upload budget after ${rejected} rejection`, async () => {
+      if (rejected === 'session')
+        getSatelliteAppSessionUser.mockResolvedValue(null);
+      if (rejected === 'permission')
+        getPermissions.mockResolvedValue({ containsPermission: () => false });
+      const response = await createSatelliteWorkspaceAvatarUploadRouteHandler(
+        'contacts'
+      )(
+        new Request('https://contacts.test/api/avatar/upload-url', {
+          method: 'POST',
+          body: JSON.stringify({
+            filename: rejected === 'filename' ? '../avatar.png' : 'avatar.png',
+          }),
+        }),
+        context
+      );
+      expect(response.status).toBe(
+        rejected === 'session' ? 401 : rejected === 'permission' ? 403 : 400
+      );
+      expect(reserveProfileUploadBudget).not.toHaveBeenCalled();
+      expect(createDynamicAdminClient).not.toHaveBeenCalled();
+    });
+  }
 
   it('updates a workspace avatar through the owning satellite session', async () => {
     const updateEq = vi.fn().mockResolvedValue({ error: null });
