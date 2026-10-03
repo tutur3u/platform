@@ -4,18 +4,36 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
+import 'package:mobile/features/settings/view/settings_scoped_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-Future<void> showOfflineChangesSheet(BuildContext context) =>
-    showModalBottomSheet<void>(
+Future<void> showOfflineChangesSheet(
+  BuildContext context, {
+  String? userId,
+  String? workspaceId,
+  bool scoped = false,
+}) async {
+  if (scoped) {
+    if (userId == null || workspaceId == null) return;
+    await showScopedSettingsSheet<void>(
+      context: context,
+      builder: (_) =>
+          _OfflineChangesSheet(userId: userId, workspaceId: workspaceId),
+    );
+  } else {
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (_) => const _OfflineChangesSheet(),
     );
+  }
+}
 
 class _OfflineChangesSheet extends StatelessWidget {
-  const _OfflineChangesSheet();
+  const _OfflineChangesSheet({this.userId, this.workspaceId});
+  final String? userId;
+  final String? workspaceId;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +54,14 @@ class _OfflineChangesSheet extends StatelessWidget {
             ListenableBuilder(
               listenable: Listenable.merge([queue.pending, queue.syncingIds]),
               builder: (context, _) {
-                final records = queue.pending.value;
+                final records = queue.pending.value
+                    .where(
+                      (record) =>
+                          (userId == null || record.userId == userId) &&
+                          (workspaceId == null ||
+                              record.workspaceId == workspaceId),
+                    )
+                    .toList();
                 if (records.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24),

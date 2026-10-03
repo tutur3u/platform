@@ -16,7 +16,7 @@ class _Auth extends Mock implements GoTrueClient {}
 class _Session extends Mock implements Session {}
 
 class TimezoneHttpHarness {
-  TimezoneHttpHarness() {
+  TimezoneHttpHarness({bool rotateTokenOnRefresh = false}) {
     final origins = ApiOrigins.forFlavor(AppFlavor.production);
     final client = _Client();
     final auth = _Auth();
@@ -32,14 +32,16 @@ class TimezoneHttpHarness {
       ),
     );
     when(() => auth.currentSession).thenReturn(session);
-    when(() => session.accessToken).thenReturn('synthetic-access');
+    when(() => session.accessToken).thenAnswer((_) => accessToken);
     when(() => session.expiresAt).thenReturn(
       DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/
           1000,
     );
-    when(auth.refreshSession).thenAnswer(
-      (_) async => AuthResponse(session: session, user: auth.currentUser),
-    );
+    when(auth.refreshSession).thenAnswer((_) async {
+      refreshes++;
+      if (rotateTokenOnRefresh) accessToken = 'synthetic-renewed';
+      return AuthResponse(session: session, user: auth.currentUser);
+    });
     api = ApiClient(
       baseUrl: origins.baseUrlForPath(TimezoneSettingsRepository.personalPath),
       authClient: client,
@@ -50,6 +52,8 @@ class TimezoneHttpHarness {
     );
     repository = TimezoneSettingsRepository(apiClient: api);
   }
+  int refreshes = 0;
+  String accessToken = 'synthetic-access';
   late final ApiClient api;
   late final TimezoneSettingsRepository repository;
   final requests = <http.Request>[];

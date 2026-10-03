@@ -17,6 +17,38 @@ void main() {
   });
 
   test(
+    'resume retries unfinished modules without redownloading ready modules',
+    () async {
+      final coordinator = OfflinePreparationCoordinator.forTesting(
+        load: (_, _) async => {},
+        write: (_, _, _) async {},
+      );
+      final calls = <String>[];
+      var failInventory = true;
+      for (final id in OfflinePreparationCoordinator.productIds) {
+        coordinator.register(id, (_) async {
+          calls.add(id);
+          if (id == 'inventory' && failInventory) {
+            throw Exception('Synthetic failure');
+          }
+        });
+      }
+      await coordinator.run(userId: 'actor', workspaceId: 'workspace');
+      expect(coordinator.state.value.completed, 3);
+      failInventory = false;
+      calls.clear();
+      await coordinator.run(
+        userId: 'actor',
+        workspaceId: 'workspace',
+        resume: true,
+      );
+      expect(calls, ['inventory']);
+      expect(coordinator.state.value.completed, 4);
+      coordinator.state.dispose();
+    },
+  );
+
+  test(
     'sequential products settle failures and retry only selected product',
     () async {
       final calls = <String>[];
