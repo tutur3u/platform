@@ -70,8 +70,8 @@ verification regressions in `offline_inventory_verification_test.dart`.
 
 Product create permits at most 500 stock rows. Stock quantity and minimum quantity
 must be integers, matching their database columns; unit prices preserve fractional
-major currency amounts. Schema tests and `inventory-offline-create.sql` cover these
-limits for both online and offline create contracts.
+major currency amounts. `offline-create-schema.test.ts` and
+`inventory-offline-create.sql` cover these limits for the offline create contract.
 
 The dedicated setup/product/period create contract returns authoritative IDs and
 deduplicates the original operation identity before the client retries an uncertain
