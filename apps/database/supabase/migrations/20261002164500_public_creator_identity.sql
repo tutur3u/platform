@@ -25,8 +25,7 @@ REVOKE ALL ON private.user_profile_change_events FROM PUBLIC, anon, authenticate
 CREATE FUNCTION public.is_reserved_username(p_value text) RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
   SELECT EXISTS(SELECT 1 FROM private.reserved_usernames r
-    WHERE (r.category='common' AND r.value=regexp_replace(lower(p_value),'_','','g'))
-    OR (r.category='brand' AND regexp_replace(lower(p_value),'_','','g') ~ ('^(official)?'||r.value||'(official|support|admin|team|[0-9]+)?$')));
+    WHERE regexp_replace(lower(p_value),'_','','g') ~ ('^(official)?'||r.value||'(official|support|admin|team|[0-9]+)?$'));
 $$;
 REVOKE ALL ON FUNCTION public.is_reserved_username(text) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.is_reserved_username(text) TO service_role;
@@ -60,6 +59,10 @@ BEGIN
   IF NEW.id IS DISTINCT FROM OLD.id THEN
     RAISE EXCEPTION 'Profile identity cannot change' USING ERRCODE='22023';
   END IF;
+  IF NEW.avatar_url IS DISTINCT FROM OLD.avatar_url AND NEW.avatar_url IS NOT NULL
+    AND (length(NEW.avatar_url) > 2000 OR NEW.avatar_url !~ '^https://[^[:space:]]+$') THEN
+    RAISE EXCEPTION 'Invalid image URL' USING ERRCODE='22023';
+  END IF;
   IF NEW.handle IS DISTINCT FROM OLD.handle THEN
     IF NEW.handle IS NOT NULL AND (NEW.handle !~ '^[a-z0-9][a-z0-9_]{4,31}$' OR public.is_reserved_username(NEW.handle)) THEN
       RAISE EXCEPTION 'Invalid or reserved username' USING ERRCODE='22023';
@@ -84,7 +87,7 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-CREATE TRIGGER enforce_public_user_profile_policy BEFORE UPDATE OF handle,display_name
+CREATE TRIGGER enforce_public_user_profile_policy BEFORE UPDATE OF handle,display_name,avatar_url
   ON public.users FOR EACH ROW EXECUTE FUNCTION public.enforce_public_user_profile_policy();
 REVOKE ALL ON FUNCTION public.enforce_public_user_profile_policy() FROM PUBLIC, anon, authenticated;
 

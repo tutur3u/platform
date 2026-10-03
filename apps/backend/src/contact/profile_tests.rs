@@ -25,10 +25,12 @@ fn rejects_unsafe_image_urls_and_non_string_usernames() {
 
 #[test]
 fn excludes_private_fields_and_forged_actors() {
-    assert!(profile_patch_updates(Some(
-        r#"{"id":"another-user","email":"private@example.test"}"#
-    ))
-    .is_err());
+    assert!(
+        profile_patch_updates(Some(
+            r#"{"id":"another-user","email":"private@example.test"}"#
+        ))
+        .is_err()
+    );
     let parsed = profile_patch_updates(Some(
         r#"{"display_name":"Synthetic creator","id":"another-user"}"#,
     ))

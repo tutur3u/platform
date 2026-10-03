@@ -1,3 +1,4 @@
+import { ProfileUploadError } from '@tuturuuu/storage-core/profile-upload-budget';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
@@ -67,5 +68,24 @@ it.each([{ is_revoked: true }, { allowed_fields: [] }])(
       'is_revoked' in change && change.is_revoked ? 410 : 403
     );
     expect(f.ticket).not.toHaveBeenCalled();
+  }
+);
+
+it.each([429, 503])(
+  'propagates optimized budget failure %s without returning a ticket',
+  async (status) => {
+    f.ticket.mockRejectedValue(
+      new ProfileUploadError(
+        'Shared budget unavailable',
+        status,
+        status === 429 ? 90 : undefined
+      )
+    );
+    const response = await POST(request(), context);
+    expect(response.status).toBe(status);
+    if (status === 429) expect(response.headers.get('Retry-After')).toBe('90');
+    const body = await response.json();
+    expect(body).not.toHaveProperty('signedUrl');
+    expect(body).not.toHaveProperty('token');
   }
 );

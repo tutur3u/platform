@@ -211,10 +211,10 @@ insert into
     public.handles (value, creator_id)
 values
     ('local', '00000000-0000-0000-0000-000000000001'),
-    ('user1', '00000000-0000-0000-0000-000000000002'),
-    ('user2', '00000000-0000-0000-0000-000000000003'),
-    ('user3', '00000000-0000-0000-0000-000000000004'),
-    ('user4', '00000000-0000-0000-0000-000000000005'),
+    ('seeded_creator_1', '00000000-0000-0000-0000-000000000002'),
+    ('seeded_creator_2', '00000000-0000-0000-0000-000000000003'),
+    ('seeded_creator_3', '00000000-0000-0000-0000-000000000004'),
+    ('seeded_creator_4', '00000000-0000-0000-0000-000000000005'),
     ('tuturuuu', null),
     ('prototype-all', null),
     ('prototype-general', null),
@@ -232,28 +232,28 @@ where
 update
     public.users
 set
-    handle = 'user1'
+    handle = 'seeded_creator_1'
 where
     id = '00000000-0000-0000-0000-000000000002';
 
 update
     public.users
 set
-    handle = 'user2'
+    handle = 'seeded_creator_2'
 where
     id = '00000000-0000-0000-0000-000000000003';
 
 update
     public.users
 set
-    handle = 'user3'
+    handle = 'seeded_creator_3'
 where
     id = '00000000-0000-0000-0000-000000000004';
 
 update
     public.users
 set
-    handle = 'user4'
+    handle = 'seeded_creator_4'
 where
     id = '00000000-0000-0000-0000-000000000005';
 

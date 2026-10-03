@@ -232,8 +232,8 @@ route tests and backend profile validation and outbound-transport tests.
 
 New usernames require 5–32 lowercase letters, digits, or underscores and start
 with a letter or digit. Common platform/service names and major brands are
-reserved; separator variants and obvious official/support/numeric brand aliases
-are reserved too. Ordinary names containing a brand syllable, such as
+reserved; separator variants and obvious official/support/admin/team/numeric
+aliases are reserved for both service names and brands. Ordinary names containing a brand syllable, such as
 `pineapple`, remain valid. The canonical pool lives in
 `packages/utils/src/username-policy.json` and is checked against the database
 migration in regression tests. Existing usernames remain readable and unchanged
@@ -379,3 +379,8 @@ short, reserved, and historically mixed-case no-ops and SQL error mapping.
 Signed profile-media PUTs use only the Storage ticket and image MIME header, with
 cookies omitted; API authorization/default headers remain on the ticket request.
 `packages/internal-api/src/profile-media.test.ts` guards this transport boundary.
+
+Changed avatar URLs are also checked by the shared database trigger on direct
+writes; unchanged legacy values remain readable. The database media contract
+seeds otherwise-writable objects and verifies restrictive policies block both
+authenticated INSERT and UPDATE for avatar/banner buckets.

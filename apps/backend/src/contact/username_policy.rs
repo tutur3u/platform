@@ -6,24 +6,25 @@ pub(super) fn is_reserved_username(value: &str) -> bool {
     ))
     .expect("Canonical username policy is valid JSON");
     let normalized = value.to_lowercase().replace('_', "");
-    if policy["common"].as_array().is_some_and(|names| {
-        names
-            .iter()
-            .any(|name| name.as_str() == Some(normalized.as_str()))
-    }) {
-        return true;
-    }
-    policy["brands"].as_array().is_some_and(|names| {
-        names.iter().any(|name| {
-            let Some(brand) = name.as_str() else {
-                return false;
-            };
-            let candidate = normalized.strip_prefix("official").unwrap_or(&normalized);
-            let Some(suffix) = candidate.strip_prefix(brand) else {
-                return false;
-            };
-            matches!(suffix, "" | "official" | "support" | "admin" | "team")
-                || suffix.bytes().all(|c| c.is_ascii_digit())
+    ["common", "brands"].iter().any(|category| {
+        policy[*category].as_array().is_some_and(|names| {
+            names.iter().any(|name| {
+                let Some(base) = name.as_str() else {
+                    return false;
+                };
+                [
+                    normalized.as_str(),
+                    normalized.strip_prefix("official").unwrap_or(&normalized),
+                ]
+                .iter()
+                .any(|candidate| {
+                    let Some(suffix) = candidate.strip_prefix(base) else {
+                        return false;
+                    };
+                    matches!(suffix, "" | "official" | "support" | "admin" | "team")
+                        || suffix.bytes().all(|c| c.is_ascii_digit())
+                })
+            })
         })
     })
 }
@@ -51,4 +52,48 @@ pub(super) fn profile_change_limit_response(response: &OutboundResponse) -> Back
         .headers
         .push(("retry-after", retry_after.to_string()));
     response
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn quota_timing_is_bounded_without_private_error_details() {
+        for (details, expected) in [
+            ("120", 120),
+            ("-1", 14 * 86400),
+            ("999999999999", 14 * 86400),
+        ] {
+            let response = OutboundResponse { status: 429, headers: vec![], body_text: json!({ "details": details, "message": "private data", "hint": "display_name_change_limit" }).to_string() };
+            let result = profile_change_limit_response(&response);
+            assert_eq!(result.status, 429);
+            assert_eq!(
+                result.body,
+                json!({"message":"Profile change limit reached","code":"display_name_change_limit","retryAfter":expected})
+            );
+            assert!(
+                result
+                    .headers
+                    .iter()
+                    .any(|(k, v)| k.eq_ignore_ascii_case("Retry-After")
+                        && v == &expected.to_string())
+            );
+        }
+    }
+    #[test]
+    fn common_service_variants_match_sql_and_typescript() {
+        for name in [
+            "admin123",
+            "supportteam",
+            "official_admin",
+            "s_u_p_p_o_r_t123",
+            "official",
+            "official123",
+        ] {
+            assert!(is_reserved_username(name));
+        }
+        for name in ["pineapple", "my_supportteam"] {
+            assert!(!is_reserved_username(name));
+        }
+    }
 }
