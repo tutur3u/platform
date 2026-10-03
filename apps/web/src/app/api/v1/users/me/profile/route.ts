@@ -1,33 +1,57 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_BIO_LENGTH,
   MAX_DISPLAY_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { NextResponse } from 'next/server';
+import { isValidNewUsername } from '@tuturuuu/utils/username-policy';
+import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { createLegacyHeadHandler } from '@/legacy-api-routes/head';
 import {
   CURRENT_USER_PROFILE_READ_APP_SESSION_AUTH,
   CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH,
 } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
 
+function isHttpsUrl(value: string) {
+  try {
+    return new URL(value).protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
 const PatchProfileSchema = z.object({
   display_name: z.string().min(1).max(MAX_DISPLAY_NAME_LENGTH).optional(),
   bio: z.string().max(MAX_BIO_LENGTH).nullable().optional(),
-  avatar_url: z.url().nullable().optional(),
+  avatar_url: z.url().max(2000).refine(isHttpsUrl).nullable().optional(),
+  banner_url: z.url().max(2000).refine(isHttpsUrl).nullable().optional(),
+  handle: z.string().max(100).nullable().optional(),
 });
 
 export const GET = withSessionAuth(
   async (_req, { user, supabase }) => {
     try {
+      await connection();
       // Fetch user profile data
-      const { data: userData, error: userError } = await supabase
+      let { data: userData, error: userError } = await supabase
         .from('users')
-        .select('id, display_name, avatar_url, created_at')
+        .select(
+          'id, display_name, avatar_url, banner_url, bio, handle, created_at'
+        )
         .eq('id', user.id)
         .maybeSingle();
 
+      if (userError && ['42703', 'PGRST204'].includes(userError.code)) {
+        const legacy = await supabase
+          .from('users')
+          .select('id,display_name,avatar_url,bio,handle,created_at')
+          .eq('id', user.id)
+          .maybeSingle();
+        userData = legacy.data ? { ...legacy.data, banner_url: null } : null;
+        userError = legacy.error;
+      }
       if (userError) {
-        console.error('Error fetching user profile:', userError);
+        console.error('Error fetching user profile:', { code: userError.code });
         return NextResponse.json(
           { message: 'Error fetching user profile' },
           { status: 500 }
@@ -57,6 +81,9 @@ export const GET = withSessionAuth(
         email: privateData?.email ?? null,
         display_name: userData?.display_name ?? null,
         avatar_url: userData?.avatar_url ?? null,
+        banner_url: userData?.banner_url ?? null,
+        bio: userData?.bio ?? null,
+        handle: userData?.handle ?? null,
         full_name: privateData?.full_name ?? null,
         new_email: privateData?.new_email ?? null,
         created_at: userData?.created_at ?? user.created_at ?? null,
@@ -72,7 +99,7 @@ export const GET = withSessionAuth(
   },
   {
     allowAppSessionAuth: CURRENT_USER_PROFILE_READ_APP_SESSION_AUTH,
-    cache: { maxAge: 60, swr: 30 },
+    cache: { maxAge: 0, swr: 0 },
   }
 );
 
@@ -93,11 +120,51 @@ export const PATCH = withSessionAuth(
         );
       }
 
-      const { error } = await supabase
-        .from('users')
-        .update(updates)
-        .eq('id', user.id);
+      if (typeof updates.handle === 'string') {
+        const original = updates.handle;
+        const normalized = original.trim().toLowerCase();
+        if (original !== normalized || !isValidNewUsername(normalized)) {
+          const { data: current, error: currentError } = await supabase
+            .from('users')
+            .select('handle')
+            .eq('id', user.id)
+            .maybeSingle();
+          if (currentError)
+            return NextResponse.json(
+              { message: 'Unable to verify current username' },
+              { status: 503 }
+            );
+          if (current?.handle === original) updates.handle = original;
+          else if (isValidNewUsername(normalized)) updates.handle = normalized;
+          else
+            return NextResponse.json(
+              { message: 'Invalid request data' },
+              { status: 400 }
+            );
+        }
+      }
 
+      const admin = await createAdminClient({ noCookie: true });
+      let { error } = await admin.rpc('update_public_user_profile', {
+        p_user_id: user.id,
+        p_patch: updates,
+      });
+
+      if (error && ['42883', 'PGRST202'].includes(error.code)) {
+        if (
+          'handle' in updates ||
+          'banner_url' in updates ||
+          'display_name' in updates
+        )
+          return NextResponse.json(
+            { message: 'Profile identity upgrade is pending' },
+            { status: 503 }
+          );
+        ({ error } = await supabase
+          .from('users')
+          .update(updates)
+          .eq('id', user.id));
+      }
       if (error) {
         if (error.code === 'PT429') {
           const code =
@@ -114,6 +181,21 @@ export const PATCH = withSessionAuth(
             { status: 429, headers: { 'Retry-After': String(retryAfter) } }
           );
         }
+        if (error.code === '23505')
+          return NextResponse.json(
+            { message: 'Username is unavailable' },
+            { status: 409 }
+          );
+        if (error.code === '22023')
+          return NextResponse.json(
+            { message: 'Invalid request data' },
+            { status: 400 }
+          );
+        if (error.code === 'P0002')
+          return NextResponse.json(
+            { message: 'Profile not found' },
+            { status: 404 }
+          );
         console.error('Error updating user profile:', { code: error.code });
         return NextResponse.json(
           { message: 'Internal server error' },
@@ -123,9 +205,12 @@ export const PATCH = withSessionAuth(
 
       return NextResponse.json({ message: 'Profile updated successfully' });
     } catch (error) {
-      if (error instanceof z.ZodError) {
+      if (error instanceof z.ZodError || error instanceof SyntaxError) {
         return NextResponse.json(
-          { message: 'Invalid request data', errors: error.issues },
+          {
+            message: 'Invalid request data',
+            errors: error instanceof z.ZodError ? error.issues : undefined,
+          },
           { status: 400 }
         );
       }
@@ -142,3 +227,5 @@ export const PATCH = withSessionAuth(
     skipAppSessionStepUpChallenge: true,
   }
 );
+
+export const HEAD = createLegacyHeadHandler(GET);

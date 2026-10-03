@@ -18,6 +18,7 @@ test('resource bounds preserve full locked parity tests and read-only source val
   assert.equal(parity['runs-on'], 'ubuntu-latest');
   assert.equal(parity['timeout-minutes'], 30);
   assert.deepEqual(creator.permissions, { contents: 'read' });
+  assert.equal(parity.permissions, undefined);
   assert.equal(parity.environment, undefined);
   const checkout = parity.steps.find((step) =>
     step.uses?.startsWith('actions/checkout@')

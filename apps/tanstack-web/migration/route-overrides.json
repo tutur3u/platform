@@ -2712,6 +2712,11 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Verified profile-link avatar tickets reserve link-scoped and global media budgets before signing. The first-class web handler remains live; Rust has not implemented this path."
+    },
+    "api:/api/v1/workspaces/:wsId/avatar/upload-url:apps/web/src/app/api/v1/workspaces/[wsId]/avatar/upload-url/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class authorized workspace avatar signer reserves the resolved actor shared profile-upload and global budgets before privileged avatars ticket creation; quotas fail closed with 429/503. Rust handler is explicit backlog."
     }
   }
 }

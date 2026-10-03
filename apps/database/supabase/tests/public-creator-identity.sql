@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(58);
+select plan(64);
 select is((select creator_id from public.handles where value='local'),'00000000-0000-0000-0000-000000000001'::uuid,'full-schema seed reserves the canonical handle for its actual actor');
 select lives_ok($$select public.update_public_user_profile('00000000-0000-0000-0000-000000000001','{"handle":"local"}')$$,'the existing canonical seed handle remains a valid no-op');
 select is((select count(*) from private.user_profile_change_events where user_id='00000000-0000-0000-0000-000000000001' and field='handle'),1::bigint,'existing-handle no-op adds no quota event to the seeded initial claim');
@@ -96,5 +96,12 @@ delete from private.user_profile_change_events
  where user_id='00000000-0000-4000-8000-000000009501' and field='handle';
 select lives_ok($$select public.update_public_user_profile('00000000-0000-4000-8000-000000009501','{"handle":null}')$$,'clear succeeds after cooldown');
 select is((select count(*) from public.handles where creator_id='00000000-0000-4000-8000-000000009501' and value in ('synthetic_creator_9501','retained_creator_9501')),2::bigint,'clear retains current and historical reservations');
+
+select throws_ok($$select public.update_public_user_profile('00000000-0000-4000-8000-000000009502','{"handle":"admin123"}')$$,'22023',null,'numeric service-name variants are reserved');
+select throws_ok($$select public.update_public_user_profile('00000000-0000-4000-8000-000000009502','{"handle":"supportteam"}')$$,'22023',null,'team service-name variants are reserved');
+select throws_ok($$update public.users set avatar_url='javascript:alert(1)' where id='00000000-0000-4000-8000-000000009501'$$,'22023',null,'direct writes reject unsafe avatars');
+select throws_ok($$update public.users set avatar_url='https://example.test/has space.png' where id='00000000-0000-4000-8000-000000009501'$$,'22023',null,'direct writes reject whitespace in avatars');
+select lives_ok($$update public.users set avatar_url='https://example.test/avatar.png' where id='00000000-0000-4000-8000-000000009501'$$,'direct writes accept valid HTTPS avatars');
+select lives_ok($$update public.users set avatar_url=null where id='00000000-0000-4000-8000-000000009501'$$,'direct writes can clear avatars');
 select * from finish();
 rollback;

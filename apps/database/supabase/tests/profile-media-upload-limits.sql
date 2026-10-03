@@ -1,16 +1,25 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(8);
+select plan(13);
 select is((select file_size_limit from storage.buckets where id='avatars'),2097152::bigint,'avatar uploads are capped at two MiB by Storage');
 select is((select file_size_limit from storage.buckets where id='banners'),5242880::bigint,'banner uploads are capped at five MiB by Storage');
 select ok((select allowed_mime_types=ARRAY['image/png','image/jpeg','image/webp','image/gif'] from storage.buckets where id='avatars'),'avatars exclude executable SVG');
 select ok((select allowed_mime_types=ARRAY['image/png','image/jpeg','image/webp','image/gif'] from storage.buckets where id='banners'),'banners exclude executable SVG');
 select ok((select public from storage.buckets where id='banners'),'canonical banners use public identity semantics');
 select is((select permissive from pg_policies where schemaname='storage' and tablename='objects' and policyname='profile_media_require_budgeted_insert'),'RESTRICTIVE','raw upload restriction composes with broad legacy insert policies');
+select is((select permissive from pg_policies where schemaname='storage' and tablename='objects' and policyname='profile_media_require_budgeted_update'),'RESTRICTIVE','raw overwrite restriction composes with broad legacy update policies');
+insert into storage.objects(bucket_id,name) values ('avatars','synthetic-existing-avatar.png'),('banners','synthetic-existing-banner.png');
+-- Explicit permissive policies prove the restrictive policy blocks otherwise-authorized overwrites.
+create policy synthetic_profile_media_select on storage.objects for select to authenticated using (name like 'synthetic-existing-%');
+create policy synthetic_profile_media_update on storage.objects for update to authenticated using (name like 'synthetic-existing-%') with check (true);
 set local role authenticated;
 select throws_ok($$insert into storage.objects(bucket_id,name) values('avatars','synthetic-bypass.png')$$,'42501',null,'authenticated clients cannot bypass avatar ticket quotas');
 select throws_ok($$insert into storage.objects(bucket_id,name) values('banners','synthetic-bypass.png')$$,'42501',null,'authenticated clients cannot bypass banner ticket quotas');
+select lives_ok($$update storage.objects set name='synthetic-overwritten-avatar.png' where bucket_id='avatars' and name='synthetic-existing-avatar.png'$$,'restricted avatar overwrites affect no visible rows');
+select lives_ok($$update storage.objects set name='synthetic-overwritten-banner.png' where bucket_id='banners' and name='synthetic-existing-banner.png'$$,'restricted banner overwrites affect no visible rows');
 reset role;
+select is((select count(*) from storage.objects where bucket_id='avatars' and name='synthetic-existing-avatar.png'),1::bigint,'authenticated clients cannot overwrite seeded avatars');
+select is((select count(*) from storage.objects where bucket_id='banners' and name='synthetic-existing-banner.png'),1::bigint,'authenticated clients cannot overwrite seeded banners');
 select * from finish();
 rollback;

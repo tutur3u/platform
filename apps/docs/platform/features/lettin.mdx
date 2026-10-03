@@ -209,6 +209,8 @@ published notebooks; they never expose email or private account details.
 resolve the authenticated actor before calling it. A conflicting username or
 invalid image rejects the complete patch and reserves no new username. Image
 URLs use HTTPS; avatar, banner, bio, and username can be cleared explicitly.
+Changed avatar URLs are checked by the database trigger on every update path;
+unchanged legacy URLs remain readable and do not block unrelated saves.
 The database contract fixture `public-creator-identity.sql` covers actor grants,
 claims, conflicts, rollback, rename, clearing, and private-field rejection.
 
@@ -221,8 +223,8 @@ production migration or deployment.
 
 New usernames require 5–32 lowercase letters, digits, or underscores and start
 with a letter or digit. Common platform/service names and major brands are
-reserved; separator variants and obvious official/support/numeric brand aliases
-are reserved too. Ordinary names containing a brand syllable, such as
+reserved; separator variants and obvious official/support/admin/team/numeric
+aliases are reserved for both service names and brands. Ordinary names containing a brand syllable, such as
 `pineapple`, remain valid. The canonical pool lives in
 `packages/utils/src/username-policy.json` and is checked against the database
 migration in regression tests. Existing usernames remain readable and unchanged
@@ -261,13 +263,18 @@ upload handler's colocated tests and `profile-upload-budget.test.ts`.
 
 The shared contract applies to current-user media ticket issuers, including the
 avatar endpoint in this foundation and the dependent banner endpoint. Existing
-workspace ticket endpoints retain their own authorization and API abuse budgets.
+workspace avatar tickets retain workspace-settings authorization and additionally
+reserve the resolved account media ceilings and the shared global ceilings before
+signing. Permission denials reserve nothing; quota exhaustion and unavailable
+protection return 429 and 503 without issuing a ticket.
 Shared public profile-link avatar tickets reserve the account media ceilings above
 against the verified workspace and link identity, plus the shared global ceilings,
 before issuing a signed URL; revoked or unauthorized links cannot reserve tickets.
 These tickets do not charge the link creator's account. Reservation failure prevents
 signing and returns a bounded retry delay. The shared avatar byte/MIME ceilings
-also apply. Regression evidence: the public profile-link avatar handler's colocated tests.
+also apply. Regression evidence: the public profile-link and workspace avatar
+handlers' colocated tests, plus `profile-media-upload-limits.sql` for authenticated
+INSERT and UPDATE restrictions.
 
 Legacy handle rows with no recorded owner are attributed only when an existing
 canonical profile references that handle; explicitly owned reservations are never
