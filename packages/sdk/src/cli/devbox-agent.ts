@@ -1,6 +1,11 @@
 import { pollDevboxAgentJobs } from '../platform-devbox';
 import { normalizeBaseUrl } from './config';
 import { createDevboxAgentCapabilities } from './devbox-agent-capabilities';
+import {
+  DEVBOX_UPGRADE_CHECK_INTERVAL_MS,
+  DevboxCliRepairRequiredError,
+  upgradeDevboxCliIfNeeded,
+} from './devbox-auto-upgrade';
 import { executeDevboxAgentJob } from './devbox-runner';
 
 function formatResponseStatus(response: Response) {
@@ -85,6 +90,10 @@ export async function runDevboxAgentLoop({
   let restartRequested = false;
   let cliUpdated = false;
   let failure: unknown = null;
+  let nextPollAt = 0;
+  let idlePollDelay = 5000;
+  let nextUpgradeCheckAt = 0;
+  let upgrading = false;
   const waitForJobs = async () => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
@@ -129,6 +138,11 @@ export async function runDevboxAgentLoop({
     while (running) {
       if (Date.now() >= nextHeartbeatAt) await heartbeat();
       if (failure) throw failure;
+      if (restartRequested) break;
+      if (upgrading) {
+        await waitForJobs();
+        continue;
+      }
       if (
         controlOrigin &&
         !once &&
@@ -141,6 +155,14 @@ export async function runDevboxAgentLoop({
       }
       if (active.size >= 8) {
         await waitForJobs();
+        continue;
+      }
+      if (!pendingWake && Date.now() < nextPollAt) {
+        await waitForWake(
+          wakeSocket,
+          Math.max(1, Math.min(nextPollAt, nextHeartbeatAt) - Date.now()),
+          localWake
+        );
         continue;
       }
       pendingWake = false;
@@ -207,14 +229,41 @@ export async function runDevboxAgentLoop({
         running = false;
         continue;
       }
-      if (pollResponse.jobs.length || pendingWake) continue;
-      if (controlOrigin)
-        await waitForWake(
-          wakeSocket,
-          Math.max(1, nextHeartbeatAt - Date.now()),
-          localWake
-        );
-      else await waitForWake(null, 5000, localWake);
+      if (pollResponse.jobs.length || pendingWake) {
+        idlePollDelay = 5000;
+        nextPollAt = 0;
+        continue;
+      }
+      nextPollAt = Date.now() + (controlOrigin ? 30_000 : idlePollDelay);
+      idlePollDelay = Math.min(30_000, idlePollDelay * 2);
+      if (
+        active.size === 0 &&
+        Date.now() >= nextUpgradeCheckAt &&
+        process.env.TUTURUUU_DEVBOX_AUTO_UPGRADE === 'true'
+      ) {
+        nextUpgradeCheckAt = Date.now() + DEVBOX_UPGRADE_CHECK_INTERVAL_MS;
+        upgrading = true;
+        const task = upgradeDevboxCliIfNeeded()
+          .then((updated) => {
+            if (updated) {
+              restartRequested = true;
+              cliUpdated = true;
+            }
+          })
+          .catch((error) => {
+            if (error instanceof DevboxCliRepairRequiredError) failure = error;
+            console.warn(
+              'Automatic devbox CLI upgrade failed; inspect the host install before retrying.'
+            );
+          })
+          .finally(() => {
+            upgrading = false;
+            active.delete(task);
+            pendingWake = true;
+            localWake.dispatchEvent(new Event('wake'));
+          });
+        active.add(task);
+      }
     }
   } finally {
     while (active.size > 0) {

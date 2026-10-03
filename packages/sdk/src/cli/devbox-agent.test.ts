@@ -1,8 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { executeJob, pollJobs } = vi.hoisted(() => ({
+const { executeJob, pollJobs, autoUpgrade } = vi.hoisted(() => ({
   executeJob: vi.fn(),
   pollJobs: vi.fn(),
+  autoUpgrade: vi.fn(),
+}));
+
+vi.mock('./devbox-auto-upgrade', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./devbox-auto-upgrade')>()),
+  upgradeDevboxCliIfNeeded: autoUpgrade,
 }));
 
 vi.mock('../platform-devbox', () => ({ pollDevboxAgentJobs: pollJobs }));
@@ -20,12 +26,53 @@ describe('Devbox agent upgrade handoff', () => {
     vi.restoreAllMocks();
     executeJob.mockReset();
     pollJobs.mockReset();
+    autoUpgrade.mockReset().mockResolvedValue(false);
+    vi.stubEnv('TUTURUUU_DEVBOX_AUTO_UPGRADE', 'false');
     vi.stubEnv('TUTURUUU_DEVBOX_CONTROL_URL', '');
     vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'));
   });
 
   afterEach(() => vi.unstubAllEnvs());
+
+  it('backs off idle claims while maintaining 20-second heartbeats', async () => {
+    vi.useFakeTimers();
+    pollJobs.mockResolvedValue({ ok: true, jobs: [] });
+    const loop = runDevboxAgentLoop({
+      baseUrl: 'https://example.test',
+      token: 'fixture',
+    });
+    try {
+      await vi.advanceTimersByTimeAsync(65_000);
+      // Claims at 0, 5, 15, 35, 65 seconds; heartbeat at 0, 20, 40, 60.
+      expect(pollJobs).toHaveBeenCalledTimes(5);
+      expect(globalThis.fetch).toHaveBeenCalledTimes(4);
+      pollJobs.mockResolvedValue({
+        ok: true,
+        jobs: [{ command: ['__ttr_restart_agent_v1__'] }],
+      });
+      executeJob.mockResolvedValue({ status: 'succeeded' });
+      await vi.advanceTimersByTimeAsync(30_000);
+      await loop;
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('upgrades only after an empty claim and exits for a supervised restart', async () => {
+    vi.stubEnv('TUTURUUU_DEVBOX_AUTO_UPGRADE', 'true');
+    pollJobs.mockResolvedValue({ ok: true, jobs: [] });
+    autoUpgrade.mockResolvedValue(true);
+    await runDevboxAgentLoop({
+      baseUrl: 'https://example.test',
+      token: 'fixture',
+    });
+    expect(autoUpgrade).toHaveBeenCalledTimes(1);
+    expect(process.stdout.write).toHaveBeenCalledWith(
+      'Devbox CLI updated. Exiting for service manager restart.\n'
+    );
+  });
 
   it('routes heartbeat and claims to the configured Cloudflare control plane', async () => {
     vi.stubEnv('TUTURUUU_DEVBOX_CONTROL_URL', 'https://control.example.test');

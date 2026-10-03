@@ -4,6 +4,11 @@ import { dirname, join, resolve } from 'node:path';
 import type { TuturuuuUserClient } from '../platform';
 import type { DevboxAgentRegistrationResponse } from '../platform-devbox';
 import { getDefaultConfigPath } from './config';
+import {
+  type DevboxExecutionMode,
+  parseDevboxExecutionMode,
+  preflightProtectedService,
+} from './devbox-host-protection';
 import { parseJudgeImages } from './devbox-judge-sandbox';
 import {
   canPromptDevboxSetup,
@@ -32,6 +37,8 @@ export interface DevboxRunnerSetupResult {
 
 export interface InstallDevboxRunnerServiceOptions {
   checkoutDir: string;
+  executionMode?: DevboxExecutionMode;
+  dockerHost?: string;
   json?: boolean;
   manager?: DevboxServiceManager;
   runCommand: DevboxSetupCommandRunner;
@@ -42,6 +49,9 @@ export interface InstallDevboxRunnerServiceOptions {
 export interface SetupDevboxRunnerOptions {
   checkoutDir: string;
   options: {
+    executionMode?: DevboxExecutionMode;
+    dockerHost?: string;
+    controlUrl?: string;
     agent?: boolean;
     client?: TuturuuuUserClient;
     confirm?: DevboxSetupConfirm;
@@ -111,22 +121,38 @@ function getCurrentTtrCommand() {
 
 export async function writeRunnerTokenFile({
   judgeImages,
+  executionMode,
+  dockerHost,
+  controlUrl,
   token,
   tokenFile,
 }: {
   judgeImages?: string;
+  executionMode?: DevboxExecutionMode;
+  dockerHost?: string;
+  controlUrl?: string;
   token: string;
   tokenFile?: string;
 }) {
   const resolvedTokenFile = resolve(
     tokenFile?.trim() || getDefaultRunnerTokenFile()
   );
+  if (
+    controlUrl &&
+    (new URL(controlUrl).protocol !== 'https:' ||
+      new URL(controlUrl).username ||
+      new URL(controlUrl).password)
+  )
+    throw new Error('Control URL must use HTTPS without embedded credentials.');
   if (judgeImages) parseJudgeImages(judgeImages);
+  const mode = parseDevboxExecutionMode(
+    executionMode ?? (judgeImages ? 'judge-only' : undefined)
+  );
 
   await mkdir(dirname(resolvedTokenFile), { mode: 0o700, recursive: true });
   await writeFile(
     resolvedTokenFile,
-    `TUTURUUU_DEVBOX_RUNNER_TOKEN=${shellQuote(token)}\n${judgeImages ? `TUTURUUU_JUDGE_IMAGES=${shellQuote(judgeImages)}\n` : ''}`,
+    `TUTURUUU_DEVBOX_RUNNER_TOKEN=${shellQuote(token)}\nTUTURUUU_DEVBOX_EXECUTION_MODE=${shellQuote(mode)}\n${dockerHost ? `DOCKER_HOST=${shellQuote(dockerHost)}\n` : ''}${controlUrl ? `TUTURUUU_DEVBOX_CONTROL_URL=${shellQuote(controlUrl)}\n` : ''}${judgeImages ? `TUTURUUU_JUDGE_IMAGES=${shellQuote(judgeImages)}\n` : ''}`,
     {
       mode: 0o600,
     }
@@ -139,11 +165,19 @@ export async function writeRunnerTokenFile({
 async function writeRunnerWrapper({
   checkoutDir,
   tokenFile,
+  executionMode,
+  dockerHost,
 }: {
   checkoutDir: string;
   tokenFile: string;
+  executionMode?: DevboxExecutionMode;
+  dockerHost?: string;
 }) {
-  const wrapperPath = resolve(getDefaultRunnerWrapperFile());
+  const wrapperPath = resolve(
+    getDefaultRunnerWrapperFile(
+      executionMode === 'judge-only' ? tokenFile : undefined
+    )
+  );
   const ttrCommand = getCurrentTtrCommand();
   const script = [
     '#!/bin/sh',
@@ -151,12 +185,21 @@ async function writeRunnerWrapper({
     `if [ -n "\${HOME:-}" ]; then`,
     '  PATH="$HOME/.bun/bin:$PATH"',
     'fi',
-    'PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"',
+    'PATH="$PATH:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"',
     'export PATH',
     'set -a',
     `. ${shellQuote(tokenFile)}`,
     'set +a',
+    `export TUTURUUU_DEVBOX_EXECUTION_MODE=${shellQuote(executionMode ?? 'trusted')}`,
+    ...(dockerHost ? [`export DOCKER_HOST=${shellQuote(dockerHost)}`] : []),
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: shell parameter expansion in the generated script.
+    ': "${TUTURUUU_DEVBOX_AUTO_UPGRADE:=false}"',
+    'export TUTURUUU_DEVBOX_AUTO_UPGRADE',
     `cd ${shellQuote(checkoutDir)}`,
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: shell parameter expansion.
+    'if [ -n "${HOME:-}" ] && [ -x "$HOME/.bun/bin/ttr" ]; then',
+    '  exec "$HOME/.bun/bin/ttr" box agent start --no-update-check',
+    'fi',
     `exec ${ttrCommand.map(shellQuote).join(' ')} box agent start --no-update-check`,
     '',
   ].join('\n');
@@ -193,6 +236,8 @@ async function runRequiredServiceCommand({
 
 export async function installDevboxRunnerService({
   checkoutDir,
+  executionMode = 'trusted',
+  dockerHost,
   json,
   manager,
   runCommand,
@@ -201,13 +246,30 @@ export async function installDevboxRunnerService({
 }: InstallDevboxRunnerServiceOptions) {
   const resolvedManager = resolveDevboxServiceManager(manager);
   const resolvedServiceUser = serviceUser?.trim() || userInfo().username;
-  const wrapperPath = await writeRunnerWrapper({ checkoutDir, tokenFile });
+  const serviceHome = await preflightProtectedService({
+    mode: executionMode,
+    manager: resolvedManager,
+    serviceUser: resolvedServiceUser,
+    checkoutDir,
+    tokenFile,
+    cliCommand: getCurrentTtrCommand(),
+    dockerHost,
+    runCommand,
+  });
+  const wrapperPath = await writeRunnerWrapper({
+    checkoutDir,
+    tokenFile,
+    executionMode,
+    dockerHost,
+  });
   const definitionPath = getDefaultServiceDefinitionFile(resolvedManager);
   const systemDefinitionPath = getServiceDefinitionPath(resolvedManager);
   const definition =
     resolvedManager === 'systemd'
       ? renderSystemdUnit({
           checkoutDir,
+          executionMode,
+          serviceHome,
           serviceUser: resolvedServiceUser,
           wrapperPath,
         })
@@ -219,6 +281,15 @@ export async function installDevboxRunnerService({
 
   await writeFile(definitionPath, definition, { mode: 0o644 });
 
+  if (executionMode === 'judge-only') {
+    await runRequiredServiceCommand({
+      command: 'sudo',
+      args: ['chown', resolvedServiceUser, wrapperPath, tokenFile],
+      json,
+      name: 'Set private runner file ownership',
+      runCommand,
+    });
+  }
   if (resolvedManager === 'systemd') {
     await runRequiredServiceCommand({
       args: ['cp', definitionPath, systemDefinitionPath],
@@ -375,12 +446,37 @@ export async function setupDevboxRunner({
       options,
       'Install a boot-starting devbox runner system service?'
     ));
+  if (
+    options.controlUrl &&
+    (new URL(options.controlUrl).protocol !== 'https:' ||
+      new URL(options.controlUrl).username ||
+      new URL(options.controlUrl).password)
+  )
+    throw new Error('Control URL must use HTTPS without embedded credentials.');
+  if (options.judgeImages) parseJudgeImages(options.judgeImages);
   const runnerName = options.runnerName?.trim() || getDefaultRunnerName();
+  const executionMode =
+    options.executionMode ?? (options.judgeImages ? 'judge-only' : 'trusted');
+  // Validate protection prerequisites before issuing a new runner credential.
+  if (shouldInstallService)
+    await preflightProtectedService({
+      mode: executionMode,
+      manager: resolveDevboxServiceManager(options.serviceManager),
+      serviceUser: options.serviceUser?.trim() || userInfo().username,
+      checkoutDir,
+      tokenFile: options.tokenFile ?? getDefaultRunnerTokenFile(),
+      cliCommand: getCurrentTtrCommand(),
+      dockerHost: options.dockerHost,
+      runCommand: options.runCommand,
+    });
   const registration = await options.client.devboxes.registerAgent({
     name: runnerName,
   });
   const tokenFile = await writeRunnerTokenFile({
     judgeImages: options.judgeImages,
+    executionMode,
+    dockerHost: options.dockerHost,
+    controlUrl: options.controlUrl,
     token: registration.token,
     tokenFile: options.tokenFile,
   });
@@ -396,6 +492,8 @@ export async function setupDevboxRunner({
     runner: registration.runner,
     service: await installDevboxRunnerService({
       checkoutDir,
+      executionMode,
+      dockerHost: options.dockerHost,
       json: options.json,
       manager: options.serviceManager,
       runCommand: options.runCommand,

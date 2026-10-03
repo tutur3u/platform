@@ -12,6 +12,10 @@ import {
   type DevboxDoctorReport,
 } from './devbox-doctor';
 import {
+  type DevboxExecutionMode,
+  parseDevboxExecutionMode,
+} from './devbox-host-protection';
+import {
   type DevboxSetupConfirm,
   ensurePlatformCheckout,
   resolveDevboxCheckout,
@@ -33,6 +37,10 @@ import {
 } from './devbox-setup-service';
 
 export interface DevboxSetupOptions {
+  executionMode?: DevboxExecutionMode;
+  dockerHost?: string;
+  controlUrl?: string;
+  judgeImages?: string;
   agent?: boolean;
   cloneInto?: string;
   client?: TuturuuuUserClient;
@@ -324,6 +332,12 @@ export async function runDevboxSetupCommand({
   }
 
   await runDevboxSetup({
+    executionMode: getFlag(flags, 'execution-mode')
+      ? parseDevboxExecutionMode(getFlag(flags, 'execution-mode'))
+      : undefined,
+    dockerHost: getFlag(flags, 'docker-host'),
+    controlUrl: getFlag(flags, 'control-url'),
+    judgeImages: getFlag(flags, 'judge-images'),
     agent: flags.agent === true,
     client,
     cloneInto: getFlag(flags, 'clone-into'),

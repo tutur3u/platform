@@ -1,6 +1,20 @@
-import { readFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
+import {
+  chown,
+  lstat,
+  readFile,
+  rename,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
+import { userInfo } from 'node:os';
 import { resolve } from 'node:path';
 import { type FlagValue, getFlag } from './args';
+import {
+  type DevboxExecutionMode,
+  parseDevboxExecutionMode,
+  preflightProtectedService,
+} from './devbox-host-protection';
 import {
   type DevboxCheckoutSelection,
   resolveExistingDevboxCheckout,
@@ -20,6 +34,8 @@ import {
 import { getServiceDefinitionPath } from './devbox-setup-service-templates';
 
 export interface DevboxRepairOptions {
+  executionMode?: DevboxExecutionMode;
+  dockerHost?: string;
   cwd?: string;
   dir?: string;
   dryRun?: boolean;
@@ -120,6 +136,25 @@ export async function runDevboxRepair(
   const manager = resolveDevboxServiceManager(options.serviceManager);
 
   await assertRunnerTokenFile(tokenFile);
+  const content = await readFile(tokenFile, 'utf8');
+  const readSetting = (key: string) =>
+    content
+      .split(/\r?\n/u)
+      .map((line) => line.trim().replace(/^export\s+/u, ''))
+      .find((line) => line.startsWith(`${key}=`))
+      ?.slice(key.length + 1)
+      .replace(/^['"]|['"]$/gu, '');
+  const executionMode =
+    options.executionMode ??
+    parseDevboxExecutionMode(readSetting('TUTURUUU_DEVBOX_EXECUTION_MODE'));
+  if (
+    readSetting('TUTURUUU_DEVBOX_EXECUTION_MODE') === 'judge-only' &&
+    executionMode !== 'judge-only'
+  )
+    throw new Error(
+      'Repair cannot weaken an existing Judge-only execution policy.'
+    );
+  const dockerHost = options.dockerHost ?? readSetting('DOCKER_HOST');
 
   const checkout = await resolveExistingDevboxCheckout({
     cwd: options.cwd,
@@ -128,14 +163,61 @@ export async function runDevboxRepair(
     runCommand,
   });
 
+  await preflightProtectedService({
+    mode: executionMode,
+    manager,
+    serviceUser: options.serviceUser ?? userInfo().username,
+    checkoutDir: checkout.path,
+    tokenFile,
+    cliCommand: [process.execPath, process.argv[1] ?? 'ttr'],
+    dockerHost,
+    runCommand,
+  });
+  if (!options.dryRun && (options.executionMode || options.dockerHost)) {
+    const metadata = await lstat(tokenFile);
+    if (!metadata.isFile() || metadata.isSymbolicLink())
+      throw new Error('Runner token file must be a regular private file.');
+    let updated = content;
+    for (const [key, value] of Object.entries({
+      TUTURUUU_DEVBOX_EXECUTION_MODE: executionMode,
+      ...(dockerHost ? { DOCKER_HOST: dockerHost } : {}),
+    })) {
+      updated = updated
+        .split(/\r?\n/u)
+        .filter(
+          (line) =>
+            !line
+              .trim()
+              .replace(/^export\s+/u, '')
+              .startsWith(`${key}=`)
+        )
+        .join('\n')
+        .trimEnd();
+      updated += `\n${key}='${value.replace(/'/gu, "'\\''")}'\n`;
+    }
+    const temporary = `${tokenFile}.${randomUUID()}.tmp`;
+    try {
+      await writeFile(temporary, updated, { mode: 0o600, flag: 'wx' });
+      await chown(temporary, metadata.uid, metadata.gid);
+      await rename(temporary, tokenFile);
+    } finally {
+      await rm(temporary, { force: true });
+    }
+  }
   const service = options.dryRun
     ? {
         definitionPath: getServiceDefinitionPath(manager),
         manager,
-        wrapperPath: resolve(getDefaultRunnerWrapperFile()),
+        wrapperPath: resolve(
+          getDefaultRunnerWrapperFile(
+            executionMode === 'judge-only' ? tokenFile : undefined
+          )
+        ),
       }
     : await installDevboxRunnerService({
         checkoutDir: checkout.path,
+        executionMode,
+        dockerHost,
         json: options.json,
         manager,
         runCommand,
@@ -194,6 +276,10 @@ export async function runDevboxRepairCommand({
     serviceManager: assertSupportedServiceManager(
       getFlag(flags, 'service-manager')
     ),
+    executionMode: getFlag(flags, 'execution-mode')
+      ? parseDevboxExecutionMode(getFlag(flags, 'execution-mode'))
+      : undefined,
+    dockerHost: getFlag(flags, 'docker-host'),
     serviceUser: getFlag(flags, 'service-user'),
     tokenFile: getFlag(flags, 'token-file'),
   });

@@ -109,6 +109,11 @@ the job. Verify `/health`, then a real runner heartbeat, claim, completion,
 revocation rejection, and Learn submission before moving additional runners.
 The old web API remains available until all runners are migrated.
 
+Without a Worker URL, idle claims back off from 5 to 10, 20, and then 30 seconds.
+A claimed job or completion resets that delay; heartbeats remain independent at
+20 seconds to preserve online detection and leases. Worker wake messages still
+trigger immediate claims, with a 30-second reconciliation poll for missed wakes.
+
 If a host completed `ttr box setup` but does not appear in Infrastructure >
 Devboxes, confirm it was registered as a runner. Plain setup prepares the
 checkout, dependencies, local Supabase, and ignored env files only; it does not
@@ -153,6 +158,148 @@ successful CLI update, the agent exits; a runner installed with `--service`
 restarts under systemd or launchd and reports its new CLI version on the next
 heartbeat. A manually started agent must be restarted by its operator. The run
 completion and the subsequent heartbeat are separate verification steps.
+
+### Platform-owned fleet controls
+
+Root members can use the existing Infrastructure authorization boundary through
+`client.devboxes.fleet.snapshot()` or the CLI:
+
+```bash
+ttr box runners --json
+ttr box inspect --runner <id> --json
+ttr box upgrade --runners <id,id> --dry-run
+ttr box upgrade --runners <id,id> --apply --json
+ttr box restart --all --dry-run
+```
+
+Fleet maintenance defaults to a dry run. `--apply` performs sequential,
+allowlisted maintenance, rechecks fresh heartbeats and unfinished work before
+each operation, stops on failure, and waits for a subsequent healthy heartbeat.
+Upgrades additionally verify the advertised CLI version against the registry
+release. Offline, revoked, busy, or truncated snapshots are skipped. Snapshot
+limits mean this is a conservative operator convenience, not an atomic host-wide
+reservation; coordinate a maintenance window when service users share an install.
+Capabilities, feature switches, and resource limits are available as structured
+JSON for tooling extensions. These commands do not enable arbitrary shell access
+or change runner workload permissions. Custom SDK deployments use their own
+origin rather than forwarding credentials to hosted Infrastructure.
+
+### Protecting hosts with existing critical files
+
+Use `--execution-mode judge-only` with `box connect`, `box setup`, or `box
+repair`. Supplying Judge images during registration defaults to Judge-only;
+general development runners retain trusted execution. `--control-url` persists
+the HTTPS Cloudflare Worker URL during registration. Protected service setup
+requires Linux systemd, a pre-existing non-login service user with its private
+home under `/var/lib`, a private service-owned token directory, and checkout and
+CLI outside personal homes. The dedicated root-owned Unix Docker socket must be
+restricted to that user's group; the user must not belong to the general
+`docker` group. Preflight verifies the daemon defaults to `runsc` with cgroup
+limits before registering a credential. It does not create OS users, move host
+files, or reconfigure a shared Docker daemon automatically.
+
+```bash
+ttr box connect --service --service-manager systemd --service-user tuturuuu-judge \
+  --execution-mode judge-only --docker-host unix:///run/tuturuuu-judge-docker/docker.sock \
+  --token-file /var/lib/tuturuuu-judge/config/runner.env --judge-images "$TUTURUUU_JUDGE_IMAGES"
+```
+
+Run this from the prepared runner directory with the CLI installed outside
+personal homes. Protected systemd units hide personal homes, make the host
+filesystem read-only except runner directories, remove capabilities, restrict
+devices, namespaces and kernel access, and set a private umask. Repair preserves
+an existing Judge-only policy and refuses to weaken it; `--dry-run` performs the
+same preflight before service writes. The wrapper prefers the service user's
+global `ttr` executable so upgrades affect the running service. Launchd lacks
+these Linux protections; use a dedicated Linux VM for protected Judge setup on
+macOS. Local policy enforcement requires the CLI release containing this change.
+
+Judge-only servers must keep Run, Build, Preview, and Tunnel disabled in
+Infrastructure. Set `TUTURUUU_DEVBOX_EXECUTION_MODE=judge-only` in the private
+runner environment after installing the release containing this local policy.
+It rejects host commands, environment files, and environment overrides on
+maintenance jobs even if a remote workload switch is accidentally enabled.
+Unknown modes fail closed. The exact CLI-update and supervised-restart commands
+remain root-member-authorized maintenance operations.
+
+Judge submissions use digest-pinned images, gVisor `runsc`, an unprivileged
+container user, no network, a read-only root filesystem, no host bind mounts,
+dropped capabilities, no privilege escalation, and CPU/memory/PID/time limits.
+Never expose the Docker socket to submissions. The runner and dedicated Docker
+daemon remain trusted infrastructure: access to a rootful Docker socket is a
+privileged control plane, even when its default runtime is gVisor. Keep the
+service user out of the general Docker group, use a dedicated Unix socket, hide
+personal home directories, and do not use this host for arbitrary trusted devbox
+commands. Stronger isolation for additional workloads requires a separate VM or
+host; a shell-command denylist is not a security boundary.
+
+### Operator-owned automatic upgrades
+
+For a fleet whose service users do not have CLI user sessions, schedule upgrades
+from an authenticated operator machine with an explicit runner allowlist:
+
+```bash
+bun scripts/devbox-cli-upgrades.ts --runner <id> --runner <id>
+bun scripts/devbox-cli-upgrades.ts --runner <id> --runner <id> --apply
+bun scripts/setup-devbox-cli-upgrades.ts --runner <id> --runner <id> --dry-run
+bun scripts/setup-devbox-cli-upgrades.ts --runner <id> --runner <id>
+```
+
+The installer supports macOS launchd, checks at login and every 24 hours while
+the operator machine is running, and stores its standalone script and private
+logs under `~/.tuturuuu/devbox-upgrades`. It uses the existing CLI session and
+never copies credentials into its plist. `launchctl print
+gui/$(id -u)/com.tuturuuu.devbox-cli-upgrades` shows scheduler status. A full
+snapshot, an active lease, stale heartbeat, or unfinished job prevents upgrade;
+an unsuccessful run or version heartbeat stops the remaining operations.
+Keep runner self-upgrades disabled when this scheduler owns maintenance.
+
+Ensure the service's executable points at the same global installation that
+`bun i -g tuturuuu` updates for its OS user. A successful install into a different
+path does not update a service launching an older private copy. After changing a
+systemd path, drain work, reload the unit, restart sequentially, and verify each
+runner's heartbeat and CLI version.
+
+### Automatic CLI upgrades
+
+New or repaired managed services default `TUTURUUU_DEVBOX_AUTO_UPGRADE=false`.
+Enable `TUTURUUU_DEVBOX_AUTO_UPGRADE=true` in the private runner environment only
+after selecting an upgrade owner and maintenance policy. Existing services need one repair after the
+release containing this capability is installed:
+
+```bash
+ttr box repair --dir . --dry-run
+ttr box repair --dir .
+```
+
+An idle agent checks the official npm registry at most once per day, installs
+only a newer stable `tuturuuu` release pinned to its exact version, verifies
+`--version`, and exits for its service manager to restart. It pauses new claims
+during installation and keeps heartbeating. A private host lock serializes
+installs from runners sharing an OS user home directory, and persisted check state
+prevents restart retry loops. Other agents using that shared install restart
+after verifying the installed version. Each agent drains its own jobs; for hosts
+with different OS service users or unrelated CLI consumers, coordinate a
+host maintenance window or opt out instead of assuming this lock covers them.
+
+Installer subprocesses receive host path/runtime variables, never the runner
+token. An unverified install attempts to restore the previous release. A failed
+rollback stops the agent with a repair error; inspect service logs and repair
+the host installation. A lock surviving a crash requires operator inspection
+before removing it; never remove a lock held by a running installer.
+
+Set `TUTURUUU_DEVBOX_AUTO_UPGRADE=false` in `devbox-runner.env` to opt out.
+Manually started and source-checkout agents do not upgrade automatically unless
+explicitly configured, and source `.ts` entry points never mutate the global CLI.
+Infrastructure's **Update CLI** remains the bootstrap for existing runners;
+confirm both its successful run and the subsequent version heartbeat. Source
+changes take effect only after the normal tested CLI release is published.
+
+Regression coverage: `devbox-auto-upgrade.test.ts` covers stable version
+validation, pinned installation, shared-host locking, restart throttling,
+verification and rollback. `devbox-agent.test.ts` covers claim backoff,
+independent heartbeats, concurrency, draining and supervised restart;
+`devbox-setup.test.ts` verifies the service wrapper preserves the explicit opt-in.
 
 Infrastructure > Devboxes lets root administrators enable or disable command,
 build, preview, and tunnel workloads per runner. New runners default to those
