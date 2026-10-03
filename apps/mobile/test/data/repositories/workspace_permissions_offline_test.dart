@@ -128,6 +128,44 @@ void main() {
   });
 
   test(
+    'instant verified hints are isolated by actor/workspace and revoke online',
+    () async {
+      expect(repository.peekPermissions('ws'), isNull);
+      await repository.getPermissions(wsId: 'ws');
+      expect(
+        repository
+            .peekPermissions('ws')
+            ?.containsPermission('manage_inventory'),
+        isTrue,
+      );
+      expect(repository.peekPermissions('another'), isNull);
+      actor = 'another';
+      expect(repository.peekPermissions('ws'), isNull);
+      expect(
+        (await repository.readCachedPermissions(
+          'ws',
+        )).containsPermission('manage_inventory'),
+        isFalse,
+      );
+      actor = 'user';
+      expect(
+        (await repository.readCachedPermissions(
+          'ws',
+        )).containsPermission('manage_inventory'),
+        isTrue,
+      );
+      grant = false;
+      await repository.getPermissions(wsId: 'ws');
+      expect(
+        repository
+            .peekPermissions('ws')
+            ?.containsPermission('manage_inventory'),
+        isFalse,
+      );
+    },
+  );
+
+  test(
     'transport failure uses scoped hint but online refresh revokes grants',
     () async {
       expect(
