@@ -123,7 +123,9 @@ Tuturuuu uses the following branch types:
 | `claude`     | AI-assisted scratch or experimental PR | `claude/rate-limit-audit`       |
 
 Release Please bot branches are also accepted with the
-`release-please--branches--` prefix. Do not create human-authored branches with
+`release-please--branches--` prefix. The exact automated image-optimization branch
+`imgbot` is also allowed; similarly named branches still require a conventional
+prefix. Do not create human-authored branches with
 that prefix.
 
 ### Naming Rules
@@ -290,11 +292,11 @@ jobs:
       - name: Check branch name
         run: |
           BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          if ! [[ $BRANCH_NAME =~ ^(feature|feat|fix|bugfix|hotfix|release|chore|docs|style|refactor|perf|dependabot|claude)/.+|^release-please--branches--.+ ]]; then
+          if ! [[ $BRANCH_NAME =~ ^(feature|feat|fix|bugfix|hotfix|release|chore|docs|style|refactor|perf|dependabot|claude)/.+|^release-please--branches--.+|^imgbot$ ]]; then
             echo "❌ Branch name '$BRANCH_NAME' doesn't follow the conventional branch format."
             echo "Branch name should be in format: type/description"
             echo "Allowed types: feature, feat, fix, bugfix, hotfix, release, chore, docs, style, refactor, perf, dependabot, claude"
-            echo "Release Please bot branches are also allowed with the release-please--branches-- prefix."
+            echo "Bot branches are also allowed with the release-please--branches-- prefix or the exact name imgbot."
             exit 1
           else
             echo "✅ Branch name follows convention: $BRANCH_NAME"
