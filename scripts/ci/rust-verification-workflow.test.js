@@ -95,6 +95,26 @@ test('actual compile commands retain native and Worker feature contracts and loc
   assert.equal(setup.with.targets, 'wasm32-unknown-unknown');
 });
 
+test('native tests run before strict lint can block Worker packaging', () => {
+  const native = job.steps.findIndex(
+    (step) => step.name === 'Test native backend'
+  );
+  const clippy = job.steps.findIndex(
+    (step) => step.name === 'Clippy native targets'
+  );
+  assert.ok(native >= 0 && native < clippy);
+  assert.equal(job.steps[native].run, 'cargo test --locked');
+  assert.equal(job.steps[native].if, undefined);
+  assert.equal(
+    job.steps[clippy].run,
+    'cargo clippy --locked --all-targets --features native -- -D warnings'
+  );
+  assert.equal(job.steps[clippy]['continue-on-error'], undefined);
+  assert.equal(job['continue-on-error'], undefined);
+  assert.equal(workerJob.needs, 'verify');
+  assert.doesNotMatch(workerJob.if, /always\(\)|failure\(\)/);
+});
+
 test('read-only guard rejects the Wrangler Action and executable forms', () => {
   for (const value of [
     'uses: cloudflare/wrangler-action@v3',
@@ -288,4 +308,87 @@ test('Worker package semantics reject entry drift, missing exports and broken mo
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+});
+
+const disconnectedPorts = [
+  ['storage_download_path', '/api/v1/storage/download/*path'],
+  [
+    'workspaces_external_projects_delivery',
+    '/api/v1/workspaces/:wsId/external-projects/delivery',
+  ],
+  [
+    'workspaces_wsid_external_projects_assets_assetid',
+    '/api/v1/workspaces/:wsId/external-projects/assets/:assetId',
+  ],
+  ['workspaces_wsid_storage_share', '/api/v1/workspaces/:wsId/storage/share'],
+];
+
+function assertDisconnectedPorts(registry, dispatcher, overrides) {
+  const expectations = [
+    ...registry.matchAll(
+      /#\[expect\(\s*dead_code,\s*reason = "([^"]+)"\s*\)\]\s*mod (\w+);/g
+    ),
+  ];
+  assert.deepEqual(
+    expectations.map((match) => match[2]).sort(),
+    disconnectedPorts.map(([name]) => name).sort()
+  );
+  assert.match(registry, /#!\[deny\(unfulfilled_lint_expectations\)\]/);
+  assert.doesNotMatch(registry, /#!?\[allow\(dead_code/);
+  for (const [name, route] of disconnectedPorts) {
+    const expectation = expectations.find((match) => match[2] === name);
+    assert.match(expectation[1], /guarded.*parity.*route-overrides/);
+    assert.ok(
+      !dispatcher.includes(`${name}::`),
+      `${name} must remain disconnected`
+    );
+    const override = Object.entries(overrides.routes).find(([key]) =>
+      key.startsWith(`api:${route}:`)
+    )?.[1];
+    assert.equal(override?.status, 'legacy-next', route);
+    assert.match(override.note, /disabled|pending/i);
+  }
+}
+
+test('intentional dead-code expectations are bounded to unsafe disconnected ports', () => {
+  const registry = fs.readFileSync(
+    path.join(root, 'apps/backend/src/lib.rs'),
+    'utf8'
+  );
+  const directory = path.join(root, 'apps/backend/src/dispatch');
+  const dispatcher = fs
+    .readdirSync(directory)
+    .filter((name) => name.endsWith('.rs'))
+    .map((name) => fs.readFileSync(path.join(directory, name), 'utf8'))
+    .join('\n')
+    .replace(/\/\/[^\n]*/g, '');
+  const overrides = JSON.parse(
+    fs.readFileSync(
+      path.join(root, 'apps/tanstack-web/migration/route-overrides.json'),
+      'utf8'
+    )
+  );
+  assertDisconnectedPorts(registry, dispatcher, overrides);
+  for (const [name, route] of disconnectedPorts) {
+    assert.throws(() =>
+      assertDisconnectedPorts(
+        registry,
+        `${dispatcher} ${name}::handle_route()`,
+        overrides
+      )
+    );
+    const changed = structuredClone(overrides);
+    const key = Object.keys(changed.routes).find((entry) =>
+      entry.startsWith(`api:${route}:`)
+    );
+    changed.routes[key].status = 'migrated';
+    assert.throws(() => assertDisconnectedPorts(registry, dispatcher, changed));
+  }
+  assert.throws(() =>
+    assertDisconnectedPorts(
+      registry.replace(/expect\(\s*dead_code,/, 'allow(dead_code,'),
+      dispatcher,
+      overrides
+    )
+  );
 });

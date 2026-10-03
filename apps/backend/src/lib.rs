@@ -1,3 +1,5 @@
+#![deny(unfulfilled_lint_expectations)]
+
 use serde::Serialize;
 use serde_json::{Value, json};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -193,6 +195,10 @@ mod shared_forms_sharecode;
 mod shared_task_boards;
 mod shared_tasks_sharecode;
 mod storage_analytics;
+#[expect(
+    dead_code,
+    reason = "Dispatcher disabled pending guarded relay/source parity; see route-overrides.json"
+)]
 mod storage_download_path;
 mod storage_list;
 #[cfg(test)]
@@ -285,6 +291,10 @@ mod workspaces_education_attempts;
 mod workspaces_education_attempts_attemptid;
 mod workspaces_external_projects;
 mod workspaces_external_projects_collections;
+#[expect(
+    dead_code,
+    reason = "Dispatcher disabled pending guarded relay/source parity; see route-overrides.json"
+)]
 mod workspaces_external_projects_delivery;
 mod workspaces_external_projects_entries;
 mod workspaces_external_projects_members_roles;
@@ -479,6 +489,10 @@ mod workspaces_wsid_external_apps_cron;
 mod workspaces_wsid_external_apps_cron_executions;
 mod workspaces_wsid_external_apps_cron_jobs_jobkey_executions;
 mod workspaces_wsid_external_apps_members;
+#[expect(
+    dead_code,
+    reason = "Dispatcher disabled pending guarded relay/source parity; see route-overrides.json"
+)]
 mod workspaces_wsid_external_projects_assets_assetid;
 mod workspaces_wsid_external_projects_field_definitions;
 mod workspaces_wsid_external_projects_storage;
@@ -531,6 +545,10 @@ mod workspaces_wsid_settings_configs;
 mod workspaces_wsid_settings_configs_test;
 mod workspaces_wsid_settings_email_audit;
 mod workspaces_wsid_settings_members;
+#[expect(
+    dead_code,
+    reason = "Dispatcher disabled pending guarded relay/source parity; see route-overrides.json"
+)]
 mod workspaces_wsid_storage_share;
 mod workspaces_wsid_task_boards;
 mod workspaces_wsid_task_boards_boardid;
