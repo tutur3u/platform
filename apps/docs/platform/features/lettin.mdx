@@ -261,9 +261,13 @@ upload handler's colocated tests and `profile-upload-budget.test.ts`.
 
 The shared contract applies to current-user media ticket issuers, including the
 avatar endpoint in this foundation and the dependent banner endpoint. Existing
-workspace and shared profile-link ticket endpoints retain their own authorization
-and API abuse budgets; the shared avatar bucket byte/MIME ceilings also apply
-to their uploads.
+workspace ticket endpoints retain their own authorization and API abuse budgets.
+Shared public profile-link avatar tickets reserve the account media ceilings above
+against the verified workspace and link identity, plus the shared global ceilings,
+before issuing a signed URL; revoked or unauthorized links cannot reserve tickets.
+These tickets do not charge the link creator's account. Reservation failure prevents
+signing and returns a bounded retry delay. The shared avatar byte/MIME ceilings
+also apply. Regression evidence: the public profile-link avatar handler's colocated tests.
 
 Legacy handle rows with no recorded owner are attributed only when an existing
 canonical profile references that handle; explicitly owned reservations are never

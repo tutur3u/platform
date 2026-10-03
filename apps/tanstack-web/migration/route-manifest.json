@@ -2066,11 +2066,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/public/user-profile-links/:code/avatar:apps/web/src/legacy-api-routes/v1/public/user-profile-links/[code]/avatar/route.ts",
+      "id": "api:/api/v1/public/user-profile-links/:code/avatar:apps/web/src/app/api/v1/public/user-profile-links/[code]/avatar/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/v1/public/user-profile-links/:code/avatar",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/public/user-profile-links/[code]/avatar/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/public/user-profile-links/[code]/avatar/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -2354,11 +2354,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/users/me/profile:apps/web/src/legacy-api-routes/v1/users/me/profile/route.ts",
+      "id": "api:/api/v1/users/me/profile:apps/web/src/app/api/v1/users/me/profile/route.ts",
       "kind": "api",
       "methods": ["GET", "PATCH"],
       "routePath": "/api/v1/users/me/profile",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/users/me/profile/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/users/me/profile/route.ts",
       "status": "migrated",
       "targetOwner": "rust-backend"
     },

@@ -52,13 +52,45 @@ function createProfileSupabase({
 }
 
 describe('current user profile route', () => {
+  it.each(['120', 'not-a-number'])(
+    'returns quota timing safely for detail %s',
+    async (details) => {
+      const route = await import('@/app/api/v1/users/me/profile/route');
+      const eq = vi.fn().mockResolvedValue({
+        error: {
+          code: 'PT429',
+          hint: 'display_name_change_limit',
+          details,
+          message: 'private database details',
+        },
+      });
+      const supabase = { from: () => ({ update: () => ({ eq }) }) };
+      const response = await (route.PATCH as any)(
+        new NextRequest('https://example.test/api/v1/users/me/profile', {
+          method: 'PATCH',
+          body: JSON.stringify({ display_name: 'Third name' }),
+        }),
+        { user: { id: 'resolved-actor' }, supabase }
+      );
+      expect(response.status).toBe(429);
+      const seconds = details === '120' ? 120 : 14 * 86400;
+      expect(response.headers.get('Retry-After')).toBe(String(seconds));
+      expect(await response.json()).toEqual({
+        message: 'Profile change limit reached',
+        code: 'display_name_change_limit',
+        retryAfter: seconds,
+      });
+      expect(eq).toHaveBeenCalledWith('id', 'resolved-actor');
+    }
+  );
+
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
   });
 
   it('wires GET and PATCH with scoped internal-or-external profile auth policies', async () => {
-    await import('@/legacy-api-routes/v1/users/me/profile/route');
+    await import('@/app/api/v1/users/me/profile/route');
 
     expect(withSessionAuthMock).toHaveBeenCalledTimes(2);
     expect(withSessionAuthMock.mock.calls[0]?.[1]).toEqual({
@@ -135,7 +167,7 @@ describe('current user profile route', () => {
   });
 
   it('returns public profile fields with email from private user details', async () => {
-    const route = await import('@/legacy-api-routes/v1/users/me/profile/route');
+    const route = await import('@/app/api/v1/users/me/profile/route');
     const supabase = createProfileSupabase({
       userResult: {
         data: {
@@ -177,7 +209,7 @@ describe('current user profile route', () => {
   });
 
   it('does not fall back to auth email when private email is missing', async () => {
-    const route = await import('@/legacy-api-routes/v1/users/me/profile/route');
+    const route = await import('@/app/api/v1/users/me/profile/route');
     const supabase = createProfileSupabase({
       userResult: {
         data: {
@@ -216,7 +248,7 @@ describe('current user profile route', () => {
   });
 
   it('returns current app-session identity when the public profile row is absent', async () => {
-    const route = await import('@/legacy-api-routes/v1/users/me/profile/route');
+    const route = await import('@/app/api/v1/users/me/profile/route');
     const supabase = createProfileSupabase({
       userResult: {
         data: null,

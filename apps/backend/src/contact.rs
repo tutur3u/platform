@@ -11,6 +11,7 @@ use crate::{
 
 mod current_user_session_targets;
 mod datetime;
+mod profile_error;
 mod session;
 mod validation;
 
@@ -659,10 +660,8 @@ async fn current_user_profile_patch_data_response(
             200,
             json!({ "message": "Profile updated successfully" }),
         )),
-        Ok(_) | Err(_) => no_store_response(json_response(
-            500,
-            json!({ "message": "Internal server error" }),
-        )),
+        Ok(response) => profile_error::update_error(Some(&response)),
+        Err(_) => profile_error::update_error(None),
     }
 }
 
