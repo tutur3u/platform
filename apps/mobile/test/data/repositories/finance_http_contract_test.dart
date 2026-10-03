@@ -146,7 +146,15 @@ void main() {
         expect(request.method, 'POST');
         expect(request.url.path, _walletPath);
         final payload = body(request);
-        expect(payload['id'], matches(RegExp(r'^[0-9a-f-]{36}$')));
+        expect(
+          payload['id'],
+          matches(
+            RegExp(
+              '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-'
+              r'[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+            ),
+          ),
+        );
         expect(payload['type'], 'CREDIT');
         expect(payload['limit'], 1000);
         expect(payload['statement_date'], 10);
@@ -281,7 +289,12 @@ void main() {
         final payload = body(request);
         expect(
           payload['client_transaction_id'],
-          matches(RegExp(r'^[0-9a-f-]{36}$')),
+          matches(
+            RegExp(
+              '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-'
+              r'[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+            ),
+          ),
         );
         expect(payload['origin_wallet_id'], _wallet);
         expect(payload['taken_at'], _checkedAt.toUtc().toIso8601String());

@@ -42,6 +42,12 @@ void main() {
           expect(req.method, 'POST');
           expect(req.url.path, '$base/finance/invoices');
           final body = jsonDecode(req.body) as Map<String, dynamic>;
+          if (notes == null) {
+            expect(body.containsKey('notes'), false);
+          } else {
+            expect(body.containsKey('notes'), true);
+            expect(body['notes'], notes);
+          }
           if (body.containsKey('notes') && body['notes'] is! String) {
             return InventoryApiContractHarness.json({
               'message': 'Invalid notes',
