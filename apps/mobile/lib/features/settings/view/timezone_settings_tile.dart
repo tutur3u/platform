@@ -133,22 +133,42 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
               : context.l10n.settingsTimezoneEffective(state.effective),
           value: state.loading || state.saving
               ? '…'
-              : !(state.resolved ||
-                    (widget.workspace
-                        ? state.workspaceLoaded
-                        : state.personalLoaded))
+              : !(widget.workspace
+                    ? state.workspaceLoaded
+                    : state.personalLoaded)
               ? context.l10n.settingsTimezoneUnknown
               : (widget.workspace ? state.workspace : state.personal) == 'auto'
               ? context.l10n.settingsTimezoneAuto
               : (widget.workspace ? state.workspace : state.personal),
+          trailing: state.failed
+              ? IconButton(
+                  key: ValueKey(
+                    widget.workspace
+                        ? 'timezone-retry-workspace'
+                        : 'timezone-retry-personal',
+                  ),
+                  tooltip: context.l10n.settingsTimezoneRetry,
+                  onPressed: _coolingDown || state.loading || state.saving
+                      ? null
+                      : () => unawaited(_load()),
+                  icon: const Icon(Icons.refresh_rounded),
+                )
+              : null,
           showChevron: !widget.workspace || widget.canManageWorkspace,
           onTap:
               _coolingDown ||
                   state.loading ||
                   state.saving ||
-                  (!state.resolved && !state.failed)
+                  (!state.resolved &&
+                      !state.failed &&
+                      !(widget.workspace
+                          ? state.workspaceLoaded
+                          : state.personalLoaded))
               ? null
-              : state.failed && !state.resolved
+              : state.failed &&
+                    !(widget.workspace
+                        ? state.workspaceLoaded
+                        : state.personalLoaded)
               ? () => unawaited(_load())
               : widget.workspace && !widget.canManageWorkspace
               ? null

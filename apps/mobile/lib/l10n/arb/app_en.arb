@@ -3974,7 +3974,8 @@
     "settingsTimezoneUnknown": "Unknown",
     "settingsTimezoneEffective": "Effective timezone: {timezone}",
     "settingsTimezoneRateLimited": "Too many requests. Please wait before retrying.",
-    "settingsTimezoneError": "Could not load or save timezone. Tap to retry.",
+    "settingsTimezoneRetry": "Retry timezone",
+    "settingsTimezoneError": "Could not load or save timezone. Retry or edit a loaded preference.",
     "@settingsTimezoneEffective": {
         "placeholders": {
             "timezone": {

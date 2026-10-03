@@ -18253,10 +18253,16 @@ abstract class AppLocalizations {
   /// **'Too many requests. Please wait before retrying.'**
   String get settingsTimezoneRateLimited;
 
+  /// No description provided for @settingsTimezoneRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry timezone'**
+  String get settingsTimezoneRetry;
+
   /// No description provided for @settingsTimezoneError.
   ///
   /// In en, this message translates to:
-  /// **'Could not load or save timezone. Tap to retry.'**
+  /// **'Could not load or save timezone. Retry or edit a loaded preference.'**
   String get settingsTimezoneError;
 
   /// No description provided for @calendarInvalidLocalTime.

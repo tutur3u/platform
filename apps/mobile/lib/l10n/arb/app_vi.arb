@@ -3977,7 +3977,8 @@
     "settingsTimezoneUnknown": "Chưa xác định",
     "settingsTimezoneEffective": "Múi giờ áp dụng: {timezone}",
     "settingsTimezoneRateLimited": "Quá nhiều yêu cầu. Vui lòng chờ trước khi thử lại.",
-    "settingsTimezoneError": "Không thể tải hoặc lưu múi giờ. Nhấn để thử lại.",
+    "settingsTimezoneRetry": "Thử lại múi giờ",
+    "settingsTimezoneError": "Không thể tải hoặc lưu múi giờ. Hãy thử lại hoặc sửa tùy chọn đã tải.",
     "@settingsTimezoneEffective": {
         "placeholders": {
             "timezone": {

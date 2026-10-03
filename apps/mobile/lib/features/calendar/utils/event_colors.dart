@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 
 /// Maps event color strings (from Supabase) to Flutter colors.
 abstract final class EventColors {
@@ -64,6 +65,49 @@ abstract final class EventColors {
         : Colors.white;
   }
 
+  /// Provider identity stays unchanged; presentation blends its hue into the
+  /// active theme. Completed events have a quieter fill, never faded text.
+  static EventPresentation presentation(
+    CalendarEvent event,
+    ColorScheme scheme, {
+    required DateTime now,
+  }) {
+    final end = event.endAt ?? event.startAt;
+    final past = end != null && !end.isAfter(now);
+    final seed = forEvent(event);
+    final dark = scheme.brightness == Brightness.dark;
+    final background = Color.alphaBlend(
+      seed.withValues(alpha: past ? 0.08 : (dark ? 0.28 : 0.18)),
+      scheme.surface,
+    );
+    final hue = HSLColor.fromColor(seed);
+    final accent = hue.withLightness(dark ? 0.72 : 0.36).toColor();
+    return EventPresentation(
+      background: background,
+      foreground: _contrastingForeground(background),
+      accent: past
+          ? Color.alphaBlend(accent.withValues(alpha: 0.45), scheme.surface)
+          : accent,
+      isPast: past,
+    );
+  }
+
+  static EventPresentation inContext(
+    CalendarEvent event,
+    BuildContext context,
+  ) => presentation(
+    event,
+    Theme.of(context).colorScheme,
+    now: calendarNowInContext(context),
+  );
+
+  static Color _contrastingForeground(Color background) {
+    final luminance = background.computeLuminance();
+    return (luminance + 0.05) / 0.05 >= 1.05 / (luminance + 0.05)
+        ? Colors.black
+        : Colors.white;
+  }
+
   static Color bright(String? color) {
     final luminance = fromString(color).computeLuminance();
     return (luminance + 0.05) / 0.05 >= 1.05 / (luminance + 0.05)
@@ -86,4 +130,18 @@ abstract final class EventColors {
     'CYAN',
     'GRAY',
   ];
+}
+
+/// Theme rendering values, distinct from persisted provider color identity.
+class EventPresentation {
+  const EventPresentation({
+    required this.background,
+    required this.foreground,
+    required this.accent,
+    required this.isPast,
+  });
+  final Color background;
+  final Color foreground;
+  final Color accent;
+  final bool isPast;
 }

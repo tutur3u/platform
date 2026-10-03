@@ -449,10 +449,17 @@ establish complete two-way color editing. Sync never rewrites a calendar's label
 array or implicitly publishes a private native calendar to Google.
 
 
-### Opaque event rendering
+### Event rendering and provider identity
 
-Web and mobile event surfaces render opaque fills with the higher-contrast black
-or white foreground. Persisted `google_color` RGB is used when available; only
+Web event surfaces render opaque provider fills with the higher-contrast black
+or white foreground. Mobile agenda, day/three-day/week cards, all-day chips and
+month indicators blend the same read-only provider hue into the active theme.
+Completed mobile events (end at or before the shared projected wall clock) use
+a weaker background tint and accent; foreground text remains fully opaque with
+at least 4.5:1 contrast. All-day ends remain exclusive, so an event stays active
+until its final midnight boundary. A shared minute clock refreshes completion
+styles while the Calendar screen is visible. This presentation never changes
+the stored provider RGB, explicit/inherited intent or event times. Persisted `google_color` RGB is used when available; only
 known inherited intent uses a valid current source RGB. Authenticated list/item
 reads join the current stored connection RGB only for a persisted source calendar
 link in the actor's active Google accounts. Unbound legacy rows, mismatched source
@@ -462,8 +469,8 @@ fetch or mutate Google and does not infer intent for legacy rows. Native and leg
 without resolved provider metadata retain their canonical event color. Rendering
 does not infer old color intent, fetch a provider palette, or rewrite events.
 
-Timed, all-day, agenda, month/year, location and drag previews use the same
-read-only color policy. Past events use text decoration rather than translucent
+Web timed, all-day, agenda, month/year, location and drag previews use the same
+read-only color policy. Past web events use text decoration rather than translucent
 fills; optimistic/preview status uses outlines. Hovering an overlapped lower card
 hides upper cards instead of blending their fills, and restores them when the
 hover ends. Focus/drag/resize states retain opaque backgrounds. The existing
@@ -510,3 +517,27 @@ intent contract. They do not establish a persistent all-day intent flag or verif
 live provider writes. Focused mounted tests exercise navigation, labels, grouping,
 and fetch boundaries; deployed browser verification and exact-head CI remain
 separate release checks.
+
+
+### Mobile wall-clock display and timezone preference recovery
+
+Mobile parses offset-bearing API timestamps into UTC instants once, then projects
+those instants into the selected Calendar timezone once. Agenda labels consume the
+projected wall-clock fields directly, including when the device timezone differs;
+they must not call native `toLocal` on a projected event. Existing UTC date-only
+all-day identity and DST-aware midnight bounds remain unchanged. Regression
+coverage lives in `agenda_view_test.dart`, `calendar_date_time_test.dart` and
+`calendar_event_presentation_test.dart`.
+
+Personal and workspace timezone preferences load independently. A successfully
+loaded scope remains editable if the other scope or the native timezone lookup
+fails. Saving a named personal preference can resolve Calendar without a device
+lookup. Workspace saving still requires permission and a loaded workspace scope.
+Failed reads retain Unknown with an explicit retry; they never imply an automatic
+preference or cause an implicit save. Failed saves retain the prior preference and
+allow retry. Account/workspace changes invalidate in-flight replies and editors.
+`timezone_settings_http_contract_test.dart` and
+`timezone_settings_http_widget_test.dart` exercise production gateway paths,
+Bearer serialization, failure/retry and explicit saving with synthetic data.
+Those checks do not prove a real provider session or explain a particular user's
+failed authenticated request without runtime evidence.

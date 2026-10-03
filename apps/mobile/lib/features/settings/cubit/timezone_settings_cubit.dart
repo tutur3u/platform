@@ -88,8 +88,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
         resolved: sameScope && previous.resolved,
         personalLoaded:
             sameUser && (previous.resolved || previous.personalLoaded),
-        workspaceLoaded:
-            sameScope && (previous.resolved || previous.workspaceLoaded),
+        workspaceLoaded: sameScope && previous.workspaceLoaded,
       ),
     );
     if (userId == null) {
@@ -153,6 +152,8 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
           device: values[2],
           loading: false,
           resolved: true,
+          personalLoaded: true,
+          workspaceLoaded: workspaceId != null,
         ),
       );
     } on Object catch (error) {
@@ -172,6 +173,8 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
                   device: previous.device,
                   loading: false,
                   resolved: true,
+                  personalLoaded: previous.personalLoaded,
+                  workspaceLoaded: previous.workspaceLoaded,
                   failed: true,
                   retryAt: _retryAt,
                 )
@@ -194,6 +197,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
                   workspaceLoaded:
                       workspaceRead != null ||
                       (sameScope && previous.workspaceLoaded),
+                  device: '',
                   loading: false,
                   failed: true,
                   retryAt: _retryAt,
@@ -215,7 +219,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
         _userId == null ||
         state.loading ||
         state.saving ||
-        !state.resolved ||
+        !(workspace ? state.workspaceLoaded : state.personalLoaded) ||
         (workspace && (!canManageWorkspace || _workspaceId == null))) {
       return;
     }
@@ -227,7 +231,9 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
         workspace: previous.workspace,
         device: previous.device,
         loading: false,
-        resolved: true,
+        resolved: previous.resolved,
+        personalLoaded: previous.personalLoaded,
+        workspaceLoaded: previous.workspaceLoaded,
         saving: true,
       ),
     );
@@ -243,17 +249,33 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
         }
         if (isClosed || generation != _generation) return;
       }
-      final saved = workspace
-          ? await repository.saveWorkspace(_workspaceId!, zone)
-          : await repository.savePersonal(zone);
+      final saved = await ApiClient.runForUser(
+        _userId!,
+        () => workspace
+            ? repository.saveWorkspace(_workspaceId!, zone)
+            : repository.savePersonal(zone),
+      );
       if (isClosed || generation != _generation) return;
+      final personal = workspace ? previous.personal : saved;
+      final workspaceZone = workspace ? saved : previous.workspace;
+      final personalKnown = !workspace || previous.personalLoaded;
+      final workspaceKnown =
+          _workspaceId == null || workspace || previous.workspaceLoaded;
+      final resolved =
+          personalKnown &&
+          (personal != 'auto' ||
+              (workspaceKnown &&
+                  (workspaceZone != 'auto' || device.isNotEmpty)));
       emit(
         TimezoneSettingsState(
-          personal: workspace ? previous.personal : saved,
-          workspace: workspace ? saved : previous.workspace,
+          personal: personal,
+          workspace: workspaceZone,
           device: device,
           loading: false,
-          resolved: true,
+          resolved: resolved,
+          failed: !resolved,
+          personalLoaded: !workspace || previous.personalLoaded,
+          workspaceLoaded: workspace || previous.workspaceLoaded,
         ),
       );
     } on Exception catch (error) {
@@ -269,7 +291,9 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
             workspace: previous.workspace,
             device: previous.device,
             loading: false,
-            resolved: true,
+            resolved: previous.resolved,
+            personalLoaded: previous.personalLoaded,
+            workspaceLoaded: previous.workspaceLoaded,
             failed: true,
             retryAt: _retryAt,
           ),
