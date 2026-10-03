@@ -2,6 +2,10 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import {
+  INVENTORY_SQL_FIXTURES,
+  runInventoryContractTests,
+} from './inventory-contract-tests.mjs';
 import { ensureSupabaseBinary, runCommand } from './run-supabase.js';
 import {
   chooseAvailablePortBlock,
@@ -34,7 +38,7 @@ const trackedFiles = execFileSync(
 )
   .split('\0')
   .filter(Boolean);
-const fixtures = ['inventory-offline-create.sql'];
+const fixtures = INVENTORY_SQL_FIXTURES;
 const ports = await chooseAvailablePortBlock(identity);
 const metadata = await stageDisposableProject({
   repositoryRoot,
@@ -76,48 +80,7 @@ const excluded =
   'gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor';
 const runner = async (command, args, cwd) => {
   if (args.includes('test')) {
-    const container = `supabase_db_${metadata.projectId}`;
-    for (const fixture of fixtures) {
-      const target = '/tmp/inventory-offline-contract.sql';
-      execFileSync('docker', [
-        'cp',
-        path.resolve(metadata.disposableRoot, 'supabase/tests', fixture),
-        `${container}:${target}`,
-      ]);
-      const tap = execFileSync(
-        'docker',
-        [
-          'exec',
-          container,
-          'psql',
-          '-X',
-          '-A',
-          '-t',
-          '-v',
-          'ON_ERROR_STOP=1',
-          '-U',
-          'supabase_admin',
-          '--dbname',
-          'postgres',
-          '-f',
-          target,
-        ],
-        { encoding: 'utf8' }
-      );
-      console.log(`SQL fixture: ${fixture}\n${tap}`);
-      const plan = tap.match(/^1\.\.(\d+)$/m);
-      const passes = [...tap.matchAll(/^ok (\d+) - /gm)].map((match) =>
-        Number(match[1])
-      );
-      if (
-        !plan ||
-        /^not ok /m.test(tap) ||
-        passes.length !== Number(plan[1]) ||
-        !passes.every((n, i) => n === i + 1)
-      )
-        return { code: 1 };
-    }
-    return { code: 0 };
+    return runInventoryContractTests(metadata);
   }
   return runCommand(
     command,

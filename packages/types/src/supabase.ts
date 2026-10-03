@@ -5725,6 +5725,13 @@ export type Database = {
             foreignKeyName: 'inventory_batches_warehouse_id_fkey';
             columns: ['warehouse_id'];
             isOneToOne: false;
+            referencedRelation: 'inventory_active_warehouses';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_batches_warehouse_id_fkey';
+            columns: ['warehouse_id'];
+            isOneToOne: false;
             referencedRelation: 'inventory_warehouses';
             referencedColumns: ['id'];
           },
@@ -5815,6 +5822,13 @@ export type Database = {
             columns: ['unit_id'];
             isOneToOne: false;
             referencedRelation: 'inventory_units';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_bundle_components_warehouse_id_fkey';
+            columns: ['warehouse_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_active_warehouses';
             referencedColumns: ['id'];
           },
           {
@@ -5995,6 +6009,13 @@ export type Database = {
             columns: ['variant_id'];
             isOneToOne: false;
             referencedRelation: 'inventory_storefront_listing_variants';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_checkout_lines_warehouse_id_fkey';
+            columns: ['warehouse_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_active_warehouses';
             referencedColumns: ['id'];
           },
           {
@@ -6244,6 +6265,13 @@ export type Database = {
             columns: ['unit_id'];
             isOneToOne: false;
             referencedRelation: 'inventory_units';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_checkout_stock_consumptions_warehouse_id_fkey';
+            columns: ['warehouse_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_active_warehouses';
             referencedColumns: ['id'];
           },
           {
@@ -6562,6 +6590,60 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      inventory_identity_merges: {
+        Row: {
+          actor_id: string | null;
+          created_at: string;
+          kind: string;
+          metadata_policy: string;
+          preview: Json;
+          source_id: string;
+          stock_policy: string;
+          target_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id?: string | null;
+          created_at?: string;
+          kind: string;
+          metadata_policy: string;
+          preview: Json;
+          source_id: string;
+          stock_policy: string;
+          target_id: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string | null;
+          created_at?: string;
+          kind?: string;
+          metadata_policy?: string;
+          preview?: Json;
+          source_id?: string;
+          stock_policy?: string;
+          target_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      inventory_invoice_restore_context: {
+        Row: {
+          backend_pid: number;
+          invoice_id: string;
+          transaction_id: number;
+        };
+        Insert: {
+          backend_pid: number;
+          invoice_id: string;
+          transaction_id: number;
+        };
+        Update: {
+          backend_pid?: number;
+          invoice_id?: string;
+          transaction_id?: number;
+        };
+        Relationships: [];
       };
       inventory_listing_option_groups: {
         Row: {
@@ -7080,6 +7162,13 @@ export type Database = {
             foreignKeyName: 'inventory_product_prices_warehouse_id_fkey';
             columns: ['warehouse_id'];
             isOneToOne: false;
+            referencedRelation: 'inventory_active_warehouses';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_product_prices_warehouse_id_fkey';
+            columns: ['warehouse_id'];
+            isOneToOne: false;
             referencedRelation: 'inventory_warehouses';
             referencedColumns: ['id'];
           },
@@ -7132,6 +7221,13 @@ export type Database = {
             columns: ['unit_id'];
             isOneToOne: false;
             referencedRelation: 'inventory_units';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_products_warehouse_id_fkey';
+            columns: ['warehouse_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_active_warehouses';
             referencedColumns: ['id'];
           },
           {
@@ -7213,6 +7309,13 @@ export type Database = {
             columns: ['variant_id'];
             isOneToOne: false;
             referencedRelation: 'inventory_storefront_listing_variants';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_reservations_warehouse_id_fkey';
+            columns: ['warehouse_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_active_warehouses';
             referencedColumns: ['id'];
           },
           {
@@ -7549,6 +7652,13 @@ export type Database = {
             columns: ['unit_id'];
             isOneToOne: false;
             referencedRelation: 'inventory_units';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_square_catalog_links_warehouse_id_fkey';
+            columns: ['warehouse_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_active_warehouses';
             referencedColumns: ['id'];
           },
           {
@@ -7966,6 +8076,13 @@ export type Database = {
             foreignKeyName: 'inventory_storefront_listing_variants_warehouse_id_fkey';
             columns: ['warehouse_id'];
             isOneToOne: false;
+            referencedRelation: 'inventory_active_warehouses';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_storefront_listing_variants_warehouse_id_fkey';
+            columns: ['warehouse_id'];
+            isOneToOne: false;
             referencedRelation: 'inventory_warehouses';
             referencedColumns: ['id'];
           },
@@ -8073,6 +8190,13 @@ export type Database = {
             columns: ['unit_id'];
             isOneToOne: false;
             referencedRelation: 'inventory_units';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_storefront_listings_warehouse_id_fkey';
+            columns: ['warehouse_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_active_warehouses';
             referencedColumns: ['id'];
           },
           {
@@ -15665,6 +15789,27 @@ export type Database = {
           },
         ];
       };
+      inventory_active_warehouses: {
+        Row: {
+          created_at: string | null;
+          id: string | null;
+          name: string | null;
+          ws_id: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          id?: string | null;
+          name?: string | null;
+          ws_id?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          id?: string | null;
+          name?: string | null;
+          ws_id?: string | null;
+        };
+        Relationships: [];
+      };
       nova_submissions_with_scores: {
         Row: {
           created_at: string | null;
@@ -16297,6 +16442,19 @@ export type Database = {
       allocate_inventory_checkout_revenue: {
         Args: { p_checkout_id: string; p_proportional_source?: string };
         Returns: number;
+      };
+      apply_inventory_merge: {
+        Args: {
+          p_actor_id: string;
+          p_kind: string;
+          p_metadata_policy: string;
+          p_source_id: string;
+          p_stock_policy: string;
+          p_target_id: string;
+          p_version: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       apply_inventory_offline_create: {
         Args: {
@@ -18549,10 +18707,25 @@ export type Database = {
         Args: { p_amount: number; p_currency: string };
         Returns: number;
       };
+      inventory_identity_lock_key:
+        | { Args: { p_id: string; p_kind: string }; Returns: number }
+        | {
+            Args: { p_id: string; p_kind: string; p_ws_id: string };
+            Returns: number;
+          };
       inventory_major_to_minor: {
         Args: { p_amount: number; p_currency?: string };
         Returns: number;
       };
+      inventory_merge_references: {
+        Args: { p_kind: string };
+        Returns: {
+          col: string;
+          historical: boolean;
+          tbl: unknown;
+        }[];
+      };
+      inventory_merge_schema_ready: { Args: never; Returns: boolean };
       inventory_stock_available_quantity: {
         Args: {
           p_now?: string;
@@ -19087,6 +19260,15 @@ export type Database = {
       };
       prepare_inventory_pos_operator_access: {
         Args: { p_actor_id: string; p_ws_id: string };
+        Returns: Json;
+      };
+      preview_inventory_merge: {
+        Args: {
+          p_kind: string;
+          p_source_id: string;
+          p_target_id: string;
+          p_ws_id: string;
+        };
         Returns: Json;
       };
       prune_discord_interaction_claims: {

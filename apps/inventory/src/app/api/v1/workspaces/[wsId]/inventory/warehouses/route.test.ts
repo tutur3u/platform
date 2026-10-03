@@ -43,11 +43,13 @@ function createListClient(rows: Array<Record<string, unknown>>) {
   const query = {
     eq: vi.fn(() => query),
     ilike: vi.fn(() => query),
-    order: vi.fn().mockResolvedValue({
-      count: rows.length,
-      data: rows,
-      error: null,
-    }),
+    not: vi.fn(() => query),
+    order: vi.fn(() => query),
+    // biome-ignore lint/suspicious/noThenProperty: Model the PostgREST thenable query contract.
+    then: (resolve: (result: unknown) => unknown) =>
+      Promise.resolve({ count: rows.length, data: rows, error: null }).then(
+        resolve
+      ),
     range: vi.fn(() => query),
     select: vi.fn(() => query),
   };
@@ -158,7 +160,7 @@ describe('inventory warehouses API route', () => {
       'personal'
     );
     expect(listClient.schema).toHaveBeenCalledWith('private');
-    expect(listClient.from).toHaveBeenCalledWith('inventory_warehouses');
+    expect(listClient.from).toHaveBeenCalledWith('inventory_active_warehouses');
     expect(listClient.query.eq).toHaveBeenCalledWith('ws_id', 'ws-1');
   });
 
