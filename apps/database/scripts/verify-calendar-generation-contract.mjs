@@ -35,7 +35,7 @@ const trackedFiles = execFileSync(
   .split('\0')
   .filter(Boolean);
 const hasSaga = trackedFiles.some((file) =>
-  file.endsWith('/20261002110000_calendar_provider_saga.sql')
+  file.endsWith('/20261003060300_calendar_provider_saga.sql')
 );
 const fixtures = hasSaga
   ? [

@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/data/models/google_calendar_color.dart';
 import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
+import 'package:mobile/features/calendar/widgets/google_calendar_color_picker.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Shows a bottom sheet (compact) or dialog (medium+) for creating or editing
@@ -16,6 +20,9 @@ Future<Map<String, dynamic>?> showEventFormSheet(
   CalendarEvent? event,
   DateTime? initialStartTime,
   String? timezone,
+  GoogleCalendarColorOptions? providerColors,
+  Future<GoogleCalendarColorOptions?>? providerColorsFuture,
+  bool Function()? isCurrentScope,
 }) {
   return showAdaptiveSheet<Map<String, dynamic>>(
     context: context,
@@ -25,16 +32,29 @@ Future<Map<String, dynamic>?> showEventFormSheet(
       event: event,
       initialStartTime: initialStartTime,
       timezone: timezone,
+      providerColors: providerColors,
+      providerColorsFuture: providerColorsFuture,
+      isCurrentScope: isCurrentScope,
     ),
   );
 }
 
 class _EventFormContent extends StatefulWidget {
-  const _EventFormContent({this.event, this.initialStartTime, this.timezone});
+  const _EventFormContent({
+    this.event,
+    this.initialStartTime,
+    this.timezone,
+    this.providerColors,
+    this.providerColorsFuture,
+    this.isCurrentScope,
+  });
 
   final CalendarEvent? event;
   final DateTime? initialStartTime;
   final String? timezone;
+  final GoogleCalendarColorOptions? providerColors;
+  final Future<GoogleCalendarColorOptions?>? providerColorsFuture;
+  final bool Function()? isCurrentScope;
 
   @override
   State<_EventFormContent> createState() => _EventFormContentState();
@@ -55,12 +75,31 @@ class _EventFormContentState extends State<_EventFormContent> {
   DateTime? _initialEndWall;
   bool? _initialAllDay;
   String? _dateTimeError;
+  GoogleCalendarColorChoice? _providerColor;
+  GoogleCalendarColorChoice? _initialProviderColor;
+  GoogleCalendarColorOptions? _providerColors;
+
+  bool get _canUseProviderColors =>
+      widget.event?.provider == 'google' &&
+      _providerColors?.writesEnabled == true &&
+      _providerColors!.options.isNotEmpty;
 
   bool get _isEditing => widget.event != null;
 
   @override
   void initState() {
     super.initState();
+    _providerColors = widget.providerColors;
+    _initialProviderColor = _storedProviderColor(_providerColors);
+    unawaited(
+      widget.providerColorsFuture?.then((colors) {
+        if (!mounted || widget.isCurrentScope?.call() == false) return;
+        setState(() {
+          _providerColors = colors;
+          _initialProviderColor = _storedProviderColor(colors);
+        });
+      }),
+    );
     _originalStart = widget.event?.startAt;
     _originalEnd = widget.event?.endAt;
     final event = widget.event == null
@@ -100,6 +139,31 @@ class _EventFormContentState extends State<_EventFormContent> {
     }
   }
 
+  GoogleCalendarColorChoice? _storedProviderColor(
+    GoogleCalendarColorOptions? colors,
+  ) {
+    final metadata = widget.event?.schedulingMetadata?['google_color'];
+    if (metadata is! Map || colors == null) return null;
+    final kind = metadata['inherited'] == true
+        ? 'inherit'
+        : metadata['event_label_id'] is String
+        ? 'label'
+        : metadata['color_id'] is String
+        ? 'event'
+        : null;
+    final id = kind == 'label'
+        ? metadata['event_label_id']
+        : kind == 'event'
+        ? metadata['color_id']
+        : null;
+    for (final option in colors.options) {
+      if (option.kind == kind && option.id == id) {
+        return option.choice(colors.connectionId);
+      }
+    }
+    return null;
+  }
+
   DateTime _roundToQuarter(DateTime dt) {
     final minutes = (dt.minute / 15).ceil() * 15;
     return calendarDate(dt.year, dt.month, dt.day, dt.hour, minutes);
@@ -131,6 +195,10 @@ class _EventFormContentState extends State<_EventFormContent> {
       initial.minute == selected.minute;
 
   void _save() {
+    if (widget.isCurrentScope?.call() == false) {
+      setState(() => _dateTimeError = context.l10n.calendarEventUnavailable);
+      return;
+    }
     final title = _titleController.text.trim();
     if (title.isEmpty) return;
 
@@ -157,6 +225,26 @@ class _EventFormContentState extends State<_EventFormContent> {
           ? _originalEnd!.toUtc()
           : calendarWallToUtc(endAt, widget.timezone);
       if (!end.isAfter(start)) throw const FormatException('Invalid range');
+      if (_providerColor != null) {
+        final original = widget.event!;
+        if (title != (original.title ?? '').trim() ||
+            _descriptionController.text.trim() !=
+                (original.description ?? '').trim() ||
+            start != _originalStart?.toUtc() ||
+            end != _originalEnd?.toUtc() ||
+            _isAllDay != _initialAllDay ||
+            _color != (original.color ?? 'BLUE')) {
+          setState(
+            () =>
+                _dateTimeError = context.l10n.calendarProviderColorSeparateEdit,
+          );
+          return;
+        }
+        Navigator.of(
+          context,
+        ).pop(<String, dynamic>{'providerColor': _providerColor});
+        return;
+      }
       Navigator.of(context).pop(<String, dynamic>{
         'title': title,
         'description': _descriptionController.text.trim(),
@@ -334,38 +422,46 @@ class _EventFormContentState extends State<_EventFormContent> {
                   style: Theme.of(context).textTheme.labelLarge,
                 ),
                 const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: EventColors.allColors.map((name) {
-                    final c = EventColors.fromString(name);
-                    final selected = _color == name;
-                    return GestureDetector(
-                      onTap: () => setState(() => _color = name),
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: c,
-                          shape: BoxShape.circle,
-                          border: selected
-                              ? Border.all(
-                                  color: colorScheme.onSurface,
-                                  width: 2,
+                if (_canUseProviderColors)
+                  GoogleCalendarColorPicker(
+                    colors: _providerColors!,
+                    selected: _providerColor ?? _initialProviderColor,
+                    onChanged: (choice) =>
+                        setState(() => _providerColor = choice),
+                  )
+                else
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: EventColors.allColors.map((name) {
+                      final c = EventColors.fromString(name);
+                      final selected = _color == name;
+                      return GestureDetector(
+                        onTap: () => setState(() => _color = name),
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: c,
+                            shape: BoxShape.circle,
+                            border: selected
+                                ? Border.all(
+                                    color: colorScheme.onSurface,
+                                    width: 2,
+                                  )
+                                : null,
+                          ),
+                          child: selected
+                              ? Icon(
+                                  Icons.check,
+                                  size: 16,
+                                  color: colorScheme.surface,
                                 )
                               : null,
                         ),
-                        child: selected
-                            ? Icon(
-                                Icons.check,
-                                size: 16,
-                                color: colorScheme.surface,
-                              )
-                            : null,
-                      ),
-                    );
-                  }).toList(),
-                ),
+                      );
+                    }).toList(),
+                  ),
               ],
             ),
           ),

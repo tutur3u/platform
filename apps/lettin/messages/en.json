@@ -1,4 +1,12 @@
 {
+  "calendar": {
+    "creation_recovery_notice": "The previous creation is unconfirmed. Retry the original request first; your edits will stay open to save after confirmation.",
+    "creation_recovery_retry": "Retry original creation",
+    "creation_recovery_unavailable": "Creation is unconfirmed and automatic recovery is unavailable for this source. Check the calendar before starting another creation; your edits are preserved.",
+    "google_event_color": "Google color {id}",
+    "inherit_calendar_color": "Use calendar color",
+    "provider_color_label": "Google event color"
+  },
   "command_launcher": {
     "aliases_slot": "Also matches: {aliases}",
     "app_categories": {
