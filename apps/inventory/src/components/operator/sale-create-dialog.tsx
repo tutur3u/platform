@@ -198,10 +198,11 @@ export function SaleCreateDialog({
     () =>
       [
         ...new Map([
-          ...(options?.categories ?? []).flatMap((category) =>
-            category.id ? [[category.id, category.name ?? category.id]] : []
+          ...(options?.categories ?? []).flatMap<[string, string]>(
+            (category) =>
+              category.id ? [[category.id, category.name ?? category.id]] : []
           ),
-          ...stockOptions.flatMap((option) =>
+          ...stockOptions.flatMap<[string, string]>((option) =>
             option.categoryId
               ? [
                   [
@@ -223,10 +224,13 @@ export function SaleCreateDialog({
     () =>
       [
         ...new Map([
-          ...(options?.warehouses ?? []).flatMap((warehouse) =>
-            warehouse.id ? [[warehouse.id, warehouse.name ?? warehouse.id]] : []
+          ...(options?.warehouses ?? []).flatMap<[string, string]>(
+            (warehouse) =>
+              warehouse.id
+                ? [[warehouse.id, warehouse.name ?? warehouse.id]]
+                : []
           ),
-          ...stockOptions.map((option) => [
+          ...stockOptions.map<[string, string]>((option) => [
             option.warehouseId,
             option.warehouseName,
           ]),
