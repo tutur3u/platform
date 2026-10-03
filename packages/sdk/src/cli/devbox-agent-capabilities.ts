@@ -119,16 +119,25 @@ async function readStaticCapabilities() {
 
 export async function createDevboxAgentCapabilities() {
   staticCapabilitiesPromise ??= readStaticCapabilities();
+  // Existing Judge agents keep their published heartbeat contract. Operators
+  // opt a separate pool in only after both heartbeat transports support it.
+  const reportPlayground = /^[a-zA-Z0-9_-]{1,40}$/.test(
+    process.env.TUTURUUU_PLAYGROUND_POOL_ID ?? ''
+  );
+  const playgroundReadiness = () =>
+    reportPlayground
+      ? getPlaygroundReadiness()
+      : Promise.resolve({ ready: false, languages: [], environments: 0 });
   if (!readinessSnapshot) {
     judgeReadinessPromise ??= getJudgeReadiness();
     const [judge, playground] = await Promise.all([
       judgeReadinessPromise,
-      getPlaygroundReadiness(),
+      playgroundReadiness(),
     ]);
     readinessSnapshot = { judge, playground };
     judgeReadinessAt = Date.now();
   } else if (Date.now() - judgeReadinessAt > 600_000 && !refreshing) {
-    refreshing = Promise.all([getJudgeReadiness(), getPlaygroundReadiness()])
+    refreshing = Promise.all([getJudgeReadiness(), playgroundReadiness()])
       .then(([judge, playground]) => {
         readinessSnapshot = { judge, playground };
         judgeReadinessAt = Date.now();
@@ -146,7 +155,14 @@ export async function createDevboxAgentCapabilities() {
   return {
     ...staticCapabilities,
     judge,
-    playground: { ...playground, environments: playgroundEnvironmentCount() },
+    ...(reportPlayground
+      ? {
+          playground: {
+            ...playground,
+            environments: playgroundEnvironmentCount(),
+          },
+        }
+      : {}),
     reportedAt: new Date().toISOString(),
     resources: {
       cpu: {

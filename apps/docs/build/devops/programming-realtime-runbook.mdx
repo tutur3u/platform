@@ -305,3 +305,19 @@ This proves synthetic Python sandbox behavior only. It does not provision a mana
 
 
 `programming-app-builds.yaml` is shared parent-stack infrastructure: secretless actual builds of Web, Learn, and Infrastructure check out the exact PR source SHA. The existing Meet Cloudflare validation builds both Worker bundles and executes the real local channel/document/programming probes; its deploy job remains production-only. Neither build gate is a production rollout or authenticated Drive acceptance.
+
+
+## Managed pool heartbeat compatibility
+
+Deploy the Web heartbeat handler and Devbox Control Worker before upgrading an
+opted-in playground agent. Both transports accept optional playground readiness:
+boolean `ready`, up to 11 supported languages including shell, and an integer
+`environments` count from zero to eight (the runner instance limit). Malformed
+fields and unknown capability keys remain rejected. Existing Judge agents omit
+this field and skip playground probes unless a valid `TUTURUUU_PLAYGROUND_POOL_ID`
+is explicitly configured. An opted-in pool still reports `ready: false` when its
+sandbox prerequisites are unavailable; readiness never enables a service or
+allocates a production pool automatically.
+
+Regressions: first-class `apps/web/src/app/api/v1/devboxes/agents/routes.test.ts`,
+`apps/devbox-control/src/worker.test.ts`, and the SDK capability collector tests.

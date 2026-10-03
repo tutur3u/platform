@@ -214,4 +214,207 @@ describe('managed playground removal ownership', () => {
     ).rejects.toThrow('pool identity');
     expect(docker).not.toHaveBeenCalled();
   });
+  it('keeps new creation behind the stop removal critical section', async () => {
+    const { runPlaygroundJob } = await import('./devbox-playground-sandbox');
+    await runPlaygroundJob(payload(), limits);
+    let release!: () => void;
+    const removing = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const normal = docker.getMockImplementation()!;
+    docker.mockImplementation(async (args: string[]) => {
+      if (args[0] === 'rm') await removing;
+      return normal(args);
+    });
+    const stop = runPlaygroundJob(payload(first, 'stop'), limits);
+    await vi.waitFor(() =>
+      expect(docker.mock.calls.some(([args]) => args[0] === 'rm')).toBe(true)
+    );
+    const run = runPlaygroundJob(payload(second), limits);
+    try {
+      for (let i = 0; i < 20; i++) await Promise.resolve();
+      expect(
+        docker.mock.calls.filter(([args]) => args[0] === 'run')
+      ).toHaveLength(1);
+      release();
+      await Promise.all([stop, run]);
+      expect(
+        docker.mock.calls.filter(([args]) => args[0] === 'run')
+      ).toHaveLength(2);
+    } finally {
+      release();
+      await Promise.allSettled([stop, run]);
+    }
+  });
+  it('retries an unavailable initial Docker inventory before admitting a run', async () => {
+    const { runPlaygroundJob } = await import('./devbox-playground-sandbox');
+    docker.mockResolvedValueOnce(result(1));
+    await expect(runPlaygroundJob(payload(), limits)).rejects.toThrow(
+      'inventory failed'
+    );
+    await runPlaygroundJob(payload(), limits);
+    expect(
+      docker.mock.calls.filter(([args]) => args[0] === 'run')
+    ).toHaveLength(1);
+    expect(docker.mock.calls.filter(([args]) => args[0] === 'ps')).toHaveLength(
+      2
+    );
+  });
+  it('serializes same-project synchronization and command execution', async () => {
+    const { runPlaygroundJob } = await import('./devbox-playground-sandbox');
+    let release!: () => void;
+    const command = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let commands = 0;
+    const normal = docker.getMockImplementation()!;
+    docker.mockImplementation(async (args: string[]) => {
+      if (args[0] === 'exec' && args.includes('sh')) {
+        commands++;
+        if (commands === 1) await command;
+      }
+      return normal(args);
+    });
+    const firstRun = runPlaygroundJob(payload(), limits);
+    await vi.waitFor(() => expect(commands).toBe(1));
+    const secondRun = runPlaygroundJob(payload(), limits);
+    try {
+      for (let i = 0; i < 20; i++) await Promise.resolve();
+      expect(commands).toBe(1);
+      expect(
+        docker.mock.calls.filter(
+          ([args]) =>
+            args[0] === 'exec' &&
+            args.includes('--interactive') &&
+            !args.includes('sh')
+        )
+      ).toHaveLength(1);
+      release();
+      await Promise.all([firstRun, secondRun]);
+      expect(commands).toBe(2);
+    } finally {
+      release();
+      await Promise.allSettled([firstRun, secondRun]);
+    }
+  });
+  it('reports incomplete background persistence without exposing its error payload', async () => {
+    const { runPlaygroundJob } = await import('./devbox-playground-sandbox');
+    let release!: () => void;
+    const command = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const save = vi
+      .fn()
+      .mockRejectedValue(new Error('synthetic-private-content'));
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const normal = docker.getMockImplementation()!;
+    docker.mockImplementation(async (args: string[]) => {
+      if (args[0] === 'exec' && args.includes('sh')) await command;
+      if (args[0] === 'exec' && !args.includes('--interactive'))
+        return result(0, '[{"path":"file.txt","content":"changed"}]');
+      return normal(args);
+    });
+    const run = runPlaygroundJob(
+      payload(),
+      { ...limits, sandbox_timeout_seconds: 90 },
+      save
+    );
+    const outcome = expect(run).rejects.toThrow('background snapshot failed');
+    try {
+      await vi.waitFor(() =>
+        expect(docker.mock.calls.some(([args]) => args.includes('sh'))).toBe(
+          true
+        )
+      );
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(save).toHaveBeenCalledTimes(1);
+      expect(warning).toHaveBeenCalledWith(
+        'Managed playground background snapshot failed; run persistence is incomplete.'
+      );
+      release();
+      await outcome;
+      expect(save).toHaveBeenCalledTimes(1);
+    } finally {
+      release();
+      warning.mockRestore();
+    }
+  });
+  it('uses the image PATH for Python helpers and readiness', async () => {
+    const { getPlaygroundReadiness, runPlaygroundJob } = await import(
+      './devbox-playground-sandbox'
+    );
+    await getPlaygroundReadiness();
+    const smoke = docker.mock.calls.find(
+      ([args]) => args[0] === 'run'
+    )![0] as string[];
+    expect(smoke.at(-1)).toContain('command -v python3');
+    expect(smoke.at(-1)).not.toContain('/usr/bin/python3');
+    await runPlaygroundJob(payload(), limits);
+    const managed = docker.mock.calls.find(([args]) =>
+      args.includes('--detach')
+    )![0] as string[];
+    const helperPath = managed.find((arg) => arg.startsWith('--env=PATH='));
+    expect(helperPath).toBeDefined();
+    expect(smoke).toContain(helperPath);
+    const execs = docker.mock.calls.filter(
+      ([args]) => args[0] === 'exec' && !args.includes('sh')
+    );
+    expect(
+      execs.every(
+        ([args]) =>
+          args.includes('python3') && !args.includes('/usr/bin/python3')
+      )
+    ).toBe(true);
+  });
+  it('stops without waiting for a long command and invalidates already queued project runs', async () => {
+    const { runPlaygroundJob } = await import('./devbox-playground-sandbox');
+    let release!: () => void;
+    const command = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const normal = docker.getMockImplementation()!;
+    let commands = 0;
+    docker.mockImplementation(async (args: string[]) => {
+      if (args[0] === 'exec' && args.includes('sh')) {
+        commands++;
+        await command;
+      }
+      return normal(args);
+    });
+    const active = runPlaygroundJob(payload(), limits);
+    await vi.waitFor(() => expect(commands).toBe(1));
+    const queued = runPlaygroundJob(payload(), limits);
+    const rejected = expect(queued).rejects.toThrow('stopped before execution');
+    try {
+      await runPlaygroundJob(payload(first, 'stop'), limits);
+      expect(commands).toBe(1);
+      release();
+      await active;
+      await rejected;
+      expect(commands).toBe(1);
+    } finally {
+      release();
+      await Promise.allSettled([active, queued]);
+    }
+  });
+  it('uses the bounded JSON export budget and returns a clear per-file failure', async () => {
+    const { runPlaygroundJob } = await import('./devbox-playground-sandbox');
+    const normal = docker.getMockImplementation()!;
+    docker.mockImplementation(async (args: string[]) => {
+      if (args[0] === 'exec' && !args.includes('--interactive'))
+        return {
+          ...result(1),
+          stderr:
+            'Traceback: synthetic-private-content\nValueError: Unsupported Drive file path: bad name.txt\n',
+        };
+      return normal(args);
+    });
+    await expect(runPlaygroundJob(payload(), limits)).rejects.toThrow(
+      'Unsupported Drive file path: bad name.txt'
+    );
+    const exported = docker.mock.calls.find(
+      ([args]) => args[0] === 'exec' && !args.includes('--interactive')
+    )!;
+    expect(exported.slice(1)).toEqual(['', 15_000, 16 * 1024 * 1024]);
+  });
 });

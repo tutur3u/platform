@@ -1,6 +1,33 @@
 import { PLAYGROUND_LANGUAGES } from '@tuturuuu/types/primitives/playgrounds';
 import { z } from 'zod';
 
+function hasDirectoryConflict(paths: string[]) {
+  const inventory = new Set(paths);
+  return paths.some((path) => {
+    const pieces = path.split('/');
+    return pieces
+      .slice(0, -1)
+      .some((_, index) => inventory.has(pieces.slice(0, index + 1).join('/')));
+  });
+}
+
+function validPreviewPath(path: string) {
+  if (!path.startsWith('/') || /[\r\n\0\\]/.test(path)) return false;
+  try {
+    const pathname = decodeURIComponent(path.split(/[?#]/, 1)[0]!);
+    return (
+      pathname === '/' ||
+      (!/[\r\n\0\\]/.test(pathname) &&
+        pathname
+          .slice(1)
+          .split('/')
+          .every((part) => part !== '' && part !== '.' && part !== '..'))
+    );
+  } catch {
+    return false;
+  }
+}
+
 export const PLAYGROUND_BYTES = 2 * 1024 * 1024;
 export const PlaygroundPath = z
   .string()
@@ -53,7 +80,7 @@ export const PlaygroundFiles = z
         message: 'Project exceeds storage limit',
       });
     const paths = files.map((file) => file.path).sort();
-    if (paths.some((path, i) => paths[i + 1]?.startsWith(`${path}/`)))
+    if (hasDirectoryConflict(paths))
       ctx.addIssue({
         code: 'custom',
         message: 'File conflicts with directory',
@@ -97,7 +124,7 @@ export const PlaygroundJob = z
       ctx.addIssue({ code: 'custom', message: 'Missing run payload' });
     if (
       job.operation === 'preview' &&
-      (!job.port || !job.path?.startsWith('/') || /[\r\n\0]/.test(job.path))
+      (!job.port || !job.path || !validPreviewPath(job.path))
     )
       ctx.addIssue({ code: 'custom', message: 'Invalid preview request' });
   });
@@ -110,7 +137,7 @@ export const PlaygroundDelta = PlaygroundSave.extend({
   const paths = [...value.paths].sort();
   if (
     new Set(paths).size !== paths.length ||
-    paths.some((path, i) => paths[i + 1]?.startsWith(`${path}/`)) ||
+    hasDirectoryConflict(paths) ||
     value.files.some((file) => !paths.includes(file.path))
   )
     ctx.addIssue({ code: 'custom', message: 'Invalid delta inventory' });
@@ -128,6 +155,7 @@ export const PlaygroundRunnerExport = z
   .refine(
     (value) =>
       new Set(value.paths).size === value.paths.length &&
+      !hasDirectoryConflict(value.paths) &&
       value.files.every((file) => value.paths.includes(file.path)),
     'Invalid runner inventory'
   );
