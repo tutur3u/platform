@@ -1,5 +1,13 @@
 # PR Merge Sync Procedures
 
+## Rollback And Mixed-Version Recovery
+
+For Instant Rollback, incompatible satellite/API versions, or a rollout incident,
+use `$tuturuuu-rollout-recovery` and its
+[recovery evidence](../../tuturuuu-rollout-recovery/references/recovery-evidence.md).
+Keep the current skill's merge and exact-SHA delivery gates; recovery guidance
+does not authorize promotion.
+
 ## Required Gates
 
 0. Check whether the PR is part of a stack. A base other than `main` is not
