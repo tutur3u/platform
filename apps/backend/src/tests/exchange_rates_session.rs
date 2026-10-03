@@ -214,6 +214,7 @@ async fn exchange_rates_allows_expired_suspensions_and_preserves_policy_error_fa
             assert_eq!(response.status, 200);
             let calls = outbound.calls();
             let policy_index = if app_session { 0 } else { 1 };
+            assert_eq!(calls.len(), policy_index + 3);
             assert_suspension_query(
                 &calls[policy_index],
                 if app_session {
