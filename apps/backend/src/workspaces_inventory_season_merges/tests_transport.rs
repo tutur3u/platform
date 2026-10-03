@@ -7,6 +7,8 @@ const WS: &str = "00000000-0000-4000-8000-000000000010";
 struct Recording {
     calls: Mutex<Vec<(String, Option<String>)>>,
     membership_status: u16,
+    member_type: &'static str,
+    creator_id: &'static str,
     failure: Option<(&'static str, bool)>,
     permissions: Vec<&'static str>,
 }
@@ -37,9 +39,9 @@ impl OutboundHttpClient for Recording {
             json!({"id":ACTOR})
         } else if request.url.contains("/workspace_members?") {
             status = self.membership_status;
-            json!([{"type":"MEMBER"}])
+            json!([{"type":self.member_type}])
         } else if request.url.contains("/workspaces?") {
-            json!([{"creator_id":"another"}])
+            json!([{"creator_id":self.creator_id}])
         } else if request.url.contains("/workspace_role_members?") {
             json!([])
         } else if request.url.contains("/workspace_default_permissions?") {
@@ -95,6 +97,8 @@ async fn transport_stamps_authenticated_actor_and_workspace() {
     let client = Recording {
         calls: Mutex::new(vec![]),
         membership_status: 200,
+        member_type: "MEMBER",
+        creator_id: "another",
         failure: None,
         permissions: vec!["update_invoices", "delete_invoices", "update_inventory"],
     };
@@ -123,6 +127,8 @@ async fn membership_failure_and_missing_roles_never_reach_privileged_rpc() {
         let client = Recording {
             calls: Mutex::new(vec![]),
             membership_status,
+            member_type: "MEMBER",
+            creator_id: "another",
             failure: None,
             permissions,
         };
@@ -149,6 +155,8 @@ async fn dispatcher_method_coverage_and_fallthrough() {
     let client = Recording {
         calls: Mutex::new(vec![]),
         membership_status: 200,
+        member_type: "MEMBER",
+        creator_id: "another",
         failure: None,
         permissions: vec![],
     };
@@ -188,6 +196,8 @@ async fn permission_provider_failures_preserve_web_404_without_privileged_rpc() 
             let client = Recording {
                 calls: Mutex::new(vec![]),
                 membership_status: 200,
+                member_type: "MEMBER",
+                creator_id: "another",
                 permissions: vec!["admin"],
                 failure: Some((table, transport)),
             };
@@ -212,6 +222,56 @@ async fn permission_provider_failures_preserve_web_404_without_privileged_rpc() 
                         .iter()
                         .any(|(url, _)| url.contains("/rpc/"))
                 );
+            }
+        }
+    }
+}
+
+#[tokio::test]
+async fn non_members_never_inherit_creator_or_default_permission_merge_access() {
+    let config = config();
+    let path = format!("/api/v1/workspaces/{WS}/inventory/sales-periods/merges");
+    let body = json!({
+        "sourceId":"00000000-0000-4000-8000-000000000002",
+        "targetId":"00000000-0000-4000-8000-000000000003",
+        "version":"00000000-0000-4000-8000-000000000004",
+        "descriptionPolicy":"source","rulePolicy":"target","pricePolicy":"block"
+    })
+    .to_string();
+    let url = format!(
+        "https://inventory.test{path}?sourceId=00000000-0000-4000-8000-000000000002&targetId=00000000-0000-4000-8000-000000000003"
+    );
+    for member_type in ["GUEST", "unknown"] {
+        for creator_id in [ACTOR, "another"] {
+            for permissions in [
+                vec!["admin"],
+                vec!["update_invoices", "delete_invoices", "update_inventory"],
+            ] {
+                for method in ["GET", "POST"] {
+                    let client = Recording {
+                        calls: Mutex::new(vec![]),
+                        membership_status: 200,
+                        member_type,
+                        creator_id,
+                        permissions: permissions.clone(),
+                        failure: None,
+                    };
+                    let request = BackendRequest {
+                        url: Some(&url),
+                        ..request(method, &path, Some(&body))
+                    };
+                    let response = handle_route(&config, request, &client).await.unwrap();
+                    assert_eq!(response.status, 403);
+                    let calls = client.calls.lock().unwrap();
+                    assert!(
+                        calls
+                            .iter()
+                            .any(|(url, _)| url.contains("/workspace_members?"))
+                    );
+                    assert!(!calls.iter().any(|(url, _)| url.contains("/workspaces?")
+                        || url.contains("/workspace_default_permissions?")
+                        || url.contains("/rpc/")));
+                }
             }
         }
     }

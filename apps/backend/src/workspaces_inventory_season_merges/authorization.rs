@@ -45,6 +45,11 @@ pub(super) async fn authorize(
         .get("type")
         .and_then(Value::as_str)
         .ok_or(500u16)?;
+    // Match authorizeInventoryWorkspace: its membership gate requires MEMBER
+    // before getPermissions can consult creator or GUEST default permissions.
+    if member_type != "MEMBER" {
+        return Err(403);
+    }
     let workspace = rows(
         config,
         "workspaces",
