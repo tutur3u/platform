@@ -94,5 +94,6 @@ it.each(['image/svg+xml', 'image/avif', 'text/plain'])(
     );
     expect(response.status).toBe(400);
     expect(f.budget).not.toHaveBeenCalled();
+    expect(f.sign).not.toHaveBeenCalled();
   }
 );

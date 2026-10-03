@@ -23,6 +23,32 @@ describe('support inquiry contract', () => {
       }).success
     ).toBe(false)
   );
+  it('rejects blank messages and normalizes surrounding whitespace', () => {
+    expect(
+      createInquirySchema.safeParse({ ...payload, message: ' '.repeat(20) })
+        .success
+    ).toBe(false);
+    expect(
+      createInquirySchema.parse({
+        ...payload,
+        message: '  valid support message  ',
+      }).message
+    ).toBe('valid support message');
+  });
+  it.each(['name', 'subject', 'message'])(
+    'counts Unicode code points for %s',
+    (field) => {
+      const limit = { name: 64, subject: 128, message: 512 }[field]!;
+      const text = '😀'.repeat(limit);
+      expect(
+        createInquirySchema.safeParse({ ...payload, [field]: text }).success
+      ).toBe(true);
+      expect(
+        createInquirySchema.safeParse({ ...payload, [field]: `${text}😀` })
+          .success
+      ).toBe(false);
+    }
+  );
   it('rejects extra email separators', () =>
     expect(
       createInquirySchema.safeParse({ ...payload, email: 'a@b.com@evil' })

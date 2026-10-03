@@ -296,3 +296,12 @@ Cross-origin cookie updates return 403 before Supabase access. Regression eviden
 `support-inquiry-guard.test.ts`, the first-class inquiry route tests, and Rust
 support/g12 regressions. Profile HEAD follows GET authentication/cache/status but
 emits no response body; its Rust regression verifies the same boundary.
+
+Support inquiry string limits count Unicode code points consistently in the live
+Zod schema and Rust source. The contact form bounds its disabled profile-name
+prefill to 64 code points without splitting astral characters. Both API sources
+trim inquiry messages before validating the 10–512 character range and persisting
+them, so blank-looking messages are rejected. Regression coverage includes
+`support-inquiry-guard.test.ts`, `contact-form-values.test.ts`, and the Rust
+support payload boundary tests. Unported inquiry GET/HEAD methods retain the
+backend dispatcher’s fall-through sentinel instead of claiming a 405 response.
