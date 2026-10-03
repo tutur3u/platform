@@ -4192,5 +4192,16 @@
             }
         }
     },
-    "offlineStorageNeedsWorkspace": "Chọn không gian làm việc để xem hoặc xóa dữ liệu đã lưu. Giới hạn lưu trữ áp dụng cho thiết bị này."
+    "offlineStorageNeedsWorkspace": "Chọn không gian làm việc để xem hoặc xóa dữ liệu đã lưu. Giới hạn lưu trữ áp dụng cho thiết bị này.",
+    "offlineBrowseStoredItems": "Xem các mục đã lưu",
+    "offlineSearchItems": "Tìm các mục đã lưu theo tên hoặc ID",
+    "offlineNoMatchingItems": "Không có mục đã lưu phù hợp.",
+    "offlineStoredItemId": "ID mục: {id}",
+    "@offlineStoredItemId": {
+        "placeholders": {
+            "id": {
+                "type": "String"
+            }
+        }
+    }
 }

@@ -1176,7 +1176,12 @@ Mobile Settings groups Preferences into Appearance & language, Calendar &
 timezone, Notifications & interaction, and App preferences. Downloads, cache
 limits, cache removal, and unsynchronized changes belong to a dedicated Offline
 section. Account, workspace, experiments, and help retain their existing access
-rules. Offline module detail pages offer stored-collection search, per-namespace
+rules. Each stored namespace expands to a local-only item list, searchable by name or ID.
+Item details show its stored identity, logical payload bytes and last fetch time;
+these persisted rows exclude queued-only edits. Account/workspace changes and loss
+of module access immediately remove the list and its expanded details.
+Regression coverage: `offline_module_page_test.dart` verifies item search, scoped
+isolation and permission redaction. Offline module detail pages offer stored-collection search, per-namespace
 inventory, and the applicable existing Finance, Tasks, or Calendar preference.
 Inventory has download, refresh, and eviction controls; it does not invent a new
 module preference.

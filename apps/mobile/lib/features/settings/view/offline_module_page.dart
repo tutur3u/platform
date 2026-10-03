@@ -10,6 +10,7 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/settings/view/offline_module_preferences.dart';
 import 'package:mobile/features/settings/view/offline_preparation_section.dart';
+import 'package:mobile/features/settings/view/offline_stored_items.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -274,6 +275,14 @@ class _OfflineModulePageState extends State<OfflineModulePage> {
                             Localizations.localeOf(context).toString(),
                           ).add_jm().format(row.lastFetch.toLocal()),
                         ),
+                      ),
+                      OfflineStoredItems(
+                        key: ValueKey((_userId, _workspaceId, row.namespace)),
+                        store: _store,
+                        userId: _userId!,
+                        workspaceId: _workspaceId!,
+                        namespace: row.namespace,
+                        revision: inventory,
                       ),
                     ],
                   ),

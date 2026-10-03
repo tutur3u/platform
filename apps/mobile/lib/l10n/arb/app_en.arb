@@ -4189,5 +4189,16 @@
             }
         }
     },
-    "offlineStorageNeedsWorkspace": "Select a workspace to view or clear its cached data. The storage limit applies to this device."
+    "offlineStorageNeedsWorkspace": "Select a workspace to view or clear its cached data. The storage limit applies to this device.",
+    "offlineBrowseStoredItems": "Browse stored items",
+    "offlineSearchItems": "Search stored items by name or ID",
+    "offlineNoMatchingItems": "No stored items match.",
+    "offlineStoredItemId": "Item ID: {id}",
+    "@offlineStoredItemId": {
+        "placeholders": {
+            "id": {
+                "type": "String"
+            }
+        }
+    }
 }

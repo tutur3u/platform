@@ -18828,6 +18828,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select a workspace to view or clear its cached data. The storage limit applies to this device.'**
   String get offlineStorageNeedsWorkspace;
+
+  /// No description provided for @offlineBrowseStoredItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse stored items'**
+  String get offlineBrowseStoredItems;
+
+  /// No description provided for @offlineSearchItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Search stored items by name or ID'**
+  String get offlineSearchItems;
+
+  /// No description provided for @offlineNoMatchingItems.
+  ///
+  /// In en, this message translates to:
+  /// **'No stored items match.'**
+  String get offlineNoMatchingItems;
+
+  /// No description provided for @offlineStoredItemId.
+  ///
+  /// In en, this message translates to:
+  /// **'Item ID: {id}'**
+  String offlineStoredItemId(String id);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

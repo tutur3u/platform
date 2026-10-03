@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:bloc_test/bloc_test.dart';
@@ -112,10 +113,32 @@ void main() {
         ),
         policy: CachePolicies.moduleData,
         payload: [
-          {'id': 'synthetic-item'},
+          {'id': 'synthetic-item', 'name': 'Synthetic stored product'},
         ],
       );
     }
+    await store.write(
+      key: const CacheKey(
+        namespace: 'inventory.products',
+        userId: 'other-synthetic-actor',
+        workspaceId: 'synthetic-workspace',
+      ),
+      policy: CachePolicies.moduleData,
+      payload: [
+        {'id': 'other-item', 'name': 'Other account product'},
+      ],
+    );
+    await store.write(
+      key: const CacheKey(
+        namespace: 'inventory.products',
+        userId: 'synthetic-actor',
+        workspaceId: 'other-synthetic-workspace',
+      ),
+      policy: CachePolicies.moduleData,
+      payload: [
+        {'id': 'other-workspace-item', 'name': 'Other workspace product'},
+      ],
+    );
   });
 
   tearDown(() async {
@@ -192,6 +215,110 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  Future<void> browseItems(WidgetTester tester) async {
+    await tester.tap(find.text('Browse stored items'));
+    await tester.runAsync(
+      () => store.queryReplica(
+        namespace: 'inventory.products',
+        userId: 'synthetic-actor',
+        workspaceId: 'synthetic-workspace',
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('stored item drilldown searches local scoped rows and metadata', (
+    tester,
+  ) async {
+    await pump(tester);
+    await browseItems(tester);
+    expect(find.text('Synthetic stored product'), findsOneWidget);
+    expect(find.text('Other account product'), findsNothing);
+    expect(find.text('Other workspace product'), findsNothing);
+    await tester.tap(find.text('Synthetic stored product'));
+    await tester.pumpAndSettle();
+    expect(find.text('Item ID: synthetic-item'), findsOneWidget);
+    expect(find.textContaining('Latest fetch:'), findsWidgets);
+    final search = find.byKey(
+      const ValueKey(('offline-item-search', 'inventory.products')),
+    );
+    await tester.enterText(search, 'not-stored');
+    await tester.pumpAndSettle();
+    expect(find.text('No stored items match.'), findsOneWidget);
+    expect(find.text('Synthetic stored product'), findsNothing);
+    await tester.enterText(search, 'synthetic-item');
+    await tester.pumpAndSettle();
+    expect(find.text('Synthetic stored product'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('loss of access removes expanded stored item details', (
+    tester,
+  ) async {
+    final updates = StreamController<InventoryAccessState>();
+    addTearDown(updates.close);
+    whenListen(access, updates.stream, initialState: access.state);
+    await pump(tester);
+    await browseItems(tester);
+    await tester.tap(find.text('Synthetic stored product'));
+    await tester.pumpAndSettle();
+    expect(find.text('Item ID: synthetic-item'), findsOneWidget);
+    updates.add(
+      const InventoryAccessState(
+        wsId: 'synthetic-workspace',
+        status: InventoryAccessStatus.loaded,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Synthetic stored product'), findsNothing);
+    expect(find.text('Item ID: synthetic-item'), findsNothing);
+    expect(find.text('Browse stored items'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('account switch removes previous expanded stored items', (
+    tester,
+  ) async {
+    final updates = StreamController<AuthState>();
+    addTearDown(updates.close);
+    whenListen(auth, updates.stream, initialState: auth.state);
+    await pump(tester);
+    await browseItems(tester);
+    await tester.tap(find.text('Synthetic stored product'));
+    await tester.pumpAndSettle();
+    expect(find.text('Item ID: synthetic-item'), findsOneWidget);
+    updates.add(const AuthState.unauthenticated());
+    await tester.pumpAndSettle();
+    expect(find.text('Synthetic stored product'), findsNothing);
+    expect(find.text('Item ID: synthetic-item'), findsNothing);
+    expect(find.text('Browse stored items'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('workspace switch removes previous expanded stored items', (
+    tester,
+  ) async {
+    final updates = StreamController<WorkspaceState>();
+    addTearDown(updates.close);
+    whenListen(workspace, updates.stream, initialState: workspace.state);
+    await pump(tester);
+    await browseItems(tester);
+    expect(find.text('Synthetic stored product'), findsOneWidget);
+    updates.add(
+      const WorkspaceState(
+        status: WorkspaceStatus.loaded,
+        currentWorkspace: Workspace(
+          id: 'other-synthetic-workspace',
+          name: 'Other synthetic workspace',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Synthetic stored product'), findsNothing);
+    expect(find.text('Browse stored items'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets(
     'initial scope restoration does not notify ancestors during build',

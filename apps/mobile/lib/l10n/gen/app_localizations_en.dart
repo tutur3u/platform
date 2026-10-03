@@ -9909,4 +9909,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offlineStorageNeedsWorkspace => 'Select a workspace to view or clear its cached data. The storage limit applies to this device.';
+
+  @override
+  String get offlineBrowseStoredItems => 'Browse stored items';
+
+  @override
+  String get offlineSearchItems => 'Search stored items by name or ID';
+
+  @override
+  String get offlineNoMatchingItems => 'No stored items match.';
+
+  @override
+  String offlineStoredItemId(String id) {
+    return 'Item ID: $id';
+  }
 }

@@ -9812,4 +9812,18 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get offlineStorageNeedsWorkspace => 'Chọn không gian làm việc để xem hoặc xóa dữ liệu đã lưu. Giới hạn lưu trữ áp dụng cho thiết bị này.';
+
+  @override
+  String get offlineBrowseStoredItems => 'Xem các mục đã lưu';
+
+  @override
+  String get offlineSearchItems => 'Tìm các mục đã lưu theo tên hoặc ID';
+
+  @override
+  String get offlineNoMatchingItems => 'Không có mục đã lưu phù hợp.';
+
+  @override
+  String offlineStoredItemId(String id) {
+    return 'ID mục: $id';
+  }
 }
