@@ -4114,5 +4114,53 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "inventoryRedesignLimitedData": "Limited data. Last available snapshot shown.",
+    "inventoryRedesignReceiptActivity": "Receipt activity",
+    "inventoryRedesignReceiptCoverage": "Counts from the available recent receipts, not a complete period total. Missing days are unknown. Currency and quantity totals are not inferred.",
+    "inventoryRedesignDays": "{count, plural, =1{1 day} other{{count} days}}",
+    "@inventoryRedesignDays": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "inventoryRedesignRecentSample": "{count, plural, =1{1 available record} other{{count} available records}} · limited coverage",
+    "@inventoryRedesignRecentSample": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "inventoryRedesignUnknownDates": "{count, plural, =1{1 record without a date} other{{count} records without a date}}",
+    "@inventoryRedesignUnknownDates": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "inventoryRedesignLoadedRevenue": "Revenue in loaded receipts",
+    "inventoryRedesignUnknownCurrencies": "{count, plural, =1{1 receipt with unknown currency excluded} other{{count} receipts with unknown currency excluded}}",
+    "@inventoryRedesignUnknownCurrencies": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "inventoryRedesignPendingDeletion": "Deletion pending confirmation",
+    "inventoryRedesignPendingCount": "{count, plural, =1{1 unsynchronized edit} other{{count} unsynchronized edits}}",
+    "@inventoryRedesignPendingCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "inventoryRedesignLoadedSearch": "Search available records",
+    "inventoryRedesignAllEvents": "All events",
+    "inventoryRedesignSelectedLines": "Selected lines"
 }

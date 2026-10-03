@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/app_router_access_redirects.dart';
+import 'package:mobile/core/router/inventory_catalog_routes.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/data/sources/api_verification.dart';
@@ -429,7 +430,8 @@ GoRouter createAppRouter(
           ),
           GoRoute(
             path: Routes.inventoryProductCreate,
-            builder: (context, state) => const InventoryProductEditorPage(),
+            builder: (context, state) =>
+                const InventoryProductEditorPage(embedded: true),
           ),
           GoRoute(
             path: Routes.inventoryProductDetail,
@@ -438,7 +440,10 @@ GoRouter createAppRouter(
               if (productId == null || productId.isEmpty) {
                 return const InventoryProductsPage();
               }
-              return InventoryProductEditorPage(productId: productId);
+              return InventoryProductEditorPage(
+                productId: productId,
+                embedded: true,
+              );
             },
           ),
           GoRoute(
@@ -449,13 +454,15 @@ GoRouter createAppRouter(
             path: Routes.inventoryManage,
             builder: (context, state) => const InventoryManagePage(),
           ),
+          ...inventoryCatalogRoutes,
           GoRoute(
             path: Routes.inventoryAuditLogs,
             builder: (context, state) => const InventoryAuditLogsPage(),
           ),
           GoRoute(
             path: Routes.inventoryCheckout,
-            builder: (context, state) => const InventoryCheckoutPage(),
+            builder: (context, state) =>
+                const InventoryCheckoutPage(embedded: true),
           ),
           GoRoute(
             path: Routes.storefronts,

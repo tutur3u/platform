@@ -9719,4 +9719,53 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventoryCheckoutPeriodRulesChanged => 'Một số sản phẩm không phù hợp với kỳ bán hàng này. Đối soát giỏ hàng để tiếp tục.';
+
+  @override
+  String get inventoryRedesignLimitedData => 'Dữ liệu hạn chế. Đang hiển thị bản lưu gần nhất.';
+
+  @override
+  String get inventoryRedesignReceiptActivity => 'Hoạt động hóa đơn';
+
+  @override
+  String get inventoryRedesignReceiptCoverage => 'Số lượng từ các hóa đơn gần đây có sẵn, không phải tổng đầy đủ của kỳ. Ngày thiếu dữ liệu chưa xác định. Không suy ra tổng tiền hay số lượng sản phẩm.';
+
+  @override
+  String inventoryRedesignDays(int count) {
+    return '$count ngày';
+  }
+
+  @override
+  String inventoryRedesignRecentSample(int count) {
+    return '$count bản ghi có sẵn · phạm vi hạn chế';
+  }
+
+  @override
+  String inventoryRedesignUnknownDates(int count) {
+    return '$count bản ghi chưa có ngày';
+  }
+
+  @override
+  String get inventoryRedesignLoadedRevenue => 'Doanh thu từ hóa đơn đã tải';
+
+  @override
+  String inventoryRedesignUnknownCurrencies(int count) {
+    return 'Đã loại $count hóa đơn chưa xác định tiền tệ';
+  }
+
+  @override
+  String get inventoryRedesignPendingDeletion => 'Đang chờ xác nhận xóa';
+
+  @override
+  String inventoryRedesignPendingCount(int count) {
+    return '$count thay đổi chưa đồng bộ';
+  }
+
+  @override
+  String get inventoryRedesignLoadedSearch => 'Tìm trong bản ghi có sẵn';
+
+  @override
+  String get inventoryRedesignAllEvents => 'Tất cả sự kiện';
+
+  @override
+  String get inventoryRedesignSelectedLines => 'Dòng đã chọn';
 }

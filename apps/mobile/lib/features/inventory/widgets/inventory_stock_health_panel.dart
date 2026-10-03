@@ -9,9 +9,14 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class InventoryStockHealthPanel extends StatelessWidget {
-  const InventoryStockHealthPanel({required this.future, super.key});
+  const InventoryStockHealthPanel({
+    required this.future,
+    this.retained,
+    super.key,
+  });
 
   final Future<InventoryStockHealth>? future;
+  final InventoryStockHealth? retained;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +26,7 @@ class InventoryStockHealthPanel extends StatelessWidget {
       child: FutureBuilder<InventoryStockHealth>(
         future: future,
         builder: (context, snapshot) {
-          final data = snapshot.data;
+          final data = snapshot.data ?? retained;
           final error = snapshot.error;
           final denied =
               error is ApiException &&
@@ -29,22 +34,37 @@ class InventoryStockHealthPanel extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                l10n.inventoryStockHealthTitle,
-                style: shad.Theme.of(context).typography.h4,
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.inventoryStockHealthTitle,
+                      style: shad.Theme.of(context).typography.h4,
+                    ),
+                  ),
+                  Tooltip(
+                    triggerMode: TooltipTriggerMode.tap,
+                    message:
+                        '${l10n.inventoryStockHealthScope}\n'
+                        '${l10n.inventoryStockHealthOverlap}',
+                    child: const SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: Icon(Icons.info_outline, size: 20),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(l10n.inventoryStockHealthScope),
               const SizedBox(height: 10),
               if (snapshot.hasError)
                 Text(
                   denied
                       ? l10n.inventoryStockHealthDenied
                       : l10n.inventoryStockHealthUnavailable,
-                )
-              else if (data == null)
-                Text(l10n.inventoryStockHealthLoading)
-              else ...[
+                ),
+              if (data == null && !snapshot.hasError)
+                Text(l10n.inventoryStockHealthLoading),
+              if (data != null && !denied) ...[
                 if (data.generatedAt != null)
                   Text(
                     l10n.inventoryStockHealthAsOf(
@@ -67,10 +87,6 @@ class InventoryStockHealthPanel extends StatelessWidget {
                 ),
                 const Divider(height: 20),
                 ..._stockBars(context, data),
-                Text(
-                  l10n.inventoryStockHealthOverlap,
-                  style: shad.Theme.of(context).typography.small,
-                ),
               ],
             ],
           );

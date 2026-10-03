@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -20,6 +21,7 @@ import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/inventory/controllers/inventory_season_pricing_controller.dart';
+import 'package:mobile/features/inventory/widgets/inventory_form_scaffold.dart';
 import 'package:mobile/features/inventory/widgets/inventory_product_image.dart';
 import 'package:mobile/features/inventory/widgets/inventory_season_price_status.dart';
 import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
@@ -29,8 +31,8 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-part 'inventory_checkout_operations.dart';
 part 'inventory_checkout_cart.dart';
+part 'inventory_checkout_operations.dart';
 part 'inventory_checkout_pricing.dart';
 part 'inventory_checkout_recovery.dart';
 part 'inventory_checkout_widgets.dart';
@@ -60,8 +62,10 @@ class InventoryCheckoutPage extends StatefulWidget {
     this.actorId,
     this.actorChanges,
     super.key,
+    this.embedded = false,
   });
 
+  final bool embedded;
   final InventorySaleDetail? sale;
   final List<InventorySalesPeriod> initialSalesPeriods;
   final InventoryRepository? inventoryRepository;
@@ -282,8 +286,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
   String? get _resolvedCategoryId =>
       _requiresManualCategory ? _manualCategoryId : _linkedCategoryIds.first;
 
-  int get _selectedItemsCount =>
-      _quantities.values.fold<int>(0, (sum, qty) => sum + qty);
+  int get _selectedItemsCount => _selectedRows.length;
 
   double get _cartTotal => _selectedRows.fold<double>(
     0,
@@ -377,7 +380,8 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
     }
 
     if (_loading) {
-      return FinanceFullscreenFormScaffold(
+      return InventoryFormScaffold(
+        embedded: widget.embedded,
         title: pageTitle,
         primaryActionLabel: primaryActionLabel,
         onPrimaryPressed: null,
@@ -385,7 +389,8 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
       );
     }
 
-    return FinanceFullscreenFormScaffold(
+    return InventoryFormScaffold(
+      embedded: widget.embedded,
       title: pageTitle,
       primaryActionLabel: primaryActionLabel,
       onPrimaryPressed:
@@ -414,11 +419,13 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
       footerTop: _CheckoutFooterSummary(
         walletLabel: l10n.inventoryCheckoutWallet,
         walletValue: _selectedWalletName,
-        itemsLabel: l10n.inventoryCheckoutTotalItems,
+        itemsLabel: l10n.inventoryRedesignSelectedLines,
         itemsValue: '$_selectedItemsCount',
         totalLabel: l10n.inventoryCheckoutCartTotal,
         totalValue: _totalLabel,
       ),
+      searchController: _searchController,
+      onSearchChanged: (_) => setState(() {}),
       child: ListView(
         padding: const EdgeInsets.only(bottom: 12),
         children: [
@@ -428,23 +435,6 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
             Text(l10n.inventoryCheckoutScopeChanged)
           else if (_blockedHistory)
             Text(l10n.inventorySeasonHistoricalReadOnly),
-          InventoryHeroCard(
-            title: pageTitle,
-            icon: Icons.shopping_basket_outlined,
-            metrics: [
-              InventoryMetricTile(
-                label: l10n.inventoryCheckoutCartTotal,
-                value: _totalLabel,
-                icon: Icons.payments_outlined,
-              ),
-              InventoryMetricTile(
-                label: l10n.inventoryCheckoutSelectedItems,
-                value: '$_selectedItemsCount',
-                icon: Icons.shopping_cart_checkout_rounded,
-              ),
-            ],
-          ),
-          const shad.Gap(16),
           if (_hasUnavailableOptions) ...[
             _CheckoutOptionsAlert(onRetry: _load),
             const shad.Gap(16),
@@ -463,52 +453,33 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (_productCategories.isNotEmpty) ...[
-                    SizedBox(
-                      height: 36,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        children: [
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _CategoryFilterChip(
+                          label: l10n.inventoryCheckoutAllCategories,
+                          selected: _selectedProductCategory == null,
+                          onTap: () =>
+                              setState(() => _selectedProductCategory = null),
+                        ),
+                        for (final category in _productCategories) ...[
+                          const shad.Gap(8),
                           _CategoryFilterChip(
-                            label: l10n.inventoryCheckoutAllCategories,
-                            selected: _selectedProductCategory == null,
-                            onTap: () =>
-                                setState(() => _selectedProductCategory = null),
-                          ),
-                          for (final category in _productCategories) ...[
-                            const shad.Gap(8),
-                            _CategoryFilterChip(
-                              label: category,
-                              selected: _selectedProductCategory == category,
-                              onTap: () => setState(
-                                () => _selectedProductCategory =
-                                    _selectedProductCategory == category
-                                    ? null
-                                    : category,
-                              ),
+                            label: category,
+                            selected: _selectedProductCategory == category,
+                            onTap: () => setState(
+                              () => _selectedProductCategory =
+                                  _selectedProductCategory == category
+                                  ? null
+                                  : category,
                             ),
-                          ],
+                          ),
                         ],
-                      ),
+                      ],
                     ),
                     const shad.Gap(12),
                   ],
-                  TextField(
-                    controller: _searchController,
-                    onChanged: (_) => setState(() {}),
-                    decoration: InputDecoration(
-                      hintText: l10n.inventorySearchProducts,
-                      prefixIcon: const Icon(Icons.search_rounded),
-                      suffixIcon: _searchController.text.isEmpty
-                          ? null
-                          : IconButton(
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() {});
-                              },
-                              icon: const Icon(Icons.close_rounded),
-                            ),
-                    ),
-                  ),
                 ],
               ),
             ),

@@ -9786,4 +9786,83 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryCheckoutPeriodRulesChanged => 'Some items do not match this period. Reconcile the cart to continue.';
+
+  @override
+  String get inventoryRedesignLimitedData => 'Limited data. Last available snapshot shown.';
+
+  @override
+  String get inventoryRedesignReceiptActivity => 'Receipt activity';
+
+  @override
+  String get inventoryRedesignReceiptCoverage => 'Counts from the available recent receipts, not a complete period total. Missing days are unknown. Currency and quantity totals are not inferred.';
+
+  @override
+  String inventoryRedesignDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String inventoryRedesignRecentSample(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count available records',
+      one: '1 available record',
+    );
+    return '$_temp0 · limited coverage';
+  }
+
+  @override
+  String inventoryRedesignUnknownDates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count records without a date',
+      one: '1 record without a date',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inventoryRedesignLoadedRevenue => 'Revenue in loaded receipts';
+
+  @override
+  String inventoryRedesignUnknownCurrencies(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count receipts with unknown currency excluded',
+      one: '1 receipt with unknown currency excluded',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inventoryRedesignPendingDeletion => 'Deletion pending confirmation';
+
+  @override
+  String inventoryRedesignPendingCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count unsynchronized edits',
+      one: '1 unsynchronized edit',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inventoryRedesignLoadedSearch => 'Search available records';
+
+  @override
+  String get inventoryRedesignAllEvents => 'All events';
+
+  @override
+  String get inventoryRedesignSelectedLines => 'Selected lines';
 }

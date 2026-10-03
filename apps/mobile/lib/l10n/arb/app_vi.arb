@@ -4117,5 +4117,53 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "inventoryRedesignLimitedData": "Dữ liệu hạn chế. Đang hiển thị bản lưu gần nhất.",
+    "inventoryRedesignReceiptActivity": "Hoạt động hóa đơn",
+    "inventoryRedesignReceiptCoverage": "Số lượng từ các hóa đơn gần đây có sẵn, không phải tổng đầy đủ của kỳ. Ngày thiếu dữ liệu chưa xác định. Không suy ra tổng tiền hay số lượng sản phẩm.",
+    "inventoryRedesignDays": "{count} ngày",
+    "@inventoryRedesignDays": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "inventoryRedesignRecentSample": "{count} bản ghi có sẵn · phạm vi hạn chế",
+    "@inventoryRedesignRecentSample": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "inventoryRedesignUnknownDates": "{count} bản ghi chưa có ngày",
+    "@inventoryRedesignUnknownDates": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "inventoryRedesignLoadedRevenue": "Doanh thu từ hóa đơn đã tải",
+    "inventoryRedesignUnknownCurrencies": "Đã loại {count} hóa đơn chưa xác định tiền tệ",
+    "@inventoryRedesignUnknownCurrencies": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "inventoryRedesignPendingDeletion": "Đang chờ xác nhận xóa",
+    "inventoryRedesignPendingCount": "{count} thay đổi chưa đồng bộ",
+    "@inventoryRedesignPendingCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "inventoryRedesignLoadedSearch": "Tìm trong bản ghi có sẵn",
+    "inventoryRedesignAllEvents": "Tất cả sự kiện",
+    "inventoryRedesignSelectedLines": "Dòng đã chọn"
 }

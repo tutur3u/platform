@@ -4,6 +4,36 @@ import 'package:mobile/core/router/routes.dart';
 
 void main() {
   group('resolveMobileDeepLink', () {
+    test('preserves dedicated native Inventory catalog and period routes', () {
+      for (final catalog in [
+        'owners',
+        'categories',
+        'manufacturers',
+        'units',
+        'warehouses',
+        'financeCategories',
+      ]) {
+        expect(
+          resolveMobileDeepLink(
+            Uri.parse('https://tuturuuu.com/ws/inventory/manage/$catalog'),
+          )?.location,
+          Routes.inventoryCatalogPath(catalog),
+        );
+      }
+      expect(
+        resolveMobileDeepLink(
+          Uri.parse('https://tuturuuu.com/ws/inventory/sales-periods'),
+        )?.location,
+        Routes.inventorySalesPeriods,
+      );
+      expect(
+        resolveMobileDeepLink(
+          Uri.parse('https://tuturuuu.com/ws/inventory/manage/unknown'),
+        )?.location,
+        Routes.inventoryManage,
+      );
+    });
+
     test('preserves meeting room links and rejects other origins', () {
       expect(
         resolveMobileDeepLink(
