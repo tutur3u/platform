@@ -36,6 +36,7 @@ extension InventorySeasonPricingRepository on InventoryRepository {
     };
     final invoiceId = await queueOrSendValue<String>(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'inventory',
       method: 'POST',
       path: path,

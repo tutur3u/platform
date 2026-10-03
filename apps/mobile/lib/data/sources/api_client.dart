@@ -581,6 +581,9 @@ class ApiClient {
             _retryAfter(response.headers['retry-after']) ??
             parsed?['retryAfter'] as int?,
         code: parsed?['code'] as String?,
+        offlineContractObserved:
+            response.headers['x-tuturuuu-offline-contract'] ==
+            'inventory-offline-create-v1',
         isVerificationRequired:
             response.statusCode == 403 &&
             (response.headers['x-abuse-challenge'] == 'turnstile' ||
@@ -638,6 +641,7 @@ class ApiException implements Exception {
     this.retryAfter,
     this.code,
     this.isVerificationRequired = false,
+    this.offlineContractObserved = false,
   });
 
   final String message;
@@ -645,6 +649,7 @@ class ApiException implements Exception {
   final int? retryAfter;
   final String? code;
   final bool isVerificationRequired;
+  final bool offlineContractObserved;
 
   @override
   String toString() => 'ApiException($statusCode): $message';

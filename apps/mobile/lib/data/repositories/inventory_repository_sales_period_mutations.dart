@@ -81,11 +81,13 @@ extension InventorySalesPeriodMutations on InventoryRepository {
     };
     final period = await queueOrSendValue<InventorySalesPeriod>(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'inventory',
       method: 'POST',
       path: path,
       workspaceId: wsId,
       payload: payload,
+      acknowledgedValue: InventorySalesPeriod.fromJson,
       pendingValue: (id) => InventorySalesPeriod(
         id: id,
         name: name,
@@ -136,12 +138,14 @@ extension InventorySalesPeriodMutations on InventoryRepository {
     };
     final period = await queueOrSendValue<InventorySalesPeriod>(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'inventory',
       method: 'PATCH',
       path: path,
       workspaceId: wsId,
       entityId: periodId,
       payload: payload,
+      acknowledgedValue: InventorySalesPeriod.fromJson,
       pendingValue: (_) => InventorySalesPeriod(
         id: periodId,
         name: name ?? previous?.name ?? '',
