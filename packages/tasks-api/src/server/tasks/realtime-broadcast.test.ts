@@ -139,7 +139,9 @@ describe('published-client realtime transition', () => {
     const send = vi.fn().mockResolvedValue('ok');
     const channel = { send };
     const sbAdmin = {
-      channel: vi.fn((_name: string, _options: unknown) => channel),
+      channel: vi
+        .fn<(name: string, options: unknown) => typeof channel>()
+        .mockReturnValue(channel),
       removeChannel: vi.fn().mockResolvedValue('ok'),
     };
     return { send, channel, sbAdmin };

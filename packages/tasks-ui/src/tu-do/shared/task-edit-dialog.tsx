@@ -2176,11 +2176,9 @@ export function TaskEditDialog({
     setEditorInstance(editor);
   }, []);
 
-  // Navigate to a collaborator's cursor position in the editor.
-  // The CollaborationCaret extension renders `<span class="collaboration-carets__label">`
-  // with the user's display name. We match by name and scroll it into view.
+  // Navigate to a collaborator's cursor by its stable user id.
   const scrollToUserCursor = useCallback(
-    (userId: string, _displayName: string) => {
+    (userId: string) => {
       if (editorInstance)
         scrollToCollaborationCaret(editorInstance.view.dom, userId);
     },
