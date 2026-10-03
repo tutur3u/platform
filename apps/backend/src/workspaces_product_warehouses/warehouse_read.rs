@@ -54,7 +54,9 @@ fn is_legacy(value: &Value, ws_id: &str) -> bool {
     };
     rows.iter().all(|row| {
         row["id"].as_str().is_some_and(|id| !id.is_empty())
-            && row["ws_id"].as_str() == Some(ws_id)
+            && row["ws_id"]
+                .as_str()
+                .is_some_and(|id| id.eq_ignore_ascii_case(ws_id))
             && row
                 .get("name")
                 .is_some_and(|name| name.is_null() || name.is_string())
@@ -110,4 +112,20 @@ async fn verify_legacy(
         return Err(());
     }
     Ok(is_legacy(&baseline.json::<Value>().map_err(|_| ())?, ws_id))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn legacy_workspace_uuid_casing_preserves_same_identity_only() {
+        let lower = "abcdef00-0000-4000-8000-000000000000";
+        let value = json!({"warehouses":[{"id":"ordinary","name":"Main","ws_id":lower}]});
+        assert!(is_legacy(&value, &lower.to_uppercase()));
+        assert!(!is_legacy(&value, "abcdef00-0000-4000-8000-000000000001"));
+        assert!(!is_legacy(
+            &json!({"warehouses":[],"inventoryMergeSchema":null}),
+            lower
+        ));
+    }
 }

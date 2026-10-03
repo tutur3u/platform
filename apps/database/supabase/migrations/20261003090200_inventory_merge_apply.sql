@@ -8,7 +8,8 @@ declare v_preview jsonb; v_receipt private.inventory_identity_merges; r record;
 begin
  if not private.inventory_merge_schema_ready() then
   raise exception 'Inventory merge schema is not ready' using errcode='55000'; end if;
- if p_metadata_policy not in ('source','target') or p_stock_policy not in ('source','target') then
+ if p_metadata_policy is null or p_stock_policy is null or
+ p_metadata_policy not in ('source','target') or p_stock_policy not in ('source','target') then
   raise exception 'Review and choose conflict policies' using errcode='22023'; end if;
  if not exists(select 1 from public.workspace_members where ws_id=p_ws_id and user_id=p_actor_id) then
   raise exception 'Workspace access required' using errcode='42501'; end if;

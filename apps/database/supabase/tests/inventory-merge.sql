@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(37);
+select plan(42);
 create function public.im_id(n integer) returns uuid language sql immutable as $$select ('00009000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid$$;
 insert into auth.users(id) values(im_id(1));
 insert into public.users(id) values(im_id(1)) on conflict do nothing;
@@ -30,6 +30,11 @@ update private.inventory_products set price=101 where product_id=im_id(50) and u
 select throws_ok($$select private.apply_inventory_merge(im_id(10),'product',im_id(50),im_id(51),(select data->>'version' from merge_preview),'source','target',im_id(1))$$,'23P01',null,'Actual intervening stock change invalidates original preview');
 select is((select amount from private.inventory_products where product_id=im_id(51) and unit_id=im_id(21)),7::bigint,'Concurrent change rejection leaves destination intact');
 update private.inventory_products set price=100 where product_id=im_id(50) and unit_id=im_id(21);
+select throws_ok($$select private.apply_inventory_merge(im_id(10),'product',im_id(50),im_id(51),(select data->>'version' from merge_preview),null,'target',im_id(1))$$,'22023',null,'NULL metadata policy never silently selects target');
+select throws_ok($$select private.apply_inventory_merge(im_id(10),'product',im_id(50),im_id(51),(select data->>'version' from merge_preview),'source',null,im_id(1))$$,'22023',null,'NULL stock policy never silently selects target');
+update public.product_stock_changes set amount=999 where id=im_id(60);
+select is(private.preview_inventory_merge(im_id(10),'product',im_id(50),im_id(51))->>'version',(select data->>'version' from merge_preview),'Historical payload changes irrelevant to retained references do not inflate fingerprint');
+update public.product_stock_changes set amount=3 where id=im_id(60);
 select lives_ok($$select private.apply_inventory_merge(im_id(10),'product',im_id(50),im_id(51),(select data->>'version' from merge_preview),'source','target',im_id(1))$$,'Atomic product merge succeeds');
 select is((select amount from private.inventory_products where product_id=im_id(51) and unit_id=im_id(21)),10::bigint,'Finite quantities add exactly');
 select is((select price from private.inventory_products where product_id=im_id(51) and unit_id=im_id(21)),200::numeric,'Explicit target price policy honored');
@@ -70,6 +75,11 @@ select ok(not has_function_privilege('authenticated','private.apply_inventory_me
 select ok(not has_function_privilege('anon','private.preview_inventory_merge(uuid,text,uuid,uuid)','EXECUTE'),'Anonymous preview execution forbidden');
 select throws_ok($$delete from private.inventory_warehouses where id=im_id(31)$$,'23514',null,'Destination with durable merge identity cannot be deleted');
 select is((select count(*) from private.inventory_audit_logs where summary='Merged inventory identity into destination'),2::bigint,'Successful merges each record one transactional audit event');
+create unique index inventory_merge_expression_fixture on public.inventory_merge_provider_fixture ((product_id::text));
+select ok(private.preview_inventory_merge(im_id(10),'product',im_id(52),im_id(51))->'blockers' ? 'unsupported_unique_key:inventory_merge_provider_fixture','Expression-only FK dependency blocks unsafe rewiring');
+drop index public.inventory_merge_expression_fixture;
+create unique index inventory_merge_predicate_fixture on public.inventory_merge_provider_fixture (unit_id) where product_id=im_id(52);
+select ok(private.preview_inventory_merge(im_id(10),'product',im_id(52),im_id(51))->'blockers' ? 'unsupported_unique_key:inventory_merge_provider_fixture','Predicate-only FK dependency blocks unsafe rewiring');
 drop table public.inventory_merge_provider_fixture;
 delete from private.inventory_checkout_sessions where id=im_id(81);
 select lives_ok($$delete from public.workspaces where id=im_id(10)$$,'Owning workspace deletion can remove its merge aliases');

@@ -58,6 +58,17 @@ beforeEach(() => {
 
 describe('deduplicated native create boundary', () => {
   it('reports merged source identities as actionable conflicts without creating a listing', async () => {
+    authorize.mockResolvedValue({
+      ok: true,
+      value: {
+        userId: 'captured-actor',
+        wsId: 'normalized-workspace',
+        permissions: permissions([
+          'manage_inventory_catalog',
+          'adjust_inventory_stock',
+        ]),
+      },
+    });
     rpc.mockResolvedValue({
       data: null,
       error: {
@@ -66,7 +77,23 @@ describe('deduplicated native create boundary', () => {
           'Inventory identity was merged; refresh and select its destination before retrying',
       },
     });
-    const result = await handleOfflineCreate(request(), 'workspace');
+    const result = await handleOfflineCreate(
+      request('product', {
+        name: 'Synthetic',
+        category_id: operationId,
+        owner_id: serverId,
+        inventory: [
+          {
+            unit_id: operationId,
+            warehouse_id: serverId,
+            amount: null,
+            min_amount: 0,
+            price: 0,
+          },
+        ],
+      }),
+      'workspace'
+    );
     expect(result.status).toBe(409);
     expect(await result.json()).toMatchObject({
       code: 'MERGED_INVENTORY_IDENTITY',
@@ -74,6 +101,27 @@ describe('deduplicated native create boundary', () => {
         'Inventory was merged. Refresh and select its destination before retrying.',
     });
     expect(listing).not.toHaveBeenCalled();
+    expect(rpc).toHaveBeenCalledTimes(1);
+    rpc.mockResolvedValue(acknowledged('product'));
+    const success = await handleOfflineCreate(
+      request('product', {
+        name: 'Synthetic',
+        category_id: operationId,
+        owner_id: serverId,
+        inventory: [
+          {
+            unit_id: operationId,
+            warehouse_id: serverId,
+            amount: null,
+            min_amount: 0,
+            price: 0,
+          },
+        ],
+      }),
+      'workspace'
+    );
+    expect(success.status).toBe(201);
+    expect(listing).toHaveBeenCalledTimes(1);
   });
   it('passes only the captured actor/workspace and validated payload to RPC', async () => {
     const response = await handleOfflineCreate(request(), 'raw-workspace');

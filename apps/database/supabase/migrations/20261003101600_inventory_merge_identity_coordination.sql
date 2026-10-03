@@ -148,10 +148,19 @@ begin
   v_blockers:=v_blockers||jsonb_build_array('mixed_unlimited_stock'); end if;
 
  for r in select * from private.inventory_merge_references(p_kind) order by tbl::text,col loop
-  execute format('select coalesce(jsonb_agg(to_jsonb(x) order by to_jsonb(x)::text),''[]''::jsonb),count(*) from %s x where %I in ($1,$2)',r.tbl,r.col)
-   into v_rows,v_count using p_source_id,p_target_id;
-  if exists(select 1 from jsonb_array_elements(v_rows) x where x ? 'ws_id' and x->>'ws_id' is distinct from p_ws_id::text) then
-   v_blockers:=v_blockers||jsonb_build_array('cross_workspace_reference'); end if;
+  if r.historical then
+   -- Retained history is never rewired. Only counts and workspace ownership
+   -- affect this plan; do not materialize an unbounded history JSON array.
+   execute format('select jsonb_build_object(''sourceCount'',count(*) filter(where %I=$1),''targetCount'',count(*) filter(where %I=$2),''crossWorkspace'',coalesce(bool_or(to_jsonb(x) ? ''ws_id'' and to_jsonb(x)->>''ws_id'' is distinct from $3),false)) from %s x where %I in ($1,$2)',r.col,r.col,r.tbl,r.col)
+    into v_rows using p_source_id,p_target_id,p_ws_id::text;
+   if (v_rows->>'crossWorkspace')::boolean then
+    v_blockers:=v_blockers||jsonb_build_array('cross_workspace_reference'); end if;
+  else
+   execute format('select coalesce(jsonb_agg(to_jsonb(x) order by to_jsonb(x)::text),''[]''::jsonb) from %s x where %I in ($1,$2)',r.tbl,r.col)
+    into v_rows using p_source_id,p_target_id;
+   if exists(select 1 from jsonb_array_elements(v_rows) x where x ? 'ws_id' and x->>'ws_id' is distinct from p_ws_id::text) then
+    v_blockers:=v_blockers||jsonb_build_array('cross_workspace_reference'); end if;
+  end if;
   v_state:=v_state||jsonb_build_array(jsonb_build_object('table',r.tbl::text,'column',r.col,'rows',v_rows));
   execute format('select count(*) from %s where %I=$1',r.tbl,r.col) into v_count using p_source_id;
   v_refs:=v_refs||jsonb_build_array(jsonb_build_object('table',r.tbl::text,'count',v_count,'historical',r.historical));
@@ -172,7 +181,10 @@ begin
   -- Check every ordinary unique key that rewiring can collide with. Expression
   -- and partial keys involving this FK require explicit manual resolution.
   for ix in select i.* from pg_index i where i.indrelid=r.tbl and i.indisunique
-   and (select attnum from pg_attribute where attrelid=r.tbl and attname=r.col)=any(i.indkey::smallint[]) loop
+   and ((select attnum from pg_attribute where attrelid=r.tbl and attname=r.col)=any(i.indkey::smallint[])
+    or exists(select 1 from pg_depend d where d.classid='pg_class'::regclass and d.objid=i.indexrelid
+     and d.refclassid='pg_class'::regclass and d.refobjid=r.tbl
+     and d.refobjsubid=(select attnum from pg_attribute where attrelid=r.tbl and attname=r.col))) loop
    if ix.indexprs is not null or ix.indpred is not null then
     v_blockers:=v_blockers||jsonb_build_array('unsupported_unique_key:'||r.tbl::text); continue; end if;
    select string_agg(case when a.attname=r.col then format('%L::text',p_target_id::text) else format('x.%I::text',a.attname) end,', ' order by k.ord),
@@ -206,7 +218,8 @@ declare v_preview jsonb; v_receipt private.inventory_identity_merges; r record;
  s private.inventory_products; t private.inventory_products; v_metadata jsonb;
  v_product uuid; v_warehouse uuid; v_key bigint; v_lock_timeout text:=current_setting('lock_timeout');
 begin
- if p_metadata_policy not in ('source','target') or p_stock_policy not in ('source','target') then
+ if p_metadata_policy is null or p_stock_policy is null or
+ p_metadata_policy not in ('source','target') or p_stock_policy not in ('source','target') then
   raise exception 'Review and choose conflict policies' using errcode='22023'; end if;
  if not exists(select 1 from public.workspace_members where ws_id=p_ws_id and user_id=p_actor_id) then
   raise exception 'Workspace access required' using errcode='42501'; end if;

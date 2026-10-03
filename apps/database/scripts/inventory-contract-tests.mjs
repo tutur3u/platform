@@ -10,14 +10,18 @@ export const INVENTORY_SQL_FIXTURES = [
 ];
 
 export function hasCompletePassingTap(tap) {
-  const plan = tap.match(/^1\.\.(\d+)$/m);
-  const passes = [...tap.matchAll(/^ok (\d+) - /gm)].map((m) => Number(m[1]));
+  const plans = [...tap.matchAll(/^1\.\.(\d+)$/gm)];
+  const assertions = tap
+    .split(/\r?\n/u)
+    .filter((line) => /^(?:not )?ok\b/u.test(line));
   return (
-    !!plan &&
-    Number(plan[1]) > 0 &&
-    !/^not ok /m.test(tap) &&
-    passes.length === Number(plan[1]) &&
-    passes.every((n, i) => n === i + 1)
+    !/^Bail out!/imu.test(tap) &&
+    plans.length === 1 &&
+    Number(plans[0][1]) > 0 &&
+    assertions.length === Number(plans[0][1]) &&
+    assertions.every((line, i) =>
+      new RegExp(`^ok ${i + 1} - [^#]+$`, 'u').test(line)
+    )
   );
 }
 

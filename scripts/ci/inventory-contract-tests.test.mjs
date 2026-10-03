@@ -19,6 +19,10 @@ const passing = '1..2\nok 1 - assertion\nok 2 - assertion\n';
 test('strict fixture results reject missing/empty plans, failures, duplicate or missing assertions', () => {
   assert.equal(hasCompletePassingTap(passing), true);
   for (const tap of [
+    '1..1\nok 1 - skipped # SKIP\n',
+    '1..1\nok 1 - pending # TODO\n',
+    '1..1\nok 1 - assertion\nBail out! aborted\n',
+    '1..1\nok 1 - assertion\n1..1\n',
     '',
     '1..0\n',
     '1..2\nok 1 - assertion\n',

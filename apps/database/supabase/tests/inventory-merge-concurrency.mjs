@@ -4,9 +4,9 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, realpathSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
+import { assertDisposableRoot } from '../../scripts/run-supabase-isolated.js';
 
-const root = process.argv[2];
-assert.match(root ?? '', /^\/tmp\/tuturuuu-supabase-[A-Za-z0-9]+$/);
+const root = assertDisposableRoot(process.argv[2] ?? '');
 const metadata = JSON.parse(
   readFileSync(path.join(root, '.tuturuuu-isolated-supabase.json'), 'utf8')
 );

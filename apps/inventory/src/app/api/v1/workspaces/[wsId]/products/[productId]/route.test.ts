@@ -180,6 +180,26 @@ describe('inventory product delete route', () => {
     );
   });
 
+  it('returns an actionable merged identity conflict without archive or audit fallback', async () => {
+    const client = createProductClient({
+      deleteResult: {
+        data: null,
+        error: {
+          code: '23514',
+          message: 'Inventory identity was merged; use its destination',
+        },
+      },
+    });
+    mocks.createAdminClient.mockResolvedValue(client);
+    const response = await deleteProduct();
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({
+      code: 'MERGED_INVENTORY_IDENTITY',
+    });
+    expect(client.from('workspace_products').update).not.toHaveBeenCalled();
+    expect(mocks.createInventoryAuditLog).not.toHaveBeenCalled();
+  });
+
   it('does not hide unexpected deletion failures', async () => {
     mocks.createAdminClient.mockResolvedValue(
       createProductClient({
@@ -269,5 +289,26 @@ describe('inventory product update route', () => {
         after: expect.objectContaining({ usage: 'Counter display' }),
       })
     );
+  });
+  it('maps the atomic priced edit merged-identity rejection to conflict', async () => {
+    mocks.createAdminClient.mockResolvedValue(createProductClient({}));
+    pricedEdit.mockRejectedValue({
+      code: '23514',
+      message: 'Inventory identity was merged; use its destination',
+    });
+    const { PATCH } = await import('./route');
+    const response = await PATCH(
+      new Request('http://localhost/api/v1/workspaces/ws/products/p', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ usage: 'Counter display' }),
+      }),
+      { params: Promise.resolve({ productId: 'product-1', wsId: 'ws-alias' }) }
+    );
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({
+      code: 'MERGED_INVENTORY_IDENTITY',
+    });
+    expect(mocks.createInventoryAuditLog).not.toHaveBeenCalled();
   });
 });
