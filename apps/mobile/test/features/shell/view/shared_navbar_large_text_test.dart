@@ -332,11 +332,11 @@ void main() {
             });
           }
           if (!baseline && profileSection && viewport == 393 && scale == 2) {
-            await tester.tap(find.byTooltip('Activity timeline'));
+            await tester.tap(find.byTooltip('Timeline'));
             await _pump(tester);
             expect(
               tester
-                  .getSemantics(find.byTooltip('Activity timeline'))
+                  .getSemantics(find.byTooltip('Timeline'))
                   .getSemanticsData()
                   .flagsCollection
                   .isSelected,

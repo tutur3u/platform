@@ -14,6 +14,9 @@ import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
+import 'package:mobile/features/dashboard/cubit/dashboard_layout_cubit.dart';
+import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
@@ -21,6 +24,7 @@ import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
+import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -69,7 +73,11 @@ void main() {
       workspaces,
       const Stream<WorkspaceState>.empty(),
       initialState: const WorkspaceState(
-        currentWorkspace: Workspace(id: 'synthetic-personal', personal: true),
+        currentWorkspace: Workspace(id: 'synthetic-shared'),
+        workspaces: [
+          Workspace(id: 'synthetic-personal', personal: true),
+          Workspace(id: 'synthetic-shared'),
+        ],
       ),
     );
     whenListen(
@@ -175,6 +183,74 @@ void main() {
     await _pump(tester);
   }
 
+  testWidgets('Home tabs retain Dashboard cubits and Grid precedes List', (
+    tester,
+  ) async {
+    await mount(tester);
+    final chrome = tester
+        .element(find.byType(ShellPage))
+        .read<ShellChromeActionsCubit>();
+    final appsViews = chrome.state
+        .resolveForLocation(Routes.apps)
+        .where((action) => action.segmentGroup == 'apps-view')
+        .toList();
+    expect(appsViews.map((action) => action.id), [
+      'apps-view-grid',
+      'apps-view-list',
+    ]);
+    expect(appsViews.first.highlighted, isTrue);
+    router.go(Routes.home);
+    await _pump(tester);
+    final homeViews = chrome.state
+        .resolveForLocation(Routes.home)
+        .where((action) => action.segmentGroup == 'home-views')
+        .toList();
+    expect(homeViews.map((action) => action.id), [
+      'home-view-home',
+      'home-view-agenda',
+    ]);
+    expect(homeViews.first.highlighted, isTrue);
+    final dashboardContext = tester.element(
+      find
+          .descendant(
+            of: find.byType(DashboardPage),
+            matching: find.byType(BlocBuilder<CalendarCubit, CalendarState>),
+          )
+          .first,
+    );
+    final calendar = dashboardContext.read<CalendarCubit>();
+    final tasks = dashboardContext.read<TaskListCubit>();
+    final layout = dashboardContext.read<DashboardLayoutCubit>();
+    final selectedDay = DateTime.utc(2026, 10, 8);
+    calendar.selectDate(selectedDay);
+    homeViews.last.onPressed!();
+    await _pump(tester);
+    expect(find.text('Personal calendar is unavailable.'), findsOneWidget);
+    expect(workspaces.state.currentWorkspace!.id, 'synthetic-shared');
+    expect(
+      chrome.state
+          .resolveForLocation(Routes.home)
+          .any((a) => a.id == 'home-customize'),
+      isFalse,
+    );
+    expect(dashboardContext.mounted, isTrue);
+    homeViews.first.onPressed!();
+    await _pump(tester);
+    expect(dashboardContext.read<CalendarCubit>(), same(calendar));
+    expect(dashboardContext.read<TaskListCubit>(), same(tasks));
+    expect(calendar.isClosed, isFalse);
+    expect(calendar.state.selectedDate, selectedDay);
+    expect(dashboardContext.read<DashboardLayoutCubit>(), same(layout));
+    expect(tasks.isClosed, isFalse);
+    expect(
+      chrome.state
+          .resolveForLocation(Routes.home)
+          .any((a) => a.id == 'home-customize'),
+      isTrue,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'unique normalized current result launches once and clears search',
     (tester) async {
@@ -222,19 +298,30 @@ void main() {
     expect(tester.takeException(), isNull);
   });
   for (final query in ['no-such-module', 'a', '   ']) {
-    testWidgets(
-      'IME preserves search for zero multiple or empty results: $query',
-      (tester) async {
-        await mount(tester);
-        await search(tester, query);
-        await submit(tester);
-        expect(router.routeInformationProvider.value.uri.path, Routes.apps);
+    testWidgets('IME retains results or dismisses empty query: $query', (
+      tester,
+    ) async {
+      await mount(tester);
+      await search(tester, query);
+      await submit(tester);
+      expect(router.routeInformationProvider.value.uri.path, Routes.apps);
+      if (query.trim().isEmpty) {
+        expect(searchField, findsNothing);
+        expect(
+          FocusManager.instance.primaryFocus?.debugLabel,
+          isNot('shell-search'),
+        );
+      } else {
         expect(searchField, findsOneWidget);
         expect(tester.widget<TextField>(searchField).controller!.text, query);
-        expect(apps.state.selectedId, isNull);
-        expect(tester.takeException(), isNull);
-      },
-    );
+        expect(
+          tester.widget<TextField>(searchField).focusNode!.hasFocus,
+          isFalse,
+        );
+      }
+      expect(apps.state.selectedId, isNull);
+      expect(tester.takeException(), isNull);
+    });
   }
   testWidgets('stale submission cannot launch a different current query', (
     tester,

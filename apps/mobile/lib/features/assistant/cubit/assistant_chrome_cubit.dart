@@ -4,6 +4,17 @@ import 'package:equatable/equatable.dart';
 class AssistantChromeCubit extends Cubit<AssistantChromeState> {
   AssistantChromeCubit() : super(const AssistantChromeState());
 
+  void setComposerVisible({required bool visible}) {
+    if (visible == state.composerVisible) return;
+    emit(state.copyWith(composerVisible: visible, navigationExpanded: false));
+  }
+
+  void toggleComposerNavigation() {
+    if (state.composerVisible) {
+      emit(state.copyWith(navigationExpanded: !state.navigationExpanded));
+    }
+  }
+
   void enterFullscreen() {
     emit(state.copyWith(isFullscreen: true));
   }
@@ -23,6 +34,8 @@ class AssistantChromeCubit extends Cubit<AssistantChromeState> {
   void enterLiveMode() {
     emit(
       state.copyWith(
+        composerVisible: false,
+        navigationExpanded: false,
         isLiveMode: true,
         isFullscreen: false,
         hasSelectedMode: true,
@@ -43,6 +56,8 @@ class AssistantChromeCubit extends Cubit<AssistantChromeState> {
   void setLiveMode({required bool value}) {
     emit(
       state.copyWith(
+        composerVisible: false,
+        navigationExpanded: false,
         isLiveMode: value,
         isFullscreen: false,
         hasSelectedMode: true,
@@ -53,21 +68,29 @@ class AssistantChromeCubit extends Cubit<AssistantChromeState> {
 
 class AssistantChromeState extends Equatable {
   const AssistantChromeState({
+    this.composerVisible = false,
+    this.navigationExpanded = false,
     this.isFullscreen = false,
     this.isLiveMode = false,
     this.hasSelectedMode = false,
   });
 
+  final bool composerVisible;
+  final bool navigationExpanded;
   final bool isFullscreen;
   final bool isLiveMode;
   final bool hasSelectedMode;
 
   AssistantChromeState copyWith({
+    bool? composerVisible,
+    bool? navigationExpanded,
     bool? isFullscreen,
     bool? isLiveMode,
     bool? hasSelectedMode,
   }) {
     return AssistantChromeState(
+      composerVisible: composerVisible ?? this.composerVisible,
+      navigationExpanded: navigationExpanded ?? this.navigationExpanded,
       isFullscreen: isFullscreen ?? this.isFullscreen,
       isLiveMode: isLiveMode ?? this.isLiveMode,
       hasSelectedMode: hasSelectedMode ?? this.hasSelectedMode,
@@ -75,5 +98,11 @@ class AssistantChromeState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [isFullscreen, isLiveMode, hasSelectedMode];
+  List<Object?> get props => [
+    composerVisible,
+    navigationExpanded,
+    isFullscreen,
+    isLiveMode,
+    hasSelectedMode,
+  ];
 }

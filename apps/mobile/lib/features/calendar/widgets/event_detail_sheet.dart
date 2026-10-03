@@ -16,20 +16,22 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 Future<String?> showEventDetailSheet(
   BuildContext context, {
   required CalendarEvent event,
+  bool readOnly = false,
 }) {
   return showAdaptiveSheet<String>(
     context: context,
     useRootNavigator: true,
     backgroundColor: Theme.of(context).colorScheme.surface,
     isScrollControlled: false,
-    builder: (context) => _EventDetailContent(event: event),
+    builder: (context) => _EventDetailContent(event: event, readOnly: readOnly),
   );
 }
 
 class _EventDetailContent extends StatelessWidget {
-  const _EventDetailContent({required this.event});
+  const _EventDetailContent({required this.event, this.readOnly = false});
 
   final CalendarEvent event;
+  final bool readOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -103,38 +105,39 @@ class _EventDetailContent extends StatelessWidget {
           const SizedBox(height: 24),
 
           // Action buttons.
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => Navigator.of(context).pop('edit'),
-                    icon: const Icon(Icons.edit_outlined, size: 18),
-                    label: Text(l10n.calendarEditEvent),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _confirmDelete(context),
-                    icon: Icon(
-                      Icons.delete_outline,
-                      size: 18,
-                      color: colorScheme.error,
-                    ),
-                    label: Text(
-                      l10n.calendarDeleteEvent,
-                      style: TextStyle(color: colorScheme.error),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: colorScheme.error),
+          if (!readOnly)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.of(context).pop('edit'),
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      label: Text(l10n.calendarEditEvent),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _confirmDelete(context),
+                      icon: Icon(
+                        Icons.delete_outline,
+                        size: 18,
+                        color: colorScheme.error,
+                      ),
+                      label: Text(
+                        l10n.calendarDeleteEvent,
+                        style: TextStyle(color: colorScheme.error),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: colorScheme.error),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );

@@ -3649,7 +3649,7 @@
     "profileTimelineDescription": "Hoạt động tạo trong không gian làm việc này trong 30 ngày qua. Sự kiện lịch là hoạt động của không gian làm việc.",
     "profileTimelineLimited": "Chỉ hiển thị hoạt động gần đây. Một số nguồn đã đạt giới hạn hiển thị.",
     "profileTimelineUnavailable": "Không thể làm mới hoạt động.",
-    "profileTimelineTitle": "Dòng thời gian hoạt động",
+    "profileTimelineTitle": "Dòng thời gian",
     "profileTimelineToday": "Hôm nay",
     "profileTimelineYesterday": "Hôm qua",
     "profileTimelineEmpty": "Không có hoạt động gần đây trong không gian này",
@@ -4203,5 +4203,10 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "homePersonalAgenda": "Lịch cá nhân",
+    "homePersonalAgendaUnavailable": "Lịch cá nhân hiện không khả dụng.",
+    "assistantExpandNavigation": "Hiện điều hướng",
+    "assistantCollapseNavigation": "Ẩn điều hướng",
+    "assistantCloseComposer": "Đóng ô nhập"
 }

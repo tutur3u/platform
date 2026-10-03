@@ -8762,7 +8762,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileTimelineUnavailable => 'Không thể làm mới hoạt động.';
 
   @override
-  String get profileTimelineTitle => 'Dòng thời gian hoạt động';
+  String get profileTimelineTitle => 'Dòng thời gian';
 
   @override
   String get profileTimelineToday => 'Hôm nay';
@@ -9826,4 +9826,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String offlineStoredItemId(String id) {
     return 'ID mục: $id';
   }
+
+  @override
+  String get homePersonalAgenda => 'Lịch cá nhân';
+
+  @override
+  String get homePersonalAgendaUnavailable => 'Lịch cá nhân hiện không khả dụng.';
+
+  @override
+  String get assistantExpandNavigation => 'Hiện điều hướng';
+
+  @override
+  String get assistantCollapseNavigation => 'Ẩn điều hướng';
+
+  @override
+  String get assistantCloseComposer => 'Đóng ô nhập';
 }
