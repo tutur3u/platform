@@ -6876,6 +6876,51 @@ export type Database = {
         };
         Relationships: [];
       };
+      inventory_offline_create_receipts: {
+        Row: {
+          actor_id: string;
+          created_at: string;
+          operation_id: string;
+          request_payload: Json;
+          resource: string;
+          response: Json;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          created_at?: string;
+          operation_id: string;
+          request_payload: Json;
+          resource: string;
+          response: Json;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          created_at?: string;
+          operation_id?: string;
+          request_payload?: Json;
+          resource?: string;
+          response?: Json;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_offline_create_receipts_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'inventory_offline_create_receipts_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       inventory_option_template_groups: {
         Row: {
           created_at: string | null;
@@ -16411,6 +16456,16 @@ export type Database = {
       allocate_inventory_checkout_revenue: {
         Args: { p_checkout_id: string; p_proportional_source?: string };
         Returns: number;
+      };
+      apply_inventory_offline_create: {
+        Args: {
+          p_actor_id: string;
+          p_operation_id: string;
+          p_payload: Json;
+          p_resource: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       assert_finance_chart_date_range: {
         Args: { _end_date: string; _max_days: number; _start_date: string };

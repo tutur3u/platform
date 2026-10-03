@@ -9308,6 +9308,27 @@ class AppLocalizationsVi extends AppLocalizations {
   String get cacheCategoryOther => 'Dữ liệu khác';
 
   @override
+  String get offlineDependencyWaiting => 'Đang chờ các thay đổi liên quan. Đồng bộ sẽ tự động tiếp tục.';
+
+  @override
+  String get offlineDependencyMissing => 'Một mục cục bộ liên quan đã bị hủy hoặc xóa. Hãy kiểm tra thay đổi này.';
+
+  @override
+  String get offlineDependencyCycle => 'Các thay đổi liên quan phụ thuộc lẫn nhau. Hãy kiểm tra các mục tham chiếu.';
+
+  @override
+  String get offlineDependencyAmbiguous => 'Nhiều thao tác tạo đang chờ dùng cùng một mục cục bộ. Hãy kiểm tra thay đổi này.';
+
+  @override
+  String get offlineDependencyInvalid => 'Thay đổi đã lưu có dữ liệu không hợp lệ. Hãy kiểm tra trước khi đồng bộ.';
+
+  @override
+  String get offlineDependencyContract => 'Đang chờ máy chủ hỗ trợ. Thay đổi đã được lưu và sẽ tự động thử lại.';
+
+  @override
+  String get offlineEditSyncing => 'Đang đồng bộ…';
+
+  @override
   String get offlineEditQueued => 'Đang chờ đồng bộ';
 
   @override
@@ -9460,7 +9481,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsTimezoneRateLimited => 'Quá nhiều yêu cầu. Vui lòng chờ trước khi thử lại.';
 
   @override
-  String get settingsTimezoneError => 'Không thể tải hoặc lưu múi giờ. Nhấn để thử lại.';
+  String get settingsTimezoneRetry => 'Thử lại múi giờ';
+
+  @override
+  String get settingsTimezoneError => 'Không thể tải hoặc lưu múi giờ. Hãy thử lại hoặc sửa tùy chọn đã tải.';
 
   @override
   String get calendarInvalidLocalTime => 'Chọn thời gian bắt đầu và kết thúc hợp lệ. Một số thời điểm không tồn tại khi đổi giờ mùa hè.';
@@ -9637,9 +9661,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get workspacePickerClose => 'Đóng danh sách không gian làm việc';
-
-  @override
-  String get offlineEditSyncing => 'Đang đồng bộ…';
 
   @override
   String get inventoryProductDeleteConfirm => 'Xóa sản phẩm này? Nếu giao dịch đã có tham chiếu đến sản phẩm, máy chủ sẽ lưu trữ sản phẩm khi đồng bộ.';

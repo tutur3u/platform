@@ -58,6 +58,7 @@ mixin FinanceRepositoryTaxonomy {
     };
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'finance',
       method: 'POST',
       path: path,
@@ -90,6 +91,7 @@ mixin FinanceRepositoryTaxonomy {
     final path = FinanceEndpoints.category(wsId, categoryId);
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'finance',
       method: 'PUT',
       path: path,
@@ -112,6 +114,7 @@ mixin FinanceRepositoryTaxonomy {
     final path = FinanceEndpoints.category(wsId, categoryId);
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'finance',
       method: 'DELETE',
       path: path,
@@ -165,6 +168,7 @@ mixin FinanceRepositoryTaxonomy {
     };
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'finance',
       method: 'POST',
       path: path,
@@ -194,6 +198,7 @@ mixin FinanceRepositoryTaxonomy {
     };
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'finance',
       method: 'PUT',
       path: path,
@@ -213,6 +218,7 @@ mixin FinanceRepositoryTaxonomy {
     final path = FinanceEndpoints.tag(wsId, tagId);
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'finance',
       method: 'DELETE',
       path: path,

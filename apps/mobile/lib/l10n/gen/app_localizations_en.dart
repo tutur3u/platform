@@ -9374,6 +9374,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cacheCategoryOther => 'Other data';
 
   @override
+  String get offlineDependencyWaiting => 'Waiting for related changes. Sync will continue automatically.';
+
+  @override
+  String get offlineDependencyMissing => 'A related local item was discarded or deleted. Review this change.';
+
+  @override
+  String get offlineDependencyCycle => 'Related changes depend on each other. Review their references.';
+
+  @override
+  String get offlineDependencyAmbiguous => 'More than one queued create uses the same local item. Review this change.';
+
+  @override
+  String get offlineDependencyInvalid => 'The saved change has invalid data. Review it before syncing.';
+
+  @override
+  String get offlineDependencyContract => 'Waiting for server support. This change is saved and retries automatically.';
+
+  @override
+  String get offlineEditSyncing => 'Syncing…';
+
+  @override
   String get offlineEditQueued => 'Waiting to sync';
 
   @override
@@ -9526,7 +9547,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTimezoneRateLimited => 'Too many requests. Please wait before retrying.';
 
   @override
-  String get settingsTimezoneError => 'Could not load or save timezone. Tap to retry.';
+  String get settingsTimezoneRetry => 'Retry timezone';
+
+  @override
+  String get settingsTimezoneError => 'Could not load or save timezone. Retry or edit a loaded preference.';
 
   @override
   String get calendarInvalidLocalTime => 'Choose a valid start and end time. Some times do not exist when daylight saving time changes.';
@@ -9703,9 +9727,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workspacePickerClose => 'Close workspace picker';
-
-  @override
-  String get offlineEditSyncing => 'Syncing…';
 
   @override
   String get inventoryProductDeleteConfirm => 'Remove this product? If existing sales reference it, the server will archive it when syncing.';

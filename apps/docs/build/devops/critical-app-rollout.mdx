@@ -1,0 +1,64 @@
+---
+title: Critical app rollout gates
+description: Stage production artifacts and verify ordinary API boundaries before moving production domains.
+updatedAt: "2026-10-03"
+---
+
+Finance, Inventory, Contacts, CMS, and Tasks depend on the live Web API. A
+successful satellite build does not prove that this shared dependency is usable.
+Production releases must preserve daily enterprise operations during optional
+download-provider failures.
+
+## Ordinary operations and bulk downloads
+
+Ordinary GET and HEAD requests never enter the optional offline-download guard,
+even when `OFFLINE_DOWNLOAD_PROTECTION_ENABLED` is enabled. Explicit bulk
+requests marked with the offline-download header retain their protection and
+return a retryable failure when its provider is unavailable. Required MFA,
+verified IP blocks, and baseline rate limits remain effective.
+
+This rule applies to Web and the registered satellite API proxies. It prevents
+optional Redis, quota, or Turnstile failures from blocking normal pages and
+routine reads. It does not change permission checks or authorize bulk exports.
+The real proxy regression suite is
+`packages/utils/src/__tests__/daily-operation-download-isolation.test.ts`.
+
+## Production domain assignment
+
+The Web, Finance, Inventory, Contacts, CMS, and Tasks production workflows stage
+production artifacts with `vercel deploy --prod --skip-domain`. They then run
+`scripts/ci/verify-staged-critical-app.js` against the immutable deployment URL.
+The gate requires production build metadata for the exact workflow SHA and app.
+GET and HEAD probes with a deliberately invalid machine-key token must reach the normal JSON API authentication
+boundary and return 401. Unexpected statuses, redirects, HTML, missing metadata,
+and mismatched source identity stop the workflow before domain assignment.
+
+Only a passing staged deployment is promoted, then recorded as successfully
+deployed. [Vercel staging and promotion](https://vercel.com/docs/cli/deploying-from-cli)
+retain the same built artifact. The CLI probe uses deployment-protection bypass
+through [vercel curl](https://vercel.com/docs/cli/curl); it supplies no application
+valid session and reads no customer records. The invalid machine-key shape crosses satellite
+session refresh so the probe exercises the shared API guard rather than stopping
+before it.
+
+When the production planner selects Web, every selected Vercel satellite waits
+for Web's explicit `promoted` output. A failed, cancelled, skipped, or
+package-release-blocked Web deployment prevents satellite rollout. When Web is
+not selected, satellites can deploy independently. Cloudflare jobs keep their
+own dependency rules.
+
+These probes establish source identity and API ingress health. They do not prove
+signed-in permissions, business CRUD, mobile behavior, or provider integrations.
+The Web probe includes Learn's Programming catalog API: its sidebar page must
+not advance against a platform artifact that lacks the route. An out-of-band
+Instant Rollback can still create mixed versions, so recovery must restore a
+compatible platform artifact and verify the signed-in Programming sidebar flow.
+An HTML API 404 is not evidence that the Learn page or workspace is missing.
+After promotion, verify the requested signed-in workflows separately and record
+any missing evidence. Production database migrations still require their gated
+exact-SHA workflow; never push them manually from an agent checkout.
+
+Regression coverage lives in `scripts/ci/critical-rollout-workflow.test.js`,
+`scripts/ci/verify-staged-critical-app.test.js`, and the existing release workflow
+suite. The dependency test exercises selected and unselected Web, failed and
+cancelled runs, missing promotion output, failed planning, and unselected apps.
