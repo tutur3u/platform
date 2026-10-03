@@ -294,7 +294,8 @@ describe('CMS proxy auth mode', () => {
         cookie: 'tuturuuu_app_session=expired-session',
       },
     });
-    await proxy(request);
+    const response = await proxy(request);
+    expect(response.headers.get('x-middleware-next')).toBe('1');
     expect(request.cookies.getAll()).toEqual([]);
     expect(request.headers.has('authorization')).toBe(false);
     expect(mocks.guardApiProxyRequest).toHaveBeenCalledOnce();
