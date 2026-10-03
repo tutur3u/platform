@@ -252,3 +252,17 @@ The board-guest ASSERT21 data-changing CTE is scoped inside its consuming
 assertion query. Structural regression coverage rejects a CTE left before a DO
 block; this coverage is not a PostgreSQL grammar check. Revised SQL still needs
 fresh admitted runtime validation.
+
+
+## Mobile preference service recovery
+
+Mobile workspace selection treats Hidden preferences as an optional UI service.
+If their read fails (including a server rollback without the endpoint), canonical
+membership remains selectable in the selection page and picker sheet, with a
+localized warning and explicit Retry. Confirmed account-scoped cached Hidden IDs
+remain excluded. Without a confirmed list, membership may be selected explicitly;
+this does not save an empty preference list, restore a workspace, or change
+membership authorization. Pending discovery still waits for its result. A failed
+preference read never becomes a successful preference refresh. Regression coverage:
+`workspace_select_page_test.dart`, `workspace_picker_sheet_test.dart`, and
+`workspace_visibility_test.dart`.

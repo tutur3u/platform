@@ -4,7 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cached_resource_record.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/workspace_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
+import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/data/workspace_visibility_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -54,6 +56,30 @@ void main() {
   Future<void> load() async {
     await cubit.loadWorkspaces(forceRefresh: true);
     await Future<void>.delayed(Duration.zero);
+  }
+
+  for (final status in [403, 404, 500]) {
+    test(
+      'preference $status keeps canonical membership and explicit selection',
+      () async {
+        when(() => visibility.refresh('A')).thenThrow(
+          ApiException(message: 'Preference unavailable', statusCode: status),
+        );
+        await load();
+        expect(cubit.state.status, WorkspaceStatus.loaded);
+        expect(cubit.state.workspaces, [personal, team]);
+        expect(cubit.state.visibleWorkspaces, [personal, team]);
+        expect(cubit.state.visibilityStatus, WorkspaceStatus.error);
+        expect(cubit.state.visibilityResolved, isFalse);
+        await cubit.selectWorkspace(team);
+        expect(cubit.state.currentWorkspace, team);
+        verify(() => repo.saveSelectedWorkspace(team)).called(1);
+        verifyNever(() => visibility.saveCached(any(), any()));
+        verifyNever(
+          () => visibility.update(any(), any(), hidden: any(named: 'hidden')),
+        );
+      },
+    );
   }
 
   test(
