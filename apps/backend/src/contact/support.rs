@@ -198,6 +198,18 @@ pub(super) async fn support_inquiry_data_patch_response(
         return contact_data_layer_not_ready_response(request);
     }
 
+    if request.cookie.is_some()
+        && !request
+            .authorization
+            .and_then(|value| value.strip_prefix("Bearer "))
+            .is_some_and(|token| !token.trim().is_empty())
+        && !is_same_origin_api_request(request)
+    {
+        return no_store_response(json_response(
+            403,
+            json!({ "message": "Support inquiry updates require same-origin confirmation" }),
+        ));
+    }
     let Some(access_token) = supabase_auth::request_access_token(request) else {
         return support_inquiry_admin_unauthorized_response();
     };
@@ -337,13 +349,7 @@ fn support_inquiry_internal_server_error_response() -> BackendResponse {
 fn validate_support_inquiry_payload(payload: &SupportInquiryRequest) -> Vec<String> {
     let mut errors = Vec::new();
 
-    validate_string_length(
-        &mut errors,
-        "name",
-        &payload.name,
-        2,
-        MAX_DISPLAY_NAME_LENGTH,
-    );
+    validate_string_length(&mut errors, "name", &payload.name, 2, 64);
     validate_email(&mut errors, &payload.email);
     validate_enum(
         &mut errors,
@@ -373,4 +379,44 @@ fn validate_support_inquiry_payload(payload: &SupportInquiryRequest) -> Vec<Stri
     );
 
     errors
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn support_limits_match_current_database_constraints() {
+        let mut value = SupportInquiryRequest {
+            email: "synthetic@example.test".into(),
+            message: "m".repeat(512),
+            name: "n".repeat(64),
+            product: "web".into(),
+            subject: "s".repeat(128),
+            inquiry_type: "support".into(),
+        };
+        assert!(validate_support_inquiry_payload(&value).is_empty());
+        for field in ["name", "subject", "message"] {
+            match field {
+                "name" => value.name.push('n'),
+                "subject" => value.subject.push('s'),
+                _ => value.message.push('m'),
+            }
+            assert!(
+                validate_support_inquiry_payload(&value)
+                    .iter()
+                    .any(|error| error.starts_with(field))
+            );
+            match field {
+                "name" => {
+                    value.name.pop();
+                }
+                "subject" => {
+                    value.subject.pop();
+                }
+                _ => {
+                    value.message.pop();
+                }
+            }
+        }
+    }
 }

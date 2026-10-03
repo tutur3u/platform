@@ -6,12 +6,12 @@
         "acceptedRemoval": 12,
         "key": "api",
         "label": "api",
-        "legacyNext": 535,
+        "legacyNext": 536,
         "migrated": 62,
-        "percentComplete": 12.15,
-        "remaining": 535,
+        "percentComplete": 12.13,
+        "remaining": 536,
         "terminal": 74,
-        "total": 609,
+        "total": 610,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 12,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 545,
+        "legacyNext": 546,
         "migrated": 67,
-        "percentComplete": 12.66,
-        "remaining": 545,
+        "percentComplete": 12.64,
+        "remaining": 546,
         "terminal": 79,
-        "total": 624,
+        "total": 625,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 623,
+      "legacyNext": 624,
       "migrated": 215,
-      "percentComplete": 26.88,
-      "remaining": 623,
+      "percentComplete": 26.85,
+      "remaining": 624,
       "terminal": 229,
-      "total": 852,
+      "total": 853,
       "unknownStatus": 0
     }
   },
@@ -1617,33 +1617,44 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:GET:/api/v1/inquiries:apps/web/src/legacy-api-routes/v1/inquiries/route.ts",
+      "id": "api:GET:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts",
       "kind": "api",
       "methods": ["GET"],
       "routePath": "/api/v1/inquiries",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/inquiries/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/inquiries/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "method": "GET",
-      "parentId": "api:/api/v1/inquiries:apps/web/src/legacy-api-routes/v1/inquiries/route.ts"
+      "parentId": "api:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts"
     },
     {
-      "id": "api:POST:/api/v1/inquiries:apps/web/src/legacy-api-routes/v1/inquiries/route.ts",
+      "id": "api:HEAD:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts",
+      "kind": "api",
+      "methods": ["HEAD"],
+      "routePath": "/api/v1/inquiries",
+      "sourceFile": "apps/web/src/app/api/v1/inquiries/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "method": "HEAD",
+      "parentId": "api:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/v1/inquiries",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/inquiries/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/inquiries/route.ts",
       "status": "migrated",
       "targetOwner": "rust-backend",
       "method": "POST",
-      "parentId": "api:/api/v1/inquiries:apps/web/src/legacy-api-routes/v1/inquiries/route.ts"
+      "parentId": "api:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts"
     },
     {
-      "id": "api:/api/v1/inquiries/:id:apps/web/src/legacy-api-routes/v1/inquiries/[id]/route.ts",
+      "id": "api:/api/v1/inquiries/:id:apps/web/src/app/api/v1/inquiries/[id]/route.ts",
       "kind": "api",
       "methods": ["PATCH"],
       "routePath": "/api/v1/inquiries/:id",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/inquiries/[id]/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/inquiries/[id]/route.ts",
       "status": "migrated",
       "targetOwner": "rust-backend"
     },
@@ -8119,20 +8130,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 609,
+    "apiRoutes": 610,
     "cronRoutes": 10,
     "layouts": 68,
     "pages": 156,
-    "routeHandlers": 624,
+    "routeHandlers": 625,
     "methodCounts": {
       "GET": 314,
-      "HEAD": 9,
+      "HEAD": 10,
       "POST": 306,
       "PUT": 58,
       "PATCH": 64,
       "DELETE": 101,
       "OPTIONS": 24
     },
-    "total": 852
+    "total": 853
   }
 }

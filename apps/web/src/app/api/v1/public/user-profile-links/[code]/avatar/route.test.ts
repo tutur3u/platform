@@ -89,3 +89,17 @@ it.each([429, 503])(
     expect(body).not.toHaveProperty('token');
   }
 );
+it.each(['image/svg+xml', 'image/avif', 'text/plain'])(
+  'rejects unsupported MIME %s before reserving or signing',
+  async (contentType) => {
+    const response = await POST(
+      new Request('https://example.test/api/avatar', {
+        method: 'POST',
+        body: JSON.stringify({ contentType }),
+      }),
+      context
+    );
+    expect(response.status).toBe(400);
+    expect(f.ticket).not.toHaveBeenCalled();
+  }
+);

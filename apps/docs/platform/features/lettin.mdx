@@ -335,8 +335,8 @@ allow three tickets per UTC day; banners allow two. Their combined reserved byte
 are capped at 16 MiB per day and 32 MiB per week. Global caps are 10,000 tickets
 and 16 GiB per UTC day. Weeks begin Monday. The full source-upload transport ceiling (2 MiB/5 MiB) is
 charged, even for smaller files or unused tickets; clients cannot claim a lower
-size to bypass the budget. Quota failures return 429 with Retry-After; protection
-or schema outages return 503 and issue no ticket. Tickets expire after ten minutes, are scoped to a fresh actor-owned WebP object,
+size to bypass the budget. Quota failures return 429 with a bounded Retry-After; protection
+or schema outages return 503 without retry timing and issue no ticket. Tickets expire after ten minutes, are scoped to a fresh actor-owned WebP object,
 and prohibit overwrite. They authorize an unauthenticated binary PUT to the central
 API so native/offline clients retain their existing signed-upload contract. An
 atomic shared counter consumes each ticket once before reading or decoding; replay
@@ -384,3 +384,15 @@ Changed avatar URLs are also checked by the shared database trigger on direct
 writes; unchanged legacy values remain readable. The database media contract
 seeds otherwise-writable objects and verifies restrictive policies block both
 authenticated INSERT and UPDATE for avatar/banner buckets.
+
+### Support API parity safeguards
+
+The support form and Web/Rust support creation APIs enforce the existing database
+ceilings: 64 characters for a name, 128 for a subject, and 512 for a message. Invalid
+payloads, including addresses with multiple email separators, return 400 before
+storage. Cookie-authenticated creation and updates require a matching Origin or
+Referer; explicit Bearer requests retain their independent authentication checks.
+Cross-origin cookie updates return 403 before Supabase access. Regression evidence:
+`support-inquiry-guard.test.ts`, the first-class inquiry route tests, and Rust
+support/g12 regressions. Profile HEAD follows GET authentication/cache/status but
+emits no response body; its Rust regression verifies the same boundary.

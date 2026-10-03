@@ -76,8 +76,8 @@ const SUPPORT_INQUIRY_PRODUCTS: [&str; 12] = [
 const MAX_DISPLAY_NAME_LENGTH: usize = 100;
 const MAX_FULL_NAME_LENGTH: usize = 100;
 const MAX_BIO_LENGTH: usize = 1000;
-const MAX_SUPPORT_INQUIRY_LENGTH: usize = 5000;
-const MAX_SUPPORT_INQUIRY_SUBJECT_LENGTH: usize = 255;
+const MAX_SUPPORT_INQUIRY_LENGTH: usize = 512;
+const MAX_SUPPORT_INQUIRY_SUBJECT_LENGTH: usize = 128;
 const CLI_APP_SESSION_TARGETS: [&str; 1] = ["platform"];
 const CLI_APP_ACCESS_SCOPE: &str = "cli:access";
 pub(crate) const CONTACT_DATA_LAYER_NOT_READY_MESSAGE: &str =
@@ -276,10 +276,16 @@ pub(crate) async fn handle_contact_route(
         ("GET", CURRENT_USER_PROFILE_PATH) => {
             Some(current_user_profile_data_response(config, request, outbound).await)
         }
+        ("HEAD", CURRENT_USER_PROFILE_PATH) => {
+            let mut response = current_user_profile_data_response(config, request, outbound).await;
+            response.body_empty = true;
+            response.body_text = None;
+            Some(response)
+        }
         ("PATCH", CURRENT_USER_PROFILE_PATH) => {
             Some(current_user_profile_patch_data_response(config, request, outbound).await)
         }
-        (method, CURRENT_USER_PROFILE_PATH) => Some(method_not_allowed(method, "GET, PATCH")),
+        (method, CURRENT_USER_PROFILE_PATH) => Some(method_not_allowed(method, "GET, HEAD, PATCH")),
         ("PATCH", CURRENT_USER_FULL_NAME_PATH) => {
             Some(current_user_full_name_patch_response(config, request, outbound).await)
         }
@@ -287,6 +293,7 @@ pub(crate) async fn handle_contact_route(
         ("POST", SUPPORT_INQUIRIES_PATH) => {
             Some(support_inquiry_data_post_response(config, request, outbound).await)
         }
+        ("GET" | "HEAD", SUPPORT_INQUIRIES_PATH) => None,
         (method, SUPPORT_INQUIRIES_PATH) => Some(method_not_allowed(method, "POST")),
         ("PATCH", path) => match support_inquiry_route(path)? {
             SupportInquiryRoute::Detail { id } => {
