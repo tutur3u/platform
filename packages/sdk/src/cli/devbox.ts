@@ -24,6 +24,7 @@ import {
 } from './devbox-doctor';
 import { parseDurationSeconds } from './devbox-duration';
 import { runDevboxFleetCommand } from './devbox-fleet';
+import { parseDevboxExecutionMode } from './devbox-host-protection';
 import { getJudgeReadiness } from './devbox-judge-sandbox';
 import {
   createDevboxRestartPayload,
@@ -448,6 +449,16 @@ export async function runDevboxCommand({
   json: boolean;
 }) {
   const resolvedAction = action || 'list';
+
+  if (resolvedAction === 'agent' && argv[2] === 'policy') {
+    printJson({
+      executionMode: parseDevboxExecutionMode(
+        process.env.TUTURUUU_DEVBOX_EXECUTION_MODE
+      ),
+      supportedModes: ['trusted', 'judge-only'],
+    });
+    return;
+  }
 
   if (resolvedAction === 'doctor') {
     printDevboxDoctorReport(await createDevboxDoctorReport(), json);

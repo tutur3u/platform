@@ -9,6 +9,7 @@ export const boxHelp = {
     'lease                        create a warm reusable devbox lease',
     'release <lease-id>           release a kept lease',
     'preview --lease <id> --port  expose an authenticated HTTP preview',
+    'agent policy                verify local Judge-only policy support without login',
     'agent register               create a self-hosted runner token',
     'shutdown                     remove this runner from the cluster',
     'cache list|prune             inspect or prune runner cache metadata',

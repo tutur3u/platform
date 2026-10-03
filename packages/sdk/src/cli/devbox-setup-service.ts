@@ -198,8 +198,16 @@ async function writeRunnerWrapper({
     `cd ${shellQuote(checkoutDir)}`,
     // biome-ignore lint/suspicious/noTemplateCurlyInString: shell parameter expansion.
     'if [ -n "${HOME:-}" ] && [ -x "$HOME/.bun/bin/ttr" ]; then',
+    ...(executionMode === 'judge-only'
+      ? ['  "$HOME/.bun/bin/ttr" box agent policy --no-update-check >/dev/null']
+      : []),
     '  exec "$HOME/.bun/bin/ttr" box agent start --no-update-check',
     'fi',
+    ...(executionMode === 'judge-only'
+      ? [
+          `${ttrCommand.map(shellQuote).join(' ')} box agent policy --no-update-check >/dev/null`,
+        ]
+      : []),
     `exec ${ttrCommand.map(shellQuote).join(' ')} box agent start --no-update-check`,
     '',
   ].join('\n');

@@ -1397,7 +1397,7 @@ export async function runCli(argv = process.argv.slice(2)) {
       action === 'doctor' ||
       action === 'repair' ||
       (action === 'judge' && firstId === 'doctor') ||
-      (action === 'agent' && firstId === 'start')
+      (action === 'agent' && ['start', 'policy'].includes(firstId ?? ''))
         ? undefined
         : action === 'setup'
           ? config.session

@@ -210,7 +210,9 @@ filesystem read-only except runner directories, remove capabilities, restrict
 devices, namespaces and kernel access, and set a private umask. Repair preserves
 an existing Judge-only policy and refuses to weaken it; `--dry-run` performs the
 same preflight before service writes. The wrapper prefers the service user's
-global `ttr` executable so upgrades affect the running service. Launchd lacks
+global `ttr` executable so upgrades affect the running service. Before starting
+a protected agent, it requires `box agent policy` to succeed on that executable;
+an older CLI lacking policy support fails closed rather than launching. Launchd lacks
 these Linux protections; use a dedicated Linux VM for protected Judge setup on
 macOS. Local policy enforcement requires the CLI release containing this change.
 

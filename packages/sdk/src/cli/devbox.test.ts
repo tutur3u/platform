@@ -57,6 +57,22 @@ describe('devbox CLI helpers', () => {
     process.exitCode = undefined;
   });
 
+  it('reports local execution policy without a login', async () => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+    vi.stubEnv('TUTURUUU_DEVBOX_EXECUTION_MODE', 'judge-only');
+    await runDevboxCommand({
+      action: 'agent',
+      argv: ['box', 'agent', 'policy'],
+      flags: {},
+      json: true,
+    });
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('"executionMode": "judge-only"')
+    );
+  });
+
   it('extracts commands after -- without treating command flags as CLI flags', () => {
     expect(
       extractDevboxForwardedCommand([
