@@ -1,10 +1,14 @@
 const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const test = require('node:test');
 const {
   DEFAULT_MATRIX,
   parseTree,
   fingerprint,
+  inspectInertProposal,
   cacheContext,
   lookupTrustedCache,
   plan,
@@ -352,5 +356,179 @@ test('account-shape acceptance owns both Contacts and Finance runtimes', () => {
       key(tree, 'invite-account-shapes'),
       key(entries, 'invite-account-shapes')
     );
+  }
+});
+
+const proposalPrefix = 'apps/database/tests/programming-hosted-typegen-review/';
+const inactivePolicy = { inertProposal: true, inspection: 'inactive' };
+const allSuites = [...DEFAULT_MATRIX, 'inventory-storefront'];
+const digest = (tree, target, policy) =>
+  fingerprint(tree, target, context, policy);
+const proposalChanged = entries.map((entry) =>
+  entry.path.startsWith(proposalPrefix)
+    ? { ...entry, oid: 'e'.repeat(40) }
+    : entry
+);
+
+test('all eleven suites retain exact keys for verified inactive proposal inputs', async () => {
+  assert.ok(
+    entries.some((entry) => entry.path === `${proposalPrefix}proposal.mjs`)
+  );
+  const keys = new Set(
+    allSuites.map((target) => digest(entries, target, inactivePolicy))
+  );
+  for (const target of allSuites) {
+    assert.equal(
+      digest(proposalChanged, target, inactivePolicy),
+      digest(entries, target, inactivePolicy)
+    );
+    assert.notEqual(digest(proposalChanged, target), digest(entries, target));
+  }
+  const result = await plan({
+    entries: proposalChanged,
+    env,
+    now,
+    policy: inactivePolicy,
+    lookup: async (candidate) => (keys.has(candidate) ? proof : null),
+  });
+  assert.equal(result.run_web, false);
+  assert.equal(result.run_inventory, false);
+  assert.equal(result.provenance.filter((item) => item.cache).length, 11);
+});
+
+test('activation restores common hashing for all eleven suites', () => {
+  const active = { inertProposal: false, inspection: 'active' };
+  for (const target of allSuites) {
+    assert.notEqual(
+      digest(proposalChanged, target, active),
+      digest(entries, target, inactivePolicy)
+    );
+    assert.notEqual(
+      digest(proposalChanged, target, active),
+      digest(entries, target, active)
+    );
+  }
+});
+
+test('schema, seeds, real SQL tests, active helpers and unknown database runtime always invalidate all suites', () => {
+  for (const file of [
+    'apps/database/supabase/migrations/20990101000000.sql',
+    'apps/database/supabase/seed.sql',
+    'apps/database/supabase/tests/real-contract.sql',
+    'apps/database/scripts/run-supabase.js',
+    'apps/database/future-runtime/unknown.mjs',
+    `${proposalPrefix.slice(0, -1)}-active/proposal.mjs`,
+  ]) {
+    for (const target of allSuites)
+      assert.notEqual(
+        digest(changed(file), target, inactivePolicy),
+        digest(entries, target, inactivePolicy),
+        file
+      );
+  }
+});
+
+test('uncertain inspection executes every suite even when cache lookup would report success', async () => {
+  let lookups = 0;
+  const result = await plan({
+    entries,
+    env,
+    now,
+    policy: { inertProposal: false, inspection: 'uncertain' },
+    lookup: async () => {
+      lookups += 1;
+      return proof;
+    },
+  });
+  assert.equal(lookups, 0);
+  assert.equal(result.matrix.include.length, 10);
+  assert.equal(result.run_inventory, true);
+});
+
+test('caller inspection is bounded, quiet and conservative on invalid refs and Git failures', () => {
+  const ref = 'a'.repeat(40);
+  assert.equal(
+    inspectInertProposal('HEAD', () => {
+      throw new Error('Must not run');
+    }).inspection,
+    'uncertain'
+  );
+  for (const error of [
+    { status: 128 },
+    { signal: 'SIGTERM' },
+    { code: 'ETIMEDOUT' },
+    new Error('unknown'),
+  ])
+    assert.equal(
+      inspectInertProposal(ref, () => {
+        throw error;
+      }).inspection,
+      'uncertain'
+    );
+  assert.equal(
+    inspectInertProposal(ref, (command, args, options) => {
+      assert.equal(command, 'git');
+      assert.ok(args.includes(ref));
+      assert.equal(options.stdio, 'ignore');
+      assert.equal(options.timeout, 10000);
+      throw { status: 1 };
+    }).inspection,
+    'inactive'
+  );
+});
+
+test('real tracked CI, script, app, package and root-config references activate only their exact snapshot', () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-inert-policy-'));
+  const gitEnvironment = Object.fromEntries(
+    Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_'))
+  );
+  const git = (args) =>
+    execFileSync('git', args, {
+      cwd: directory,
+      env: gitEnvironment,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  const inspect = (ref) =>
+    inspectInertProposal(ref, (command, args, options) =>
+      execFileSync(command, args, {
+        ...options,
+        cwd: directory,
+        env: gitEnvironment,
+      })
+    );
+  const write = (file, value) => {
+    fs.mkdirSync(path.dirname(path.join(directory, file)), { recursive: true });
+    fs.writeFileSync(path.join(directory, file), value);
+    git(['add', file]);
+  };
+  try {
+    git(['init', '--quiet']);
+    for (const file of [
+      `${proposalPrefix}proposal.mjs`,
+      'apps/docs/reference.mdx',
+      'scripts/ci/e2e-result-plan.js',
+      'scripts/ci/e2e-result-plan.test.js',
+    ])
+      write(file, 'programming-hosted-typegen-review');
+    const initial = git(['write-tree']);
+    assert.equal(inspect(initial).inspection, 'inactive');
+    for (const file of [
+      '.github/workflows/activated.yaml',
+      'scripts/activated.mjs',
+      'apps/web/src/activated.ts',
+      'packages/utils/src/activated.ts',
+      'future-runtime.config.js',
+    ]) {
+      write(
+        file,
+        "const source = '../programming-hosted-typegen-review/proposal.mjs';"
+      );
+      assert.equal(inspect(git(['write-tree'])).inspection, 'active', file);
+      // The ambient index/worktree has callers; the original immutable tree does not.
+      assert.equal(inspect(initial).inspection, 'inactive');
+    }
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
   }
 });

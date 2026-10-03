@@ -394,6 +394,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
     final actor = _actor;
     if (actor == null ||
         _repo.authenticatedUserId != actor ||
+        !state.visibilityResolved ||
         state.pendingVisibilityIds.contains(workspaceId) ||
         !state.workspaces.any((w) => w.id == workspaceId)) {
       return;

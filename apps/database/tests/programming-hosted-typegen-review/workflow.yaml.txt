@@ -40,11 +40,41 @@ jobs:
           test "$(docker info --format '{{.CgroupDriver}}')" = systemd
           test -z "$(docker ps -aq)"
           test -z "$(docker volume ls -q)"
-          command -v bpftool
+          printf 'SUPABASE_CLI_BINARY_OVERRIDE=%s\n' "$(command -v supabase)" >> "$GITHUB_ENV"
+          if ! sudo bpftool version >/dev/null 2>&1; then
+            sudo timeout 180 apt-get update -qq >/dev/null 2>&1
+            sudo timeout 180 apt-get install -y -qq --no-install-recommends linux-tools-generic >/dev/null 2>&1
+            sudo python3 - <<'PYBPF'
+          import glob, os, shutil, stat
+          candidates = sorted(glob.glob('/usr/lib/linux-tools/*/bpftool'))
+          native = []
+          for candidate in candidates:
+              info = os.stat(candidate)
+              if stat.S_ISREG(info.st_mode) and info.st_mode & 0o111:
+                  with open(candidate, 'rb') as source:
+                      if source.read(4) == b'\x7fELF':
+                          native.append(candidate)
+          if not native:
+              raise SystemExit('Native kernel inspection tool unavailable.')
+          shutil.copy2(native[-1], '/usr/local/bin/bpftool')
+          PYBPF
+          fi
+          sudo bpftool version >/dev/null 2>&1
           sudo mkdir -p /etc/systemd/system/tuturuuu-typegen.slice.d
           printf '[Slice]\nCPUQuota=200%%\nMemoryMax=6G\nMemorySwapMax=0\nIPAddressDeny=any\nIPAddressAllow=localhost 172.28.0.0/16\n' | sudo tee /etc/systemd/system/tuturuuu-typegen.slice.d/limits.conf >/dev/null
           sudo systemctl daemon-reload
           sudo systemctl start tuturuuu-typegen.slice
+          sudo systemd-run --unit=tuturuuu-typegen-admission --slice=tuturuuu-typegen.slice --property=Type=exec /bin/sleep infinity >/dev/null 2>&1
+          test -d /sys/fs/cgroup/tuturuuu.slice/tuturuuu-typegen.slice
+          sudo bpftool -j cgroup show /sys/fs/cgroup/tuturuuu.slice/tuturuuu-typegen.slice/tuturuuu-typegen-admission.service effective | python3 -c '
+          import json, sys
+          programs = json.load(sys.stdin)
+          if not isinstance(programs, list):
+              raise SystemExit("Kernel filter inventory must be an array.")
+          types = {program.get("attach_type") for program in programs}
+          if not ({"ingress", "cgroup_inet_ingress"} & types and {"egress", "cgroup_inet_egress"} & types):
+              raise SystemExit("Kernel ingress or egress admission filter missing.")
+          '
           sudo python3 - <<'PYCONFIG'
           import json
           from pathlib import Path
@@ -89,3 +119,9 @@ jobs:
       - name: Validate generated types and retain runner-local proof only
         if: success() && steps.lifecycle.outcome == 'success' && steps.cleanup.outcome == 'success'
         run: node apps/database/tests/programming-hosted-typegen-review/proposal.mjs validate
+      - name: Stop the inert slice admission service
+        if: always()
+        run: |
+          if test "$(systemctl show tuturuuu-typegen-admission.service -p LoadState --value)" != not-found; then
+            sudo systemctl stop tuturuuu-typegen-admission.service
+          fi

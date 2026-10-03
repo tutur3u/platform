@@ -65,10 +65,9 @@ extension _ShellPageLayout on _ShellPageState {
   }
 
   Widget _buildNormalizedChild() {
-    return NotificationListener<ScrollNotification>(
-      onNotification: (notification) =>
-          _trackPageScroll(widget.matchedLocation, notification),
-      child: SizedBox.expand(child: widget.child),
+    return _trackPageScrolling(
+      widget.matchedLocation,
+      SizedBox.expand(child: widget.child),
     );
   }
 
@@ -93,10 +92,9 @@ extension _ShellPageLayout on _ShellPageState {
                         data: media
                             .removePadding(removeTop: true)
                             .copyWith(viewPadding: media.viewPadding),
-                        child: NotificationListener<ScrollNotification>(
-                          onNotification: (notification) =>
-                              _trackPageScroll(_lastRootLocation, notification),
-                          child: LazyIndexedStack(
+                        child: _trackPageScrolling(
+                          _lastRootLocation,
+                          LazyIndexedStack(
                             animate: true,
                             index: _ShellPageState._calculateSelectedIndex(
                               _lastRootLocation,
