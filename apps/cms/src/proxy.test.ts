@@ -79,7 +79,10 @@ vi.mock('@tuturuuu/internal-api', () => ({
   ) => mocks.withForwardedInternalApiAuth(...args),
 }));
 
-vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
+vi.mock('@tuturuuu/utils/api-proxy-guard', async () => ({
+  ...(await vi.importActual<typeof import('@tuturuuu/utils/api-proxy-guard')>(
+    '@tuturuuu/utils/api-proxy-guard'
+  )),
   guardApiProxyRequest: (
     ...args: Parameters<typeof mocks.guardApiProxyRequest>
   ) => mocks.guardApiProxyRequest(...args),
@@ -150,6 +153,88 @@ describe('CMS proxy auth mode', () => {
       prefixBase: 'proxy:cms:api',
     });
   });
+
+  it.each(['GET', 'HEAD'])(
+    'keeps public build metadata %s independent of cookies',
+    async (method) => {
+      mocks.refreshAppSessionForRequest.mockResolvedValue({
+        ok: false,
+        error: 'Account assurance unavailable',
+      });
+      const request = new NextRequest(
+        'https://cms.tuturuuu.com/api/build-info',
+        {
+          method,
+        }
+      );
+
+      const response = await proxy(request);
+
+      expect(response.headers.get('x-middleware-next')).toBe('1');
+      expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+      expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
+        prefixBase: 'proxy:cms:api',
+      });
+    }
+  );
+
+  it.each(['GET', 'HEAD'])(
+    'passes machine API %s credentials to the API auth boundary',
+    async (method) => {
+      mocks.refreshAppSessionForRequest.mockResolvedValue({
+        ok: false,
+        error: 'Account assurance unavailable',
+      });
+      const request = new NextRequest(
+        'https://cms.tuturuuu.com/api/v1/admin/external-projects',
+        {
+          method,
+          headers: { authorization: 'Bearer ttr_invalid_rollout_canary' },
+        }
+      );
+
+      const response = await proxy(request);
+
+      expect(response.headers.get('x-middleware-next')).toBe('1');
+      expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+      expect(request.headers.get('authorization')).toBe(
+        'Bearer ttr_invalid_rollout_canary'
+      );
+      expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
+        prefixBase: 'proxy:cms:api',
+      });
+    }
+  );
+
+  it('preserves an API guard rejection for machine credentials', async () => {
+    mocks.guardApiProxyRequest.mockResolvedValue(
+      NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    );
+    const response = await proxy(
+      new NextRequest(
+        'https://cms.tuturuuu.com/api/v1/admin/external-projects',
+        { headers: { authorization: 'Bearer ttr_invalid_rollout_canary' } }
+      )
+    );
+    expect(response.status).toBe(403);
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+  });
+
+  it.each(['/api/v1/admin/external-projects', '/api/build-info-extra'])(
+    'retains browser assurance failures for %s',
+    async (path) => {
+      mocks.refreshAppSessionForRequest.mockResolvedValue({
+        ok: false,
+        error: 'Account assurance unavailable',
+      });
+      const response = await proxy(
+        new NextRequest(`https://cms.tuturuuu.com${path}`)
+      );
+      expect(response.status).toBe(503);
+      expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledOnce();
+      expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    }
+  );
 
   it('redirects authenticated root requests before locale middleware can fall through to a 404', async () => {
     const request = new NextRequest('https://cms.tuturuuu.com/');

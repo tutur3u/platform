@@ -18,7 +18,10 @@ import {
   getCurrentUserDefaultWorkspace,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
-import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
+import {
+  guardApiProxyRequest,
+  hasAuthenticatedBearerToken,
+} from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
@@ -69,12 +72,19 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
-    const appSessionRefresh = isLocalAuthApi
-      ? null
-      : await refreshAppSessionForRequest(req, {
-          sessionMode: 'supabase-first',
-          targetApp: 'cms',
-        });
+    // Build metadata is public; machine credentials are verified by the real
+    // API boundary, independently of a browser's satellite session cookies.
+    const isBuildInfoRead =
+      req.nextUrl.pathname === '/api/build-info' &&
+      (req.method === 'GET' || req.method === 'HEAD');
+    const hasBearerApiSession = hasAuthenticatedBearerToken(req.headers);
+    const appSessionRefresh =
+      isLocalAuthApi || isBuildInfoRead || hasBearerApiSession
+        ? null
+        : await refreshAppSessionForRequest(req, {
+            sessionMode: 'supabase-first',
+            targetApp: 'cms',
+          });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return appSessionFailureResponse(
