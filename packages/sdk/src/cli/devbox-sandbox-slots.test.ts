@@ -72,3 +72,87 @@ it('never mixes a full host reservation with another job', async () => {
   await Promise.all([first, ...small]);
   expect(admitted).toBe(8);
 });
+
+it('keeps admitting mixed-limit waves while another case keeps the host busy', async () => {
+  let releaseAnchor!: () => void;
+  const anchor = withSandboxSlot(
+    16,
+    () =>
+      new Promise<void>((resolve) => {
+        releaseAnchor = resolve;
+      })
+  );
+  await Promise.resolve();
+  let seed = 1;
+  const next = () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed;
+  };
+  try {
+    for (let wave = 0; wave < 80; wave++) {
+      let available = 315; // 15/16 of a host, in units divisible by 3, 7 and 16.
+      const limits: number[] = [];
+      for (let candidate = 0; candidate < 20; candidate++) {
+        const limit = [3, 7, 16][next() % 3]!;
+        const units = 336 / limit;
+        if (units <= available) {
+          available -= units;
+          limits.push(limit);
+        }
+      }
+      let entered = 0;
+      const releases: (() => void)[] = [];
+      const abort = new AbortController();
+      const tasks = limits.map((limit) =>
+        withSandboxSlot(
+          limit,
+          () => {
+            entered++;
+            return new Promise<void>((resolve) => {
+              releases.push(resolve);
+            });
+          },
+          abort.signal
+        )
+      );
+      try {
+        await Promise.resolve();
+        expect(
+          entered,
+          `wave ${wave} must fit alongside the active anchor`
+        ).toBe(limits.length);
+      } finally {
+        abort.abort(new Error('wave cleanup'));
+        while (releases.length)
+          releases.splice(next() % releases.length, 1)[0]!();
+        await Promise.allSettled(tasks);
+      }
+    }
+    let entered = 0;
+    const releases: (() => void)[] = [];
+    const abort = new AbortController();
+    const full = Array.from({ length: 15 }, () =>
+      withSandboxSlot(
+        16,
+        () => {
+          entered++;
+          return new Promise<void>((resolve) => {
+            releases.push(resolve);
+          });
+        },
+        abort.signal
+      )
+    );
+    try {
+      await Promise.resolve();
+      expect(entered).toBe(15);
+    } finally {
+      abort.abort(new Error('full wave cleanup'));
+      for (const release of releases) release();
+      await Promise.allSettled(full);
+    }
+  } finally {
+    releaseAnchor();
+    await anchor;
+  }
+});

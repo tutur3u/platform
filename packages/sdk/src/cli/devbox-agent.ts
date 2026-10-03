@@ -161,9 +161,13 @@ export async function runDevboxAgentLoop({
           `Received ${pollResponse.jobs.length} devbox job(s).\n`
         );
         for (const job of pollResponse.jobs) {
-          const maintenance =
-            job.command[0] === '__ttr_restart_agent_v1__' ||
+          const restart =
+            job.command.length === 1 &&
+            job.command[0] === '__ttr_restart_agent_v1__';
+          const update =
+            job.command.length === 4 &&
             job.command.join(' ') === 'bun i -g tuturuuu';
+          const maintenance = restart || update;
           while (active.size >= 8 || (maintenance && active.size > 0)) {
             await waitForJobs();
             if (Date.now() >= nextHeartbeatAt) await heartbeat();
@@ -172,12 +176,6 @@ export async function runDevboxAgentLoop({
           if (failure) throw failure;
           const task = executeDevboxAgentJob(job, { baseUrl: origin, token })
             .then((result) => {
-              const restart =
-                job.command.length === 1 &&
-                job.command[0] === '__ttr_restart_agent_v1__';
-              const update =
-                job.command.length === 4 &&
-                job.command.join(' ') === 'bun i -g tuturuuu';
               if (result.status === 'succeeded' && (restart || update)) {
                 restartRequested = true;
                 cliUpdated = update;

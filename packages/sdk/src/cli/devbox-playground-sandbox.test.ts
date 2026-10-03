@@ -417,4 +417,101 @@ describe('managed playground removal ownership', () => {
     )!;
     expect(exported.slice(1)).toEqual(['', 15_000, 16 * 1024 * 1024]);
   });
+  it('defers idle eviction until the active run completes and preserves a fresh touch', async () => {
+    const { runPlaygroundJob } = await import('./devbox-playground-sandbox');
+    let release!: () => void;
+    const command = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const normal = docker.getMockImplementation()!;
+    docker.mockImplementation(async (args: string[]) => {
+      if (args[0] === 'exec' && args.includes('sh')) await command;
+      return normal(args);
+    });
+    const run = runPlaygroundJob(payload(), limits);
+    try {
+      await vi.waitFor(() =>
+        expect(docker.mock.calls.some(([args]) => args.includes('sh'))).toBe(
+          true
+        )
+      );
+      await vi.advanceTimersByTimeAsync(15 * 60_000);
+      expect(docker.mock.calls.some(([args]) => args[0] === 'rm')).toBe(false);
+      release();
+      await run;
+      await vi.advanceTimersByTimeAsync(0);
+      expect(docker.mock.calls.some(([args]) => args[0] === 'rm')).toBe(false);
+      await vi.advanceTimersByTimeAsync(15 * 60_000);
+      expect(
+        docker.mock.calls.filter(([args]) => args[0] === 'rm')
+      ).toHaveLength(1);
+    } finally {
+      release();
+      await run;
+    }
+  });
+  it('replaces near-expiry environments before synchronization and command admission', async () => {
+    const { runPlaygroundJob } = await import('./devbox-playground-sandbox');
+    await runPlaygroundJob(payload(), limits);
+    docker.mockClear();
+    vi.setSystemTime(Date.now() + 2 * 60 * 60_000 - 69_999);
+    await runPlaygroundJob(payload(), limits);
+    const operations = docker.mock.calls.map(([args]) => args[0]);
+    expect(operations.slice(0, 2)).toEqual(['rm', 'run']);
+  });
+  it.each([
+    { code: 1, timedOut: false, exceeded: false },
+    { code: 0, timedOut: true, exceeded: false },
+    { code: 0, timedOut: false, exceeded: true },
+  ])(
+    'removes partially started containers for failed startup %j',
+    async (failure) => {
+      const { runPlaygroundJob, playgroundEnvironmentCount } = await import(
+        './devbox-playground-sandbox'
+      );
+      const normal = docker.getMockImplementation()!;
+      docker.mockImplementation(async (args: string[]) =>
+        args[0] === 'run' ? { ...result(), ...failure } : normal(args)
+      );
+      await expect(runPlaygroundJob(payload(), limits)).rejects.toThrow(
+        'Could not start'
+      );
+      expect(docker).toHaveBeenCalledWith(['rm', '--force', name]);
+      expect(playgroundEnvironmentCount()).toBe(0);
+      expect(docker.mock.calls.some(([args]) => args[0] === 'exec')).toBe(
+        false
+      );
+    }
+  );
+  it('retains unconfirmed partial startup capacity and retries removal before reuse', async () => {
+    const { runPlaygroundJob, playgroundEnvironmentCount } = await import(
+      './devbox-playground-sandbox'
+    );
+    const normal = docker.getMockImplementation()!;
+    let started = false;
+    docker.mockImplementation(async (args: string[]) => {
+      if (args[0] === 'run') {
+        started = true;
+        return result(1);
+      }
+      if (args[0] === 'rm') return result(1);
+      if (args[0] === 'ps' && started) return result(0, 'abcdef012345');
+      return normal(args);
+    });
+    await expect(runPlaygroundJob(payload(), limits)).rejects.toThrow(
+      'Could not remove'
+    );
+    expect(playgroundEnvironmentCount()).toBe(1);
+    await expect(runPlaygroundJob(payload(second), limits)).rejects.toThrow(
+      'at capacity'
+    );
+    docker.mockClear();
+    docker.mockImplementation(normal);
+    await runPlaygroundJob(payload(), limits);
+    expect(docker.mock.calls.slice(0, 2).map(([args]) => args[0])).toEqual([
+      'rm',
+      'run',
+    ]);
+    expect(playgroundEnvironmentCount()).toBe(1);
+  });
 });
