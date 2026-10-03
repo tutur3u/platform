@@ -479,15 +479,23 @@ test('caller inspection is bounded, quiet and conservative on invalid refs and G
 
 test('real tracked CI, script, app, package and root-config references activate only their exact snapshot', () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-inert-policy-'));
+  const gitEnvironment = Object.fromEntries(
+    Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_'))
+  );
   const git = (args) =>
     execFileSync('git', args, {
       cwd: directory,
+      env: gitEnvironment,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
     }).trim();
   const inspect = (ref) =>
     inspectInertProposal(ref, (command, args, options) =>
-      execFileSync(command, args, { ...options, cwd: directory })
+      execFileSync(command, args, {
+        ...options,
+        cwd: directory,
+        env: gitEnvironment,
+      })
     );
   const write = (file, value) => {
     fs.mkdirSync(path.dirname(path.join(directory, file)), { recursive: true });
