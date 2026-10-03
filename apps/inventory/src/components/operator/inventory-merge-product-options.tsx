@@ -97,6 +97,9 @@ export function InventoryMergeProductSelect({
         onLoadMore={() => {
           if (!products.isFetching) void products.fetchNextPage();
         }}
+        onOpenChange={(open) => {
+          if (!open) setSearch('');
+        }}
         onSearchChange={setSearch}
         options={rows
           .filter((row) => row.id !== excludeId)

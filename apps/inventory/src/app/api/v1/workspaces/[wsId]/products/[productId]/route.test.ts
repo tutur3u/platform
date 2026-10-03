@@ -87,6 +87,7 @@ function createProductClient({
   });
   const deleteQuery = thenableQuery(deleteResult);
   const archiveQuery = thenableQuery(archiveResult);
+  const update = vi.fn(() => archiveQuery);
   const from = vi.fn((table: string) => {
     if (table !== 'workspace_products') {
       throw new Error(`Unexpected table: ${table}`);
@@ -94,10 +95,10 @@ function createProductClient({
     return {
       delete: vi.fn(() => deleteQuery),
       select: vi.fn(() => selectQuery),
-      update: vi.fn(() => archiveQuery),
+      update,
     };
   });
-  return { from, schema: vi.fn() };
+  return { from, update, schema: vi.fn() };
 }
 
 async function deleteProduct() {
@@ -196,7 +197,7 @@ describe('inventory product delete route', () => {
     expect(await response.json()).toMatchObject({
       code: 'MERGED_INVENTORY_IDENTITY',
     });
-    expect(client.from('workspace_products').update).not.toHaveBeenCalled();
+    expect(client.update).not.toHaveBeenCalled();
     expect(mocks.createInventoryAuditLog).not.toHaveBeenCalled();
   });
 

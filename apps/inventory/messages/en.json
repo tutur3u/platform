@@ -2219,7 +2219,7 @@
           "owner_id": "Owner",
           "usage": "Usage"
         },
-        "labelsError": "Product names could not load. Retry before confirming the merge.",
+        "labelsError": "Record names could not load. Retry before confirming the merge.",
         "loading": "Loading merge preview…",
         "loadMore": "Load more products",
         "metadata": "Details to retain",

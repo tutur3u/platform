@@ -2219,7 +2219,7 @@
           "owner_id": "Chủ sở hữu",
           "usage": "Công dụng"
         },
-        "labelsError": "Không thể tải tên sản phẩm. Thử lại trước khi xác nhận gộp.",
+        "labelsError": "Không tải được tên bản ghi. Hãy thử lại trước khi xác nhận gộp.",
         "loading": "Đang tải bản xem trước…",
         "loadMore": "Tải thêm sản phẩm",
         "metadata": "Thông tin cần giữ",

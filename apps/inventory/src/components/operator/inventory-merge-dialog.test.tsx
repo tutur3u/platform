@@ -24,7 +24,9 @@ vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
   useMutation: () => ({
     mutate: state.mutate,
-    reset: vi.fn(),
+    reset: () => {
+      state.mutationError = false;
+    },
     isPending: false,
     isError: state.mutationError,
   }),
@@ -346,11 +348,14 @@ describe('Inventory merge safety controls', () => {
     ).toBe(true);
   });
   it('shows a persistent merge error in the review', () => {
-    state.mutationError = true;
-    render(
+    const view = render(
       <InventoryMergeDialog kind="product" options={options} wsId="workspace" />
     );
     choosePair();
+    state.mutationError = true;
+    view.rerender(
+      <InventoryMergeDialog kind="product" options={options} wsId="workspace" />
+    );
     expect(screen.getByRole('alert').textContent).toBe('error');
   });
   it('does not acknowledge a preview with an unresolved source name', () => {
