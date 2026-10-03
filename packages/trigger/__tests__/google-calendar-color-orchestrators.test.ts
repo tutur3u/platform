@@ -7,9 +7,7 @@ const mocks = vi.hoisted(() => ({
   entry: vi.fn(),
   details: vi.fn(),
   scope: vi.fn(),
-  existing: vi.fn(),
-  upsert: vi.fn(),
-  remove: vi.fn(),
+  token: vi.fn(),
   rpc: vi.fn(),
   credentials: vi.fn(),
 }));
@@ -29,11 +27,7 @@ vi.mock('@tuturuuu/google', () => ({
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
     rpc: mocks.rpc,
-    from: () => ({
-      upsert: mocks.upsert,
-      delete: () => ({ or: mocks.remove }),
-      select: () => ({ eq: mocks.scope }),
-    }),
+    from: () => ({ select: () => ({ eq: mocks.scope }) }),
   }),
 }));
 vi.mock('../src/calendar-sync-coordination', () => ({
@@ -43,6 +37,9 @@ vi.mock('../src/calendar-sync-coordination', () => ({
 import { performFullSyncForWorkspace } from '../src/google-calendar-full-sync';
 import { performIncrementalSyncForWorkspace } from '../src/google-calendar-incremental-sync';
 
+const workspace = '33333333-3333-4333-8333-333333333333';
+const token = '22222222-2222-4222-8222-222222222222';
+const capture = '11111111-1111-4111-8111-111111111111';
 const source = 'selected@group.calendar.google.com';
 const event = (id: string, extra: Partial<calendar_v3.Schema$Event> = {}) => ({
   id,
@@ -51,15 +48,23 @@ const event = (id: string, extra: Partial<calendar_v3.Schema$Event> = {}) => ({
   end: { dateTime: '2026-09-30T11:00:00Z' },
   ...extra,
 });
+const applies = () =>
+  mocks.rpc.mock.calls.filter(
+    ([name]) => name === 'apply_calendar_google_import'
+  );
+const rows = () => applies()[0]?.[1].p_events;
 const tokenWrites = () =>
-  mocks.rpc.mock.calls.filter(([, args]) => args.p_operation === 'update');
-
+  mocks.rpc.mock.calls.filter(
+    ([name, args]) =>
+      name === 'atomic_sync_token_operation' && args.p_operation === 'update'
+  );
 beforeEach(() => {
   vi.resetAllMocks();
   mocks.scope.mockImplementation(() => ({
     eq: mocks.scope,
-    in: mocks.existing,
+    limit: mocks.token,
   }));
+  mocks.token.mockResolvedValue({ data: [{ id: token }], error: null });
   mocks.colors.mockResolvedValue({
     data: {
       event: { '7': { background: '#039be5', foreground: '#ffffff' } },
@@ -100,22 +105,39 @@ beforeEach(() => {
       nextSyncToken: 'next-token',
     },
   });
-  mocks.existing.mockResolvedValue({ data: [], error: null });
-  mocks.upsert.mockResolvedValue({ error: null });
-  mocks.remove.mockResolvedValue({ error: null });
-  mocks.rpc.mockResolvedValue({
-    data: [{ success: true, sync_token: 'old-token' }],
-    error: null,
+  mocks.rpc.mockImplementation(async (name, args) => {
+    if (name === 'list_deferred_calendar_google_imports')
+      return { data: [], error: null };
+    if (name === 'capture_calendar_google_import')
+      return {
+        data: {
+          id: capture,
+          wsId: args.p_ws_id,
+          calendarId: args.p_calendar_id,
+          authTokenId: args.p_auth_token_id,
+        },
+        error: null,
+      };
+    if (name === 'apply_calendar_google_import')
+      return {
+        data: {
+          inserted: args.p_events.length,
+          updated: 0,
+          deleted: args.p_tombstones.length,
+          deferred: 0,
+        },
+        error: null,
+      };
+    return { data: [{ success: true, sync_token: 'old-token' }], error: null };
   });
 });
-
 for (const [mode, sync] of [
   ['full', performFullSyncForWorkspace],
   ['incremental', performIncrementalSyncForWorkspace],
 ] as const) {
-  describe(`${mode} actual orchestrator and DB payload`, () => {
-    it('imports selected calendar RGB, live palette and calendar labels', async () => {
-      await sync(source, 'workspace', 'access', 'refresh');
+  describe(`${mode} guarded orchestrator and DB payload`, () => {
+    it('imports selected RGB, palette and calendar labels through the captured scope', async () => {
+      await sync(source, workspace, 'access', 'refresh');
       expect(mocks.credentials).toHaveBeenCalledWith({
         access_token: 'access',
         refresh_token: 'refresh',
@@ -124,12 +146,13 @@ for (const [mode, sync] of [
       expect(mocks.entry).toHaveBeenCalledWith({ calendarId: source });
       expect(mocks.details).toHaveBeenCalledWith({ calendarId: source });
       expect(mocks.scope.mock.calls).toEqual([
-        ['ws_id', 'workspace'],
+        ['ws_id', workspace],
         ['provider', 'google'],
-        ['external_calendar_id', source],
+        ['is_active', true],
+        ['access_token', 'access'],
       ]);
-      const rows = mocks.upsert.mock.calls[0]?.[0];
-      expect(rows).toEqual(
+      expect(mocks.token).toHaveBeenCalledWith(2);
+      expect(rows()).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             external_calendar_id: source,
@@ -165,10 +188,17 @@ for (const [mode, sync] of [
           }),
         ])
       );
-      expect(mocks.upsert).toHaveBeenCalledWith(rows, {
-        onConflict: 'ws_id,provider,external_calendar_id,external_event_id',
-        ignoreDuplicates: false,
+      expect(applies()[0]?.[1]).toMatchObject({
+        p_capture_id: capture,
+        p_tombstones: [],
       });
+      const captureIndex = mocks.rpc.mock.calls.findIndex(
+        ([name]) => name === 'capture_calendar_google_import'
+      );
+      for (const read of [mocks.colors, mocks.entry, mocks.details, mocks.list])
+        expect(mocks.rpc.mock.invocationCallOrder[captureIndex]).toBeLessThan(
+          read.mock.invocationCallOrder[0]!
+        );
       expect(tokenWrites()).toEqual([
         [
           'atomic_sync_token_operation',
@@ -179,178 +209,129 @@ for (const [mode, sync] of [
         ],
       ]);
     });
-
-    it('uses calendar palette only when custom source RGB is absent', async () => {
-      mocks.entry.mockResolvedValue({ data: { colorId: '3' } });
-      await sync(source, 'workspace', 'access', 'refresh');
-      expect(
-        mocks.upsert.mock.calls[0]?.[0][0].scheduling_metadata.google_color
-          .background
-      ).toBe('#7bd148');
+    it('persists recurrence identity and original slot in the complete snapshot', async () => {
+      mocks.list.mockResolvedValue({
+        data: {
+          items: [
+            event('instance', {
+              recurringEventId: 'series',
+              originalStartTime: {
+                dateTime: '2026-09-29T10:00:00Z',
+                timeZone: 'Asia/Ho_Chi_Minh',
+              },
+              status: 'confirmed',
+            }),
+          ],
+        },
+      });
+      await sync(source, workspace, 'access', 'refresh');
+      expect(rows()[0].scheduling_metadata.google_recurrence).toEqual({
+        version: 1,
+        calendar_id: source,
+        auth_token_id: token,
+        recurring_event_id: 'series',
+        original_start_time: {
+          date_time: '2026-09-29T10:00:00Z',
+          date: null,
+          time_zone: 'Asia/Ho_Chi_Minh',
+        },
+        recurrence: null,
+        status: 'confirmed',
+      });
     });
-
+    it('does not leave stale recurrence metadata on ordinary snapshots', async () => {
+      await sync(source, workspace, 'access', 'refresh');
+      expect(rows()[0].scheduling_metadata).not.toHaveProperty(
+        'google_recurrence'
+      );
+    });
+    it('uses calendar palette when custom source RGB is absent', async () => {
+      mocks.entry.mockResolvedValue({ data: { colorId: '3' } });
+      await sync(source, workspace, 'access', 'refresh');
+      expect(rows()[0].scheduling_metadata.google_color.background).toBe(
+        '#7bd148'
+      );
+    });
     it.each(['colors', 'entry', 'details'] as const)(
-      'continues syncing with matching known metadata when %s fails',
+      'sends unresolved optional metadata to the guarded persistence boundary when %s fails',
       async (read) => {
+        mocks[read].mockRejectedValue(new Error('provider unavailable'));
+        await sync(source, workspace, 'access', 'refresh');
         const affected =
           read === 'entry'
             ? 'inherited'
             : read === 'colors'
               ? 'palette'
               : 'label';
-        const id = affected === 'label' ? 'calendar-label-uuid' : null;
-        mocks.existing.mockResolvedValue({
-          data: [
-            {
-              external_event_id: affected,
-              scheduling_metadata: {
-                custom: { retained: true },
-                google_color: {
-                  version: 1,
-                  calendar_id: source,
-                  color_id: affected === 'inherited' ? null : '7',
-                  event_label_id: id,
-                  inherited: affected === 'inherited',
-                  background: '#123456',
-                  foreground: '#ffffff',
-                  resolution:
-                    affected === 'inherited'
-                      ? 'calendar'
-                      : affected === 'palette'
-                        ? 'event'
-                        : 'label',
-                },
-              },
-            },
-          ],
-          error: null,
-        });
-        mocks[read].mockRejectedValue(new Error('provider unavailable'));
-        await sync(source, 'workspace', 'access', 'refresh');
-        const row = mocks.upsert.mock.calls[0]?.[0].find(
-          (entry: { external_event_id: string }) =>
-            entry.external_event_id === affected
-        );
-        expect(row.scheduling_metadata).toMatchObject({
-          custom: { retained: true },
-          google_color: { background: '#123456' },
-        });
+        expect(
+          rows().find(
+            (row: { external_event_id: string }) =>
+              row.external_event_id === affected
+          ).scheduling_metadata.google_color
+        ).toMatchObject({ background: null, resolution: 'unresolved' });
         expect(tokenWrites()).toHaveLength(1);
       }
     );
-
-    it('continues with all optional metadata reads unavailable and clears stale working location', async () => {
-      mocks.colors.mockRejectedValue(new Error('unavailable'));
-      mocks.entry.mockRejectedValue(new Error('unavailable'));
-      mocks.details.mockRejectedValue(new Error('unavailable'));
-      mocks.list.mockResolvedValue({
-        data: { items: [event('inherited')], nextSyncToken: 'next-token' },
-      });
-      mocks.existing.mockResolvedValue({
-        data: [
-          {
-            external_event_id: 'inherited',
-            scheduling_metadata: {
-              custom: { retained: true },
-              google_working_location_label: 'Old office',
-              google_event_type: 'workingLocation',
-              google_color: {
-                version: 1,
-                calendar_id: source,
-                color_id: null,
-                event_label_id: null,
-                inherited: true,
-                background: '#abcdef',
-                foreground: '#000000',
-                resolution: 'calendar',
-              },
-            },
-          },
-        ],
-        error: null,
-      });
-      await sync(source, 'workspace', 'access', 'refresh');
-      expect(mocks.upsert.mock.calls[0]?.[0][0].scheduling_metadata).toEqual({
-        custom: { retained: true },
-        google_color: expect.objectContaining({
-          background: '#abcdef',
-          inherited: true,
-        }),
-      });
-      expect(tokenWrites()).toHaveLength(1);
-    });
-
-    it('does not mutate known metadata or advance token when preservation read fails', async () => {
-      mocks.existing.mockResolvedValue({
-        data: null,
-        error: new Error('metadata read unavailable'),
-      });
+    it('blocks event reads and token advancement if pre-read capture fails', async () => {
+      const original = mocks.rpc.getMockImplementation()!;
+      mocks.rpc.mockImplementation((name, args) =>
+        name === 'capture_calendar_google_import'
+          ? Promise.resolve({ data: null, error: new Error('private detail') })
+          : original(name, args)
+      );
       await expect(
-        sync(source, 'workspace', 'access', 'refresh')
-      ).rejects.toThrow('metadata read unavailable');
-      expect(mocks.upsert).not.toHaveBeenCalled();
+        sync(source, workspace, 'access', 'refresh')
+      ).rejects.toThrow('Google import guard is unavailable');
+      for (const read of [mocks.colors, mocks.entry, mocks.details, mocks.list])
+        expect(read).not.toHaveBeenCalled();
+      expect(applies()).toEqual([]);
       expect(tokenWrites()).toEqual([]);
     });
-
-    it('does not advance token after a failed upsert batch', async () => {
-      mocks.upsert.mockResolvedValue({
-        error: new Error('database unavailable'),
-      });
+    it('does not advance the token after failed guarded persistence', async () => {
+      const original = mocks.rpc.getMockImplementation()!;
+      mocks.rpc.mockImplementation((name, args) =>
+        name === 'apply_calendar_google_import'
+          ? Promise.resolve({ data: null, error: new Error('private detail') })
+          : original(name, args)
+      );
       await expect(
-        sync(source, 'workspace', 'access', 'refresh')
-      ).rejects.toThrow('database unavailable');
+        sync(source, workspace, 'access', 'refresh')
+      ).rejects.toThrow('Google calendar batch sync failed');
       expect(tokenWrites()).toEqual([]);
     });
-
-    it('scopes canceled-event deletion and blocks token advancement on delete failure', async () => {
+    it('passes canceled-event identity under the retained capture before token advancement', async () => {
       mocks.list.mockResolvedValue({
         data: {
           items: [event('cancelled', { status: 'cancelled' })],
           nextSyncToken: 'next-token',
         },
       });
-      mocks.remove.mockResolvedValue({
-        error: new Error('delete unavailable'),
-      });
-      await expect(
-        sync(source, 'workspace', 'access', 'refresh')
-      ).rejects.toThrow('delete unavailable');
-      expect(mocks.remove).toHaveBeenCalledWith(
-        expect.stringContaining(`external_calendar_id.eq.${source}`)
-      );
-      expect(tokenWrites()).toEqual([]);
-    });
-
-    it('preserves unknown explicit identity without inventing a named fallback', async () => {
-      mocks.existing.mockResolvedValue({
-        data: [
-          {
-            external_event_id: 'unknown',
-            scheduling_metadata: {
-              google_color: {
-                version: 1,
-                calendar_id: source,
-                color_id: '7',
-                event_label_id: null,
-                inherited: false,
-                background: '#123456',
-                resolution: 'event',
-              },
-            },
-          },
+      await sync(source, workspace, 'access', 'refresh');
+      expect(applies()).toEqual([
+        [
+          'apply_calendar_google_import',
+          { p_capture_id: capture, p_events: [], p_tombstones: ['cancelled'] },
         ],
-        error: null,
-      });
+      ]);
+      const applyIndex = mocks.rpc.mock.calls.findIndex(
+        ([name]) => name === 'apply_calendar_google_import'
+      );
+      const tokenIndex = mocks.rpc.mock.calls.findIndex(
+        ([name, args]) =>
+          name === 'atomic_sync_token_operation' &&
+          args.p_operation === 'update'
+      );
+      expect(applyIndex).toBeLessThan(tokenIndex);
+    });
+    it('preserves unknown explicit identity without inventing a named fallback', async () => {
       mocks.list.mockResolvedValue({
         data: {
           items: [event('unknown', { colorId: 'future-color' })],
           nextSyncToken: 'next-token',
         },
       });
-      await sync(source, 'workspace', 'access', 'refresh');
-      expect(
-        mocks.upsert.mock.calls[0]?.[0][0].scheduling_metadata.google_color
-      ).toMatchObject({
+      await sync(source, workspace, 'access', 'refresh');
+      expect(rows()[0].scheduling_metadata.google_color).toMatchObject({
         color_id: 'future-color',
         inherited: false,
         background: null,

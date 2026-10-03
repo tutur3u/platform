@@ -10017,4 +10017,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryRedesignSelectedLines => 'Selected lines';
+
+  @override
+  String get calendarGoogleColorInherit => 'Use calendar color';
+
+  @override
+  String calendarGoogleColorLabel(String id) {
+    return 'Custom label $id';
+  }
+
+  @override
+  String calendarGoogleColorEvent(String id) {
+    return 'Google color $id';
+  }
+
+  @override
+  String get calendarProviderColorSeparateEdit => 'Save other changes before changing the Google color.';
+
+  @override
+  String get inventorySetupSyncFirst => 'Sync this new item before using, editing, or deleting it.';
 }

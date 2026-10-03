@@ -1,6 +1,13 @@
 import { type calendar_v3, google } from '@tuturuuu/google';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  captureGoogleImport,
+  replayDeferredGoogleImports,
+  verifiedGoogleImportToken,
+} from '@tuturuuu/utils/google-calendar-import-fence';
 import { getGoogleCalendarColorContext } from './google-calendar-color-context';
 import {
+  formatEventForDb,
   getGoogleAuthClient,
   getSyncToken,
   storeSyncToken,
@@ -21,10 +28,32 @@ export async function performIncrementalSyncForWorkspace(
   const calendar = google.calendar({ version: 'v3', auth: calendarAuth });
 
   try {
+    const client = await createAdminClient({ noCookie: true });
+    const scope = {
+      wsId: ws_id,
+      calendarId,
+      authTokenId: await verifiedGoogleImportToken(client, ws_id, access_token),
+    };
+    const capture = await captureGoogleImport(client, scope);
     const colorContext = await getGoogleCalendarColorContext(
       calendar,
       calendarId
     );
+    await replayDeferredGoogleImports({
+      client,
+      calendar,
+      scope,
+      format: async (events) =>
+        events.map((event) =>
+          formatEventForDb(
+            event,
+            ws_id,
+            calendarId,
+            colorContext,
+            scope.authTokenId
+          )
+        ),
+    });
     const syncToken = await getSyncToken(ws_id, calendarId);
     let allEvents: calendar_v3.Schema$Event[] = [];
     let pageToken: string | undefined;
@@ -50,7 +79,7 @@ export async function performIncrementalSyncForWorkspace(
         events_to_sync: allEvents,
         calendarId,
         colorContext,
-        preserveExistingMetadata: true,
+        capture,
       });
       if (!result.success)
         throw new Error(result.error ?? 'Google calendar batch sync failed');

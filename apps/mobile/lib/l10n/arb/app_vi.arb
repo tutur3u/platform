@@ -4256,5 +4256,24 @@
     },
     "inventoryRedesignLoadedSearch": "Tìm trong bản ghi có sẵn",
     "inventoryRedesignAllEvents": "Tất cả sự kiện",
-    "inventoryRedesignSelectedLines": "Dòng đã chọn"
+    "inventoryRedesignSelectedLines": "Dòng đã chọn",
+    "calendarGoogleColorInherit": "Dùng màu lịch",
+    "calendarGoogleColorLabel": "Nhãn tùy chỉnh {id}",
+    "calendarGoogleColorEvent": "Màu Google {id}",
+    "calendarProviderColorSeparateEdit": "Lưu các thay đổi khác trước khi đổi màu Google.",
+    "@calendarGoogleColorLabel": {
+        "placeholders": {
+            "id": {
+                "type": "String"
+            }
+        }
+    },
+    "@calendarGoogleColorEvent": {
+        "placeholders": {
+            "id": {
+                "type": "String"
+            }
+        }
+    },
+    "inventorySetupSyncFirst": "Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa."
 }

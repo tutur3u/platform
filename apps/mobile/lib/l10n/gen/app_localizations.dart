@@ -18960,6 +18960,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Selected lines'**
   String get inventoryRedesignSelectedLines;
+
+  /// No description provided for @calendarGoogleColorInherit.
+  ///
+  /// In en, this message translates to:
+  /// **'Use calendar color'**
+  String get calendarGoogleColorInherit;
+
+  /// No description provided for @calendarGoogleColorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom label {id}'**
+  String calendarGoogleColorLabel(String id);
+
+  /// No description provided for @calendarGoogleColorEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Google color {id}'**
+  String calendarGoogleColorEvent(String id);
+
+  /// No description provided for @calendarProviderColorSeparateEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Save other changes before changing the Google color.'**
+  String get calendarProviderColorSeparateEdit;
+
+  /// No description provided for @inventorySetupSyncFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync this new item before using, editing, or deleting it.'**
+  String get inventorySetupSyncFirst;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
