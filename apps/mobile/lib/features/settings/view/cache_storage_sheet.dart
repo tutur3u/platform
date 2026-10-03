@@ -1,26 +1,41 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_storage_snapshot.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/settings/view/cache_storage_chart.dart';
+import 'package:mobile/features/settings/view/settings_scoped_sheet.dart';
+import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-Future<void> showCacheStorageSheet(BuildContext context) =>
-    showModalBottomSheet<void>(
-      context: context,
-      useRootNavigator: true,
-      useSafeArea: true,
-      isScrollControlled: true,
-      builder: (_) => const FractionallySizedBox(
-        heightFactor: 0.82,
-        child: CacheStorageSheet(),
-      ),
-    );
+Future<void> showCacheStorageSheet(BuildContext context) async {
+  final userId = context.read<AuthCubit?>()?.state.user?.id;
+  final workspaceId = context
+      .read<WorkspaceCubit?>()
+      ?.state
+      .currentWorkspace
+      ?.id;
+  if (userId == null || workspaceId == null) return;
+  await showScopedSettingsSheet<void>(
+    context: context,
+    builder: (_) => FractionallySizedBox(
+      heightFactor: 0.82,
+      child: CacheStorageSheet(userId: userId, workspaceId: workspaceId),
+    ),
+  );
+}
 
 class CacheStorageSheet extends StatefulWidget {
-  const CacheStorageSheet({super.key});
+  const CacheStorageSheet({
+    required this.userId,
+    required this.workspaceId,
+    super.key,
+  });
+  final String userId;
+  final String workspaceId;
 
   @override
   State<CacheStorageSheet> createState() => _CacheStorageSheetState();
@@ -39,7 +54,10 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
 
   Future<void> _refresh() async {
     try {
-      final snapshot = await CacheStore.instance.storageSnapshot();
+      final snapshot = await CacheStore.instance.storageSnapshot(
+        userId: widget.userId,
+        workspaceId: widget.workspaceId,
+      );
       if (!mounted) return;
       setState(() {
         _snapshot = snapshot;
@@ -51,6 +69,7 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
   }
 
   Future<void> _setLimit(int bytes) async {
+    if (OfflinePreparationCoordinator.instance.state.value.running) return;
     setState(() => _busy = true);
     try {
       if (bytes < (_snapshot?.maxBytes ?? bytes)) {
@@ -66,11 +85,12 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
   }
 
   Future<void> _clear() async {
+    if (OfflinePreparationCoordinator.instance.state.value.running) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(context.l10n.cacheStorageClear),
-        content: Text(context.l10n.cacheStorageClearDescription),
+        content: Text(context.l10n.offlineClearScopeDescription),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -83,11 +103,19 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
         ],
       ),
     );
-    if (confirmed != true || !mounted) return;
+    if (confirmed != true ||
+        !mounted ||
+        OfflinePreparationCoordinator.instance.state.value.running) {
+      return;
+    }
     setState(() => _busy = true);
     try {
       OfflinePreparationCoordinator.instance.invalidateRetainedData();
-      await CacheStore.instance.clearResourceCache();
+      await CacheStore.instance.clearScope(
+        userId: widget.userId,
+        workspaceId: widget.workspaceId,
+        resourceOnly: true,
+      );
       await _refresh();
     } on Object {
       if (mounted) setState(() => _error = context.l10n.cacheStorageError);
@@ -161,7 +189,7 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
             const SizedBox(height: 6),
             Center(
               child: Text(
-                l10n.cacheStorageEstimateNote,
+                '${l10n.cacheStorageEstimateNote}\n${l10n.offlineStorageScope}',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall,
               ),

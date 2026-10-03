@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/data/sources/api_client.dart';
 
 typedef OfflinePreparationTask = Future<void> Function(String workspaceId);
 typedef OfflinePreparationLoader =
@@ -30,10 +31,12 @@ class OfflineProductPreparation {
   const OfflineProductPreparation({
     this.status = OfflinePreparationStatus.queued,
     this.lastSuccess,
+    this.errorMessage,
   });
 
   final OfflinePreparationStatus status;
   final DateTime? lastSuccess;
+  final String? errorMessage;
 }
 
 @immutable
@@ -148,6 +151,7 @@ class OfflinePreparationCoordinator {
     required String userId,
     required String workspaceId,
     String? productId,
+    bool resume = false,
   }) async {
     await setScope(userId: userId, workspaceId: workspaceId);
     if (_busy ||
@@ -158,7 +162,17 @@ class OfflinePreparationCoordinator {
     final generation = ++_generation;
     _busy = true;
     _activeGeneration = generation;
-    final ids = productId == null ? productIds : [productId];
+    final ids = productId != null
+        ? [productId]
+        : resume
+        ? productIds
+              .where(
+                (id) =>
+                    state.value.products[id]?.status !=
+                    OfflinePreparationStatus.ready,
+              )
+              .toList()
+        : productIds;
     final products = {...state.value.products};
     void publish({required bool running}) {
       state.value = OfflinePreparationState(
@@ -208,10 +222,20 @@ class OfflinePreparationCoordinator {
         } on Object catch (error) {
           if (!_current(generation, userId, workspaceId)) return;
           products[id] = OfflineProductPreparation(
-            status: error is OfflinePreparationUnavailable
+            status:
+                error is OfflinePreparationUnavailable ||
+                    (error is ApiException &&
+                        (error.statusCode == 401 ||
+                            (error.statusCode == 403 &&
+                                !error.isVerificationRequired)))
                 ? OfflinePreparationStatus.unavailable
                 : OfflinePreparationStatus.failed,
             lastSuccess: lastSuccess,
+            errorMessage: error is OfflinePreparationUnavailable
+                ? null
+                : error is ApiException
+                ? '${error.statusCode}: ${error.message}'
+                : error.toString(),
           );
         }
         publish(running: true);

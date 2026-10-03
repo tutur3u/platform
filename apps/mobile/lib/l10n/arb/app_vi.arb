@@ -4115,5 +4115,81 @@
                 "type": "int"
             }
         }
+    },
+    "offlineSectionTitle": "Ngoại tuyến",
+    "offlineSectionDescription": "Tải xuống, dữ liệu đã lưu và thay đổi chưa đồng bộ của tài khoản và không gian làm việc hiện tại.",
+    "offlinePreferencesTitle": "Tùy chọn ngoại tuyến",
+    "offlineStorageScope": "Giới hạn lưu trữ áp dụng cho thiết bị này. Xóa bộ nhớ đệm giữ lại các thay đổi đang chờ.",
+    "offlineRefreshModule": "Tải xuống / làm mới",
+    "offlineModuleDetails": "Dữ liệu đã lưu và cài đặt",
+    "offlineDownloadRetryHint": "Thử tải lại để làm mới dữ liệu đã lưu.",
+    "offlineCoverageUnknown": "Lần tải thông thường có thể chỉ chứa một phần bộ sưu tập. Tổng số mục chỉ hiển thị khi các trang đã lưu nhất quán. Tải xuống chỉ bao phủ các bộ sưu tập được hỗ trợ, không phải mọi tài nguyên của ứng dụng.",
+    "offlineBytesExplanation": "Kích thước là số byte nội dung đã lưu, gồm bản chụp và bản sao. Chi phí lưu trữ trên đĩa, kích thước tải dự kiến và số byte truyền qua mạng chưa rõ.",
+    "offlineLogicalBytes": "{bytes} byte nội dung",
+    "@offlineLogicalBytes": {
+        "placeholders": {
+            "bytes": {
+                "type": "String"
+            }
+        }
+    },
+    "offlinePendingCoverage": "{count} thay đổi đang chờ. Chúng được lưu riêng và không được tính là mục đã tải.",
+    "@offlinePendingCoverage": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "offlineSearchStored": "Tìm bộ sưu tập đã lưu",
+    "offlineNoStoredItems": "Không có bộ sưu tập đã lưu phù hợp.",
+    "offlineAvailableItems": "{items} mục đã lập chỉ mục riêng biệt trong {snapshots} bản chụp đã lưu",
+    "@offlineAvailableItems": {
+        "placeholders": {
+            "items": {
+                "type": "int"
+            },
+            "snapshots": {
+                "type": "int"
+            }
+        }
+    },
+    "offlineFreshness": "{stale} bản chụp cũ · {expired} bản chụp hết hạn còn được lưu để dùng ngoại tuyến",
+    "@offlineFreshness": {
+        "placeholders": {
+            "stale": {
+                "type": "int"
+            },
+            "expired": {
+                "type": "int"
+            }
+        }
+    },
+    "offlineLastFetch": "Lần tải gần nhất: {time}",
+    "@offlineLastFetch": {
+        "placeholders": {
+            "time": {
+                "type": "String"
+            }
+        }
+    },
+    "offlineEvictTitle": "Xóa dữ liệu ứng dụng đã lưu",
+    "offlineEvictDescription": "Chỉ xóa bản chụp của ứng dụng này trong tài khoản và không gian làm việc đã chọn. Các thao tác ghi đang chờ vẫn được giữ. Tải lại để khôi phục dữ liệu ngoại tuyến.",
+    "offlineInventoryError": "Không thể kiểm tra hoặc cập nhật dữ liệu đã lưu. Hãy thử lại.",
+    "settingsAppearanceLanguage": "Giao diện và ngôn ngữ",
+    "settingsCalendarTimezone": "Lịch và múi giờ",
+    "settingsNotificationsInteraction": "Thông báo và tương tác",
+    "settingsAppPreferences": "Tùy chọn ứng dụng",
+    "offlinePauseDownloads": "Tạm dừng tải xuống",
+    "offlineResumeDownloads": "Tiếp tục các lượt tải chưa hoàn tất",
+    "offlineClearScopeDescription": "Chỉ xóa dữ liệu đệm của tài khoản và không gian làm việc này. Các thao tác ghi đang chờ vẫn được giữ. Giới hạn lưu trữ áp dụng cho toàn bộ thiết bị.",
+    "offlineExpectedTotal": "Tổng số mục truy vấn máy chủ báo cáo: {count}. Con số này không xác nhận dữ liệu đã được tải đầy đủ.",
+    "offlineExpectedTotalUnknown": "Tổng số mục truy vấn máy chủ báo cáo: chưa rõ.",
+    "@offlineExpectedTotal": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
     }
 }
