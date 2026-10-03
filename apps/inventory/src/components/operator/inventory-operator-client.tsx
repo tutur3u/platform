@@ -71,7 +71,7 @@ const catalogTabs = ['products', 'categories'] as const;
 
 export function InventoryOperatorClient({
   canExportSales = false,
-  canMergeSeasons = false,
+  canMergeSeasons,
   view,
   wsId,
 }: InventoryOperatorClientProps) {
