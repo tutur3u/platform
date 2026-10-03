@@ -1,8 +1,10 @@
+import { getProviderSyncFields } from '@/lib/calendar/provider-sync-fields';
 import {
   MAX_CALENDAR_EVENT_DESCRIPTION_LENGTH,
   MAX_CALENDAR_EVENT_TITLE_LENGTH,
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { googleColorCompatibilityValue } from '@tuturuuu/utils/google-calendar-colors';
 import { MeetingInvitationInputSchema } from '@tuturuuu/utils/meeting-invitations';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -14,6 +16,21 @@ import { DefaultCalendarEventColorSchema } from '@/lib/calendar/event-color';
 import { deduplicateCalendarEvents } from '@/lib/calendar/event-deduplication';
 import { parseCalendarEventRead } from '@/lib/calendar/event-read-pagination';
 import { hydrateEventSourceColors } from '@/lib/calendar/event-source-colors';
+import {
+  GoogleColorChoiceError,
+  GoogleProviderColorChoiceSchema,
+} from '@/lib/calendar/google-color-choices';
+import { ColorOperationError } from '@/lib/calendar/google-color-operations/protocol';
+import {
+  handleProviderSagaCreate,
+  unsupportedProviderSaga,
+} from '@/lib/calendar/google-color-operations/provider-saga-routes';
+import { getCalendarRetainedGeneration } from '@/lib/calendar/google-color-operations/retained-generation-request-access';
+import {
+  googleColorOperationModeEnabled,
+  operationFailure,
+} from '@/lib/calendar/google-color-operations/route-handlers';
+import { refreshOwnedGoogleSourceColor } from '@/lib/calendar/google-source-color-refresh';
 import { createProviderEvent } from '@/lib/calendar/provider-writes';
 import {
   type ResolvedCalendarSource,
@@ -56,6 +73,7 @@ const CreateEventSchema = z.object({
   start_at: z.string().datetime(),
   end_at: z.string().datetime(),
   color: DefaultCalendarEventColorSchema,
+  providerColor: GoogleProviderColorChoiceSchema.optional(),
   locked: z.boolean().optional(),
   task_id: z.guid().nullable().optional(),
   source: CalendarSourceSchema.optional(),
@@ -67,39 +85,6 @@ interface Params {
   params: Promise<{
     wsId: string;
   }>;
-}
-
-function getProviderSyncFields(args: {
-  error: unknown;
-  settingsAvailable: boolean;
-  synced: boolean;
-}) {
-  if (!args.settingsAvailable) return {};
-
-  if (args.synced) {
-    return {
-      last_synced_at: new Date().toISOString(),
-      sync_error: null,
-      sync_status: 'synced',
-    };
-  }
-
-  if (args.error) {
-    const message =
-      args.error instanceof Error
-        ? args.error.message
-        : 'External calendar sync failed';
-
-    return {
-      sync_error: message.slice(0, 1000),
-      sync_status: 'failed',
-    };
-  }
-
-  return {
-    sync_error: null,
-    sync_status: 'local_only',
-  };
 }
 
 export async function GET(request: Request, { params }: Params) {
@@ -209,12 +194,47 @@ export async function POST(request: Request, { params }: Params) {
   try {
     const body = await request.json();
     const event = CreateEventSchema.parse(body);
+    if (event.providerColor && !googleColorOperationModeEnabled())
+      return unsupportedProviderSaga();
+    if (event.providerColor && body.color !== undefined)
+      throw new GoogleColorChoiceError(
+        'Choose either native color or provider color'
+      );
     const source = await resolveCalendarSource({
       sbAdmin,
       wsId,
       userId,
       source: event.source ?? null,
     });
+    if (
+      event.providerColor &&
+      (source.provider !== 'google' ||
+        source.connectionId !== event.providerColor.connectionId)
+    )
+      throw new GoogleColorChoiceError(
+        'Color choice does not belong to the selected Google calendar'
+      );
+    const retained = event.requestId
+      ? await getCalendarRetainedGeneration(request, wsId, event.requestId)
+      : null;
+    if (googleColorOperationModeEnabled() || retained) {
+      if (event.invitation || source.provider === 'microsoft')
+        return unsupportedProviderSaga();
+      if (source.provider === 'google')
+        return handleProviderSagaCreate({
+          request,
+          rawWsId: wsId,
+          wsId,
+          sbAdmin,
+          source,
+          event,
+        });
+      if (
+        retained ||
+        (await resolveOutboundSyncSource({ sbAdmin, wsId, userId }))
+      )
+        return unsupportedProviderSaga();
+    }
     if (event.invitation) {
       if (!event.requestId)
         return NextResponse.json(
@@ -250,6 +270,7 @@ export async function POST(request: Request, { params }: Params) {
       start_at: event.start_at,
       end_at: event.end_at,
       color: event.color,
+      providerColor: event.providerColor,
     };
     let providerSource: ResolvedCalendarSource = source;
     let providerWriteError: unknown = null;
@@ -285,6 +306,13 @@ export async function POST(request: Request, { params }: Params) {
       }
     }
 
+    if (providerResult?.googleSourceColor)
+      await refreshOwnedGoogleSourceColor({
+        sbAdmin,
+        wsId,
+        source: providerSource,
+        background: providerResult.googleSourceColor,
+      });
     // Get workspace encryption key (read-only, does not auto-create)
     // This ensures encryption only happens if E2EE was explicitly enabled
     const workspaceKey = await getWorkspaceKey(wsId);
@@ -318,7 +346,14 @@ export async function POST(request: Request, { params }: Params) {
         location: encryptedFields.location,
         start_at: event.start_at,
         end_at: event.end_at,
-        color: event.color,
+        color: providerResult?.googleColor
+          ? googleColorCompatibilityValue(providerResult.googleColor.color_id)
+          : event.color,
+        ...(providerResult?.googleColor
+          ? {
+              scheduling_metadata: { google_color: providerResult.googleColor },
+            }
+          : {}),
         locked: event.locked || false,
         task_id: event.task_id ?? null,
         ws_id: wsId,
@@ -351,6 +386,17 @@ export async function POST(request: Request, { params }: Params) {
       { status: 201 }
     );
   } catch (error) {
+    if (error instanceof ColorOperationError) return operationFailure(error);
+    if (error instanceof SyntaxError)
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    if (error instanceof GoogleColorChoiceError)
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
     if (error instanceof MeetingCreateError)
       return NextResponse.json(
         { error: error.message },

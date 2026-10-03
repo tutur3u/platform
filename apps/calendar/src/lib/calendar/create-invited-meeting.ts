@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { GoogleProviderColorChoice } from '@tuturuuu/types/primitives/google-calendar-color';
 import type { MeetingInvitationInput } from '@tuturuuu/utils/meeting-invitations';
 import {
   decryptEventFromStorage,
@@ -7,6 +8,11 @@ import {
   getWorkspaceKey,
 } from '@/lib/workspace-encryption';
 import { DefaultCalendarEventColorSchema } from './event-color';
+import { refreshOwnedGoogleSourceColor } from './google-source-color-refresh';
+import {
+  assertLegacyCalendarWriteAllowed,
+  LegacyCalendarWriteError,
+} from './legacy-provider-generation-guard';
 import { MeetingCreateError, withMeetingRequest } from './meeting-request';
 import { createProviderEvent } from './provider-writes';
 import type { ResolvedCalendarSource } from './source-resolver';
@@ -19,6 +25,7 @@ export interface InvitedMeetingInput {
   start_at: string;
   end_at: string;
   color?: string;
+  providerColor?: GoogleProviderColorChoice;
   locked?: boolean;
   invitation: MeetingInvitationInput;
   requestId: string;
@@ -63,6 +70,25 @@ export async function createInvitedMeeting({
   }
   const color = DefaultCalendarEventColorSchema.parse(input.color);
   const id = meetingRequestIdentity(wsId, userId, input.requestId);
+  if (input.providerColor)
+    throw new MeetingCreateError(
+      409,
+      'Provider color invitations require recoverable delivery support'
+    );
+  try {
+    await assertLegacyCalendarWriteAllowed({
+      sbAdmin,
+      wsId,
+      userId,
+      eventIds: [id],
+      blockCandidate:
+        process.env.CALENDAR_GOOGLE_COLOR_OPERATIONS_ENABLED === 'true',
+    });
+  } catch (error) {
+    if (error instanceof LegacyCalendarWriteError)
+      throw new MeetingCreateError(error.status, error.message);
+    throw error;
+  }
   const requestHash = createHash('sha256')
     .update(
       JSON.stringify({
@@ -177,6 +203,7 @@ export async function createInvitedMeeting({
           end_at: input.end_at,
           invitation: input.invitation,
           color,
+          providerColor: input.providerColor,
         },
       });
       if (!provider)
@@ -184,6 +211,13 @@ export async function createInvitedMeeting({
           502,
           'Invitation delivery did not complete'
         );
+      if (provider.googleSourceColor)
+        await refreshOwnedGoogleSourceColor({
+          sbAdmin,
+          wsId,
+          source,
+          background: provider.googleSourceColor,
+        });
       const { data, error } = await sbAdmin
         .from('workspace_calendar_events')
         .update({
@@ -196,6 +230,9 @@ export async function createInvitedMeeting({
             meeting_request_hash: requestHash,
             meeting_organizer: userId,
             meeting_delivery: 'sent',
+            ...(provider.googleColor
+              ? { google_color: { ...provider.googleColor } }
+              : {}),
           },
         })
         .eq('id', id)

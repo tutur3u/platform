@@ -1,7 +1,14 @@
 import { type calendar_v3, google } from '@tuturuuu/google';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  captureGoogleImport,
+  replayDeferredGoogleImports,
+  verifiedGoogleImportToken,
+} from '@tuturuuu/utils/google-calendar-import-fence';
 import dayjs from 'dayjs';
 import { getGoogleCalendarColorContext } from './google-calendar-color-context';
 import {
+  formatEventForDb,
   getGoogleAuthClient,
   storeSyncToken,
   syncWorkspaceBatched,
@@ -36,10 +43,32 @@ export async function performFullSyncForWorkspace(
   });
 
   try {
+    const client = await createAdminClient({ noCookie: true });
+    const scope = {
+      wsId: ws_id,
+      calendarId,
+      authTokenId: await verifiedGoogleImportToken(client, ws_id, access_token),
+    };
+    const capture = await captureGoogleImport(client, scope);
     const colorContext = await getGoogleCalendarColorContext(
       calendar,
       calendarId
     );
+    await replayDeferredGoogleImports({
+      client,
+      calendar,
+      scope,
+      format: async (events) =>
+        events.map((event) =>
+          formatEventForDb(
+            event,
+            ws_id,
+            calendarId,
+            colorContext,
+            scope.authTokenId
+          )
+        ),
+    });
     const res = await calendar.events.list({
       calendarId,
       showDeleted: true,
@@ -81,7 +110,7 @@ export async function performFullSyncForWorkspace(
         events_to_sync: events,
         calendarId,
         colorContext,
-        preserveExistingMetadata: true,
+        capture,
       });
       if (!result.success)
         throw new Error(result.error ?? 'Google calendar batch sync failed');

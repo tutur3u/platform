@@ -2279,6 +2279,165 @@ export type Database = {
         };
         Relationships: [];
       };
+      calendar_google_color_operations: {
+        Row: {
+          actor_id: string;
+          completion: Json | null;
+          created_at: string;
+          current_generation: number;
+          event_id: string;
+          generation: number;
+          identity: Json;
+          intent: Json;
+          operation_id: string;
+          phase: string;
+          prepared: Json | null;
+          request_hash: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          completion?: Json | null;
+          created_at?: string;
+          current_generation?: number;
+          event_id: string;
+          generation: number;
+          identity: Json;
+          intent: Json;
+          operation_id: string;
+          phase: string;
+          prepared?: Json | null;
+          request_hash: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          completion?: Json | null;
+          created_at?: string;
+          current_generation?: number;
+          event_id?: string;
+          generation?: number;
+          identity?: Json;
+          intent?: Json;
+          operation_id?: string;
+          phase?: string;
+          prepared?: Json | null;
+          request_hash?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      calendar_google_color_write_permits: {
+        Row: {
+          event_id: string;
+          generation: number;
+          operation_id: string;
+          transaction_id: number;
+          ws_id: string;
+        };
+        Insert: {
+          event_id: string;
+          generation: number;
+          operation_id: string;
+          transaction_id: number;
+          ws_id: string;
+        };
+        Update: {
+          event_id?: string;
+          generation?: number;
+          operation_id?: string;
+          transaction_id?: number;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      calendar_google_deferred_imports: {
+        Row: {
+          auth_scope: string;
+          calendar_id: string;
+          external_event_id: string;
+          observed_generation: number;
+          reason: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          auth_scope: string;
+          calendar_id: string;
+          external_event_id: string;
+          observed_generation: number;
+          reason: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          auth_scope?: string;
+          calendar_id?: string;
+          external_event_id?: string;
+          observed_generation?: number;
+          reason?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      calendar_google_import_reads: {
+        Row: {
+          auth_token_id: string | null;
+          calendar_id: string;
+          created_at: string;
+          generations: Json;
+          id: string;
+          ws_id: string;
+        };
+        Insert: {
+          auth_token_id?: string | null;
+          calendar_id: string;
+          created_at?: string;
+          generations: Json;
+          id?: string;
+          ws_id: string;
+        };
+        Update: {
+          auth_token_id?: string | null;
+          calendar_id?: string;
+          created_at?: string;
+          generations?: Json;
+          id?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      calendar_provider_saga_scopes: {
+        Row: {
+          auth_token_id: string;
+          calendar_id: string;
+          event_id: string;
+          provider: string;
+          provider_event_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          auth_token_id: string;
+          calendar_id: string;
+          event_id: string;
+          provider: string;
+          provider_event_id: string;
+          ws_id: string;
+        };
+        Update: {
+          auth_token_id?: string;
+          calendar_id?: string;
+          event_id?: string;
+          provider?: string;
+          provider_event_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       calendar_user_workspace_preferences: {
         Row: {
           conflict_policy: string;
@@ -16873,6 +17032,22 @@ export type Database = {
           _ws_id: string;
         };
         Returns: Json;
+      };
+      calendar_google_color_operation_json: {
+        Args: {
+          op: Database['private']['Tables']['calendar_google_color_operations']['Row'];
+        };
+        Returns: Json;
+      };
+      calendar_provider_saga_json: {
+        Args: {
+          op: Database['private']['Tables']['calendar_google_color_operations']['Row'];
+        };
+        Returns: Json;
+      };
+      calendar_saga_endpoint_allowed: {
+        Args: { actor: string; endpoint: Json; ws: string };
+        Returns: boolean;
       };
       can_deliver_mail_notification: {
         Args: { p_notification_id: string };
@@ -42857,6 +43032,10 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      apply_calendar_google_import: {
+        Args: { p_capture_id: string; p_events?: Json; p_tombstones?: Json };
+        Returns: Json;
+      };
       apply_hive_world_event: {
         Args: {
           p_actor_user_id: string;
@@ -42984,6 +43163,46 @@ export type Database = {
         Args: { p_is_personal: boolean; p_user_id: string; p_ws_id: string };
         Returns: number;
       };
+      calendar_google_color_operation: {
+        Args: {
+          p_action: string;
+          p_actor_id: string;
+          p_event_id: string;
+          p_input?: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      calendar_google_mutation_operation: {
+        Args: {
+          p_action: string;
+          p_actor_id: string;
+          p_event_id: string;
+          p_input?: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      calendar_native_generation_mutation: {
+        Args: {
+          p_action: string;
+          p_actor_id: string;
+          p_event_id: string;
+          p_input?: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      calendar_provider_saga_operation: {
+        Args: {
+          p_action: string;
+          p_actor_id: string;
+          p_event_id: string;
+          p_input?: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       calendar_retained_generation: {
         Args: { p_actor_id: string; p_event_id: string; p_ws_id: string };
         Returns: Json;
@@ -43008,6 +43227,14 @@ export type Database = {
       can_publish_workspace_external_projects: {
         Args: { p_user_id?: string; p_ws_id: string };
         Returns: boolean;
+      };
+      capture_calendar_google_import: {
+        Args: {
+          p_auth_token_id?: string;
+          p_calendar_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       check_account_request: { Args: never; Returns: undefined };
       check_ai_credit_allowance: {
@@ -45713,6 +45940,14 @@ export type Database = {
           isOneToOne: false;
           isSetofReturn: true;
         };
+      };
+      list_deferred_calendar_google_imports: {
+        Args: {
+          p_auth_token_id?: string;
+          p_calendar_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       list_immediate_notification_email_configs: {
         Args: { p_notification_types: string[] };

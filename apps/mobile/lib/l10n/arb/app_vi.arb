@@ -1,13 +1,4 @@
 {
-    "workspaceHiddenTitle": "Không gian làm việc đã ẩn",
-    "workspaceHideAction": "Ẩn",
-    "workspaceRestoreAction": "Hiện lại",
-    "workspaceHiddenDescription": "Chỉ bạn thấy danh sách này. Ẩn không thay đổi tư cách thành viên hay thông báo.",
-    "workspaceHiddenEmpty": "Không có không gian làm việc đã ẩn",
-    "workspaceHiddenLoadError": "Không thể tải tùy chọn hiển thị. Các lựa chọn ẩn đã lưu được giữ lại.",
-    "workspaceHiddenUpdateError": "Không thể lưu thay đổi. Hãy thử lại khi có kết nối.",
-    "workspaceAllHidden": "Các không gian làm việc của bạn đã bị ẩn. Hiện lại một không gian để tiếp tục.",
-    "workspacePickerClose": "Đóng danh sách không gian làm việc",
     "commonLoading": "Đang tải",
     "@@locale": "vi",
     "appTitle": "Tuturuuu",
@@ -4051,8 +4042,6 @@
             }
         }
     },
-    "inventoryProductDeleteConfirm": "Xóa sản phẩm này? Nếu giao dịch đã có tham chiếu đến sản phẩm, máy chủ sẽ lưu trữ sản phẩm khi đồng bộ.",
-    "inventorySeasonPriceCached": "Bản nháp ngoại tuyến sử dụng giá mùa đã lưu. Giá và tình trạng hàng sẽ được kiểm tra khi đồng bộ.",
     "inventorySeasonPriceLoading": "Đang kiểm tra giá mùa hiện tại…",
     "inventorySeasonPriceUnavailable": "Giá mùa không khả dụng hoặc đã hết hạn. Kết nối, làm mới và kiểm tra giỏ hàng trước khi bán.",
     "inventorySeasonPriceAsOf": "Giá mùa · {currency} · tại {asOf} (UTC) · ngày mùa theo {timeZone}",
@@ -4075,6 +4064,35 @@
             }
         }
     },
+    "calendarGoogleColorInherit": "Dùng màu lịch",
+    "calendarGoogleColorLabel": "Nhãn tùy chỉnh {id}",
+    "calendarGoogleColorEvent": "Màu Google {id}",
+    "calendarProviderColorSeparateEdit": "Lưu các thay đổi khác trước khi đổi màu Google.",
+    "@calendarGoogleColorLabel": {
+        "placeholders": {
+            "id": {
+                "type": "String"
+            }
+        }
+    },
+    "@calendarGoogleColorEvent": {
+        "placeholders": {
+            "id": {
+                "type": "String"
+            }
+        }
+    },
+    "workspaceHiddenTitle": "Không gian làm việc đã ẩn",
+    "workspaceHideAction": "Ẩn",
+    "workspaceRestoreAction": "Hiện lại",
+    "workspaceHiddenDescription": "Chỉ bạn thấy danh sách này. Ẩn không thay đổi tư cách thành viên hay thông báo.",
+    "workspaceHiddenEmpty": "Không có không gian làm việc đã ẩn",
+    "workspaceHiddenLoadError": "Không thể tải tùy chọn hiển thị. Các lựa chọn ẩn đã lưu được giữ lại.",
+    "workspaceHiddenUpdateError": "Không thể lưu thay đổi. Hãy thử lại khi có kết nối.",
+    "workspaceAllHidden": "Các không gian làm việc của bạn đã bị ẩn. Hiện lại một không gian để tiếp tục.",
+    "workspacePickerClose": "Đóng danh sách không gian làm việc",
+    "inventoryProductDeleteConfirm": "Xóa sản phẩm này? Nếu giao dịch đã có tham chiếu đến sản phẩm, máy chủ sẽ lưu trữ sản phẩm khi đồng bộ.",
+    "inventorySeasonPriceCached": "Bản nháp ngoại tuyến sử dụng giá mùa đã lưu. Giá và tình trạng hàng sẽ được kiểm tra khi đồng bộ.",
     "offlinePreparationTitle": "Dữ liệu ngoại tuyến",
     "offlinePreparationCacheAll": "Tải tất cả",
     "offlinePreparationDescription": "Tải dữ liệu không gian làm việc để dùng ngoại tuyến. Bộ nhớ đệm chịu giới hạn lưu trữ; tệp và dịch vụ trực tuyến vẫn có thể cần kết nối.",
@@ -4116,6 +4134,12 @@
             }
         }
     },
+    "inventorySetupSyncFirst": "Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa.",
+    "homePersonalAgenda": "Lịch cá nhân",
+    "homePersonalAgendaUnavailable": "Lịch cá nhân hiện không khả dụng.",
+    "assistantExpandNavigation": "Hiện điều hướng",
+    "assistantCollapseNavigation": "Ẩn điều hướng",
+    "assistantCloseComposer": "Đóng ô nhập",
     "offlineSectionTitle": "Ngoại tuyến",
     "offlineSectionDescription": "Tải xuống, dữ liệu đã lưu và thay đổi chưa đồng bộ của tài khoản và không gian làm việc hiện tại.",
     "offlinePreferencesTitle": "Tùy chọn ngoại tuyến",
@@ -4203,10 +4227,5 @@
                 "type": "String"
             }
         }
-    },
-    "homePersonalAgenda": "Lịch cá nhân",
-    "homePersonalAgendaUnavailable": "Lịch cá nhân hiện không khả dụng.",
-    "assistantExpandNavigation": "Hiện điều hướng",
-    "assistantCollapseNavigation": "Ẩn điều hướng",
-    "assistantCloseComposer": "Đóng ô nhập"
+    }
 }
