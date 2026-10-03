@@ -9698,10 +9698,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetScreenFixtureTitle => 'Native screen capture test';
 
   @override
-  String get meetScreenFixtureHint => 'This test sends your selected screen only to a receiver on this device. It does not join a hosted meeting. Stop sharing when finished.';
+  String get meetScreenFixtureHint => 'Join the synthetic local meeting and share your screen. Media stays on this device; watch the receiver frame counter.';
 
   @override
   String meetScreenFixtureFrames(int count) {
     return 'Decoded receiver frames: $count';
   }
+
+  @override
+  String get meetFixtureConnected => 'Local meeting connected';
+
+  @override
+  String get meetFixtureRevoke => 'Host: stop screen share';
+
+  @override
+  String get meetFixtureReconnect => 'Reconnect meeting';
 }

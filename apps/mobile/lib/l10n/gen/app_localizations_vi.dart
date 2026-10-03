@@ -9632,10 +9632,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get meetScreenFixtureTitle => 'Kiểm thử chia sẻ màn hình gốc';
 
   @override
-  String get meetScreenFixtureHint => 'Kiểm thử chỉ gửi màn hình bạn chọn đến bộ nhận trên thiết bị này, không tham gia cuộc họp trực tuyến. Dừng chia sẻ khi hoàn tất.';
+  String get meetScreenFixtureHint => 'Tham gia cuộc họp giả lập cục bộ và chia sẻ màn hình. Nội dung chỉ ở trên thiết bị này; theo dõi số khung hình nhận được.';
 
   @override
   String meetScreenFixtureFrames(int count) {
     return 'Số khung hình đã giải mã: $count';
   }
+
+  @override
+  String get meetFixtureConnected => 'Đã kết nối cuộc họp cục bộ';
+
+  @override
+  String get meetFixtureRevoke => 'Chủ phòng: dừng chia sẻ màn hình';
+
+  @override
+  String get meetFixtureReconnect => 'Kết nối lại cuộc họp';
 }

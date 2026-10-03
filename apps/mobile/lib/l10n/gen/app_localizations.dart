@@ -18514,7 +18514,7 @@ abstract class AppLocalizations {
   /// No description provided for @meetScreenFixtureHint.
   ///
   /// In en, this message translates to:
-  /// **'This test sends your selected screen only to a receiver on this device. It does not join a hosted meeting. Stop sharing when finished.'**
+  /// **'Join the synthetic local meeting and share your screen. Media stays on this device; watch the receiver frame counter.'**
   String get meetScreenFixtureHint;
 
   /// No description provided for @meetScreenFixtureFrames.
@@ -18522,6 +18522,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Decoded receiver frames: {count}'**
   String meetScreenFixtureFrames(int count);
+
+  /// No description provided for @meetFixtureConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Local meeting connected'**
+  String get meetFixtureConnected;
+
+  /// No description provided for @meetFixtureRevoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Host: stop screen share'**
+  String get meetFixtureRevoke;
+
+  /// No description provided for @meetFixtureReconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect meeting'**
+  String get meetFixtureReconnect;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
