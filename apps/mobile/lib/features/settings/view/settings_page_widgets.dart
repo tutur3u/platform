@@ -40,19 +40,14 @@ class _SettingsOverviewSection extends StatelessWidget {
           title: l10n.settingsExperimentalAppsSectionTitle,
           onTap: () => context.push(Routes.settingsExperiments),
         ),
-        ValueListenableBuilder(
-          valueListenable: OfflineMutationQueue.instance.pending,
-          builder: (context, records, _) => SettingsTile(
-            grouped: true,
-            icon: Icons.sync_rounded,
-            title: l10n.offlineChangesTitle,
-            value: records.isEmpty ? null : '${records.length}',
-            onTap: () => unawaited(showOfflineChangesSheet(context)),
-          ),
-        ),
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 16),
-          child: OfflinePreparationSection(),
+        SettingsTile(
+          key: const ValueKey('settings-offline-row'),
+          grouped: true,
+          icon: Icons.offline_pin_outlined,
+          title: l10n.offlineSectionTitle,
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute<void>(builder: (_) => const OfflinePage())),
         ),
         if (showInfrastructure)
           SettingsTile(
@@ -278,90 +273,109 @@ class _PreferencesSection extends StatelessWidget {
         .state
         .currentWorkspace
         ?.id;
-    final tiles = <Widget>[
-      TimezoneSettingsTile(
-        userId: userId,
-        workspaceId: workspaceId,
-        grouped: true,
+    final personalZone = TimezoneSettingsTile(
+      userId: userId,
+      workspaceId: workspaceId,
+      grouped: true,
+    );
+    final appearance = SettingsTile(
+      grouped: true,
+      icon: Icons.palette_outlined,
+      title: l10n.settingsTheme,
+      value: themeLabel,
+      onTap: onChangeTheme,
+    );
+    final language = SettingsTile(
+      grouped: true,
+      icon: Icons.language_rounded,
+      title: l10n.settingsLanguage,
+      value: languageLabel,
+      onTap: onChangeLanguage,
+    );
+    final finance = SettingsTile(
+      key: const ValueKey('settings-finance-row'),
+      grouped: true,
+      icon: Icons.visibility_outlined,
+      title: l10n.settingsFinanceAmounts,
+      value: showFinanceAmounts
+          ? l10n.financeShowAmounts
+          : l10n.financeHideAmounts,
+      onTap: onToggleFinanceAmounts,
+    );
+    final calendar = SettingsTile(
+      grouped: true,
+      icon: Icons.calendar_today_outlined,
+      title: l10n.settingsFirstDayOfWeek,
+      value: calendarLabel,
+      onTap: onChangeFirstDayOfWeek,
+    );
+    final notifications = SettingsTile(
+      grouped: true,
+      icon: Icons.notifications_active_outlined,
+      title: l10n.remindersTitle,
+      onTap: () => context.push(Routes.settingsReminders),
+    );
+    final interaction = SettingsTile(
+      key: const ValueKey('settings-haptics-row'),
+      grouped: true,
+      icon: Icons.vibration_rounded,
+      title: l10n.settingsHaptics,
+      value: hapticsEnabled ? l10n.commonOn : l10n.commonOff,
+      onTap: onToggleHaptics,
+    );
+    final tasks = SettingsTile(
+      key: const ValueKey('settings-task-board-row'),
+      grouped: true,
+      icon: Icons.view_kanban_outlined,
+      title: l10n.taskBoardsTitle,
+      value: disableDefaultTaskBoardNavigation
+          ? l10n.settingsDefaultTaskBoardNavigationBoardPicker
+          : l10n.settingsDefaultTaskBoardNavigationDefaultBoard,
+      onTap: onToggleDefaultTaskBoardNavigation,
+    );
+    final workspaceZone = workspaceId == null
+        ? null
+        : WorkspaceTimezoneSettingsTile(
+            userId: userId,
+            workspaceId: workspaceId,
+            permissionsRepository: permissionsRepository,
+            refreshRevision: permissionsRevision,
+            grouped: true,
+          );
+    final groups = [
+      (l10n.settingsAppearanceLanguage, [appearance, language]),
+      (
+        l10n.settingsCalendarTimezone,
+        [personalZone, if (workspaceZone != null) workspaceZone, calendar],
       ),
-      if (workspaceId != null)
-        WorkspaceTimezoneSettingsTile(
-          userId: userId,
-          workspaceId: workspaceId,
-          permissionsRepository: permissionsRepository,
-          refreshRevision: permissionsRevision,
-          grouped: true,
-        ),
-      SettingsTile(
-        grouped: true,
-        icon: Icons.palette_outlined,
-        title: l10n.settingsTheme,
-        value: themeLabel,
-        onTap: onChangeTheme,
-      ),
-      SettingsTile(
-        grouped: true,
-        icon: Icons.language_rounded,
-        title: l10n.settingsLanguage,
-        value: languageLabel,
-        onTap: onChangeLanguage,
-      ),
-      SettingsTile(
-        key: const ValueKey('settings-finance-row'),
-        grouped: true,
-        icon: Icons.visibility_outlined,
-        title: l10n.settingsFinanceAmounts,
-        value: showFinanceAmounts
-            ? l10n.financeShowAmounts
-            : l10n.financeHideAmounts,
-        onTap: onToggleFinanceAmounts,
-      ),
-      SettingsTile(
-        grouped: true,
-        icon: Icons.calendar_today_outlined,
-        title: l10n.settingsFirstDayOfWeek,
-        value: calendarLabel,
-        onTap: onChangeFirstDayOfWeek,
-      ),
-      SettingsTile(
-        grouped: true,
-        icon: Icons.notifications_active_outlined,
-        title: l10n.remindersTitle,
-        onTap: () => context.push(Routes.settingsReminders),
-      ),
-      SettingsTile(
-        key: const ValueKey('settings-haptics-row'),
-        grouped: true,
-        icon: Icons.vibration_rounded,
-        title: l10n.settingsHaptics,
-        value: hapticsEnabled ? l10n.commonOn : l10n.commonOff,
-        onTap: onToggleHaptics,
-      ),
-      SettingsTile(
-        grouped: true,
-        icon: Icons.storage_outlined,
-        title: l10n.cacheStorageTitle,
-        onTap: () => unawaited(showCacheStorageSheet(context)),
-      ),
-      SettingsTile(
-        key: const ValueKey('settings-task-board-row'),
-        grouped: true,
-        icon: Icons.view_kanban_outlined,
-        title: l10n.taskBoardsTitle,
-        value: disableDefaultTaskBoardNavigation
-            ? l10n.settingsDefaultTaskBoardNavigationBoardPicker
-            : l10n.settingsDefaultTaskBoardNavigationDefaultBoard,
-        onTap: onToggleDefaultTaskBoardNavigation,
-      ),
+      (l10n.settingsNotificationsInteraction, [notifications, interaction]),
+      (l10n.settingsAppPreferences, [finance, tasks]),
+    ];
+    final sections = [
+      for (final group in groups)
+        SettingsCompactSection(title: group.$1, children: group.$2),
     ];
     return LayoutBuilder(
       builder: (context, constraints) {
-        final split = (tiles.length / 2).ceil();
-        return SettingsCompactSection(
-          title: l10n.settingsPreferencesSectionTitle,
-          columnSplit: constraints.maxWidth >= 840 ? split : null,
-          children: tiles,
+        Widget column(List<Widget> widgets) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final widget in widgets) ...[
+              widget,
+              const SizedBox(height: 20),
+            ],
+          ],
         );
+        return constraints.maxWidth >= 840
+            ? Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: column(sections.take(2).toList())),
+                  const SizedBox(width: 20),
+                  Expanded(child: column(sections.skip(2).toList())),
+                ],
+              )
+            : column(sections);
       },
     );
   }
