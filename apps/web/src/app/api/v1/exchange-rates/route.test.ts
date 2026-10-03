@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   attachSupabaseAuthUser: vi.fn(),
@@ -118,11 +118,11 @@ beforeEach(() => {
     eq: vi.fn(),
     order: vi.fn(),
     limit: vi.fn(),
-    single: vi.fn(),
+    maybeSingle: vi.fn(),
   };
   for (const method of ['select', 'eq', 'order', 'limit'])
     query[method]!.mockReturnValue(query);
-  query.single!.mockResolvedValue({
+  query.maybeSingle!.mockResolvedValue({
     data: { date: '2026-10-03' },
     error: null,
   });
@@ -193,6 +193,7 @@ describe('exchange rates with real session middleware', () => {
     mocks.verifyAppSessionRequest.mockReturnValue({ ok: false });
     expect((await GET(request())).status).toBe(401);
     expect(from).not.toHaveBeenCalled();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
   it('retains Supabase JWT authentication', async () => {
     mocks.getAppSessionTokenFromRequest.mockReturnValue(null);
@@ -213,5 +214,60 @@ describe('exchange rates with real session middleware', () => {
     mocks.checkUserSuspension.mockResolvedValue({ suspended: true });
     expect((await GET(request())).status).toBe(403);
     expect(from).not.toHaveBeenCalled();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+});
+
+describe('exchange rate query failures', () => {
+  beforeEach(() => {
+    vi.stubEnv('SUPABASE_SECRET_KEY', 'synthetic-service-key');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response(null, { status: 200 }))
+    );
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+  it('does not seed when the latest-date query fails', async () => {
+    query.maybeSingle!.mockResolvedValue({
+      data: null,
+      error: { message: 'synthetic database outage' },
+    });
+    expect((await GET(request())).status).toBe(500);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+  it('seeds only an empty successful lookup and preserves an empty result', async () => {
+    query.maybeSingle!.mockResolvedValue({ data: null, error: null });
+    const response = await GET(request());
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ data: [], date: null });
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+  it('returns an error when the seeded-date lookup fails', async () => {
+    query
+      .maybeSingle!.mockResolvedValueOnce({ data: null, error: null })
+      .mockResolvedValueOnce({
+        data: null,
+        error: { message: 'synthetic database outage' },
+      });
+    expect((await GET(request())).status).toBe(500);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+  it('does not return success when the seeded rates query fails', async () => {
+    query
+      .maybeSingle!.mockResolvedValueOnce({ data: null, error: null })
+      .mockResolvedValueOnce({ data: { date: '2026-10-03' }, error: null });
+    query.order!.mockImplementation((column: string) =>
+      column === 'target_currency'
+        ? Promise.resolve({
+            data: null,
+            error: { message: 'synthetic database outage' },
+          })
+        : query
+    );
+    expect((await GET(request())).status).toBe(500);
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });

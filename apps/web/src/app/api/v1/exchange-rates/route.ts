@@ -16,37 +16,49 @@ export const GET = withSessionAuth(
     await connection();
     try {
       // Get the latest date's exchange rates
-      const { data: latestDate } = await supabase
+      const { data: latestDate, error: latestDateError } = await supabase
         .from('currency_exchange_rates')
         .select('date')
         .eq('base_currency', 'USD')
         .order('date', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
+
+      if (latestDateError) {
+        return reply({ error: 'Failed to fetch rates' }, { status: 500 });
+      }
 
       // If no rates exist yet, trigger the cron endpoint to seed initial data
       if (!latestDate) {
         await triggerInitialFetch();
 
         // Re-query after seeding
-        const { data: seededDate } = await supabase
+        const { data: seededDate, error: seededDateError } = await supabase
           .from('currency_exchange_rates')
           .select('date')
           .eq('base_currency', 'USD')
           .order('date', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
+
+        if (seededDateError) {
+          return reply({ error: 'Failed to fetch rates' }, { status: 500 });
+        }
 
         if (!seededDate) {
           return reply({ data: [], date: null });
         }
 
-        const { data: rates } = await supabase
+        const { data: rates, error: seededRatesError } = await supabase
           .from('currency_exchange_rates')
           .select('base_currency, target_currency, rate, date')
           .eq('base_currency', 'USD')
           .eq('date', seededDate.date)
           .order('target_currency');
+
+        if (seededRatesError) {
+          return reply({ error: 'Failed to fetch rates' }, { status: 500 });
+        }
 
         return reply({
           data: rates ?? [],

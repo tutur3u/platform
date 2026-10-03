@@ -380,7 +380,12 @@ Exchange rates are authenticated global reference data. Web Supabase sessions an
 verified internal app sessions, including Finance, use the same API. A Finance
 app session does not require a separate Supabase login. Invalid or expired app
 sessions and anonymous callers are rejected before any database read; existing
-session suspension and abuse controls remain active. Successful rates are private
+session suspension and abuse controls remain active. Active app-session suspensions
+are also checked before Rust service-role currency reads; the suspension lookup
+retains the shared live policy’s fail-open behavior on policy-store outages.
+Currency query failures return 500 and never masquerade as missing rates or
+trigger seeding; initial seeding runs only after a successful empty lookup.
+Successful rates are private
 and not stored in a shared HTTP cache. The shared UI uses the internal API client.
 
 Regression coverage: `apps/web/src/app/api/v1/exchange-rates/route.test.ts` exercises
