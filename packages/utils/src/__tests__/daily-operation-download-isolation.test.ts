@@ -62,7 +62,7 @@ beforeEach(async () => {
   vi.clearAllMocks();
   vi.resetModules();
   vi.stubEnv('NODE_ENV', 'production');
-  ({ guardApiProxyRequest } = await import('../api-proxy-guard'));
+  ({ guardApiProxyRequest } = await import('../api-proxy-guard.js'));
   mocks.mfa.mockResolvedValue(null);
   mocks.block.mockResolvedValue(null);
   mocks.rest.mockRejectedValue(new Error('offline Redis unavailable'));
