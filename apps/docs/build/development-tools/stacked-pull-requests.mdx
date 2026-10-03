@@ -50,9 +50,18 @@ gh stack --help
 Use `gh extension upgrade stack` for an existing installation when an operation
 needs a newer capability. Inspect its help and release notes before relying on
 worktree support; do not mix extension versions during a paused operation.
-The optional upstream agent guidance can be installed with
-`gh skill install github/gh-stack`; repository ownership and delivery rules still
-apply.
+The upstream agent skill is installed at `.agents/skills/gh-stack`, with source
+tracking metadata for `github/gh-stack@v0.2.0`. Install or refresh it explicitly:
+
+```bash
+gh skill install github/gh-stack gh-stack --agent codex --scope project
+gh skill update --help
+```
+
+A bare `gh skill install github/gh-stack` lists available skills in a non-interactive
+terminal; supplying `gh-stack` installs it. Review upstream changes before updates.
+Keep the installed files as upstream content; repository ownership, branch naming,
+review gates, and delivery rules take precedence over generic skill examples.
 
 Every open PR has an isolated owning worktree under `.worktrees/`. Run `bun install`
 immediately after creating it. Never run `bun setup`, local builds, or local
@@ -106,7 +115,7 @@ branches:
 
 ```bash
 gh stack link <bottom-pr-number> <next-pr-number> --base main
-gh stack view
+gh stack view --json
 ```
 
 `link` can push branches, create PRs, and correct their bases; inspect the intended
@@ -144,9 +153,12 @@ stage them under its commit window, and run `gh stack rebase --continue`. Use
 manually edit recovery journals. Server-side rebase creates unsigned commits;
 use local signing when signed commits are required.
 
-Use `gh stack modify` for deliberate reorder/insert/fold/rename operations after
+Humans can use the interactive `gh stack modify` for deliberate restructuring after
 checking clean owners, linear history, and absence of queued merges. Dropping
 work or rewriting another owner's branch needs explicit scope/coordination.
+Agents must not launch its TUI. For non-interactive restructuring, preserve the
+old boundary SHAs, coordinate owners, and deliberately rebuild ancestry and
+membership with `unstack` and `init`; do not drop work outside the authorized scope.
 Submit the resulting composition again and review new diffs and heads.
 Unstacking removes native membership while retaining bases; it changes the
 workflow to manual chaining, not independent PRs. See

@@ -45,7 +45,9 @@ five minutes when a request does not specify a duration.
 For dependent PR work, the merge skill uses native GitHub stacks as the daily
 default. Follow [stack operations](/build/development-tools/stacked-pull-requests)
 for `gh stack` adoption, worktree ownership, cascading fixes, and verified prefix
-merges. Apply review, quiet-window, and exact-head checks to every included layer;
+merges. The official upstream skill is installed at `.agents/skills/gh-stack` from
+`github/gh-stack@v0.2.0`, with installer source metadata. Preserve its upstream
+content and review updates; repository rules override generic upstream examples. Apply review, quiet-window, and exact-head checks to every included layer;
 register each PR with the T3 thread when linking tools are available. Manual chains
 are a documented fallback for concrete limitations. A main-only merge request
 ends after main verification; production sync still needs production authorization.

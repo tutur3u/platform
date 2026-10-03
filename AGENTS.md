@@ -81,6 +81,8 @@ merge, or production evidence only when that delivery is authorized.
 - Use native [GitHub stacks](https://gh.io/stacks-overview) by default for
   reviewable dependent work; keep independent changes on separate branches.
   Native stacks are our day-to-day workflow, with no repository pilot gate.
+  Load the installed upstream `.agents/skills/gh-stack/SKILL.md` for stack command
+  mechanics; repository ownership and delivery rules take precedence.
   Prefer `gh stack` or GitHub's stack UI for creation, adoption, cascading updates,
   and merges. Coordinate every affected worktree before commands that rewrite
   multiple branches. Merge a verified contiguous prefix bottom-up, checking every
