@@ -215,6 +215,84 @@ describe('authenticated native Calendar gateway', () => {
     }
   });
 
+  it.each([403, 429])(
+    'relays only safe scalar rate/challenge diagnostics (%s)',
+    async (status) => {
+      const deps = dependencies();
+      const safe = {
+        'Retry-After': 'Thu, 01 Oct 2026 00:00:30 GMT',
+        'X-Proxy-Block-Reason': 'route-rate-limit',
+        'X-RateLimit-Policy': 'workspace-dashboard-read',
+        'X-RateLimit-Caller-Class': 'authenticated',
+        'X-RateLimit-Window': 'minute',
+        'X-RateLimit-Limit': '60',
+        'X-RateLimit-Remaining': '0',
+        'X-RateLimit-Reset': '1790812830',
+        'X-Abuse-Challenge': 'turnstile',
+      };
+      deps.fetch.mockResolvedValue(
+        Response.json(
+          { message: 'Limited' },
+          {
+            status,
+            headers: {
+              ...safe,
+              'Set-Cookie': 'private=value',
+              Authorization: 'Bearer upstream-credential',
+              [GATEWAY_HEADER]: secret,
+              Location: 'https://private.example',
+              'X-Upstream-Debug': 'private diagnostic',
+              'Cache-Control': 'public, max-age=3600',
+            },
+          }
+        )
+      );
+      const response = await forwardCalendarRequest(
+        request('/api/v1/users/calendar-settings'),
+        deps
+      );
+      expect(response.status).toBe(status);
+      expect(await response.json()).toEqual({ message: 'Limited' });
+      for (const [name, value] of Object.entries(safe))
+        expect(response.headers.get(name)).toBe(value);
+      for (const name of [
+        'set-cookie',
+        'authorization',
+        GATEWAY_HEADER,
+        'location',
+        'x-upstream-debug',
+      ])
+        expect(response.headers.has(name)).toBe(false);
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+      expect(deps.fetch).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it('omits oversized or malformed diagnostics and does not expand the allowlist', async () => {
+    const deps = dependencies();
+    deps.fetch.mockResolvedValue(
+      Response.json(
+        {},
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Policy': 'x'.repeat(97),
+            'X-RateLimit-Limit': 'private value',
+            'X-Abuse-Challenge': 'https://attacker.example',
+            'Retry-After': 'x'.repeat(129),
+            'X-RateLimit-Secret': secret,
+          },
+        }
+      )
+    );
+    const response = await forwardCalendarRequest(request(), deps);
+    expect(response.status).toBe(429);
+    expect([...response.headers.keys()].sort()).toEqual([
+      'cache-control',
+      'content-type',
+    ]);
+  });
+
   it('forwards JSON mutations once and does not retry failures', async () => {
     const deps = dependencies();
     const body = JSON.stringify({ title: 'Meeting' });

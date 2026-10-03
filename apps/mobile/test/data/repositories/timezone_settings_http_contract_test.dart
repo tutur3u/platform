@@ -117,7 +117,9 @@ void main() {
   );
   test('scope-reset placeholder cannot resolve auto after cooldown', () async {
     await cubit.close();
+    h.dispose();
     var now = DateTime.utc(2030);
+    h = TimezoneHttpHarness(clock: () => now);
     var deviceReads = 0;
     var limited = false;
     cubit = TimezoneSettingsCubit(
