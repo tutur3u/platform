@@ -59,6 +59,25 @@ async function diagnoseSyntheticExport(error: unknown) {
   for (const id of await ownedContainers()) {
     if (!/^[a-f0-9]{12,64}$/.test(id))
       throw new Error('Invalid owned container ID');
+    // Inspect only the disposable synthetic fixture's resource/status fields.
+    // Never dump container configuration, environment variables or file content.
+    const inspected = await sandboxDocker(['inspect', id]);
+    if (inspected.code === 0 && !inspected.exceeded && !inspected.timedOut) {
+      const [container] = JSON.parse(inspected.output);
+      console.error(
+        'Synthetic acceptance container diagnostic',
+        JSON.stringify({
+          running: container.State?.Running,
+          exitCode: container.State?.ExitCode,
+          oomKilled: container.State?.OOMKilled,
+          memoryBytes: container.HostConfig?.Memory,
+          memorySwapBytes: container.HostConfig?.MemorySwap,
+          pidsLimit: container.HostConfig?.PidsLimit,
+          cpuQuota: container.HostConfig?.NanoCpus,
+          runtime: container.HostConfig?.Runtime,
+        })
+      );
+    }
     const exported = await sandboxDocker(
       ['exec', id, 'python3', '-I', '-S', '-B', '-c', PLAYGROUND_EXPORT_SCRIPT],
       '',
