@@ -5,9 +5,14 @@ import {
   type DevboxSetupPackageManager,
   type DevboxSetupTool,
 } from '@tuturuuu/devbox';
+import {
+  type DevboxExecutionMode,
+  parseDevboxExecutionMode,
+} from './devbox-host-protection';
 
 export interface DevboxDoctorReport {
-  containerized: true;
+  containerized: boolean;
+  executionMode?: DevboxExecutionMode;
   missingTools: DevboxSetupTool[];
   packageManager: DevboxSetupPackageManager | null;
   setupCommands: string[][];
@@ -48,6 +53,9 @@ function detectPackageManager(): DevboxSetupPackageManager | null {
 }
 
 export async function createDevboxDoctorReport(): Promise<DevboxDoctorReport> {
+  const executionMode = parseDevboxExecutionMode(
+    process.env.TUTURUUU_DEVBOX_EXECUTION_MODE
+  );
   const tools = {
     bun: getToolVersion('bun', ['--version']),
     docker: getToolVersion('docker', ['--version']),
@@ -68,7 +76,8 @@ export async function createDevboxDoctorReport(): Promise<DevboxDoctorReport> {
       : null;
 
   return {
-    containerized: true,
+    containerized: executionMode === 'judge-only',
+    executionMode,
     missingTools,
     packageManager,
     setupCommands: setupPlan?.commands ?? [],
@@ -97,7 +106,9 @@ export function printDevboxDoctorReport(
       `Bun: ${report.tools.bun ?? 'missing'}`,
       `Docker: ${report.tools.docker ?? 'missing'}`,
       `Git: ${report.tools.git ?? 'missing'}`,
-      'Execution: containerized',
+      report.executionMode === 'judge-only'
+        ? 'Execution: Judge-only; verify gVisor readiness with box judge doctor'
+        : 'Execution: trusted host commands; use a dedicated VM for untrusted workloads',
     ].join('\n')}\n`
   );
 }
