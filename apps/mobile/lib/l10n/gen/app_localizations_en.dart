@@ -9604,6 +9604,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileTimelineHasActivity => 'Activity in loaded snapshot';
 
   @override
+  String get profileTimelineLoadedEnd => 'All loaded activity shown';
+
+  @override
   String get profileTimelineMoreDays => 'Show more loaded days';
 
   @override
@@ -9925,7 +9928,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get homePersonalAgenda => 'Personal Agenda';
+  String get homePersonalAgenda => 'Agenda';
 
   @override
   String get homePersonalAgendaUnavailable => 'Personal calendar is unavailable.';

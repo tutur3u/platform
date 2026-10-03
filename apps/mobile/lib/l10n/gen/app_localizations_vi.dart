@@ -9538,6 +9538,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileTimelineHasActivity => 'Có hoạt động trong dữ liệu đã tải';
 
   @override
+  String get profileTimelineLoadedEnd => 'Đã hiển thị toàn bộ hoạt động đã tải';
+
+  @override
   String get profileTimelineMoreDays => 'Hiện thêm ngày đã tải';
 
   @override
@@ -9828,7 +9831,7 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get homePersonalAgenda => 'Lịch cá nhân';
+  String get homePersonalAgenda => 'Lịch trình';
 
   @override
   String get homePersonalAgendaUnavailable => 'Lịch cá nhân hiện không khả dụng.';

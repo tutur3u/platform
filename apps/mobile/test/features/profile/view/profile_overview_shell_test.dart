@@ -132,6 +132,7 @@ void main() {
     await experiments.load();
     auth = _Auth();
     workspaces = _Workspaces();
+    when(() => workspaces.hasAuthenticatedActor).thenReturn(true);
     profile = _Profile();
     whenListen(
       auth,
@@ -160,6 +161,7 @@ void main() {
       workspaces,
       const Stream<WorkspaceState>.empty(),
       initialState: const WorkspaceState(
+        workspaces: [Workspace(id: 'synthetic-personal', personal: true)],
         currentWorkspace: Workspace(id: 'synthetic-personal', personal: true),
       ),
     );
@@ -184,7 +186,8 @@ void main() {
             GoRoute(path: Routes.home, builder: (_, _) => const SizedBox()),
             GoRoute(
               path: Routes.profileRoot,
-              builder: (_, _) => const ProfileOverviewPage(),
+              builder: (_, _) =>
+                  ProfileOverviewPage(cacheUserId: () => auth.state.user?.id),
             ),
             GoRoute(
               path: Routes.settingsProfile,
@@ -533,7 +536,11 @@ void main() {
           );
           expect(find.byTooltip('Switch account'), findsNothing);
           final navbarRect = tester.getRect(find.byType(shad.AppBar).first);
-          expect(browserRect.top, greaterThanOrEqualTo(navbarRect.bottom));
+          expect(browserRect.top, lessThanOrEqualTo(navbarRect.top));
+          expect(
+            tester.getTopLeft(find.text('Synthetic task creation')).dy,
+            greaterThanOrEqualTo(navbarRect.bottom),
+          );
           await tester.tap(
             find.byKey(const ValueKey('shell-action-button-profile-day-trail')),
           );

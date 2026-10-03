@@ -42,6 +42,7 @@ void main() {
       });
       final auth = _Auth();
       final workspaces = _Workspaces();
+      when(() => workspaces.hasAuthenticatedActor).thenReturn(true);
       final events = _Events();
       final zones = _Zones();
       const user = User(
