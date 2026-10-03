@@ -111,6 +111,10 @@ const allowedSatelliteLocalApiRoutes = new Set([
   'apps/meet/src/app/api/meet-call/[meetingId]/assistant/review/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/costs/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/files/route.ts',
+  // Collaboration requires Meet room admission; preview assets use scoped capabilities.
+  'apps/meet/src/app/api/meet-call/[meetingId]/document/route.ts',
+  'apps/meet/src/app/api/meet-call/[meetingId]/programming/route.ts',
+  'apps/meet/src/app/api/meet-call/[meetingId]/programming/preview/[port]/[[...path]]/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/recording/route.ts',
   // In-call title edits preserve scheduling fields and require the creator.
   'apps/meet/src/app/api/meet-call/[meetingId]/title/route.ts',
@@ -329,7 +333,7 @@ describe('satellite app-session route inventory', () => {
     expect(financeTargetRoutes).toEqual(financeStorageAccessRoutes);
   });
 
-  it('keeps satellite local APIs limited to auth cookie handoff routes', () => {
+  it('keeps satellite local APIs limited to explicitly owned routes', () => {
     const unexpectedRoutes = satelliteAppApiRoots
       .flatMap(walkRouteFiles)
       .map(relative)
