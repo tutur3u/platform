@@ -137,7 +137,10 @@ function validateGitWorkspaceLock(base, head = 'HEAD', working = false) {
     .filter(Boolean);
   if (working)
     changed.push(
-      ...git('diff', 'HEAD', '--name-only', '-z').split('\0').filter(Boolean)
+      ...git('diff', 'HEAD', '--name-only', '-z').split('\0').filter(Boolean),
+      ...git('ls-files', '--others', '--exclude-standard', '-z')
+        .split('\0')
+        .filter(Boolean)
     );
   if (changed.some((file) => file !== 'bun.lock' && !allowed.has(file)))
     throw new Error('Release contains non-generated paths');

@@ -18,6 +18,10 @@
  */
 
 const fs = require('node:fs');
+const {
+  decodeReleaseFileBody,
+  validateReleaseFileMetadata,
+} = require('./release-file-body');
 const { validateWorkspaceLock } = require('./release-workspace-lock');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
@@ -90,7 +94,7 @@ class GitHubClient {
     this.token = token;
   }
 
-  async request(method, route, { body, query } = {}) {
+  async request(method, route, { body, query, accept } = {}) {
     const url = new URL(
       `${this.apiUrl}/repos/${this.repository}/${route.replace(/^\//u, '')}`
     );
@@ -104,7 +108,7 @@ class GitHubClient {
     const response = await fetch(url, {
       body: body ? JSON.stringify(body) : undefined,
       headers: {
-        Accept: 'application/vnd.github+json',
+        Accept: accept || 'application/vnd.github+json',
         Authorization: `Bearer ${this.token}`,
         'Content-Type': 'application/json',
         'X-GitHub-Api-Version': '2022-11-28',
@@ -132,17 +136,18 @@ class GitHubClient {
       throw new Error('Immutable file ref required');
     const response = await this.request('GET', `/contents/${file}`, {
       query: { ref: sha },
+      // The object representation retains immutable blob metadata above 1 MiB.
+      accept: 'application/vnd.github.object+json',
     });
-    if (
-      response?.type !== 'file' ||
-      response.encoding !== 'base64' ||
-      typeof response.content !== 'string'
-    )
+    validateReleaseFileMetadata(response, file);
+    if (response.encoding === 'base64')
+      return decodeReleaseFileBody(response, response);
+    if (response.encoding !== 'none' || response.content !== '')
       throw new Error('Cannot read complete release file');
-    const bytes = Buffer.from(response.content, 'base64');
-    if (bytes.length !== response.size || bytes.length > 16 * 1024 * 1024)
-      throw new Error('Incomplete release file body');
-    return bytes.toString('utf8');
+    // Derive the route only from validated metadata returned for this exact
+    // commit/path. Never follow git_url or download_url supplied in a response.
+    const blob = await this.request('GET', `/git/blobs/${response.sha}`);
+    return decodeReleaseFileBody(blob, response);
   }
 
   async findReleasePullRequest(targetBranch) {

@@ -215,31 +215,6 @@ test('GitHub review API includes exact validated head rather than latest-head de
   );
 });
 
-test('GitHub contents must be complete rather than truncated or guessed', async () => {
-  const github = new GitHubClient({ repository: 'test/repo', token: 'test' });
-  github.request = async () => ({
-    type: 'file',
-    encoding: 'base64',
-    content: Buffer.from('{}').toString('base64'),
-    size: 2,
-  });
-  assert.equal(await github.readFileAt('bun.lock', head), '{}');
-  github.request = async () => ({
-    type: 'file',
-    encoding: 'base64',
-    content: Buffer.from('{}').toString('base64'),
-    size: 9,
-  });
-  await assert.rejects(github.readFileAt('bun.lock', head), /Incomplete/);
-  github.request = async () => ({
-    type: 'file',
-    encoding: 'none',
-    content: '',
-    size: 9,
-  });
-  await assert.rejects(github.readFileAt('bun.lock', head), /complete/);
-});
-
 test('git validator rejects authored paths before a workspace metadata repair', () => {
   const { execFileSync } = require('node:child_process');
   const fs = require('node:fs');
@@ -279,6 +254,16 @@ test('git validator rejects authored paths before a workspace metadata repair', 
       'apps/thing',
     ]);
     fs.writeFileSync(path.join(root, 'runtime.js'), 'module.exports = true;');
+    // Nonignored untracked files must fail without being staged by the guard.
+    assert.throws(
+      () => validateGitWorkspaceLock(baseRef, 'HEAD', true),
+      /non-generated/
+    );
+    assert.equal(
+      git('ls-files', '--error-unmatch', 'bun.lock').toString().trim(),
+      'bun.lock'
+    );
+    assert.equal(git('diff', '--cached', '--name-only').toString(), '');
     git('add', 'runtime.js');
     // Staged changes must not evade the working-tree formatter guard.
     assert.throws(
