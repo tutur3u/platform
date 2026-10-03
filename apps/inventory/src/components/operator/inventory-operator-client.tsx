@@ -53,6 +53,7 @@ export type { InventoryOperatorView } from './operator-types';
 
 type InventoryOperatorClientProps = {
   canExportSales?: boolean;
+  canMergeSeasons?: boolean;
   view: InventoryOperatorView;
   wsId: string;
 };
@@ -70,6 +71,7 @@ const catalogTabs = ['products', 'categories'] as const;
 
 export function InventoryOperatorClient({
   canExportSales = false,
+  canMergeSeasons = false,
   view,
   wsId,
 }: InventoryOperatorClientProps) {
@@ -522,6 +524,7 @@ export function InventoryOperatorClient({
           {!isError && (view === 'commerce' || view === 'sales') ? (
             <CommercePanel
               canExportSales={canExportSales}
+              canMergeSeasons={canMergeSeasons}
               checkouts={checkoutSearch.results}
               isLoading={commerceLoading}
               query={data.filters.q}

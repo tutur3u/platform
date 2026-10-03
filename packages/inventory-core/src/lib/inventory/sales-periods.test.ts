@@ -43,6 +43,12 @@ describe('listInventorySalesPeriods', () => {
         ws_id: 'ws-exocorpse',
       },
     ];
+    periods.push({
+      ...periods[0]!,
+      id: 'merged-source',
+      name: 'Historical alias',
+      merged_into_id: 'period-visible',
+    } as (typeof periods)[number]);
     const from = vi.fn((table: string) =>
       table === 'inventory_sales_periods'
         ? chain({ data: periods, error: null })

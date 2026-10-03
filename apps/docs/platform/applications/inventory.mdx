@@ -475,6 +475,92 @@ readiness pgTAP fixtures. Its testing phase also runs the three-client
 `inventory-merge-concurrency.mjs` executor; SQL or concurrent-writer failures
 fail the gate and still pass through owned-stack cleanup.
 
+
+## Merge sales seasons and periods
+
+The Inventory web operator can merge two sales periods using an explicit, paged
+review. Both preview and apply require workspace membership, `update_invoices`
+and `delete_invoices`, plus `manage_inventory_catalog` or legacy
+`update_inventory`. The Rust migration source mirrors this contract; Web remains
+the live API. The sales page derives the merge action from this complete role
+contract on the server; missing or failed permission lookup hides the action.
+Catalog management alone does not expose it. Regression coverage includes
+`sales/page.test.tsx` and `sales-periods-panel.test.tsx`. Flutter has no
+season-merge action in this change.
+
+The destination keeps its name, dates, time zone and pricing mode. Description
+and the complete product eligibility rule set each require a source/destination
+choice. With live or upcoming source prices, calendar or pricing-mode differences
+block merging. Without those prices, calendar differences are reviewable and the
+destination calendar remains unchanged. Chosen eligibility rules must allow every
+source price product; the review displays excluded-price counts before approval.
+
+Overlapping schedules require either blocking the merge or explicitly keeping
+the destination overlap. The latter imports only uncovered source intervals with
+fresh price IDs, clipped to merge time. Every original price, captured invoice
+quote and invoice line stays intact; stock and movement history are unchanged.
+Reporting assignments move to the destination, with their original classification
+stored relationally. Replaced destination product rules retain every original
+rule identity, label and timestamp in the receipt, including rules beyond the first
+preview page. The source is archived as a durable alias, excluded from new
+selectors, and cannot be edited, restored or newly referenced. Trusted invoice
+recovery and offline request replay continue to use the original durable quote.
+
+Prices, overlap conflicts and product rules are paged at 50 rows per section.
+Confirmation requires explicit policies, resolved human labels and review of all
+pages. A server token binds actor, workspace, both periods and a frozen cutoff,
+and expires after five minutes. Its fingerprint hashes affected mutable planning
+rows and retained-history ownership counts without aggregating historical
+payloads. Refresh after expiry, concurrent changes, unresolved conflicts or a
+retryable readiness failure; acknowledgment is invalidated before retry.
+
+Merge apply and child writers coordinate on only the selected period rows.
+Assignment/price writers recheck aliases after waiting; unrelated periods and
+workspaces remain available. Missing schema/guards return 503 and perform no
+merge. Historical provenance foreign keys are deferred until transaction end,
+allowing whole-workspace cascade ordering while rejecting standalone removal of
+referenced periods and original/imported quotes.
+
+Regression coverage: `inventory-season-merge.sql` exercises actual migration,
+history, trusted recovery and transaction-boundary constraints;
+`inventory-season-merge-concurrency.mjs` uses independent PostgreSQL clients for
+writer rejection and unrelated CRUD. Both run in the existing Inventory contract
+CI lifecycle, including official type generation and owned cleanup. Route,
+internal API transport and dialog tests cover authorization, tokens, errors,
+policies, expiry and pagination. App builds and Rust tests require exact-commit CI;
+source and mocked UI checks do not establish browser or production behavior.
+
+
+The season test’s cascade control retains quote tombstones after trusted invoice
+deletion. Deletion of a workspace that still contains a live invoice has a separate
+parent-schema defect: the invoice product unit foreign key attempts a null default
+against a non-null column. An isolated parent-schema control reproduced that
+error before applying the new season migrations. The expected-defect control is
+retained as local validation evidence, outside the passing season CI contract. Season merging does not alter that existing schema.
+
+
+Season merge previews and review pages are scoped to the authenticated Inventory
+actor and workspace. Switching accounts resets the visible review and prevents
+late responses from completing another account's dialog. Before submitting,
+Inventory saves one immutable actor/workspace-bound request (original source,
+destination, policies and preview token) in the current tab's session storage.
+Storage failure prevents sending. Closing/reopening or reloading that tab
+restores an unresolved request; it is never replaced by a fresh preview.
+
+For an ambiguous response or authentication pause, Check original merge replays
+the exact saved request. The existing apply RPC checks its committed receipt
+before preview expiry or merged-source validation, so a lost success response
+can be reconciled after the token expires or source is archived. A conflict or
+validation response allows fresh review only for a first known attempt. Once
+uncertainty exists, even a retry409 retains the original request: a lock timeout
+can occur while its earlier transaction still commits. Recovery is manual and
+per tab; it does not claim a cross-tab journal or new offline navigation support.
+Mounted regressions in `use-season-merge-recovery.test.tsx` and
+`use-inventory-season-merge-review.test.tsx` cover scope changes, late responses,
+remount recovery, storage failures and lost-response/conflict/receipt sequences
+with synthetic transport. Existing isolated SQL receipt replay coverage remains
+the database evidence; browser/device and exact-CI evidence remain separate.
+
 ## Cleared checkout search
 
 The web Inventory sale dialog restores its loaded product catalog immediately when
