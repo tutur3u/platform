@@ -35,14 +35,14 @@ import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_chat_feedback.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
-import 'package:mobile/features/assistant/widgets/assistant_dock_navigation.dart';
-import 'package:mobile/features/assistant/widgets/assistant_morphing_dock.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet.dart';
+import 'package:mobile/features/assistant/widgets/assistant_dock_navigation.dart';
 import 'package:mobile/features/assistant/widgets/assistant_history_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_info_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_mode_view.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_stage_card.dart';
+import 'package:mobile/features/assistant/widgets/assistant_morphing_dock.dart';
 import 'package:mobile/features/assistant/widgets/assistant_scroll_to_bottom_overlay.dart';
 import 'package:mobile/features/assistant/widgets/assistant_settings_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_starter_prompts.dart';
@@ -122,10 +122,9 @@ class _AssistantPageState extends State<AssistantPage>
       if (!_keepLiveWhileBrowsing || !mounted) {
         return {'screen': 'unavailable'};
       }
-      final uri = GoRouter.maybeOf(context)
-          ?.routerDelegate
-          .currentConfiguration
-          .uri;
+      final uri = GoRouter.maybeOf(
+        context,
+      )?.routerDelegate.currentConfiguration.uri;
       return assistantMobileScreenContext(uri);
     },
   );

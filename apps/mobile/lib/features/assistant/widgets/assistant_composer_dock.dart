@@ -9,8 +9,8 @@ import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_options.dart';
-import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/features/assistant/widgets/assistant_dock_surface.dart';
+import 'package:mobile/l10n/l10n.dart';
 
 class AssistantComposerDock extends StatelessWidget {
   const AssistantComposerDock({
@@ -86,7 +86,6 @@ class AssistantComposerDock extends StatelessWidget {
                       focusNode: focusNode,
                       style: const TextStyle(fontSize: 16, height: 1.25),
                       minLines: 1,
-                      maxLines: 1,
                       textInputAction: TextInputAction.send,
                       onSubmitted:
                           chatState.status == AssistantChatStatus.restoring
