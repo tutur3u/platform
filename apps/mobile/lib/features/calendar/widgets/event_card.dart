@@ -28,8 +28,8 @@ class EventCard extends StatelessWidget {
     final event = layoutInfo.event;
     final start = event.startAt ?? calendarNowInContext(context);
     final end = event.endAt ?? start.add(const Duration(minutes: 30));
-    final accentColor = EventColors.foreground(event);
-    final titleColor = EventColors.foreground(event);
+    final accentColor = EventColors.inContext(event, context).accent;
+    final titleColor = EventColors.inContext(event, context).foreground;
 
     final startMinutes = start.hour * 60 + start.minute;
     final durationMinutes = end.difference(start).inMinutes.clamp(15, 1440);
@@ -54,7 +54,7 @@ class EventCard extends StatelessWidget {
         child: Container(
           margin: const EdgeInsets.only(right: 1, bottom: 1),
           decoration: BoxDecoration(
-            color: EventColors.forEvent(event),
+            color: EventColors.inContext(event, context).background,
             borderRadius: BorderRadius.circular(6),
             border: Border(left: BorderSide(color: accentColor, width: 3)),
           ),

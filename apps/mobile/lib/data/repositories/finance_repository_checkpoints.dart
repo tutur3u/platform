@@ -13,7 +13,7 @@ extension FinanceRepositoryCheckpoints on FinanceRepository {
         namespace: walletId == null
             ? 'finance.checkpointSummary'
             : 'finance.checkpointList',
-        userId: currentCacheUserId(),
+        userId: _cacheUserId(),
         workspaceId: wsId,
         params: {
           if (walletId != null) 'walletId': walletId,
@@ -27,21 +27,44 @@ extension FinanceRepositoryCheckpoints on FinanceRepository {
     T Function(Map<String, dynamic>) decode, {
     bool forceRefresh = false,
   }) async {
-    final cached = await CacheStore.instance.prefetch<T>(
-      key: key,
-      policy: _checkpointPolicy,
-      tags: ['finance:checkpoints', 'workspace:${key.workspaceId}'],
-      decode: (json) => decode(Map<String, dynamic>.from(json! as Map)),
-      fetch: fetch,
-      forceRefresh: forceRefresh,
-    );
+    T decodePayload(Object? json) =>
+        decode(Map<String, dynamic>.from(json! as Map));
+    CacheReadResult<T> cached;
+    try {
+      cached = await _cacheStore.prefetch<T>(
+        key: key,
+        policy: _checkpointPolicy,
+        tags: [
+          'module:finance',
+          'finance:checkpoints',
+          'workspace:${key.workspaceId}',
+        ],
+        decode: decodePayload,
+        fetch: () async {
+          try {
+            return await fetch();
+          } on ApiException catch (error) {
+            if (error.statusCode == 401 ||
+                (error.statusCode == 403 && !error.isVerificationRequired)) {
+              await _cacheStore.remove(key);
+            }
+            rethrow;
+          }
+        },
+        forceRefresh: forceRefresh,
+      );
+    } on Object catch (error) {
+      if (!isOfflineTransportFailure(error)) rethrow;
+      cached = await _cacheStore.read<T>(key: key, decode: decodePayload);
+      if (!cached.hasValue) rethrow;
+    }
     if (cached.data == null) {
       throw StateError('Wallet checkpoints are unavailable.');
     }
     return cached.data as T;
   }
 
-  Future<void> _invalidateCheckpoints(String wsId) => CacheStore.instance
+  Future<void> _invalidateCheckpoints(String wsId) => _cacheStore
       .invalidateTags(const ['finance:checkpoints'], workspaceId: wsId);
 
   Future<WalletCheckpointSummaryResponse> getWalletCheckpointSummary({
@@ -74,13 +97,15 @@ extension FinanceRepositoryCheckpoints on FinanceRepository {
         forceRefresh: forceRefresh,
       );
     } on Object catch (error) {
-      if (error is ApiException && error.statusCode != 0 ||
-          error is! ApiException && error is! StateError) {
-        rethrow;
-      }
+      if (!isOfflineTransportFailure(error)) rethrow;
       confirmed = const WalletCheckpointListResponse(data: [], intervals: []);
     }
-    return _overlayPendingCheckpoints(wsId, walletId, confirmed);
+    return _overlayPendingCheckpoints(
+      wsId,
+      walletId,
+      confirmed,
+      _mutationQueue.pending.value,
+    );
   }
 
   Future<WalletCheckpoint> createWalletCheckpoint({
@@ -93,10 +118,11 @@ extension FinanceRepositoryCheckpoints on FinanceRepository {
     final path = FinanceEndpoints.walletCheckpoints(wsId, walletId);
     final payload = {
       'actual_balance': actualBalance,
-      'checked_at': checkedAt.toIso8601String(),
+      'checked_at': checkedAt.toUtc().toIso8601String(),
       'note': note,
     };
     final checkpoint = await queueOrSendValue<WalletCheckpoint>(
+      queue: _mutationQueue,
       feature: 'finance',
       method: 'POST',
       path: path,
@@ -123,10 +149,11 @@ extension FinanceRepositoryCheckpoints on FinanceRepository {
   }) async {
     final path = FinanceEndpoints.walletCheckpointSummary(wsId);
     final payload = {
-      'checked_at': checkedAt.toIso8601String(),
+      'checked_at': checkedAt.toUtc().toIso8601String(),
       'entries': entries.map((entry) => entry.toJson()).toList(),
     };
     final batch = await queueOrSendValue<WalletCheckpointBatchResponse>(
+      queue: _mutationQueue,
       feature: 'finance',
       method: 'POST',
       path: path,
@@ -157,10 +184,11 @@ extension FinanceRepositoryCheckpoints on FinanceRepository {
     );
     final payload = {
       'actual_balance': actualBalance,
-      'checked_at': checkedAt.toIso8601String(),
+      'checked_at': checkedAt.toUtc().toIso8601String(),
       'note': note,
     };
     final checkpoint = await queueOrSendValue<WalletCheckpoint>(
+      queue: _mutationQueue,
       feature: 'finance',
       method: 'PATCH',
       path: path,
@@ -192,6 +220,7 @@ extension FinanceRepositoryCheckpoints on FinanceRepository {
       checkpointId,
     );
     await queueOrSendVoid(
+      queue: _mutationQueue,
       feature: 'finance',
       method: 'DELETE',
       path: path,
@@ -224,6 +253,7 @@ extension FinanceRepositoryCheckpoints on FinanceRepository {
     };
     final response =
         await queueOrSendValue<WalletCheckpointReconciliationResponse>(
+          queue: _mutationQueue,
           feature: 'finance',
           method: 'POST',
           path: path,
@@ -271,14 +301,21 @@ WalletCheckpointListResponse _overlayPendingCheckpoints(
   String wsId,
   String walletId,
   WalletCheckpointListResponse confirmed,
+  List<PendingMutationRecord> pending,
 ) {
   final rows = {for (final row in confirmed.data) row.id: row};
   final collectionPath = FinanceEndpoints.walletCheckpoints(wsId, walletId);
-  for (final edit in OfflineMutationQueue.instance.pending.value) {
+  for (final edit in pending) {
     if (edit.feature != 'finance' || edit.workspaceId != wsId) continue;
     final id = edit.entityId;
     final payload = edit.payload;
-    if (id == null || payload == null) continue;
+    if (id == null) continue;
+    if (edit.method == 'DELETE' &&
+        edit.path == FinanceEndpoints.walletCheckpoint(wsId, walletId, id)) {
+      rows.remove(id);
+      continue;
+    }
+    if (payload == null) continue;
     final isCreate = edit.method == 'POST' && edit.path == collectionPath;
     final isBatch =
         edit.method == 'POST' &&

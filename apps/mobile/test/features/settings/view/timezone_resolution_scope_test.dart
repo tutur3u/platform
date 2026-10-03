@@ -323,7 +323,7 @@ void main() {
       expect(find.text('Effective timezone: UTC'), findsNothing);
       waiting = false;
       api.pending = null;
-      await tester.tap(find.text('Personal timezone'));
+      await tester.tap(find.byKey(const ValueKey('timezone-retry-personal')));
       await tester.pumpAndSettle();
       expect(cubit.state.resolved, isTrue);
       expect(cubit.state.effective, 'UTC');
@@ -346,7 +346,7 @@ void main() {
       expect(cubit.state.resolved, isFalse);
       expect(find.text('Effective timezone: UTC'), findsNothing);
       messenger.setMockMethodCallHandler(channel, (_) async => 'UTC');
-      await tester.tap(find.text('Personal timezone'));
+      await tester.tap(find.byKey(const ValueKey('timezone-retry-personal')));
       await tester.pumpAndSettle();
       expect(cubit.state.resolved, isTrue);
       expect(find.text('Effective timezone: UTC'), findsNWidgets(2));

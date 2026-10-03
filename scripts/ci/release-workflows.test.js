@@ -180,9 +180,9 @@ test('production Vercel planner resolves once and calls affected apps in the pus
       `${productionWorkflow} must be called as a reusable job from the production push run`
     );
     assert.match(
-      reusableJob,
+      reusableJob.match(/^ {4}if:.*(?:\n {6}.*)*/mu)?.[0] ?? '',
       new RegExp(
-        `if: contains\\(fromJSON\\(needs\\.plan\\.outputs\\.workflows_json\\), '${productionWorkflow.replaceAll('.', '\\.')}'\\)`
+        `contains\\(fromJSON\\(needs\\.plan\\.outputs\\.workflows_json\\), '${productionWorkflow.replaceAll('.', '\\.')}'\\)`
       ),
       `${productionWorkflow} must stay skipped when the planner does not select it`
     );
@@ -457,7 +457,7 @@ test('Platform production build waits for release packages, deploys, and records
   const installIndex = deployJob.indexOf('Install dependencies');
   const vercelBuildIndex = deployJob.indexOf('Build Project Artifacts');
   const vercelDeployIndex = deployJob.indexOf(
-    'Deploy Project Artifacts to Vercel'
+    'Stage production artifacts without assigning domains'
   );
   const buildMarkerIndex = deployJob.indexOf(
     'Record successful Vercel build marker'
@@ -504,7 +504,7 @@ test('Platform production build waits for release packages, deploys, and records
   assert.match(deployJob, /GH_TOKEN: \$\{\{ github\.token \}\}/);
   assert.match(
     deployJob,
-    /vercel deploy --archive=tgz --prebuilt --prod --token=\$\{\{ secrets\.VERCEL_TOKEN \}\}/
+    /vercel deploy --archive=tgz --prebuilt --prod --skip-domain --token=\$\{\{ secrets\.VERCEL_TOKEN \}\}/
   );
   assert.match(deployJob, /VERCEL_MARKER_KIND: build/);
   assert.match(deployJob, /VERCEL_MARKER_KIND: deployment/);

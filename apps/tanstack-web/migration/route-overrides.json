@@ -635,7 +635,7 @@
     "api:/api/v1/users/me/profile:apps/web/src/app/api/v1/users/me/profile/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request verifies app-session auth, hydrates users and user_private_details through the server-owned Supabase REST adapter, and persists canonical display_name, bio, avatar_url, banner_url, and normalized handle through the atomic service-role RPC with same-origin mutation protection for cookie auth, username conflicts, and additive-migration fallbacks. This endpoint is migrated for the app-session contract used by TanStack contact; broader Supabase session revalidation remains tracked under auth migration work. The shared current-user app-session audience includes Lettin; retain that audience when porting."
+      "note": "Rust backend handle_backend_request verifies app-session auth for GET/HEAD/PATCH, hydrates users and user_private_details through the server-owned Supabase REST adapter, and mutates display_name, bio, handle, avatar_url, and banner_url atomically through update_public_user_profile with p_user_id from the verified actor. Cookie PATCH retains same-origin mutation protection. HEAD preserves GET authentication/status/cache headers without a response body. Both Web and Rust map PT429 to sanitized bounded Retry-After responses and missing identity migrations to 503. This is source parity only: Web remains the deployed API runtime; broader Supabase session revalidation remains tracked under auth migration work. The shared current-user app-session audience includes Lettin."
     },
     "api:/api/v1/auth/password-login:apps/web/src/legacy-api-routes/v1/auth/password-login/route.ts": {
       "methods": {
@@ -2620,6 +2620,11 @@
       "targetOwner": "rust-backend",
       "note": "First-class self-hosted ChatGPT plan sharing. Preserve deployment gating, session-only actor ownership, protected per-user filesystem credentials, serialized OAuth refresh, account-specific models and direct subscription billing. Hosted integration remains disabled pending OpenAI access. Rust implementation pending."
     },
+    "api:/api/v1/workspaces/:wsId/inventory/offline-mutations:apps/web/src/app/api/v1/workspaces/[wsId]/inventory/offline-mutations/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class, captured-actor and workspace-authorized native offline create contract. Kind-specific current permissions and strict payload validation precede a private transactional RPC that atomically commits authoritative IDs, stock, audit and deduplicated receipts. No legacy POST fallback; unavailable schema returns retryable contract-unavailable 503. Rust mutation parity pending; current production remains Next.js."
+    },
     "api:/api/v1/workspaces/:wsId/programming/problems:apps/web/src/app/api/v1/workspaces/[wsId]/programming/problems/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
@@ -2729,7 +2734,7 @@
         "POST": {
           "status": "migrated",
           "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request verifies app-session auth for POST /api/v1/inquiries, enforces same-origin mutation confirmation for cookie auth, validates the64/128/512 support inquiry limits and strict email, and inserts support_inquiries through the server-owned Supabase REST adapter with creator_id from the resolved app-session user. First-class Web GET/HEAD remain legacy-owned and fall through Rust until separate runtime evidence exists."
+          "note": "Rust backend handle_backend_request verifies app-session auth for POST /api/v1/inquiries, enforces same-origin mutation confirmation for cookie auth, validates the 64/128/512 Unicode-code-point support inquiry limits with trimmed message validation/persistence and strict email, and inserts support_inquiries through the server-owned Supabase REST adapter with creator_id from the resolved app-session user. First-class Web GET/HEAD remain legacy-owned and fall through Rust until separate runtime evidence exists."
         }
       }
     },

@@ -23,6 +23,30 @@ ProfileTimelineItem _item(String title, DateTime date) => ProfileTimelineItem(
 );
 
 void main() {
+  testWidgets('external closed dates do not paint or announce agenda', (
+    tester,
+  ) async {
+    await tester.pumpApp(
+      ProfileTimelineDateStrip(
+        open: false,
+        showToggle: false,
+        selected: DateTime(2026, 10),
+        week: DateTime(2026, 9, 28),
+        activityDays: const {},
+        onToggle: () {},
+        onSelect: (_) {},
+        onWeek: (_) {},
+        onToday: () {},
+      ),
+    );
+    expect(find.text('Agenda'), findsNothing);
+    expect(
+      tester.getSize(find.byKey(const ValueKey('timeline-date-slot'))).height,
+      0,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     final font = Platform.environment['TIMELINE_MATERIAL_FONT'];

@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { recordEvents, runCases } = vi.hoisted(() => ({
+const { recordEvents, runCases, spawnProcess } = vi.hoisted(() => ({
   recordEvents: vi.fn(),
+  spawnProcess: vi.fn(),
   runCases: vi.fn(),
 }));
+
+vi.mock('node:child_process', () => ({ spawn: spawnProcess }));
 
 vi.mock('../platform-devbox', () => ({
   recordDevboxAgentEvents: recordEvents,
@@ -55,5 +58,33 @@ describe('Judge job dispatch', () => {
       completion: { exitCode: 0, status: 'succeeded' },
       runId: 'run-1',
     });
+  });
+});
+
+describe('Reserved Playground command before hosted API integration', () => {
+  it.each([
+    ['__ttr_playground_v1__', 'encoded-private-payload'],
+    ['__ttr_playground_v1__'],
+  ])('fails closed without host execution for %j', async (...command) => {
+    vi.clearAllMocks();
+    recordEvents.mockResolvedValue({ ok: true });
+    const result = await executeDevboxAgentJob(
+      { command, leaseId: 'lease-1', runId: 'run-1' },
+      { baseUrl: 'https://example.com', token: 'synthetic-token' }
+    );
+    expect(result).toEqual({ exitCode: 1, status: 'failed' });
+    expect(spawnProcess).not.toHaveBeenCalled();
+    expect(runCases).not.toHaveBeenCalled();
+    expect(recordEvents).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: {
+          completion: { exitCode: 1, status: 'failed' },
+          runId: 'run-1',
+        },
+      })
+    );
+    expect(JSON.stringify(recordEvents.mock.calls)).not.toContain(
+      'encoded-private-payload'
+    );
   });
 });

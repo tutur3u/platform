@@ -150,7 +150,7 @@ void main() {
       expect(cubit.state.workspaceLoaded, isTrue);
       expect(cubit.state.resolved, isFalse);
       await cubit.save('Europe/London');
-      expect(requests, 4);
+      expect(requests, 5, reason: 'Known personal scope explicitly saves');
       attempt = 0;
       await cubit.reload();
       expect(cubit.state.workspace, 'Asia/Saigon');

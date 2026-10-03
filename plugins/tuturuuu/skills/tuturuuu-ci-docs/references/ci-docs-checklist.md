@@ -2,6 +2,14 @@
 
 Use this checklist when changing CI, validators, docs, or repo automation.
 
+## Rollback And Mixed-Version Recovery
+
+For Instant Rollback, incompatible satellite/API versions, or a rollout incident,
+use `$tuturuuu-rollout-recovery` and its
+[recovery evidence](../../tuturuuu-rollout-recovery/references/recovery-evidence.md).
+Keep the current skill's workflow ownership and migration prerequisites; recovery guidance
+does not authorize promotion.
+
 ## CI
 
 - Inspect nearby workflows before adding a new one.

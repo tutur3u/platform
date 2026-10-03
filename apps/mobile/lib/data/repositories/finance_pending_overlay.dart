@@ -1,4 +1,6 @@
+import 'package:mobile/core/cache/local_search.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
+import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 
@@ -11,7 +13,13 @@ List<Wallet> overlayPendingWallets(
   for (final mutation in pending) {
     if (mutation.feature != 'finance' ||
         mutation.workspaceId != workspaceId ||
-        !mutation.path.contains('/wallets')) {
+        !(mutation.path == FinanceEndpoints.wallets(workspaceId) ||
+            (mutation.entityId != null &&
+                mutation.path ==
+                    FinanceEndpoints.wallet(
+                      workspaceId,
+                      mutation.entityId!,
+                    )))) {
       continue;
     }
     final id = mutation.entityId;
@@ -41,8 +49,14 @@ List<Transaction> overlayPendingTransactions(
   for (final mutation in pending) {
     if (mutation.feature != 'finance' ||
         mutation.workspaceId != workspaceId ||
-        !(mutation.path.contains('/transactions') ||
-            mutation.path.contains('/transfers'))) {
+        !(mutation.path == FinanceEndpoints.transactions(workspaceId) ||
+            mutation.path == FinanceEndpoints.transfers(workspaceId) ||
+            (mutation.entityId != null &&
+                mutation.path ==
+                    FinanceEndpoints.transaction(
+                      workspaceId,
+                      mutation.entityId!,
+                    )))) {
       continue;
     }
     final originId = mutation.entityId;
@@ -69,11 +83,6 @@ List<Transaction> overlayPendingTransactions(
     if (walletId != null && resolvedWallet != walletId) continue;
     final description =
         payload['description'] as String? ?? existing?.description ?? '';
-    if (search != null &&
-        search.isNotEmpty &&
-        !description.toLowerCase().contains(search.toLowerCase())) {
-      continue;
-    }
     rows[id] = Transaction.fromJson({
       ...?existing?.toJson(),
       'id': id,
@@ -98,11 +107,24 @@ List<Transaction> overlayPendingTransactions(
           mutation.createdAt.toIso8601String(),
     });
   }
-  final result = rows.values.toList(growable: false)
-    ..sort(
-      (a, b) => (b.takenAt ?? b.createdAt ?? DateTime(0)).compareTo(
-        a.takenAt ?? a.createdAt ?? DateTime(0),
-      ),
-    );
+  final result =
+      rows.values
+          .where(
+            (row) =>
+                search == null ||
+                search.isEmpty ||
+                (row.description != '[CONFIDENTIAL]' &&
+                    localIlike(row.description, search)),
+          )
+          .toList(growable: false)
+        ..sort((a, b) {
+          final taken = (b.takenAt ?? b.createdAt ?? DateTime(0)).compareTo(
+            a.takenAt ?? a.createdAt ?? DateTime(0),
+          );
+          if (taken != 0) return taken;
+          return (b.createdAt ?? DateTime(0)).compareTo(
+            a.createdAt ?? DateTime(0),
+          );
+        });
   return result;
 }

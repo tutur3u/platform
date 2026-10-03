@@ -159,58 +159,59 @@ class _ProfileActivitySectionState extends State<ProfileActivitySection> {
           ).typography.large.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 12),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (final entry in [
-              (l10n.timerToday, stats.todayTime, 'calendar'),
-              (l10n.timerThisWeek, stats.weekTime, 'tasks'),
-              (l10n.timerThisMonth, stats.monthTime, 'mail'),
-            ])
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Builder(
-                    builder: (context) {
-                      final palette = AppCardPalette.resolve(
-                        context,
-                        index: 0,
-                        moduleId: entry.$3,
-                      );
-                      return Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: palette.background,
-                          border: Border.all(
-                            color: palette.border.withValues(alpha: .5),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
+            final columns = constraints.maxWidth >= 480 * scale ? 3 : 1;
+            final width =
+                ((constraints.maxWidth - 12 * (columns - 1)) / columns)
+                    .floorToDouble();
+            return Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                for (final entry in [
+                  (l10n.timerToday, stats.todayTime, 'calendar'),
+                  (l10n.timerThisWeek, stats.weekTime, 'tasks'),
+                  (l10n.timerThisMonth, stats.monthTime, 'mail'),
+                ])
+                  SizedBox(
+                    width: width,
+                    child: Builder(
+                      builder: (context) {
+                        final palette = AppCardPalette.resolve(
+                          context,
+                          index: 0,
+                          moduleId: entry.$3,
+                        );
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                entry.$1,
+                                style: shad.Theme.of(
+                                  context,
+                                ).typography.textSmall,
+                              ),
+                              Text(
+                                l10n.profileTrackedMinutes(entry.$2 ~/ 60),
+                                style: shad.Theme.of(context).typography.base
+                                    .copyWith(
+                                      color: palette.textColor,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                            ],
                           ),
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              entry.$1,
-                              style: shad.Theme.of(context).typography.textSmall
-                                  .copyWith(color: palette.textColor),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              l10n.profileTrackedMinutes(entry.$2 ~/ 60),
-                              style: shad.Theme.of(context).typography.base
-                                  .copyWith(
-                                    color: palette.textColor,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ),
-          ],
+              ],
+            );
+          },
         ),
         const SizedBox(height: 16),
         ProfileActivityChart(activity: stats.dailyActivity),

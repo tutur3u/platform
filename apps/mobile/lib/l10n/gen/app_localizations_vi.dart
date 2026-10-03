@@ -27,7 +27,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get workspaceHiddenEmpty => 'Không có không gian làm việc đã ẩn';
 
   @override
-  String get workspaceHiddenLoadError => 'Không thể làm mới danh sách đã ẩn. Danh sách đã lưu được giữ lại.';
+  String get workspaceHiddenLoadError => 'Không thể tải tùy chọn hiển thị. Các lựa chọn ẩn đã lưu được giữ lại.';
 
   @override
   String get workspaceHiddenUpdateError => 'Không thể lưu thay đổi. Hãy thử lại khi có kết nối.';
@@ -9335,6 +9335,27 @@ class AppLocalizationsVi extends AppLocalizations {
   String get cacheCategoryOther => 'Dữ liệu khác';
 
   @override
+  String get offlineDependencyWaiting => 'Đang chờ các thay đổi liên quan. Đồng bộ sẽ tự động tiếp tục.';
+
+  @override
+  String get offlineDependencyMissing => 'Một mục cục bộ liên quan đã bị hủy hoặc xóa. Hãy kiểm tra thay đổi này.';
+
+  @override
+  String get offlineDependencyCycle => 'Các thay đổi liên quan phụ thuộc lẫn nhau. Hãy kiểm tra các mục tham chiếu.';
+
+  @override
+  String get offlineDependencyAmbiguous => 'Nhiều thao tác tạo đang chờ dùng cùng một mục cục bộ. Hãy kiểm tra thay đổi này.';
+
+  @override
+  String get offlineDependencyInvalid => 'Thay đổi đã lưu có dữ liệu không hợp lệ. Hãy kiểm tra trước khi đồng bộ.';
+
+  @override
+  String get offlineDependencyContract => 'Đang chờ máy chủ hỗ trợ. Thay đổi đã được lưu và sẽ tự động thử lại.';
+
+  @override
+  String get offlineEditSyncing => 'Đang đồng bộ…';
+
+  @override
   String get offlineEditQueued => 'Đang chờ đồng bộ';
 
   @override
@@ -9487,7 +9508,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsTimezoneRateLimited => 'Quá nhiều yêu cầu. Vui lòng chờ trước khi thử lại.';
 
   @override
-  String get settingsTimezoneError => 'Không thể tải hoặc lưu múi giờ. Nhấn để thử lại.';
+  String get settingsTimezoneRetry => 'Thử lại múi giờ';
+
+  @override
+  String get settingsTimezoneError => 'Không thể tải hoặc lưu múi giờ. Hãy thử lại hoặc sửa tùy chọn đã tải.';
 
   @override
   String get calendarInvalidLocalTime => 'Chọn thời gian bắt đầu và kết thúc hợp lệ. Một số thời điểm không tồn tại khi đổi giờ mùa hè.';
@@ -9594,6 +9618,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryStockHealthUnknown => 'Chưa có dữ liệu';
 
   @override
+  String get inventoryProductDeleteConfirm => 'Xóa sản phẩm này? Nếu giao dịch đã có tham chiếu đến sản phẩm, máy chủ sẽ lưu trữ sản phẩm khi đồng bộ.';
+
+  @override
+  String get inventorySeasonPriceCached => 'Bản nháp ngoại tuyến sử dụng giá mùa đã lưu. Giá và tình trạng hàng sẽ được kiểm tra khi đồng bộ.';
+
+  @override
   String get inventorySeasonPriceLoading => 'Đang kiểm tra giá mùa hiện tại…';
 
   @override
@@ -9621,4 +9651,66 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventorySeasonHistoricalReadOnly => 'Lịch sử bán theo mùa chỉ có thể xem tại đây. Giá đã ghi nhận được giữ nguyên.';
+
+  @override
+  String get offlinePreparationTitle => 'Dữ liệu ngoại tuyến';
+
+  @override
+  String get offlinePreparationCacheAll => 'Tải tất cả';
+
+  @override
+  String get offlinePreparationDescription => 'Tải dữ liệu không gian làm việc để dùng ngoại tuyến. Bộ nhớ đệm chịu giới hạn lưu trữ; tệp và dịch vụ trực tuyến vẫn có thể cần kết nối.';
+
+  @override
+  String get offlinePreparationQueued => 'Chưa tải';
+
+  @override
+  String get offlinePreparationWaiting => 'Đang chờ';
+
+  @override
+  String get offlinePreparationDownloading => 'Đang tải';
+
+  @override
+  String get offlinePreparationReady => 'Đã tải';
+
+  @override
+  String get offlinePreparationFailed => 'Tải thất bại';
+
+  @override
+  String get offlinePreparationUnavailable => 'Không khả dụng';
+
+  @override
+  String offlinePreparationLastSuccess(String time) {
+    return 'Lần tải gần nhất: $time';
+  }
+
+  @override
+  String offlinePreparationProgress(int completed, int total) {
+    return 'Đã tải $completed/$total mô-đun';
+  }
+
+  @override
+  String get offlinePreparationNeedsRefresh => 'Cần làm mới';
+
+  @override
+  String get inventoryCheckoutReconcileCart => 'Đối soát giỏ hàng';
+
+  @override
+  String get inventoryCheckoutReconcileCartHelp => 'Làm mới giá và loại bỏ sản phẩm không còn phù hợp với kỳ bán hàng này.';
+
+  @override
+  String get inventoryCheckoutCartReconciled => 'Đã cập nhật giỏ hàng. Kiểm tra tổng tiền trước khi tạo đơn.';
+
+  @override
+  String inventoryCheckoutCartRemoved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Đã loại bỏ $count sản phẩm không còn khả dụng. Kiểm tra giỏ hàng trước khi tạo đơn.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inventoryCheckoutPeriodRulesChanged => 'Một số sản phẩm không phù hợp với kỳ bán hàng này. Đối soát giỏ hàng để tiếp tục.';
 }

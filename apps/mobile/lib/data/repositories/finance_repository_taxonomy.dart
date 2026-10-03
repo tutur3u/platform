@@ -1,24 +1,42 @@
 part of 'finance_repository.dart';
 
+Future<List<dynamic>> _financeSetupRows(Future<List<dynamic>> read) async {
+  try {
+    return await read;
+  } on Object catch (error) {
+    if (CacheStore.awaitingRevalidation || !isOfflineTransportFailure(error)) {
+      rethrow;
+    }
+    return const [];
+  }
+}
+
 mixin FinanceRepositoryTaxonomy {
   ApiClient get _api;
+  CacheStore get _cacheStore;
+  String? Function() get _cacheUserId;
+  OfflineMutationQueue get _mutationQueue;
 
   // ── Categories ──────────────────────────────────
 
   Future<List<TransactionCategory>> getCategories(String wsId) async {
     final path = FinanceEndpoints.categories(wsId);
-    final response = await readThroughJsonList(
-      api: _api,
-      namespace: 'finance.categories',
-      workspaceId: wsId,
-      path: path,
+    final response = await _financeSetupRows(
+      readThroughJsonList(
+        api: _api,
+        namespace: 'finance.categories',
+        workspaceId: wsId,
+        path: path,
+        cacheStore: _cacheStore,
+        cacheUserId: _cacheUserId,
+      ),
     );
     final rows = overlayPendingCollection(
       workspaceId: wsId,
       feature: 'finance',
       pathContains: path,
       source: response.whereType<Map<String, dynamic>>().toList(),
-      pending: await OfflineMutationQueue.instance.listPending(),
+      pending: await _mutationQueue.listPending(),
       normalizeCreate: (payload) => {...payload, 'ws_id': wsId},
     );
     return rows.map(TransactionCategory.fromJson).toList();
@@ -39,6 +57,8 @@ mixin FinanceRepositoryTaxonomy {
       'color': color,
     };
     await queueOrSendVoid(
+      queue: _mutationQueue,
+      apiClient: _api,
       feature: 'finance',
       method: 'POST',
       path: path,
@@ -46,6 +66,9 @@ mixin FinanceRepositoryTaxonomy {
       payload: payload,
       send: () async {
         await _api.postJson(path, payload);
+        await _cacheStore.invalidateTags(const [
+          'module:finance',
+        ], workspaceId: wsId);
       },
     );
   }
@@ -67,6 +90,8 @@ mixin FinanceRepositoryTaxonomy {
 
     final path = FinanceEndpoints.category(wsId, categoryId);
     await queueOrSendVoid(
+      queue: _mutationQueue,
+      apiClient: _api,
       feature: 'finance',
       method: 'PUT',
       path: path,
@@ -75,6 +100,9 @@ mixin FinanceRepositoryTaxonomy {
       entityId: categoryId,
       send: () async {
         await _api.putJson(path, body);
+        await _cacheStore.invalidateTags(const [
+          'module:finance',
+        ], workspaceId: wsId);
       },
     );
   }
@@ -85,6 +113,8 @@ mixin FinanceRepositoryTaxonomy {
   }) async {
     final path = FinanceEndpoints.category(wsId, categoryId);
     await queueOrSendVoid(
+      queue: _mutationQueue,
+      apiClient: _api,
       feature: 'finance',
       method: 'DELETE',
       path: path,
@@ -92,6 +122,9 @@ mixin FinanceRepositoryTaxonomy {
       entityId: categoryId,
       send: () async {
         await _api.deleteJson(path);
+        await _cacheStore.invalidateTags(const [
+          'module:finance',
+        ], workspaceId: wsId);
       },
     );
   }
@@ -100,18 +133,22 @@ mixin FinanceRepositoryTaxonomy {
 
   Future<List<FinanceTag>> getTags(String wsId) async {
     final path = FinanceEndpoints.tags(wsId);
-    final response = await readThroughJsonList(
-      api: _api,
-      namespace: 'finance.tags',
-      workspaceId: wsId,
-      path: path,
+    final response = await _financeSetupRows(
+      readThroughJsonList(
+        api: _api,
+        namespace: 'finance.tags',
+        workspaceId: wsId,
+        path: path,
+        cacheStore: _cacheStore,
+        cacheUserId: _cacheUserId,
+      ),
     );
     final rows = overlayPendingCollection(
       workspaceId: wsId,
       feature: 'finance',
       pathContains: path,
       source: response.whereType<Map<String, dynamic>>().toList(),
-      pending: await OfflineMutationQueue.instance.listPending(),
+      pending: await _mutationQueue.listPending(),
       normalizeCreate: (payload) => {...payload, 'ws_id': wsId},
     );
     return rows.map(FinanceTag.fromJson).toList();
@@ -130,6 +167,8 @@ mixin FinanceRepositoryTaxonomy {
       'description': description,
     };
     await queueOrSendVoid(
+      queue: _mutationQueue,
+      apiClient: _api,
       feature: 'finance',
       method: 'POST',
       path: path,
@@ -137,6 +176,9 @@ mixin FinanceRepositoryTaxonomy {
       payload: payload,
       send: () async {
         await _api.postJson(path, payload);
+        await _cacheStore.invalidateTags(const [
+          'module:finance',
+        ], workspaceId: wsId);
       },
     );
   }
@@ -155,6 +197,8 @@ mixin FinanceRepositoryTaxonomy {
       'description': description,
     };
     await queueOrSendVoid(
+      queue: _mutationQueue,
+      apiClient: _api,
       feature: 'finance',
       method: 'PUT',
       path: path,
@@ -163,6 +207,9 @@ mixin FinanceRepositoryTaxonomy {
       entityId: tagId,
       send: () async {
         await _api.putJson(path, payload);
+        await _cacheStore.invalidateTags(const [
+          'module:finance',
+        ], workspaceId: wsId);
       },
     );
   }
@@ -170,6 +217,8 @@ mixin FinanceRepositoryTaxonomy {
   Future<void> deleteTag({required String wsId, required String tagId}) async {
     final path = FinanceEndpoints.tag(wsId, tagId);
     await queueOrSendVoid(
+      queue: _mutationQueue,
+      apiClient: _api,
       feature: 'finance',
       method: 'DELETE',
       path: path,
@@ -177,6 +226,9 @@ mixin FinanceRepositoryTaxonomy {
       entityId: tagId,
       send: () async {
         await _api.deleteJson(path);
+        await _cacheStore.invalidateTags(const [
+          'module:finance',
+        ], workspaceId: wsId);
       },
     );
   }

@@ -8,7 +8,6 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/profile/profile_timeline_repository.dart';
 import 'package:mobile/features/profile/view/profile_timeline_days.dart';
 import 'package:mobile/features/profile/view/profile_timeline_section.dart';
-import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
@@ -108,9 +107,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.textContaining('sự kiện'), findsWidgets);
-      final rows = tester
-          .widgetList<SettingsTile>(find.byType(SettingsTile))
-          .toList();
+      final rows = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
       expect(rows.last.onTap, isNull);
       expect(tester.takeException(), isNull);
     },

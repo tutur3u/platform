@@ -13,6 +13,7 @@ import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:mobile/features/calendar/view/calendar_timezone_listener.dart';
 import 'package:mobile/features/calendar/widgets/agenda_view.dart';
 import 'package:mobile/features/calendar/widgets/calendar_connections_sheet.dart';
+import 'package:mobile/features/calendar/widgets/calendar_minute_clock.dart';
 import 'package:mobile/features/calendar/widgets/day_schedule_view.dart';
 import 'package:mobile/features/calendar/widgets/event_detail_sheet.dart';
 import 'package:mobile/features/calendar/widgets/event_form_sheet.dart';
@@ -60,9 +61,11 @@ class CalendarPage extends StatelessWidget {
         if (wsId != null) unawaited(cubit.loadEvents(wsId, forceRefresh: true));
         return cubit;
       },
-      child: _CalendarView(
-        initialEventId: initialEventId,
-        repositoryFactory: repositoryFactory,
+      child: CalendarMinuteClock(
+        child: _CalendarView(
+          initialEventId: initialEventId,
+          repositoryFactory: repositoryFactory,
+        ),
       ),
     );
   }
@@ -243,6 +246,11 @@ class _CalendarViewState extends State<_CalendarView> {
                   ?.id;
               return ShellChromeActions(
                 ownerId: 'calendar-root',
+                onResetSection: () => unawaited(
+                  context.read<CalendarCubit>().setViewMode(
+                    _defaultCalendarMode(context),
+                  ),
+                ),
                 locations: {
                   Routes.calendar,
                   if (widget.initialEventId case final eventId?)

@@ -54,6 +54,7 @@ import {
   FormMessage,
 } from '../form';
 import { Input } from '../input';
+import { Popover, PopoverTrigger } from '../popover';
 import { TUTURUUU_LOGO_URL } from './tuturuuu-logo';
 import { WorkspacePickerContent } from './workspace-picker-content';
 import {
@@ -93,6 +94,7 @@ export function WorkspaceSelect({
   triggerClassName,
   platformWorkspaceSetupUrl,
   cacheScope,
+  presentation = 'dropdown',
 }: {
   wsId: string;
   hideLeading?: boolean;
@@ -113,7 +115,11 @@ export function WorkspaceSelect({
   platformWorkspaceSetupUrl?: string;
   /** Authenticated identity used to isolate user-specific picker caches. */
   cacheScope?: string;
+  presentation?: 'fullscreen' | 'dropdown';
 }) {
+  const Picker = presentation === 'dropdown' ? Popover : Dialog;
+  const PickerTrigger =
+    presentation === 'dropdown' ? PopoverTrigger : DialogTrigger;
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
@@ -417,8 +423,8 @@ export function WorkspaceSelect({
           setShowNewWorkspaceDialog(open);
         }}
       >
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild disabled={!hasSelectableWorkspaces}>
+        <Picker open={open} onOpenChange={setOpen}>
+          <PickerTrigger asChild disabled={!hasSelectableWorkspaces}>
             <Button
               size="xs"
               variant="outline"
@@ -485,8 +491,10 @@ export function WorkspaceSelect({
                 <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
               )}
             </Button>
-          </DialogTrigger>
+          </PickerTrigger>
           <WorkspacePickerContent
+            presentation={presentation}
+            onClose={() => setOpen(false)}
             workspaces={workspaces ?? []}
             currentId={workspace?.id}
             defaultId={defaultWorkspaceId}
@@ -517,7 +525,7 @@ export function WorkspaceSelect({
               </Command>
             }
           />
-        </Dialog>
+        </Picker>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('common.create_workspace')}</DialogTitle>

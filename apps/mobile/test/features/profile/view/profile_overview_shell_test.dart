@@ -519,8 +519,8 @@ void main() {
           final browser = find.byType(ProfileTimelineBrowser);
           final panelRect = tester.getRect(section);
           var browserRect = tester.getRect(browser);
-          expect(browserRect.left, greaterThan(panelRect.left));
-          expect(browserRect.right, lessThan(panelRect.right));
+          expect(browserRect.left, equals(panelRect.left));
+          expect(browserRect.right, equals(panelRect.right));
           final outer = tester.state<ScrollableState>(
             find.ancestor(of: section, matching: find.byType(Scrollable)).first,
           );
@@ -532,7 +532,9 @@ void main() {
           await _pump(tester);
           browserRect = tester.getRect(browser);
           expect(browserRect.top, greaterThanOrEqualTo(navbarRect.bottom));
-          await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
+          await tester.tap(
+            find.byKey(const ValueKey('shell-action-button-profile-day-trail')),
+          );
           await _pump(tester);
           expect(tester.getRect(browser), browserRect);
           final day = DateTime.now();
@@ -564,7 +566,8 @@ void main() {
           var closed = false;
           final closing = CacheStore.instance.closeForTesting();
           unawaited(closing.then((_) => closed = true));
-          for (var i = 0; i < 30 && !closed; i++) {
+          // Real filesystem teardown may exceed frame-render deadlines.
+          for (var i = 0; i < 200 && !closed; i++) {
             await tester.runAsync(
               () => Future<void>.delayed(const Duration(milliseconds: 50)),
             );
@@ -622,6 +625,13 @@ void main() {
       await tester.tap(find.byTooltip('Overview'));
       await _pump(tester);
       expect(find.text('Overview'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(ProfileOverviewPage),
+          matching: find.text('Overview'),
+        ),
+        findsNothing,
+      );
       await tester.tap(find.text('Identity'));
       await _pump(tester);
       expect(
@@ -662,6 +672,13 @@ void main() {
       await tester.tap(find.byTooltip('Overview'));
       await _pump(tester);
       expect(find.text('Overview'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(ProfileOverviewPage),
+          matching: find.text('Overview'),
+        ),
+        findsNothing,
+      );
       expect(tester.takeException(), isNull);
     });
   }

@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/utils/currency_conversion.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
@@ -17,11 +20,47 @@ part 'finance_state.dart';
 const _sentinel = Object();
 
 class FinanceCubit extends Cubit<FinanceState> {
-  FinanceCubit({required FinanceRepository financeRepository})
-    : _repo = financeRepository,
-      super(const FinanceState());
+  FinanceCubit({
+    required FinanceRepository financeRepository,
+    CacheStore? cacheStore,
+    String? Function()? currentUserId,
+  }) : _repo = financeRepository,
+       _store = cacheStore ?? CacheStore.instance,
+       _mutationQueue = financeRepository.mutationQueue,
+       _currentUserId = currentUserId ?? currentCacheUserId,
+       super(const FinanceState()) {
+    _mutationQueue.syncRevision.addListener(_onOfflineSync);
+  }
+
+  void _onOfflineSync() {
+    final wsId = _requestedWorkspaceId;
+    if (isClosed || wsId == null || _requestedUserId != _currentUserId()) {
+      return;
+    }
+    unawaited(loadFinanceData(wsId).then<void>((_) {}, onError: (Object _) {}));
+  }
+
+  @override
+  Future<void> close() {
+    _generation++;
+    _mutationQueue.syncRevision.removeListener(_onOfflineSync);
+    return super.close();
+  }
 
   final FinanceRepository _repo;
+  final OfflineMutationQueue _mutationQueue;
+  final CacheStore _store;
+  final String? Function() _currentUserId;
+  int _generation = 0;
+  String? _requestedWorkspaceId;
+  String? _loadedUserId;
+  String? _requestedUserId;
+
+  bool _isCurrent(int generation, String? userId, String wsId) =>
+      !isClosed &&
+      _generation == generation &&
+      _currentUserId() == userId &&
+      _requestedWorkspaceId == wsId;
   static const CachePolicy _cachePolicy = CachePolicies.summary;
   static const String _cacheTag = financeOverviewCacheTag;
   static final Map<String, _FinanceCacheEntry> _cache = {};
@@ -65,6 +104,13 @@ class FinanceCubit extends Cubit<FinanceState> {
     required String wsId,
     bool forceRefresh = false,
   }) async {
+    final userId = currentCacheUserId();
+    void ensureActor() {
+      if (currentCacheUserId() != userId) {
+        throw StateError('Finance prewarm account changed.');
+      }
+    }
+
     await CacheStore.instance.prefetch<FinanceState>(
       key: _cacheKey(wsId),
       policy: _cachePolicy,
@@ -72,14 +118,21 @@ class FinanceCubit extends Cubit<FinanceState> {
       forceRefresh: forceRefresh,
       tags: [_cacheTag, 'workspace:$wsId', 'module:finance'],
       fetch: () async {
-        final wallets = await financeRepository.getWallets(wsId);
-        final recentTransactions = await financeRepository
-            .getTransactionsInfinite(wsId: wsId, limit: 10);
-        final workspaceCurrency = await financeRepository
-            .getWorkspaceDefaultCurrency(wsId);
-        final exchangeRates = await financeRepository
-            .getExchangeRates()
-            .catchError((_) => <ExchangeRate>[]);
+        ensureActor();
+        final (
+          wallets,
+          recentTransactions,
+          workspaceCurrency,
+          exchangeRates,
+        ) = await (
+          financeRepository.getWallets(wsId),
+          financeRepository.getTransactionsInfinite(wsId: wsId, limit: 10),
+          financeRepository.getWorkspaceDefaultCurrency(wsId),
+          financeRepository.getExchangeRates().catchError(
+            (_) => <ExchangeRate>[],
+          ),
+        ).wait;
+        ensureActor();
         final sortedWallets = sortWalletsForDisplay(
           wallets: wallets,
           workspaceCurrency: workspaceCurrency,
@@ -103,25 +156,46 @@ class FinanceCubit extends Cubit<FinanceState> {
 
   /// Loads wallets and recent transactions for the workspace.
   Future<void> loadFinanceData(String wsId, {bool forceRefresh = false}) async {
-    final cacheKey = _cacheKey(wsId);
-    final memoryCacheKey = _memoryCacheKey(wsId);
-    final diskCached = await CacheStore.instance.read<FinanceState>(
+    if (isClosed) {
+      return;
+    }
+    final generation = ++_generation;
+    final userId = _currentUserId();
+    _requestedWorkspaceId = wsId;
+    _requestedUserId = userId;
+    final hasVisibleData =
+        _loadedWorkspaceId == wsId && _loadedUserId == userId;
+    if (!hasVisibleData) {
+      emit(const FinanceState(status: FinanceStatus.loading));
+    }
+    final cacheKey = CacheKey(
+      namespace: 'finance.overview',
+      userId: userId,
+      workspaceId: wsId,
+      locale: currentCacheLocaleTag(),
+    );
+    final memoryCacheKey = '${userId ?? 'anonymous'}::$wsId';
+    final diskCached = await _store.read<FinanceState>(
       key: cacheKey,
       decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
     );
+    if (!_isCurrent(generation, userId, wsId)) {
+      return;
+    }
     final cached = _cache[memoryCacheKey];
-    final hasVisibleData = _loadedWorkspaceId == wsId;
     final hasDiskSnapshot = diskCached.hasValue && diskCached.data != null;
     final shouldShowDiskSnapshot =
         hasDiskSnapshot && (!forceRefresh || !hasVisibleData);
 
     if (shouldShowDiskSnapshot) {
       _loadedWorkspaceId = wsId;
+      _loadedUserId = userId;
       emit(diskCached.data!);
     }
 
     if (!forceRefresh && cached != null) {
       _loadedWorkspaceId = wsId;
+      _loadedUserId = userId;
       emit(cached.state);
     } else if (!hasVisibleData && !shouldShowDiskSnapshot) {
       emit(
@@ -146,20 +220,33 @@ class FinanceCubit extends Cubit<FinanceState> {
     }
 
     try {
-      final walletsFuture = _repo.getWallets(wsId);
-      final recentTransactionsFuture = _repo.getTransactionsInfinite(
-        wsId: wsId,
-        limit: 10,
+      final walletsFuture = CacheStore.awaitRevalidation(
+        () => _repo.getWallets(wsId),
       );
-      final workspaceCurrencyFuture = _repo.getWorkspaceDefaultCurrency(wsId);
-      final exchangeRatesFuture = _repo.getExchangeRates().catchError(
-        (_) => <ExchangeRate>[],
+      final recentTransactionsFuture = CacheStore.awaitRevalidation(
+        () => _repo.getTransactionsInfinite(wsId: wsId, limit: 10),
       );
+      final workspaceCurrencyFuture = CacheStore.awaitRevalidation(
+        () => _repo.getWorkspaceDefaultCurrency(wsId),
+      );
+      final exchangeRatesFuture = CacheStore.awaitRevalidation(
+        _repo.getExchangeRates,
+      ).catchError((_) => <ExchangeRate>[]);
 
-      final wallets = await walletsFuture;
-      final recentTransactionsPage = await recentTransactionsFuture;
-      final workspaceCurrency = await workspaceCurrencyFuture;
-      final exchangeRates = await exchangeRatesFuture;
+      final (
+        wallets,
+        recentTransactionsPage,
+        workspaceCurrency,
+        exchangeRates,
+      ) = await (
+        walletsFuture,
+        recentTransactionsFuture,
+        workspaceCurrencyFuture,
+        exchangeRatesFuture,
+      ).wait;
+      if (!_isCurrent(generation, userId, wsId)) {
+        return;
+      }
 
       final sortedWallets = sortWalletsForDisplay(
         wallets: wallets,
@@ -184,14 +271,18 @@ class FinanceCubit extends Cubit<FinanceState> {
         fetchedAt: DateTime.now(),
       );
       _loadedWorkspaceId = wsId;
+      _loadedUserId = userId;
       emit(nextState);
-      await CacheStore.instance.write(
+      await _store.write(
         key: cacheKey,
         policy: _cachePolicy,
         payload: _stateToCacheJson(nextState),
         tags: [_cacheTag, 'workspace:$wsId', 'module:finance'],
       );
-    } on Exception catch (e) {
+    } on Object catch (e) {
+      if (!_isCurrent(generation, userId, wsId)) {
+        return;
+      }
       if (cached != null || hasVisibleData || diskCached.hasValue) {
         emit(
           (cached?.state ?? state).copyWith(

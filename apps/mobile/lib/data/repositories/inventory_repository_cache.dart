@@ -32,7 +32,7 @@ extension InventoryCacheSnapshot on InventoryRepository {
     final data = overlayPendingProducts(
       wsId,
       cached.data,
-      OfflineMutationQueue.instance.pending.value,
+      _mutationQueue.pending.value,
       query: query.trim(),
     );
     return (data: data, count: cached.count + data.length - cached.data.length);
@@ -54,7 +54,12 @@ extension InventoryCacheSnapshot on InventoryRepository {
       params: {'limit': '$limit', 'offset': '0', 'periodId': periodId ?? ''},
     );
     if (cached == null) return null;
-    return _overlayPendingInventorySales(wsId, cached, periodId: periodId);
+    return _overlayPendingInventorySales(
+      wsId,
+      cached,
+      periodId: periodId,
+      pending: _mutationQueue.pending.value,
+    );
   }
 
   List<InventorySalesPeriod>? peekSalesPeriods(String wsId) => _peekInventory(
@@ -89,7 +94,7 @@ extension _InventoryRepositoryCache on InventoryRepository {
   }) {
     return CacheKey(
       namespace: 'inventory.$namespace',
-      userId: currentCacheUserId(),
+      userId: _cacheUserId(),
       workspaceId: wsId,
       locale: currentCacheLocaleTag(),
       params: params,
@@ -124,7 +129,8 @@ extension _InventoryRepositoryCache on InventoryRepository {
           try {
             return await fetch();
           } on ApiException catch (error) {
-            if (error.statusCode == 401 || error.statusCode == 403) {
+            if (error.statusCode == 401 ||
+                (error.statusCode == 403 && !error.isVerificationRequired)) {
               await _cacheStore.remove(key);
             }
             rethrow;
@@ -134,8 +140,8 @@ extension _InventoryRepositoryCache on InventoryRepository {
         tags: [_inventoryModuleTag, 'workspace:$wsId', ...tags],
       );
       data = result.data;
-    } on ApiException catch (error) {
-      if (error.statusCode != 0) rethrow;
+    } on Object catch (error) {
+      if (!isOfflineTransportFailure(error)) rethrow;
       data = (await _cacheStore.read<T>(key: key, decode: decodePayload)).data;
       if (data == null) rethrow;
     }
@@ -173,7 +179,8 @@ extension _InventoryRepositoryCache on InventoryRepository {
           try {
             return await fetch();
           } on ApiException catch (error) {
-            if (error.statusCode == 401 || error.statusCode == 403) {
+            if (error.statusCode == 401 ||
+                (error.statusCode == 403 && !error.isVerificationRequired)) {
               await _cacheStore.remove(key);
             }
             rethrow;
@@ -183,8 +190,8 @@ extension _InventoryRepositoryCache on InventoryRepository {
         tags: [_inventoryModuleTag, 'workspace:$wsId', ...tags],
       );
       data = result.data;
-    } on ApiException catch (error) {
-      if (error.statusCode != 0) rethrow;
+    } on Object catch (error) {
+      if (!isOfflineTransportFailure(error)) rethrow;
       data = (await _cacheStore.read<T>(key: key, decode: decodePayload)).data;
       if (data == null) rethrow;
     }

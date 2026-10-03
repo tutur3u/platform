@@ -277,7 +277,7 @@ class _AgendaViewState extends State<AgendaView> {
         var nowInserted = false;
         for (final event in timed) {
           final eventEnd = event.endAt ?? event.startAt;
-          final isPast = eventEnd != null && eventEnd.isBefore(now);
+          final isPast = eventEnd != null && !eventEnd.isAfter(now);
 
           if (!nowInserted && !isPast) {
             items.add(const _NowIndicatorItem());
@@ -292,11 +292,9 @@ class _AgendaViewState extends State<AgendaView> {
           insertedNow = true;
         }
       } else {
-        final dayIsPast = day.isBefore(today);
         for (final event in dayEvents) {
           final eventEnd = event.endAt ?? event.startAt;
-          final isPast =
-              dayIsPast || (eventEnd != null && eventEnd.isBefore(now));
+          final isPast = eventEnd != null && !eventEnd.isAfter(now);
           items.add(_EventItem(event, isPast: isPast, displayDate: day));
         }
       }

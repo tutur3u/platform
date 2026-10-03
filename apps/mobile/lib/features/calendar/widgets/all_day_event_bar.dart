@@ -65,11 +65,11 @@ class _AllDayEventBarState extends State<AllDayEventBar> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: EventColors.forEvent(e),
+                    color: EventColors.inContext(e, context).background,
                     borderRadius: BorderRadius.circular(4),
                     border: Border(
                       left: BorderSide(
-                        color: EventColors.foreground(e),
+                        color: EventColors.inContext(e, context).accent,
                         width: 3,
                       ),
                     ),
@@ -80,7 +80,7 @@ class _AllDayEventBarState extends State<AllDayEventBar> {
                         Icon(
                           workingLocationIcon(kind),
                           size: 15,
-                          color: EventColors.foreground(e),
+                          color: EventColors.inContext(e, context).foreground,
                         ),
                         const SizedBox(width: 5),
                       ],
@@ -91,7 +91,10 @@ class _AllDayEventBarState extends State<AllDayEventBar> {
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.labelSmall
                               ?.copyWith(
-                                color: EventColors.foreground(e),
+                                color: EventColors.inContext(
+                                  e,
+                                  context,
+                                ).foreground,
                                 fontWeight: FontWeight.w600,
                               ),
                         ),

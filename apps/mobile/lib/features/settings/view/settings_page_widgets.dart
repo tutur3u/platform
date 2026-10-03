@@ -50,6 +50,10 @@ class _SettingsOverviewSection extends StatelessWidget {
             onTap: () => unawaited(showOfflineChangesSheet(context)),
           ),
         ),
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 16),
+          child: OfflinePreparationSection(),
+        ),
         if (showInfrastructure)
           SettingsTile(
             grouped: true,

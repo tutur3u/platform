@@ -14,7 +14,7 @@ class CacheWarmupCoordinator {
       'assistant_metadata',
       'inventory_catalog',
     ],
-    'home': <String>['apps_registry', 'assistant_metadata'],
+    'home': <String>['apps_registry', 'assistant_metadata', 'home_payload'],
     'tasks': <String>[
       'tasks_list',
       'task_boards',

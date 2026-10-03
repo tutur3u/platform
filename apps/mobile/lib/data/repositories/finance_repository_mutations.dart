@@ -2,6 +2,7 @@ part of 'finance_repository.dart';
 
 mixin FinanceRepositoryMutations {
   ApiClient get _api;
+  OfflineMutationQueue get _mutationQueue;
 
   Future<Transaction> updateTransaction({
     required String wsId,
@@ -55,7 +56,7 @@ mixin FinanceRepositoryMutations {
       body['is_category_confidential'] = isCategoryConfidential;
     }
 
-    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+    if (await _mutationQueue.enqueueIfOffline(
       feature: 'finance',
       method: 'PUT',
       path: FinanceEndpoints.transaction(wsId, transactionId),
@@ -84,7 +85,7 @@ mixin FinanceRepositoryMutations {
     try {
       await _api.putJson(path, body);
     } on ApiException catch (error) {
-      if (await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+      if (await _mutationQueue.enqueueAfterNetworkFailure(
         error: error,
         feature: 'finance',
         method: 'PUT',
@@ -156,7 +157,7 @@ mixin FinanceRepositoryMutations {
 
     final transactionId = newLocalMutationId();
     body['client_transaction_id'] = transactionId;
-    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+    if (await _mutationQueue.enqueueIfOffline(
       feature: 'finance',
       method: 'POST',
       path: FinanceEndpoints.transactions(wsId),
@@ -174,7 +175,7 @@ mixin FinanceRepositoryMutations {
       );
       return response['transaction_id'] as String?;
     } on ApiException catch (error) {
-      if (await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+      if (await _mutationQueue.enqueueAfterNetworkFailure(
         error: error,
         feature: 'finance',
         method: 'POST',
@@ -228,7 +229,7 @@ mixin FinanceRepositoryMutations {
     final destinationId = newLocalMutationId();
     body['client_origin_transaction_id'] = originId;
     body['client_destination_transaction_id'] = destinationId;
-    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+    if (await _mutationQueue.enqueueIfOffline(
       feature: 'finance',
       method: 'POST',
       path: FinanceEndpoints.transfers(wsId),
@@ -246,7 +247,7 @@ mixin FinanceRepositoryMutations {
       );
       return response['from_transaction_id'] as String?;
     } on ApiException catch (error) {
-      if (await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+      if (await _mutationQueue.enqueueAfterNetworkFailure(
         error: error,
         feature: 'finance',
         method: 'POST',
@@ -301,7 +302,7 @@ mixin FinanceRepositoryMutations {
       body['tag_ids'] = tagIds;
     }
 
-    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+    if (await _mutationQueue.enqueueIfOffline(
       feature: 'finance',
       method: 'PUT',
       path: FinanceEndpoints.transfers(wsId),
@@ -328,7 +329,7 @@ mixin FinanceRepositoryMutations {
     try {
       await _api.putJson(path, body);
     } on ApiException catch (error) {
-      if (await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+      if (await _mutationQueue.enqueueAfterNetworkFailure(
         error: error,
         feature: 'finance',
         method: 'PUT',
@@ -357,7 +358,7 @@ mixin FinanceRepositoryMutations {
     required String wsId,
     required String transactionId,
   }) async {
-    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+    if (await _mutationQueue.enqueueIfOffline(
       feature: 'finance',
       method: 'DELETE',
       path: FinanceEndpoints.transaction(wsId, transactionId),
@@ -370,7 +371,7 @@ mixin FinanceRepositoryMutations {
     try {
       await _api.deleteJson(path);
     } on ApiException catch (error) {
-      if (!await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+      if (!await _mutationQueue.enqueueAfterNetworkFailure(
         error: error,
         feature: 'finance',
         method: 'DELETE',

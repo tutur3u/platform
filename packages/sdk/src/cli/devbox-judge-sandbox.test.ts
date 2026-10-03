@@ -1,9 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createJudgeDockerArgs,
+  getJudgeReadiness,
   parseJudgeImages,
   parseJudgePayload,
   parseJudgeResourceLimits,
+  runJudgeCases,
 } from './devbox-judge-sandbox';
 
 const limits = {
@@ -18,6 +20,26 @@ const limits = {
 const image = `python@sha256:${'a'.repeat(64)}`;
 
 describe('Judge sandbox', () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it('disables Judge readiness and execution in a dedicated Playground process before Docker', async () => {
+    vi.stubEnv('TUTURUUU_PLAYGROUND_POOL_ID', 'fixture');
+    expect(await getJudgeReadiness(JSON.stringify({ python: image }))).toEqual({
+      ready: false,
+      languages: [],
+      reason: 'This process owns a dedicated Playground pool.',
+    });
+    await expect(
+      runJudgeCases({
+        images: { python: image },
+        limits,
+        payload: {
+          language: 'python',
+          source: '',
+          cases: [{ input: '', expected: '', visible: true }],
+        },
+      })
+    ).rejects.toThrow('disabled in a dedicated Playground process');
+  });
   it('caps the sandbox below host budgets with no network or mounts', () => {
     const args = createJudgeDockerArgs({
       image,

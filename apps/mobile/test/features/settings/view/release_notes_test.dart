@@ -1,9 +1,57 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/features/settings/view/release_note_policy.dart';
 import 'package:mobile/features/settings/view/release_notes.dart';
 
 void main() {
+  test(
+    'shared bookkeeping fixtures retain legitimate product merge subjects',
+    () {
+      final fixtures =
+          jsonDecode(
+                File(
+                  '../../scripts/ci/release-note-policy.fixture.json',
+                ).readAsStringSync(),
+              )
+              as List;
+      for (final item in fixtures.cast<Map<String, dynamic>>()) {
+        expect(
+          ReleaseNotePolicy.isBookkeeping(item['subject'] as String),
+          item['bookkeeping'],
+          reason: item['subject'] as String,
+        );
+      }
+    },
+  );
+
+  test('bundled history hides bookkeeping and retains release identities', () {
+    const markdown =
+        "## [0.22.0](https://example.test) (2026-10-02)\n* Merge remote-tracking branch 'origin/main'\n* merge duplicate contacts";
+    final notes = MobileReleaseNotes.combine(
+      markdown,
+      jsonEncode({
+        'releases': [
+          {
+            'version': '0.22.0',
+            'date': '2026-10-02',
+            'changes': [
+              "Merge remote-tracking branch 'origin/release-please--branches--production'",
+              'improve settings',
+            ],
+          },
+        ],
+      }),
+    );
+    expect(notes.single.version, '0.22.0');
+    expect(notes.single.date, DateTime(2026, 10, 2));
+    expect(notes.single.changes, [
+      'merge duplicate contacts',
+      'improve settings',
+    ]);
+  });
+
   test(
     'groups published versions and strips developer links from summaries',
     () {

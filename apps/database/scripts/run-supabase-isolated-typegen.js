@@ -1,8 +1,7 @@
 import { spawn } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
-import { rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { writeFileAtomically } from './atomic-file.js';
 
 export const APPROVED_TYPEGEN_OUTPUT = 'packages/types/src/supabase.ts';
 const MAX_TYPEGEN_OUTPUT_BYTES = 64 * 1024 * 1024;
@@ -83,25 +82,21 @@ export async function writeTypegenOutputAtomically(
   repositoryRoot,
   outputPath,
   contents,
-  { move = rename, remove = rm, write = writeFile } = {}
+  options = {}
 ) {
   validateTypegenOutputPath(repositoryRoot, outputPath);
   if (contents.length === 0 || contents.toString('utf8').trim().length === 0) {
     throw new Error('Supabase type generation returned empty output.');
   }
 
-  const target = path.resolve(repositoryRoot, outputPath);
-  const temporary = path.join(
-    path.dirname(target),
-    `.${path.basename(target)}.${process.pid}.${randomUUID()}.tmp`
+  return writeFileAtomically(
+    path.resolve(repositoryRoot, outputPath),
+    contents,
+    {
+      ...options,
+      beforeMove: () => validateTypegenOutputPath(repositoryRoot, outputPath),
+    }
   );
-  try {
-    await write(temporary, contents, { flag: 'wx' });
-    validateTypegenOutputPath(repositoryRoot, outputPath);
-    await move(temporary, target);
-  } finally {
-    await remove(temporary, { force: true });
-  }
 }
 
 export async function generateTypesFromDisposableStack({

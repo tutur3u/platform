@@ -1,14 +1,14 @@
 {
-  "workspaceHiddenTitle": "Hidden workspaces",
-  "workspaceHideAction": "Hide",
-  "workspaceRestoreAction": "Restore",
-  "workspaceHiddenDescription": "Only you can see this list. Hiding does not change membership or notifications.",
-  "workspaceHiddenEmpty": "No Hidden workspaces",
-  "workspaceHiddenLoadError": "Unable to refresh Hidden workspaces. Your saved list is kept.",
-  "workspaceHiddenUpdateError": "Unable to save this change. Try again when connected.",
-  "workspaceAllHidden": "Your workspaces are hidden. Restore one to continue.",
-  "workspacePickerClose": "Close workspace picker",
-  "commonLoading": "Loading",
+    "workspaceHiddenTitle": "Hidden workspaces",
+    "workspaceHideAction": "Hide",
+    "workspaceRestoreAction": "Restore",
+    "workspaceHiddenDescription": "Only you can see this list. Hiding does not change membership or notifications.",
+    "workspaceHiddenEmpty": "No Hidden workspaces",
+    "workspaceHiddenLoadError": "Workspace visibility preferences are unavailable. Saved hidden choices are kept.",
+    "workspaceHiddenUpdateError": "Unable to save this change. Try again when connected.",
+    "workspaceAllHidden": "Your workspaces are hidden. Restore one to continue.",
+    "workspacePickerClose": "Close workspace picker",
+    "commonLoading": "Loading",
     "@@locale": "en",
     "appTitle": "Tuturuuu",
     "chatAccept": "Accept",
@@ -3894,6 +3894,13 @@
     "cacheCategoryCalendar": "Calendar",
     "cacheCategoryFinance": "Finance",
     "cacheCategoryOther": "Other data",
+    "offlineDependencyWaiting": "Waiting for related changes. Sync will continue automatically.",
+    "offlineDependencyMissing": "A related local item was discarded or deleted. Review this change.",
+    "offlineDependencyCycle": "Related changes depend on each other. Review their references.",
+    "offlineDependencyAmbiguous": "More than one queued create uses the same local item. Review this change.",
+    "offlineDependencyInvalid": "The saved change has invalid data. Review it before syncing.",
+    "offlineDependencyContract": "Waiting for server support. This change is saved and retries automatically.",
+    "offlineEditSyncing": "Syncing…",
     "offlineEditQueued": "Waiting to sync",
     "offlineEditConflict": "Needs review before syncing",
     "offlineEditFailed": "Sync failed",
@@ -3972,7 +3979,8 @@
     "settingsTimezoneUnknown": "Unknown",
     "settingsTimezoneEffective": "Effective timezone: {timezone}",
     "settingsTimezoneRateLimited": "Too many requests. Please wait before retrying.",
-    "settingsTimezoneError": "Could not load or save timezone. Tap to retry.",
+    "settingsTimezoneRetry": "Retry timezone",
+    "settingsTimezoneError": "Could not load or save timezone. Retry or edit a loaded preference.",
     "@settingsTimezoneEffective": {
         "placeholders": {
             "timezone": {
@@ -4040,6 +4048,8 @@
             }
         }
     },
+    "inventoryProductDeleteConfirm": "Remove this product? If existing sales reference it, the server will archive it when syncing.",
+    "inventorySeasonPriceCached": "Offline draft using saved season prices. Prices and availability will be checked when syncing.",
     "inventorySeasonPriceLoading": "Checking current season prices…",
     "inventorySeasonPriceUnavailable": "Season prices unavailable or expired. Connect, refresh and review the cart before selling.",
     "inventorySeasonPriceAsOf": "Season prices · {currency} · as of {asOf} (UTC) · season dates in {timeZone}",
@@ -4059,6 +4069,47 @@
             },
             "timeZone": {
                 "type": "String"
+            }
+        }
+    },
+    "offlinePreparationTitle": "Available offline",
+    "offlinePreparationCacheAll": "Download all",
+    "offlinePreparationDescription": "Download workspace data for offline use. Cached data uses your storage limit; files and online services may still need connectivity.",
+    "offlinePreparationQueued": "Not downloaded",
+    "offlinePreparationWaiting": "Queued",
+    "offlinePreparationDownloading": "Downloading",
+    "offlinePreparationReady": "Downloaded",
+    "offlinePreparationFailed": "Download failed",
+    "offlinePreparationUnavailable": "Unavailable",
+    "offlinePreparationLastSuccess": "Last downloaded: {time}",
+    "offlinePreparationProgress": "{completed} of {total} modules downloaded",
+    "@offlinePreparationLastSuccess": {
+        "placeholders": {
+            "time": {
+                "type": "String"
+            }
+        }
+    },
+    "@offlinePreparationProgress": {
+        "placeholders": {
+            "completed": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
+        }
+    },
+    "offlinePreparationNeedsRefresh": "Needs refresh",
+    "inventoryCheckoutReconcileCart": "Reconcile cart",
+    "inventoryCheckoutReconcileCartHelp": "Refresh prices and remove items that no longer match this period.",
+    "inventoryCheckoutCartReconciled": "Cart updated. Review the total before submitting.",
+    "inventoryCheckoutCartRemoved": "{count, plural, one{Removed {count} unavailable item. Review the cart before submitting.} other{Removed {count} unavailable items. Review the cart before submitting.}}",
+    "inventoryCheckoutPeriodRulesChanged": "Some items do not match this period. Reconcile the cart to continue.",
+    "@inventoryCheckoutCartRemoved": {
+        "placeholders": {
+            "count": {
+                "type": "int"
             }
         }
     }
