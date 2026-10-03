@@ -72,11 +72,11 @@ jobs:
       - name: Check formatting
         run: cargo fmt --check
 
-      - name: Clippy native targets
-        run: cargo clippy --locked --all-targets --features native -- -D warnings
-
       - name: Test native backend
         run: cargo test --locked
+
+      - name: Clippy native targets
+        run: cargo clippy --locked --all-targets --features native -- -D warnings
 
       - name: Check wasm Worker target
         run: cargo check --locked --target wasm32-unknown-unknown --no-default-features --features worker

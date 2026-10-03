@@ -5,12 +5,49 @@ const _replicaSchemaVersion = 1;
 const _replicaIdMapPrefix = '@id-map:';
 
 extension CacheStoreReplica on CacheStore {
+  /// Provenance survives cancellation so stale editors never send local UUIDs.
+  Future<void> registerLocalResource(OfflineResourceReference reference) async {
+    await init();
+    final identity = jsonEncode(reference.toJson());
+    await _entityBox.put(
+      '@local-origin:${sha256.convert(utf8.encode(identity))}',
+      {'kind': 'local-origin', ...reference.toJson()},
+    );
+  }
+
+  Future<Set<OfflineResourceReference>> localResourceOrigins({
+    required String userId,
+    required String workspaceId,
+  }) async {
+    await init();
+    return _entityBox.values
+        .whereType<Map<dynamic, dynamic>>()
+        .where(
+          (raw) =>
+              {'local-origin', 'local-deleted'}.contains(raw['kind']) &&
+              raw['userId'] == userId &&
+              raw['workspaceId'] == workspaceId,
+        )
+        .map(_parseOfflineReference)
+        .whereType<OfflineResourceReference>()
+        .toSet();
+  }
+
+  OfflineResourceReference? _parseOfflineReference(Map<dynamic, dynamic> raw) {
+    try {
+      return OfflineResourceReference.fromJson(raw);
+    } on Object {
+      return null;
+    }
+  }
+
   Future<void> saveLocalIdMapping({
     required String userId,
     required String workspaceId,
     required String feature,
     required String localId,
     required String serverId,
+    Map<String, dynamic>? resourceData,
   }) async {
     await init();
     final identity = '$userId|$workspaceId|$feature|$localId';
@@ -22,7 +59,77 @@ extension CacheStoreReplica on CacheStore {
       'feature': feature,
       'localId': localId,
       'serverId': serverId,
+      if (resourceData != null) 'resourceData': resourceData,
     });
+  }
+
+  Future<Map<String, dynamic>?> localResourceAcknowledgment(
+    OfflineResourceReference reference,
+  ) async {
+    await init();
+    final identity =
+        '${reference.userId}|${reference.workspaceId}|'
+        '${reference.mappingNamespace}|${reference.localId}';
+    final key = '$_replicaIdMapPrefix${sha256.convert(utf8.encode(identity))}';
+    final raw = _entityBox.get(key);
+    if (raw is! Map || raw['deleted'] == true) return null;
+    final data = raw['resourceData'];
+    return data is Map ? Map<String, dynamic>.from(data) : null;
+  }
+
+  Future<Set<OfflineResourceReference>> deletedOfflineResources({
+    required String userId,
+    required String workspaceId,
+  }) async {
+    await init();
+    return _entityBox.values
+        .whereType<Map<dynamic, dynamic>>()
+        .where(
+          (raw) =>
+              raw['kind'] == 'local-deleted' &&
+              raw['userId'] == userId &&
+              raw['workspaceId'] == workspaceId,
+        )
+        .map(_parseOfflineReference)
+        .whereType<OfflineResourceReference>()
+        .toSet();
+  }
+
+  Future<void> tombstoneOfflineResource(
+    OfflineResourceReference reference,
+    String serverId,
+  ) async {
+    await init();
+    final aliases = {
+      reference,
+      OfflineResourceReference(
+        userId: reference.userId,
+        workspaceId: reference.workspaceId,
+        feature: reference.feature,
+        resource: reference.resource,
+        localId: serverId,
+      ),
+    };
+    final writes = <String, Map<dynamic, dynamic>>{};
+    for (final alias in aliases) {
+      final identity = jsonEncode(alias.toJson());
+      writes['@local-deleted:${sha256.convert(utf8.encode(identity))}'] = {
+        'kind': 'local-deleted',
+        ...alias.toJson(),
+      };
+    }
+    for (final key in _entityBox.keys.whereType<String>()) {
+      final raw = _entityBox.get(key);
+      if (raw is Map &&
+          raw['kind'] == 'id-map' &&
+          raw['userId'] == reference.userId &&
+          raw['workspaceId'] == reference.workspaceId &&
+          raw['feature'] == reference.mappingNamespace &&
+          raw['serverId'] == serverId) {
+        writes[key] = {...raw, 'deleted': true};
+      }
+    }
+    await _entityBox.putAll(writes);
   }
 
   Future<Map<String, String>> localIdMappings({
@@ -35,6 +142,7 @@ extension CacheStoreReplica on CacheStore {
     for (final raw in _entityBox.values) {
       if (raw is Map &&
           raw['kind'] == 'id-map' &&
+          raw['deleted'] != true &&
           raw['userId'] == userId &&
           raw['workspaceId'] == workspaceId &&
           raw['feature'] == feature &&
@@ -57,6 +165,7 @@ extension CacheStoreReplica on CacheStore {
     for (final raw in _entityBox.values) {
       if (raw is Map &&
           raw['kind'] == 'id-map' &&
+          raw['deleted'] != true &&
           raw['userId'] == userId &&
           raw['workspaceId'] == workspaceId &&
           raw['localId'] is String &&
@@ -75,7 +184,7 @@ extension CacheStoreReplica on CacheStore {
     for (final key in _entityBox.keys) {
       final raw = _entityBox.get(key);
       if (raw is Map &&
-          raw['kind'] == 'id-map' &&
+          {'id-map', 'local-origin', 'local-deleted'}.contains(raw['kind']) &&
           (userId == null || raw['userId'] == userId) &&
           (workspaceId == null || raw['workspaceId'] == workspaceId)) {
         keys.add(key);

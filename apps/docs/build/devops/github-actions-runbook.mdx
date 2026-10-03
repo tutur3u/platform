@@ -1,7 +1,7 @@
 ---
 title: "GitHub Actions Runbook"
 description: "How the repository’s automation is organized, gated, and operated."
-updatedAt: "2026-09-30"
+updatedAt: "2026-10-03"
 ---
 
 GitHub Actions is the primary automation plane for Tuturuuu.
@@ -23,11 +23,11 @@ GitHub Actions is the primary automation plane for Tuturuuu.
   exact-head CI for builds; independent CI builds need not be serialized. One
   integration owner serializes main and production mutations. Other owners continue active work and
   hand off manifests rather than starting competing CI watch loops.
-- Integrate dependencies bottom-up, retaining ancestry for base-chained PRs.
-  Verify child diffs and retargeting, then rerun the owning gates. A base edit alone
-  may not trigger a workflow listening only for opened/synchronize events; verify
-  actual runs before an authorized source-identical synchronization. A changed
-  assembled source tree needs its own validation.
+- Use native stacks for dependencies: trunk rules and PR workflow filters apply to
+  every layer. Verify each selected head, review, quiet window and CI before merging
+  a contiguous prefix; queued is not merged. Check the resulting trunk SHA separately.
+  Handle absent stack metadata in automation. For fallback chains, retain ancestry.
+  After cascades/retargeting, rerun gates; manual base edits may not trigger CI. Inspect actual runs.
 - Ship verified independent scopes in bounded releases. Pin and inspect the exact
   main-to-production range, migrations and mobile path triggers before promotion;
   stop if the range changes. Verify the exact merged-main gates before normal
@@ -65,6 +65,12 @@ The reusable workflow
 `ci-check.yml`
 reads that config and emits `should_run`, which downstream jobs use before doing
 real work.
+
+For rollback or mixed-version recovery, use `$tuturuuu-rollout-recovery` from the
+[Codex plugin](../development-tools/codex-plugin) and the
+[critical rollout gates](./critical-app-rollout). Audit canonical alias identities
+and API upstreams: a Git branch or successful deployment marker can disagree
+with the artifact selected by Instant Rollback.
 
 For Vercel deployments, the production planner and platform preview perform
 affected-app gating before any install, build, or deploy step starts. They check
@@ -290,6 +296,15 @@ manifest and lock hashes, and the Rust toolchain in the run summary. It uses the
 repository's Rust 1.95 minimum to run locked native Clippy/tests, wasm Worker
 checking and a native release build. It uses read-only repository permissions,
 no deployment environment or secrets, and no shared cache writes.
+
+Native tests run before strict Clippy so an unrelated lint failure cannot hide
+actual test results for the requested source. Clippy retains `-D warnings` and
+still fails the verifier; Worker packaging remains dependent on a successful
+verifier. A passing test step alongside failed lint is bounded test evidence,
+not a successful Rust gate. Preserve the original failed run and inspect the
+exact source and test results separately before resolving review findings.
+The ordering and strict-failure policy is covered by
+`scripts/ci/rust-verification-workflow.test.js`.
 
 For dependency drafts, record the requested source SHA and the actual successful
 job result. After the existing verifier succeeds, a separate sequential Worker-package job

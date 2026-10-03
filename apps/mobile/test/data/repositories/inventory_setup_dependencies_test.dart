@@ -1,10 +1,11 @@
 import 'dart:io';
-
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_inventory_mutation.dart';
+import 'package:mobile/core/cache/offline_inventory_persistence.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
@@ -127,7 +128,9 @@ void main() {
           await store.saveLocalIdMapping(
             userId: 'user',
             workspaceId: 'ws',
-            feature: feature,
+            feature: feature == 'finance'
+                ? 'finance:category'
+                : 'inventory:category',
             localId: 'shared-local',
             serverId: 'server-$feature',
           );
@@ -136,14 +139,20 @@ void main() {
           'category': 'shared-local',
           'financeCategory': 'shared-local',
         }, update: update);
-        final payload = (await queue.listPending()).single.payload!;
+        final mutation = OfflineInventoryMutation.fromRecord(
+          (await queue.listPending()).single,
+        )!;
+        final ids = await OfflineInventoryPersistence(
+          store,
+        ).mappings(mutation.references);
+        final payload = mutation.resolve(ids).payload!;
         expect(payload['category_id'], 'server-inventory');
         expect(payload['finance_category_id'], 'server-finance');
       },
     );
     for (final kind in paths.keys) {
-      test('${update ? 'update' : 'create'} rejects pending '
-          '$kind before product enqueue', () async {
+      test('${update ? 'update' : 'create'} queues pending '
+          '$kind as a retained prerequisite', () async {
         final path = paths[kind]!;
         await queue.enqueueIfOffline(
           feature: kind == 'financeCategory' ? 'finance' : 'inventory',
@@ -153,13 +162,11 @@ void main() {
           entityId: 'local',
           payload: {'name': 'Local'},
         );
-        await expectLater(
-          product({kind: 'local'}, update: update),
-          throwsA(isA<InventorySetupAwaitingSync>()),
-        );
+        await product({kind: 'local'}, update: update);
         final pending = await queue.listPending();
-        expect(pending, hasLength(1));
-        expect(pending.single.path, path);
+        expect(pending, hasLength(2));
+        expect(pending.first.path, path);
+        expect(pending.last.requiredReferences.single.localId, 'local');
         verifyNever(() => api.postJson(any(), any()));
         verifyNever(() => api.patchJson(any(), any()));
       });
@@ -170,7 +177,9 @@ void main() {
         await store.saveLocalIdMapping(
           userId: 'user',
           workspaceId: 'ws',
-          feature: kind == 'financeCategory' ? 'finance' : 'inventory',
+          feature: kind == 'financeCategory'
+              ? 'finance:category'
+              : 'inventory:$kind',
           localId: 'local-$kind',
           serverId: 'server-$kind',
         );
@@ -180,20 +189,22 @@ void main() {
       }, update: update);
       final pending = await queue.listPending();
       expect(pending, hasLength(1));
-      expect(pending.single.payload!['category_id'], 'server-category');
+      final mutation = OfflineInventoryMutation.fromRecord(pending.single)!;
+      final ids = await OfflineInventoryPersistence(
+        store,
+      ).mappings(mutation.references);
+      final resolved = mutation.resolve(ids).payload!;
+      expect(resolved['category_id'], 'server-category');
       expect(
-        ((pending.single.payload!['inventory'] as List).single
+        ((resolved['inventory'] as List).single
             as Map<String, dynamic>)['warehouse_id'],
         'server-warehouse',
       );
+      expect(resolved['finance_category_id'], 'server-financeCategory');
+      expect(resolved['owner_id'], 'server-owner');
+      expect(resolved['manufacturer_id'], 'server-manufacturer');
       expect(
-        pending.single.payload!['finance_category_id'],
-        'server-financeCategory',
-      );
-      expect(pending.single.payload!['owner_id'], 'server-owner');
-      expect(pending.single.payload!['manufacturer_id'], 'server-manufacturer');
-      expect(
-        ((pending.single.payload!['inventory'] as List).single
+        ((resolved['inventory'] as List).single
             as Map<String, dynamic>)['unit_id'],
         'server-unit',
       );

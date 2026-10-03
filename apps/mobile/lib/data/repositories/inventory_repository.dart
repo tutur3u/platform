@@ -531,12 +531,17 @@ class InventoryRepository {
     final payload = {'period_id': periodId, 'source': source};
     final period = await queueOrSendValue<InventorySalesPeriod?>(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'inventory',
       method: 'PUT',
       path: path,
       workspaceId: wsId,
       entityId: saleId,
       payload: payload,
+      acknowledgedValue: (data) =>
+          data.containsKey('data') && data['data'] == null
+          ? null
+          : InventorySalesPeriod.fromJson(data),
       pendingValue: (_) => null,
       send: () async {
         final response = await _api.putJson(path, payload);
@@ -580,12 +585,14 @@ class InventoryRepository {
     };
     final sale = await queueOrSendValue<InventorySaleDetail>(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'inventory',
       method: 'PUT',
       path: path,
       workspaceId: wsId,
       entityId: saleId,
       payload: payload,
+      acknowledgedValue: InventorySaleDetail.fromJson,
       pendingValue: (_) => InventorySaleDetail(
         id: saleId,
         notice: notice,
@@ -619,6 +626,7 @@ class InventoryRepository {
     final path = InventoryEndpoints.sale(wsId, saleId);
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'inventory',
       method: 'DELETE',
       path: path,

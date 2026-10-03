@@ -3897,8 +3897,13 @@
     "cacheCategoryCalendar": "Lịch",
     "cacheCategoryFinance": "Tài chính",
     "cacheCategoryOther": "Dữ liệu khác",
+    "offlineDependencyWaiting": "Đang chờ các thay đổi liên quan. Đồng bộ sẽ tự động tiếp tục.",
+    "offlineDependencyMissing": "Một mục cục bộ liên quan đã bị hủy hoặc xóa. Hãy kiểm tra thay đổi này.",
+    "offlineDependencyCycle": "Các thay đổi liên quan phụ thuộc lẫn nhau. Hãy kiểm tra các mục tham chiếu.",
+    "offlineDependencyAmbiguous": "Nhiều thao tác tạo đang chờ dùng cùng một mục cục bộ. Hãy kiểm tra thay đổi này.",
+    "offlineDependencyInvalid": "Thay đổi đã lưu có dữ liệu không hợp lệ. Hãy kiểm tra trước khi đồng bộ.",
+    "offlineDependencyContract": "Đang chờ máy chủ hỗ trợ. Thay đổi đã được lưu và sẽ tự động thử lại.",
     "offlineEditSyncing": "Đang đồng bộ…",
-    "inventorySetupSyncFirst": "Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa.",
     "offlineEditQueued": "Đang chờ đồng bộ",
     "offlineEditConflict": "Cần xem lại trước khi đồng bộ",
     "offlineEditFailed": "Đồng bộ thất bại",
@@ -3977,7 +3982,8 @@
     "settingsTimezoneUnknown": "Chưa xác định",
     "settingsTimezoneEffective": "Múi giờ áp dụng: {timezone}",
     "settingsTimezoneRateLimited": "Quá nhiều yêu cầu. Vui lòng chờ trước khi thử lại.",
-    "settingsTimezoneError": "Không thể tải hoặc lưu múi giờ. Nhấn để thử lại.",
+    "settingsTimezoneRetry": "Thử lại múi giờ",
+    "settingsTimezoneError": "Không thể tải hoặc lưu múi giờ. Hãy thử lại hoặc sửa tùy chọn đã tải.",
     "@settingsTimezoneEffective": {
         "placeholders": {
             "timezone": {

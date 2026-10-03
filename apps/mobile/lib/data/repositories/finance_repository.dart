@@ -292,6 +292,7 @@ class FinanceRepository
     final payload = {'value': currency.trim().toUpperCase()};
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'finance',
       method: 'PUT',
       path: path,
@@ -395,7 +396,9 @@ class FinanceRepository
       'payment_date': paymentDate,
     };
     final id = newLocalMutationId();
-    if (await _mutationQueue.enqueueIfOffline(
+    await queueOrSendVoid(
+      queue: _mutationQueue,
+      apiClient: _api,
       feature: 'finance',
       method: 'POST',
       path: FinanceEndpoints.wallets(wsId),
@@ -403,25 +406,10 @@ class FinanceRepository
       payload: {...body, 'id': id},
       entityId: id,
       replaySafe: true,
-    )) {
-      return;
-    }
-    try {
-      await _api.postJson(FinanceEndpoints.wallets(wsId), {...body, 'id': id});
-    } on ApiException catch (error) {
-      if (!await _mutationQueue.enqueueAfterNetworkFailure(
-        error: error,
-        feature: 'finance',
-        method: 'POST',
-        path: FinanceEndpoints.wallets(wsId),
-        workspaceId: wsId,
-        payload: {...body, 'id': id},
-        entityId: id,
-        replaySafe: true,
-      )) {
-        rethrow;
-      }
-    }
+      send: () async {
+        throw StateError('Wallet create uses durable replay');
+      },
+    );
   }
 
   Future<void> updateWallet({
@@ -452,6 +440,7 @@ class FinanceRepository
     final path = FinanceEndpoints.wallet(wsId, walletId);
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'finance',
       method: 'PUT',
       path: path,
@@ -471,6 +460,7 @@ class FinanceRepository
     final path = FinanceEndpoints.wallet(wsId, walletId);
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
       feature: 'finance',
       method: 'DELETE',
       path: path,
