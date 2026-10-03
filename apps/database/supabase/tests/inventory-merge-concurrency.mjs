@@ -38,6 +38,7 @@ const clients = Array.from({ length: 3 }, (_, n) =>
 const [control, merge, writer] = clients;
 const id = (n) => `00009020-0000-4000-8000-${String(n).padStart(12, '0')}`;
 let checks = 0;
+let barrierHeld = false;
 const ok = (name) => console.log(`ok ${++checks} - ${name}`);
 const deadlineWait = async (query) => {
   const deadline = Date.now() + 5000;
@@ -74,6 +75,7 @@ try {
     'Both bucket cases must have real independent fixture identities'
   );
   await writer`select pg_advisory_lock(900302020)`;
+  barrierHeld = true;
   const merging = apply(merge).then((result) => result);
   await deadlineWait(
     () =>
@@ -120,6 +122,7 @@ try {
   assert.equal((await control`show lock_timeout`)[0].lock_timeout, '0');
   ok('failed advisory merge preserves caller timeout');
   await writer`select pg_advisory_unlock(900302020)`;
+  barrierHeld = false;
   assert.equal((await merging)[0].result.merged, true);
   ok('actual independent merge commits');
   assert.equal(
@@ -192,7 +195,7 @@ try {
   // Setup is committed by another transaction: this cascade cannot pass merely
   // because the deleting client already acquired all of its identity keys.
   await control`insert into public.workspaces(id,name,personal,creator_id) values(${id(12)},'Cascade namespace',false,${id(1)})`;
-  await control`insert into public.workspace_products(id,ws_id,name) values(${id(2500)},${id(12)},'Cascade product')`;
+  await control`insert into private.inventory_warehouses(id,ws_id,name) values(${id(2500)},${id(12)},'Cascade warehouse')`;
   await writer.begin(async (sql) => {
     await sql`delete from public.workspaces where id=${id(12)}`;
     const [{ count }] =
@@ -200,11 +203,12 @@ try {
     assert.equal(Number(count), 0);
     ok('actual gone-workspace cascade acquires no identity namespace');
     assert.equal(
-      (await sql`select id from public.workspace_products where id=${id(2500)}`)
-        .length,
+      (
+        await sql`select id from private.inventory_warehouses where id=${id(2500)}`
+      ).length,
       0
     );
-    ok('gone-workspace cascade still removes its owned product');
+    ok('gone-workspace cascade still removes its owned warehouse');
   });
   await assert.rejects(
     control`delete from public.workspace_products where id=${id(50)}`,
@@ -214,7 +218,7 @@ try {
   assert.equal(checks, 22);
 } finally {
   // Always release the test-only barrier, including assertion failures.
-  await writer`select pg_advisory_unlock(900302020)`;
+  if (barrierHeld) await writer`select pg_advisory_unlock(900302020)`;
   await control.unsafe(
     'drop trigger if exists imc_pause_merge on private.inventory_identity_merges; drop function if exists private.imc_pause_merge();'
   );
