@@ -64,18 +64,19 @@ function challenge() {
   );
 }
 
-/** Explicit deployment activation follows dependency and canary verification.
- * Once activated, ordinary reads cannot evade budgets by omitting the marker.
+/** Additional protection is scoped to explicitly marked offline bulk downloads.
+ * Ordinary enterprise reads retain their existing API/auth protections.
  * Clearance never satisfies authentication, authorization, IP blocks, required
  * MFA, or either rate-limit budget. Runtime failures remain fail-closed. */
 export async function guardOfflineDownloadRequest(request: NextRequest) {
   if (!isOfflineCapableRead(request) || process.env.NODE_ENV !== 'production')
     return null;
   const bulk = request.headers.get(OFFLINE_DOWNLOAD_HEADER) === '1';
+  if (!bulk) return null;
   if (process.env.OFFLINE_DOWNLOAD_PROTECTION_ENABLED !== 'true') {
     // Keep baseline API/auth protections while this additional protection is
     // unprovisioned. Offline prefetch is unavailable until explicitly enabled.
-    return bulk ? unavailable() : null;
+    return unavailable();
   }
   try {
     const redis = await getUpstashRestRedisClient();
@@ -130,7 +131,6 @@ export async function guardOfflineDownloadRequest(request: NextRequest) {
         }
       }
     }
-    if (!bulk) return null;
     if (!sessionKey)
       return NextResponse.json(
         { message: 'Authentication required' },

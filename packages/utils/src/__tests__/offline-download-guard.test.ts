@@ -88,6 +88,37 @@ describe('offline download guards', () => {
 
   it.each([
     '/api/v1/workspaces/ws/wallets',
+    '/api/v1/workspaces/ws/inventory/products',
+    '/api/v1/workspaces/ws/members',
+    '/api/v1/workspaces/ws/task-boards/board/lists',
+  ])(
+    'leaves daily operations outside activated offline protection: %s',
+    async (pathname) => {
+      mocks.limit.mockRejectedValue(new Error('quota service unavailable'));
+      for (const method of ['GET', 'HEAD']) {
+        const input = request({ pathname, method, token: 'captcha' });
+        expect(await guardOfflineDownloadRequest(input)).toBeNull();
+      }
+      expect(mocks.redis).not.toHaveBeenCalled();
+      expect(mocks.limiterRedis).not.toHaveBeenCalled();
+      expect(mocks.limit).not.toHaveBeenCalled();
+      expect(mocks.trust).not.toHaveBeenCalled();
+      expect(mocks.verify).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each(['0', 'true', ''])(
+    'requires the explicit bulk marker value 1: %s',
+    async (marker) => {
+      const input = request();
+      input.headers.set(OFFLINE_DOWNLOAD_HEADER, marker);
+      expect(await guardOfflineDownloadRequest(input)).toBeNull();
+      expect(mocks.redis).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
+    '/api/v1/workspaces/ws/wallets',
     '/api/workspaces/ws/transactions/infinite',
     '/api/v1/workspaces/ws/members',
     '/api/v1/users/calendar-settings',
@@ -158,38 +189,34 @@ describe('offline download guards', () => {
     ).toBeNull();
     expect(mocks.limit).not.toHaveBeenCalled();
   });
-  it.each([false, true])(
-    'enforces the same IP and session budget with bulk=%s',
-    async (bulk) => {
-      expect(
-        await guardOfflineDownloadRequest(request({ bulk, token: 'captcha' }))
-      ).toBeNull();
-      expect(mocks.limit.mock.calls.map(([key]) => key)).toEqual([
-        'ip:192.0.2.1',
-        'ip:192.0.2.1',
-        expect.stringMatching(/^session:/),
-        expect.stringMatching(/^session:/),
-      ]);
-      expect(JSON.stringify(mocks.limit.mock.calls)).not.toContain(
-        'synthetic-session'
-      );
-    }
-  );
-  it.each([false, true])(
-    'rate limits even when the marker is stripped: bulk=%s',
-    async (bulk) => {
-      mocks.limit.mockResolvedValue({
-        success: false,
-        reset: Date.now() + 2000,
-      });
-      const response = await guardOfflineDownloadRequest(
-        request({ bulk, token: 'captcha' })
-      );
-      expect(response?.status).toBe(429);
-      expect(Number(response?.headers.get('Retry-After'))).toBeGreaterThan(0);
-      expect(mocks.verify).not.toHaveBeenCalled();
-    }
-  );
+  it('enforces IP and session budgets for explicitly marked bulk reads', async () => {
+    expect(
+      await guardOfflineDownloadRequest(
+        request({ bulk: true, token: 'captcha' })
+      )
+    ).toBeNull();
+    expect(mocks.limit.mock.calls.map(([key]) => key)).toEqual([
+      'ip:192.0.2.1',
+      'ip:192.0.2.1',
+      expect.stringMatching(/^session:/),
+      expect.stringMatching(/^session:/),
+    ]);
+    expect(JSON.stringify(mocks.limit.mock.calls)).not.toContain(
+      'synthetic-session'
+    );
+  });
+  it('rate limits marked bulk reads before attempting CAPTCHA', async () => {
+    mocks.limit.mockResolvedValue({
+      success: false,
+      reset: Date.now() + 2000,
+    });
+    const response = await guardOfflineDownloadRequest(
+      request({ bulk: true, token: 'captcha' })
+    );
+    expect(response?.status).toBe(429);
+    expect(Number(response?.headers.get('Retry-After'))).toBeGreaterThan(0);
+    expect(mocks.verify).not.toHaveBeenCalled();
+  });
   it('issues an explicit challenge, not a permission denial', async () => {
     const response = await guardOfflineDownloadRequest(request({ bulk: true }));
     expect(response?.status).toBe(403);
@@ -263,22 +290,25 @@ describe('offline download guards', () => {
     ).toBe(403);
     expect(mocks.set).not.toHaveBeenCalled();
   });
-  it.each([false, true])(
-    'fails closed when distributed storage is missing: bulk=%s',
-    async (bulk) => {
-      mocks.redis.mockResolvedValue(null);
-      expect(
-        (await guardOfflineDownloadRequest(request({ bulk })))?.status
-      ).toBe(503);
-    }
-  );
+  it('fails closed for marked bulk when distributed storage is missing', async () => {
+    mocks.redis.mockResolvedValue(null);
+    expect(
+      (await guardOfflineDownloadRequest(request({ bulk: true })))?.status
+    ).toBe(503);
+  });
   it('fails closed on limiter/store errors', async () => {
     mocks.limit.mockRejectedValue(new Error('unavailable'));
-    expect((await guardOfflineDownloadRequest(request()))?.status).toBe(503);
+    expect(
+      (await guardOfflineDownloadRequest(request({ bulk: true })))?.status
+    ).toBe(503);
   });
   it('keeps authenticated gateway sessions separate when the client IP is absent', async () => {
     mocks.ip.mockReturnValueOnce('unknown');
-    expect(await guardOfflineDownloadRequest(request())).toBeNull();
+    expect(
+      await guardOfflineDownloadRequest(
+        request({ bulk: true, token: 'captcha' })
+      )
+    ).toBeNull();
     expect(mocks.limit).toHaveBeenCalledTimes(2);
     expect(
       mocks.limit.mock.calls.every(([key]) =>
@@ -289,7 +319,8 @@ describe('offline download guards', () => {
   it('fails closed for an unknown anonymous address', async () => {
     mocks.ip.mockReturnValueOnce('unknown');
     expect(
-      (await guardOfflineDownloadRequest(request({ bearer: null })))?.status
+      (await guardOfflineDownloadRequest(request({ bearer: null, bulk: true })))
+        ?.status
     ).toBe(503);
     expect(mocks.limit).not.toHaveBeenCalled();
   });
@@ -297,7 +328,7 @@ describe('offline download guards', () => {
     expect(
       isOfflineCapableRead(request({ pathname: '/api/v1/exchange-rates' }))
     ).toBe(true);
-    const input = request();
+    const input = request({ bulk: true, token: 'captcha' });
     input.headers.set('authorization', 'Bearer   synthetic-session');
     expect(await guardOfflineDownloadRequest(input)).toBeNull();
     expect(mocks.limit).toHaveBeenCalledTimes(4);
