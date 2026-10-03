@@ -45,7 +45,7 @@ test('runs all focused SQL and owned concurrency before success', () => {
   assert.equal(
     calls.filter(([cmd, args]) => cmd === 'docker' && args[0] === 'exec')
       .length,
-    6
+    7
   );
   const copied = calls.filter(
     ([cmd, args]) => cmd === 'docker' && args[0] === 'cp'
