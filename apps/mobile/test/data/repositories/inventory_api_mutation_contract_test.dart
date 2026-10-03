@@ -404,7 +404,15 @@ void main() {
           isA<ApiException>().having((e) => e.statusCode, 'status', status),
         ),
       );
-      expect(h.requests, hasLength(status == 401 ? 4 : 1));
+      expect(h.requests, hasLength(status == 401 ? 2 : 1));
+      expect(
+        h.requests.map((request) => (request.method, request.url.path)),
+        everyElement(('POST', '$base/finance/invoices')),
+      );
+      if (status == 401) {
+        // One foreground dispatch, with one authentication refresh retry.
+        expect(h.requests.first.body, h.requests.last.body);
+      }
       expect(await h.persistence.queue.listPending(), hasLength(1));
     });
   }
