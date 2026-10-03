@@ -7,6 +7,7 @@ const WS: &str = "00000000-0000-4000-8000-000000000010";
 struct Recording {
     calls: Mutex<Vec<(String, Option<String>)>>,
     membership_status: u16,
+    failure: Option<(&'static str, bool)>,
     permissions: Vec<&'static str>,
 }
 impl OutboundHttpClient for Recording {
@@ -15,6 +16,22 @@ impl OutboundHttpClient for Recording {
             .lock()
             .unwrap()
             .push((request.url.into(), request.body.map(str::to_owned)));
+        if let Some((table, transport)) = self.failure {
+            if request.url.contains(&format!("/{table}?")) {
+                return Box::pin(async move {
+                    if transport {
+                        return Err(crate::outbound::OutboundError::Body(
+                            "synthetic failure".into(),
+                        ));
+                    }
+                    Ok(OutboundResponse {
+                        body_text: "{}".into(),
+                        headers: vec![],
+                        status: 503,
+                    })
+                });
+            }
+        }
         let mut status = 200;
         let body = if request.url.contains("/auth/v1/user") {
             json!({"id":ACTOR})
@@ -78,6 +95,7 @@ async fn transport_stamps_authenticated_actor_and_workspace() {
     let client = Recording {
         calls: Mutex::new(vec![]),
         membership_status: 200,
+        failure: None,
         permissions: vec!["update_invoices", "delete_invoices", "update_inventory"],
     };
     let path = format!("/api/v1/workspaces/{WS}/inventory/sales-periods/merges");
@@ -105,6 +123,7 @@ async fn membership_failure_and_missing_roles_never_reach_privileged_rpc() {
         let client = Recording {
             calls: Mutex::new(vec![]),
             membership_status,
+            failure: None,
             permissions,
         };
         let path = format!("/api/v1/workspaces/{WS}/inventory/sales-periods/merges");
@@ -130,6 +149,7 @@ async fn dispatcher_method_coverage_and_fallthrough() {
     let client = Recording {
         calls: Mutex::new(vec![]),
         membership_status: 200,
+        failure: None,
         permissions: vec![],
     };
     let config = config();
@@ -154,5 +174,45 @@ async fn dispatcher_method_coverage_and_fallthrough() {
                 .await
                 .is_none()
         );
+    }
+}
+
+#[tokio::test]
+async fn permission_provider_failures_preserve_web_404_without_privileged_rpc() {
+    for table in [
+        "workspace_role_members",
+        "workspace_default_permissions",
+        "workspaces",
+    ] {
+        for transport in [false, true] {
+            let client = Recording {
+                calls: Mutex::new(vec![]),
+                membership_status: 200,
+                permissions: vec!["admin"],
+                failure: Some((table, transport)),
+            };
+            for workspace in [WS, "personal"] {
+                // Personal resolution uses workspaces before role lookup.
+                if workspace == "personal" && table != "workspaces" {
+                    continue;
+                }
+                let path = format!("/api/v1/workspaces/{workspace}/inventory/sales-periods/merges");
+                assert_eq!(
+                    handle_route(&config(), request("POST", &path, Some("{}")), &client)
+                        .await
+                        .unwrap()
+                        .status,
+                    404
+                );
+                assert!(
+                    !client
+                        .calls
+                        .lock()
+                        .unwrap()
+                        .iter()
+                        .any(|(url, _)| url.contains("/rpc/"))
+                );
+            }
+        }
     }
 }

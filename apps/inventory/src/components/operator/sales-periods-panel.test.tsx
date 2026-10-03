@@ -7,7 +7,34 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 
+vi.mock('./inventory-season-merge-dialog', () => ({
+  InventorySeasonMergeDialog: () => (
+    <button type="button">merge-season-action</button>
+  ),
+}));
+
 describe('SalesPeriodsPanel', () => {
+  it.each([undefined, false, true])(
+    'only exposes merge when explicitly permitted: %s',
+    (canMerge) => {
+      const html = renderToStaticMarkup(
+        <QueryClientProvider client={new QueryClient()}>
+          <SalesPeriodsPanel
+            canMerge={canMerge}
+            fetchNextProductsPage={() => undefined}
+            hasNextProductsPage={false}
+            isFetchingNextProductsPage={false}
+            onSelect={() => undefined}
+            periods={[]}
+            products={[]}
+            selectedPeriodId=""
+            wsId="ws-1"
+          />
+        </QueryClientProvider>
+      );
+      expect(html.includes('merge-season-action')).toBe(canMerge === true);
+    }
+  );
   it('exposes editing for the selected period', () => {
     const queryClient = new QueryClient();
     const html = renderToStaticMarkup(

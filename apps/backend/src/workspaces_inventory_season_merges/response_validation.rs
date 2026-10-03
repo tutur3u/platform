@@ -11,10 +11,9 @@ fn id(value: &Value, key: &str) -> bool {
     value.get(key).and_then(Value::as_str).is_some_and(uuid)
 }
 fn count(value: &Value, key: &str) -> bool {
-    value
-        .get(key)
-        .and_then(Value::as_u64)
-        .is_some_and(|n| n <= 9_007_199_254_740_991)
+    value.get(key).and_then(Value::as_f64).is_some_and(|n| {
+        n.is_finite() && n.fract() == 0.0 && (0.0..=9_007_199_254_740_991.0).contains(&n)
+    })
 }
 fn period(value: &Value) -> bool {
     id(value, "id")
@@ -48,19 +47,11 @@ fn identity(row: &Value) -> bool {
             .all(|key| nonempty(row, key))
 }
 fn time(row: &Value, key: &str, nullable: bool) -> bool {
-    // Provider timestamps must be RFC3339-shaped; PostgreSQL owns the values.
     row.get(key).is_some_and(|v| {
-        (nullable && v.is_null())
-            || v.as_str().is_some_and(|s| {
-                s.len() >= 20
-                    && s.as_bytes().get(10) == Some(&b'T')
-                    && (s.ends_with('Z')
-                        || s.as_bytes()
-                            .get(s.len().saturating_sub(6))
-                            .is_some_and(|c| *c == b'+' || *c == b'-'))
-            })
+        (nullable && v.is_null()) || v.as_str().is_some_and(super::timestamp::valid)
     })
 }
+
 pub(super) fn valid(value: &Value, execute: bool) -> bool {
     if execute {
         return value.get("merged") == Some(&Value::Bool(true))
@@ -72,8 +63,8 @@ pub(super) fn valid(value: &Value, execute: bool) -> bool {
         && time(value, "expiresAt", false)
         && value
             .get("page")
-            .and_then(Value::as_u64)
-            .is_some_and(|n| (1..=100000).contains(&n))
+            .and_then(Value::as_f64)
+            .is_some_and(|n| n.fract() == 0.0 && (1.0..=100000.0).contains(&n))
         && value.get("source").is_some_and(period)
         && value.get("target").is_some_and(period)
         && [

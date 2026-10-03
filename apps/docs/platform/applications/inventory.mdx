@@ -472,7 +472,11 @@ The Inventory web operator can merge two sales periods using an explicit, paged
 review. Both preview and apply require workspace membership, `update_invoices`
 and `delete_invoices`, plus `manage_inventory_catalog` or legacy
 `update_inventory`. The Rust migration source mirrors this contract; Web remains
-the live API. Flutter has no season-merge action in this change.
+the live API. The sales page derives the merge action from this complete role
+contract on the server; missing or failed permission lookup hides the action.
+Catalog management alone does not expose it. Regression coverage includes
+`sales/page.test.tsx` and `sales-periods-panel.test.tsx`. Flutter has no
+season-merge action in this change.
 
 The destination keeps its name, dates, time zone and pricing mode. Description
 and the complete product eligibility rule set each require a source/destination

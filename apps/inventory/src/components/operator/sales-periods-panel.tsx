@@ -46,6 +46,7 @@ export const NO_PERIOD = '__none__';
 
 export function SalesPeriodsPanel({
   canExport = false,
+  canMerge = false,
   fetchNextProductsPage,
   hasNextProductsPage,
   isFetchingNextProductsPage,
@@ -56,6 +57,7 @@ export function SalesPeriodsPanel({
   wsId,
 }: {
   canExport?: boolean;
+  canMerge?: boolean;
   fetchNextProductsPage: () => unknown;
   hasNextProductsPage: boolean;
   isFetchingNextProductsPage: boolean;
@@ -131,7 +133,9 @@ export function SalesPeriodsPanel({
             isFetchingNextProductsPage={isFetchingNextProductsPage}
           />
         ) : null}
-        <InventorySeasonMergeDialog wsId={wsId} periods={periods} />
+        {canMerge ? (
+          <InventorySeasonMergeDialog wsId={wsId} periods={periods} />
+        ) : null}
         <SalesExportDropdown
           canExport={canExport}
           period={selected}

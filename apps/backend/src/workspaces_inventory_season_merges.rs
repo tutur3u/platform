@@ -5,6 +5,7 @@ mod response_validation;
 mod tests;
 #[cfg(all(test, feature = "native"))]
 mod tests_transport;
+mod timestamp;
 mod validation;
 use crate::outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest};
 use crate::{

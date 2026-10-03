@@ -102,3 +102,59 @@ fn malformed_provider_is_never_confirmable() {
         true
     ));
 }
+
+#[test]
+fn timestamp_contract_matches_web_calendar_and_offset_validation() {
+    for (value, expected) in [
+        ("2024-02-29T00:00:00Z", true),
+        ("2000-02-29T23:59:59.123456+23:59", true),
+        ("2026-10-03T12:30:00-07:00", true),
+        ("1900-02-29T00:00:00Z", false),
+        ("2026-02-29T00:00:00Z", false),
+        ("2026-04-31T00:00:00Z", false),
+        ("2026-10-03T24:00:00Z", false),
+        ("2026-10-03T12:30Z", false),
+        ("2026-10-03T12:30:60Z", false),
+        ("2026-10-03T12:30:00+24:00", false),
+        ("2026-10-03T12:30:00+00:60", false),
+        ("2026-10-03T12:30:00.Z", false),
+        ("2026-10-03T12:30:00", false),
+    ] {
+        assert_eq!(timestamp::valid(value), expected, "{value}");
+    }
+}
+#[test]
+fn apply_counts_accept_integral_json_floats_but_reject_unsafe_or_fractional_values() {
+    for (count, expected) in [
+        (json!(2.0), true),
+        (json!(0), true),
+        (json!(2.5), false),
+        (json!(-1), false),
+        (json!(9007199254740992u64), false),
+    ] {
+        assert_eq!(
+            response_validation::valid(
+                &json!({"merged":true,"targetId":"00000000-0000-4000-8000-000000000002","importedPriceCount":count}),
+                true
+            ),
+            expected
+        );
+    }
+}
+
+#[test]
+fn preview_page_and_required_period_contract_match_web() {
+    let period = json!({"id":"00000000-0000-4000-8000-000000000002","name":"Season","description":null,"starts_at":"date-only permitted by Web","ends_at":null,"time_zone":null,"pricing_mode":"scheduled","product_scope":"all"});
+    let mut value = json!({"version":"00000000-0000-4000-8000-000000000004","cutoff":"2026-10-03T12:30:00Z","expiresAt":"2026-10-03T12:35:00Z","page":1.0,"source":period,"target":period,"sourceRuleCount":0.0,"targetRuleCount":0,"sourceRuleConflictCount":0,"targetRuleConflictCount":0,"futurePriceCount":0,"conflictCount":0,"assignmentCount":0,"historicalQuoteCount":0,"hasMore":false,"blockers":[],"sourceRules":[],"targetRules":[],"futurePrices":[],"conflicts":[]});
+    assert!(response_validation::valid(&value, false));
+    for page in [json!(0), json!(1.5), json!(100001)] {
+        value["page"] = page;
+        assert!(!response_validation::valid(&value, false));
+    }
+    value["page"] = json!(1);
+    value["source"].as_object_mut().unwrap().remove("time_zone");
+    assert!(!response_validation::valid(&value, false));
+    value["source"]["time_zone"] = Value::Null;
+    value["source"]["pricing_mode"] = json!("invalid");
+    assert!(!response_validation::valid(&value, false));
+}
