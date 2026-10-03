@@ -9,6 +9,91 @@ export type Json =
 export type Database = {
   private: {
     Tables: {
+      account_benefits: {
+        Row: {
+          amount: number;
+          benefit_key: string;
+          created_at: string;
+          expires_at: string | null;
+          granted_by: string;
+          id: string;
+          reason: string;
+          revoked_at: string | null;
+          revoked_by: string | null;
+          starts_at: string;
+          user_id: string;
+        };
+        Insert: {
+          amount: number;
+          benefit_key: string;
+          created_at?: string;
+          expires_at?: string | null;
+          granted_by: string;
+          id: string;
+          reason: string;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          starts_at?: string;
+          user_id: string;
+        };
+        Update: {
+          amount?: number;
+          benefit_key?: string;
+          created_at?: string;
+          expires_at?: string | null;
+          granted_by?: string;
+          id?: string;
+          reason?: string;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          starts_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'account_benefits_granted_by_fkey';
+            columns: ['granted_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'account_benefits_granted_by_fkey';
+            columns: ['granted_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'account_benefits_revoked_by_fkey';
+            columns: ['revoked_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'account_benefits_revoked_by_fkey';
+            columns: ['revoked_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'account_benefits_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'account_benefits_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       ai_agent_external_message_attachments: {
         Row: {
           content_type: string | null;
@@ -2276,6 +2361,165 @@ export type Database = {
           notes?: string;
           role?: string | null;
           user_id?: string;
+        };
+        Relationships: [];
+      };
+      calendar_google_color_operations: {
+        Row: {
+          actor_id: string;
+          completion: Json | null;
+          created_at: string;
+          current_generation: number;
+          event_id: string;
+          generation: number;
+          identity: Json;
+          intent: Json;
+          operation_id: string;
+          phase: string;
+          prepared: Json | null;
+          request_hash: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          completion?: Json | null;
+          created_at?: string;
+          current_generation?: number;
+          event_id: string;
+          generation: number;
+          identity: Json;
+          intent: Json;
+          operation_id: string;
+          phase: string;
+          prepared?: Json | null;
+          request_hash: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          completion?: Json | null;
+          created_at?: string;
+          current_generation?: number;
+          event_id?: string;
+          generation?: number;
+          identity?: Json;
+          intent?: Json;
+          operation_id?: string;
+          phase?: string;
+          prepared?: Json | null;
+          request_hash?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      calendar_google_color_write_permits: {
+        Row: {
+          event_id: string;
+          generation: number;
+          operation_id: string;
+          transaction_id: number;
+          ws_id: string;
+        };
+        Insert: {
+          event_id: string;
+          generation: number;
+          operation_id: string;
+          transaction_id: number;
+          ws_id: string;
+        };
+        Update: {
+          event_id?: string;
+          generation?: number;
+          operation_id?: string;
+          transaction_id?: number;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      calendar_google_deferred_imports: {
+        Row: {
+          auth_scope: string;
+          calendar_id: string;
+          external_event_id: string;
+          observed_generation: number;
+          reason: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          auth_scope: string;
+          calendar_id: string;
+          external_event_id: string;
+          observed_generation: number;
+          reason: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          auth_scope?: string;
+          calendar_id?: string;
+          external_event_id?: string;
+          observed_generation?: number;
+          reason?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      calendar_google_import_reads: {
+        Row: {
+          auth_token_id: string | null;
+          calendar_id: string;
+          created_at: string;
+          generations: Json;
+          id: string;
+          ws_id: string;
+        };
+        Insert: {
+          auth_token_id?: string | null;
+          calendar_id: string;
+          created_at?: string;
+          generations: Json;
+          id?: string;
+          ws_id: string;
+        };
+        Update: {
+          auth_token_id?: string | null;
+          calendar_id?: string;
+          created_at?: string;
+          generations?: Json;
+          id?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      calendar_provider_saga_scopes: {
+        Row: {
+          auth_token_id: string;
+          calendar_id: string;
+          event_id: string;
+          provider: string;
+          provider_event_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          auth_token_id: string;
+          calendar_id: string;
+          event_id: string;
+          provider: string;
+          provider_event_id: string;
+          ws_id: string;
+        };
+        Update: {
+          auth_token_id?: string;
+          calendar_id?: string;
+          event_id?: string;
+          provider?: string;
+          provider_event_id?: string;
+          ws_id?: string;
         };
         Relationships: [];
       };
@@ -8559,6 +8803,178 @@ export type Database = {
           },
         ];
       };
+      learn_playground_collaborators: {
+        Row: {
+          created_at: string;
+          granted_by: string;
+          project_id: string;
+          role: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          granted_by: string;
+          project_id: string;
+          role: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          granted_by?: string;
+          project_id?: string;
+          role?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'learn_playground_collaborators_granted_by_fkey';
+            columns: ['granted_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'learn_playground_collaborators_granted_by_fkey';
+            columns: ['granted_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'learn_playground_collaborators_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'learn_playgrounds';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'learn_playground_collaborators_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'learn_playground_collaborators_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      learn_playground_runs: {
+        Row: {
+          meeting_id: string | null;
+          operation: string;
+          project_id: string;
+          request_id: string;
+          revision: number;
+          run_id: string;
+          saved: boolean;
+        };
+        Insert: {
+          meeting_id?: string | null;
+          operation: string;
+          project_id: string;
+          request_id: string;
+          revision: number;
+          run_id: string;
+          saved?: boolean;
+        };
+        Update: {
+          meeting_id?: string | null;
+          operation?: string;
+          project_id?: string;
+          request_id?: string;
+          revision?: number;
+          run_id?: string;
+          saved?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'learn_playground_runs_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'learn_playgrounds';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'learn_playground_runs_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: true;
+            referencedRelation: 'devbox_runs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      learn_playgrounds: {
+        Row: {
+          actor_id: string;
+          command: string;
+          created_at: string;
+          drive_path: string | null;
+          file_manifest: Json;
+          id: string;
+          language: string;
+          name: string;
+          personal_ws_id: string;
+          revision: number;
+          runner_id: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          actor_id: string;
+          command?: string;
+          created_at?: string;
+          drive_path?: string | null;
+          file_manifest?: Json;
+          id?: string;
+          language: string;
+          name: string;
+          personal_ws_id: string;
+          revision?: number;
+          runner_id?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          actor_id?: string;
+          command?: string;
+          created_at?: string;
+          drive_path?: string | null;
+          file_manifest?: Json;
+          id?: string;
+          language?: string;
+          name?: string;
+          personal_ws_id?: string;
+          revision?: number;
+          runner_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'learn_playgrounds_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'learn_playgrounds_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'learn_playgrounds_runner_id_fkey';
+            columns: ['runner_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_runners';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       learn_programming_problem_cases: {
         Row: {
           expected: string;
@@ -10464,6 +10880,36 @@ export type Database = {
             referencedColumns: ['user_id'];
           },
         ];
+      };
+      meeting_documents: {
+        Row: {
+          checkpoint_content: Json;
+          checkpoint_hash: string | null;
+          document_id: string;
+          meeting_id: string;
+          revision: number;
+          updated_at: string;
+          yjs_state: Json;
+        };
+        Insert: {
+          checkpoint_content?: Json;
+          checkpoint_hash?: string | null;
+          document_id: string;
+          meeting_id: string;
+          revision?: number;
+          updated_at?: string;
+          yjs_state?: Json;
+        };
+        Update: {
+          checkpoint_content?: Json;
+          checkpoint_hash?: string | null;
+          document_id?: string;
+          meeting_id?: string;
+          revision?: number;
+          updated_at?: string;
+          yjs_state?: Json;
+        };
+        Relationships: [];
       };
       mind_ai_messages: {
         Row: {
@@ -16167,6 +16613,14 @@ export type Database = {
         Args: { p_tier: Database['public']['Enums']['abuse_risk_tier'] };
         Returns: number;
       };
+      account_personal_workspace: {
+        Args: { p_actor_id: string };
+        Returns: string;
+      };
+      account_playgrounds_allowed: {
+        Args: { p_actor_id: string };
+        Returns: boolean;
+      };
       admin_create_user_group_metric_with_audit_actor: {
         Args: {
           p_actor_auth_uid?: string;
@@ -16498,6 +16952,11 @@ export type Database = {
         };
         Returns: Json;
       };
+      authorize_playground_callback: {
+        Args: { p_run_id: string; p_runner_id: string };
+        Returns: Json;
+      };
+      available_playground_languages: { Args: never; Returns: Json };
       backfill_inventory_finance_sales: {
         Args: { p_ws_id?: string };
         Returns: number;
@@ -16649,6 +17108,22 @@ export type Database = {
           _ws_id: string;
         };
         Returns: Json;
+      };
+      calendar_google_color_operation_json: {
+        Args: {
+          op: Database['private']['Tables']['calendar_google_color_operations']['Row'];
+        };
+        Returns: Json;
+      };
+      calendar_provider_saga_json: {
+        Args: {
+          op: Database['private']['Tables']['calendar_google_color_operations']['Row'];
+        };
+        Returns: Json;
+      };
+      calendar_saga_endpoint_allowed: {
+        Args: { actor: string; endpoint: Json; ws: string };
+        Returns: boolean;
       };
       can_deliver_mail_notification: {
         Args: { p_notification_id: string };
@@ -16978,6 +17453,18 @@ export type Database = {
         Args: { p_actor_user_id: string; p_target_user_id: string };
         Returns: boolean;
       };
+      checkpoint_meeting_document: {
+        Args: {
+          p_content: Json;
+          p_document_id: string;
+          p_hash: string;
+          p_meeting_id: string;
+          p_owner_id: string;
+          p_state: Json;
+          p_version: number;
+        };
+        Returns: number;
+      };
       claim_discord_interaction: {
         Args: {
           p_interaction_id: string;
@@ -17067,6 +17554,10 @@ export type Database = {
         }[];
       };
       cleanup_rate_limits: { Args: { p_retention?: string }; Returns: number };
+      cloudflare_channel_role: {
+        Args: { p_actor: string; p_topic: string };
+        Returns: string;
+      };
       collect_ai_studio_consumption_events: {
         Args: {
           p_from: string;
@@ -17276,6 +17767,15 @@ export type Database = {
         Args: { p_actor_id: string; p_email: string; p_ws_id: string };
         Returns: Json;
       };
+      create_learn_playground: {
+        Args: {
+          p_actor_id: string;
+          p_language: string;
+          p_meeting_id?: string;
+          p_name: string;
+        };
+        Returns: string;
+      };
       create_wallet_checkpoint_reconciliation: {
         Args: {
           _actor_id: string;
@@ -17338,6 +17838,10 @@ export type Database = {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
       };
+      discard_uninitialized_playground: {
+        Args: { p_actor_id: string; p_id: string };
+        Returns: boolean;
+      };
       edit_inventory_priced_product: {
         Args: {
           p_context: Json;
@@ -17373,6 +17877,18 @@ export type Database = {
         };
         Returns: string;
       };
+      enqueue_learn_playground: {
+        Args: {
+          p_actor_id: string;
+          p_command: string[];
+          p_id: string;
+          p_meeting_id?: string;
+          p_operation: string;
+          p_request_id: string;
+          p_revision: number;
+        };
+        Returns: string;
+      };
       enqueue_learn_programming_execution: {
         Args: {
           p_actor_id: string;
@@ -17384,6 +17900,16 @@ export type Database = {
           p_source: string;
           p_user_id: string;
           p_ws_id: string;
+        };
+        Returns: string;
+      };
+      enqueue_meeting_programming_test: {
+        Args: {
+          p_actor_id: string;
+          p_language: string;
+          p_meeting_id: string;
+          p_problem_id: string;
+          p_source: string;
         };
         Returns: string;
       };
@@ -18667,6 +19193,14 @@ export type Database = {
           undeliverable_count: number;
         }[];
       };
+      grant_account_benefit: {
+        Args: { p_actor_id: string; p_grant: Json };
+        Returns: Json;
+      };
+      has_account_benefit: {
+        Args: { p_actor_id: string; p_key: string };
+        Returns: boolean;
+      };
       inventory_bundle_category_components_json: {
         Args: {
           p_bundle_id: string;
@@ -18743,6 +19277,7 @@ export type Database = {
         Args: { _team_id: string; _user_id: string };
         Returns: boolean;
       };
+      list_account_benefits: { Args: { p_user_id: string }; Returns: Json };
       list_ai_studio_consumption_events: {
         Args: {
           p_cursor_created_at?: string;
@@ -19129,6 +19664,10 @@ export type Database = {
         Args: { p_series_id: string; p_until?: string };
         Returns: number;
       };
+      meeting_programming_elevated: {
+        Args: { p_meeting_id: string; p_owner_id: string };
+        Returns: boolean;
+      };
       mind_apply_ai_patch: {
         Args: { p_patch_id: string; p_user_id: string; p_ws_id: string };
         Returns: Json;
@@ -19258,6 +19797,10 @@ export type Database = {
         Args: { approval: string; delivery: string; generation: string };
         Returns: string;
       };
+      playground_collaboration_scope: {
+        Args: { p_actor_id: string; p_id: string };
+        Returns: Json;
+      };
       prepare_inventory_pos_operator_access: {
         Args: { p_actor_id: string; p_ws_id: string };
         Returns: Json;
@@ -19275,9 +19818,39 @@ export type Database = {
         Args: { p_limit?: number };
         Returns: number;
       };
+      publish_learn_playground: {
+        Args: {
+          p_actor_id: string;
+          p_command: string;
+          p_id: string;
+          p_manifest: Json;
+          p_meeting_id?: string;
+          p_path: string;
+          p_revision: number;
+          p_run_id?: string;
+        };
+        Returns: number;
+      };
       raise_rate_limit_exceeded: {
         Args: { p_retry_after: number };
         Returns: undefined;
+      };
+      read_collaborative_programming_test: {
+        Args: {
+          p_actor_id: string;
+          p_problem_id: string;
+          p_submission_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      read_learn_playground_run: {
+        Args: { p_actor_id: string; p_id: string; p_run_id: string };
+        Returns: Json;
+      };
+      read_learn_playgrounds: {
+        Args: { p_actor_id: string; p_id?: string };
+        Returns: Json;
       };
       read_learn_programming_execution: {
         Args: { p_problem_id: string; p_ws_id: string };
@@ -19287,6 +19860,7 @@ export type Database = {
         Args: { p_author?: boolean; p_problem_id: string; p_ws_id: string };
         Returns: Json;
       };
+      read_meeting_document: { Args: { p_meeting_id: string }; Returns: Json };
       reconcile_orphaned_approved_post_email_queue: {
         Args: {
           p_cutoff?: string;
@@ -19435,6 +20009,10 @@ export type Database = {
         Returns: string;
       };
       restore_cascaded_user_group_attendance: { Args: never; Returns: number };
+      revoke_account_benefit: {
+        Args: { p_actor_id: string; p_id: string };
+        Returns: boolean;
+      };
       safe_parse_inet: { Args: { p_value: string }; Returns: unknown };
       save_learn_programming_problem: {
         Args: {
@@ -19559,6 +20137,15 @@ export type Database = {
           p_user_id: string;
         };
         Returns: undefined;
+      };
+      set_playground_collaborator: {
+        Args: {
+          p_actor_id: string;
+          p_id: string;
+          p_role: string;
+          p_user_id: string;
+        };
+        Returns: boolean;
       };
       set_workspace_invitation_roles: {
         Args: {
@@ -42612,6 +43199,10 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      apply_calendar_google_import: {
+        Args: { p_capture_id: string; p_events?: Json; p_tombstones?: Json };
+        Returns: Json;
+      };
       apply_hive_world_event: {
         Args: {
           p_actor_user_id: string;
@@ -42739,6 +43330,46 @@ export type Database = {
         Args: { p_is_personal: boolean; p_user_id: string; p_ws_id: string };
         Returns: number;
       };
+      calendar_google_color_operation: {
+        Args: {
+          p_action: string;
+          p_actor_id: string;
+          p_event_id: string;
+          p_input?: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      calendar_google_mutation_operation: {
+        Args: {
+          p_action: string;
+          p_actor_id: string;
+          p_event_id: string;
+          p_input?: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      calendar_native_generation_mutation: {
+        Args: {
+          p_action: string;
+          p_actor_id: string;
+          p_event_id: string;
+          p_input?: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      calendar_provider_saga_operation: {
+        Args: {
+          p_action: string;
+          p_actor_id: string;
+          p_event_id: string;
+          p_input?: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       calendar_retained_generation: {
         Args: { p_actor_id: string; p_event_id: string; p_ws_id: string };
         Returns: Json;
@@ -42763,6 +43394,14 @@ export type Database = {
       can_publish_workspace_external_projects: {
         Args: { p_user_id?: string; p_ws_id: string };
         Returns: boolean;
+      };
+      capture_calendar_google_import: {
+        Args: {
+          p_auth_token_id?: string;
+          p_calendar_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       check_account_request: { Args: never; Returns: undefined };
       check_ai_credit_allowance: {
@@ -45468,6 +46107,14 @@ export type Database = {
           isOneToOne: false;
           isSetofReturn: true;
         };
+      };
+      list_deferred_calendar_google_imports: {
+        Args: {
+          p_auth_token_id?: string;
+          p_calendar_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       list_immediate_notification_email_configs: {
         Args: { p_notification_types: string[] };

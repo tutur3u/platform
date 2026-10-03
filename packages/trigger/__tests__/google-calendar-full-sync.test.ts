@@ -20,6 +20,35 @@ process.env.GOOGLE_CLIENT_ID = 'test-client-id';
 process.env.GOOGLE_CLIENT_SECRET = 'test-client-secret';
 process.env.GOOGLE_REDIRECT_URI = 'http://localhost:3000/auth/callback';
 
+const importIds = vi.hoisted(() => ({
+  capture: '11111111-1111-4111-8111-111111111111',
+  token: '22222222-2222-4222-8222-222222222222',
+}));
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: async () => ({
+    from: () => {
+      const query = {
+        select: () => query,
+        eq: () => query,
+        limit: async () => ({ data: [{ id: importIds.token }], error: null }),
+      };
+      return query;
+    },
+    rpc: async (name: string, args: Record<string, unknown>) => ({
+      error: null,
+      data:
+        name === 'capture_calendar_google_import'
+          ? {
+              id: importIds.capture,
+              wsId: args.p_ws_id,
+              calendarId: args.p_calendar_id,
+              authTokenId: args.p_auth_token_id,
+            }
+          : [],
+    }),
+  }),
+}));
+
 // Mock the google-calendar-sync module
 vi.mock('../src/google-calendar-sync', async () => {
   const actual = await vi.importActual('../src/google-calendar-sync.js');
@@ -144,7 +173,7 @@ describe('performFullSyncForWorkspace', () => {
 
   describe('Basic Functionality', () => {
     it('should perform full sync for a workspace with default calendar ID', async () => {
-      const ws_id = 'test-workspace';
+      const ws_id = '33333333-3333-4333-8333-333333333333';
       const access_token = 'test-access-token';
       const refresh_token = 'test-refresh-token';
 
@@ -162,7 +191,7 @@ describe('performFullSyncForWorkspace', () => {
     });
 
     it('should perform full sync for a workspace with custom calendar ID', async () => {
-      const ws_id = 'test-workspace';
+      const ws_id = '33333333-3333-4333-8333-333333333333';
       const access_token = 'test-access-token';
       const refresh_token = 'test-refresh-token';
       const calendarId = 'custom-calendar-id';
@@ -189,7 +218,7 @@ describe('performFullSyncForWorkspace', () => {
 
       const events = await performFullSyncForWorkspace(
         'primary',
-        'test-workspace',
+        '33333333-3333-4333-8333-333333333333',
         'test-access-token',
         'test-refresh-token'
       );
@@ -201,7 +230,7 @@ describe('performFullSyncForWorkspace', () => {
 
   describe('Token Handling', () => {
     it('should handle missing refresh token', async () => {
-      const ws_id = 'test-workspace';
+      const ws_id = '33333333-3333-4333-8333-333333333333';
       const access_token = 'test-access-token';
       const refresh_token = '';
 
@@ -217,7 +246,7 @@ describe('performFullSyncForWorkspace', () => {
     });
 
     it('should handle null refresh token', async () => {
-      const ws_id = 'test-workspace';
+      const ws_id = '33333333-3333-4333-8333-333333333333';
       const access_token = 'test-access-token';
       // Exercise untyped runtime input without widening the public contract.
       const events = await Reflect.apply(
@@ -231,7 +260,7 @@ describe('performFullSyncForWorkspace', () => {
     });
 
     it('should handle undefined refresh token', async () => {
-      const ws_id = 'test-workspace';
+      const ws_id = '33333333-3333-4333-8333-333333333333';
       const access_token = 'test-access-token';
       // Exercise untyped runtime input without widening the public contract.
       const events = await Reflect.apply(
@@ -253,16 +282,21 @@ describe('performFullSyncForWorkspace', () => {
 
       await performFullSyncForWorkspace(
         'primary',
-        'test-workspace',
+        '33333333-3333-4333-8333-333333333333',
         'test-access-token',
         'test-refresh-token'
       );
 
       expect(syncWorkspaceBatched).toHaveBeenCalledWith({
-        ws_id: 'test-workspace',
+        ws_id: '33333333-3333-4333-8333-333333333333',
         calendarId: 'primary',
         colorContext: { calendarId: 'primary' },
-        preserveExistingMetadata: true,
+        capture: {
+          id: importIds.capture,
+          wsId: '33333333-3333-4333-8333-333333333333',
+          calendarId: 'primary',
+          authTokenId: importIds.token,
+        },
         events_to_sync: expect.arrayContaining([
           expect.objectContaining({ id: 'event1' }),
           expect.objectContaining({ id: 'event2' }),
@@ -285,7 +319,7 @@ describe('performFullSyncForWorkspace', () => {
 
       await performFullSyncForWorkspace(
         'primary',
-        'test-workspace',
+        '33333333-3333-4333-8333-333333333333',
         'test-access-token',
         'test-refresh-token'
       );
@@ -300,13 +334,13 @@ describe('performFullSyncForWorkspace', () => {
 
       await performFullSyncForWorkspace(
         'primary',
-        'test-workspace',
+        '33333333-3333-4333-8333-333333333333',
         'test-access-token',
         'test-refresh-token'
       );
 
       expect(storeSyncToken).toHaveBeenCalledWith(
-        'test-workspace',
+        '33333333-3333-4333-8333-333333333333',
         'test-sync-token-123',
         expect.any(Date),
         'primary'
@@ -336,7 +370,7 @@ describe('performFullSyncForWorkspace', () => {
 
       await performFullSyncForWorkspace(
         'primary',
-        'test-workspace',
+        '33333333-3333-4333-8333-333333333333',
         'test-access-token',
         'test-refresh-token'
       );
@@ -349,7 +383,7 @@ describe('performFullSyncForWorkspace', () => {
     it('should handle Google Calendar API parameters correctly', async () => {
       await performFullSyncForWorkspace(
         'primary',
-        'test-workspace',
+        '33333333-3333-4333-8333-333333333333',
         'test-access-token',
         'test-refresh-token'
       );
@@ -370,7 +404,7 @@ describe('performFullSyncForWorkspace', () => {
       for (const calendarId of calendarIds) {
         await performFullSyncForWorkspace(
           calendarId,
-          'test-workspace',
+          '33333333-3333-4333-8333-333333333333',
           'test-access-token',
           'test-refresh-token'
         );
@@ -386,7 +420,7 @@ describe('performFullSyncForWorkspace', () => {
     it('should handle time range calculations correctly', async () => {
       await performFullSyncForWorkspace(
         'primary',
-        'test-workspace',
+        '33333333-3333-4333-8333-333333333333',
         'test-access-token',
         'test-refresh-token'
       );
@@ -417,7 +451,7 @@ describe('performFullSyncForWorkspace', () => {
     it('should return properly structured mock events', async () => {
       const events = await performFullSyncForWorkspace(
         'primary',
-        'test-workspace',
+        '33333333-3333-4333-8333-333333333333',
         'test-access-token',
         'test-refresh-token'
       );
@@ -491,7 +525,7 @@ describe('performFullSyncForWorkspace', () => {
 
       const events = await performFullSyncForWorkspace(
         'primary',
-        'test-workspace',
+        '33333333-3333-4333-8333-333333333333',
         'test-access-token',
         'test-refresh-token'
       );

@@ -18936,6 +18936,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Close prompt'**
   String get assistantCloseComposer;
+
+  /// No description provided for @calendarGoogleColorInherit.
+  ///
+  /// In en, this message translates to:
+  /// **'Use calendar color'**
+  String get calendarGoogleColorInherit;
+
+  /// No description provided for @calendarGoogleColorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom label {id}'**
+  String calendarGoogleColorLabel(String id);
+
+  /// No description provided for @calendarGoogleColorEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Google color {id}'**
+  String calendarGoogleColorEvent(String id);
+
+  /// No description provided for @calendarProviderColorSeparateEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Save other changes before changing the Google color.'**
+  String get calendarProviderColorSeparateEdit;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

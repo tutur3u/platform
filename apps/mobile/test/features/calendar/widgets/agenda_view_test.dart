@@ -73,51 +73,63 @@ void main() {
     },
   );
 
-  testWidgets(
-    'past timed titles retain contrast with quieter opaque theme fills',
-    (tester) async {
-      // Keep this past event within one day regardless of the CI clock.
-      final start = DateTime(2000, 1, 1, 12);
-      await tester.pumpApp(
-        AgendaView(
-          selectedDate: start,
-          events: [
-            CalendarEvent(
-              id: 'past',
-              title: 'Past timed',
-              startAt: start,
-              endAt: start.add(const Duration(hours: 1)),
-              color: 'PINK',
-              schedulingMetadata: const {
-                'google_color': {
-                  'version': 1,
-                  'inherited': false,
-                  'background': '#00ff88',
+  for (final crossesMidnight in [false, true]) {
+    testWidgets(
+      'past titles retain contrast across ${crossesMidnight ? 2 : 1} dates',
+      (tester) async {
+        final now = DateTime.now();
+        final start = DateTime(
+          now.year,
+          now.month,
+          now.day - 2,
+          crossesMidnight ? 23 : 12,
+          crossesMidnight ? 30 : 0,
+        );
+        await tester.pumpApp(
+          AgendaView(
+            selectedDate: start,
+            events: [
+              CalendarEvent(
+                id: 'past',
+                title: 'Past timed',
+                startAt: start,
+                endAt: start.add(const Duration(hours: 1)),
+                color: 'PINK',
+                schedulingMetadata: const {
+                  'google_color': {
+                    'version': 1,
+                    'inherited': false,
+                    'background': '#00ff88',
+                  },
                 },
-              },
-            ),
-          ],
-          onEventTap: (_) {},
-          onDaySelected: (_) {},
-        ),
-      );
-      await tester.pumpAndSettle();
-      final title = tester.widget<Text>(find.text('Past timed'));
-      expect(title.style?.decoration, TextDecoration.lineThrough);
-      expect(title.style?.color, Colors.black);
-      final card = tester.widget<Material>(
-        find
-            .ancestor(
-              of: find.text('Past timed'),
-              matching: find.byType(Material),
-            )
-            .first,
-      );
-      expect(card.color, isNot(const Color(0xff00ff88)));
-      expect(card.color!.computeLuminance(), greaterThan(0.5));
-      expect(card.color!.a, 1);
-    },
-  );
+              ),
+            ],
+            onEventTap: (_) {},
+            onDaySelected: (_) {},
+          ),
+        );
+        await tester.pumpAndSettle();
+        final titles = find.text('Past timed');
+        expect(titles, findsNWidgets(crossesMidnight ? 2 : 1));
+        for (final element in titles.evaluate()) {
+          final title = element.widget as Text;
+          expect(title.style?.decoration, TextDecoration.lineThrough);
+          expect(title.style?.color, Colors.black);
+          final card = tester.widget<Material>(
+            find
+                .ancestor(
+                  of: find.byWidget(title),
+                  matching: find.byType(Material),
+                )
+                .first,
+          );
+          expect(card.color, isNot(const Color(0xff00ff88)));
+          expect(card.color!.computeLuminance(), greaterThan(0.5));
+          expect(card.color!.a, 1);
+        }
+      },
+    );
+  }
 
   for (final size in [
     const Size(390, 844),

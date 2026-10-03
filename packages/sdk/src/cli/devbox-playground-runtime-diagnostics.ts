@@ -24,3 +24,18 @@ export async function collectSyntheticContainerLogs(
     stderr: stripVTControlCharacters(logs.stderr).slice(0, 2048),
   };
 }
+
+/** Docker-create failures occur before PID 1 logs exist. Synthetic CI only. */
+export function syntheticContainerStartFailure(
+  pool: string,
+  enabled: boolean,
+  result: { code: number; timedOut: boolean; exceeded: boolean; stderr: string }
+) {
+  if (syntheticContainerLoggingArgs(pool, enabled).length === 0) return null;
+  return {
+    code: result.code,
+    timedOut: result.timedOut,
+    exceeded: result.exceeded,
+    stderr: stripVTControlCharacters(result.stderr).slice(0, 2048),
+  };
+}

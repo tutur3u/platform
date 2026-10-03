@@ -9870,4 +9870,20 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantCloseComposer => 'Đóng ô nhập';
+
+  @override
+  String get calendarGoogleColorInherit => 'Dùng màu lịch';
+
+  @override
+  String calendarGoogleColorLabel(String id) {
+    return 'Nhãn tùy chỉnh $id';
+  }
+
+  @override
+  String calendarGoogleColorEvent(String id) {
+    return 'Màu Google $id';
+  }
+
+  @override
+  String get calendarProviderColorSeparateEdit => 'Lưu các thay đổi khác trước khi đổi màu Google.';
 }

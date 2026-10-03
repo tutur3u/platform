@@ -16,6 +16,7 @@ class CalendarEvent extends Equatable {
     this.endAt,
     this.color,
     this.sourceColor,
+    this.sourceCalendarId,
     this.provider,
     this.schedulingMetadata,
     this.wsId,
@@ -39,6 +40,7 @@ class CalendarEvent extends Equatable {
       endAt: rawEnd?.toUtc(),
       color: json['color'] as String?,
       sourceColor: json['_calendarColor'] as String?,
+      sourceCalendarId: json['source_calendar_id'] as String?,
       provider: json['provider'] as String?,
       schedulingMetadata: json['scheduling_metadata'] is Map
           ? Map<String, dynamic>.from(json['scheduling_metadata'] as Map)
@@ -57,6 +59,7 @@ class CalendarEvent extends Equatable {
   final DateTime? endAt;
   final String? color;
   final String? sourceColor;
+  final String? sourceCalendarId;
   final String? provider;
   final Map<String, dynamic>? schedulingMetadata;
   final String? wsId;
@@ -129,6 +132,7 @@ class CalendarEvent extends Equatable {
     Object? endAt = _sentinel,
     Object? color = _sentinel,
     Object? sourceColor = _sentinel,
+    Object? sourceCalendarId = _sentinel,
     Object? provider = _sentinel,
     Object? schedulingMetadata = _sentinel,
     Object? wsId = _sentinel,
@@ -149,6 +153,9 @@ class CalendarEvent extends Equatable {
     sourceColor: sourceColor == _sentinel
         ? this.sourceColor
         : sourceColor as String?,
+    sourceCalendarId: sourceCalendarId == _sentinel
+        ? this.sourceCalendarId
+        : sourceCalendarId as String?,
     provider: provider == _sentinel ? this.provider : provider as String?,
     schedulingMetadata: schedulingMetadata == _sentinel
         ? this.schedulingMetadata
@@ -165,6 +172,7 @@ class CalendarEvent extends Equatable {
     'end_at': endAt?.toUtc().toIso8601String(),
     'color': color,
     '_calendarColor': sourceColor,
+    'source_calendar_id': sourceCalendarId,
     'provider': provider,
     'scheduling_metadata': schedulingMetadata,
     'ws_id': wsId,
@@ -180,6 +188,7 @@ class CalendarEvent extends Equatable {
     endAt,
     color,
     sourceColor,
+    sourceCalendarId,
     provider,
     schedulingMetadata,
     wsId,

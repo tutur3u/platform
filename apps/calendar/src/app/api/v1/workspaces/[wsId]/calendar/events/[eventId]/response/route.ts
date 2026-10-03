@@ -1,5 +1,13 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { ColorOperationError } from '@/lib/calendar/google-color-operations/protocol';
+import { unsupportedProviderSaga } from '@/lib/calendar/google-color-operations/provider-saga-routes';
+import { getCalendarRetainedGeneration } from '@/lib/calendar/google-color-operations/retained-generation-request-access';
+import {
+  googleColorOperationModeEnabled,
+  handleRecoverableGoogleResponse,
+  operationFailure,
+} from '@/lib/calendar/google-color-operations/route-handlers';
 import {
   MeetingResponseError,
   respondToProviderMeeting,
@@ -40,6 +48,12 @@ export async function POST(
   }
   const { sbAdmin, wsId, userId } = access;
   try {
+    const retained = await getCalendarRetainedGeneration(
+      request,
+      rawWsId,
+      eventId
+    );
+    if (retained?.pending) return unsupportedProviderSaga();
     const { data: event, error } = await sbAdmin
       .from('workspace_calendar_events')
       .select('*')
@@ -52,6 +66,21 @@ export async function POST(
         { error: 'Event not found' },
         { status: 404, headers }
       );
+    if (
+      event.provider === 'google' &&
+      (googleColorOperationModeEnabled() || retained)
+    ) {
+      const result = await handleRecoverableGoogleResponse({
+        request,
+        rawWsId,
+        eventId,
+        response: input.data.response,
+      });
+      result.headers.set('Cache-Control', headers['Cache-Control']);
+      return result;
+    }
+    if (googleColorOperationModeEnabled() || retained)
+      return unsupportedProviderSaga();
     const source = await resolveCalendarSourceForEvent({
       sbAdmin,
       wsId,
@@ -72,6 +101,11 @@ export async function POST(
     });
     return NextResponse.json({ response: input.data.response }, { headers });
   } catch (error) {
+    if (error instanceof ColorOperationError) {
+      const response = operationFailure(error);
+      response.headers.set('Cache-Control', headers['Cache-Control']);
+      return response;
+    }
     if (error instanceof MeetingResponseError) {
       return NextResponse.json(
         { error: error.message },
