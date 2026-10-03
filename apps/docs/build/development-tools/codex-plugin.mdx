@@ -30,6 +30,7 @@ generated Next.js instruction blocks retain their canonical owners.
 | CLI install/auth/implementation | `tuturuuu-cli`, then relevant CLI procedure |
 | Task capture or templates | `tuturuuu-cli-tasks`, then task or template procedure |
 | Finance read or mutation | `tuturuuu-cli-finance`, then finance diagnostics/examples |
+| Rollback or shared API rollout recovery | `tuturuuu-rollout-recovery`, then live graph and recovery evidence |
 | PR integration | `tuturuuu-pr-merge-sync`, then merge gates and watcher commands |
 | Skill or prompt audit | `tuturuuu-development-tooling/references/agent-guidance-review.md` |
 
@@ -130,6 +131,7 @@ npx skills add tutur3u/platform --agent codex --copy -y \
   --skill tuturuuu-platform \
   --skill tuturuuu-pr-merge-sync \
   --skill tuturuuu-review-comments \
+  --skill tuturuuu-rollout-recovery \
   --skill tuturuuu-satellite-app-ux \
   --skill tuturuuu-validation-offload \
   --skill tuturuuu-web-release
@@ -139,6 +141,12 @@ Then verify the cached page after refresh at
 `https://skills.sh/tutur3u/platform`.
 
 ## Included Skills
+
+- `$tuturuuu-rollout-recovery`: mixed-version and Instant Rollback diagnosis,
+  canonical alias/source audits, safe recovery evidence, and bounded CI retries.
+  Read the [critical rollout runbook](../devops/critical-app-rollout) for the
+  maintained staging/probe/promotion contract. Ingress 401 checks do not prove
+  signed-in business recovery; preserve per-app authentication and QA privacy.
 
 - `$tuturuuu-platform`: repo-wide workflow guidance for `apps/web`,
   `packages/*`, `apps/database`, `apps/docs`, translations, navigation, and
@@ -456,6 +464,7 @@ python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-database
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-ci-docs
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-review-comments
+python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-rollout-recovery
 ```
 
 The Codex skill validator imports `yaml`, so it requires `PyYAML` in the active
@@ -479,7 +488,8 @@ library.
 - Keep shared-worktree and commit-window coordination guidance aligned across
   `AGENTS.md`, the Agent Operating Manual, `$tuturuuu-agent-coordination`, and
   `$tuturuuu-commit`.
-- Keep the open-PR `.worktrees/` lifecycle, immediate `bun setup`, and
+- Keep the open-PR `.worktrees/` lifecycle, immediate `bun install` (without local
+  builds), and
   post-merge worktree/branch cleanup guidance aligned across `AGENTS.md`, the
   Agent Operating Manual, `$tuturuuu-agent-coordination`, the platform
   checklist, and `$tuturuuu-pr-merge-sync`. Keep the authorized continuous

@@ -66,6 +66,12 @@ The reusable workflow
 reads that config and emits `should_run`, which downstream jobs use before doing
 real work.
 
+For rollback or mixed-version recovery, use `$tuturuuu-rollout-recovery` from the
+[Codex plugin](../development-tools/codex-plugin) and the
+[critical rollout gates](./critical-app-rollout). Audit canonical alias identities
+and API upstreams: a Git branch or successful deployment marker can disagree
+with the artifact selected by Instant Rollback.
+
 For Vercel deployments, the production planner and platform preview perform
 affected-app gating before any install, build, or deploy step starts. They check
 the current GitHub event's changed files against Vercel app metadata and
