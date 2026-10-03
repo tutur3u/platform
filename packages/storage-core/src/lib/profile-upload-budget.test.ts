@@ -50,3 +50,21 @@ it('rejects invalid denied dimensions', async () => {
     reserveProfileUploadBudget('actor', 'avatar', now)
   ).rejects.toMatchObject({ status: 503 });
 });
+
+it('consumes one shared ticket once and fails closed for replay or outage', async () => {
+  const { consumeProfileUploadTicket } = await import(
+    './profile-upload-budget'
+  );
+  await consumeProfileUploadTicket('synthetic-uuid');
+  expect(f.reserve).toHaveBeenCalledWith([
+    ['api-cost:v1:profile-upload:ticket:synthetic-uuid', 1, 1, 1200],
+  ]);
+  f.reserve.mockResolvedValue([0, 1]);
+  await expect(
+    consumeProfileUploadTicket('synthetic-uuid')
+  ).rejects.toMatchObject({ status: 409 });
+  f.reserve.mockRejectedValue(new Error('Missing RPC'));
+  await expect(
+    consumeProfileUploadTicket('synthetic-uuid')
+  ).rejects.toMatchObject({ status: 503 });
+});

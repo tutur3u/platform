@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ refresh: vi.fn(), stale: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  refresh: vi.fn(),
+  stale: vi.fn(),
+  webSession: vi.fn(),
+  supabaseSession: vi.fn(),
+}));
 vi.mock('@tuturuuu/auth/app-session', () => ({
   APP_SESSION_COOKIE_NAME: 'app',
   APP_SESSION_REFRESH_COOKIE_NAME: 'refresh',
@@ -9,8 +14,8 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   WEB_APP_SESSION_REFRESH_COOKIE_NAME: 'web-refresh',
   clearSupabaseAuthCookies: (_request: unknown, response: unknown) => response,
   getAppSessionClaimsFromRequest: mocks.stale,
-  hasSupportedSupabaseAuthCookie: () => true,
-  hasWebAppSessionTokenFromRequest: () => true,
+  hasSupportedSupabaseAuthCookie: mocks.supabaseSession,
+  hasWebAppSessionTokenFromRequest: mocks.webSession,
 }));
 vi.mock('@tuturuuu/auth/proxy', async () => ({
   // Exercise the real failure response without loading the unused Supabase refresh stack.
@@ -34,6 +39,8 @@ import { proxy } from './proxy';
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.stale.mockReturnValue({ sub: 'stale-user' });
+  mocks.webSession.mockReturnValue(true);
+  mocks.supabaseSession.mockReturnValue(true);
 });
 it('rejects stale page claims when shared identity requires MFA', async () => {
   mocks.refresh.mockResolvedValue({ ok: false, error: 'MFA required' });
@@ -88,3 +95,32 @@ it('keeps workspace creative spaces protected', async () => {
   expect(new URL(response.headers.get('location')!).pathname).toBe('/login');
   expect(mocks.refresh).toHaveBeenCalled();
 });
+
+it.each([false, true])(
+  'requires a shared browser session marker even with verified app claims (present=%s)',
+  async (present) => {
+    mocks.webSession.mockReturnValue(present);
+    mocks.supabaseSession.mockReturnValue(false);
+    mocks.refresh.mockResolvedValue({
+      ok: true,
+      claims: { sub: 'verified-user' },
+      response: NextResponse.next(),
+    });
+    const response = await proxy(
+      new NextRequest('https://lettin.tuturuuu.com/workspace/wiki')
+    );
+    expect(response.status).toBe(present ? 200 : 307);
+    if (!present) {
+      expect(new URL(response.headers.get('location')!).pathname).toBe(
+        '/login'
+      );
+    }
+    expect(mocks.refresh).toHaveBeenCalledWith(
+      expect.any(NextRequest),
+      expect.objectContaining({
+        requireWebAppSession: true,
+        targetApp: 'lettin',
+      })
+    );
+  }
+);

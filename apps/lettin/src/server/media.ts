@@ -64,7 +64,7 @@ export async function getMedia(
   const image = `/api/v1/lettin/media/${id}`;
   const published = await db
     .prepare(`SELECT 1 FROM worlds w WHERE w.id=? AND w.published IS NOT NULL AND
-    (json_extract(w.published,'$.image')=? OR EXISTS(SELECT 1 FROM entries e WHERE e.world_id=w.id AND e.published IS NOT NULL AND json_extract(e.published,'$.image')=?))`)
+    (EXISTS(SELECT 1 FROM json_tree(w.published) image WHERE image.key IN ('image','src') AND image.value=?) OR EXISTS(SELECT 1 FROM entries e, json_tree(e.published) image WHERE e.world_id=w.id AND e.published IS NOT NULL AND image.key IN ('image','src') AND image.value=?))`)
     .bind(row.world_id, image, image)
     .first();
   if (!published) {

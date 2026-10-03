@@ -27,6 +27,11 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     },
+    "./lettin-server": {
+      "types": "./dist/lettin-server.d.ts",
+      "import": "./dist/lettin-server.js",
+      "require": "./dist/lettin-server.js"
+    },
     "./lettin": {
       "types": "./dist/lettin.d.ts",
       "import": "./dist/lettin.js",
@@ -341,6 +346,11 @@
       "types": "./dist/chatgpt.d.ts",
       "import": "./dist/chatgpt.js",
       "require": "./dist/chatgpt.js"
+    },
+    "./profile-media": {
+      "types": "./dist/profile-media.d.ts",
+      "import": "./dist/profile-media.js",
+      "require": "./dist/profile-media.js"
     }
   },
   "devDependencies": {

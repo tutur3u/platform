@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
-import 'package:mime/mime.dart';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
@@ -15,6 +14,7 @@ import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/cache/workspace_avatar_delivery.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/config/env.dart';
+import 'package:mobile/core/media/profile_media_optimizer.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/models/workspace_limits.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -482,11 +482,11 @@ class WorkspaceRepository {
     final localId = newLocalMutationId();
     final payload = <String, dynamic>{'name': name};
     if (avatarFile != null) {
+      final optimized = await optimizeProfileMediaFile(avatarFile);
       payload.addAll({
-        'avatarFilename': avatarFile.uri.pathSegments.last,
-        'avatarContentType':
-            lookupMimeType(avatarFile.path) ?? 'application/octet-stream',
-        'avatarBytes': base64Encode(await avatarFile.readAsBytes()),
+        'avatarFilename': optimized.filename,
+        'avatarContentType': optimized.contentType,
+        'avatarBytes': base64Encode(optimized.bytes),
       });
     }
     return await queueOrSendValue<WorkspaceCreationResult>(
@@ -553,11 +553,10 @@ class WorkspaceRepository {
   }
 
   Future<void> updateWorkspaceAvatar(String wsId, File avatarFile) async {
-    final bytes = await avatarFile.readAsBytes();
-    final encodedBytes = base64Encode(bytes);
-    final filename = avatarFile.uri.pathSegments.last;
-    final contentType =
-        lookupMimeType(avatarFile.path) ?? 'application/octet-stream';
+    final optimized = await optimizeProfileMediaFile(avatarFile);
+    final encodedBytes = base64Encode(optimized.bytes);
+    final filename = optimized.filename;
+    final contentType = optimized.contentType;
     await queueOrSendVoid(
       feature: 'workspace',
       method: 'WORKSPACE_AVATAR_UPLOAD',

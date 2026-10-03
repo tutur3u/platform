@@ -6,12 +6,12 @@
         "acceptedRemoval": 12,
         "key": "api",
         "label": "api",
-        "legacyNext": 535,
+        "legacyNext": 538,
         "migrated": 62,
-        "percentComplete": 12.15,
-        "remaining": 535,
+        "percentComplete": 12.09,
+        "remaining": 538,
         "terminal": 74,
-        "total": 609,
+        "total": 612,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 12,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 545,
+        "legacyNext": 548,
         "migrated": 67,
-        "percentComplete": 12.66,
-        "remaining": 545,
+        "percentComplete": 12.6,
+        "remaining": 548,
         "terminal": 79,
-        "total": 624,
+        "total": 627,
         "unknownStatus": 0
       },
       {
@@ -363,12 +363,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 623,
+      "legacyNext": 626,
       "migrated": 215,
-      "percentComplete": 26.88,
-      "remaining": 623,
+      "percentComplete": 26.78,
+      "remaining": 626,
       "terminal": 229,
-      "total": 852,
+      "total": 855,
       "unknownStatus": 0
     }
   },
@@ -2737,6 +2737,39 @@
       ],
       "routePath": "/api/v1/users/me/avatar/upload-url",
       "sourceFile": "apps/web/src/app/api/v1/users/me/avatar/upload-url/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/users/me/avatar/upload:apps/web/src/app/api/v1/users/me/avatar/upload/route.ts",
+      "kind": "api",
+      "methods": [
+        "PUT"
+      ],
+      "routePath": "/api/v1/users/me/avatar/upload",
+      "sourceFile": "apps/web/src/app/api/v1/users/me/avatar/upload/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/users/me/banner/upload-url:apps/web/src/app/api/v1/users/me/banner/upload-url/route.ts",
+      "kind": "api",
+      "methods": [
+        "POST"
+      ],
+      "routePath": "/api/v1/users/me/banner/upload-url",
+      "sourceFile": "apps/web/src/app/api/v1/users/me/banner/upload-url/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/users/me/banner/upload:apps/web/src/app/api/v1/users/me/banner/upload/route.ts",
+      "kind": "api",
+      "methods": [
+        "PUT"
+      ],
+      "routePath": "/api/v1/users/me/banner/upload",
+      "sourceFile": "apps/web/src/app/api/v1/users/me/banner/upload/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -6703,14 +6736,14 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/users/avatar:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/avatar/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/users/avatar:apps/web/src/app/api/v1/workspaces/[wsId]/users/avatar/route.ts",
       "kind": "api",
       "methods": [
         "GET",
         "POST"
       ],
       "routePath": "/api/v1/workspaces/:wsId/users/avatar",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/avatar/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/users/avatar/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -9662,20 +9695,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 609,
+    "apiRoutes": 612,
     "cronRoutes": 10,
     "layouts": 68,
     "pages": 156,
-    "routeHandlers": 624,
+    "routeHandlers": 627,
     "methodCounts": {
       "GET": 315,
       "HEAD": 11,
-      "POST": 307,
-      "PUT": 56,
+      "POST": 308,
+      "PUT": 58,
       "PATCH": 64,
       "DELETE": 101,
       "OPTIONS": 24
     },
-    "total": 852
+    "total": 855
   }
 }

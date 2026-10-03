@@ -1,109 +1,132 @@
 'use client';
-import { EditorContent, useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
 import type { LettinNode } from '@tuturuuu/internal-api/lettin';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  parseEditorMarkdown,
+  RichTextEditor,
+  serializeEditorMarkdown,
+} from '@tuturuuu/ui/text-editor/editor';
+import { Textarea } from '@tuturuuu/ui/textarea';
+import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import { useTranslations } from 'next-intl';
+import { useRef, useState } from 'react';
+
+function documentNode(node: JSONContent): LettinNode {
+  return {
+    type: node.type ?? 'paragraph',
+    ...(node.text !== undefined ? { text: node.text } : {}),
+    ...(node.attrs ? { attrs: node.attrs } : {}),
+    ...(node.marks ? { marks: node.marks } : {}),
+    ...(node.content ? { content: node.content.map(documentNode) } : {}),
+  };
+}
 export function RichEditor({
   value,
   onChange,
+  onImageUpload,
+  onSourceModeChange,
+  readOnly = false,
 }: {
+  readOnly?: boolean;
   value: LettinNode;
   onChange: (content: LettinNode) => void;
+  onImageUpload?: (file: File) => Promise<string>;
+  onSourceModeChange?: (editing: boolean) => void;
 }) {
   const t = useTranslations('lettin');
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        link: false,
-        underline: false,
-        heading: { levels: [2, 3] },
-      }),
-    ],
-    content: value,
-    immediatelyRender: false,
-    shouldRerenderOnTransaction: true,
-    onUpdate: ({ editor }) => onChange(editor.getJSON() as LettinNode),
-    editorProps: {
-      attributes: {
-        'aria-label': t('content'),
-        role: 'textbox',
-        'aria-multiline': 'true',
-      },
-    },
-  });
+  const editorRef = useRef<
+    Parameters<typeof serializeEditorMarkdown>[0] | null
+  >(null);
+  const [source, setSource] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState(false);
   return (
-    <div className="lettin-editor overflow-hidden rounded-lg border border-input bg-card">
-      <div
-        className="flex flex-wrap gap-1 border-border border-b p-2"
-        role="toolbar"
-        aria-label={t('formatting')}
-      >
+    <div className="wiki-text-editor">
+      <div className="wiki-editor-mode">
+        <span>{t('content')}</span>
         <Button
           type="button"
-          variant="ghost"
           size="sm"
-          aria-pressed={editor?.isActive('bold') ?? false}
-          onClick={() => editor?.chain().focus().toggleBold().run()}
+          variant="outline"
+          disabled={!ready || readOnly}
+          onClick={() => {
+            const editor = editorRef.current;
+            if (!editor) return;
+            if (source === null) {
+              setSource(serializeEditorMarkdown(editor));
+              onSourceModeChange?.(true);
+            } else {
+              try {
+                editor.commands.setContent(
+                  parseEditorMarkdown(
+                    source.replace(
+                      /\]\((\/api\/v1\/lettin\/media\/[0-9a-f-]{36})(?=[)\s])/g,
+                      '](https://lettin.tuturuuu.com$1'
+                    )
+                  )
+                );
+                onChange(documentNode(editor.getJSON()));
+                setSource(null);
+                setError(false);
+                onSourceModeChange?.(false);
+              } catch {
+                setError(true);
+              }
+            }
+          }}
         >
-          {t('bold')}
+          {t(source === null ? 'editMarkdown' : 'applyMarkdown')}
         </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          aria-pressed={editor?.isActive('italic') ?? false}
-          onClick={() => editor?.chain().focus().toggleItalic().run()}
-        >
-          {t('italic')}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          aria-pressed={editor?.isActive('heading', { level: 2 }) ?? false}
-          onClick={() =>
-            editor?.chain().focus().toggleHeading({ level: 2 }).run()
-          }
-        >
-          {t('heading')}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          aria-pressed={editor?.isActive('bulletList') ?? false}
-          onClick={() => editor?.chain().focus().toggleBulletList().run()}
-        >
-          {t('list')}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          aria-pressed={editor?.isActive('blockquote') ?? false}
-          onClick={() => editor?.chain().focus().toggleBlockquote().run()}
-        >
-          {t('quote')}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => editor?.chain().focus().undo().run()}
-        >
-          {t('undo')}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => editor?.chain().focus().redo().run()}
-        >
-          {t('redo')}
-        </Button>
+        {source !== null && (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setSource(null);
+              setError(false);
+              onSourceModeChange?.(false);
+            }}
+          >
+            {t('cancel')}
+          </Button>
+        )}
       </div>
-      <EditorContent className="lettin-prose" editor={editor} />
+      {source !== null && (
+        <label className="block p-4">
+          <span className="sr-only">{t('markdownSource')}</span>
+          <Textarea
+            className="min-h-80 font-mono"
+            value={source}
+            disabled={readOnly}
+            maxLength={100000}
+            onChange={(e) => setSource(e.target.value)}
+          />
+          <p className="mt-2 text-muted-foreground text-xs">
+            {t('markdownHint')}
+          </p>
+          {error && <p role="alert">{t('requestFailed')}</p>}
+        </label>
+      )}
+      <div hidden={source !== null}>
+        <RichTextEditor
+          readOnly={readOnly}
+          onEditorReady={() => setReady(true)}
+          content={value}
+          onImmediateChange={(content) =>
+            onChange(documentNode(content ?? { type: 'doc', content: [] }))
+          }
+          editorRef={editorRef}
+          onImageUpload={onImageUpload}
+          allowCollaboration={false}
+          allowEmbeds={false}
+          writePlaceholder={t('writeWiki')}
+          titlePlaceholder={t('title')}
+          saveButtonLabel={t('saveDraft')}
+          savedButtonLabel={t('saved')}
+          toggleBlockLabel={t('toggleBlock')}
+        />
+      </div>
     </div>
   );
 }

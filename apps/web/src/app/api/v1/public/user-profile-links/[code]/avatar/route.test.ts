@@ -1,87 +1,94 @@
-// @vitest-environment node
+import { ProfileUploadError } from '@tuturuuu/storage-core/profile-upload-budget';
 import { beforeEach, expect, it, vi } from 'vitest';
 
-const f = vi.hoisted(() => ({ budget: vi.fn(), link: vi.fn(), sign: vi.fn() }));
 vi.mock('server-only', () => ({}));
-vi.mock('@tuturuuu/storage-core/profile-upload-budget', async () => {
-  const actual = await vi.importActual(
-    '@tuturuuu/storage-core/profile-upload-budget'
-  );
-  return { ...actual, reserveProfileUploadBudget: f.budget };
-});
-vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: async () => ({
-    from: () => ({ select: () => ({ eq: () => ({ maybeSingle: f.link }) }) }),
-    storage: {
-      from: () => ({
-        createSignedUploadUrl: f.sign,
-        getPublicUrl: () => ({
-          data: { publicUrl: 'https://storage.test/avatar' },
-        }),
-      }),
-    },
-  }),
+const f = vi.hoisted(() => ({
+  admin: vi.fn(),
+  ticket: vi.fn(),
+  single: vi.fn(),
 }));
-vi.mock('@/features/user-profile-links/server', () => ({
-  getLinkUnavailableReason: (link: { is_revoked?: boolean }) =>
-    link.is_revoked ? 'revoked' : null,
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: f.admin,
+  createClient: vi.fn(),
+}));
+vi.mock('@/lib/profile-media-ticket', () => ({
+  createOptimizedProfileMediaTicket: f.ticket,
 }));
 
-import { ProfileUploadError } from '@tuturuuu/storage-core/profile-upload-budget';
 import { POST } from './route';
 
+const wsId = '12345678-1234-1234-1234-123456789abc';
+const context = { params: Promise.resolve({ code: 'active-link' }) };
 const request = () =>
-  new Request('https://example.test/api/avatar', {
+  new Request('https://app.test/api/avatar', {
     method: 'POST',
-    body: JSON.stringify({ contentType: 'image/png', actor_id: 'forged' }),
+    body: JSON.stringify({ contentType: 'image/png' }),
   });
-const context = { params: Promise.resolve({ code: 'verified-link' }) };
 beforeEach(() => {
   vi.clearAllMocks();
-  f.link.mockResolvedValue({
+  f.single.mockResolvedValue({
     data: {
-      ws_id: 'resolved-workspace',
+      ws_id: wsId,
       requires_auth: false,
       allowed_fields: ['avatar_url'],
+      is_expired: false,
+      is_full: false,
+      is_revoked: false,
     },
   });
-  f.budget.mockResolvedValue(undefined);
-  f.sign.mockResolvedValue({
-    data: { signedUrl: 'https://storage.test/ticket' },
-    error: null,
+  f.admin.mockResolvedValue({
+    from: () => ({ select: () => ({ eq: () => ({ maybeSingle: f.single }) }) }),
   });
+  f.ticket.mockResolvedValue({ filePath: 'synthetic.webp' });
 });
-it('budgets the verified active link before privileged signing', async () => {
+it('uses a stable verified link budget and a link-scoped optimized path', async () => {
   expect((await POST(request(), context)).status).toBe(200);
-  expect(f.budget).toHaveBeenCalledWith(
-    'profile-link:resolved-workspace:verified-link',
-    'avatar'
-  );
-  expect(f.budget.mock.invocationCallOrder[0]).toBeLessThan(
-    f.sign.mock.invocationCallOrder[0]!
-  );
+  expect((await POST(request(), context)).status).toBe(200);
+  expect(f.ticket.mock.calls[0]).toEqual(f.ticket.mock.calls[1]);
+  expect(f.ticket.mock.calls[0]).toEqual([
+    expect.stringMatching(/^[0-9a-f-]{36}$/),
+    'avatar',
+    expect.any(String),
+    undefined,
+    `${wsId}/users/profile-link/active-link`,
+  ]);
 });
+it.each([{ is_revoked: true }, { allowed_fields: [] }])(
+  'denies unavailable or avatar-disabled links before ticket issuance',
+  async (change) => {
+    f.single.mockResolvedValue({
+      data: {
+        ws_id: wsId,
+        requires_auth: false,
+        allowed_fields: ['avatar_url'],
+        ...change,
+      },
+    });
+    expect((await POST(request(), context)).status).toBe(
+      'is_revoked' in change && change.is_revoked ? 410 : 403
+    );
+    expect(f.ticket).not.toHaveBeenCalled();
+  }
+);
+
 it.each([429, 503])(
-  'budget failure %s never issues a privileged ticket',
+  'propagates optimized budget failure %s without returning a ticket',
   async (status) => {
-    f.budget.mockRejectedValue(
-      new ProfileUploadError('Denied', status, status === 429 ? 30 : undefined)
+    f.ticket.mockRejectedValue(
+      new ProfileUploadError(
+        'Shared budget unavailable',
+        status,
+        status === 429 ? 90 : undefined
+      )
     );
     const response = await POST(request(), context);
     expect(response.status).toBe(status);
-    if (status === 429) expect(response.headers.get('Retry-After')).toBe('30');
-    expect(f.sign).not.toHaveBeenCalled();
+    if (status === 429) expect(response.headers.get('Retry-After')).toBe('90');
+    const body = await response.json();
+    expect(body).not.toHaveProperty('signedUrl');
+    expect(body).not.toHaveProperty('token');
   }
 );
-it('revoked links cannot consume budgets or issue tickets', async () => {
-  f.link.mockResolvedValue({
-    data: { is_revoked: true, requires_auth: false },
-  });
-  expect((await POST(request(), context)).status).toBe(410);
-  expect(f.budget).not.toHaveBeenCalled();
-  expect(f.sign).not.toHaveBeenCalled();
-});
-
 it.each(['image/svg+xml', 'image/avif', 'text/plain'])(
   'rejects unsupported MIME %s before reserving or signing',
   async (contentType) => {
@@ -93,7 +100,6 @@ it.each(['image/svg+xml', 'image/avif', 'text/plain'])(
       context
     );
     expect(response.status).toBe(400);
-    expect(f.budget).not.toHaveBeenCalled();
-    expect(f.sign).not.toHaveBeenCalled();
+    expect(f.ticket).not.toHaveBeenCalled();
   }
 );

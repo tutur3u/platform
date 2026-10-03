@@ -1154,7 +1154,7 @@
     "api:/api/v1/public/user-profile-links/:code/avatar:apps/web/src/app/api/v1/public/user-profile-links/[code]/avatar/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Verified profile-link avatar tickets reserve link-scoped and global media budgets before signing. The first-class web handler remains live; Rust has not implemented this path."
+      "note": "First-class optimized avatar upload; Rust parity pending."
     },
     "api:/api/v1/storage/download/*path:apps/web/src/app/api/v1/storage/download/[...path]/route.ts": {
       "status": "legacy-next",
@@ -1204,7 +1204,22 @@
     "api:/api/v1/users/me/avatar/upload-url:apps/web/src/app/api/v1/users/me/avatar/upload-url/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Current-user avatar upload keeps browser/mobile/satellite app-session auth and the existing response. Reserve worst-case 2MiB via authoritative Postgres daily actor/global budgets before privileged scoped ticket creation; no raw client upload or request-scoped signing bypass. Rust port pending."
+      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Native/offline PUT compatibility retained. Rust parity pending."
+    },
+    "api:/api/v1/users/me/avatar/upload:apps/web/src/app/api/v1/users/me/avatar/upload/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Native/offline PUT compatibility retained. Rust parity pending."
+    },
+    "api:/api/v1/users/me/banner/upload-url:apps/web/src/app/api/v1/users/me/banner/upload-url/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Native/offline PUT compatibility retained. Rust parity pending."
+    },
+    "api:/api/v1/users/me/banner/upload:apps/web/src/app/api/v1/users/me/banner/upload/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Native/offline PUT compatibility retained. Rust parity pending."
     },
     "api:/api/v1/users/me/default-workspace:apps/web/src/legacy-api-routes/v1/users/me/default-workspace/route.ts": {
       "status": "migrated",
@@ -1244,7 +1259,7 @@
     "api:/api/v1/workspaces/:wsId/avatar/upload-url:apps/web/src/app/api/v1/workspaces/[wsId]/avatar/upload-url/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "First-class authorized workspace avatar signer reserves the resolved actor shared profile-upload and global budgets before privileged avatars ticket creation; quotas fail closed with 429/503. Rust handler is explicit backlog."
+      "note": "Permission-checked workspace avatar ticket delegates to bounded central server WebP optimization, shared per-actor quotas and one-use capabilities. Rust parity pending."
     },
     "api:/api/v1/workspaces/:wsId/billing:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/billing/route.ts": {
       "status": "accepted-removal",
@@ -1635,6 +1650,11 @@
           "note": "The live POST creates profile-completion request links. It resolves registered satellite app-session actors through resolveWorkspaceRouteAccess before authorizing manage_user_profile_links and recording the authenticated creator. The Rust port is pending. Preserve required-MFA assurance on invitation tokens and refresh pairs, and recheck fresh policy before accepting an invitation."
         }
       }
+    },
+    "api:/api/v1/workspaces/:wsId/users/avatar:apps/web/src/app/api/v1/workspaces/[wsId]/users/avatar/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "GET remains source-compatible with the Rust port. POST uses permission-checked single-use optimized upload capabilities and stays in Next.js; Rust returns None for non-GET methods."
     },
     "api:/api/v1/workspaces/:wsId/users/reports/:reportId/delivery:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/delivery/route.ts": {
       "status": "legacy-next",

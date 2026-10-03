@@ -7,7 +7,7 @@ import {
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const web = resolveTuturuuuWebAppUrl();
-export default createNextIntlPlugin()(
+const nextConfig = createNextIntlPlugin()(
   createTuturuuuNextConfig({
     async rewrites() {
       return {
@@ -19,6 +19,11 @@ export default createNextIntlPlugin()(
   })
 );
 
-if (process.env.NODE_ENV === 'development') {
-  await initOpenNextCloudflareForDev();
+// Next may load TypeScript configs through its CommonJS compiler in dev/CI.
+// Await local bindings inside the supported async config factory, not at module scope.
+export default async function configureLettin() {
+  if (process.env.NODE_ENV === 'development') {
+    await initOpenNextCloudflareForDev();
+  }
+  return nextConfig;
 }

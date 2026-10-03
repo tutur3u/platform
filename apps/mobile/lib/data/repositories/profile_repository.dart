@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
-import 'package:mime/mime.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
@@ -10,6 +9,7 @@ import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/cache/profile_avatar_delivery.dart';
 import 'package:mobile/core/config/api_config.dart';
+import 'package:mobile/core/media/profile_media_optimizer.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
@@ -115,10 +115,11 @@ class ProfileRepository {
 
   Future<({bool success, String? error})> saveAvatar(File file) async {
     try {
+      final optimized = await optimizeProfileMediaFile(file);
       final payload = {
-        'filename': file.uri.pathSegments.last,
-        'contentType': lookupMimeType(file.path) ?? 'application/octet-stream',
-        'bytes': base64Encode(await file.readAsBytes()),
+        'filename': optimized.filename,
+        'contentType': optimized.contentType,
+        'bytes': base64Encode(optimized.bytes),
       };
       await queueOrSendVoid(
         feature: 'profile',
@@ -332,9 +333,9 @@ class ProfileRepository {
     File file,
   ) async {
     try {
-      final bytes = await file.readAsBytes();
-      final contentType =
-          lookupMimeType(file.path) ?? 'application/octet-stream';
+      final optimized = await optimizeProfileMediaFile(file);
+      final bytes = optimized.bytes;
+      final contentType = optimized.contentType;
       final response = await _httpClient
           .put(
             Uri.parse(uploadUrl),

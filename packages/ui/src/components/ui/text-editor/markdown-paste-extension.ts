@@ -421,7 +421,7 @@ function parseTable(
   return { html, endIndex: i };
 }
 
-function markdownToHtml(markdown: string): string {
+export function markdownToHtml(markdown: string): string {
   const lines = markdown.split('\n');
   const result: string[] = [];
   let i = 0;
