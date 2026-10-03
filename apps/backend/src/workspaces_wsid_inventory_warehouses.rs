@@ -77,7 +77,7 @@ use crate::{
 
 const WAREHOUSES_PATH_PREFIX: &str = "/api/v1/workspaces/";
 const WAREHOUSES_PATH_SUFFIX: &str = "/inventory/warehouses";
-const WAREHOUSES_TABLE: &str = "inventory_warehouses";
+const WAREHOUSES_TABLE: &str = "inventory_active_warehouses";
 const PRIVATE_SCHEMA: &str = "private";
 
 const FORBIDDEN_MESSAGE: &str = "Forbidden";
@@ -208,7 +208,7 @@ async fn authorize_catalog_or_setup(
     )))
 }
 
-/// Reads `private.inventory_warehouses` with the service role (RLS bypassed,
+/// Reads the anti-joined `private.inventory_active_warehouses` with the service role (RLS bypassed,
 /// scoped purely by the `ws_id` filter), mirroring the legacy admin-client read.
 /// Returns the parsed rows plus the total count (only meaningful when paginated;
 /// `0` otherwise).
@@ -225,17 +225,6 @@ async fn fetch_warehouses(
         ("ws_id", format!("eq.{ws_id}")),
         ("order", "name.asc".to_owned()),
     ];
-
-    if let Some(filter) =
-        crate::workspaces_product_warehouses::merge_aliases::warehouse_alias_filter(
-            contact_data,
-            outbound,
-            ws_id,
-        )
-        .await?
-    {
-        params.push(("id", filter));
-    }
 
     // `if (q) query.ilike('name', '%q%')` — only when `q` is non-empty (JS
     // truthiness). supabase-js sends the pattern verbatim, so `%q%` reaches
@@ -570,3 +559,6 @@ mod tests {
         assert_eq!(parse_content_range_count(Some("garbage")), 0);
     }
 }
+
+#[cfg(test)]
+mod list_tests;

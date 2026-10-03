@@ -5,13 +5,7 @@ const mocks = {
   createAdminClient: vi.fn(),
   createInventoryAuditLog: vi.fn(),
   getInventoryActorContext: vi.fn(),
-  getMergedWarehouseIds: vi.fn(),
 };
-
-vi.mock('@/lib/inventory-merge-aliases', () => ({
-  getMergedWarehouseIds: (...args: unknown[]) =>
-    mocks.getMergedWarehouseIds(...args),
-}));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: Parameters<typeof mocks.createAdminClient>) =>
@@ -127,16 +121,11 @@ function createDeleteClient(row: Record<string, unknown>) {
 describe('inventory warehouses API route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.getMergedWarehouseIds.mockResolvedValue({ ids: [], error: null });
     mocks.createInventoryAuditLog.mockResolvedValue(undefined);
     mocks.getInventoryActorContext.mockResolvedValue({ userId: 'user-1' });
   });
 
   it('lists warehouses through the inventory route using the normalized workspace id', async () => {
-    mocks.getMergedWarehouseIds.mockResolvedValue({
-      ids: ['00009000-0000-4000-8000-000000000030'],
-      error: null,
-    });
     const listClient = createListClient([
       { id: 'warehouse-1', name: 'Main', ws_id: 'ws-1' },
     ]);
@@ -170,38 +159,8 @@ describe('inventory warehouses API route', () => {
       'personal'
     );
     expect(listClient.schema).toHaveBeenCalledWith('private');
-    expect(listClient.from).toHaveBeenCalledWith('inventory_warehouses');
+    expect(listClient.from).toHaveBeenCalledWith('inventory_active_warehouses');
     expect(listClient.query.eq).toHaveBeenCalledWith('ws_id', 'ws-1');
-    expect(listClient.query.not).toHaveBeenCalledWith(
-      'id',
-      'in',
-      '(00009000-0000-4000-8000-000000000030)'
-    );
-    expect(listClient.query.not.mock.invocationCallOrder[0]).toBeLessThan(
-      listClient.query.range.mock.invocationCallOrder[0]!
-    );
-  });
-
-  it('fails an unavailable alias read without returning stale source choices', async () => {
-    mocks.getMergedWarehouseIds.mockResolvedValue({
-      ids: [],
-      error: { code: 'XX000' },
-    });
-    mocks.createAdminClient.mockResolvedValue(createListClient([]).client);
-    mocks.authorizeInventoryWorkspace.mockResolvedValue({
-      ok: true,
-      value: { permissions: permissionsWith(['view_inventory']), wsId: 'ws-1' },
-    });
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/inventory/warehouses/route'
-    );
-    expect(
-      (
-        await GET(new Request('https://example.invalid/api'), {
-          params: Promise.resolve({ wsId: 'ws-1' }),
-        })
-      ).status
-    ).toBe(500);
   });
 
   it('creates warehouses for setup-capable users and returns the created row', async () => {
