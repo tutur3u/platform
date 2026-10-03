@@ -3551,6 +3551,8 @@
     "appsHideConfirmTitle": "Ẩn ứng dụng này?",
     "appsHideConfirmDescription": "Ứng dụng sẽ chuyển xuống dưới các ứng dụng đang hiện. Bạn có thể hiện lại bất cứ lúc nào.",
     "appsReorder": "Kéo để sắp xếp",
+    "homePersonalAgenda": "Lịch cá nhân",
+    "homePersonalAgendaUnavailable": "Lịch cá nhân hiện không khả dụng.",
     "homeCustomize": "Tùy chỉnh Trang chủ",
     "homeHideWidget": "Ẩn tiện ích",
     "homeShowWidget": "Hiện tiện ích",

@@ -8633,6 +8633,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appsReorder => 'Drag to reorder';
 
   @override
+  String get homePersonalAgenda => 'Personal Agenda';
+
+  @override
+  String get homePersonalAgendaUnavailable => 'Personal calendar is unavailable.';
+
+  @override
   String get homeCustomize => 'Customize Home';
 
   @override

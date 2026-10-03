@@ -16525,6 +16525,18 @@ abstract class AppLocalizations {
   /// **'Drag to reorder'**
   String get appsReorder;
 
+  /// No description provided for @homePersonalAgenda.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal Agenda'**
+  String get homePersonalAgenda;
+
+  /// No description provided for @homePersonalAgendaUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal calendar is unavailable.'**
+  String get homePersonalAgendaUnavailable;
+
   /// No description provided for @homeCustomize.
   ///
   /// In en, this message translates to:

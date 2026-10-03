@@ -3548,6 +3548,8 @@
     "appsHideConfirmTitle": "Hide this app?",
     "appsHideConfirmDescription": "It will move below your shown apps. You can show it again at any time.",
     "appsReorder": "Drag to reorder",
+    "homePersonalAgenda": "Personal Agenda",
+    "homePersonalAgendaUnavailable": "Personal calendar is unavailable.",
     "homeCustomize": "Customize Home",
     "homeHideWidget": "Hide widget",
     "homeShowWidget": "Show widget",

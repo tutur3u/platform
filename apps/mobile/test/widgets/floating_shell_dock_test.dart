@@ -120,7 +120,9 @@ void main() {
     await tester.drag(find.byType(ListView), const Offset(0, -160));
     await tester.pump(const Duration(milliseconds: 250));
     expect(
-      tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity)).opacity,
+      tester
+          .widget<AnimatedOpacity>(find.byType(AnimatedOpacity).first)
+          .opacity,
       0,
     );
     expect(visibility.last, isFalse);
@@ -128,7 +130,9 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
     expect(
-      tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity)).opacity,
+      tester
+          .widget<AnimatedOpacity>(find.byType(AnimatedOpacity).first)
+          .opacity,
       1,
     );
     expect(visibility.last, isTrue);
@@ -149,7 +153,11 @@ void main() {
     );
     expect(tester.widget<AnimatedOpacity>(headerOpacity).opacity, 1);
     expect(
-      tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity).last).opacity,
+      tester
+          .widget<AnimatedOpacity>(
+            find.byKey(const ValueKey('floating-shell-dock-opacity')),
+          )
+          .opacity,
       0,
     );
     final expanded = tester.getRect(find.byType(ListView));

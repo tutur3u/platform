@@ -176,6 +176,41 @@ void main() {
   }
 
   testWidgets(
+    'Home then personal Agenda and Grid then List preserve global scope',
+    (tester) async {
+      await mount(tester);
+      final chrome = tester
+          .element(find.byType(ShellPage))
+          .read<ShellChromeActionsCubit>();
+      final appsViews = chrome.state
+          .resolveForLocation(Routes.apps)
+          .where((action) => action.segmentGroup == 'apps-view')
+          .toList();
+      expect(appsViews.map((action) => action.id), [
+        'apps-view-grid',
+        'apps-view-list',
+      ]);
+      expect(appsViews.first.highlighted, isTrue);
+      router.go(Routes.home);
+      await _pump(tester);
+      final homeViews = chrome.state
+          .resolveForLocation(Routes.home)
+          .where((action) => action.segmentGroup == 'home-views')
+          .toList();
+      expect(homeViews.map((action) => action.id), [
+        'home-view-home',
+        'home-view-agenda',
+      ]);
+      expect(homeViews.first.highlighted, isTrue);
+      homeViews.last.onPressed!();
+      await _pump(tester);
+      expect(find.text('Personal calendar is unavailable.'), findsOneWidget);
+      expect(workspaces.state.currentWorkspace!.id, 'synthetic-personal');
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'unique normalized current result launches once and clears search',
     (tester) async {
       await mount(tester);
@@ -222,19 +257,30 @@ void main() {
     expect(tester.takeException(), isNull);
   });
   for (final query in ['no-such-module', 'a', '   ']) {
-    testWidgets(
-      'IME preserves search for zero multiple or empty results: $query',
-      (tester) async {
-        await mount(tester);
-        await search(tester, query);
-        await submit(tester);
-        expect(router.routeInformationProvider.value.uri.path, Routes.apps);
+    testWidgets('IME retains results or dismisses empty query: $query', (
+      tester,
+    ) async {
+      await mount(tester);
+      await search(tester, query);
+      await submit(tester);
+      expect(router.routeInformationProvider.value.uri.path, Routes.apps);
+      if (query.trim().isEmpty) {
+        expect(searchField, findsNothing);
+        expect(
+          FocusManager.instance.primaryFocus?.debugLabel,
+          isNot('shell-search'),
+        );
+      } else {
         expect(searchField, findsOneWidget);
         expect(tester.widget<TextField>(searchField).controller!.text, query);
-        expect(apps.state.selectedId, isNull);
-        expect(tester.takeException(), isNull);
-      },
-    );
+        expect(
+          tester.widget<TextField>(searchField).focusNode!.hasFocus,
+          isFalse,
+        );
+      }
+      expect(apps.state.selectedId, isNull);
+      expect(tester.takeException(), isNull);
+    });
   }
   testWidgets('stale submission cannot launch a different current query', (
     tester,

@@ -938,7 +938,17 @@ Profile to Overview within at most three taps; scrolling manually restarts the
 sequence. Apps resets to Grid, Finance taxonomy to Categories, and Calendar to
 Three days on phones or Week on tablets. Notes returns to Inbox and Assistant
 to Chat through their existing guarded handlers. Time Tracker sections remain
-separate routed destinations; Dashboard has no secondary section. Apps opens the Apps tab on one tap and keeps its picker on long press.
+separate routed destinations. Home defaults to Home; its second tab is Personal
+Agenda, scoped to the signed-in user's personal membership without switching the
+global workspace. It never falls back to a shared workspace. It retains authorized
+cached events during retry and offers read-only event details; Calendar remains
+the editing surface. Apps defaults to Grid, ordered before List. Shared search
+replaces the top navbar; empty submission dismisses and unfocuses. IME visibility
+and hardware search focus animate the whole dock and its actions out together;
+route changes clear focus. Workspace visibility uses an understated icon inside
+a 44-pixel target with a named tooltip. Regression coverage:
+`personal_agenda_test.dart`, `shell_keyboard_chrome_test.dart`, and
+`apps_search_submit_test.dart`. Apps opens the Apps tab on one tap and keeps its picker on long press.
 
 Profile uses the shell title for Overview and Timeline, with no duplicate
 body heading. Place the day-trail action before the rightmost Overview/Timeline
@@ -1048,7 +1058,8 @@ stutter is resolved.
 
 Submitting a nonempty Apps query with exactly one current matching app clears
 the field, closes search mode, and opens that app. Zero or multiple matches
-keep the current search unchanged. Submission uses the same current localized
+keep the query and results visible while unfocusing the keyboard. Empty queries
+close search mode. Submission uses the same current localized
 results as the hub, and repeated submissions cannot launch the app twice.
 
 Apps discovery retains its case-insensitive substring matching over the localized

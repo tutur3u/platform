@@ -8591,6 +8591,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appsReorder => 'Kéo để sắp xếp';
 
   @override
+  String get homePersonalAgenda => 'Lịch cá nhân';
+
+  @override
+  String get homePersonalAgendaUnavailable => 'Lịch cá nhân hiện không khả dụng.';
+
+  @override
   String get homeCustomize => 'Tùy chỉnh Trang chủ';
 
   @override

@@ -100,7 +100,7 @@ extension _ShellPageLayout on _ShellPageState {
                               _lastRootLocation,
                             ),
                             builders: [
-                              (_) => DashboardPage(
+                              (_) => HomePage(
                                 replayToken:
                                     _rootTabReplayTokens[Routes.home] ?? 0,
                               ),
@@ -200,7 +200,10 @@ extension _ShellPageLayout on _ShellPageState {
       key: const ValueKey('compact-shell-footer'),
       color: shad.Theme.of(context).colorScheme.background,
       padding: EdgeInsets.only(bottom: bottomPadding),
-      child: navigationBar,
+      child: ShellKeyboardChrome(
+        keyboardVisible: MediaQuery.viewInsetsOf(context).bottom > 0,
+        child: navigationBar,
+      ),
     );
   }
 
@@ -212,6 +215,7 @@ extension _ShellPageLayout on _ShellPageState {
   }) {
     return FloatingShellDock(
       location: widget.matchedLocation,
+      keyboardVisible: MediaQuery.viewInsetsOf(context).bottom > 0,
       bottomInset: bodyBottomInset,
       navigation: navigationBar,
       header: header,
@@ -275,11 +279,9 @@ extension _ShellPageLayout on _ShellPageState {
           widget.matchedLocation,
         ) ??
         false;
-    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     final showBottomNav =
         (!widget.matchedLocation.startsWith(Routes.assistant) ||
             !assistantChrome.isFullscreen) &&
-        !keyboardVisible &&
         !immersive;
     final navContent = MorphingNavigationBar(
       selectedKey: selectedKey,
