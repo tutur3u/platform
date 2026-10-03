@@ -1,3 +1,4 @@
+import { uploadCurrentUserProfileMedia } from './profile-media';
 import type {
   CurrentUserProfileResponse,
   UpdateCurrentUserProfilePayload,
@@ -574,24 +575,13 @@ export async function uploadCurrentUserAvatar(
   filename = file.name,
   options?: InternalApiClientOptions
 ): Promise<UploadCurrentUserAvatarResult> {
-  const client = getInternalApiClient(options);
-  const { uploadUrl, publicUrl } = await createCurrentUserAvatarUploadUrl(
-    filename,
+  // Preserve the legacy optional filename argument; generated names match output MIME.
+  void filename;
+  const publicUrl = await uploadCurrentUserProfileMedia(
+    'avatar',
+    file,
     options
   );
-
-  const uploadResponse = await client.fetch(uploadUrl, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': file.type,
-    },
-    body: file,
-    cache: 'no-store',
-  });
-
-  if (!uploadResponse.ok) {
-    throw new Error('Failed to upload file');
-  }
 
   try {
     await updateCurrentUserProfile({ avatar_url: publicUrl }, options);

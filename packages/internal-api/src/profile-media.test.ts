@@ -1,4 +1,15 @@
-import { expect, it, vi } from 'vitest';
+import { beforeEach, expect, it, vi } from 'vitest';
+
+vi.mock('./profile-media-optimize', () => ({
+  optimizeProfileMediaFile: vi.fn(),
+}));
+
+import { optimizeProfileMediaFile } from './profile-media-optimize';
+
+beforeEach(() =>
+  vi.mocked(optimizeProfileMediaFile).mockImplementation(async (file) => file)
+);
+
 import type { InternalApiError } from './internal-api-error';
 import { uploadCurrentUserProfileMedia } from './profile-media';
 

@@ -1,0 +1,39 @@
+import {
+  type ProfileMediaKind,
+  reserveProfileUploadBudget,
+} from '@tuturuuu/storage-core/profile-upload-budget';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { createAppCoordinationToken } from '@tuturuuu/utils/app-coordination-token';
+import { publicStorageUrl } from './profile-media-public-url';
+
+export async function createOptimizedProfileMediaTicket(
+  userId: string,
+  kind: ProfileMediaKind,
+  origin: string,
+  workspaceId?: string
+) {
+  await reserveProfileUploadBudget(userId, kind);
+  const { token, claims } = createAppCoordinationToken({
+    userId,
+    targetApp: 'profile-media-upload',
+    scopes: [
+      `profile-media:${kind}`,
+      ...(workspaceId ? [`workspace:${workspaceId}`] : []),
+    ],
+    expiresInSeconds: 600,
+  });
+  const filePath = workspaceId
+    ? `workspaces/${workspaceId}/avatar-${claims.jti}.webp`
+    : `${userId}/${claims.jti}.webp`;
+  const admin = await createAdminClient({ noCookie: true });
+  const storage = admin.storage.from(kind === 'avatar' ? 'avatars' : 'banners');
+  const uploadUrl = new URL(`/api/v1/users/me/${kind}/upload`, origin);
+  uploadUrl.searchParams.set('token', token);
+  return {
+    uploadUrl: uploadUrl.toString(),
+    signedUrl: uploadUrl.toString(),
+    token,
+    filePath,
+    publicUrl: publicStorageUrl(storage.getPublicUrl(filePath).data.publicUrl),
+  };
+}

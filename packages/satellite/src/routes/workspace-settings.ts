@@ -1,12 +1,16 @@
-import type { AppSessionTargetApp } from '@tuturuuu/auth/app-session';
+import {
+  type AppSessionTargetApp,
+  createAppSessionToken,
+} from '@tuturuuu/auth/app-session';
+import {
+  createWorkspaceAvatarUploadTarget,
+  InternalApiError,
+} from '@tuturuuu/internal-api';
 import {
   AiCreditsStatusError,
   getAiCreditsStatus,
 } from '@tuturuuu/payment-core/ai-credits-helper';
-import {
-  createAdminClient,
-  createDynamicAdminClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_ID_LENGTH,
   MAX_WORKSPACE_NAME_LENGTH,
@@ -337,31 +341,32 @@ export function createSatelliteWorkspaceAvatarUploadRouteHandler(
       );
     }
 
-    const filePath = `workspaces/${authorization.permissions.wsId}/avatar-${Date.now()}.${fileExtension}`;
-    const sbStorageAdmin = await createDynamicAdminClient();
-    const { data, error } = await sbStorageAdmin.storage
-      .from('avatars')
-      .createSignedUploadUrl(filePath, { upsert: false });
-    if (error || !data) {
-      console.error(
-        'Failed to create satellite workspace avatar upload target:',
-        error
+    try {
+      const access = createAppSessionToken({
+        userId: authorization.user.id,
+        targetApp: 'platform',
+        originApp: targetApp,
+        scopes: ['users:profile:write'],
+        expiresInSeconds: 60,
+      });
+      const ticket = await createWorkspaceAvatarUploadTarget(
+        authorization.permissions.wsId,
+        filename,
+        {
+          defaultHeaders: { Authorization: `Bearer ${access.token}` },
+        }
       );
+      return NextResponse.json(ticket, {
+        headers: { 'Cache-Control': 'no-store' },
+      });
+    } catch (error) {
       return NextResponse.json(
-        { message: 'Failed to generate upload URL' },
-        { status: 500 }
+        { message: 'Avatar upload unavailable' },
+        {
+          status: error instanceof InternalApiError ? error.status : 503,
+        }
       );
     }
-
-    const { data: publicUrlData } = sbStorageAdmin.storage
-      .from('avatars')
-      .getPublicUrl(filePath);
-    return NextResponse.json({
-      filePath,
-      publicUrl: publicUrlData.publicUrl,
-      signedUrl: data.signedUrl,
-      token: data.token,
-    });
   };
 }
 

@@ -2672,12 +2672,27 @@
     "api:/api/v1/users/me/avatar/upload-url:apps/web/src/app/api/v1/users/me/avatar/upload-url/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "First-class avatar ticket endpoint reserves atomic shared actor/global count and byte budgets before service-role signing. Retain users:profile:write audience, same-origin cookie checks, quota fail-closed behavior, Storage MIME/byte limits and no-store signed responses. Rust parity pending."
+      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Native/offline PUT compatibility retained. Rust parity pending."
     },
     "api:/api/v1/users/me/banner/upload-url:apps/web/src/app/api/v1/users/me/banner/upload-url/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "First-class banner tickets share avatar count/byte abuse budgets and scoped service-role upload signing. Rust parity pending."
+      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Native/offline PUT compatibility retained. Rust parity pending."
+    },
+    "api:/api/v1/users/me/avatar/upload:apps/web/src/app/api/v1/users/me/avatar/upload/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Native/offline PUT compatibility retained. Rust parity pending."
+    },
+    "api:/api/v1/users/me/banner/upload:apps/web/src/app/api/v1/users/me/banner/upload/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Native/offline PUT compatibility retained. Rust parity pending."
+    },
+    "api:/api/v1/workspaces/:wsId/avatar/upload-url:apps/web/src/app/api/v1/workspaces/[wsId]/avatar/upload-url/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Permission-checked workspace avatar ticket delegates to bounded central server WebP optimization, shared per-actor quotas and one-use capabilities. Rust parity pending."
     }
   }
 }

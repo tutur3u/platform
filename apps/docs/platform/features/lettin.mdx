@@ -246,8 +246,27 @@ well as the shared RPC; conflicting, invalid, or rate-limited saves roll back th
 whole patch. The private per-user change history is pruned to 28 days when a
 change succeeds. Public identity read surfaces never select this private history.
 
-Avatar uploads have a Storage-enforced 2 MiB ceiling; banners use 5 MiB. Both
-allow PNG, JPEG, WebP, and GIF and retain shared public identity semantics.
+Avatar uploads are automatically optimized to at most **1 MB (1,000,000 bytes)**;
+banners to **2 MB (2,000,000 bytes)**. Source PNG, JPEG, WebP and GIF files may be
+up to 2 MiB for avatars or 5 MiB for banners. This rule covers canonical personal
+identity uploads from Tulletin, platform web, Nova and mobile; existing objects
+remain readable. Browser clients resize and encode WebP before transport. Mobile
+uses its existing in-house image library off the UI isolate and stores optimized,
+metadata-free PNG in offline queues; older queued avatar payloads are optimized
+again before delivery. Workspace avatar clients use the same client optimizer and shared server path,
+with workspace permission checks before issuance. Their tickets share the actor
+budget with personal images. Satellite workspace endpoints delegate issuance to
+the central API rather than granting raw Storage writes.
+The shared optimizer supports banners for future native banner surfaces; mobile
+currently exposes only avatar selection.
+
+The server independently decodes, applies EXIF orientation, strips metadata,
+resizes without enlarging (avatars within 1024 x 1024; banners within 2560 x 1440),
+and encodes WebP. Quality then dimensions are reduced as needed; output is checked
+before persistence. GIF and animated WebP use their first frame. Transparency is
+preserved. Unsupported/corrupt images and sources above 20 million pixels are
+rejected. Public buckets accept only WebP, with the final byte caps enforced by
+Storage; originals are never persisted. Identity artwork retains public semantics.
 Restrictive Storage policies require server-issued, budgeted upload tickets;
 ordinary authenticated bucket uploads cannot bypass quotas. These changes build
 on the shared Postgres counter foundation in storage anti-abuse PR #5736 and
@@ -311,11 +330,16 @@ independently of its optional storage-egress activation flag. Per account, both
 media kinds share two tickets per UTC hour and ten per UTC calendar week. Avatars
 allow three tickets per UTC day; banners allow two. Their combined reserved bytes
 are capped at 16 MiB per day and 32 MiB per week. Global caps are 10,000 tickets
-and 16 GiB per UTC day. Weeks begin Monday. The full Storage bucket ceiling is
+and 16 GiB per UTC day. Weeks begin Monday. The full source-upload transport ceiling (2 MiB/5 MiB) is
 charged, even for smaller files or unused tickets; clients cannot claim a lower
 size to bypass the budget. Quota failures return 429 with Retry-After; protection
-or schema outages return 503 and issue no ticket. Tickets are scoped to a fresh
-actor-owned object and prohibit overwrite. Images are public identity artwork.
+or schema outages return 503 and issue no ticket. Tickets expire after ten minutes, are scoped to a fresh actor-owned WebP object,
+and prohibit overwrite. They authorize an unauthenticated binary PUT to the central
+API so native/offline clients retain their existing signed-upload contract. An
+atomic shared counter consumes each ticket once before reading or decoding; replay
+returns 409. Actual streamed source bytes are bounded even without Content-Length.
+The API stores only the optimized result using service-role credentials. Tickets
+never grant direct writes to public Storage. Images are public identity artwork.
 
 Coverage is in creator identity and profile-media pgTAP contracts, shared username
 and upload-budget tests, central profile/ticket API tests, actual editor Markdown
@@ -329,7 +353,8 @@ are not runtime evidence.
 
 For a server using an internal HTTP Supabase origin, set
 `SUPABASE_PUBLIC_STORAGE_ORIGIN` to its externally reachable HTTPS Storage origin.
-Profile upload responses preserve the scoped path and signed token while using
-that public origin. The E2E runner registers `supabase.tuturuuu.localhost` through
+Final profile image URLs use that public Storage origin. Signed upload URLs use
+the central web origin (`NEXT_PUBLIC_APP_URL`) and point to the optimization API;
+clients must not construct Storage upload URLs from the returned token. The E2E runner registers `supabase.tuturuuu.localhost` through
 Portless and pins this setting in its disposable environment file, so banner
 uploads use real HTTPS and the production HTTPS profile validation stays intact.

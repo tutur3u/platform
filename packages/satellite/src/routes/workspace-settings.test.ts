@@ -1,3 +1,10 @@
+import { createWorkspaceAvatarUploadTarget } from '@tuturuuu/internal-api';
+
+vi.mock('@tuturuuu/internal-api', () => ({
+  createWorkspaceAvatarUploadTarget: vi.fn(),
+  InternalApiError: class extends Error {},
+}));
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createSatelliteAiCreditsRouteHandler,
@@ -174,21 +181,12 @@ describe('satellite workspace settings route handlers', () => {
   });
 
   it('creates avatar upload targets under the authorized workspace path', async () => {
-    const createSignedUploadUrl = vi.fn().mockResolvedValue({
-      data: { signedUrl: 'https://upload.test', token: 'upload-token' },
-      error: null,
+    vi.mocked(createWorkspaceAvatarUploadTarget).mockResolvedValue({
+      signedUrl: 'https://web.test/api/v1/users/me/avatar/upload?token=scoped',
+      token: 'scoped',
+      filePath: 'workspaces/resolved-workspace-id/avatar-synthetic.webp',
+      publicUrl: 'https://cdn.test/avatar.webp',
     });
-    createDynamicAdminClient.mockResolvedValue({
-      storage: {
-        from: vi.fn(() => ({
-          createSignedUploadUrl,
-          getPublicUrl: vi.fn(() => ({
-            data: { publicUrl: 'https://cdn.test/avatar.png' },
-          })),
-        })),
-      },
-    });
-
     const response = await createSatelliteWorkspaceAvatarUploadRouteHandler(
       'tasks'
     )(
@@ -204,12 +202,19 @@ describe('satellite workspace settings route handlers', () => {
     const payload = await response.json();
 
     expect(response.status).toBe(200);
-    expect(payload.filePath).toMatch(
-      /^workspaces\/resolved-workspace-id\/avatar-\d+\.png$/
+    expect(payload.filePath).toBe(
+      'workspaces/resolved-workspace-id/avatar-synthetic.webp'
     );
-    expect(createSignedUploadUrl).toHaveBeenCalledWith(payload.filePath, {
-      upsert: false,
-    });
+    expect(createWorkspaceAvatarUploadTarget).toHaveBeenCalledWith(
+      'resolved-workspace-id',
+      'avatar.png',
+      {
+        defaultHeaders: {
+          Authorization: expect.stringMatching(/^Bearer ttr_app_/),
+        },
+      }
+    );
+    expect(createDynamicAdminClient).not.toHaveBeenCalled();
   });
 
   it('updates a workspace avatar through the owning satellite session', async () => {
