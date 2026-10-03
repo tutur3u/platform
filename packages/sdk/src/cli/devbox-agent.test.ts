@@ -20,6 +20,7 @@ vi.mock('./devbox-agent-capabilities', () => ({
 }));
 
 import { runDevboxAgentLoop } from './devbox-agent';
+import { DevboxCliUpgradeBusyError } from './devbox-auto-upgrade';
 
 describe('Devbox agent upgrade handoff', () => {
   beforeEach(() => {
@@ -72,6 +73,31 @@ describe('Devbox agent upgrade handoff', () => {
     expect(process.stdout.write).toHaveBeenCalledWith(
       'Devbox CLI updated. Exiting for service manager restart.\n'
     );
+  });
+
+  it('retries shared-install contention promptly and restarts into the winning upgrade', async () => {
+    vi.useFakeTimers();
+    vi.stubEnv('TUTURUUU_DEVBOX_AUTO_UPGRADE', 'true');
+    pollJobs.mockResolvedValue({ ok: true, jobs: [] });
+    autoUpgrade
+      .mockRejectedValueOnce(new DevboxCliUpgradeBusyError('busy'))
+      .mockResolvedValue(true);
+    const loop = runDevboxAgentLoop({
+      baseUrl: 'https://example.test',
+      token: 'fixture',
+    });
+    try {
+      await vi.advanceTimersByTimeAsync(29_000);
+      expect(autoUpgrade).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(36_000);
+      await loop;
+      expect(autoUpgrade).toHaveBeenCalledTimes(2);
+      expect(process.stdout.write).toHaveBeenCalledWith(
+        'Devbox CLI updated. Exiting for service manager restart.\n'
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('routes heartbeat and claims to the configured Cloudflare control plane', async () => {

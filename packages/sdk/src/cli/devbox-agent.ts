@@ -2,8 +2,10 @@ import { pollDevboxAgentJobs } from '../platform-devbox';
 import { normalizeBaseUrl } from './config';
 import { createDevboxAgentCapabilities } from './devbox-agent-capabilities';
 import {
+  DEVBOX_UPGRADE_BUSY_RETRY_MS,
   DEVBOX_UPGRADE_CHECK_INTERVAL_MS,
   DevboxCliRepairRequiredError,
+  DevboxCliUpgradeBusyError,
   upgradeDevboxCliIfNeeded,
 } from './devbox-auto-upgrade';
 import { executeDevboxAgentJob } from './devbox-runner';
@@ -251,6 +253,10 @@ export async function runDevboxAgentLoop({
             }
           })
           .catch((error) => {
+            if (error instanceof DevboxCliUpgradeBusyError) {
+              nextUpgradeCheckAt = Date.now() + DEVBOX_UPGRADE_BUSY_RETRY_MS;
+              return;
+            }
             if (error instanceof DevboxCliRepairRequiredError) failure = error;
             console.warn(
               'Automatic devbox CLI upgrade failed; inspect the host install before retrying.'

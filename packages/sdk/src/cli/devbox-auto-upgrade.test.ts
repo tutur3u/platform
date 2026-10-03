@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   DevboxCliRepairRequiredError,
+  DevboxCliUpgradeBusyError,
   upgradeDevboxCliIfNeeded,
 } from './devbox-auto-upgrade';
 
@@ -70,7 +71,17 @@ describe('idle devbox CLI upgrades', () => {
 
   it('does not mutate an install while another process holds its lock', async () => {
     await mkdir(join(directory, 'devbox-cli-upgrade.lock'));
-    expect(await upgradeDevboxCliIfNeeded(options())).toBe(false);
+    await expect(upgradeDevboxCliIfNeeded(options())).rejects.toBeInstanceOf(
+      DevboxCliUpgradeBusyError
+    );
+    expect(fetchImpl).not.toHaveBeenCalled();
+    // The lock holder finishes upgrading; the losing process must restart too.
+    await writeFile(
+      join(directory, 'devbox-cli-upgrade.json'),
+      JSON.stringify({ checkedAt: 100_000, installedVersion: '0.27.0' })
+    );
+    await rm(join(directory, 'devbox-cli-upgrade.lock'), { recursive: true });
+    expect(await upgradeDevboxCliIfNeeded(options())).toBe(true);
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 

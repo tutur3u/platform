@@ -9,6 +9,9 @@ import { compareVersions } from './update';
 export const DEVBOX_UPGRADE_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const STABLE_VERSION = /^\d+\.\d+\.\d+$/u;
 
+export const DEVBOX_UPGRADE_BUSY_RETRY_MS = 30_000;
+export class DevboxCliUpgradeBusyError extends Error {}
+
 export class DevboxCliRepairRequiredError extends Error {}
 
 async function run(command: string, args: string[]) {
@@ -70,7 +73,10 @@ export async function upgradeDevboxCliIfNeeded({
   const stateFile = join(directory, 'devbox-cli-upgrade.json');
   await mkdir(directory, { recursive: true, mode: 0o700 });
   const release = await acquireUpgradeLock(lock);
-  if (!release) return false;
+  if (!release)
+    throw new DevboxCliUpgradeBusyError(
+      'Shared CLI upgrade is already in progress'
+    );
   try {
     let state: UpgradeState | undefined;
     try {

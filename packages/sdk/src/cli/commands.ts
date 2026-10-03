@@ -1260,9 +1260,8 @@ interface WorkspaceCommandContext {
 }
 
 async function runBoardsCliCommand(context: WorkspaceCommandContext) {
-  let {
+  const {
     client,
-    config,
     flags,
     json,
     workspaceId,
@@ -1271,6 +1270,7 @@ async function runBoardsCliCommand(context: WorkspaceCommandContext) {
     firstId,
     positionalValue,
   } = context;
+  let { config } = context;
 
   if (action === 'list') {
     render(
@@ -1349,9 +1349,8 @@ async function runBoardsCliCommand(context: WorkspaceCommandContext) {
 }
 
 async function runListsCliCommand(context: WorkspaceCommandContext) {
-  let {
+  const {
     client,
-    config,
     flags,
     json,
     workspaceId,
@@ -1360,6 +1359,7 @@ async function runListsCliCommand(context: WorkspaceCommandContext) {
     firstId,
     positionalValue,
   } = context;
+  let { config } = context;
 
   const boardSelection = await selectBoardId(
     client,
@@ -1515,9 +1515,8 @@ async function runTaskCreateCliCommand({
 }
 
 async function runTasksCliCommand(context: WorkspaceCommandContext) {
-  let {
+  const {
     client,
-    config,
     flags,
     json,
     workspaceId,
@@ -1526,6 +1525,7 @@ async function runTasksCliCommand(context: WorkspaceCommandContext) {
     firstId,
     positionals,
   } = context;
+  let { config } = context;
 
   if (
     action === 'description' ||
@@ -1857,8 +1857,8 @@ async function runTasksCliCommand(context: WorkspaceCommandContext) {
 }
 
 async function runLabelsCliCommand(context: WorkspaceCommandContext) {
-  let { client, config, flags, json, workspaceId, group, action, firstId } =
-    context;
+  const { client, flags, json, workspaceId, group, action, firstId } = context;
+  let { config } = context;
 
   if (action === 'list') {
     render(await client.tasks.listLabels(workspaceId), { group, json });
@@ -1888,8 +1888,8 @@ async function runLabelsCliCommand(context: WorkspaceCommandContext) {
 }
 
 async function runProjectsCliCommand(context: WorkspaceCommandContext) {
-  let { client, config, flags, json, workspaceId, group, action, firstId } =
-    context;
+  const { client, flags, json, workspaceId, group, action, firstId } = context;
+  let { config } = context;
 
   if (action === 'list') {
     render(await client.tasks.listProjects(workspaceId), { group, json });

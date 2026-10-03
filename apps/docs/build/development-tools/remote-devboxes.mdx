@@ -286,7 +286,9 @@ only a newer stable `tuturuuu` release pinned to its exact version, verifies
 during installation and keeps heartbeating. A private host lock serializes
 installs from runners sharing an OS user home directory, and persisted check state
 prevents restart retry loops. Other agents using that shared install restart
-after verifying the installed version. Each agent drains its own jobs; for hosts
+after verifying the installed version. Lock contention schedules another attempt
+after 30 seconds, at the next idle claim, rather than delaying a stale process
+for a full day. Registry checks remain limited by the shared daily state. Each agent drains its own jobs; for hosts
 with different OS service users or unrelated CLI consumers, coordinate a
 host maintenance window or opt out instead of assuming this lock covers them.
 
