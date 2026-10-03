@@ -4130,7 +4130,7 @@
             }
         }
     },
-    "offlinePendingCoverage": "{count} queued changes. They are kept separately and are not counted as downloaded items.",
+    "offlinePendingCoverage": "{count, plural, one{{count} queued change. It is kept separately and is not counted as a downloaded item.} other{{count} queued changes. They are kept separately and are not counted as downloaded items.}}",
     "@offlinePendingCoverage": {
         "placeholders": {
             "count": {
@@ -4140,7 +4140,7 @@
     },
     "offlineSearchStored": "Search stored collections",
     "offlineNoStoredItems": "No stored collections match.",
-    "offlineAvailableItems": "{items} unique indexed items across {snapshots} stored snapshots",
+    "offlineAvailableItems": "{items, plural, one{{items} unique indexed item} other{{items} unique indexed items}} across {snapshots, plural, one{{snapshots} stored snapshot} other{{snapshots} stored snapshots}}",
     "@offlineAvailableItems": {
         "placeholders": {
             "items": {
@@ -4151,7 +4151,7 @@
             }
         }
     },
-    "offlineFreshness": "{stale} stale snapshots · {expired} expired snapshots retained for offline use",
+    "offlineFreshness": "{stale, plural, one{{stale} stale snapshot} other{{stale} stale snapshots}} · {expired, plural, one{{expired} expired snapshot} other{{expired} expired snapshots}} retained for offline use",
     "@offlineFreshness": {
         "placeholders": {
             "stale": {
@@ -4188,5 +4188,6 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "offlineStorageNeedsWorkspace": "Select a workspace to view or clear its cached data. The storage limit applies to this device."
 }

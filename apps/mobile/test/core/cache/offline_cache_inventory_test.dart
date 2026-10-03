@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -228,6 +229,47 @@ void main() {
       expect(await total(), isNull);
     },
   );
+
+  test('corrupt JSON retains scoped bytes and remains clearable', () async {
+    await seed('actor', 'workspace', '1', ['one']);
+    final box = Hive.box<dynamic>('offline_cache_v1');
+    final key = box.keys.single;
+    final raw = Map<dynamic, dynamic>.from(box.get(key) as Map);
+    raw['jsonPayload'] = '{broken';
+    await box.put(key, raw);
+    await store.closeForTesting();
+    store = CacheStore.forTesting(
+      secureStorage: secureStorage,
+      directoryResolver: () async => directory,
+    );
+    expect(
+      (await store.storageSnapshot(
+        userId: 'actor',
+        workspaceId: 'workspace',
+      )).totalBytes,
+      greaterThanOrEqualTo(utf8.encode('{broken').length),
+    );
+    expect(
+      (await store.offlineInventory(
+        userId: 'actor',
+        workspaceId: 'workspace',
+        moduleId: 'inventory',
+      )).namespaces,
+      isEmpty,
+    );
+    await store.clearScope(
+      userId: 'actor',
+      workspaceId: 'workspace',
+      resourceOnly: true,
+    );
+    expect(
+      (await store.storageSnapshot(
+        userId: 'actor',
+        workspaceId: 'workspace',
+      )).totalBytes,
+      0,
+    );
+  });
 
   test('unknown modules cannot inspect private namespaces', () async {
     await expectLater(

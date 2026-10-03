@@ -18718,7 +18718,7 @@ abstract class AppLocalizations {
   /// No description provided for @offlinePendingCoverage.
   ///
   /// In en, this message translates to:
-  /// **'{count} queued changes. They are kept separately and are not counted as downloaded items.'**
+  /// **'{count, plural, one{{count} queued change. It is kept separately and is not counted as a downloaded item.} other{{count} queued changes. They are kept separately and are not counted as downloaded items.}}'**
   String offlinePendingCoverage(int count);
 
   /// No description provided for @offlineSearchStored.
@@ -18736,13 +18736,13 @@ abstract class AppLocalizations {
   /// No description provided for @offlineAvailableItems.
   ///
   /// In en, this message translates to:
-  /// **'{items} unique indexed items across {snapshots} stored snapshots'**
+  /// **'{items, plural, one{{items} unique indexed item} other{{items} unique indexed items}} across {snapshots, plural, one{{snapshots} stored snapshot} other{{snapshots} stored snapshots}}'**
   String offlineAvailableItems(int items, int snapshots);
 
   /// No description provided for @offlineFreshness.
   ///
   /// In en, this message translates to:
-  /// **'{stale} stale snapshots · {expired} expired snapshots retained for offline use'**
+  /// **'{stale, plural, one{{stale} stale snapshot} other{{stale} stale snapshots}} · {expired, plural, one{{expired} expired snapshot} other{{expired} expired snapshots}} retained for offline use'**
   String offlineFreshness(int stale, int expired);
 
   /// No description provided for @offlineLastFetch.
@@ -18822,6 +18822,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Server-reported query total: unknown.'**
   String get offlineExpectedTotalUnknown;
+
+  /// No description provided for @offlineStorageNeedsWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a workspace to view or clear its cached data. The storage limit applies to this device.'**
+  String get offlineStorageNeedsWorkspace;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -9815,7 +9815,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String offlinePendingCoverage(int count) {
-    return '$count queued changes. They are kept separately and are not counted as downloaded items.';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count queued changes. They are kept separately and are not counted as downloaded items.',
+      one: '$count queued change. It is kept separately and is not counted as a downloaded item.',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -9826,12 +9832,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String offlineAvailableItems(int items, int snapshots) {
-    return '$items unique indexed items across $snapshots stored snapshots';
+    String _temp0 = intl.Intl.pluralLogic(
+      items,
+      locale: localeName,
+      other: '$items unique indexed items',
+      one: '$items unique indexed item',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      snapshots,
+      locale: localeName,
+      other: '$snapshots stored snapshots',
+      one: '$snapshots stored snapshot',
+    );
+    return '$_temp0 across $_temp1';
   }
 
   @override
   String offlineFreshness(int stale, int expired) {
-    return '$stale stale snapshots · $expired expired snapshots retained for offline use';
+    String _temp0 = intl.Intl.pluralLogic(
+      stale,
+      locale: localeName,
+      other: '$stale stale snapshots',
+      one: '$stale stale snapshot',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      expired,
+      locale: localeName,
+      other: '$expired expired snapshots',
+      one: '$expired expired snapshot',
+    );
+    return '$_temp0 · $_temp1 retained for offline use';
   }
 
   @override
@@ -9876,4 +9906,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offlineExpectedTotalUnknown => 'Server-reported query total: unknown.';
+
+  @override
+  String get offlineStorageNeedsWorkspace => 'Select a workspace to view or clear its cached data. The storage limit applies to this device.';
 }

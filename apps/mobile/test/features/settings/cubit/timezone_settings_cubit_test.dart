@@ -77,6 +77,31 @@ void main() {
     expect(cubit.state.personal, 'auto');
   });
 
+  for (final deviceResult in ['', '   ']) {
+    test(
+      'Automatic persists but blank device lookup remains unresolved',
+      () async {
+        await cubit.close();
+        repository.personal = 'UTC';
+        cubit = TimezoneSettingsCubit(
+          repository: repository,
+          deviceLoader: () async => deviceResult,
+        );
+        await cubit.load(userId: 'user', workspaceId: null);
+        await cubit.save('auto');
+        expect(repository.personal, 'auto');
+        expect(repository.writes, 1);
+        expect(cubit.state.device, isEmpty);
+        expect(cubit.state.resolved, false);
+        expect(cubit.state.failed, true);
+        expect(
+          cubit.state.errorMessage,
+          contains('Device timezone is unavailable'),
+        );
+      },
+    );
+  }
+
   test(
     'load and save retain error details, then clear them after recovery',
     () async {

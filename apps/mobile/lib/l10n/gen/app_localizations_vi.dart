@@ -9773,10 +9773,10 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get offlineEvictTitle => 'Xóa dữ liệu ứng dụng đã lưu';
+  String get offlineEvictTitle => 'Xóa dữ liệu đã lưu của mô-đun';
 
   @override
-  String get offlineEvictDescription => 'Chỉ xóa bản chụp của ứng dụng này trong tài khoản và không gian làm việc đã chọn. Các thao tác ghi đang chờ vẫn được giữ. Tải lại để khôi phục dữ liệu ngoại tuyến.';
+  String get offlineEvictDescription => 'Chỉ xóa bản chụp của mô-đun này trong tài khoản và không gian làm việc đã chọn. Các thao tác ghi đang chờ vẫn được giữ. Tải lại để khôi phục dữ liệu ngoại tuyến.';
 
   @override
   String get offlineInventoryError => 'Không thể kiểm tra hoặc cập nhật dữ liệu đã lưu. Hãy thử lại.';
@@ -9809,4 +9809,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get offlineExpectedTotalUnknown => 'Tổng số mục truy vấn máy chủ báo cáo: chưa rõ.';
+
+  @override
+  String get offlineStorageNeedsWorkspace => 'Chọn không gian làm việc để xem hoặc xóa dữ liệu đã lưu. Giới hạn lưu trữ áp dụng cho thiết bị này.';
 }

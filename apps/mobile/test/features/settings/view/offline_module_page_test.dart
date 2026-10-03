@@ -169,7 +169,7 @@ void main() {
       await pump(tester);
       expect(find.text('inventory.products'), findsOneWidget);
       expect(
-        find.text('1 unique indexed items across 2 stored snapshots'),
+        find.text('1 unique indexed item across 2 stored snapshots'),
         findsOneWidget,
       );
       expect(

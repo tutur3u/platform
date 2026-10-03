@@ -12,7 +12,6 @@ extension CacheStoreStorage on CacheStore {
       CachedResourceRecord record;
       try {
         record = CachedResourceRecord.fromJson(raw);
-        jsonDecode(record.jsonPayload);
       } on Object {
         continue;
       }
@@ -41,6 +40,15 @@ extension CacheStoreStorage on CacheStore {
       totalBytes: categories.values.fold(0, (sum, bytes) => sum + bytes),
       maxBytes: _maxBytes,
       categoryBytes: Map.unmodifiable(categories),
+    );
+  }
+
+  Future<CacheStorageSnapshot> storageLimitSnapshot() async {
+    await init();
+    return CacheStorageSnapshot(
+      totalBytes: 0,
+      maxBytes: _maxBytes,
+      categoryBytes: const {},
     );
   }
 

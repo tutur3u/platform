@@ -265,7 +265,10 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
           (workspace ? previous.personal : previous.workspace) == 'auto';
       if (needsDevice && device.isEmpty) {
         try {
-          device = await deviceLoader().timeout(loadTimeout);
+          device = (await deviceLoader().timeout(loadTimeout)).trim();
+          if (device.isEmpty) {
+            throw Exception('Device timezone is unavailable.');
+          }
         } on Object catch (error) {
           deviceError = error;
           device = '';
