@@ -294,10 +294,15 @@ describe('CalendarProvider Read-Only Mode', () => {
       await createPromise!;
     });
 
+    const optimisticId = calendarMockState.patchVisibleEvents.mock.calls.find(
+      ([, options]) => options?.status === 'creating'
+    )?.[0]?.[0]?.id;
+    expect(optimisticId).toMatch(/^optimistic[0-9a-f]{32}$/);
+
     expect(calendarMockState.patchVisibleEvents).toHaveBeenLastCalledWith(
       [serverEvent],
       expect.objectContaining({
-        clearIds: [expect.stringMatching(/^optimistic-/)],
+        clearIds: [optimisticId],
       })
     );
   });
@@ -322,10 +327,15 @@ describe('CalendarProvider Read-Only Mode', () => {
       ).rejects.toThrow('create failed');
     });
 
+    const optimisticId = calendarMockState.patchVisibleEvents.mock.calls.find(
+      ([, options]) => options?.status === 'creating'
+    )?.[0]?.[0]?.id;
+    expect(optimisticId).toMatch(/^optimistic[0-9a-f]{32}$/);
+
     expect(calendarMockState.patchVisibleEvents).toHaveBeenLastCalledWith(
       [],
       expect.objectContaining({
-        clearIds: [expect.stringMatching(/^optimistic-/)],
+        clearIds: [optimisticId],
       })
     );
   });
