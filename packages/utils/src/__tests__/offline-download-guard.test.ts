@@ -97,6 +97,7 @@ describe('offline download guards', () => {
       mocks.limit.mockRejectedValue(new Error('quota service unavailable'));
       for (const method of ['GET', 'HEAD']) {
         const input = request({ pathname, method, token: 'captcha' });
+        expect(isOfflineCapableRead(input)).toBe(true);
         expect(await guardOfflineDownloadRequest(input)).toBeNull();
       }
       expect(mocks.redis).not.toHaveBeenCalled();
@@ -112,6 +113,7 @@ describe('offline download guards', () => {
     async (marker) => {
       const input = request();
       input.headers.set(OFFLINE_DOWNLOAD_HEADER, marker);
+      expect(isOfflineCapableRead(input)).toBe(true);
       expect(await guardOfflineDownloadRequest(input)).toBeNull();
       expect(mocks.redis).not.toHaveBeenCalled();
     }
@@ -128,9 +130,11 @@ describe('offline download guards', () => {
       vi.stubEnv('OFFLINE_DOWNLOAD_PROTECTION_ENABLED', '');
       mocks.redis.mockResolvedValue(null);
       mocks.limiterRedis.mockResolvedValue(null);
-      expect(
-        await guardOfflineDownloadRequest(request({ pathname }))
-      ).toBeNull();
+      for (const method of ['GET', 'HEAD']) {
+        const input = request({ pathname, method });
+        expect(isOfflineCapableRead(input)).toBe(true);
+        expect(await guardOfflineDownloadRequest(input)).toBeNull();
+      }
       expect(mocks.redis).not.toHaveBeenCalled();
       expect(mocks.limiterRedis).not.toHaveBeenCalled();
       expect(mocks.limit).not.toHaveBeenCalled();
