@@ -2,28 +2,36 @@
 
 ## Required Gates
 
-0. Check whether the PR is part of a stack. A base other than `main` is not
-   proof: a PR can legitimately target `production`, a release branch, or a
-   maintenance branch with no parent PR at all, and treating those as stacked
-   blocks valid closeout work. It is a stack only when the base branch is the
-   head branch of an open pull request, or the PR body names its parent:
+0. Inspect native stack membership first: use the GitHub stack map, `gh stack
+   view`, or the PR REST resource's `stack` metadata. Native stacks are the
+   daily default for dependent work. A non-main base alone is not a stack:
+   ordinary PRs may target production, release, or maintenance branches.
+   Without native metadata, check whether the base is another open PR's head
+   or the body identifies a parent; that is a manual chain, not a native stack.
 
+       gh api repos/tutur3u/platform/pulls/<pr> --jq '.stack'
        gh pr list --state open --json number,headRefName \
          --jq '.[] | select(.headRefName == "<this-pr-base>") | .number'
 
-   When it is stacked, the parent must merge first — merging a child while its
-   parent is open pulls the parent's unreviewed commits into `main` through the
-   child, and merging a mid-stack or top PR merges everything below it. Merge
-   bottom-up, one PR at a time, running every gate below for each.
+   For native stacks, record the authorized contiguous prefix from the lowest
+   unmerged PR through the chosen PR. Every included layer must pass gates
+   1–5 below against its own current head. Native protections, CODEOWNERS,
+   required checks, and PR workflow selection use the stack trunk. Fully linear
+   history is required. Coordinate all affected worktrees before cascading
+   rebase/sync; recheck changed heads, diffs, checks, and quiet windows.
+   Use `gh stack merge <highest-verified-pr> --merge --yes`; selecting a higher
+   PR includes all unmerged layers below it. The command has no head-match or
+   admin-bypass option, so re-read every selected head immediately beforehand.
+   Never substitute the ordinary single-PR merge/admin path for a native stack.
+   Queue acceptance is not merge completion: verify every selected PR merged.
 
-   A native stack (`gh stack`) rebases and retargets the rest on merge and
-   accepts any merge method. A base-chained stack (`gh pr create --base`) does
-   not: merge its parents with `gh pr merge --merge`, because a squash or
-   rebase merge leaves the parent's commits outside `main`'s ancestry and the
-   retargeted child re-shows changes that already landed. Either way, confirm
-   each child's `baseRefName` actually moved before treating the stack as
-   advanced. See `/build/development-tools/stacked-pull-requests` in
-   `apps/docs`.
+   For manual chains, record the native-feature limitation and merge parents
+   individually first, using `gh pr merge --merge --match-head-commit <head>`
+   to preserve ancestry. Squash/rebase can duplicate landed work in child diffs.
+   For either workflow, confirm remaining membership, base, diff, and heads after
+   advancing the stack, then rerun affected gates. `gh stack sync` may rewrite
+   and push remaining branches; coordinate owners first and avoid automatic
+   pruning. See `/build/development-tools/stacked-pull-requests` in `apps/docs`.
 1. Perform all open-PR work in an isolated `.worktrees/` checkout and run
    `bun install` immediately after creating it. Use CI for builds.
 2. Confirm GitHub auth and rate limits:
@@ -36,15 +44,16 @@
 5. Wait for PR checks to finish with only `success`, `skipped`, or `neutral`
    conclusions.
 6. Merge the PR, preferring normal merge first. Use admin merge only when the
-   user requested merge follow-through and GitHub reports a policy-only block
-   after the gates above are clean.
+   user requested merge follow-through for an ordinary PR or manual chain and
+   GitHub reports a policy-only block after the gates above are clean.
 7. Fetch the merge SHA. Fast-forward local `main` only if its checkout is safe
    and owned; do not switch or update another session's checkout.
 8. Verify every `main` workflow for the merge SHA is green. This is a hard gate:
    do not run `bun git-sync` while any main workflow is queued, in progress, or
    failed.
-9. Run `bun git-sync` only after main is fully green and the exact promotion
-   range is authorized. If main advanced with unrelated commits, obtain broader
+9. Stop after main verification when only main integration was requested.
+   Run `bun git-sync` only with production authorization, after main is fully
+   green and the exact promotion range is authorized. If main advanced with unrelated commits, obtain broader
    authorization or use the supported pinned-SHA sync path.
 10. Verify remote production contains the approved SHA. Report local refs
     separately if another checkout owns them or main has advanced.
@@ -54,8 +63,8 @@
 
 For a user-authorized direct integration without a PR, apply the same safety
 boundary after the scoped current-main commit: wait for the exact main SHA to be
-fully green, run `bun git-sync`, verify production, then remove only that
-completed worktree and its local branch. Never clean blocked, dirty, unmerged,
+fully green, then complete any authorized production sync and verification
+before removing only that completed worktree and its local branch. Never clean blocked, dirty, unmerged,
 user-owned, or other-agent-owned lanes.
 
 ## Watcher Scripts
@@ -99,7 +108,12 @@ set status to `handoff`, and never stage the note.
 
 ## Merge And Sync Flow
 
-After the PR watcher exits cleanly:
+For a native stack, verify all selected layers as described in gate 0 and use
+`gh stack merge <highest-verified-pr> --merge --yes`. After completion, record
+all merged PRs and the resulting trunk SHA, inspect remaining retargeting/heads,
+and verify exact-main CI. Stack requirements cannot be bypassed.
+
+For an ordinary PR or manual chain, after the PR watcher exits cleanly:
 
 ```bash
 gh pr merge <pr> --repo tutur3u/platform --match-head-commit <head-sha> --merge
@@ -122,7 +136,7 @@ git merge --ff-only origin/main
 node <skill-dir>/scripts/watch_branch_runs.mjs --repo tutur3u/platform --branch main --commit <merge-sha>
 ```
 
-Only after main is green:
+Only when production delivery is authorized and main is green:
 
 ```bash
 bun git-sync
@@ -143,4 +157,5 @@ node <skill-dir>/scripts/watch_branch_runs.mjs --repo tutur3u/platform --branch 
   needed; never stage coordination notes or scratch watchers.
 - Keep the PR worktree and local task branch when the PR remains open, a required
   gate is blocked, the merge is absent from `main`, main is not fully green,
-  `bun git-sync` has not completed, or production follow-through is unresolved.
+  or an authorized production sync/verification remains unresolved. Main-only
+  integration does not require production promotion before cleanup.

@@ -78,12 +78,20 @@ merge, or production evidence only when that delivery is authorized.
   creating the worktree; `bun setup` includes local builds and must not run on
   this machine. After the PR is confirmed merged into `main`, remove
   the completed worktree and delete its local task branch.
-- Split reviewable dependent work into stacked PRs; keep independent changes on
-  separate branches. Merge stacks bottom-up. For base-chained stacks, merge parents
-  with `--merge` so ancestry is retained, verify child retargeting, and rerun gates.
-  Use `$tuturuuu-pr-merge-sync` for the exact stack and quiet-window procedure.
-  Native GitHub stacks remain a pilot; see
-  [stack policy](apps/docs/build/development-tools/stacked-pull-requests.mdx) and
+- Use native [GitHub stacks](https://gh.io/stacks-overview) by default for
+  reviewable dependent work; keep independent changes on separate branches.
+  Native stacks are our day-to-day workflow, with no repository pilot gate.
+  Prefer `gh stack` or GitHub's stack UI for creation, adoption, cascading updates,
+  and merges. Coordinate every affected worktree before commands that rewrite
+  multiple branches. Merge a verified contiguous prefix bottom-up, checking every
+  included PR's scope, immutable head, reviews, quiet window, and exact-head CI;
+  selecting a higher native PR also merges all unmerged layers below it.
+  Verify remaining membership, retargeting, and new heads, then rerun gates.
+  Use manual base chains only for a recorded native-feature limitation; merge
+  their parents with `--merge` to retain ancestry. Use
+  `$tuturuuu-pr-merge-sync` and the
+  [stack policy](apps/docs/build/development-tools/stacked-pull-requests.mdx) for
+  tooling, ownership, native merge boundaries, and fallback procedures; see
   [delivery evidence](apps/docs/build/devops/github-actions-runbook.mdx#validation-and-delivery-evidence).
   Use a five-minute review quiet window unless the user requests another duration.
 - Before production sync, fetch and inspect the exact promotion range. If main

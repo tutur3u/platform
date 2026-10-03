@@ -1,232 +1,237 @@
 ---
 title: "Stacked Pull Requests"
-description: "Split large work into a stack of dependent pull requests so each one stays reviewable, and merge the stack bottom-up without losing the chain."
-updatedAt: "2026-09-30"
+description: "Use native GitHub stacks for daily dependent PR work, cascading updates, and verified merges."
+updatedAt: "2026-10-03"
 ---
 
-<Info>
-  **Prerequisite**: You should be comfortable with [Git
-  Conventions](/build/development-tools/git-conventions) and with creating
-  worktrees, since every PR in a stack gets its own.
-</Info>
+## Daily operating policy
 
-## TL;DR
+Use [native GitHub stacked pull requests](https://gh.io/stacks-overview) whenever
+reviewable changes depend on one another. This is our day-to-day workflow; no
+repository pilot or separate adoption approval is required. Split large dependent
+work into focused layers and continue on the next layer while earlier layers are
+reviewed. Keep independent changes on separate branches from `main`, and keep a
+single focused change in one PR.
 
-A stack is a chain of pull requests where each one targets the branch below it
-instead of `main`. Use it when a change is too large to review in one sitting,
-or when follow-up work builds on a branch that has not merged yet.
+GitHub's upstream documentation currently labels the feature public preview.
+That upstream label does not make our adoption a pilot. Follow the current
+[GitHub requirements](https://docs.github.com/en/pull-requests/reference/stacked-pull-requests)
+when capabilities change.
 
-Native GitHub stacks are a **pilot**, not this repository's default. Continue
-base chaining for existing work. Do not rebase, rewrite or reinstall tooling on
-green published branches merely to adopt the pilot.
+A stack has a trunk (normally `main`), a bottom PR targeting the trunk, and higher
+PRs targeting the branch immediately below. Each layer shows its own diff. Put
+foundations below their consumers; every layer must include the coverage and
+supporting changes needed to review it. Do not separate regression tests merely
+to leave an earlier layer unverified.
 
-Before a separately owned pilot, verify fully linear branch history, same-repository
-branches, trunk-based rules/workflow behavior, cascading updates, and exact-head
-checks against GitHub's current [linear-history contract](https://docs.github.com/en/pull-requests/how-tos/create-pull-requests/managing-stacked-pull-requests).
-The pilot owner records its results before proposing broader adoption. A native
-stack's trunk supplies merge requirements and pull-request workflow selection;
-that behavior differs from ordinary base chaining. See GitHub's
-[CI contract](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/optimizing-ci-for-stacked-pull-requests).
+## Native stacks and fallback chains
 
-Everything still merges bottom-up — that is GitHub's rule, not a convention:
-"pull requests must merge from the bottom up."
-
-<Warning>
-  Merging the **top** pull request merges the whole stack: "Every pull request
-  below it comes with it." If you only mean to land the bottom one, merge the
-  bottom one.
-</Warning>
-
-## Native stacks vs. base chaining
-
-Two things get called "stacked PRs", and they behave differently on merge.
-
-**Native stacks** — created with `gh stack` or the web UI. GitHub knows the
-chain exists. Merging a mid-stack pull request merges everything below it, and
-"the pull requests above stay open and automatically re-target the stack's base
-branch." All three merge methods work: "Stacks support merge commit, squash,
-and rebase merge methods, and they are merge-queue aware."
-
-**Base chaining** — plain `gh pr create --base <parent-branch>`, with no stack
-object behind it. This is what you get by default, and what the rest of this
-page's manual steps describe. It mostly works, but the merge-time guarantees
-above do **not** apply to it; see [Base chaining without a native
-stack](#base-chaining-without-a-native-stack).
-
-Limits on the native feature, both from GitHub: it "is in public preview and
-subject to change", and it "require[s] all branches to be in the same
-repository. Cross-fork stacks are not supported." It is also "not supported in
-GitHub Desktop", so a contributor working from a fork is on the base-chaining
-path whether they want to be or not.
-
-## When to stack
-
-Stack when the parts are **genuinely dependent**:
-
-- A large feature that splits into reviewable slices, where slice 2 imports
-  code slice 1 introduces.
-- Follow-up work on a branch that is still waiting for review — stacking lets
-  you keep building instead of idling or piling more into a PR someone has
-  already started reviewing.
-- A refactor that must land before the change that depends on it, where you
-  want them reviewed separately but merged together.
-
-**Do not stack when the parts are independent.** Two unrelated fixes should be
-two PRs off `main`: they can merge in any order, neither blocks the other, and
-neither needs a rebase when the other lands. A stack buys ordering at the cost
-of rebasing, so only pay it when you need the ordering.
-
-## Creating a stack
-
-Each PR gets its own worktree, per the repo-wide rule that PR work never
-switches the shared checkout:
-
-```bash
-git worktree add -b feat/slice-one .worktrees/slice-one origin/main
-git worktree add -b feat/slice-two .worktrees/slice-two feat/slice-one
-```
-
-Then open each PR against the branch below it. The first targets `main`; every
-later one targets its parent:
-
-```bash
-gh pr create --base main --head feat/slice-one
-gh pr create --base feat/slice-one --head feat/slice-two
-```
-
-Basing the child on the parent is what keeps the diff honest: GitHub diffs
-against the merge base, so the child PR shows only its own commits rather than
-re-displaying everything in the parent.
-
-### Say where each PR sits
-
-Reviewers cannot see the stack from the PR page alone. Put the position and the
-parent in the body of every PR above the base:
-
-```markdown
-**Stack**: 2 of 3 — based on #5145, which must merge first.
-```
-
-## Keeping each PR green
-
-Every PR in the stack must pass on its own. A child that only compiles once its
-parent is merged is not reviewable, and CI will say so.
-
-Run focused non-build tests in the child's owning workspace, not just at the
-top of the stack. Do not run local `bun check`: its Turbo graph can build workspace
-dependencies. Require the applicable test, type, lint and real affected-app build
-workflows to pass in CI on that PR's exact head before calling it verified.
-
-<Warning>
-  Do not run builds on this machine, including `bun setup`, which invokes package
-  builds. Run `bun install` when creating each worktree, then use CI build results
-  for the exact head commit. Repeat the CI check after a child is retargeted.
-</Warning>
-
-## Merging the stack
-
-Merge **bottom-up**, always. GitHub states it as a requirement, not a
-preference: "pull requests must merge from the bottom up." Never merge a pull
-request whose parent is still open and unmerged — that pulls the parent's
-unreviewed commits into `main` through the child.
-
-How much lands depends on which one you merge:
-
-| You merge | What lands | What stays open |
+| Workflow | When to use it | Merge behavior |
 | --- | --- | --- |
-| The bottom PR | Just it | Everything above, retargeted |
-| A mid-stack PR | It **and everything below it** | Everything above, retargeted |
-| The top PR | The **whole stack** | Nothing |
+| Native GitHub stack | Default for dependent PRs with branches in the same repository | GitHub tracks membership and merges a contiguous prefix; remaining work is rebased/retargeted |
+| Manual base chain | Cross-fork work or a concrete native-feature/tooling limitation | Merge parents individually with merge commits, verify retargeting, and rerun child gates |
+| Independent PRs | Changes with no dependency | Each targets `main` and can land independently |
 
-<Warning>
-  "Merge the entire stack at once by merging the top pull request. Every pull
-  request below it comes with it." If you meant to land one slice and clicked
-  merge on the top of the stack, you have merged all of it.
-</Warning>
+Native stacks require same-repository branches and fully linear history. Cross-fork
+stacks and GitHub Desktop stack support are unavailable. A missing CLI extension
+alone is not a reason to use manual chains: install it or create/link the stack
+on GitHub. Record the concrete fallback reason in the PR and coordination note.
+A non-main base or a stack label in a PR body does not establish native membership.
 
-On a native stack that is the whole procedure. The merge method is free —
-"Stacks support merge commit, squash, and rebase merge methods, and they are
-merge-queue aware" — and the branches above are rebased and retargeted for you.
+## Tooling and worktree ownership
 
-### Base chaining without a native stack
-
-A chain built with `gh pr create --base` has no stack object behind it, so none
-of the guarantees above apply. Two extra rules:
-
-**Merge the parent with a merge commit.**
+Install the official extension and inspect its supported commands:
 
 ```bash
-gh pr merge <parent-number> --merge
+gh extension install github/gh-stack
+gh stack --help
 ```
 
-Not `--squash` and not `--rebase`. Both rewrite the parent's commits into new
-ones, so the originals never enter `main`'s ancestry — and the child, once
-retargeted, shows the parent's changes all over again as if they had never
-landed. A merge commit keeps them reachable from `main`, which is what makes
-the child's diff shrink to its own work. If a parent has already been
-squash-merged, rebase the child onto `main`, drop the duplicated commits, and
-re-run its gates.
+Use `gh extension upgrade stack` for an existing installation when an operation
+needs a newer capability. Inspect its help and release notes before relying on
+worktree support; do not mix extension versions during a paused operation.
+The optional upstream agent guidance can be installed with
+`gh skill install github/gh-stack`; repository ownership and delivery rules still
+apply.
 
-**Check the retargeting actually happened.** When a merged parent's branch is
-deleted through the pull-request flow — the merge button, or the repository's
-automatic head-branch deletion — GitHub retargets any open PR that had it as a
-base onto the parent's base.
+Every open PR has an isolated owning worktree under `.worktrees/`. Run `bun install`
+immediately after creating it. Never run `bun setup`, local builds, or local
+`bun check`; use focused non-build checks and exact-head CI.
 
-<Warning>
-  Do not assume it did. Deleting the branch another way — `gh` or
-  `git push origin --delete` — can **close** the dependent pull requests
-  instead of retargeting them, and a closed PR whose base branch is gone is
-  awkward to reopen. Closing a parent without merging does not delete its
-  branch at all, so its children keep pointing at a live but abandoned base.
-</Warning>
+Current upstream `gh-stack` supports branches distributed across linked worktrees.
+Its catalog and recovery journals live in Git's common directory, so mutations
+can affect more than the invoking checkout. Inspect active coordination notes,
+`git worktree list`, and each affected owner's status before `rebase`, `sync`, or
+`modify`. Coordinate with those owners and keep affected worktrees idle. The
+extension's mutation lock does not serialize ordinary Git, editors, or agents.
+Never use cascading commands to rewrite another owner's work without coordination.
+
+Use each branch's owning directory for edits and commits. Navigation commands
+such as `gh stack checkout` do not move a branch already checked out elsewhere;
+use the reported owning path (or `--print-path` where supported). Do not switch
+the shared main checkout or steal another worktree's branch. Claim the repository
+commit window before staging or committing; stage exact owned paths, not the
+extension's broad staging shortcuts.
+
+See the upstream [worktree and command reference](https://github.com/github/gh-stack)
+for version-specific behavior and recovery.
+
+## Create and submit a native stack
+
+Create dependent branches in their owning worktrees, then adopt them in bottom-up
+order. Run from the bottom layer's worktree:
 
 ```bash
-gh pr view <child-number> --json baseRefName -q .baseRefName
-gh pr edit <child-number> --base main
+git fetch origin
+git worktree add -b feat/slice-one .worktrees/slice-one origin/main
+(cd .worktrees/slice-one && bun install)
+# Implement, check, and commit the first layer before creating the child.
+git worktree add -b feat/slice-two .worktrees/slice-two feat/slice-one
+(cd .worktrees/slice-two && bun install)
+# Implement, check, and commit the second layer in its own worktree.
+(cd .worktrees/slice-one && gh stack init --base main feat/slice-one feat/slice-two)
+(cd .worktrees/slice-one && gh stack submit --auto)
 ```
 
-Then re-run the child's gates: its merge base moved, so its diff is no longer
-the one that was last verified.
+`init` can adopt existing branches without switching their owning worktrees.
+For another dependent layer, create its worktree from the current top, install,
+and adopt that existing branch with `gh stack add feat/slice-three` from the
+top owner's directory. Confirm this behavior in the installed version's help.
+`gh stack submit --auto` creates draft PRs; use `--open` when ready for review.
+Inspect and edit every generated title/body to describe its focused change,
+validation, and dependencies.
 
-### Either way
-
-Each pull request needs its own approving review from a code owner and its own
-resolved review threads — the repository ruleset applies per PR, not per stack.
-Follow the normal merge closeout (quiet window, main-green verification,
-`bun git-sync`, production verification) for each one that lands.
-
-## Rebasing a stack
-
-If you rebase or amend a parent branch, every branch above it still points at
-the old commits and must be rebased too, from the bottom up:
+If PRs already exist, link them in bottom-up order without rewriting their
+branches:
 
 ```bash
-git -C .worktrees/slice-one rebase origin/main
-git -C .worktrees/slice-two rebase --onto feat/slice-one <old-parent-sha> feat/slice-two
+gh stack link <bottom-pr-number> <next-pr-number> --base main
+gh stack view
 ```
 
-Both then need a force-push. Use `--force-with-lease` so a push is refused if
-someone else moved the branch:
+`link` can push branches, create PRs, and correct their bases; inspect the intended
+membership and ownership first. Alternatively use GitHub's **Create stack**
+recommendation for an existing chain, or **Add to stack** for a new top layer.
+Do not rewrite green published branches merely to register native membership.
+Verify the stack map on GitHub or the PR REST resource's `stack` metadata.
+See [creating stacks](https://docs.github.com/en/pull-requests/how-tos/create-pull-requests/creating-stacked-pull-requests).
+
+When running in T3 Code, register every created or worked-on PR with
+`link_pull_request`, including each layer; `gh stack submit` and `link` do not
+register them with the thread. Before closeout, reconcile `list_thread_pull_requests`.
+GitHub's stack map supplies ordering; still explain any dependency important to
+reviewers in the PR body.
+
+## Iterate and review
+
+Fix feedback in the layer that owns the behavior. Commit in its owning worktree,
+then cascade the change through higher layers:
 
 ```bash
-git push --force-with-lease origin feat/slice-one
+gh stack rebase --upstack
+gh stack push
 ```
 
-<Warning>
-  Force-pushing rewrites published history. It is routine for a branch only you
-  are working on, but confirm with the owner before rewriting a branch anyone
-  else has pulled or reviewed.
-</Warning>
+Use `gh stack rebase` to refresh the full stack from the trunk. These operations
+rewrite affected histories; `push` uses force-with-lease. Inspect affected diffs
+and record new heads, then rerun their focused checks, exact-head CI, and review
+quiet windows. Do not merge `main` into native stack branches: restore linear
+history with a cascading rebase.
 
-Rebasing a whole stack is the main cost of stacking, and it grows with depth.
-Three PRs is comfortable; much beyond that, prefer merging the lower slices
-sooner so the stack stays shallow.
+On conflict, resolve only the reported files in the reported owning worktree,
+stage them under its commit window, and run `gh stack rebase --continue`. Use
+`--abort` to restore the pre-operation state when appropriate. Do not delete or
+manually edit recovery journals. Server-side rebase creates unsigned commits;
+use local signing when signed commits are required.
 
-## Cleaning up
+Use `gh stack modify` for deliberate reorder/insert/fold/rename operations after
+checking clean owners, linear history, and absence of queued merges. Dropping
+work or rewriting another owner's branch needs explicit scope/coordination.
+Submit the resulting composition again and review new diffs and heads.
+Unstacking removes native membership while retaining bases; it changes the
+workflow to manual chaining, not independent PRs. See
+[stack maintenance](https://docs.github.com/en/pull-requests/how-tos/create-pull-requests/managing-stacked-pull-requests).
 
-Remove a worktree and delete its local branch only after that PR is confirmed
-merged into `main`. Never remove a worktree that is dirty, blocked, unmerged, or
-owned by someone else.
+## CI and merge gates
+
+Native members use the trunk's protections, required checks, CODEOWNERS, and
+pull-request workflow selection, even when their immediate base is another layer.
+A workflow filtering PRs to `main` runs for native members whose trunk is `main`.
+Custom automation must distinguish immediate base from stack trunk and handle
+absent `github.event.pull_request.stack` for ordinary PRs. Do not disable a layer's
+required validation just because a higher layer is green. See the
+[Actions runbook](/build/devops/github-actions-runbook#validation-and-delivery-evidence).
+
+Every selected layer needs its own resolved review threads, required reviews,
+applicable successful exact-head checks, and five-minute review quiet window
+(unless the user specified another duration). New pushes or review activity reset
+the affected layer's window. Record the complete selected prefix and all immutable
+heads immediately before merging; stack CLI state alone is not a gate verifier.
+
+## Merge a verified prefix
+
+Choose the highest PR in the authorized, fully verified contiguous prefix starting
+at the lowest unmerged layer. Landing the bottom alone remains useful when later
+layers need work. Landing a higher PR includes every unmerged PR below it; those
+PRs must all be within the authorized scope and pass the gates.
+
+| Selected PR | Included work |
+| --- | --- |
+| Lowest unmerged | One layer |
+| Middle | All unmerged layers through that PR |
+| Top | All remaining layers |
+
+For a native stack, use the official stack merge operation with an explicit PR
+and merge method:
+
+```bash
+gh stack merge <highest-verified-pr-number> --merge --yes
+```
+
+Do not use a bare non-interactive `gh stack merge`: it can select the entire
+stack. Native merges support merge, squash, and rebase; `--merge` remains our
+normal choice. The extension checks only basic PR state before asking GitHub to
+merge, does not bypass requirements, and has no equivalent to
+`gh pr merge --match-head-commit`. Re-read all selected heads and gates just before
+invoking it; if any changed, repeat validation. Do not apply the ordinary admin
+merge fallback to native stacks. Custom API clients must use GitHub's asynchronous
+stack merge API, rather than the ordinary single-PR endpoint.
+
+Merge queues may enqueue the selected group and split it across consecutive
+merge groups. Queued is not merged; wait for every selected PR's merged state and
+record the resulting trunk SHA. Native stack auto-merge is not supported. See
+[GitHub merge requirements](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/merging-stacked-pull-requests).
+
+After a partial merge, confirm remaining membership, retargeting, diffs and heads.
+Run `gh stack sync` only after coordinating affected worktrees: it can fetch,
+fast-forward trunk, rebase remaining branches, and push. Rerun gates for changed
+heads. Avoid `--prune` until each branch/worktree is eligible for cleanup; do not
+update another session's main checkout or resolve divergence by discarding its work.
+
+Verify exact merged-main CI for the requested integration. Production sync and
+its deployment/migration verification require production authorization; a request
+to merge into main alone does not authorize `bun git-sync`.
+
+## Manual base-chain fallback
+
+Without native membership, merge one PR at a time, parents first. Use a merge
+commit (`gh pr merge <parent> --merge --match-head-commit <head-sha>`) to keep
+parent ancestry reachable from `main`. Squash/rebase merges can make child diffs
+repeat already landed work; repair the child deliberately and rerun its gates.
+
+Confirm each child's `baseRefName`, diff, and checks after the parent merges.
+Retarget with `gh pr edit <child> --base main` if needed. A base edit may not
+trigger the configured workflows, so verify actual runs rather than assuming CI
+restarted. Do not delete remote parent branches outside the PR merge flow:
+dependent PRs can close instead of retargeting.
+
+## Cleanup
+
+After the PR is confirmed merged into `main` and the requested delivery gates pass,
+remove only its completed clean owning worktree and local task branch. Keep dirty,
+blocked, unmerged, active, or other-owned work. When production delivery was requested,
+retain the worktree through production verification. Archive your completed
+coordination note; never commit it.
 
 ```bash
 git worktree remove .worktrees/slice-one

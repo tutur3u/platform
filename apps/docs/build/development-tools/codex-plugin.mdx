@@ -42,6 +42,14 @@ checks, ownership, production data protections, and migration parity still apply
 The default quiet window for PR merge sync and automated Release Please merges is
 five minutes when a request does not specify a duration.
 
+For dependent PR work, the merge skill uses native GitHub stacks as the daily
+default. Follow [stack operations](/build/development-tools/stacked-pull-requests)
+for `gh stack` adoption, worktree ownership, cascading fixes, and verified prefix
+merges. Apply review, quiet-window, and exact-head checks to every included layer;
+register each PR with the T3 thread when linking tools are available. Manual chains
+are a documented fallback for concrete limitations. A main-only merge request
+ends after main verification; production sync still needs production authorization.
+
 Treat running CI as an asynchronous pause point by default. Finish other work
 that does not depend on its result, then stop active watchers and record the PR
 URL, exact head or merge SHA, run IDs, pending gates, last review activity, and
