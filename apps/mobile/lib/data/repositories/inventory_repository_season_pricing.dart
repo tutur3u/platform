@@ -20,11 +20,12 @@ extension InventorySeasonPricingRepository on InventoryRepository {
     String? categoryId,
     String? periodId,
   }) async {
+    final actorId = _cacheUserId();
     final path = InventoryEndpoints.invoices(wsId);
     final payload = {
       'customer_id': null,
       'content': content ?? 'Mobile inventory sale',
-      'notes': notes,
+      if (notes != null) 'notes': notes,
       'wallet_id': walletId,
       'category_id': categoryId,
       'products': products,
@@ -49,11 +50,26 @@ extension InventorySeasonPricingRepository on InventoryRepository {
         return response['invoice_id'] as String;
       },
     );
-    await _invalidateInventory(wsId, const [
-      'inventory:overview',
-      'inventory:sales',
-      'inventory:audit',
-    ]);
+    try {
+      await _invalidateInventory(wsId, const [
+        'inventory:overview',
+        'inventory:sales',
+        'inventory:audit',
+      ]);
+    } on Object {
+      // The invoice is acknowledged. A cache failure must not invite another
+      // invoice submission; evict only this actor's saved workspace resources.
+      if (actorId == null) return invoiceId;
+      try {
+        await _cacheStore.clearScope(
+          userId: actorId,
+          workspaceId: wsId,
+          resourceOnly: true,
+        );
+      } on Object {
+        // Keep the durable receipt when local storage is unavailable.
+      }
+    }
     return invoiceId;
   }
 

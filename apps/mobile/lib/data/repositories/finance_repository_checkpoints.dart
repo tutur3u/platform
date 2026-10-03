@@ -118,7 +118,7 @@ extension FinanceRepositoryCheckpoints on FinanceRepository {
     final path = FinanceEndpoints.walletCheckpoints(wsId, walletId);
     final payload = {
       'actual_balance': actualBalance,
-      'checked_at': checkedAt.toIso8601String(),
+      'checked_at': checkedAt.toUtc().toIso8601String(),
       'note': note,
     };
     final checkpoint = await queueOrSendValue<WalletCheckpoint>(
@@ -149,7 +149,7 @@ extension FinanceRepositoryCheckpoints on FinanceRepository {
   }) async {
     final path = FinanceEndpoints.walletCheckpointSummary(wsId);
     final payload = {
-      'checked_at': checkedAt.toIso8601String(),
+      'checked_at': checkedAt.toUtc().toIso8601String(),
       'entries': entries.map((entry) => entry.toJson()).toList(),
     };
     final batch = await queueOrSendValue<WalletCheckpointBatchResponse>(
@@ -184,7 +184,7 @@ extension FinanceRepositoryCheckpoints on FinanceRepository {
     );
     final payload = {
       'actual_balance': actualBalance,
-      'checked_at': checkedAt.toIso8601String(),
+      'checked_at': checkedAt.toUtc().toIso8601String(),
       'note': note,
     };
     final checkpoint = await queueOrSendValue<WalletCheckpoint>(

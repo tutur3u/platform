@@ -48,6 +48,17 @@ verification; today's catalog price must not replace historical sold prices.
 
 ## Automatic offline dependency sync implementation
 
+Native period-sale creation omits optional notes when none were entered; it does
+not send JSON null to the non-nullable optional server field. Empty entered notes
+remain an empty string. A confirmed invoice remains a successful sale if local
+cache invalidation fails; the client attempts scoped resource-cache eviction
+without repeating the financial write. Server validation and authorization
+failures still propagate. The native HTTP regressions in
+`inventory_api_mutation_contract_test.dart` cover omitted, empty and populated
+notes, durable receipts and post-acknowledgment cache failure. Read contracts are
+covered by `inventory_api_read_contract_test.dart`. These client safeguards do
+not change server permissions, season pricing or stock accounting.
+
 Native create and supported Inventory mutations persist their operation identity
 before any HTTP request, including successful online creates. Online callers
 receive the authoritative acknowledged resource; offline or temporarily blocked

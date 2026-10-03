@@ -54,6 +54,8 @@ class OfflineInventoryMutation {
           resource = 'finance_category';
         }
       case 'wallets':
+        // This collection endpoint is not a wallet with id "checkpoints".
+        if (tail.length > 1 && tail[1] == 'checkpoints') return null;
         resource = 'wallet';
     }
     if (resource == null) return null;
