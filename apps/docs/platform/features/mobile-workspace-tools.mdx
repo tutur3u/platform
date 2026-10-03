@@ -1,7 +1,7 @@
 ---
 title: 'Mobile Workspace Tools'
 description: 'Shared mobile navigation, tablet layouts, caching, and workspace application behavior.'
-updatedAt: 2026-10-02
+updatedAt: 2026-10-03
 ---
 
 ## Overview
@@ -870,22 +870,15 @@ another bulk run starts. Normal visits fill a bounded older history window with
 15-minute throttling, rather than rerunning Download all automatically.
 
 Bulk GETs are globally serialized on the device and spaced by at least 750 ms at the request boundary, using a monotonic clock after queued authentication preparation. Early timer wakeups are rechecked; regression coverage lives in `offline_api_pacer_test.dart` and `api_client_offline_preparation_test.dart`. This stays below the hourly session budget even
-when the gateway and owning app both enforce the guard, with room for ordinary
-foreground reads.
-The shared server proxy enforces distributed IP and session read budgets on
-eligible routes even without the bulk marker: 1,200/minute and 30,000/hour per
-IP, plus 600/minute and 12,000/hour per session when present. Gateway and
-owning-app enforcement may both count a request. Explicit bulk requests require
-Turnstile clearance unless the server has verified elevated trust; clearance lasts
-15 minutes and never bypasses authentication, permissions, MFA, blocks, or quotas.
-Regular reconnect refreshes are paced without the bulk marker; optional history
-fills use silent bulk mode. Background work never opens a verification modal
-and pauses when challenged.
-Verification-required 403 responses preserve existing authorized snapshots;
-authorization-denied responses purge the denied resource. A 429 stops downloads
-and delays queued replay according to Retry-After, with at least a minute's wait.
-Redis protection must be configured and available in production; protected reads
-return 503 when distributed enforcement is unavailable.
+when the gateway and owning app both enforce the guard. Ordinary unmarked
+foreground reads do not consume these additional bulk-download budgets.
+The additional server download protection applies only to eligible GET/HEAD requests explicitly marked `x-tuturuuu-offline-download: 1`. Ordinary daily enterprise operations in Finance, Inventory, Contacts, Tasks and other apps always continue through existing authentication, authorization, MFA, abuse and API protections without accessing this additional guard's Redis clients, quotas or CAPTCHA, even when it is activated. This scope applies to the web API and every registered satellite proxy. `OFFLINE_DOWNLOAD_PROTECTION_ENABLED` defaults to inactive and activates only for the exact value `true`; while inactive, marked bulk downloads return 503 with `Retry-After: 30`. Omitting the bulk marker never bypasses baseline protections or grants access.
+
+Before enabling offline prefetch, provision `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` on every gateway and owning-app replica that can handle these reads. Verify distributed limiter operations, shared clearance storage, Turnstile configuration, and authenticated ordinary-read and marked-bulk canaries on the exact deployment. Enable the activation flag only after those checks pass, consistently across the request path; available Redis or elevated account trust never implicitly activates the feature. Keep the flag inactive during initial provisioning. Once activated, Redis/configuration/runtime failures still return 503; there is no automatic outage bypass or process-local substitute.
+
+When activated, the shared proxy enforces explicitly marked eligible bulk reads: 1,200/minute and 30,000/hour per IP, plus 600/minute and 12,000/hour per session when present. Gateway and owning-app enforcement may both count a marked request. Bulk requests require Turnstile clearance unless the server has verified elevated trust; clearance lasts 15 minutes and never bypasses authentication, permissions, MFA, blocks, or quotas. Ordinary unmarked requests do not spend these additional offline-download allowances.
+Regular reconnect refreshes are paced without the bulk marker; optional history fills use silent bulk mode. Background work never opens a verification modal and pauses when challenged. Verification-required 403 responses preserve existing authorized snapshots; authorization-denied responses purge the denied resource. A 429 stops downloads and delays queued replay according to Retry-After, with at least a minute's wait.
+Regression coverage in [offline-download-guard.test.ts](https://github.com/tutur3u/platform/blob/main/packages/utils/src/__tests__/offline-download-guard.test.ts) proves unmarked ordinary reads avoid Redis, offline quotas and CAPTCHA with activation on or off, inactive bulk remains blocked, and activated bulk storage failures, quotas and CAPTCHA remain enforced.
 
 Local Inventory search mirrors name-only SQL ILIKE, trimmed whole query, case
 insensitivity, preserved accents, `%`/`_` wildcards, and backslash escaping.
@@ -921,7 +914,7 @@ read tokens are not exposed in plaintext keys.
 
 Offline inventory acceptance is scoped to the current account and workspace. A queued checkout receives a local pending identifier, never a committed invoice receipt; pending local catalog/setup edits must synchronize before checkout. Read-through helpers retain their default compatibility behavior while pinning an available account at entry, checking it at request and cache publication boundaries, and rejecting late responses after account changes. Request generations also prevent older workspace loads from replacing the active screen.
 
-The authenticated gateway uses a session budget when the client IP is unknown; an anonymous request without an attributable IP fails closed. Known-IP requests retain their existing IP budget. These controls do not grant offline clients server authorization. Product images share one 60-second deadline across redirects and body streaming, and unrelated resource eviction does not cancel their fetch.
+For marked bulk reads, the authenticated gateway uses a session budget when the client IP is unknown; an anonymous marked request without an attributable IP fails closed. Known-IP bulk requests retain their IP budget. These controls do not grant offline clients server authorization. Product images share one 60-second deadline across redirects and body streaming, and unrelated resource eviction does not cancel their fetch.
 
 Deferred cache transaction/refresh sharing, transport draining, search performance, and cosmetic improvements are tracked in [#5737](https://github.com/tutur3u/platform/issues/5737). App disposal invalidates preparation readiness immediately; an already-started read may fail when its HTTP client closes. Graceful draining remains a followup and does not permit a disposed preparation to publish readiness or replay writes. Regression coverage includes `inventory_product_image_cache_test.dart`, `inventory_product_editor_page_test.dart`, `api_client_account_test.dart`, and `packages/utils/src/__tests__/api-proxy-offline-response.test.ts`.
 

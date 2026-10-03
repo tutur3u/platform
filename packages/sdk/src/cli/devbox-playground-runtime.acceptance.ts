@@ -5,6 +5,7 @@ import {
   PLAYGROUND_EXPORT_BYTES,
   PLAYGROUND_EXPORT_SCRIPT,
 } from './devbox-playground-files';
+import { collectSyntheticContainerLogs } from './devbox-playground-runtime-diagnostics';
 import { runPlaygroundJob } from './devbox-playground-sandbox';
 import { sandboxDocker } from './devbox-sandbox-process';
 
@@ -78,6 +79,12 @@ async function diagnoseSyntheticExport(error: unknown) {
         })
       );
     }
+    // A dead PID 1 cannot be diagnosed with docker exec. Its bounded logs retain
+    // startup/runtime errors before the owning fixture is cleaned up.
+    console.error(
+      'Synthetic acceptance PID 1 diagnostic',
+      JSON.stringify(await collectSyntheticContainerLogs(id))
+    );
     const exported = await sandboxDocker(
       ['exec', id, 'python3', '-I', '-S', '-B', '-c', PLAYGROUND_EXPORT_SCRIPT],
       '',

@@ -1,7 +1,7 @@
 ---
 title: "Finance"
 description: "Shared Finance product surface across apps/web and apps/finance."
-updatedAt: "2026-09-23"
+updatedAt: "2026-10-03"
 ---
 
 ## Overview
@@ -38,6 +38,20 @@ Legacy nested category paths, such as
 `/{wsId}/finance/categories` while preserving query strings.
 
 ## API Ownership
+
+Native Finance checkpoint creation, editing and batch creation serialize the
+selected instant in UTC, including its timezone, so server parsing cannot shift
+the user's local time. Batch checkpoint responses retain their authoritative
+rows; `/wallets/checkpoints` is a collection operation, not a wallet detail
+mutation in the Inventory dependency scheduler. Ordinary wallet writes keep
+their existing durable behavior.
+
+Mobile error handling accepts both issue arrays and flattened validation objects
+from the shared Finance handlers. Validation and permission failures retain their
+HTTP status and readable message rather than becoming Dart type errors. These
+rules apply to the native client without changing server permissions or web
+behavior. Regression evidence is in `finance_http_contract_test.dart`,
+`api_client_error_contract_test.dart` and `offline_inventory_mutation_test.dart`.
 
 - `apps/finance` owns the standalone workspace shell, Finance UI route wrappers,
   local `/verify-token` handoff, host-local auth/session routes, and build-info.

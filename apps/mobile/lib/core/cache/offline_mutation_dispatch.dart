@@ -2,13 +2,28 @@ part of 'offline_mutation_queue.dart';
 
 extension OfflineMutationDispatch on OfflineMutationQueue {
   Future<void> _dispatchHttpMutation(PendingMutationRecord record) async {
-    final api = ApiClient(expectedUserId: record.userId);
+    final borrowed = _foregroundInventoryClients[record.id];
+    final api =
+        borrowed ??
+        _apiFactory?.call(record.userId!) ??
+        ApiClient(expectedUserId: record.userId);
     try {
+      if (OfflineInventoryMutation.fromRecord(record) != null) {
+        await ApiClient.offlinePreparation(
+          () => ApiClient.runForUser(
+            record.userId!,
+            () => _dispatchInventoryHttp(record, api),
+          ),
+          allowChallenge: _foregroundInventoryResults.containsKey(record.id),
+          markBulk: false,
+        );
+        return;
+      }
       final userId = record.userId;
       final workspaceId = record.workspaceId;
       final ids = userId == null || workspaceId == null
           ? const <String, String>{}
-          : await CacheStore.instance.localIdMappingsForScope(
+          : await _store.localIdMappingsForScope(
               userId: userId,
               workspaceId: workspaceId,
             );
@@ -41,7 +56,7 @@ extension OfflineMutationDispatch on OfflineMutationQueue {
               localId != null &&
               serverId != null &&
               localId != serverId) {
-            await CacheStore.instance.saveLocalIdMapping(
+            await _store.saveLocalIdMapping(
               userId: userId,
               workspaceId: workspaceId,
               feature: record.feature,
@@ -140,7 +155,7 @@ extension OfflineMutationDispatch on OfflineMutationQueue {
               bytes: base64Decode(payload['bytes'] as String),
             );
             if (userId != null && record.entityId != null) {
-              await CacheStore.instance.saveLocalIdMapping(
+              await _store.saveLocalIdMapping(
                 userId: userId,
                 workspaceId: workspaceId,
                 feature: record.feature,
@@ -168,7 +183,7 @@ extension OfflineMutationDispatch on OfflineMutationQueue {
               taskId: payload['taskId'] as String?,
             );
             if (userId != null && record.entityId != null) {
-              await CacheStore.instance.saveLocalIdMapping(
+              await _store.saveLocalIdMapping(
                 userId: userId,
                 workspaceId: workspaceId,
                 feature: record.feature,
@@ -204,7 +219,7 @@ extension OfflineMutationDispatch on OfflineMutationQueue {
             );
           }
           if (userId != null && record.entityId != null) {
-            await CacheStore.instance.saveLocalIdMapping(
+            await _store.saveLocalIdMapping(
               userId: userId,
               workspaceId: workspaceId,
               feature: record.feature,
@@ -235,7 +250,7 @@ extension OfflineMutationDispatch on OfflineMutationQueue {
                 record.entityId != null &&
                 serverPath is String &&
                 serverPath.isNotEmpty) {
-              await CacheStore.instance.saveLocalIdMapping(
+              await _store.saveLocalIdMapping(
                 userId: userId,
                 workspaceId: workspaceId,
                 feature: 'chat',
@@ -285,7 +300,7 @@ extension OfflineMutationDispatch on OfflineMutationQueue {
               if (userId != null &&
                   record.entityId != null &&
                   serverId != record.entityId) {
-                await CacheStore.instance.saveLocalIdMapping(
+                await _store.saveLocalIdMapping(
                   userId: userId,
                   workspaceId: workspaceId,
                   feature: record.feature,
@@ -329,7 +344,7 @@ extension OfflineMutationDispatch on OfflineMutationQueue {
           if (userId != null &&
               workspaceId != null &&
               record.entityId != null) {
-            await CacheStore.instance.saveLocalIdMapping(
+            await _store.saveLocalIdMapping(
               userId: userId,
               workspaceId: workspaceId,
               feature: 'workspace',
@@ -385,7 +400,7 @@ extension OfflineMutationDispatch on OfflineMutationQueue {
           throw StateError('Unsupported queued method: ${record.method}');
       }
     } finally {
-      api.dispose();
+      if (borrowed == null) api.dispose();
     }
   }
 }

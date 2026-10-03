@@ -1,14 +1,18 @@
 import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/inventory/view/inventory_manage_page.dart';
@@ -29,6 +33,41 @@ class _Inventory extends Mock implements InventoryRepository {}
 class _Finance extends Mock implements FinanceRepository {}
 
 class _Permissions extends Mock implements WorkspacePermissionsRepository {}
+
+class _DeleteApi extends Mock implements ApiClient {}
+
+class _DeleteStore extends Mock implements CacheStore {}
+
+class _DeletingInventory extends InventoryRepository {
+  _DeletingInventory(this.reads, ApiClient api, OfflineMutationQueue queue)
+    : super(apiClient: api, mutationQueue: queue);
+  final InventoryRepository reads;
+  @override
+  Future<List<InventoryOwner>> getOwners(
+    String id, {
+    bool forceRefresh = false,
+  }) => reads.getOwners(id, forceRefresh: forceRefresh);
+  @override
+  Future<List<InventoryLookupItem>> getManufacturers(
+    String id, {
+    bool forceRefresh = false,
+  }) async => [];
+  @override
+  Future<List<InventoryLookupItem>> getProductCategories(
+    String id, {
+    bool forceRefresh = false,
+  }) async => [];
+  @override
+  Future<List<InventoryLookupItem>> getProductUnits(
+    String id, {
+    bool forceRefresh = false,
+  }) async => [];
+  @override
+  Future<List<InventoryLookupItem>> getProductWarehouses(
+    String id, {
+    bool forceRefresh = false,
+  }) async => [];
+}
 
 AuthState _actor(String id) => AuthState.authenticated(
   User(
@@ -105,7 +144,7 @@ class _Harness {
   final requests = <Completer<List<InventoryOwner>>>[];
   final grants = <Completer<WorkspacePermissions>>[];
 
-  Future<void> mount(WidgetTester tester) async {
+  Future<void> mount(WidgetTester tester, {InventoryRepository? writes}) async {
     tester.view
       ..devicePixelRatio = 1
       ..physicalSize = const Size(390, 1200);
@@ -120,7 +159,7 @@ class _Harness {
           BlocProvider<AuthCubit>.value(value: auth),
         ],
         child: InventoryManagePage(
-          inventoryRepository: inventory,
+          inventoryRepository: writes ?? inventory,
           financeRepository: finance,
           permissionsRepository: permissions,
         ),
@@ -148,6 +187,57 @@ class _Harness {
 }
 
 void main() {
+  for (final deleting in [false, true]) {
+    testWidgets('setup rejection is safe server text, deleting=$deleting', (
+      tester,
+    ) async {
+      final h = _Harness();
+      addTearDown(h.close);
+      const failure = ApiException(
+        message: 'Synthetic name already exists',
+        statusCode: 409,
+      );
+      when(() => h.inventory.createOwner(any(), any())).thenThrow(failure);
+      InventoryRepository? writes;
+      if (deleting) {
+        final api = _DeleteApi();
+        final queue = OfflineMutationQueue.forTesting(
+          store: _DeleteStore(),
+          userId: () => null,
+          checkConnectivity: () async => [ConnectivityResult.wifi],
+          connectivityChanges: const Stream.empty(),
+        );
+        writes = _DeletingInventory(h.inventory, api, queue);
+      }
+      await h.mount(tester, writes: writes);
+      h.complete(0, 'Synthetic owner');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip(deleting ? 'Delete' : 'Add owner'));
+      await tester.pumpAndSettle();
+      if (!deleting) {
+        await tester.enterText(find.byType(EditableText), 'Synthetic');
+        await tester.tap(find.text('Add owner').last);
+      } else {
+        await tester.tap(find.text('Delete').last);
+        await tester.pumpAndSettle();
+      }
+      await tester.pumpAndSettle();
+      expect(
+        find.text(deleting ? 'Authentication required' : failure.message),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          deleting
+              ? 'ApiException(401): Authentication required'
+              : 'ApiException(409): Synthetic name already exists',
+        ),
+        findsNothing,
+      );
+      await tester.drainShadToastTimers();
+    });
+  }
+
   testWidgets(
     'workspace transition clears old rows and add actions before B resolves',
     (tester) async {

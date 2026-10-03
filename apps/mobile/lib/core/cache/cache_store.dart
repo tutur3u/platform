@@ -12,6 +12,7 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_storage_snapshot.dart';
 import 'package:mobile/core/cache/cached_resource_record.dart';
+import 'package:mobile/core/cache/offline_resource_reference.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/cache/replica_entity_record.dart';
 import 'package:path_provider/path_provider.dart';
@@ -20,6 +21,7 @@ part 'cache_store_refresh.dart';
 part 'cache_store_revalidation.dart';
 part 'cache_store_storage.dart';
 part 'cache_store_replica.dart';
+part 'cache_store_pending.dart';
 part 'cache_store_scopes.dart';
 part 'cache_store_reconciliation.dart';
 
@@ -39,6 +41,8 @@ class CacheStore {
     required CacheDirectoryResolver directoryResolver,
   }) : _secureStorage = secureStorage,
        _directoryResolver = directoryResolver;
+
+  Future<void>? _pendingWrite;
 
   static final CacheStore instance = CacheStore._();
 
@@ -533,92 +537,15 @@ class CacheStore {
     String? workspaceId,
     String? namespace,
     bool resourceOnly = false,
-  }) async {
-    _refreshTasks.removeWhere(
-      (_, task) =>
-          (userId == null || task.key.userId == userId) &&
-          (workspaceId == null || task.key.workspaceId == workspaceId) &&
-          (namespace == null || task.key.namespace == namespace),
-    );
-    final scope = (userId, workspaceId, namespace);
-    _scopeRevisions[scope] = ++_revision;
-    _clearingScopes[scope] = (_clearingScopes[scope] ?? 0) + 1;
-    try {
-      await init();
-      final keysToDelete = <String>[];
-      for (final entry in _memory.entries) {
-        final record = entry.value;
-        final matchesUser = userId == null || record.userId == userId;
-        final matchesWorkspace =
-            workspaceId == null || record.workspaceId == workspaceId;
-        if (matchesUser &&
-            matchesWorkspace &&
-            (namespace == null || record.namespace == namespace)) {
-          keysToDelete.add(entry.key);
-        }
-      }
-
-      for (final key in keysToDelete) {
-        _dropRecord(key);
-        await _resourceBox.delete(key);
-        await _replicaMigration;
-        await _removeReplicaSource(key);
-      }
-
-      // Resource-only purges must preserve unrelated queued offline changes.
-      if (namespace != null || resourceOnly) return;
-      final mutationIds = <dynamic>[];
-      for (final dynamic key in _mutationBox.keys) {
-        final raw = _mutationBox.get(key);
-        if (raw is! Map<dynamic, dynamic>) continue;
-        final record = PendingMutationRecord.fromJson(raw);
-        final matchesUser = userId == null || record.userId == userId;
-        final matchesWorkspace =
-            workspaceId == null || record.workspaceId == workspaceId;
-        if (matchesUser && matchesWorkspace) {
-          mutationIds.add(key);
-        }
-      }
-      for (final id in mutationIds) {
-        await _mutationBox.delete(id);
-      }
-      await _clearReplicaMappingsScope(userId, workspaceId);
-    } finally {
-      _scopeRevisions[scope] = ++_revision;
-      final remaining = _clearingScopes[scope]! - 1;
-      if (remaining == 0) {
-        _clearingScopes.remove(scope);
-      } else {
-        _clearingScopes[scope] = remaining;
-      }
-    }
-  }
+  }) => _clearScopeSerialized(
+    userId: userId,
+    workspaceId: workspaceId,
+    namespace: namespace,
+    resourceOnly: resourceOnly,
+  );
 
   Future<void> clearResources({String? userId}) =>
       clearScope(userId: userId, resourceOnly: true);
-
-  Future<void> savePendingMutation(PendingMutationRecord record) async {
-    await init();
-    await _mutationBox.put(record.id, record.toJson());
-  }
-
-  Future<void> deletePendingMutation(String id) async {
-    await init();
-    await _mutationBox.delete(id);
-  }
-
-  Future<List<PendingMutationRecord>> listPendingMutations() async {
-    await init();
-    final records = <PendingMutationRecord>[];
-    for (final key in _mutationBox.keys) {
-      final raw = _mutationBox.get(key);
-      if (raw is Map<dynamic, dynamic>) {
-        records.add(PendingMutationRecord.fromJson(raw));
-      }
-    }
-    records.sort((left, right) => left.createdAt.compareTo(right.createdAt));
-    return records;
-  }
 
   CachedResourceRecord _markRecordStale(
     CachedResourceRecord record, {

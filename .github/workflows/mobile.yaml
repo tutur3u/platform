@@ -104,6 +104,13 @@ jobs:
       - name: Run test shard
         run: flutter test --concurrency=2 --total-shards=4 --shard-index=${{ matrix.shard }} -r expanded
 
+      - name: Verify Agenda wall time on a non-UTC device
+        if: matrix.shard == 0
+        env:
+          TZ: Asia/Ho_Chi_Minh
+          CALENDAR_NATIVE_TZ_REGRESSION: "1"
+        run: flutter test test/features/calendar/widgets/agenda_view_test.dart --concurrency=1 -r expanded
+
       - name: Verify configured OTP CAPTCHA guards
         if: matrix.shard == 0
         run: |

@@ -37,6 +37,7 @@ class Socket extends EventTarget {
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   Socket.instances = [];
 });
 it('retains the latest persisted title until reconnect and retries a dropped acknowledgement', async () => {
@@ -85,6 +86,7 @@ it('does not replay a pending title after deliberately leaving', async () => {
 
 it('replays a persisted title after the socket drops before acknowledgement', async () => {
   vi.useFakeTimers();
+  vi.spyOn(Math, 'random').mockReturnValue(0);
   vi.stubGlobal('WebSocket', Socket);
   const signaling = new MeetSignaling({
     resolveUrl: () => 'ws://test',
@@ -97,7 +99,8 @@ it('replays a persisted title after the socket drops before acknowledgement', as
   signaling.announceTitle('Persisted title');
   first.readyState = 3;
   first.dispatchEvent(Object.assign(new Event('close'), { code: 1006 }));
-  await vi.advanceTimersByTimeAsync(10_000);
+  // Reconnect before the unopened socket's 10-second handshake timeout.
+  await vi.advanceTimersByTimeAsync(1000);
   const replacement = Socket.instances.at(-1)!;
   expect(replacement).not.toBe(first);
   replacement.open();

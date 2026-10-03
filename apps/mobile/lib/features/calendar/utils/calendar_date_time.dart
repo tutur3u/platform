@@ -60,7 +60,17 @@ String? calendarZone(BuildContext context) {
 }
 
 DateTime calendarNowInContext(BuildContext context) =>
+    context.dependOnInheritedWidgetOfExactType<CalendarWallClock>()?.now ??
     calendarNow(calendarZone(context));
+
+/// Projected wall-clock shared by visible views; injectable for deterministic
+/// event-end and midnight rendering tests.
+class CalendarWallClock extends InheritedWidget {
+  const CalendarWallClock({required this.now, required super.child, super.key});
+  final DateTime now;
+  @override
+  bool updateShouldNotify(CalendarWallClock oldWidget) => now != oldWidget.now;
+}
 
 /// Build each boundary independently; a calendar day may be 23 or 25 hours.
 DateTime calendarWallToUtc(DateTime wall, String? zone) {

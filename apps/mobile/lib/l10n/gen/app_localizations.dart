@@ -17953,6 +17953,42 @@ abstract class AppLocalizations {
   /// **'Other data'**
   String get cacheCategoryOther;
 
+  /// No description provided for @offlineDependencyWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for related changes. Sync will continue automatically.'**
+  String get offlineDependencyWaiting;
+
+  /// No description provided for @offlineDependencyMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'A related local item was discarded or deleted. Review this change.'**
+  String get offlineDependencyMissing;
+
+  /// No description provided for @offlineDependencyCycle.
+  ///
+  /// In en, this message translates to:
+  /// **'Related changes depend on each other. Review their references.'**
+  String get offlineDependencyCycle;
+
+  /// No description provided for @offlineDependencyAmbiguous.
+  ///
+  /// In en, this message translates to:
+  /// **'More than one queued create uses the same local item. Review this change.'**
+  String get offlineDependencyAmbiguous;
+
+  /// No description provided for @offlineDependencyInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The saved change has invalid data. Review it before syncing.'**
+  String get offlineDependencyInvalid;
+
+  /// No description provided for @offlineDependencyContract.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for server support. This change is saved and retries automatically.'**
+  String get offlineDependencyContract;
+
   /// No description provided for @offlineEditQueued.
   ///
   /// In en, this message translates to:
@@ -18241,10 +18277,16 @@ abstract class AppLocalizations {
   /// **'Too many requests. Please wait before retrying.'**
   String get settingsTimezoneRateLimited;
 
+  /// No description provided for @settingsTimezoneRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry timezone'**
+  String get settingsTimezoneRetry;
+
   /// No description provided for @settingsTimezoneError.
   ///
   /// In en, this message translates to:
-  /// **'Could not load or save timezone. Tap to retry.'**
+  /// **'Could not load or save timezone. Retry or edit a loaded preference.'**
   String get settingsTimezoneError;
 
   /// No description provided for @calendarInvalidLocalTime.

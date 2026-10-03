@@ -566,7 +566,8 @@ void main() {
           var closed = false;
           final closing = CacheStore.instance.closeForTesting();
           unawaited(closing.then((_) => closed = true));
-          for (var i = 0; i < 30 && !closed; i++) {
+          // Real filesystem teardown may exceed frame-render deadlines.
+          for (var i = 0; i < 200 && !closed; i++) {
             await tester.runAsync(
               () => Future<void>.delayed(const Duration(milliseconds: 50)),
             );
