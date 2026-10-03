@@ -56,6 +56,8 @@ void main() {
         final state = TimezoneSettingsState(
           loading: false,
           resolved: true,
+          personalLoaded: true,
+          workspaceLoaded: true,
           failed: failed,
         );
         when(() => cubit.state).thenReturn(state);

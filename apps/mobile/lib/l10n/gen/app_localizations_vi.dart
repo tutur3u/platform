@@ -9493,7 +9493,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsTimezoneRateLimited => 'Quá nhiều yêu cầu. Vui lòng chờ trước khi thử lại.';
 
   @override
-  String get settingsTimezoneError => 'Không thể tải hoặc lưu múi giờ. Nhấn để thử lại.';
+  String get settingsTimezoneRetry => 'Thử lại múi giờ';
+
+  @override
+  String get settingsTimezoneError => 'Không thể tải hoặc lưu múi giờ. Hãy thử lại hoặc sửa tùy chọn đã tải.';
 
   @override
   String get calendarInvalidLocalTime => 'Chọn thời gian bắt đầu và kết thúc hợp lệ. Một số thời điểm không tồn tại khi đổi giờ mùa hè.';

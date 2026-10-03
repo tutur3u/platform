@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
 import 'package:mobile/features/calendar/utils/event_layout.dart';
 import 'package:mobile/features/calendar/widgets/all_day_event_bar.dart';
@@ -46,31 +47,38 @@ void main() {
       await tester.pumpApp(
         Theme(
           data: ThemeData(brightness: brightness),
-          child: MultiDayScheduleView(
-            selectedDate: DateTime(2030),
-            events: [timed, allDay],
-            onEventTap: (_) {},
-            onCreateAtTime: (_) {},
-            onDaySelected: (_) {},
-            onSwipe: (_) {},
-            visibleDayCount: 3,
+          child: CalendarWallClock(
+            now: DateTime.utc(2029),
+            child: MultiDayScheduleView(
+              selectedDate: DateTime(2030),
+              events: [timed, allDay],
+              onEventTap: (_) {},
+              onCreateAtTime: (_) {},
+              onDaySelected: (_) {},
+              onSwipe: (_) {},
+              visibleDayCount: 3,
+            ),
           ),
         ),
       );
       await tester.pumpAndSettle();
       expect(find.text('Timed RGB'), findsOneWidget);
       expect(find.text('All-day RGB'), findsOneWidget);
+      final palette = EventColors.inContext(
+        timed,
+        tester.element(find.text('Timed RGB')),
+      );
       final boxes = tester
           .widgetList<Container>(find.byType(Container))
           .map((widget) => widget.decoration)
           .whereType<BoxDecoration>()
-          .where((decoration) => decoration.color == const Color(0xff00ff88))
+          .where((decoration) => decoration.color == palette.background)
           .toList();
       expect(boxes.length, 2);
       for (final decoration in boxes) {
         expect(decoration.color!.a, 1);
         final border = decoration.border! as Border;
-        expect(border.left.color, Colors.black);
+        expect(border.left.color, palette.accent);
         expect(border.left.color.a, 1);
       }
       expect(tester.takeException(), isNull);
@@ -138,22 +146,26 @@ void main() {
           ),
         ),
       );
+      final palette = EventColors.inContext(
+        value,
+        tester.element(find.text('Provider RGB').first),
+      );
       final boxes = tester
           .widgetList<Container>(find.byType(Container))
           .map((widget) => widget.decoration)
           .whereType<BoxDecoration>()
-          .where((decoration) => decoration.color == const Color(0xff00ff88));
+          .where((decoration) => decoration.color == palette.background);
       expect(boxes.length, greaterThanOrEqualTo(2));
       for (final decoration in boxes) {
         expect(decoration.color!.a, 1);
         if (decoration.border is Border) {
           final border = decoration.border! as Border;
-          expect(border.left.color, Colors.black);
+          expect(border.left.color, palette.accent);
         }
       }
       final title = tester.widgetList<Text>(find.text('Provider RGB'));
       expect(
-        title.every((widget) => widget.style?.color == Colors.black),
+        title.every((widget) => widget.style?.color == palette.foreground),
         isTrue,
       );
       expect(tester.takeException(), isNull);

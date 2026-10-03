@@ -9559,7 +9559,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTimezoneRateLimited => 'Too many requests. Please wait before retrying.';
 
   @override
-  String get settingsTimezoneError => 'Could not load or save timezone. Tap to retry.';
+  String get settingsTimezoneRetry => 'Retry timezone';
+
+  @override
+  String get settingsTimezoneError => 'Could not load or save timezone. Retry or edit a loaded preference.';
 
   @override
   String get calendarInvalidLocalTime => 'Choose a valid start and end time. Some times do not exist when daylight saving time changes.';
