@@ -1253,7 +1253,7 @@ interface WorkspaceCommandContext {
   json: boolean;
   workspaceId: string;
   group: string;
-  action: string;
+  action?: string;
   firstId?: string;
   positionalValue: string;
   positionals: string[];

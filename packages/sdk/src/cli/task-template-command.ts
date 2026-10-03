@@ -28,7 +28,7 @@ export async function runTaskTemplateCliCommand({
   flags: Record<string, FlagValue>;
   json: boolean;
   workspaceId: string;
-  action: string;
+  action?: string;
   firstId?: string;
   positionalValue: string;
   helpers: {
