@@ -180,7 +180,7 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                                           size: 48,
                                         )
                                       : Image.network(
-                                          avatarUrl!,
+                                          avatarUrl,
                                           fit: BoxFit.cover,
                                           errorBuilder: (_, error, stack) =>
                                               const Icon(
