@@ -627,6 +627,12 @@ async fn unported_support_list_reads_fall_through_to_next() {
     let config = BackendConfig::new("test", "backend");
     let outbound = RecordingOutboundClient::default();
     for method in ["GET", "HEAD"] {
+        let response =
+            handle_backend_request(&config, request(method, SUPPORT_INQUIRIES_PATH), &outbound)
+                .await;
+        assert_eq!(response.status, 404);
+        assert_eq!(response.body["error"], "not found");
+        assert_eq!(response.allow, None);
         assert!(
             crate::contact::handle_contact_route(
                 &config,

@@ -54,7 +54,7 @@ pub(crate) fn support_inquiry_post_response(
         ]));
     };
 
-    let payload = match serde_json::from_value::<SupportInquiryRequest>(body) {
+    let mut payload = match serde_json::from_value::<SupportInquiryRequest>(body) {
         Ok(payload) => payload,
         Err(_) => {
             return no_store_response(invalid_contact_request_body_response(vec![
@@ -63,6 +63,7 @@ pub(crate) fn support_inquiry_post_response(
         }
     };
 
+    payload.message = payload.message.trim().to_owned();
     let validation_errors = validate_support_inquiry_payload(&payload);
     if !validation_errors.is_empty() {
         return no_store_response(invalid_contact_request_body_response(validation_errors));
@@ -102,7 +103,7 @@ pub(super) async fn support_inquiry_data_post_response(
         ]));
     };
 
-    let payload = match serde_json::from_value::<SupportInquiryRequest>(body) {
+    let mut payload = match serde_json::from_value::<SupportInquiryRequest>(body) {
         Ok(payload) => payload,
         Err(_) => {
             return no_store_response(invalid_contact_request_body_response(vec![
@@ -111,6 +112,7 @@ pub(super) async fn support_inquiry_data_post_response(
         }
     };
 
+    payload.message = payload.message.trim().to_owned();
     let validation_errors = validate_support_inquiry_payload(&payload);
     if !validation_errors.is_empty() {
         return no_store_response(invalid_contact_request_body_response(validation_errors));
@@ -373,7 +375,7 @@ fn validate_support_inquiry_payload(payload: &SupportInquiryRequest) -> Vec<Stri
     validate_string_length(
         &mut errors,
         "message",
-        &payload.message,
+        payload.message.trim(),
         10,
         MAX_SUPPORT_INQUIRY_LENGTH,
     );
@@ -395,6 +397,34 @@ mod tests {
             inquiry_type: "support".into(),
         };
         assert!(validate_support_inquiry_payload(&value).is_empty());
+        for field in ["name", "subject", "message"] {
+            let mut unicode = SupportInquiryRequest {
+                name: "😀".repeat(64),
+                subject: "😀".repeat(128),
+                message: "😀".repeat(512),
+                email: value.email.clone(),
+                product: value.product.clone(),
+                inquiry_type: value.inquiry_type.clone(),
+            };
+            assert!(validate_support_inquiry_payload(&unicode).is_empty());
+            match field {
+                "name" => unicode.name.push('😀'),
+                "subject" => unicode.subject.push('😀'),
+                _ => unicode.message.push('😀'),
+            }
+            assert!(
+                validate_support_inquiry_payload(&unicode)
+                    .iter()
+                    .any(|e| e.starts_with(field))
+            );
+        }
+        value.message = " ".repeat(20);
+        assert!(
+            validate_support_inquiry_payload(&value)
+                .iter()
+                .any(|e| e.starts_with("message"))
+        );
+        value.message = "m".repeat(512);
         for field in ["name", "subject", "message"] {
             match field {
                 "name" => value.name.push('n'),

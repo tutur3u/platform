@@ -25,7 +25,7 @@ export const createInquirySchema = z.object({
   type: z.enum(['bug', 'feature-request', 'support', 'job-application']),
   product: z.enum(INQUIRY_PRODUCTS),
   subject: z.string().min(5).max(MAX_SUPPORT_INQUIRY_SUBJECT_LENGTH),
-  message: z.string().min(10).max(MAX_SUPPORT_INQUIRY_MESSAGE_LENGTH),
+  message: z.string().trim().min(10).max(MAX_SUPPORT_INQUIRY_MESSAGE_LENGTH),
 });
 export function permitsSupportCookieMutation(request: Request) {
   if (

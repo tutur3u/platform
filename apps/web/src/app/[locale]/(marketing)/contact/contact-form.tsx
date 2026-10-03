@@ -37,6 +37,7 @@ import { useEffect, useState } from 'react';
 import * as z from 'zod';
 import { Panel } from '@/components/landing/shared/section-shell';
 import { useCurrentUserProfile } from '@/hooks/use-current-user-profile';
+import { inquiryPrefillName } from './contact-form-values';
 
 const formSchema = z.object({
   name: z
@@ -67,6 +68,7 @@ const formSchema = z.object({
     .max(MAX_SUPPORT_INQUIRY_SUBJECT_LENGTH),
   message: z
     .string()
+    .trim()
     .min(10, 'Message must be at least 10 characters')
     .max(MAX_SUPPORT_INQUIRY_MESSAGE_LENGTH),
 });
@@ -108,7 +110,9 @@ export function ContactForm() {
       form.setValue('email', profile.email);
     }
 
-    const name = profile.display_name || profile.email?.split('@')[0] || '';
+    const name = inquiryPrefillName(
+      profile.display_name || profile.email?.split('@')[0] || ''
+    );
     if (name) {
       form.setValue('name', name);
     }

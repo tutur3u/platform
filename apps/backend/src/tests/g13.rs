@@ -529,6 +529,7 @@ async fn support_inquiry_patch_requires_tuturuuu_admin_email() {
     let response = handle_backend_request(
         &config,
         BackendRequest {
+            origin: Some("https://tuturuuu.localhost"),
             cookie: Some(leaked_test_str(format!(
                 "sb-project-ref-auth-token={cookie_value}"
             ))),
@@ -564,6 +565,7 @@ async fn support_inquiry_patch_updates_row_with_service_role() {
     let response = handle_backend_request(
         &config,
         BackendRequest {
+            origin: Some("https://tuturuuu.localhost"),
             cookie: Some(leaked_test_str(format!(
                 "sb-project-ref-auth-token={cookie_value}"
             ))),
