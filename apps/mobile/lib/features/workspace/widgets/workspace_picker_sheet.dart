@@ -156,11 +156,6 @@ class _WorkspacePickerState extends State<_WorkspacePicker> {
           needsVisibility &&
           !state.visibilityResolved &&
           state.visibilityStatus == WorkspaceStatus.loading;
-      final visibilityUnknown =
-          needsVisibility &&
-          state.visibilityStatus != WorkspaceStatus.loaded &&
-          !state.visibilityResolved &&
-          state.visibilityStatus != WorkspaceStatus.initial;
       final visibleError = state.visibilityError != null;
       final canCreate = state.limits?.canCreate ?? true;
       return BackButtonListener(
@@ -293,9 +288,6 @@ class _WorkspacePickerState extends State<_WorkspacePicker> {
                             ),
                             for (var i = 0; i < 3; i++)
                               const Card(child: SizedBox(height: 80)),
-                          ] else if (visibilityUnknown) ...[
-                            if (!visibleError)
-                              Text(l10n.workspaceHiddenLoadError),
                           ] else ...[
                             for (final section in [
                               (

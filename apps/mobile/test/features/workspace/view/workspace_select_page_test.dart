@@ -40,6 +40,56 @@ void main() {
       when(() => workspaceCubit.hasAuthenticatedActor).thenReturn(true);
     });
 
+    for (final resolved in [false, true]) {
+      testWidgets('preference failure keeps membership selectable '
+          'with cached preferences=$resolved', (tester) async {
+        const available = Workspace(id: 'available', name: 'Available team');
+        const hidden = Workspace(id: 'hidden', name: 'Saved hidden team');
+        final state = WorkspaceState(
+          status: WorkspaceStatus.loaded,
+          visibilityStatus: WorkspaceStatus.error,
+          visibilityResolved: resolved,
+          visibilityError: 'Preference unavailable',
+          hiddenWorkspaceIds: const ['hidden'],
+          workspaces: const [available, hidden],
+        );
+        when(() => workspaceCubit.state).thenReturn(state);
+        whenListen(
+          workspaceCubit,
+          const Stream<WorkspaceState>.empty(),
+          initialState: state,
+        );
+        when(
+          () => workspaceCubit.selectWorkspace(available),
+        ).thenAnswer((_) async {});
+        when(
+          () => workspaceCubit.refreshHiddenWorkspaces(),
+        ).thenAnswer((_) async {});
+        await tester.pumpApp(
+          BlocProvider.value(
+            value: workspaceCubit,
+            child: const WorkspaceSelectPage(),
+          ),
+        );
+        await tester.pump();
+        expect(find.text('Available team'), findsOneWidget);
+        expect(find.text('Saved hidden team'), findsNothing);
+        expect(find.text('Retry'), findsOneWidget);
+        await tester.tap(find.text('Retry'));
+        await tester.pump();
+        verify(() => workspaceCubit.refreshHiddenWorkspaces()).called(1);
+        await tester.tap(find.text('Available team'));
+        await tester.pump();
+        verify(() => workspaceCubit.selectWorkspace(available)).called(1);
+        verifyNever(
+          () => workspaceCubit.setWorkspaceHidden(
+            any(),
+            hidden: any(named: 'hidden'),
+          ),
+        );
+      });
+    }
+
     testWidgets('renders personal, internal, and team sections', (
       tester,
     ) async {

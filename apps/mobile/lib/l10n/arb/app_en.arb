@@ -4,7 +4,7 @@
     "workspaceRestoreAction": "Restore",
     "workspaceHiddenDescription": "Only you can see this list. Hiding does not change membership or notifications.",
     "workspaceHiddenEmpty": "No Hidden workspaces",
-    "workspaceHiddenLoadError": "Unable to refresh Hidden workspaces. Your saved list is kept.",
+    "workspaceHiddenLoadError": "Workspace visibility preferences are unavailable. You can still select a workspace; saved hidden choices are kept.",
     "workspaceHiddenUpdateError": "Unable to save this change. Try again when connected.",
     "workspaceAllHidden": "Your workspaces are hidden. Restore one to continue.",
     "workspacePickerClose": "Close workspace picker",

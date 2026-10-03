@@ -4,7 +4,7 @@
     "workspaceRestoreAction": "Hiện lại",
     "workspaceHiddenDescription": "Chỉ bạn thấy danh sách này. Ẩn không thay đổi tư cách thành viên hay thông báo.",
     "workspaceHiddenEmpty": "Không có không gian làm việc đã ẩn",
-    "workspaceHiddenLoadError": "Không thể làm mới danh sách đã ẩn. Danh sách đã lưu được giữ lại.",
+    "workspaceHiddenLoadError": "Không thể tải tùy chọn hiển thị. Bạn vẫn có thể chọn không gian làm việc; các lựa chọn ẩn đã lưu được giữ lại.",
     "workspaceHiddenUpdateError": "Không thể lưu thay đổi. Hãy thử lại khi có kết nối.",
     "workspaceAllHidden": "Các không gian làm việc của bạn đã bị ẩn. Hiện lại một không gian để tiếp tục.",
     "workspacePickerClose": "Đóng danh sách không gian làm việc",
