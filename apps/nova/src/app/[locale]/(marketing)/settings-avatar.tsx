@@ -5,6 +5,7 @@ import {
   removeCurrentUserAvatar,
   uploadCurrentUserAvatar,
 } from '@tuturuuu/internal-api';
+import { optimizeProfileMediaFile } from '@tuturuuu/internal-api/profile-media';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -119,13 +120,10 @@ export default function UserAvatar({ user }: AvatarProps) {
 
   const handleFileSelect = async (file: File) => {
     try {
-      const compressedBlob = await compressImage(file);
-      const fileURL = URL.createObjectURL(compressedBlob);
+      const optimizedFile = await optimizeProfileMediaFile(file, 'avatar');
+      const fileURL = URL.createObjectURL(optimizedFile);
       setPreviewSrc(fileURL);
-      form.setValue(
-        'file',
-        new File([compressedBlob], file.name, { type: file.type })
-      );
+      form.setValue('file', optimizedFile);
     } catch (error) {
       console.error('Error compressing image:', error);
       toast({
