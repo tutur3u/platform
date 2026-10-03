@@ -1,4 +1,5 @@
 import { uploadCurrentUserProfileMedia } from './profile-media';
+import { optimizeProfileMediaFile } from './profile-media-optimize';
 import type {
   CurrentUserProfileResponse,
   UpdateCurrentUserProfilePayload,
@@ -1227,19 +1228,17 @@ export async function uploadUserProfileLinkAvatar(
   file: File,
   options?: InternalApiClientOptions
 ): Promise<{ publicUrl: string }> {
-  const client = getInternalApiClient(options);
+  const optimized = await optimizeProfileMediaFile(file, 'avatar');
   const { signedUrl, publicUrl } = await createUserProfileLinkAvatarUploadUrl(
     code,
-    file.type,
+    optimized.type,
     options
   );
-
-  const uploadResponse = await client.fetch(signedUrl, {
+  const uploadResponse = await (options?.fetch ?? globalThis.fetch)(signedUrl, {
     method: 'PUT',
-    headers: {
-      'Content-Type': file.type,
-    },
-    body: file,
+    credentials: 'omit',
+    headers: { 'Content-Type': optimized.type },
+    body: optimized,
     cache: 'no-store',
   });
 

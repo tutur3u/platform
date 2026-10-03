@@ -50,3 +50,45 @@ export async function uploadCurrentUserProfileMedia(
   if (!response.ok) throw new Error('Unable to upload profile image');
   return ticket.publicUrl;
 }
+
+/** Managed contact avatars use the same optimized transport as shared identity. */
+export async function createWorkspaceUserAvatarUploadUrl(
+  wsId: string,
+  contentType: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    signedUrl: string;
+    publicUrl: string;
+    path: string;
+  }>(`/api/v1/workspaces/${encodeURIComponent(wsId)}/users/avatar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contentType }),
+    cache: 'no-store',
+  });
+}
+export async function uploadWorkspaceUserAvatar(
+  wsId: string,
+  file: File,
+  options?: InternalApiClientOptions
+) {
+  const optimized = await optimizeProfileMediaFile(file, 'avatar');
+  const ticket = await createWorkspaceUserAvatarUploadUrl(
+    wsId,
+    optimized.type,
+    options
+  );
+  const response = await (options?.fetch ?? globalThis.fetch)(
+    ticket.signedUrl,
+    {
+      method: 'PUT',
+      credentials: 'omit',
+      body: optimized,
+      headers: { 'Content-Type': optimized.type },
+      cache: 'no-store',
+    }
+  );
+  if (!response.ok) throw new Error('Unable to upload profile image');
+  return ticket.publicUrl;
+}

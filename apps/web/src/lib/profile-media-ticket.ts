@@ -10,7 +10,8 @@ export async function createOptimizedProfileMediaTicket(
   userId: string,
   kind: ProfileMediaKind,
   origin: string,
-  workspaceId?: string
+  workspaceId?: string,
+  avatarPrefix?: string
 ) {
   await reserveProfileUploadBudget(userId, kind);
   const { token, claims } = createAppCoordinationToken({
@@ -18,13 +19,19 @@ export async function createOptimizedProfileMediaTicket(
     targetApp: 'profile-media-upload',
     scopes: [
       `profile-media:${kind}`,
-      ...(workspaceId ? [`workspace:${workspaceId}`] : []),
+      ...(avatarPrefix
+        ? [`avatar-prefix:${avatarPrefix}`]
+        : workspaceId
+          ? [`workspace:${workspaceId}`]
+          : []),
     ],
     expiresInSeconds: 600,
   });
-  const filePath = workspaceId
-    ? `workspaces/${workspaceId}/avatar-${claims.jti}.webp`
-    : `${userId}/${claims.jti}.webp`;
+  const filePath = avatarPrefix
+    ? `${avatarPrefix}/${claims.jti}.webp`
+    : workspaceId
+      ? `workspaces/${workspaceId}/avatar-${claims.jti}.webp`
+      : `${userId}/${claims.jti}.webp`;
   const admin = await createAdminClient({ noCookie: true });
   const storage = admin.storage.from(kind === 'avatar' ? 'avatars' : 'banners');
   const uploadUrl = new URL(`/api/v1/users/me/${kind}/upload`, origin);

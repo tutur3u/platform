@@ -30,9 +30,17 @@ export function createProfileMediaPutHandler(kind: ProfileMediaKind) {
       )
         throw new ProfileUploadError('Invalid upload ticket', 401);
       const workspace = verified.claims.scopes[1];
+      const avatarPrefix = workspace?.startsWith('avatar-prefix:')
+        ? workspace.slice(14)
+        : undefined;
       if (
         workspace &&
-        (kind !== 'avatar' || !/^workspace:[0-9a-f-]{36}$/i.test(workspace))
+        (kind !== 'avatar' ||
+          !(avatarPrefix
+            ? /^[0-9a-f-]{36}\/users(?:\/profile-link\/[a-zA-Z0-9_-]{1,100})?$/i.test(
+                avatarPrefix
+              )
+            : /^workspace:[0-9a-f-]{36}$/i.test(workspace)))
       )
         throw new ProfileUploadError('Invalid upload ticket', 401);
       const contentType = request.headers
@@ -55,9 +63,11 @@ export function createProfileMediaPutHandler(kind: ProfileMediaKind) {
       const bucket = admin.storage.from(
         kind === 'avatar' ? 'avatars' : 'banners'
       );
-      const filePath = workspace
-        ? `workspaces/${workspace.slice(10)}/avatar-${verified.claims.jti}.webp`
-        : `${verified.claims.sub}/${verified.claims.jti}.webp`;
+      const filePath = avatarPrefix
+        ? `${avatarPrefix}/${verified.claims.jti}.webp`
+        : workspace
+          ? `workspaces/${workspace.slice(10)}/avatar-${verified.claims.jti}.webp`
+          : `${verified.claims.sub}/${verified.claims.jti}.webp`;
       const publicUrl = publicStorageUrl(
         bucket.getPublicUrl(filePath).data.publicUrl
       );

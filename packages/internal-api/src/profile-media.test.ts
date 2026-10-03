@@ -11,7 +11,11 @@ beforeEach(() =>
 );
 
 import type { InternalApiError } from './internal-api-error';
-import { uploadCurrentUserProfileMedia } from './profile-media';
+import {
+  uploadCurrentUserProfileMedia,
+  uploadWorkspaceUserAvatar,
+} from './profile-media';
+import { uploadUserProfileLinkAvatar } from './users';
 
 it.each(['avatar', 'banner'] as const)(
   'uploads a supported %s through the budgeted API and saves no profile prematurely',
@@ -121,3 +125,45 @@ it('keeps API credentials on the ticket request and omits them from Storage', as
     ['content-type', 'image/png'],
   ]);
 });
+
+it.each(['contact', 'profile-link'] as const)(
+  'optimizes %s avatars and omits API credentials from the capability PUT',
+  async (surface) => {
+    const optimized = new File(['optimized'], 'avatar.webp', {
+      type: 'image/webp',
+    });
+    vi.mocked(optimizeProfileMediaFile).mockResolvedValue(optimized);
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            signedUrl: 'https://upload.test/signed',
+            publicUrl: 'https://public.test/avatar.webp',
+          })
+        )
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 200 }));
+    const options = {
+      baseUrl: 'https://app.test',
+      fetch,
+      defaultHeaders: { Authorization: 'Bearer synthetic-api-auth' },
+    };
+    const file = new File(['source'], 'source.png', { type: 'image/png' });
+    if (surface === 'contact')
+      await uploadWorkspaceUserAvatar('workspace-id', file, options);
+    else await uploadUserProfileLinkAvatar('active-link', file, options);
+    expect(vi.mocked(optimizeProfileMediaFile)).toHaveBeenCalledWith(
+      file,
+      'avatar'
+    );
+    expect(fetch.mock.calls[1]![1]).toMatchObject({
+      credentials: 'omit',
+      method: 'PUT',
+      body: optimized,
+    });
+    expect([
+      ...new Headers(fetch.mock.calls[1]![1]!.headers).entries(),
+    ]).toEqual([['content-type', 'image/webp']]);
+  }
+);

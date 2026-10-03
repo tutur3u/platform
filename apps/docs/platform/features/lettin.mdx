@@ -253,7 +253,10 @@ identity uploads from Tulletin, platform web, Nova and mobile; existing objects
 remain readable. Browser clients resize and encode WebP before transport. Mobile
 uses its existing in-house image library off the UI isolate and stores optimized,
 metadata-free PNG in offline queues; older queued avatar payloads are optimized
-again before delivery. Workspace avatar clients use the same client optimizer and shared server path,
+again before delivery. Contact avatars and public profile-link avatars also use the browser optimizer and
+single-use central upload capability. Active public links receive a stable,
+link-scoped budget identity and can only write inside their verified link path.
+Workspace avatar clients use the same client optimizer and shared server path,
 with workspace permission checks before issuance. Their tickets share the actor
 budget with personal images. Satellite workspace endpoints delegate issuance to
 the central API rather than granting raw Storage writes.

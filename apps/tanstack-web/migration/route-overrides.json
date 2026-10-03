@@ -2727,6 +2727,16 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Permission-checked workspace avatar ticket delegates to bounded central server WebP optimization, shared per-actor quotas and one-use capabilities. Rust parity pending."
+    },
+    "api:/api/v1/public/user-profile-links/:code/avatar:apps/web/src/app/api/v1/public/user-profile-links/[code]/avatar/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class optimized avatar upload; Rust parity pending."
+    },
+    "api:/api/v1/workspaces/:wsId/users/avatar:apps/web/src/app/api/v1/workspaces/[wsId]/users/avatar/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "GET remains source-compatible with the Rust port. POST uses permission-checked single-use optimized upload capabilities and stays in Next.js; Rust returns None for non-GET methods."
     }
   }
 }

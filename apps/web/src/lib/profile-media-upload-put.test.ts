@@ -161,3 +161,36 @@ it('stores a workspace capability only in its signed workspace path', async () =
     `workspaces/${workspace}/avatar-${signed.claims.jti}.webp`
   );
 });
+
+it.each([
+  '12345678-1234-1234-1234-123456789abc/users',
+  '12345678-1234-1234-1234-123456789abc/users/profile-link/active-link',
+])('stores managed avatars only in the signed prefix %s', async (prefix) => {
+  const signed = createAppCoordinationToken({
+    userId: actor,
+    targetApp: 'profile-media-upload',
+    scopes: ['profile-media:avatar', `avatar-prefix:${prefix}`],
+    expiresInSeconds: 600,
+  });
+  expect(
+    (await createProfileMediaPutHandler('avatar')(request(signed.token))).status
+  ).toBe(200);
+  expect(f.upload.mock.calls[0]![0]).toBe(
+    `${prefix}/${signed.claims.jti}.webp`
+  );
+});
+it('rejects traversal in a signed managed prefix', async () => {
+  const signed = createAppCoordinationToken({
+    userId: actor,
+    targetApp: 'profile-media-upload',
+    scopes: [
+      'profile-media:avatar',
+      'avatar-prefix:12345678-1234-1234-1234-123456789abc/users/../other',
+    ],
+    expiresInSeconds: 600,
+  });
+  expect(
+    (await createProfileMediaPutHandler('avatar')(request(signed.token))).status
+  ).toBe(401);
+  expect(f.consume).not.toHaveBeenCalled();
+});
