@@ -5,7 +5,7 @@ import {
 
 vi.mock('@tuturuuu/internal-api', async () => ({
   createWorkspaceAvatarUploadTarget: vi.fn(),
-  ...(await import('../../../internal-api/src/internal-api-error')),
+  ...(await import('../../../internal-api/src/internal-api-error.js')),
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
