@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.30.0](https://github.com/tutur3u/platform/compare/learn-v0.29.0...learn-v0.30.0) (2026-10-03)
+
+
+### Features
+
+* **calendar:** support full Google color choices and scoped edits ([#5661](https://github.com/tutur3u/platform/issues/5661)) ([8cafac5](https://github.com/tutur3u/platform/commit/8cafac53438b504eafa8bcc8213d18448e4a17bc))
+* **learn:** add canonical Programming catalog, author forms and scoped drafts ([#5710](https://github.com/tutur3u/platform/issues/5710)) ([4e658d8](https://github.com/tutur3u/platform/commit/4e658d8c2c3c14b3b66b5e0accbf74fa4b16917e))
+* **learn:** improve Programming workspace controls and layout ([#5707](https://github.com/tutur3u/platform/issues/5707)) ([0f432ba](https://github.com/tutur3u/platform/commit/0f432ba02692f7f936ce9b191e3b152a1a67e970))
+* **workspaces:** add private Hidden choices and fullscreen picker ([#5699](https://github.com/tutur3u/platform/issues/5699)) ([9cab7ef](https://github.com/tutur3u/platform/commit/9cab7efc0e75f71c6b1a2436eea6885e48f6bfe4))
+* **workspaces:** reconcile Hidden picker and preserve membership fences ([c9806bb](https://github.com/tutur3u/platform/commit/c9806bb12a49a777fe28ab3653bb19d9350a1471))
+
+
+### Bug Fixes
+
+* **calendar:** gate uncertain creation retries on durable capability ([4a0a088](https://github.com/tutur3u/platform/commit/4a0a0883ddfff464be0880afd13758908e65203f))
+* **calendar:** recover edited drafts and align provider color parity ([d97142a](https://github.com/tutur3u/platform/commit/d97142abe22188b6a31a4a6b0e7b3a97d35d07f5))
+* **calendar:** wire recoverable routes and gated provider palette ([ecfc1e7](https://github.com/tutur3u/platform/commit/ecfc1e7dd1c5556b94c64cde62635df15d024747))
+* **learn:** explicitly strip types in programming QA launcher ([fc521bb](https://github.com/tutur3u/platform/commit/fc521bb4a29708e9759fb6ef01f309ef26f793fa))
+* **learn:** resolve Programming route and draft review findings ([0f3b71a](https://github.com/tutur3u/platform/commit/0f3b71ab039b6f9632329d0674e42a622d7a1354))
+* **learn:** resolve server boundary marker in Programming tests ([1a54dd6](https://github.com/tutur3u/platform/commit/1a54dd61ad5632c1fe65e177262f8789b0c4a126))
+* **learn:** test Programming workspace source and document catalog rules ([53bb7ac](https://github.com/tutur3u/platform/commit/53bb7ac27414f342bace2f7589b89f3abf9f484b))
+
 ## [0.29.0](https://github.com/tutur3u/platform/compare/learn-v0.28.0...learn-v0.29.0) (2026-09-29)
 
 

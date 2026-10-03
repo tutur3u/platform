@@ -1,5 +1,69 @@
 # Changelog
 
+## [0.23.0](https://github.com/tutur3u/platform/compare/mobile-v0.22.0...mobile-v0.23.0) (2026-10-03)
+
+
+### Features
+
+* **calendar:** support full Google color choices and scoped edits ([#5661](https://github.com/tutur3u/platform/issues/5661)) ([8cafac5](https://github.com/tutur3u/platform/commit/8cafac53438b504eafa8bcc8213d18448e4a17bc))
+* **mobile:** add personal Agenda and unify search keyboard navigation ([bff9e55](https://github.com/tutur3u/platform/commit/bff9e5566967027ad237e2fbd3b45b6012132760))
+* **mobile:** consolidate offline data and settings ([a96039a](https://github.com/tutur3u/platform/commit/a96039a4987782d69e566a57743aa2c1adc65882)) ([#5768](https://github.com/tutur3u/platform/issues/5768)) ([a4b1256](https://github.com/tutur3u/platform/commit/a4b1256bb8bd5a53662f3c2597c13702b23a670e))
+* **mobile:** inspect individual stored offline items ([fd68e81](https://github.com/tutur3u/platform/commit/fd68e813279bb2a4363ec18be198951379d7838c))
+* **mobile:** make Timeline a full surface with persistent activity ([b6b912a](https://github.com/tutur3u/platform/commit/b6b912a7a94d40a42fa600112ef12fdc1761d803))
+* **mobile:** model typed offline prerequisite graphs ([6a9012a](https://github.com/tutur3u/platform/commit/6a9012abf251edff18a4bf2b8c3cca3cfbc9caf6))
+* **mobile:** persist typed inventory dependency identities ([7c2d86f](https://github.com/tutur3u/platform/commit/7c2d86fae5f8fac28e05e94fbc89516584cababc))
+* **mobile:** replay inventory dependencies automatically ([fa8734c](https://github.com/tutur3u/platform/commit/fa8734ccebe827cab4bb8dc283f639229e7da50a))
+* **mobile:** simplify Timeline and add personal Agenda navigation ([#5767](https://github.com/tutur3u/platform/issues/5767)) ([350184b](https://github.com/tutur3u/platform/commit/350184b8804dd6ec94db5914e6e546d553e5dbfe))
+* **mobile:** streamline Assistant composer and navigation ([#5769](https://github.com/tutur3u/platform/issues/5769)) ([53200ca](https://github.com/tutur3u/platform/commit/53200ca3b8a526509a8eee95c446bc1d1b172271))
+* **mobile:** streamline assistant prompt and navigation ([c41817a](https://github.com/tutur3u/platform/commit/c41817a6360e2457e7e5ef7a0ba9162b3e4cdbb4))
+* **mobile:** support offline data and safe inventory checkout ([a45d634](https://github.com/tutur3u/platform/commit/a45d63498cc1e686d1d070f5861cf938c4e9a9ef))
+* **mobile:** support offline data, cached images, and safe inventory checkout ([#5734](https://github.com/tutur3u/platform/issues/5734)) ([2f0f397](https://github.com/tutur3u/platform/commit/2f0f39763daea56f1029fcc3e99e0be53c60e106))
+* **mobile:** sync inventory prerequisites and dependent writes automatically ([#5743](https://github.com/tutur3u/platform/issues/5743)) ([242fbbd](https://github.com/tutur3u/platform/commit/242fbbdb90671325af104f6c9fe79c43b81a82c1))
+
+
+### Bug Fixes
+
+* **calendar:** integrate all inventory setup reference guards ([08e1ab1](https://github.com/tutur3u/platform/commit/08e1ab1836b45d623ab3abe092650d5053c78dad))
+* **calendar:** integrate inventory setup dependency guards ([6711361](https://github.com/tutur3u/platform/commit/67113612bdab5e7a5f179b92f61ac46db9115574))
+* **calendar:** recover edited drafts and align provider color parity ([d97142a](https://github.com/tutur3u/platform/commit/d97142abe22188b6a31a4a6b0e7b3a97d35d07f5))
+* **inventory:** harden durable offline replay and validation ([7166401](https://github.com/tutur3u/platform/commit/7166401d06e357d24ab92ec104cf4e48ef1f5b3a))
+* **mobile:** align assistant floating controls and model eligibility ([f99fa11](https://github.com/tutur3u/platform/commit/f99fa11e82ba8bf35a3c0bb2cce3836ca5fd3a5d))
+* **mobile:** align fullscreen workspace picker with shell ([ed49181](https://github.com/tutur3u/platform/commit/ed491810a84c14580738cb8a49402fc49d10daf6)) ([#5742](https://github.com/tutur3u/platform/issues/5742)) ([863a858](https://github.com/tutur3u/platform/commit/863a8582bb4747fc7aaa04c65975aa45612641aa))
+* **mobile:** avoid duplicate Apps brand announcements ([8e67059](https://github.com/tutur3u/platform/commit/8e67059fc790de282f82eac3c5817b8749cb7e50))
+* **mobile:** bind outbox replay to its owning account ([50e4a80](https://github.com/tutur3u/platform/commit/50e4a805b948ea5b48c0998344fb322edc0095de))
+* **mobile:** bound dock labels and preserve accessibility ([39712cb](https://github.com/tutur3u/platform/commit/39712cb813c17aaed31ccb1d93dfd15cd04af8ea))
+* **mobile:** correct calendar times and timezone recovery ([#5753](https://github.com/tutur3u/platform/issues/5753)) ([94bd020](https://github.com/tutur3u/platform/commit/94bd0200ef236a3aaa337277a29ba207f09fc8b5))
+* **mobile:** correct calendar wall times and timezone recovery ([f51e701](https://github.com/tutur3u/platform/commit/f51e701f46a0eeb64746bf98a9bb4e6e7bc9bbf4))
+* **mobile:** enforce monotonic offline request spacing ([1cb15e6](https://github.com/tutur3u/platform/commit/1cb15e658b4e66efb265be129dc44453dc4a5dbe))
+* **mobile:** fence cache publication and finance workspace transitions ([a798346](https://github.com/tutur3u/platform/commit/a7983465a934a47e185f4a1244c9edd2e1af8120))
+* **mobile:** fence invalid inventory replay and preserve receipts ([23ea162](https://github.com/tutur3u/platform/commit/23ea162aeb2b5eed98efb4fb3636e48fdb0df5da))
+* **mobile:** fence visibility changes during preference recovery ([d52318f](https://github.com/tutur3u/platform/commit/d52318f9ffe58afdfad0d5a275e166bdec1bf8b1))
+* **mobile:** guard every pending product setup reference ([c4bcc00](https://github.com/tutur3u/platform/commit/c4bcc00f3c784c5c39c8023dad7442f832c80099))
+* **mobile:** harden offline inventory and scoped cache replay ([d9c0b13](https://github.com/tutur3u/platform/commit/d9c0b13b386287fb874be62a8b8ec794deeb6407))
+* **mobile:** integrate current main into offline settings ([218a6e6](https://github.com/tutur3u/platform/commit/218a6e663ce51cea6be5d8d0080888fa32c39fc3))
+* **mobile:** integrate scoped Agenda repairs into Assistant ([62e5a66](https://github.com/tutur3u/platform/commit/62e5a6663b0663939728475308c263f4b5afcda5))
+* **mobile:** keep workspace selection usable during preference outages ([ae5e419](https://github.com/tutur3u/platform/commit/ae5e4193307b0101c92b753291720994f3d26fb7))
+* **mobile:** persist automatic timezone and retain scoped errors ([2d959d4](https://github.com/tutur3u/platform/commit/2d959d4cf1b6c5e550cc876f3b2722233fac17a2))
+* **mobile:** preserve dock reset and profile accessibility semantics ([8ac36ad](https://github.com/tutur3u/platform/commit/8ac36ad3821c1e1c59d090964ba136b81b023c91))
+* **mobile:** preserve foreground inventory verification ([0ce0bea](https://github.com/tutur3u/platform/commit/0ce0bea3c9c91f35030c473eca5fb319438e068b))
+* **mobile:** preserve Home state and scope Agenda timezone ([1565656](https://github.com/tutur3u/platform/commit/15656564b93c10c7b7394de2c2f71883634f3a1b))
+* **mobile:** preserve inventory foreground transport and durable fixtures ([0e68cac](https://github.com/tutur3u/platform/commit/0e68cac8891138449221479aa563738250f764ce))
+* **mobile:** preserve sales receipts and finance API contracts ([c940cda](https://github.com/tutur3u/platform/commit/c940cda7ad60acadae8e005328b4e1d11701ecb7)) ([#5750](https://github.com/tutur3u/platform/issues/5750)) ([1c3ee92](https://github.com/tutur3u/platform/commit/1c3ee9280aa144ed2417a0b1fd09da4794ece089))
+* **mobile:** preserve timezone diagnostics and restore offline scope safely ([e34a3f2](https://github.com/tutur3u/platform/commit/e34a3f2503619b630b2d84dc96beb3317c5d67e2))
+* **mobile:** preserve timezone retries and calendar minute boundaries ([e68fb37](https://github.com/tutur3u/platform/commit/e68fb37ab895e5c8eb7de13e504a041a97faf40b))
+* **mobile:** propagate account-bound offline replay into navigation stack ([55b0b1f](https://github.com/tutur3u/platform/commit/55b0b1f6255d737c12846b56bc655a4ef0cab532))
+* **mobile:** refresh collapsed offline item lists ([d39db1d](https://github.com/tutur3u/platform/commit/d39db1de3d7fb87465bb277e3101d6fe6e31d54b))
+* **mobile:** reject unresolved offline inventory setup dependencies ([bc14a6a](https://github.com/tutur3u/platform/commit/bc14a6a341926247b1f46659e4abb6dc18852649))
+* **mobile:** repair offline settings review regressions ([d1e281a](https://github.com/tutur3u/platform/commit/d1e281acfcb68fc398d9553c18292e5fef04f814))
+* **mobile:** reset dock sections and simplify responsive Profile ([4ff7363](https://github.com/tutur3u/platform/commit/4ff7363a8ba3d5d4d16c6f1d1a75cb082a8c10dc)) ([#5735](https://github.com/tutur3u/platform/issues/5735)) ([1557706](https://github.com/tutur3u/platform/commit/15577064ac5a52993ca5cba1a90b391dd7213b4c))
+* **mobile:** retain offline search and render cached rows lazily ([902844a](https://github.com/tutur3u/platform/commit/902844ad3d3c8c621c2855dc94ec807e18064b79))
+* **mobile:** retain timezone save retry during cooldown reload ([afb5de6](https://github.com/tutur3u/platform/commit/afb5de6a44320b4fa2f3ca5025b242e58c31b27f))
+* **mobile:** satisfy analysis and cart reconciliation checks ([d002af9](https://github.com/tutur3u/platform/commit/d002af9ae50a04c93ca91aa63b1645629ae08379))
+* **mobile:** satisfy verification analyzer contracts ([d58316f](https://github.com/tutur3u/platform/commit/d58316f1ae7e8c003a17a4698f275b2b4a52b909))
+* **mobile:** unblock workspace selection during preference outages ([#5754](https://github.com/tutur3u/platform/issues/5754)) ([59749d3](https://github.com/tutur3u/platform/commit/59749d3b6a28ef20e89bcdf29f500b33e7490f2a))
+* **release:** preserve manual test notes and share filtering policy ([ff312ca](https://github.com/tutur3u/platform/commit/ff312ca8b16e36bdc7f65484cded768de3073c17))
+* **releases:** omit merge bookkeeping from release summaries ([c66e0b1](https://github.com/tutur3u/platform/commit/c66e0b139c89706db32ec70c3e87fcc9c4018b6c)) ([#5741](https://github.com/tutur3u/platform/issues/5741)) ([552cd5a](https://github.com/tutur3u/platform/commit/552cd5ae85d19d9147f1367475f5f6b3bf522a63))
+
 ## [0.22.0](https://github.com/tutur3u/platform/compare/mobile-v0.21.0...mobile-v0.22.0) (2026-10-02)
 
 

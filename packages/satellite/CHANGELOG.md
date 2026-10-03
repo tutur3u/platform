@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.24.0](https://github.com/tutur3u/platform/compare/satellite-v0.23.0...satellite-v0.24.0) (2026-10-03)
+
+
+### Features
+
+* **learn:** improve Programming workspace controls and layout ([#5707](https://github.com/tutur3u/platform/issues/5707)) ([0f432ba](https://github.com/tutur3u/platform/commit/0f432ba02692f7f936ce9b191e3b152a1a67e970))
+* **workspaces:** add private Hidden choices and fullscreen picker ([#5699](https://github.com/tutur3u/platform/issues/5699)) ([9cab7ef](https://github.com/tutur3u/platform/commit/9cab7efc0e75f71c6b1a2436eea6885e48f6bfe4))
+* **workspaces:** reconcile Hidden picker and preserve membership fences ([c9806bb](https://github.com/tutur3u/platform/commit/c9806bb12a49a777fe28ab3653bb19d9350a1471))
+
 ## [0.23.0](https://github.com/tutur3u/platform/compare/satellite-v0.22.0...satellite-v0.23.0) (2026-09-26)
 
 

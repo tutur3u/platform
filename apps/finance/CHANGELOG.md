@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.33.0](https://github.com/tutur3u/platform/compare/finance-v0.32.0...finance-v0.33.0) (2026-10-03)
+
+
+### Features
+
+* **calendar:** support full Google color choices and scoped edits ([#5661](https://github.com/tutur3u/platform/issues/5661)) ([8cafac5](https://github.com/tutur3u/platform/commit/8cafac53438b504eafa8bcc8213d18448e4a17bc))
+* **inventory:** expose authorized deduplicated native creates ([d71325d](https://github.com/tutur3u/platform/commit/d71325d22043ea80357770269f325e6ee1e5cd7b))
+* **mobile:** sync inventory prerequisites and dependent writes automatically ([#5743](https://github.com/tutur3u/platform/issues/5743)) ([242fbbd](https://github.com/tutur3u/platform/commit/242fbbdb90671325af104f6c9fe79c43b81a82c1))
+
+
+### Bug Fixes
+
+* **calendar:** gate uncertain creation retries on durable capability ([4a0a088](https://github.com/tutur3u/platform/commit/4a0a0883ddfff464be0880afd13758908e65203f))
+* **calendar:** recover edited drafts and align provider color parity ([d97142a](https://github.com/tutur3u/platform/commit/d97142abe22188b6a31a4a6b0e7b3a97d35d07f5))
+* **mobile:** preserve sales receipts and finance API contracts ([#5750](https://github.com/tutur3u/platform/issues/5750)) ([1c3ee92](https://github.com/tutur3u/platform/commit/1c3ee9280aa144ed2417a0b1fd09da4794ece089))
+
 ## [0.32.0](https://github.com/tutur3u/platform/compare/finance-v0.31.1...finance-v0.32.0) (2026-10-02)
 
 

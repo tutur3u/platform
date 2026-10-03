@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.33.0](https://github.com/tutur3u/platform/compare/calendar-v0.32.1...calendar-v0.33.0) (2026-10-03)
+
+
+### Features
+
+* **calendar:** support full Google color choices and scoped edits ([#5661](https://github.com/tutur3u/platform/issues/5661)) ([8cafac5](https://github.com/tutur3u/platform/commit/8cafac53438b504eafa8bcc8213d18448e4a17bc))
+* **mobile:** support offline data and safe inventory checkout ([a45d634](https://github.com/tutur3u/platform/commit/a45d63498cc1e686d1d070f5861cf938c4e9a9ef))
+* **mobile:** support offline data, cached images, and safe inventory checkout ([#5734](https://github.com/tutur3u/platform/issues/5734)) ([2f0f397](https://github.com/tutur3u/platform/commit/2f0f39763daea56f1029fcc3e99e0be53c60e106))
+
+
+### Bug Fixes
+
+* **calendar:** atomically fence native transfer snapshots ([8b34406](https://github.com/tutur3u/platform/commit/8b34406a0133769d0e995ee8fb6e62c5dcf36d50))
+* **calendar:** authorize historical native primary saga sources ([01656b7](https://github.com/tutur3u/platform/commit/01656b748772f07c25ebd190a8fe31e9b544917e))
+* **calendar:** fence native edits and preserve recoverable route errors ([bff0488](https://github.com/tutur3u/platform/commit/bff0488d039b720aa796c9b3546b9cf30b86f95b))
+* **calendar:** finalize compensated source deletion atomically ([14b2f73](https://github.com/tutur3u/platform/commit/14b2f73fe07056a63ff8c430ef3c73e505b082ce))
+* **calendar:** gate uncertain creation retries on durable capability ([4a0a088](https://github.com/tutur3u/platform/commit/4a0a0883ddfff464be0880afd13758908e65203f))
+* **calendar:** preserve provider intent and reject ambiguous transfers ([4af32c7](https://github.com/tutur3u/platform/commit/4af32c70803b9277e76ffdc8fce0dbf3036e0424))
+* **calendar:** recover edited drafts and align provider color parity ([d97142a](https://github.com/tutur3u/platform/commit/d97142abe22188b6a31a4a6b0e7b3a97d35d07f5))
+* **mobile:** harden offline inventory and scoped cache replay ([d9c0b13](https://github.com/tutur3u/platform/commit/d9c0b13b386287fb874be62a8b8ec794deeb6407))
+
 ## [0.32.1](https://github.com/tutur3u/platform/compare/calendar-v0.32.0...calendar-v0.32.1) (2026-10-02)
 
 

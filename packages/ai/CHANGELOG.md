@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.17.0](https://github.com/tutur3u/platform/compare/ai-v0.16.1...ai-v0.17.0) (2026-10-03)
+
+
+### Features
+
+* **ai:** support self-hosted ChatGPT subscriptions ([a6ce805](https://github.com/tutur3u/platform/commit/a6ce8059077c312369e1693d0e1d8fbcfbdde131)) ([#5728](https://github.com/tutur3u/platform/issues/5728)) ([67be76a](https://github.com/tutur3u/platform/commit/67be76ad4e140a2883afb488f5af2e28e40f13a2))
+
+
+### Bug Fixes
+
+* **ai:** address ChatGPT subscription review findings ([f0bf14f](https://github.com/tutur3u/platform/commit/f0bf14f22cdec1029a29a2a9cf7fd108d6558504))
+* **ai:** bind ChatGPT routing to request snapshots ([7c51eb4](https://github.com/tutur3u/platform/commit/7c51eb4634131a9ece2a29c32d1b7f33e0724bf7))
+* **ai:** close subscription retry and billing edges ([91d0cc6](https://github.com/tutur3u/platform/commit/91d0cc6eb7f729bef21ea6ca2f5e36c59760b7b3))
+
 ## [0.16.1](https://github.com/tutur3u/platform/compare/ai-v0.16.0...ai-v0.16.1) (2026-09-26)
 
 

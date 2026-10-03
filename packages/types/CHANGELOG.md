@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.34.0](https://github.com/tutur3u/platform/compare/types-v0.33.1...types-v0.34.0) (2026-10-03)
+
+
+### Features
+
+* **calendar:** add encrypted recoverable Google mutations ([4ecc93d](https://github.com/tutur3u/platform/commit/4ecc93d8ad1602407d5ebe0ddbff3a4e500f44f7))
+* **calendar:** journal provider creation and move generations ([f0b9573](https://github.com/tutur3u/platform/commit/f0b95734063121259f73f261d08cd40eb1a75ace))
+* **calendar:** support full Google color choices and scoped edits ([#5661](https://github.com/tutur3u/platform/issues/5661)) ([8cafac5](https://github.com/tutur3u/platform/commit/8cafac53438b504eafa8bcc8213d18448e4a17bc))
+* **inventory:** merge products and warehouses with conflict previews ([ebcd1d9](https://github.com/tutur3u/platform/commit/ebcd1d9b16f100743c346c1665f42f4f867f379d)) ([#5765](https://github.com/tutur3u/platform/issues/5765)) ([35e584c](https://github.com/tutur3u/platform/commit/35e584c50061a17d9515563e0ee71c04f0cec53a))
+* **learn:** persist workspace Programming problems and authorized catalog APIs ([#5709](https://github.com/tutur3u/platform/issues/5709)) ([f39c84b](https://github.com/tutur3u/platform/commit/f39c84b9df76448683f439c78f1897847b609299))
+* **mobile:** sync inventory prerequisites and dependent writes automatically ([#5743](https://github.com/tutur3u/platform/issues/5743)) ([242fbbd](https://github.com/tutur3u/platform/commit/242fbbdb90671325af104f6c9fe79c43b81a82c1))
+
+
+### Bug Fixes
+
+* **calendar:** generate applied native generation RPC types ([39b8a77](https://github.com/tutur3u/platform/commit/39b8a77f35d11e15c22667716e30041739c9195f))
+* **calendar:** generate staged guard RPC types ([4802a28](https://github.com/tutur3u/platform/commit/4802a28f268711895cc54eb0aa44c2a5922b5375))
+* **calendar:** preserve explicit draft intent and source selection ([d2a0ac9](https://github.com/tutur3u/platform/commit/d2a0ac908366ca2feb5f11da85b1f1dde66c2fdb))
+* **calendar:** stage retained generation compatibility guard ([#5727](https://github.com/tutur3u/platform/issues/5727)) ([5c87bfe](https://github.com/tutur3u/platform/commit/5c87bfee00c5cd9574fe984909fd40d64629db0f))
+* **calendar:** wire recoverable routes and gated provider palette ([ecfc1e7](https://github.com/tutur3u/platform/commit/ecfc1e7dd1c5556b94c64cde62635df15d024747))
+* **inventory:** preserve invoice recovery and scope merge locks ([ec5352e](https://github.com/tutur3u/platform/commit/ec5352e557eb934219816f21710a169e6412df22))
+* **mobile:** preserve sales receipts and finance API contracts ([#5750](https://github.com/tutur3u/platform/issues/5750)) ([1c3ee92](https://github.com/tutur3u/platform/commit/1c3ee9280aa144ed2417a0b1fd09da4794ece089))
+* **security:** address egress guard review findings ([1e4916a](https://github.com/tutur3u/platform/commit/1e4916a7c9216ac1d5f9beadab0e69144337db7c))
+* **storage:** bound CMS downloads and API usage without Redis ([#5736](https://github.com/tutur3u/platform/issues/5736)) ([bbfc428](https://github.com/tutur3u/platform/commit/bbfc42886a0953ab11d303cdcceed8968127d40b))
+* **storage:** generate entitlement types and isolate server tests ([da77152](https://github.com/tutur3u/platform/commit/da77152967946e64bdb8e593b340c99793830546))
+
+
+### Performance Improvements
+
+* **devboxes:** parallelize bounded execution and retain warm playgrounds ([#5746](https://github.com/tutur3u/platform/issues/5746)) ([efd8ac4](https://github.com/tutur3u/platform/commit/efd8ac44b5c9f8cbf2ab5d64fbe89e1f7afe4f96))
+* **devboxes:** parallelize bounded runner execution and retain warm playgrounds ([c31cbf3](https://github.com/tutur3u/platform/commit/c31cbf3a2a7cb5214d75183896791366affdc7e6))
+
 ## [0.33.1](https://github.com/tutur3u/platform/compare/types-v0.33.0...types-v0.33.1) (2026-10-01)
 
 

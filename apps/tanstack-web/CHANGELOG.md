@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.39.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.38.0...tanstack-web-v0.39.0) (2026-10-03)
+
+
+### Features
+
+* **ai:** support self-hosted ChatGPT subscriptions ([a6ce805](https://github.com/tutur3u/platform/commit/a6ce8059077c312369e1693d0e1d8fbcfbdde131)) ([#5728](https://github.com/tutur3u/platform/issues/5728)) ([67be76a](https://github.com/tutur3u/platform/commit/67be76ad4e140a2883afb488f5af2e28e40f13a2))
+* **inventory:** expose authorized deduplicated native creates ([d71325d](https://github.com/tutur3u/platform/commit/d71325d22043ea80357770269f325e6ee1e5cd7b))
+* **inventory:** merge products and warehouses with conflict previews ([ebcd1d9](https://github.com/tutur3u/platform/commit/ebcd1d9b16f100743c346c1665f42f4f867f379d)) ([#5765](https://github.com/tutur3u/platform/issues/5765)) ([35e584c](https://github.com/tutur3u/platform/commit/35e584c50061a17d9515563e0ee71c04f0cec53a))
+* **learn:** persist workspace Programming problems and authorized catalog APIs ([#5709](https://github.com/tutur3u/platform/issues/5709)) ([f39c84b](https://github.com/tutur3u/platform/commit/f39c84b9df76448683f439c78f1897847b609299))
+* **mobile:** sync inventory prerequisites and dependent writes automatically ([#5743](https://github.com/tutur3u/platform/issues/5743)) ([242fbbd](https://github.com/tutur3u/platform/commit/242fbbdb90671325af104f6c9fe79c43b81a82c1))
+* **seo:** automate sitemap discovery and improve bilingual team messaging ([#5729](https://github.com/tutur3u/platform/issues/5729)) ([1ec6d2e](https://github.com/tutur3u/platform/commit/1ec6d2e3eef4bb19af62133dac2ab441e5e62409))
+* **workspaces:** add private Hidden choices and fullscreen picker ([#5699](https://github.com/tutur3u/platform/issues/5699)) ([9cab7ef](https://github.com/tutur3u/platform/commit/9cab7efc0e75f71c6b1a2436eea6885e48f6bfe4))
+
+
+### Bug Fixes
+
+* **deps:** patch TanStack Start server response XSS ([4f491fb](https://github.com/tutur3u/platform/commit/4f491fb2bd85b7d81ce8c0a541b2e2737f1745ba))
+* **deps:** patch TanStack Start XSS to unblock release builds ([#5755](https://github.com/tutur3u/platform/issues/5755)) ([abc15af](https://github.com/tutur3u/platform/commit/abc15affacff8ab211af41cb1e1d1c10ff8750b9))
+* **finance:** authenticate exchange rates with satellite sessions ([33368f1](https://github.com/tutur3u/platform/commit/33368f1c00f86f71b4a66702899af262a90122e2)) ([#5760](https://github.com/tutur3u/platform/issues/5760)) ([759b1e5](https://github.com/tutur3u/platform/commit/759b1e52f8867aced2d64288af43b861d5ebccdc))
+* **inventory:** preserve verified legacy warehouse reads ([28f4fe3](https://github.com/tutur3u/platform/commit/28f4fe3929699928f2f944604b43846d1f5d2377))
+* **migration:** reconcile stack route tracking and counts ([f6c0e9d](https://github.com/tutur3u/platform/commit/f6c0e9d837ef551bd2856f6a5c8308d982c3e57e))
+* **mobile:** preserve sales receipts and finance API contracts ([#5750](https://github.com/tutur3u/platform/issues/5750)) ([1c3ee92](https://github.com/tutur3u/platform/commit/1c3ee9280aa144ed2417a0b1fd09da4794ece089))
+* **security:** address egress guard review findings ([1e4916a](https://github.com/tutur3u/platform/commit/1e4916a7c9216ac1d5f9beadab0e69144337db7c))
+* **seo:** preserve public crawlability and strengthen discovery safeguards ([dcceebc](https://github.com/tutur3u/platform/commit/dcceebcc66e1785a85525bb26297dc205950dfd4))
+* **storage:** bound CMS downloads and API usage without Redis ([277ffeb](https://github.com/tutur3u/platform/commit/277ffebb738fbdb787fbe465cf6400de7ae910b2)) ([#5736](https://github.com/tutur3u/platform/issues/5736)) ([bbfc428](https://github.com/tutur3u/platform/commit/bbfc42886a0953ab11d303cdcceed8968127d40b))
+
 ## [0.38.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.37.0...tanstack-web-v0.38.0) (2026-09-29)
 
 

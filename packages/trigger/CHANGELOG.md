@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/trigger-v0.3.3...trigger-v0.4.0) (2026-10-03)
+
+
+### Features
+
+* **calendar:** support full Google color choices and scoped edits ([#5661](https://github.com/tutur3u/platform/issues/5661)) ([8cafac5](https://github.com/tutur3u/platform/commit/8cafac53438b504eafa8bcc8213d18448e4a17bc))
+
+
+### Bug Fixes
+
+* **calendar:** fence metadata reads and retain recurrence during imports ([3895d28](https://github.com/tutur3u/platform/commit/3895d28fb4acd0164f6f021ad15df4c39a83938e))
+
 ## [0.3.3](https://github.com/tutur3u/platform/compare/trigger-v0.3.2...trigger-v0.3.3) (2026-10-01)
 
 

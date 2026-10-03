@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.10.0](https://github.com/tutur3u/platform/compare/inventory-core-v0.9.0...inventory-core-v0.10.0) (2026-10-03)
+
+
+### Features
+
+* **inventory:** expose authorized deduplicated native creates ([d71325d](https://github.com/tutur3u/platform/commit/d71325d22043ea80357770269f325e6ee1e5cd7b))
+* **inventory:** merge products and warehouses with conflict previews ([ebcd1d9](https://github.com/tutur3u/platform/commit/ebcd1d9b16f100743c346c1665f42f4f867f379d)) ([#5765](https://github.com/tutur3u/platform/issues/5765)) ([35e584c](https://github.com/tutur3u/platform/commit/35e584c50061a17d9515563e0ee71c04f0cec53a))
+* **mobile:** sync inventory prerequisites and dependent writes automatically ([#5743](https://github.com/tutur3u/platform/issues/5743)) ([242fbbd](https://github.com/tutur3u/platform/commit/242fbbdb90671325af104f6c9fe79c43b81a82c1))
+
+
+### Bug Fixes
+
+* **inventory:** close merge API and contract review gaps ([37a0f44](https://github.com/tutur3u/platform/commit/37a0f446517318a270037a3ec0fb1937dfb13373))
+* **inventory:** harden durable offline replay and validation ([7166401](https://github.com/tutur3u/platform/commit/7166401d06e357d24ab92ec104cf4e48ef1f5b3a))
+* **mobile:** fence invalid inventory replay and preserve receipts ([23ea162](https://github.com/tutur3u/platform/commit/23ea162aeb2b5eed98efb4fb3636e48fdb0df5da))
+* **mobile:** preserve inventory foreground transport and durable fixtures ([0e68cac](https://github.com/tutur3u/platform/commit/0e68cac8891138449221479aa563738250f764ce))
+* **mobile:** preserve sales receipts and finance API contracts ([#5750](https://github.com/tutur3u/platform/issues/5750)) ([1c3ee92](https://github.com/tutur3u/platform/commit/1c3ee9280aa144ed2417a0b1fd09da4794ece089))
+
 ## [0.9.0](https://github.com/tutur3u/platform/compare/inventory-core-v0.8.3...inventory-core-v0.9.0) (2026-10-02)
 
 

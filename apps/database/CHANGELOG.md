@@ -1,5 +1,69 @@
 # Changelog
 
+## [1.39.0](https://github.com/tutur3u/platform/compare/database-v1.38.1...database-v1.39.0) (2026-10-03)
+
+
+### Features
+
+* **calendar:** add encrypted recoverable Google mutations ([4ecc93d](https://github.com/tutur3u/platform/commit/4ecc93d8ad1602407d5ebe0ddbff3a4e500f44f7))
+* **calendar:** authorize and project recoverable mutation requests ([70ee17c](https://github.com/tutur3u/platform/commit/70ee17c1f55db60b8215d0c25c7de91e6a961a5a))
+* **calendar:** journal provider creation and move generations ([f0b9573](https://github.com/tutur3u/platform/commit/f0b95734063121259f73f261d08cd40eb1a75ace))
+* **calendar:** support full Google color choices and scoped edits ([#5661](https://github.com/tutur3u/platform/issues/5661)) ([8cafac5](https://github.com/tutur3u/platform/commit/8cafac53438b504eafa8bcc8213d18448e4a17bc))
+* **inventory:** add transactional offline create receipts ([d52a973](https://github.com/tutur3u/platform/commit/d52a973166abf9d2c2e7fbc8553ad53556f02669))
+* **inventory:** expose authorized deduplicated native creates ([d71325d](https://github.com/tutur3u/platform/commit/d71325d22043ea80357770269f325e6ee1e5cd7b))
+* **inventory:** merge products and warehouses with conflict previews ([ebcd1d9](https://github.com/tutur3u/platform/commit/ebcd1d9b16f100743c346c1665f42f4f867f379d)) ([#5765](https://github.com/tutur3u/platform/issues/5765)) ([35e584c](https://github.com/tutur3u/platform/commit/35e584c50061a17d9515563e0ee71c04f0cec53a))
+* **learn:** persist workspace Programming problems and authorized catalog APIs ([#5709](https://github.com/tutur3u/platform/issues/5709)) ([f39c84b](https://github.com/tutur3u/platform/commit/f39c84b9df76448683f439c78f1897847b609299))
+* **mobile:** sync inventory prerequisites and dependent writes automatically ([#5743](https://github.com/tutur3u/platform/issues/5743)) ([242fbbd](https://github.com/tutur3u/platform/commit/242fbbdb90671325af104f6c9fe79c43b81a82c1))
+* **security:** scale abuse budgets by paid plans and memberships ([93ccf02](https://github.com/tutur3u/platform/commit/93ccf0237c79addaed3ab8b653bd8b57b27a9557))
+* **workspaces:** add private Hidden choices and fullscreen picker ([#5699](https://github.com/tutur3u/platform/issues/5699)) ([9cab7ef](https://github.com/tutur3u/platform/commit/9cab7efc0e75f71c6b1a2436eea6885e48f6bfe4))
+
+
+### Bug Fixes
+
+* **calendar:** atomically fence native transfer snapshots ([8b34406](https://github.com/tutur3u/platform/commit/8b34406a0133769d0e995ee8fb6e62c5dcf36d50))
+* **calendar:** finalize compensated source deletion atomically ([14b2f73](https://github.com/tutur3u/platform/commit/14b2f73fe07056a63ff8c430ef3c73e505b082ce))
+* **calendar:** harden compatibility contract validation ([c3b3a2f](https://github.com/tutur3u/platform/commit/c3b3a2ff7a9a7b8c2851f0c4f7a942ef56c43e6c))
+* **calendar:** order unapplied provider migrations after main ([e230dc0](https://github.com/tutur3u/platform/commit/e230dc05567f8185710d0ccdc4b779275955beca))
+* **calendar:** retain native generations and immutable saga retries ([adb8662](https://github.com/tutur3u/platform/commit/adb8662ba727911f21a685b30bbb031c027f9cbc))
+* **calendar:** seal provider source fingerprints and label version ([3110590](https://github.com/tutur3u/platform/commit/311059005645374c9156193db5a473ddda764483))
+* **calendar:** stage retained generation compatibility guard ([7795818](https://github.com/tutur3u/platform/commit/7795818d776bcb6a069450faab615de86ee0761b)) ([#5727](https://github.com/tutur3u/platform/issues/5727)) ([5c87bfe](https://github.com/tutur3u/platform/commit/5c87bfee00c5cd9574fe984909fd40d64629db0f))
+* **ci:** allow isolated database configuration rewrite ([42a8251](https://github.com/tutur3u/platform/commit/42a82519ba80a3274a2f404e52fb7dc8187129a7))
+* **ci:** classify disposable startup failures without raw logs ([7f2c1cc](https://github.com/tutur3u/platform/commit/7f2c1cc325642d403f1f65cba17ac0efa1e543aa))
+* **ci:** classify kernel inventory decode failures ([791dc16](https://github.com/tutur3u/platform/commit/791dc16dffae3381bff139db3258be6a2fa21000))
+* **ci:** emit only actual lifecycle metadata checkpoints ([7951fb5](https://github.com/tutur3u/platform/commit/7951fb589aa83ce1b5039acae1960f67929d71b2))
+* **ci:** expose bounded lifecycle phase checkpoints ([f610b5c](https://github.com/tutur3u/platform/commit/f610b5c2b570990fea3488166d6ad7c9150f93a6))
+* **ci:** share atomic writes and strengthen proposal regression checks ([50490f2](https://github.com/tutur3u/platform/commit/50490f2f0b18d1e48314f9c1c9489997dbdf5cdb))
+* **ci:** verify inherited leaf cgroup admission filters ([67181e0](https://github.com/tutur3u/platform/commit/67181e0ee0462cec2f8ff67d10060ee8dc78c4fa))
+* **database:** abort owned helpers on diagnostic callback errors ([4e97654](https://github.com/tutur3u/platform/commit/4e97654b7d68b06ee1b7c71e4b5ac77d1ccf0b52))
+* **database:** admit tracked Git files before hosted staging ([a621ae2](https://github.com/tutur3u/platform/commit/a621ae28e168d0da557c64795717b64e13729da3))
+* **database:** align hosted command and runtime config isolation ([5864e06](https://github.com/tutur3u/platform/commit/5864e0664318922b06c3cffedbd3104286889de0))
+* **database:** bound commands and isolate CLI temporary state ([17a182e](https://github.com/tutur3u/platform/commit/17a182e21663b57fb237879ed139f427edfc5589))
+* **database:** diagnose hosted policy parser stages without raw output ([a315afb](https://github.com/tutur3u/platform/commit/a315afbb7fe27324b9841d0f30be86ef41a68053))
+* **database:** distinguish hosted policy admission failures ([ecf546b](https://github.com/tutur3u/platform/commit/ecf546b18ba1ae9cad727ae4a4c123ebb68127cf))
+* **database:** enforce admitted subprocess boundaries ([29d93e0](https://github.com/tutur3u/platform/commit/29d93e0c7f0f74607c3ec4bc97b23b7ebfd0e79c))
+* **database:** expose safe hosted preparation checkpoints ([6d1d0e2](https://github.com/tutur3u/platform/commit/6d1d0e223c3cee83b529172c33d6fcb313f2a303))
+* **database:** identify failed hosted command phases safely ([aca0d92](https://github.com/tutur3u/platform/commit/aca0d92743c90974b440b292ce53bd254ec1929a))
+* **database:** isolate synthetic hosted CLI environment ([b1e366d](https://github.com/tutur3u/platform/commit/b1e366d269b671565f8ac38d4ce6d3deb682693a))
+* **database:** keep fixture pipe failures inside cleanup lifecycle ([4211eef](https://github.com/tutur3u/platform/commit/4211eef2742f0014ab437eca0defc8ccfd9ea8d1))
+* **database:** report fixed policy mismatch diagnostics ([9662562](https://github.com/tutur3u/platform/commit/9662562308c0e1ba68da31d833daccd605799a29))
+* **database:** resolve native CLI for isolated hosted probes ([2dce73a](https://github.com/tutur3u/platform/commit/2dce73ace89c894d5782db9bbd8a775222a958ef))
+* **database:** review isolated native CLI environment ([#5717](https://github.com/tutur3u/platform/issues/5717)) ([6442b65](https://github.com/tutur3u/platform/commit/6442b654f96ac7939d1ce19586ddbaa8a14f3d69))
+* **database:** scope guest restore CTE inside assertion ([8b240e6](https://github.com/tutur3u/platform/commit/8b240e6fed3f0a8a94daaeb7b2c6cfcbb24b61bd))
+* **database:** use current inventory migration timestamp ([2db1fa9](https://github.com/tutur3u/platform/commit/2db1fa9974a10f18134f8ece0bddd30dfc3a44e8))
+* **inventory:** bound identity locks by workspace buckets ([279a56c](https://github.com/tutur3u/platform/commit/279a56c38e251f876bba4e6788c2ee100bb70bbc))
+* **inventory:** close merge API and contract review gaps ([37a0f44](https://github.com/tutur3u/platform/commit/37a0f446517318a270037a3ec0fb1937dfb13373))
+* **inventory:** filter merged warehouse aliases in database ([33450b7](https://github.com/tutur3u/platform/commit/33450b777075e5093434e26a36c5161f13243db0))
+* **inventory:** harden durable offline replay and validation ([7166401](https://github.com/tutur3u/platform/commit/7166401d06e357d24ab92ec104cf4e48ef1f5b3a))
+* **inventory:** preserve invoice recovery and scope merge locks ([ec5352e](https://github.com/tutur3u/platform/commit/ec5352e557eb934219816f21710a169e6412df22))
+* **inventory:** settle concurrent fixtures and retry missing labels ([7c279ba](https://github.com/tutur3u/platform/commit/7c279ba4e0517d189efb840aa171f3fcb3d3ba57))
+* **learn:** harden Programming boundaries and prove database contract ([f7723c3](https://github.com/tutur3u/platform/commit/f7723c31a74dadacd4a4352bfcb59e5f86e1bfb5))
+* **learn:** tighten Programming input and request boundaries ([e13c7c6](https://github.com/tutur3u/platform/commit/e13c7c63a8de6181835d112de27cda1b670e1097))
+* **mobile:** preserve sales receipts and finance API contracts ([#5750](https://github.com/tutur3u/platform/issues/5750)) ([1c3ee92](https://github.com/tutur3u/platform/commit/1c3ee9280aa144ed2417a0b1fd09da4794ece089))
+* **programming:** preserve bounded startup diagnostics ([c16ff0c](https://github.com/tutur3u/platform/commit/c16ff0ca79f692eee26804d497b6d82679de13d3))
+* **security:** address egress guard review findings ([1e4916a](https://github.com/tutur3u/platform/commit/1e4916a7c9216ac1d5f9beadab0e69144337db7c))
+* **security:** isolate caller budgets and preserve download semantics ([de5e090](https://github.com/tutur3u/platform/commit/de5e090f57e58b94bd235c47c494264a1192f5bf))
+* **storage:** bound CMS downloads and API usage without Redis ([277ffeb](https://github.com/tutur3u/platform/commit/277ffebb738fbdb787fbe465cf6400de7ae910b2)) ([#5736](https://github.com/tutur3u/platform/issues/5736)) ([bbfc428](https://github.com/tutur3u/platform/commit/bbfc42886a0953ab11d303cdcceed8968127d40b))
+
 ## [1.38.1](https://github.com/tutur3u/platform/compare/database-v1.38.0...database-v1.38.1) (2026-10-01)
 
 
