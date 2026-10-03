@@ -196,6 +196,157 @@ describe('mounted season sales integrations', () => {
       ]);
     }
   );
+  it('restores priced products and filter choices after clearing a settled empty search', async () => {
+    openSale('scheduled');
+    await screen.findByRole('button', { name: 'Add Alpha' });
+    const search = screen.getByRole('textbox', {
+      name: 'Search products, units, or warehouses',
+    });
+    fireEvent.change(search, { target: { value: 'nonexistent' } });
+    await waitFor(() =>
+      expect(api.products).toHaveBeenCalledWith(
+        'ws',
+        expect.objectContaining({ q: 'nonexistent' })
+      )
+    );
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Add Alpha' })).toBeNull()
+    );
+    fireEvent.change(search, { target: { value: '' } });
+    await screen.findByRole('button', { name: 'Add Alpha' });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Filters and sorting' })
+    );
+    fireEvent.click(screen.getByRole('combobox', { name: 'Category' }));
+    expect(
+      await screen.findByRole('option', { name: 'category' })
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('option', { name: 'category' }));
+    fireEvent.click(screen.getByRole('combobox', { name: 'Warehouse' }));
+    expect(await screen.findByRole('option', { name: 'Booth' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('option', { name: 'Booth' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Filters and sorting' })
+    );
+    await add('Alpha');
+    await add('Beta');
+    review();
+    await waitFor(() => expect(api.sale).toHaveBeenCalledTimes(1));
+    expect(api.sale.mock.calls[0]?.[1].products).toEqual([
+      expect.objectContaining({
+        product_id: 'Alpha',
+        warehouse_id: 'warehouse',
+        price_id: 'quote-Alpha',
+        price: 60000,
+      }),
+      expect.objectContaining({
+        product_id: 'Beta',
+        warehouse_id: 'warehouse',
+        price_id: 'quote-Beta',
+        price: 70000,
+      }),
+    ]);
+  });
+  it('keeps the base catalog after clearing while an old search resolves', async () => {
+    let resolveSearch!: (value: { data: InventoryProductSummary[] }) => void;
+    api.products.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveSearch = resolve;
+        })
+    );
+    openSale('scheduled');
+    await screen.findByRole('button', { name: 'Add Alpha' });
+    const search = screen.getByRole('textbox', {
+      name: 'Search products, units, or warehouses',
+    });
+    fireEvent.change(search, { target: { value: 'nonexistent' } });
+    await waitFor(() => expect(api.products).toHaveBeenCalledTimes(1));
+    fireEvent.change(search, { target: { value: '' } });
+    resolveSearch({ data: [] });
+    await add('Alpha');
+    await screen.findByRole('button', { name: 'Add Beta' });
+  });
+  it('finds an unloaded category and pages its products independently of the initial catalog', async () => {
+    const remoteProducts = ['Gamma', 'Delta'].map((name) => ({
+      ...product(name),
+      category_id: 'remote-category',
+    }));
+    api.products.mockImplementation(async (_ws, params) => ({
+      data:
+        params.categoryId === 'remote-category'
+          ? [remoteProducts[params.page - 1]].filter(Boolean)
+          : [],
+      count: 2,
+    }));
+    api.prices.mockResolvedValue({
+      as_of: new Date().toISOString(),
+      data: remoteProducts.map((p) => ({
+        id: `quote-${p.id}`,
+        period_id: 'season',
+        product_id: p.id,
+        unit_id: 'unit',
+        warehouse_id: 'warehouse',
+        currency: 'VND',
+        price: 60000,
+        valid_from: '2000-01-01T00:00:00Z',
+        valid_to: '2100-01-02T00:00:00Z',
+      })),
+    });
+    mount(
+      <SaleCreateDialog
+        wsId="ws"
+        workspaceCurrency="VND"
+        products={products}
+        periods={[period]}
+        options={{
+          ...options,
+          defaultSalesPeriodId: period.id,
+          categories: [
+            { id: 'remote-category', name: 'Unloaded category', ws_id: 'ws' },
+          ],
+          warehouses: [
+            { id: 'remote-warehouse', name: 'Unloaded warehouse', ws_id: 'ws' },
+          ],
+        }}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Record sale' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Filters and sorting' })
+    );
+    fireEvent.click(screen.getByRole('combobox', { name: 'Warehouse' }));
+    expect(
+      await screen.findByRole('option', { name: 'Unloaded warehouse' })
+    ).toBeTruthy();
+    fireEvent.keyDown(
+      screen.getByRole('option', { name: 'Unloaded warehouse' }),
+      { key: 'Escape' }
+    );
+    fireEvent.click(screen.getByRole('combobox', { name: 'Category' }));
+    const categorySearch = screen.getByRole('combobox', {
+      name: '',
+      expanded: true,
+    });
+    fireEvent.change(categorySearch, { target: { value: 'Unloaded' } });
+    fireEvent.click(
+      await screen.findByRole('option', { name: 'Unloaded category' })
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Filters and sorting' })
+    );
+    await screen.findByRole('button', { name: 'Add Gamma' });
+    expect(api.products).toHaveBeenCalledWith(
+      'ws',
+      expect.objectContaining({ categoryId: 'remote-category', page: 1 })
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
+    await screen.findByRole('button', { name: 'Add Delta' });
+    expect(api.products).toHaveBeenLastCalledWith(
+      'ws',
+      expect.objectContaining({ categoryId: 'remote-category', page: 2 })
+    );
+  });
   it('clicking the selected row in the real period dropdown preserves cart and request identity', async () => {
     const uuid = vi.spyOn(crypto, 'randomUUID');
     openSale('scheduled');

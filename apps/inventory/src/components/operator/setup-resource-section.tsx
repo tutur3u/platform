@@ -171,10 +171,12 @@ function ResourceRow({
 }
 
 export function ResourceSection({
+  footerAction,
   config,
   wsId,
 }: {
   config: ResourceConfig;
+  footerAction?: ReactNode;
   wsId: string;
 }) {
   const t = useTranslations('inventory.operator.forms');
@@ -228,6 +230,7 @@ export function ResourceSection({
           }
           wsId={wsId}
         />
+        {footerAction}
       </AccordionContent>
     </AccordionItem>
   );

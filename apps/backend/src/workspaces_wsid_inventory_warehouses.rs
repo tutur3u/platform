@@ -67,9 +67,8 @@
 use serde_json::{Value, json};
 
 use crate::{
-    APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact, json_response,
-    no_store_response,
-    outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest},
+    BackendConfig, BackendRequest, BackendResponse, contact, json_response, no_store_response,
+    outbound::OutboundHttpClient,
     workspace_permission_check::{
         WorkspacePermissionAuthorizationError, authorize_workspace_permission,
     },
@@ -77,8 +76,6 @@ use crate::{
 
 const WAREHOUSES_PATH_PREFIX: &str = "/api/v1/workspaces/";
 const WAREHOUSES_PATH_SUFFIX: &str = "/inventory/warehouses";
-const WAREHOUSES_TABLE: &str = "inventory_warehouses";
-const PRIVATE_SCHEMA: &str = "private";
 
 const FORBIDDEN_MESSAGE: &str = "Forbidden";
 const NOT_FOUND_MESSAGE: &str = "Not found";
@@ -208,7 +205,7 @@ async fn authorize_catalog_or_setup(
     )))
 }
 
-/// Reads `private.inventory_warehouses` with the service role (RLS bypassed,
+/// Reads the anti-joined `private.inventory_active_warehouses` with the service role (RLS bypassed,
 /// scoped purely by the `ws_id` filter), mirroring the legacy admin-client read.
 /// Returns the parsed rows plus the total count (only meaningful when paginated;
 /// `0` otherwise).
@@ -241,24 +238,14 @@ async fn fetch_warehouses(
         params.push(("limit", query.page_size.to_string()));
     }
 
-    let url = contact_data.rest_url(WAREHOUSES_TABLE, &params).ok_or(())?;
-    let service_role_key = contact_data.service_role_key().ok_or(())?;
-    let bearer = format!("Bearer {service_role_key}");
-
-    let mut request = OutboundRequest::new(OutboundMethod::Get, &url)
-        .with_header("Accept", APPLICATION_JSON)
-        .with_header("Authorization", &bearer)
-        .with_header("apikey", service_role_key)
-        // The table lives in the `private` schema.
-        .with_header("Accept-Profile", PRIVATE_SCHEMA);
-
-    // `count: 'exact'` => `Prefer: count=exact`; the total is returned in the
-    // `Content-Range` response header.
-    if should_paginate {
-        request = request.with_header("Prefer", "count=exact");
-    }
-
-    let response = outbound.send(request).await.map_err(|_| ())?;
+    let response = crate::workspaces_product_warehouses::warehouse_read::fetch(
+        contact_data,
+        outbound,
+        ws_id,
+        &params,
+        should_paginate,
+    )
+    .await?;
 
     if !is_success(response.status) {
         return Err(());
@@ -559,3 +546,6 @@ mod tests {
         assert_eq!(parse_content_range_count(Some("garbage")), 0);
     }
 }
+
+#[cfg(test)]
+mod list_tests;
