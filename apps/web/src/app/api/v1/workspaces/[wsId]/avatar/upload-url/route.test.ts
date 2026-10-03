@@ -1,3 +1,4 @@
+import { NextRequest } from 'next/server';
 // @vitest-environment node
 import { beforeEach, expect, it, vi } from 'vitest';
 
@@ -27,10 +28,13 @@ vi.mock('server-only', () => ({}));
 import { POST } from './route';
 
 const request = (filename = 'art.png') =>
-  new Request('https://web.test/api/v1/workspaces/personal/avatar/upload-url', {
-    method: 'POST',
-    body: JSON.stringify({ filename }),
-  });
+  new NextRequest(
+    'https://web.test/api/v1/workspaces/personal/avatar/upload-url',
+    {
+      method: 'POST',
+      body: JSON.stringify({ filename }),
+    }
+  );
 const context = { params: Promise.resolve({ wsId: 'personal' }) };
 beforeEach(() => {
   vi.clearAllMocks();

@@ -1,3 +1,4 @@
+import { NextRequest } from 'next/server';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
@@ -30,7 +31,7 @@ import { POST } from './route';
 
 const context = { params: Promise.resolve({ wsId: 'personal' }) };
 const request = (contentType = 'image/png') =>
-  new Request('https://app.test/api/avatar', {
+  new NextRequest('https://app.test/api/avatar', {
     method: 'POST',
     body: JSON.stringify({ contentType, fileName: '../forged.png' }),
   });
