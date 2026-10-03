@@ -1,3 +1,14 @@
+import type {
+  WorkspaceCalendarEventCreatePayload,
+  WorkspaceCalendarEventUpdatePayload,
+} from './calendar-event-payloads';
+
+export type {
+  RecoverableGoogleCalendarEventCreatePayload,
+  WorkspaceCalendarEventCreatePayload,
+  WorkspaceCalendarEventUpdatePayload,
+} from './calendar-event-payloads';
+
 import type { ProviderCalendarsResponse } from './calendar-sync';
 
 export * from './calendar-link-preview';
@@ -15,17 +26,6 @@ import {
   getInternalApiClient,
   withTaskApiBaseUrl,
 } from './client';
-
-export interface WorkspaceCalendarEventUpdatePayload {
-  locked?: boolean;
-  title?: string;
-  description?: string | null;
-  location?: string | null;
-  start_at?: string;
-  end_at?: string;
-  color?: string;
-  source?: CalendarSourceInput;
-}
 
 export type CalendarSourceInput =
   | {
@@ -82,18 +82,6 @@ export interface CalendarSyncPreferencesPayload {
   outboundSyncEnabled?: boolean;
   conflictPolicy?: CalendarConflictPolicy;
   defaultOutboundConnectionId?: string | null;
-}
-
-export interface WorkspaceCalendarEventCreatePayload {
-  title: string;
-  start_at: string;
-  end_at: string;
-  description?: string | null;
-  location?: string | null;
-  color?: string;
-  locked?: boolean;
-  task_id?: string | null;
-  source?: CalendarSourceInput;
 }
 
 export type WorkspaceCalendarEventsQuery = InternalApiQuery & {
@@ -906,3 +894,9 @@ export async function revokeWorkspaceHabitSkip(
     }
   );
 }
+
+export {
+  type GoogleProviderColorChoice,
+  type GoogleProviderColorOptions,
+  getGoogleCalendarColorOptions,
+} from './calendar-colors';

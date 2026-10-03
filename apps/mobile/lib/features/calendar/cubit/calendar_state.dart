@@ -1,5 +1,7 @@
 part of 'calendar_cubit.dart';
 
+const _sentinel = Object();
+
 enum CalendarStatus { initial, loading, loaded, error }
 
 enum CalendarViewMode { day, threeDays, week, month, agenda, year }

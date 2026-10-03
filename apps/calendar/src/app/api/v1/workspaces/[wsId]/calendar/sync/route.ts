@@ -10,6 +10,10 @@ import { validate } from 'uuid';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { DefaultCalendarEventColorSchema } from '@/lib/calendar/event-color';
 import { syncGoogleInbound } from '@/lib/calendar/google-inbound-sync';
+import {
+  assertLegacyCalendarWriteAllowed,
+  LegacyCalendarWriteError,
+} from '@/lib/calendar/legacy-provider-generation-guard';
 import { createProviderEvent } from '@/lib/calendar/provider-writes';
 import { classifyCalendarSyncError } from '@/lib/calendar/sync-errors';
 import { sanitizeWorkspaceCalendarEventFields } from '@/lib/calendar/sync-field-limits';
@@ -351,13 +355,11 @@ async function syncTuturuuuOutbound(args: {
       provider: null as string | null,
     };
   }
-
   const source = await resolveOutboundSyncSource({
     sbAdmin: args.sbAdmin,
     wsId: args.wsId,
     userId: args.userId,
   });
-
   if (!source) {
     return {
       created: 0,
@@ -366,7 +368,6 @@ async function syncTuturuuuOutbound(args: {
       provider: null as string | null,
     };
   }
-
   const { data: rows, error } = await args.sbAdmin
     .from('workspace_calendar_events')
     .select('*')
@@ -378,17 +379,22 @@ async function syncTuturuuuOutbound(args: {
     .in('sync_status', ['local_only', 'failed'])
     .order('start_at', { ascending: true })
     .limit(250);
-
   if (error) throw error;
-
+  await assertLegacyCalendarWriteAllowed({
+    sbAdmin: args.sbAdmin,
+    wsId: args.wsId,
+    userId: args.userId,
+    eventIds: (rows ?? []).map((row: LocalEventRow) => row.id),
+    blockCandidate:
+      source.provider === 'google' &&
+      process.env.CALENDAR_GOOGLE_COLOR_OPERATIONS_ENABLED === 'true',
+  });
   const localEvents = (await decryptEventsFromStorage(
     (rows ?? []) as LocalEventRow[],
     args.wsId
   )) as LocalEventRow[];
-
   let created = 0;
   let failed = 0;
-
   for (const event of localEvents) {
     try {
       const providerResult = await createProviderEvent({
@@ -404,9 +410,7 @@ async function syncTuturuuuOutbound(args: {
           ),
         },
       });
-
       if (!providerResult) continue;
-
       const { error: updateError } = await args.sbAdmin
         .from('workspace_calendar_events')
         .update({
@@ -428,7 +432,6 @@ async function syncTuturuuuOutbound(args: {
         })
         .eq('id', event.id)
         .eq('ws_id', args.wsId);
-
       if (updateError) throw updateError;
       created += 1;
     } catch (syncError) {
@@ -437,7 +440,6 @@ async function syncTuturuuuOutbound(args: {
         syncError instanceof Error
           ? syncError.message
           : 'External calendar sync failed';
-
       await args.sbAdmin
         .from('workspace_calendar_events')
         .update({
@@ -446,7 +448,6 @@ async function syncTuturuuuOutbound(args: {
         })
         .eq('id', event.id)
         .eq('ws_id', args.wsId);
-
       console.warn('Failed to outbound-sync Tuturuuu calendar event', {
         wsId: args.wsId,
         eventId: event.id,
@@ -455,7 +456,6 @@ async function syncTuturuuuOutbound(args: {
       });
     }
   }
-
   return {
     created,
     failed,
@@ -463,7 +463,6 @@ async function syncTuturuuuOutbound(args: {
     provider: source.provider,
   };
 }
-
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<RouteParams> }
@@ -683,7 +682,7 @@ export async function POST(
     }
     return jsonError(
       error instanceof Error ? error.message : 'Internal server error',
-      500,
+      error instanceof LegacyCalendarWriteError ? error.status : 500,
       { code: classifyCalendarSyncError(error) }
     );
   }

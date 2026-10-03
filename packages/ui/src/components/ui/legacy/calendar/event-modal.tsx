@@ -25,11 +25,7 @@ import {
   Unlock,
   X,
 } from '@tuturuuu/icons';
-import {
-  type CalendarSourceInput,
-  type CalendarSourceOption,
-  getWorkspaceCalendarDefaultSource,
-} from '@tuturuuu/internal-api';
+import { getWorkspaceCalendarDefaultSource } from '@tuturuuu/internal-api';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -44,6 +40,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
+import { newCalendarCreationRequestId } from '@tuturuuu/ui/hooks/calendar-creation-request';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { notifySave } from '@tuturuuu/ui/save-notification';
@@ -76,13 +73,12 @@ import {
   useState,
 } from 'react';
 import { z } from 'zod';
+import { useCalendarDraftSave } from './use-calendar-draft-save';
 import { Alert, AlertDescription, AlertTitle } from '../../alert';
 import { AutosizeTextarea } from '../../custom/autosize-textarea';
-import { getCalendarMeetingMetadata } from './calendar-meeting-link';
 import {
   COLOR_OPTIONS,
   DateError,
-  EventColorPicker,
   EventDateTimePicker,
   EventDescriptionInput,
   EventLocationInput,
@@ -92,7 +88,17 @@ import {
 } from './event-form-components';
 import { EventModalHeader } from './event-modal-header';
 import { eventEndPickerBounds } from './event-picker-bounds';
-import { saveCalendarEventDrafts } from './save-calendar-event-drafts';
+import { eventModalDraft, eventModalSavePayload } from './event-save-payload';
+import {
+  eventSourceChanged,
+  selectedEventSource,
+  sourceInputFromOption,
+} from './event-source-selection';
+import { ProviderColorPicker } from './provider-color-picker';
+import {
+  prepareCalendarEventDrafts,
+  saveCalendarEventDrafts,
+} from './save-calendar-event-drafts';
 import { useCalendarSettings } from './settings/settings-context';
 import { useEventDraftSession } from './use-event-draft-session';
 
@@ -106,53 +112,6 @@ const AIFormSchema = z.object({
     .default(() => Intl.DateTimeFormat().resolvedOptions().timeZone),
   smart_scheduling: z.boolean().default(true),
 });
-
-function sourceInputFromOption(
-  option?: CalendarSourceOption | null
-): CalendarSourceInput | undefined {
-  if (!option) return undefined;
-
-  if (option.provider === 'tuturuuu') {
-    return {
-      provider: 'tuturuuu',
-      workspaceCalendarId: option.workspaceCalendarId,
-    };
-  }
-
-  return {
-    provider: option.provider,
-    connectionId: option.connectionId,
-  };
-}
-
-function findEventSourceOption(
-  options: CalendarSourceOption[],
-  event: Partial<CalendarEvent>
-) {
-  if (event.provider === 'google' || event.provider === 'microsoft') {
-    return options.find((option) => {
-      if (option.provider === 'tuturuuu') return false;
-      if (option.provider !== event.provider) return false;
-      if (
-        event.source_calendar_id &&
-        option.workspaceCalendarId === event.source_calendar_id
-      ) {
-        return true;
-      }
-
-      return (
-        option.externalCalendarId ===
-        (event.external_calendar_id ?? event.google_calendar_id)
-      );
-    });
-  }
-
-  return options.find(
-    (option) =>
-      option.provider === 'tuturuuu' &&
-      option.workspaceCalendarId === event.source_calendar_id
-  );
-}
 
 export function EventModal() {
   const toast = notifySave;
@@ -195,11 +154,12 @@ export function EventModal() {
     () => sourceData?.options ?? [],
     [sourceData?.options]
   );
-  const selectedSourceOption =
-    sourceOptions.find((option) => option.id === selectedSourceId) ??
-    findEventSourceOption(sourceOptions, event) ??
-    sourceData?.defaultSource ??
-    sourceOptions[0];
+  const selectedSourceOption = selectedEventSource(
+    sourceOptions,
+    event,
+    selectedSourceId,
+    sourceData?.defaultSource
+  );
 
   // State for AI event generation
   const [generatedEvents, setGeneratedEvents] =
@@ -284,7 +244,7 @@ export function EventModal() {
 
   const receiveGeneratedEvents = useEffectEvent(() => {
     const processedEvents = (object?.events || []) as Partial<CalendarEvent>[];
-    setGeneratedEvents(processedEvents);
+    setGeneratedEvents(prepareCalendarEventDrafts(processedEvents));
     setCurrentEventIndex(0);
     const firstEvent = processedEvents[0];
     if (
@@ -307,32 +267,16 @@ export function EventModal() {
     workspaceId: activeEvent?.ws_id,
     initialize: () => {
       if (activeEvent) {
-        const cleanEventData: Partial<CalendarEvent> = {
-          id: activeEvent.id,
-          title: activeEvent.title || '',
-          description: activeEvent.description || '',
-          start_at: activeEvent.start_at,
-          end_at: activeEvent.end_at,
-          color: activeEvent.color || 'BLUE',
-          location: activeEvent.location || '',
-          locked: activeEvent.locked || false,
-          ws_id: activeEvent.ws_id,
-          provider: activeEvent.provider,
-          source_calendar_id: activeEvent.source_calendar_id,
-          external_calendar_id: activeEvent.external_calendar_id,
-          external_event_id: activeEvent.external_event_id,
-          google_event_id: activeEvent.google_event_id,
-          google_calendar_id: activeEvent.google_calendar_id,
-          scheduling_metadata: getCalendarMeetingMetadata(activeEvent),
-        };
+        const cleanEventData = eventModalDraft(activeEvent);
 
         setEvent(cleanEventData);
-        const sourceOption = findEventSourceOption(
-          sourceOptions,
-          cleanEventData
-        );
         setSelectedSourceId(
-          sourceOption?.id ?? sourceData?.defaultSource?.id ?? null
+          selectedEventSource(
+            sourceOptions,
+            cleanEventData,
+            null,
+            sourceData?.defaultSource
+          )?.id ?? null
         );
 
         if (activeEvent.id !== 'new') {
@@ -350,6 +294,7 @@ export function EventModal() {
         const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
 
         const newEvent = {
+          requestId: newCalendarCreationRequestId(),
           title: '',
           description: '',
           start_at: now.toISOString(),
@@ -372,61 +317,38 @@ export function EventModal() {
     },
   });
 
-  // Handle manual event save
-  const handleManualSave = async () => {
-    if (!event.start_at || !event.end_at) return;
-
-    const startDate = new Date(event.start_at);
-    const endDate = new Date(event.end_at);
-
-    if (endDate <= startDate) {
-      setDateError('End date must be after start date');
-      return;
-    }
-
-    setDateError(null);
-    setIsSaving(true);
-
-    try {
-      // Clean event data to only include fields that should be updated
-      const eventData: Partial<CalendarEvent> = {
-        title: event.title || '',
-        description: event.description || '',
-        start_at: event.start_at,
-        end_at: event.end_at,
-        color: event.color || 'BLUE',
-        location: event.location || '',
-        locked: event.locked || false,
-        source: sourceInputFromOption(selectedSourceOption),
-      };
-
-      if (activeEvent?.id === 'new') {
-        const saved = await addEvent(eventData as Omit<CalendarEvent, 'id'>);
-        if (!saved?.id) throw new Error();
-      } else if (activeEvent?.id) {
-        // For multi-day events, always use the original event ID
-        // The activeEvent should already contain the original event from the database
-        const eventId = activeEvent.id;
-
-        if (eventId && eventId !== 'new') {
-          await updateEvent(eventId, eventData);
-        } else {
-          throw new Error('Invalid event ID');
-        }
-      } else {
-        throw new Error('No event to save');
-      }
-
-      closeModal();
-    } catch (_) {
+  const draftSave = useCalendarDraftSave({
+    draft: event,
+    original: activeEvent,
+    buildPayload: () =>
+      eventModalSavePayload(
+        event,
+        activeEvent,
+        sourceInputFromOption(selectedSourceOption),
+        eventSourceChanged(sourceOptions, activeEvent ?? {}, selectedSourceId)
+      ),
+    addEvent,
+    updateEvent,
+    closeModal,
+    setIsSaving,
+    isSaving,
+    source: selectedSourceOption,
+    wsId,
+    onError: () =>
       toast({
         title: 'Error',
         description: 'Failed to save or sync event. Please try again.',
         variant: 'destructive',
-      });
-    } finally {
-      setIsSaving(false);
+      }),
+  });
+  const handleManualSave = async () => {
+    if (!event.start_at || !event.end_at) return;
+    if (new Date(event.end_at) <= new Date(event.start_at)) {
+      setDateError('End date must be after start date');
+      return;
     }
+    setDateError(null);
+    await draftSave.save();
   };
 
   // Handle AI event generation
@@ -993,7 +915,13 @@ export function EventModal() {
                       </div>
                       <Select
                         value={selectedSourceOption?.id}
-                        onValueChange={(value) => setSelectedSourceId(value)}
+                        onValueChange={(value) => {
+                          setSelectedSourceId(value);
+                          setEvent((previous) => ({
+                            ...previous,
+                            providerColor: undefined,
+                          }));
+                        }}
                         disabled={sourceOptions.length === 0 || isSaving}
                       >
                         <SelectTrigger id="event-source" className="w-full">
@@ -1087,10 +1015,21 @@ export function EventModal() {
 
                       {/* Color and Options Row */}
                       <div className="flex items-end justify-between gap-4">
-                        <EventColorPicker
+                        <ProviderColorPicker
+                          wsId={wsId}
+                          source={selectedSourceOption}
                           value={event.color || 'BLUE'}
-                          onChange={(value) =>
-                            setEvent({ ...event, color: value })
+                          metadata={event.scheduling_metadata}
+                          choice={event.providerColor}
+                          onNativeChange={(value) =>
+                            setEvent({
+                              ...event,
+                              color: value,
+                              providerColor: undefined,
+                            })
+                          }
+                          onProviderChange={(providerColor) =>
+                            setEvent({ ...event, providerColor })
                           }
                         />
                         <button
@@ -1147,6 +1086,7 @@ export function EventModal() {
 
                 {/* Action Buttons */}
                 <div className="mt-auto border-t p-2">
+                  {draftSave.recoveryNotice}
                   <div className="flex justify-between">
                     {isEditing ? (
                       <Button

@@ -2,13 +2,30 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   authorize: vi.fn(),
+  enabled: vi.fn(),
+  recover: vi.fn(),
   resolve: vi.fn(),
   respond: vi.fn(),
   from: vi.fn(),
   select: vi.fn(),
   eq: vi.fn(),
   one: vi.fn(),
+  retained: vi.fn(async () => null),
 }));
+vi.mock(
+  '@/lib/calendar/google-color-operations/retained-generation-request-access',
+  () => ({ getCalendarRetainedGeneration: mocks.retained })
+);
+vi.mock(
+  '@/lib/calendar/google-color-operations/route-handlers',
+  async (original) => ({
+    ...(await original<
+      typeof import('@/lib/calendar/google-color-operations/route-handlers')
+    >()),
+    googleColorOperationModeEnabled: mocks.enabled,
+    handleRecoverableGoogleResponse: mocks.recover,
+  })
+);
 vi.mock('@/lib/calendar-event-permission', () => ({
   authorizeCalendarEventManagement: mocks.authorize,
 }));
@@ -22,6 +39,7 @@ vi.mock('@/lib/calendar/meeting-provider-response', async (original) => ({
   respondToProviderMeeting: mocks.respond,
 }));
 
+import { ColorOperationError } from '@/lib/calendar/google-color-operations/protocol';
 import { POST } from './route';
 
 const eventId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -42,6 +60,8 @@ function request(body: unknown = { response: 'accepted' }, id = eventId) {
 }
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.enabled.mockReturnValue(false);
+  mocks.recover.mockResolvedValue(Response.json({ response: 'accepted' }));
   mocks.from.mockReturnValue({ select: mocks.select });
   mocks.select.mockReturnValue({ eq: mocks.eq });
   mocks.eq.mockReturnValue({ eq: mocks.eq, maybeSingle: mocks.one });
@@ -124,4 +144,57 @@ describe('authenticated meeting responses', () => {
     expect(await result.text()).not.toContain('private provider diagnostic');
     expect(mocks.respond).toHaveBeenCalledTimes(1);
   });
+  it('uses the recoverable Google ledger and skips stale source/provider snapshots when enabled', async () => {
+    mocks.enabled.mockReturnValue(true);
+    mocks.one.mockResolvedValueOnce({
+      data: { ...event, provider: 'google' },
+      error: null,
+    });
+    const result = await request();
+    expect(result.status).toBe(200);
+    expect(result.headers.get('cache-control')).toBe('private, no-store');
+    expect(mocks.recover).toHaveBeenCalledWith({
+      request: expect.any(Request),
+      rawWsId: 'personal',
+      eventId,
+      response: 'accepted',
+    });
+    expect(mocks.resolve).not.toHaveBeenCalled();
+    expect(mocks.respond).not.toHaveBeenCalled();
+  });
+  it('keeps a failed dispatched response recoverable without legacy retry', async () => {
+    mocks.enabled.mockReturnValue(true);
+    mocks.one.mockResolvedValueOnce({
+      data: { ...event, provider: 'google' },
+      error: null,
+    });
+    mocks.recover.mockResolvedValueOnce(
+      Response.json({ operationId: 'pending' }, { status: 503 })
+    );
+    const result = await request();
+    expect(result.status).toBe(503);
+    expect(result.headers.get('cache-control')).toBe('private, no-store');
+    expect(await result.json()).toEqual({ operationId: 'pending' });
+    expect(mocks.respond).not.toHaveBeenCalled();
+  });
+  it('rejects unsupported Microsoft responses in candidate mode before provider dispatch', async () => {
+    mocks.enabled.mockReturnValue(true);
+    mocks.one.mockResolvedValueOnce({
+      data: { ...event, provider: 'microsoft' },
+      error: null,
+    });
+    mocks.resolve.mockResolvedValueOnce({ provider: 'microsoft' });
+    expect((await request()).status).toBe(409);
+    expect(mocks.recover).not.toHaveBeenCalled();
+    expect(mocks.respond).not.toHaveBeenCalled();
+  });
+});
+
+it('keeps private no-store on retained-generation failure responses', async () => {
+  mocks.retained.mockRejectedValueOnce(
+    new ColorOperationError('storage', 'private SQL detail')
+  );
+  const response = await request();
+  expect(response.status).toBe(503);
+  expect(response.headers.get('Cache-Control')).toBe('private, no-store');
 });
