@@ -22,6 +22,7 @@ class ProfileTimelineBrowser extends StatefulWidget {
     required this.items,
     required this.onOpen,
     this.loading = false,
+    this.fullSurface = false,
     this.datesOpen,
     this.onDatesChanged,
     this.refreshing = false,
@@ -36,6 +37,7 @@ class ProfileTimelineBrowser extends StatefulWidget {
   final List<ProfileTimelineItem> items;
   final ValueChanged<ProfileTimelineItem> onOpen;
   final bool loading;
+  final bool fullSurface;
   final bool? datesOpen;
   final ValueChanged<bool>? onDatesChanged;
   final bool refreshing;
@@ -180,7 +182,18 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
       _dates = true;
     });
     widget.onDatesChanged?.call(true);
-    if (_scroll.hasClients) _scroll.jumpTo(0);
+    final index = _groups.keys.toList().indexOf(day);
+    if (index >= _shown) setState(() => _shown = index + 1);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final first = _groups[day]?.firstOrNull;
+      final target = first == null
+          ? null
+          : _itemKeys[_id(first)]?.currentContext;
+      if (target != null) {
+        Scrollable.ensureVisible(target, alignment: .1);
+      }
+    });
     _animate();
   }
 
@@ -195,9 +208,7 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
   @override
   Widget build(BuildContext context) {
     final groups = _groups;
-    final entries = _dates
-        ? groups.entries.where((entry) => entry.key == _selected).toList()
-        : groups.entries.take(_shown).toList();
+    final entries = groups.entries.take(_shown).toList();
     final header = 48 + ProfileTimelineDateStrip.slotHeight(context);
     final height = math.max(
       MediaQuery.sizeOf(context).height * .72,
@@ -205,7 +216,7 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
     );
     return SizedBox(
       key: const ValueKey('timeline-browser'),
-      height: height,
+      height: widget.fullSurface ? null : height,
       child: Column(
         children: [
           ProfileTimelineDateStrip(
@@ -245,6 +256,9 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
               child: SingleChildScrollView(
                 key: _viewport,
                 controller: _scroll,
+                padding: EdgeInsets.only(
+                  bottom: 24 + MediaQuery.paddingOf(context).bottom,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -271,6 +285,16 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
                           }),
                         ),
                       ),
+                    if (_dates &&
+                        groups.isNotEmpty &&
+                        !groups.containsKey(_selected) &&
+                        !widget.loading &&
+                        widget.availability ==
+                            ProfileTimelineAvailability.complete)
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(context.l10n.profileTimelineDayEmpty),
+                      ),
                     for (final entry in entries)
                       ProfileTimelineDays(
                         key: ValueKey(('timeline-group', entry.key)),
@@ -281,7 +305,7 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
                         itemKey: (item) =>
                             _itemKeys.putIfAbsent(_id(item), GlobalKey.new),
                       ),
-                    if (!_dates && groups.length > _shown)
+                    if (groups.length > _shown)
                       shad.OutlineButton(
                         key: const ValueKey('timeline-more-days'),
                         onPressed: () =>

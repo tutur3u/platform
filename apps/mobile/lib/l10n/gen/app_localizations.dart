@@ -16525,6 +16525,18 @@ abstract class AppLocalizations {
   /// **'Drag to reorder'**
   String get appsReorder;
 
+  /// No description provided for @homePersonalAgenda.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal Agenda'**
+  String get homePersonalAgenda;
+
+  /// No description provided for @homePersonalAgendaUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal calendar is unavailable.'**
+  String get homePersonalAgendaUnavailable;
+
   /// No description provided for @homeCustomize.
   ///
   /// In en, this message translates to:
@@ -16846,7 +16858,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileTimelineTitle.
   ///
   /// In en, this message translates to:
-  /// **'Activity timeline'**
+  /// **'Timeline'**
   String get profileTimelineTitle;
 
   /// No description provided for @profileTimelineToday.
@@ -18708,6 +18720,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Some items do not match this period. Reconcile the cart to continue.'**
   String get inventoryCheckoutPeriodRulesChanged;
+
+  /// No description provided for @assistantExpandNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Show navigation'**
+  String get assistantExpandNavigation;
+
+  /// No description provided for @assistantCollapseNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide navigation'**
+  String get assistantCollapseNavigation;
+
+  /// No description provided for @assistantCloseComposer.
+  ///
+  /// In en, this message translates to:
+  /// **'Close prompt'**
+  String get assistantCloseComposer;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

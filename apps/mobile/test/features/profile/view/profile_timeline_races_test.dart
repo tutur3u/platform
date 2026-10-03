@@ -124,7 +124,7 @@ void main() {
     (tester) async {
       repository.cache = snapshot('Cached task', partial: true, limited: true);
       await mount(tester);
-      expect(find.textContaining('over the last 30 days'), findsOneWidget);
+      expect(find.textContaining('over the last 30 days'), findsNothing);
       expect(find.text('Cached task'), findsOneWidget);
       expect(find.text('Some activity is unavailable.'), findsOneWidget);
       expect(_limitedTooltip(), findsOneWidget);
@@ -298,7 +298,7 @@ void main() {
         ));
         await tester.pumpAndSettle();
         if (explicitDate) {
-          expect(find.text('First loaded activity'), findsNothing);
+          expect(find.text('First loaded activity'), findsOneWidget);
           expect(
             find.text('No activity was returned for this day.'),
             findsOneWidget,
