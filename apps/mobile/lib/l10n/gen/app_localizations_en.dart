@@ -8804,7 +8804,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileTimelineUnavailable => 'Activity could not be refreshed.';
 
   @override
-  String get profileTimelineTitle => 'Activity timeline';
+  String get profileTimelineTitle => 'Timeline';
 
   @override
   String get profileTimelineToday => 'Today';

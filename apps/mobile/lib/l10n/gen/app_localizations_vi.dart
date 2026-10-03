@@ -8762,7 +8762,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileTimelineUnavailable => 'Không thể làm mới hoạt động.';
 
   @override
-  String get profileTimelineTitle => 'Dòng thời gian hoạt động';
+  String get profileTimelineTitle => 'Dòng thời gian';
 
   @override
   String get profileTimelineToday => 'Hôm nay';

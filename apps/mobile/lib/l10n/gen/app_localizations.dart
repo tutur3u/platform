@@ -16846,7 +16846,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileTimelineTitle.
   ///
   /// In en, this message translates to:
-  /// **'Activity timeline'**
+  /// **'Timeline'**
   String get profileTimelineTitle;
 
   /// No description provided for @profileTimelineToday.
