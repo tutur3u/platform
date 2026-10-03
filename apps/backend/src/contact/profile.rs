@@ -406,10 +406,7 @@ pub(super) async fn current_user_profile_patch_data_response(
         }
     }
 
-    let Some(profile_url) = config
-        .contact_data
-        .rest_url("rpc/update_public_user_profile", &[])
-    else {
+    let Some(profile_url) = config.contact_data.rpc_url("update_public_user_profile") else {
         return contact_data_layer_not_ready_response(request);
     };
     let body = match serde_json::to_string(
