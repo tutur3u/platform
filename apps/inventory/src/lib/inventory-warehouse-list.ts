@@ -39,10 +39,21 @@ export async function fetchInventoryWarehouseList(
   const load = (
     table: 'inventory_active_warehouses' | 'inventory_warehouses'
   ) => {
-    const query = inventory
-      .from(table)
-      .select('*', { count: options.paginate ? 'exact' : undefined })
-      .eq('ws_id', wsId);
+    // Tables and views have distinct .from overloads. Keep each relation literal
+    // so generated row/column inference remains intact before common filters.
+    const selectOptions = {
+      count: options.paginate ? ('exact' as const) : undefined,
+    };
+    const query =
+      table === 'inventory_active_warehouses'
+        ? inventory
+            .from('inventory_active_warehouses')
+            .select('*', selectOptions)
+            .eq('ws_id', wsId)
+        : inventory
+            .from('inventory_warehouses')
+            .select('*', selectOptions)
+            .eq('ws_id', wsId);
     if (options.q) query.ilike('name', `%${options.q}%`);
     if (options.paginate) {
       const { start, end } = getInventoryApiListRange(options);
