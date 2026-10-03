@@ -11,6 +11,9 @@ const workspaceSelectSource = readFileSync(
 );
 
 describe('[wsId] workspace select assets', () => {
+  it('uses the browser dropdown independent of viewport size', () => {
+    expect(workspaceSelectSource).toContain('presentation="dropdown"');
+  });
   it('uses the same-origin Tuturuuu logo fallback in apps/web', () => {
     expect(workspaceSelectSource).toContain('TUTURUUU_LOCAL_LOGO_URL');
     expect(workspaceSelectSource).toContain(

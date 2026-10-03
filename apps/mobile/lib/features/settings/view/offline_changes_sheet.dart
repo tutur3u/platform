@@ -33,9 +33,10 @@ class _OfflineChangesSheet extends StatelessWidget {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
-            ValueListenableBuilder(
-              valueListenable: queue.pending,
-              builder: (context, records, _) {
+            ListenableBuilder(
+              listenable: Listenable.merge([queue.pending, queue.syncingIds]),
+              builder: (context, _) {
+                final records = queue.pending.value;
                 if (records.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24),
@@ -118,17 +119,31 @@ class _PendingChangeCard extends StatelessWidget {
       ),
     );
     if (confirmed != true) return;
-    await OfflineMutationQueue.instance.cancel(record.id);
-    unawaited(AppHaptics.drop());
+    if (await OfflineMutationQueue.instance.cancel(record.id)) {
+      unawaited(AppHaptics.drop());
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final status = switch (record.status) {
-      PendingMutationStatus.queued => l10n.offlineEditQueued,
+      PendingMutationStatus.queued =>
+        OfflineMutationQueue.instance.syncingIds.value.contains(record.id)
+            ? l10n.offlineEditSyncing
+            : l10n.offlineEditQueued,
       PendingMutationStatus.conflict => l10n.offlineEditConflict,
       PendingMutationStatus.failed => l10n.offlineEditFailed,
+    };
+    final diagnostic = switch (record.dependencyIssue) {
+      OfflineDependencyIssue.waiting => l10n.offlineDependencyWaiting,
+      OfflineDependencyIssue.missing => l10n.offlineDependencyMissing,
+      OfflineDependencyIssue.cycle => l10n.offlineDependencyCycle,
+      OfflineDependencyIssue.ambiguous => l10n.offlineDependencyAmbiguous,
+      OfflineDependencyIssue.invalidPayload => l10n.offlineDependencyInvalid,
+      OfflineDependencyIssue.contractUnavailable =>
+        l10n.offlineDependencyContract,
+      null => record.lastError,
     };
     final color = record.status == PendingMutationStatus.queued
         ? Theme.of(context).colorScheme.primary
@@ -150,20 +165,22 @@ class _PendingChangeCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               Text(status, style: TextStyle(color: color)),
-              if (record.lastError != null)
-                Text(
-                  record.lastError!,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              if (diagnostic != null)
+                Text(diagnostic, maxLines: 2, overflow: TextOverflow.ellipsis),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: () => _discard(context),
+                    onPressed:
+                        OfflineMutationQueue.instance.syncingIds.value.contains(
+                          record.id,
+                        )
+                        ? null
+                        : () => _discard(context),
                     child: Text(l10n.offlineChangesDiscard),
                   ),
-                  if (record.status != PendingMutationStatus.queued)
+                  if (record.canRetry &&
+                      record.status != PendingMutationStatus.queued)
                     TextButton(
                       onPressed: () => _retry(context),
                       child: Text(l10n.offlineChangesRetry),

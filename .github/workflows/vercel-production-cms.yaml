@@ -64,11 +64,34 @@ jobs:
           token: ${{ github.actor != 'dependabot[bot]' && secrets.TURBO_TOKEN || '' }}
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 
-      - name: Deploy Project Artifacts to Vercel
+      - name: Stage production artifacts without assigning domains
+        id: stage_deployment
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_CMS_PROJECT_ID }}
-        run: vercel deploy --archive=tgz --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          deployment_url=$(vercel deploy --archive=tgz --prebuilt --prod --skip-domain --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$deployment_url" >> "$GITHUB_OUTPUT"
+
+      - name: Verify staged source and ordinary API boundaries
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_CMS_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_STAGED_DEPLOYMENT_URL: ${{ steps.stage_deployment.outputs.url }}
+          VERCEL_STAGED_APP: cms
+        run: node scripts/ci/verify-staged-critical-app.js
+
+      - name: Promote verified production deployment
+        id: promote
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_CMS_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+          vercel promote "${{ steps.stage_deployment.outputs.url }}" --yes --token=${{ secrets.VERCEL_TOKEN }}
+          echo 'promoted=true' >> "$GITHUB_OUTPUT"
 
       - name: Record successful Vercel deployment marker
         continue-on-error: true

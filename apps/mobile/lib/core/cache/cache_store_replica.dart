@@ -5,12 +5,49 @@ const _replicaSchemaVersion = 1;
 const _replicaIdMapPrefix = '@id-map:';
 
 extension CacheStoreReplica on CacheStore {
+  /// Provenance survives cancellation so stale editors never send local UUIDs.
+  Future<void> registerLocalResource(OfflineResourceReference reference) async {
+    await init();
+    final identity = jsonEncode(reference.toJson());
+    await _entityBox.put(
+      '@local-origin:${sha256.convert(utf8.encode(identity))}',
+      {'kind': 'local-origin', ...reference.toJson()},
+    );
+  }
+
+  Future<Set<OfflineResourceReference>> localResourceOrigins({
+    required String userId,
+    required String workspaceId,
+  }) async {
+    await init();
+    return _entityBox.values
+        .whereType<Map<dynamic, dynamic>>()
+        .where(
+          (raw) =>
+              {'local-origin', 'local-deleted'}.contains(raw['kind']) &&
+              raw['userId'] == userId &&
+              raw['workspaceId'] == workspaceId,
+        )
+        .map(_parseOfflineReference)
+        .whereType<OfflineResourceReference>()
+        .toSet();
+  }
+
+  OfflineResourceReference? _parseOfflineReference(Map<dynamic, dynamic> raw) {
+    try {
+      return OfflineResourceReference.fromJson(raw);
+    } on Object {
+      return null;
+    }
+  }
+
   Future<void> saveLocalIdMapping({
     required String userId,
     required String workspaceId,
     required String feature,
     required String localId,
     required String serverId,
+    Map<String, dynamic>? resourceData,
   }) async {
     await init();
     final identity = '$userId|$workspaceId|$feature|$localId';
@@ -22,7 +59,77 @@ extension CacheStoreReplica on CacheStore {
       'feature': feature,
       'localId': localId,
       'serverId': serverId,
+      if (resourceData != null) 'resourceData': resourceData,
     });
+  }
+
+  Future<Map<String, dynamic>?> localResourceAcknowledgment(
+    OfflineResourceReference reference,
+  ) async {
+    await init();
+    final identity =
+        '${reference.userId}|${reference.workspaceId}|'
+        '${reference.mappingNamespace}|${reference.localId}';
+    final key = '$_replicaIdMapPrefix${sha256.convert(utf8.encode(identity))}';
+    final raw = _entityBox.get(key);
+    if (raw is! Map || raw['deleted'] == true) return null;
+    final data = raw['resourceData'];
+    return data is Map ? Map<String, dynamic>.from(data) : null;
+  }
+
+  Future<Set<OfflineResourceReference>> deletedOfflineResources({
+    required String userId,
+    required String workspaceId,
+  }) async {
+    await init();
+    return _entityBox.values
+        .whereType<Map<dynamic, dynamic>>()
+        .where(
+          (raw) =>
+              raw['kind'] == 'local-deleted' &&
+              raw['userId'] == userId &&
+              raw['workspaceId'] == workspaceId,
+        )
+        .map(_parseOfflineReference)
+        .whereType<OfflineResourceReference>()
+        .toSet();
+  }
+
+  Future<void> tombstoneOfflineResource(
+    OfflineResourceReference reference,
+    String serverId,
+  ) async {
+    await init();
+    final aliases = {
+      reference,
+      OfflineResourceReference(
+        userId: reference.userId,
+        workspaceId: reference.workspaceId,
+        feature: reference.feature,
+        resource: reference.resource,
+        localId: serverId,
+      ),
+    };
+    final writes = <String, Map<dynamic, dynamic>>{};
+    for (final alias in aliases) {
+      final identity = jsonEncode(alias.toJson());
+      writes['@local-deleted:${sha256.convert(utf8.encode(identity))}'] = {
+        'kind': 'local-deleted',
+        ...alias.toJson(),
+      };
+    }
+    for (final key in _entityBox.keys.whereType<String>()) {
+      final raw = _entityBox.get(key);
+      if (raw is Map &&
+          raw['kind'] == 'id-map' &&
+          raw['userId'] == reference.userId &&
+          raw['workspaceId'] == reference.workspaceId &&
+          raw['feature'] == reference.mappingNamespace &&
+          raw['serverId'] == serverId) {
+        writes[key] = {...raw, 'deleted': true};
+      }
+    }
+    await _entityBox.putAll(writes);
   }
 
   Future<Map<String, String>> localIdMappings({
@@ -35,6 +142,7 @@ extension CacheStoreReplica on CacheStore {
     for (final raw in _entityBox.values) {
       if (raw is Map &&
           raw['kind'] == 'id-map' &&
+          raw['deleted'] != true &&
           raw['userId'] == userId &&
           raw['workspaceId'] == workspaceId &&
           raw['feature'] == feature &&
@@ -57,6 +165,7 @@ extension CacheStoreReplica on CacheStore {
     for (final raw in _entityBox.values) {
       if (raw is Map &&
           raw['kind'] == 'id-map' &&
+          raw['deleted'] != true &&
           raw['userId'] == userId &&
           raw['workspaceId'] == workspaceId &&
           raw['localId'] is String &&
@@ -75,7 +184,7 @@ extension CacheStoreReplica on CacheStore {
     for (final key in _entityBox.keys) {
       final raw = _entityBox.get(key);
       if (raw is Map &&
-          raw['kind'] == 'id-map' &&
+          {'id-map', 'local-origin', 'local-deleted'}.contains(raw['kind']) &&
           (userId == null || raw['userId'] == userId) &&
           (workspaceId == null || raw['workspaceId'] == workspaceId)) {
         keys.add(key);
@@ -107,19 +216,21 @@ extension CacheStoreReplica on CacheStore {
   Iterable<Map<String, dynamic>> _extractReplicaRows(Object? value) sync* {
     if (value is List) {
       for (final row in value.take(1000)) {
-        if (row is Map && row['id'] is String) {
-          yield Map<String, dynamic>.from(row);
+        if (row is Map) {
+          final id = row['id'] ?? row['auditRecordId'];
+          if (id is String) yield {...Map<String, dynamic>.from(row), 'id': id};
         }
       }
       return;
     }
     if (value is! Map) return;
-    if (value['id'] is String) {
-      yield Map<String, dynamic>.from(value);
+    final id = value['id'] ?? value['auditRecordId'];
+    if (id is String) {
+      yield {...Map<String, dynamic>.from(value), 'id': id};
       return;
     }
     for (final nested in value.values) {
-      if (nested is List) yield* _extractReplicaRows(nested);
+      if (nested is List || nested is Map) yield* _extractReplicaRows(nested);
     }
   }
 
@@ -129,7 +240,37 @@ extension CacheStoreReplica on CacheStore {
       !source.namespace.contains('secret') &&
       !source.namespace.contains('token');
 
-  Future<void> _replaceReplicaSource(CachedResourceRecord source) async {
+  Future<void> _serializeReplicaSource(
+    String sourceKey,
+    Future<void> Function() operation,
+  ) async {
+    final previous = _replicaWrites[sourceKey];
+    final released = Completer<void>();
+    _replicaWrites[sourceKey] = released.future;
+    try {
+      await previous;
+      await operation();
+    } finally {
+      released.complete();
+      if (identical(_replicaWrites[sourceKey], released.future)) {
+        unawaited(_replicaWrites.remove(sourceKey));
+      }
+    }
+  }
+
+  Future<void> _replaceReplicaSource(
+    CachedResourceRecord source, {
+    void Function()? checkCurrent,
+  }) => _serializeReplicaSource(
+    source.key,
+    () => _replaceReplicaSourceUnlocked(source, checkCurrent: checkCurrent),
+  );
+
+  Future<void> _replaceReplicaSourceUnlocked(
+    CachedResourceRecord source, {
+    void Function()? checkCurrent,
+  }) async {
+    checkCurrent?.call();
     final sourceIndexKey = _replicaSourceKey(source.key);
     final previous =
         (_entityBox.get(sourceIndexKey) as List?)?.whereType<String>().toList(
@@ -163,9 +304,14 @@ extension CacheStoreReplica on CacheStore {
     }
     try {
       await _entityBox.putAll(next);
+      checkCurrent?.call();
       await _entityBox.put(sourceIndexKey, next.keys.toList(growable: false));
+      checkCurrent?.call();
       for (final key in previous) {
-        if (!next.containsKey(key)) await _entityBox.delete(key);
+        if (!next.containsKey(key)) {
+          await _entityBox.delete(key);
+          checkCurrent?.call();
+        }
       }
       _entityBytes +=
           next.values.fold<int>(
@@ -174,12 +320,22 @@ extension CacheStoreReplica on CacheStore {
           ) -
           priorBytes;
     } on Object {
+      // The per-source queue excludes newer writers while rollback removes
+      // this attempt's rows. Other resource sources have distinct entity keys.
+      await _entityBox.deleteAll({...previous, ...next.keys});
+      await _entityBox.delete(sourceIndexKey);
       _entityBytes = _countReplicaBytes();
       rethrow;
     }
   }
 
-  Future<void> _removeReplicaSource(String sourceKey) async {
+  Future<void> _removeReplicaSource(String sourceKey) =>
+      _serializeReplicaSource(
+        sourceKey,
+        () => _removeReplicaSourceUnlocked(sourceKey),
+      );
+
+  Future<void> _removeReplicaSourceUnlocked(String sourceKey) async {
     final indexKey = _replicaSourceKey(sourceKey);
     final keys =
         (_entityBox.get(indexKey) as List?)?.whereType<String>() ??
@@ -279,6 +435,7 @@ extension CacheStoreReplica on CacheStore {
     await _mutationBox.close();
     await _entityBox.close();
     _memory.clear();
+    _refreshTasks.clear();
     _resourceBytes = 0;
     _entityBytes = 0;
     _initialized = false;

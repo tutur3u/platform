@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tuturuuu Rollout Recovery"
+  short_description: "Recover rollbacks and shared API deployment failures"
+  default_prompt: "Diagnose this rollout and verify a safe recovery candidate."

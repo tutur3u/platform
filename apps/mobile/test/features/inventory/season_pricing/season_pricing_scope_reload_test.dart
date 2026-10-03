@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
+import 'package:mobile/data/models/inventory/inventory_checkout_defaults.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
@@ -26,6 +27,9 @@ class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
 class _Inventory extends InventoryRepository {
   _Inventory(this.actor);
+  @override
+  Future<InventoryCheckoutDefaults> getCheckoutDefaults(String wsId) async =>
+      const InventoryCheckoutDefaults();
   final String Function() actor;
   final reads = <String>[];
   int periodReads = 0;

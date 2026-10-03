@@ -1,6 +1,10 @@
 name: Vercel Platform Production Deployment
 on:
   workflow_call:
+    outputs:
+      promoted:
+        description: "Whether the exact Web candidate was staged, verified and promoted"
+        value: ${{ jobs.Deploy-Production.outputs.promoted }}
   workflow_dispatch:
 
 concurrency:
@@ -12,6 +16,8 @@ permissions:
 
 jobs:
   Deploy-Production:
+    outputs:
+      promoted: ${{ steps.promote.outputs.promoted }}
     if: github.ref == 'refs/heads/production'
     environment: vercel-production-platform
     runs-on: ubuntu-latest
@@ -86,12 +92,37 @@ jobs:
           token: ${{ github.actor != 'dependabot[bot]' && secrets.TURBO_TOKEN || '' }}
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 
-      - name: Deploy Project Artifacts to Vercel
+      - name: Stage production artifacts without assigning domains
+        id: stage_deployment
         if: steps.package_release_gate.outputs.packages_ready == 'true'
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
-        run: vercel deploy --archive=tgz --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          deployment_url=$(vercel deploy --archive=tgz --prebuilt --prod --skip-domain --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$deployment_url" >> "$GITHUB_OUTPUT"
+
+      - name: Verify staged source and ordinary API boundaries
+        if: steps.package_release_gate.outputs.packages_ready == 'true'
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_STAGED_DEPLOYMENT_URL: ${{ steps.stage_deployment.outputs.url }}
+          VERCEL_STAGED_APP: platform
+        run: node scripts/ci/verify-staged-critical-app.js
+
+      - name: Promote verified production deployment
+        id: promote
+        if: steps.package_release_gate.outputs.packages_ready == 'true'
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+          vercel promote "${{ steps.stage_deployment.outputs.url }}" --yes --token=${{ secrets.VERCEL_TOKEN }}
+          echo 'promoted=true' >> "$GITHUB_OUTPUT"
 
       - name: Record successful Vercel build marker
         if: steps.package_release_gate.outputs.packages_ready == 'true'

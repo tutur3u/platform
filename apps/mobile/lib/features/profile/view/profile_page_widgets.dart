@@ -39,7 +39,6 @@ class _ProfileActionTile extends StatelessWidget {
           decoration: BoxDecoration(
             color: theme.colorScheme.background.withValues(alpha: 0.78),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.colorScheme.border),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,7 +134,6 @@ class _ProfileHeroCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border.all(color: palette.border),
       ),
       padding: const EdgeInsets.all(22),
       child: Column(
@@ -317,7 +315,6 @@ class _StatusCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.colorScheme.background.withValues(alpha: 0.78),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: theme.colorScheme.border),
       ),
       child: Row(
         children: [

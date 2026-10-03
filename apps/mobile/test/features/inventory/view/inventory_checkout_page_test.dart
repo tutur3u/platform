@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
+import 'package:mobile/data/models/inventory/inventory_checkout_defaults.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
@@ -21,6 +22,10 @@ class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
     implements WorkspaceCubit {}
 
 class _CheckoutInventoryRepository extends InventoryRepository {
+  @override
+  Future<InventoryCheckoutDefaults> getCheckoutDefaults(String wsId) async =>
+      const InventoryCheckoutDefaults();
+
   @override
   Future<List<InventoryProduct>> getProductOptions(
     String wsId, {
@@ -62,58 +67,80 @@ class _CheckoutSettingsRepository extends SettingsRepository {
 }
 
 void main() {
-  testWidgets('keeps fresh periods when another checkout option fails', (
-    tester,
-  ) async {
-    tester.view
-      ..devicePixelRatio = 1
-      ..physicalSize = const Size(390, 1200);
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+  for (final editing in [false, true]) {
+    testWidgets(
+      'keeps periods and historical choices on refresh failure: $editing',
+      (tester) async {
+        tester.view
+          ..devicePixelRatio = 1
+          ..physicalSize = const Size(390, 1200);
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
 
-    const workspace = Workspace(id: 'ws-1', name: 'Convention');
-    const workspaceState = WorkspaceState(
-      status: WorkspaceStatus.loaded,
-      workspaces: [workspace],
-      currentWorkspace: workspace,
-      defaultWorkspace: workspace,
+        const workspace = Workspace(id: 'ws-1', name: 'Convention');
+        const workspaceState = WorkspaceState(
+          status: WorkspaceStatus.loaded,
+          workspaces: [workspace],
+          currentWorkspace: workspace,
+          defaultWorkspace: workspace,
+        );
+        final workspaceCubit = _MockWorkspaceCubit();
+        when(() => workspaceCubit.state).thenReturn(workspaceState);
+        whenListen(
+          workspaceCubit,
+          const Stream<WorkspaceState>.empty(),
+          initialState: workspaceState,
+        );
+
+        await tester.pumpApp(
+          BlocProvider<WorkspaceCubit>.value(
+            value: workspaceCubit,
+            child: InventoryCheckoutPage(
+              sale: editing
+                  ? const InventorySaleDetail(
+                      id: 'sale',
+                      paidAmount: 0,
+                      itemsCount: 0,
+                      totalQuantity: 0,
+                      owners: [],
+                      source: 'finance_invoice',
+                      lines: [],
+                      walletId: 'archived-wallet',
+                      walletName: 'Archived revenue',
+                      categoryId: 'historical-category',
+                      categoryName: 'Historical category',
+                    )
+                  : null,
+              inventoryRepository: _CheckoutInventoryRepository(),
+              financeRepository: _PartiallyFailingFinanceRepository(),
+              settingsRepository: _CheckoutSettingsRepository(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.textContaining('Some checkout choices could not be refreshed'),
+          findsOneWidget,
+        );
+
+        await tester.tap(find.text('Cart'));
+        await tester.pumpAndSettle();
+        if (editing) {
+          expect(find.text('Archived revenue'), findsOneWidget);
+          expect(find.text('Historical category'), findsOneWidget);
+        }
+        final periodSelector = find.text('No period');
+        await tester.ensureVisible(periodSelector);
+        await tester.pumpAndSettle();
+        await tester.tap(periodSelector);
+        await tester.pumpAndSettle();
+
+        expect(find.text('TuCon 2026'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
     );
-    final workspaceCubit = _MockWorkspaceCubit();
-    when(() => workspaceCubit.state).thenReturn(workspaceState);
-    whenListen(
-      workspaceCubit,
-      const Stream<WorkspaceState>.empty(),
-      initialState: workspaceState,
-    );
-
-    await tester.pumpApp(
-      BlocProvider<WorkspaceCubit>.value(
-        value: workspaceCubit,
-        child: InventoryCheckoutPage(
-          inventoryRepository: _CheckoutInventoryRepository(),
-          financeRepository: _PartiallyFailingFinanceRepository(),
-          settingsRepository: _CheckoutSettingsRepository(),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(
-      find.textContaining('Some checkout choices could not be refreshed'),
-      findsOneWidget,
-    );
-
-    await tester.tap(find.text('Cart'));
-    await tester.pumpAndSettle();
-    final periodSelector = find.text('No period');
-    await tester.ensureVisible(periodSelector);
-    await tester.pumpAndSettle();
-    await tester.tap(periodSelector);
-    await tester.pumpAndSettle();
-
-    expect(find.text('TuCon 2026'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+  }
 }

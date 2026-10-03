@@ -3,6 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
+import 'package:mobile/features/shell/view/shell_brand_title.dart';
+import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/create_workspace_dialog.dart';
@@ -23,6 +27,7 @@ void showWorkspacePickerSheet(
   unawaited(
     showDialog<void>(
       context: parentContext,
+      useSafeArea: false,
       builder: (_) => Dialog.fullscreen(
         child: BlocProvider.value(
           value: cubit,
@@ -151,11 +156,6 @@ class _WorkspacePickerState extends State<_WorkspacePicker> {
           needsVisibility &&
           !state.visibilityResolved &&
           state.visibilityStatus == WorkspaceStatus.loading;
-      final visibilityUnknown =
-          needsVisibility &&
-          state.visibilityStatus != WorkspaceStatus.loaded &&
-          !state.visibilityResolved &&
-          state.visibilityStatus != WorkspaceStatus.initial;
       final visibleError = state.visibilityError != null;
       final canCreate = state.limits?.canCreate ?? true;
       return BackButtonListener(
@@ -171,175 +171,136 @@ class _WorkspacePickerState extends State<_WorkspacePicker> {
         child: Scaffold(
           backgroundColor: theme.colorScheme.background,
           body: SafeArea(
-            child: Column(
+            bottom: false,
+            child: Stack(
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-                  child: Row(
-                    children: [
-                      if (_hiddenOnly && !widget.hiddenOnly)
+                Column(
+                  children: [
+                    shad.AppBar(
+                      height: mobileSectionAppBarHeightFor(context),
+                      padding: mobileSectionAppBarPadding,
+                      backgroundColor: Colors.transparent,
+                      leading: [
+                        if (_hiddenOnly && !widget.hiddenOnly)
+                          IconButton(
+                            tooltip: MaterialLocalizations.of(
+                              context,
+                            ).backButtonTooltip,
+                            icon: const Icon(Icons.arrow_back_rounded),
+                            onPressed: () {
+                              _clearSearch();
+                              setState(() => _hiddenOnly = false);
+                            },
+                          ),
+                      ],
+                      trailingGap: 6,
+                      trailing: [
                         IconButton(
-                          tooltip: MaterialLocalizations.of(
-                            context,
-                          ).backButtonTooltip,
-                          icon: const Icon(Icons.arrow_back_rounded),
-                          onPressed: () {
-                            _clearSearch();
-                            setState(() => _hiddenOnly = false);
-                          },
+                          tooltip: l10n.workspacePickerClose,
+                          icon: const Icon(Icons.close_rounded),
+                          onPressed: () => Navigator.maybePop(context),
                         ),
-                      Image.asset(
-                        'assets/logos/transparent.png',
-                        width: 36,
-                        height: 36,
-                        semanticLabel: 'Tuturuuu',
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          _hiddenOnly
-                              ? l10n.workspaceHiddenTitle
-                              : l10n.workspacePickerTitle,
-                          style: theme.typography.h3,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: l10n.workspacePickerClose,
-                        icon: const Icon(Icons.close_rounded),
-                        onPressed: () => Navigator.maybePop(context),
-                      ),
-                    ],
-                  ),
-                ),
-                if (_hiddenOnly ||
-                    widget.mode == WorkspacePickerMode.defaultWorkspace ||
-                    _searchVisible ||
-                    visibleError ||
-                    (!_hiddenOnly && (state.limits?.limit ?? 0) > 0))
-                  Flexible(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          if (!_hiddenOnly && (state.limits?.limit ?? 0) > 0)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
-                              child: Column(
-                                children: [
-                                  Text(
-                                    l10n.workspaceCreateLimitInfo(
-                                      state.limits!.currentCount,
-                                      state.limits!.limit,
-                                    ),
-                                  ),
-                                  if (!canCreate)
-                                    Text(l10n.workspaceCreateLimitReached),
-                                ],
-                              ),
-                            ),
-                          if (_hiddenOnly ||
-                              widget.mode ==
-                                  WorkspacePickerMode.defaultWorkspace)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
-                              child: Text(
-                                _hiddenOnly
-                                    ? l10n.workspaceHiddenDescription
-                                    : l10n.workspaceDefaultPickerTitle,
-                              ),
-                            ),
-                          if (_searchVisible)
-                            Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: TextField(
-                                controller: _search,
-                                focusNode: _focus,
-                                decoration: InputDecoration(
-                                  hintText: l10n.workspacePickerSearchHint,
-                                  prefixIcon: const Icon(Icons.search_rounded),
-                                  suffixIcon: query.isEmpty
-                                      ? null
-                                      : IconButton(
-                                          tooltip: l10n.commonClearSearch,
-                                          onPressed: _clearSearch,
-                                          icon: const Icon(Icons.close_rounded),
-                                        ),
-                                ),
-                              ),
-                            ),
-                          if (visibleError)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      state.visibilityStatus ==
-                                              WorkspaceStatus.loaded
-                                          ? l10n.workspaceHiddenUpdateError
-                                          : l10n.workspaceHiddenLoadError,
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => context
-                                        .read<WorkspaceCubit>()
-                                        .refreshHiddenWorkspaces(),
-                                    child: Text(l10n.commonRetry),
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
+                      ],
+                      child: ShellBrandTitle(
+                        title: _hiddenOnly
+                            ? l10n.workspaceHiddenTitle
+                            : l10n.workspacePickerTitle,
                       ),
                     ),
-                  ),
-                Expanded(
-                  child: loading
-                      ? Semantics(
-                          label: l10n.commonLoading,
-                          child: ListView(
-                            padding: const EdgeInsets.all(16),
-                            children: [
-                              const LinearProgressIndicator(),
-                              for (var i = 0; i < 3; i++)
-                                const Card(child: SizedBox(height: 80)),
-                            ],
-                          ),
-                        )
-                      : visibilityUnknown
-                      ? visibleError
-                            ? const SizedBox.expand()
-                            : Center(
-                                child: Text(
-                                  state.visibilityStatus ==
-                                          WorkspaceStatus.loaded
-                                      ? l10n.workspaceHiddenUpdateError
-                                      : l10n.workspaceHiddenLoadError,
+                    Expanded(
+                      child: ListView(
+                        key: const ValueKey('workspace-picker-scroll'),
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          12,
+                          16,
+                          88 + MediaQuery.paddingOf(context).bottom,
+                        ),
+                        children: [
+                          if (!_hiddenOnly &&
+                              (state.limits?.limit ?? 0) > 0) ...[
+                            Text(
+                              l10n.workspaceCreateLimitInfo(
+                                state.limits!.currentCount,
+                                state.limits!.limit,
+                              ),
+                            ),
+                            if (!canCreate)
+                              Text(l10n.workspaceCreateLimitReached),
+                            const SizedBox(height: 12),
+                          ],
+                          if (_hiddenOnly ||
+                              widget.mode ==
+                                  WorkspacePickerMode.defaultWorkspace) ...[
+                            Text(
+                              _hiddenOnly
+                                  ? l10n.workspaceHiddenDescription
+                                  : l10n.workspaceDefaultPickerTitle,
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                          if (_searchVisible) ...[
+                            TextField(
+                              controller: _search,
+                              focusNode: _focus,
+                              decoration: InputDecoration(
+                                hintText: l10n.workspacePickerSearchHint,
+                                prefixIcon: const Icon(Icons.search_rounded),
+                                suffixIcon: query.isEmpty
+                                    ? null
+                                    : IconButton(
+                                        tooltip: l10n.commonClearSearch,
+                                        onPressed: _clearSearch,
+                                        icon: const Icon(Icons.close_rounded),
+                                      ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                          if (visibleError) ...[
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    state.visibilityStatus ==
+                                            WorkspaceStatus.loaded
+                                        ? l10n.workspaceHiddenUpdateError
+                                        : l10n.workspaceHiddenLoadError,
+                                  ),
                                 ),
-                              )
-                      : ListView(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 112),
-                          children: [
+                                TextButton(
+                                  onPressed: () => context
+                                      .read<WorkspaceCubit>()
+                                      .refreshHiddenWorkspaces(),
+                                  child: Text(l10n.commonRetry),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                          if (loading) ...[
+                            Semantics(
+                              label: l10n.commonLoading,
+                              child: const LinearProgressIndicator(),
+                            ),
+                            for (var i = 0; i < 3; i++)
+                              const Card(child: SizedBox(height: 80)),
+                          ] else ...[
                             for (final section in [
                               (
                                 l10n.workspacePersonalSection,
                                 sections.personal,
                               ),
                               (l10n.workspaceSystemSection, sections.system),
-                              (l10n.workspacePickerTitle, sections.team),
+                              (l10n.workspaceTeamSection, sections.team),
                             ])
                               if (section.$2.isNotEmpty) ...[
                                 Padding(
-                                  padding: const EdgeInsets.only(
-                                    bottom: 8,
-                                    top: 8,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
                                   ),
                                   child: Text(
                                     section.$1,
@@ -367,7 +328,9 @@ class _WorkspacePickerState extends State<_WorkspacePicker> {
                                     actionLabel: _hiddenOnly
                                         ? l10n.workspaceRestoreAction
                                         : l10n.workspaceHideAction,
-                                    onVisibility: needsVisibility
+                                    onVisibility:
+                                        needsVisibility &&
+                                            state.visibilityResolved
                                         ? () => _setHidden(
                                             workspace,
                                             !_hiddenOnly,
@@ -406,30 +369,45 @@ class _WorkspacePickerState extends State<_WorkspacePicker> {
                                 ),
                               ),
                           ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                Positioned(
+                  right: 16,
+                  left: 16,
+                  bottom: 16,
+                  child: SafeArea(
+                    top: false,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        ShellDockActionButton(
+                          action: ShellActionSpec(
+                            id: 'workspace-picker-search',
+                            icon: Icons.search_rounded,
+                            tooltip: l10n.workspacePickerSearchHint,
+                            onPressed: _openSearch,
+                          ),
                         ),
-                ),
-              ],
-            ),
-          ),
-          floatingActionButton: SafeArea(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FloatingActionButton(
-                  heroTag: null,
-                  tooltip: l10n.workspacePickerSearchHint,
-                  onPressed: _openSearch,
-                  child: const Icon(Icons.search_rounded),
-                ),
-                if (!_hiddenOnly) ...[
-                  const SizedBox(width: 12),
-                  FloatingActionButton(
-                    heroTag: null,
-                    tooltip: l10n.workspaceCreateNew,
-                    onPressed: canCreate ? _create : null,
-                    child: const Icon(Icons.add_rounded),
+                        if (!_hiddenOnly) ...[
+                          const SizedBox(width: 12),
+                          ShellDockActionButton(
+                            primary: false,
+                            action: ShellActionSpec(
+                              id: 'workspace-picker-create',
+                              icon: Icons.add_rounded,
+                              tooltip: l10n.workspaceCreateNew,
+                              enabled: canCreate,
+                              onPressed: _create,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ],
             ),
           ),

@@ -178,8 +178,8 @@ are enforced on each Judge container by Docker cgroups, with a conservative
 free-memory check before each case. The platform claim function caps concurrent
 Judge runs on a runner at the lower of its sandbox and instance maxima. Each
 container receives a share of the host CPU and memory budget divided by that
-ceiling. A single managed agent currently processes one Judge job at a time;
-additional agent processes can use the configured capacity. These settings do
+ceiling. A managed agent can dispatch independent Judge jobs concurrently within
+the configured process-wide sandbox budget. These settings do
 not limit the current trusted host commands, builds, previews, or tunnels.
 
 ## Judge setup
@@ -375,6 +375,65 @@ publish its reachable URL as `DEVBOX_DATABASE_URL` on the operator machine, and
 queue the app devbox with `--database-url-env DEVBOX_DATABASE_URL`. This lets a
 database-heavy runner and a Next.js runner share work while the current machine
 only brokers commands and opens previews.
+
+## Runner scheduling and hosted environments
+
+Agents keep heartbeats on a 20-second cadence while dispatching independent jobs
+concurrently, with at most eight active jobs. Judge cases share a process-wide
+sandbox budget and always use fresh isolated containers. Each case reserves
+`1 / parallelLimit` of the host budget, so mixed jobs cannot each claim the
+whole memory or CPU allocation. Eligible smaller reservations can pass a waiting
+full-budget case. Infrastructure failures cancel queued cases and wait for
+already admitted commands and container cleanup before reporting failure.
+Regression coverage lives in `devbox-sandbox-slots.test.ts` and
+`devbox-judge-case-batch.test.ts`. Maintenance and CLI
+restart jobs drain active work before changing the agent. An execution failure
+stops new dispatch and drains already active work before the agent exits. Heartbeats
+continue during that drain, and local completions wake idle claim polling. The
+parent scheduling client omits Playground capabilities until both heartbeat
+contracts support them; `devbox-agent-capabilities.test.ts` exercises its emitted
+body against both current handlers. Judge readiness probes are cached for ten minutes and refreshed in the background; execution still fails
+closed if required isolation or language images are unavailable.
+
+Platform-managed playground workers opt in through operator configuration. They
+require gVisor and pinned language image digests, run unprivileged without host
+credentials, and disable network access by default. Project environments retain
+dependencies while warm. A configured `TUTURUUU_PLAYGROUND_POOL_ID` dedicates the
+agent process to Playground: Judge readiness is false and Judge execution fails
+before Docker admission, so warm environments cannot double the Judge host budget.
+Idle/max-age eviction waits for an active project run and holds the pool lock;
+near-expiry containers are replaced before admitting another bounded run. Failed
+starts remove their exact owned name, retaining quarantined capacity when Docker
+cannot confirm removal. Environments expire after fifteen idle minutes and have a two-hour
+maximum lifetime. Environment count is bounded by the runner's resource limits.
+A failed container removal retains its capacity reservation until a successful
+removal or healthy Docker inventory confirms the container is absent. Failed
+startup orphan cleanup blocks new environments and is retried on the next
+admission. Creation and stop removal share the same pool lock. Same-project runs
+serialize synchronization, execution and saves; stop invalidates queued runs
+without waiting for a running command. Stopping waits for admitted creation, with a fifteen-second
+wait bound; a timeout reports an unconfirmed stop and retains capacity ownership.
+It does not wait for the arbitrary project command to finish. Python helpers use
+the pinned image PATH, including images that install Python under `/usr/local/bin`.
+A failed background save emits a fixed diagnostic and makes the run report
+incomplete persistence rather than silently claiming success. These lifecycle
+rules are covered by `devbox-playground-sandbox.test.ts`.
+File inventories and changed bytes are exported separately; credentials and
+runner metadata never enter project files. File/directory conflicts are checked
+against every path ancestor, and preview paths reject traversal before URL
+normalization. Export transport permits the worst-case JSON escaping of a valid
+two-MiB text project; unsupported paths or oversized files report the offending
+file instead of failing with an opaque schema error. The schema and Python
+export contracts cover these rules. The platform must provide its signed
+file-save callback before enabling the hosted playground workload. The scheduling
+primitives alone reject the reserved hosted Playground envelope without running a
+host command; its HTTP adapter ships together with the canonical file-save API.
+The reserved-command regression is in `devbox-runner-judge.test.ts`.
+
+Use focused SDK agent, Judge and sandbox-slot tests for scheduling changes. A
+passing mock test does not establish real sandbox startup latency; measure cold
+and warm execution on a configured gVisor runner before advertising timings.
+Do not fall back to ordinary Docker isolation when gVisor is missing.
 
 ## Cache Policy
 

@@ -22,6 +22,7 @@
         "tuturuuu-commit",
         "tuturuuu-review-comments",
         "tuturuuu-pr-merge-sync",
+        "tuturuuu-rollout-recovery",
         "tuturuuu-validation-offload",
         "tuturuuu-development-tooling"
       ]

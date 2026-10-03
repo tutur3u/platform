@@ -12,6 +12,7 @@ import {
 } from '@/lib/calendar/create-invited-meeting';
 import { DefaultCalendarEventColorSchema } from '@/lib/calendar/event-color';
 import { deduplicateCalendarEvents } from '@/lib/calendar/event-deduplication';
+import { parseCalendarEventRead } from '@/lib/calendar/event-read-pagination';
 import { hydrateEventSourceColors } from '@/lib/calendar/event-source-colors';
 import { createProviderEvent } from '@/lib/calendar/provider-writes';
 import {
@@ -109,14 +110,15 @@ export async function GET(request: Request, { params }: Params) {
   if ('error' in access) return access.error;
   const { sbAdmin, wsId, userId } = access;
 
-  // Get the start_at and end_at from the URL
-  const url = new URL(request.url);
-  const start_at = url.searchParams.get('start_at');
-  const end_at = url.searchParams.get('end_at');
-
-  if (!start_at || !end_at) {
+  let read: ReturnType<typeof parseCalendarEventRead>;
+  try {
+    read = parseCalendarEventRead(new URL(request.url).searchParams);
+  } catch (error) {
     return NextResponse.json(
-      { error: 'Start and end dates are required' },
+      {
+        error:
+          error instanceof Error ? error.message : 'Invalid calendar range',
+      },
       { status: 400 }
     );
   }
@@ -129,15 +131,18 @@ export async function GET(request: Request, { params }: Params) {
         .from('workspace_calendar_events')
         .select('*')
         .eq('ws_id', wsId)
-        .lt('start_at', new Date(end_at).toISOString()) // Event starts before range ends
-        .gt('end_at', new Date(start_at).toISOString()) // Event ends after range starts
+        .lt('start_at', read.end_at) // Event starts before range ends
+        .gt('end_at', read.start_at) // Event ends after range starts
         .order('start_at', { ascending: true })
         .order('id', { ascending: true });
 
     // Year views can exceed PostgREST's 1,000-row response limit.
     const events: NonNullable<Awaited<ReturnType<typeof query>>['data']> = [];
-    const pageSize = 1000;
-    let cursor: (typeof events)[number] | undefined;
+    const pageSize = read.pageSize ?? 1000;
+    let cursor: { start_at: string | null; id: string } | undefined =
+      read.cursor;
+    let hasMore = false;
+    let nextCursor: string | null = null;
     for (;;) {
       let page = query();
       if (cursor) {
@@ -147,8 +152,20 @@ export async function GET(request: Request, { params }: Params) {
           `start_at.gt.${start},and(start_at.eq.${start},id.gt.${id})`
         );
       }
-      const { data, error } = await page.limit(pageSize);
+      const { data, error } = await page.limit(
+        pageSize + (read.pageSize === undefined ? 0 : 1)
+      );
       if (error) throw error;
+      if (read.pageSize !== undefined) {
+        hasMore = (data?.length ?? 0) > pageSize;
+        const rows = (data ?? []).slice(0, pageSize);
+        events.push(...rows);
+        const last = rows.at(-1);
+        if (hasMore && last) {
+          nextCursor = JSON.stringify({ start_at: last.start_at, id: last.id });
+        }
+        break;
+      }
       events.push(...(data ?? []));
       if (!data || data.length < pageSize) break;
       cursor = data.at(-1);
@@ -168,6 +185,9 @@ export async function GET(request: Request, { params }: Params) {
     return NextResponse.json({
       data: hydratedEvents,
       count: hydratedEvents.length,
+      ...(read.pageSize === undefined
+        ? {}
+        : { has_more: hasMore, next_cursor: nextCursor }),
     });
   } catch (error) {
     console.error('Calendar events API error', { wsId, error });

@@ -3,6 +3,7 @@ import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { describe, expect, it, vi } from 'vitest';
 import type { useWorkspaceVisibility } from '../../../../hooks/use-workspace-visibility';
 import { Dialog } from '../../dialog';
+import { Popover, PopoverTrigger } from '../../popover';
 import { WorkspacePickerContent } from '../workspace-picker-content';
 
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
@@ -179,3 +180,88 @@ describe('workspace sheet rendered identities', () => {
     );
   });
 });
+
+describe('workspace browser dropdown', () => {
+  it('keeps search and Hidden recovery in an anchored scrolling dropdown', async () => {
+    const onSelect = vi.fn();
+    const onDefault = vi.fn();
+    const onCreate = vi.fn();
+    const state = visibility({ hiddenIds: [other.id] });
+    render(
+      <Popover defaultOpen>
+        <PopoverTrigger>Choose workspace</PopoverTrigger>
+        <WorkspacePickerContent
+          presentation="dropdown"
+          workspaces={[one, other]}
+          visibility={state}
+          onSelect={onSelect}
+          onDefault={onDefault}
+          onCreate={onCreate}
+        />
+      </Popover>
+    );
+    const dropdown = screen.getByRole('dialog', { name: 'workspaces' });
+    expect(dropdown).toHaveAttribute('data-slot', 'popover-content');
+    expect(dropdown).not.toHaveClass('inset-0');
+    expect(dropdown).not.toHaveClass('h-dvh');
+    expect(dropdown).toHaveClass(
+      'max-h-[min(32rem,var(--radix-popover-content-available-height))]'
+    );
+    expect(dropdown).toHaveClass('overflow-hidden', 'flex-col');
+    const input = screen.getByRole('textbox', { name: 'search_workspace' });
+    const row = screen.getByRole('button', { name: 'Repeated name PRO' });
+    expect(row.closest('.overflow-y-auto')).not.toBeNull();
+    expect(screen.queryByText('Another workspace')).toBeNull();
+    fireEvent.click(row);
+    expect(onSelect).toHaveBeenCalledWith(one);
+    fireEvent.click(screen.getByRole('button', { name: 'default_workspace' }));
+    expect(onDefault).toHaveBeenCalledWith(one.id);
+    const create = screen.getByRole('button', {
+      name: 'create_workspace_action',
+    });
+    const createFooter = create.parentElement;
+    expect(createFooter).not.toHaveClass('absolute');
+    fireEvent.click(create);
+    expect(onCreate).toHaveBeenCalledOnce();
+    fireEvent.change(input, { target: { value: 'missing' } });
+    expect(
+      screen.queryByRole('button', { name: 'Repeated name PRO' })
+    ).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'hidden_workspaces' }));
+    expect(input).toHaveValue('');
+    expect(dropdown).toHaveAccessibleName('hidden_workspaces');
+    expect(createFooter).toHaveClass('hidden');
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'restore_workspace: Another workspace',
+      })
+    );
+    expect(state.setHidden).toHaveBeenCalledWith(other.id, false);
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(dropdown, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+});
+
+it.each([false, true])(
+  'closes its popover with an optional callback: %s',
+  async (withCallback) => {
+    const onClose = vi.fn();
+    render(
+      <Popover defaultOpen>
+        <PopoverTrigger>Choose workspace</PopoverTrigger>
+        <WorkspacePickerContent
+          presentation="dropdown"
+          workspaces={[one]}
+          visibility={visibility()}
+          onSelect={vi.fn()}
+          onDefault={vi.fn()}
+          onClose={withCallback ? onClose : undefined}
+        />
+      </Popover>
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'close' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(onClose).toHaveBeenCalledTimes(withCallback ? 1 : 0);
+  }
+);

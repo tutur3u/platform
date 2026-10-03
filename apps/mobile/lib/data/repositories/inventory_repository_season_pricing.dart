@@ -1,6 +1,16 @@
 part of 'inventory_repository.dart';
 
 extension InventorySeasonPricingRepository on InventoryRepository {
+  Future<InventoryCheckoutDefaults> _getCheckoutDefaults(String wsId) =>
+      _cachedInventoryMap(
+        namespace: 'checkout-defaults',
+        wsId: wsId,
+        tags: const ['inventory:setup', 'inventory:periods'],
+        fetch: () => _api.getJson(
+          '/api/v1/workspaces/$wsId/inventory/product-form-options',
+        ),
+        decode: InventoryCheckoutDefaults.fromJson,
+      );
   Future<String> _createLegacySale({
     required String wsId,
     required String walletId,
@@ -10,64 +20,158 @@ extension InventorySeasonPricingRepository on InventoryRepository {
     String? categoryId,
     String? periodId,
   }) async {
+    final actorId = _cacheUserId();
     final path = InventoryEndpoints.invoices(wsId);
     final payload = {
       'customer_id': null,
       'content': content ?? 'Mobile inventory sale',
-      'notes': notes,
+      if (notes != null) 'notes': notes,
       'wallet_id': walletId,
       'category_id': categoryId,
       'products': products,
+      if (periodId != null && periodId.isNotEmpty) ...{
+        'price_mode': 'custom',
+        'inventory_period_id': periodId,
+        'inventory_request_id': newLocalMutationId(),
+      },
     };
     final invoiceId = await queueOrSendValue<String>(
+      queue: _mutationQueue,
+      apiClient: _api,
       feature: 'inventory',
       method: 'POST',
       path: path,
       workspaceId: wsId,
       payload: payload,
+      replaySafe: periodId != null && periodId.isNotEmpty,
       pendingValue: (id) => id,
       send: () async {
         final response = await _api.postJson(path, payload);
         return response['invoice_id'] as String;
       },
     );
-    if (periodId != null && periodId.isNotEmpty) {
-      await setSalePeriod(
-        wsId: wsId,
-        saleId: invoiceId,
-        source: 'finance_invoice',
-        periodId: periodId,
-      );
+    try {
+      await _invalidateInventory(wsId, const [
+        'inventory:overview',
+        'inventory:sales',
+        'inventory:audit',
+      ]);
+    } on Object {
+      // The invoice is acknowledged. A cache failure must not invite another
+      // invoice submission; evict only this actor's saved workspace resources.
+      if (actorId == null) return invoiceId;
+      try {
+        await _cacheStore.clearScope(
+          userId: actorId,
+          workspaceId: wsId,
+          resourceOnly: true,
+        );
+      } on Object {
+        // Keep the durable receipt when local storage is unavailable.
+      }
     }
-    await _invalidateInventory(wsId, const [
-      'inventory:overview',
-      'inventory:sales',
-      'inventory:audit',
-    ]);
     return invoiceId;
   }
 
   Future<List<InventorySalesPeriod>> _getCheckoutSalesPeriods(
     String wsId,
   ) async {
-    final response = await _api.getJson(InventoryEndpoints.salesPeriods(wsId));
-    final data = response['data'];
-    if (data is! List) throw const FormatException('Missing sales periods');
-    return data
-        .map(
-          (row) => InventorySalesPeriod.fromJson(
-            Map<String, dynamic>.from(row as Map),
-          ),
-        )
-        .toList(growable: false);
+    return await getSalesPeriods(wsId, includeArchived: false);
   }
 
   Future<InventorySeasonQuote> _getSeasonQuote(
     String wsId,
     String periodId,
-  ) async => InventorySeasonQuote.fromJson(
-    await _api.getJson(InventoryEndpoints.seasonPrices(wsId, periodId)),
-  );
+  ) async {
+    final key = _inventoryCacheKey(
+      'season-quote',
+      wsId,
+      params: {'periodId': periodId},
+    );
+    InventorySeasonQuote decode(Object? json) =>
+        InventorySeasonQuote.fromJson(Map<String, dynamic>.from(json! as Map));
+    if (!await _networkAvailable()) {
+      final snapshot = await _cacheStore.read<InventorySeasonQuote>(
+        key: key,
+        decode: decode,
+      );
+      final quote = snapshot.data;
+      if (quote == null) {
+        throw const ApiException(
+          message: 'No saved season prices',
+          statusCode: 0,
+        );
+      }
+      return InventorySeasonQuote(
+        asOf: quote.asOf,
+        prices: quote.prices,
+        isCached: true,
+      );
+    }
+    try {
+      final response = await _cacheStore.prefetch<InventorySeasonQuote>(
+        key: key,
+        policy: const CachePolicy(
+          staleAfter: Duration(seconds: 15),
+          expireAfter: Duration(days: 365),
+          allowBackgroundRefresh: false,
+        ),
+        decode: decode,
+        forceRefresh: true,
+        tags: const ['module:inventory', 'inventory:periods'],
+        fetch: () async {
+          try {
+            return await _api.getJson(
+              InventoryEndpoints.seasonPrices(wsId, periodId),
+            );
+          } on ApiException catch (error) {
+            if (error.statusCode == 401 ||
+                (error.statusCode == 403 && !error.isVerificationRequired)) {
+              await _cacheStore.remove(key);
+            }
+            rethrow;
+          }
+        },
+      );
+      return response.data!;
+    } on Object catch (error) {
+      if (!isOfflineTransportFailure(error)) rethrow;
+      final snapshot = await _cacheStore.read<InventorySeasonQuote>(
+        key: key,
+        decode: decode,
+      );
+      final quote = snapshot.data;
+      if (quote == null) rethrow;
+      return InventorySeasonQuote(
+        asOf: quote.asOf,
+        prices: quote.prices,
+        isCached: true,
+      );
+    }
+  }
+
+  /// Store a scheduled draft. The server validates exact price IDs on replay.
+  Future<String> queueScheduledSale(
+    String wsId,
+    Map<String, dynamic> payload,
+  ) async {
+    final requestId = payload['inventory_request_id'] as String;
+    await _mutationQueue.enqueue(
+      PendingMutationRecord(
+        id: requestId,
+        feature: 'inventory',
+        method: 'POST',
+        path: InventoryEndpoints.invoices(wsId),
+        createdAt: DateTime.now().toUtc(),
+        userId: _cacheUserId(),
+        workspaceId: wsId,
+        payload: payload,
+        optimisticPatch: {'entityId': requestId},
+        replaySafe: true,
+      ),
+    );
+    return requestId;
+  }
 
   Future<String?> _getSaleReceipt(String wsId, String requestId) async {
     final response = await _api.getJson(
@@ -90,7 +194,7 @@ extension InventorySeasonPricingRepository on InventoryRepository {
     String wsId,
     Map<String, dynamic> payload,
   ) async {
-    // Direct authenticated POST: scheduled requests NEVER enter offline replay.
+    // Online journal operations send directly; offline drafts use the outbox.
     final response = await _api.postJson(
       InventoryEndpoints.invoices(wsId),
       payload,

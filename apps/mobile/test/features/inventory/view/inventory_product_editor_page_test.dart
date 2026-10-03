@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -8,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
@@ -20,11 +22,13 @@ import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/inventory/view/inventory_product_editor_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/helpers.dart';
+import '../../../helpers/offline_inventory_harness.dart';
 
 class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
     implements WorkspaceCubit {}
@@ -34,7 +38,12 @@ class _MockApiClient extends Mock implements ApiClient {}
 class _MockCacheStore extends Mock implements CacheStore {}
 
 class _FakeInventoryRepository extends InventoryRepository {
-  _FakeInventoryRepository({super.apiClient, super.cacheStore});
+  _FakeInventoryRepository({
+    super.apiClient,
+    super.cacheStore,
+    super.mutationQueue,
+    super.cacheUserId,
+  });
   @override
   Future<List<InventoryLookupItem>> getManufacturers(
     String wsId, {
@@ -87,6 +96,8 @@ class _ExistingProductRepository extends _FakeInventoryRepository {
     required super.apiClient,
     required this.amount,
     super.cacheStore,
+    super.mutationQueue,
+    super.cacheUserId,
   });
   final double? amount;
 
@@ -239,19 +250,63 @@ void main() {
       settingsRepository = SettingsRepository();
     });
 
-    for (final testCase in <({double? amount, bool clearQuantity})>[
-      (amount: null, clearQuantity: false),
-      (amount: 0, clearQuantity: false),
-      (amount: 7.5, clearQuantity: false),
-      (amount: 7.5, clearQuantity: true),
-    ]) {
+    for (final testCase
+        in <
+          ({
+            double? amount,
+            bool clearQuantity,
+            bool offline,
+            bool verification,
+          })
+        >[
+          (
+            amount: null,
+            clearQuantity: false,
+            offline: false,
+            verification: false,
+          ),
+          (
+            amount: 0,
+            clearQuantity: false,
+            offline: false,
+            verification: false,
+          ),
+          (
+            amount: 7.5,
+            clearQuantity: false,
+            offline: false,
+            verification: false,
+          ),
+          (
+            amount: 7.5,
+            clearQuantity: true,
+            offline: false,
+            verification: false,
+          ),
+          (
+            amount: 7.5,
+            clearQuantity: false,
+            offline: true,
+            verification: false,
+          ),
+          (
+            amount: 9.5,
+            clearQuantity: false,
+            offline: false,
+            verification: true,
+          ),
+        ]) {
       final amount = testCase.amount;
       final expectedAmount = testCase.clearQuantity ? null : amount;
+      final payloadKind = testCase.offline ? 'offline queue' : 'PATCH';
       testWidgets(
-        testCase.clearQuantity
+        testCase.verification
+            ? 'canceled verification closes editor '
+                  'with one visible pending Save'
+            : testCase.clearQuantity
             ? 'clearing finite quantity saves null and reloads as unlimited'
             : 'unrelated edit preserves stock amount $amount '
-                  'in repository PATCH payload',
+                  'in repository $payloadKind payload',
         (tester) async {
           tester.view
             ..devicePixelRatio = 1
@@ -275,21 +330,23 @@ void main() {
               Set<String>.from(call.positionalArguments[0] as Iterable),
             ));
           });
-          const connectivity = MethodChannel(
-            'dev.fluttercommunity.plus/connectivity',
-          );
-          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-              .setMockMethodCallHandler(connectivity, (_) async => ['wifi']);
-          addTearDown(
-            () => TestDefaultBinaryMessengerBinding
-                .instance
-                .defaultBinaryMessenger
-                .setMockMethodCallHandler(connectivity, null),
-          );
+          final harness = (await tester.runAsync(
+            () =>
+                OfflineInventoryHarness.create(api, online: !testCase.offline),
+          ))!;
+          final mutations = harness.queue;
+          addTearDown(harness.dispose);
           when(() => api.patchJson(any(), any())).thenAnswer((call) async {
             payload = Map<String, dynamic>.from(
               call.positionalArguments[1] as Map,
             );
+            if (testCase.verification) {
+              throw const ApiException(
+                message: 'Verification required',
+                statusCode: 403,
+                isVerificationRequired: true,
+              );
+            }
             return <String, dynamic>{};
           });
           await _mountModal(
@@ -301,6 +358,8 @@ void main() {
                 inventoryRepository: _ExistingProductRepository(
                   apiClient: api,
                   cacheStore: cache,
+                  mutationQueue: mutations,
+                  cacheUserId: () => 'actor',
                   amount: amount,
                 ),
                 financeRepository: financeRepository,
@@ -317,21 +376,71 @@ void main() {
             await tester.enterText(_amountField(), '');
             await tester.pumpAndSettle();
           }
-          await tester.tap(find.text('Save product').hitTestable());
+          await tester.runAsync(() async {
+            final persisted = Completer<void>();
+            void observedPending() {
+              if (mutations.pending.value.isNotEmpty &&
+                  !persisted.isCompleted) {
+                persisted.complete();
+              }
+            }
+
+            mutations.pending.addListener(observedPending);
+            await tester.tap(find.text('Save product').hitTestable());
+            await persisted.future.timeout(const Duration(seconds: 10));
+            if (!testCase.verification) await mutations.synchronize();
+            mutations.pending.removeListener(observedPending);
+            if (testCase.offline) {
+              payload = (await mutations.listPending()).single.payload;
+            }
+          });
+          // Hive completes on real I/O; give those continuations time while
+          // advancing frames until the save actually closes the editor.
+          final saveDeadline = DateTime.now().add(const Duration(seconds: 10));
+          while (find
+                  .byType(InventoryProductEditorPage)
+                  .evaluate()
+                  .isNotEmpty &&
+              DateTime.now().isBefore(saveDeadline)) {
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 10)),
+            );
+            await tester.pump(const Duration(milliseconds: 16));
+          }
+          expect(find.byType(InventoryProductEditorPage), findsNothing);
           await tester.pumpAndSettle();
           expect(payload, isNotNull);
           expect(payload!['name'], 'Renamed synthetic product');
+          if (testCase.offline) {
+            verifyNever(() => api.patchJson(any(), any()));
+          } else {
+            verify(
+              () => api.patchJson(
+                '/api/v1/workspaces/ws_1/products/synthetic-product',
+                payload!,
+              ),
+            ).called(1);
+            final pending = await tester.runAsync(mutations.listPending);
+            if (testCase.verification) {
+              expect(pending, hasLength(1));
+              expect(pending!.single.entityId, 'synthetic-product');
+            } else {
+              expect(pending, isEmpty);
+            }
+          }
           final savedStock = Map<String, dynamic>.from(
             (payload!['inventory'] as List).single as Map,
           );
           expect(savedStock['amount'], expectedAmount);
           expect(invalidations, hasLength(1));
-          expect(invalidations.single.$1, 'ws_1');
-          expect(invalidations.single.$2, {
-            'inventory:overview',
-            'inventory:catalog',
-            'inventory:audit',
-          });
+          {
+            expect(invalidations.single.$1, 'ws_1');
+            expect(invalidations.single.$2, {
+              'inventory:overview',
+              'inventory:catalog',
+              'inventory:audit',
+            });
+          }
           expect(
             await settingsRepository.getLastInventoryProductOwner('ws_1'),
             'owner_2',
@@ -342,6 +451,25 @@ void main() {
           );
           expect(find.byType(InventoryProductEditorPage), findsNothing);
           await tester.drainShadToastTimers();
+          if (testCase.verification) {
+            final singleton = OfflineMutationQueue.instance;
+            final originalPending = singleton.pending.value;
+            try {
+              singleton.pending.value = mutations.pending.value;
+              await tester.pumpApp(
+                const PendingSyncFrame(
+                  workspaceId: 'ws_1',
+                  entityId: 'synthetic-product',
+                  feature: 'inventory',
+                  child: Text('Locally saved product'),
+                ),
+              );
+              await tester.pump();
+              expect(find.text('Waiting to sync'), findsOneWidget);
+            } finally {
+              singleton.pending.value = originalPending;
+            }
+          }
           final reloadKey = await _mountModal(
             tester,
             BlocProvider<WorkspaceCubit>.value(

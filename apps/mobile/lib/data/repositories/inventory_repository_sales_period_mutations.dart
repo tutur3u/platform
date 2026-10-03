@@ -4,10 +4,11 @@ List<InventorySalesPeriod> _overlayPendingSalesPeriods(
   String wsId,
   List<InventorySalesPeriod> confirmed, {
   required bool includeArchived,
+  required List<PendingMutationRecord> pending,
 }) {
   final rows = {for (final period in confirmed) period.id: period};
   final createPath = InventoryEndpoints.salesPeriods(wsId);
-  for (final edit in OfflineMutationQueue.instance.pending.value) {
+  for (final edit in pending) {
     if (edit.feature != 'inventory' || edit.workspaceId != wsId) continue;
     final id = edit.entityId;
     final payload = edit.payload;
@@ -79,11 +80,14 @@ extension InventorySalesPeriodMutations on InventoryRepository {
       'product_ids': productScope == 'all' ? <String>[] : productIds,
     };
     final period = await queueOrSendValue<InventorySalesPeriod>(
+      queue: _mutationQueue,
+      apiClient: _api,
       feature: 'inventory',
       method: 'POST',
       path: path,
       workspaceId: wsId,
       payload: payload,
+      acknowledgedValue: InventorySalesPeriod.fromJson,
       pendingValue: (id) => InventorySalesPeriod(
         id: id,
         name: name,
@@ -133,12 +137,15 @@ extension InventorySalesPeriodMutations on InventoryRepository {
       if (status != null) 'status': status,
     };
     final period = await queueOrSendValue<InventorySalesPeriod>(
+      queue: _mutationQueue,
+      apiClient: _api,
       feature: 'inventory',
       method: 'PATCH',
       path: path,
       workspaceId: wsId,
       entityId: periodId,
       payload: payload,
+      acknowledgedValue: InventorySalesPeriod.fromJson,
       pendingValue: (_) => InventorySalesPeriod(
         id: periodId,
         name: name ?? previous?.name ?? '',

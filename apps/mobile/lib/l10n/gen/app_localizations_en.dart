@@ -27,7 +27,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workspaceHiddenEmpty => 'No Hidden workspaces';
 
   @override
-  String get workspaceHiddenLoadError => 'Unable to refresh Hidden workspaces. Your saved list is kept.';
+  String get workspaceHiddenLoadError => 'Workspace visibility preferences are unavailable. Saved hidden choices are kept.';
 
   @override
   String get workspaceHiddenUpdateError => 'Unable to save this change. Try again when connected.';
@@ -9401,6 +9401,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cacheCategoryOther => 'Other data';
 
   @override
+  String get offlineDependencyWaiting => 'Waiting for related changes. Sync will continue automatically.';
+
+  @override
+  String get offlineDependencyMissing => 'A related local item was discarded or deleted. Review this change.';
+
+  @override
+  String get offlineDependencyCycle => 'Related changes depend on each other. Review their references.';
+
+  @override
+  String get offlineDependencyAmbiguous => 'More than one queued create uses the same local item. Review this change.';
+
+  @override
+  String get offlineDependencyInvalid => 'The saved change has invalid data. Review it before syncing.';
+
+  @override
+  String get offlineDependencyContract => 'Waiting for server support. This change is saved and retries automatically.';
+
+  @override
+  String get offlineEditSyncing => 'Syncing…';
+
+  @override
   String get offlineEditQueued => 'Waiting to sync';
 
   @override
@@ -9553,7 +9574,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTimezoneRateLimited => 'Too many requests. Please wait before retrying.';
 
   @override
-  String get settingsTimezoneError => 'Could not load or save timezone. Tap to retry.';
+  String get settingsTimezoneRetry => 'Retry timezone';
+
+  @override
+  String get settingsTimezoneError => 'Could not load or save timezone. Retry or edit a loaded preference.';
 
   @override
   String get calendarInvalidLocalTime => 'Choose a valid start and end time. Some times do not exist when daylight saving time changes.';
@@ -9660,6 +9684,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryStockHealthUnknown => 'Unavailable';
 
   @override
+  String get inventoryProductDeleteConfirm => 'Remove this product? If existing sales reference it, the server will archive it when syncing.';
+
+  @override
+  String get inventorySeasonPriceCached => 'Offline draft using saved season prices. Prices and availability will be checked when syncing.';
+
+  @override
   String get inventorySeasonPriceLoading => 'Checking current season prices…';
 
   @override
@@ -9687,4 +9717,67 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventorySeasonHistoricalReadOnly => 'Scheduled sale history is read only here. Recorded prices are preserved.';
+
+  @override
+  String get offlinePreparationTitle => 'Available offline';
+
+  @override
+  String get offlinePreparationCacheAll => 'Download all';
+
+  @override
+  String get offlinePreparationDescription => 'Download workspace data for offline use. Cached data uses your storage limit; files and online services may still need connectivity.';
+
+  @override
+  String get offlinePreparationQueued => 'Not downloaded';
+
+  @override
+  String get offlinePreparationWaiting => 'Queued';
+
+  @override
+  String get offlinePreparationDownloading => 'Downloading';
+
+  @override
+  String get offlinePreparationReady => 'Downloaded';
+
+  @override
+  String get offlinePreparationFailed => 'Download failed';
+
+  @override
+  String get offlinePreparationUnavailable => 'Unavailable';
+
+  @override
+  String offlinePreparationLastSuccess(String time) {
+    return 'Last downloaded: $time';
+  }
+
+  @override
+  String offlinePreparationProgress(int completed, int total) {
+    return '$completed of $total modules downloaded';
+  }
+
+  @override
+  String get offlinePreparationNeedsRefresh => 'Needs refresh';
+
+  @override
+  String get inventoryCheckoutReconcileCart => 'Reconcile cart';
+
+  @override
+  String get inventoryCheckoutReconcileCartHelp => 'Refresh prices and remove items that no longer match this period.';
+
+  @override
+  String get inventoryCheckoutCartReconciled => 'Cart updated. Review the total before submitting.';
+
+  @override
+  String inventoryCheckoutCartRemoved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Removed $count unavailable items. Review the cart before submitting.',
+      one: 'Removed $count unavailable item. Review the cart before submitting.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inventoryCheckoutPeriodRulesChanged => 'Some items do not match this period. Reconcile the cart to continue.';
 }

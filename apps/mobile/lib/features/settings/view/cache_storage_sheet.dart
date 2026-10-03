@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/cache/cache_storage_snapshot.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/features/settings/view/cache_storage_chart.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -52,6 +53,9 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
   Future<void> _setLimit(int bytes) async {
     setState(() => _busy = true);
     try {
+      if (bytes < (_snapshot?.maxBytes ?? bytes)) {
+        OfflinePreparationCoordinator.instance.invalidateRetainedData();
+      }
       await CacheStore.instance.setMaxStorageBytes(bytes);
       await _refresh();
     } on Object {
@@ -82,6 +86,7 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
     if (confirmed != true || !mounted) return;
     setState(() => _busy = true);
     try {
+      OfflinePreparationCoordinator.instance.invalidateRetainedData();
       await CacheStore.instance.clearResourceCache();
       await _refresh();
     } on Object {

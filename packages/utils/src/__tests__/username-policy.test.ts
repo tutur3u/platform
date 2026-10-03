@@ -49,7 +49,7 @@ describe('Canonical username policy', () => {
     const sql = readFileSync(
       resolve(
         __dirname,
-        '../../../../apps/database/supabase/migrations/20261002164500_public_creator_identity.sql'
+        '../../../../apps/database/supabase/migrations/20261003080000_public_creator_identity.sql'
       ),
       'utf8'
     );

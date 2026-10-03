@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
@@ -8,6 +8,8 @@ import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mocktail/mocktail.dart';
+
+class _Queue extends Mock implements OfflineMutationQueue {}
 
 class _MockApiClient extends Mock implements ApiClient {}
 
@@ -222,7 +224,19 @@ void main() {
     'period edits send content fields and allow clearing dates and notes',
     () async {
       final apiClient = _MockApiClient();
-      final repository = InventoryRepository(apiClient: apiClient);
+      final queue = OfflineMutationQueue.forTesting(
+        store: CacheStore.instance,
+        userId: () => 'user',
+        checkConnectivity: () async => [ConnectivityResult.wifi],
+        connectivityChanges: const Stream<List<ConnectivityResult>>.empty(),
+        apiFactory: (_) => apiClient,
+      );
+      final repository = InventoryRepository(
+        apiClient: apiClient,
+        mutationQueue: queue,
+      );
+      addTearDown(queue.dispose);
+
       Map<String, dynamic>? requestBody;
 
       when(() => apiClient.patchJson(any(), any())).thenAnswer((
@@ -239,7 +253,7 @@ void main() {
         };
       });
 
-      await repository.updateSalesPeriod(
+      final updated = await repository.updateSalesPeriod(
         wsId: 'ws-1',
         periodId: 'period-1',
         name: 'Summer 2027',
@@ -247,6 +261,7 @@ void main() {
         productIds: const ['product-1'],
       );
 
+      expect(updated.name, 'Summer 2027');
       expect(requestBody, {
         'name': 'Summer 2027',
         'description': null,
@@ -262,7 +277,14 @@ void main() {
     'keeps queued sales periods visible during an offline refresh',
     () async {
       final apiClient = _MockApiClient();
-      final repository = InventoryRepository(apiClient: apiClient);
+      final queue = _Queue();
+      when(
+        queue.listPending,
+      ).thenAnswer((_) async => OfflineMutationQueue.instance.pending.value);
+      final repository = InventoryRepository(
+        apiClient: apiClient,
+        mutationQueue: queue,
+      );
       when(
         () => apiClient.getJson(any()),
       ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));
@@ -286,9 +308,66 @@ void main() {
     },
   );
 
+  test(
+    'durable queued sales paginate once and honor their submitted period',
+    () async {
+      final api = _MockApiClient();
+      final queue = _Queue();
+      when(queue.listPending).thenAnswer(
+        (_) async => List.generate(
+          3,
+          (index) => PendingMutationRecord(
+            id: 'edit-$index',
+            feature: 'inventory',
+            method: 'POST',
+            path: InventoryEndpoints.invoices('ws'),
+            createdAt: DateTime.utc(2026, 1, index + 1),
+            userId: 'user',
+            workspaceId: 'ws',
+            payload: {'inventory_period_id': 'season'},
+            optimisticPatch: {'entityId': 'sale-$index'},
+          ),
+        ),
+      );
+      final repository = InventoryRepository(
+        apiClient: api,
+        mutationQueue: queue,
+        cacheUserId: () => 'user',
+        networkAvailable: () async => false,
+      );
+      final first = await repository.getSales(
+        'ws',
+        limit: 2,
+        periodId: 'season',
+      );
+      final second = await repository.getSales(
+        'ws',
+        limit: 2,
+        offset: 2,
+        periodId: 'season',
+      );
+      expect(first.data.map((row) => row.id), ['sale-2', 'sale-1']);
+      expect(second.data.single.id, 'sale-0');
+      expect(second.count, 3);
+      expect(
+        (await repository.getSales('ws', periodId: 'other')).data,
+        isEmpty,
+      );
+      verifyNever(() => api.getJson(any()));
+      repository.dispose();
+    },
+  );
+
   test('shows a queued sale without a confirmed amount', () async {
     final apiClient = _MockApiClient();
-    final repository = InventoryRepository(apiClient: apiClient);
+    final queue = _Queue();
+    when(
+      queue.listPending,
+    ).thenAnswer((_) async => OfflineMutationQueue.instance.pending.value);
+    final repository = InventoryRepository(
+      apiClient: apiClient,
+      mutationQueue: queue,
+    );
     when(
       () => apiClient.getJson(any()),
     ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));

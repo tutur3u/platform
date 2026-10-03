@@ -24,8 +24,8 @@ class _AllDayBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final baseColor = EventColors.forEvent(event);
-    final foreground = EventColors.foreground(event);
+    final baseColor = EventColors.inContext(event, context).background;
+    final foreground = EventColors.inContext(event, context).foreground;
     final info = _dayInfo();
 
     return GestureDetector(
@@ -174,10 +174,11 @@ class _AgendaEventCard extends StatelessWidget {
     final locale = Localizations.localeOf(context).toLanguageTag();
     final use24Hours = MediaQuery.alwaysUse24HourFormatOf(context);
     final format = use24Hours ? DateFormat.Hm(locale) : DateFormat.jm(locale);
-    final start = event.startAt!.toLocal();
-    final end = (event.endAt ?? event.startAt)!.toLocal();
+    // Events already carry the selected calendar wall-clock fields.
+    final start = event.startAt!;
+    final end = (event.endAt ?? event.startAt)!;
     final time = '${format.format(start)} – ${format.format(end)}';
-    final titleColor = EventColors.foreground(event);
+    final titleColor = EventColors.inContext(event, context).foreground;
     final wide =
         MediaQuery.sizeOf(context).width >= Breakpoints.mediumMin &&
         MediaQuery.textScalerOf(context).scale(14) < 24;
@@ -188,7 +189,7 @@ class _AgendaEventCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Material(
-        color: EventColors.forEvent(event),
+        color: EventColors.inContext(event, context).background,
         borderRadius: BorderRadius.circular(14),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -197,7 +198,10 @@ class _AgendaEventCard extends StatelessWidget {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               border: BorderDirectional(
-                start: BorderSide(color: titleColor, width: 4),
+                start: BorderSide(
+                  color: EventColors.inContext(event, context).accent,
+                  width: 4,
+                ),
               ),
             ),
             child: Row(

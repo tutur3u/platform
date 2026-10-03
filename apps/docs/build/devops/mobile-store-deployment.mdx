@@ -176,7 +176,20 @@ other platform from publishing; both use the same prepared version and build
 number. The preparation job fetches App Store metadata credentials from the
 protected vault and removes them before its runner exits. Both apps read the
 bundled result offline without a changelog API or extra database table.
-The installed version and build number remain visible.
+The installed version and build number remain visible. Release summaries omit
+pure Git merge and branch-sync bookkeeping, including remote-tracking merges;
+legitimate product changes such as merging duplicate contacts remain visible.
+Mobile history traverses product commits within the exact shipped range, so a
+merge does not hide its underlying work. Installed What's New and the public
+GitHub release feed filter old bookkeeping at display time without rewriting
+published changelogs or version metadata. TestFlight notes use only the exact
+uploaded build's original history artifact; a metadata retry removes known
+bookkeeping bullets from existing English notes while preserving genuine text
+and other locales. A history containing only bookkeeping is unavailable test
+evidence, rather than a fabricated product summary. Existing installed binaries
+and Apple metadata change only after an authorized app update or metadata retry.
+Regression coverage: `release-note-policy.test.js`, `release-history.test.mjs`,
+`build-test-notes.test.mjs`, `release_notes_test.dart`, and `release-query.test.ts`.
 
 The workflow runs after relevant pushes to `production`. Retry the latest push
 run for recovery; vault OIDC validation permits production pushes and the

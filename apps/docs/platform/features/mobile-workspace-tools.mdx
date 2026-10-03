@@ -1,7 +1,7 @@
 ---
 title: 'Mobile Workspace Tools'
 description: 'Shared mobile navigation, tablet layouts, caching, and workspace application behavior.'
-updatedAt: 2026-10-02
+updatedAt: 2026-10-03
 ---
 
 ## Overview
@@ -289,7 +289,12 @@ snapshots. Assistant review decisions queue with revision conflicts surfaced for
 manual review; a queued review card uses the pending frame. Live call tokens and
 assistant generation still require a connection.
 Pending Notes, Mail, Finance, Calendar, and Inventory product edits are stored in the account-scoped encrypted
-mutation queue and replayed in order per module and workspace on reconnect. A
+mutation queue and replayed in order per module and workspace on reconnect. Every
+authenticated replay request remains bound to the queued edit's account, including
+after asynchronous local-ID resolution and between requests in a multi-step
+operation. Switching accounts pauses that edit in the queue; it cannot send with
+the new account's credentials. API account and offline-sync regression tests cover
+this boundary. A
 conflict holds dependent edits in that scope while other modules continue. A queued item uses a dashed
 border and lower opacity until the server confirms it; conflicts and failed
 writes remain visible in Settings > Offline changes for retry or removal.
@@ -442,7 +447,7 @@ encrypted bytes, request a new signed upload URL on replay, and show queued
 state until delivery. An ambiguous money write or upload waits for manual review.
 Inventory sales-period create and edit, sale create and edit, period assignment,
 and delete queue offline. Sales lists overlay local edits; pending sale cards do
-not show an unconfirmed amount or open a server-only detail. Invoice replay maps
+not show an unconfirmed amount. Their local details remain readable and editable. Invoice replay maps
 its returned ID before sending a queued period assignment. Pending period and
 sale cards use the dashed treatment, and unknown outcomes require manual review.
 Invalidation and logout prevent older
@@ -820,6 +825,142 @@ For Drive, CRM, or Education mobile changes:
    demonstrably stuck, record the pending jobs and local evidence, then resume
    exact-commit CI before claiming release readiness.
 
+## Offline preparation and synchronization
+
+Finance, Inventory, Tasks, and Calendar keep visited responses in the encrypted,
+user/workspace-scoped cache. Reopening uses local snapshots immediately while
+revalidating. Loaded list pages and detail responses also materialize local rows;
+searching a new query offline does not require that exact query to have been
+requested online. Reconnect, app resume, and refreshed authentication replay the
+outbox before refreshing visited resources. Visible lists reload after replay.
+Only one replay runs at a time. Cached screens publish their first snapshot,
+then await fresh data without starting a second cold fetch or a cache-notifier
+loop. Transport failures retain the original scoped snapshot and its timestamp.
+Settings and pending rows distinguish queued,
+syncing, failed, and conflicting writes. An uncertain money operation stays in
+manual review unless its endpoint guarantees idempotency; replay must never turn
+a cache refresh failure after acknowledgment into a second write.
+
+Settings → Offline cache → Download all is an explicit download for the current
+account and workspace. Products settle sequentially, with per-product state,
+historical completion time, and targeted retry. Inventory downloads catalog pages
+and each product detail; sales, audit, and finance transaction history are paged.
+Audit pages are indexed by their server audit record IDs and reused across UI
+page sizes, ordered by occurrence time descending.
+Finance also prepares checkpoint summaries, wallet-specific statistics, and
+account-scoped global exchange rates, so these reads work on a first offline visit.
+Tasks include board collections, task details, relationships, and supported
+history. Calendar cursor pages cover the API-supported year range 0001–9999 and
+connection metadata. Its paginated requests cap each page at 500 rows; normal
+unpaginated requests accept at most 400 days. Pagination has finite safety bounds and fails rather than silently
+claiming completion when a cursor does not advance. Wallet checkpoint preparation
+currently follows the mobile endpoint's latest-50 window; it does not promise a
+lifetime checkpoint archive.
+
+Completed full collections reconcile obsolete list/detail snapshots so removed
+server rows do not survive in local search. Failed downloads retain older
+snapshots and pending writes. Each explicit download requires successful
+persistent writes and a final check
+that its requested snapshots survived storage limits. A full run checks earlier
+products again for eviction. A restored completion timestamp is historical and
+shows **Needs refresh**, never proof that all rows remain stored. Cache eviction, clearing cache, changing quota, or changing account/workspace
+invalidates readiness. A scope
+switch stops subsequent requests; an already-started request settles before
+another bulk run starts. Normal visits fill a bounded older history window with
+15-minute throttling, rather than rerunning Download all automatically.
+
+Bulk GETs are globally serialized on the device and spaced by at least 750 ms at the request boundary, using a monotonic clock after queued authentication preparation. Early timer wakeups are rechecked; regression coverage lives in `offline_api_pacer_test.dart` and `api_client_offline_preparation_test.dart`. This stays below the hourly session budget even
+when the gateway and owning app both enforce the guard. Ordinary unmarked
+foreground reads do not consume these additional bulk-download budgets.
+The additional server download protection applies only to eligible GET/HEAD requests explicitly marked `x-tuturuuu-offline-download: 1`. Ordinary daily enterprise operations in Finance, Inventory, Contacts, Tasks and other apps always continue through existing authentication, authorization, MFA, abuse and API protections without accessing this additional guard's Redis clients, quotas or CAPTCHA, even when it is activated. This scope applies to the web API and every registered satellite proxy. `OFFLINE_DOWNLOAD_PROTECTION_ENABLED` defaults to inactive and activates only for the exact value `true`; while inactive, marked bulk downloads return 503 with `Retry-After: 30`. Omitting the bulk marker never bypasses baseline protections or grants access.
+
+Before enabling offline prefetch, provision `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` on every gateway and owning-app replica that can handle these reads. Verify distributed limiter operations, shared clearance storage, Turnstile configuration, and authenticated ordinary-read and marked-bulk canaries on the exact deployment. Enable the activation flag only after those checks pass, consistently across the request path; available Redis or elevated account trust never implicitly activates the feature. Keep the flag inactive during initial provisioning. Once activated, Redis/configuration/runtime failures still return 503; there is no automatic outage bypass or process-local substitute.
+
+When activated, the shared proxy enforces explicitly marked eligible bulk reads: 1,200/minute and 30,000/hour per IP, plus 600/minute and 12,000/hour per session when present. Gateway and owning-app enforcement may both count a marked request. Bulk requests require Turnstile clearance unless the server has verified elevated trust; clearance lasts 15 minutes and never bypasses authentication, permissions, MFA, blocks, or quotas. Ordinary unmarked requests do not spend these additional offline-download allowances.
+Regular reconnect refreshes are paced without the bulk marker; optional history fills use silent bulk mode. Background work never opens a verification modal and pauses when challenged. Verification-required 403 responses preserve existing authorized snapshots; authorization-denied responses purge the denied resource. A 429 stops downloads and delays queued replay according to Retry-After, with at least a minute's wait.
+Regression coverage in [offline-download-guard.test.ts](https://github.com/tutur3u/platform/blob/main/packages/utils/src/__tests__/offline-download-guard.test.ts) proves unmarked ordinary reads avoid Redis, offline quotas and CAPTCHA with activation on or off, inactive bulk remains blocked, and activated bulk storage failures, quotas and CAPTCHA remain enforced.
+
+Local Inventory search mirrors name-only SQL ILIKE, trimmed whole query, case
+insensitivity, preserved accents, `%`/`_` wildcards, and backslash escaping.
+Catalog ordering is creation time descending, then stable ID. Finance matches the
+untrimmed query against descriptions and orders by taken time, then creation time,
+both descending. Cached `[CONFIDENTIAL]` descriptions are not searchable: offline
+search cannot reconstruct hidden server fields or newly granted permissions.
+The cache represents the last authorized download; changes made elsewhere,
+permission revocations, and authoritative stock/balance calculations require a
+server refresh. Sales can be drafted offline from cached catalog and season
+prices, but remain queued until the server validates price IDs and commits them.
+Mobile applies configured current-period, revenue-wallet, and finance-category
+defaults while preserving explicit choices. Legacy period sales also use the
+atomic invoice request with a stable request ID; period rejection must not leave
+an already-created invoice. Reconcile cart refreshes current metadata/prices and
+removes incompatible or unavailable lines, then asks the operator to review the
+total. It applies only to the editable current cart, never historical sales or a
+frozen uncertain checkout journal.
+Stock health remains the last confirmed snapshot and excludes local drafts.
+Workspace permissions are refreshed online and persisted as an encrypted
+account/workspace-scoped UI hint. A missing network interface or transport failure
+may reuse that hint; authorization failures remove it, and switching accounts cannot reuse grants.
+Download all also prepares this metadata. Local permissions never authorize
+server writes: the server checks current permissions when replaying each mutation.
+Product images are cached as encrypted bytes when displayed and during Inventory
+Download all. Cards, checkout rows, and editor previews use the same scoped cache.
+Image bytes share the storage quota and clearing/eviction behavior with product
+records. Downloads accept HTTPS media with at most three HTTPS redirects, never
+send app credentials, and enforce an 8 MiB file and 16 megapixel image limit.
+A required image that cannot be retained makes the product download fail rather
+than claiming full offline readiness. Cache keys digest image URLs so signed
+read tokens are not exposed in plaintext keys.
+
+Offline inventory acceptance is scoped to the current account and workspace. A queued checkout receives a local pending identifier, never a committed invoice receipt; pending local catalog/setup edits must synchronize before checkout. Read-through helpers retain their default compatibility behavior while pinning an available account at entry, checking it at request and cache publication boundaries, and rejecting late responses after account changes. Request generations also prevent older workspace loads from replacing the active screen.
+
+For marked bulk reads, the authenticated gateway uses a session budget when the client IP is unknown; an anonymous marked request without an attributable IP fails closed. Known-IP bulk requests retain their IP budget. These controls do not grant offline clients server authorization. Product images share one 60-second deadline across redirects and body streaming, and unrelated resource eviction does not cancel their fetch.
+
+Deferred cache transaction/refresh sharing, transport draining, search performance, and cosmetic improvements are tracked in [#5737](https://github.com/tutur3u/platform/issues/5737). App disposal invalidates preparation readiness immediately; an already-started read may fail when its HTTP client closes. Graceful draining remains a followup and does not permit a disposed preparation to publish readiness or replay writes. Regression coverage includes `inventory_product_image_cache_test.dart`, `inventory_product_editor_page_test.dart`, `api_client_account_test.dart`, and `packages/utils/src/__tests__/api-proxy-offline-response.test.ts`.
+
+Provider authorization, live calls, AI execution, and uncached attachment bytes still require connectivity; Download all is scoped to these four product data collections, not every external service or file.
+
+Regression evidence: `offline_sync_test.dart`, `local_search_test.dart`, `offline_preparation_coordinator_test.dart`, `offline_download_manifest_test.dart`, `offline_preparation_repository_test.dart`, `finance_inventory_offline_test.dart`, `inventory_audit_offline_test.dart`, `season_pricing_controller_test.dart`, and `packages/utils/src/__tests__/offline-download-guard.test.ts` cover replay, scope changes, strict persistence, search rules, offline draft state, and server rate/challenge enforcement. `cache_revalidation_test.dart`, `workspace_permissions_offline_test.dart`, and `finance_scope_races_test.dart` cover fresh visible data, permission hints, scoped invalidation, and late-response rejection. Native airplane-mode and real Turnstile verification remain release checks beyond unit tests.
+
+Synthetic render evidence for the offline status and targeted retry surface:
+
+![Offline cache with targeted retry, synthetic Flutter fixture](/images/mobile-offline-preparation-retry-synthetic.png)
+
+These images come from Flutter widget fixtures, not an installed-device build.
+
+## Floating navigation and compact Profile
+
+The first floating navigation tap opens its destination. Reselecting the active
+destination scrolls its content to the top. Reselecting again resets its top
+section to the default; if already at the top, reset happens immediately. Rapid
+third taps during scrolling must also reset. Notifications returns to Inbox and
+Profile to Overview within at most three taps; scrolling manually restarts the
+sequence. Apps resets to Grid, Finance taxonomy to Categories, and Calendar to
+Three days on phones or Week on tablets. Notes returns to Inbox and Assistant
+to Chat through their existing guarded handlers. Time Tracker sections remain
+separate routed destinations; Dashboard has no secondary section. Apps opens the Apps tab on one tap and keeps its picker on long press.
+
+Profile uses the shell title for Overview and Activity timeline, with no duplicate
+body heading. Place the day-trail action before the rightmost Overview/Timeline
+switch, including compact/overflow layouts. Identity and metric layouts adapt to
+available width and text scale; avoid nested bordered panels and fixed three-column
+cards on small screens. Timeline uses short rows and a compact retry/status
+line. Preserve privacy and incomplete-source information in accessible tooltips
+or concise status, rather than long explanatory paragraphs. These are defaults
+for the mobile Profile and comparable shell section switches; semantic borders
+for unsynchronized drafts and destructive confirmation dialogs remain intentional.
+
+Regression evidence: `shell_dock_reselection_checks.dart`,
+`shell_chrome_actions_test.dart`, `profile_overview_shell_test.dart`,
+`profile_timeline_section_test.dart`, and `profile_timeline_races_test.dart`.
+
+Synthetic Profile renders use placeholder identity and activity data:
+
+![Compact Profile Overview, synthetic Flutter fixture](/images/mobile-profile-overview-synthetic.png)
+
+![Profile Timeline at double text scale, synthetic Flutter fixture](/images/mobile-profile-timeline-large-text-synthetic.png)
+
+
 ## Profile activity privacy
 
 The Profile timeline shows the signed-in user's task creations, transaction
@@ -829,7 +970,7 @@ table does not record a reliable creator. The timeline groups rows by the device
 local day, expands to individual items, and links to their native mobile views.
 Overview is the default Profile view. Overview and Timeline use the same shell
 segmented action control as Notifications, Assistant, and Apps. Overview contains
-identity and tracked-time panels; Timeline contains creation records, newest
+responsive identity and tracked-time sections; Timeline contains creation records, newest
 first within local-day groups, with all returned records visible.
 Each record states the creation action and time; calendar creation is explicitly
 workspace activity. This is a bounded recent feed, not lifetime achievements,

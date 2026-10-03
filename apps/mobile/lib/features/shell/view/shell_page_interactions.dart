@@ -29,7 +29,7 @@ extension _ShellPageInteractions on _ShellPageState {
       return;
     }
     if (selected.selected && !selected.dropdown) {
-      _scrollPageToTop(widget.matchedLocation);
+      _reselectPage(widget.matchedLocation);
       return;
     }
     selected.onPressed?.call();
@@ -70,7 +70,7 @@ extension _ShellPageInteractions on _ShellPageState {
     final currentRoute = _normalizeRouteLocation(widget.matchedLocation);
     final selectedRoute = _normalizeRouteLocation(selected.route);
     if (currentRoute == selectedRoute) {
-      _scrollPageToTop(currentRoute);
+      _reselectPage(currentRoute);
       return;
     }
 
@@ -165,18 +165,8 @@ extension _ShellPageInteractions on _ShellPageState {
     context.go(origin);
   }
 
-  Future<void> _openAppsDrawerFromAppsTab() => showAppsPicker(context);
-
   Future<void> _onItemTapped(int index, BuildContext context) async {
     final appTabCubit = context.read<AppTabCubit>();
-    if (index == 2) {
-      if (_normalizeRouteLocation(widget.matchedLocation) == Routes.apps) {
-        _scrollPageToTop(Routes.apps);
-        return;
-      }
-      await _openAppsDrawerFromAppsTab();
-      return;
-    }
 
     final route = switch (index) {
       2 => Routes.apps,
@@ -185,8 +175,11 @@ extension _ShellPageInteractions on _ShellPageState {
       4 => Routes.profileRoot,
       _ => Routes.home,
     };
-    if (_normalizeRouteLocation(widget.matchedLocation) == route) {
-      _scrollPageToTop(route);
+    final currentRoute = _normalizeRouteLocation(widget.matchedLocation);
+    if (currentRoute == route ||
+        (route == Routes.notifications &&
+            currentRoute == Routes.notificationsArchive)) {
+      _reselectPage(currentRoute);
       return;
     }
     _debugBack(
@@ -223,19 +216,6 @@ extension _ShellPageInteractions on _ShellPageState {
     if (!_isAppsTabHit(event, navContext)) {
       return;
     }
-
-    final now = DateTime.now();
-    final lastTap = _lastAppsTabPointerUpAt;
-    final isCompactAppsReselection =
-        _ShellPageState._calculateSelectedIndex(widget.matchedLocation) == 2;
-    if (isCompactAppsReselection &&
-        lastTap != null &&
-        now.difference(lastTap) < const Duration(milliseconds: 300)) {
-      _lastAppsTabPointerUpAt = null;
-      unawaited(_openAppsDrawerFromAppsTab());
-      return;
-    }
-    _lastAppsTabPointerUpAt = now;
   }
 
   void _stopLongPressTimer([PointerEvent? _]) {

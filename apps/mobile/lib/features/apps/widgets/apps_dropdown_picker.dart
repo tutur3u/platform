@@ -11,7 +11,7 @@ import 'package:mobile/features/apps/view/apps_hub_results.dart';
 import 'package:mobile/features/apps/widgets/apps_picker_editor.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
-import 'package:mobile/features/shell/view/readable_shell_title.dart';
+import 'package:mobile/features/shell/view/shell_brand_title.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/order_editor_sheet.dart';
@@ -28,30 +28,12 @@ class AppsDropdownPicker extends StatelessWidget {
         '${title ?? context.l10n.navApps}, ${context.l10n.appsHubSearchHint}',
     child: Tooltip(
       message: context.l10n.navApps,
+      excludeFromSemantics: true,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () => unawaited(showAppsPicker(context)),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset(
-                'assets/logos/transparent.png',
-                width: 28,
-                height: 28,
-              ),
-              const SizedBox(width: 10),
-              Flexible(
-                child: ReadableShellTitle(
-                  title ?? context.l10n.navApps,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-                ),
-              ),
-            ],
-          ),
+        child: ExcludeSemantics(
+          child: ShellBrandTitle(title: title ?? context.l10n.navApps),
         ),
       ),
     ),
@@ -174,6 +156,7 @@ class _AppsScreenState extends State<AppsScreen> {
           ShellChromeActions(
             ownerId: 'apps-screen',
             locations: const {Routes.apps},
+            onResetSection: () => setState(() => _showGrid = true),
             actions: [
               ShellActionSpec(
                 id: 'apps-search',
