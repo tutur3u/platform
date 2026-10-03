@@ -11,7 +11,7 @@ it('resolves the real budget source even when package exports select a native Co
   );
   const loaded = await loadConfigFromFile(
     { command: 'serve', mode: 'test' },
-    resolve(import.meta.dirname, '../vitest.config.mts')
+    resolve(__dirname, '../vitest.config.mts')
   );
   const dependency = join(root, 'node_modules/@tuturuuu/storage-core');
   await mkdir(join(dependency, 'dist'), { recursive: true });
@@ -30,7 +30,7 @@ it('resolves the real budget source even when package exports select a native Co
     'require("server-only");\n'
   );
   const source = resolve(
-    import.meta.dirname,
+    __dirname,
     '../../storage-core/src/lib/profile-upload-budget.ts'
   );
   const aliases = loaded?.config.resolve?.alias;
