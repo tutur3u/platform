@@ -1,5 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { afterAll, expect, it } from 'vitest';
+import { stripVTControlCharacters } from 'node:util';
+import { afterAll, afterEach, expect, it } from 'vitest';
+import {
+  PLAYGROUND_EXPORT_BYTES,
+  PLAYGROUND_EXPORT_SCRIPT,
+} from './devbox-playground-files';
 import { runPlaygroundJob } from './devbox-playground-sandbox';
 import { sandboxDocker } from './devbox-sandbox-process';
 
@@ -43,6 +48,46 @@ async function ownedContainers() {
   expect(result.code).toBe(0);
   return result.output.trim().split('\n').filter(Boolean);
 }
+async function diagnoseSyntheticExport(error: unknown) {
+  if (
+    !(error instanceof Error) ||
+    error.message !== 'Could not export project files'
+  )
+    return;
+  // Only this opt-in CI fixture's disposable containers are inspected. Never log
+  // exported file content or alter the production error redaction policy.
+  for (const id of await ownedContainers()) {
+    if (!/^[a-f0-9]{12,64}$/.test(id))
+      throw new Error('Invalid owned container ID');
+    const exported = await sandboxDocker(
+      ['exec', id, 'python3', '-I', '-S', '-B', '-c', PLAYGROUND_EXPORT_SCRIPT],
+      '',
+      15_000,
+      PLAYGROUND_EXPORT_BYTES
+    );
+    console.error(
+      'Synthetic acceptance export diagnostic',
+      JSON.stringify({
+        code: exported.code,
+        timedOut: exported.timedOut,
+        exceeded: exported.exceeded,
+        outputBytes: Buffer.byteLength(exported.output),
+        // JSON escaping prevents terminal control sequences; cap the fixture-only
+        // stderr and strip ANSI sequences before printing it.
+        stderr: stripVTControlCharacters(exported.stderr).slice(0, 2048),
+      })
+    );
+  }
+}
+afterEach(async () => {
+  const stopped = await Promise.allSettled(
+    projects.map((projectId) =>
+      runPlaygroundJob(encode(projectId, { operation: 'stop' }), limits)
+    )
+  );
+  expect(stopped.every((result) => result.status === 'fulfilled')).toBe(true);
+  expect(await ownedContainers()).toEqual([]);
+});
 afterAll(async () => {
   for (const id of await ownedContainers()) {
     if (!/^[a-f0-9]{12,64}$/.test(id))
@@ -98,7 +143,12 @@ PY`,
     async (delta) => {
       changes.push(delta);
     }
-  );
+  ).catch(async (error: unknown) => {
+    await diagnoseSyntheticExport(error).catch(() => {
+      console.error('Synthetic acceptance export diagnostic unavailable');
+    });
+    throw error;
+  });
   expect(result.code).toBe(0);
   expect(result.output).toContain('isolated');
   expect(changes).toHaveLength(1);
