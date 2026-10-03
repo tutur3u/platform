@@ -71,6 +71,8 @@ void main() {
         expect(cubit.state.visibleWorkspaces, [personal, team]);
         expect(cubit.state.visibilityStatus, WorkspaceStatus.error);
         expect(cubit.state.visibilityResolved, isFalse);
+        await cubit.setWorkspaceHidden(team.id, hidden: true);
+        expect(cubit.state.visibilityResolved, isFalse);
         await cubit.selectWorkspace(team);
         expect(cubit.state.currentWorkspace, team);
         verify(() => repo.saveSelectedWorkspace(team)).called(1);

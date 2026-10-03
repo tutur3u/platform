@@ -328,7 +328,9 @@ class _WorkspacePickerState extends State<_WorkspacePicker> {
                                     actionLabel: _hiddenOnly
                                         ? l10n.workspaceRestoreAction
                                         : l10n.workspaceHideAction,
-                                    onVisibility: needsVisibility
+                                    onVisibility:
+                                        needsVisibility &&
+                                            state.visibilityResolved
                                         ? () => _setHidden(
                                             workspace,
                                             !_hiddenOnly,

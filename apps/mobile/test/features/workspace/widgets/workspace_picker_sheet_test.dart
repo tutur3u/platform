@@ -13,6 +13,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/hidden_workspaces_settings_row.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
+import 'package:mobile/features/workspace/widgets/workspace_result_tile.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -479,8 +480,8 @@ void main() {
         );
         expect(
           find.text(
-            'Workspace visibility preferences are unavailable. You can still '
-            'select a workspace; saved hidden choices are kept.',
+            'Workspace visibility preferences are unavailable. '
+            'Saved hidden choices are kept.',
           ),
           findsOneWidget,
         );
@@ -488,6 +489,14 @@ void main() {
         await tester.tap(find.text('Retry'));
         verify(() => workspaceCubit.refreshHiddenWorkspaces()).called(1);
         expect(find.text('Product'), findsOneWidget);
+        expect(
+          tester
+              .widget<WorkspaceResultTile>(
+                find.byKey(const ValueKey('workspace-result-ws_1')),
+              )
+              .onVisibility,
+          isNull,
+        );
         when(
           () => workspaceCubit.selectWorkspace(proWorkspace),
         ).thenAnswer((_) async {});

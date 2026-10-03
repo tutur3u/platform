@@ -130,7 +130,7 @@ abstract class AppLocalizations {
   /// No description provided for @workspaceHiddenLoadError.
   ///
   /// In en, this message translates to:
-  /// **'Workspace visibility preferences are unavailable. You can still select a workspace; saved hidden choices are kept.'**
+  /// **'Workspace visibility preferences are unavailable. Saved hidden choices are kept.'**
   String get workspaceHiddenLoadError;
 
   /// No description provided for @workspaceHiddenUpdateError.

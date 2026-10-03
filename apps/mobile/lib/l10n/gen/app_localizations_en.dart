@@ -27,7 +27,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workspaceHiddenEmpty => 'No Hidden workspaces';
 
   @override
-  String get workspaceHiddenLoadError => 'Workspace visibility preferences are unavailable. You can still select a workspace; saved hidden choices are kept.';
+  String get workspaceHiddenLoadError => 'Workspace visibility preferences are unavailable. Saved hidden choices are kept.';
 
   @override
   String get workspaceHiddenUpdateError => 'Unable to save this change. Try again when connected.';

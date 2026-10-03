@@ -105,7 +105,7 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
             ),
             onSelect: _onSelectWorkspace,
           );
-          if (state.visibilityError == null) return list;
+          if (state.visibilityStatus != WorkspaceStatus.error) return list;
           return Column(
             children: [
               Padding(

@@ -90,6 +90,33 @@ void main() {
       });
     }
 
+    testWidgets('failed preference write does not become a load warning', (
+      tester,
+    ) async {
+      const state = WorkspaceState(
+        status: WorkspaceStatus.loaded,
+        visibilityStatus: WorkspaceStatus.loaded,
+        visibilityResolved: true,
+        visibilityError: 'Failed preference update',
+        workspaces: [teamWorkspace],
+      );
+      when(() => workspaceCubit.state).thenReturn(state);
+      whenListen(
+        workspaceCubit,
+        const Stream<WorkspaceState>.empty(),
+        initialState: state,
+      );
+      await tester.pumpApp(
+        BlocProvider.value(
+          value: workspaceCubit,
+          child: const WorkspaceSelectPage(),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('Product'), findsOneWidget);
+      expect(find.text('Retry'), findsNothing);
+    });
+
     testWidgets('renders personal, internal, and team sections', (
       tester,
     ) async {
