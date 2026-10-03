@@ -1,7 +1,7 @@
 ---
 title: "Finance"
 description: "Shared Finance product surface across apps/web and apps/finance."
-updatedAt: "2026-09-23"
+updatedAt: "2026-10-03"
 ---
 
 ## Overview
@@ -386,7 +386,9 @@ retains the shared live policy’s fail-open behavior on policy-store outages.
 Currency query failures return 500 and never masquerade as missing rates or
 trigger seeding; initial seeding runs only after a successful empty lookup.
 Successful rates are private
-and not stored in a shared HTTP cache. The shared UI uses the internal API client.
+and not stored in a shared HTTP cache. The client-side exchange-rate hook uses
+the internal API client. The existing wallet-details server component continues
+to read rates directly through its server-only admin client.
 
 Regression coverage: `apps/web/src/app/api/v1/exchange-rates/route.test.ts` exercises
 the real session middleware with injected authentication dependencies;
