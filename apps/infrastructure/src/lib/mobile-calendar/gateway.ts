@@ -36,6 +36,13 @@ function jsonError(status: number, message: string) {
 function allowedMethods(path: string): string[] {
   const id = '[a-zA-Z0-9_-]+';
   if (
+    new RegExp(
+      `^/api/v1/workspaces/${id}/calendar/(?:colors|default-source)$`
+    ).test(path)
+  ) {
+    return ['GET'];
+  }
+  if (
     path === '/api/v1/users/calendar-settings' ||
     new RegExp(`^/api/v1/workspaces/${id}/calendar-settings$`).test(path)
   ) {

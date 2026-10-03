@@ -1,13 +1,4 @@
 {
-    "workspaceHiddenTitle": "Hidden workspaces",
-    "workspaceHideAction": "Hide",
-    "workspaceRestoreAction": "Restore",
-    "workspaceHiddenDescription": "Only you can see this list. Hiding does not change membership or notifications.",
-    "workspaceHiddenEmpty": "No Hidden workspaces",
-    "workspaceHiddenLoadError": "Workspace visibility preferences are unavailable. Saved hidden choices are kept.",
-    "workspaceHiddenUpdateError": "Unable to save this change. Try again when connected.",
-    "workspaceAllHidden": "Your workspaces are hidden. Restore one to continue.",
-    "workspacePickerClose": "Close workspace picker",
     "commonLoading": "Loading",
     "@@locale": "en",
     "appTitle": "Tuturuuu",
@@ -4048,8 +4039,6 @@
             }
         }
     },
-    "inventoryProductDeleteConfirm": "Remove this product? If existing sales reference it, the server will archive it when syncing.",
-    "inventorySeasonPriceCached": "Offline draft using saved season prices. Prices and availability will be checked when syncing.",
     "inventorySeasonPriceLoading": "Checking current season prices…",
     "inventorySeasonPriceUnavailable": "Season prices unavailable or expired. Connect, refresh and review the cart before selling.",
     "inventorySeasonPriceAsOf": "Season prices · {currency} · as of {asOf} (UTC) · season dates in {timeZone}",
@@ -4072,6 +4061,35 @@
             }
         }
     },
+    "calendarGoogleColorInherit": "Use calendar color",
+    "calendarGoogleColorLabel": "Custom label {id}",
+    "calendarGoogleColorEvent": "Google color {id}",
+    "calendarProviderColorSeparateEdit": "Save other changes before changing the Google color.",
+    "@calendarGoogleColorLabel": {
+        "placeholders": {
+            "id": {
+                "type": "String"
+            }
+        }
+    },
+    "@calendarGoogleColorEvent": {
+        "placeholders": {
+            "id": {
+                "type": "String"
+            }
+        }
+    },
+    "workspaceHiddenTitle": "Hidden workspaces",
+    "workspaceHideAction": "Hide",
+    "workspaceRestoreAction": "Restore",
+    "workspaceHiddenDescription": "Only you can see this list. Hiding does not change membership or notifications.",
+    "workspaceHiddenEmpty": "No Hidden workspaces",
+    "workspaceHiddenLoadError": "Workspace visibility preferences are unavailable. Saved hidden choices are kept.",
+    "workspaceHiddenUpdateError": "Unable to save this change. Try again when connected.",
+    "workspaceAllHidden": "Your workspaces are hidden. Restore one to continue.",
+    "workspacePickerClose": "Close workspace picker",
+    "inventoryProductDeleteConfirm": "Remove this product? If existing sales reference it, the server will archive it when syncing.",
+    "inventorySeasonPriceCached": "Offline draft using saved season prices. Prices and availability will be checked when syncing.",
     "offlinePreparationTitle": "Available offline",
     "offlinePreparationCacheAll": "Download all",
     "offlinePreparationDescription": "Download workspace data for offline use. Cached data uses your storage limit; files and online services may still need connectivity.",
@@ -4113,6 +4131,12 @@
             }
         }
     },
+    "inventorySetupSyncFirst": "Sync this new item before using, editing, or deleting it.",
+    "homePersonalAgenda": "Personal Agenda",
+    "homePersonalAgendaUnavailable": "Personal calendar is unavailable.",
+    "assistantExpandNavigation": "Show navigation",
+    "assistantCollapseNavigation": "Hide navigation",
+    "assistantCloseComposer": "Close prompt",
     "offlineSectionTitle": "Offline",
     "offlineSectionDescription": "Downloads, stored data, and unsynchronized changes for the selected account and workspace.",
     "offlinePreferencesTitle": "Offline preferences",
@@ -4200,10 +4224,5 @@
                 "type": "String"
             }
         }
-    },
-    "homePersonalAgenda": "Personal Agenda",
-    "homePersonalAgendaUnavailable": "Personal calendar is unavailable.",
-    "assistantExpandNavigation": "Show navigation",
-    "assistantCollapseNavigation": "Hide navigation",
-    "assistantCloseComposer": "Close prompt"
+    }
 }
