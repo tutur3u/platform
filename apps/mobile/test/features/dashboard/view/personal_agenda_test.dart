@@ -29,7 +29,10 @@ void main() {
     tester,
   ) async {
     final calendar = _Calendar();
-    final now = DateTime.now();
+    final today = DateTime.now();
+    // Keep this cached-event fixture on one day, even near midnight. Multi-day
+    // events correctly render one agenda segment per day.
+    final now = DateTime(today.year, today.month, today.day, 12);
     final state = CalendarState(
       status: CalendarStatus.error,
       hasLoadedOnce: true,
