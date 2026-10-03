@@ -10,7 +10,7 @@ import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_options.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:mobile/features/assistant/widgets/assistant_dock_surface.dart';
 
 class AssistantComposerDock extends StatelessWidget {
   const AssistantComposerDock({
@@ -58,27 +58,14 @@ class AssistantComposerDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final navSurface = shad.Theme.of(context).colorScheme.background;
-    final separatorColor = theme.colorScheme.outlineVariant.withValues(
-      alpha: 0.28,
-    );
-
     return SizedBox(
       height: assistantComposerHeight(context) + bottomInset,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
-            child: Container(
+            child: AssistantDockSurface(
               key: const ValueKey('assistant-composer-surface'),
-              clipBehavior: Clip.antiAlias,
-              padding: EdgeInsets.fromLTRB(4, 4, 4, 4 + bottomInset),
-              decoration: BoxDecoration(
-                color: navSurface,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: separatorColor),
-              ),
               child: Row(
                 children: [
                   AssistantComposerOptions(
@@ -91,6 +78,7 @@ class AssistantComposerDock extends StatelessWidget {
                     onThinkingModeChanged: onThinkingModeChanged,
                     onRemoveAttachment: onRemoveAttachment,
                     onCloseComposer: onCloseComposer,
+                    onDismissKeyboard: focusNode.unfocus,
                   ),
                   Expanded(
                     child: TextField(
@@ -98,6 +86,7 @@ class AssistantComposerDock extends StatelessWidget {
                       focusNode: focusNode,
                       style: const TextStyle(fontSize: 16, height: 1.25),
                       minLines: 1,
+                      maxLines: 1,
                       textInputAction: TextInputAction.send,
                       onSubmitted:
                           chatState.status == AssistantChatStatus.restoring
@@ -139,7 +128,10 @@ class AssistantComposerDock extends StatelessWidget {
                             ? null
                             : hasPrompt
                             ? onSend
-                            : onMicrophoneTap,
+                            : () {
+                                focusNode.unfocus();
+                                unawaited(onMicrophoneTap());
+                              },
                         icon: Icon(
                           hasPrompt
                               ? Icons.arrow_upward_rounded
@@ -153,19 +145,16 @@ class AssistantComposerDock extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Material(
-            color: navSurface,
-            shape: CircleBorder(side: BorderSide(color: separatorColor)),
+          AssistantDockSurface(
             child: IconButton(
               key: const ValueKey('assistant-navigation-toggle'),
-              tooltip: navigationExpanded
-                  ? context.l10n.assistantCollapseNavigation
-                  : context.l10n.assistantExpandNavigation,
-              constraints: const BoxConstraints.tightFor(width: 48, height: 48),
-              onPressed: onToggleNavigation,
-              icon: Icon(
-                navigationExpanded ? Icons.close_rounded : Icons.menu_rounded,
-              ),
+              tooltip: context.l10n.assistantExpandNavigation,
+              constraints: const BoxConstraints.tightFor(width: 52, height: 52),
+              onPressed: () {
+                focusNode.unfocus();
+                onToggleNavigation();
+              },
+              icon: const Icon(Icons.menu_rounded),
             ),
           ),
         ],
