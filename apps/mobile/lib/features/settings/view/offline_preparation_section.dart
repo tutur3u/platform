@@ -2,12 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
-import 'package:mobile/features/settings/view/offline_module_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -210,12 +211,7 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
                                     _workspaceId)) &&
                         state.products[id]?.status !=
                             OfflinePreparationStatus.unavailable
-                    ? () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) =>
-                              OfflineModulePage(moduleId: id, embedded: true),
-                        ),
-                      )
+                    ? () => context.push(Routes.settingsOfflineModulePath(id))
                     : null,
                 onRetry: enabled && !state.running && !_starting && !_restoring
                     ? () => _download(productId: id)

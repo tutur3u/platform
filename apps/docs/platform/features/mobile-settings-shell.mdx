@@ -1,0 +1,33 @@
+---
+title: Mobile settings shell
+description: Shared shell chrome, profile settings routes and accessible edit entry
+---
+
+## Settings detail shell and profile settings
+
+All mobile Settings children use the same shell background and one shell top
+navbar with the destination title and Back. Offline is `/settings/offline`; its
+Finance, Inventory, Tasks and Calendar details are `/settings/offline/<module>`.
+They do not add body title/back bars, nested AppBars or another top safe area.
+Their scroll content reserves the shell-provided bottom padding, so the floating
+dock clears the last actionable row. Pushed destinations return to the screen
+that opened them; direct links fall back to their Settings parent.
+
+Settings → You now opens identity, avatar and account-status settings at
+`/settings/profile`, with account management at `/settings/accounts`. Legacy
+`/profile/edit` and `/profile/accounts` links redirect to those destinations.
+`/profile` retains the Overview/Timeline activity surface. Its edit entry is a
+compact icon with an accessible Identity label and tooltip. Account-switching
+shortcuts remain available there. These defaults apply in both mobile languages;
+workspace permissions and queued profile writes retain their existing rules.
+
+Licenses, onboarding replay and explicit admin edit forms intentionally open
+above the shell on the root navigator with their own full-screen chrome. Sheet
+editors retain their existing modal presentation. They never stack a second
+navbar within a shell body.
+
+Regression coverage: `settings_detail_shell_checks.dart` exercises actual
+Offline registrations, inherited background/header and dock clearance, enlarged
+text, navbar/system/dock back, and unknown module links;
+`profile_overview_shell_test.dart` covers the icon edit entry and return path.
+These widget checks do not establish installed-device or production evidence.

@@ -219,15 +219,13 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                    shad.GhostButton(
+                                    IconButton(
+                                      tooltip: l10n.profileIdentitySectionTitle,
                                       onPressed: () =>
-                                          context.go(Routes.profileEdit),
-                                      leading: const Icon(
+                                          context.push(Routes.settingsProfile),
+                                      icon: const Icon(
                                         Icons.edit_outlined,
-                                        size: 18,
-                                      ),
-                                      child: Text(
-                                        l10n.profileIdentitySectionTitle,
+                                        size: 20,
                                       ),
                                     ),
                                   ],

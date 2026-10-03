@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/app_router_access_redirects.dart';
 import 'package:mobile/core/router/inventory_catalog_routes.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/router/settings_routes.dart';
 import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/data/sources/api_verification.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
@@ -39,22 +40,9 @@ import 'package:mobile/features/inventory/view/inventory_manage_page.dart';
 import 'package:mobile/features/inventory/view/inventory_product_editor_page.dart';
 import 'package:mobile/features/inventory/view/inventory_products_page.dart';
 import 'package:mobile/features/inventory/view/inventory_sales_page.dart';
-import 'package:mobile/features/mobile_versions/view/mobile_version_settings_page.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/profile/view/profile_overview_page.dart';
-import 'package:mobile/features/profile/view/profile_page.dart';
-import 'package:mobile/features/reminders/reminder_settings_page.dart';
-import 'package:mobile/features/security/account/account_security_page.dart';
-import 'package:mobile/features/security/mfa_approval/view/mfa_request_page.dart';
-import 'package:mobile/features/security/qr_login/view/qr_login_scanner_page.dart';
 import 'package:mobile/features/security/qr_login/view/qr_login_sign_in_page.dart';
-import 'package:mobile/features/settings/view/release_notes_page.dart';
-import 'package:mobile/features/settings/view/settings_page.dart';
-import 'package:mobile/features/settings/view/settings_workspace_members_page.dart';
-import 'package:mobile/features/settings/view/settings_workspace_page.dart';
-import 'package:mobile/features/settings/view/settings_workspace_roles_page.dart';
-import 'package:mobile/features/settings/view/settings_workspace_secrets_page.dart';
-import 'package:mobile/features/shell/view/manage_accounts_page.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/storefront/view/storefront_detail_page.dart';
 import 'package:mobile/features/storefront/view/storefronts_page.dart';
@@ -265,7 +253,9 @@ GoRouter createAppRouter(
       // Workspace loaded but none selected → go to picker
       if (!isWsSelectRoute &&
           state.matchedLocation != Routes.settings &&
-          state.matchedLocation != Routes.settingsWorkspace &&
+          !state.matchedLocation.startsWith('${Routes.settings}/') &&
+          state.matchedLocation != Routes.profileEdit &&
+          state.matchedLocation != Routes.profileAccounts &&
           wsState.status == WorkspaceStatus.loaded &&
           !wsState.hasWorkspace) {
         return Routes.workspaceSelect;
@@ -518,75 +508,7 @@ GoRouter createAppRouter(
               return WalletDetailPage(walletId: walletId);
             },
           ),
-          GoRoute(
-            path: Routes.settingsPreferences,
-            redirect: (context, state) => Routes.settings,
-          ),
-          GoRoute(
-            path: Routes.settingsExperiments,
-            builder: (context, state) => const SettingsPage(
-              section: SettingsSectionDestination.experiments,
-            ),
-          ),
-          GoRoute(
-            path: Routes.settingsInfrastructure,
-            builder: (context, state) => const SettingsPage(
-              section: SettingsSectionDestination.infrastructure,
-            ),
-          ),
-          GoRoute(
-            path: Routes.settingsAbout,
-            builder: (context, state) =>
-                const SettingsPage(section: SettingsSectionDestination.about),
-          ),
-          GoRoute(
-            path: Routes.settingsWhatsNew,
-            builder: (context, state) => const ReleaseNotesPage(),
-          ),
-          GoRoute(
-            path: Routes.settingsReminders,
-            builder: (context, state) => const ReminderSettingsPage(),
-          ),
-          GoRoute(
-            path: Routes.settingsSession,
-            builder: (context, state) =>
-                const SettingsPage(section: SettingsSectionDestination.session),
-          ),
-          GoRoute(
-            path: Routes.settingsAccountSecurity,
-            builder: (context, state) => const AccountSecurityPage(),
-          ),
-          GoRoute(
-            path: Routes.settingsMfaApproval,
-            builder: (context, state) => MfaRequestPage(
-              challengeId: state.uri.queryParameters['challengeId'] ?? '',
-              userId: state.uri.queryParameters['userId'] ?? '',
-            ),
-          ),
-          GoRoute(
-            path: Routes.settingsQrLoginScan,
-            builder: (context, state) => const QrLoginScannerPage(),
-          ),
-          GoRoute(
-            path: Routes.settingsWorkspace,
-            builder: (context, state) => const SettingsWorkspacePage(),
-          ),
-          GoRoute(
-            path: Routes.settingsWorkspaceSecrets,
-            builder: (context, state) => const SettingsWorkspaceSecretsPage(),
-          ),
-          GoRoute(
-            path: Routes.settingsWorkspaceMembers,
-            builder: (context, state) => const SettingsWorkspaceMembersPage(),
-          ),
-          GoRoute(
-            path: Routes.settingsWorkspaceRoles,
-            builder: (context, state) => const SettingsWorkspaceRolesPage(),
-          ),
-          GoRoute(
-            path: Routes.settingsMobileVersions,
-            builder: (context, state) => const MobileVersionSettingsPage(),
-          ),
+          ...settingsRoutes(),
           GoRoute(
             path: Routes.timerRequests,
             builder: (context, state) => TimeTrackerRequestsPage(
@@ -622,16 +544,8 @@ GoRouter createAppRouter(
             ),
           ),
           GoRoute(
-            path: Routes.profileAccounts,
-            builder: (context, state) => const ManageAccountsPage(),
-          ),
-          GoRoute(
             path: Routes.profileRoot,
             builder: (context, state) => const ProfileOverviewPage(),
-          ),
-          GoRoute(
-            path: Routes.profileEdit,
-            builder: (context, state) => const ProfilePage(),
           ),
         ],
       ),
