@@ -3,7 +3,9 @@ on:
   pull_request:
     paths:
       - 'apps/database/supabase/migrations/**'
-      - 'apps/database/supabase/tests/inventory-offline-create.sql'
+      - 'apps/database/supabase/tests/inventory-*.sql'
+      - 'apps/database/supabase/tests/inventory-merge-concurrency.mjs'
+      - 'apps/database/scripts/inventory-contract-tests.mjs'
       - 'apps/database/scripts/verify-inventory-offline-contract.mjs'
       - 'apps/database/scripts/run-supabase*.js'
       - '.github/workflows/inventory-offline-contract.yaml'
@@ -45,7 +47,7 @@ jobs:
           package-manager-cache: false
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
-      - name: Apply complete schema, run strict pgTAP, generate actual RPC types
+      - name: Apply complete schema, run strict Inventory SQL and concurrent writers, generate types
         run: node apps/database/scripts/verify-inventory-offline-contract.mjs
       - uses: actions/upload-artifact@v7
         with:

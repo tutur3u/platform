@@ -448,3 +448,9 @@ tests, internal API transport tests, and Inventory merge-dialog tests. Deploymen
 the additive merge and repair migrations before execution becomes available; missing merge
 RPCs return a temporary-unavailable response while existing warehouse lists continue
 working on an older schema.
+
+The existing `inventory-offline-contract.yaml` CI lane applies the full isolated
+schema and runs offline create plus merge, alias pagination, restoration and
+readiness pgTAP fixtures. Its testing phase also runs the three-client
+`inventory-merge-concurrency.mjs` executor; SQL or concurrent-writer failures
+fail the gate and still pass through owned-stack cleanup.
