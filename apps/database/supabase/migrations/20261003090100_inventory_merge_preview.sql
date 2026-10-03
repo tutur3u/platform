@@ -19,6 +19,8 @@ declare v_source jsonb; v_target jsonb; v_stock jsonb; v_refs jsonb:='[]';
  v_state jsonb:='[]'; v_blockers jsonb:='[]'; v_rows jsonb; r record; ix record;
  v_keys text; v_nonnull text; v_conflicts bigint; v_count bigint; v_plan jsonb;
 begin
+ if not private.inventory_merge_schema_ready() then
+  raise exception 'Inventory merge schema is not ready' using errcode='55000'; end if;
  if p_kind not in ('product','warehouse') or p_source_id=p_target_id then
   raise exception 'Choose two different inventory records' using errcode='22023'; end if;
  if p_kind='product' then

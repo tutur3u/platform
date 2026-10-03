@@ -410,15 +410,41 @@ source warehouses are removed from new selectors. Their durable rows remain avai
 for historical detail. Future writes using a merged source identity, including stale
 web/mobile/offline/provider writes, reject atomically with a refresh-and-select-the-
 destination message. Historical updates that do not change their identity remain
-allowed. Offline creation receipts retain their original identity rather than creating
+allowed. Authorized invoice recovery is the narrow exception for historical inserts:
+it restores only exact saved invoice lines with their original product and warehouse
+IDs, after invoice recovery permissions and workspace checks. A private transaction
+capability restricts this exception to the restoration RPC; new sales and stale writes
+cannot use it, including by setting a restoration flag. Restoring history does not
+consume the combined stock again.
+
+New merge preview and apply require the final schema readiness RPC and the active
+warehouse view, restoration guard and writer guards. During deployment before gated
+migrations, ordinary warehouse reads may use the legacy table only after the existing
+product-form-options RPC successfully returns a valid warehouse array without an
+`inventoryMergeSchema` marker. Alias-table creation atomically replaces that RPC to
+return `aliases-v1`; marker presence and a missing active view fail closed. Cached
+PostgREST metadata cannot substitute an older server function body, and a missing-table
+API error alone cannot establish legacy schema. Merge actions remain unavailable
+until readiness succeeds.
+
+Merge transactions reserve only the source and destination inventory identities.
+Reference inserts, updates, deletes and checkout state changes coordinate with those
+identities; unrelated workspace and identity CRUD remains available. Contention fails
+fast and requires refresh/retry. Row-lock waits are limited separately; this does not
+establish a deadline for the entire RPC. New reference tables must install both the
+merged-reference guard and the identity writer coordination trigger before merging
+can use them.
+
+Offline creation receipts retain their original identity rather than creating
 a replacement resource; operators must refresh and select the destination for new work.
 
 The feature does not execute automatic background merges, convert units, merge external
 provider objects, or delete historical identities. New tables that reference inventory
 identities must install the merged-reference guard as part of their migration; the
 preview enumerates current foreign keys and fails closed for unsupported composite
-relationships. Regression evidence lives in `inventory-merge.sql`, the merge API route
+relationships. Regression evidence lives in `inventory-merge.sql`, `inventory-merge-restoration.sql`,
+`inventory-merge-concurrency.mjs`, `inventory-merge-readiness.sql`, the merge API route
 tests, internal API transport tests, and Inventory merge-dialog tests. Deployment needs
-the three additive merge migrations before execution becomes available; missing merge
+the additive merge and repair migrations before execution becomes available; missing merge
 RPCs return a temporary-unavailable response while existing warehouse lists continue
 working on an older schema.

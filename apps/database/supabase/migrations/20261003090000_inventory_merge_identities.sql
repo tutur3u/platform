@@ -64,7 +64,9 @@ end $$;
 -- reads or the durable warehouse row. Product aliases use existing archived state.
 create or replace function private.get_inventory_product_form_options(p_ws_id uuid)
 returns jsonb language sql stable security definer set search_path=pg_catalog,private,public as $$
+ -- This marker and alias table creation commit atomically in this migration.
  select jsonb_build_object(
+ 'inventoryMergeSchema','aliases-v1',
  'categories',coalesce((select jsonb_agg(to_jsonb(x) order by x.name) from public.product_categories x where x.ws_id=p_ws_id),'[]'::jsonb),
  'manufacturers',coalesce((select jsonb_agg(to_jsonb(x) order by x.name) from private.inventory_manufacturers x where x.ws_id=p_ws_id),'[]'::jsonb),
  'owners',coalesce((select jsonb_agg(to_jsonb(x) order by x.archived,x.name) from private.inventory_owners x where x.ws_id=p_ws_id),'[]'::jsonb),

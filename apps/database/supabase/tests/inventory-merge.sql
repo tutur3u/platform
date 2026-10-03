@@ -60,6 +60,8 @@ select ok(private.preview_inventory_merge(im_id(10),'product',im_id(52),im_id(51
 update private.inventory_checkout_sessions set status='cancelled' where id=im_id(81);
 select ok(not(private.preview_inventory_merge(im_id(10),'product',im_id(52),im_id(51))->'blockers' ? 'active_reservations'),'Terminal checkout snapshot retained without blocking new merge');
 create table public.inventory_merge_provider_fixture(id uuid primary key,product_id uuid not null references public.workspace_products(id),unit_id uuid not null,unique(product_id,unit_id));
+create trigger inventory_identity_writer before insert or update or delete on public.inventory_merge_provider_fixture for each row execute function private.coordinate_inventory_identity_writer();
+create trigger inventory_merged_reference_guard before insert or update on public.inventory_merge_provider_fixture for each row execute function private.reject_merged_inventory_reference();
 insert into public.inventory_merge_provider_fixture values(im_id(70),im_id(52),im_id(21)),(im_id(71),im_id(51),im_id(21));
 select ok(private.preview_inventory_merge(im_id(10),'product',im_id(52),im_id(51))->'blockers' ? 'duplicate_reference:inventory_merge_provider_fixture','Duplicate live identities are named in preview');
 select throws_ok($$select private.apply_inventory_merge(im_id(10),'product',im_id(52),im_id(51),(private.preview_inventory_merge(im_id(10),'product',im_id(52),im_id(51))->>'version'),'target','target',im_id(1))$$,'23514',null,'Provider identity conflict cannot discard mappings');
