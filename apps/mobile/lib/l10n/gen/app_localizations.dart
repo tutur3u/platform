@@ -18343,6 +18343,12 @@ abstract class AppLocalizations {
   /// **'Activity in loaded snapshot'**
   String get profileTimelineHasActivity;
 
+  /// No description provided for @profileTimelineLoadedEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'All loaded activity shown'**
+  String get profileTimelineLoadedEnd;
+
   /// No description provided for @profileTimelineMoreDays.
   ///
   /// In en, this message translates to:
@@ -18856,7 +18862,7 @@ abstract class AppLocalizations {
   /// No description provided for @homePersonalAgenda.
   ///
   /// In en, this message translates to:
-  /// **'Personal Agenda'**
+  /// **'Agenda'**
   String get homePersonalAgenda;
 
   /// No description provided for @homePersonalAgendaUnavailable.

@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -10,6 +9,7 @@ import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/calendar/widgets/agenda_view.dart';
 import 'package:mobile/features/calendar/widgets/event_detail_sheet.dart';
 import 'package:mobile/features/dashboard/view/personal_agenda_scope.dart';
+import 'package:mobile/features/profile/personal_profile_workspace.dart';
 import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -33,11 +33,13 @@ class PersonalAgenda extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userId = context.watch<AuthCubit>().state.user?.id;
-    final workspace = homePersonalWorkspace(
-      context.watch<WorkspaceCubit>().state.workspaces,
+    final workspace = verifiedPersonalProfileWorkspace(
+      userId: userId,
+      cacheUserId: (cacheUserId ?? currentPersonalProfileUserId)(),
+      workspaces: context.watch<WorkspaceCubit>(),
     );
     if (userId == null ||
-        (cacheUserId ?? currentCacheUserId)() != userId ||
+        (cacheUserId ?? currentPersonalProfileUserId)() != userId ||
         workspace == null) {
       return Center(child: Text(context.l10n.homePersonalAgendaUnavailable));
     }
@@ -82,68 +84,80 @@ class PersonalAgendaViewState extends State<PersonalAgendaView> {
     forceRefresh: true,
   );
 
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: EdgeInsets.only(top: floatingShellHeaderInset(context)),
-    child: BlocBuilder<CalendarCubit, CalendarState>(
-      builder: (context, state) => Column(
-        children: [
-          if (state.error != null)
-            Row(
-              children: [
-                Expanded(
-                  child: Semantics(
-                    liveRegion: true,
-                    child: Text(context.l10n.homePersonalAgendaUnavailable),
-                  ),
+  Widget? _status(CalendarState state) {
+    if (state.error == null && !(state.isRefreshing && state.hasLoadedOnce)) {
+      return null;
+    }
+    return Column(
+      children: [
+        if (state.error != null)
+          Row(
+            children: [
+              Expanded(
+                child: Semantics(
+                  liveRegion: true,
+                  child: Text(context.l10n.homePersonalAgendaUnavailable),
                 ),
-                TextButton.icon(
-                  onPressed: state.isRefreshing ? null : _refresh,
-                  icon: const Icon(Icons.refresh),
-                  label: Text(context.l10n.commonRetry),
-                ),
-              ],
-            ),
-          if (state.isRefreshing && state.hasLoadedOnce)
-            const SizedBox(height: 2, child: LinearProgressIndicator()),
-          Expanded(
-            child: !state.hasLoadedOnce && state.error == null
-                ? const Center(child: NovaLoadingIndicator())
-                : RefreshIndicator(
-                    onRefresh: _refresh,
-                    child: state.events.isEmpty
-                        ? ListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(32),
-                                child: Text(context.l10n.calendarAgendaEmpty),
-                              ),
-                            ],
-                          )
-                        : AgendaView(
-                            selectedDate: state.effectiveSelectedDate,
-                            events: state.displayEvents,
-                            isLoadingMore: state.isLoadingMore,
-                            onLoadMore: () => context
-                                .read<CalendarCubit>()
-                                .loadMoreForward(widget.workspaceId),
-                            onDaySelected: context
-                                .read<CalendarCubit>()
-                                .selectDate,
-                            // Home never mutates the global workspace.
-                            onEventTap: (event) => unawaited(
-                              showEventDetailSheet(
-                                context,
-                                event: event,
-                                readOnly: true,
-                              ),
-                            ),
-                          ),
-                  ),
+              ),
+              TextButton.icon(
+                onPressed: state.isRefreshing ? null : _refresh,
+                icon: const Icon(Icons.refresh),
+                label: Text(context.l10n.commonRetry),
+              ),
+            ],
           ),
-        ],
-      ),
-    ),
-  );
+        if (state.isRefreshing && state.hasLoadedOnce)
+          const SizedBox(height: 2, child: LinearProgressIndicator()),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      BlocBuilder<CalendarCubit, CalendarState>(
+        builder: (context, state) {
+          if (!state.hasLoadedOnce && state.error == null) {
+            return const Center(child: NovaLoadingIndicator());
+          }
+          final status = _status(state);
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: state.events.isEmpty
+                ? ListView(
+                    padding: EdgeInsets.only(
+                      top: floatingShellHeaderInset(context),
+                      bottom: MediaQuery.paddingOf(context).bottom,
+                    ),
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      if (status != null) status,
+                      if (state.error == null)
+                        Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Text(context.l10n.calendarAgendaEmpty),
+                        ),
+                    ],
+                  )
+                : AgendaView(
+                    contentTopPadding: floatingShellHeaderInset(context),
+                    scrollHeader: status,
+                    selectedDate: state.effectiveSelectedDate,
+                    events: state.displayEvents,
+                    isLoadingMore: state.isLoadingMore,
+                    onLoadMore: () => context
+                        .read<CalendarCubit>()
+                        .loadMoreForward(widget.workspaceId),
+                    onDaySelected: context.read<CalendarCubit>().selectDate,
+                    // Home never mutates the global workspace.
+                    onEventTap: (event) => unawaited(
+                      showEventDetailSheet(
+                        context,
+                        event: event,
+                        readOnly: true,
+                      ),
+                    ),
+                  ),
+          );
+        },
+      );
 }

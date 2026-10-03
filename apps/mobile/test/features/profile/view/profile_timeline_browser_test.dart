@@ -150,7 +150,11 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text(entry.value), findsOneWidget);
       expect(find.text('No recent activity in this workspace'), findsNothing);
-      await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
+      tester
+          .widget<IconButton>(
+            find.byKey(const ValueKey('timeline-date-toggle')),
+          )
+          .onPressed!();
       await tester.pumpAndSettle();
       expect(find.text(entry.value), findsOneWidget);
       expect(find.text('No activity was returned for this day.'), findsNothing);
@@ -166,7 +170,11 @@ void main() {
       expect(find.text('September task'), findsOneWidget);
       expect(find.text('Older task'), findsOneWidget);
       final semantics = tester.ensureSemantics();
-      await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
+      tester
+          .widget<IconButton>(
+            find.byKey(const ValueKey('timeline-date-toggle')),
+          )
+          .onPressed!();
       await tester.pumpAndSettle();
       final selected = date(DateTime(2026, 10));
       expect(
@@ -184,7 +192,11 @@ void main() {
       );
       expect(find.text('October task'), findsOneWidget);
       for (var i = 0; i < 4; i++) {
-        await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
+        tester
+            .widget<IconButton>(
+              find.byKey(const ValueKey('timeline-date-toggle')),
+            )
+            .onPressed!();
         await tester.pumpAndSettle();
       }
       expect(
@@ -217,7 +229,11 @@ void main() {
       await tester.pumpAndSettle();
       final before = tester.getTopLeft(find.text('Task 3')).dy;
       for (var i = 0; i < 6; i++) {
-        await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
+        tester
+            .widget<IconButton>(
+              find.byKey(const ValueKey('timeline-date-toggle')),
+            )
+            .onPressed!();
         await tester.pumpAndSettle();
         expect(
           tester.getRect(find.byKey(const ValueKey('timeline-browser'))),
@@ -239,7 +255,8 @@ void main() {
       );
       await tester.pumpAndSettle();
       final before = tester.getTopLeft(find.text('October task'));
-      await tester.tap(find.byKey(const ValueKey('timeline-more-days')));
+      // Scrolling near the action reveals the next page automatically.
+      await tester.pump();
       await tester.pumpAndSettle();
       expect(find.text('Older task'), findsOneWidget);
       expect(tester.getTopLeft(find.text('October task')), before);
@@ -264,7 +281,11 @@ void main() {
         tester.getRect(find.byKey(const ValueKey('timeline-browser'))),
         cold,
       );
-      await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
+      tester
+          .widget<IconButton>(
+            find.byKey(const ValueKey('timeline-date-toggle')),
+          )
+          .onPressed!();
       await tester.pumpAndSettle();
       await tester.tap(date(DateTime(2026, 9, 30)));
       await tester.pumpAndSettle();
@@ -296,7 +317,11 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       await mount(tester, reduceMotion: true, scale: 2);
-      await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
+      tester
+          .widget<IconButton>(
+            find.byKey(const ValueKey('timeline-date-toggle')),
+          )
+          .onPressed!();
       await tester.pump();
       expect(find.text('October task'), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -417,7 +442,9 @@ void main() {
     }
 
     await capture('agenda');
-    await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
+    tester
+        .widget<IconButton>(find.byKey(const ValueKey('timeline-date-toggle')))
+        .onPressed!();
     await tester.pumpAndSettle();
     await capture('selected-day');
     await tester.tap(date(DateTime(2026, 9, 30)));

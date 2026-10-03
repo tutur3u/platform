@@ -22,6 +22,8 @@ class ProfileTimelineBrowser extends StatefulWidget {
     required this.items,
     required this.onOpen,
     this.loading = false,
+    this.status,
+    this.contentTopPadding = 0,
     this.fullSurface = false,
     this.datesOpen,
     this.onDatesChanged,
@@ -37,6 +39,8 @@ class ProfileTimelineBrowser extends StatefulWidget {
   final List<ProfileTimelineItem> items;
   final ValueChanged<ProfileTimelineItem> onOpen;
   final bool loading;
+  final Widget? status;
+  final double contentTopPadding;
   final bool fullSurface;
   final bool? datesOpen;
   final ValueChanged<bool>? onDatesChanged;
@@ -62,6 +66,7 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
   final GlobalKey _viewport = GlobalKey();
   final _itemKeys = <String, GlobalKey>{};
   bool _dates = false;
+  bool _appendScheduled = false;
   bool _selectedByUser = false;
   late DateTime _selected;
   late DateTime _week;
@@ -74,7 +79,10 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
   DateTime get _today =>
       profileTimelineDay(widget.now ?? DateTime.now(), _convert);
   Map<DateTime, List<ProfileTimelineItem>> get _groups =>
-      groupProfileTimelineDays(widget.items, convertDate: _convert);
+      groupProfileTimelineDays(
+        {for (final item in widget.items) _id(item): item}.values.toList(),
+        convertDate: _convert,
+      );
   String _id(ProfileTimelineItem item) => '${item.type}:${item.id}';
   DateTime _monday(DateTime date) =>
       DateTime(date.year, date.month, date.day - date.weekday + 1);
@@ -86,6 +94,7 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
     _selected = _groups.keys.firstOrNull ?? _today;
     _week = _monday(_selected);
     _shown = widget.pageSize;
+    _scroll.addListener(_nearBottom);
   }
 
   @override
@@ -104,6 +113,22 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
     }
     final ids = widget.items.map(_id).toSet();
     _itemKeys.removeWhere((id, _) => !ids.contains(id));
+  }
+
+  void _nearBottom() {
+    if (!_scroll.hasClients ||
+        _scroll.position.extentAfter > 300 ||
+        widget.loading ||
+        _appendScheduled ||
+        _shown >= _groups.length) {
+      return;
+    }
+    _appendScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _appendScheduled = false;
+      if (!mounted || widget.loading || _shown >= _groups.length) return;
+      setState(() => _shown += widget.pageSize);
+    });
   }
 
   Rect? _rect(GlobalKey key) {
@@ -217,107 +242,102 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
     return SizedBox(
       key: const ValueKey('timeline-browser'),
       height: widget.fullSurface ? null : height,
-      child: Column(
-        children: [
-          ProfileTimelineDateStrip(
-            open: _dates,
-            showToggle: widget.datesOpen == null,
-            selected: _selected,
-            week: _week,
-            activityDays: groups.keys.toSet(),
-            onToggle: _toggle,
-            onSelect: _select,
-            onWeek: (delta) => setState(
-              () => _week = DateTime(
-                _week.year,
-                _week.month,
-                _week.day + delta * 7,
-              ),
-            ),
-            onToday: () => _select(_today),
+      child: FadeTransition(
+        opacity: _fade,
+        child: SingleChildScrollView(
+          key: _viewport,
+          controller: _scroll,
+          padding: EdgeInsets.only(
+            top: widget.contentTopPadding,
+            bottom: 24 + MediaQuery.paddingOf(context).bottom,
           ),
-          SizedBox(
-            height: 24,
-            child: widget.refreshing
-                ? Semantics(
-                    key: const ValueKey('timeline-refreshing'),
-                    label: context.l10n.commonLoading,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (widget.status != null) widget.status!,
+              ProfileTimelineDateStrip(
+                open: _dates,
+                showToggle: widget.datesOpen == null,
+                selected: _selected,
+                week: _week,
+                activityDays: groups.keys.toSet(),
+                onToggle: _toggle,
+                onSelect: _select,
+                onWeek: (delta) => setState(
+                  () => _week = DateTime(
+                    _week.year,
+                    _week.month,
+                    _week.day + delta * 7,
+                  ),
+                ),
+                onToday: () => _select(_today),
+              ),
+              if (widget.refreshing)
+                Semantics(
+                  key: const ValueKey('timeline-refreshing'),
+                  label: context.l10n.commonLoading,
+                  liveRegion: true,
+                  child: const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Icon(Icons.sync, size: 16),
+                  ),
+                ),
+              if (widget.loading || (widget.refreshing && widget.items.isEmpty))
+                const FinanceSkeletonBlock(height: 112, radius: 20)
+              else if (entries.isEmpty &&
+                  !(widget.statusReportedByParent &&
+                      widget.availability !=
+                          ProfileTimelineAvailability.complete))
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Semantics(
                     liveRegion: true,
-                    child: const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Icon(Icons.sync, size: 16),
-                    ),
-                  )
-                : null,
-          ),
-          Expanded(
-            child: FadeTransition(
-              opacity: _fade,
-              child: SingleChildScrollView(
-                key: _viewport,
-                controller: _scroll,
-                padding: EdgeInsets.only(
-                  bottom: 24 + MediaQuery.paddingOf(context).bottom,
+                    child: Text(switch (widget.availability) {
+                      ProfileTimelineAvailability.unavailable =>
+                        context.l10n.profileTimelineUnavailable,
+                      ProfileTimelineAvailability.partial =>
+                        context.l10n.profileTimelinePartial,
+                      ProfileTimelineAvailability.complete =>
+                        _dates
+                            ? context.l10n.profileTimelineDayEmpty
+                            : context.l10n.profileTimelineEmpty,
+                    }),
+                  ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (widget.loading ||
-                        (widget.refreshing && widget.items.isEmpty))
-                      const FinanceSkeletonBlock(height: 112, radius: 20)
-                    else if (entries.isEmpty &&
-                        !(widget.statusReportedByParent &&
-                            widget.availability !=
-                                ProfileTimelineAvailability.complete))
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Semantics(
-                          liveRegion: true,
-                          child: Text(switch (widget.availability) {
-                            ProfileTimelineAvailability.unavailable =>
-                              context.l10n.profileTimelineUnavailable,
-                            ProfileTimelineAvailability.partial =>
-                              context.l10n.profileTimelinePartial,
-                            ProfileTimelineAvailability.complete =>
-                              _dates
-                                  ? context.l10n.profileTimelineDayEmpty
-                                  : context.l10n.profileTimelineEmpty,
-                          }),
-                        ),
-                      ),
-                    if (_dates &&
-                        groups.isNotEmpty &&
-                        !groups.containsKey(_selected) &&
-                        !widget.loading &&
-                        widget.availability ==
-                            ProfileTimelineAvailability.complete)
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Text(context.l10n.profileTimelineDayEmpty),
-                      ),
-                    for (final entry in entries)
-                      ProfileTimelineDays(
-                        key: ValueKey(('timeline-group', entry.key)),
-                        items: entry.value,
-                        convertDate: _convert,
-                        now: widget.now,
-                        onOpen: widget.onOpen,
-                        itemKey: (item) =>
-                            _itemKeys.putIfAbsent(_id(item), GlobalKey.new),
-                      ),
-                    if (groups.length > _shown)
-                      shad.OutlineButton(
-                        key: const ValueKey('timeline-more-days'),
-                        onPressed: () =>
-                            setState(() => _shown += widget.pageSize),
-                        child: Text(context.l10n.profileTimelineMoreDays),
-                      ),
-                  ],
+              if (_dates &&
+                  groups.isNotEmpty &&
+                  !groups.containsKey(_selected) &&
+                  !widget.loading &&
+                  widget.availability == ProfileTimelineAvailability.complete)
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(context.l10n.profileTimelineDayEmpty),
                 ),
-              ),
-            ),
+              for (final entry in entries)
+                ProfileTimelineDays(
+                  key: ValueKey(('timeline-group', entry.key)),
+                  items: entry.value,
+                  convertDate: _convert,
+                  now: widget.now,
+                  onOpen: widget.onOpen,
+                  itemKey: (item) =>
+                      _itemKeys.putIfAbsent(_id(item), GlobalKey.new),
+                ),
+              if (groups.length > _shown)
+                shad.OutlineButton(
+                  key: const ValueKey('timeline-more-days'),
+                  onPressed: () => setState(() => _shown += widget.pageSize),
+                  child: Text(context.l10n.profileTimelineMoreDays),
+                ),
+              if (entries.isNotEmpty && groups.length <= _shown)
+                Padding(
+                  key: const ValueKey('timeline-loaded-end'),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Text(context.l10n.profileTimelineLoadedEnd),
+                ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
