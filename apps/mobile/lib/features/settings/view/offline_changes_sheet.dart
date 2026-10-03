@@ -179,7 +179,8 @@ class _PendingChangeCard extends StatelessWidget {
                         : () => _discard(context),
                     child: Text(l10n.offlineChangesDiscard),
                   ),
-                  if (record.status != PendingMutationStatus.queued)
+                  if (record.canRetry &&
+                      record.status != PendingMutationStatus.queued)
                     TextButton(
                       onPressed: () => _retry(context),
                       child: Text(l10n.offlineChangesRetry),

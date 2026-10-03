@@ -83,6 +83,15 @@ class _CreateManageItemDialogState extends State<_CreateManageItemDialog> {
         return;
       }
       Navigator.of(context).pop(true);
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      showInventoryToast(
+        context,
+        error.message.trim().isEmpty
+            ? context.l10n.commonSomethingWentWrong
+            : error.message,
+        destructive: true,
+      );
     } on Exception catch (error) {
       if (!mounted) {
         return;

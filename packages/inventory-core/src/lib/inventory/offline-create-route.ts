@@ -74,6 +74,13 @@ function rpcFailure(error: unknown) {
     typeof error === 'object' && error && 'code' in error
       ? String(error.code)
       : 'UNKNOWN';
+  if (code === 'OFFLINE_CONTRACT_RESPONSE_MISMATCH') {
+    return new TuturuuuEffectError({
+      code,
+      message: 'Offline create returned an invalid receipt',
+      status: 500,
+    });
+  }
   const unavailable = [
     '42883',
     '42P01',
@@ -157,7 +164,7 @@ export async function handleOfflineCreate(request: Request, rawWsId: string) {
         const parsed = resultSchema.safeParse(data);
         if (!parsed.success || parsed.data.resource !== kind) {
           throw Object.assign(new Error('Invalid offline contract response'), {
-            code: 'PGRST202',
+            code: 'OFFLINE_CONTRACT_RESPONSE_MISMATCH',
           });
         }
         return parsed.data;
