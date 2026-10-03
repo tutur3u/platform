@@ -474,3 +474,16 @@ schema and runs offline create plus merge, alias pagination, restoration and
 readiness pgTAP fixtures. Its testing phase also runs the three-client
 `inventory-merge-concurrency.mjs` executor; SQL or concurrent-writer failures
 fail the gate and still pass through owned-stack cleanup.
+
+## Cleared checkout search
+
+The web Inventory sale dialog restores its loaded product catalog immediately when
+product search is cleared. Category and warehouse choices and scheduled price
+eligibility derive from those restored products. A previous empty response or
+in-flight response cannot replace the unfiltered catalog. During a new search,
+loaded products remain searchable while the server query settles. This changes
+search selection only; current season price validation and existing cart snapshots
+remain authoritative. Mounted regressions in
+`season-sale-integration.test.tsx` cover settled empty search, clearing an in-flight
+search, restored category/warehouse choices, and the original scheduled prices in
+the submitted sale.

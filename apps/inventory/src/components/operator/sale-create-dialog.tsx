@@ -140,7 +140,14 @@ export function SaleCreateDialog({
       actorId,
     ],
     serverQuery,
-    visibleItems: productSearchQuery.data?.data ?? products,
+    // Disabled/placeholder search data belongs to an earlier query, never the
+    // unfiltered catalog. Keep base rows available during debounce and on clear.
+    visibleItems:
+      query.trim() &&
+      query.trim() === serverQuery.trim() &&
+      !productSearchQuery.isPlaceholderData
+        ? [...products, ...(productSearchQuery.data?.data ?? [])]
+        : products,
   });
   const seasonPricing = useSeasonSalePrices({
     wsId,
