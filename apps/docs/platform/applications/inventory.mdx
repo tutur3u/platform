@@ -487,3 +487,12 @@ remain authoritative. Mounted regressions in
 `season-sale-integration.test.tsx` cover settled empty search, clearing an in-flight
 search, restored category/warehouse choices, and the original scheduled prices in
 the submitted sale.
+
+The checkout category and warehouse pickers use the full authorized workspace
+form options, independent of product search, pagination, or season price coverage.
+Selecting a category queries its products across pages; search results have their
+own pagination. Categories with no currently eligible stock remain selectable and
+show an empty product result rather than disappearing from the picker. The
+mounted unloaded-category regression uses synthetic data outside the initial
+catalog page and verifies searchable choices, category-scoped requests, and the
+second page. This does not imply every product has a current scheduled price.

@@ -2,8 +2,8 @@
 
 import {
   keepPreviousData,
+  useInfiniteQuery,
   useMutation,
-  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import {
@@ -109,21 +109,30 @@ export function SaleCreateDialog({
   const selectedPeriod = periods.find((period) => period.id === periodId);
   const [keepOpenAfterSale, setKeepOpenAfterSale] = useState(false);
   const [serverQuery] = useDebounce(query, 280);
-  const productSearchQuery = useQuery({
-    enabled: open && Boolean(serverQuery.trim()),
+  const hasProductSearch = Boolean(query.trim() || productCategoryFilter);
+  const productSearchQuery = useInfiniteQuery({
+    enabled: open && Boolean(serverQuery.trim() || productCategoryFilter),
+    initialPageParam: 1,
     placeholderData: keepPreviousData,
-    queryFn: () =>
+    queryFn: ({ pageParam }) =>
       listInventoryProducts(wsId, {
-        page: 1,
+        categoryId: productCategoryFilter || undefined,
+        page: pageParam,
         pageSize: 100,
         q: serverQuery,
         status: 'all',
       }),
+    getNextPageParam: (lastPage, pages) => {
+      const loaded = pages.reduce((count, page) => count + page.data.length, 0);
+      return lastPage.data.length > 0 && loaded < lastPage.count
+        ? pages.length + 1
+        : undefined;
+    },
     queryKey: [
       'inventory',
       wsId,
       'products',
-      SALE_PRODUCT_SEARCH_SCOPE,
+      { ...SALE_PRODUCT_SEARCH_SCOPE, category: productCategoryFilter },
       actorId,
       serverQuery,
     ],
@@ -136,17 +145,21 @@ export function SaleCreateDialog({
       'inventory',
       wsId,
       'products',
-      SALE_PRODUCT_SEARCH_SCOPE,
+      { ...SALE_PRODUCT_SEARCH_SCOPE, category: productCategoryFilter },
       actorId,
     ],
     serverQuery,
     // Disabled/placeholder search data belongs to an earlier query, never the
     // unfiltered catalog. Keep base rows available during debounce and on clear.
     visibleItems:
-      query.trim() &&
+      hasProductSearch &&
       query.trim() === serverQuery.trim() &&
       !productSearchQuery.isPlaceholderData
-        ? [...products, ...(productSearchQuery.data?.data ?? [])]
+        ? [
+            ...products,
+            ...(productSearchQuery.data?.pages.flatMap((page) => page.data) ??
+              []),
+          ]
         : products,
   });
   const seasonPricing = useSeasonSalePrices({
@@ -184,27 +197,42 @@ export function SaleCreateDialog({
   const productCategories = useMemo(
     () =>
       [
-        ...new Map(
-          stockOptions.flatMap((option) =>
+        ...new Map([
+          ...(options?.categories ?? []).flatMap((category) =>
+            category.id ? [[category.id, category.name ?? category.id]] : []
+          ),
+          ...stockOptions.flatMap((option) =>
             option.categoryId
-              ? [[option.categoryId, option.categoryName ?? option.categoryId]]
+              ? [
+                  [
+                    option.categoryId,
+                    option.categoryName ??
+                      options?.categories.find(
+                        (category) => category.id === option.categoryId
+                      )?.name ??
+                      option.categoryId,
+                  ],
+                ]
               : []
-          )
-        ),
+          ),
+        ]),
       ].map(([id, name]) => ({ id, name })),
-    [stockOptions]
+    [options?.categories, stockOptions]
   );
   const warehouses = useMemo(
     () =>
       [
-        ...new Map(
-          stockOptions.map((option) => [
+        ...new Map([
+          ...(options?.warehouses ?? []).flatMap((warehouse) =>
+            warehouse.id ? [[warehouse.id, warehouse.name ?? warehouse.id]] : []
+          ),
+          ...stockOptions.map((option) => [
             option.warehouseId,
             option.warehouseName,
-          ])
-        ),
+          ]),
+        ]),
       ].map(([id, name]) => ({ id, name })),
-    [stockOptions]
+    [options?.warehouses, stockOptions]
   );
   const showUnitOnMobile =
     hasNextProductsPage ||
@@ -402,9 +430,21 @@ export function SaleCreateDialog({
                   <SaleProductPicker
                     categories={productCategories}
                     categoryFilter={productCategoryFilter}
-                    fetchNextPage={fetchNextProductsPage}
-                    hasNextPage={hasNextProductsPage}
-                    isFetchingNextPage={isFetchingNextProductsPage}
+                    fetchNextPage={
+                      hasProductSearch
+                        ? () => productSearchQuery.fetchNextPage()
+                        : fetchNextProductsPage
+                    }
+                    hasNextPage={
+                      hasProductSearch
+                        ? productSearchQuery.hasNextPage
+                        : hasNextProductsPage
+                    }
+                    isFetchingNextPage={
+                      hasProductSearch
+                        ? productSearchQuery.isFetchingNextPage
+                        : isFetchingNextProductsPage
+                    }
                     isRefreshing={productSearch.status.isRefreshing}
                     lines={lines}
                     onCategoryFilterChange={setProductCategoryFilter}
