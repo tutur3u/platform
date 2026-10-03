@@ -1,6 +1,8 @@
 /** Each case reserves its share of one host budget, including across jobs with
  * different parallel limits. Scan eligible waiters instead of blocking on a
  * larger reservation at the head. Never reuse a case's container. */
+// LCM of 1..16: every supported host share is an exact integer.
+const HOST_BUDGET = 720_720;
 let reserved = 0;
 let active = 0;
 interface Reservation {
@@ -13,7 +15,7 @@ const waiting: Reservation[] = [];
 function drain() {
   for (let index = 0; index < waiting.length; ) {
     const entry = waiting[index]!;
-    if (reserved + entry.weight > 1 + Number.EPSILON) {
+    if (reserved + entry.weight > HOST_BUDGET) {
       index++;
       continue;
     }
@@ -32,7 +34,7 @@ export async function withSandboxSlot<T>(
   if (!Number.isInteger(limit) || limit < 1 || limit > 16)
     throw new Error('Invalid sandbox concurrency');
   signal?.throwIfAborted();
-  const weight = 1 / limit;
+  const weight = HOST_BUDGET / limit;
   await new Promise<void>((start, reject) => {
     const entry: Reservation = {
       weight,
@@ -54,7 +56,7 @@ export async function withSandboxSlot<T>(
     return await run();
   } finally {
     active--;
-    reserved = active ? Math.max(0, reserved - weight) : 0;
+    reserved = active ? reserved - weight : 0;
     drain();
   }
 }
