@@ -37,6 +37,28 @@ OfflineResourceReference ref(
 );
 
 void main() {
+  test('batch checkpoints stay outside the inventory wallet scheduler', () {
+    expect(
+      OfflineInventoryMutation.fromRecord(
+        record(
+          path: '/api/workspaces/ws/wallets/checkpoints',
+          feature: 'finance',
+        ),
+      ),
+      isNull,
+    );
+    expect(
+      OfflineInventoryMutation.fromRecord(
+        record(
+          path: '/api/workspaces/ws/wallets/local-wallet',
+          feature: 'finance',
+          method: 'PATCH',
+        ),
+      )?.resource,
+      'wallet',
+    );
+  });
+
   test(
     'entity/workspace ID collision rewrites only the declared entity slot',
     () {

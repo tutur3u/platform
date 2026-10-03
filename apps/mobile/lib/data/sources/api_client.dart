@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mobile/core/config/api_config.dart';
+import 'package:mobile/data/sources/api_error_payload.dart';
 import 'package:mobile/data/sources/api_verification.dart';
 import 'package:mobile/data/sources/offline_api_request.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
@@ -555,32 +556,17 @@ class ApiClient {
       if (parsed?['code'] == 'MFA_REQUIRED') {
         unawaited(refreshRequiredMfa(_auth));
       }
-      final errorMessage =
-          parsed?['message'] as String? ??
-          parsed?['error'] as String? ??
-          'Request failed';
-      final validationErrors =
-          (parsed?['errors'] as List<dynamic>? ?? const <dynamic>[])
-              .whereType<Map<String, dynamic>>()
-              .map((error) => error['message']?.toString().trim() ?? '')
-              .where((message) => message.isNotEmpty)
-              .toList(growable: false);
-      final effectiveMessage =
-          validationErrors.isNotEmpty &&
-              validationErrors.first.toLowerCase() != errorMessage.toLowerCase()
-          ? '$errorMessage: ${validationErrors.first}'
-          : errorMessage;
+      final error = ApiErrorPayload(parsed);
       developer.log(
-        'HTTP ${response.statusCode}; code=${parsed?['code'] ?? 'unknown'}',
+        'HTTP ${response.statusCode}; code=${error.code ?? 'unknown'}',
         name: 'ApiClient',
       );
       throw ApiException(
-        message: effectiveMessage,
+        message: error.effectiveMessage,
         statusCode: response.statusCode,
         retryAfter:
-            _retryAfter(response.headers['retry-after']) ??
-            parsed?['retryAfter'] as int?,
-        code: parsed?['code'] as String?,
+            _retryAfter(response.headers['retry-after']) ?? error.retryAfter,
+        code: error.code,
         offlineContractObserved:
             response.headers['x-tuturuuu-offline-contract'] ==
             'inventory-offline-create-v1',
