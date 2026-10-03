@@ -32,12 +32,17 @@ function fixture(operationId?: string) {
       refresh_token: null,
     },
   };
+  const predicates: Record<string, unknown[][]> = {};
   const sbAdmin = {
     rpc: vi.fn(async () => ({ data: null as unknown, error: null as unknown })),
     from: (table: string) => {
       const query = {
         select: () => query,
-        eq: () => query,
+        eq: (column: string, value: unknown) => {
+          predicates[table] ??= [];
+          predicates[table].push([column, value]);
+          return query;
+        },
         maybeSingle: async () => ({ data: rows[table], error: null }),
       };
       return query;
@@ -73,7 +78,15 @@ function fixture(operationId?: string) {
     } as unknown as Parameters<typeof createRequestColorOperationAccess>[3],
     { operationId: () => operationId }
   );
-  return { rows, authorize, resolveSource, resolveConnection, sbAdmin, access };
+  return {
+    rows,
+    predicates,
+    authorize,
+    resolveSource,
+    resolveConnection,
+    sbAdmin,
+    access,
+  };
 }
 
 describe('request-bound color operation access', () => {
@@ -87,6 +100,28 @@ describe('request-bound color operation access', () => {
       access_token: 'verified-fixture',
       refresh_token: undefined,
     });
+  });
+  it('scopes every privileged event, connection and token read to the actor workspace', async () => {
+    const f = fixture();
+    await f.access.discover();
+    expect(f.predicates.workspace_calendar_events).toEqual([
+      ['ws_id', 'workspace'],
+      ['id', 'event'],
+    ]);
+    expect(f.predicates.calendar_connections).toEqual([
+      ['id', 'connection'],
+      ['ws_id', 'workspace'],
+      ['provider', 'google'],
+      ['calendar_id', 'calendar'],
+      ['is_enabled', true],
+    ]);
+    expect(f.predicates.calendar_auth_tokens).toEqual([
+      ['id', 'token'],
+      ['ws_id', 'workspace'],
+      ['user_id', 'actor'],
+      ['provider', 'google'],
+      ['is_active', true],
+    ]);
   });
   it('refuses recovery after linkage changes', async () => {
     const f = fixture();

@@ -195,6 +195,15 @@ export async function createRequestProviderSagaService(
             );
           const event = original.event as calendar_v3.Schema$Event;
           if (
+            event.recurrence?.length ||
+            event.recurringEventId ||
+            event.originalStartTime
+          )
+            throw new ColorOperationError(
+              'unavailable',
+              'Recurring transfers require recurrence preservation'
+            );
+          if (
             event.id !== original.eventId ||
             event.etag !== original.etag ||
             !(event.start?.date || event.start?.dateTime) ||

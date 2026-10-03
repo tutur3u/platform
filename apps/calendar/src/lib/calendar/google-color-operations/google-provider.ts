@@ -46,7 +46,7 @@ export function createGoogleColorOperationProvider(
         calendarId: operation.identity.calendarId,
         eventId: operation.identity.providerEventId,
       });
-      if (!current.data.etag)
+      if (!current.data.etag || current.data.status === 'cancelled')
         throw new ColorOperationError(
           'unavailable',
           'Google event version is unavailable'
@@ -96,7 +96,7 @@ export function createGoogleColorOperationProvider(
         calendarId: identity.calendarId,
         eventId: identity.providerEventId,
       });
-      if (!current.data.etag)
+      if (!current.data.etag || current.data.status === 'cancelled')
         throw new ColorOperationError(
           'unavailable',
           'Google event version is unavailable'

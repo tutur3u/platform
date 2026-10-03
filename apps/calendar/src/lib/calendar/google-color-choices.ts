@@ -40,6 +40,18 @@ export const GoogleProviderColorChoiceSchema = z.discriminatedUnion('kind', [
     .strict(),
 ]);
 
+function providerChoiceFailure(failure: unknown, message: string) {
+  const error = failure as {
+    code?: unknown;
+    response?: { status?: unknown };
+  } | null;
+  const status = Number(error?.response?.status ?? error?.code);
+  return new GoogleColorChoiceError(
+    message,
+    [401, 403].includes(status) ? status : 503
+  );
+}
+
 /** All definitions must be current before a selectable/writeable choice is offered. */
 export async function loadGoogleColorOptions(
   calendar: calendar_v3.Calendar,
@@ -54,26 +66,26 @@ export async function loadGoogleColorOptions(
         [
           Effect.tryPromise({
             try: () => calendar.colors.get(),
-            catch: () =>
-              new GoogleColorChoiceError(
-                'Google color palette is unavailable',
-                502
+            catch: (failure) =>
+              providerChoiceFailure(
+                failure,
+                'Google color palette is unavailable'
               ),
           }),
           Effect.tryPromise({
             try: () => calendar.calendarList.get({ calendarId }),
-            catch: () =>
-              new GoogleColorChoiceError(
-                'Google source color is unavailable',
-                502
+            catch: (failure) =>
+              providerChoiceFailure(
+                failure,
+                'Google source color is unavailable'
               ),
           }),
           Effect.tryPromise({
             try: () => calendar.calendars.get({ calendarId }),
-            catch: () =>
-              new GoogleColorChoiceError(
-                'Google calendar labels are unavailable',
-                502
+            catch: (failure) =>
+              providerChoiceFailure(
+                failure,
+                'Google calendar labels are unavailable'
               ),
           }),
         ],
@@ -175,10 +187,10 @@ export async function resolveGoogleColorChoice(
     );
   const fields: Pick<calendar_v3.Schema$Event, 'colorId' | 'eventLabelId'> =
     choice.kind === 'label'
-      ? { eventLabelId: choice.id }
+      ? { eventLabelId: choice.id, colorId: '' }
       : choice.kind === 'event'
-        ? { colorId: choice.id }
-        : {};
+        ? { colorId: choice.id, eventLabelId: '' }
+        : { colorId: '', eventLabelId: '' };
   return {
     fields,
     metadata: resolveGoogleEventColor(fields, context),

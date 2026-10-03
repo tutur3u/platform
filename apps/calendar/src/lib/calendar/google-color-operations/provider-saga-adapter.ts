@@ -222,13 +222,15 @@ export function createProviderSagaAdapter(args: {
         throw failure('unavailable');
       const source = admittedEndpoint(binding, binding.source);
       const destination = admittedEndpoint(binding, binding.destination);
-      const inspect = async () => {
+      const inspect = async (confirmedMove = false) => {
         const original = await observe(binding, source);
         const target = await observe(binding, destination);
         if (original.absent && !target.absent) {
           if (target.event.iCalUID !== payload.sourceICalUID)
             throw failure('identity');
-          return { recovered: target, original, target };
+          // UID/ID may also identify a concurrent copy after source deletion.
+          // Only this invocation's successful move response establishes attribution.
+          return { recovered: confirmedMove ? target : null, original, target };
         }
         return { recovered: null, original, target };
       };
@@ -274,7 +276,7 @@ export function createProviderSagaAdapter(args: {
             : 'unavailable'
         );
       }
-      const after = await inspect();
+      const after = await inspect(true);
       if (!after.recovered) throw failure('unavailable');
       return after.recovered;
     },

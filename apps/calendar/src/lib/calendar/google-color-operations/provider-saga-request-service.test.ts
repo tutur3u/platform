@@ -413,3 +413,49 @@ it.each([false, true])(
     expect(f.provider.deleteSource).not.toHaveBeenCalled();
   }
 );
+
+it.each([
+  { recurrence: ['RRULE:FREQ=DAILY'] },
+  { recurringEventId: 'series' },
+  { originalStartTime: { date: '2026-10-02' } },
+])(
+  'rejects recurring native transfers without deleting the source',
+  async (recurrence) => {
+    const f = fixture();
+    vi.mocked(f.provider.observe).mockResolvedValueOnce({
+      absent: false,
+      eventId: 'original',
+      etag: 'original-version',
+      marker: null,
+      event: {
+        id: 'original',
+        etag: 'original-version',
+        start: { date: '2026-10-02' },
+        end: { date: '2026-10-03' },
+        ...recurrence,
+      },
+    });
+    const service = await createRequestProviderSagaService(
+      new Request('https://example.test'),
+      scope.wsId,
+      scope.eventId,
+      { provider: () => f.provider, project: vi.fn() }
+    );
+    await expect(
+      service.reserve({
+        ...f.input,
+        binding: {
+          ...f.input.binding,
+          mode: 'external-to-native',
+          destination: {
+            provider: 'tuturuuu',
+            wsId: scope.wsId,
+            eventId: scope.eventId,
+            workspaceCalendarId: '00000000-0000-4000-8000-000000008791',
+          },
+        },
+      })
+    ).rejects.toMatchObject({ reason: 'unavailable' });
+    expect(f.provider.deleteSource).not.toHaveBeenCalled();
+  }
+);

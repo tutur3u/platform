@@ -86,8 +86,19 @@ export function createColorOperationExecutor(dependencies: {
         'Google operation is not fenced yet'
       );
     // An external update can supersede the intent even when its color matches.
+    const choice = snapshot.metadata.google_color as
+      | { color_id?: string | null; event_label_id?: string | null }
+      | undefined;
+    const fields = operation.prepared.patch;
+    const matchesChoice =
+      (!('colorId' in fields) ||
+        (choice?.color_id ?? '') === (fields.colorId ?? '')) &&
+      (!('eventLabelId' in fields) ||
+        (choice?.event_label_id ?? '') === (fields.eventLabelId ?? ''));
     const outcome =
-      snapshot.operationMarker === operation.id ? 'applied' : 'superseded';
+      snapshot.operationMarker === operation.id && matchesChoice
+        ? 'applied'
+        : 'superseded';
     await access.assertAllowed(identity);
     return repository.finalize(operation, snapshot, outcome);
   }

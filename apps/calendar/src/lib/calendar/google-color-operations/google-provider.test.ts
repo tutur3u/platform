@@ -78,6 +78,16 @@ function fixture() {
 }
 
 describe('real Google operation adapter', () => {
+  it('rejects canceled events before preparation or dispatch', async () => {
+    const f = fixture();
+    f.get.mockResolvedValueOnce({
+      data: { etag: 'canceled-version', status: 'cancelled' },
+    });
+    await expect(f.provider.prepare(operation)).rejects.toMatchObject({
+      reason: 'unavailable',
+    });
+    expect(f.patch).not.toHaveBeenCalled();
+  });
   it('prepares actual provider choice and preserves unrelated private properties', async () => {
     const f = fixture();
     const prepared = await f.provider.prepare(operation);

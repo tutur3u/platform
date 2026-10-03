@@ -601,7 +601,12 @@ Google creation, source-only movement between two calendars of the same Google
 account, native-to-Google creation, and conditional Google-to-native transfer.
 Google move preserves the provider event identity and iCalendar UID; a move may
 include a local lock change, but combined content/color/time changes return 409
-before provider effects. Cross-account copy/delete and Microsoft sagas return 409
+before provider effects. A lost move response remains ambiguous: a matching ID and
+UID at the destination cannot distinguish this operation from an independent copy.
+Only a successful response from the attempted move permits that invocation to
+finalize; resumption never attributes an unmarked destination to the operation.
+Google-to-native transfers reject recurring masters and instances before admission
+because a single native snapshot cannot preserve the source recurrence. Cross-account copy/delete and Microsoft sagas return 409
 before admission because their retry and compensation fences are not established.
 Google-to-Google moves of events with a calendar-scoped label also return 409
 before key resolution or admission because that label cannot be carried safely
@@ -624,7 +629,7 @@ native generation comparison for subsequent edits and deletion. Disabling the
 candidate cannot reopen legacy provider writes for a retained event. Legacy batch
 sync preflights every event before dispatch, and invited creation and automatic
 outbound mirroring remain blocked in candidate mode until they adopt the same
-boundary. Ledgerless ordinary native behavior remains unchanged. Native-to-Google admission compares the complete stored native row under the event lock before creating its retained generation. A concurrent ledgerless edit returns a conflict without a provider write, without depending on a native mutation timestamp. The transient encrypted row comparison never enters the public binding or persisted journal; route/service regressions and `calendar-provider-saga.sql` cover stale rejection and fresh admission.
+boundary. With candidate mode disabled, ledgerless ordinary native behavior remains unchanged. When enabled, native edits use generation zero as their initial compare-and-set fence, so a concurrently admitted transfer rejects the stale edit. Native-to-Google admission compares the complete stored native row under the event lock before creating its retained generation. A concurrent ledgerless edit returns a conflict without a provider write, without depending on a native mutation timestamp. The transient encrypted row comparison never enters the public binding or persisted journal; route/service regressions and `calendar-provider-saga.sql` cover stale rejection and fresh admission.
 
 Synthetic Google acceptance established stale-version delete and move rejection,
 identity-preserving movement, duplicate insert rejection, and rejection of late

@@ -98,6 +98,17 @@ export function createGoogleMutationProvider(args: {
           'unavailable',
           'Google version unavailable'
         );
+      // Preserve all-day representation from the authoritative version fetched
+      // for this exact If-Match preparation, rather than guessing from timestamps.
+      if (current.start?.date) {
+        for (const field of ['start', 'end'] as const) {
+          const value = providerPatch[field] as
+            | { dateTime?: string }
+            | undefined;
+          if (value?.dateTime)
+            providerPatch[field] = { date: value.dateTime.slice(0, 10) };
+        }
+      }
       if (input.meetingResponse) {
         const response = z
           .object({
@@ -156,7 +167,9 @@ export function createGoogleMutationProvider(args: {
         localPatch,
         providerOptions: {
           sendUpdates: input.sendUpdates ?? 'none',
-          eventLabelVersion: input.eventLabelVersion ?? 1,
+          ...(input.eventLabelVersion === undefined
+            ? {}
+            : { eventLabelVersion: input.eventLabelVersion }),
         },
       };
       return { binding, journal: await codec.seal(binding, payload) };
@@ -185,7 +198,11 @@ export function createGoogleMutationProvider(args: {
         await calendar.events.patch(
           {
             ...resource,
-            eventLabelVersion: payload.providerOptions?.eventLabelVersion ?? 1,
+            ...(payload.providerOptions?.eventLabelVersion === undefined
+              ? {}
+              : {
+                  eventLabelVersion: payload.providerOptions.eventLabelVersion,
+                }),
             requestBody: payload.providerPatch as calendar_v3.Schema$Event,
           },
           options

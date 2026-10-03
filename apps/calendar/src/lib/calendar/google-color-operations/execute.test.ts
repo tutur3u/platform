@@ -322,3 +322,13 @@ describe('recoverable immutable color operation executor', () => {
     expect(other.attempts).toHaveLength(0);
   });
 });
+
+it('treats later external color changes as superseded even when the private marker survives', async () => {
+  const f = fixture();
+  const originalRead = f.provider.read;
+  f.provider.read = async (scope) => {
+    const snapshot = await originalRead(scope);
+    return { ...snapshot, metadata: { google_color: { color_id: '7' } } };
+  };
+  expect((await f.executor().execute(identity, 'A')).phase).toBe('superseded');
+});

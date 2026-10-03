@@ -427,3 +427,29 @@ describe('durable mutation crash recovery', () => {
     expect(f.patch).not.toHaveBeenCalled();
   });
 });
+
+it('preserves all-day boundaries and does not opt content-only patches into labels', async () => {
+  const f = fixture();
+  f.get.mockResolvedValue({
+    data: {
+      etag: 'all-day',
+      start: { date: '2026-10-03' },
+      end: { date: '2026-10-04' },
+    },
+  });
+  const prepared = await f.provider.prepare({
+    operationId: id,
+    generation: '1',
+    identity,
+    action: 'patch',
+    providerPatch: {
+      start: { dateTime: '2026-10-05T00:00:00.000Z' },
+      end: { dateTime: '2026-10-06T00:00:00.000Z' },
+    },
+  });
+  await f.provider.dispatch(identity, prepared);
+  expect(f.patch.mock.calls[0]?.[0]).toMatchObject({
+    requestBody: { start: { date: '2026-10-05' }, end: { date: '2026-10-06' } },
+  });
+  expect(f.patch.mock.calls[0]?.[0]).not.toHaveProperty('eventLabelVersion');
+});

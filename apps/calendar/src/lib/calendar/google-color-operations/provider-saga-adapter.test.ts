@@ -365,14 +365,18 @@ describe('conditionally fenced same-account Google move', () => {
       list.mock.calls.length + get.mock.calls.length + move.mock.calls.length
     );
   });
-  it('recovers lost success and repeated execution without dispatching another move', async () => {
+  it('keeps lost move success ambiguous without attributing a same-ID copy', async () => {
     move.mockImplementationOnce(async () => {
       events.delete('source/original');
       events.set('destination/original', sourceEvent('moved-etag'));
       throw new Error('private transport details');
     });
-    await movingAdapter().move(atomic, movePayload);
-    await movingAdapter().move(atomic, movePayload);
+    await expect(
+      movingAdapter().move(atomic, movePayload)
+    ).rejects.toMatchObject({ reason: 'unavailable' });
+    await expect(
+      movingAdapter().move(atomic, movePayload)
+    ).rejects.toMatchObject({ reason: 'unavailable' });
     expect(move).toHaveBeenCalledTimes(1);
   });
   it('never adopts independently created destination ID with a different UID', async () => {
@@ -384,6 +388,14 @@ describe('conditionally fenced same-account Google move', () => {
     await expect(
       movingAdapter().move(atomic, movePayload)
     ).rejects.toMatchObject({ reason: 'identity' });
+    expect(move).not.toHaveBeenCalled();
+  });
+  it('does not adopt a same-ID same-UID independent copy after source deletion', async () => {
+    events.delete('source/original');
+    events.set('destination/original', sourceEvent('independent-copy'));
+    await expect(
+      movingAdapter().move(atomic, movePayload)
+    ).rejects.toMatchObject({ reason: 'unavailable' });
     expect(move).not.toHaveBeenCalled();
   });
   it('rejects a destination collision even with matching UID while source still exists', async () => {

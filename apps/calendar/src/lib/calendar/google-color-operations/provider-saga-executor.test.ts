@@ -249,3 +249,21 @@ describe('durable dual-endpoint provider saga', () => {
     expect(f.provider.deleteSource).not.toHaveBeenCalled();
   });
 });
+
+it('keeps compensated source absence pending until an atomic tombstone contract exists', async () => {
+  const f = await fixture();
+  f.state().phase = 'dispatched';
+  f.state().checkpoint = {
+    step: 'target-removed',
+    targetEventId: destination.identity.providerEventId!,
+    targetETag: 'target-original',
+  };
+  vi.mocked(f.provider.observe).mockResolvedValue({ absent: true });
+  await expect(f.executor.execute(id)).rejects.toMatchObject({
+    reason: 'unavailable',
+  });
+  expect(f.repository.finalize).not.toHaveBeenCalled();
+  expect(f.provider.insert).not.toHaveBeenCalled();
+  expect(f.provider.deleteSource).not.toHaveBeenCalled();
+  expect(f.state().phase).toBe('dispatched');
+});

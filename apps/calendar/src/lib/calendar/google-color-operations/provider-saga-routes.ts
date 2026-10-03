@@ -246,6 +246,12 @@ export async function handleProviderSagaMove(
           summary: plain.title ?? '',
           description: plain.description ?? '',
           location: plain.location ?? '',
+          ...(GOOGLE_COLOR_IDS[args.existingEvent.color as SupportedColor]
+            ? {
+                colorId:
+                  GOOGLE_COLOR_IDS[args.existingEvent.color as SupportedColor],
+              }
+            : {}),
           start: { dateTime: args.existingEvent.start_at },
           end: { dateTime: args.existingEvent.end_at },
         }

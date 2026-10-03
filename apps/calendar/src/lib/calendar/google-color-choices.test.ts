@@ -90,6 +90,13 @@ describe('validated Google colors', () => {
         choice.kind === 'inherit' ? 'calendar' : choice.kind
       );
       expect(result.metadata.inherited).toBe(choice.kind === 'inherit');
+      expect(result.fields).toEqual(
+        choice.kind === 'inherit'
+          ? { colorId: '', eventLabelId: '' }
+          : choice.kind === 'event'
+            ? { colorId: choice.id, eventLabelId: '' }
+            : { colorId: '', eventLabelId: choice.id }
+      );
     }
   );
   it('rejects a choice from another source before metadata reads', async () => {
@@ -112,6 +119,20 @@ describe('validated Google colors', () => {
       })
     ).rejects.toMatchObject({ status: 409 });
   });
+  it.each([401, 403, 429, 500])(
+    'preserves auth status and maps provider %s outages to503',
+    async (status) => {
+      const client = calendar();
+      vi.mocked(client.calendars.get).mockRejectedValueOnce({
+        response: { status },
+      });
+      await expect(
+        loadGoogleColorOptions(client, source)
+      ).rejects.toMatchObject({
+        status: status === 401 || status === 403 ? status : 503,
+      });
+    }
+  );
   it('reports provider availability failures as typed errors', async () => {
     const client = calendar();
     vi.mocked(client.calendars.get).mockRejectedValueOnce(

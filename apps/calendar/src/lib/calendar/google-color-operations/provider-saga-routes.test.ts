@@ -236,6 +236,7 @@ it.each([false, true])(
       id: eventId,
       ws_id: wsId,
       provider: 'tuturuuu',
+      color: 'BLUE',
       title: 'encrypted-old',
       description: 'encrypted-description',
       is_encrypted: true,
@@ -267,6 +268,7 @@ it.each([false, true])(
     const input = mocks.reserve.mock.calls[0]?.[0];
     expect(input.nativeSnapshot).toEqual(stored);
     expect(input.payload.event.summary).toBe('private decrypted intent');
+    expect(input.payload.event.colorId).toBe('9');
     expect(input.binding).not.toHaveProperty('nativeSnapshot');
     if (stale) {
       expect(mocks.execute).not.toHaveBeenCalled();
