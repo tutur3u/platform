@@ -394,9 +394,12 @@ Exchange rates are authenticated global reference data. Web Supabase sessions an
 verified internal app sessions, including Finance, use the same API. A Finance
 app session does not require a separate Supabase login. Invalid or expired app
 sessions and anonymous callers are rejected before any database read; existing
-session suspension and abuse controls remain active. Active app-session suspensions
-are also checked before Rust service-role currency reads; the suspension lookup
-retains the shared live policy’s fail-open behavior on policy-store outages.
+session suspension and abuse controls remain active. Both verified Supabase JWT
+users and app-session actors pass the same Rust active-suspension check before
+currency reads. Lifted and expired suspensions do not block reads; the policy
+lookup retains the shared live policy’s fail-open behavior on policy-store outages.
+Supabase JWT currency reads retain the caller token; only verified app sessions
+use the server read credential.
 Currency query failures return 500 and never masquerade as missing rates or
 trigger seeding; initial seeding runs only after a successful empty lookup.
 Successful rates are private

@@ -49,7 +49,7 @@ async fn exchange_rates_response(
 ) -> BackendResponse {
     // Verified satellite sessions have no Supabase JWT. Currency rates are
     // global reference data; only this branch may use the server read client.
-    let access_token = if contact::request_has_app_session_token(request) {
+    let (user_id, access_token) = if contact::request_has_app_session_token(request) {
         let Ok(identity) = contact::resolve_app_session_identity(
             config,
             request,
@@ -57,27 +57,26 @@ async fn exchange_rates_response(
         ) else {
             return error_response(401, UNAUTHORIZED_MESSAGE);
         };
-        if let Some(response) = suspended_app_session_response(config, &identity.id, outbound).await
-        {
-            return response;
-        }
         let Some(key) = config.contact_data.service_role_key() else {
             return error_response(500, INTERNAL_SERVER_ERROR_MESSAGE);
         };
-        key.to_owned()
+        (identity.id, key.to_owned())
     } else {
         let Some(token) = supabase_auth::request_access_token(request) else {
             return error_response(401, UNAUTHORIZED_MESSAGE);
         };
-        if supabase_auth::fetch_supabase_auth_user(&config.contact_data, &token, outbound)
-            .await
-            .and_then(|user| user.id.filter(|id| !id.trim().is_empty()))
-            .is_none()
-        {
+        let Some(user_id) =
+            supabase_auth::fetch_supabase_auth_user(&config.contact_data, &token, outbound)
+                .await
+                .and_then(|user| user.id.filter(|id| !id.trim().is_empty()))
+        else {
             return error_response(401, UNAUTHORIZED_MESSAGE);
-        }
-        token
+        };
+        (user_id, token)
     };
+    if let Some(response) = suspended_user_response(config, &user_id, outbound).await {
+        return response;
+    }
 
     // Get the latest date's exchange rates for the USD base currency.
     let latest_date =
@@ -111,7 +110,7 @@ async fn exchange_rates_response(
 
 // Match the live session middleware: deny an active suspension before rate
 // reads, and preserve its documented fail-open behavior on policy-store errors.
-async fn suspended_app_session_response(
+async fn suspended_user_response(
     config: &BackendConfig,
     user_id: &str,
     outbound: &impl OutboundHttpClient,
