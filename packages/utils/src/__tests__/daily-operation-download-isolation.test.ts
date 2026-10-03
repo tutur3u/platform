@@ -78,9 +78,9 @@ it.each(paths)(
       vi.stubEnv('OFFLINE_DOWNLOAD_PROTECTION_ENABLED', enabled);
       for (const method of ['GET', 'HEAD']) {
         for (const headers of [
-          {},
-          { authorization: 'Bearer synthetic-session' },
-          { cookie: 'tuturuuu-app-session=synthetic-session' },
+          new Headers(),
+          new Headers({ authorization: 'Bearer synthetic-session' }),
+          new Headers({ cookie: 'tuturuuu_app_session=ttr_app_synthetic' }),
         ]) {
           const request = new NextRequest(
             `https://${app}.tuturuuu.com${path}`,
