@@ -12,6 +12,33 @@ class AppLocalizationsVi extends AppLocalizations {
   AppLocalizationsVi([String locale = 'vi']) : super(locale);
 
   @override
+  String get workspaceHiddenTitle => 'Không gian làm việc đã ẩn';
+
+  @override
+  String get workspaceHideAction => 'Ẩn';
+
+  @override
+  String get workspaceRestoreAction => 'Hiện lại';
+
+  @override
+  String get workspaceHiddenDescription => 'Chỉ bạn thấy danh sách này. Ẩn không thay đổi tư cách thành viên hay thông báo.';
+
+  @override
+  String get workspaceHiddenEmpty => 'Không có không gian làm việc đã ẩn';
+
+  @override
+  String get workspaceHiddenLoadError => 'Không thể tải tùy chọn hiển thị. Các lựa chọn ẩn đã lưu được giữ lại.';
+
+  @override
+  String get workspaceHiddenUpdateError => 'Không thể lưu thay đổi. Hãy thử lại khi có kết nối.';
+
+  @override
+  String get workspaceAllHidden => 'Các không gian làm việc của bạn đã bị ẩn. Hiện lại một không gian để tiếp tục.';
+
+  @override
+  String get workspacePickerClose => 'Đóng danh sách không gian làm việc';
+
+  @override
   String get commonLoading => 'Đang tải';
 
   @override
@@ -9591,6 +9618,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryStockHealthUnknown => 'Chưa có dữ liệu';
 
   @override
+  String get inventoryProductDeleteConfirm => 'Xóa sản phẩm này? Nếu giao dịch đã có tham chiếu đến sản phẩm, máy chủ sẽ lưu trữ sản phẩm khi đồng bộ.';
+
+  @override
+  String get inventorySeasonPriceCached => 'Bản nháp ngoại tuyến sử dụng giá mùa đã lưu. Giá và tình trạng hàng sẽ được kiểm tra khi đồng bộ.';
+
+  @override
   String get inventorySeasonPriceLoading => 'Đang kiểm tra giá mùa hiện tại…';
 
   @override
@@ -9618,55 +9651,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventorySeasonHistoricalReadOnly => 'Lịch sử bán theo mùa chỉ có thể xem tại đây. Giá đã ghi nhận được giữ nguyên.';
-
-  @override
-  String get calendarGoogleColorInherit => 'Dùng màu lịch';
-
-  @override
-  String calendarGoogleColorLabel(String id) {
-    return 'Nhãn tùy chỉnh $id';
-  }
-
-  @override
-  String calendarGoogleColorEvent(String id) {
-    return 'Màu Google $id';
-  }
-
-  @override
-  String get calendarProviderColorSeparateEdit => 'Lưu các thay đổi khác trước khi đổi màu Google.';
-
-  @override
-  String get workspaceHiddenTitle => 'Không gian làm việc đã ẩn';
-
-  @override
-  String get workspaceHideAction => 'Ẩn';
-
-  @override
-  String get workspaceRestoreAction => 'Hiện lại';
-
-  @override
-  String get workspaceHiddenDescription => 'Chỉ bạn thấy danh sách này. Ẩn không thay đổi tư cách thành viên hay thông báo.';
-
-  @override
-  String get workspaceHiddenEmpty => 'Không có không gian làm việc đã ẩn';
-
-  @override
-  String get workspaceHiddenLoadError => 'Không thể tải tùy chọn hiển thị. Các lựa chọn ẩn đã lưu được giữ lại.';
-
-  @override
-  String get workspaceHiddenUpdateError => 'Không thể lưu thay đổi. Hãy thử lại khi có kết nối.';
-
-  @override
-  String get workspaceAllHidden => 'Các không gian làm việc của bạn đã bị ẩn. Hiện lại một không gian để tiếp tục.';
-
-  @override
-  String get workspacePickerClose => 'Đóng danh sách không gian làm việc';
-
-  @override
-  String get inventoryProductDeleteConfirm => 'Xóa sản phẩm này? Nếu giao dịch đã có tham chiếu đến sản phẩm, máy chủ sẽ lưu trữ sản phẩm khi đồng bộ.';
-
-  @override
-  String get inventorySeasonPriceCached => 'Bản nháp ngoại tuyến sử dụng giá mùa đã lưu. Giá và tình trạng hàng sẽ được kiểm tra khi đồng bộ.';
 
   @override
   String get offlinePreparationTitle => 'Dữ liệu ngoại tuyến';
@@ -9729,24 +9713,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventoryCheckoutPeriodRulesChanged => 'Một số sản phẩm không phù hợp với kỳ bán hàng này. Đối soát giỏ hàng để tiếp tục.';
-
-  @override
-  String get inventorySetupSyncFirst => 'Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa.';
-
-  @override
-  String get homePersonalAgenda => 'Lịch cá nhân';
-
-  @override
-  String get homePersonalAgendaUnavailable => 'Lịch cá nhân hiện không khả dụng.';
-
-  @override
-  String get assistantExpandNavigation => 'Hiện điều hướng';
-
-  @override
-  String get assistantCollapseNavigation => 'Ẩn điều hướng';
-
-  @override
-  String get assistantCloseComposer => 'Đóng ô nhập';
 
   @override
   String get offlineSectionTitle => 'Ngoại tuyến';
@@ -9860,4 +9826,87 @@ class AppLocalizationsVi extends AppLocalizations {
   String offlineStoredItemId(String id) {
     return 'ID mục: $id';
   }
+
+  @override
+  String get homePersonalAgenda => 'Lịch cá nhân';
+
+  @override
+  String get homePersonalAgendaUnavailable => 'Lịch cá nhân hiện không khả dụng.';
+
+  @override
+  String get assistantExpandNavigation => 'Hiện điều hướng';
+
+  @override
+  String get assistantCollapseNavigation => 'Ẩn điều hướng';
+
+  @override
+  String get assistantCloseComposer => 'Đóng ô nhập';
+
+  @override
+  String get inventoryRedesignLimitedData => 'Dữ liệu hạn chế. Đang hiển thị bản lưu gần nhất.';
+
+  @override
+  String get inventoryRedesignReceiptActivity => 'Hoạt động hóa đơn';
+
+  @override
+  String get inventoryRedesignReceiptCoverage => 'Số lượng từ các hóa đơn gần đây có sẵn, không phải tổng đầy đủ của kỳ. Ngày thiếu dữ liệu chưa xác định. Không suy ra tổng tiền hay số lượng sản phẩm.';
+
+  @override
+  String inventoryRedesignDays(int count) {
+    return '$count ngày';
+  }
+
+  @override
+  String inventoryRedesignRecentSample(int count) {
+    return '$count bản ghi có sẵn · phạm vi hạn chế';
+  }
+
+  @override
+  String inventoryRedesignUnknownDates(int count) {
+    return '$count bản ghi chưa có ngày';
+  }
+
+  @override
+  String get inventoryRedesignLoadedRevenue => 'Doanh thu từ hóa đơn đã tải';
+
+  @override
+  String inventoryRedesignUnknownCurrencies(int count) {
+    return 'Đã loại $count hóa đơn chưa xác định tiền tệ';
+  }
+
+  @override
+  String get inventoryRedesignPendingDeletion => 'Đang chờ xác nhận xóa';
+
+  @override
+  String inventoryRedesignPendingCount(int count) {
+    return '$count thay đổi chưa đồng bộ';
+  }
+
+  @override
+  String get inventoryRedesignLoadedSearch => 'Tìm trong bản ghi có sẵn';
+
+  @override
+  String get inventoryRedesignAllEvents => 'Tất cả sự kiện';
+
+  @override
+  String get inventoryRedesignSelectedLines => 'Dòng đã chọn';
+
+  @override
+  String get calendarGoogleColorInherit => 'Dùng màu lịch';
+
+  @override
+  String calendarGoogleColorLabel(String id) {
+    return 'Nhãn tùy chỉnh $id';
+  }
+
+  @override
+  String calendarGoogleColorEvent(String id) {
+    return 'Màu Google $id';
+  }
+
+  @override
+  String get calendarProviderColorSeparateEdit => 'Lưu các thay đổi khác trước khi đổi màu Google.';
+
+  @override
+  String get inventorySetupSyncFirst => 'Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa.';
 }

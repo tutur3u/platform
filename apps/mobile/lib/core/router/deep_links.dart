@@ -276,6 +276,21 @@ String _inventoryLocation(List<String> segments) {
   if (segments.length > 1 && segments[1] == 'sales') {
     return Routes.inventorySales;
   }
+  if (segments.length > 1 && segments[1] == 'sales-periods') {
+    return Routes.inventorySalesPeriods;
+  }
+  if (segments.length > 2 &&
+      segments[1] == 'manage' &&
+      const {
+        'owners',
+        'categories',
+        'manufacturers',
+        'units',
+        'warehouses',
+        'financeCategories',
+      }.contains(segments[2])) {
+    return Routes.inventoryCatalogPath(segments[2]);
+  }
   if (segments.length > 1 && segments[1] == 'manage') {
     return Routes.inventoryManage;
   }

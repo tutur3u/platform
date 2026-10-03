@@ -97,6 +97,60 @@ abstract class AppLocalizations {
     Locale('vi')
   ];
 
+  /// No description provided for @workspaceHiddenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden workspaces'**
+  String get workspaceHiddenTitle;
+
+  /// No description provided for @workspaceHideAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get workspaceHideAction;
+
+  /// No description provided for @workspaceRestoreAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get workspaceRestoreAction;
+
+  /// No description provided for @workspaceHiddenDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you can see this list. Hiding does not change membership or notifications.'**
+  String get workspaceHiddenDescription;
+
+  /// No description provided for @workspaceHiddenEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No Hidden workspaces'**
+  String get workspaceHiddenEmpty;
+
+  /// No description provided for @workspaceHiddenLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace visibility preferences are unavailable. Saved hidden choices are kept.'**
+  String get workspaceHiddenLoadError;
+
+  /// No description provided for @workspaceHiddenUpdateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to save this change. Try again when connected.'**
+  String get workspaceHiddenUpdateError;
+
+  /// No description provided for @workspaceAllHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Your workspaces are hidden. Restore one to continue.'**
+  String get workspaceAllHidden;
+
+  /// No description provided for @workspacePickerClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close workspace picker'**
+  String get workspacePickerClose;
+
   /// No description provided for @commonLoading.
   ///
   /// In en, this message translates to:
@@ -18433,6 +18487,18 @@ abstract class AppLocalizations {
   /// **'Unavailable'**
   String get inventoryStockHealthUnknown;
 
+  /// No description provided for @inventoryProductDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this product? If existing sales reference it, the server will archive it when syncing.'**
+  String get inventoryProductDeleteConfirm;
+
+  /// No description provided for @inventorySeasonPriceCached.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline draft using saved season prices. Prices and availability will be checked when syncing.'**
+  String get inventorySeasonPriceCached;
+
   /// No description provided for @inventorySeasonPriceLoading.
   ///
   /// In en, this message translates to:
@@ -18486,96 +18552,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scheduled sale history is read only here. Recorded prices are preserved.'**
   String get inventorySeasonHistoricalReadOnly;
-
-  /// No description provided for @calendarGoogleColorInherit.
-  ///
-  /// In en, this message translates to:
-  /// **'Use calendar color'**
-  String get calendarGoogleColorInherit;
-
-  /// No description provided for @calendarGoogleColorLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Custom label {id}'**
-  String calendarGoogleColorLabel(String id);
-
-  /// No description provided for @calendarGoogleColorEvent.
-  ///
-  /// In en, this message translates to:
-  /// **'Google color {id}'**
-  String calendarGoogleColorEvent(String id);
-
-  /// No description provided for @calendarProviderColorSeparateEdit.
-  ///
-  /// In en, this message translates to:
-  /// **'Save other changes before changing the Google color.'**
-  String get calendarProviderColorSeparateEdit;
-
-  /// No description provided for @workspaceHiddenTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Hidden workspaces'**
-  String get workspaceHiddenTitle;
-
-  /// No description provided for @workspaceHideAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Hide'**
-  String get workspaceHideAction;
-
-  /// No description provided for @workspaceRestoreAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Restore'**
-  String get workspaceRestoreAction;
-
-  /// No description provided for @workspaceHiddenDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Only you can see this list. Hiding does not change membership or notifications.'**
-  String get workspaceHiddenDescription;
-
-  /// No description provided for @workspaceHiddenEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'No Hidden workspaces'**
-  String get workspaceHiddenEmpty;
-
-  /// No description provided for @workspaceHiddenLoadError.
-  ///
-  /// In en, this message translates to:
-  /// **'Workspace visibility preferences are unavailable. Saved hidden choices are kept.'**
-  String get workspaceHiddenLoadError;
-
-  /// No description provided for @workspaceHiddenUpdateError.
-  ///
-  /// In en, this message translates to:
-  /// **'Unable to save this change. Try again when connected.'**
-  String get workspaceHiddenUpdateError;
-
-  /// No description provided for @workspaceAllHidden.
-  ///
-  /// In en, this message translates to:
-  /// **'Your workspaces are hidden. Restore one to continue.'**
-  String get workspaceAllHidden;
-
-  /// No description provided for @workspacePickerClose.
-  ///
-  /// In en, this message translates to:
-  /// **'Close workspace picker'**
-  String get workspacePickerClose;
-
-  /// No description provided for @inventoryProductDeleteConfirm.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove this product? If existing sales reference it, the server will archive it when syncing.'**
-  String get inventoryProductDeleteConfirm;
-
-  /// No description provided for @inventorySeasonPriceCached.
-  ///
-  /// In en, this message translates to:
-  /// **'Offline draft using saved season prices. Prices and availability will be checked when syncing.'**
-  String get inventorySeasonPriceCached;
 
   /// No description provided for @offlinePreparationTitle.
   ///
@@ -18678,42 +18654,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Some items do not match this period. Reconcile the cart to continue.'**
   String get inventoryCheckoutPeriodRulesChanged;
-
-  /// No description provided for @inventorySetupSyncFirst.
-  ///
-  /// In en, this message translates to:
-  /// **'Sync this new item before using, editing, or deleting it.'**
-  String get inventorySetupSyncFirst;
-
-  /// No description provided for @homePersonalAgenda.
-  ///
-  /// In en, this message translates to:
-  /// **'Personal Agenda'**
-  String get homePersonalAgenda;
-
-  /// No description provided for @homePersonalAgendaUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Personal calendar is unavailable.'**
-  String get homePersonalAgendaUnavailable;
-
-  /// No description provided for @assistantExpandNavigation.
-  ///
-  /// In en, this message translates to:
-  /// **'Show navigation'**
-  String get assistantExpandNavigation;
-
-  /// No description provided for @assistantCollapseNavigation.
-  ///
-  /// In en, this message translates to:
-  /// **'Hide navigation'**
-  String get assistantCollapseNavigation;
-
-  /// No description provided for @assistantCloseComposer.
-  ///
-  /// In en, this message translates to:
-  /// **'Close prompt'**
-  String get assistantCloseComposer;
 
   /// No description provided for @offlineSectionTitle.
   ///
@@ -18912,6 +18852,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Item ID: {id}'**
   String offlineStoredItemId(String id);
+
+  /// No description provided for @homePersonalAgenda.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal Agenda'**
+  String get homePersonalAgenda;
+
+  /// No description provided for @homePersonalAgendaUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal calendar is unavailable.'**
+  String get homePersonalAgendaUnavailable;
+
+  /// No description provided for @assistantExpandNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Show navigation'**
+  String get assistantExpandNavigation;
+
+  /// No description provided for @assistantCollapseNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide navigation'**
+  String get assistantCollapseNavigation;
+
+  /// No description provided for @assistantCloseComposer.
+  ///
+  /// In en, this message translates to:
+  /// **'Close prompt'**
+  String get assistantCloseComposer;
+
+  /// No description provided for @inventoryRedesignLimitedData.
+  ///
+  /// In en, this message translates to:
+  /// **'Limited data. Last available snapshot shown.'**
+  String get inventoryRedesignLimitedData;
+
+  /// No description provided for @inventoryRedesignReceiptActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt activity'**
+  String get inventoryRedesignReceiptActivity;
+
+  /// No description provided for @inventoryRedesignReceiptCoverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Counts from the available recent receipts, not a complete period total. Missing days are unknown. Currency and quantity totals are not inferred.'**
+  String get inventoryRedesignReceiptCoverage;
+
+  /// No description provided for @inventoryRedesignDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day} other{{count} days}}'**
+  String inventoryRedesignDays(int count);
+
+  /// No description provided for @inventoryRedesignRecentSample.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 available record} other{{count} available records}} · limited coverage'**
+  String inventoryRedesignRecentSample(int count);
+
+  /// No description provided for @inventoryRedesignUnknownDates.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 record without a date} other{{count} records without a date}}'**
+  String inventoryRedesignUnknownDates(int count);
+
+  /// No description provided for @inventoryRedesignLoadedRevenue.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue in loaded receipts'**
+  String get inventoryRedesignLoadedRevenue;
+
+  /// No description provided for @inventoryRedesignUnknownCurrencies.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 receipt with unknown currency excluded} other{{count} receipts with unknown currency excluded}}'**
+  String inventoryRedesignUnknownCurrencies(int count);
+
+  /// No description provided for @inventoryRedesignPendingDeletion.
+  ///
+  /// In en, this message translates to:
+  /// **'Deletion pending confirmation'**
+  String get inventoryRedesignPendingDeletion;
+
+  /// No description provided for @inventoryRedesignPendingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 unsynchronized edit} other{{count} unsynchronized edits}}'**
+  String inventoryRedesignPendingCount(int count);
+
+  /// No description provided for @inventoryRedesignLoadedSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search available records'**
+  String get inventoryRedesignLoadedSearch;
+
+  /// No description provided for @inventoryRedesignAllEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'All events'**
+  String get inventoryRedesignAllEvents;
+
+  /// No description provided for @inventoryRedesignSelectedLines.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected lines'**
+  String get inventoryRedesignSelectedLines;
+
+  /// No description provided for @calendarGoogleColorInherit.
+  ///
+  /// In en, this message translates to:
+  /// **'Use calendar color'**
+  String get calendarGoogleColorInherit;
+
+  /// No description provided for @calendarGoogleColorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom label {id}'**
+  String calendarGoogleColorLabel(String id);
+
+  /// No description provided for @calendarGoogleColorEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Google color {id}'**
+  String calendarGoogleColorEvent(String id);
+
+  /// No description provided for @calendarProviderColorSeparateEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Save other changes before changing the Google color.'**
+  String get calendarProviderColorSeparateEdit;
+
+  /// No description provided for @inventorySetupSyncFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync this new item before using, editing, or deleting it.'**
+  String get inventorySetupSyncFirst;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

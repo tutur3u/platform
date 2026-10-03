@@ -120,6 +120,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await tester.tap(find.byType(Tooltip).first);
+    await tester.pump(const Duration(milliseconds: 200));
     expect(find.text('Dòng tồn kho không giới hạn'), findsOneWidget);
     expect(find.text('7'), findsOneWidget);
     expect(
@@ -265,6 +267,8 @@ void main() {
           find.text('Server snapshot: 2026-10-01 02:00:00 UTC'),
           findsOneWidget,
         );
+        await tester.tap(find.byType(Tooltip).first);
+        await tester.pump(const Duration(milliseconds: 200));
         expect(find.bySemanticsLabel('Low stock rows: 4'), findsOneWidget);
         expect(
           find.textContaining('including archived warehouses'),

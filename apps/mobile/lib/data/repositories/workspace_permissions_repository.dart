@@ -183,6 +183,34 @@ class WorkspacePermissionsRepository {
     }
   }
 
+  /// Scoped, previously server-verified UI hint; never grants unknown access.
+  WorkspacePermissions? peekPermissions(String wsId) {
+    final actor = _actorId;
+    if (actor == null || wsId.isEmpty) return null;
+    try {
+      final result = _store.peek<WorkspacePermissions>(
+        key: _key(wsId, actor),
+        decode: _decodeHint,
+      );
+      return _actorId == actor ? result.data : null;
+    } on Object {
+      return null;
+    }
+  }
+
+  Future<WorkspacePermissions> readCachedPermissions(String wsId) async {
+    final actor = _actorId;
+    return actor == null ? _denied : await _readHint(wsId, actor);
+  }
+
+  WorkspacePermissions _decodeHint(Object? raw) {
+    final row = Map<String, dynamic>.from(raw! as Map);
+    return WorkspacePermissions(
+      permissions: (row['permissions'] as List).whereType<String>().toSet(),
+      isCreator: row['isCreator'] == true,
+    );
+  }
+
   Future<WorkspacePermissions> _readHint(String wsId, String actor) async {
     if (_actorId != actor) return _denied;
     try {

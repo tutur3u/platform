@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
+import 'package:mobile/features/inventory/view/inventory_catalog_hub.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 enum ShellNavMode { global, miniApp, hidden }
@@ -13,6 +14,15 @@ class ShellChromeConfig {
     String matchedLocation,
   ) {
     final l10n = context.l10n;
+    final catalog = InventoryCatalogSection.values
+        .where((s) => Routes.inventoryCatalogPath(s.name) == matchedLocation)
+        .firstOrNull;
+    if (catalog != null) {
+      return ShellChromeConfig(
+        title: inventoryCatalogTitle(context, catalog),
+        navMode: ShellNavMode.miniApp,
+      );
+    }
     final title = switch (matchedLocation) {
       Routes.home => l10n.navHome,
       Routes.apps => l10n.navApps,
@@ -24,6 +34,9 @@ class ShellChromeConfig {
       Routes.inventoryProducts => l10n.inventoryProductsLabel,
       Routes.inventorySales => l10n.inventorySalesLabel,
       Routes.inventoryManage => l10n.inventoryManageLabel,
+      Routes.inventorySalesPeriods => l10n.inventorySalesPeriodsTitle,
+      Routes.inventoryCheckout => l10n.inventoryCheckoutTitle,
+      Routes.inventoryProductCreate => l10n.inventoryCreateProduct,
       Routes.inventoryAuditLogs => l10n.inventoryAuditLabel,
       Routes.storefronts => l10n.storefrontTitle,
       Routes.transactions => l10n.financeActivityLabel,

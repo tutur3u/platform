@@ -80,6 +80,10 @@ abstract final class Routes {
   static const inventoryProductDetail = '/inventory/products/:productId';
   static const inventorySales = '/inventory/sales';
   static const inventoryManage = '/inventory/manage';
+  static const inventoryCatalog = '/inventory/manage/:catalog';
+  static const inventorySalesPeriods = '/inventory/sales-periods';
+  static String inventoryCatalogPath(String catalog) =>
+      '/inventory/manage/$catalog';
   static const inventoryAuditLogs = '/inventory/audit-logs';
   static const inventoryCheckout = '/inventory/checkout';
   static const storefronts = '/inventory/storefronts';
