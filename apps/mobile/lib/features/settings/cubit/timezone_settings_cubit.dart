@@ -79,6 +79,8 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
           loading: false,
           failed: true,
           retryAt: _retryAt,
+          failedSaveZone: sameScope ? previous.failedSaveZone : null,
+          failedSaveWorkspace: sameScope && previous.failedSaveWorkspace,
         ),
       );
       return;
