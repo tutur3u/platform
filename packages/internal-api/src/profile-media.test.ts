@@ -85,3 +85,39 @@ it('preserves quota errors and never starts a storage request after rejection', 
   });
   expect(fetch).toHaveBeenCalledTimes(1);
 });
+
+it('keeps API credentials on the ticket request and omits them from Storage', async () => {
+  const fetch = vi
+    .fn<typeof globalThis.fetch>()
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          uploadUrl: 'https://storage.test/signed',
+          publicUrl: 'https://storage.test/public',
+        })
+      )
+    )
+    .mockResolvedValueOnce(new Response(null, { status: 200 }));
+  await uploadCurrentUserProfileMedia(
+    'avatar',
+    new File(['x'], 'art.png', { type: 'image/png' }),
+    {
+      baseUrl: 'https://app.test',
+      fetch,
+      defaultHeaders: {
+        authorization: 'Bearer synthetic-api-auth',
+        cookie: 'synthetic-session=value',
+        'x-private-client': 'synthetic-private',
+      },
+    }
+  );
+  const apiHeaders = new Headers(fetch.mock.calls[0]![1]?.headers);
+  expect(apiHeaders.get('authorization')).toBe('Bearer synthetic-api-auth');
+  expect(apiHeaders.get('cookie')).toBe('synthetic-session=value');
+  const storageRequest = fetch.mock.calls[1]![1]!;
+  expect(storageRequest.credentials).toBe('omit');
+  const storageHeaders = new Headers(storageRequest.headers);
+  expect([...storageHeaders.entries()]).toEqual([
+    ['content-type', 'image/png'],
+  ]);
+});

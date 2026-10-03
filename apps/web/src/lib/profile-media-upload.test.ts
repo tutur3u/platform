@@ -1,3 +1,4 @@
+import { NextRequest } from 'next/server';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 const f = vi.hoisted(() => ({
@@ -31,7 +32,7 @@ import { ProfileUploadError } from '@tuturuuu/storage-core/profile-upload-budget
 import { createProfileMediaUploadHandler } from './profile-media-upload';
 
 const request = (body: unknown) =>
-  new Request('https://example.test/api/v1/users/me/avatar/upload-url', {
+  new NextRequest('https://example.test/api/v1/users/me/avatar/upload-url', {
     method: 'POST',
     body: JSON.stringify(body),
   });

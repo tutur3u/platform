@@ -844,16 +844,13 @@ test('paused TanStack migration E2E retains its restartable matrix', () => {
 test('Inventory and Storefront cache invalidation stays protected by E2E', () => {
   const workflow = readWorkflowYaml('e2e-tests.yaml');
   const job = workflow.jobs?.['inventory-storefront-cache-e2e'];
-
   assert.ok(job, 'e2e-tests.yaml must define the cross-app cache E2E job');
   assert.equal(job.needs, 'relevance');
   assert.match(job.if, /production'.*needs\.relevance\.outputs\.run_e2e/u);
   assert.equal(job['timeout-minutes'], 30);
   assert.equal(job.permissions?.contents, 'read');
-
   const steps = job.steps || [];
   const stepNamed = (name) => steps.find((step) => step.name === name);
-
   assert.equal(
     stepNamed('Setup Supabase CLI')?.uses,
     './.github/actions/setup-supabase-cli-with-retry'
@@ -882,44 +879,35 @@ test('Inventory and Storefront cache invalidation stays protected by E2E', () =>
   assert.match(dependencyBuildStep?.with?.token || '', /secrets\.TURBO_TOKEN/u);
   assert.match(dependencyBuildStep?.with?.team || '', /TURBO_TEAM/u);
   assert.equal(stepNamed('Start local Supabase')?.run, 'bun sb:start');
+  const runStep = stepNamed('Verify cache invalidation and instant navigation');
+  assert.equal(runStep?.run, 'bun test:e2e -- --reporter=line,html,json');
+  assert.equal(runStep?.['working-directory'], 'apps/inventory');
+  const redactStep = stepNamed('Sanitize cache E2E failure diagnostics');
+  assert.equal(redactStep?.id, 'redact-inventory');
   assert.equal(
-    stepNamed('Verify cache invalidation and instant navigation')?.run,
-    'bun test:e2e -- --reporter=line,html'
+    redactStep?.run,
+    'node scripts/ci/e2e-diagnostics-redact.js --report tmp/e2e-inventory-results.json --output tmp/e2e-diagnostics/inventory-results.json'
   );
-  assert.equal(
-    stepNamed('Verify cache invalidation and instant navigation')?.[
-      'working-directory'
-    ],
-    'apps/inventory'
-  );
-
   const artifactStep = stepNamed('Upload cache E2E failure artifact');
   assert.equal(artifactStep?.uses, 'actions/upload-artifact@v7');
-  assert.equal(artifactStep?.if, githubExpression('failure()'));
+  assert.equal(
+    artifactStep?.if,
+    githubExpression("failure() && steps.redact-inventory.outcome == 'success'")
+  );
   assert.equal(artifactStep?.with?.name, 'inventory-storefront-cache-e2e');
-  assert.match(
-    artifactStep?.with?.path || '',
-    /apps\/inventory\/playwright-report\//u
-  );
-  assert.match(
-    artifactStep?.with?.path || '',
-    /apps\/inventory\/test-results\//u
-  );
+  assert.equal(artifactStep?.with?.path, 'tmp/e2e-diagnostics/');
   assert.equal(artifactStep?.with?.['if-no-files-found'], 'ignore');
   assert.equal(artifactStep?.with?.['retention-days'], 7);
-
   const cleanupStep = stepNamed('Stop local Supabase');
   assert.equal(cleanupStep?.if, 'always()');
   assert.equal(cleanupStep?.run, 'bun sb:stop || true');
 });
-
 test('E2E image bundle completes before private, bounded, optional consumers', () => {
   const workflow = readWorkflowYaml('e2e-tests.yaml');
   const producer = workflow.jobs?.['prepare-e2e-images'];
   const e2e = workflow.jobs?.e2e;
   const migration = workflow.jobs?.['migration-e2e'];
   const cleanup = workflow.jobs?.['cleanup-e2e-images'];
-
   assert.ok(producer && e2e && migration && cleanup);
   assert.equal(producer.needs, 'relevance');
   assert.match(producer.if, /needs\.relevance\.outputs\.run_e2e/u);
@@ -953,7 +941,6 @@ test('E2E image bundle completes before private, bounded, optional consumers', (
       'github.run_attempt'
     )}-${githubExpression('github.sha')}`
   );
-
   assert.ok(
     e2e.steps.some(
       (step) =>

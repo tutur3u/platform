@@ -38,6 +38,7 @@ export async function uploadCurrentUserProfileMedia(
       cache: 'no-store',
     }
   );
+  // The signed capability is its own authority; never forward API credentials.
   const storageFetch = options?.fetch ?? globalThis.fetch;
   const response = await storageFetch(ticket.uploadUrl, {
     credentials: 'omit',

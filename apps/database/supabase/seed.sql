@@ -206,20 +206,20 @@ VALUES
         'f'
     );
 
--- Populate handles
+-- Populate handles; profile reservations carry their real synthetic owner.
 insert into
-    public.handles (value)
+    public.handles (value, creator_id)
 values
-    ('local'),
-    ('user1'),
-    ('user2'),
-    ('user3'),
-    ('user4'),
-    ('tuturuuu'),
-    ('prototype-all'),
-    ('prototype-general'),
-    ('prototype-pharmacy'),
-    ('prototype-school');
+    ('local', '00000000-0000-0000-0000-000000000001'),
+    ('user1', '00000000-0000-0000-0000-000000000002'),
+    ('user2', '00000000-0000-0000-0000-000000000003'),
+    ('user3', '00000000-0000-0000-0000-000000000004'),
+    ('user4', '00000000-0000-0000-0000-000000000005'),
+    ('tuturuuu', null),
+    ('prototype-all', null),
+    ('prototype-general', null),
+    ('prototype-pharmacy', null),
+    ('prototype-school', null);
 
 -- Update user handles
 update

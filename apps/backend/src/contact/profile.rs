@@ -349,13 +349,61 @@ pub(super) async fn current_user_profile_patch_data_response(
         ));
     }
 
-    let updates = match profile_patch_updates(request.body_text) {
+    let mut updates = match profile_patch_updates(request.body_text) {
         Ok(updates) => updates,
         Err(response) => return no_store_response(*response),
     };
 
     if !config.contact_data.configured() {
         return contact_data_layer_not_ready_response(request);
+    }
+
+    if let Some(original) = updates.get("handle").and_then(|value| value.as_str()) {
+        let normalized = original.trim().to_lowercase();
+        if original != normalized || !valid_new_handle(&normalized) {
+            let Some(url) = config.contact_data.rest_url(
+                "users",
+                &[
+                    ("select", "handle".to_owned()),
+                    ("id", format!("eq.{}", actor.claims.sub)),
+                    ("limit", "1".to_owned()),
+                ],
+            ) else {
+                return contact_data_layer_not_ready_response(request);
+            };
+            let response = send_contact_data_request(
+                &config.contact_data,
+                outbound,
+                OutboundMethod::Get,
+                &url,
+                None,
+                None,
+            )
+            .await;
+            let rows = match response {
+                Ok(response) if is_success_status(response.status) => {
+                    serde_json::from_str::<Vec<serde_json::Value>>(&response.body_text).ok()
+                }
+                _ => None,
+            };
+            let Some(rows) = rows else {
+                return no_store_response(json_response(
+                    503,
+                    json!({ "message": "Unable to verify current username" }),
+                ));
+            };
+            let current = rows
+                .first()
+                .and_then(|row| row.get("handle"))
+                .and_then(|value| value.as_str());
+            let Some(handle) = resolve_handle_update(original, current) else {
+                return no_store_response(json_response(
+                    400,
+                    json!({ "message": "Invalid request data" }),
+                ));
+            };
+            updates["handle"] = json!(handle);
+        }
     }
 
     let Some(profile_url) = config
@@ -509,20 +557,8 @@ fn profile_patch_updates(
         if value.is_null() {
             updates.insert("handle".to_owned(), serde_json::Value::Null);
         } else if let Some(handle) = value.as_str() {
-            let handle = handle.trim().to_lowercase();
-            if !(5..=32).contains(&handle.len())
-                || is_reserved_username(&handle)
-                || !handle
-                    .bytes()
-                    .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == b'_')
-                || !handle
-                    .bytes()
-                    .next()
-                    .is_some_and(|c| c.is_ascii_alphanumeric())
-            {
-                errors.push(
-                    "handle must be 5 to 32 lowercase letters, numbers or underscores and not reserved".to_owned(),
-                );
+            if handle.chars().count() > 100 {
+                errors.push("handle must be at most 100 characters".to_owned());
             }
             updates.insert("handle".to_owned(), json!(handle));
         } else {
@@ -627,7 +663,9 @@ fn postgrest_code(response: &OutboundResponse) -> Option<String> {
 
 #[path = "username_policy.rs"]
 mod username_policy;
-use username_policy::{is_reserved_username, profile_change_limit_response};
+use username_policy::profile_change_limit_response;
+mod legacy_handle;
+use legacy_handle::{resolve_handle_update, valid_new_handle};
 
 #[cfg(test)]
 #[path = "profile_tests.rs"]

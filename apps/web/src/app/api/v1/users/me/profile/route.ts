@@ -25,13 +25,7 @@ const PatchProfileSchema = z.object({
   bio: z.string().max(MAX_BIO_LENGTH).nullable().optional(),
   avatar_url: z.url().max(2000).refine(isHttpsUrl).nullable().optional(),
   banner_url: z.url().max(2000).refine(isHttpsUrl).nullable().optional(),
-  handle: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .refine(isValidNewUsername)
-    .nullable()
-    .optional(),
+  handle: z.string().max(100).nullable().optional(),
 });
 
 export const GET = withSessionAuth(
@@ -124,6 +118,30 @@ export const PATCH = withSessionAuth(
           { message: 'No valid fields to update' },
           { status: 400 }
         );
+      }
+
+      if (typeof updates.handle === 'string') {
+        const original = updates.handle;
+        const normalized = original.trim().toLowerCase();
+        if (original !== normalized || !isValidNewUsername(normalized)) {
+          const { data: current, error: currentError } = await supabase
+            .from('users')
+            .select('handle')
+            .eq('id', user.id)
+            .maybeSingle();
+          if (currentError)
+            return NextResponse.json(
+              { message: 'Unable to verify current username' },
+              { status: 503 }
+            );
+          if (current?.handle === original) updates.handle = original;
+          else if (isValidNewUsername(normalized)) updates.handle = normalized;
+          else
+            return NextResponse.json(
+              { message: 'Invalid request data' },
+              { status: 400 }
+            );
+        }
       }
 
       const admin = await createAdminClient({ noCookie: true });

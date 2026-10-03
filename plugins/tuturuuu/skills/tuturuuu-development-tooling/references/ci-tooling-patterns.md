@@ -305,11 +305,13 @@ formatting behavior, or repo-wide verification.
   checked-in `codeql.yml` manual-only so it provides an explicit fallback and
   satisfies the Security UI without duplicating push, pull-request, or cron
   runs.
-- Use native push paths for the expensive E2E image producer and consumers.
-  Cover E2E specs, Playwright/Docker configuration, database fixtures,
-  dependency manifests, lockfiles, and runner scripts. Keep automatic E2E
-  commit-driven with no cron schedule; retain manual dispatch for deliberate
-  full validation.
+- E2E uses a `**` push-path catch-all so unknown runtime inputs reach the
+  planner, with explicit exclusions for known non-runtime apps, docs, and agent
+  tooling. Fingerprints cover runtime, specs, shared packages, database,
+  dependencies and runner controls. The input-keyed planner may reuse only exact,
+  fresh passing protected-main proofs; missing or uncertain evidence executes
+  tests. Never cache failures, flaky/empty reports, or branch-authored successes.
+  Keep automatic E2E commit-driven with no cron and manual dispatch always full.
 - Keep E2E requests aligned with current route ownership. When a spec exercises
   a satellite-owned API or UI, discover it from Playwright's shard-specific
   `--list` output, start only that satellite, and route the request through its
