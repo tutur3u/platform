@@ -265,7 +265,9 @@ The shared contract applies to current-user media ticket issuers, including the
 avatar endpoint in this foundation and the dependent banner endpoint. Existing
 workspace avatar tickets retain workspace-settings authorization and additionally
 reserve the resolved account media ceilings and the shared global ceilings before
-signing. Permission denials reserve nothing; quota exhaustion and unavailable
+signing. Registered satellites use the same actor reservation before their local
+admin-backed workspace avatar signer; changing apps cannot bypass the shared
+account or global limits. Permission denials reserve nothing; quota exhaustion and unavailable
 protection return 429 and 503 without issuing a ticket.
 Shared public profile-link avatar tickets reserve the account media ceilings above
 against the verified workspace and link identity, plus the shared global ceilings,
@@ -274,7 +276,8 @@ These tickets do not charge the link creator's account. Reservation failure prev
 signing; quota exhaustion returns 429 with a bounded retry delay, while protection
 outages return 503 without retry timing. The shared avatar byte/MIME ceilings
 also apply. Regression evidence: the public profile-link and workspace avatar
-handlers' colocated tests, plus `profile-media-upload-limits.sql` for authenticated
+handlers' colocated tests and `packages/satellite/src/routes/workspace-settings.test.ts`,
+plus `profile-media-upload-limits.sql` for authenticated
 INSERT and UPDATE restrictions.
 
 Legacy handle rows with no recorded owner are attributed only when an existing
