@@ -142,7 +142,9 @@ export function ProductsTable({
             categories: formOptions?.categories,
             owners: formOptions?.owners,
             manufacturers: formOptions?.manufacturers,
-            financeCategories: formOptions?.financeCategories,
+            financeCategories: formOptions?.financeCategories?.flatMap(
+              ({ id, name }) => (id ? [{ id, name }] : [])
+            ),
           }}
           kind="product"
           options={rows}
