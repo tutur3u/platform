@@ -193,6 +193,16 @@ void main() {
     },
   );
 
+  testWidgets(
+    'initial scope restoration does not notify ancestors during build',
+    (tester) async {
+      await coordinator.setScope();
+      await pump(tester);
+      expect(find.text('inventory.products'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('unavailable module redacts previously cached namespace counts', (
     tester,
   ) async {

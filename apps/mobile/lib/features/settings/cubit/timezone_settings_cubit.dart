@@ -80,7 +80,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
           workspaceLoaded: sameScope && previous.workspaceLoaded,
           loading: false,
           failed: true,
-          errorMessage: previous.errorMessage,
+          errorMessage: sameScope ? previous.errorMessage : null,
           retryAt: _retryAt,
           failedSaveZone: sameScope ? previous.failedSaveZone : null,
           failedSaveWorkspace: sameScope && previous.failedSaveWorkspace,
@@ -132,9 +132,14 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
       Future<List<String>> resolve() async {
         // A named preference does not depend on a working native plugin.
         // Attach error handling immediately, even if we never need the device.
-        final device = Future<String>.sync(
-          deviceLoader,
-        ).then<String?>((zone) => zone, onError: (Object _) => null);
+        Object? deviceFailure;
+        final device = Future<String>.sync(deviceLoader).then<String?>(
+          (zone) => zone,
+          onError: (Object error) {
+            deviceFailure = error;
+            return null;
+          },
+        );
         final preferences = await Future.wait<String>([
           readPreference(repository.loadPersonal(), personal: true),
           if (workspaceId != null)
@@ -147,7 +152,9 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
         }
         final zone = await device;
         if (zone == null || zone.trim().isEmpty) {
-          throw Exception('Device timezone is unavailable.');
+          throw Exception(
+            deviceFailure?.toString() ?? 'Device timezone is unavailable.',
+          );
         }
         return [...preferences, zone];
       }
@@ -291,7 +298,10 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
           resolved: resolved,
           failed: !resolved,
           errorMessage: !resolved
-              ? deviceError == null
+              ? !personalKnown || !workspaceKnown
+                    ? previous.errorMessage ??
+                          'Timezone preferences are unavailable.'
+                    : deviceError == null
                     ? 'Device timezone is unavailable.'
                     : _failureMessage(deviceError)
               : null,

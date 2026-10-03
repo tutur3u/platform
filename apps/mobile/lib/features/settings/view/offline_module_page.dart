@@ -41,6 +41,7 @@ class _OfflineModulePageState extends State<OfflineModulePage> {
   String _query = '';
   bool _allowed = false;
   bool _busy = false;
+  bool _refreshScheduled = false;
   int _generation = 0;
 
   @override
@@ -50,10 +51,15 @@ class _OfflineModulePageState extends State<OfflineModulePage> {
   }
 
   void _changed() {
-    if (mounted) {
+    if (!mounted || _refreshScheduled) return;
+    _refreshScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshScheduled = false;
+      if (!mounted) return;
       setState(() {});
       unawaited(_refresh());
-    }
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
   @override
