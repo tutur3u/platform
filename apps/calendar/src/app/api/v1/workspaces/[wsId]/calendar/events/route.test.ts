@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
@@ -16,6 +16,8 @@ const mocks = vi.hoisted(() => ({
   resolveAuth: vi.fn(),
   resolveOutboundSource: vi.fn(),
   resolveSource: vi.fn(),
+  refreshSource: vi.fn(),
+  retained: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -28,6 +30,13 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 vi.mock('@/lib/api-auth', () => ({
   resolveSessionAuthContext: mocks.resolveAuth,
 }));
+vi.mock(
+  '@/lib/calendar/google-color-operations/retained-generation-request-access',
+  () => ({
+    getCalendarRetainedGeneration: mocks.retained,
+  })
+);
+
 vi.mock('@/lib/calendar/event-deduplication', () => ({
   deduplicateCalendarEvents: mocks.deduplicateEvents,
 }));
@@ -36,6 +45,9 @@ vi.mock('@/lib/calendar/provider-writes', () => ({
 }));
 vi.mock('@/lib/calendar/source-resolver', () => ({
   resolveCalendarSource: mocks.resolveSource,
+}));
+vi.mock('@/lib/calendar/google-source-color-refresh', () => ({
+  refreshOwnedGoogleSourceColor: mocks.refreshSource,
 }));
 vi.mock('@/lib/calendar/sync-preferences', () => ({
   getCalendarSyncPreferences: mocks.getSyncPreferences,
@@ -53,6 +65,11 @@ vi.mock('@/lib/calendar/create-invited-meeting', async (original) => ({
 }));
 
 import { MeetingCreateError } from '@/lib/calendar/create-invited-meeting';
+import {
+  cacheFailureModes,
+  failingSourceColorCache,
+  privateCacheFailure,
+} from '@/lib/calendar/test-fixtures/source-color-cache';
 import { GET, POST } from './route';
 
 const WS_ID = '00000000-0000-4000-8000-000000008611';
@@ -116,6 +133,8 @@ function insertQueryResult(data: unknown) {
 describe('workspace calendar event collection authorization', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv('CALENDAR_GOOGLE_COLOR_OPERATIONS_ENABLED', 'false');
+    mocks.retained.mockResolvedValue(null);
     mocks.resolveAuth.mockResolvedValue({
       ok: true,
       supabase: { rpc: vi.fn(async () => ({ data: true, error: null })) },
@@ -138,6 +157,8 @@ describe('workspace calendar event collection authorization', () => {
     }));
   });
 
+  afterEach(() => vi.unstubAllEnvs());
+
   const invitationBody = {
     title: 'Planning',
     start_at: '2026-11-01T05:30:00.000Z',
@@ -152,6 +173,178 @@ describe('workspace calendar event collection authorization', () => {
       connectionId: '00000000-0000-4000-8000-000000008631',
     },
   };
+
+  it.each(cacheFailureModes)(
+    'persists provider creation when optional cache fails: %s',
+    async (mode) => {
+      const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const actual = await vi.importActual<
+        typeof import('@/lib/calendar/google-source-color-refresh')
+      >('@/lib/calendar/google-source-color-refresh');
+      mocks.refreshSource.mockImplementationOnce(
+        actual.refreshOwnedGoogleSourceColor
+      );
+      const choice = {
+        connectionId: invitationBody.source.connectionId,
+        kind: 'event',
+        id: '7',
+      };
+      const source = {
+        provider: 'google',
+        connectionId: choice.connectionId,
+        externalCalendarId: 'primary',
+        workspaceCalendarId: null,
+      };
+      const query = insertQueryResult({ id: 'created' });
+      const admin = {
+        from: vi.fn((table: string) =>
+          table === 'calendar_connections'
+            ? failingSourceColorCache(mode)
+            : query
+        ),
+      };
+      const color = {
+        version: 1,
+        calendar_id: 'primary',
+        color_id: '7',
+        event_label_id: null,
+        inherited: false,
+        background: '#46d6db',
+        foreground: '#000000',
+        resolution: 'event',
+      };
+      mocks.createAdminClient.mockResolvedValue(admin);
+      mocks.resolveSource.mockResolvedValue(source);
+      mocks.createProviderEvent.mockResolvedValue({
+        provider: 'google',
+        externalCalendarId: 'primary',
+        externalEventId: 'provider-created',
+        googleColor: color,
+        googleSourceColor: '#f691b2',
+      });
+      const response = await POST(
+        request('POST', {
+          ...invitationBody,
+          invitation: undefined,
+          requestId: undefined,
+          color: 'CYAN',
+          scheduling_metadata: { google_color: { background: '#ffffff' } },
+        }),
+        params()
+      );
+      expect(response.status).toBe(201);
+      expect(warning).toHaveBeenCalledExactlyOnceWith(
+        'Google source color refresh failed'
+      );
+      expect(JSON.stringify(warning.mock.calls)).not.toContain(
+        privateCacheFailure
+      );
+      warning.mockRestore();
+      expect(mocks.createProviderEvent).toHaveBeenCalledWith({
+        source,
+        event: expect.objectContaining({
+          color: 'CYAN',
+          providerColor: undefined,
+        }),
+      });
+      expect(query.insert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          color: 'CYAN',
+          scheduling_metadata: { google_color: color },
+          external_event_id: 'provider-created',
+        })
+      );
+      expect(mocks.refreshSource).toHaveBeenCalledWith({
+        sbAdmin: admin,
+        wsId: WS_ID,
+        source,
+        background: '#f691b2',
+      });
+    }
+  );
+
+  it.each([
+    {
+      providerColor: {
+        connectionId: invitationBody.source.connectionId,
+        kind: 'inherit',
+      },
+      color: 'BLUE',
+    },
+    {
+      providerColor: {
+        connectionId: '00000000-0000-4000-8000-000000008632',
+        kind: 'inherit',
+      },
+    },
+    {
+      providerColor: {
+        connectionId: invitationBody.source.connectionId,
+        kind: 'inherit',
+        background: '#ffffff',
+      },
+    },
+  ])(
+    'rejects ambiguous, foreign or untrusted creation choices before provider writes',
+    async (choice) => {
+      vi.stubEnv('CALENDAR_GOOGLE_COLOR_OPERATIONS_ENABLED', 'true');
+      mocks.createAdminClient.mockResolvedValue({ from: vi.fn() });
+      mocks.resolveSource.mockResolvedValue({
+        provider: 'google',
+        connectionId: invitationBody.source.connectionId,
+        workspaceCalendarId: null,
+      });
+      const response = await POST(
+        request('POST', {
+          ...invitationBody,
+          invitation: undefined,
+          ...choice,
+        }),
+        params()
+      );
+      expect(response.status).toBe(400);
+      expect(mocks.createProviderEvent).not.toHaveBeenCalled();
+    }
+  );
+
+  it('blocks the new provider-color namespace while disabled before any provider write', async () => {
+    const admin = { from: vi.fn() };
+    mocks.createAdminClient.mockResolvedValue(admin);
+    const response = await POST(
+      request('POST', {
+        ...invitationBody,
+        invitation: undefined,
+        providerColor: {
+          connectionId: invitationBody.source.connectionId,
+          kind: 'inherit',
+        },
+      }),
+      params()
+    );
+    expect(response.status).toBe(409);
+    expect(mocks.resolveSource).not.toHaveBeenCalled();
+    expect(mocks.createProviderEvent).not.toHaveBeenCalled();
+    expect(mocks.getWorkspaceKey).not.toHaveBeenCalled();
+    expect(admin.from).not.toHaveBeenCalled();
+  });
+
+  it('blocks an invitation with a retained retry identity even while disabled', async () => {
+    const admin = { from: vi.fn() };
+    mocks.createAdminClient.mockResolvedValue(admin);
+    mocks.retained.mockResolvedValue({ generation: '1', pending: true });
+    const req = request('POST', invitationBody);
+    const response = await POST(req, params());
+    expect(response.status).toBe(409);
+    expect(mocks.retained).toHaveBeenCalledWith(
+      req,
+      WS_ID,
+      invitationBody.requestId
+    );
+    expect(mocks.createInvitedMeeting).not.toHaveBeenCalled();
+    expect(mocks.createProviderEvent).not.toHaveBeenCalled();
+    expect(mocks.getWorkspaceKey).not.toHaveBeenCalled();
+    expect(admin.from).not.toHaveBeenCalled();
+  });
 
   it('routes explicit invitations through the durable send operation', async () => {
     const admin = { from: vi.fn() };

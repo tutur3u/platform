@@ -47,6 +47,8 @@ use crate::{
     path_segments, supabase_auth,
 };
 
+mod source_colors;
+
 const EVENT_PAGE_SIZE: usize = 1000;
 const MEMBER_TYPE: &str = "MEMBER";
 const UNAUTHORIZED_MESSAGE: &str = "Unauthorized";
@@ -107,7 +109,19 @@ async fn events_get_response(
     };
 
     match fetch_calendar_events(contact_data, outbound, ws_id, &start_at, &end_at).await {
-        Ok(events) => {
+        Ok(mut events) => {
+            if source_colors::hydrate_source_colors(
+                contact_data,
+                outbound,
+                ws_id,
+                &user_id,
+                &mut events,
+            )
+            .await
+            .is_err()
+            {
+                return error_response(500, INTERNAL_SERVER_ERROR_MESSAGE);
+            }
             let count = events.len();
             no_store_response(json_response(
                 200,

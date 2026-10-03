@@ -1,4 +1,12 @@
 {
+  "calendar": {
+    "creation_recovery_notice": "Lần tạo trước chưa được xác nhận. Hãy thử lại yêu cầu ban đầu; các chỉnh sửa vẫn được giữ để lưu sau khi xác nhận.",
+    "creation_recovery_retry": "Thử lại lần tạo ban đầu",
+    "creation_recovery_unavailable": "Lần tạo chưa được xác nhận và nguồn này không hỗ trợ tự động khôi phục. Hãy kiểm tra lịch trước khi tạo lại; các chỉnh sửa vẫn được giữ.",
+    "google_event_color": "Màu Google {id}",
+    "inherit_calendar_color": "Dùng màu lịch",
+    "provider_color_label": "Màu sự kiện Google"
+  },
   "chat": {
     "first_activity": "Hoạt động đầu tiên",
     "last_activity": "Hoạt động gần nhất",

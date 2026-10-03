@@ -26,6 +26,49 @@ function dependencies() {
 }
 
 describe('authenticated native Calendar gateway', () => {
+  it('forwards the exact color options GET and preserves its source query', async () => {
+    const deps = dependencies();
+    const path =
+      '/api/v1/workspaces/personal/calendar/colors?connectionId=source-id';
+    const response = await forwardCalendarRequest(request(path), deps);
+    expect(response.status).toBe(200);
+    expect(deps.fetch.mock.calls[0]?.[0]).toBe(
+      `https://calendar.tuturuuu.com${path}`
+    );
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
+
+  it('forwards actor-authenticated source mapping GET to the Calendar owner', async () => {
+    const deps = dependencies();
+    const path = '/api/v1/workspaces/personal/calendar/default-source';
+    expect((await forwardCalendarRequest(request(path), deps)).status).toBe(
+      200
+    );
+    expect(deps.verifyToken).toHaveBeenCalledWith('valid-session');
+    expect(deps.fetch.mock.calls[0]?.[0]).toBe(
+      `https://calendar.tuturuuu.com${path}`
+    );
+  });
+
+  it.each(
+    ['colors', 'default-source'].flatMap((resource) =>
+      ['POST', 'PUT', 'PATCH', 'DELETE'].map((method) => [resource, method])
+    )
+  )(
+    'rejects readonly Calendar %s mutation %s before auth or forwarding',
+    async (resource, method) => {
+      const deps = dependencies();
+      const response = await forwardCalendarRequest(
+        request(`/api/v1/workspaces/personal/calendar/${resource}`, { method }),
+        deps
+      );
+      expect(response.status).toBe(405);
+      expect(deps.verifyToken).not.toHaveBeenCalled();
+      expect(deps.loadSecret).not.toHaveBeenCalled();
+      expect(deps.fetch).not.toHaveBeenCalled();
+    }
+  );
+
   it.each([
     ['/api/v1/users/calendar-settings', 'GET'],
     ['/api/v1/users/calendar-settings', 'PATCH'],

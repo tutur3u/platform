@@ -2,8 +2,14 @@ import { createHash } from 'node:crypto';
 import { type calendar_v3, google, OAuth2Client } from '@tuturuuu/google';
 import { createGraphClient } from '@tuturuuu/microsoft';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import type { GoogleProviderColorChoice } from '@tuturuuu/types/primitives/google-calendar-color';
+import type { GoogleEventColor } from '@tuturuuu/utils/google-calendar-colors';
 import { GOOGLE_COLOR_IDS } from '@tuturuuu/utils/google-calendar-colors';
 import type { MeetingInvitationInput } from '@tuturuuu/utils/meeting-invitations';
+import {
+  GoogleColorChoiceError,
+  resolveGoogleColorChoice,
+} from './google-color-choices';
 import {
   googleMeetingGuests,
   microsoftMeetingGuests,
@@ -17,12 +23,19 @@ export type ProviderEventWriteResult = {
   provider: ExternalProvider;
   externalCalendarId: string;
   externalEventId: string;
+  googleColor?: GoogleEventColor;
+  googleSourceColor?: string;
 };
 
 type ProviderEventInput = Pick<
   CalendarEvent,
   'title' | 'description' | 'location' | 'start_at' | 'end_at' | 'color'
-> & { invitation?: MeetingInvitationInput };
+> & {
+  invitation?: MeetingInvitationInput;
+  providerColor?: GoogleProviderColorChoice;
+  providerColorOnly?: boolean;
+  nativeColorChange?: boolean;
+};
 
 type ExistingExternalEvent = {
   provider?: string | null;
@@ -166,6 +179,10 @@ export async function createProviderEvent(args: {
   idempotencyKey?: string;
 }): Promise<ProviderEventWriteResult | null> {
   const { source, event } = args;
+  if (event.providerColor && source.provider !== 'google')
+    throw new GoogleColorChoiceError(
+      'Google color choice requires a Google calendar'
+    );
   if (source.provider === 'tuturuuu') return null;
   assertExternalSource(source);
 
@@ -176,7 +193,14 @@ export async function createProviderEvent(args: {
     });
 
     const stableId = args.idempotencyKey?.replaceAll('-', '').toLowerCase();
+    const selected = event.providerColor
+      ? await resolveGoogleColorChoice(calendar, source, event.providerColor)
+      : null;
     const payload = toGoogleEvent(event);
+    if (selected) {
+      delete payload.colorId;
+      Object.assign(payload, selected.fields);
+    }
     const requestHash = createHash('sha256')
       .update(JSON.stringify(payload))
       .digest('hex');
@@ -184,6 +208,9 @@ export async function createProviderEvent(args: {
     try {
       response = await calendar.events.insert({
         calendarId: source.externalCalendarId,
+        ...(event.providerColor?.kind !== 'event' && event.providerColor
+          ? { eventLabelVersion: 1 }
+          : {}),
         sendUpdates: 'all',
         requestBody: {
           ...payload,
@@ -198,6 +225,11 @@ export async function createProviderEvent(args: {
         },
       });
     } catch (error) {
+      if (selected && providerErrorStatus(error) === 400)
+        throw new GoogleColorChoiceError(
+          'Google color choice changed; reload available colors before trying again',
+          409
+        );
       if (!stableId || providerErrorStatus(error) !== 409) throw error;
       response = await calendar.events.get({
         calendarId: source.externalCalendarId,
@@ -221,6 +253,12 @@ export async function createProviderEvent(args: {
       provider: 'google',
       externalCalendarId: source.externalCalendarId,
       externalEventId: response.data.id,
+      ...(selected
+        ? {
+            googleColor: selected.metadata,
+            googleSourceColor: selected.sourceBackground,
+          }
+        : {}),
     };
   }
 
@@ -250,6 +288,10 @@ export async function updateProviderEvent(args: {
   event: ProviderEventInput;
 }): Promise<ProviderEventWriteResult | null> {
   const { source, existingEvent, event } = args;
+  if (event.providerColor && source.provider !== 'google')
+    throw new GoogleColorChoiceError(
+      'Google color choice requires a Google calendar'
+    );
   if (source.provider === 'tuturuuu') return null;
   assertExternalSource(source);
 
@@ -257,6 +299,11 @@ export async function updateProviderEvent(args: {
   if (!existing || existing.provider !== source.provider) {
     return createProviderEvent({ source, event });
   }
+
+  if (source.externalCalendarId !== existing.externalCalendarId)
+    throw new GoogleColorChoiceError(
+      'Event does not belong to the selected calendar'
+    );
 
   if (source.provider === 'google') {
     const calendar = google.calendar({
@@ -270,27 +317,79 @@ export async function updateProviderEvent(args: {
       calendarId: existing.externalCalendarId,
       eventId: existing.externalEventId,
     });
-    const eventLabelId = current.data.eventLabelId;
-    const payload = toGoogleEvent(event);
+    const choice =
+      event.providerColor ??
+      (event.nativeColorChange && event.color && source.provider === 'google'
+        ? {
+            connectionId: source.connectionId,
+            kind: 'event' as const,
+            id: GOOGLE_COLOR_IDS[event.color],
+          }
+        : undefined);
+    const selected = choice
+      ? await resolveGoogleColorChoice(calendar, source, choice)
+      : null;
+    if (choice && !current.data.etag)
+      throw new GoogleColorChoiceError(
+        'Google event version is unavailable; refresh before changing color',
+        409
+      );
+    const payload: calendar_v3.Schema$Event = event.providerColorOnly
+      ? {}
+      : toGoogleEvent(event);
     delete payload.colorId;
-    if (current.data.colorId) payload.colorId = current.data.colorId;
-    const request = {
-      calendarId: existing.externalCalendarId,
-      eventId: existing.externalEventId,
-      sendUpdates: 'all',
-      // Version 1 requires the live label identity to be supplied explicitly.
-      ...(eventLabelId ? { eventLabelVersion: 1 } : {}),
-      requestBody: {
-        ...payload,
-        ...(eventLabelId ? { eventLabelId } : {}),
-      },
-    };
-    await calendar.events.patch(
-      request,
-      current.data.etag
-        ? { headers: { 'If-Match': current.data.etag } }
-        : undefined
-    );
+    let labelVersion: number | undefined;
+    if (selected) {
+      Object.assign(payload, selected.fields);
+      if (choice?.kind === 'event') labelVersion = 0;
+      else {
+        labelVersion = 1;
+        payload.eventLabelId = selected.fields.eventLabelId ?? '';
+      }
+    } else if (event.nativeColorChange && event.color) {
+      payload.colorId = GOOGLE_COLOR_IDS[event.color];
+      labelVersion = 0;
+    } else {
+      if (current.data.colorId) payload.colorId = current.data.colorId;
+      if (current.data.eventLabelId) {
+        payload.eventLabelId = current.data.eventLabelId;
+        labelVersion = 1;
+      }
+    }
+    try {
+      await calendar.events.patch(
+        {
+          calendarId: existing.externalCalendarId,
+          eventId: existing.externalEventId,
+          sendUpdates: event.providerColorOnly ? 'none' : 'all',
+          ...(labelVersion === undefined
+            ? {}
+            : { eventLabelVersion: labelVersion }),
+          requestBody: payload,
+        },
+        current.data.etag
+          ? { headers: { 'If-Match': current.data.etag } }
+          : undefined
+      );
+    } catch (error) {
+      if (choice && providerErrorStatus(error) === 400)
+        throw new GoogleColorChoiceError(
+          'Google color choice changed; reload available colors before trying again',
+          409
+        );
+      if (providerErrorStatus(error) === 412)
+        throw new GoogleColorChoiceError(
+          'Google event changed; refresh before trying again',
+          409
+        );
+      throw error;
+    }
+    if (selected)
+      return {
+        ...existing,
+        googleColor: selected.metadata,
+        googleSourceColor: selected.sourceBackground,
+      };
 
     return existing;
   }
@@ -377,36 +476,75 @@ export async function moveProviderEvent(args: {
       auth: createGoogleAuthClient(fromSource),
     });
 
-    try {
-      const response = await calendar.events.move({
-        calendarId: existing.externalCalendarId,
-        eventId: existing.externalEventId,
-        destination: toSource.externalCalendarId,
-        sendUpdates: 'all',
-      });
-
-      if (response.data.id) {
-        await updateProviderEvent({
-          source: toSource,
-          existingEvent: {
-            provider: 'google',
-            external_calendar_id: toSource.externalCalendarId,
-            external_event_id: response.data.id,
-          },
-          event,
-        });
-
-        return {
-          provider: 'google',
-          externalCalendarId: toSource.externalCalendarId,
-          externalEventId: response.data.id,
-        };
-      }
-    } catch {
-      // Some Google event types cannot be moved. Fall through to create-delete.
+    const current = await calendar.events.get({
+      calendarId: existing.externalCalendarId,
+      eventId: existing.externalEventId,
+    });
+    if (
+      current.data.eventLabelId ||
+      event.providerColor ||
+      event.nativeColorChange
+    ) {
+      throw new GoogleColorChoiceError(
+        'Moving a labeled event or changing color while moving requires reconciliation; change color within its current calendar first',
+        409
+      );
     }
+    // Do not hide a failed move/patch behind create-delete: that can duplicate
+    // events and discard calendar-scoped labels or provider-only fields.
+    let response: { data: calendar_v3.Schema$Event };
+    try {
+      response = await calendar.events.move(
+        {
+          calendarId: existing.externalCalendarId,
+          eventId: existing.externalEventId,
+          destination: toSource.externalCalendarId,
+          sendUpdates: 'all',
+        },
+        current.data.etag
+          ? { headers: { 'If-Match': current.data.etag } }
+          : undefined
+      );
+    } catch (error) {
+      if (providerErrorStatus(error) === 412)
+        throw new GoogleColorChoiceError(
+          'Google event changed; refresh before moving it',
+          409
+        );
+      throw error;
+    }
+    if (!response.data.id)
+      throw new GoogleColorChoiceError(
+        'Google calendar move did not return an event identity',
+        502
+      );
+    const updated = await updateProviderEvent({
+      source: toSource,
+      existingEvent: {
+        provider: 'google',
+        external_calendar_id: toSource.externalCalendarId,
+        external_event_id: response.data.id,
+      },
+      event,
+    });
+    return updated;
   }
 
+  if (fromSource.provider === 'google') {
+    const calendar = google.calendar({
+      version: 'v3',
+      auth: createGoogleAuthClient(fromSource),
+    });
+    const current = await calendar.events.get({
+      calendarId: existing.externalCalendarId,
+      eventId: existing.externalEventId,
+    });
+    if (current.data.eventLabelId)
+      throw new GoogleColorChoiceError(
+        'A Google labeled event cannot be copied to this provider without choosing a supported destination color',
+        409
+      );
+  }
   const created = await createProviderEvent({ source: toSource, event });
   await deleteProviderEvent({ source: fromSource, existingEvent });
   return created;

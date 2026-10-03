@@ -2,16 +2,24 @@ part of 'calendar_page.dart';
 
 extension _CalendarPageActions on _CalendarViewState {
   Future<void> _createEvent(BuildContext context, {DateTime? startTime}) async {
+    final userId = currentCacheUserId();
     final cubit = context.read<CalendarCubit>();
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
+    if (wsId == null) {
+      return;
+    }
 
     final result = await showEventFormSheet(
       context,
       initialStartTime: startTime,
       timezone: cubit.state.timezone,
     );
-    if (result == null) return;
+    if (result == null ||
+        !context.mounted ||
+        currentCacheUserId() != userId ||
+        context.read<WorkspaceCubit>().state.currentWorkspace?.id != wsId) {
+      return;
+    }
 
     await cubit.createEvent(
       wsId,
@@ -28,6 +36,7 @@ extension _CalendarPageActions on _CalendarViewState {
     CalendarEvent event, {
     CalendarEvent? sourceEvent,
   }) async {
+    final originalUserId = currentCacheUserId();
     final originalWorkspaceId = context
         .read<WorkspaceCubit>()
         .state
@@ -40,10 +49,16 @@ extension _CalendarPageActions on _CalendarViewState {
     }
     final action = await showEventDetailSheet(context, event: event);
 
-    if (!mounted || !context.mounted) return;
+    if (!mounted ||
+        !context.mounted ||
+        currentCacheUserId() != originalUserId) {
+      return;
+    }
 
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null || wsId != originalWorkspaceId) return;
+    if (wsId == null || wsId != originalWorkspaceId) {
+      return;
+    }
 
     if (action == 'edit') {
       // Detail views carry projected wall times. Editing always needs raw
@@ -61,12 +76,29 @@ extension _CalendarPageActions on _CalendarViewState {
         );
         return;
       }
+      final colors = cubit.getGoogleColorOptions(wsId, source);
       final result = await showEventFormSheet(
         context,
+        providerColorsFuture: colors,
+        isCurrentScope: () =>
+            mounted &&
+            context.mounted &&
+            currentCacheUserId() == originalUserId &&
+            context.read<WorkspaceCubit>().state.currentWorkspace?.id == wsId,
         event: source,
         timezone: cubit.state.timezone,
       );
-      if (result == null) return;
+      if (result == null ||
+          !context.mounted ||
+          currentCacheUserId() != originalUserId ||
+          context.read<WorkspaceCubit>().state.currentWorkspace?.id != wsId) {
+        return;
+      }
+      final choice = result['providerColor'];
+      if (choice is GoogleCalendarColorChoice) {
+        await cubit.updateProviderColor(wsId, event.id, choice);
+        return;
+      }
 
       await cubit.updateEvent(
         wsId,

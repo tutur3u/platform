@@ -385,19 +385,14 @@ export async function resolveCalendarSourceForEvent(args: {
   const entries = await listWritableConnections(args);
   const externalCalendarId =
     args.event.external_calendar_id ?? args.event.google_calendar_id ?? null;
-  const entry = entries.find(({ connection }) => {
-    if (
-      sourceCalendarId &&
-      connection.workspace_calendar_id === sourceCalendarId
-    ) {
-      return connection.provider === provider;
-    }
-
-    return (
+  const entry = entries.find(
+    ({ connection }) =>
       connection.provider === provider &&
-      connection.calendar_id === externalCalendarId
-    );
-  });
+      (!sourceCalendarId ||
+        connection.workspace_calendar_id === sourceCalendarId) &&
+      (!externalCalendarId || connection.calendar_id === externalCalendarId) &&
+      Boolean(sourceCalendarId || externalCalendarId)
+  );
 
   if (!entry) {
     throw new Error('Calendar source is unavailable or read-only');
