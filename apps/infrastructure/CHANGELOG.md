@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.32.0](https://github.com/tutur3u/platform/compare/infra-v0.31.0...infra-v0.32.0) (2026-10-03)
+
+
+### Features
+
+* **calendar:** support full Google color choices and scoped edits ([#5661](https://github.com/tutur3u/platform/issues/5661)) ([8cafac5](https://github.com/tutur3u/platform/commit/8cafac53438b504eafa8bcc8213d18448e4a17bc))
+* **workspaces:** add private Hidden choices and fullscreen picker ([#5699](https://github.com/tutur3u/platform/issues/5699)) ([9cab7ef](https://github.com/tutur3u/platform/commit/9cab7efc0e75f71c6b1a2436eea6885e48f6bfe4))
+
+
+### Bug Fixes
+
+* **calendar:** gate uncertain creation retries on durable capability ([4a0a088](https://github.com/tutur3u/platform/commit/4a0a0883ddfff464be0880afd13758908e65203f))
+* **calendar:** recover edited drafts and align provider color parity ([d97142a](https://github.com/tutur3u/platform/commit/d97142abe22188b6a31a4a6b0e7b3a97d35d07f5))
+* **calendar:** wire recoverable routes and gated provider palette ([ecfc1e7](https://github.com/tutur3u/platform/commit/ecfc1e7dd1c5556b94c64cde62635df15d024747))
+* **mobile:** align reviewer notes and shared email guard ([6ef2c0b](https://github.com/tutur3u/platform/commit/6ef2c0b15fa4ab446fb56561f01d23afd9ab3e79))
+* **mobile:** guard beta review access metadata ([#5678](https://github.com/tutur3u/platform/issues/5678)) ([190f305](https://github.com/tutur3u/platform/commit/190f3052e24441f57fe6a745337c7a3a72e85b4e))
+
 ## [0.31.0](https://github.com/tutur3u/platform/compare/infra-v0.30.1...infra-v0.31.0) (2026-10-01)
 
 

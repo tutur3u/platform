@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/realtime-v0.10.0...realtime-v0.11.0) (2026-10-03)
+
+
+### Features
+
+* **workspaces:** reconcile Hidden picker and preserve membership fences ([c9806bb](https://github.com/tutur3u/platform/commit/c9806bb12a49a777fe28ab3653bb19d9350a1471))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/realtime-v0.9.0...realtime-v0.10.0) (2026-09-25)
 
 

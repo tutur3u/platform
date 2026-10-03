@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0](https://github.com/tutur3u/platform/compare/storage-core-v0.2.1...storage-core-v0.3.0) (2026-10-03)
+
+
+### Features
+
+* **security:** scale abuse budgets by paid plans and memberships ([93ccf02](https://github.com/tutur3u/platform/commit/93ccf0237c79addaed3ab8b653bd8b57b27a9557))
+
+
+### Bug Fixes
+
+* **security:** address egress guard review findings ([1e4916a](https://github.com/tutur3u/platform/commit/1e4916a7c9216ac1d5f9beadab0e69144337db7c))
+* **security:** isolate caller budgets and preserve download semantics ([de5e090](https://github.com/tutur3u/platform/commit/de5e090f57e58b94bd235c47c494264a1192f5bf))
+* **storage:** bound CMS downloads and API usage without Redis ([277ffeb](https://github.com/tutur3u/platform/commit/277ffebb738fbdb787fbe465cf6400de7ae910b2)) ([#5736](https://github.com/tutur3u/platform/issues/5736)) ([bbfc428](https://github.com/tutur3u/platform/commit/bbfc42886a0953ab11d303cdcceed8968127d40b))
+
 ## [0.2.1](https://github.com/tutur3u/platform/compare/storage-core-v0.2.0...storage-core-v0.2.1) (2026-09-20)
 
 

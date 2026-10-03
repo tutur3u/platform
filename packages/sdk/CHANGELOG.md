@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.26.1](https://github.com/tutur3u/platform/compare/sdk-v0.26.0...sdk-v0.26.1) (2026-10-03)
+
+
+### Bug Fixes
+
+* **devboxes:** reserve exact integer host shares ([d282009](https://github.com/tutur3u/platform/commit/d2820097fc84b6b814be24e2f23200dba389ff7b))
+* **devbox:** stop failed dispatch and retain sandbox ownership ([85d1e61](https://github.com/tutur3u/platform/commit/85d1e613e65af1441fa54fc192c24ee359746723))
+* **devbox:** wait for admitted creation before stopping ([b1edb12](https://github.com/tutur3u/platform/commit/b1edb127f164fa9ab8cd8598d93eb51faff9b919))
+* **sdk:** bound mixed judge jobs and validate playground exports ([c5efff9](https://github.com/tutur3u/platform/commit/c5efff9427dc36cae6c4212871a335f9cd4bde03))
+* **sdk:** defer hosted playground adapter to canonical API ([a18e65a](https://github.com/tutur3u/platform/commit/a18e65a862ab22b664b92f615a9e35d56e123a82))
+* **sdk:** fence playground eviction and failed startup ([f208dcb](https://github.com/tutur3u/platform/commit/f208dcbd7a55385f2aa62ed8a822b029d7b5bc8f))
+* **sdk:** fence playground lifecycle and keep agent leases alive ([d92e437](https://github.com/tutur3u/platform/commit/d92e437af1b2e2fdefa1036d40a71d1d45be4703))
+* **sdk:** probe playground tools with the managed image path ([9571f35](https://github.com/tutur3u/platform/commit/9571f353f277efdddeeb22335a81b4475c2f4461))
+
+
+### Performance Improvements
+
+* **devboxes:** parallelize bounded execution and retain warm playgrounds ([#5746](https://github.com/tutur3u/platform/issues/5746)) ([efd8ac4](https://github.com/tutur3u/platform/commit/efd8ac44b5c9f8cbf2ab5d64fbe89e1f7afe4f96))
+* **devboxes:** parallelize bounded runner execution and retain warm playgrounds ([c31cbf3](https://github.com/tutur3u/platform/commit/c31cbf3a2a7cb5214d75183896791366affdc7e6))
+
 ## [0.26.0](https://github.com/tutur3u/platform/compare/sdk-v0.25.0...sdk-v0.26.0) (2026-09-29)
 
 

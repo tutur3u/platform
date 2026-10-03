@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.34.0](https://github.com/tutur3u/platform/compare/utils-v0.33.3...utils-v0.34.0) (2026-10-03)
+
+
+### Features
+
+* **calendar:** support full Google color choices and scoped edits ([#5661](https://github.com/tutur3u/platform/issues/5661)) ([8cafac5](https://github.com/tutur3u/platform/commit/8cafac53438b504eafa8bcc8213d18448e4a17bc))
+* **mobile:** support offline data and safe inventory checkout ([a45d634](https://github.com/tutur3u/platform/commit/a45d63498cc1e686d1d070f5861cf938c4e9a9ef))
+* **mobile:** support offline data, cached images, and safe inventory checkout ([#5734](https://github.com/tutur3u/platform/issues/5734)) ([2f0f397](https://github.com/tutur3u/platform/commit/2f0f39763daea56f1029fcc3e99e0be53c60e106))
+
+
+### Bug Fixes
+
+* **calendar:** fence metadata reads and retain recurrence during imports ([3895d28](https://github.com/tutur3u/platform/commit/3895d28fb4acd0164f6f021ad15df4c39a83938e))
+* **mobile:** harden offline inventory and scoped cache replay ([d9c0b13](https://github.com/tutur3u/platform/commit/d9c0b13b386287fb874be62a8b8ec794deeb6407))
+* **release:** gate critical app promotion on staged API probes ([f39cea3](https://github.com/tutur3u/platform/commit/f39cea3621b504a9320b6d79675aa42b905b0476)) ([#5761](https://github.com/tutur3u/platform/issues/5761)) ([391397f](https://github.com/tutur3u/platform/commit/391397f90f651d041d8f0e9ae566f8c3eab60dd7))
+* **release:** preserve manual test notes and share filtering policy ([ff312ca](https://github.com/tutur3u/platform/commit/ff312ca8b16e36bdc7f65484cded768de3073c17))
+* **releases:** omit merge bookkeeping from release summaries ([c66e0b1](https://github.com/tutur3u/platform/commit/c66e0b139c89706db32ec70c3e87fcc9c4018b6c)) ([#5741](https://github.com/tutur3u/platform/issues/5741)) ([552cd5a](https://github.com/tutur3u/platform/commit/552cd5ae85d19d9147f1367475f5f6b3bf522a63))
+* **sdk:** bound mixed judge jobs and validate playground exports ([c5efff9](https://github.com/tutur3u/platform/commit/c5efff9427dc36cae6c4212871a335f9cd4bde03))
+* **security:** isolate bulk limits from ordinary web operations ([b3a9add](https://github.com/tutur3u/platform/commit/b3a9addf90271c7e28319a2138bbd52aaa294bc1))
+* **security:** isolate offline bulk protection from daily web operations ([#5752](https://github.com/tutur3u/platform/issues/5752)) ([fd32aca](https://github.com/tutur3u/platform/commit/fd32aca3319c67d82149975e8c3a7615dfbca275))
+* **security:** stage offline download protection activation ([018f6ab](https://github.com/tutur3u/platform/commit/018f6ab2ada3fef843d66789dee6ec45fba905d3))
+
+
+### Performance Improvements
+
+* **devboxes:** parallelize bounded execution and retain warm playgrounds ([#5746](https://github.com/tutur3u/platform/issues/5746)) ([efd8ac4](https://github.com/tutur3u/platform/commit/efd8ac44b5c9f8cbf2ab5d64fbe89e1f7afe4f96))
+* **devboxes:** parallelize bounded runner execution and retain warm playgrounds ([c31cbf3](https://github.com/tutur3u/platform/commit/c31cbf3a2a7cb5214d75183896791366affdc7e6))
+
 ## [0.33.3](https://github.com/tutur3u/platform/compare/utils-v0.33.2...utils-v0.33.3) (2026-10-02)
 
 

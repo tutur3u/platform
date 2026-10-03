@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.35.0](https://github.com/tutur3u/platform/compare/inventory-v0.34.0...inventory-v0.35.0) (2026-10-03)
+
+
+### Features
+
+* **calendar:** support full Google color choices and scoped edits ([#5661](https://github.com/tutur3u/platform/issues/5661)) ([8cafac5](https://github.com/tutur3u/platform/commit/8cafac53438b504eafa8bcc8213d18448e4a17bc))
+* **inventory:** expose authorized deduplicated native creates ([d71325d](https://github.com/tutur3u/platform/commit/d71325d22043ea80357770269f325e6ee1e5cd7b))
+* **inventory:** merge products and warehouses with conflict previews ([ebcd1d9](https://github.com/tutur3u/platform/commit/ebcd1d9b16f100743c346c1665f42f4f867f379d)) ([#5765](https://github.com/tutur3u/platform/issues/5765)) ([35e584c](https://github.com/tutur3u/platform/commit/35e584c50061a17d9515563e0ee71c04f0cec53a))
+* **mobile:** sync inventory prerequisites and dependent writes automatically ([#5743](https://github.com/tutur3u/platform/issues/5743)) ([242fbbd](https://github.com/tutur3u/platform/commit/242fbbdb90671325af104f6c9fe79c43b81a82c1))
+
+
+### Bug Fixes
+
+* **calendar:** gate uncertain creation retries on durable capability ([4a0a088](https://github.com/tutur3u/platform/commit/4a0a0883ddfff464be0880afd13758908e65203f))
+* **calendar:** recover edited drafts and align provider color parity ([d97142a](https://github.com/tutur3u/platform/commit/d97142abe22188b6a31a4a6b0e7b3a97d35d07f5))
+* **inventory:** close merge API and contract review gaps ([37a0f44](https://github.com/tutur3u/platform/commit/37a0f446517318a270037a3ec0fb1937dfb13373))
+* **inventory:** declare merge selector debounce dependency ([33d564a](https://github.com/tutur3u/platform/commit/33d564a171a8283e350ab545007c6c473b99317a))
+* **inventory:** filter merged warehouse aliases in database ([33450b7](https://github.com/tutur3u/platform/commit/33450b777075e5093434e26a36c5161f13243db0))
+* **inventory:** keep merge policy pickers context appropriate ([7264070](https://github.com/tutur3u/platform/commit/7264070773a145ecf8bd2b70a13e7ec7c397505e))
+* **inventory:** load full sale filter choices and paged categories ([e10a488](https://github.com/tutur3u/platform/commit/e10a48882a1b859f9d6e62a139786e5bc5a904c2))
+* **inventory:** make merge review searchable and mobile accessible ([b1f2859](https://github.com/tutur3u/platform/commit/b1f2859934400b12f364161244bae24ca5e234d6))
+* **inventory:** narrow finance category merge labels ([f954fa9](https://github.com/tutur3u/platform/commit/f954fa995d2956cb6679c383373d499e8d783023))
+* **inventory:** normalize blank product option labels ([b3decc1](https://github.com/tutur3u/platform/commit/b3decc12272ad3638fcd23c12816a2fc59db5c64))
+* **inventory:** preserve table and view type inference ([8691a5e](https://github.com/tutur3u/platform/commit/8691a5e050502c3c125fa294b6aca6041e5ffbd1))
+* **inventory:** preserve verified legacy warehouse reads ([28f4fe3](https://github.com/tutur3u/platform/commit/28f4fe3929699928f2f944604b43846d1f5d2377))
+* **inventory:** preserve warehouse UUID casing parity ([8b688c1](https://github.com/tutur3u/platform/commit/8b688c150273981f323fe076741f096b5796b9cb))
+* **inventory:** reset merge search and cover persistent errors ([4c3c16d](https://github.com/tutur3u/platform/commit/4c3c16d84adc2162a6fdeb7dce7f6ab2e17d5975))
+* **inventory:** restore sale catalog when search clears ([10ac21f](https://github.com/tutur3u/platform/commit/10ac21f9979a051fcc794c548e75fa3cebd0949d))
+* **inventory:** settle concurrent fixtures and retry missing labels ([7c279ba](https://github.com/tutur3u/platform/commit/7c279ba4e0517d189efb840aa171f3fcb3d3ba57))
+* **inventory:** type filter option entries as tuples ([3c573c9](https://github.com/tutur3u/platform/commit/3c573c9357c5b081d694b45b1266a36e555cb8f6))
+* **mobile:** preserve sales receipts and finance API contracts ([#5750](https://github.com/tutur3u/platform/issues/5750)) ([1c3ee92](https://github.com/tutur3u/platform/commit/1c3ee9280aa144ed2417a0b1fd09da4794ece089))
+
 ## [0.34.0](https://github.com/tutur3u/platform/compare/inventory-v0.33.0...inventory-v0.34.0) (2026-10-02)
 
 

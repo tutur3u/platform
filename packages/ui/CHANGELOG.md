@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.38.0](https://github.com/tutur3u/platform/compare/ui-v0.37.2...ui-v0.38.0) (2026-10-03)
+
+
+### Features
+
+* **calendar:** support full Google color choices and scoped edits ([#5661](https://github.com/tutur3u/platform/issues/5661)) ([8cafac5](https://github.com/tutur3u/platform/commit/8cafac53438b504eafa8bcc8213d18448e4a17bc))
+
+
+### Bug Fixes
+
+* **calendar:** gate uncertain creation retries on durable capability ([4a0a088](https://github.com/tutur3u/platform/commit/4a0a0883ddfff464be0880afd13758908e65203f))
+* **calendar:** recover edited drafts and align provider color parity ([d97142a](https://github.com/tutur3u/platform/commit/d97142abe22188b6a31a4a6b0e7b3a97d35d07f5))
+* **finance:** authenticate exchange rates with satellite sessions ([33368f1](https://github.com/tutur3u/platform/commit/33368f1c00f86f71b4a66702899af262a90122e2)) ([#5760](https://github.com/tutur3u/platform/issues/5760)) ([759b1e5](https://github.com/tutur3u/platform/commit/759b1e52f8867aced2d64288af43b861d5ebccdc))
+* **ui:** close workspace popover without callback ([b0693b8](https://github.com/tutur3u/platform/commit/b0693b869721b9333d81d791554864291bec769d))
+* **ui:** default browser workspace selectors to dropdowns ([9a8da02](https://github.com/tutur3u/platform/commit/9a8da02ceb7c03ee7eb05fb6cdc729144da6192a))
+* **ui:** refine workspace dropdown recovery and viewport bounds ([06eeee7](https://github.com/tutur3u/platform/commit/06eeee77a26c1fc632907b72a5e0218d5d3fb49d))
+* **web:** restore anchored workspace dropdown ([2df0661](https://github.com/tutur3u/platform/commit/2df0661f911eaec319cacca5d29242804d0e76ee))
+* **web:** restore standard workspace dropdown ([#5739](https://github.com/tutur3u/platform/issues/5739)) ([f84ae74](https://github.com/tutur3u/platform/commit/f84ae741f2abab2a21aadfacda56bd7eba623466))
+
 ## [0.37.2](https://github.com/tutur3u/platform/compare/ui-v0.37.1...ui-v0.37.2) (2026-10-02)
 
 

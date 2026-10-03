@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.3.0](https://github.com/tutur3u/platform/compare/meet-core-v1.2.1...meet-core-v1.3.0) (2026-10-03)
+
+
+### Features
+
+* **workspaces:** add private Hidden choices and fullscreen picker ([#5699](https://github.com/tutur3u/platform/issues/5699)) ([9cab7ef](https://github.com/tutur3u/platform/commit/9cab7efc0e75f71c6b1a2436eea6885e48f6bfe4))
+
+
+### Bug Fixes
+
+* **meet:** add mobile capture and room event notifications ([fe6b020](https://github.com/tutur3u/platform/commit/fe6b020b95b2799fad8314969784d06ccd7fadda))
+* **meet:** resolve native capture and browser review findings ([ce9b522](https://github.com/tutur3u/platform/commit/ce9b52248eb807424a063cd89a3cd606b04c5e01))
+* **meet:** restore mobile capture and room notifications ([#5721](https://github.com/tutur3u/platform/issues/5721)) ([d116a54](https://github.com/tutur3u/platform/commit/d116a54262fb74da780968d27ee8bbe0245d5812))
+
 ## [1.2.1](https://github.com/tutur3u/platform/compare/meet-core-v1.2.0...meet-core-v1.2.1) (2026-09-28)
 
 

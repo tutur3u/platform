@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.37.0](https://github.com/tutur3u/platform/compare/tasks-v0.36.3...tasks-v0.37.0) (2026-10-03)
+
+
+### Features
+
+* **calendar:** support full Google color choices and scoped edits ([#5661](https://github.com/tutur3u/platform/issues/5661)) ([8cafac5](https://github.com/tutur3u/platform/commit/8cafac53438b504eafa8bcc8213d18448e4a17bc))
+
+
+### Bug Fixes
+
+* **calendar:** gate uncertain creation retries on durable capability ([4a0a088](https://github.com/tutur3u/platform/commit/4a0a0883ddfff464be0880afd13758908e65203f))
+* **calendar:** recover edited drafts and align provider color parity ([d97142a](https://github.com/tutur3u/platform/commit/d97142abe22188b6a31a4a6b0e7b3a97d35d07f5))
+
 ## [0.36.3](https://github.com/tutur3u/platform/compare/tasks-v0.36.2...tasks-v0.36.3) (2026-10-02)
 
 
