@@ -664,9 +664,7 @@ class _InventoryProductEditorPageState
       showInventoryToast(context, error.message, destructive: true);
     } on Exception catch (error) {
       if (!mounted) return;
-      final message = error is InventorySetupAwaitingSync
-          ? context.l10n.inventorySetupSyncFirst
-          : error.toString();
+      final message = error.toString();
       setState(() => _formError = message);
       showInventoryToast(context, message, destructive: true);
     } finally {

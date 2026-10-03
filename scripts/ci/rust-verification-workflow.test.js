@@ -95,6 +95,26 @@ test('actual compile commands retain native and Worker feature contracts and loc
   assert.equal(setup.with.targets, 'wasm32-unknown-unknown');
 });
 
+test('native tests run before strict lint can block Worker packaging', () => {
+  const native = job.steps.findIndex(
+    (step) => step.name === 'Test native backend'
+  );
+  const clippy = job.steps.findIndex(
+    (step) => step.name === 'Clippy native targets'
+  );
+  assert.ok(native >= 0 && native < clippy);
+  assert.equal(job.steps[native].run, 'cargo test --locked');
+  assert.equal(job.steps[native].if, undefined);
+  assert.equal(
+    job.steps[clippy].run,
+    'cargo clippy --locked --all-targets --features native -- -D warnings'
+  );
+  assert.equal(job.steps[clippy]['continue-on-error'], undefined);
+  assert.equal(job['continue-on-error'], undefined);
+  assert.equal(workerJob.needs, 'verify');
+  assert.doesNotMatch(workerJob.if, /always\(\)|failure\(\)/);
+});
+
 test('read-only guard rejects the Wrangler Action and executable forms', () => {
   for (const value of [
     'uses: cloudflare/wrangler-action@v3',

@@ -94,13 +94,16 @@ void main() {
         expect(cubit.state.workspace, expectedWorkspace);
         expect(cubit.state.resolved, isFalse);
         await cubit.save('Europe/London');
-        expect(repository.writes, 0);
+        expect(repository.writes, scope == 'account' ? 0 : 1);
         personal.complete('America/Chicago');
         workspace.complete('Australia/Sydney');
         await pending;
-        expect(cubit.state.personal, expectedPersonal);
+        expect(
+          cubit.state.personal,
+          scope == 'account' ? expectedPersonal : 'Europe/London',
+        );
         expect(cubit.state.workspace, expectedWorkspace);
-        expect(cubit.state.resolved, isFalse);
+        expect(cubit.state.resolved, scope != 'account');
       },
     );
   }

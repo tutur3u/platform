@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
@@ -20,53 +20,6 @@ void main() {
     await CacheStore.instance.clearScope();
     OfflineMutationQueue.instance.pending.value = [];
   });
-
-  test(
-    'pending local setup create cannot enqueue edit or delete followups',
-    () async {
-      final api = _MockApiClient();
-      final queue = _Queue();
-      final repository = InventoryRepository(
-        apiClient: api,
-        mutationQueue: queue,
-      );
-      when(queue.listPending).thenAnswer(
-        (_) async => [
-          PendingMutationRecord(
-            id: 'create',
-            feature: 'inventory',
-            method: 'POST',
-            path: InventoryEndpoints.productCategories('ws'),
-            createdAt: DateTime.utc(2026),
-            userId: 'user',
-            workspaceId: 'ws',
-            payload: {'name': 'Local'},
-            optimisticPatch: {'entityId': 'local'},
-          ),
-        ],
-      );
-      await expectLater(
-        repository.updateSetupItem(
-          wsId: 'ws',
-          kind: InventorySetupKind.category,
-          id: 'local',
-          name: 'Updated',
-        ),
-        throwsA(isA<InventorySetupAwaitingSync>()),
-      );
-      await expectLater(
-        repository.deleteSetupItem(
-          wsId: 'ws',
-          kind: InventorySetupKind.category,
-          id: 'local',
-        ),
-        throwsA(isA<InventorySetupAwaitingSync>()),
-      );
-      verifyNever(() => api.putJson(any(), any()));
-      verifyNever(() => api.deleteJson(any()));
-      repository.dispose();
-    },
-  );
 
   test(
     'shows queued inventory setup choices only in their workspace',
@@ -271,7 +224,19 @@ void main() {
     'period edits send content fields and allow clearing dates and notes',
     () async {
       final apiClient = _MockApiClient();
-      final repository = InventoryRepository(apiClient: apiClient);
+      final queue = OfflineMutationQueue.forTesting(
+        store: CacheStore.instance,
+        userId: () => 'user',
+        checkConnectivity: () async => [ConnectivityResult.wifi],
+        connectivityChanges: const Stream<List<ConnectivityResult>>.empty(),
+        apiFactory: (_) => apiClient,
+      );
+      final repository = InventoryRepository(
+        apiClient: apiClient,
+        mutationQueue: queue,
+      );
+      addTearDown(queue.dispose);
+
       Map<String, dynamic>? requestBody;
 
       when(() => apiClient.patchJson(any(), any())).thenAnswer((
@@ -288,7 +253,7 @@ void main() {
         };
       });
 
-      await repository.updateSalesPeriod(
+      final updated = await repository.updateSalesPeriod(
         wsId: 'ws-1',
         periodId: 'period-1',
         name: 'Summer 2027',
@@ -296,6 +261,7 @@ void main() {
         productIds: const ['product-1'],
       );
 
+      expect(updated.name, 'Summer 2027');
       expect(requestBody, {
         'name': 'Summer 2027',
         'description': null,

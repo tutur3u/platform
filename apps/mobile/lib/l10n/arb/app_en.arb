@@ -3894,8 +3894,13 @@
     "cacheCategoryCalendar": "Calendar",
     "cacheCategoryFinance": "Finance",
     "cacheCategoryOther": "Other data",
+    "offlineDependencyWaiting": "Waiting for related changes. Sync will continue automatically.",
+    "offlineDependencyMissing": "A related local item was discarded or deleted. Review this change.",
+    "offlineDependencyCycle": "Related changes depend on each other. Review their references.",
+    "offlineDependencyAmbiguous": "More than one queued create uses the same local item. Review this change.",
+    "offlineDependencyInvalid": "The saved change has invalid data. Review it before syncing.",
+    "offlineDependencyContract": "Waiting for server support. This change is saved and retries automatically.",
     "offlineEditSyncing": "Syncing…",
-    "inventorySetupSyncFirst": "Sync this new item before using, editing, or deleting it.",
     "offlineEditQueued": "Waiting to sync",
     "offlineEditConflict": "Needs review before syncing",
     "offlineEditFailed": "Sync failed",
@@ -3974,7 +3979,8 @@
     "settingsTimezoneUnknown": "Unknown",
     "settingsTimezoneEffective": "Effective timezone: {timezone}",
     "settingsTimezoneRateLimited": "Too many requests. Please wait before retrying.",
-    "settingsTimezoneError": "Could not load or save timezone. Tap to retry.",
+    "settingsTimezoneRetry": "Retry timezone",
+    "settingsTimezoneError": "Could not load or save timezone. Retry or edit a loaded preference.",
     "@settingsTimezoneEffective": {
         "placeholders": {
             "timezone": {

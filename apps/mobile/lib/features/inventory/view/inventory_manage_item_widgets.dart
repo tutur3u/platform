@@ -83,17 +83,20 @@ class _CreateManageItemDialogState extends State<_CreateManageItemDialog> {
         return;
       }
       Navigator.of(context).pop(true);
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      showInventoryToast(
+        context,
+        error.message.trim().isEmpty
+            ? context.l10n.commonSomethingWentWrong
+            : error.message,
+        destructive: true,
+      );
     } on Exception catch (error) {
       if (!mounted) {
         return;
       }
-      showInventoryToast(
-        context,
-        error is InventorySetupAwaitingSync
-            ? context.l10n.inventorySetupSyncFirst
-            : error.toString(),
-        destructive: true,
-      );
+      showInventoryToast(context, error.toString(), destructive: true);
     } finally {
       if (mounted) {
         setState(() => _saving = false);

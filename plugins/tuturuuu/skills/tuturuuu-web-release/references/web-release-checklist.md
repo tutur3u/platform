@@ -2,6 +2,14 @@
 
 Use this checklist for `apps/web` version badge and release metadata work.
 
+## Rollback And Mixed-Version Recovery
+
+For Instant Rollback, incompatible satellite/API versions, or a rollout incident,
+use `$tuturuuu-rollout-recovery` and its
+[recovery evidence](../../tuturuuu-rollout-recovery/references/recovery-evidence.md).
+Keep the current skill's release badge and source metadata contract; recovery guidance
+does not authorize promotion.
+
 ## Release Version
 
 - Do not manually bump `TUTURUUU_PLATFORM_VERSION` for ordinary authored
