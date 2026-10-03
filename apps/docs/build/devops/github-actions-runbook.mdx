@@ -297,6 +297,27 @@ repository's Rust 1.95 minimum to run locked native Clippy/tests, wasm Worker
 checking and a native release build. It uses read-only repository permissions,
 no deployment environment or secrets, and no shared cache writes.
 
+Native tests run before strict Clippy so an unrelated lint failure cannot hide
+actual test results for the requested source. Clippy retains `-D warnings` and
+still fails the verifier; Worker packaging remains dependent on a successful
+verifier. A passing test step alongside failed lint is bounded test evidence,
+not a successful Rust gate. Preserve the original failed run and inspect the
+exact source and test results separately before resolving review findings.
+The ordering and strict-failure policy is covered by
+`scripts/ci/rust-verification-workflow.test.js`.
+
+Four private Storage/CMS port modules remain compiled for their regression tests
+but deliberately have no dispatcher arms: storage downloads, workspace sharing,
+CMS delivery and CMS assets. Their prior direct-download behavior lacks guarded
+relay/source parity, so live Next.js retains ownership in `route-overrides.json`.
+Only these module declarations carry reasoned `#[expect(dead_code)]`; strict
+Clippy stays unchanged and handler source is retained. Crate-level
+`deny(unfulfilled_lint_expectations)` rejects an expectation once no diagnostic
+fulfills it. Remove the expectation when completing protected parity; the focused
+workflow test also rejects reconnecting any of these handlers while its
+expectation remains, even if other unused helpers still satisfy that expectation.
+Never restore an unsafe dispatcher arm merely to make lint pass.
+
 For dependency drafts, record the requested source SHA and the actual successful
 job result. After the existing verifier succeeds, a separate sequential Worker-package job
 installs checksum-published stable `worker-build 0.8.7`
