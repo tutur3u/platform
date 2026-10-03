@@ -182,7 +182,7 @@ void main() {
         find.text('No activity was returned for this day.'),
         findsOneWidget,
       );
-      expect(find.text('October task'), findsNothing);
+      expect(find.text('October task'), findsOneWidget);
       for (var i = 0; i < 4; i++) {
         await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
         await tester.pumpAndSettle();

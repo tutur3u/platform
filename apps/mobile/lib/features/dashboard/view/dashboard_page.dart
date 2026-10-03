@@ -59,9 +59,10 @@ part 'dashboard_resource_cards.dart';
 part 'dashboard_customization.dart';
 
 class DashboardPage extends StatelessWidget {
-  const DashboardPage({this.replayToken = 0, super.key});
+  const DashboardPage({this.replayToken = 0, this.active = true, super.key});
 
   final int replayToken;
+  final bool active;
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +114,7 @@ class DashboardPage extends StatelessWidget {
           },
         ),
       ],
-      child: _DashboardView(replayToken: replayToken),
+      child: _DashboardView(replayToken: replayToken, active: active),
     );
   }
 
@@ -149,9 +150,10 @@ AppCardPalette _dashboardPalette(BuildContext context, int index) =>
     );
 
 class _DashboardView extends StatefulWidget {
-  const _DashboardView({required this.replayToken});
+  const _DashboardView({required this.replayToken, required this.active});
 
   final int replayToken;
+  final bool active;
 
   @override
   State<_DashboardView> createState() => _DashboardViewState();
@@ -307,7 +309,7 @@ class _DashboardViewState extends State<_DashboardView> {
         ),
         ShellChromeActions(
           ownerId: 'home-dashboard',
-          locations: const {Routes.home},
+          locations: widget.active ? const {Routes.home} : const {},
           actions: [
             ShellActionSpec(
               id: 'home-customize',

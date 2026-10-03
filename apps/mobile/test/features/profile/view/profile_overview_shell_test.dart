@@ -484,7 +484,7 @@ void main() {
               },
             ),
           );
-          final timelineTarget = find.byTooltip('Activity timeline');
+          final timelineTarget = find.byTooltip('Timeline');
           expect(tester.getCenter(timelineTarget).dy, greaterThan(0));
           await tester.tap(timelineTarget);
           await _pump(tester);
@@ -518,19 +518,19 @@ void main() {
           final section = find.byType(ProfileTimelineSection);
           final browser = find.byType(ProfileTimelineBrowser);
           final panelRect = tester.getRect(section);
-          var browserRect = tester.getRect(browser);
+          final browserRect = tester.getRect(browser);
           expect(browserRect.left, equals(panelRect.left));
           expect(browserRect.right, equals(panelRect.right));
-          final outer = tester.state<ScrollableState>(
-            find.ancestor(of: section, matching: find.byType(Scrollable)).first,
+          expect(
+            find.ancestor(of: section, matching: find.byType(Scrollable)),
+            findsNothing,
           );
+          expect(
+            find.descendant(of: browser, matching: find.byType(Scrollable)),
+            findsOneWidget,
+          );
+          expect(find.byTooltip('Switch account'), findsNothing);
           final navbarRect = tester.getRect(find.byType(shad.AppBar).first);
-          outer.position.jumpTo(
-            (outer.position.pixels + browserRect.top - navbarRect.bottom - 8)
-                .clamp(0.0, outer.position.maxScrollExtent),
-          );
-          await _pump(tester);
-          browserRect = tester.getRect(browser);
           expect(browserRect.top, greaterThanOrEqualTo(navbarRect.bottom));
           await tester.tap(
             find.byKey(const ValueKey('shell-action-button-profile-day-trail')),
@@ -619,9 +619,9 @@ void main() {
       await mount(tester);
       expect(find.byKey(const ValueKey('profile-views')), findsOneWidget);
       expect(find.byType(ProfileOverviewPage), findsOneWidget);
-      await tester.tap(find.byTooltip('Activity timeline'));
+      await tester.tap(find.byTooltip('Timeline'));
       await _pump(tester);
-      expect(find.text('Activity timeline'), findsOneWidget);
+      expect(find.text('Timeline'), findsOneWidget);
       await tester.tap(find.byTooltip('Overview'));
       await _pump(tester);
       expect(find.text('Overview'), findsOneWidget);
@@ -666,9 +666,9 @@ void main() {
       tester,
     ) async {
       await mount(tester, size: size);
-      await tester.tap(find.byTooltip('Activity timeline'));
+      await tester.tap(find.byTooltip('Timeline'));
       await _pump(tester);
-      expect(find.text('Activity timeline'), findsOneWidget);
+      expect(find.text('Timeline'), findsOneWidget);
       await tester.tap(find.byTooltip('Overview'));
       await _pump(tester);
       expect(find.text('Overview'), findsOneWidget);

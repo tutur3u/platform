@@ -282,6 +282,7 @@ fn browser_recovery_request(
     }
 }
 
+mod exchange_rates_session;
 mod g00;
 mod g01;
 mod g02;

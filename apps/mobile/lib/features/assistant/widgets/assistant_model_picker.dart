@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/assistant/models/assistant_model_eligibility.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_model_picker_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -22,13 +23,6 @@ class AssistantModelPicker extends StatelessWidget {
   final AssistantRepository? repository;
   final String? workspaceId;
 
-  bool _isAllowed(AssistantGatewayModel model) {
-    if (model.disabled) return false;
-    if (allowedModels.isEmpty) return true;
-    final bare = model.value.split('/').last;
-    return allowedModels.contains(model.value) || allowedModels.contains(bare);
-  }
-
   @override
   Widget build(BuildContext context) {
     return IconButton(
@@ -47,7 +41,8 @@ class AssistantModelPicker extends StatelessWidget {
                 builder: (_) => AssistantModelPickerSheet(
                   selected: selected,
                   models: models,
-                  isAllowed: _isAllowed,
+                  isAllowed: (model) =>
+                      isAssistantModelAllowed(model, allowedModels),
                   repository: repository,
                   workspaceId: workspaceId,
                 ),

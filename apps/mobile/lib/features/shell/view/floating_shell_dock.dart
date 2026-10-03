@@ -7,6 +7,7 @@ import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/dock_action_transition.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
+import 'package:mobile/features/shell/view/shell_keyboard_chrome.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// The floating header includes the system status bar and the section bar.
@@ -26,16 +27,24 @@ class FloatingShellDock extends StatefulWidget {
     required this.child,
     this.header,
     this.scrollableHeader = false,
+    this.keyboardVisible = false,
     this.onVisibilityChanged,
+    this.navigationBottomOffset = 0,
+    this.reserveNavigationClearance = true,
+    this.keepNavigationVisible = false,
     super.key,
   });
 
+  final double navigationBottomOffset;
+  final bool reserveNavigationClearance;
+  final bool keepNavigationVisible;
   final String location;
   final double bottomInset;
   final Widget navigation;
   final Widget child;
   final Widget? header;
   final bool scrollableHeader;
+  final bool keyboardVisible;
   final ValueChanged<bool>? onVisibilityChanged;
 
   @override
@@ -62,6 +71,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
   void didUpdateWidget(covariant FloatingShellDock oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.location != widget.location ||
+        oldWidget.keepNavigationVisible != widget.keepNavigationVisible ||
         (widget.bottomInset == 0 && widget.header == null)) {
       _returnTimer?.cancel();
       _hidden = false;
@@ -131,7 +141,10 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
             .background ??
         Theme.of(context).colorScheme.surface;
     final active = widget.bottomInset > 0;
-    final clearance = active ? widget.bottomInset + media.padding.bottom : 0.0;
+    final clearance = active && widget.reserveNavigationClearance
+        ? widget.bottomInset + media.padding.bottom
+        : media.padding.bottom;
+    final navigationHidden = _hidden && !widget.keepNavigationVisible;
     final headerClearance = widget.header == null || widget.scrollableHeader
         ? 0.0
         : _headerInset;
@@ -166,7 +179,9 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                   curve: Curves.easeOutCubic,
                   offset: headerHidden ? const Offset(0, -1.3) : Offset.zero,
                   child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 180),
+                    duration: media.disableAnimations
+                        ? Duration.zero
+                        : const Duration(milliseconds: 180),
                     opacity: headerHidden ? 0 : 1,
                     child: ColoredBox(
                       key: const ValueKey('floating-shell-header-surface'),
@@ -181,26 +196,43 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
             Positioned(
               left: 0,
               right: 0,
-              bottom: 0,
+              bottom: widget.navigationBottomOffset,
               child: SafeArea(
                 top: false,
-                child: IgnorePointer(
-                  ignoring: _hidden,
-                  child: AnimatedSlide(
-                    duration: media.disableAnimations
-                        ? Duration.zero
-                        : const Duration(milliseconds: 240),
-                    curve: Curves.easeOutCubic,
-                    offset: _hidden ? const Offset(0, 1.3) : Offset.zero,
-                    child: AnimatedOpacity(
-                      duration: const Duration(milliseconds: 180),
-                      opacity: _hidden ? 0 : 1,
-                      child: _DockActions(
-                        location: widget.location,
-                        navigation: widget.navigation,
+                child: ShellKeyboardChrome(
+                  keyboardVisible: widget.keyboardVisible,
+                  builder: (context, {required hidden, required settled}) =>
+                      ExcludeSemantics(
+                        excluding: navigationHidden || hidden,
+                        child: IgnorePointer(
+                          ignoring: navigationHidden || hidden,
+                          child: AnimatedSlide(
+                            duration: media.disableAnimations
+                                ? Duration.zero
+                                : const Duration(milliseconds: 240),
+                            curve: Curves.easeOutCubic,
+                            offset: navigationHidden || hidden
+                                ? const Offset(0, 1.3)
+                                : Offset.zero,
+                            child: AnimatedOpacity(
+                              key: const ValueKey(
+                                'floating-shell-dock-opacity',
+                              ),
+                              duration: media.disableAnimations
+                                  ? Duration.zero
+                                  : const Duration(milliseconds: 180),
+                              opacity: navigationHidden || hidden ? 0 : 1,
+                              child: Offstage(
+                                offstage: hidden && settled,
+                                child: _DockActions(
+                                  location: widget.location,
+                                  navigation: widget.navigation,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
                 ),
               ),
             ),
@@ -276,7 +308,12 @@ class _DockActionsState extends State<_DockActions> {
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Flexible(child: widget.navigation),
+            Flexible(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: widget.navigation,
+              ),
+            ),
             DockActionTransition(
               identity: Object.hashAll([
                 visibleCount,
@@ -289,7 +326,7 @@ class _DockActionsState extends State<_DockActions> {
                   for (final (index, action)
                       in actions.take(visibleCount).indexed)
                     Padding(
-                      padding: const EdgeInsets.only(right: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
                       child: ShellDockActionButton(
                         action: action,
                         primary: index == 0,
@@ -297,7 +334,7 @@ class _DockActionsState extends State<_DockActions> {
                     ),
                   if (actions.length > visibleCount)
                     Padding(
-                      padding: const EdgeInsets.only(right: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
                       child: PopupMenuButton<ShellActionSpec>(
                         tooltip: '',
                         icon: const Icon(Icons.more_horiz),
