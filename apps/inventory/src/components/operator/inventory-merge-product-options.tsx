@@ -56,7 +56,11 @@ export function InventoryMergeProductSelect({
   });
   const selected = useQuery({
     queryKey: ['inventory', wsId, 'merge-product-label', value],
-    queryFn: () => getInventoryProduct(wsId, value),
+    queryFn: async () => {
+      const product = await getInventoryProduct(wsId, value);
+      if (!product.name?.trim()) throw new Error('Product name unavailable');
+      return product;
+    },
     enabled: Boolean(value),
     retry: false,
   });
@@ -96,6 +100,9 @@ export function InventoryMergeProductSelect({
         }}
         onLoadMore={() => {
           if (!products.isFetching) void products.fetchNextPage();
+        }}
+        onOpenChange={(open) => {
+          if (!open) setSearch('');
         }}
         onSearchChange={setSearch}
         options={rows

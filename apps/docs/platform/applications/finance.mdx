@@ -387,3 +387,28 @@ database migration workflow must finish successfully for the corrected debt
 rows to appear; a deployed UI and a green application build do not prove the
 database function changed. Check the migration marker and a read-only customer
 row after sync. Never manually push the migration from an agent checkout.
+
+### Exchange-rate session boundary
+
+Exchange rates are authenticated global reference data. Web Supabase sessions and
+verified internal app sessions, including Finance, use the same API. A Finance
+app session does not require a separate Supabase login. Invalid or expired app
+sessions and anonymous callers are rejected before any database read; existing
+session suspension and abuse controls remain active. Both verified Supabase JWT
+users and app-session actors pass the same Rust active-suspension check before
+currency reads. Lifted and expired suspensions do not block reads; the policy
+lookup retains the shared live policy’s fail-open behavior on policy-store outages.
+Supabase JWT currency reads retain the caller token; only verified app sessions
+use the server read credential.
+Currency query failures return 500 and never masquerade as missing rates or
+trigger seeding; initial seeding runs only after a successful empty lookup.
+Successful rates are private
+and not stored in a shared HTTP cache. The client-side exchange-rate hook uses
+the internal API client. The existing wallet-details server component continues
+to read rates directly through its server-only admin client.
+
+Regression coverage: `apps/web/src/app/api/v1/exchange-rates/route.test.ts` exercises
+the real session middleware with injected authentication dependencies;
+`packages/internal-api/src/finance-exchange-rates.test.ts` covers transport and
+error propagation. Rust source parity is covered by
+`apps/backend/src/tests/exchange_rates_session.rs`; Rust does not serve production.

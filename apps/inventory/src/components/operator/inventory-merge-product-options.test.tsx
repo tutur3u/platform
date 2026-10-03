@@ -24,6 +24,7 @@ vi.mock('@tuturuuu/ui/custom/combobox', () => ({
     ariaLabel: string;
     options: { value: string; label: string }[];
     onSearchChange: (value: string) => void;
+    onOpenChange: (open: boolean) => void;
     hasMore: boolean;
     onLoadMore: () => void;
     loadMoreText: string;
@@ -33,6 +34,9 @@ vi.mock('@tuturuuu/ui/custom/combobox', () => ({
         aria-label={props.ariaLabel}
         onChange={(event) => props.onSearchChange(event.target.value)}
       />
+      <button type="button" onClick={() => props.onOpenChange(false)}>
+        Close options
+      </button>
       {props.options.map((row) => (
         <p key={row.value}>{row.label}</p>
       ))}
@@ -97,6 +101,9 @@ describe('independent merge product lookup', () => {
       'workspace',
       expect.objectContaining({ page: 1, q: 'Remote', status: 'active' })
     );
+    fireEvent.click(screen.getByRole('button', { name: 'Close options' }));
+    await screen.findByText('Page 6');
+    await waitFor(() => expect(screen.queryByText('Remote match')).toBeNull());
   });
   it('keeps an explicit retry available after lookup failure', async () => {
     api.list
@@ -172,7 +179,7 @@ describe('independent merge product lookup', () => {
   it('shows a selected-name error and retry instead of loading forever', async () => {
     api.list.mockResolvedValue({ data: [], count: 0 });
     api.product
-      .mockRejectedValueOnce(new Error('Unavailable'))
+      .mockResolvedValueOnce({ id: 'selected', name: null })
       .mockResolvedValue({ id: 'selected', name: 'Recovered selection' });
     renderQuery(
       <InventoryMergeProductSelect

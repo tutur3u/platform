@@ -7,6 +7,7 @@ export const INVENTORY_SQL_FIXTURES = [
   'inventory-active-warehouses.sql',
   'inventory-merge-restoration.sql',
   'inventory-merge-readiness.sql',
+  'inventory-merge-lock-bounds.sql',
   'inventory-season-merge.sql',
 ];
 

@@ -18931,10 +18931,12 @@ export type Database = {
         Args: { p_amount: number; p_currency: string };
         Returns: number;
       };
-      inventory_identity_lock_key: {
-        Args: { p_id: string; p_kind: string };
-        Returns: number;
-      };
+      inventory_identity_lock_key:
+        | { Args: { p_id: string; p_kind: string }; Returns: number }
+        | {
+            Args: { p_id: string; p_kind: string; p_ws_id: string };
+            Returns: number;
+          };
       inventory_major_to_minor: {
         Args: { p_amount: number; p_currency?: string };
         Returns: number;

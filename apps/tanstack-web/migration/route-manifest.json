@@ -1916,13 +1916,14 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/exchange-rates:apps/web/src/legacy-api-routes/v1/exchange-rates/route.ts",
+      "id": "api:/api/v1/exchange-rates:apps/web/src/app/api/v1/exchange-rates/route.ts",
       "kind": "api",
       "methods": [
-        "GET"
+        "GET",
+        "HEAD"
       ],
       "routePath": "/api/v1/exchange-rates",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/exchange-rates/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/exchange-rates/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -9666,7 +9667,7 @@
     "routeHandlers": 624,
     "methodCounts": {
       "GET": 316,
-      "HEAD": 8,
+      "HEAD": 9,
       "POST": 308,
       "PUT": 56,
       "PATCH": 64,
