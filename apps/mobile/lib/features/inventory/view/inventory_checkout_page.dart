@@ -172,6 +172,11 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
   void dispose() {
     _quoteTimer?.cancel();
     unawaited(_authSubscription?.cancel());
+    // Shell back replaces embedded routes without calling the form's onClose.
+    // The journal only removes a durably confirmed, matching invoice.
+    if (widget.embedded && _season.completedInvoiceId != null) {
+      unawaited(_acknowledgeReceipt());
+    }
     _season.removeListener(_quoteChanged);
     if (widget.seasonController == null) _season.dispose();
     _searchController.dispose();
