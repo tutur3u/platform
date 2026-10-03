@@ -100,14 +100,13 @@ Unavailable modules do not appear as Home cards or editor choices; their saved
 layout preferences remain intact if access returns. The workspace picker and
 security prompts remain outside customization.
 
-The shell reserves physical bottom clearance, including for lists with explicit
-padding. Screens inside the shell must not add another dock inset. The dock hides
-on downward scrolling and returns on upward scrolling or after a short idle period;
-its clearance stays stable to avoid moving content. Primary actions register with
-`ShellActionSpec.inDock`; `ExtendedFab` automatically uses that registration inside
-the router shell and keeps its standalone presentation elsewhere. Action buttons
-show icons on phones and labels on tablet widths. Do not duplicate these actions
-in page-level floating buttons or top-bar actions.
+The shell provides bottom scroll clearance, including for explicit-padding
+lists; pages must not add another dock inset. Downward scrolling hides the dock;
+reverse scrolling or idle restores it. Profile/Agenda reclaim hidden clearance;
+other pages keep it stable. Primary actions register with `ShellActionSpec.inDock`.
+`ExtendedFab` uses that registration inside the shell and remains standalone
+elsewhere. Actions use icons on phones and labels on tablets. Do not duplicate
+these actions in page-level floating buttons or top-bar actions.
 
 Nova spins once when entering Assistant and remains static afterward. Loading
 indicators continue animating, while pull-to-refresh uses an opaque circular

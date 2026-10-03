@@ -234,6 +234,10 @@ extension _ShellPageLayout on _ShellPageState {
       bottomInset: bodyBottomInset,
       navigationBottomOffset: navigationBottomOffset,
       reserveNavigationClearance: !composerVisible,
+      reclaimNavigationClearanceWhenHidden:
+          widget.matchedLocation == Routes.profileRoot ||
+          widget.matchedLocation == Routes.home ||
+          widget.matchedLocation == Routes.calendar,
       keepNavigationVisible: composerVisible,
       navigation: navigationBar,
       header: header,
@@ -297,11 +301,20 @@ extension _ShellPageLayout on _ShellPageState {
           widget.matchedLocation,
         ) ??
         false;
+    final workspace = context.watch<WorkspaceCubit>().state;
+    final hasAssistantWorkspace =
+        (workspace.currentWorkspace ?? workspace.personalWorkspaceOrCurrent) !=
+        null;
+    final textAssistant =
+        widget.matchedLocation == Routes.assistant &&
+        !assistantChrome.isLiveMode &&
+        hasAssistantWorkspace;
     final composerVisible =
         widget.matchedLocation == Routes.assistant &&
-        assistantChrome.composerVisible &&
+        assistantChrome.isComposing &&
         !assistantChrome.isLiveMode;
     final showBottomNav =
+        !textAssistant &&
         (!composerVisible || assistantChrome.navigationExpanded) &&
         (!widget.matchedLocation.startsWith(Routes.assistant) ||
             !assistantChrome.isFullscreen) &&
@@ -324,7 +337,12 @@ extension _ShellPageLayout on _ShellPageState {
         child: navContent,
       ),
     );
-    final globalBody = _buildGlobalBody();
+    // Keep this wrapper present across routes and modes: changing its shape
+    // would remount the cached Assistant page and discard its draft/focus.
+    final globalBody = AssistantDockNavigation(
+      navigation: navContent,
+      child: _buildGlobalBody(),
+    );
     final floatingNavInset = (!isCompact || composerVisible) && showBottomNav
         ? _floatingNavBodyInset()
         : 0.0;
@@ -353,7 +371,7 @@ extension _ShellPageLayout on _ShellPageState {
             : const SizedBox.shrink(),
         bodyBottomInset: floatingNavInset,
         composerVisible: composerVisible,
-        navigationBottomOffset: composerVisible
+        navigationBottomOffset: composerVisible && !textAssistant
             ? assistantComposerHeight(context) + assistantComposerBottomGap * 2
             : 0,
       ),

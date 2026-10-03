@@ -37,6 +37,7 @@ import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
+import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -593,6 +594,12 @@ void main() {
   ) async {
     await mount(tester);
     expect(find.byType(ProfileOverviewPage), findsOneWidget);
+    expect(
+      tester
+          .widget<FloatingShellDock>(find.byType(FloatingShellDock))
+          .reclaimNavigationClearanceWhenHidden,
+      isTrue,
+    );
     expect(find.byType(SettingsPanel), findsNothing);
     expect(tester.takeException(), isNull);
   });

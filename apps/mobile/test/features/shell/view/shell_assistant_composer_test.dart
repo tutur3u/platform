@@ -10,6 +10,8 @@ import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
+import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
+import 'package:mobile/features/assistant/widgets/assistant_morphing_dock.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -73,7 +75,10 @@ void main() {
         whenListen(
           workspace,
           const Stream<WorkspaceState>.empty(),
-          initialState: const WorkspaceState(),
+          initialState: const WorkspaceState(
+            status: WorkspaceStatus.loaded,
+            currentWorkspace: Workspace(id: 'first', personal: true),
+          ),
         );
         whenListen(
           profile,
@@ -149,17 +154,28 @@ void main() {
         );
         expect(
           find.byKey(const ValueKey('floating-shell-dock-opacity')),
+          findsNothing,
+        );
+        expect(find.byType(AssistantMorphingDock), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('assistant-dock-navigation')),
           findsOneWidget,
         );
-        final expandedRect = tester.getRect(
-          find.byKey(const ValueKey('floating-shell-dock-opacity')),
+        final navigationDock = tester.widget<FloatingShellDock>(
+          find.byType(FloatingShellDock),
         );
-        expect(expandedRect.width, width);
+        expect(navigationDock.bottomInset, 0);
+        expect(navigationDock.navigationBottomOffset, 0);
 
-        chrome.setComposerVisible(visible: true);
+        await tester.tap(find.byType(AssistantComposerFab));
         await settle();
+        expect(find.byType(AssistantMorphingDock), findsOneWidget);
         expect(
-          find.byKey(const ValueKey('compact-shell-footer')),
+          find.byKey(const ValueKey('assistant-dock-chat')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('assistant-dock-navigation')),
           findsNothing,
         );
         expect(
@@ -170,39 +186,46 @@ void main() {
           identical(tester.state(find.byType(FloatingShellDock)), dockBefore),
           isTrue,
         );
-        chrome.toggleComposerNavigation();
+        tester.view.viewInsets = const FakeViewPadding(bottom: 260);
+        addTearDown(tester.view.resetViewInsets);
         await settle();
+        expect(
+          tester
+              .getRect(find.byKey(const ValueKey('assistant-dock-chat')))
+              .bottom,
+          lessThanOrEqualTo(900 - 260),
+        );
+        expect(
+          find.byKey(const ValueKey('floating-shell-dock-opacity')),
+          findsNothing,
+        );
+        tester.view.resetViewInsets();
+        await settle();
+        await tester.binding.handlePopRoute();
+        await settle();
+        expect(chrome.state.navigationExpanded, isFalse);
+        expect(chrome.state.composerVisible, isFalse);
+        expect(
+          find.byKey(const ValueKey('assistant-dock-navigation')),
+          findsOneWidget,
+        );
+        expect(
+          router.routeInformationProvider.value.uri.path,
+          Routes.assistant,
+        );
+        chrome.enterLiveMode();
+        await settle();
+        expect(find.byType(AssistantMorphingDock), findsNothing);
         expect(
           find.byKey(const ValueKey('floating-shell-dock-opacity')),
           findsOneWidget,
         );
-        final dock = tester.widget<FloatingShellDock>(
-          find.byType(FloatingShellDock),
-        );
-        expect(dock.navigationBottomOffset, greaterThan(52));
-        expect(
-          tester
-              .getRect(
-                find.byKey(const ValueKey('floating-shell-dock-opacity')),
-              )
-              .bottom,
-          lessThan(expandedRect.bottom),
-        );
-        expect(dock.reserveNavigationClearance, isFalse);
-        await tester.binding.handlePopRoute();
+        chrome.exitLiveMode();
         await settle();
-        expect(chrome.state.navigationExpanded, isFalse);
-        expect(chrome.state.composerVisible, isTrue);
+        expect(find.byType(AssistantMorphingDock), findsOneWidget);
         expect(
-          router.routeInformationProvider.value.uri.path,
-          Routes.assistant,
-        );
-        await tester.binding.handlePopRoute();
-        await settle();
-        expect(chrome.state.composerVisible, isFalse);
-        expect(
-          router.routeInformationProvider.value.uri.path,
-          Routes.assistant,
+          find.byKey(const ValueKey('floating-shell-dock-opacity')),
+          findsNothing,
         );
         expect(tester.takeException(), isNull);
       },
@@ -350,7 +373,9 @@ void main() {
       final dock = tester.widget<FloatingShellDock>(
         find.byType(FloatingShellDock),
       );
-      expect(dock.reserveNavigationClearance, isTrue);
+      expect(dock.bottomInset, 0);
+      expect(dock.navigationBottomOffset, 0);
+      expect(find.byType(AssistantMorphingDock), findsOneWidget);
       chrome.setComposerVisible(visible: false);
       await settle();
       expect(input.text, 'Synthetic unsent draft');

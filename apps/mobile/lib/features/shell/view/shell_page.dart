@@ -16,6 +16,7 @@ import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
+import 'package:mobile/features/assistant/widgets/assistant_dock_navigation.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/dashboard/view/home_page.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
