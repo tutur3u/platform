@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
@@ -5,8 +7,8 @@ import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
-import 'package:mobile/features/assistant/widgets/assistant_attachment_preview.dart';
-import 'package:mobile/features/assistant/widgets/assistant_model_picker.dart';
+import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
+import 'package:mobile/features/assistant/widgets/assistant_composer_options.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -16,7 +18,7 @@ class AssistantComposerDock extends StatelessWidget {
     required this.liveState,
     required this.liveUiState,
     required this.shellState,
-    required this.isFullscreen,
+    required this.navigationExpanded,
     required this.bottomInset,
     required this.isPersonalWorkspace,
     required this.onModelSelected,
@@ -25,7 +27,8 @@ class AssistantComposerDock extends StatelessWidget {
     required this.controller,
     required this.focusNode,
     required this.onOpenAttachments,
-    required this.onToggleFullscreen,
+    required this.onToggleNavigation,
+    required this.onCloseComposer,
     required this.onMicrophoneTap,
     required this.onSend,
     required this.onRemoveAttachment,
@@ -38,7 +41,7 @@ class AssistantComposerDock extends StatelessWidget {
   final AssistantLiveUiState liveUiState;
   final AssistantShellState shellState;
   final AssistantRepository? repository;
-  final bool isFullscreen;
+  final bool navigationExpanded;
   final double bottomInset;
   final bool isPersonalWorkspace;
   final Future<void> Function(AssistantGatewayModel) onModelSelected;
@@ -47,7 +50,8 @@ class AssistantComposerDock extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final Future<void> Function() onOpenAttachments;
-  final Future<void> Function() onToggleFullscreen;
+  final VoidCallback onToggleNavigation;
+  final VoidCallback onCloseComposer;
   final Future<void> Function() onMicrophoneTap;
   final Future<void> Function() onSend;
   final Future<void> Function(String attachmentId) onRemoveAttachment;
@@ -60,334 +64,109 @@ class AssistantComposerDock extends StatelessWidget {
       alpha: 0.28,
     );
 
-    return Container(
-      key: const ValueKey('assistant-composer-surface'),
-      clipBehavior: Clip.antiAlias,
-      padding: EdgeInsets.fromLTRB(12, 8, 12, 8 + bottomInset),
-      decoration: BoxDecoration(
-        color: navSurface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: separatorColor),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return SizedBox(
+      height: assistantComposerHeight(context) + bottomInset,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (chatState.composerAttachments.isNotEmpty) ...[
-            _AttachmentStrip(
-              attachments: chatState.composerAttachments,
-              onRemoveAttachment: onRemoveAttachment,
-            ),
-            const SizedBox(height: 6),
-          ],
-          TextField(
-            controller: controller,
-            focusNode: focusNode,
-            minLines: 1,
-            maxLines: 4,
-            textInputAction: TextInputAction.send,
-            onSubmitted: chatState.status == AssistantChatStatus.restoring
-                ? null
-                : (_) => onSend(),
-            onTapOutside: (_) => focusNode.unfocus(),
-            decoration: InputDecoration(
-              hintText: context.l10n.assistantAskPlaceholder,
-              border: InputBorder.none,
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 2,
-                vertical: 10,
+          Expanded(
+            child: Container(
+              key: const ValueKey('assistant-composer-surface'),
+              clipBehavior: Clip.antiAlias,
+              padding: EdgeInsets.fromLTRB(4, 4, 4, 4 + bottomInset),
+              decoration: BoxDecoration(
+                color: navSurface,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: separatorColor),
               ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _GhostActionButton(
-                tooltip: context.l10n.assistantAttachFilesAction,
-                onPressed: onOpenAttachments,
-                icon: Icons.add_rounded,
-              ),
-              const SizedBox(width: 4),
-              _GhostActionButton(
-                tooltip: isFullscreen
-                    ? context.l10n.assistantShowBottomNavLabel
-                    : context.l10n.assistantEnterFullscreenAction,
-                onPressed: onToggleFullscreen,
-                icon: isFullscreen
-                    ? Icons.fullscreen_exit_rounded
-                    : Icons.fullscreen_rounded,
-                isActive: isFullscreen,
-              ),
-              const SizedBox(width: 8),
-              _ThinkingModeDropdown(
-                thinkingMode: shellState.thinkingMode,
-                onChanged: onThinkingModeChanged,
-              ),
-              const SizedBox(width: 2),
-              AssistantModelPicker(
-                selected: shellState.selectedModel,
-                models: shellState.availableModels,
-                allowedModels: shellState.activeCredits.allowedModels,
-                repository: repository,
-                workspaceId: shellState.workspace?.id,
-                onSelected: onModelSelected,
-              ),
-              const SizedBox(width: 2),
-              _CreditSourceDropdown(
-                creditSource: shellState.creditSource,
-                onPressed: onOpenCreditSourceSheet,
-              ),
-              const Spacer(),
-              ValueListenableBuilder<TextEditingValue>(
-                valueListenable: controller,
-                builder: (context, value, _) {
-                  final hasPrompt = value.text.trim().isNotEmpty;
-                  if (hasPrompt) {
-                    return _GhostActionButton(
-                      tooltip: context.l10n.assistantSendAction,
-                      onPressed:
+              child: Row(
+                children: [
+                  AssistantComposerOptions(
+                    chatState: chatState,
+                    shellState: shellState,
+                    repository: repository,
+                    onOpenAttachments: onOpenAttachments,
+                    onModelSelected: onModelSelected,
+                    onOpenCreditSourceSheet: onOpenCreditSourceSheet,
+                    onThinkingModeChanged: onThinkingModeChanged,
+                    onRemoveAttachment: onRemoveAttachment,
+                    onCloseComposer: onCloseComposer,
+                  ),
+                  Expanded(
+                    child: TextField(
+                      controller: controller,
+                      focusNode: focusNode,
+                      style: const TextStyle(fontSize: 16, height: 1.25),
+                      minLines: 1,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted:
                           chatState.status == AssistantChatStatus.restoring
                           ? null
-                          : onSend,
-                      icon: Icons.arrow_upward_rounded,
-                      isActive: true,
-                    );
-                  }
-
-                  return _GhostActionButton(
-                    tooltip: context.l10n.voiceRecord,
-                    onPressed: onMicrophoneTap,
-                    icon: Icons.mic_none_rounded,
-                  );
-                },
+                          : (_) {
+                              if (controller.text.trim().isNotEmpty ||
+                                  chatState.composerAttachments.isNotEmpty) {
+                                unawaited(onSend());
+                              }
+                            },
+                      onTapOutside: (_) => focusNode.unfocus(),
+                      decoration: InputDecoration(
+                        hintText: context.l10n.assistantAskPlaceholder,
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: controller,
+                    builder: (context, value, _) {
+                      final hasPrompt =
+                          value.text.trim().isNotEmpty ||
+                          chatState.composerAttachments.isNotEmpty;
+                      return IconButton(
+                        tooltip: hasPrompt
+                            ? context.l10n.assistantSendAction
+                            : context.l10n.voiceRecord,
+                        constraints: const BoxConstraints.tightFor(
+                          width: 44,
+                          height: 44,
+                        ),
+                        padding: EdgeInsets.zero,
+                        onPressed:
+                            chatState.status == AssistantChatStatus.restoring
+                            ? null
+                            : hasPrompt
+                            ? onSend
+                            : onMicrophoneTap,
+                        icon: Icon(
+                          hasPrompt
+                              ? Icons.arrow_upward_rounded
+                              : Icons.mic_none_rounded,
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AttachmentStrip extends StatelessWidget {
-  const _AttachmentStrip({
-    required this.attachments,
-    required this.onRemoveAttachment,
-  });
-
-  final List<AssistantAttachment> attachments;
-  final Future<void> Function(String attachmentId) onRemoveAttachment;
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: attachments
-            .map(
-              (attachment) => Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: AssistantAttachmentPreview(
-                  attachment: attachment,
-                  onRemove: () => onRemoveAttachment(attachment.id),
-                ),
-              ),
-            )
-            .toList(growable: false),
-      ),
-    );
-  }
-}
-
-class _GhostActionButton extends StatelessWidget {
-  const _GhostActionButton({
-    required this.tooltip,
-    required this.onPressed,
-    required this.icon,
-    this.isActive = false,
-  });
-
-  final String tooltip;
-  final Future<void> Function()? onPressed;
-  final IconData icon;
-  final bool isActive;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return IconButton(
-      tooltip: tooltip,
-      visualDensity: VisualDensity.compact,
-      constraints: const BoxConstraints.tightFor(width: 34, height: 34),
-      padding: EdgeInsets.zero,
-      style: IconButton.styleFrom(
-        backgroundColor: isActive
-            ? theme.colorScheme.primary.withValues(alpha: 0.12)
-            : Colors.transparent,
-        foregroundColor: isActive
-            ? theme.colorScheme.primary
-            : theme.colorScheme.onSurfaceVariant,
-      ),
-      onPressed: onPressed,
-      icon: Icon(icon, size: 18),
-    );
-  }
-}
-
-class _ThinkingModeDropdown extends StatelessWidget {
-  const _ThinkingModeDropdown({
-    required this.thinkingMode,
-    required this.onChanged,
-  });
-
-  final AssistantThinkingMode thinkingMode;
-  final Future<void> Function(AssistantThinkingMode mode) onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final label = thinkingMode == AssistantThinkingMode.thinking
-        ? context.l10n.assistantModeThinking
-        : context.l10n.assistantModeFast;
-
-    return PopupMenuButton<AssistantThinkingMode>(
-      tooltip: context.l10n.assistantSettingsTitle,
-      padding: EdgeInsets.zero,
-      onSelected: onChanged,
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: AssistantThinkingMode.fast,
-          child: Row(
-            children: [
-              const Icon(Icons.flash_on_rounded, size: 18),
-              const SizedBox(width: 8),
-              Text(context.l10n.assistantModeFast),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: AssistantThinkingMode.thinking,
-          child: Row(
-            children: [
-              const Icon(Icons.psychology_alt_rounded, size: 18),
-              const SizedBox(width: 8),
-              Text(context.l10n.assistantModeThinking),
-            ],
-          ),
-        ),
-      ],
-      child: _LabeledDropdownGhostButton(
-        icon: thinkingMode == AssistantThinkingMode.thinking
-            ? Icons.psychology_alt_rounded
-            : Icons.flash_on_rounded,
-        label: label,
-      ),
-    );
-  }
-}
-
-class _CreditSourceDropdown extends StatelessWidget {
-  const _CreditSourceDropdown({
-    required this.creditSource,
-    required this.onPressed,
-  });
-
-  final AssistantCreditSource creditSource;
-  final Future<void> Function() onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    const sourceIcon = Icons.toll_rounded;
-    final selectedTargetIcon = creditSource == AssistantCreditSource.personal
-        ? Icons.person_rounded
-        : Icons.apartment_rounded;
-
-    return Tooltip(
-      message: context.l10n.assistantSourceLabel,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(999),
-          onTap: onPressed,
-          child: _DropdownGhostButton(
-            leadingIcon: sourceIcon,
-            trailingIcon: selectedTargetIcon,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DropdownGhostButton extends StatelessWidget {
-  const _DropdownGhostButton({
-    required this.leadingIcon,
-    required this.trailingIcon,
-  });
-
-  final IconData leadingIcon;
-  final IconData trailingIcon;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final iconColor = theme.colorScheme.onSurfaceVariant;
-
-    return Container(
-      height: 34,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(leadingIcon, size: 16, color: iconColor),
-          const SizedBox(width: 6),
-          Icon(Icons.chevron_right_rounded, size: 16, color: iconColor),
-          const SizedBox(width: 6),
-          Icon(trailingIcon, size: 16, color: iconColor),
-        ],
-      ),
-    );
-  }
-}
-
-class _LabeledDropdownGhostButton extends StatelessWidget {
-  const _LabeledDropdownGhostButton({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      height: 34,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(width: 4),
-          Icon(
-            Icons.expand_more_rounded,
-            size: 16,
-            color: theme.colorScheme.onSurfaceVariant,
+          const SizedBox(width: 8),
+          Material(
+            color: navSurface,
+            shape: CircleBorder(side: BorderSide(color: separatorColor)),
+            child: IconButton(
+              key: const ValueKey('assistant-navigation-toggle'),
+              tooltip: navigationExpanded
+                  ? context.l10n.assistantCollapseNavigation
+                  : context.l10n.assistantExpandNavigation,
+              constraints: const BoxConstraints.tightFor(width: 48, height: 48),
+              onPressed: onToggleNavigation,
+              icon: Icon(
+                navigationExpanded ? Icons.close_rounded : Icons.menu_rounded,
+              ),
+            ),
           ),
         ],
       ),

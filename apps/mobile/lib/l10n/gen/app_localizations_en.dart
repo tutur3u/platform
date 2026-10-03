@@ -9786,4 +9786,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryCheckoutPeriodRulesChanged => 'Some items do not match this period. Reconcile the cart to continue.';
+
+  @override
+  String get assistantExpandNavigation => 'Show navigation';
+
+  @override
+  String get assistantCollapseNavigation => 'Hide navigation';
+
+  @override
+  String get assistantCloseComposer => 'Close prompt';
 }

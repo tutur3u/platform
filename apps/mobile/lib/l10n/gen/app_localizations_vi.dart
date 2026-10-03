@@ -9719,4 +9719,13 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventoryCheckoutPeriodRulesChanged => 'Một số sản phẩm không phù hợp với kỳ bán hàng này. Đối soát giỏ hàng để tiếp tục.';
+
+  @override
+  String get assistantExpandNavigation => 'Hiện điều hướng';
+
+  @override
+  String get assistantCollapseNavigation => 'Ẩn điều hướng';
+
+  @override
+  String get assistantCloseComposer => 'Đóng ô nhập';
 }
