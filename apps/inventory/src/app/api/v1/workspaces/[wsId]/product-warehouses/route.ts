@@ -1,11 +1,11 @@
 import {
-  getInventoryApiListRange,
   parseInventoryApiListQuery,
   shouldReturnPaginatedInventoryList,
 } from '@tuturuuu/inventory-core/api-list-query';
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { fetchInventoryWarehouseList } from '@/lib/inventory-warehouse-list';
 
 interface Params {
   params: Promise<{
@@ -36,21 +36,15 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
   const admin = await createAdminClient();
-  const inventory = admin.schema('private');
-
-  const query = inventory
-    .from('inventory_active_warehouses')
-    .select('*', { count: shouldPaginate ? 'exact' : undefined })
-    .eq('ws_id', wsId);
-
-  const { q, page, pageSize } = parsedQuery.data;
-  if (q) query.ilike('name', `%${q}%`);
-  if (shouldPaginate) {
-    const { start, end } = getInventoryApiListRange({ page, pageSize });
-    query.range(start, end);
-  }
-
-  const { data, error, count } = await query;
+  const { data, error, count } = await fetchInventoryWarehouseList(
+    admin,
+    wsId,
+    {
+      ...parsedQuery.data,
+      paginate: shouldPaginate,
+      orderByName: false,
+    }
+  );
 
   if (error) {
     console.error('Error fetching product warehouses', error);

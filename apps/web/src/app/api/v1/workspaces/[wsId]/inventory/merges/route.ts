@@ -42,11 +42,11 @@ function rpcFailure(code?: string) {
       { message: 'One of the selected inventory records no longer exists.' },
       404
     );
-  if (['PGRST202', 'PGRST106', '42883', '3F000'].includes(code ?? ''))
+  if (['PGRST202', 'PGRST106', '42883', '3F000', '55000'].includes(code ?? ''))
     return response(
       {
         message:
-          'Inventory merging is temporarily unavailable. Contact your workspace administrator.',
+          'Inventory merging is not ready yet. Refresh and retry after the workspace update completes.',
       },
       503
     );
@@ -92,6 +92,10 @@ async function handle(request: Request, context: Context, execute: boolean) {
 
   const operation = Effect.tryPromise(async () => {
     const admin = await createAdminClient({ noCookie: true });
+    const readiness = await admin
+      .schema('private')
+      .rpc('inventory_merge_schema_ready' as never);
+    if (readiness.error || readiness.data !== true) return rpcFailure('55000');
     const args = {
       p_ws_id: wsId,
       p_kind: parsed.data.kind,

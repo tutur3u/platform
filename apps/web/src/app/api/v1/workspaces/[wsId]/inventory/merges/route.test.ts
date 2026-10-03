@@ -1,3 +1,4 @@
+import { createClient } from '@supabase/supabase-js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { authorize, admin, rpc } = vi.hoisted(() => ({
@@ -61,7 +62,11 @@ beforeEach(() => {
   vi.clearAllMocks();
   permitted();
   admin.mockResolvedValue({ schema: () => ({ rpc }) });
-  rpc.mockResolvedValue({ data: { merged: true, targetId }, error: null });
+  rpc.mockImplementation(async (name: string) =>
+    name === 'inventory_merge_schema_ready'
+      ? { data: true, error: null }
+      : { data: { merged: true, targetId }, error: null }
+  );
 });
 
 describe('inventory merge boundary', () => {
@@ -154,6 +159,7 @@ describe('inventory merge boundary', () => {
     ['3F000', 503],
     ['XX000', 500],
   ])('sanitizes RPC %s to %s', async (code, status) => {
+    rpc.mockResolvedValueOnce({ data: true, error: null });
     rpc.mockResolvedValue({
       data: null,
       error: { code, message: 'private sensitive detail' },
@@ -169,3 +175,57 @@ describe('inventory merge boundary', () => {
     expect(await result.text()).not.toContain('sensitive');
   });
 });
+
+describe('inventory merge rollout readiness', () => {
+  it.each([get, post])(
+    'blocks new merge operations when readiness is absent or false',
+    async (invoke) => {
+      for (const result of [
+        { data: null, error: { code: 'PGRST202' } },
+        { data: false, error: null },
+        { data: 'true', error: null },
+        { data: null, error: { code: 'XX000' } },
+      ]) {
+        rpc.mockReset();
+        rpc.mockResolvedValue(result);
+        const response = await invoke();
+        expect(response.status).toBe(503);
+        expect((await response.json()).message).toMatch(
+          /unavailable|ready|refresh|retry/i
+        );
+        expect(rpc).toHaveBeenCalledTimes(1);
+        expect(rpc).toHaveBeenCalledWith('inventory_merge_schema_ready');
+      }
+    }
+  );
+});
+
+it.each([get, post])(
+  'uses the actual Supabase readiness request and blocks unavailable schemas',
+  async (invoke) => {
+    const fetch = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ code: 'PGRST202' }), {
+          status: 404,
+          headers: { 'content-type': 'application/json' },
+        })
+    );
+    admin.mockResolvedValue(
+      createClient('https://merge-db.example.invalid', 'synthetic-test-key', {
+        auth: { persistSession: false, autoRefreshToken: false },
+        global: { fetch },
+      })
+    );
+    expect((await invoke()).status).toBe(503);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const [input, init] = fetch.mock.calls[0]! as unknown as [
+      string,
+      RequestInit,
+    ];
+    expect(new URL(input).pathname).toBe(
+      '/rest/v1/rpc/inventory_merge_schema_ready'
+    );
+    expect(new Headers(init.headers).get('content-profile')).toBe('private');
+    expect(rpc).not.toHaveBeenCalled();
+  }
+);

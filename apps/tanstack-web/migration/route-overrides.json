@@ -2716,7 +2716,7 @@
     "api:/api/v1/workspaces/:wsId/inventory/merges:apps/web/src/app/api/v1/workspaces/[wsId]/inventory/merges/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "First-class inventory product and warehouse merge preview/apply with verified workspace membership, combined update/delete/stock permissions, mandatory conflict choices, version-bound private service-role RPC and actor scoping. Rust parity pending."
+      "note": "First-class inventory product and warehouse merge preview/apply with verified workspace membership, combined update/delete/stock permissions, mandatory conflict choices, version-bound private service-role RPC and actor scoping. Preview/apply require repair-generation schema readiness; missing/false readiness returns retryable 503 before merge RPCs. Rust parity pending."
     }
   }
 }
