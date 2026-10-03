@@ -162,10 +162,22 @@ test.describe
           .getByRole('dialog')
           .getByLabel('Title', { exact: true })
           .fill('Synthetic browser notebook');
+        const creationResponse = page.waitForResponse(
+          (response) =>
+            response.request().method() === 'POST' &&
+            new URL(response.url()).pathname ===
+              `/api/v1/workspaces/${workspaceId}/lettin`
+        );
         await page
           .getByRole('button', { name: 'Create project', exact: true })
           .click();
-        await expect(page).toHaveURL(/\/worlds\/[0-9a-f-]+/);
+        const created = await creationResponse;
+        expect(created.status(), await created.text()).toBe(200);
+        const project = await created.json();
+        expect(project.id).toMatch(/^[0-9a-f-]{36}$/);
+        await expect(page).toHaveURL(
+          new RegExp(`/worlds/${project.id}(?:[?]|$)`)
+        );
         await page
           .getByRole('button', { name: 'World notebook', exact: true })
           .click();
