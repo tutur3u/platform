@@ -32,7 +32,7 @@ import {
   resolveCliTasksBaseUrl,
   writeCliConfig,
 } from './config';
-import { runDevboxCommand } from './devbox';
+import { runDevboxCommandWithSession } from './devbox-session';
 import { runExternalCommand } from './external-admin';
 import { runFinanceCommand } from './finance';
 import { getGlobalHelp, getHelpOutput } from './help';
@@ -1393,22 +1393,13 @@ export async function runCli(argv = process.argv.slice(2)) {
   }
 
   if (group === 'box') {
-    const client =
-      action === 'doctor' ||
-      action === 'repair' ||
-      (action === 'judge' && firstId === 'doctor') ||
-      (action === 'agent' && ['start', 'policy'].includes(firstId ?? ''))
-        ? undefined
-        : action === 'setup'
-          ? config.session
-            ? getClient(config)
-            : undefined
-          : getClient(config);
-    await runDevboxCommand({
+    await runDevboxCommandWithSession({
       action,
+      firstId,
       argv,
       baseUrl: config.baseUrl,
-      client,
+      hasSession: Boolean(config.session),
+      createClient: () => getClient(config),
       flags,
       json,
     });
