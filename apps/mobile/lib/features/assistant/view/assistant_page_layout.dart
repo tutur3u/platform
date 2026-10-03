@@ -114,20 +114,10 @@ extension _AssistantPageLayout on _AssistantPageState {
                         );
                         final keyboardVisible =
                             MediaQuery.viewInsetsOf(context).bottom > 0;
-                        final expandedNavClearance =
-                            chrome.navigationExpanded && !keyboardVisible
-                            ? assistantExpandedNavigationClearance
-                            : 0.0;
                         final hasLiveAccess = _hasLiveAccess(shellState);
                         final isPersonalWorkspace = currentWorkspace.personal;
                         const scrollDismissBehavior =
                             ScrollViewKeyboardDismissBehavior.onDrag;
-                        final scrollToBottomLabel =
-                            context.l10n.assistantScrollToBottomAction;
-                        final scrollToBottomFab = AssistantScrollToBottomFab(
-                          label: scrollToBottomLabel,
-                          onPressed: _handleScrollToBottomPressed,
-                        );
                         Future<void> removeComposerAttachment(
                           String attachmentId,
                         ) {
@@ -251,12 +241,9 @@ extension _AssistantPageLayout on _AssistantPageState {
                                       Positioned(
                                         left: _horizontalPadding(context),
                                         right: _horizontalPadding(context),
-                                        bottom: keyboardVisible
-                                            ? assistantComposerBottomGap
-                                            : MediaQuery.paddingOf(
-                                                    context,
-                                                  ).bottom +
-                                                  assistantComposerBottomGap,
+                                        bottom: assistantComposerBottomOffset(
+                                          context,
+                                        ),
                                         child: ExcludeSemantics(
                                           excluding: !_isComposerVisible,
                                           child: IgnorePointer(
@@ -355,51 +342,14 @@ extension _AssistantPageLayout on _AssistantPageState {
                                           ),
                                         ),
                                       if (hasTranscript)
-                                        Positioned(
-                                          left: 0,
-                                          right: 0,
-                                          bottom:
-                                              (_isComposerVisible
-                                                  ? assistantComposerHeight(
-                                                          context,
-                                                        ) +
-                                                        24 +
-                                                        expandedNavClearance
-                                                  : 16) +
-                                              (isFullscreen
-                                                  ? MediaQuery.paddingOf(
-                                                      context,
-                                                    ).bottom
-                                                  : 0),
-                                          child: IgnorePointer(
-                                            ignoring: !_showScrollToBottomFab,
-                                            child: Center(
-                                              child: AnimatedSlide(
-                                                duration: reducedMotion
-                                                    ? Duration.zero
-                                                    : const Duration(
-                                                        milliseconds: 180,
-                                                      ),
-                                                curve: Curves.easeOutCubic,
-                                                offset: _showScrollToBottomFab
-                                                    ? Offset.zero
-                                                    : const Offset(0, 1),
-                                                child: AnimatedOpacity(
-                                                  duration: reducedMotion
-                                                      ? Duration.zero
-                                                      : const Duration(
-                                                          milliseconds: 160,
-                                                        ),
-                                                  curve: Curves.easeOutCubic,
-                                                  opacity:
-                                                      _showScrollToBottomFab
-                                                      ? 1
-                                                      : 0,
-                                                  child: scrollToBottomFab,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
+                                        AssistantScrollToBottomOverlay(
+                                          composerVisible: _isComposerVisible,
+                                          isFullscreen: isFullscreen,
+                                          navigationExpanded:
+                                              chrome.navigationExpanded,
+                                          visible: _showScrollToBottomFab,
+                                          onPressed:
+                                              _handleScrollToBottomPressed,
                                         ),
                                     ],
                                     ShellChromeActions(

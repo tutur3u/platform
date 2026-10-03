@@ -51,9 +51,11 @@ void main() {
   });
   tearDownAll(() => supa.Supabase.instance.dispose());
 
+  // The active shell uses floating navigation at every width. This matrix
+  // checks phone/tablet/desktop geometry, not the disabled compact footer.
   for (final width in [320.0, 600.0, 1024.0]) {
     testWidgets(
-      'Assistant actual navigation collapses and back closes it at $width',
+      'Floating Assistant dock collapses and back closes it at width $width',
       (tester) async {
         tester.view.physicalSize = Size(width, 900);
         tester.view.devicePixelRatio = 1;
@@ -141,6 +143,19 @@ void main() {
 
         await settle();
         final dockBefore = tester.state(find.byType(FloatingShellDock));
+        expect(
+          find.byKey(const ValueKey('compact-shell-footer')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const ValueKey('floating-shell-dock-opacity')),
+          findsOneWidget,
+        );
+        final expandedRect = tester.getRect(
+          find.byKey(const ValueKey('floating-shell-dock-opacity')),
+        );
+        expect(expandedRect.width, width);
+
         chrome.setComposerVisible(visible: true);
         await settle();
         expect(
@@ -165,6 +180,14 @@ void main() {
           find.byType(FloatingShellDock),
         );
         expect(dock.navigationBottomOffset, greaterThan(52));
+        expect(
+          tester
+              .getRect(
+                find.byKey(const ValueKey('floating-shell-dock-opacity')),
+              )
+              .bottom,
+          lessThan(expandedRect.bottom),
+        );
         expect(dock.reserveNavigationClearance, isFalse);
         await tester.binding.handlePopRoute();
         await settle();

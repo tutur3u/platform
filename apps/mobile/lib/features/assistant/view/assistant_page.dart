@@ -42,6 +42,7 @@ import 'package:mobile/features/assistant/widgets/assistant_history_sheet_body.d
 import 'package:mobile/features/assistant/widgets/assistant_live_info_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_mode_view.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_stage_card.dart';
+import 'package:mobile/features/assistant/widgets/assistant_scroll_to_bottom_overlay.dart';
 import 'package:mobile/features/assistant/widgets/assistant_settings_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_starter_prompts.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
@@ -669,9 +670,8 @@ class _AssistantPageState extends State<AssistantPage>
     );
   }
 
-  double _horizontalPadding(BuildContext context) {
-    return context.isCompact ? 16 : 24;
-  }
+  double _horizontalPadding(BuildContext context) =>
+      context.isCompact ? 16 : 24;
 
   double _composerReservedSpace(
     BuildContext context, {

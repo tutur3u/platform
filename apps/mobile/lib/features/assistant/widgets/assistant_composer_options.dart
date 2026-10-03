@@ -5,6 +5,7 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/assistant/models/assistant_model_eligibility.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_attachment_menu_entry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_model_picker_sheet.dart';
@@ -54,13 +55,10 @@ class AssistantComposerOptions extends StatelessWidget {
           builder: (_) => AssistantModelPickerSheet(
             selected: shellState.selectedModel,
             models: shellState.availableModels,
-            isAllowed: (model) {
-              final allowed = shellState.activeCredits.allowedModels;
-              return !model.disabled &&
-                  (allowed.isEmpty ||
-                      allowed.contains(model.value) ||
-                      allowed.contains(model.value.split('/').last));
-            },
+            isAllowed: (model) => isAssistantModelAllowed(
+              model,
+              shellState.activeCredits.allowedModels,
+            ),
             repository: repository,
             workspaceId: shellState.workspace?.id,
           ),

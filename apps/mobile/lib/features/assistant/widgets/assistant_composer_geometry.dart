@@ -9,3 +9,12 @@ double assistantComposerHeight(BuildContext context) =>
 const assistantComposerBottomGap = 8.0;
 
 const assistantExpandedNavigationClearance = 84.0;
+
+/// IME-resized viewports must not reserve the physical bottom inset again.
+double assistantBottomSafeArea(BuildContext context) =>
+    MediaQuery.viewInsetsOf(context).bottom > 0
+    ? 0
+    : MediaQuery.paddingOf(context).bottom;
+
+double assistantComposerBottomOffset(BuildContext context) =>
+    assistantBottomSafeArea(context) + assistantComposerBottomGap;

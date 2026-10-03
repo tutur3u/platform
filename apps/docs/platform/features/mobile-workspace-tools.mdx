@@ -1191,5 +1191,10 @@ large text, single-row actions, attachment removal, restoring state and blank
 submission; `assistant_composer_options_test.dart` checks adaptive model selection
 and credit allowlists; `assistant_chrome_cubit_test.dart` covers presentation reset;
 `shell_assistant_composer_test.dart` checks actual dock collapse, restoration,
-back handling, mounted shell continuity, retained tab drafts and workspace reset. Widget coverage does not establish
+back handling, mounted shell continuity, retained tab drafts and workspace reset
+across the active floating dock at phone/tablet/desktop widths (the legacy compact
+footer is disabled). `assistant_composer_geometry_test.dart` checks the rendered
+scroll action clears the composer with safe-area insets, large text and keyboard
+visibility; both exclude physical bottom padding while the keyboard is visible.
+Widget coverage does not establish
 physical-device microphone, provider, camera, or production behavior.
