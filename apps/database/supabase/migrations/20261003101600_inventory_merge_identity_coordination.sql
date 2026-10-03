@@ -1,8 +1,21 @@
 -- Identity-scoped reader/writer coordination protects the preview/apply snapshot
 -- while unrelated identities and workspaces retain ordinary CRUD concurrency.
-create function private.inventory_identity_lock_key(p_kind text,p_id uuid)
+-- Sixteen buckets per kind/workspace bound large single-workspace transactions
+-- to at most 32 identity lock keys, without a deliberate cross-workspace domain.
+create function private.inventory_identity_lock_key(p_ws_id uuid,p_kind text,p_id uuid)
 returns bigint language sql immutable set search_path=pg_catalog as $$
- select hashtextextended('inventory-identity:'||p_kind||':'||p_id::text,0);
+ select hashtextextended('inventory-identity:'||p_ws_id::text||':'||p_kind||':'||
+  (hashtextextended(p_id::text,0)&15)::text,0);
+$$;
+revoke all on function private.inventory_identity_lock_key(uuid,text,uuid) from public,anon,authenticated;
+-- Preserve the existing helper signature for dependent merge contracts. Resolve
+-- ownership from the referenced parent, never a caller-supplied child workspace.
+create function private.inventory_identity_lock_key(p_kind text,p_id uuid)
+returns bigint language sql stable set search_path=pg_catalog,private,public as $$
+ select private.inventory_identity_lock_key(o.ws_id,p_kind,p_id) from (
+  select ws_id from public.workspace_products where p_kind='product' and id=p_id
+  union all select ws_id from private.inventory_warehouses where p_kind='warehouse' and id=p_id
+ ) o join public.workspaces w on w.id=o.ws_id;
 $$;
 revoke all on function private.inventory_identity_lock_key(text,uuid) from public,anon,authenticated;
 
@@ -13,7 +26,7 @@ begin
  if tg_op<>'INSERT' then v_old:=to_jsonb(old); end if;
  if tg_op<>'DELETE' then v_new:=to_jsonb(new); end if;
  for v_key in
-  select distinct private.inventory_identity_lock_key(k.kind,ids.id)
+  select distinct private.inventory_identity_lock_key(owner.ws_id,k.kind,ids.id)
   from (
    select case c.confrelid when 'public.workspace_products'::regclass then 'product' else 'warehouse' end kind,
     a.attname::text col
@@ -23,9 +36,18 @@ begin
    union select tg_argv[0],'id' where tg_nargs=1
   ) k
   cross join lateral (
-   select nullif(v_old->>k.col,'')::uuid id
-   union select nullif(v_new->>k.col,'')::uuid
-  ) ids where ids.id is not null order by 1
+   select nullif(v_old->>k.col,'')::uuid id,nullif(v_old->>'ws_id','')::uuid own_ws
+   union select nullif(v_new->>k.col,'')::uuid,nullif(v_new->>'ws_id','')::uuid
+  ) ids
+  cross join lateral (
+   select ids.own_ws ws_id where tg_nargs=1
+   union all select p.ws_id from public.workspace_products p where tg_nargs<>1 and k.kind='product' and p.id=ids.id
+   union all select w.ws_id from private.inventory_warehouses w where tg_nargs<>1 and k.kind='warehouse' and w.id=ids.id
+  ) owner
+  -- An actual deleted workspace cannot be merged. Its FK deletion cascades
+  -- must not acquire one bucket namespace for every workspace being removed.
+  join public.workspaces live on live.id=owner.ws_id
+  where ids.id is not null order by 1
  loop
   if not pg_try_advisory_xact_lock_shared(v_key) then
    raise exception 'Inventory identity is being merged; refresh and retry' using errcode='55P03';
@@ -237,7 +259,7 @@ begin
  end if;
  -- Writers share identity locks; merges exclusively reserve their two identities.
  -- Never lock whole reference tables or queue behind another merge/writer.
- for v_key in select distinct private.inventory_identity_lock_key(p_kind,x)
+ for v_key in select distinct private.inventory_identity_lock_key(p_ws_id,p_kind,x)
   from unnest(array[p_source_id,p_target_id]) x order by 1 loop
   if not pg_try_advisory_xact_lock(v_key) then
    raise exception 'Inventory identity is busy; refresh and retry' using errcode='55P03'; end if;

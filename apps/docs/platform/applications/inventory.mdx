@@ -437,9 +437,19 @@ PostgREST metadata cannot substitute an older server function body, and a missin
 API error alone cannot establish legacy schema. Merge actions remain unavailable
 until readiness succeeds.
 
-Merge transactions reserve only the source and destination inventory identities.
+Merge transactions reserve the buckets containing the source and destination identities.
+Identity coordination uses 16 stable buckets per resource kind and workspace, so
+large imports and stock/reference updates acquire at most 32 identity keys within
+one workspace instead of one advisory lock per record. Product/warehouse parents
+supply the authoritative workspace for all writers; a child row cannot choose a
+different namespace. Different workspaces have separate bucket namespaces. Two
+unrelated identities in the same workspace can share a bucket: when a merge holds
+it exclusively, that unrelated write safely returns retryable `55P03` rather than
+waiting or bypassing guards. Retry after the merge finishes. Actual workspace
+removal exempts its deletion cascades because that workspace can no longer merge;
+ordinary deletes in a live workspace retain all identity and merged-source guards.
 Reference inserts, updates, deletes and checkout state changes coordinate with those
-identities; unrelated workspace and identity CRUD remains available. Contention fails
+identities; unrelated workspace CRUD and other buckets remain available. Contention fails
 fast and requires refresh/retry. Row-lock waits are limited separately; this does not
 establish a deadline for the entire RPC. New reference tables must install both the
 merged-reference guard and the identity writer coordination trigger before merging
