@@ -55,7 +55,7 @@ describe('platform-owned fleet boundary', () => {
       heartbeat_enabled: true,
       enabled_features: {},
       resource_limits: null,
-      capabilities: {},
+      capabilities: { os: { hostname: 'host' } },
     };
     const snapshot: DevboxFleetSnapshot = {
       runners: [runner],
@@ -63,6 +63,9 @@ describe('platform-owned fleet boundary', () => {
       leases: [],
     };
     expect(runnerMaintenanceBlocker(snapshot, runner, 1000)).toBeUndefined();
+    expect(
+      runnerMaintenanceBlocker(snapshot, { ...runner, capabilities: {} }, 1000)
+    ).toContain('hostname');
     expect(runnerMaintenanceBlocker(snapshot, runner, 61_000)).toContain(
       'stale'
     );

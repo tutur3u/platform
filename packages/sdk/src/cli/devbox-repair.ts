@@ -15,6 +15,7 @@ import {
   parseDevboxExecutionMode,
   preflightProtectedService,
 } from './devbox-host-protection';
+import { readPersistedRunnerSetting } from './devbox-persisted-setting';
 import {
   type DevboxCheckoutSelection,
   resolveExistingDevboxCheckout,
@@ -137,20 +138,12 @@ export async function runDevboxRepair(
 
   await assertRunnerTokenFile(tokenFile);
   const content = await readFile(tokenFile, 'utf8');
-  const readSetting = (key: string) =>
-    content
-      .split(/\r?\n/u)
-      .map((line) => line.trim().replace(/^export\s+/u, ''))
-      .find((line) => line.startsWith(`${key}=`))
-      ?.slice(key.length + 1)
-      .replace(/^['"]|['"]$/gu, '');
-  const executionMode =
-    options.executionMode ??
-    parseDevboxExecutionMode(readSetting('TUTURUUU_DEVBOX_EXECUTION_MODE'));
-  if (
-    readSetting('TUTURUUU_DEVBOX_EXECUTION_MODE') === 'judge-only' &&
-    executionMode !== 'judge-only'
-  )
+  const readSetting = (key: string) => readPersistedRunnerSetting(content, key);
+  const persistedMode = parseDevboxExecutionMode(
+    readSetting('TUTURUUU_DEVBOX_EXECUTION_MODE')
+  );
+  const executionMode = options.executionMode ?? persistedMode;
+  if (persistedMode === 'judge-only' && executionMode !== 'judge-only')
     throw new Error(
       'Repair cannot weaken an existing Judge-only execution policy.'
     );

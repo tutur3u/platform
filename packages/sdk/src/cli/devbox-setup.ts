@@ -181,6 +181,16 @@ export async function runDevboxSetup(
     options.stdout ?? ((value: string) => process.stdout.write(value));
   let doctor = options.doctorReport ?? (await createDevboxDoctorReport());
 
+  if (doctor.executionPolicyError) {
+    if (options.json) printJson(doctor, stdout);
+    else
+      stdout(
+        `Invalid runner execution policy: ${doctor.executionPolicyError}\n`
+      );
+    process.exitCode = 1;
+    return doctor;
+  }
+
   if (doctor.missingTools.length > 0) {
     if (!options.yes) {
       if (options.json) printJson(doctor, stdout);

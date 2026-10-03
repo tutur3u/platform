@@ -188,7 +188,9 @@ origin rather than forwarding credentials to hosted Infrastructure.
 
 Use `--execution-mode judge-only` with `box connect`, `box setup`, or `box
 repair`. Supplying Judge images during registration defaults to Judge-only;
-general development runners retain trusted execution. `--control-url` persists
+general development runners retain trusted execution. Manual Judge-only setup
+restricts accepted jobs but does not receive protected-service host isolation;
+use the protected Linux service setup for hosts with critical files. `--control-url` persists
 the HTTPS Cloudflare Worker URL during registration. Protected service setup
 requires Linux systemd, a pre-existing non-login service user with its private
 home under `/var/lib`, a private service-owned token directory, and checkout and
@@ -285,7 +287,8 @@ only a newer stable `tuturuuu` release pinned to its exact version, verifies
 `--version`, and exits for its service manager to restart. It pauses new claims
 during installation and keeps heartbeating. A private host lock serializes
 installs from runners sharing an OS user home directory, and persisted check state
-prevents restart retry loops. Other agents using that shared install restart
+prevents restart retry loops. Cached install state is scoped to the verified
+CLI command, and a failed cached-version verification resumes its registry check. Other agents using that shared install restart
 after verifying the installed version. Lock contention schedules another attempt
 after 30 seconds, at the next idle claim, rather than delaying a stale process
 for a full day. Registry checks remain limited by the shared daily state. Each agent drains its own jobs; for hosts
@@ -297,8 +300,9 @@ token. An unverified install attempts to restore the previous release. A failed
 rollback stops the agent with a repair error; inspect service logs and repair
 the host installation. Locks record process ownership and identity; dead owners are reclaimed under a
 separate reclamation guard, while live installers are never evicted by age. An
-unknown legacy lock or interrupted reclamation guard requires operator
-inspection. Never remove a lock held by a running installer.
+unknown legacy lock requires operator inspection. Reclaim guards also record
+process ownership; an interrupted guard reports a repair-required error rather
+than being deleted automatically or retrying silently. Never remove a lock held by a running installer.
 
 Set `TUTURUUU_DEVBOX_AUTO_UPGRADE=false` in `devbox-runner.env` to opt out.
 Manually started and source-checkout agents do not upgrade automatically unless
@@ -655,3 +659,9 @@ select version from supabase_migrations.schema_migrations
 where version = '20260603171600';
 notify pgrst, 'reload schema';
 ```
+
+Fleet selection rejects combining `--all` with explicit runner IDs. Maintenance
+is deferred when a runner does not report its hostname. Fleet upgrades honor
+`--timeout`; a timed-out run requests cancellation and reports whether that
+request succeeded. Verify its run and lease before retrying or touching another
+runner, since a stop request does not prove immediate process termination.

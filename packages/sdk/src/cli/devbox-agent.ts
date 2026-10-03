@@ -257,10 +257,18 @@ export async function runDevboxAgentLoop({
               nextUpgradeCheckAt = Date.now() + DEVBOX_UPGRADE_BUSY_RETRY_MS;
               return;
             }
-            if (error instanceof DevboxCliRepairRequiredError) failure = error;
-            console.warn(
-              'Automatic devbox CLI upgrade failed; inspect the host install before retrying.'
-            );
+            const message =
+              error instanceof Error
+                ? error.message
+                : 'Unknown upgrade failure';
+            if (error instanceof DevboxCliRepairRequiredError) {
+              failure = error;
+              console.error(
+                `Automatic devbox CLI upgrade requires repair: ${message}`
+              );
+              return;
+            }
+            console.warn(`Automatic devbox CLI upgrade failed: ${message}`);
           })
           .finally(() => {
             upgrading = false;

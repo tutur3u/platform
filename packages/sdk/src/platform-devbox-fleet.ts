@@ -68,12 +68,14 @@ export function runnerMaintenanceBlocker(
     age >= 60_000
   )
     return 'Runner is offline or its heartbeat is stale';
-  const host = runner.capabilities?.os?.hostname;
+  const host = runner.capabilities?.os?.hostname?.trim();
+  if (!host)
+    return 'Runner does not report a hostname; host idleness cannot be established';
   const peers = snapshot.runners
     .filter(
       (row) =>
         row.id === runner.id ||
-        (host && row.capabilities?.os?.hostname === host)
+        (host && row.capabilities?.os?.hostname?.trim() === host)
     )
     .map((row) => row.id);
   if (

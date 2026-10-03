@@ -1,7 +1,9 @@
 import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+
+export class UpgradeLockRepairRequiredError extends Error {}
 
 interface Owner {
   pid: number;
@@ -81,15 +83,52 @@ export async function acquireUpgradeLock(lock: string, isAlive = alive) {
   if (await claim()) return release;
   const previous = await readOwner(lock);
   // Unknown legacy/crash state requires inspection, never speculative eviction.
-  if (!previous || (await isAlive(previous))) return undefined;
+  if (!previous) {
+    if (
+      Date.now() -
+        (
+          await stat(lock).catch((error) => {
+            if (error.code === 'ENOENT') return { mtimeMs: Date.now() };
+            throw error;
+          })
+        ).mtimeMs <
+      5000
+    )
+      return undefined;
+    throw new UpgradeLockRepairRequiredError(
+      'Upgrade lock has no valid owner metadata; inspect and repair it before retrying.'
+    );
+  }
+  if (await isAlive(previous)) return undefined;
   const reclaim = `${lock}.reclaim`;
   try {
     await mkdir(reclaim, { mode: 0o700 });
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'EEXIST') return undefined;
-    throw error;
+    if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+    const guardOwner = await readOwner(reclaim);
+    if (guardOwner && (await isAlive(guardOwner))) return undefined;
+    // Another live process can be between mkdir and its metadata write.
+    if (
+      !guardOwner &&
+      Date.now() -
+        (
+          await stat(reclaim).catch((error) => {
+            if (error.code === 'ENOENT') return { mtimeMs: Date.now() };
+            throw error;
+          })
+        ).mtimeMs <
+        5000
+    )
+      return undefined;
+    throw new UpgradeLockRepairRequiredError(
+      'Upgrade reclaim guard was interrupted; inspect its owner and repair the guard before retrying.'
+    );
   }
   try {
+    await writeFile(join(reclaim, 'owner.json'), JSON.stringify(owner), {
+      flag: 'wx',
+      mode: 0o600,
+    });
     // Serialize reclaimers and re-read so an observer cannot delete a new owner.
     const latest = await readOwner(lock);
     if (!latest || (await isAlive(latest))) return undefined;

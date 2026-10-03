@@ -1,6 +1,10 @@
 import type { TuturuuuUserClient } from '../platform';
 import { runnerMaintenanceBlocker } from '../platform-devbox-fleet';
 import { type FlagValue, getFlag } from './args';
+import {
+  createDevboxRestartPayload,
+  createDevboxUpgradePayload,
+} from './devbox-maintenance';
 import { compareVersions } from './update';
 
 export async function runDevboxFleetCommand({
@@ -30,6 +34,10 @@ export async function runDevboxFleetCommand({
       .filter(Boolean) ?? [];
   const id = getFlag(flags, 'runner');
   if (id) ids.push(id);
+  if (ids.length && flags.all === true)
+    throw new Error(
+      'Use either --all or an explicit runner selection, not both.'
+    );
   if (!ids.length && flags.all !== true)
     throw new Error('Select --runner <id>, --runners <id,id>, or --all.');
   for (const selected of ids) {
@@ -89,23 +97,26 @@ export async function runDevboxFleetCommand({
       results.push({ runnerId: runner.id, skipped: blocker });
       continue;
     }
-    let result = await client.devboxes.createRun({
-      command:
-        action === 'upgrade'
-          ? ['bun', 'i', '-g', 'tuturuuu']
-          : ['__ttr_restart_agent_v1__'],
-      keep: false,
-      leaseMode: 'auto',
-      runnerId: runner.id,
-      timeoutSeconds: action === 'upgrade' ? 600 : 60,
-      workload: 'maintenance',
-    });
-    const deadline = Date.now() + (action === 'upgrade' ? 630_000 : 90_000);
+    const payload =
+      action === 'upgrade'
+        ? createDevboxUpgradePayload({ ...flags, runner: runner.id })
+        : createDevboxRestartPayload({ ...flags, runner: runner.id });
+    let result = await client.devboxes.createRun(payload);
+    const deadline = Date.now() + (payload.timeoutSeconds + 30) * 1000;
     while (['queued', 'claimed', 'running'].includes(result.run.status)) {
-      if (Date.now() >= deadline)
+      if (Date.now() >= deadline) {
+        let cancellation =
+          'Stop requested; verify the runner has released the lease before retrying.';
+        try {
+          await client.devboxes.stopRun(result.run.id);
+        } catch {
+          cancellation =
+            'Stop request failed; inspect this run and its lease before retrying.';
+        }
         throw new Error(
-          `Timed out waiting for maintenance run ${result.run.id}`
+          `Timed out waiting for maintenance run ${result.run.id}. ${cancellation} Remaining runners were not changed.`
         );
+      }
       await new Promise((resolve) => setTimeout(resolve, 1000));
       result = await client.devboxes.getRun(result.run.id);
     }

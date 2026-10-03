@@ -20,7 +20,10 @@ vi.mock('./devbox-agent-capabilities', () => ({
 }));
 
 import { runDevboxAgentLoop } from './devbox-agent';
-import { DevboxCliUpgradeBusyError } from './devbox-auto-upgrade';
+import {
+  DevboxCliRepairRequiredError,
+  DevboxCliUpgradeBusyError,
+} from './devbox-auto-upgrade';
 
 describe('Devbox agent upgrade handoff', () => {
   beforeEach(() => {
@@ -75,6 +78,22 @@ describe('Devbox agent upgrade handoff', () => {
     );
   });
 
+  it('logs repair-required upgrade failure as an error and stops the agent', async () => {
+    vi.stubEnv('TUTURUUU_DEVBOX_AUTO_UPGRADE', 'true');
+    pollJobs.mockResolvedValue({ ok: true, jobs: [] });
+    autoUpgrade.mockRejectedValue(
+      new DevboxCliRepairRequiredError('rollback verification failed')
+    );
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await expect(
+      runDevboxAgentLoop({ baseUrl: 'https://example.test', token: 'fixture' })
+    ).rejects.toThrow('rollback verification failed');
+    expect(errorLog).toHaveBeenCalledWith(
+      expect.stringContaining('rollback verification failed')
+    );
+    expect(warning).not.toHaveBeenCalled();
+  });
   it('retries shared-install contention promptly and restarts into the winning upgrade', async () => {
     vi.useFakeTimers();
     vi.stubEnv('TUTURUUU_DEVBOX_AUTO_UPGRADE', 'true');

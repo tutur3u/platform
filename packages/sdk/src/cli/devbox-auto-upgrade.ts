@@ -1,9 +1,13 @@
 import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import packageJson from '../../package.json';
-import { acquireUpgradeLock } from './devbox-upgrade-lock';
+import {
+  acquireUpgradeLock,
+  UpgradeLockRepairRequiredError,
+} from './devbox-upgrade-lock';
 import { compareVersions } from './update';
 
 export const DEVBOX_UPGRADE_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -45,6 +49,7 @@ async function run(command: string, args: string[]) {
 interface UpgradeState {
   checkedAt: number;
   installedVersion?: string;
+  commandKey?: string;
 }
 
 /** Called only after this agent drains jobs; the lock serializes shared-host installs. */
@@ -70,9 +75,17 @@ export async function upgradeDevboxCliIfNeeded({
   )
     return false;
   const lock = join(directory, 'devbox-cli-upgrade.lock');
-  const stateFile = join(directory, 'devbox-cli-upgrade.json');
+  const commandKey = JSON.stringify(cliCommand);
+  const stateFile = join(
+    directory,
+    `devbox-cli-upgrade-${createHash('sha256').update(commandKey).digest('hex')}.json`
+  );
   await mkdir(directory, { recursive: true, mode: 0o700 });
-  const release = await acquireUpgradeLock(lock);
+  const release = await acquireUpgradeLock(lock).catch((error) => {
+    if (error instanceof UpgradeLockRepairRequiredError)
+      throw new DevboxCliRepairRequiredError(error.message);
+    throw error;
+  });
   if (!release)
     throw new DevboxCliUpgradeBusyError(
       'Shared CLI upgrade is already in progress'
@@ -84,6 +97,7 @@ export async function upgradeDevboxCliIfNeeded({
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
     }
+    if (state?.commandKey !== commandKey) state = undefined;
     const verify = async (version: string) => {
       const [command, ...args] = cliCommand;
       if (!command || args.some((arg) => !arg)) return false;
@@ -100,7 +114,9 @@ export async function upgradeDevboxCliIfNeeded({
       STABLE_VERSION.test(state.installedVersion) &&
       compareVersions(state.installedVersion, currentVersion) > 0
     ) {
-      return verify(state.installedVersion);
+      if (await verify(state.installedVersion)) return true;
+      // A changed or broken command must not keep suppressing its registry check.
+      state = undefined;
     }
     if (
       state &&
@@ -111,7 +127,7 @@ export async function upgradeDevboxCliIfNeeded({
       return false;
 
     // Persist the attempt before network/install so service restarts cannot retry-loop.
-    await writeFile(stateFile, JSON.stringify({ checkedAt: now }), {
+    await writeFile(stateFile, JSON.stringify({ checkedAt: now, commandKey }), {
       mode: 0o600,
     });
     const response = await fetchImpl(
@@ -144,7 +160,7 @@ export async function upgradeDevboxCliIfNeeded({
     }
     await writeFile(
       stateFile,
-      JSON.stringify({ checkedAt: now, installedVersion: version }),
+      JSON.stringify({ checkedAt: now, installedVersion: version, commandKey }),
       {
         mode: 0o600,
       }

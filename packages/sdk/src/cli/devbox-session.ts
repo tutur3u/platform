@@ -23,6 +23,7 @@ export async function runDevboxCommandWithSession({
   json: boolean;
 }) {
   const local =
+    action === 'shutdown' ||
     action === 'doctor' ||
     action === 'repair' ||
     (action === 'judge' && firstId === 'doctor') ||

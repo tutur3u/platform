@@ -9,7 +9,7 @@ describe('fleet upgrade eligibility', () => {
     name: 'fixture',
     status: 'online',
     last_heartbeat_at: new Date(now - 1000).toISOString(),
-    capabilities: { cli: { version: '0.26.0' } },
+    capabilities: { cli: { version: '0.26.0' }, os: { hostname: 'host' } },
   };
   it('upgrades only allowlisted, online, idle, older stable runners', async () => {
     const { planUpgrades } = await modulePromise;
@@ -18,7 +18,14 @@ describe('fleet upgrade eligibility', () => {
         runner,
         { ...runner, id: 'other' },
         { ...runner, id: 'revoked', status: 'revoked' },
-        { ...runner, id: 'busy' },
+        {
+          ...runner,
+          id: 'busy',
+          capabilities: {
+            ...runner.capabilities,
+            os: { hostname: 'busy-host' },
+          },
+        },
         {
           ...runner,
           id: 'stale',
@@ -35,6 +42,24 @@ describe('fleet upgrade eligibility', () => {
         now
       ),
       [runner]
+    );
+  });
+  it('defers a runner whose hostname cannot establish host idleness', async () => {
+    const { planUpgrades } = await modulePromise;
+    assert.equal(
+      planUpgrades(
+        {
+          runners: [
+            { ...runner, capabilities: { cli: runner.capabilities.cli } },
+          ],
+          runs: [],
+          leases: [],
+        },
+        ['allowed'],
+        '0.27.0',
+        now
+      ).length,
+      0
     );
   });
   it('does not reinstall, downgrade, or install prereleases', async () => {

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -26,6 +27,11 @@ describe('idle devbox CLI upgrades', () => {
     cliCommand: ['bun', '/global/ttr.js'],
     now: 100_000,
   });
+  const stateFile = () =>
+    join(
+      directory,
+      `devbox-cli-upgrade-${createHash('sha256').update(JSON.stringify(options().cliCommand)).digest('hex')}.json`
+    );
   beforeEach(async () => {
     directory = await mkdtemp(join(tmpdir(), 'ttr-auto-upgrade-'));
     fetchImpl
@@ -48,9 +54,7 @@ describe('idle devbox CLI upgrades', () => {
       'tuturuuu@0.27.0',
     ]);
     expect(
-      JSON.parse(
-        await readFile(join(directory, 'devbox-cli-upgrade.json'), 'utf8')
-      ).installedVersion
+      JSON.parse(await readFile(stateFile(), 'utf8')).installedVersion
     ).toBe('0.27.0');
     expect(
       await upgradeDevboxCliIfNeeded({ ...options(), currentVersion: '0.27.0' })
@@ -77,13 +81,40 @@ describe('idle devbox CLI upgrades', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
     // The lock holder finishes upgrading; the losing process must restart too.
     await writeFile(
-      join(directory, 'devbox-cli-upgrade.json'),
-      JSON.stringify({ checkedAt: 100_000, installedVersion: '0.27.0' })
+      stateFile(),
+      JSON.stringify({
+        checkedAt: 100_000,
+        installedVersion: '0.27.0',
+        commandKey: JSON.stringify(options().cliCommand),
+      })
     );
     await rm(join(directory, 'devbox-cli-upgrade.lock'), { recursive: true });
     expect(await upgradeDevboxCliIfNeeded(options())).toBe(true);
     expect(fetchImpl).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ['bun', '/different/ttr.js'],
+    ['bun', '/global/ttr.js'],
+  ])(
+    'does not let unrelated or unverifiable cached state suppress registry checks for %j',
+    async (...command) => {
+      await writeFile(
+        stateFile(),
+        JSON.stringify({
+          checkedAt: 100_000,
+          installedVersion: '0.27.0',
+          commandKey: JSON.stringify(command),
+        })
+      );
+      runCommand.mockResolvedValue({ code: 0, stdout: '0.26.0' });
+      fetchImpl.mockResolvedValue(
+        new Response(JSON.stringify({ version: '0.26.0' }))
+      );
+      expect(await upgradeDevboxCliIfNeeded(options())).toBe(false);
+      expect(fetchImpl).toHaveBeenCalledTimes(1);
+    }
+  );
 
   it('leaves source-checkout agents alone', async () => {
     expect(
@@ -125,7 +156,7 @@ describe('idle devbox CLI upgrades', () => {
       '-g',
       'tuturuuu@0.26.0',
     ]);
-    await writeFile(join(directory, 'devbox-cli-upgrade.json'), '{}');
+    await writeFile(stateFile(), '{}');
     fetchImpl.mockResolvedValue(
       new Response(JSON.stringify({ version: '0.27.0' }))
     );

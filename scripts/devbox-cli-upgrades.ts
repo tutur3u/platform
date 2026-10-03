@@ -37,12 +37,13 @@ export function planUpgrades(
     throw new Error('Registry latest is not a stable release');
   return snapshot.runners.filter((runner) => {
     const version = runner.capabilities?.cli?.version;
-    const host = runner.capabilities?.os?.hostname;
+    const host = runner.capabilities?.os?.hostname?.trim();
+    if (!host) return false;
     const peers = snapshot.runners
       .filter(
         (row) =>
           row.id === runner.id ||
-          (host && row.capabilities?.os?.hostname === host)
+          (host && row.capabilities?.os?.hostname?.trim() === host)
       )
       .map((row) => row.id);
     const age = now - Date.parse(runner.last_heartbeat_at ?? '');
