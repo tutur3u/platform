@@ -16,7 +16,25 @@ const stamp = (app) => ({
   }),
 });
 const denied = { status: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
-for (const app of Object.keys(READS)) {
+const workspace = '00000000-0000-4000-8000-000000000001';
+const expectedReads = {
+  platform: [
+    `/api/v1/workspaces/${workspace}/wallets`,
+    '/api/v1/exchange-rates',
+  ],
+  finance: [
+    `/api/workspaces/${workspace}/wallets/infinite`,
+    '/api/v1/exchange-rates',
+  ],
+  inventory: [`/api/v1/workspaces/${workspace}/inventory/products`],
+  contacts: [`/api/v1/workspaces/${workspace}/users/database`],
+  cms: ['/api/v1/admin/external-projects'],
+  tasks: ['/api/v1/users/me/tasks'],
+};
+test('pins every approved critical app API route', () => {
+  assert.deepEqual(READS, expectedReads);
+});
+for (const app of Object.keys(expectedReads)) {
   test(`${app} checks exact production identity and GET/HEAD authentication without writes`, async () => {
     const calls = [];
     await verifyStagedApp({
@@ -27,8 +45,12 @@ for (const app of Object.keys(READS)) {
         return path === '/api/build-info' ? stamp(app) : denied;
       },
     });
-    assert.equal(calls.length, 1 + 2 * READS[app].length);
-    assert.ok(calls.every((call) => ['GET', 'HEAD'].includes(call.method)));
+    assert.deepEqual(calls, [
+      { path: '/api/build-info', method: 'GET' },
+      ...expectedReads[app].flatMap((path) =>
+        ['GET', 'HEAD'].map((method) => ({ path, method }))
+      ),
+    ]);
   });
 }
 for (const status of [200, 302, 403, 404, 429, 500, 503]) {

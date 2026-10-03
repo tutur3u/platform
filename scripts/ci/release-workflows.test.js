@@ -180,7 +180,7 @@ test('production Vercel planner resolves once and calls affected apps in the pus
       `${productionWorkflow} must be called as a reusable job from the production push run`
     );
     assert.match(
-      reusableJob,
+      reusableJob.match(/^ {4}if:.*(?:\n {6}.*)*/mu)?.[0] ?? '',
       new RegExp(
         `contains\\(fromJSON\\(needs\\.plan\\.outputs\\.workflows_json\\), '${productionWorkflow.replaceAll('.', '\\.')}'\\)`
       ),
