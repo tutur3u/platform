@@ -96,6 +96,13 @@ class _SettingsHarness {
               path: Routes.settingsPreferences,
               redirect: (_, _) => Routes.settings,
             ),
+            ...settingsRoutes().where(
+              (route) => !{
+                Routes.settingsPreferences,
+                Routes.settingsWorkspace,
+                Routes.settingsAbout,
+              }.contains((route as GoRoute).path),
+            ),
             GoRoute(
               path: Routes.settingsWorkspace,
               builder: (_, _) => const SettingsWorkspacePage(),

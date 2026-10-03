@@ -4,6 +4,24 @@ import 'package:mobile/core/router/routes.dart';
 
 void main() {
   group('resolveMobileDeepLink', () {
+    test('Settings profile and Offline links preserve native destinations', () {
+      for (final entry in {
+        'settings/profile': Routes.settingsProfile,
+        'settings/accounts': Routes.settingsAccounts,
+        'profile/edit': Routes.settingsProfile,
+        'profile/accounts': Routes.settingsAccounts,
+        'settings/offline': Routes.settingsOffline,
+        'settings/offline/finance': Routes.settingsOfflineModulePath('finance'),
+        'settings/offline/unknown': Routes.settingsOffline,
+      }.entries) {
+        expect(
+          resolveMobileDeepLink(
+            Uri.parse('https://tuturuuu.com/en/personal/${entry.key}'),
+          )?.location,
+          entry.value,
+        );
+      }
+    });
     test('preserves dedicated native Inventory catalog and period routes', () {
       for (final catalog in [
         'owners',

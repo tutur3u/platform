@@ -67,7 +67,20 @@ extension _ShellPageLayout on _ShellPageState {
   Widget _buildNormalizedChild() {
     return _trackPageScrolling(
       widget.matchedLocation,
-      SizedBox.expand(child: widget.child),
+      Builder(
+        builder: (bodyContext) => MediaQuery.removePadding(
+          context: bodyContext,
+          removeTop: true,
+          child: Theme(
+            data: Theme.of(bodyContext).copyWith(
+              scaffoldBackgroundColor: shad.Theme.of(
+                bodyContext,
+              ).colorScheme.background,
+            ),
+            child: SizedBox.expand(child: widget.child),
+          ),
+        ),
+      ),
     );
   }
 
@@ -534,6 +547,22 @@ extension _ShellPageLayout on _ShellPageState {
       height: mobileSectionAppBarHeightFor(context),
       padding: mobileSectionAppBarPadding,
       backgroundColor: Colors.transparent,
+      leading:
+          Routes.isSettingsHubLocation(widget.matchedLocation) &&
+              widget.matchedLocation != Routes.settings &&
+              widget.matchedLocation != Routes.profileRoot
+          ? [
+              IconButton(
+                key: const ValueKey('shell-settings-back'),
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                onPressed: () => _dispatchBackNavigation(
+                  context,
+                  source: 'settings-top-bar',
+                ),
+                icon: const Icon(Icons.arrow_back_rounded),
+              ),
+            ]
+          : const [],
       trailingGap: 6,
       trailing: [
         SizedBox(

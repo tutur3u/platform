@@ -61,6 +61,7 @@ Future<void> _pump(WidgetTester tester) async {
 }
 
 void main() {
+  tearDown(() => GoRouter.optionURLReflectsImperativeAPIs = false);
   late AppTabCubit apps;
   late ExperimentalAppsCubit experiments;
   late _Auth auth;
@@ -116,6 +117,7 @@ void main() {
   });
 
   setUp(() async {
+    GoRouter.optionURLReflectsImperativeAPIs = true;
     textScale = 2;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
@@ -185,7 +187,7 @@ void main() {
               builder: (_, _) => const ProfileOverviewPage(),
             ),
             GoRoute(
-              path: Routes.profileEdit,
+              path: Routes.settingsProfile,
               builder: (_, _) => const Text('Identity editor'),
             ),
             GoRoute(
@@ -632,12 +634,9 @@ void main() {
         ),
         findsNothing,
       );
-      await tester.tap(find.text('Identity'));
+      await tester.tap(find.byTooltip('Identity'));
       await _pump(tester);
-      expect(
-        router.routeInformationProvider.value.uri.path,
-        Routes.profileEdit,
-      );
+      expect(router.state.matchedLocation, Routes.settingsProfile);
       await tester.binding.handlePopRoute();
       await _pump(tester);
       expect(

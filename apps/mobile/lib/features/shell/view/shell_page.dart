@@ -369,6 +369,11 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
       await onBack();
       return;
     }
+    if (currentLocation.startsWith('${Routes.settings}/') && context.canPop()) {
+      _isHandlingBackNavigation = true;
+      context.pop();
+      return;
+    }
     final miniAppRoot = Routes.miniAppRootForLocation(currentLocation);
     final injectedDeepLinkBackRoute = lookupShellMiniNavCubit(
       context,
