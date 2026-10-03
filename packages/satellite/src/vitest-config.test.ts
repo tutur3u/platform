@@ -11,7 +11,7 @@ it('resolves the real budget source even when package exports select a native Co
   );
   const loaded = await loadConfigFromFile(
     { command: 'serve', mode: 'test' },
-    resolve(__dirname, '../vitest.config.mts')
+    resolve(__dirname, '../vitest.config.ts')
   );
   const dependency = join(root, 'node_modules/@tuturuuu/storage-core');
   await mkdir(join(dependency, 'dist'), { recursive: true });
