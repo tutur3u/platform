@@ -6,25 +6,65 @@ import { InventoryMergeDialog } from './inventory-merge-dialog';
 const state = vi.hoisted(() => ({
   data: undefined as unknown,
   fetching: false,
+  previewError: false,
+  labelError: false,
+  labelsPending: false,
+  refetch: vi.fn(),
+  labelRefetch: vi.fn(),
+  mutationError: false,
   mutate: vi.fn(),
 }));
 vi.mock('@tanstack/react-query', () => ({
   useQuery: () => ({
     data: state.data,
     isFetching: state.fetching,
-    isError: false,
-    refetch: vi.fn(),
+    isError: state.previewError,
+    refetch: state.refetch,
   }),
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
   useMutation: () => ({
     mutate: state.mutate,
     reset: vi.fn(),
     isPending: false,
+    isError: state.mutationError,
   }),
 }));
 vi.mock('@tuturuuu/internal-api/inventory', () => ({
   applyInventoryMerge: vi.fn(),
   previewInventoryMerge: vi.fn(),
+}));
+vi.mock('./inventory-merge-product-options', () => ({
+  InventoryMergeProductSelect: ({
+    value,
+    excludeId,
+    onChange,
+  }: {
+    value: string;
+    excludeId: string;
+    onChange: (value: string) => void;
+  }) => (
+    <select value={value} onChange={(event) => onChange(event.target.value)}>
+      <option value="">Choose</option>
+      {[
+        { id: 'a', name: 'First' },
+        { id: 'b', name: 'Second' },
+      ]
+        .filter((row) => row.id !== excludeId)
+        .map((row) => (
+          <option key={row.id} value={row.id}>
+            {row.name}
+          </option>
+        ))}
+    </select>
+  ),
+  useInventoryMergeProductLabels: () => ({
+    data:
+      state.labelsPending || state.labelError
+        ? undefined
+        : [{ id: 'a', name: 'Named product' }],
+    isError: state.labelError,
+    refetch: state.labelRefetch,
+  }),
 }));
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string, values?: Record<string, unknown>) =>
@@ -72,6 +112,26 @@ vi.mock('@tuturuuu/ui/select', () => ({
   ),
   SelectTrigger: () => <option value="">Choose</option>,
   SelectValue: () => null,
+}));
+vi.mock('@tuturuuu/ui/custom/combobox', () => ({
+  Combobox: ({
+    selected,
+    options,
+    onChange,
+  }: {
+    selected: string;
+    options: { value: string; label: string }[];
+    onChange: (value: string) => void;
+  }) => (
+    <select value={selected} onChange={(event) => onChange(event.target.value)}>
+      <option value="">Choose</option>
+      {options.map((row) => (
+        <option key={row.value} value={row.value}>
+          {row.label}
+        </option>
+      ))}
+    </select>
+  ),
 }));
 vi.mock('@tuturuuu/ui/checkbox', () => ({
   Checkbox: ({
@@ -131,6 +191,12 @@ afterEach(cleanup);
 beforeEach(() => {
   state.data = preview;
   state.fetching = false;
+  state.previewError = false;
+  state.labelError = false;
+  state.labelsPending = false;
+  state.mutationError = false;
+  state.refetch.mockClear();
+  state.labelRefetch.mockClear();
   state.mutate.mockClear();
 });
 describe('Inventory merge safety controls', () => {
@@ -220,5 +286,84 @@ describe('Inventory merge safety controls', () => {
         .disabled
     ).toBe(true);
     expect(state.mutate).not.toHaveBeenCalled();
+  });
+  it('shows warehouse stock product names and prevents acknowledgment while labels are missing', () => {
+    const { rerender } = render(
+      <InventoryMergeDialog
+        kind="warehouse"
+        options={options}
+        wsId="workspace"
+      />
+    );
+    choosePair();
+    expect(screen.getByText(/stockIdentity/).textContent).toContain(
+      'Named product'
+    );
+    expect(screen.getByText(/stockIdentity/).textContent).not.toContain(
+      '"product":"a"'
+    );
+    state.labelsPending = true;
+    rerender(
+      <InventoryMergeDialog
+        kind="warehouse"
+        options={options}
+        wsId="workspace"
+      />
+    );
+    expect((screen.getByRole('checkbox') as HTMLInputElement).disabled).toBe(
+      true
+    );
+    state.labelsPending = false;
+    state.labelError = true;
+    rerender(
+      <InventoryMergeDialog
+        kind="warehouse"
+        options={options}
+        wsId="workspace"
+      />
+    );
+    expect(screen.getByRole('alert').textContent).toContain('labelsError');
+    fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
+    expect(state.labelRefetch).toHaveBeenCalledOnce();
+    expect(
+      (screen.getByRole('button', { name: 'confirm' }) as HTMLButtonElement)
+        .disabled
+    ).toBe(true);
+  });
+  it('keeps failed preview review blocked and provides a retry', () => {
+    state.previewError = true;
+    render(
+      <InventoryMergeDialog kind="product" options={options} wsId="workspace" />
+    );
+    choosePair();
+    expect(screen.getByRole('alert').textContent).toContain('previewError');
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
+    expect(state.refetch).toHaveBeenCalledOnce();
+    expect(
+      (screen.getByRole('button', { name: 'confirm' }) as HTMLButtonElement)
+        .disabled
+    ).toBe(true);
+  });
+  it('shows a persistent merge error in the review', () => {
+    state.mutationError = true;
+    render(
+      <InventoryMergeDialog kind="product" options={options} wsId="workspace" />
+    );
+    choosePair();
+    expect(screen.getByRole('alert').textContent).toBe('error');
+  });
+  it('does not acknowledge a preview with an unresolved source name', () => {
+    state.data = { ...preview, source: { ...preview.source, name: null } };
+    render(
+      <InventoryMergeDialog kind="product" options={options} wsId="workspace" />
+    );
+    choosePair();
+    expect((screen.getByRole('checkbox') as HTMLInputElement).disabled).toBe(
+      true
+    );
+    expect(screen.getByRole('alert').textContent).toContain('labelsError');
+    fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
+    expect(state.refetch).toHaveBeenCalledOnce();
   });
 });

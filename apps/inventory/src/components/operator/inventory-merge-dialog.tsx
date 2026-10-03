@@ -8,6 +8,7 @@ import {
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { Dialog, DialogTrigger } from '@tuturuuu/ui/dialog';
 import {
   Select,
@@ -24,6 +25,10 @@ import {
   type InventoryMergeLabels,
   InventoryMergeMetadata,
 } from './inventory-merge-preview';
+import {
+  InventoryMergeProductSelect,
+  useInventoryMergeProductLabels,
+} from './inventory-merge-product-options';
 import {
   OperatorDialogBody,
   OperatorDialogContent,
@@ -100,6 +105,26 @@ export function InventoryMergeDialog({
   const recordName = (id: string, rows?: MergeOption[]) =>
     rows?.find((row) => row.id === id)?.name || id;
   const pending = mutation.isPending;
+  const productLabels = useInventoryMergeProductLabels(
+    wsId,
+    data?.stock.map((row) => row.productId) ?? [],
+    labels?.products
+  );
+  const resolvedLabels = [
+    ...(labels?.products ?? []),
+    ...(productLabels.data ?? []),
+  ];
+  const recordNamesReady = Boolean(data?.source.name && data?.target.name);
+  const labelsReady =
+    !data ||
+    (recordNamesReady &&
+      data.stock.every((row) =>
+        resolvedLabels.some(
+          (product) => product.id === row.productId && product.name
+        )
+      ));
+  const selectionRef = useId();
+  const confirmationId = useId();
 
   return (
     <Dialog
@@ -119,7 +144,8 @@ export function InventoryMergeDialog({
     >
       <DialogTrigger asChild>
         <Button
-          disabled={options.length < 2}
+          disabled={kind === 'warehouse' && options.length < 2}
+          className="min-h-11 w-full touch-manipulation sm:w-auto"
           type="button"
           size="sm"
           variant="outline"
@@ -128,29 +154,68 @@ export function InventoryMergeDialog({
           {t(kind === 'product' ? 'products' : 'warehouses')}
         </Button>
       </DialogTrigger>
-      <OperatorDialogContent mobileFullscreen size="md">
+      <OperatorDialogContent
+        mobileFullscreen
+        size="md"
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          document
+            .getElementById(selectionRef)
+            ?.querySelector<HTMLElement>('[role="combobox"]')
+            ?.focus();
+        }}
+      >
         <OperatorDialogHeader
           title={t(kind === 'product' ? 'products' : 'warehouses')}
           description={t('description')}
         />
-        <OperatorDialogBody className="grid gap-5">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <MergeSelect
-              label={t('source')}
-              value={sourceId}
-              onChange={(value) => changeSelection(setSourceId, value)}
-              options={options.filter((option) => option.id !== targetId)}
-              disabled={pending}
-              placeholder={t('choose')}
-            />
-            <MergeSelect
-              label={t('destination')}
-              value={targetId}
-              onChange={(value) => changeSelection(setTargetId, value)}
-              options={options.filter((option) => option.id !== sourceId)}
-              disabled={pending}
-              placeholder={t('choose')}
-            />
+        <OperatorDialogBody className="grid min-w-0 content-start gap-5 break-words">
+          <div
+            id={selectionRef}
+            tabIndex={-1}
+            className="grid min-w-0 gap-3 outline-none sm:grid-cols-2"
+          >
+            {kind === 'product' ? (
+              <>
+                <InventoryMergeProductSelect
+                  wsId={wsId}
+                  label={t('source')}
+                  value={sourceId}
+                  excludeId={targetId}
+                  disabled={pending}
+                  onChange={(value) => changeSelection(setSourceId, value)}
+                />
+                <InventoryMergeProductSelect
+                  wsId={wsId}
+                  label={t('destination')}
+                  value={targetId}
+                  excludeId={sourceId}
+                  disabled={pending}
+                  onChange={(value) => changeSelection(setTargetId, value)}
+                />
+              </>
+            ) : (
+              <>
+                <MergeSelect
+                  searchable
+                  label={t('source')}
+                  value={sourceId}
+                  onChange={(value) => changeSelection(setSourceId, value)}
+                  options={options.filter((option) => option.id !== targetId)}
+                  disabled={pending}
+                  placeholder={t('choose')}
+                />
+                <MergeSelect
+                  searchable
+                  label={t('destination')}
+                  value={targetId}
+                  onChange={(value) => changeSelection(setTargetId, value)}
+                  options={options.filter((option) => option.id !== sourceId)}
+                  disabled={pending}
+                  placeholder={t('choose')}
+                />
+              </>
+            )}
           </div>
           {validPair && preview.isFetching ? (
             <p
@@ -183,6 +248,7 @@ export function InventoryMergeDialog({
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
                 <MergeSelect
+                  searchable
                   label={t('metadata')}
                   value={metadata}
                   onChange={(value) => {
@@ -197,6 +263,7 @@ export function InventoryMergeDialog({
                   placeholder={t('choose')}
                 />
                 <MergeSelect
+                  searchable
                   label={t('stockPolicy')}
                   value={stockPolicy}
                   onChange={(value) => {
@@ -215,6 +282,41 @@ export function InventoryMergeDialog({
                 {t('metadataNotice')}
               </p>
               <InventoryMergeMetadata data={data} kind={kind} labels={labels} />
+              {!labelsReady ? (
+                <div
+                  role={
+                    productLabels.isError || !recordNamesReady
+                      ? 'alert'
+                      : 'status'
+                  }
+                  className="grid gap-2 text-sm"
+                >
+                  <p>
+                    {t(
+                      productLabels.isError || !recordNamesReady
+                        ? 'labelsError'
+                        : 'loading'
+                    )}
+                  </p>
+                  {productLabels.isError || !recordNamesReady ? (
+                    <Button
+                      className="min-h-11"
+                      variant="outline"
+                      onClick={() => {
+                        if (!recordNamesReady) void preview.refetch();
+                        else void productLabels.refetch();
+                      }}
+                    >
+                      {t('refresh')}
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
+              {mutation.isError ? (
+                <p role="alert" className="text-destructive text-sm">
+                  {t('error')}
+                </p>
+              ) : null}
               <div className="grid gap-2">
                 <h3 className="font-semibold text-sm">
                   {t('stockTitle', { count: data.stock.length })}
@@ -225,11 +327,14 @@ export function InventoryMergeDialog({
                 {data.stock.map((row) => (
                   <div
                     key={`${row.productId}:${row.warehouseId}:${row.unitId}`}
-                    className="grid gap-1 rounded-md border p-3 text-sm"
+                    className="grid min-w-0 gap-1 rounded-md border p-3 text-sm [overflow-wrap:anywhere]"
                   >
                     <p className="break-all text-muted-foreground text-xs">
                       {t('stockIdentity', {
-                        product: recordName(row.productId, labels?.products),
+                        product:
+                          resolvedLabels.find(
+                            (product) => product.id === row.productId
+                          )?.name || t('loading'),
                         warehouse: recordName(
                           row.warehouseId,
                           labels?.warehouses
@@ -308,11 +413,19 @@ export function InventoryMergeDialog({
                   </ul>
                 </div>
               ) : null}
-              <label className="flex items-start gap-2 text-sm">
+              <label
+                htmlFor={confirmationId}
+                className="flex min-h-11 cursor-pointer items-start gap-3 rounded-md border p-3 text-sm"
+              >
                 <Checkbox
+                  id={confirmationId}
+                  aria-label={t('confirmation')}
                   checked={confirmedVersion === data.version}
                   disabled={
-                    pending || preview.isFetching || data.blockers.length > 0
+                    pending ||
+                    preview.isFetching ||
+                    !labelsReady ||
+                    data.blockers.length > 0
                   }
                   onCheckedChange={(checked) =>
                     setConfirmedVersion(checked === true ? data.version : null)
@@ -326,6 +439,7 @@ export function InventoryMergeDialog({
         <OperatorDialogFooter>
           <Button
             type="button"
+            className="min-h-11 touch-manipulation"
             variant="ghost"
             disabled={pending}
             onClick={() => setOpen(false)}
@@ -333,12 +447,14 @@ export function InventoryMergeDialog({
             {t('cancel')}
           </Button>
           <Button
+            className="min-h-11 touch-manipulation"
             type="button"
             disabled={
               !data ||
               confirmedVersion !== data.version ||
               preview.isFetching ||
               preview.isError ||
+              !labelsReady ||
               data.blockers.length > 0 ||
               pending
             }
@@ -364,7 +480,9 @@ function MergeSelect({
   options,
   disabled,
   placeholder,
+  searchable = false,
 }: {
+  searchable?: boolean;
   label: string;
   value: string;
   onChange: (value: string) => void;
@@ -373,13 +491,35 @@ function MergeSelect({
   placeholder: string;
 }) {
   const id = useId();
+  const t = useTranslations('inventory.operator.merge');
+  if (searchable)
+    return (
+      <div className="grid min-w-0 gap-1 text-sm">
+        <span className="font-medium">{label}</span>
+        <Combobox
+          ariaLabel={label}
+          selected={value}
+          onChange={(next) => onChange(typeof next === 'string' ? next : '')}
+          options={options.map((option) => ({
+            value: option.id,
+            label: option.name || option.id,
+          }))}
+          disabled={disabled}
+          placeholder={placeholder}
+          searchPlaceholder={t('searchWarehouses')}
+          emptyText={t('noWarehouses')}
+          className="min-w-0 [&_button[role=combobox]]:min-h-11 [&_button[role=combobox]]:touch-manipulation"
+          contentClassName="max-w-[calc(100vw-2rem)] [&_[cmdk-item]]:min-h-11"
+        />
+      </div>
+    );
   return (
-    <div className="grid gap-1 text-sm">
+    <div className="grid min-w-0 gap-1 text-sm">
       <label htmlFor={id} className="font-medium">
         {label}
       </label>
       <Select disabled={disabled} value={value} onValueChange={onChange}>
-        <SelectTrigger id={id} className="w-full">
+        <SelectTrigger id={id} className="min-h-11 w-full touch-manipulation">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>

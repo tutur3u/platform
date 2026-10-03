@@ -19,6 +19,7 @@ describe('inventory merge transport', () => {
     expect(parsed.searchParams.get('sourceId')).toBe('source');
     expect(parsed.searchParams.get('targetId')).toBe('target');
     expect(parsed.searchParams.get('kind')).toBe('warehouse');
+    expect(new Request(url, init).method).toBe('GET');
     expect(init.cache).toBe('no-store');
   });
   it('posts preview version/policies and preserves authentication headers', async () => {

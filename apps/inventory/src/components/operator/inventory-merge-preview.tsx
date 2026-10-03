@@ -63,7 +63,7 @@ export function InventoryMergeMetadata({
                   <dt className="text-muted-foreground">
                     {t(`fields.${field}`)}
                   </dt>
-                  <dd className="break-words">
+                  <dd className="[overflow-wrap:anywhere]">
                     {display(
                       field,
                       data[side].metadata[field] ??

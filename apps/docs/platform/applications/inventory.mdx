@@ -391,6 +391,16 @@ confirming. Both update/manage access, inventory deletion permission, and stock
 adjustment permission are required. This is ordinary authenticated inventory work;
 it is not an offline bulk download and must not require download-protection setup.
 
+Product selectors search active products independently of catalog filters and the
+currently loaded table page. Each selector supports loading more results. Warehouse
+stock reviews resolve product names by identity; confirmation waits for those names
+and offers a retry when they cannot load. On narrow screens the dialog fills the
+viewport, keeps its actions pinned, and scrolls the review body; long record names
+wrap rather than push conflict details outside the screen. Failed previews and
+failed merges retain the dialog and require a fresh acknowledgment before retrying.
+Regression coverage: `inventory-merge-dialog.test.tsx` and
+`inventory-merge-product-options.test.tsx`.
+
 Different unit structures are supported: separate units remain separate stock rows
 and quantities are never converted between units. Matching finite stock quantities
 are added exactly once. Two unlimited rows remain unlimited. Mixed unlimited and
