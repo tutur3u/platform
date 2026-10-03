@@ -31,6 +31,30 @@ double contrast(Color a, Color b) =>
     (math.min(a.computeLuminance(), b.computeLuminance()) + 0.05);
 
 void main() {
+  test(
+    'missing timed end stays active through the rendered thirty minutes',
+    () {
+      final value = CalendarEvent(id: 'no-end', startAt: now);
+      final scheme = ColorScheme.fromSeed(seedColor: Colors.blue);
+      expect(
+        EventColors.presentation(
+          value,
+          scheme,
+          now: now.add(const Duration(minutes: 29)),
+        ).isPast,
+        false,
+      );
+      expect(
+        EventColors.presentation(
+          value,
+          scheme,
+          now: now.add(const Duration(minutes: 30)),
+        ).isPast,
+        true,
+      );
+    },
+  );
+
   for (final brightness in Brightness.values) {
     test(
       'theme $brightness retains hue and full text contrast at end boundary',

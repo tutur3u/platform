@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/calendar_event.dart';
@@ -7,6 +9,12 @@ import 'package:mobile/features/calendar/widgets/agenda_view.dart';
 import '../../../helpers/helpers.dart';
 
 void main() {
+  if (Platform.environment['CALENDAR_NATIVE_TZ_REGRESSION'] == '1') {
+    test('native timezone regression job actually runs at UTC plus seven', () {
+      expect(DateTime(2030).timeZoneOffset, const Duration(hours: 7));
+    });
+  }
+
   testWidgets('selected UTC agenda ignores a different native device zone', (
     tester,
   ) async {

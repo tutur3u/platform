@@ -8,7 +8,7 @@ class TimezoneSettingsState {
   const TimezoneSettingsState({
     this.personal = 'auto',
     this.workspace = 'auto',
-    this.device = 'UTC',
+    this.device = '',
     this.loading = true,
     this.saving = false,
     this.failed = false,
@@ -16,6 +16,8 @@ class TimezoneSettingsState {
     this.retryAt,
     this.personalLoaded = false,
     this.workspaceLoaded = false,
+    this.failedSaveZone,
+    this.failedSaveWorkspace = false,
   });
   final String personal;
   final String workspace;
@@ -27,6 +29,8 @@ class TimezoneSettingsState {
   final DateTime? retryAt;
   final bool personalLoaded;
   final bool workspaceLoaded;
+  final String? failedSaveZone;
+  final bool failedSaveWorkspace;
   String get effective => personal != 'auto'
       ? personal
       : workspace != 'auto'
@@ -67,7 +71,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
         TimezoneSettingsState(
           personal: sameUser ? previous.personal : 'auto',
           workspace: sameScope ? previous.workspace : 'auto',
-          device: sameScope ? previous.device : 'UTC',
+          device: sameScope ? previous.device : '',
           resolved: sameScope && previous.resolved,
           personalLoaded:
               sameUser && (previous.resolved || previous.personalLoaded),
@@ -84,7 +88,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
       TimezoneSettingsState(
         personal: sameUser ? previous.personal : 'auto',
         workspace: sameScope ? previous.workspace : 'auto',
-        device: sameScope ? previous.device : 'UTC',
+        device: sameScope ? previous.device : '',
         resolved: sameScope && previous.resolved,
         personalLoaded:
             sameUser && (previous.resolved || previous.personalLoaded),
@@ -197,7 +201,6 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
                   workspaceLoaded:
                       workspaceRead != null ||
                       (sameScope && previous.workspaceLoaded),
-                  device: '',
                   loading: false,
                   failed: true,
                   retryAt: _retryAt,
@@ -295,6 +298,8 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
             personalLoaded: previous.personalLoaded,
             workspaceLoaded: previous.workspaceLoaded,
             failed: true,
+            failedSaveZone: zone,
+            failedSaveWorkspace: workspace,
             retryAt: _retryAt,
           ),
         );

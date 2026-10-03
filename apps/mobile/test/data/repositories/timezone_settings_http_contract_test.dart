@@ -29,7 +29,13 @@ void main() {
       h.respond = (req) async {
         expect(req.url.host, 'infrastructure.tuturuuu.com');
         expect(req.headers['authorization'], 'Bearer synthetic-access');
-        expect(req.url.path, startsWith('/api/v1/mobile-calendar/api/v1/'));
+        expect(
+          req.url.path,
+          isIn(const [
+            '/api/v1/mobile-calendar/api/v1/users/calendar-settings',
+            '/api/v1/mobile-calendar/api/v1/workspaces/synthetic-ws/calendar-settings',
+          ]),
+        );
         final path = req.url.path.split('/api/v1/').last;
         if (req.method == 'PATCH') {
           final body = jsonDecode(req.body) as Map<String, dynamic>;
@@ -49,9 +55,45 @@ void main() {
       );
       expect(cubit.state.personal, 'Europe/London');
       expect(cubit.state.workspace, 'Asia/Ho_Chi_Minh');
+      expect(
+        h.requests.map((r) => '${r.method} ${r.url.path}'),
+        containsAll(const [
+          'GET /api/v1/mobile-calendar/api/v1/users/calendar-settings',
+          'GET /api/v1/mobile-calendar/api/v1/workspaces/synthetic-ws/calendar-settings',
+          'PATCH /api/v1/mobile-calendar/api/v1/users/calendar-settings',
+          'PATCH /api/v1/mobile-calendar/api/v1/workspaces/synthetic-ws/calendar-settings',
+        ]),
+      );
       expect(h.requests.where((r) => r.method == 'PATCH'), hasLength(2));
     },
   );
+  test('scope-reset placeholder cannot resolve auto after cooldown', () async {
+    await cubit.close();
+    var now = DateTime.utc(2030);
+    var deviceReads = 0;
+    var limited = false;
+    cubit = TimezoneSettingsCubit(
+      repository: h.repository,
+      clock: () => now,
+      deviceLoader: () async {
+        deviceReads++;
+        return 'America/New_York';
+      },
+    );
+    h.respond = (req) async => limited && req.method == 'GET'
+        ? TimezoneHttpHarness.json({'retryAfter': 30}, status: 429)
+        : TimezoneHttpHarness.json({'timezone': 'auto'});
+    await cubit.load(userId: 'synthetic-actor', workspaceId: 'synthetic-ws');
+    limited = true;
+    await cubit.reload();
+    await cubit.load(userId: 'synthetic-actor', workspaceId: null);
+    now = now.add(const Duration(seconds: 31));
+    final beforeSave = deviceReads;
+    await cubit.save('auto');
+    expect(cubit.state.effective, 'America/New_York');
+    expect(deviceReads, beforeSave + 1);
+  });
+
   test('loaded personal scope remains editable after workspace403', () async {
     h.respond = (req) async => req.url.path.contains('/workspaces/')
         ? TimezoneHttpHarness.json({'error': 'Denied'}, status: 403)

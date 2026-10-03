@@ -57,6 +57,24 @@ void main() {
         expect(workspace ? cubit.state.workspace : cubit.state.personal, 'UTC');
         for (final shouldFail in [true, false]) {
           failSave = shouldFail;
+          if (!shouldFail) {
+            await tester.tap(
+              find.byKey(
+                ValueKey(
+                  workspace
+                      ? 'timezone-retry-workspace'
+                      : 'timezone-retry-personal',
+                ),
+              ),
+            );
+            await tester.pumpAndSettle();
+            expect(
+              workspace ? cubit.state.workspace : cubit.state.personal,
+              'Europe/London',
+            );
+            expect(h.requests.where((r) => r.method == 'GET'), hasLength(4));
+            continue;
+          }
           await tester.tap(
             find.text(workspace ? 'Workspace timezone' : 'Personal timezone'),
           );

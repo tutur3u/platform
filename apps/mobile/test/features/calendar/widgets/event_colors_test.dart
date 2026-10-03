@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
 import 'package:mobile/features/calendar/utils/event_layout.dart';
 import 'package:mobile/features/calendar/widgets/all_day_event_bar.dart';
@@ -46,14 +47,17 @@ void main() {
       await tester.pumpApp(
         Theme(
           data: ThemeData(brightness: brightness),
-          child: MultiDayScheduleView(
-            selectedDate: DateTime(2030),
-            events: [timed, allDay],
-            onEventTap: (_) {},
-            onCreateAtTime: (_) {},
-            onDaySelected: (_) {},
-            onSwipe: (_) {},
-            visibleDayCount: 3,
+          child: CalendarWallClock(
+            now: DateTime.utc(2029),
+            child: MultiDayScheduleView(
+              selectedDate: DateTime(2030),
+              events: [timed, allDay],
+              onEventTap: (_) {},
+              onCreateAtTime: (_) {},
+              onDaySelected: (_) {},
+              onSwipe: (_) {},
+              visibleDayCount: 3,
+            ),
           ),
         ),
       );
@@ -61,7 +65,7 @@ void main() {
       expect(find.text('Timed RGB'), findsOneWidget);
       expect(find.text('All-day RGB'), findsOneWidget);
       final palette = EventColors.inContext(
-        event(),
+        timed,
         tester.element(find.text('Timed RGB')),
       );
       final boxes = tester

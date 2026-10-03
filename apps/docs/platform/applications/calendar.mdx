@@ -541,3 +541,15 @@ allow retry. Account/workspace changes invalidate in-flight replies and editors.
 Bearer serialization, failure/retry and explicit saving with synthetic data.
 Those checks do not prove a real provider session or explain a particular user's
 failed authenticated request without runtime evidence.
+
+
+Mobile Calendar completion styling refreshes at wall-clock minute boundaries.
+Timed events without an end use the same 30-minute fallback as rendered cards.
+Timezone retry repeats a failed explicit save for its original scope; read failures
+reload preferences. Unknown device zones stay unresolved until native lookup
+succeeds, including after workspace changes during rate-limit cooldown.
+`calendar_minute_clock_test.dart` and the HTTP settings tests cover these rules.
+The shard-zero mobile test job additionally runs `agenda_view_test.dart` with
+`TZ=Asia/Ho_Chi_Minh` and `CALENDAR_NATIVE_TZ_REGRESSION=1`; its explicit native
+UTC+07 offset assertion prevents a UTC runner from silently weakening the
+wall-clock double-conversion regression.

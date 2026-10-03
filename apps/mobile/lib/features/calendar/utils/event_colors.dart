@@ -72,7 +72,11 @@ abstract final class EventColors {
     ColorScheme scheme, {
     required DateTime now,
   }) {
-    final end = event.endAt ?? event.startAt;
+    final end =
+        event.endAt ??
+        (event.isAllDay
+            ? event.startAt
+            : event.startAt?.add(const Duration(minutes: 30)));
     final past = end != null && !end.isAfter(now);
     final seed = forEvent(event);
     final dark = scheme.brightness == Brightness.dark;

@@ -82,6 +82,21 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
 
   Future<void> _load() => _cubit.reload();
 
+  Future<void> _retry() async {
+    final state = _cubit.state;
+    final zone = state.failedSaveZone;
+    if (zone == null) {
+      await _load();
+      return;
+    }
+    if (state.failedSaveWorkspace != widget.workspace) return;
+    await _cubit.save(
+      zone,
+      workspace: widget.workspace,
+      canManageWorkspace: widget.canManageWorkspace,
+    );
+  }
+
   Future<void> _choose() async {
     if (widget.workspace && !widget.canManageWorkspace) return;
     final generation = ++_editorGeneration;
@@ -140,7 +155,10 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
               : (widget.workspace ? state.workspace : state.personal) == 'auto'
               ? context.l10n.settingsTimezoneAuto
               : (widget.workspace ? state.workspace : state.personal),
-          trailing: state.failed
+          trailing:
+              state.failed &&
+                  (state.failedSaveZone == null ||
+                      state.failedSaveWorkspace == widget.workspace)
               ? IconButton(
                   key: ValueKey(
                     widget.workspace
@@ -150,7 +168,7 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
                   tooltip: context.l10n.settingsTimezoneRetry,
                   onPressed: _coolingDown || state.loading || state.saving
                       ? null
-                      : () => unawaited(_load()),
+                      : () => unawaited(_retry()),
                   icon: const Icon(Icons.refresh_rounded),
                 )
               : null,
