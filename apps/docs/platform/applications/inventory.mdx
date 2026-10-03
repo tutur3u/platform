@@ -380,3 +380,45 @@ review. A missing RPC function/schema remains HTTP 503
 `OFFLINE_CONTRACT_UNAVAILABLE`. These distinguish a server receipt defect from
 contract availability; the client must not blindly resend a new create identity.
 `offline-create-route.test.ts` covers malformed receipts and resource mismatches.
+
+## Merge products and warehouses
+
+The Inventory web operator exposes **Merge products** above the product table and
+**Merge warehouses** in Setup. Select a source and destination, review the current
+stock/reference preview, choose which metadata and overlapping price, minimum-stock
+and revenue-share configuration to keep, then acknowledge the destination before
+confirming. Both update/manage access, inventory deletion permission, and stock
+adjustment permission are required. This is ordinary authenticated inventory work;
+it is not an offline bulk download and must not require download-protection setup.
+
+Different unit structures are supported: separate units remain separate stock rows
+and quantities are never converted between units. Matching finite stock quantities
+are added exactly once. Two unlimited rows remain unlimited. Mixed unlimited and
+finite rows are blocked until the operator explicitly adjusts that stock outside
+the merge. Active reservations and active/upcoming scheduled source prices block the operation. Duplicate provider mappings,
+storefront variants, bundle identities and other live unique identities are shown
+as conflicts and must be resolved in their owning editor before merging; no provider
+objects or conflicting records are silently deleted. The global price policy also
+chooses the associated minimum stock and revenue-share settings together.
+
+The merge is one database transaction with a current preview version and a durable
+receipt. Concurrent stock/reference changes invalidate the preview; retries of the
+same source, destination, version and policies do not add stock again. Live references
+move to the destination while invoices, movement history, scheduled price quotes and
+checkout snapshots keep their original IDs and values. Source products are archived;
+source warehouses are removed from new selectors. Their durable rows remain available
+for historical detail. Future writes using a merged source identity, including stale
+web/mobile/offline/provider writes, reject atomically with a refresh-and-select-the-
+destination message. Historical updates that do not change their identity remain
+allowed. Offline creation receipts retain their original identity rather than creating
+a replacement resource; operators must refresh and select the destination for new work.
+
+The feature does not execute automatic background merges, convert units, merge external
+provider objects, or delete historical identities. New tables that reference inventory
+identities must install the merged-reference guard as part of their migration; the
+preview enumerates current foreign keys and fails closed for unsupported composite
+relationships. Regression evidence lives in `inventory-merge.sql`, the merge API route
+tests, internal API transport tests, and Inventory merge-dialog tests. Deployment needs
+the three additive merge migrations before execution becomes available; missing merge
+RPCs return a temporary-unavailable response while existing warehouse lists continue
+working on an older schema.

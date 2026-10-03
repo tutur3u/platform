@@ -6,6 +6,7 @@ import {
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { getMergedWarehouseIds } from '@/lib/inventory-merge-aliases';
 
 interface Params {
   params: Promise<{
@@ -35,12 +36,22 @@ export async function GET(req: Request, { params }: Params) {
       { status: 403 }
     );
   }
-  const inventory = (await createAdminClient()).schema('private');
+  const admin = await createAdminClient();
+  const aliases = await getMergedWarehouseIds(admin, wsId);
+  if (aliases.error) {
+    return NextResponse.json(
+      { message: 'Error fetching product warehouses' },
+      { status: 500 }
+    );
+  }
+  const inventory = admin.schema('private');
 
   const query = inventory
     .from('inventory_warehouses')
     .select('*', { count: shouldPaginate ? 'exact' : undefined })
     .eq('ws_id', wsId);
+
+  if (aliases.ids.length) query.not('id', 'in', `(${aliases.ids.join(',')})`);
 
   const { q, page, pageSize } = parsedQuery.data;
   if (q) query.ilike('name', `%${q}%`);

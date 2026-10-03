@@ -6563,6 +6563,42 @@ export type Database = {
           },
         ];
       };
+      inventory_identity_merges: {
+        Row: {
+          actor_id: string | null;
+          created_at: string;
+          kind: string;
+          metadata_policy: string;
+          preview: Json;
+          source_id: string;
+          stock_policy: string;
+          target_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id?: string | null;
+          created_at?: string;
+          kind: string;
+          metadata_policy: string;
+          preview: Json;
+          source_id: string;
+          stock_policy: string;
+          target_id: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string | null;
+          created_at?: string;
+          kind?: string;
+          metadata_policy?: string;
+          preview?: Json;
+          source_id?: string;
+          stock_policy?: string;
+          target_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       inventory_listing_option_groups: {
         Row: {
           created_at: string | null;
@@ -16298,6 +16334,19 @@ export type Database = {
         Args: { p_checkout_id: string; p_proportional_source?: string };
         Returns: number;
       };
+      apply_inventory_merge: {
+        Args: {
+          p_actor_id: string;
+          p_kind: string;
+          p_metadata_policy: string;
+          p_source_id: string;
+          p_stock_policy: string;
+          p_target_id: string;
+          p_version: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       apply_inventory_offline_create: {
         Args: {
           p_actor_id: string;
@@ -18553,6 +18602,14 @@ export type Database = {
         Args: { p_amount: number; p_currency?: string };
         Returns: number;
       };
+      inventory_merge_references: {
+        Args: { p_kind: string };
+        Returns: {
+          col: string;
+          historical: boolean;
+          tbl: unknown;
+        }[];
+      };
       inventory_stock_available_quantity: {
         Args: {
           p_now?: string;
@@ -19087,6 +19144,15 @@ export type Database = {
       };
       prepare_inventory_pos_operator_access: {
         Args: { p_actor_id: string; p_ws_id: string };
+        Returns: Json;
+      };
+      preview_inventory_merge: {
+        Args: {
+          p_kind: string;
+          p_source_id: string;
+          p_target_id: string;
+          p_ws_id: string;
+        };
         Returns: Json;
       };
       prune_discord_interaction_claims: {

@@ -1,5 +1,5 @@
-export type { InventoryPrice, InventoryPricePayload } from './inventory-prices';
-export { createInventoryPrice, listInventoryPrices } from './inventory-prices';
+export * from './inventory-merge';
+export * from './inventory-prices';
 
 import type { InventoryOwner } from '@tuturuuu/types/primitives/InventoryOwner';
 import type { Product } from '@tuturuuu/types/primitives/Product';

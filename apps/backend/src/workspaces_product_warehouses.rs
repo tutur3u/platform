@@ -37,6 +37,8 @@
 //! routes. The 404-vs-403 distinction for "member but lacking permission" is
 //! preserved (Forbidden -> 403; not-a-member/unknown-workspace -> 404).
 
+pub(crate) mod merge_aliases;
+
 use serde_json::{Value, json};
 
 use crate::{
@@ -158,6 +160,12 @@ async fn fetch_warehouses(
 ) -> Result<(Vec<Value>, i64), ()> {
     let mut query: Vec<(&str, String)> =
         vec![("select", "*".to_owned()), ("ws_id", format!("eq.{ws_id}"))];
+
+    if let Some(filter) =
+        merge_aliases::warehouse_alias_filter(contact_data, outbound, ws_id).await?
+    {
+        query.push(("id", filter));
+    }
 
     // Legacy: `if (q) query.ilike('name', `%${q}%`)` — only applied for a
     // non-empty `q` (default is the empty string).

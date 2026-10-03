@@ -2712,6 +2712,11 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Private workspace Storage downloads use opaque encrypted relay tickets, shared atomic request and byte budgets, fail-closed Postgres enforcement after migration-first activation, no-store responses, HEAD size inspection, and bounded streaming. Do not expose underlying Supabase signed URLs. Rust parity pending; prior direct-download dispatcher disabled."
+    },
+    "api:/api/v1/workspaces/:wsId/inventory/merges:apps/web/src/app/api/v1/workspaces/[wsId]/inventory/merges/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class inventory product and warehouse merge preview/apply with verified workspace membership, combined update/delete/stock permissions, mandatory conflict choices, version-bound private service-role RPC and actor scoping. Rust parity pending."
     }
   }
 }

@@ -57,6 +57,24 @@ beforeEach(() => {
 });
 
 describe('deduplicated native create boundary', () => {
+  it('reports merged source identities as actionable conflicts without creating a listing', async () => {
+    rpc.mockResolvedValue({
+      data: null,
+      error: {
+        code: '23514',
+        message:
+          'Inventory identity was merged; refresh and select its destination before retrying',
+      },
+    });
+    const result = await handleOfflineCreate(request(), 'workspace');
+    expect(result.status).toBe(409);
+    expect(await result.json()).toMatchObject({
+      code: 'MERGED_INVENTORY_IDENTITY',
+      message:
+        'Inventory was merged. Refresh and select its destination before retrying.',
+    });
+    expect(listing).not.toHaveBeenCalled();
+  });
   it('passes only the captured actor/workspace and validated payload to RPC', async () => {
     const response = await handleOfflineCreate(request(), 'raw-workspace');
     expect(response.status).toBe(201);

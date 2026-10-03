@@ -15,6 +15,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getMergedWarehouseIds } from '@/lib/inventory-merge-aliases';
 
 const WarehouseSchema = z.object({
   name: z.string().trim().min(1).max(MAX_NAME_LENGTH),
@@ -49,11 +50,21 @@ export async function GET(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 
-  const inventory = (await createAdminClient()).schema('private');
+  const admin = await createAdminClient();
+  const aliases = await getMergedWarehouseIds(admin, wsId);
+  if (aliases.error) {
+    return NextResponse.json(
+      { message: 'Failed to fetch inventory warehouses' },
+      { status: 500 }
+    );
+  }
+  const inventory = admin.schema('private');
   const query = inventory
     .from('inventory_warehouses')
     .select('*', { count: shouldPaginate ? 'exact' : undefined })
     .eq('ws_id', wsId);
+
+  if (aliases.ids.length) query.not('id', 'in', `(${aliases.ids.join(',')})`);
 
   const { q, page, pageSize } = parsedQuery.data;
   if (q) query.ilike('name', `%${q}%`);

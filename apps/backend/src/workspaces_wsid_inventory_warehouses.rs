@@ -226,6 +226,17 @@ async fn fetch_warehouses(
         ("order", "name.asc".to_owned()),
     ];
 
+    if let Some(filter) =
+        crate::workspaces_product_warehouses::merge_aliases::warehouse_alias_filter(
+            contact_data,
+            outbound,
+            ws_id,
+        )
+        .await?
+    {
+        params.push(("id", filter));
+    }
+
     // `if (q) query.ilike('name', '%q%')` — only when `q` is non-empty (JS
     // truthiness). supabase-js sends the pattern verbatim, so `%q%` reaches
     // PostgREST as the SQL ILIKE pattern.

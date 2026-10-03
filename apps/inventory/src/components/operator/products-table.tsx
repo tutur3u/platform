@@ -19,6 +19,7 @@ import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { InventoryMergeDialog } from './inventory-merge-dialog';
 import {
   OperationsTable,
   type OperationsTableColumn,
@@ -132,6 +133,26 @@ export function ProductsTable({
 
   return (
     <div className="grid min-w-0 gap-3">
+      <div className="flex justify-end">
+        <InventoryMergeDialog
+          labels={{
+            products: rows,
+            warehouses: formOptions?.warehouses,
+            units: formOptions?.units,
+            categories: formOptions?.categories,
+            owners: formOptions?.owners,
+            manufacturers: formOptions?.manufacturers,
+            financeCategories: formOptions?.financeCategories,
+          }}
+          kind="product"
+          options={rows}
+          wsId={wsId}
+          onComplete={() => {
+            setSelectedIds(new Set());
+            setEditing(null);
+          }}
+        />
+      </div>
       <ProductBulkToolbar
         allSelected={
           tableRows.length > 0 && selectedRows.length === tableRows.length
