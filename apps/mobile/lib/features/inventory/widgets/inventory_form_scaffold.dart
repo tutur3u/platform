@@ -104,6 +104,15 @@ class _InventoryFormScaffoldState extends State<InventoryFormScaffold> {
                   controller: widget.searchController,
                   autofocus: true,
                   onChanged: widget.onSearchChanged,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (value) {
+                    FocusScope.of(context).unfocus();
+                    if (value.trim().isEmpty) {
+                      _toggleSearch();
+                    } else {
+                      widget.onSearchChanged?.call(value);
+                    }
+                  },
                   decoration: InputDecoration(
                     hintText: context.l10n.inventorySearchProducts,
                   ),

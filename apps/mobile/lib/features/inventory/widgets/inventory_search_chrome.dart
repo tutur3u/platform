@@ -34,6 +34,16 @@ class _InventorySearchChromeState extends State<InventorySearchChrome> {
     setState(() => _open = false);
   }
 
+  void _submit(String value) {
+    if (!mounted || value.trim() != widget.controller.text.trim()) return;
+    FocusScope.of(context).unfocus();
+    if (value.trim().isEmpty) {
+      _close();
+    } else {
+      widget.onChanged(value);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => ShellChromeActions(
     ownerId: 'inventory-search-${widget.location}',
@@ -48,7 +58,7 @@ class _InventorySearchChromeState extends State<InventorySearchChrome> {
         searchController: _open ? widget.controller : null,
         searchHint: widget.hint ?? context.l10n.inventoryRedesignLoadedSearch,
         onSearchChanged: widget.onChanged,
-        onSearchSubmitted: widget.onChanged,
+        onSearchSubmitted: _submit,
         onCloseSearch: _close,
         onPressed: () {
           if (_open) {
