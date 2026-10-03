@@ -22,7 +22,14 @@ import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 
 class InventorySalesPeriodsPage extends StatefulWidget {
-  const InventorySalesPeriodsPage({super.key});
+  const InventorySalesPeriodsPage({
+    super.key,
+    this.inventoryRepository,
+    this.permissionsRepository,
+  });
+
+  final InventoryRepository? inventoryRepository;
+  final WorkspacePermissionsRepository? permissionsRepository;
 
   @override
   State<InventorySalesPeriodsPage> createState() =>
@@ -31,11 +38,12 @@ class InventorySalesPeriodsPage extends StatefulWidget {
 
 class _InventorySalesPeriodsPageState extends State<InventorySalesPeriodsPage>
     with OfflineSyncRefresh<InventorySalesPeriodsPage> {
-  final _repository = InventoryRepository();
-  final _permissions = WorkspacePermissionsRepository();
+  late final InventoryRepository _repository;
+  late final WorkspacePermissionsRepository _permissions;
   List<InventorySalesPeriod> _periods = const [];
   (String?, String?)? _loadedScope;
-  bool _canManage = false;
+  bool _canCreate = false;
+  bool _canUpdate = false;
   final TextEditingController _searchController = TextEditingController();
   bool _loading = true;
   bool _failed = false;
@@ -52,14 +60,22 @@ class _InventorySalesPeriodsPageState extends State<InventorySalesPeriodsPage>
   @override
   void initState() {
     super.initState();
+    _repository = widget.inventoryRepository ?? InventoryRepository();
+    _permissions =
+        widget.permissionsRepository ?? WorkspacePermissionsRepository();
     unawaited(Future<void>.delayed(Duration.zero, _reload));
   }
 
   @override
   void dispose() {
     _searchController.dispose();
-    _repository.dispose();
+    if (widget.inventoryRepository == null) _repository.dispose();
     super.dispose();
+  }
+
+  void _applyPermissions(WorkspacePermissions permissions) {
+    _canCreate = canCreateInventorySales(permissions);
+    _canUpdate = canUpdateInventorySales(permissions);
   }
 
   Future<void> _reload() async {
@@ -68,7 +84,7 @@ class _InventorySalesPeriodsPageState extends State<InventorySalesPeriodsPage>
     if (scope != _loadedScope) {
       _searchController.clear();
       _periods = const [];
-      _canManage = false;
+      _canCreate = _canUpdate = false;
     }
     _loadedScope = scope;
     if (scope.$1 == null || scope.$2 == null) {
@@ -84,16 +100,10 @@ class _InventorySalesPeriodsPageState extends State<InventorySalesPeriodsPage>
     unawaited(() async {
       final cached = await _permissions.readCachedPermissions(wsId);
       if (!current()) return;
-      setState(
-        () => _canManage =
-            canCreateInventorySales(cached) || canUpdateInventorySales(cached),
-      );
+      setState(() => _applyPermissions(cached));
       final fresh = await _permissions.getPermissions(wsId: wsId);
       if (!current()) return;
-      setState(
-        () => _canManage =
-            canCreateInventorySales(fresh) || canUpdateInventorySales(fresh),
-      );
+      setState(() => _applyPermissions(fresh));
     }());
     try {
       final data = await CacheStore.readWithRevalidation(
@@ -112,7 +122,9 @@ class _InventorySalesPeriodsPageState extends State<InventorySalesPeriodsPage>
 
   Future<void> _edit([InventorySalesPeriod? period]) async {
     final scope = _scope;
-    if (!_canManage || scope.$2 == null) return;
+    if ((period == null ? !_canCreate : !_canUpdate) || scope.$2 == null) {
+      return;
+    }
     final result = await showInventorySalesPeriodEditor(
       context: context,
       repository: _repository,
@@ -124,7 +136,7 @@ class _InventorySalesPeriodsPageState extends State<InventorySalesPeriodsPage>
 
   Future<void> _archive(InventorySalesPeriod period) async {
     final scope = _scope;
-    if (!_canManage || scope.$2 == null) return;
+    if (!_canUpdate || scope.$2 == null) return;
     try {
       await _repository.updateSalesPeriod(
         wsId: scope.$2!,
@@ -187,8 +199,8 @@ class _InventorySalesPeriodsPageState extends State<InventorySalesPeriodsPage>
                             ? context.l10n.inventorySalesPeriodArchived
                             : context.l10n.commonActive,
                       ),
-                      onTap: _canManage ? () => _edit(period) : null,
-                      trailing: _canManage
+                      onTap: _canUpdate ? () => _edit(period) : null,
+                      trailing: _canUpdate
                           ? IconButton(
                               tooltip: period.isArchived
                                   ? context.l10n.inventorySalesPeriodRestore
@@ -207,7 +219,7 @@ class _InventorySalesPeriodsPageState extends State<InventorySalesPeriodsPage>
             ],
           ),
         ),
-        if (_canManage)
+        if (_canCreate)
           ExtendedFab(
             icon: Icons.add,
             label: context.l10n.inventorySalesPeriodCreate,
