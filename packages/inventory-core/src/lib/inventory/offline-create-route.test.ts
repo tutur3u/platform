@@ -137,7 +137,20 @@ describe('deduplicated native create boundary', () => {
       error: null,
     });
     const response = await handleOfflineCreate(request(), 'ws');
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(500);
+    expect((await response.json()).code).toBe(
+      'OFFLINE_CONTRACT_RESPONSE_MISMATCH'
+    );
+    expect(rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it('a successful RPC with a different resource is a response mismatch', async () => {
+    rpc.mockResolvedValue(acknowledged('warehouse'));
+    const response = await handleOfflineCreate(request(), 'ws');
+    expect(response.status).toBe(500);
+    const body = await response.json();
+    expect(body.code).toBe('OFFLINE_CONTRACT_RESPONSE_MISMATCH');
+    expect(JSON.stringify(body)).not.toContain(serverId);
     expect(rpc).toHaveBeenCalledTimes(1);
   });
 

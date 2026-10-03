@@ -60,6 +60,30 @@ void main() {
     },
   );
 
+  test('failed update releases unrelated queued writes in order', () async {
+    await harness.store.savePendingMutation(record('failed'));
+    final failed = harness.store.updatePendingMutation('failed', (_) {
+      throw StateError('Synthetic update failure');
+    });
+    final failureObserved = expectLater(failed, throwsStateError);
+    final first = harness.store.savePendingMutation(
+      record('independent', owner: 'other'),
+    );
+    final last = harness.store.updatePendingMutation(
+      'independent',
+      (current) => current.copyWith(acknowledgedWrite: true),
+    );
+    await Future.wait([failureObserved, first, last]);
+    final rows = await harness.store.listPendingMutations();
+    expect(
+      rows.singleWhere((row) => row.id == 'failed').acknowledgedWrite,
+      false,
+    );
+    final independent = rows.singleWhere((row) => row.id == 'independent');
+    expect(independent.userId, 'other');
+    expect(independent.acknowledgedWrite, true);
+  });
+
   test(
     'corrupt record is visible conflict without stopping healthy replay',
     () async {

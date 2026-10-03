@@ -129,12 +129,19 @@ void main() {
           : http.Response('{"message":"Temporarily unavailable"}', 503);
       expect(await create(borrowed: false), isNull);
       expect(prompts, 1);
-      expect(requests, hasLength(3));
+      expect(requests, hasLength(2));
+      expect(requests.map((request) => (request.method, request.url.path)), [
+        ('POST', '/api/v1/workspaces/$workspace/inventory/offline-mutations'),
+        ('POST', '/api/v1/workspaces/$workspace/inventory/offline-mutations'),
+      ]);
+      expect(requests.first.body, requests.last.body);
       expect(
         requests[1].headers['x-tuturuuu-turnstile-token'],
         'synthetic-one-use-token',
       );
       final retained = (await harness.queue.listPending()).single;
+      expect(retained.entityId, localId);
+      expect(retained.status, PendingMutationStatus.queued);
       expect(
         retained.toJson().toString(),
         isNot(contains('synthetic-one-use-token')),

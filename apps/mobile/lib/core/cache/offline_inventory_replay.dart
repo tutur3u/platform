@@ -46,7 +46,11 @@ extension OfflineInventoryReplay on OfflineMutationQueue {
     if (apiClient != null) _foregroundInventoryClients[record.id] = apiClient;
     try {
       await enqueue(record);
-      await synchronize();
+      await ApiClient.offlinePreparation(
+        drain,
+        allowChallenge: false,
+        markBulk: false,
+      );
       if (_userId() != owner) {
         throw const ApiException(message: 'Account changed', statusCode: 401);
       }
@@ -102,7 +106,6 @@ extension OfflineInventoryReplay on OfflineMutationQueue {
       if (mutation == null) continue;
       if (mutation.isCreate && mutation.identity != null) {
         producers.add(mutation.identity!);
-        await _store.registerLocalResource(mutation.identity!);
       }
       scopes.add((record.userId!, record.workspaceId!));
     }

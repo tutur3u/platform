@@ -114,6 +114,10 @@ class OfflineMutationQueue with WidgetsBindingObserver {
 
   Future<void> _initialize() async {
     await _store.init();
+    // Backfill legacy queued creates once, not on each dependency scan.
+    for (final record in await _store.listPendingMutations()) {
+      await _registerInventoryProvenance(record);
+    }
     _dispatchers.putIfAbsent('*', () => _dispatchHttpMutation);
     _connectivitySubscription = _connectivityChanges.listen((results) {
       if (results.any((result) => result != ConnectivityResult.none)) {
@@ -352,7 +356,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
     final record = (await listPending())
         .where((item) => item.id == id)
         .firstOrNull;
-    if (record == null) return;
+    if (record == null || !record.canRetry) return;
     await _store.savePendingMutation(
       record.copyWith(status: PendingMutationStatus.queued),
     );
@@ -506,6 +510,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
 
   bool _isRetryable(Object error) {
     if (error is ApiException) {
+      if (error.code == 'OFFLINE_CONTRACT_RESPONSE_MISMATCH') return false;
       return error.statusCode == 0 ||
           error.statusCode == 429 ||
           error.statusCode >= 500;

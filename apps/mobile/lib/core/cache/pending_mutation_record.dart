@@ -87,6 +87,10 @@ class PendingMutationRecord {
   final String? acknowledgedDeletedId;
   final OfflineDependencyIssue? dependencyIssue;
 
+  bool get canRetry =>
+      method != 'INVALID' &&
+      dependencyIssue != OfflineDependencyIssue.invalidPayload;
+
   String? get entityId => optimisticPatch?['entityId'] as String?;
 
   PendingMutationRecord copyWith({

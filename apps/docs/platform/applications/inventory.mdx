@@ -81,8 +81,8 @@ verification regressions in `offline_inventory_verification_test.dart`.
 
 Product create permits at most 500 stock rows. Stock quantity and minimum quantity
 must be integers, matching their database columns; unit prices preserve fractional
-major currency amounts. Schema tests and `inventory-offline-create.sql` cover these
-limits for both online and offline create contracts.
+major currency amounts. `offline-create-schema.test.ts` and
+`inventory-offline-create.sql` cover these limits for the offline create contract.
 
 The dedicated setup/product/period create contract returns authoritative IDs and
 deduplicates the original operation identity before the client retries an uncertain
@@ -360,3 +360,23 @@ returns `OFFLINE_CONTRACT_UNAVAILABLE` with 503; an unknown route on an older
 deployment has no contract header. These rollout gaps must retain the operation
 and retry automatically, while a marked domain 404 or permission 403 is permanent.
 The native implementation must never fall back to an undeduplicated create POST.
+
+Offline catalog create receipts intentionally have no time-based expiry. Their
+private storage lasts for the owning actor/workspace lifetime and is removed by
+those owners' deletion cascades. The mobile outbox has no maximum retry age, so
+pruning a receipt could replay an old successful create as a new resource.
+Changing this default requires a coordinated client/server operation expiry and
+server rejection of expired operation IDs before receipt deletion is enabled.
+This rule covers inventory catalog/setup create receipts, including stored
+request/response data; it does not introduce a financial transaction retention
+policy. The private table is inaccessible to ordinary client roles. Receipt
+replay and payload-identity checks in `inventory-offline-create.sql` guard the
+current behavior; lifecycle pruning remains intentionally disabled.
+
+An offline create RPC that completes with a malformed receipt or a different
+resource returns sanitized HTTP 500 `OFFLINE_CONTRACT_RESPONSE_MISMATCH`.
+No row IDs are exposed, and the same operation remains retained for operator
+review. A missing RPC function/schema remains HTTP 503
+`OFFLINE_CONTRACT_UNAVAILABLE`. These distinguish a server receipt defect from
+contract availability; the client must not blindly resend a new create identity.
+`offline-create-route.test.ts` covers malformed receipts and resource mismatches.

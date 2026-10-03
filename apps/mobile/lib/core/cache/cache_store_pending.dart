@@ -11,6 +11,7 @@ extension CacheStorePending on CacheStore {
       await init();
       return await operation();
     } finally {
+      // Publish completion, never the operation error, to the next waiter.
       released.complete();
       if (identical(_pendingWrite, released.future)) {
         _pendingWrite = null;

@@ -66,6 +66,15 @@ extension _InventoryManageItemActions on _InventoryManagePageState {
         return;
       }
       showInventoryToast(context, context.l10n.commonDeleted);
+    } on ApiException catch (error) {
+      if (!mounted || _scope != scope) return;
+      showInventoryToast(
+        context,
+        error.message.trim().isEmpty
+            ? context.l10n.commonSomethingWentWrong
+            : error.message,
+        destructive: true,
+      );
     } on Object catch (error) {
       if (!mounted || _scope != scope) {
         return;
