@@ -20,6 +20,54 @@ void main() {
     h.dispose();
   });
   test(
+    'production gateway 401 refreshes the token and retries timezone reads',
+    () async {
+      await cubit.close();
+      h.dispose();
+      h = TimezoneHttpHarness(rotateTokenOnRefresh: true);
+      cubit = TimezoneSettingsCubit(
+        repository: h.repository,
+        deviceLoader: () async => 'UTC',
+      );
+      final attempts = <String, int>{};
+      h.respond = (req) async {
+        final count = attempts.update(
+          req.url.path,
+          (n) => n + 1,
+          ifAbsent: () => 1,
+        );
+        return count == 1
+            ? TimezoneHttpHarness.json({
+                'error': 'Synthetic expired',
+              }, status: 401)
+            : TimezoneHttpHarness.json({'timezone': 'UTC'});
+      };
+      await cubit.load(userId: 'synthetic-actor', workspaceId: 'synthetic-ws');
+      expect(cubit.state.resolved, true);
+      expect(h.refreshes, greaterThan(0));
+      expect(h.requests, hasLength(4));
+      expect(
+        h.requests.last.headers['authorization'],
+        'Bearer synthetic-renewed',
+      );
+      expect(
+        h.requests.every((r) => r.url.host == 'infrastructure.tuturuuu.com'),
+        true,
+      );
+    },
+  );
+
+  test(
+    'timezone reads reject a mismatched account before issuing HTTP',
+    () async {
+      await cubit.load(userId: 'different-actor', workspaceId: 'synthetic-ws');
+      expect(h.requests, isEmpty);
+      expect(cubit.state.personalLoaded, false);
+      expect(cubit.state.errorMessage, contains('401'));
+    },
+  );
+
+  test(
     'production GET/PATCH preference contracts retain Bearer and gateway',
     () async {
       final values = {

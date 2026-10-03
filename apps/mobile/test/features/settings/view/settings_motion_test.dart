@@ -312,7 +312,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(StaggeredEntry), findsOneWidget);
-      expect(find.text('Preferences'), findsOneWidget);
+      expect(find.text('Appearance & language'), findsOneWidget);
+      expect(find.text('Calendar & timezone'), findsOneWidget);
+      expect(find.text('Notifications & interaction'), findsOneWidget);
+      expect(find.text('App preferences'), findsOneWidget);
       expect(find.text('Theme'), findsOneWidget);
       expect(find.text('Language'), findsOneWidget);
       expect(find.text('Boards'), findsOneWidget);

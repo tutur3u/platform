@@ -33,6 +33,7 @@ import { Accordion } from '@tuturuuu/ui/accordion';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { matchesHybridSearch } from './hybrid-search';
+import { InventoryMergeDialog } from './inventory-merge-dialog';
 import { OperatorMetricCard } from './operator-dashboard-primitives';
 import { EmptyRow } from './operator-shell';
 import { BatchSection } from './setup-batch-section';
@@ -167,7 +168,24 @@ export function SetupPanel({
       ) : null}
       <Accordion className="grid min-w-0 gap-2" type="multiple">
         {configs.map((config) => (
-          <ResourceSection config={config} key={config.key} wsId={wsId} />
+          <ResourceSection
+            config={config}
+            key={config.key}
+            wsId={wsId}
+            footerAction={
+              config.key === 'warehouses' ? (
+                <InventoryMergeDialog
+                  labels={{
+                    warehouses: options?.warehouses,
+                    units: options?.units,
+                  }}
+                  kind="warehouse"
+                  options={options?.warehouses ?? []}
+                  wsId={wsId}
+                />
+              ) : undefined
+            }
+          />
         ))}
       </Accordion>
       <BatchSection

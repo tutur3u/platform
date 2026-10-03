@@ -18,6 +18,7 @@ class TimezoneSettingsState {
     this.workspaceLoaded = false,
     this.failedSaveZone,
     this.failedSaveWorkspace = false,
+    this.errorMessage,
   });
   final String personal;
   final String workspace;
@@ -31,6 +32,7 @@ class TimezoneSettingsState {
   final bool workspaceLoaded;
   final String? failedSaveZone;
   final bool failedSaveWorkspace;
+  final String? errorMessage;
   String get effective => personal != 'auto'
       ? personal
       : workspace != 'auto'
@@ -78,6 +80,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
           workspaceLoaded: sameScope && previous.workspaceLoaded,
           loading: false,
           failed: true,
+          errorMessage: sameScope ? previous.errorMessage : null,
           retryAt: _retryAt,
           failedSaveZone: sameScope ? previous.failedSaveZone : null,
           failedSaveWorkspace: sameScope && previous.failedSaveWorkspace,
@@ -129,9 +132,14 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
       Future<List<String>> resolve() async {
         // A named preference does not depend on a working native plugin.
         // Attach error handling immediately, even if we never need the device.
-        final device = Future<String>.sync(
-          deviceLoader,
-        ).then<String?>((zone) => zone, onError: (Object _) => null);
+        Object? deviceFailure;
+        final device = Future<String>.sync(deviceLoader).then<String?>(
+          (zone) => zone,
+          onError: (Object error) {
+            deviceFailure = error;
+            return null;
+          },
+        );
         final preferences = await Future.wait<String>([
           readPreference(repository.loadPersonal(), personal: true),
           if (workspaceId != null)
@@ -144,12 +152,17 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
         }
         final zone = await device;
         if (zone == null || zone.trim().isEmpty) {
-          throw Exception('Device timezone is unavailable.');
+          throw Exception(
+            deviceFailure?.toString() ?? 'Device timezone is unavailable.',
+          );
         }
         return [...preferences, zone];
       }
 
-      final values = await resolve().timeout(loadTimeout);
+      final values = await ApiClient.runForUser(
+        userId,
+        () => resolve().timeout(loadTimeout),
+      );
       if (isClosed || generation != _generation) return;
       emit(
         TimezoneSettingsState(
@@ -182,6 +195,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
                   personalLoaded: previous.personalLoaded,
                   workspaceLoaded: previous.workspaceLoaded,
                   failed: true,
+                  errorMessage: _failureMessage(failure),
                   retryAt: _retryAt,
                 )
               : TimezoneSettingsState(
@@ -205,6 +219,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
                       (sameScope && previous.workspaceLoaded),
                   loading: false,
                   failed: true,
+                  errorMessage: _failureMessage(failure),
                   retryAt: _retryAt,
                 ),
         );
@@ -244,13 +259,19 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
     );
     try {
       var device = previous.device;
+      Object? deviceError;
       final needsDevice =
           zone == 'auto' &&
           (workspace ? previous.personal : previous.workspace) == 'auto';
       if (needsDevice && device.isEmpty) {
-        device = await deviceLoader().timeout(loadTimeout);
-        if (device.trim().isEmpty) {
-          throw Exception('Device timezone is unavailable.');
+        try {
+          device = (await deviceLoader().timeout(loadTimeout)).trim();
+          if (device.isEmpty) {
+            throw Exception('Device timezone is unavailable.');
+          }
+        } on Object catch (error) {
+          deviceError = error;
+          device = '';
         }
         if (isClosed || generation != _generation) return;
       }
@@ -279,6 +300,14 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
           loading: false,
           resolved: resolved,
           failed: !resolved,
+          errorMessage: !resolved
+              ? !personalKnown || !workspaceKnown
+                    ? previous.errorMessage ??
+                          'Timezone preferences are unavailable.'
+                    : deviceError == null
+                    ? 'Device timezone is unavailable.'
+                    : _failureMessage(deviceError)
+              : null,
           personalLoaded: !workspace || previous.personalLoaded,
           workspaceLoaded: workspace || previous.workspaceLoaded,
         ),
@@ -300,6 +329,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
             personalLoaded: previous.personalLoaded,
             workspaceLoaded: previous.workspaceLoaded,
             failed: true,
+            errorMessage: _failureMessage(error),
             failedSaveZone: zone,
             failedSaveWorkspace: workspace,
             retryAt: _retryAt,
@@ -309,3 +339,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
     }
   }
 }
+
+String _failureMessage(Object error) => error is ApiException
+    ? '${error.statusCode}: ${error.message}'
+    : error.toString();

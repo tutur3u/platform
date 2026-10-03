@@ -380,3 +380,119 @@ review. A missing RPC function/schema remains HTTP 503
 `OFFLINE_CONTRACT_UNAVAILABLE`. These distinguish a server receipt defect from
 contract availability; the client must not blindly resend a new create identity.
 `offline-create-route.test.ts` covers malformed receipts and resource mismatches.
+
+## Merge products and warehouses
+
+The Inventory web operator exposes **Merge products** above the product table and
+**Merge warehouses** in Setup. Select a source and destination, review the current
+stock/reference preview, choose which metadata and overlapping price, minimum-stock
+and revenue-share configuration to keep, then acknowledge the destination before
+confirming. Both update/manage access, inventory deletion permission, and stock
+adjustment permission are required. This is ordinary authenticated inventory work;
+it is not an offline bulk download and must not require download-protection setup.
+
+Product selectors search active products independently of catalog filters and the
+currently loaded table page. Each selector supports loading more results. Warehouse
+stock reviews resolve product names by identity; confirmation waits for those names
+and offers a retry when they cannot load. On narrow screens the dialog fills the
+viewport, keeps its actions pinned, and scrolls the review body; long record names
+wrap rather than push conflict details outside the screen. Failed previews and
+failed merges retain the dialog and require a fresh acknowledgment before retrying.
+Regression coverage: `inventory-merge-dialog.test.tsx` and
+`inventory-merge-product-options.test.tsx`.
+
+Different unit structures are supported: separate units remain separate stock rows
+and quantities are never converted between units. Matching finite stock quantities
+are added exactly once. Two unlimited rows remain unlimited. Mixed unlimited and
+finite rows are blocked until the operator explicitly adjusts that stock outside
+the merge. Active reservations and active/upcoming scheduled source prices block the operation. Duplicate provider mappings,
+storefront variants, bundle identities and other live unique identities are shown
+as conflicts and must be resolved in their owning editor before merging; no provider
+objects or conflicting records are silently deleted. The global price policy also
+chooses the associated minimum stock and revenue-share settings together.
+
+The merge is one database transaction with a current preview version and a durable
+receipt. Concurrent stock/reference changes invalidate the preview; retries of the
+same source, destination, version and policies do not add stock again. Live references
+move to the destination while invoices, movement history, scheduled price quotes and
+checkout snapshots keep their original IDs and values. Source products are archived;
+source warehouses are removed from new selectors. Their durable rows remain available
+for historical detail. Future writes using a merged source identity, including stale
+web/mobile/offline/provider writes, reject atomically with a refresh-and-select-the-
+destination message. Historical updates that do not change their identity remain
+allowed. Authorized invoice recovery is the narrow exception for historical inserts:
+it restores only exact saved invoice lines with their original product and warehouse
+IDs, after invoice recovery permissions and workspace checks. A private transaction
+capability restricts this exception to the restoration RPC; new sales and stale writes
+cannot use it, including by setting a restoration flag. Restoring history does not
+consume the combined stock again.
+
+New merge preview and apply require the final schema readiness RPC and the active
+warehouse view, restoration guard and writer guards. During deployment before gated
+migrations, ordinary warehouse reads may use the legacy table only after the existing
+product-form-options RPC successfully returns a valid warehouse array without an
+`inventoryMergeSchema` marker. Alias-table creation atomically replaces that RPC to
+return `aliases-v1`; marker presence and a missing active view fail closed. Cached
+PostgREST metadata cannot substitute an older server function body, and a missing-table
+API error alone cannot establish legacy schema. Merge actions remain unavailable
+until readiness succeeds.
+
+Merge transactions reserve the buckets containing the source and destination identities.
+Identity coordination uses 16 stable buckets per resource kind and workspace, so
+large imports and stock/reference updates acquire at most 32 identity keys within
+one workspace instead of one advisory lock per record. Product/warehouse parents
+supply the authoritative workspace for all writers; a child row cannot choose a
+different namespace. Different workspaces have separate bucket namespaces. Two
+unrelated identities in the same workspace can share a bucket: when a merge holds
+it exclusively, that unrelated write safely returns retryable `55P03` rather than
+waiting or bypassing guards. Retry after the merge finishes. Actual workspace
+removal exempts its deletion cascades because that workspace can no longer merge;
+ordinary deletes in a live workspace retain all identity and merged-source guards.
+Reference inserts, updates, deletes and checkout state changes coordinate with those
+identities; unrelated workspace CRUD and other buckets remain available. Contention fails
+fast and requires refresh/retry. Row-lock waits are limited separately; this does not
+establish a deadline for the entire RPC. New reference tables must install both the
+merged-reference guard and the identity writer coordination trigger before merging
+can use them.
+
+Offline creation receipts retain their original identity rather than creating
+a replacement resource; operators must refresh and select the destination for new work.
+
+The feature does not execute automatic background merges, convert units, merge external
+provider objects, or delete historical identities. New tables that reference inventory
+identities must install the merged-reference guard as part of their migration; the
+preview enumerates current foreign keys and fails closed for unsupported composite
+relationships. Regression evidence lives in `inventory-merge.sql`, `inventory-merge-restoration.sql`,
+`inventory-merge-concurrency.mjs`, `inventory-merge-readiness.sql`, the merge API route
+tests, internal API transport tests, and Inventory merge-dialog tests. Deployment needs
+the additive merge and repair migrations before execution becomes available; missing merge
+RPCs return a temporary-unavailable response while existing warehouse lists continue
+working on an older schema.
+
+The existing `inventory-offline-contract.yaml` CI lane applies the full isolated
+schema and runs offline create plus merge, alias pagination, restoration and
+readiness pgTAP fixtures. Its testing phase also runs the three-client
+`inventory-merge-concurrency.mjs` executor; SQL or concurrent-writer failures
+fail the gate and still pass through owned-stack cleanup.
+
+## Cleared checkout search
+
+The web Inventory sale dialog restores its loaded product catalog immediately when
+product search is cleared. Category and warehouse choices and scheduled price
+eligibility derive from those restored products. A previous empty response or
+in-flight response cannot replace the unfiltered catalog. During a new search,
+loaded products remain searchable while the server query settles. This changes
+search selection only; current season price validation and existing cart snapshots
+remain authoritative. Mounted regressions in
+`season-sale-integration.test.tsx` cover settled empty search, clearing an in-flight
+search, restored category/warehouse choices, and the original scheduled prices in
+the submitted sale.
+
+The checkout category and warehouse pickers use the full authorized workspace
+form options, independent of product search, pagination, or season price coverage.
+Selecting a category queries its products across pages; search results have their
+own pagination. Categories with no currently eligible stock remain selectable and
+show an empty product result rather than disappearing from the picker. The
+mounted unloaded-category regression uses synthetic data outside the initial
+catalog page and verifies searchable choices, category-scoped requests, and the
+second page. This does not imply every product has a current scheduled price.

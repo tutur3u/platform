@@ -1,16 +1,35 @@
 part of 'cache_store.dart';
 
 extension CacheStoreStorage on CacheStore {
-  Future<CacheStorageSnapshot> storageSnapshot() async {
+  Future<CacheStorageSnapshot> storageSnapshot({
+    String? userId,
+    String? workspaceId,
+  }) async {
     await init();
     final categories = <CacheStorageCategory, int>{};
-    for (final record in _memory.values) {
+    for (final raw in _resourceBox.values) {
+      if (raw is! Map) continue;
+      CachedResourceRecord record;
+      try {
+        record = CachedResourceRecord.fromJson(raw);
+      } on Object {
+        continue;
+      }
+      if ((userId != null && record.userId != userId) ||
+          (workspaceId != null && record.workspaceId != workspaceId)) {
+        continue;
+      }
       final bytes = utf8.encode(record.jsonPayload).length;
       final category = CacheStorageCategory.forNamespace(record.namespace);
       categories[category] = (categories[category] ?? 0) + bytes;
     }
     for (final raw in _entityBox.values) {
-      if (raw is! Map || raw['payload'] == null) continue;
+      if (raw is! Map ||
+          raw['payload'] == null ||
+          (userId != null && raw['userId'] != userId) ||
+          (workspaceId != null && raw['workspaceId'] != workspaceId)) {
+        continue;
+      }
       final bytes = utf8.encode(jsonEncode(raw['payload'])).length;
       final category = CacheStorageCategory.forNamespace(
         raw['namespace'] as String? ?? '',
@@ -18,9 +37,18 @@ extension CacheStoreStorage on CacheStore {
       categories[category] = (categories[category] ?? 0) + bytes;
     }
     return CacheStorageSnapshot(
-      totalBytes: _resourceBytes + _entityBytes,
+      totalBytes: categories.values.fold(0, (sum, bytes) => sum + bytes),
       maxBytes: _maxBytes,
       categoryBytes: Map.unmodifiable(categories),
+    );
+  }
+
+  Future<CacheStorageSnapshot> storageLimitSnapshot() async {
+    await init();
+    return CacheStorageSnapshot(
+      totalBytes: 0,
+      maxBytes: _maxBytes,
+      categoryBytes: const {},
     );
   }
 

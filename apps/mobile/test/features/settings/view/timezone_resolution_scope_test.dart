@@ -344,6 +344,7 @@ void main() {
       final cubit = await mount(tester);
       expect(cubit.state.failed, isTrue);
       expect(cubit.state.resolved, isFalse);
+      expect(cubit.state.errorMessage, contains('synthetic unavailable'));
       expect(find.text('Effective timezone: UTC'), findsNothing);
       messenger.setMockMethodCallHandler(channel, (_) async => 'UTC');
       await tester.tap(find.byKey(const ValueKey('timezone-retry-personal')));
@@ -356,7 +357,7 @@ void main() {
 
   for (final owner in ['personal', 'workspace']) {
     testWidgets(
-      '$owner override resolves without device; last auto cannot write',
+      '$owner override resolves without device; Automatic persists unresolved',
       (tester) async {
         if (owner == 'personal') {
           api.personal = 'UTC';
@@ -377,12 +378,15 @@ void main() {
           workspace: owner == 'workspace',
           canManageWorkspace: true,
         );
-        expect(api.writes, 0);
-        expect(cubit.state.failed, isTrue);
+        expect(api.writes, 1);
         expect(
-          cubit.state.effective,
-          owner == 'personal' ? 'UTC' : 'Asia/Ho_Chi_Minh',
+          owner == 'personal' ? cubit.state.personal : cubit.state.workspace,
+          'auto',
         );
+        expect(cubit.state.failed, isTrue);
+        expect(cubit.state.resolved, isFalse);
+        expect(cubit.state.effective, isEmpty);
+        expect(cubit.state.errorMessage, contains('synthetic unavailable'));
       },
     );
   }

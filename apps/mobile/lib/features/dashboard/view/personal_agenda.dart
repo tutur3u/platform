@@ -9,6 +9,8 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/calendar/widgets/agenda_view.dart';
 import 'package:mobile/features/calendar/widgets/event_detail_sheet.dart';
+import 'package:mobile/features/dashboard/view/personal_agenda_scope.dart';
+import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -18,9 +20,15 @@ Workspace? homePersonalWorkspace(Iterable<Workspace> memberships) =>
     memberships.where((workspace) => workspace.personal).firstOrNull;
 
 class PersonalAgenda extends StatelessWidget {
-  const PersonalAgenda({this.replayToken = 0, this.repository, super.key});
+  const PersonalAgenda({
+    this.replayToken = 0,
+    this.repository,
+    this.cacheUserId,
+    super.key,
+  });
   final int replayToken;
   final CalendarRepository? repository;
+  final String? Function()? cacheUserId;
 
   @override
   Widget build(BuildContext context) {
@@ -28,44 +36,24 @@ class PersonalAgenda extends StatelessWidget {
     final workspace = homePersonalWorkspace(
       context.watch<WorkspaceCubit>().state.workspaces,
     );
-    if (userId == null || currentCacheUserId() != userId || workspace == null) {
+    if (userId == null ||
+        (cacheUserId ?? currentCacheUserId)() != userId ||
+        workspace == null) {
       return Center(child: Text(context.l10n.homePersonalAgendaUnavailable));
     }
     // Recreate on account or membership changes; never reuse another scope's
     // visible events, and never fall back to a shared workspace.
-    return BlocProvider(
+    return PersonalAgendaScope(
       key: ValueKey('personal-agenda:$userId:${workspace.id}'),
-      create: (_) {
-        final cubit = _PersonalAgendaCubit(
-          repository: repository ?? CalendarRepository(),
-          ownsRepository: repository == null,
-          initialState: CalendarCubit.seedStateForWorkspace(workspace.id),
-        );
-        unawaited(cubit.loadEvents(workspace.id, forceRefresh: true));
-        return cubit;
-      },
+      userId: userId,
+      workspaceId: workspace.id,
+      settings: context.read<TimezoneSettingsCubit>(),
+      repository: repository,
       child: PersonalAgendaView(
         workspaceId: workspace.id,
         replayToken: replayToken,
       ),
     );
-  }
-}
-
-class _PersonalAgendaCubit extends CalendarCubit {
-  _PersonalAgendaCubit({
-    required this.repository,
-    required this.ownsRepository,
-    super.initialState,
-  }) : super(calendarRepository: repository);
-
-  final CalendarRepository repository;
-  final bool ownsRepository;
-
-  @override
-  Future<void> close() async {
-    await super.close();
-    if (ownsRepository) repository.dispose();
   }
 }
 

@@ -8591,12 +8591,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appsReorder => 'Kéo để sắp xếp';
 
   @override
-  String get homePersonalAgenda => 'Lịch cá nhân';
-
-  @override
-  String get homePersonalAgendaUnavailable => 'Lịch cá nhân hiện không khả dụng.';
-
-  @override
   String get homeCustomize => 'Tùy chỉnh Trang chủ';
 
   @override
@@ -9719,6 +9713,134 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventoryCheckoutPeriodRulesChanged => 'Một số sản phẩm không phù hợp với kỳ bán hàng này. Đối soát giỏ hàng để tiếp tục.';
+
+  @override
+  String get offlineSectionTitle => 'Ngoại tuyến';
+
+  @override
+  String get offlineSectionDescription => 'Tải xuống, dữ liệu đã lưu và thay đổi chưa đồng bộ của tài khoản và không gian làm việc hiện tại.';
+
+  @override
+  String get offlinePreferencesTitle => 'Tùy chọn ngoại tuyến';
+
+  @override
+  String get offlineStorageScope => 'Giới hạn lưu trữ áp dụng cho thiết bị này. Xóa bộ nhớ đệm giữ lại các thay đổi đang chờ.';
+
+  @override
+  String get offlineRefreshModule => 'Tải xuống / làm mới';
+
+  @override
+  String get offlineModuleDetails => 'Dữ liệu đã lưu và cài đặt';
+
+  @override
+  String get offlineDownloadRetryHint => 'Thử tải lại để làm mới dữ liệu đã lưu.';
+
+  @override
+  String get offlineCoverageUnknown => 'Lần tải thông thường có thể chỉ chứa một phần bộ sưu tập. Tổng số mục chỉ hiển thị khi các trang đã lưu nhất quán. Tải xuống chỉ bao phủ các bộ sưu tập được hỗ trợ, không phải mọi tài nguyên của ứng dụng.';
+
+  @override
+  String get offlineBytesExplanation => 'Kích thước là số byte nội dung đã lưu, gồm bản chụp và bản sao. Chi phí lưu trữ trên đĩa, kích thước tải dự kiến và số byte truyền qua mạng chưa rõ.';
+
+  @override
+  String offlineLogicalBytes(String bytes) {
+    return '$bytes byte nội dung';
+  }
+
+  @override
+  String offlinePendingCoverage(int count) {
+    return '$count thay đổi đang chờ. Chúng được lưu riêng và không được tính là mục đã tải.';
+  }
+
+  @override
+  String get offlineSearchStored => 'Tìm bộ sưu tập đã lưu';
+
+  @override
+  String get offlineNoStoredItems => 'Không có bộ sưu tập đã lưu phù hợp.';
+
+  @override
+  String offlineAvailableItems(int items, int snapshots) {
+    return '$items mục đã lập chỉ mục riêng biệt trong $snapshots bản chụp đã lưu';
+  }
+
+  @override
+  String offlineFreshness(int stale, int expired) {
+    return '$stale bản chụp cũ · $expired bản chụp hết hạn còn được lưu để dùng ngoại tuyến';
+  }
+
+  @override
+  String offlineLastFetch(String time) {
+    return 'Lần tải gần nhất: $time';
+  }
+
+  @override
+  String get offlineEvictTitle => 'Xóa dữ liệu đã lưu của mô-đun';
+
+  @override
+  String get offlineEvictDescription => 'Chỉ xóa bản chụp của mô-đun này trong tài khoản và không gian làm việc đã chọn. Các thao tác ghi đang chờ vẫn được giữ. Tải lại để khôi phục dữ liệu ngoại tuyến.';
+
+  @override
+  String get offlineInventoryError => 'Không thể kiểm tra hoặc cập nhật dữ liệu đã lưu. Hãy thử lại.';
+
+  @override
+  String get settingsAppearanceLanguage => 'Giao diện và ngôn ngữ';
+
+  @override
+  String get settingsCalendarTimezone => 'Lịch và múi giờ';
+
+  @override
+  String get settingsNotificationsInteraction => 'Thông báo và tương tác';
+
+  @override
+  String get settingsAppPreferences => 'Tùy chọn ứng dụng';
+
+  @override
+  String get offlinePauseDownloads => 'Tạm dừng tải xuống';
+
+  @override
+  String get offlineResumeDownloads => 'Tiếp tục các lượt tải chưa hoàn tất';
+
+  @override
+  String get offlineClearScopeDescription => 'Chỉ xóa dữ liệu đệm của tài khoản và không gian làm việc này. Các thao tác ghi đang chờ vẫn được giữ. Giới hạn lưu trữ áp dụng cho toàn bộ thiết bị.';
+
+  @override
+  String offlineExpectedTotal(int count) {
+    return 'Tổng số mục truy vấn máy chủ báo cáo: $count. Con số này không xác nhận dữ liệu đã được tải đầy đủ.';
+  }
+
+  @override
+  String get offlineExpectedTotalUnknown => 'Tổng số mục truy vấn máy chủ báo cáo: chưa rõ.';
+
+  @override
+  String get offlineStorageNeedsWorkspace => 'Chọn không gian làm việc để xem hoặc xóa dữ liệu đã lưu. Giới hạn lưu trữ áp dụng cho thiết bị này.';
+
+  @override
+  String get offlineBrowseStoredItems => 'Xem các mục đã lưu';
+
+  @override
+  String get offlineSearchItems => 'Tìm các mục đã lưu theo tên hoặc ID';
+
+  @override
+  String get offlineNoMatchingItems => 'Không có mục đã lưu phù hợp.';
+
+  @override
+  String offlineStoredItemId(String id) {
+    return 'ID mục: $id';
+  }
+
+  @override
+  String get homePersonalAgenda => 'Lịch cá nhân';
+
+  @override
+  String get homePersonalAgendaUnavailable => 'Lịch cá nhân hiện không khả dụng.';
+
+  @override
+  String get assistantExpandNavigation => 'Hiện điều hướng';
+
+  @override
+  String get assistantCollapseNavigation => 'Ẩn điều hướng';
+
+  @override
+  String get assistantCloseComposer => 'Đóng ô nhập';
 
   @override
   String get inventoryRedesignLimitedData => 'Dữ liệu hạn chế. Đang hiển thị bản lưu gần nhất.';

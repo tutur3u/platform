@@ -1,6 +1,5 @@
 import { getInventoryActorContext } from '@tuturuuu/inventory-core/actor';
 import {
-  getInventoryApiListRange,
   parseInventoryApiListQuery,
   shouldReturnPaginatedInventoryList,
 } from '@tuturuuu/inventory-core/api-list-query';
@@ -15,6 +14,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { fetchInventoryWarehouseList } from '@/lib/inventory-warehouse-list';
 
 const WarehouseSchema = z.object({
   name: z.string().trim().min(1).max(MAX_NAME_LENGTH),
@@ -49,20 +49,16 @@ export async function GET(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 
-  const inventory = (await createAdminClient()).schema('private');
-  const query = inventory
-    .from('inventory_warehouses')
-    .select('*', { count: shouldPaginate ? 'exact' : undefined })
-    .eq('ws_id', wsId);
-
-  const { q, page, pageSize } = parsedQuery.data;
-  if (q) query.ilike('name', `%${q}%`);
-  if (shouldPaginate) {
-    const { start, end } = getInventoryApiListRange({ page, pageSize });
-    query.range(start, end);
-  }
-
-  const { data, error, count } = await query.order('name');
+  const admin = await createAdminClient();
+  const { data, error, count } = await fetchInventoryWarehouseList(
+    admin,
+    wsId,
+    {
+      ...parsedQuery.data,
+      paginate: shouldPaginate,
+      orderByName: true,
+    }
+  );
 
   if (error) {
     console.error('Error fetching inventory warehouses', error);

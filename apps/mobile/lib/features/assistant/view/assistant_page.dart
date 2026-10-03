@@ -35,12 +35,14 @@ import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_chat_feedback.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
+import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_history_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_info_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_mode_view.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_stage_card.dart';
+import 'package:mobile/features/assistant/widgets/assistant_scroll_to_bottom_overlay.dart';
 import 'package:mobile/features/assistant/widgets/assistant_settings_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_starter_prompts.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
@@ -55,6 +57,7 @@ import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'assistant_page_live_actions.dart';
+part 'assistant_page_layout.dart';
 
 class AssistantPage extends StatefulWidget {
   const AssistantPage({this.replayToken = 0, super.key});
@@ -213,409 +216,21 @@ class _AssistantPageState extends State<AssistantPage>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider.value(value: _shellCubit),
-        BlocProvider.value(value: _chatCubit),
-        BlocProvider.value(value: _liveCubit),
-      ],
-      child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
-        builder: (context, workspaceState) {
-          final currentWorkspace =
-              workspaceState.currentWorkspace ??
-              workspaceState.personalWorkspaceOrCurrent;
-          if (currentWorkspace == null) {
-            if (workspaceState.status == WorkspaceStatus.initial ||
-                workspaceState.status == WorkspaceStatus.loading) {
-              return const shad.Scaffold(
-                child: Center(child: NovaLoadingIndicator()),
-              );
-            }
-            return shad.Scaffold(
-              child: Center(child: Text(context.l10n.assistantSelectWorkspace)),
-            );
-          }
-
-          _syncWorkspace(currentWorkspace);
-
-          return MultiBlocListener(
-            listeners: [
-              BlocListener<AssistantChatCubit, AssistantChatState>(
-                listenWhen: (previous, current) =>
-                    previous.messages.length != current.messages.length ||
-                    previous.history.length != current.history.length,
-                listener: (context, state) {
-                  if (!_hasTranscript(state, _liveCubit.state)) {
-                    _scheduleScrollToTop();
-                    return;
-                  }
-                  _scheduleScrollToBottom();
-                },
-              ),
-              BlocListener<AssistantChatCubit, AssistantChatState>(
-                listenWhen: (previous, current) =>
-                    _activeConversationKey(previous) !=
-                    _activeConversationKey(current),
-                listener: (context, state) {
-                  _collapseComposerToFab();
-                },
-              ),
-              BlocListener<AssistantLiveCubit, AssistantLiveState>(
-                listenWhen: (previous, current) =>
-                    previous.hasDraft != current.hasDraft ||
-                    previous.status != current.status,
-                listener: (context, state) {
-                  if (!_hasTranscript(_chatCubit.state, state)) {
-                    _scheduleScrollToTop();
-                    return;
-                  }
-                  _scheduleScrollToBottom();
-                },
-              ),
-              BlocListener<AssistantChromeCubit, AssistantChromeState>(
-                listenWhen: (previous, current) =>
-                    previous.isFullscreen != current.isFullscreen,
-                listener: (context, chromeState) {
-                  if (_shellCubit.state.isImmersive !=
-                      chromeState.isFullscreen) {
-                    _shellCubit.setImmersiveMode(chromeState.isFullscreen);
-                  }
-                },
-              ),
-              BlocListener<AssistantShellCubit, AssistantShellState>(
-                listenWhen: (previous, current) =>
-                    previous.isImmersive != current.isImmersive,
-                listener: (context, shellState) {
-                  final chromeCubit = context.read<AssistantChromeCubit>();
-                  if (chromeCubit.state.isFullscreen !=
-                      shellState.isImmersive) {
-                    chromeCubit.setFullscreen(value: shellState.isImmersive);
-                  }
-                },
-              ),
-            ],
-            child: BlocBuilder<AssistantShellCubit, AssistantShellState>(
-              builder: (context, shellState) {
-                return BlocBuilder<AssistantChatCubit, AssistantChatState>(
-                  builder: (context, chatState) {
-                    return BlocBuilder<AssistantLiveCubit, AssistantLiveState>(
-                      builder: (context, liveState) {
-                        final isFullscreen = context
-                            .select<AssistantChromeCubit, bool>(
-                              (cubit) => cubit.state.isFullscreen,
-                            );
-                        final isLiveMode = context
-                            .select<AssistantChromeCubit, bool>(
-                              (cubit) => cubit.state.isLiveMode,
-                            );
-                        final liveCameraController =
-                            _liveCubit.cameraController;
-                        final isVisibleLiveSession = _isVisibleLiveSession(
-                          chatState,
-                          liveState,
-                        );
-                        final hasTranscript = _hasTranscript(
-                          chatState,
-                          liveState,
-                        );
-                        final keyboardVisible =
-                            MediaQuery.viewInsetsOf(context).bottom > 0;
-                        final hasLiveAccess = _hasLiveAccess(shellState);
-                        final isPersonalWorkspace = currentWorkspace.personal;
-                        const scrollDismissBehavior =
-                            ScrollViewKeyboardDismissBehavior.onDrag;
-                        final scrollToBottomLabel =
-                            context.l10n.assistantScrollToBottomAction;
-                        final scrollToBottomFab = AssistantScrollToBottomFab(
-                          label: scrollToBottomLabel,
-                          onPressed: _handleScrollToBottomPressed,
-                        );
-                        Future<void> removeComposerAttachment(
-                          String attachmentId,
-                        ) {
-                          return _chatCubit.removeComposerAttachment(
-                            wsId: currentWorkspace.id,
-                            attachmentId: attachmentId,
-                          );
-                        }
-
-                        final liveUiState = deriveAssistantLiveUiState(
-                          shellState: shellState,
-                          liveState: liveState,
-                          isEligible: hasLiveAccess,
-                          isVisibleLiveSession: isVisibleLiveSession,
-                          showBlockedReason: false,
-                        );
-                        final showLiveStrip =
-                            !isLiveMode && liveUiState.showExpandedStageCard;
-                        _maybeResetEmptyStateScroll(
-                          workspaceId: currentWorkspace.id,
-                          chatId: chatState.chat?.id ?? chatState.storedChatId,
-                          hasTranscript: hasTranscript,
-                          showLiveStrip: showLiveStrip || isLiveMode,
-                        );
-                        if (!isLiveMode) {
-                          _syncComposerVisibilityForBuild(
-                            keyboardVisible: keyboardVisible,
-                          );
-                        }
-
-                        return shad.Scaffold(
-                          resizeToAvoidBottomInset: false,
-                          child: SafeArea(
-                            top: false,
-                            bottom: false,
-                            child: ResponsiveWrapper(
-                              maxWidth: ResponsivePadding.rootContentWidth(
-                                context.deviceClass,
-                              ),
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.translucent,
-                                onTap: _dismissKeyboard,
-                                child: Stack(
-                                  children: [
-                                    if (isLiveMode)
-                                      _buildLiveModeView(
-                                        currentWorkspace.id,
-                                        chatState,
-                                        liveState,
-                                        liveUiState,
-                                        shellState,
-                                        liveCameraController,
-                                      )
-                                    else ...[
-                                      Stack(
-                                        children: [
-                                          CustomScrollView(
-                                            controller: _scrollController,
-                                            keyboardDismissBehavior:
-                                                scrollDismissBehavior,
-                                            physics: _assistantScrollPhysics,
-                                            slivers: [
-                                              SliverPadding(
-                                                padding: EdgeInsets.fromLTRB(
-                                                  _horizontalPadding(context),
-                                                  floatingShellHeaderInset(
-                                                        context,
-                                                      ) +
-                                                      12,
-                                                  _horizontalPadding(context),
-                                                  _composerReservedSpace(
-                                                    context,
-                                                    isFullscreen: isFullscreen,
-                                                    hasAttachments: chatState
-                                                        .composerAttachments
-                                                        .isNotEmpty,
-                                                    isComposerVisible:
-                                                        _isComposerVisible,
-                                                  ),
-                                                ),
-                                                sliver: SliverList.list(
-                                                  children: [
-                                                    if (showLiveStrip) ...[
-                                                      _buildLiveStageCard(
-                                                        currentWorkspace.id,
-                                                        chatState,
-                                                        liveState,
-                                                        liveCameraController,
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 12,
-                                                      ),
-                                                    ],
-                                                    if (hasTranscript)
-                                                      _buildTranscriptSection(
-                                                        chatState,
-                                                        liveState,
-                                                        shellState,
-                                                      )
-                                                    else
-                                                      AssistantStarterPrompts(
-                                                        onPromptSelected:
-                                                            _applyStarterPrompt,
-                                                        replayToken:
-                                                            widget.replayToken,
-                                                      ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          if (chatState.status ==
-                                              AssistantChatStatus.restoring)
-                                            const Positioned(
-                                              top: 0,
-                                              left: 0,
-                                              right: 0,
-                                              child: NovaLoadingIndicator(
-                                                size: 20,
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                      Positioned(
-                                        left: _horizontalPadding(context),
-                                        right: _horizontalPadding(context),
-                                        bottom: keyboardVisible
-                                            ? 8
-                                            : MediaQuery.paddingOf(
-                                                    context,
-                                                  ).bottom +
-                                                  (isFullscreen ? 8 : 0),
-                                        child: IgnorePointer(
-                                          ignoring: !_isComposerVisible,
-                                          child: AnimatedSlide(
-                                            duration: const Duration(
-                                              milliseconds: 180,
-                                            ),
-                                            curve: Curves.easeOutCubic,
-                                            offset: _isComposerVisible
-                                                ? Offset.zero
-                                                : const Offset(0, 1),
-                                            child: AnimatedOpacity(
-                                              duration: const Duration(
-                                                milliseconds: 160,
-                                              ),
-                                              curve: Curves.easeOutCubic,
-                                              opacity: _isComposerVisible
-                                                  ? 1
-                                                  : 0,
-                                              child: AssistantComposerDock(
-                                                repository: _repository,
-                                                chatState: chatState,
-                                                liveState: liveState,
-                                                liveUiState: liveUiState,
-                                                shellState: shellState,
-                                                isFullscreen: isFullscreen,
-                                                bottomInset: 0,
-                                                isPersonalWorkspace:
-                                                    isPersonalWorkspace,
-                                                onModelSelected: _shellCubit
-                                                    .setSelectedModel,
-                                                onOpenCreditSourceSheet: () =>
-                                                    _showCreditSourceSheet(
-                                                      context,
-                                                      shellState: shellState,
-                                                      isPersonalWorkspace:
-                                                          isPersonalWorkspace,
-                                                    ),
-                                                onThinkingModeChanged:
-                                                    _shellCubit.setThinkingMode,
-                                                controller: _inputController,
-                                                focusNode: _inputFocusNode,
-                                                onOpenAttachments: () =>
-                                                    _showAttachmentSheet(
-                                                      context,
-                                                      currentWorkspace.id,
-                                                    ),
-                                                onToggleFullscreen: () =>
-                                                    _toggleFullscreen(
-                                                      !isFullscreen,
-                                                    ),
-                                                onMicrophoneTap: () =>
-                                                    _recordVoiceMessage(
-                                                      currentWorkspace.id,
-                                                    ),
-                                                onSend: () => _handleSend(
-                                                  currentWorkspace.id,
-                                                  shellState,
-                                                  chatState,
-                                                  liveState,
-                                                ),
-                                                onRemoveAttachment:
-                                                    removeComposerAttachment,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      if (isFullscreen && !_isComposerVisible)
-                                        Positioned(
-                                          right:
-                                              _assistantFabSideOffset +
-                                              MediaQuery.paddingOf(
-                                                context,
-                                              ).right,
-                                          bottom:
-                                              _assistantFabBottomOffset +
-                                              MediaQuery.paddingOf(
-                                                context,
-                                              ).bottom,
-                                          child: AssistantComposerFab(
-                                            label: context
-                                                .l10n
-                                                .assistantAskPlaceholder,
-                                            onPressed: _restoreComposerAndFocus,
-                                          ),
-                                        ),
-                                      if (hasTranscript)
-                                        Positioned(
-                                          left: 0,
-                                          right: 0,
-                                          bottom:
-                                              (_isComposerVisible ? 112 : 16) +
-                                              (isFullscreen
-                                                  ? MediaQuery.paddingOf(
-                                                      context,
-                                                    ).bottom
-                                                  : 0),
-                                          child: IgnorePointer(
-                                            ignoring: !_showScrollToBottomFab,
-                                            child: Center(
-                                              child: AnimatedSlide(
-                                                duration: const Duration(
-                                                  milliseconds: 180,
-                                                ),
-                                                curve: Curves.easeOutCubic,
-                                                offset: _showScrollToBottomFab
-                                                    ? Offset.zero
-                                                    : const Offset(0, 1),
-                                                child: AnimatedOpacity(
-                                                  duration: const Duration(
-                                                    milliseconds: 160,
-                                                  ),
-                                                  curve: Curves.easeOutCubic,
-                                                  opacity:
-                                                      _showScrollToBottomFab
-                                                      ? 1
-                                                      : 0,
-                                                  child: scrollToBottomFab,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                    ShellChromeActions(
-                                      ownerId: 'assistant-root',
-                                      locations: const {Routes.assistant},
-                                      actions: _buildChromeActions(
-                                        context,
-                                        wsId: currentWorkspace.id,
-                                        shellState: shellState,
-                                        chatState: chatState,
-                                        liveState: liveState,
-                                        isLiveMode: isLiveMode,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                );
-              },
-            ),
-          );
-        },
-      ),
-    );
-  }
+  Widget build(BuildContext context) => BackButtonListener(
+    onBackButtonPressed: () async {
+      if (!TickerMode.valuesOf(context).enabled || !_isComposerVisible) {
+        return false;
+      }
+      final chrome = context.read<AssistantChromeCubit>();
+      if (chrome.state.navigationExpanded) {
+        chrome.toggleComposerNavigation();
+      } else {
+        _collapseComposerToFab();
+      }
+      return true;
+    },
+    child: _buildPage(context),
+  );
 
   void _syncWorkspace(Workspace workspace) {
     if (workspace.id == _loadedWorkspaceId) {
@@ -631,7 +246,11 @@ class _AssistantPageState extends State<AssistantPage>
     _showScrollToBottomFab = false;
     _composerVisibilityAnchorOffset = null;
     if (mounted) {
-      context.read<AssistantChromeCubit>().exitLiveMode();
+      context.read<AssistantChromeCubit>()
+        ..setComposerVisible(visible: false)
+        ..exitLiveMode();
+      _inputController.clear();
+      _dismissKeyboard();
     }
     final previousDisconnect = _workspaceDisconnect;
     _workspaceDisconnect = () async {
@@ -714,12 +333,19 @@ class _AssistantPageState extends State<AssistantPage>
     });
   }
 
+  void _toggleComposerNavigation() {
+    _dismissKeyboard();
+    context.read<AssistantChromeCubit>().toggleComposerNavigation();
+  }
+
   void _dismissKeyboard() {
     FocusManager.instance.primaryFocus?.unfocus();
   }
 
   void _handleInputFocusChange() {
     if (_inputFocusNode.hasFocus) {
+      final chrome = context.read<AssistantChromeCubit>();
+      if (chrome.state.navigationExpanded) chrome.toggleComposerNavigation();
       _setComposerVisible(true);
       _resetComposerVisibilityAnchor();
     }
@@ -765,7 +391,10 @@ class _AssistantPageState extends State<AssistantPage>
   }
 
   void _syncComposerVisibilityForBuild({required bool keyboardVisible}) {
-    if (!keyboardVisible || _isComposerVisible) {
+    if (!keyboardVisible ||
+        !_inputFocusNode.hasFocus ||
+        !TickerMode.valuesOf(context).enabled ||
+        _isComposerVisible) {
       return;
     }
 
@@ -783,9 +412,8 @@ class _AssistantPageState extends State<AssistantPage>
       return;
     }
 
-    setState(() {
-      _isComposerVisible = value;
-    });
+    context.read<AssistantChromeCubit>().setComposerVisible(visible: value);
+    setState(() => _isComposerVisible = value);
   }
 
   void _setScrollToBottomFabVisible(bool value) {
@@ -957,12 +585,6 @@ class _AssistantPageState extends State<AssistantPage>
     }
   }
 
-  Future<void> _toggleFullscreen(bool value) async {
-    FocusManager.instance.primaryFocus?.unfocus();
-    context.read<AssistantChromeCubit>().setFullscreen(value: value);
-    _shellCubit.setImmersiveMode(value);
-  }
-
   void _showInlineNotice(String message) {
     final messenger = ScaffoldMessenger.maybeOf(context);
     messenger?.hideCurrentSnackBar();
@@ -1048,24 +670,22 @@ class _AssistantPageState extends State<AssistantPage>
     );
   }
 
-  double _horizontalPadding(BuildContext context) {
-    return context.isCompact ? 16 : 24;
-  }
+  double _horizontalPadding(BuildContext context) =>
+      context.isCompact ? 16 : 24;
 
   double _composerReservedSpace(
     BuildContext context, {
-    required bool isFullscreen,
-    required bool hasAttachments,
     required bool isComposerVisible,
   }) {
-    if (!isComposerVisible) {
-      return _hiddenComposerReservedSpace +
-          (isFullscreen ? MediaQuery.paddingOf(context).bottom : 16);
-    }
-
-    final baseHeight = hasAttachments ? 236.0 : 196.0;
-    return baseHeight +
-        (isFullscreen ? MediaQuery.paddingOf(context).bottom : 16);
+    return (isComposerVisible
+            ? assistantComposerHeight(context) + 24
+            : _hiddenComposerReservedSpace) +
+        MediaQuery.paddingOf(context).bottom +
+        (isComposerVisible &&
+                context.read<AssistantChromeCubit>().state.navigationExpanded &&
+                MediaQuery.viewInsetsOf(context).bottom == 0
+            ? assistantExpandedNavigationClearance
+            : 0);
   }
 
   void _maybeResetEmptyStateScroll({

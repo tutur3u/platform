@@ -29,9 +29,15 @@ class FloatingShellDock extends StatefulWidget {
     this.scrollableHeader = false,
     this.keyboardVisible = false,
     this.onVisibilityChanged,
+    this.navigationBottomOffset = 0,
+    this.reserveNavigationClearance = true,
+    this.keepNavigationVisible = false,
     super.key,
   });
 
+  final double navigationBottomOffset;
+  final bool reserveNavigationClearance;
+  final bool keepNavigationVisible;
   final String location;
   final double bottomInset;
   final Widget navigation;
@@ -65,6 +71,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
   void didUpdateWidget(covariant FloatingShellDock oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.location != widget.location ||
+        oldWidget.keepNavigationVisible != widget.keepNavigationVisible ||
         (widget.bottomInset == 0 && widget.header == null)) {
       _returnTimer?.cancel();
       _hidden = false;
@@ -134,7 +141,10 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
             .background ??
         Theme.of(context).colorScheme.surface;
     final active = widget.bottomInset > 0;
-    final clearance = active ? widget.bottomInset + media.padding.bottom : 0.0;
+    final clearance = active && widget.reserveNavigationClearance
+        ? widget.bottomInset + media.padding.bottom
+        : media.padding.bottom;
+    final navigationHidden = _hidden && !widget.keepNavigationVisible;
     final headerClearance = widget.header == null || widget.scrollableHeader
         ? 0.0
         : _headerInset;
@@ -169,7 +179,9 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                   curve: Curves.easeOutCubic,
                   offset: headerHidden ? const Offset(0, -1.3) : Offset.zero,
                   child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 180),
+                    duration: media.disableAnimations
+                        ? Duration.zero
+                        : const Duration(milliseconds: 180),
                     opacity: headerHidden ? 0 : 1,
                     child: ColoredBox(
                       key: const ValueKey('floating-shell-header-surface'),
@@ -184,22 +196,22 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
             Positioned(
               left: 0,
               right: 0,
-              bottom: 0,
+              bottom: widget.navigationBottomOffset,
               child: SafeArea(
                 top: false,
                 child: ShellKeyboardChrome(
                   keyboardVisible: widget.keyboardVisible,
                   builder: (context, {required hidden, required settled}) =>
                       ExcludeSemantics(
-                        excluding: _hidden || hidden,
+                        excluding: navigationHidden || hidden,
                         child: IgnorePointer(
-                          ignoring: _hidden || hidden,
+                          ignoring: navigationHidden || hidden,
                           child: AnimatedSlide(
                             duration: media.disableAnimations
                                 ? Duration.zero
                                 : const Duration(milliseconds: 240),
                             curve: Curves.easeOutCubic,
-                            offset: _hidden || hidden
+                            offset: navigationHidden || hidden
                                 ? const Offset(0, 1.3)
                                 : Offset.zero,
                             child: AnimatedOpacity(
@@ -209,7 +221,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                               duration: media.disableAnimations
                                   ? Duration.zero
                                   : const Duration(milliseconds: 180),
-                              opacity: _hidden || hidden ? 0 : 1,
+                              opacity: navigationHidden || hidden ? 0 : 1,
                               child: Offstage(
                                 offstage: hidden && settled,
                                 child: _DockActions(
