@@ -52,7 +52,7 @@ console.log('1..22');
 try {
   await control.unsafe(
     'begin;' +
-      "create function public.imc_id(n integer) returns uuid language sql immutable as $$select ('00009020-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid$$;\ninsert into auth.users(id) values(imc_id(1));\ninsert into public.users(id) values(imc_id(1)) on conflict do nothing;\ninsert into public.workspaces(id,name,personal,creator_id) values(imc_id(10),'Synthetic merge',false,imc_id(1)),(imc_id(11),'Other workspace',false,imc_id(1));\ninsert into public.workspace_members(ws_id,user_id,type) values(imc_id(10),imc_id(1),'MEMBER') on conflict do nothing;\ninsert into public.workspace_users(id,ws_id,full_name) values(imc_id(90),imc_id(10),'Synthetic merge actor');\ninsert into private.inventory_owners(id,ws_id,name) values(imc_id(20),imc_id(10),'Owner');\ninsert into private.inventory_units(id,ws_id,name) values(imc_id(21),imc_id(10),'Each'),(imc_id(22),imc_id(10),'Box');\ninsert into private.inventory_warehouses(id,ws_id,name) values(imc_id(30),imc_id(10),'Source warehouse'),(imc_id(31),imc_id(10),'Target warehouse'),(imc_id(32),imc_id(11),'Other');\ninsert into public.product_categories(id,ws_id,name) values(imc_id(40),imc_id(10),'Category');\ninsert into public.workspace_products(id,ws_id,name,owner_id,category_id) values\n (imc_id(50),imc_id(10),'Source product',imc_id(20),imc_id(40)),(imc_id(51),imc_id(10),'Target product',imc_id(20),imc_id(40)),\n (imc_id(52),imc_id(10),'Third product',imc_id(20),imc_id(40));\ninsert into private.inventory_products(product_id,warehouse_id,unit_id,amount,price,min_amount) values\n (imc_id(50),imc_id(30),imc_id(21),3,100,1),(imc_id(51),imc_id(30),imc_id(21),7,200,2),\n (imc_id(50),imc_id(30),imc_id(22),2,500,0);\ninsert into public.product_stock_changes(id,product_id,warehouse_id,unit_id,amount,creator_id) values(imc_id(60),imc_id(50),imc_id(30),imc_id(21),3,imc_id(90));\n\ninsert into private.inventory_owners(id,ws_id,name) values(imc_id(120),imc_id(11),'Other owner');\ninsert into public.product_categories(id,ws_id,name) values(imc_id(140),imc_id(11),'Other category');\ninsert into public.workspace_products(id,ws_id,name,owner_id,category_id) values(imc_id(150),imc_id(11),'Other product',imc_id(120),imc_id(140));\ninsert into private.inventory_units(id,ws_id,name) values(imc_id(121),imc_id(11),'Other unit'),(imc_id(122),imc_id(11),'Other unit two');\ninsert into private.inventory_products(product_id,warehouse_id,unit_id,amount,price) values(imc_id(150),imc_id(32),imc_id(121),10,200);\ncreate function private.imc_pause_merge() returns trigger language plpgsql as $$ begin\n if new.ws_id=public.imc_id(10) then perform pg_sleep(3); end if; return new;\nend; $$;\ncreate trigger imc_pause_merge after insert on private.inventory_identity_merges for each row execute function private.imc_pause_merge();\n\ninsert into public.workspace_products(id,ws_id,name,owner_id,category_id) values(public.imc_id(53),public.imc_id(10),'Row lock source',public.imc_id(20),public.imc_id(40));" +
+      "create function public.imc_id(n integer) returns uuid language sql immutable as $$select ('00009020-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid$$;\ninsert into auth.users(id) values(imc_id(1));\ninsert into public.users(id) values(imc_id(1)) on conflict do nothing;\ninsert into public.workspaces(id,name,personal,creator_id) values(imc_id(10),'Synthetic merge',false,imc_id(1)),(imc_id(11),'Other workspace',false,imc_id(1));\ninsert into public.workspace_members(ws_id,user_id,type) values(imc_id(10),imc_id(1),'MEMBER') on conflict do nothing;\ninsert into public.workspace_users(id,ws_id,full_name) values(imc_id(90),imc_id(10),'Synthetic merge actor');\ninsert into private.inventory_owners(id,ws_id,name) values(imc_id(20),imc_id(10),'Owner');\ninsert into private.inventory_units(id,ws_id,name) values(imc_id(21),imc_id(10),'Each'),(imc_id(22),imc_id(10),'Box');\ninsert into private.inventory_warehouses(id,ws_id,name) values(imc_id(30),imc_id(10),'Source warehouse'),(imc_id(31),imc_id(10),'Target warehouse'),(imc_id(32),imc_id(11),'Other');\ninsert into public.product_categories(id,ws_id,name) values(imc_id(40),imc_id(10),'Category');\ninsert into public.workspace_products(id,ws_id,name,owner_id,category_id) values\n (imc_id(50),imc_id(10),'Source product',imc_id(20),imc_id(40)),(imc_id(51),imc_id(10),'Target product',imc_id(20),imc_id(40)),\n (imc_id(52),imc_id(10),'Third product',imc_id(20),imc_id(40));\ninsert into private.inventory_products(product_id,warehouse_id,unit_id,amount,price,min_amount) values\n (imc_id(50),imc_id(30),imc_id(21),3,100,1),(imc_id(51),imc_id(30),imc_id(21),7,200,2),\n (imc_id(50),imc_id(30),imc_id(22),2,500,0);\ninsert into public.product_stock_changes(id,product_id,warehouse_id,unit_id,amount,creator_id) values(imc_id(60),imc_id(50),imc_id(30),imc_id(21),3,imc_id(90));\n\ninsert into private.inventory_owners(id,ws_id,name) values(imc_id(120),imc_id(11),'Other owner');\ninsert into public.product_categories(id,ws_id,name) values(imc_id(140),imc_id(11),'Other category');\ninsert into public.workspace_products(id,ws_id,name,owner_id,category_id) values(imc_id(150),imc_id(11),'Other product',imc_id(120),imc_id(140));\ninsert into private.inventory_units(id,ws_id,name) values(imc_id(121),imc_id(11),'Other unit'),(imc_id(122),imc_id(11),'Other unit two');\ninsert into private.inventory_products(product_id,warehouse_id,unit_id,amount,price) values(imc_id(150),imc_id(32),imc_id(121),10,200);\ncreate function private.imc_pause_merge() returns trigger language plpgsql as $$ begin\n if new.ws_id=public.imc_id(10) then perform pg_advisory_xact_lock(900302020); end if; return new;\nend; $$;\ncreate trigger imc_pause_merge after insert on private.inventory_identity_merges for each row execute function private.imc_pause_merge();\n\ninsert into public.workspace_products(id,ws_id,name,owner_id,category_id) values(public.imc_id(53),public.imc_id(10),'Row lock source',public.imc_id(20),public.imc_id(40));" +
       'commit;'
   );
   await control`insert into public.workspace_products(id,ws_id,name,owner_id,category_id)
@@ -73,10 +73,11 @@ try {
     distinct && collision,
     'Both bucket cases must have real independent fixture identities'
   );
+  await writer`select pg_advisory_lock(900302020)`;
   const merging = apply(merge).then((result) => result);
   await deadlineWait(
     () =>
-      control`select 1 from pg_stat_activity where application_name='imc_1' and wait_event='PgSleep'`
+      control`select 1 from pg_stat_activity where application_name='imc_1' and wait_event='advisory'`
   );
   await control`update private.inventory_products set amount=amount+1 where product_id=${id(150)}`;
   ok('unrelated workspace stock UPDATE during actual merge');
@@ -118,6 +119,7 @@ try {
   ok('concurrent workspace merge fails fast');
   assert.equal((await control`show lock_timeout`)[0].lock_timeout, '0');
   ok('failed advisory merge preserves caller timeout');
+  await writer`select pg_advisory_unlock(900302020)`;
   assert.equal((await merging)[0].result.merged, true);
   ok('actual independent merge commits');
   assert.equal(
@@ -211,6 +213,8 @@ try {
   ok('ordinary live-workspace deletion retains merged identity guard');
   assert.equal(checks, 22);
 } finally {
+  // Always release the test-only barrier, including assertion failures.
+  await writer`select pg_advisory_unlock(900302020)`;
   await control.unsafe(
     'drop trigger if exists imc_pause_merge on private.inventory_identity_merges; drop function if exists private.imc_pause_merge();'
   );
