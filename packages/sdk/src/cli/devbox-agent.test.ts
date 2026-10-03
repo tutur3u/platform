@@ -125,6 +125,51 @@ describe('Devbox agent upgrade handoff', () => {
     await loop;
     expect(started).toEqual(['first', 'second', 'maintenance']);
   });
+  it.each([
+    ['__ttr_restart_agent_v1__', 'extra'],
+    ['bun i', '-g', 'tuturuuu'],
+  ])(
+    'does not serialize malformed maintenance envelopes: %j',
+    async (...command) => {
+      let release!: () => void;
+      const pending = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const started: string[] = [];
+      executeJob.mockImplementation(async (job: { runId: string }) => {
+        started.push(job.runId);
+        await pending;
+        return { exitCode: 0, status: 'succeeded' };
+      });
+      pollJobs.mockResolvedValue({
+        ok: true,
+        jobs: [
+          { runId: 'ordinary', command: ['echo'] },
+          { runId: 'malformed', command },
+          { runId: 'next', command: ['echo'] },
+        ],
+      });
+      const loop = runDevboxAgentLoop({
+        baseUrl: 'https://example.test',
+        once: true,
+        token: 'fixture',
+      });
+      try {
+        await vi.waitFor(() =>
+          expect(started).toEqual(['ordinary', 'malformed', 'next'])
+        );
+      } finally {
+        release();
+        await loop;
+      }
+      expect(process.stdout.write).not.toHaveBeenCalledWith(
+        'Restart requested. Exiting for service manager restart.\n'
+      );
+      expect(process.stdout.write).not.toHaveBeenCalledWith(
+        'Devbox CLI updated. Exiting for service manager restart.\n'
+      );
+    }
+  );
   it('does not dispatch newly claimed jobs after an in-flight execution failure', async () => {
     let rejectJob!: (error: Error) => void;
     const execution = new Promise<never>((_, reject) => {
