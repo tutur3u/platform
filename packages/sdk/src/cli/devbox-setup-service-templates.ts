@@ -1,3 +1,7 @@
+import {
+  type DevboxExecutionMode,
+  protectedSystemdSettings,
+} from './devbox-host-protection';
 export type DevboxServiceManager = 'auto' | 'launchd' | 'systemd';
 
 export function getServiceDefinitionPath(
@@ -19,10 +23,14 @@ function xmlEscape(value: string) {
 
 export function renderSystemdUnit({
   checkoutDir,
+  executionMode = 'trusted',
+  serviceHome,
   serviceUser,
   wrapperPath,
 }: {
   checkoutDir: string;
+  executionMode?: DevboxExecutionMode;
+  serviceHome?: string;
   serviceUser: string;
   wrapperPath: string;
 }) {
@@ -39,6 +47,16 @@ export function renderSystemdUnit({
     `ExecStart=${wrapperPath}`,
     'Restart=always',
     'RestartSec=5',
+    'NoNewPrivileges=yes',
+    'UMask=0077',
+    ...(serviceHome ? [`Environment=HOME=${serviceHome}`] : []),
+    ...(executionMode === 'judge-only'
+      ? protectedSystemdSettings(
+          checkoutDir,
+          wrapperPath,
+          serviceHome ?? checkoutDir
+        )
+      : []),
     '',
     '[Install]',
     'WantedBy=multi-user.target',

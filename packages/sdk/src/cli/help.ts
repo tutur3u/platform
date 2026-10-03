@@ -1,3 +1,4 @@
+import { boxHelp } from './help-devbox';
 import { getGlobalHelp } from './help-global';
 import { resourcesHelp } from './resources';
 
@@ -13,80 +14,7 @@ interface HelpTopic {
   usage: string;
 }
 const helpTopics: Record<string, HelpTopic> = {
-  box: {
-    commands: [
-      'run -- <command>             auto-lease a remote devbox and run a command',
-      'build                       run a build command on a remote devbox',
-      'serve                       build and serve an app from a remote devbox',
-      'tunnel                      run a dockerized Cloudflare tunnel',
-      'lease                        create a warm reusable devbox lease',
-      'release <lease-id>           release a kept lease',
-      'preview --lease <id> --port  expose an authenticated HTTP preview',
-      'agent register               create a self-hosted runner token',
-      'shutdown                     remove this runner from the cluster',
-      'cache list|prune             inspect or prune runner cache metadata',
-      'doctor                       inspect local runner prerequisites',
-      'setup                        clone, install, start Supabase, and wire env',
-      'connect                      register a runner without a platform checkout',
-      'judge doctor                 verify pinned images and sandbox readiness',
-      'repair                       repair an existing runner service without rotating its token',
-      'upgrade                      upgrade the CLI on a remote runner',
-      'restart                      restart a managed remote runner agent',
-    ],
-    description:
-      'Remote devboxes run trusted development commands on self-hosted machines; Judge submissions use a separate sandbox runtime.',
-    examples: [
-      'ttr box doctor',
-      'ttr box setup',
-      'ttr box connect --service --runner-name "$(hostname)-devbox"',
-      'ttr box judge doctor --images "$TUTURUUU_JUDGE_IMAGES"',
-      'ttr box repair --dir .',
-      'ttr box upgrade --runner <runner-id>',
-      'ttr box restart --runner <runner-id>',
-      'TUTURUUU_DEVBOX_RUNNER_TOKEN=<token> ttr box shutdown',
-      'ttr box run -- bun check',
-      'ttr box build --cwd apps/web',
-      'ttr box serve --cwd apps/web --port 7803 --database-url-env DEVBOX_DATABASE_URL',
-      'ttr box tunnel --cloudflared-token-env CLOUDFLARED_TOKEN',
-      'ttr box run --keep --preview-port 7803 -- bun test:e2e',
-      'ttr box preview --lease <lease-id> --port 7803',
-    ],
-    options: [
-      '--runner <id>                prefer a specific runner',
-      '--lease <id>                 reuse an existing kept lease',
-      '--reuse                      reuse a compatible warm lease when possible',
-      '--keep                       keep the lease warm after the command exits',
-      '--timeout <duration>         command timeout; build/serve/tunnel default to none',
-      '--wait                       wait for serve or tunnel runs to exit',
-      '--preview-port <port>        request preview forwarding for a port',
-      '--env KEY=value              set one-off remote env values',
-      '--env-file <path>            explicitly send a remote env file',
-      '--cwd <path>                 app/package directory for build or serve',
-      '--build-command <cmd>        custom shell build command',
-      '--serve-command <cmd>        custom shell serve command',
-      '--port <port>                serve port, defaults to 7803',
-      '--database-url <url>         set DATABASE_URL for the remote run',
-      '--database-url-env <env>     read DATABASE_URL from a local env var',
-      '--cloudflared                start a dockerized Cloudflare tunnel with serve',
-      '--cloudflared-token-env <env> read a local tunnel token env var',
-      '--cloudflared-image <image>  Cloudflare tunnel Docker image',
-      '--dir <path>                 setup checkout path, defaults to the current platform checkout',
-      '--clone-into <path>          clone into this path when setup target is not a platform checkout',
-      '--agent                      register this machine as a runner during setup',
-      '--service                    install a boot-starting runner service during setup',
-      '--runner-name <name>         runner name for setup registration',
-      '--service-manager <manager>  auto, systemd, or launchd',
-      '--service-user <user>        OS user for the installed runner service',
-      '--token-file <path>          path for the runner token env file',
-      '--dry-run                    inspect repair inputs without writing service files',
-      '--no-restart                 repair service files without restarting the service',
-      '--token <token>              runner token for agent start or shutdown',
-      '--yes                       install detected missing prerequisites during setup',
-      '--json                       print machine-readable JSON',
-    ],
-    usage:
-      'ttr box <run|build|serve|tunnel|lease|release|preview|agent|shutdown|cache|doctor|setup|repair|upgrade>',
-  },
+  box: boxHelp,
   boards: {
     commands: [
       'list                         list boards in the current workspace',
