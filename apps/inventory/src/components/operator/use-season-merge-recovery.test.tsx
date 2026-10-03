@@ -248,4 +248,37 @@ describe('season merge exact request recovery', () => {
     expect(api.apply).not.toHaveBeenCalled();
     expect(readPendingSeasonMerge('actor-a', 'workspace')).toBeNull();
   });
+  it('sends one original request for same-tick submissions and reconciliation', async () => {
+    let reject!: (error: Error) => void;
+    api.apply.mockImplementationOnce(
+      () =>
+        new Promise((_, fail) => {
+          reject = fail;
+        })
+    );
+    const hook = setup();
+    await waitFor(() => expect(hook.result.current.loading).toBe(false));
+    act(() => {
+      hook.result.current.mutation.mutate(request);
+      hook.result.current.mutation.mutate(request);
+    });
+    await waitFor(() => expect(api.apply).toHaveBeenCalledTimes(1));
+    act(() => reject(new TypeError('synthetic lost response')));
+    await waitFor(() => expect(hook.result.current.pending).toBe(false));
+    expect(readPendingSeasonMerge('actor-a', 'workspace')).toEqual(request);
+    api.apply.mockResolvedValueOnce({
+      merged: true,
+      targetId: request.payload.targetId,
+      importedPriceCount: 0,
+    });
+    act(() => {
+      hook.result.current.retry();
+      hook.result.current.retry();
+    });
+    await waitFor(() => expect(api.apply).toHaveBeenCalledTimes(2));
+    expect(api.apply.mock.calls[1]).toEqual(['workspace', request.payload]);
+    await waitFor(() =>
+      expect(readPendingSeasonMerge('actor-a', 'workspace')).toBeNull()
+    );
+  });
 });

@@ -21,6 +21,7 @@ export function useSeasonMergeRecovery({
 }) {
   const client = useQueryClient();
   const scope = JSON.stringify([actorId, wsId]);
+  const inFlight = useRef(false);
   const currentScope = useRef<string | null>(scope);
   currentScope.current = scope;
   useEffect(() => {
@@ -41,6 +42,9 @@ export function useSeasonMergeRecovery({
   });
   const mutation = useMutation({
     retry: false,
+    onSettled: () => {
+      inFlight.current = false;
+    },
     onMutate: (record: PendingSeasonMerge) => ({
       firstAttempt: !readPendingSeasonMerge(record.actorId, record.wsId),
     }),
@@ -77,6 +81,22 @@ export function useSeasonMergeRecovery({
       }
     },
   });
+  // Reserve synchronously before React Query awaits its mutation callbacks.
+  // Two same-tick submissions must not both classify themselves as first.
+  const guardedMutation = {
+    ...mutation,
+    mutate: (record: PendingSeasonMerge) => {
+      if (inFlight.current) return;
+      inFlight.current = true;
+      mutation.mutate(record);
+    },
+    mutateAsync: (record: PendingSeasonMerge) => {
+      if (inFlight.current)
+        return Promise.reject(new Error('Season merge already pending'));
+      inFlight.current = true;
+      return mutation.mutateAsync(record);
+    },
+  };
   const scopedMutation =
     mutation.variables &&
     JSON.stringify([mutation.variables.actorId, mutation.variables.wsId]) ===
@@ -91,9 +111,9 @@ export function useSeasonMergeRecovery({
       !!scopedMutation &&
       mutation.error instanceof InternalApiError &&
       [401, 403].includes(mutation.error.status),
-    mutation,
+    mutation: guardedMutation,
     retry: () => {
-      if (recovery.data && !mutation.isPending) mutation.mutate(recovery.data);
+      if (recovery.data) guardedMutation.mutate(recovery.data);
     },
     refreshStorage: () => void recovery.refetch(),
   };
