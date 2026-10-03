@@ -97,4 +97,16 @@ describe('fleet upgrade eligibility', () => {
       []
     );
   });
+  it('fails closed when the runner list itself reaches its page limit', async () => {
+    const { planUpgrades } = await modulePromise;
+    assert.deepEqual(
+      planUpgrades(
+        { runners: Array.from({ length: 50 }, () => runner), runs: [] },
+        ['allowed'],
+        '0.27.0',
+        now
+      ),
+      []
+    );
+  });
 });

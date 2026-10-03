@@ -156,6 +156,12 @@ export async function runDevboxRepair(
     );
   const dockerHost = options.dockerHost ?? readSetting('DOCKER_HOST');
 
+  const serviceUser =
+    options.serviceUser ?? readSetting('TUTURUUU_DEVBOX_SERVICE_USER');
+  if (executionMode === 'judge-only' && !serviceUser)
+    throw new Error(
+      'Protected repair requires --service-user for legacy token files that do not persist the dedicated OS account.'
+    );
   const checkout = await resolveExistingDevboxCheckout({
     cwd: options.cwd,
     dir: options.dir,
@@ -166,20 +172,24 @@ export async function runDevboxRepair(
   await preflightProtectedService({
     mode: executionMode,
     manager,
-    serviceUser: options.serviceUser ?? userInfo().username,
+    serviceUser: serviceUser ?? userInfo().username,
     checkoutDir: checkout.path,
     tokenFile,
     cliCommand: [process.execPath, process.argv[1] ?? 'ttr'],
     dockerHost,
     runCommand,
   });
-  if (!options.dryRun && (options.executionMode || options.dockerHost)) {
+  if (
+    !options.dryRun &&
+    (options.executionMode || options.dockerHost || options.serviceUser)
+  ) {
     const metadata = await lstat(tokenFile);
     if (!metadata.isFile() || metadata.isSymbolicLink())
       throw new Error('Runner token file must be a regular private file.');
     let updated = content;
     for (const [key, value] of Object.entries({
       TUTURUUU_DEVBOX_EXECUTION_MODE: executionMode,
+      ...(serviceUser ? { TUTURUUU_DEVBOX_SERVICE_USER: serviceUser } : {}),
       ...(dockerHost ? { DOCKER_HOST: dockerHost } : {}),
     })) {
       updated = updated
@@ -221,7 +231,7 @@ export async function runDevboxRepair(
         json: options.json,
         manager,
         runCommand,
-        serviceUser: options.serviceUser,
+        serviceUser,
         tokenFile,
       });
 

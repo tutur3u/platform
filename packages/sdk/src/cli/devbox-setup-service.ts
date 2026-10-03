@@ -124,6 +124,7 @@ export async function writeRunnerTokenFile({
   executionMode,
   dockerHost,
   controlUrl,
+  serviceUser,
   token,
   tokenFile,
 }: {
@@ -131,6 +132,7 @@ export async function writeRunnerTokenFile({
   executionMode?: DevboxExecutionMode;
   dockerHost?: string;
   controlUrl?: string;
+  serviceUser?: string;
   token: string;
   tokenFile?: string;
 }) {
@@ -152,7 +154,7 @@ export async function writeRunnerTokenFile({
   await mkdir(dirname(resolvedTokenFile), { mode: 0o700, recursive: true });
   await writeFile(
     resolvedTokenFile,
-    `TUTURUUU_DEVBOX_RUNNER_TOKEN=${shellQuote(token)}\nTUTURUUU_DEVBOX_EXECUTION_MODE=${shellQuote(mode)}\n${dockerHost ? `DOCKER_HOST=${shellQuote(dockerHost)}\n` : ''}${controlUrl ? `TUTURUUU_DEVBOX_CONTROL_URL=${shellQuote(controlUrl)}\n` : ''}${judgeImages ? `TUTURUUU_JUDGE_IMAGES=${shellQuote(judgeImages)}\n` : ''}`,
+    `TUTURUUU_DEVBOX_RUNNER_TOKEN=${shellQuote(token)}\nTUTURUUU_DEVBOX_EXECUTION_MODE=${shellQuote(mode)}\n${dockerHost ? `DOCKER_HOST=${shellQuote(dockerHost)}\n` : ''}${controlUrl ? `TUTURUUU_DEVBOX_CONTROL_URL=${shellQuote(controlUrl)}\n` : ''}${serviceUser ? `TUTURUUU_DEVBOX_SERVICE_USER=${shellQuote(serviceUser)}\n` : ''}${judgeImages ? `TUTURUUU_JUDGE_IMAGES=${shellQuote(judgeImages)}\n` : ''}`,
     {
       mode: 0o600,
     }
@@ -500,6 +502,7 @@ export async function setupDevboxRunner({
     executionMode,
     dockerHost: options.dockerHost,
     controlUrl: options.controlUrl,
+    serviceUser: options.serviceUser,
     token: registration.token,
     tokenFile: options.tokenFile,
   });

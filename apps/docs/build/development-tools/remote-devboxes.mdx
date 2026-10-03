@@ -209,7 +209,9 @@ personal homes. Protected systemd units hide personal homes, make the host
 filesystem read-only except runner directories, remove capabilities, restrict
 devices, namespaces and kernel access, and set a private umask. Repair preserves
 an existing Judge-only policy and refuses to weaken it; `--dry-run` performs the
-same preflight before service writes. The wrapper prefers the service user's
+same preflight before service writes. Setup persists the dedicated service user
+for subsequent repair. Older private token files need `--service-user` once;
+repair then retains it without rotating the runner token. The wrapper prefers the service user's
 global `ttr` executable so upgrades affect the running service. Before starting
 a protected agent, it requires `box agent policy` to succeed on that executable;
 an older CLI lacking policy support fails closed rather than launching. Launchd lacks

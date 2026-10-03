@@ -47,6 +47,7 @@ export function planUpgrades(
       .map((row) => row.id);
     const age = now - Date.parse(runner.last_heartbeat_at ?? '');
     return (
+      snapshot.runners.length < 50 &&
       snapshot.runs.length < 50 &&
       (snapshot.leases?.length ?? 0) < 50 &&
       !snapshot.leases?.some(
@@ -163,7 +164,9 @@ async function main() {
         latest: version,
         apply: args.includes('--apply'),
         snapshotTruncated:
-          initial.runs.length >= 50 || (initial.leases?.length ?? 0) >= 50,
+          initial.runners.length >= 50 ||
+          initial.runs.length >= 50 ||
+          (initial.leases?.length ?? 0) >= 50,
         candidates: candidates.map(({ id, name }) => ({ id, name })),
       })
     );
@@ -218,7 +221,7 @@ async function main() {
       );
     }
   } finally {
-    await rm(lock, { recursive: true });
+    await release();
   }
 }
 

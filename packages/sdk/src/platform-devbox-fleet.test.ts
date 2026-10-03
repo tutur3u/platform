@@ -73,5 +73,12 @@ describe('platform-owned fleet boundary', () => {
         1000
       )
     ).toContain('truncated');
+    expect(
+      runnerMaintenanceBlocker(
+        { ...snapshot, runners: Array.from({ length: 50 }, () => runner) },
+        runner,
+        1000
+      )
+    ).toContain('truncated');
   });
 });
