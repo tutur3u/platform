@@ -38,9 +38,11 @@ deployed. [Vercel staging and promotion](https://vercel.com/docs/cli/deploying-f
 retain the same built artifact. The CLI probe uses deployment-protection bypass
 through [vercel curl](https://vercel.com/docs/cli/curl); it supplies no application
 valid session and reads no customer records. Public `GET`/`HEAD` build metadata reads do not require satellite cookies.
-Machine-key and provider JWT request shapes reach the shared API guard without
-browser session refresh; the real API still verifies those credentials. Browser
-business requests retain session refresh and assurance checks. CMS middleware
+CMS machine-key requests remove ambient cookies from the guard and forwarded
+request, so invalid keys cannot borrow a browser actor and expired cookies do
+not interfere with independent API-key verification. JWT-shaped headers retain
+browser session refresh and assurance checks; their shape is not proof of
+authentication. Public metadata reads discard incidental session credentials. CMS middleware
 regressions cover metadata access, invalid machine-key forwarding, guard denial,
 and browser assurance failures in `apps/cms/src/proxy.test.ts`.
 

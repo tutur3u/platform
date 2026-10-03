@@ -18,10 +18,7 @@ import {
   getCurrentUserDefaultWorkspace,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
-import {
-  guardApiProxyRequest,
-  hasAuthenticatedBearerToken,
-} from '@tuturuuu/utils/api-proxy-guard';
+import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
@@ -72,14 +69,25 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
-    // Build metadata is public; machine credentials are verified by the real
-    // API boundary, independently of a browser's satellite session cookies.
+    // Build metadata is intentionally public. Only opaque workspace-key shapes
+    // choose machine transport; a JWT shape is never proof of authentication.
     const isBuildInfoRead =
       req.nextUrl.pathname === '/api/build-info' &&
       (req.method === 'GET' || req.method === 'HEAD');
-    const hasBearerApiSession = hasAuthenticatedBearerToken(req.headers);
+    const hasMachineKey = /^Bearer\s+ttr_(?!app_)[A-Za-z0-9_-]+$/i.test(
+      req.headers.get('authorization')?.trim() ?? ''
+    );
+    if (isBuildInfoRead || hasMachineKey) {
+      // Remove ambient identities from BOTH the guard and downstream handlers.
+      // An invalid key must not fall back to a valid browser cookie; an expired
+      // cookie must not block independently verified machine credentials.
+      for (const cookie of req.cookies.getAll())
+        req.cookies.delete(cookie.name);
+      req.headers.delete('cookie');
+      if (isBuildInfoRead) req.headers.delete('authorization');
+    }
     const appSessionRefresh =
-      isLocalAuthApi || isBuildInfoRead || hasBearerApiSession
+      isLocalAuthApi || isBuildInfoRead || hasMachineKey
         ? null
         : await refreshAppSessionForRequest(req, {
             sessionMode: 'supabase-first',
@@ -103,6 +111,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       }
       return preserveMfaRecoveryCookies(req, guardResponse);
     }
+
+    if (isBuildInfoRead || hasMachineKey)
+      return NextResponse.next({ request: { headers: req.headers } });
 
     return (
       appSessionRefresh?.response ??
