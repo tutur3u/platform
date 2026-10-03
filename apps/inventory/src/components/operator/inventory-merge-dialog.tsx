@@ -248,7 +248,6 @@ export function InventoryMergeDialog({
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
                 <MergeSelect
-                  searchable
                   label={t('metadata')}
                   value={metadata}
                   onChange={(value) => {
@@ -263,7 +262,6 @@ export function InventoryMergeDialog({
                   placeholder={t('choose')}
                 />
                 <MergeSelect
-                  searchable
                   label={t('stockPolicy')}
                   value={stockPolicy}
                   onChange={(value) => {
