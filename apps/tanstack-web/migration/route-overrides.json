@@ -348,7 +348,7 @@
     "api:/api/:wsId/crawlers/list:apps/web/src/legacy-api-routes/[wsId]/crawlers/list/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET /api/:wsId/crawlers/list by revalidating the browser Supabase session, requiring a @tuturuuu.com user email before server-owned admin reads, preserving the legacy raw crawled_urls row payload, domain/search filters, created_at.desc ordering, exact-count pagination, and data/count response shape. Unauthorized callers now receive an explicit 401 instead of the legacy catch-all 500."
+      "note": "Rust backend handle_backend_request handles GET /api/:wsId/crawlers/list by requiring same-origin cookie mutation confirmation, revalidating the browser Supabase session or independent Bearer token, requiring a @tuturuuu.com user email before server-owned admin reads, preserving the legacy raw crawled_urls row payload, domain/search filters, created_at.desc ordering, exact-count pagination, and data/count response shape. Unauthorized callers now receive an explicit 401 instead of the legacy catch-all 500."
     },
     "api:/api/:wsId/crawlers/uncrawled:apps/web/src/legacy-api-routes/[wsId]/crawlers/uncrawled/route.ts": {
       "status": "migrated",
@@ -616,20 +616,6 @@
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
-    },
-    "api:/api/v1/inquiries:apps/web/src/legacy-api-routes/v1/inquiries/route.ts": {
-      "methods": {
-        "POST": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request verifies app-session auth for POST /api/v1/inquiries, enforces same-origin mutation confirmation for cookie auth, validates the legacy support inquiry payload, and inserts support_inquiries through the server-owned Supabase REST adapter with creator_id from the resolved app-session user. The active GET export in the dirty apps/web route remains legacy-owned until it has separate Rust backend evidence."
-        }
-      }
-    },
-    "api:/api/v1/inquiries/:id:apps/web/src/legacy-api-routes/v1/inquiries/[id]/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles PATCH /api/v1/inquiries/:id by validating the legacy is_read/is_resolved payload, revalidating the browser Supabase session, requiring a Tuturuuu or XWF email domain, patching support_inquiries through the server-owned Supabase REST adapter, and preserving the legacy { data } success body plus 400/401/500 error bodies. The adjacent media-url storage route remains legacy-owned."
     },
     "api:/api/v1/users/me/full-name:apps/web/src/legacy-api-routes/v1/users/me/full-name/route.ts": {
       "status": "migrated",
@@ -2717,6 +2703,20 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "First-class authorized workspace avatar signer reserves the resolved actor shared profile-upload and global budgets before privileged avatars ticket creation; quotas fail closed with 429/503. Rust handler is explicit backlog."
+    },
+    "api:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts": {
+      "methods": {
+        "POST": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request verifies app-session auth for POST /api/v1/inquiries, enforces same-origin mutation confirmation for cookie auth, validates the64/128/512 support inquiry limits and strict email, and inserts support_inquiries through the server-owned Supabase REST adapter with creator_id from the resolved app-session user. First-class Web GET/HEAD remain legacy-owned and fall through Rust until separate runtime evidence exists."
+        }
+      }
+    },
+    "api:/api/v1/inquiries/:id:apps/web/src/app/api/v1/inquiries/[id]/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles PATCH /api/v1/inquiries/:id by validating the legacy is_read/is_resolved payload, requiring same-origin cookie mutation confirmation, revalidating the browser Supabase session or independent Bearer token, requiring a Tuturuuu or XWF email domain, patching support_inquiries through the server-owned Supabase REST adapter, and preserving the legacy { data } success body plus 400/401/500 error bodies. The adjacent media-url storage route remains legacy-owned."
     }
   }
 }

@@ -17,7 +17,7 @@ interface Params {
 }
 
 const bodySchema = z.object({
-  contentType: z.string().min(1).max(100),
+  contentType: z.enum(['image/png', 'image/jpeg', 'image/webp', 'image/gif']),
 });
 
 export async function POST(req: Request, { params }: Params) {

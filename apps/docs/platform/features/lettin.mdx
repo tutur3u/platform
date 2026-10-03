@@ -271,7 +271,8 @@ Shared public profile-link avatar tickets reserve the account media ceilings abo
 against the verified workspace and link identity, plus the shared global ceilings,
 before issuing a signed URL; revoked or unauthorized links cannot reserve tickets.
 These tickets do not charge the link creator's account. Reservation failure prevents
-signing and returns a bounded retry delay. The shared avatar byte/MIME ceilings
+signing; quota exhaustion returns 429 with a bounded retry delay, while protection
+outages return 503 without retry timing. The shared avatar byte/MIME ceilings
 also apply. Regression evidence: the public profile-link and workspace avatar
 handlers' colocated tests, plus `profile-media-upload-limits.sql` for authenticated
 INSERT and UPDATE restrictions.
@@ -282,3 +283,16 @@ reassigned. Full-schema local seeds assign each synthetic reservation to its
 profile actor before updating the profile, so bootstrap obeys the same ownership
 and cooldown checks. The identity pgTAP fixture covers seeded ownership and a
 no-op save without consuming another allowance.
+
+
+### Support API parity safeguards
+
+The support form and Web/Rust support creation APIs enforce the existing database
+ceilings:64 characters for a name,128 for a subject, and512 for a message. Invalid
+payloads, including addresses with multiple email separators, return400 before
+storage. Cookie-authenticated creation and updates require a matching Origin or
+Referer; explicit Bearer requests retain their independent authentication checks.
+Cross-origin cookie updates return403 before Supabase access. Regression evidence:
+`support-inquiry-guard.test.ts`, the first-class inquiry route tests, and Rust
+support/g12 regressions. Profile HEAD follows GET authentication/cache/status but
+emits no response body; its Rust regression verifies the same boundary.

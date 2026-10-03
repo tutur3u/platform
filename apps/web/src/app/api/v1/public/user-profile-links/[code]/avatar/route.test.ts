@@ -81,3 +81,18 @@ it('revoked links cannot consume budgets or issue tickets', async () => {
   expect(f.budget).not.toHaveBeenCalled();
   expect(f.sign).not.toHaveBeenCalled();
 });
+
+it.each(['image/svg+xml', 'image/avif', 'text/plain'])(
+  'rejects unsupported MIME %s before reserving or signing',
+  async (contentType) => {
+    const response = await POST(
+      new Request('https://example.test/api/avatar', {
+        method: 'POST',
+        body: JSON.stringify({ contentType }),
+      }),
+      context
+    );
+    expect(response.status).toBe(400);
+    expect(f.budget).not.toHaveBeenCalled();
+  }
+);
