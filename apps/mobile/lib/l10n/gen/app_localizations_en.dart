@@ -9401,10 +9401,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cacheCategoryOther => 'Other data';
 
   @override
-  String get offlineEditSyncing => 'Syncing…';
+  String get offlineDependencyWaiting => 'Waiting for related changes. Sync will continue automatically.';
 
   @override
-  String get inventorySetupSyncFirst => 'Sync this new item before using, editing, or deleting it.';
+  String get offlineDependencyMissing => 'A related local item was discarded or deleted. Review this change.';
+
+  @override
+  String get offlineDependencyCycle => 'Related changes depend on each other. Review their references.';
+
+  @override
+  String get offlineDependencyAmbiguous => 'More than one queued create uses the same local item. Review this change.';
+
+  @override
+  String get offlineDependencyInvalid => 'The saved change has invalid data. Review it before syncing.';
+
+  @override
+  String get offlineDependencyContract => 'Waiting for server support. This change is saved and retries automatically.';
+
+  @override
+  String get offlineEditSyncing => 'Syncing…';
 
   @override
   String get offlineEditQueued => 'Waiting to sync';

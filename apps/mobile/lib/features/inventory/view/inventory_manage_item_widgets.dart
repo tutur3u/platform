@@ -87,13 +87,7 @@ class _CreateManageItemDialogState extends State<_CreateManageItemDialog> {
       if (!mounted) {
         return;
       }
-      showInventoryToast(
-        context,
-        error is InventorySetupAwaitingSync
-            ? context.l10n.inventorySetupSyncFirst
-            : error.toString(),
-        destructive: true,
-      );
+      showInventoryToast(context, error.toString(), destructive: true);
     } finally {
       if (mounted) {
         setState(() => _saving = false);

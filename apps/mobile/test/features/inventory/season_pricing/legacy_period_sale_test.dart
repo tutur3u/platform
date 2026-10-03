@@ -1,20 +1,20 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_store.dart';
-import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../helpers/offline_inventory_harness.dart';
+
 class _Api extends Mock implements ApiClient {}
 
 class _Cache extends Mock implements CacheStore {}
 
-class _Queue extends Mock implements OfflineMutationQueue {}
-
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late _Api api;
-  late _Queue queue;
+  late OfflineInventoryHarness harness;
   late InventoryRepository repository;
   const products = <Map<String, dynamic>>[
     {
@@ -30,42 +30,22 @@ void main() {
       const ApiException(message: 'Failure', statusCode: 422),
     ),
   );
-  setUp(() {
+  setUp(() async {
     api = _Api();
-    queue = _Queue();
+    harness = await OfflineInventoryHarness.create(api);
     final cache = _Cache();
     when(
       () => cache.invalidateTags(any(), workspaceId: any(named: 'workspaceId')),
     ).thenAnswer((_) async {});
-    when(
-      () => queue.enqueueIfOffline(
-        feature: 'inventory',
-        method: 'POST',
-        path: InventoryEndpoints.invoices('ws'),
-        workspaceId: 'ws',
-        payload: any(named: 'payload'),
-        entityId: any(named: 'entityId'),
-        replaySafe: true,
-      ),
-    ).thenAnswer((_) async => false);
-    when(
-      () => queue.enqueueAfterNetworkFailure(
-        error: any(named: 'error'),
-        feature: 'inventory',
-        method: 'POST',
-        path: InventoryEndpoints.invoices('ws'),
-        workspaceId: 'ws',
-        payload: any(named: 'payload'),
-        entityId: any(named: 'entityId'),
-        replaySafe: true,
-      ),
-    ).thenAnswer((_) async => false);
     repository = InventoryRepository(
       apiClient: api,
       cacheStore: cache,
-      mutationQueue: queue,
+      mutationQueue: harness.queue,
       cacheUserId: () => 'actor',
     );
+  });
+  tearDown(() async {
+    await harness.dispose();
   });
   Future<String> create() => repository.createSale(
     wsId: 'ws',
@@ -98,7 +78,10 @@ void main() {
       ),
     );
     expect(body['products'], products);
-    verifyNoMoreInteractions(api);
+    verifyNever(() => api.getJson(any()));
+    verifyNever(() => api.putJson(any(), any()));
+    verifyNever(() => api.patchJson(any(), any()));
+    verifyNever(() => api.deleteJson(any()));
   });
   test('rejected product rules do not cause '
       'a second assignment request or claim success', () async {
@@ -114,6 +97,9 @@ void main() {
     verify(
       () => api.postJson(InventoryEndpoints.invoices('ws'), any()),
     ).called(1);
-    verifyNoMoreInteractions(api);
+    verifyNever(() => api.getJson(any()));
+    verifyNever(() => api.putJson(any(), any()));
+    verifyNever(() => api.patchJson(any(), any()));
+    verifyNever(() => api.deleteJson(any()));
   });
 }

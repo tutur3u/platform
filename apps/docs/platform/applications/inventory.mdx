@@ -1,7 +1,7 @@
 ---
 title: 'Inventory'
 description: 'How inventory.tuturuuu.com is wired as the inventory satellite app, operator console, public storefront, checkout reservation, and audit operations surface.'
-updatedAt: '2026-10-01'
+updatedAt: '2026-10-03'
 ---
 
 Inventory lives in `apps/inventory` and runs locally through Portless at
@@ -31,20 +31,76 @@ Manage clears previous rows and add controls when the authenticated account or
 selected workspace changes. An open setup sheet cannot submit into a different
 account/workspace scope. These UI safeguards supplement server authorization.
 
-Native product create/update rejects an owner, manufacturer, category, unit,
-warehouse, or Finance category that is still a pending setup create without a
-server-ID mapping, before sending or queueing the product. Existing mappings are resolved within the owning account and workspace.
-The editor asks the user to sync first; confirmed references remain usable. This
-rule does not detect a stale selection after a successful setup create whose API
-returns no server ID; that contract/provenance follow-up is tracked in
-[issue #5737](https://github.com/tutur3u/platform/issues/5737). Repository
-regressions in `inventory_setup_dependencies_test.dart` cover both product writes,
-unresolved pending references, and mapped server references.
+Native Inventory writes accept pending setup selections. The dependency queue
+creates referenced owners, manufacturers, categories, units, warehouses and
+Finance categories before product writes, then applies their authoritative IDs.
+The earlier sync-first guard is replaced by automatic prerequisite handling.
+Repository regressions in `inventory_setup_dependencies_test.dart` cover both
+product writes, all six pending references, nullable optional fields and
+resource-scoped mappings. Legacy already-completed setup creates whose old API
+returned no ID cannot retroactively recover local-ID provenance; that historical
+limitation remains tracked in [issue #5737](https://github.com/tutur3u/platform/issues/5737).
 
 This compact presentation does not establish parity for web commerce checkout,
 payment providers, stock ledgers, scoped analytics, costing or effective season
 pricing. Those require their existing authorized API contracts and separate
 verification; today's catalog price must not replace historical sold prices.
+
+## Automatic offline dependency sync implementation
+
+Native create and supported Inventory mutations persist their operation identity
+before any HTTP request, including successful online creates. Online callers
+receive the authoritative acknowledged resource; offline or temporarily blocked
+callers keep their optimistic representation. This source behavior becomes
+available after the matching mobile/API/database release has passed its gates.
+
+A queued product write must wait for referenced Inventory owners, manufacturers,
+categories, units, warehouses and Finance categories to be created, regardless
+of enqueue order. Dependencies and mappings belong to the authenticated account,
+workspace and resource type. Related mutations retain their per-entity order;
+independent ready writes can progress. Missing prerequisites and dependency
+cycles remain visible without deleting queued work.
+
+Account/workspace purges serialize with durable pending writes. Malformed encrypted
+pending records remain visible as conflicts while independent valid records can
+continue; corrupt reference metadata cannot abort the entire replay pass. Online
+sale-period clearing preserves the nullable server response. These boundaries are
+covered by `offline_inventory_review_regression_test.dart` and the foreground
+verification regressions in `offline_inventory_verification_test.dart`.
+
+Product create permits at most 500 stock rows. Stock quantity and minimum quantity
+must be integers, matching their database columns; unit prices preserve fractional
+major currency amounts. Schema tests and `inventory-offline-create.sql` cover these
+limits for both online and offline create contracts.
+
+The dedicated setup/product/period create contract returns authoritative IDs and
+deduplicates the original operation identity before the client retries an uncertain
+create. The client never falls back to a legacy create route when this contract is
+missing.
+After acknowledgment, the queue persists the mapping and rewrites dependent
+paths/payload references. An acknowledged create must not be sent again because
+mapping storage or cache refresh failed. Automatic sync must preserve user data
+across account switches, restart, retry and temporary network loss.
+
+A missing endpoint or RPC retains the mutation and retries with bounded backoff,
+connectivity, authentication and app-resume wakeups. Permission/domain failures,
+canceled/deleted prerequisites, malformed payloads, ambiguous creators and cycles
+remain stored with localized diagnostics; they cannot block unrelated ready work.
+Confirmed create and write acknowledgments survive restart before mapping/dequeue.
+Successful deletions persist resource-scoped tombstones, preventing stale mappings
+from restoring deleted resources. Automatic replay never invents a replacement
+for a canceled/deleted prerequisite. Typed references never rewrite free text,
+workspace path segments or query parameters.
+
+The dedicated online scheduled-sale journal keeps its existing receipt recovery
+contract. Legacy invoices without an inventory period do not gain retry safety;
+an uncertain legacy invoice remains retained for review, rather than duplicating
+its financial effects. Wallets retain their existing stable client-ID contract.
+Regression evidence is in `offline_inventory_replay_test.dart`,
+`offline_dependency_graph_test.dart`, `offline_inventory_mutation_test.dart`,
+`finance_repository_inventory_dependency_test.dart` and
+`offline_changes_sheet_test.dart`; these synthetic tests do not establish native
+airplane-mode or authenticated production acceptance.
 
 The app is a registered Tuturuuu satellite app. It uses Tuturuuu app-session
 auth for `targetApp: 'inventory'`, exposes local `/verify-token` and
@@ -250,3 +306,46 @@ period is a no-op. Price authoring forwards the scoped catalog pagination so
 products after the first page can be selected without preloading another dialog.
 
 Atomic pricing-aware edit routing also applies before a product has its first authored price and while a legacy period is being converted. The database transaction resolves current state under its locks; routing never relies on an earlier mode or price-existence read. Checkout, stock editing and price authoring acquire stock tuples before the product row to avoid mixed legacy/scheduled lock inversion. If price support is installed but its edit transaction is unavailable, edits fail closed instead of falling back to separate writes.
+
+On native mobile, an active user Save may open the existing verification dialog
+for that record only. Background replay never opens verification dialogs or
+persists verification tokens. Canceling that dialog leaves the already-requested
+Save queued: the editor closes and the item keeps its existing **Waiting to sync**
+indicator, rather than claiming server completion or creating another operation
+on a repeated Save. The original operation identity is reused on later replay.
+Explicitly discarding the queued change cancels unsent work; canceling verification
+does not discard it. Account changes and real membership or permission denials
+retain their original error behavior. Regression coverage lives in
+`offline_inventory_verification_test.dart` and the mounted product editor tests.
+
+### Transactional offline create validation
+
+Automatic dependency sync uses a separate deduplicated create
+contract. Its private receipt and all resource, stock, history and audit effects
+commit together. Reusing an operation identity with different input is rejected.
+The service authorizes the captured account, workspace and resource permission
+before invoking this contract; customers cannot read receipts or forge actors.
+
+`.github/workflows/inventory-offline-contract.yaml` validates the exact PR head
+by applying the complete schema in a disposable hosted database, running strict
+`inventory-offline-create.sql` pgTAP assertions, and generating
+`packages/types/src/supabase.ts` as an artifact. A queued workflow is not schema
+or type parity evidence. The native scheduler persists operation identities before
+sending, orders prerequisites, and rewrites acknowledged references automatically.
+An unavailable server contract retains queued work and retries automatically; it
+never falls back to an unsafe legacy create. Release readiness still requires the
+exact-source database, generated-type, native, and owning-app CI gates.
+
+The new `/api/v1/workspaces/:wsId/inventory/offline-mutations` POST route
+accepts an operation identity, an explicit create kind and a strictly validated
+payload. Current workspace membership and the owning kind permission are checked
+on every retry, even when a prior receipt exists; a revoked grant denies the
+request. Inventory stock initialization additionally requires stock permission.
+Finance categories use `create_transactions` and accept Inventory or Finance
+app sessions. Receipt identities have no TTL or automatic pruning.
+
+Recognized responses carry `X-Tuturuuu-Offline-Contract`. Missing RPC/schema
+returns `OFFLINE_CONTRACT_UNAVAILABLE` with 503; an unknown route on an older
+deployment has no contract header. These rollout gaps must retain the operation
+and retry automatically, while a marked domain 404 or permission 403 is permanent.
+The native implementation must never fall back to an undeduplicated create POST.
