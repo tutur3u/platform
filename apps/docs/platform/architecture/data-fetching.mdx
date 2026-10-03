@@ -459,10 +459,10 @@ Use stable array query keys:
 
 ```typescript
 // ✅ Good: Specific, cacheable
-['tasks', wsId, { listId, completed: false }]
+queryClient.getQueryData(['tasks', wsId, { listId, completed: false }]);
 
 // ❌ Bad: Too generic
-['tasks']
+queryClient.getQueryData(['tasks']);
 ```
 
 ### Thin Server Gate + Client Query Shell
@@ -793,17 +793,17 @@ export function TaskDetails({ wsId, taskId }: { wsId: string; taskId: string }) 
 
 2. **Use specific query keys**
    ```typescript
-   ['tasks', wsId, { listId, status: 'active' }]
+   queryClient.getQueryData(['tasks', wsId, { listId, status: 'active' }]);
    ```
 
 3. **Set appropriate staleTime**
    ```typescript
-   staleTime: 5 * 60 * 1000 // 5 minutes for user profiles
+   queryClient.setQueryDefaults(['user-profiles'], { staleTime: 5 * 60 * 1000 }); // 5 minutes
    ```
 
 4. **Implement optimistic updates for better UX**
    ```typescript
-   onMutate: async (newData) => { /* optimistic update */ }
+   queryClient.setMutationDefaults(['tasks'], { onMutate: async (newData) => { queryClient.setQueryData(['tasks'], newData); } });
    ```
 
 5. **Invalidate narrowly**
@@ -818,7 +818,7 @@ export function TaskDetails({ wsId, taskId }: { wsId: string; taskId: string }) 
    ```typescript
    // Route client reads/writes through @tuturuuu/internal-api, not raw
    // fetch('/api/...') or trpc.* routers.
-   queryFn: () => listWorkspaceTasks(wsId);
+   useQuery({ queryKey: ['workspaces', wsId, 'tasks'], queryFn: () => listWorkspaceTasks(wsId) });
    ```
 
 ### ❌ DON'T
