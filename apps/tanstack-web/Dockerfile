@@ -61,6 +61,7 @@ COPY packages/education-core/package.json ./packages/education-core/package.json
 COPY packages/editor/package.json ./packages/editor/package.json
 COPY packages/finance-core/package.json ./packages/finance-core/package.json
 COPY packages/payment-core/package.json ./packages/payment-core/package.json
+COPY packages/programming-ui/package.json ./packages/programming-ui/package.json
 COPY packages/email-service/package.json ./packages/email-service/package.json
 COPY packages/games/package.json ./packages/games/package.json
 COPY packages/google/package.json ./packages/google/package.json
