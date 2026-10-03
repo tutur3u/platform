@@ -181,6 +181,29 @@ describe.each([
     }
   );
 
+  it('accepts canonical lowercase RPC UUIDs for an uppercase authorized workspace', async () => {
+    const wsId = 'abcdef00-0000-4000-8000-000000000000';
+    mocks.authorize.mockResolvedValue({
+      ok: true,
+      value: {
+        wsId: wsId.toUpperCase(),
+        permissions: { containsPermission: () => true },
+      },
+    });
+    const canonicalRows = [{ id: 'ordinary', name: 'Main', ws_id: wsId }];
+    sequence([
+      { status: 404, body: { code: 'PGRST205' } },
+      { status: 200, body: { warehouses: canonicalRows } },
+      { status: 200, body: canonicalRows },
+      { status: 200, body: { warehouses: canonicalRows } },
+    ]);
+    const response = await GET(
+      new Request('https://app.invalid/api'),
+      params()
+    );
+    expect(response.status).toBe(200);
+  });
+
   it.each([
     { warehouses: rows, inventoryMergeSchema: 'partial' },
     { warehouses: rows, inventoryMergeSchema: 'ready' },

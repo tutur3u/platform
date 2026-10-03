@@ -21,7 +21,8 @@ function isLegacyOptions(data: unknown, wsId: string): boolean {
       typeof row.id === 'string' &&
       row.id.length > 0 &&
       'ws_id' in row &&
-      row.ws_id === wsId &&
+      typeof row.ws_id === 'string' &&
+      row.ws_id.toLowerCase() === wsId.toLowerCase() &&
       'name' in row &&
       (row.name === null || typeof row.name === 'string')
   );
