@@ -85,7 +85,11 @@ export function runnerMaintenanceBlocker(
   )
     return 'Runner or another runner on its host has an active lease or unfinished work';
   // The admin snapshot is bounded. A full page cannot establish idleness.
-  if (snapshot.runs.length >= 50 || snapshot.leases.length >= 50)
+  if (
+    snapshot.runners.length >= 50 ||
+    snapshot.runs.length >= 50 ||
+    snapshot.leases.length >= 50
+  )
     return 'Snapshot is truncated; inspect the runner before maintenance';
   return undefined;
 }
