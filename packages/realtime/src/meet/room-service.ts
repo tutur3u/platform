@@ -26,6 +26,7 @@ import {
   type RoomLiveUsage,
   summarizeLiveUsage,
 } from './room-live-usage';
+import { applyRoomProgramming } from './room-programming';
 import type { RoomRecording } from './room-recording';
 import { summarizeRoomUsage } from './room-usage';
 
@@ -120,6 +121,7 @@ export function roomService(
   });
   if (!token.scopes.includes('meet:server')) return fail('Forbidden');
   const live =
+    applyRoomProgramming(snapshot, token, input) ??
     applyLiveUsage(snapshot, token, input) ??
     applyRoomLive(snapshot, token, input) ??
     applyLiveSharing(snapshot, token, input);

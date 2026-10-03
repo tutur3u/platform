@@ -21,6 +21,10 @@ import {
   PLAYGROUND_PREVIEW_SCRIPT,
   PLAYGROUND_SYNC_SCRIPT,
 } from './devbox-playground-files';
+import {
+  syntheticContainerLoggingArgs,
+  syntheticContainerStartFailure,
+} from './devbox-playground-runtime-diagnostics';
 import { sandboxDocker } from './devbox-sandbox-process';
 
 const PLAYGROUND_PATH =
@@ -87,19 +91,24 @@ export function createPlaygroundDockerArgs(
     freeMemoryBytes: freemem(),
   });
   const imageIndex = judgeArgs.indexOf(image);
+  const syntheticLogs = syntheticContainerLoggingArgs(
+    POOL_OWNER ?? '',
+    process.env.TTR_PLAYGROUND_ACCEPTANCE === 'true'
+  );
   const args = judgeArgs
     .slice(0, imageIndex)
     .filter(
       (arg) =>
         !['--rm', '--interactive', '--network=none', '--workdir=/tmp'].includes(
           arg
-        )
+        ) && !(syntheticLogs.length > 0 && arg === '--log-driver=none')
     );
   const network = process.env.TUTURUUU_PLAYGROUND_NETWORK;
   if (network && !/^[a-zA-Z0-9_.-]{1,80}$/.test(network))
     throw new Error('Invalid managed playground network');
   return [
     ...args,
+    ...syntheticLogs,
     '--detach',
     `--network=${network || 'none'}`,
     '--label=ttr.playground=true',
@@ -306,6 +315,16 @@ async function ensureEnvironment(
     });
     touch(payload.projectId);
     if (started.code !== 0 || started.timedOut || started.exceeded) {
+      const diagnostic = syntheticContainerStartFailure(
+        POOL_OWNER ?? '',
+        process.env.TTR_PLAYGROUND_ACCEPTANCE === 'true',
+        started
+      );
+      if (diagnostic)
+        console.error(
+          'Synthetic acceptance Docker create diagnostic',
+          diagnostic
+        );
       // Docker may have created the named container before its CLI failed.
       // Keep the entry quarantined and capacity owned if removal is unconfirmed.
       await removeEnvironment(payload.projectId);

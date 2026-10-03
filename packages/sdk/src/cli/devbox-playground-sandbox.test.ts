@@ -3,7 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { docker } = vi.hoisted(() => ({ docker: vi.fn() }));
 vi.mock('./devbox-sandbox-process', () => ({ sandboxDocker: docker }));
 vi.mock('./devbox-judge-sandbox', () => ({
-  createJudgeDockerArgs: ({ image }: { image: string }) => ['run', image],
+  createJudgeDockerArgs: ({ image }: { image: string }) => [
+    'run',
+    '--log-driver=none',
+    image,
+  ],
   readJudgeDockerCapacity: vi.fn().mockResolvedValue({
     hostCpus: 4,
     hostMemoryBytes: 8 * 1024 ** 3,
@@ -57,6 +61,38 @@ describe('managed playground removal ownership', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllEnvs();
+  });
+
+  it('retains production log suppression but allows bounded synthetic startup logs', async () => {
+    const { createPlaygroundDockerArgs } = await import(
+      './devbox-playground-sandbox'
+    );
+    const args = () =>
+      createPlaygroundDockerArgs(
+        first,
+        'python',
+        `python@sha256:${'a'.repeat(64)}`,
+        limits,
+        { hostCpus: 4, hostMemoryBytes: 8 * 1024 ** 3 }
+      );
+    expect(args()).toContain('--log-driver=none');
+    vi.stubEnv('TTR_PLAYGROUND_ACCEPTANCE', 'true');
+    expect(args()).toContain('--log-driver=none');
+    vi.stubEnv('TUTURUUU_PLAYGROUND_POOL_ID', 'ci-123-1');
+    vi.resetModules();
+    const synthetic = await import('./devbox-playground-sandbox');
+    const logged = synthetic.createPlaygroundDockerArgs(
+      first,
+      'python',
+      `python@sha256:${'a'.repeat(64)}`,
+      limits,
+      { hostCpus: 4, hostMemoryBytes: 8 * 1024 ** 3 }
+    );
+    expect(logged).not.toContain('--log-driver=none');
+    expect(logged).toContain('--log-driver=local');
+    expect(logged).toContain('--log-opt=max-size=8k');
+    expect(logged).toContain('--log-opt=max-file=1');
+    expect(logged.slice(-3)).toEqual(['sh', '-c', 'exec sleep 7200']);
   });
 
   it('keeps capacity owned when removal fails and the container remains', async () => {
@@ -483,6 +519,34 @@ describe('managed playground removal ownership', () => {
       );
     }
   );
+  it('captures synthetic create failure before unchanged confirmed cleanup', async () => {
+    vi.stubEnv('TUTURUUU_PLAYGROUND_POOL_ID', 'ci-123-1');
+    vi.stubEnv('TTR_PLAYGROUND_ACCEPTANCE', 'true');
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { runPlaygroundJob, playgroundEnvironmentCount } = await import(
+      './devbox-playground-sandbox'
+    );
+    const normal = docker.getMockImplementation()!;
+    docker.mockImplementation(async (args: string[]) =>
+      args[0] === 'run'
+        ? { ...result(125), stderr: '\u001b[31mcreate refused\u001b[0m' }
+        : normal(args)
+    );
+    await expect(runPlaygroundJob(payload(), limits)).rejects.toThrow(
+      'Could not start'
+    );
+    expect(log).toHaveBeenCalledExactlyOnceWith(
+      'Synthetic acceptance Docker create diagnostic',
+      { code: 125, timedOut: false, exceeded: false, stderr: 'create refused' }
+    );
+    expect(docker).toHaveBeenCalledWith([
+      'rm',
+      '--force',
+      `ttr-playground-ci-123-1-${first}`,
+    ]);
+    expect(playgroundEnvironmentCount()).toBe(0);
+    log.mockRestore();
+  });
   it('retains unconfirmed partial startup capacity and retries removal before reuse', async () => {
     const { runPlaygroundJob, playgroundEnvironmentCount } = await import(
       './devbox-playground-sandbox'

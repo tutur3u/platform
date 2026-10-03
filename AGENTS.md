@@ -206,6 +206,17 @@ merge, or production evidence only when that delivery is authorized.
 - After Flutter ARB key changes, run `flutter gen-l10n` before Flutter analysis
   or tests.
 
+- For Cloudflare realtime changes, verify the real local Worker and Durable
+  Object runtime with Wrangler when local runtime testing is requested or needed
+  to reproduce a defect. Prefer loopback origins, disposable identities/secrets,
+  isolated persistence and the running Linux Docker daemon for database fixtures.
+  Record which boundaries use fixtures and which are exercised end to end; local
+  Durable Objects do not emulate Cloudflare's hosted SFU/TURN network. Document
+  reproducible setup, commands, ports, cleanup and remaining remote dependencies
+  in the owning runbook and focused skill so future agents can repeat the check.
+  Local dev runtime bundling is allowed for this verification; release builds,
+  deployments and production writes still follow the existing CI/release rules.
+
 - Before heavy local validation, use `ttr resources status --json` and load
   `$tuturuuu-cli-resources`. Queue broad tests/type checks, Supabase setup,
   and browser suites with `ttr resources run -- <command>`; sequence heavy

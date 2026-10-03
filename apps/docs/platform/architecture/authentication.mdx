@@ -1181,12 +1181,13 @@ including requests from previously optional accounts. Optional accounts still
 retain instant cached startup and offline UI; this does not grant offline server
 access.
 
-Supabase private Broadcast/Presence authorization is cached for an open channel.
-The restrictive policy applies on a new join or fresh JWT; an existing connection
-can retain access until token refresh, reconnect, or JWT expiry. Postgres Changes
-uses table RLS separately, and public channels are not protected by private-channel
-policies. Do not claim immediate revocation of already-open broadcasts or signed
-URLs. See [Supabase Realtime authorization](https://supabase.com/docs/guides/realtime/authorization)
-and [private channel settings](https://supabase.com/docs/guides/realtime/settings).
+Cloudflare realtime tickets authorize a specific account, topic and role for
+60 seconds. Refresh at 45 seconds rechecks current account policy and resource
+access on the same socket; reconnects also reauthorize. Durable Object alarms
+close quiet expired connections. Revocation is bounded by ticket expiry rather
+than instantaneous. Service publishing and persistence use separate capabilities;
+browser tickets cannot manufacture server checkpoints. Supabase remains the
+authentication, database and storage provider, without realtime subscriptions.
+See [the realtime runbook](/build/devops/programming-realtime-runbook).
 
 Administrative policy/recovery metadata transitions use a row-locked database compare-and-swap with a unique generation. A delayed completion cannot overwrite a newer recovery marker, even after the application coordination lease expires. Provider password changes remain GoTrue operations; optional-account password reset does not promise immediate revocation of every previously issued JWT, including when an administrator concurrently enables required MFA. Fresh required-policy and factor checks still apply to every protected request.

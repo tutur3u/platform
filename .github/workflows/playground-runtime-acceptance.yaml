@@ -1,0 +1,112 @@
+name: Playground real gVisor acceptance
+on:
+  pull_request:
+    paths:
+      - 'packages/sdk/src/cli/devbox-playground*'
+      - 'packages/sdk/src/cli/devbox-sandbox*'
+      - 'packages/sdk/src/cli/devbox-judge*'
+      - 'packages/sdk/vitest*'
+      - 'packages/utils/src/playground-schema.ts'
+      - 'packages/types/src/primitives/playgrounds.ts'
+      - 'bun.lock'
+      - 'tuturuuu.ci.ts'
+      - 'scripts/ci/playground-runtime-cleanup.test.js'
+      - '.github/workflows/playground-runtime-acceptance.yaml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: playground-runtime-${{ github.event.pull_request.number || github.ref }}
+  # A started real sandbox must finish its bounded cleanup.
+  cancel-in-progress: false
+jobs:
+  check-ci:
+    permissions:
+      contents: read
+      deployments: read
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: playground-runtime-acceptance.yaml
+  acceptance:
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TUTURUUU_PLAYGROUND_POOL_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
+      TTR_PLAYGROUND_ACCEPTANCE: 'true'
+      TTR_HOST_CANARY: synthetic-host-only-canary
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Verify cleanup failure and ownership contracts
+        run: node --test scripts/ci/playground-runtime-cleanup.test.js
+      - name: Install verified official gVisor on this disposable VM
+        run: |
+          set -euo pipefail
+          # Point release verified against google/gvisor release-20260928.0.
+          url=https://storage.googleapis.com/gvisor/releases/release/20260928.0/x86_64
+          curl --fail --silent --show-error --retry 3 "$url/gvisor.tar.zstd" -o "$RUNNER_TEMP/gvisor.tar.zstd"
+          cd "$RUNNER_TEMP"
+          echo '4ce35ca83aef7f96b06cde668e0b23aa98b05aa1829508e974196c2a1e02786c95f5bf79315fd7ddcfd88fe7a00f083ed8053e25eff7673d28d5256440caae8b  gvisor.tar.zstd' | sha512sum -c -
+          # Keep runsc and its gvisor-bin companion directory together.
+          sudo tar --zstd -xf gvisor.tar.zstd -C /usr/local/bin
+          sudo /usr/local/bin/runsc install
+          sudo systemctl reload docker
+          /usr/local/bin/runsc --version
+      - name: Build a synthetic immutable Python fixture in a localhost-only registry
+        run: |
+          set -euo pipefail
+          registry="ttr-acceptance-registry-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          docker run --detach --name "$registry" --label "ttr.acceptance=$TUTURUUU_PLAYGROUND_POOL_ID" --publish 127.0.0.1:5000:5000 registry:3@sha256:ddf754342cfc8acc51a56d5d0ab6af06826461864460636d8bd5c546dab2a7b8
+          fixture="$RUNNER_TEMP/playground-fixture"
+          mkdir -p "$fixture"
+          cat > "$fixture/Dockerfile" <<'DOCKERFILE'
+          FROM python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+          RUN ln -s /usr/local/bin/python3 /usr/bin/python3
+          DOCKERFILE
+          image="localhost:5000/ttr-playground-python:${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          docker build --tag "$image" "$fixture"
+          docker push "$image"
+          digest="$(docker image inspect "$image" --format '{{index .RepoDigests 0}}')"
+          test -n "$digest"
+          echo "TUTURUUU_PLAYGROUND_IMAGES={\"python\":\"$digest\"}" >> "$GITHUB_ENV"
+      - name: Execute actual SDK sandbox and checkpoint acceptance
+        working-directory: packages/sdk
+        run: bun x --no-install vitest run --config vitest.playground-acceptance.config.ts
+      - name: Always remove only this run's owned containers and registry volume
+        if: always()
+        run: |
+          set -euo pipefail
+          # Attempt every exact-owned target, then fail if any cleanup was unconfirmed.
+          failed=0
+          inventory=''
+          if ! inventory="$(docker ps -aq --filter "label=ttr.pool=$TUTURUUU_PLAYGROUND_POOL_ID")"; then failed=1; fi
+          while IFS= read -r id; do
+            if [[ -z "$id" ]]; then continue; fi
+            if [[ ! "$id" =~ ^[a-f0-9]{12,64}$ ]]; then failed=1; continue; fi
+            docker rm --force --volumes "$id" || failed=1
+          done <<< "$inventory"
+          registry="ttr-acceptance-registry-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          if docker container inspect "$registry" >/dev/null 2>&1; then
+            actual=''
+            if ! actual="$(docker inspect "$registry" --format '{{index .Config.Labels "ttr.acceptance"}}')"; then failed=1; fi
+            if [[ "$actual" = "$TUTURUUU_PLAYGROUND_POOL_ID" ]]; then
+              docker rm --force --volumes "$registry" || failed=1
+            else
+              failed=1
+            fi
+          fi
+          remaining=''
+          if ! remaining="$(docker ps -aq --filter "label=ttr.pool=$TUTURUUU_PLAYGROUND_POOL_ID")"; then failed=1; fi
+          if [[ -n "$remaining" ]]; then failed=1; fi
+          if ! remaining="$(docker ps -aq --filter "label=ttr.acceptance=$TUTURUUU_PLAYGROUND_POOL_ID")"; then failed=1; fi
+          if [[ -n "$remaining" ]]; then failed=1; fi
+          exit "$failed"

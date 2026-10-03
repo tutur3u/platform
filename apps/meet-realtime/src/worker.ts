@@ -1,3 +1,13 @@
+import type { ChannelRoomEnv } from './channel-room-do';
+import { channelRequest } from './channel-worker';
+
+export { ChannelRoomDurableObject } from './channel-room-do';
+
+import type { CollaborationRoomEnv } from './collaboration-room-do';
+import { collaborationRequest } from './collaboration-worker';
+
+export { CollaborationRoomDurableObject } from './collaboration-room-do';
+
 import { verifyMeetRealtimeToken } from '../../../packages/realtime/src/meet/token';
 import type { MeetRoomEnv } from './room-do';
 
@@ -11,8 +21,27 @@ export { MeetRoomDurableObject } from './room-do';
  * happens inside the object so a room has exactly one authority.
  */
 export default {
-  async fetch(request: Request, env: MeetRoomEnv): Promise<Response> {
+  async fetch(
+    request: Request,
+    env: MeetRoomEnv & CollaborationRoomEnv & ChannelRoomEnv
+  ): Promise<Response> {
     const url = new URL(request.url);
+    if (
+      ['/channels', '/channels/publish', '/channels/document'].includes(
+        url.pathname
+      )
+    )
+      return channelRequest(request, env);
+
+    if (
+      [
+        '/collaboration',
+        '/collaboration/seed',
+        '/collaboration/checkpoint',
+        '/collaboration/runner-files',
+      ].includes(url.pathname)
+    )
+      return collaborationRequest(request, env);
 
     if (url.pathname === '/health') {
       return Response.json({ ok: true });

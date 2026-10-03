@@ -470,10 +470,10 @@
       "targetOwner": "rust-backend",
       "note": "Devbox run creation now records a typed workload so the database claim function can enforce each runner's enabled services. Rust mutation parity is pending; Next.js remains the live owner."
     },
-    "api:/api/v1/devboxes/agents/heartbeat:apps/web/src/legacy-api-routes/v1/devboxes/agents/heartbeat/route.ts": {
+    "api:/api/v1/devboxes/agents/heartbeat:apps/web/src/app/api/v1/devboxes/agents/heartbeat/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Agent heartbeat accepts Judge sandbox readiness alongside host capability metrics. Rust parity is pending; Next.js remains the live owner."
+      "note": "First-class agent heartbeat accepts optional bounded Judge and playground sandbox readiness alongside host capability metrics; existing agent capability payloads remain valid. Rust parity is pending; Next.js remains the live owner."
     },
     "api:/api/v1/devboxes/cache/prune:apps/web/src/legacy-api-routes/v1/devboxes/cache/prune/route.ts": {
       "status": "migrated",
@@ -2677,6 +2677,71 @@
           "note": "First-class live Next.js handler; preserve strict authorized atomic writes and status/cache parity."
         }
       }
+    },
+    "api:/api/v1/users/me/playgrounds:apps/web/src/app/api/v1/users/me/playgrounds/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class managed playground API with personal Drive ownership, server-only account benefits and bounded signed runner or realtime callbacks. Rust parity pending; production remains on Next.js."
+    },
+    "api:/api/v1/users/me/playgrounds/:projectId:apps/web/src/app/api/v1/users/me/playgrounds/[projectId]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class managed playground API with personal Drive ownership, server-only account benefits and bounded signed runner or realtime callbacks. Rust parity pending; production remains on Next.js."
+    },
+    "api:/api/v1/users/me/playgrounds/:projectId/runs:apps/web/src/app/api/v1/users/me/playgrounds/[projectId]/runs/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class managed playground API with personal Drive ownership, server-only account benefits and bounded signed runner or realtime callbacks. Rust parity pending; production remains on Next.js."
+    },
+    "api:/api/v1/users/me/playgrounds/:projectId/collaboration:apps/web/src/app/api/v1/users/me/playgrounds/[projectId]/collaboration/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class managed playground API with personal Drive ownership, server-only account benefits and bounded signed runner or realtime callbacks. Rust parity pending; production remains on Next.js."
+    },
+    "api:/api/v1/users/me/playgrounds/:projectId/preview/:port/*path?:apps/web/src/app/api/v1/users/me/playgrounds/[projectId]/preview/[port]/[[...path]]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class GET preview with authenticated initial authorization and 60-second project/port scoped asset capabilities for opaque iframes. Rust parity pending; production remains on Next.js."
+    },
+    "api:/api/v1/users/me/playgrounds/:projectId/runs/:runId:apps/web/src/app/api/v1/users/me/playgrounds/[projectId]/runs/[runId]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class managed playground API with personal Drive ownership, server-only account benefits and bounded signed runner or realtime callbacks. Rust parity pending; production remains on Next.js."
+    },
+    "api:/api/v1/devboxes/agents/playground-files:apps/web/src/app/api/v1/devboxes/agents/playground-files/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class managed playground API with personal Drive ownership, server-only account benefits and bounded signed runner or realtime callbacks. Rust parity pending; production remains on Next.js."
+    },
+    "api:/api/v1/realtime/programming/checkpoint:apps/web/src/app/api/v1/realtime/programming/checkpoint/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class managed playground API with personal Drive ownership, server-only account benefits and bounded signed runner or realtime callbacks. Rust parity pending; production remains on Next.js."
+    },
+    "api:/api/v1/realtime/channels:apps/web/src/app/api/v1/realtime/channels/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Cloudflare realtime and native Meet collaboration API; retain authenticated room admission, role-scoped tickets, private preview and signed monotonic checkpoints. Rust parity pending; Next.js serves live traffic."
+    },
+    "api:/api/v1/realtime/session:apps/web/src/app/api/v1/realtime/session/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Cloudflare realtime and native Meet collaboration API; retain authenticated room admission, role-scoped tickets, private preview and signed monotonic checkpoints. Rust parity pending; Next.js serves live traffic."
+    },
+    "api:/api/v1/realtime/documents/checkpoint:apps/web/src/app/api/v1/realtime/documents/checkpoint/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Cloudflare realtime and native Meet collaboration API; retain authenticated room admission, role-scoped tickets, private preview and signed monotonic checkpoints. Rust parity pending; Next.js serves live traffic."
+    },
+    "api:/api/v1/meetings/:meetingId/collaboration:apps/web/src/app/api/v1/meetings/[meetingId]/collaboration/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Cloudflare realtime and native Meet collaboration API; retain authenticated room admission, role-scoped tickets, private preview and signed monotonic checkpoints. Rust parity pending; Next.js serves live traffic."
+    },
+    "api:/api/v1/meetings/:meetingId/collaboration/preview/:port/*path?:apps/web/src/app/api/v1/meetings/[meetingId]/collaboration/preview/[port]/[[...path]]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Cloudflare realtime and native Meet collaboration API; retain authenticated room admission, role-scoped tickets, private preview and signed monotonic checkpoints. Rust parity pending; Next.js serves live traffic."
     },
     "api:/api/v1/workspaces/:wsId/storage/share:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/share/route.ts": {
       "status": "legacy-next",

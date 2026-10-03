@@ -3,7 +3,7 @@
  */
 
 import { act, renderHook, waitFor } from '@testing-library/react';
-import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
+import type { RealtimePresenceState } from '@tuturuuu/internal-api/realtime';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   type UseWorkspacePresenceResult,
@@ -16,8 +16,8 @@ const { createClientMock, getCurrentUserProfileMock } = vi.hoisted(() => ({
   getCurrentUserProfileMock: vi.fn(),
 }));
 
-vi.mock('@tuturuuu/supabase/next/client', () => ({
-  createClient: createClientMock,
+vi.mock('@tuturuuu/internal-api/realtime', () => ({
+  createRealtimeClient: createClientMock,
 }));
 
 vi.mock('@tuturuuu/internal-api/users', () => ({

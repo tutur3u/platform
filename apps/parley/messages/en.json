@@ -4241,7 +4241,11 @@
       "waiting_media": "Waiting for media — recovery runs automatically",
       "waiting_room": "Waiting to join ({count})",
       "you": "You",
-      "your_name": "Your name"
+      "your_name": "Your name",
+      "screen_browser_unsupported": "This browser cannot share its screen. Join from a supported desktop browser; you can still view other participants’ screens here.",
+      "screen_permission_denied": "Screen capture was cancelled or denied. Allow capture in the browser picker and system settings. If no picker appears on Android or iOS, use a desktop browser.",
+      "screen_user_gesture_required": "Click Share screen again in the active meeting tab to open the browser picker.",
+      "share_from_mobile_app": "Open mobile app"
     },
     "details": {
       "back": "Back to meetings",
@@ -4387,6 +4391,16 @@
       "empty": "This recording contains no audio to transcribe. The saved recording remains available.",
       "too_large": "This recording is too large for inline transcription. The saved recording remains available.",
       "unsupported_type": "This recording format cannot be transcribed inline yet. The saved recording remains available."
+    },
+    "collaboration": {
+      "document": "Shared document",
+      "connecting": "Connecting to the shared document…",
+      "unavailable": "The shared document is unavailable.",
+      "live": "Live · automatic sync",
+      "reconnecting": "Reconnecting…",
+      "placeholder": "Write together…",
+      "checkpoint_conflict": "The workspace document changed elsewhere. Live edits remain in this room; its workspace backup has a conflict.",
+      "checkpoint_deferred": "Workspace backup is delayed. Live edits remain in this room while saving is retried."
     }
   },
   "meet_workspace": {
@@ -9117,5 +9131,50 @@
     "plural": "Wallets",
     "singular": "Wallet",
     "wallet": "Payment Method"
+  },
+  "programmingPlayground": {
+    "title": "Hosted playgrounds",
+    "description": "Build and run projects on managed environments. Files belong to your personal Tuturuuu Drive.",
+    "paidRequired": "A paid account or playground benefit is required",
+    "benefitHint": "Account benefits are managed in Infrastructure.",
+    "name": "Project name",
+    "language": "Language",
+    "create": "Create project",
+    "noRunners": "No managed language environments are ready.",
+    "empty": "Your projects will appear here.",
+    "failed": "Request failed. Your unsaved edits remain in this room. Try again.",
+    "accessError": "Programming access is unavailable. Check your account or room access.",
+    "connecting": "Connecting…",
+    "open": "Open",
+    "offline": "Reconnecting…",
+    "save": "Save to Drive",
+    "run": "Run",
+    "stop": "Stop environment",
+    "share": "Invite collaborators",
+    "accountId": "Collaborator account ID",
+    "invite": "Allow editing",
+    "revoke": "Revoke access",
+    "shared": "Collaboration access updated.",
+    "test": "Run public tests",
+    "files": "Project files",
+    "newFile": "New file path",
+    "addFile": "Add file",
+    "driveHint": "Background saves write changed files to personal Drive.",
+    "command": "Command",
+    "stdin": "Standard input",
+    "console": "Console",
+    "running": "Running…",
+    "saveFailed": "Drive save failed. Keep this room open and retry.",
+    "saved": "Saved to Drive",
+    "backgroundSave": "Changes save in the background",
+    "previewPort": "Preview port",
+    "preview": "Private preview",
+    "resource": "Programming resource",
+    "problem": "Learn problem",
+    "playground": "Hosted playground",
+    "resourceId": "Problem or project ID",
+    "close": "Close coding room",
+    "chooseResource": "The host can open a Learn problem or playground for this meeting.",
+    "coding": "Co-programming"
   }
 }

@@ -11,7 +11,7 @@ import {
 } from '../use-notifications';
 
 const createRealtimeClient = vi.hoisted(() => vi.fn());
-vi.mock('@tuturuuu/supabase/next/realtime-browser', () => ({
+vi.mock('@tuturuuu/internal-api/realtime', () => ({
   createRealtimeClient,
 }));
 

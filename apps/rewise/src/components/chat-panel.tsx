@@ -2,8 +2,8 @@
 
 import type { UIMessage, UseChatHelpers } from '@tuturuuu/ai/types';
 import { getCurrentUserProfile } from '@tuturuuu/internal-api';
+import type { RealtimePresenceState } from '@tuturuuu/internal-api/realtime';
 import { createDynamicClient } from '@tuturuuu/supabase/next/client';
-import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import type { AIChat, AIModelUI } from '@tuturuuu/types';
 import {
   FileUploader,

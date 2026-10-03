@@ -730,7 +730,8 @@
     "marks": "Điểm",
     "practice": "Luyện tập",
     "reports": "Báo cáo",
-    "settings": "Cài đặt Learn"
+    "settings": "Cài đặt Learn",
+    "playgrounds": "Playground"
   },
   "notifications": {
     "accept": "Chấp nhận",
@@ -825,7 +826,8 @@
     "title": "Lập trình",
     "topic": "Chủ đề",
     "vietnamese": "Tiếng Việt",
-    "visibleCase": "Hiển thị cho học viên"
+    "visibleCase": "Hiển thị cho học viên",
+    "playgrounds": "Playground"
   },
   "reports": {
     "description": "Đọc nhận xét của giáo viên dưới dạng ghi chú tiến bộ đơn giản cho học viên và phụ huynh.",
@@ -1109,5 +1111,50 @@
       "private": "Riêng tư",
       "workspace": "Không gian làm việc"
     }
+  },
+  "programmingPlayground": {
+    "title": "Playground được lưu trữ",
+    "description": "Xây dựng và chạy dự án trên môi trường được quản lý. Tệp thuộc Tuturuuu Drive cá nhân của bạn.",
+    "paidRequired": "Cần tài khoản trả phí hoặc quyền lợi playground",
+    "benefitHint": "Quyền lợi tài khoản được quản lý trong Infrastructure.",
+    "name": "Tên dự án",
+    "language": "Ngôn ngữ",
+    "create": "Tạo dự án",
+    "noRunners": "Chưa có môi trường ngôn ngữ được quản lý sẵn sàng.",
+    "empty": "Dự án của bạn sẽ xuất hiện ở đây.",
+    "failed": "Yêu cầu thất bại. Thay đổi chưa lưu vẫn còn trong phòng. Hãy thử lại.",
+    "accessError": "Không thể truy cập lập trình. Kiểm tra quyền tài khoản hoặc phòng.",
+    "connecting": "Đang kết nối…",
+    "open": "Mở",
+    "offline": "Đang kết nối lại…",
+    "save": "Lưu vào Drive",
+    "run": "Chạy",
+    "stop": "Dừng môi trường",
+    "share": "Mời cộng tác",
+    "accountId": "ID tài khoản cộng tác",
+    "invite": "Cho phép chỉnh sửa",
+    "revoke": "Thu hồi quyền",
+    "shared": "Đã cập nhật quyền cộng tác.",
+    "test": "Chạy kiểm thử công khai",
+    "files": "Tệp dự án",
+    "newFile": "Đường dẫn tệp mới",
+    "addFile": "Thêm tệp",
+    "driveHint": "Lưu nền ghi các tệp đã thay đổi vào Drive cá nhân.",
+    "command": "Lệnh",
+    "stdin": "Đầu vào chuẩn",
+    "console": "Bảng điều khiển",
+    "running": "Đang chạy…",
+    "saveFailed": "Lưu Drive thất bại. Giữ phòng mở và thử lại.",
+    "saved": "Đã lưu vào Drive",
+    "backgroundSave": "Thay đổi được lưu trong nền",
+    "previewPort": "Cổng xem trước",
+    "preview": "Xem trước riêng tư",
+    "resource": "Tài nguyên lập trình",
+    "problem": "Bài tập Learn",
+    "playground": "Playground được lưu trữ",
+    "resourceId": "ID bài tập hoặc dự án",
+    "close": "Đóng phòng lập trình",
+    "chooseResource": "Chủ phòng có thể mở bài tập Learn hoặc playground cho cuộc họp này.",
+    "coding": "Lập trình cùng nhau"
   }
 }
