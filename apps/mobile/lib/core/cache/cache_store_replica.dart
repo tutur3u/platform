@@ -382,14 +382,15 @@ extension CacheStoreReplica on CacheStore {
     await _replicaMigration;
     final byId = <String, ReplicaEntityRecord>{};
     for (final raw in _entityBox.values) {
-      if (raw is! Map || raw['id'] is! String) continue;
-      final row = ReplicaEntityRecord.fromJson(raw);
-      if (row.namespace != namespace ||
-          row.userId != userId ||
-          row.workspaceId != workspaceId ||
-          (sourceKeys != null && !sourceKeys.contains(row.sourceKey))) {
+      if (raw is! Map ||
+          raw['id'] is! String ||
+          raw['namespace'] != namespace ||
+          raw['userId'] != userId ||
+          raw['workspaceId'] != workspaceId ||
+          (sourceKeys != null && !sourceKeys.contains(raw['sourceKey']))) {
         continue;
       }
+      final row = ReplicaEntityRecord.fromJson(raw);
       final previous = byId[row.id];
       if (previous == null || row.fetchedAt.isAfter(previous.fetchedAt)) {
         byId[row.id] = row;

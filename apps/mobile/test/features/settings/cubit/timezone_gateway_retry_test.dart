@@ -236,9 +236,21 @@ void main() {
         deviceLoader: getVerifiedDeviceTimezoneIdentifier,
         clock: () => now,
       );
+      User actor(String id) => User(
+        id: id,
+        appMetadata: const {},
+        userMetadata: const {},
+        aud: 'authenticated',
+        createdAt: '2030',
+      );
+      final auth = client.auth;
+      when(() => auth.currentUser).thenReturn(actor('account-a'));
+      expect(client.auth.currentUser?.id, 'account-a');
       await cubit.load(userId: 'account-a', workspaceId: null);
+      when(() => auth.currentUser).thenReturn(actor('account-b'));
+      expect(client.auth.currentUser?.id, 'account-b');
       await cubit.load(userId: 'account-b', workspaceId: null);
-      expect(requests, 2);
+      expect(requests, 2, reason: cubit.state.errorMessage);
       expect(cubit.state.resolved, isFalse);
       await cubit.close();
       repository.dispose();

@@ -66,10 +66,10 @@ export function InventoryMergeProductSelect({
   });
   const rows = products.data?.pages.flatMap((page) => page.data) ?? [];
   const selectedName =
-    rows.find((row) => row.id === value)?.name ??
-    selected.data?.name ??
+    rows.find((row) => row.id === value)?.name?.trim() ||
+    selected.data?.name?.trim() ||
     (knownSelection?.id === value && knownSelection.wsId === wsId
-      ? knownSelection.name
+      ? knownSelection.name?.trim()
       : null);
   return (
     <div className="grid min-w-0 gap-1 text-sm">
@@ -94,7 +94,7 @@ export function InventoryMergeProductSelect({
           setKnownSelection({
             id,
             wsId,
-            name: rows.find((row) => row.id === id)?.name ?? null,
+            name: rows.find((row) => row.id === id)?.name?.trim() || null,
           });
           onChange(id);
         }}
@@ -109,7 +109,7 @@ export function InventoryMergeProductSelect({
           .filter((row) => row.id !== excludeId)
           .map((row) => ({
             value: row.id,
-            label: row.name || row.id,
+            label: row.name?.trim() || row.id,
           }))}
         placeholder={t('choose')}
         searchPlaceholder={t('searchProducts')}

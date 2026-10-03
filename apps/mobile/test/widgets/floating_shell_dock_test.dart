@@ -14,6 +14,7 @@ void main() {
     Size size = const Size(390, 844),
     bool showHeader = false,
     bool scrollableHeader = false,
+    bool keepNavigationVisible = false,
     ScrollController? scrollController,
     ValueChanged<bool>? onVisibilityChanged,
   }) async {
@@ -27,6 +28,7 @@ void main() {
           body: FloatingShellDock(
             location: '/settings',
             bottomInset: 68,
+            keepNavigationVisible: keepNavigationVisible,
             header: showHeader
                 ? Padding(
                     padding: EdgeInsets.only(
@@ -75,6 +77,21 @@ void main() {
     );
   }
 
+  testWidgets('closing composer restores navigation after a hidden scroll', (
+    tester,
+  ) async {
+    await mount(tester, keepNavigationVisible: true);
+    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await tester.pump(const Duration(milliseconds: 300));
+    final opacity = find.byKey(const ValueKey('floating-shell-dock-opacity'));
+    expect(tester.widget<AnimatedOpacity>(opacity).opacity, 1);
+    await mount(tester);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(tester.widget<AnimatedOpacity>(opacity).opacity, 1);
+    await tester.pump(const Duration(seconds: 2));
+    expect(tester.takeException(), isNull);
+  });
+
   for (final size in [const Size(390, 844), const Size(1194, 834)]) {
     testWidgets('last explicit-padding row clears dock at $size', (
       tester,
@@ -120,7 +137,9 @@ void main() {
     await tester.drag(find.byType(ListView), const Offset(0, -160));
     await tester.pump(const Duration(milliseconds: 250));
     expect(
-      tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity)).opacity,
+      tester
+          .widget<AnimatedOpacity>(find.byType(AnimatedOpacity).first)
+          .opacity,
       0,
     );
     expect(visibility.last, isFalse);
@@ -128,7 +147,9 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
     expect(
-      tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity)).opacity,
+      tester
+          .widget<AnimatedOpacity>(find.byType(AnimatedOpacity).first)
+          .opacity,
       1,
     );
     expect(visibility.last, isTrue);
@@ -149,7 +170,11 @@ void main() {
     );
     expect(tester.widget<AnimatedOpacity>(headerOpacity).opacity, 1);
     expect(
-      tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity).last).opacity,
+      tester
+          .widget<AnimatedOpacity>(
+            find.byKey(const ValueKey('floating-shell-dock-opacity')),
+          )
+          .opacity,
       0,
     );
     final expanded = tester.getRect(find.byType(ListView));

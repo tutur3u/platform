@@ -16846,7 +16846,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileTimelineTitle.
   ///
   /// In en, this message translates to:
-  /// **'Activity timeline'**
+  /// **'Timeline'**
   String get profileTimelineTitle;
 
   /// No description provided for @profileTimelineToday.
@@ -18654,6 +18654,234 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Some items do not match this period. Reconcile the cart to continue.'**
   String get inventoryCheckoutPeriodRulesChanged;
+
+  /// No description provided for @offlineSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get offlineSectionTitle;
+
+  /// No description provided for @offlineSectionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads, stored data, and unsynchronized changes for the selected account and workspace.'**
+  String get offlineSectionDescription;
+
+  /// No description provided for @offlinePreferencesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline preferences'**
+  String get offlinePreferencesTitle;
+
+  /// No description provided for @offlineStorageScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage limit applies to this device. Clearing cached data preserves queued changes.'**
+  String get offlineStorageScope;
+
+  /// No description provided for @offlineRefreshModule.
+  ///
+  /// In en, this message translates to:
+  /// **'Download / refresh'**
+  String get offlineRefreshModule;
+
+  /// No description provided for @offlineModuleDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored data and settings'**
+  String get offlineModuleDetails;
+
+  /// No description provided for @offlineDownloadRetryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry downloads to refresh retained data.'**
+  String get offlineDownloadRetryHint;
+
+  /// No description provided for @offlineCoverageUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'A normal fetch may contain only part of a collection. Query totals are shown only when stored pages agree. Explicit downloads cover supported collections, not every module resource.'**
+  String get offlineCoverageUnknown;
+
+  /// No description provided for @offlineBytesExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Sizes are logical persisted payload bytes, including snapshot and replica copies. Disk overhead, expected download size, and transferred network bytes are unknown.'**
+  String get offlineBytesExplanation;
+
+  /// No description provided for @offlineLogicalBytes.
+  ///
+  /// In en, this message translates to:
+  /// **'{bytes} payload bytes'**
+  String offlineLogicalBytes(String bytes);
+
+  /// No description provided for @offlinePendingCoverage.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} queued change. It is kept separately and is not counted as a downloaded item.} other{{count} queued changes. They are kept separately and are not counted as downloaded items.}}'**
+  String offlinePendingCoverage(int count);
+
+  /// No description provided for @offlineSearchStored.
+  ///
+  /// In en, this message translates to:
+  /// **'Search stored collections'**
+  String get offlineSearchStored;
+
+  /// No description provided for @offlineNoStoredItems.
+  ///
+  /// In en, this message translates to:
+  /// **'No stored collections match.'**
+  String get offlineNoStoredItems;
+
+  /// No description provided for @offlineAvailableItems.
+  ///
+  /// In en, this message translates to:
+  /// **'{items, plural, one{{items} unique indexed item} other{{items} unique indexed items}} across {snapshots, plural, one{{snapshots} stored snapshot} other{{snapshots} stored snapshots}}'**
+  String offlineAvailableItems(int items, int snapshots);
+
+  /// No description provided for @offlineFreshness.
+  ///
+  /// In en, this message translates to:
+  /// **'{stale, plural, one{{stale} stale snapshot} other{{stale} stale snapshots}} · {expired, plural, one{{expired} expired snapshot} other{{expired} expired snapshots}} retained for offline use'**
+  String offlineFreshness(int stale, int expired);
+
+  /// No description provided for @offlineLastFetch.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest fetch: {time}'**
+  String offlineLastFetch(String time);
+
+  /// No description provided for @offlineEvictTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove stored module data'**
+  String get offlineEvictTitle;
+
+  /// No description provided for @offlineEvictDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove only this module’s snapshots in the selected account and workspace. Queued writes remain. Download again to restore offline data.'**
+  String get offlineEvictDescription;
+
+  /// No description provided for @offlineInventoryError.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored data could not be inspected or updated. Retry.'**
+  String get offlineInventoryError;
+
+  /// No description provided for @settingsAppearanceLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance & language'**
+  String get settingsAppearanceLanguage;
+
+  /// No description provided for @settingsCalendarTimezone.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar & timezone'**
+  String get settingsCalendarTimezone;
+
+  /// No description provided for @settingsNotificationsInteraction.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications & interaction'**
+  String get settingsNotificationsInteraction;
+
+  /// No description provided for @settingsAppPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'App preferences'**
+  String get settingsAppPreferences;
+
+  /// No description provided for @offlinePauseDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause downloads'**
+  String get offlinePauseDownloads;
+
+  /// No description provided for @offlineResumeDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume unfinished downloads'**
+  String get offlineResumeDownloads;
+
+  /// No description provided for @offlineClearScopeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove cached data only for this account and workspace. Queued writes remain. Storage limits apply to the whole device.'**
+  String get offlineClearScopeDescription;
+
+  /// No description provided for @offlineExpectedTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Server-reported query total: {count}. This does not establish complete coverage.'**
+  String offlineExpectedTotal(int count);
+
+  /// No description provided for @offlineExpectedTotalUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Server-reported query total: unknown.'**
+  String get offlineExpectedTotalUnknown;
+
+  /// No description provided for @offlineStorageNeedsWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a workspace to view or clear its cached data. The storage limit applies to this device.'**
+  String get offlineStorageNeedsWorkspace;
+
+  /// No description provided for @offlineBrowseStoredItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse stored items'**
+  String get offlineBrowseStoredItems;
+
+  /// No description provided for @offlineSearchItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Search stored items by name or ID'**
+  String get offlineSearchItems;
+
+  /// No description provided for @offlineNoMatchingItems.
+  ///
+  /// In en, this message translates to:
+  /// **'No stored items match.'**
+  String get offlineNoMatchingItems;
+
+  /// No description provided for @offlineStoredItemId.
+  ///
+  /// In en, this message translates to:
+  /// **'Item ID: {id}'**
+  String offlineStoredItemId(String id);
+
+  /// No description provided for @homePersonalAgenda.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal Agenda'**
+  String get homePersonalAgenda;
+
+  /// No description provided for @homePersonalAgendaUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal calendar is unavailable.'**
+  String get homePersonalAgendaUnavailable;
+
+  /// No description provided for @assistantExpandNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Show navigation'**
+  String get assistantExpandNavigation;
+
+  /// No description provided for @assistantCollapseNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide navigation'**
+  String get assistantCollapseNavigation;
+
+  /// No description provided for @assistantCloseComposer.
+  ///
+  /// In en, this message translates to:
+  /// **'Close prompt'**
+  String get assistantCloseComposer;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
