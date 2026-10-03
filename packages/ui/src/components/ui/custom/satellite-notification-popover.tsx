@@ -27,6 +27,8 @@ type TabType = 'inbox' | 'archive';
 
 export interface NotificationPopoverClientProps {
   userId?: string;
+  /** Optional app-specific freshness policy for non-subscription consumers. */
+  pollIntervalMs?: number;
   noNotificationsText: string;
   notificationsText: string;
   viewAllText: string;
@@ -64,6 +66,7 @@ function isValidWorkspaceFilterId(value: unknown): value is string {
 
 export default function SatelliteNotificationPopover({
   userId,
+  pollIntervalMs = NOTIFICATION_POLL_INTERVAL_MS,
   noNotificationsText,
   notificationsText,
   viewAllText,
@@ -99,7 +102,7 @@ export default function SatelliteNotificationPopover({
   const { data: unreadCount = 0 } = useUnreadCount(wsIdForFiltering, {
     cacheScope: userId,
     enabled: Boolean(userId),
-    refetchInterval: realtime ? undefined : NOTIFICATION_POLL_INTERVAL_MS,
+    refetchInterval: realtime ? undefined : pollIntervalMs,
   });
 
   // Infinite scroll for inbox (unread) and archive (read)
@@ -108,7 +111,7 @@ export default function SatelliteNotificationPopover({
     wsId: wsIdForFiltering,
     unreadOnly: true,
     pageSize: 15,
-    refetchInterval: realtime ? undefined : NOTIFICATION_POLL_INTERVAL_MS,
+    refetchInterval: realtime ? undefined : pollIntervalMs,
     enabled: Boolean(userId) && open && activeTab === 'inbox',
   });
 
@@ -117,7 +120,7 @@ export default function SatelliteNotificationPopover({
     wsId: wsIdForFiltering,
     readOnly: true,
     pageSize: 15,
-    refetchInterval: realtime ? undefined : NOTIFICATION_POLL_INTERVAL_MS,
+    refetchInterval: realtime ? undefined : pollIntervalMs,
     enabled: Boolean(userId) && open && activeTab === 'archive',
   });
 

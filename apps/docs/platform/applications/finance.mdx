@@ -241,11 +241,12 @@ tabs pause periodic invalidation and refresh immediately on reconnect. This is
 the default across Next.js satellites and the central web notification surfaces;
 satellites without the shared subscription use the same two-minute query polling
 interval. Foreground notifications may therefore take up to two minutes to
-appear without a mutation or resume event. Colab retains its separate 30-second
-native polling implementation, and Mail inbox/snooze timers are unchanged.
+appear without a mutation or resume event. Colab explicitly selects a 30-second
+interval through the shared popover, and Mail inbox/snooze timers are unchanged.
 Regression coverage in `use-notifications-subscription.test.tsx` verifies 30
 refreshes per visible hour, shared consumers, hidden/offline pauses, reconnect,
-actor teardown and lazy closed inboxes.
+actor teardown and lazy closed inboxes. `satellite-notification-polling.test.tsx`
+verifies the two-minute default and explicit Colab interval override.
 
 Do not subscribe directly to `public.notifications` with browser
 `postgres_changes` filters. Production notifications are server-owned; the
