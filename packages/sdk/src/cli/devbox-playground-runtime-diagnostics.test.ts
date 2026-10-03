@@ -2,6 +2,7 @@ import { expect, it, vi } from 'vitest';
 import {
   collectSyntheticContainerLogs,
   syntheticContainerLoggingArgs,
+  syntheticContainerStartFailure,
 } from './devbox-playground-runtime-diagnostics';
 
 it('enables bounded readable logs only for opted-in synthetic CI identities', () => {
@@ -61,4 +62,33 @@ it('retains collection failures and bounds even oversized injected output', asyn
   expect(logs.exceeded).toBe(true);
   expect(logs.output).toHaveLength(2048);
   expect(logs.stderr).toHaveLength(2048);
+});
+
+it('retains sanitized bounded create failure only in opted-in synthetic pools', () => {
+  const failure = {
+    code: 125,
+    timedOut: false,
+    exceeded: true,
+    stderr: `\u001b[31mDocker refused option\u001b[0m${'x'.repeat(3000)}`,
+  };
+  expect(
+    syntheticContainerStartFailure('production', true, failure)
+  ).toBeNull();
+  expect(syntheticContainerStartFailure('ci-123-1', false, failure)).toBeNull();
+  expect(
+    syntheticContainerStartFailure('ci-123-1-extra', true, failure)
+  ).toBeNull();
+  const diagnostic = syntheticContainerStartFailure('ci-123-1', true, failure)!;
+  expect(diagnostic).toEqual({
+    code: 125,
+    timedOut: false,
+    exceeded: true,
+    stderr: `Docker refused option${'x'.repeat(3000)}`.slice(0, 2048),
+  });
+  expect(Object.keys(diagnostic)).toEqual([
+    'code',
+    'timedOut',
+    'exceeded',
+    'stderr',
+  ]);
 });

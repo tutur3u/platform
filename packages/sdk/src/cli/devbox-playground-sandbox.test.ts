@@ -519,6 +519,34 @@ describe('managed playground removal ownership', () => {
       );
     }
   );
+  it('captures synthetic create failure before unchanged confirmed cleanup', async () => {
+    vi.stubEnv('TUTURUUU_PLAYGROUND_POOL_ID', 'ci-123-1');
+    vi.stubEnv('TTR_PLAYGROUND_ACCEPTANCE', 'true');
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { runPlaygroundJob, playgroundEnvironmentCount } = await import(
+      './devbox-playground-sandbox'
+    );
+    const normal = docker.getMockImplementation()!;
+    docker.mockImplementation(async (args: string[]) =>
+      args[0] === 'run'
+        ? { ...result(125), stderr: '\u001b[31mcreate refused\u001b[0m' }
+        : normal(args)
+    );
+    await expect(runPlaygroundJob(payload(), limits)).rejects.toThrow(
+      'Could not start'
+    );
+    expect(log).toHaveBeenCalledExactlyOnceWith(
+      'Synthetic acceptance Docker create diagnostic',
+      { code: 125, timedOut: false, exceeded: false, stderr: 'create refused' }
+    );
+    expect(docker).toHaveBeenCalledWith([
+      'rm',
+      '--force',
+      `ttr-playground-ci-123-1-${first}`,
+    ]);
+    expect(playgroundEnvironmentCount()).toBe(0);
+    log.mockRestore();
+  });
   it('retains unconfirmed partial startup capacity and retries removal before reuse', async () => {
     const { runPlaygroundJob, playgroundEnvironmentCount } = await import(
       './devbox-playground-sandbox'

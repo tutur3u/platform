@@ -21,7 +21,10 @@ import {
   PLAYGROUND_PREVIEW_SCRIPT,
   PLAYGROUND_SYNC_SCRIPT,
 } from './devbox-playground-files';
-import { syntheticContainerLoggingArgs } from './devbox-playground-runtime-diagnostics';
+import {
+  syntheticContainerLoggingArgs,
+  syntheticContainerStartFailure,
+} from './devbox-playground-runtime-diagnostics';
 import { sandboxDocker } from './devbox-sandbox-process';
 
 const PLAYGROUND_PATH =
@@ -312,6 +315,16 @@ async function ensureEnvironment(
     });
     touch(payload.projectId);
     if (started.code !== 0 || started.timedOut || started.exceeded) {
+      const diagnostic = syntheticContainerStartFailure(
+        POOL_OWNER ?? '',
+        process.env.TTR_PLAYGROUND_ACCEPTANCE === 'true',
+        started
+      );
+      if (diagnostic)
+        console.error(
+          'Synthetic acceptance Docker create diagnostic',
+          diagnostic
+        );
       // Docker may have created the named container before its CLI failed.
       // Keep the entry quarantined and capacity owned if removal is unconfirmed.
       await removeEnvironment(payload.projectId);
