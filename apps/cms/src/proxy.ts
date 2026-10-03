@@ -69,12 +69,30 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
-    const appSessionRefresh = isLocalAuthApi
-      ? null
-      : await refreshAppSessionForRequest(req, {
-          sessionMode: 'supabase-first',
-          targetApp: 'cms',
-        });
+    // Build metadata is intentionally public. Only opaque workspace-key shapes
+    // choose machine transport; a JWT shape is never proof of authentication.
+    const isBuildInfoRead =
+      req.nextUrl.pathname === '/api/build-info' &&
+      (req.method === 'GET' || req.method === 'HEAD');
+    const hasMachineKey = /^Bearer\s+ttr_(?!app_)[A-Za-z0-9_-]+$/i.test(
+      req.headers.get('authorization')?.trim() ?? ''
+    );
+    if (isBuildInfoRead || hasMachineKey) {
+      // Remove ambient identities from BOTH the guard and downstream handlers.
+      // An invalid key must not fall back to a valid browser cookie; an expired
+      // cookie must not block independently verified machine credentials.
+      for (const cookie of req.cookies.getAll())
+        req.cookies.delete(cookie.name);
+      req.headers.delete('cookie');
+      if (isBuildInfoRead) req.headers.delete('authorization');
+    }
+    const appSessionRefresh =
+      isLocalAuthApi || isBuildInfoRead || hasMachineKey
+        ? null
+        : await refreshAppSessionForRequest(req, {
+            sessionMode: 'supabase-first',
+            targetApp: 'cms',
+          });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return appSessionFailureResponse(
@@ -93,6 +111,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       }
       return preserveMfaRecoveryCookies(req, guardResponse);
     }
+
+    if (isBuildInfoRead || hasMachineKey)
+      return NextResponse.next({ request: { headers: req.headers } });
 
     return (
       appSessionRefresh?.response ??

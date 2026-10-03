@@ -9,85 +9,314 @@ import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+const _model = AssistantGatewayModel(
+  value: 'test/model',
+  label: 'Test model',
+  provider: 'test',
+);
+const _attachment = AssistantAttachment(
+  id: 'file',
+  name: 'Example.pdf',
+  size: 12,
+  type: 'application/pdf',
+);
+
+Widget _app({
+  required TextEditingController controller,
+  required FocusNode focus,
+  AssistantChatState chat = const AssistantChatState(fallbackChatId: 'draft'),
+  double scale = 1,
+  double keyboard = 0,
+  bool reducedMotion = false,
+  VoidCallback? onNavigation,
+  VoidCallback? onClose,
+  Future<void> Function()? onSend,
+  Future<void> Function()? onMic,
+  Future<void> Function()? onAttach,
+  Future<void> Function()? onCredits,
+  Future<void> Function(AssistantThinkingMode)? onThinking,
+  Future<void> Function(String)? onRemove,
+}) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  builder: (context, child) => MediaQuery(
+    data: MediaQuery.of(context).copyWith(
+      textScaler: TextScaler.linear(scale),
+      viewInsets: EdgeInsets.only(bottom: keyboard),
+      disableAnimations: reducedMotion,
+    ),
+    child: child!,
+  ),
+  home: shad.Theme(
+    data: const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
+    child: Scaffold(
+      body: Align(
+        alignment: Alignment.bottomCenter,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: AssistantComposerDock(
+            chatState: chat,
+            liveState: const AssistantLiveState(),
+            liveUiState: const AssistantLiveUiState(
+              kind: AssistantLiveUiKind.unavailable,
+              tone: AssistantLiveUiTone.neutral,
+              workspaceTier: 'FREE',
+              activeTier: 'FREE',
+              creditSource: AssistantCreditSource.personal,
+              isEligible: false,
+              isVisibleLiveSession: false,
+            ),
+            shellState: const AssistantShellState(
+              creditSource: AssistantCreditSource.personal,
+              selectedModel: _model,
+              availableModels: [_model],
+            ),
+            navigationExpanded: false,
+            bottomInset: 0,
+            isPersonalWorkspace: true,
+            onModelSelected: (_) async {},
+            onOpenCreditSourceSheet: onCredits ?? () async {},
+            onThinkingModeChanged: onThinking ?? (_) async {},
+            controller: controller,
+            focusNode: focus,
+            onOpenAttachments: onAttach ?? () async {},
+            onToggleNavigation: onNavigation ?? () {},
+            onCloseComposer: onClose ?? () {},
+            onMicrophoneTap: onMic ?? () async {},
+            onSend: onSend ?? () async {},
+            onRemoveAttachment: onRemove ?? (_) async {},
+          ),
+        ),
+      ),
+    ),
+  ),
+);
+
 void main() {
-  testWidgets('restoring preserves a draft and disables both send actions', (
+  testWidgets(
+    'restoring retains draft and disables send including keyboard submission',
+    (tester) async {
+      final controller = TextEditingController(text: 'My unsent draft');
+      final focus = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focus.dispose);
+      var sends = 0;
+      await tester.pumpWidget(
+        _app(
+          controller: controller,
+          focus: focus,
+          chat: const AssistantChatState(
+            status: AssistantChatStatus.restoring,
+            fallbackChatId: 'draft',
+          ),
+          onSend: () async {
+            sends++;
+          },
+        ),
+      );
+      await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).onSubmitted,
+        isNull,
+      );
+      expect(sends, 0);
+      expect(controller.text, 'My unsent draft');
+      await tester.pumpWidget(
+        _app(
+          controller: controller,
+          focus: focus,
+          onSend: () async {
+            sends++;
+          },
+        ),
+      );
+      await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+      expect(sends, 1);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  for (final width in [320.0, 600.0, 1024.0]) {
+    for (final scale in [1.0, 2.0, 3.0]) {
+      testWidgets(
+        'single row remains usable at width $width and scale $scale',
+        (tester) async {
+          tester.view.physicalSize = Size(width, 900);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final controller = TextEditingController();
+          final focus = FocusNode();
+          addTearDown(controller.dispose);
+          addTearDown(focus.dispose);
+          var nav = 0;
+          var mic = 0;
+          await tester.pumpWidget(
+            _app(
+              controller: controller,
+              focus: focus,
+              scale: scale,
+              keyboard: 300,
+              reducedMotion: true,
+              onNavigation: () {
+                nav++;
+              },
+              onMic: () async {
+                mic++;
+              },
+            ),
+          );
+          expect(tester.widget<TextField>(find.byType(TextField)).maxLines, 1);
+          expect(find.byIcon(Icons.fullscreen_rounded), findsNothing);
+          for (final key in [
+            'assistant-composer-options',
+            'assistant-navigation-toggle',
+          ]) {
+            final size = tester.getSize(find.byKey(ValueKey(key)));
+            expect(size.width, greaterThanOrEqualTo(44));
+            expect(size.height, greaterThanOrEqualTo(44));
+          }
+          expect(tester.getRect(find.byType(TextField)).width, greaterThan(60));
+          await tester.tap(find.byIcon(Icons.mic_none_rounded));
+          await tester.tap(
+            find.byKey(const ValueKey('assistant-navigation-toggle')),
+          );
+          expect(mic, 1);
+          expect(nav, 1);
+          expect(tester.takeException(), isNull);
+          await tester.tap(
+            find.byKey(const ValueKey('assistant-composer-options')),
+          );
+          await tester.pumpAndSettle();
+          expect(find.text('Test model', findRichText: true), findsNothing);
+          expect(find.text('Fast'), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          await tester.tapAt(const Offset(5, 5));
+          await tester.pumpAndSettle();
+        },
+      );
+    }
+  }
+
+  testWidgets('plus menu controls attachments, thinking, credits and close '
+      'without clearing draft', (tester) async {
+    final controller = TextEditingController(text: 'Unsent');
+    final focus = FocusNode();
+    addTearDown(controller.dispose);
+    addTearDown(focus.dispose);
+    var attaches = 0;
+    var credits = 0;
+    var closes = 0;
+    AssistantThinkingMode? mode;
+    await tester.pumpWidget(
+      _app(
+        controller: controller,
+        focus: focus,
+        onAttach: () async {
+          attaches++;
+        },
+        onCredits: () async {
+          credits++;
+        },
+        onThinking: (value) async {
+          mode = value;
+        },
+        onClose: () {
+          closes++;
+        },
+      ),
+    );
+    Future<void> choose(String label) async {
+      await tester.tap(
+        find.byKey(const ValueKey('assistant-composer-options')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find
+            .ancestor(
+              of: find.text(label),
+              matching: find.byWidgetPredicate(
+                (widget) => widget is PopupMenuEntry,
+              ),
+            )
+            .first,
+      );
+      await tester.pumpAndSettle();
+    }
+
+    await choose('Attach files');
+    expect(attaches, 1);
+    await choose('Thinking');
+    expect(mode, AssistantThinkingMode.thinking);
+    await choose('Source: Personal');
+    expect(credits, 1);
+    await choose('Close prompt');
+    expect(closes, 1);
+    expect(controller.text, 'Unsent');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'attachments expose send and removable previews through the plus menu',
+    (tester) async {
+      final controller = TextEditingController();
+      final focus = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focus.dispose);
+      String? removed;
+      var sends = 0;
+      await tester.pumpWidget(
+        _app(
+          controller: controller,
+          focus: focus,
+          chat: const AssistantChatState(
+            fallbackChatId: 'draft',
+            composerAttachments: [_attachment],
+          ),
+          onRemove: (id) async {
+            removed = id;
+          },
+          onSend: () async {
+            sends++;
+          },
+        ),
+      );
+      expect(find.byIcon(Icons.mic_none_rounded), findsNothing);
+      await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+      expect(sends, 1);
+      expect(find.text('Example.pdf'), findsNothing);
+      await tester.tap(
+        find.byKey(const ValueKey('assistant-composer-options')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Example.pdf'), findsOneWidget);
+      final remove = find.widgetWithIcon(IconButton, Icons.close_rounded);
+      expect(tester.getSize(remove).height, greaterThanOrEqualTo(44));
+      await tester.tap(remove);
+      await tester.pumpAndSettle();
+      expect(removed, 'file');
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('empty keyboard submit never sends a blank message', (
     tester,
   ) async {
-    final controller = TextEditingController(text: 'My unsent draft');
+    final controller = TextEditingController();
     final focus = FocusNode();
     addTearDown(controller.dispose);
     addTearDown(focus.dispose);
     var sends = 0;
-    Future<void> mount(AssistantChatStatus status) => tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: shad.Theme(
-          data: const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
-          child: Scaffold(
-            body: AssistantComposerDock(
-              chatState: AssistantChatState(
-                status: status,
-                fallbackChatId: 'draft',
-              ),
-              liveState: const AssistantLiveState(),
-              liveUiState: const AssistantLiveUiState(
-                kind: AssistantLiveUiKind.unavailable,
-                tone: AssistantLiveUiTone.neutral,
-                workspaceTier: 'FREE',
-                activeTier: 'FREE',
-                creditSource: AssistantCreditSource.personal,
-                isEligible: false,
-                isVisibleLiveSession: false,
-              ),
-              shellState: const AssistantShellState(
-                creditSource: AssistantCreditSource.personal,
-                selectedModel: AssistantGatewayModel(
-                  value: 'test-model',
-                  label: 'Test model',
-                  provider: 'test',
-                ),
-              ),
-              isFullscreen: false,
-              bottomInset: 0,
-              isPersonalWorkspace: true,
-              onModelSelected: (_) async {},
-              onOpenCreditSourceSheet: () async {},
-              onThinkingModeChanged: (_) async {},
-              controller: controller,
-              focusNode: focus,
-              onOpenAttachments: () async {},
-              onToggleFullscreen: () async {},
-              onMicrophoneTap: () async {},
-              onSend: () async {
-                sends++;
-              },
-              onRemoveAttachment: (_) async {},
-            ),
-          ),
-        ),
+    await tester.pumpWidget(
+      _app(
+        controller: controller,
+        focus: focus,
+        onSend: () async {
+          sends++;
+        },
       ),
     );
-    await mount(AssistantChatStatus.restoring);
-    await tester.pumpAndSettle();
-    final surface = tester.widget<Container>(
-      find.byKey(const ValueKey('assistant-composer-surface')),
-    );
-    final decoration = surface.decoration! as BoxDecoration;
-    expect(decoration.borderRadius, BorderRadius.circular(24));
-    expect((decoration.border! as Border).isUniform, isTrue);
-    expect(surface.clipBehavior, Clip.antiAlias);
-    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
-    expect(
-      tester.widget<TextField>(find.byType(TextField)).onSubmitted,
-      isNull,
-    );
+    tester.widget<TextField>(find.byType(TextField)).onSubmitted!('');
     expect(sends, 0);
-    expect(controller.text, 'My unsent draft');
-    await mount(AssistantChatStatus.idle);
-    await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
-    expect(sends, 1);
-    expect(tester.takeException(), isNull);
   });
 }

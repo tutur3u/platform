@@ -3637,7 +3637,7 @@
     "profileTimelineDescription": "Creation activity in this workspace over the last 30 days. Calendar events are workspace activity.",
     "profileTimelineLimited": "Showing recent activity only. Some sources reached the display limit.",
     "profileTimelineUnavailable": "Activity could not be refreshed.",
-    "profileTimelineTitle": "Activity timeline",
+    "profileTimelineTitle": "Timeline",
     "profileTimelineToday": "Today",
     "profileTimelineYesterday": "Yesterday",
     "profileTimelineEmpty": "No recent activity in this workspace",
@@ -4088,7 +4088,6 @@
     "workspaceHiddenUpdateError": "Unable to save this change. Try again when connected.",
     "workspaceAllHidden": "Your workspaces are hidden. Restore one to continue.",
     "workspacePickerClose": "Close workspace picker",
-    "offlineEditSyncing": "Syncing…",
     "inventoryProductDeleteConfirm": "Remove this product? If existing sales reference it, the server will archive it when syncing.",
     "inventorySeasonPriceCached": "Offline draft using saved season prices. Prices and availability will be checked when syncing.",
     "offlinePreparationTitle": "Available offline",
@@ -4132,5 +4131,10 @@
             }
         }
     },
-    "inventorySetupSyncFirst": "Sync this new item before using, editing, or deleting it."
+    "inventorySetupSyncFirst": "Sync this new item before using, editing, or deleting it.",
+    "homePersonalAgenda": "Personal Agenda",
+    "homePersonalAgendaUnavailable": "Personal calendar is unavailable.",
+    "assistantExpandNavigation": "Show navigation",
+    "assistantCollapseNavigation": "Hide navigation",
+    "assistantCloseComposer": "Close prompt"
 }

@@ -100,7 +100,7 @@ extension _ShellPageLayout on _ShellPageState {
                               _lastRootLocation,
                             ),
                             builders: [
-                              (_) => DashboardPage(
+                              (_) => HomePage(
                                 replayToken:
                                     _rootTabReplayTokens[Routes.home] ?? 0,
                               ),
@@ -200,7 +200,10 @@ extension _ShellPageLayout on _ShellPageState {
       key: const ValueKey('compact-shell-footer'),
       color: shad.Theme.of(context).colorScheme.background,
       padding: EdgeInsets.only(bottom: bottomPadding),
-      child: navigationBar,
+      child: ShellKeyboardChrome(
+        keyboardVisible: MediaQuery.viewInsetsOf(context).bottom > 0,
+        child: navigationBar,
+      ),
     );
   }
 
@@ -209,10 +212,16 @@ extension _ShellPageLayout on _ShellPageState {
     required Widget navigationBar,
     Widget? header,
     double bodyBottomInset = 0,
+    double navigationBottomOffset = 0,
+    bool composerVisible = false,
   }) {
     return FloatingShellDock(
       location: widget.matchedLocation,
+      keyboardVisible: MediaQuery.viewInsetsOf(context).bottom > 0,
       bottomInset: bodyBottomInset,
+      navigationBottomOffset: navigationBottomOffset,
+      reserveNavigationClearance: !composerVisible,
+      keepNavigationVisible: composerVisible,
       navigation: navigationBar,
       header: header,
       scrollableHeader: _isRootTabLocation(widget.matchedLocation),
@@ -275,11 +284,14 @@ extension _ShellPageLayout on _ShellPageState {
           widget.matchedLocation,
         ) ??
         false;
-    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final composerVisible =
+        widget.matchedLocation == Routes.assistant &&
+        assistantChrome.composerVisible &&
+        !assistantChrome.isLiveMode;
     final showBottomNav =
+        (!composerVisible || assistantChrome.navigationExpanded) &&
         (!widget.matchedLocation.startsWith(Routes.assistant) ||
             !assistantChrome.isFullscreen) &&
-        !keyboardVisible &&
         !immersive;
     final navContent = MorphingNavigationBar(
       selectedKey: selectedKey,
@@ -300,12 +312,12 @@ extension _ShellPageLayout on _ShellPageState {
       ),
     );
     final globalBody = _buildGlobalBody();
-    final floatingNavInset = !isCompact && showBottomNav
+    final floatingNavInset = (!isCompact || composerVisible) && showBottomNav
         ? _floatingNavBodyInset()
         : 0.0;
 
     return shad.Scaffold(
-      footers: showBottomNav && isCompact
+      footers: showBottomNav && isCompact && !composerVisible
           ? [
               _buildCompactFooter(
                 context: context,
@@ -323,10 +335,14 @@ extension _ShellPageLayout on _ShellPageState {
                 activeModule: activeModule,
                 injectedMiniNavRegistration: injectedMiniNavRegistration,
               ),
-        navigationBar: showBottomNav && !isCompact
+        navigationBar: showBottomNav && (!isCompact || composerVisible)
             ? navigationBar
             : const SizedBox.shrink(),
         bodyBottomInset: floatingNavInset,
+        composerVisible: composerVisible,
+        navigationBottomOffset: composerVisible
+            ? assistantComposerHeight(context) + assistantComposerBottomGap * 2
+            : 0,
       ),
     );
   }
