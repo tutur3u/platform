@@ -32,6 +32,7 @@ export function ColabNotifications({ userId }: { userId: string }) {
     >
       <SatelliteNotificationPopover
         userId={userId}
+        pollIntervalMs={30_000}
         webAppUrl="https://tuturuuu.com"
         notificationsText={c.notifications}
         noNotificationsText={c['no-notifications']}
