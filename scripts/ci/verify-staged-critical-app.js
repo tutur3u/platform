@@ -6,6 +6,7 @@ const READS = {
   platform: [
     `/api/v1/workspaces/${workspace}/wallets`,
     '/api/v1/exchange-rates',
+    `/api/v1/workspaces/${workspace}/programming/problems?mode=learner`,
   ],
   finance: [
     `/api/workspaces/${workspace}/wallets/infinite`,

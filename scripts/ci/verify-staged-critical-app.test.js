@@ -21,6 +21,7 @@ const expectedReads = {
   platform: [
     `/api/v1/workspaces/${workspace}/wallets`,
     '/api/v1/exchange-rates',
+    `/api/v1/workspaces/${workspace}/programming/problems?mode=learner`,
   ],
   finance: [
     `/api/workspaces/${workspace}/wallets/infinite`,
@@ -136,5 +137,21 @@ test('CLI forwards only curl flags and uses an intentionally invalid machine key
       'HEAD',
       'https://candidate.vercel.app'
     ).includes('--head')
+  );
+});
+
+test('blocks Web promotion when the Learn catalog API is missing', async () => {
+  await assert.rejects(
+    verifyStagedApp({
+      app: 'platform',
+      sha,
+      request: async (path) =>
+        path === '/api/build-info'
+          ? stamp('platform')
+          : path.includes('/programming/problems')
+            ? { status: 404, body: '<html>Not Found</html>' }
+            : denied,
+    }),
+    /auth-boundary probe failed/
   );
 });

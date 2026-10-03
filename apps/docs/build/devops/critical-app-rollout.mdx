@@ -1,6 +1,7 @@
 ---
 title: Critical app rollout gates
 description: Stage production artifacts and verify ordinary API boundaries before moving production domains.
+updatedAt: "2026-10-03"
 ---
 
 Finance, Inventory, Contacts, CMS, and Tasks depend on the live Web API. A
@@ -48,6 +49,11 @@ own dependency rules.
 
 These probes establish source identity and API ingress health. They do not prove
 signed-in permissions, business CRUD, mobile behavior, or provider integrations.
+The Web probe includes Learn's Programming catalog API: its sidebar page must
+not advance against a platform artifact that lacks the route. An out-of-band
+Instant Rollback can still create mixed versions, so recovery must restore a
+compatible platform artifact and verify the signed-in Programming sidebar flow.
+An HTML API 404 is not evidence that the Learn page or workspace is missing.
 After promotion, verify the requested signed-in workflows separately and record
 any missing evidence. Production database migrations still require their gated
 exact-SHA workflow; never push them manually from an agent checkout.
