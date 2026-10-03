@@ -17,9 +17,8 @@ class _CountedPayload {
 }
 
 void main() {
-  testWidgets('large collections render lazily and serialize only opened rows', (
-    tester,
-  ) async {
+  testWidgets('large collections render lazily '
+      'and serialize only opened rows', (tester) async {
     final store = _Store();
     final payloads = List.generate(2000, (_) => _CountedPayload());
     final rows = [
