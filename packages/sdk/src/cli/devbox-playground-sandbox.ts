@@ -40,6 +40,7 @@ const environments = new Map<
     name: string;
     language: PlaygroundLanguage;
     image: string;
+    ready: boolean;
     createdAt: number;
     touchedAt: number;
     timer: ReturnType<typeof setTimeout>;
@@ -146,7 +147,18 @@ function touch(projectId: string) {
   entry.touchedAt = Date.now();
   entry.timer = setTimeout(
     () => {
-      void removeEnvironment(projectId).catch(() => {});
+      void withProjectRun(projectId, () =>
+        withPoolLock(async () => {
+          // A queued eviction must never remove a replacement or freshly reused entry.
+          if (environments.get(projectId) !== entry) return;
+          if (
+            Date.now() - entry.createdAt < MAX_AGE_MS &&
+            Date.now() - entry.touchedAt < IDLE_MS
+          )
+            return;
+          await removeEnvironment(projectId);
+        })
+      ).catch(() => {});
     },
     Math.min(IDLE_MS, MAX_AGE_MS - (Date.now() - entry.createdAt))
   );
@@ -241,9 +253,11 @@ async function ensureEnvironment(
     let entry = environments.get(payload.projectId);
     if (
       entry &&
-      (entry.language !== payload.language ||
+      (!entry.ready ||
+        entry.language !== payload.language ||
         entry.image !== image ||
-        Date.now() - entry.createdAt >= MAX_AGE_MS)
+        Date.now() - entry.createdAt >=
+          MAX_AGE_MS - limits.sandbox_timeout_seconds * 1000 - 60_000)
     ) {
       await removeEnvironment(payload.projectId);
       entry = undefined;
@@ -278,8 +292,6 @@ async function ensureEnvironment(
         capacity
       )
     );
-    if (started.code !== 0)
-      throw new Error('Could not start isolated playground');
     const name = PREFIX + payload.projectId;
     const timer = setTimeout(() => {}, 0);
     clearTimeout(timer);
@@ -287,11 +299,18 @@ async function ensureEnvironment(
       name,
       language: payload.language,
       image,
+      ready: started.code === 0 && !started.timedOut && !started.exceeded,
       createdAt: Date.now(),
       touchedAt: Date.now(),
       timer,
     });
     touch(payload.projectId);
+    if (started.code !== 0 || started.timedOut || started.exceeded) {
+      // Docker may have created the named container before its CLI failed.
+      // Keep the entry quarantined and capacity owned if removal is unconfirmed.
+      await removeEnvironment(payload.projectId);
+      throw new Error('Could not start isolated playground');
+    }
     return name;
   });
 }

@@ -398,7 +398,13 @@ closed if required isolation or language images are unavailable.
 Platform-managed playground workers opt in through operator configuration. They
 require gVisor and pinned language image digests, run unprivileged without host
 credentials, and disable network access by default. Project environments retain
-dependencies while warm, expire after fifteen idle minutes and have a two-hour
+dependencies while warm. A configured `TUTURUUU_PLAYGROUND_POOL_ID` dedicates the
+agent process to Playground: Judge readiness is false and Judge execution fails
+before Docker admission, so warm environments cannot double the Judge host budget.
+Idle/max-age eviction waits for an active project run and holds the pool lock;
+near-expiry containers are replaced before admitting another bounded run. Failed
+starts remove their exact owned name, retaining quarantined capacity when Docker
+cannot confirm removal. Environments expire after fifteen idle minutes and have a two-hour
 maximum lifetime. Environment count is bounded by the runner's resource limits.
 A failed container removal retains its capacity reservation until a successful
 removal or healthy Docker inventory confirms the container is absent. Failed

@@ -110,6 +110,13 @@ export async function getJudgeReadiness(rawImages?: string): Promise<{
   ready: boolean;
   reason: string | null;
 }> {
+  if (process.env.TUTURUUU_PLAYGROUND_POOL_ID) {
+    return {
+      languages: [],
+      ready: false,
+      reason: 'This process owns a dedicated Playground pool.',
+    };
+  }
   try {
     const images = parseJudgeImages(rawImages);
     if (Object.keys(images).length === 0) {
@@ -353,6 +360,10 @@ export async function runJudgeCases({
   limits: JudgeResourceLimits;
   payload: JudgePayload;
 }) {
+  if (process.env.TUTURUUU_PLAYGROUND_POOL_ID)
+    throw new Error(
+      'Judge execution is disabled in a dedicated Playground process.'
+    );
   const capacity = await readJudgeDockerCapacity();
   const image = images[payload.language];
   if (!image)
