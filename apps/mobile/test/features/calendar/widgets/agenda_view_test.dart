@@ -9,7 +9,8 @@ void main() {
   testWidgets(
     'past timed titles retain their completion cue with opaque fills',
     (tester) async {
-      final start = DateTime.now().subtract(const Duration(days: 1));
+      // Keep this past event within one day regardless of the CI clock.
+      final start = DateTime(2000, 1, 1, 12);
       await tester.pumpApp(
         AgendaView(
           selectedDate: start,
