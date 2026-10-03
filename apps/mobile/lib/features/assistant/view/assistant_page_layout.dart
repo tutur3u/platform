@@ -99,9 +99,6 @@ extension _AssistantPageLayout on _AssistantPageState {
                             .state;
                         final isFullscreen = chrome.isFullscreen;
                         final isLiveMode = chrome.isLiveMode;
-                        final reducedMotion = MediaQuery.disableAnimationsOf(
-                          context,
-                        );
                         final liveCameraController =
                             _liveCubit.cameraController;
                         final isVisibleLiveSession = _isVisibleLiveSession(
@@ -244,103 +241,65 @@ extension _AssistantPageLayout on _AssistantPageState {
                                         bottom: assistantComposerBottomOffset(
                                           context,
                                         ),
-                                        child: ExcludeSemantics(
-                                          excluding: !_isComposerVisible,
-                                          child: IgnorePointer(
-                                            ignoring: !_isComposerVisible,
-                                            child: AnimatedSlide(
-                                              duration: reducedMotion
-                                                  ? Duration.zero
-                                                  : const Duration(
-                                                      milliseconds: 180,
-                                                    ),
-                                              curve: Curves.easeOutCubic,
-                                              offset: _isComposerVisible
-                                                  ? Offset.zero
-                                                  : const Offset(0, 1),
-                                              child: AnimatedOpacity(
-                                                duration: reducedMotion
-                                                    ? Duration.zero
-                                                    : const Duration(
-                                                        milliseconds: 160,
-                                                      ),
-                                                curve: Curves.easeOutCubic,
-                                                opacity: _isComposerVisible
-                                                    ? 1
-                                                    : 0,
-                                                child: AssistantComposerDock(
-                                                  repository: _repository,
-                                                  chatState: chatState,
-                                                  liveState: liveState,
-                                                  liveUiState: liveUiState,
+                                        child: AssistantMorphingDock(
+                                          isComposing: _isComposerVisible,
+                                          navigation:
+                                              AssistantDockNavigation.maybeOf(
+                                                context,
+                                              ) ??
+                                              const SizedBox.shrink(),
+                                          composer: AssistantComposerDock(
+                                            repository: _repository,
+                                            chatState: chatState,
+                                            liveState: liveState,
+                                            liveUiState: liveUiState,
+                                            shellState: shellState,
+                                            navigationExpanded:
+                                                chrome.navigationExpanded,
+                                            bottomInset: 0,
+                                            isPersonalWorkspace:
+                                                isPersonalWorkspace,
+                                            onModelSelected:
+                                                _shellCubit.setSelectedModel,
+                                            onOpenCreditSourceSheet: () =>
+                                                _showCreditSourceSheet(
+                                                  context,
                                                   shellState: shellState,
-                                                  navigationExpanded:
-                                                      chrome.navigationExpanded,
-                                                  bottomInset: 0,
                                                   isPersonalWorkspace:
                                                       isPersonalWorkspace,
-                                                  onModelSelected: _shellCubit
-                                                      .setSelectedModel,
-                                                  onOpenCreditSourceSheet: () =>
-                                                      _showCreditSourceSheet(
-                                                        context,
-                                                        shellState: shellState,
-                                                        isPersonalWorkspace:
-                                                            isPersonalWorkspace,
-                                                      ),
-                                                  onThinkingModeChanged:
-                                                      _shellCubit
-                                                          .setThinkingMode,
-                                                  controller: _inputController,
-                                                  focusNode: _inputFocusNode,
-                                                  onOpenAttachments: () =>
-                                                      _showAttachmentSheet(
-                                                        context,
-                                                        currentWorkspace.id,
-                                                      ),
-                                                  onCloseComposer:
-                                                      _collapseComposerToFab,
-                                                  onToggleNavigation:
-                                                      _toggleComposerNavigation,
-                                                  onMicrophoneTap: () =>
-                                                      _recordVoiceMessage(
-                                                        currentWorkspace.id,
-                                                      ),
-                                                  onSend: () => _handleSend(
-                                                    currentWorkspace.id,
-                                                    shellState,
-                                                    chatState,
-                                                    liveState,
-                                                  ),
-                                                  onRemoveAttachment:
-                                                      removeComposerAttachment,
                                                 ),
-                                              ),
+                                            onThinkingModeChanged:
+                                                _shellCubit.setThinkingMode,
+                                            controller: _inputController,
+                                            focusNode: _inputFocusNode,
+                                            onOpenAttachments: () =>
+                                                _showAttachmentSheet(
+                                                  context,
+                                                  currentWorkspace.id,
+                                                ),
+                                            onCloseComposer:
+                                                _collapseComposerToFab,
+                                            onToggleNavigation:
+                                                _toggleComposerNavigation,
+                                            onMicrophoneTap: () =>
+                                                _recordVoiceMessage(
+                                                  currentWorkspace.id,
+                                                ),
+                                            onSend: () => _handleSend(
+                                              currentWorkspace.id,
+                                              shellState,
+                                              chatState,
+                                              liveState,
                                             ),
+                                            onRemoveAttachment:
+                                                removeComposerAttachment,
                                           ),
+                                          composeLabel: context
+                                              .l10n
+                                              .assistantAskPlaceholder,
+                                          onCompose: _restoreComposerAndFocus,
                                         ),
                                       ),
-                                      if (isFullscreen && !_isComposerVisible)
-                                        Positioned(
-                                          right:
-                                              _AssistantPageState
-                                                  ._assistantFabSideOffset +
-                                              MediaQuery.paddingOf(
-                                                context,
-                                              ).right,
-                                          bottom:
-                                              _AssistantPageState
-                                                  ._assistantFabBottomOffset +
-                                              MediaQuery.paddingOf(
-                                                context,
-                                              ).bottom,
-                                          child: AssistantComposerFab(
-                                            label: context
-                                                .l10n
-                                                .assistantAskPlaceholder,
-                                            onPressed: _restoreComposerAndFocus,
-                                          ),
-                                        ),
                                       if (hasTranscript)
                                         AssistantScrollToBottomOverlay(
                                           composerVisible: _isComposerVisible,

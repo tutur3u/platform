@@ -322,6 +322,9 @@ void main() {
       final input = tester
           .widget<TextField>(find.byType(TextField))
           .controller!;
+      final inputFocus = tester
+          .widget<TextField>(find.byType(TextField))
+          .focusNode!;
       expect(chrome.state.composerVisible, isTrue);
       router.go(Routes.settings);
       await settle();
@@ -339,11 +342,15 @@ void main() {
         find.byKey(const ValueKey('assistant-navigation-toggle')),
       );
       await settle();
-      expect(chrome.state.navigationExpanded, isTrue);
+      expect(chrome.state.composerVisible, isFalse);
+      expect(chrome.state.navigationExpanded, isFalse);
+      expect(find.byType(TextField), findsNothing);
+      expect(inputFocus.hasFocus, isFalse);
+      expect(input.text, 'Synthetic unsent draft');
       final dock = tester.widget<FloatingShellDock>(
         find.byType(FloatingShellDock),
       );
-      expect(dock.reserveNavigationClearance, isFalse);
+      expect(dock.reserveNavigationClearance, isTrue);
       chrome.setComposerVisible(visible: false);
       await settle();
       expect(input.text, 'Synthetic unsent draft');
