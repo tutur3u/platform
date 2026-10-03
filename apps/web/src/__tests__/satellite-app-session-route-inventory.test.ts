@@ -111,6 +111,10 @@ const allowedSatelliteLocalApiRoutes = new Set([
   'apps/meet/src/app/api/meet-call/[meetingId]/assistant/review/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/costs/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/files/route.ts',
+  // Collaboration uses Meet's participant/host guard and signed room capabilities.
+  'apps/meet/src/app/api/meet-call/[meetingId]/document/route.ts',
+  'apps/meet/src/app/api/meet-call/[meetingId]/programming/route.ts',
+  'apps/meet/src/app/api/meet-call/[meetingId]/programming/preview/[port]/[[...path]]/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/recording/route.ts',
   // In-call title edits preserve scheduling fields and require the creator.
   'apps/meet/src/app/api/meet-call/[meetingId]/title/route.ts',
