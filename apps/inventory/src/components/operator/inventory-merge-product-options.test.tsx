@@ -176,25 +176,31 @@ describe('independent merge product lookup', () => {
     await screen.findByText('Label error');
     expect(screen.queryByText('Ready')).toBeNull();
   });
-  it('shows a selected-name error and retry instead of loading forever', async () => {
-    api.list.mockResolvedValue({ data: [], count: 0 });
-    api.product
-      .mockResolvedValueOnce({ id: 'selected', name: null })
-      .mockResolvedValue({ id: 'selected', name: 'Recovered selection' });
-    renderQuery(
-      <InventoryMergeProductSelect
-        disabled={false}
-        excludeId=""
-        label="Source"
-        onChange={vi.fn()}
-        value="selected"
-        wsId="workspace"
-      />
-    );
-    await screen.findByRole('alert');
-    expect(screen.getByRole('alert').textContent).toContain('labelsError');
-    fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
-    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
-    expect(api.product).toHaveBeenCalledTimes(2);
-  });
+  it.each([null, '   '])(
+    'shows a selected-name error and retry for page label %s',
+    async (name) => {
+      api.list.mockResolvedValue({
+        data: [{ id: 'selected', name }],
+        count: 1,
+      });
+      api.product
+        .mockResolvedValueOnce({ id: 'selected', name: null })
+        .mockResolvedValue({ id: 'selected', name: 'Recovered selection' });
+      renderQuery(
+        <InventoryMergeProductSelect
+          disabled={false}
+          excludeId=""
+          label="Source"
+          onChange={vi.fn()}
+          value="selected"
+          wsId="workspace"
+        />
+      );
+      await screen.findByRole('alert');
+      expect(screen.getByRole('alert').textContent).toContain('labelsError');
+      fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
+      await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+      expect(api.product).toHaveBeenCalledTimes(2);
+    }
+  );
 });
