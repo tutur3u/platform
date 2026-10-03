@@ -82,3 +82,31 @@ it('does not contact storage when membership/permission was revoked', async () =
   ).rejects.toMatchObject({ reason: 'unauthorized' });
   expect(mocks.rpc).not.toHaveBeenCalled();
 });
+
+it('preserves storage outages as unavailable rather than authorization denial', async () => {
+  mocks.authorize.mockResolvedValueOnce({
+    error: new Response(null, { status: 500 }),
+  });
+  await expect(
+    getCalendarRetainedGeneration(request, wsId, eventId)
+  ).rejects.toMatchObject({ reason: 'storage' });
+  expect(mocks.rpc).not.toHaveBeenCalled();
+});
+it('uses generation zero as the CAS fence for a previously ledgerless event', async () => {
+  const service = createRequestNativeGenerationService(request, wsId, eventId);
+  mocks.rpc.mockResolvedValueOnce({
+    data: { generation: '0', pending: false },
+    error: null,
+  });
+  const expectedGeneration = await service.inspect();
+  mocks.rpc.mockResolvedValueOnce({ data: null, error: { code: '40001' } });
+  await expect(
+    service.patch(expectedGeneration, { locked: true })
+  ).rejects.toMatchObject({ reason: 'conflict' });
+  expect(mocks.rpc).toHaveBeenLastCalledWith(
+    'calendar_native_generation_mutation',
+    expect.objectContaining({
+      p_input: { expectedGeneration: '0', patch: { locked: true } },
+    })
+  );
+});

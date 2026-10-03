@@ -268,3 +268,16 @@ it('inspects a retained native terminal saga even with the feature mode disabled
   expect(fixture.sagaAllowed).toHaveBeenCalledWith(binding);
   expect(fixture.create).not.toHaveBeenCalled();
 });
+
+it('suppresses attendee notifications for bulk sync content patches', async () => {
+  fixture.reserve.mockResolvedValue({ id: 'operation-A' });
+  fixture.execute.mockResolvedValue({ phase: 'applied' });
+  await handleRecoverableGooglePut({
+    ...args(),
+    updates: { title: 'bulk title' },
+    sendUpdates: 'none',
+  });
+  expect(fixture.reserve).toHaveBeenCalledWith(
+    expect.objectContaining({ sendUpdates: 'none' })
+  );
+});

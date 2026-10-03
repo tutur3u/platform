@@ -43,8 +43,9 @@ export function operationFailure(error: unknown, operationId?: string) {
         : ['conflict', 'identity'].includes(error.reason)
           ? 409
           : 503
-      : error instanceof GoogleColorChoiceError && error.status === 403
-        ? 403
+      : error instanceof GoogleColorChoiceError &&
+          [401, 403].includes(error.status)
+        ? error.status
         : 503;
   // Do not return provider errors, SQL messages, stored intent or prepared patch.
   console.warn('Google color operation could not complete');
@@ -231,6 +232,7 @@ export async function handleRecoverableGooglePut(args: {
   rawWsId: string;
   eventId: string;
   updates: Record<string, unknown>;
+  sendUpdates?: 'none';
 }) {
   const keys = Object.keys(args.updates);
   if (keys.length === 1 && ['color', 'providerColor'].includes(keys[0]!))
@@ -288,11 +290,15 @@ export async function handleRecoverableGooglePut(args: {
         args.updates.locked === undefined
           ? {}
           : { locked: args.updates.locked as boolean },
-      sendUpdates: keys.some((key) =>
-        ['title', 'description', 'location', 'start_at', 'end_at'].includes(key)
-      )
-        ? 'all'
-        : 'none',
+      sendUpdates:
+        args.sendUpdates ??
+        (keys.some((key) =>
+          ['title', 'description', 'location', 'start_at', 'end_at'].includes(
+            key
+          )
+        )
+          ? 'all'
+          : 'none'),
     });
     operationId = operation.id;
     const complete = await service.execute(operationId);

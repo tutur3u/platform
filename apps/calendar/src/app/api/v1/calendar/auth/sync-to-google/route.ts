@@ -202,6 +202,7 @@ export async function POST(request: Request) {
       for (const event of writable) {
         const result = await handleRecoverableGooglePut({
           request,
+          sendUpdates: 'none',
           rawWsId: normalizedWsId,
           eventId: event.id,
           updates: {

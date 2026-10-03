@@ -1,10 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ColorOperationError } from '@/lib/calendar/google-color-operations/protocol';
 
 const mocks = vi.hoisted(() => ({
   authorize: vi.fn(),
   retained: vi.fn(),
   recoverablePut: vi.fn(),
+  nativePut: vi.fn(),
   decryptEvent: vi.fn(),
   deleteProviderEvent: vi.fn(),
   encryptEvent: vi.fn(),
@@ -28,6 +29,10 @@ vi.mock(
     >()),
     handleRecoverableGooglePut: mocks.recoverablePut,
   })
+);
+vi.mock(
+  '@/lib/calendar/google-color-operations/native-generation-routes',
+  () => ({ handleRetainedNativeMutation: mocks.nativePut })
 );
 vi.mock('@/lib/calendar-event-permission', () => ({
   authorizeCalendarEventManagement: mocks.authorize,
@@ -358,3 +363,27 @@ it.each([
     expect(mocks.decryptEvent).not.toHaveBeenCalled();
   }
 );
+
+afterEach(() => vi.unstubAllEnvs());
+it('routes enabled ledgerless native patches through generation checked mutation', async () => {
+  vi.stubEnv('CALENDAR_GOOGLE_COLOR_OPERATIONS_ENABLED', 'true');
+  const existing = chainResult({
+    data: { id: EVENT_ID, provider: 'tuturuuu' },
+    error: null,
+  });
+  const from = vi.fn(() => existing);
+  mocks.authorize.mockResolvedValue({
+    sbAdmin: { from },
+    wsId: WS_ID,
+    userId: 'actor',
+  });
+  mocks.resolveOutboundSource.mockResolvedValue(null);
+  mocks.nativePut.mockResolvedValue(Response.json({ locked: true }));
+  expect((await PUT(request('PUT', { locked: true }), params())).status).toBe(
+    200
+  );
+  expect(mocks.nativePut).toHaveBeenCalledWith(
+    expect.objectContaining({ eventId: EVENT_ID, updates: { locked: true } })
+  );
+  expect(existing.update).not.toHaveBeenCalled();
+});

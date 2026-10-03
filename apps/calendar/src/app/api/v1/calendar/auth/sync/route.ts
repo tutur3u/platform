@@ -201,10 +201,15 @@ export async function PUT(request: Request) {
   });
   if (!authContext.ok) return authContext.response;
   const { supabase, user } = authContext;
-  const access = await authorizeLegacySync(request, supabase, {
-    eventId,
-    googleEventId: googleCalendarEventId,
-  });
+  const access = await authorizeLegacySync(
+    request,
+    supabase,
+    {
+      eventId,
+      googleEventId: googleCalendarEventId,
+    },
+    { recoverable: googleColorOperationModeEnabled() }
+  );
   if ('error' in access) return access.error;
   if (googleColorOperationModeEnabled()) {
     return handleRecoverableGooglePut({
@@ -362,10 +367,15 @@ export async function DELETE(request: Request) {
   });
   if (!authContext.ok) return authContext.response;
   const { supabase, user } = authContext;
-  const access = await authorizeLegacySync(request, supabase, {
-    eventId,
-    googleEventId: googleCalendarEventId,
-  });
+  const access = await authorizeLegacySync(
+    request,
+    supabase,
+    {
+      eventId,
+      googleEventId: googleCalendarEventId,
+    },
+    { recoverable: googleColorOperationModeEnabled() }
+  );
   if ('error' in access) return access.error;
   if (googleColorOperationModeEnabled()) {
     return handleRecoverableGoogleDelete({

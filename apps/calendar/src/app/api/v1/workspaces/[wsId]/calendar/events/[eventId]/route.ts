@@ -205,6 +205,14 @@ export async function PUT(request: Request, { params }: Params) {
         });
       if (await resolveOutboundSyncSource({ sbAdmin, wsId, userId }))
         return unsupportedProviderSaga();
+      return handleRetainedNativeMutation({
+        request,
+        rawWsId,
+        wsId,
+        eventId,
+        sbAdmin,
+        updates,
+      });
     }
 
     const decryptedExisting = await decryptEventFromStorage(

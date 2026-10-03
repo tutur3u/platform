@@ -5,10 +5,11 @@ const mocks = vi.hoisted(() => ({
   authorize: vi.fn(),
   one: vi.fn(),
   eq: vi.fn(),
+  retained: vi.fn(async () => null as unknown),
 }));
 vi.mock(
   '@/lib/calendar/google-color-operations/retained-generation-request-access',
-  () => ({ getCalendarRetainedGeneration: vi.fn(async () => null) })
+  () => ({ getCalendarRetainedGeneration: mocks.retained })
 );
 vi.mock('@/lib/calendar-event-permission', () => ({
   authorizeCalendarEventManagement: mocks.authorize,
@@ -71,4 +72,23 @@ it('requires explicit authorized workspace when no local event exists', async ()
   expect('error' in missing && missing.error.status).toBe(400);
   await authorizeLegacySync(request, client, { wsId: 'personal' });
   expect(mocks.authorize).toHaveBeenCalledWith(request, 'personal');
+});
+
+it('routes retained events into recoverable writes while direct legacy writes stay blocked', async () => {
+  mocks.retained.mockResolvedValue({
+    generation: '1',
+    phase: 'applied',
+    pending: false,
+  });
+  const blocked = await authorizeLegacySync(request, client, { eventId });
+  expect('error' in blocked && blocked.error.status).toBe(409);
+  const recovered = await authorizeLegacySync(
+    request,
+    client,
+    { eventId },
+    { recoverable: true }
+  );
+  expect(recovered).toMatchObject({ event: { id: eventId } });
+  expect(mocks.authorize).toHaveBeenCalledTimes(2);
+  expect(mocks.retained).toHaveBeenCalledTimes(1);
 });

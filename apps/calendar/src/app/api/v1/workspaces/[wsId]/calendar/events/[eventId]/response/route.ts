@@ -101,7 +101,11 @@ export async function POST(
     });
     return NextResponse.json({ response: input.data.response }, { headers });
   } catch (error) {
-    if (error instanceof ColorOperationError) return operationFailure(error);
+    if (error instanceof ColorOperationError) {
+      const response = operationFailure(error);
+      response.headers.set('Cache-Control', headers['Cache-Control']);
+      return response;
+    }
     if (error instanceof MeetingResponseError) {
       return NextResponse.json(
         { error: error.message },

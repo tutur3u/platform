@@ -30,7 +30,7 @@ export async function getCalendarRetainedGeneration(
   const authorized = await authorizeCalendarEventManagement(request, rawWsId);
   if ('error' in authorized)
     throw new ColorOperationError(
-      'unauthorized',
+      authorized.error.status >= 500 ? 'storage' : 'unauthorized',
       'Calendar generation access unavailable'
     );
   const { data, error } = await authorized.sbAdmin.rpc(

@@ -10,15 +10,22 @@ const mocks = vi.hoisted(() => ({
   select: vi.fn(),
   eq: vi.fn(),
   one: vi.fn(),
+  retained: vi.fn(async () => null),
 }));
 vi.mock(
   '@/lib/calendar/google-color-operations/retained-generation-request-access',
-  () => ({ getCalendarRetainedGeneration: vi.fn(async () => null) })
+  () => ({ getCalendarRetainedGeneration: mocks.retained })
 );
-vi.mock('@/lib/calendar/google-color-operations/route-handlers', () => ({
-  googleColorOperationModeEnabled: mocks.enabled,
-  handleRecoverableGoogleResponse: mocks.recover,
-}));
+vi.mock(
+  '@/lib/calendar/google-color-operations/route-handlers',
+  async (original) => ({
+    ...(await original<
+      typeof import('@/lib/calendar/google-color-operations/route-handlers')
+    >()),
+    googleColorOperationModeEnabled: mocks.enabled,
+    handleRecoverableGoogleResponse: mocks.recover,
+  })
+);
 vi.mock('@/lib/calendar-event-permission', () => ({
   authorizeCalendarEventManagement: mocks.authorize,
 }));
@@ -32,6 +39,7 @@ vi.mock('@/lib/calendar/meeting-provider-response', async (original) => ({
   respondToProviderMeeting: mocks.respond,
 }));
 
+import { ColorOperationError } from '@/lib/calendar/google-color-operations/protocol';
 import { POST } from './route';
 
 const eventId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -180,4 +188,13 @@ describe('authenticated meeting responses', () => {
     expect(mocks.recover).not.toHaveBeenCalled();
     expect(mocks.respond).not.toHaveBeenCalled();
   });
+});
+
+it('keeps private no-store on retained-generation failure responses', async () => {
+  mocks.retained.mockRejectedValueOnce(
+    new ColorOperationError('storage', 'private SQL detail')
+  );
+  const response = await request();
+  expect(response.status).toBe(503);
+  expect(response.headers.get('Cache-Control')).toBe('private, no-store');
 });

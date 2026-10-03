@@ -6,6 +6,7 @@ import {
   getWorkspaceKey,
 } from '../../workspace-encryption';
 import { createRequestNativeGenerationService } from './native-generation-request-service';
+import { ColorOperationError } from './protocol';
 import { unsupportedProviderSaga } from './provider-saga-routes';
 import { operationFailure } from './route-handlers';
 
@@ -38,7 +39,15 @@ export async function handleRetainedNativeMutation(args: {
         .eq('id', args.eventId)
         .eq('ws_id', args.wsId)
         .single();
-      if (error || !data) return NextResponse.json({}, { status: 404 });
+      if (error) {
+        if (error.code === 'PGRST116')
+          return NextResponse.json({}, { status: 404 });
+        throw new ColorOperationError(
+          'storage',
+          'Native event storage unavailable'
+        );
+      }
+      if (!data) return NextResponse.json({}, { status: 404 });
       const plain = await decryptEventFromStorage(data, args.wsId);
       const key = await getWorkspaceKey(args.wsId);
       if (!Buffer.isBuffer(key) || key.length !== 32)
@@ -63,7 +72,15 @@ export async function handleRetainedNativeMutation(args: {
       .eq('id', args.eventId)
       .eq('ws_id', args.wsId)
       .single();
-    if (error || !data) return NextResponse.json({}, { status: 404 });
+    if (error) {
+      if (error.code === 'PGRST116')
+        return NextResponse.json({}, { status: 404 });
+      throw new ColorOperationError(
+        'storage',
+        'Native event storage unavailable'
+      );
+    }
+    if (!data) return NextResponse.json({}, { status: 404 });
     return NextResponse.json(await decryptEventFromStorage(data, args.wsId));
   } catch (error) {
     return operationFailure(error);

@@ -11,7 +11,8 @@ import { authorizeCalendarEventManagement } from '@/lib/calendar-event-permissio
 export async function authorizeLegacySync(
   request: Request,
   supabase: TypedSupabaseClient,
-  input: { eventId?: string; googleEventId?: string; wsId?: string }
+  input: { eventId?: string; googleEventId?: string; wsId?: string },
+  options: { recoverable?: boolean } = {}
 ) {
   if (input.eventId && !z.guid().safeParse(input.eventId).success)
     return {
@@ -56,7 +57,7 @@ export async function authorizeLegacySync(
     };
   const access = await authorizeCalendarEventManagement(request, wsId);
   if ('error' in access) return access;
-  if (event) {
+  if (event && !options.recoverable) {
     try {
       if (await getCalendarRetainedGeneration(request, wsId, event.id))
         return { error: unsupportedProviderSaga() };
