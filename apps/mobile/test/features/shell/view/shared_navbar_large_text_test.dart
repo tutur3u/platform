@@ -18,7 +18,6 @@ import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
-import 'package:mobile/features/profile/view/profile_overview_page.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
@@ -209,6 +208,7 @@ void main() {
 
   for (final title in ['Settings', 'Profile', 'Mira Chat', 'Mira Live']) {
     final profileSection = title == 'Profile';
+    final renderedTitle = profileSection ? 'Overview' : title;
     final assistantSection = title.startsWith('Mira');
     for (final viewport in [320.0, 393.0]) {
       for (final scale in [1.0, 2.0, 3.0]) {
@@ -229,7 +229,7 @@ void main() {
           }
           final titleFinder = find.descendant(
             of: find.byType(ShellTopBarTitle),
-            matching: find.text(title),
+            matching: find.text(renderedTitle),
           );
           expect(titleFinder, findsOneWidget);
           final paragraph = tester.renderObject<RenderParagraph>(titleFinder);
@@ -267,12 +267,7 @@ void main() {
           if (!assistantSection) {
             content = tester.getRect(
               profileSection
-                  ? find
-                        .descendant(
-                          of: find.byType(ProfileOverviewPage),
-                          matching: find.text('Overview'),
-                        )
-                        .first
+                  ? find.byKey(const ValueKey('profile-overview-content'))
                   : find.byKey(const ValueKey('navbar-content')),
             );
             expect(content.top, closeTo(bar.bottom + 10, .01));
@@ -299,7 +294,7 @@ void main() {
           final semantics = tester.ensureSemantics();
           expect(
             find.bySemanticsLabel(
-              RegExp(assistantSection ? title : '$title, Search apps'),
+              RegExp(assistantSection ? title : '$renderedTitle, Search apps'),
             ),
             findsOneWidget,
           );

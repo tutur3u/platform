@@ -8,7 +8,11 @@ export default defineConfig({
   resolve: {
     alias: [
       {
-        find: '@tuturuuu/types',
+        find: /^@\/(.+)$/,
+        replacement: `${resolve(__dirname, '../../apps/web/src')}/$1`,
+      },
+      {
+        find: /^@tuturuuu\/types$/,
         replacement: resolve(__dirname, '../types/src/index.ts'),
       },
       {

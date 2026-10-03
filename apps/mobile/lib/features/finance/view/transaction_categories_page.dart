@@ -69,7 +69,6 @@ class _TransactionCategoriesViewState
   static const _tagsCacheTag = 'finance:tags';
   static final Map<String, _CategoryCacheEntry> _categoriesCache = {};
   static final Map<String, _TagCacheEntry> _tagsCache = {};
-
   static void clearMemoryCaches() {
     _categoriesCache.clear();
     _tagsCache.clear();
@@ -257,6 +256,9 @@ class _TransactionCategoriesViewState
             ShellChromeActions(
               ownerId: 'finance-manage-create',
               locations: const {Routes.categories},
+              onResetSection: () {
+                if (_activeTab != _tabCategories) _switchTab(_tabCategories);
+              },
               actions: [
                 ShellActionSpec(
                   id: 'finance-manage-create',
