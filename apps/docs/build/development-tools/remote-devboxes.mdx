@@ -248,7 +248,7 @@ bun scripts/setup-devbox-cli-upgrades.ts --runner <id> --runner <id>
 ```
 
 The installer supports macOS launchd, checks at login and every 24 hours while
-the operator machine is running, and stores its standalone script and private
+the operator machine is running, and stores its portable script, lock helper, and private
 logs under `~/.tuturuuu/devbox-upgrades`. It uses the existing CLI session and
 never copies credentials into its plist. `launchctl print
 gui/$(id -u)/com.tuturuuu.devbox-cli-upgrades` shows scheduler status. A full
@@ -287,8 +287,10 @@ host maintenance window or opt out instead of assuming this lock covers them.
 Installer subprocesses receive host path/runtime variables, never the runner
 token. An unverified install attempts to restore the previous release. A failed
 rollback stops the agent with a repair error; inspect service logs and repair
-the host installation. A lock surviving a crash requires operator inspection
-before removing it; never remove a lock held by a running installer.
+the host installation. Locks record process ownership and identity; dead owners are reclaimed under a
+separate reclamation guard, while live installers are never evicted by age. An
+unknown legacy lock or interrupted reclamation guard requires operator
+inspection. Never remove a lock held by a running installer.
 
 Set `TUTURUUU_DEVBOX_AUTO_UPGRADE=false` in `devbox-runner.env` to opt out.
 Manually started and source-checkout agents do not upgrade automatically unless

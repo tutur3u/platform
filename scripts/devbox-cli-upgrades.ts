@@ -1,7 +1,8 @@
 import { spawn } from 'node:child_process';
-import { mkdir, readFile, rm } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { acquireUpgradeLock } from '../packages/sdk/src/cli/devbox-upgrade-lock.ts';
 
 interface Runner {
   id: string;
@@ -113,14 +114,12 @@ async function main() {
   const directory = join(homedir(), '.tuturuuu', 'devbox-upgrades');
   await mkdir(directory, { recursive: true, mode: 0o700 });
   const lock = join(directory, 'fleet.lock');
-  try {
-    await mkdir(lock, { mode: 0o700 });
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'EEXIST') {
-      console.log('Another upgrade check holds the lock');
-      return;
-    }
-    throw error;
+  const release = await acquireUpgradeLock(lock);
+  if (!release) {
+    console.log(
+      'Another upgrade check holds the lock, or its ownership requires inspection'
+    );
+    return;
   }
   try {
     // Let the installed CLI refresh its existing session before reading it.

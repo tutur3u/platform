@@ -66,7 +66,19 @@ async function main() {
   await mkdir(dirname(plist), { recursive: true });
   await writeFile(
     script,
-    await readFile(join(import.meta.dir, 'devbox-cli-upgrades.ts')),
+    (
+      await readFile(join(import.meta.dir, 'devbox-cli-upgrades.ts'), 'utf8')
+    ).replace(
+      '../packages/sdk/src/cli/devbox-upgrade-lock.ts',
+      './devbox-upgrade-lock.ts'
+    ),
+    { mode: 0o600 }
+  );
+  await writeFile(
+    join(directory, 'devbox-upgrade-lock.ts'),
+    await readFile(
+      join(import.meta.dir, '../packages/sdk/src/cli/devbox-upgrade-lock.ts')
+    ),
     { mode: 0o600 }
   );
   for (const name of ['stdout.log', 'stderr.log'])

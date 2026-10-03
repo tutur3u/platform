@@ -1,8 +1,9 @@
 import { spawn } from 'node:child_process';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import packageJson from '../../package.json';
+import { acquireUpgradeLock } from './devbox-upgrade-lock';
 import { compareVersions } from './update';
 
 export const DEVBOX_UPGRADE_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -68,12 +69,8 @@ export async function upgradeDevboxCliIfNeeded({
   const lock = join(directory, 'devbox-cli-upgrade.lock');
   const stateFile = join(directory, 'devbox-cli-upgrade.json');
   await mkdir(directory, { recursive: true, mode: 0o700 });
-  try {
-    await mkdir(lock, { mode: 0o700 });
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'EEXIST') return false;
-    throw error;
-  }
+  const release = await acquireUpgradeLock(lock);
+  if (!release) return false;
   try {
     let state: UpgradeState | undefined;
     try {
@@ -148,6 +145,6 @@ export async function upgradeDevboxCliIfNeeded({
     );
     return true;
   } finally {
-    await rm(lock, { recursive: true });
+    await release();
   }
 }

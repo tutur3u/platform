@@ -38,11 +38,19 @@ export type JudgeImages = Partial<Record<JudgeLanguage, string>>;
 const IMAGE_REFERENCE = /^[-\w./:]+@sha256:[a-f0-9]{64}$/u;
 const MEBIBYTE = 1024 * 1024;
 
-async function dockerMetadata(args: string[], timeoutMs = 4000) {
-  const child = spawn('docker', args, {
-    shell: false,
-    stdio: ['ignore', 'pipe', 'ignore'],
-  });
+export async function dockerMetadata(
+  args: string[],
+  timeoutMs = 4000,
+  dockerHost?: string
+) {
+  const child = spawn(
+    'docker',
+    dockerHost ? ['--host', dockerHost, ...args] : args,
+    {
+      shell: false,
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }
+  );
   let output = '';
   child.stdout.on('data', (chunk) => {
     output = (output + String(chunk)).slice(0, 65_536);
@@ -59,12 +67,12 @@ async function dockerMetadata(args: string[], timeoutMs = 4000) {
   }
 }
 
-export async function readJudgeDockerCapacity() {
-  const { code, output } = await dockerMetadata([
-    'info',
-    '--format',
-    '{{json .}}',
-  ]);
+export async function readJudgeDockerCapacity(dockerHost?: string) {
+  const { code, output } = await dockerMetadata(
+    ['info', '--format', '{{json .}}'],
+    4000,
+    dockerHost
+  );
   if (code !== 0) throw new Error('Docker engine is unavailable for Judge.');
   const info = JSON.parse(output) as {
     CgroupDriver?: string;
@@ -105,7 +113,10 @@ export function parseJudgeImages(raw = process.env.TUTURUUU_JUDGE_IMAGES) {
   return images;
 }
 
-export async function getJudgeReadiness(rawImages?: string): Promise<{
+export async function getJudgeReadiness(
+  rawImages?: string,
+  dockerHost?: string
+): Promise<{
   languages: JudgeLanguage[];
   ready: boolean;
   reason: string | null;
@@ -126,13 +137,17 @@ export async function getJudgeReadiness(rawImages?: string): Promise<{
         reason: 'Pinned Judge images are not configured.',
       };
     }
-    await readJudgeDockerCapacity();
+    await readJudgeDockerCapacity(dockerHost);
     const languages: JudgeLanguage[] = [];
     for (const [language, image] of Object.entries(images) as [
       JudgeLanguage,
       string,
     ][]) {
-      const { code } = await dockerMetadata(['image', 'inspect', image]);
+      const { code } = await dockerMetadata(
+        ['image', 'inspect', image],
+        4000,
+        dockerHost
+      );
       if (code !== 0) continue;
       const binary = judgeLanguageBinary(language);
       const smokeName = `ttr-judge-smoke-${randomUUID()}`;
@@ -157,9 +172,10 @@ export async function getJudgeReadiness(rawImages?: string): Promise<{
           '-c',
           `command -v ${binary} >/dev/null && command -v base64 >/dev/null`,
         ],
-        15_000
+        15_000,
+        dockerHost
       );
-      await dockerMetadata(['rm', '--force', smokeName]);
+      await dockerMetadata(['rm', '--force', smokeName], 4000, dockerHost);
       if (smoke.code === 0) languages.push(language);
     }
     return {

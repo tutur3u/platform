@@ -9,7 +9,7 @@ import {
   parseDevboxExecutionMode,
   preflightProtectedService,
 } from './devbox-host-protection';
-import { parseJudgeImages } from './devbox-judge-sandbox';
+import { getJudgeReadiness, parseJudgeImages } from './devbox-judge-sandbox';
 import {
   canPromptDevboxSetup,
   confirmDevboxSetupQuestion,
@@ -477,6 +477,21 @@ export async function setupDevboxRunner({
       dockerHost: options.dockerHost,
       runCommand: options.runCommand,
     });
+  if (options.judgeImages) {
+    const readiness = await getJudgeReadiness(
+      options.judgeImages,
+      options.dockerHost
+    );
+    if (
+      !readiness.ready ||
+      readiness.languages.length !==
+        Object.keys(parseJudgeImages(options.judgeImages)).length
+    )
+      throw new Error(
+        readiness.reason ??
+          'A configured Judge image failed readiness checks on the selected Docker daemon.'
+      );
+  }
   const registration = await options.client.devboxes.registerAgent({
     name: runnerName,
   });
