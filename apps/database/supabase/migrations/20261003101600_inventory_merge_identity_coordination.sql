@@ -29,20 +29,20 @@ begin
   select distinct private.inventory_identity_lock_key(owner.ws_id,k.kind,ids.id)
   from (
    select case c.confrelid when 'public.workspace_products'::regclass then 'product' else 'warehouse' end kind,
-    a.attname::text col
+    a.attname::text col,false own
    from pg_constraint c join pg_attribute a on a.attrelid=c.conrelid and a.attnum=c.conkey[1]
    where c.contype='f' and c.conrelid=tg_relid and cardinality(c.conkey)=1
     and c.confrelid in ('public.workspace_products'::regclass,'private.inventory_warehouses'::regclass)
-   union select tg_argv[0],'id' where tg_nargs=1
+   union select tg_argv[0],'id',true where tg_nargs=1
   ) k
   cross join lateral (
    select nullif(v_old->>k.col,'')::uuid id,nullif(v_old->>'ws_id','')::uuid own_ws
    union select nullif(v_new->>k.col,'')::uuid,nullif(v_new->>'ws_id','')::uuid
   ) ids
   cross join lateral (
-   select ids.own_ws ws_id where tg_nargs=1
-   union all select p.ws_id from public.workspace_products p where tg_nargs<>1 and k.kind='product' and p.id=ids.id
-   union all select w.ws_id from private.inventory_warehouses w where tg_nargs<>1 and k.kind='warehouse' and w.id=ids.id
+   select ids.own_ws ws_id where k.own
+   union all select p.ws_id from public.workspace_products p where not k.own and k.kind='product' and p.id=ids.id
+   union all select w.ws_id from private.inventory_warehouses w where not k.own and k.kind='warehouse' and w.id=ids.id
   ) owner
   -- An actual deleted workspace cannot be merged. Its FK deletion cascades
   -- must not acquire one bucket namespace for every workspace being removed.
