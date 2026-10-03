@@ -57,6 +57,15 @@ void registerHiddenRecoveryChecks() {
       );
       await _tapRow(tester, const ValueKey('settings-hidden-workspaces-row'));
       await _settle(tester);
+      await tester.scrollUntilVisible(
+        find.byTooltip('Restore: Guest project'),
+        120,
+        scrollable: find.descendant(
+          of: find.byKey(const ValueKey('workspace-picker-scroll')),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      await _settle(tester);
       expect(find.byTooltip('Restore: Guest project'), findsOneWidget);
       await _capture(tester, 'hidden-root-${sample.$1.split(' ').first}');
       verifyNever(
@@ -83,7 +92,14 @@ void registerHiddenRecoveryChecks() {
       );
       await _tapRow(tester, const ValueKey('settings-hidden-workspaces-row'));
       await _settle(tester);
-      await tester.ensureVisible(find.byTooltip('Restore: Guest project'));
+      await tester.scrollUntilVisible(
+        find.byTooltip('Restore: Guest project'),
+        120,
+        scrollable: find.descendant(
+          of: find.byKey(const ValueKey('workspace-picker-scroll')),
+          matching: find.byType(Scrollable),
+        ),
+      );
       await _settle(tester);
       await _capture(tester, 'hidden-ready-${sample.$1.split(' ').first}');
       await tester.tap(find.byTooltip('Restore: Guest project'));

@@ -7,7 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/models/inventory/inventory_stock_health.dart';
@@ -27,6 +31,8 @@ import 'package:supabase_flutter/supabase_flutter.dart' show User;
 import '../../../helpers/helpers.dart';
 
 class _Api extends Mock implements ApiClient {}
+
+class _SecureStorage extends Mock implements FlutterSecureStorage {}
 
 class _Inventory extends InventoryRepository {
   _Inventory() : super(apiClient: _Api());
@@ -166,20 +172,67 @@ void main() {
   );
 
   test(
-    'repository calls authorized aggregate, propagates denial without cache',
+    'explicit aggregate revalidation propagates denial and removes snapshot',
     () async {
       final api = _Api();
       const path = '/api/v1/workspaces/ws/inventory/analytics/summary?days=30';
       when(() => api.getJson(path)).thenAnswer((_) async => _payload());
-      final repository = InventoryRepository(apiClient: api);
+      final directory = await Directory.systemTemp.createTemp('stock-health-');
+      final secure = _SecureStorage();
+      final secrets = <String, String>{};
+      when(() => secure.read(key: any(named: 'key'))).thenAnswer(
+        (call) async => secrets[call.namedArguments[#key] as String],
+      );
+      when(
+        () => secure.write(
+          key: any(named: 'key'),
+          value: any(named: 'value'),
+        ),
+      ).thenAnswer((call) async {
+        secrets[call.namedArguments[#key] as String] =
+            call.namedArguments[#value] as String;
+      });
+      final store = CacheStore.forTesting(
+        secureStorage: secure,
+        directoryResolver: () async => directory,
+      );
+      addTearDown(() async {
+        await store.closeForTesting();
+        await directory.delete(recursive: true);
+      });
+      final repository = InventoryRepository(
+        apiClient: api,
+        cacheStore: store,
+        cacheUserId: () => 'stock-health-actor',
+      );
       expect((await repository.getStockHealth('ws')).activeProducts, 12);
+      final before = await store.read<Map<String, dynamic>>(
+        key: CacheKey(
+          namespace: 'inventory.stock-health',
+          userId: 'stock-health-actor',
+          workspaceId: 'ws',
+          locale: currentCacheLocaleTag(),
+        ),
+        decode: (json) => Map<String, dynamic>.from(json! as Map),
+      );
+      expect(before.hasValue, isTrue);
       when(
         () => api.getJson(path),
       ).thenThrow(const ApiException(message: 'Forbidden', statusCode: 403));
       await expectLater(
-        repository.getStockHealth('ws'),
+        CacheStore.awaitRevalidation(() => repository.getStockHealth('ws')),
         throwsA(isA<ApiException>()),
       );
+      final snapshot = await store.read<Map<String, dynamic>>(
+        key: CacheKey(
+          namespace: 'inventory.stock-health',
+          userId: 'stock-health-actor',
+          workspaceId: 'ws',
+          locale: currentCacheLocaleTag(),
+        ),
+        decode: (json) => Map<String, dynamic>.from(json! as Map),
+      );
+      expect(snapshot.hasValue, isFalse);
       verify(() => api.getJson(path)).called(2);
       verifyNoMoreInteractions(api);
     },

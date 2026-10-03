@@ -12,6 +12,11 @@ import {
   validateApiKey,
   type WorkspaceContext,
 } from '@tuturuuu/auth/api-keys';
+import { isSecurityEgressEnforcementEnabled } from '@tuturuuu/storage-core/security-budget';
+import {
+  getSecurityBudgetPolicy,
+  scaledSecurityBudgetLimit,
+} from '@tuturuuu/storage-core/security-budget-policy';
 import type { PermissionId } from '@tuturuuu/types';
 import type { ApiErrorResponse } from '@tuturuuu/types/sdk';
 import {
@@ -287,8 +292,29 @@ export function withApiAuth<T = unknown>(
               });
 
         if (rateLimitConfig !== false) {
+          let planRateLimitConfig = rateLimitConfig;
+          if (isSecurityEgressEnforcementEnabled()) {
+            const plan = await getSecurityBudgetPolicy({
+              workspaceId: context.wsId,
+            }).catch(() => null);
+            if (!plan)
+              return createErrorResponse(
+                'Unavailable',
+                'API protection temporarily unavailable',
+                503,
+                'SECURITY_UNAVAILABLE',
+                { 'Retry-After': '60', 'Cache-Control': 'private, no-store' }
+              );
+            planRateLimitConfig = {
+              ...rateLimitConfig,
+              maxRequests: scaledSecurityBudgetLimit(
+                rateLimitConfig.maxRequests,
+                plan
+              ),
+            };
+          }
           const { config: adaptiveRateLimitConfig } =
-            getAdaptiveRateLimitConfig(rateLimitConfig, abuseDecision);
+            getAdaptiveRateLimitConfig(planRateLimitConfig, abuseDecision);
           const rateLimitResult = await checkRateLimit(
             `${context.keyId}:${isRead ? 'read' : 'mutate'}`,
             adaptiveRateLimitConfig,

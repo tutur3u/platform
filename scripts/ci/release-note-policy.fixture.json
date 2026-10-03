@@ -1,0 +1,82 @@
+[
+  {
+    "subject": "Merge remote-tracking branch 'origin/release-please--branches--production'",
+    "bookkeeping": true
+  },
+  {
+    "subject": "Merge remote-tracking branch 'origin/main'",
+    "bookkeeping": true
+  },
+  {
+    "subject": "Merge branch 'main' into 'fix/preview'",
+    "bookkeeping": true
+  },
+  {
+    "subject": "Merge branches 'main' and 'fix/work'",
+    "bookkeeping": true
+  },
+  {
+    "subject": "Merge pull request #5721 from tutur3u/fix/mobile",
+    "bookkeeping": true
+  },
+  {
+    "subject": "chore(release): sync main to production",
+    "bookkeeping": true
+  },
+  {
+    "subject": "fix(mobile): merge current main",
+    "bookkeeping": true
+  },
+  {
+    "subject": "feat(mobile): address review and integrate current main",
+    "bookkeeping": true
+  },
+  {
+    "subject": "fix(mobile): merge duplicate contacts",
+    "bookkeeping": false
+  },
+  {
+    "subject": "Merge calendar events without losing descriptions",
+    "bookkeeping": false
+  },
+  {
+    "subject": "fix(mobile): merge branches safely in the editor",
+    "bookkeeping": false
+  },
+  {
+    "subject": "feat(mobile): show merge conflict recovery",
+    "bookkeeping": false
+  },
+  {
+    "subject": "sync calendar events to Google",
+    "bookkeeping": false
+  },
+  {
+    "subject": "improve settings",
+    "bookkeeping": false
+  },
+  {
+    "subject": "Merge branch 'main' into production",
+    "bookkeeping": true
+  },
+  {
+    "subject": "Merge branch 'main' of https://github.com/tutur3u/platform",
+    "bookkeeping": true
+  },
+  {
+    "subject": "Merge branch 'main' of https://github.com/tutur3u/platform into 'fix/mobile'",
+    "bookkeeping": true
+  },
+  {
+    "subject": "Merge branch 'main' ([abcdef](https://github.com/tutur3u/platform/commit/abcdef))",
+    "bookkeeping": true
+  },
+  {
+    "subject": "merge duplicate contacts ([abcdef](https://github.com/tutur3u/platform/commit/abcdef))",
+    "bookkeeping": false
+  },
+  {
+    "subject": "Merge branch 'main' of the editor's project view",
+    "bookkeeping": false
+  }
+]

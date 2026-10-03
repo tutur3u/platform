@@ -30,8 +30,14 @@ import {
   isReservedMobileDeploymentDrivePath,
 } from './mobile-deployment/storage-policy';
 import { getWorkspaceStorageMetrics } from './storage-analytics';
+import { WorkspaceStorageError } from './storage-download-error';
+import { downloadGuardedSupabaseStorageObject } from './storage-download-object';
+import { createGuardedSupabaseStorageReadUrl } from './storage-download-sign';
 import { fitsStorageBudget, readStorageUsageBytes } from './storage-quota';
 import { getStorageLimit } from './storage-quota-reader';
+
+export { WorkspaceStorageError } from './storage-download-error';
+
 import {
   DRIVE_R2_ACCESS_KEY_ID_SECRET,
   DRIVE_R2_BUCKET_SECRET,
@@ -149,16 +155,6 @@ type R2ListEntry = {
   size?: number;
   etag?: string | null;
 };
-
-export class WorkspaceStorageError extends Error {
-  constructor(
-    message: string,
-    public readonly status = 500
-  ) {
-    super(message);
-    this.name = 'WorkspaceStorageError';
-  }
-}
 
 function normalizeRelativePath(path = '') {
   const sanitizedPath = sanitizePath(path);
@@ -1201,21 +1197,7 @@ export async function downloadWorkspaceStorageObjectForProvider(
 
   if (provider === WORKSPACE_STORAGE_PROVIDER_SUPABASE) {
     const supabase = await createDynamicAdminClient();
-    const { data, error } = await supabase.storage
-      .from('workspaces')
-      .download(fullPath);
-
-    if (error || !data) {
-      throw new WorkspaceStorageError(
-        error?.message || 'Failed to download source object',
-        404
-      );
-    }
-
-    return {
-      buffer: new Uint8Array(await data.arrayBuffer()),
-      contentType: data.type || null,
-    };
+    return downloadGuardedSupabaseStorageObject(supabase, wsId, fullPath);
   }
 
   const config = await resolveWorkspaceStorageBackendConfig(wsId, provider);
@@ -1435,17 +1417,13 @@ export async function createWorkspaceStorageSignedReadUrl(
     }
   }
 
-  const { data, error } = await supabase.storage
-    .from('workspaces')
-    .createSignedUrl(fullPath, options?.expiresIn ?? 31_536_000, {
-      transform: options?.transform as never,
-    });
-
-  if (error || !data?.signedUrl) {
-    throw new WorkspaceStorageError('Failed to generate signed URL');
-  }
-
-  return data.signedUrl;
+  return createGuardedSupabaseStorageReadUrl(
+    supabase as TypedSupabaseClient,
+    wsId,
+    fullPath,
+    options?.expiresIn ?? 3600,
+    options?.transform
+  );
 }
 
 export async function createWorkspaceStorageUploadPayload(

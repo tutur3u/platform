@@ -1,7 +1,10 @@
 import { NextRequest } from 'next/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { validateRequestBody } from '../api-middleware';
+
+// Server-only modules remain protected in production; Vitest loads server helpers here.
+vi.mock('server-only', () => ({}));
 
 function makeRequest(body: string, contentType = 'application/json') {
   return new NextRequest('http://localhost/api/test', {

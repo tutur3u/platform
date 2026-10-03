@@ -2737,6 +2737,41 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "First-class Cloudflare realtime and native Meet collaboration API; retain authenticated room admission, role-scoped tickets, private preview and signed monotonic checkpoints. Rust parity pending; Next.js serves live traffic."
+    },
+    "api:/api/v1/workspaces/:wsId/storage/share:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/share/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Shared storage-core signing returns opaque guarded download URLs for Supabase. Prior Rust direct-CDN redirect dispatch disabled; preserve session/Drive/Finance authorization and port shared atomic byte budgets before enabling this route."
+    },
+    "api:/api/v1/workspaces/:wsId/external-projects/assets/:assetId:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "CMS assets retain publication/workspace authorization; Supabase links use encrypted guarded downloads, including existing source_url records. Redirects are no-store. Shared proxy ceilings protect CMS and external app APIs before trusted bypasses. Rust asset dispatch is disabled; live Next owns the route pending protected Rust parity."
+    },
+    "api:/api/v1/storage/share:apps/web/src/app/api/v1/storage/share/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Private workspace Storage downloads use opaque encrypted relay tickets, shared atomic request and byte budgets, fail-closed Postgres enforcement after migration-first activation, no-store responses, HEAD size inspection, and bounded streaming. Do not expose underlying Supabase signed URLs. Rust parity pending; prior direct-download dispatcher disabled."
+    },
+    "api:/api/v1/storage/download/*path:apps/web/src/app/api/v1/storage/download/[...path]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Private workspace Storage downloads use opaque encrypted relay tickets, shared atomic request and byte budgets, fail-closed Postgres enforcement after migration-first activation, no-store responses, HEAD size inspection, and bounded streaming. Do not expose underlying Supabase signed URLs. Rust parity pending; prior direct-download dispatcher disabled."
+    },
+    "api:/api/v1/storage/share-batch:apps/web/src/app/api/v1/storage/share-batch/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Private workspace Storage downloads use opaque encrypted relay tickets, shared atomic request and byte budgets, fail-closed Postgres enforcement after migration-first activation, no-store responses, HEAD size inspection, and bounded streaming. Do not expose underlying Supabase signed URLs. Rust parity pending; prior direct-download dispatcher disabled."
+    },
+    "api:/api/v1/workspaces/:wsId/external-projects/delivery:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/delivery/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Public CMS delivery replaces stored Supabase source URLs with the guarded asset API path; preserve assetUrl and publication filtering. Future Rust dispatch is disabled; live Next owns the route pending safe source parity. Global/CMS API ceilings apply before bypasses."
+    },
+    "api:/api/v1/storage/guarded-download/:token:apps/web/src/app/api/v1/storage/guarded-download/[token]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Private workspace Storage downloads use opaque encrypted relay tickets, shared atomic request and byte budgets, fail-closed Postgres enforcement after migration-first activation, no-store responses, HEAD size inspection, and bounded streaming. Do not expose underlying Supabase signed URLs. Rust parity pending; prior direct-download dispatcher disabled."
     }
   }
 }

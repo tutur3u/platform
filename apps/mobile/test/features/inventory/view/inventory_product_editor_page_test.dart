@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
@@ -33,8 +34,15 @@ class _MockApiClient extends Mock implements ApiClient {}
 
 class _MockCacheStore extends Mock implements CacheStore {}
 
+class _OnlineMutationQueue extends Mock implements OfflineMutationQueue {}
+
 class _FakeInventoryRepository extends InventoryRepository {
-  _FakeInventoryRepository({super.apiClient, super.cacheStore});
+  _FakeInventoryRepository({
+    super.apiClient,
+    super.cacheStore,
+    super.mutationQueue,
+    super.cacheUserId,
+  });
   @override
   Future<List<InventoryLookupItem>> getManufacturers(
     String wsId, {
@@ -87,6 +95,8 @@ class _ExistingProductRepository extends _FakeInventoryRepository {
     required super.apiClient,
     required this.amount,
     super.cacheStore,
+    super.mutationQueue,
+    super.cacheUserId,
   });
   final double? amount;
 
@@ -239,19 +249,22 @@ void main() {
       settingsRepository = SettingsRepository();
     });
 
-    for (final testCase in <({double? amount, bool clearQuantity})>[
-      (amount: null, clearQuantity: false),
-      (amount: 0, clearQuantity: false),
-      (amount: 7.5, clearQuantity: false),
-      (amount: 7.5, clearQuantity: true),
-    ]) {
+    for (final testCase
+        in <({double? amount, bool clearQuantity, bool offline})>[
+          (amount: null, clearQuantity: false, offline: false),
+          (amount: 0, clearQuantity: false, offline: false),
+          (amount: 7.5, clearQuantity: false, offline: false),
+          (amount: 7.5, clearQuantity: true, offline: false),
+          (amount: 7.5, clearQuantity: false, offline: true),
+        ]) {
       final amount = testCase.amount;
       final expectedAmount = testCase.clearQuantity ? null : amount;
+      final payloadKind = testCase.offline ? 'offline queue' : 'PATCH';
       testWidgets(
         testCase.clearQuantity
             ? 'clearing finite quantity saves null and reloads as unlimited'
             : 'unrelated edit preserves stock amount $amount '
-                  'in repository PATCH payload',
+                  'in repository $payloadKind payload',
         (tester) async {
           tester.view
             ..devicePixelRatio = 1
@@ -275,17 +288,25 @@ void main() {
               Set<String>.from(call.positionalArguments[0] as Iterable),
             ));
           });
-          const connectivity = MethodChannel(
-            'dev.fluttercommunity.plus/connectivity',
-          );
-          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-              .setMockMethodCallHandler(connectivity, (_) async => ['wifi']);
-          addTearDown(
-            () => TestDefaultBinaryMessengerBinding
-                .instance
-                .defaultBinaryMessenger
-                .setMockMethodCallHandler(connectivity, null),
-          );
+          final mutations = _OnlineMutationQueue();
+          when(mutations.listPending).thenAnswer((_) async => []);
+          when(
+            () => mutations.enqueueIfOffline(
+              feature: 'inventory',
+              method: 'PATCH',
+              path: '/api/v1/workspaces/ws_1/products/synthetic-product',
+              workspaceId: 'ws_1',
+              payload: any(named: 'payload'),
+              entityId: 'synthetic-product',
+            ),
+          ).thenAnswer((call) async {
+            if (testCase.offline) {
+              payload = Map<String, dynamic>.from(
+                call.namedArguments[#payload] as Map,
+              );
+            }
+            return testCase.offline;
+          });
           when(() => api.patchJson(any(), any())).thenAnswer((call) async {
             payload = Map<String, dynamic>.from(
               call.positionalArguments[1] as Map,
@@ -301,6 +322,10 @@ void main() {
                 inventoryRepository: _ExistingProductRepository(
                   apiClient: api,
                   cacheStore: cache,
+                  mutationQueue: mutations,
+                  // This payload fixture has no authenticated ID-mapping store.
+                  // Owner-scoped mapping is covered by repository tests.
+                  cacheUserId: () => null,
                   amount: amount,
                 ),
                 financeRepository: financeRepository,
@@ -321,17 +346,39 @@ void main() {
           await tester.pumpAndSettle();
           expect(payload, isNotNull);
           expect(payload!['name'], 'Renamed synthetic product');
+          verify(
+            () => mutations.enqueueIfOffline(
+              feature: 'inventory',
+              method: 'PATCH',
+              path: '/api/v1/workspaces/ws_1/products/synthetic-product',
+              workspaceId: 'ws_1',
+              payload: payload,
+              entityId: 'synthetic-product',
+            ),
+          ).called(1);
+          if (testCase.offline) {
+            verifyNever(() => api.patchJson(any(), any()));
+          } else {
+            verify(
+              () => api.patchJson(
+                '/api/v1/workspaces/ws_1/products/synthetic-product',
+                payload!,
+              ),
+            ).called(1);
+          }
           final savedStock = Map<String, dynamic>.from(
             (payload!['inventory'] as List).single as Map,
           );
           expect(savedStock['amount'], expectedAmount);
-          expect(invalidations, hasLength(1));
-          expect(invalidations.single.$1, 'ws_1');
-          expect(invalidations.single.$2, {
-            'inventory:overview',
-            'inventory:catalog',
-            'inventory:audit',
-          });
+          expect(invalidations, hasLength(testCase.offline ? 0 : 1));
+          if (!testCase.offline) {
+            expect(invalidations.single.$1, 'ws_1');
+            expect(invalidations.single.$2, {
+              'inventory:overview',
+              'inventory:catalog',
+              'inventory:audit',
+            });
+          }
           expect(
             await settingsRepository.getLastInventoryProductOwner('ws_1'),
             'owner_2',

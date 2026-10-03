@@ -1,6 +1,23 @@
 part of 'inventory_checkout_page.dart';
 
 extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
+  String _saleFeedback(String wsId, String confirmed, String saleId) {
+    final edits = OfflineMutationQueue.instance.pending.value.where(
+      (edit) =>
+          edit.feature == 'inventory' &&
+          edit.workspaceId == wsId &&
+          edit.entityId == saleId &&
+          (edit.path.contains('/invoices') || edit.path.contains('/sales/')),
+    );
+    if (edits.any((edit) => edit.status == PendingMutationStatus.failed)) {
+      return context.l10n.offlineEditFailed;
+    }
+    if (edits.any((edit) => edit.status == PendingMutationStatus.conflict)) {
+      return context.l10n.offlineEditConflict;
+    }
+    return edits.isEmpty ? confirmed : context.l10n.offlineEditQueued;
+  }
+
   Future<void> _loadData() async {
     final wsId = _wsId;
     if (_saving) {
@@ -14,7 +31,7 @@ extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
     final token = ++_loadGeneration;
     _loadedWorkspace = wsId;
     _loadedActor = actor;
-    _update(() => _loading = true);
+    _update(() => _loading = _products.isEmpty);
 
     var hasUnavailableOptions = false;
     var periodsAvailable = true;
@@ -41,6 +58,12 @@ extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
         null,
         'remembered category',
       );
+      if (!mounted ||
+          token != _loadGeneration ||
+          wsId != _wsId ||
+          actor != _actorId) {
+        return;
+      }
       final results = await Future.wait<dynamic>([
         loadOptional(
           _inventoryRepository.getProductOptions(wsId),
@@ -57,6 +80,11 @@ extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
           _inventoryRepository.getCheckoutSalesPeriods(wsId),
           const <InventorySalesPeriod>[],
           'sales periods',
+        ),
+        loadOptional(
+          _inventoryRepository.getCheckoutDefaults(wsId),
+          const InventoryCheckoutDefaults(),
+          'checkout defaults',
         ),
       ]);
       if (!mounted ||
@@ -75,21 +103,47 @@ extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
         _periodsAvailable = periodsAvailable;
         _salesPeriods = results[3] as List<InventorySalesPeriod>;
         _hasUnavailableOptions = hasUnavailableOptions;
-        _walletId =
-            widget.sale?.walletId ??
-            _walletId ??
-            (_wallets.isEmpty ? null : _wallets.first.id);
+        final defaults = results[4] as InventoryCheckoutDefaults;
+        if (widget.sale == null &&
+            !_periodSelectionExplicit &&
+            periodsAvailable) {
+          _periodId = defaults.resolvePeriod(_salesPeriods, _season.now());
+        }
+        final availableWallets = _wallets.map((wallet) => wallet.id).toSet();
+        if (!_walletSelectionExplicit) {
+          _walletId =
+              widget.sale?.walletId ??
+              (availableWallets.contains(defaults.revenueWalletId)
+                  ? defaults.revenueWalletId
+                  : availableWallets.contains(defaults.walletId)
+                  ? defaults.walletId
+                  : _walletId ?? (_wallets.isEmpty ? null : _wallets.first.id));
+        }
+        if (widget.sale == null && !availableWallets.contains(_walletId)) {
+          _walletId = null;
+        }
         final availableCategoryIds = _categories
             .map((category) => category.id)
             .whereType<String>()
             .where((id) => id.isNotEmpty)
             .toSet();
-        _manualCategoryId =
-            availableCategoryIds.contains(widget.sale?.categoryId)
-            ? widget.sale?.categoryId
-            : availableCategoryIds.contains(lastCategoryId)
-            ? lastCategoryId
-            : (_categories.isEmpty ? null : _categories.first.id);
+        if (!_categorySelectionExplicit) {
+          final configured =
+              availableCategoryIds.contains(defaults.financeCategoryId)
+              ? defaults.financeCategoryId
+              : null;
+          _categoryOverride = widget.sale != null || configured != null;
+          _manualCategoryId = widget.sale != null
+              ? widget.sale!.categoryId
+              : configured ??
+                    (availableCategoryIds.contains(lastCategoryId)
+                        ? lastCategoryId
+                        : (_categories.isEmpty ? null : _categories.first.id));
+        }
+        if (widget.sale == null &&
+            !availableCategoryIds.contains(_manualCategoryId)) {
+          _manualCategoryId = null;
+        }
         final sale = widget.sale;
         if (sale != null && _quantities.isEmpty) {
           for (final line in sale.lines) {
@@ -191,13 +245,17 @@ extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
         if (!mounted || !_matchesSaveScope(revision, actor, wsId)) {
           return;
         }
-        showInventoryToast(context, context.l10n.inventorySaleUpdated);
+        showInventoryToast(
+          context,
+          _saleFeedback(wsId, context.l10n.inventorySaleUpdated, sale.id),
+        );
         context.pop(updated);
         return;
       }
 
+      final String submittedSaleId;
       if (_scheduled) {
-        await _season.submit(
+        submittedSaleId = await _season.submit(
           walletId: walletId,
           categoryId: resolvedCategoryId,
           content: _titleController.text.trim().isEmpty
@@ -228,7 +286,7 @@ extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
               .toList(growable: false),
         );
       } else {
-        await _inventoryRepository.createSale(
+        submittedSaleId = await _inventoryRepository.createSale(
           wsId: wsId,
           walletId: walletId,
           categoryId: resolvedCategoryId,
@@ -259,7 +317,10 @@ extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
       _update(() => _saleCompleted = true);
       unawaited(_rememberCategory(wsId, resolvedCategoryId));
       if (_scheduled) unawaited(_acknowledgeReceipt());
-      showInventoryToast(context, context.l10n.inventorySaleCreated);
+      showInventoryToast(
+        context,
+        _saleFeedback(wsId, context.l10n.inventorySaleCreated, submittedSaleId),
+      );
       if (context.canPop()) context.pop(true);
     } on ApiException catch (error) {
       if (!mounted || !_matchesSaveScope(revision, actor, wsId)) {

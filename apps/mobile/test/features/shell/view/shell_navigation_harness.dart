@@ -40,6 +40,7 @@ Widget _buildTestApp({
   required AuthCubit authCubit,
   required WorkspaceCubit workspaceCubit,
   ShellProfileCubit? shellProfileCubit,
+  ShellChromeActionsCubit? shellChromeActionsCubit,
 }) {
   return MultiBlocProvider(
     providers: [
@@ -48,6 +49,8 @@ Widget _buildTestApp({
       BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
       BlocProvider(create: (_) => ShellMiniNavCubit()),
       BlocProvider(create: (_) => ShellTitleOverrideCubit()),
+      if (shellChromeActionsCubit != null)
+        BlocProvider.value(value: shellChromeActionsCubit),
       if (shellProfileCubit != null)
         BlocProvider<ShellProfileCubit>.value(value: shellProfileCubit)
       else

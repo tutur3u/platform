@@ -107,19 +107,21 @@ extension CacheStoreReplica on CacheStore {
   Iterable<Map<String, dynamic>> _extractReplicaRows(Object? value) sync* {
     if (value is List) {
       for (final row in value.take(1000)) {
-        if (row is Map && row['id'] is String) {
-          yield Map<String, dynamic>.from(row);
+        if (row is Map) {
+          final id = row['id'] ?? row['auditRecordId'];
+          if (id is String) yield {...Map<String, dynamic>.from(row), 'id': id};
         }
       }
       return;
     }
     if (value is! Map) return;
-    if (value['id'] is String) {
-      yield Map<String, dynamic>.from(value);
+    final id = value['id'] ?? value['auditRecordId'];
+    if (id is String) {
+      yield {...Map<String, dynamic>.from(value), 'id': id};
       return;
     }
     for (final nested in value.values) {
-      if (nested is List) yield* _extractReplicaRows(nested);
+      if (nested is List || nested is Map) yield* _extractReplicaRows(nested);
     }
   }
 
@@ -129,7 +131,37 @@ extension CacheStoreReplica on CacheStore {
       !source.namespace.contains('secret') &&
       !source.namespace.contains('token');
 
-  Future<void> _replaceReplicaSource(CachedResourceRecord source) async {
+  Future<void> _serializeReplicaSource(
+    String sourceKey,
+    Future<void> Function() operation,
+  ) async {
+    final previous = _replicaWrites[sourceKey];
+    final released = Completer<void>();
+    _replicaWrites[sourceKey] = released.future;
+    try {
+      await previous;
+      await operation();
+    } finally {
+      released.complete();
+      if (identical(_replicaWrites[sourceKey], released.future)) {
+        unawaited(_replicaWrites.remove(sourceKey));
+      }
+    }
+  }
+
+  Future<void> _replaceReplicaSource(
+    CachedResourceRecord source, {
+    void Function()? checkCurrent,
+  }) => _serializeReplicaSource(
+    source.key,
+    () => _replaceReplicaSourceUnlocked(source, checkCurrent: checkCurrent),
+  );
+
+  Future<void> _replaceReplicaSourceUnlocked(
+    CachedResourceRecord source, {
+    void Function()? checkCurrent,
+  }) async {
+    checkCurrent?.call();
     final sourceIndexKey = _replicaSourceKey(source.key);
     final previous =
         (_entityBox.get(sourceIndexKey) as List?)?.whereType<String>().toList(
@@ -163,9 +195,14 @@ extension CacheStoreReplica on CacheStore {
     }
     try {
       await _entityBox.putAll(next);
+      checkCurrent?.call();
       await _entityBox.put(sourceIndexKey, next.keys.toList(growable: false));
+      checkCurrent?.call();
       for (final key in previous) {
-        if (!next.containsKey(key)) await _entityBox.delete(key);
+        if (!next.containsKey(key)) {
+          await _entityBox.delete(key);
+          checkCurrent?.call();
+        }
       }
       _entityBytes +=
           next.values.fold<int>(
@@ -174,12 +211,22 @@ extension CacheStoreReplica on CacheStore {
           ) -
           priorBytes;
     } on Object {
+      // The per-source queue excludes newer writers while rollback removes
+      // this attempt's rows. Other resource sources have distinct entity keys.
+      await _entityBox.deleteAll({...previous, ...next.keys});
+      await _entityBox.delete(sourceIndexKey);
       _entityBytes = _countReplicaBytes();
       rethrow;
     }
   }
 
-  Future<void> _removeReplicaSource(String sourceKey) async {
+  Future<void> _removeReplicaSource(String sourceKey) =>
+      _serializeReplicaSource(
+        sourceKey,
+        () => _removeReplicaSourceUnlocked(sourceKey),
+      );
+
+  Future<void> _removeReplicaSourceUnlocked(String sourceKey) async {
     final indexKey = _replicaSourceKey(sourceKey);
     final keys =
         (_entityBox.get(indexKey) as List?)?.whereType<String>() ??
@@ -279,6 +326,7 @@ extension CacheStoreReplica on CacheStore {
     await _mutationBox.close();
     await _entityBox.close();
     _memory.clear();
+    _refreshTasks.clear();
     _resourceBytes = 0;
     _entityBytes = 0;
     _initialized = false;

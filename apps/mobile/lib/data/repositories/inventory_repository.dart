@@ -1,18 +1,27 @@
 import 'dart:async';
+
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/local_replica_query.dart';
+import 'package:mobile/core/cache/offline_download_manifest.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_network.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
+import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/config/api_config.dart';
+import 'package:mobile/data/models/inventory/inventory_checkout_defaults.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/models/inventory/inventory_season_price.dart';
 import 'package:mobile/data/models/inventory/inventory_stock_health.dart';
 import 'package:mobile/data/repositories/inventory_pending_overlay.dart';
+import 'package:mobile/data/repositories/inventory_product_image_cache.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
 part 'inventory_repository_cache.dart';
+part 'inventory_repository_local.dart';
+part 'inventory_repository_offline_preparation.dart';
 part 'inventory_repository_product_mutations.dart';
 part 'inventory_repository_sales_pending.dart';
 part 'inventory_repository_sales_period_mutations.dart';
@@ -20,12 +29,33 @@ part 'inventory_repository_season_pricing.dart';
 part 'inventory_repository_setup_pending.dart';
 
 class InventoryRepository {
-  InventoryRepository({ApiClient? apiClient, CacheStore? cacheStore})
-    : _api = apiClient ?? ApiClient(),
-      _cacheStore = cacheStore ?? CacheStore.instance;
+  InventoryRepository({
+    ApiClient? apiClient,
+    CacheStore? cacheStore,
+    OfflineMutationQueue? mutationQueue,
+    String? Function()? cacheUserId,
+    Future<bool> Function()? networkAvailable,
+    InventoryProductImageCache? productImageCache,
+  }) : _api = apiClient ?? ApiClient(),
+       _cacheStore = cacheStore ?? CacheStore.instance,
+       _mutationQueue = mutationQueue ?? OfflineMutationQueue.instance,
+       _cacheUserId = cacheUserId ?? currentCacheUserId,
+       _networkAvailable = networkAvailable ?? hasNetworkConnection,
+       _productImageCache =
+           productImageCache ??
+           InventoryProductImageCache(
+             store: cacheStore,
+             currentUserId: cacheUserId,
+           );
 
   final ApiClient _api;
   final CacheStore _cacheStore;
+  final OfflineMutationQueue _mutationQueue;
+  final String? Function() _cacheUserId;
+  final Future<bool> Function() _networkAvailable;
+  final InventoryProductImageCache _productImageCache;
+  Future<void>? _catalogBackfill;
+  DateTime? _catalogBackfillAt;
 
   Map<String, dynamic> _buildProductPayload({
     required String name,
@@ -59,7 +89,11 @@ class InventoryRepository {
     };
   }
 
-  Map<String, dynamic> _normalizeOptionProduct(Map<String, dynamic> json) {
+  Map<String, dynamic> _normalizeOptionProduct(
+    Map<String, dynamic> json, {
+    required String wsId,
+  }) {
+    if (json.containsKey('inventory')) return {...json, 'ws_id': wsId};
     final owner = json['inventory_owners'] is Map<String, dynamic>
         ? Map<String, dynamic>.from(
             json['inventory_owners'] as Map<String, dynamic>,
@@ -98,6 +132,7 @@ class InventoryRepository {
     return {
       'id': json['id'],
       'name': json['name'],
+      'avatar_url': json['avatar_url'],
       'manufacturer_id': json['manufacturer_id'],
       'manufacturer': json['manufacturer'],
       'description': json['description'],
@@ -108,7 +143,7 @@ class InventoryRepository {
       'owner': owner,
       'finance_category_id': json['finance_category_id'],
       'finance_category': financeCategory,
-      'ws_id': '',
+      'ws_id': wsId,
       'created_at': json['created_at'],
       'archived': false,
       'inventory': inventory,
@@ -129,13 +164,15 @@ class InventoryRepository {
         .toList(growable: false);
   }
 
-  /// Reads confirmed server counts without a persistent aggregate cache.
-  Future<InventoryStockHealth> getStockHealth(String wsId) async {
-    final response = await _api.getJson(
-      InventoryEndpoints.analyticsSummary(wsId),
-    );
-    return InventoryStockHealth.fromJson(response);
-  }
+  /// Last confirmed counts remain available offline; they exclude local drafts.
+  Future<InventoryStockHealth> getStockHealth(String wsId) =>
+      _cachedInventoryMap(
+        namespace: 'stock-health',
+        wsId: wsId,
+        tags: const ['inventory:catalog'],
+        fetch: () => _api.getJson(InventoryEndpoints.analyticsSummary(wsId)),
+        decode: InventoryStockHealth.fromJson,
+      );
 
   Future<InventoryOverview> getOverview(
     String wsId, {
@@ -159,51 +196,25 @@ class InventoryRepository {
     int page = 1,
     int pageSize = 20,
     bool forceRefresh = false,
-  }) async {
-    final result =
-        await _cachedInventoryMap<({List<InventoryProduct> data, int count})>(
-          namespace: 'products',
-          wsId: wsId,
-          forceRefresh: forceRefresh,
-          tags: const ['inventory:catalog'],
-          params: {
-            'query': query?.trim() ?? '',
-            'status': status,
-            'page': '$page',
-            'pageSize': '$pageSize',
-          },
-          fetch: () => _api.getJson(
-            InventoryEndpoints.products(
-              wsId,
-              query: query,
-              status: status,
-              page: page,
-              pageSize: pageSize,
-            ),
-          ),
-          decode: (response) => (
-            data: (response['data'] as List<dynamic>? ?? const <dynamic>[])
-                .whereType<Map<String, dynamic>>()
-                .map(InventoryProduct.fromJson)
-                .toList(growable: false),
-            count: (response['count'] as num?)?.toInt() ?? 0,
-          ),
-        );
-    final data = overlayPendingProducts(
-      wsId,
-      result.data,
-      await OfflineMutationQueue.instance.listPending(),
-      query: query?.trim(),
-      includeCreates: page == 1 && status == 'active',
-    );
-    return (data: data, count: result.count + data.length - result.data.length);
-  }
+  }) => _getProducts(
+    wsId,
+    query: query,
+    status: status,
+    page: page,
+    pageSize: pageSize,
+    forceRefresh: forceRefresh,
+  );
 
   Future<InventoryProduct?> getProduct(
     String wsId,
     String productId, {
     bool forceRefresh = false,
   }) async {
+    if (!await _networkAvailable()) {
+      return (await _localCatalog(
+        wsId,
+      )).where((row) => row.id == productId).firstOrNull;
+    }
     InventoryProduct? product;
     ApiException? offlineError;
     try {
@@ -222,7 +233,7 @@ class InventoryRepository {
     }
     final rows = overlayPendingProducts(wsId, [
       if (product != null) product,
-    ], await OfflineMutationQueue.instance.listPending());
+    ], await _mutationQueue.listPending());
     for (final row in rows) {
       if (row.id == productId) return row;
     }
@@ -233,22 +244,7 @@ class InventoryRepository {
   Future<List<InventoryProduct>> getProductOptions(
     String wsId, {
     bool forceRefresh = false,
-  }) {
-    return _cachedInventoryMap(
-      namespace: 'product-options',
-      wsId: wsId,
-      forceRefresh: forceRefresh,
-      policy: CachePolicies.offlineCatalog,
-      tags: const ['inventory:catalog'],
-      fetch: () => _api.getJson(InventoryEndpoints.productOptions(wsId)),
-      decode: (response) =>
-          (response['data'] as List<dynamic>? ?? const <dynamic>[])
-              .whereType<Map<String, dynamic>>()
-              .map(_normalizeOptionProduct)
-              .map(InventoryProduct.fromJson)
-              .toList(growable: false),
-    );
-  }
+  }) => _getProductOptions(wsId, forceRefresh: forceRefresh);
 
   Future<List<InventoryOwner>> getOwners(
     String wsId, {
@@ -274,6 +270,7 @@ class InventoryRepository {
       InventoryEndpoints.owners(wsId),
       owners,
       (id, name) => InventoryOwner(id: id, name: name),
+      pending: _mutationQueue.pending.value,
     );
   }
 
@@ -309,6 +306,7 @@ class InventoryRepository {
       InventoryEndpoints.manufacturers(wsId),
       rows,
       (id, name) => InventoryLookupItem(id: id, name: name),
+      pending: _mutationQueue.pending.value,
     );
   }
 
@@ -341,6 +339,7 @@ class InventoryRepository {
       InventoryEndpoints.productCategories(wsId),
       rows,
       (id, name) => InventoryLookupItem(id: id, name: name),
+      pending: _mutationQueue.pending.value,
     );
   }
 
@@ -375,6 +374,7 @@ class InventoryRepository {
       InventoryEndpoints.productUnits(wsId),
       rows,
       (id, name) => InventoryLookupItem(id: id, name: name),
+      pending: _mutationQueue.pending.value,
     );
   }
 
@@ -407,6 +407,7 @@ class InventoryRepository {
       InventoryEndpoints.productWarehouses(wsId),
       rows,
       (id, name) => InventoryLookupItem(id: id, name: name),
+      pending: _mutationQueue.pending.value,
     );
   }
 
@@ -427,6 +428,14 @@ class InventoryRepository {
     String? periodId,
     bool forceRefresh = false,
   }) async {
+    if (!await _networkAvailable()) {
+      return await _localSales(
+        wsId,
+        limit: limit,
+        offset: offset,
+        periodId: periodId,
+      );
+    }
     final ({List<InventorySaleSummary> data, int count, bool realtimeEnabled})
     result;
     try {
@@ -460,13 +469,13 @@ class InventoryRepository {
               realtimeEnabled: response['realtime_enabled'] as bool? ?? false,
             ),
           );
-    } on ApiException catch (error) {
-      if (error.statusCode != 0) rethrow;
-      return _overlayPendingInventorySales(
+    } on Object catch (error) {
+      if (!isOfflineTransportFailure(error)) rethrow;
+      return await _localSales(
         wsId,
-        (data: const [], count: 0, realtimeEnabled: false),
+        limit: limit,
+        offset: offset,
         periodId: periodId,
-        includeCreates: offset == 0,
       );
     }
     return _overlayPendingInventorySales(
@@ -474,6 +483,7 @@ class InventoryRepository {
       result,
       periodId: periodId,
       includeCreates: offset == 0,
+      pending: await _mutationQueue.listPending(),
     );
   }
 
@@ -507,6 +517,7 @@ class InventoryRepository {
       wsId,
       periods,
       includeArchived: includeArchived,
+      pending: await _mutationQueue.listPending(),
     );
   }
 
@@ -519,6 +530,7 @@ class InventoryRepository {
     final path = InventoryEndpoints.salePeriod(wsId, saleId);
     final payload = {'period_id': periodId, 'source': source};
     final period = await queueOrSendValue<InventorySalesPeriod?>(
+      queue: _mutationQueue,
       feature: 'inventory',
       method: 'PUT',
       path: path,
@@ -546,20 +558,7 @@ class InventoryRepository {
     String wsId,
     String saleId, {
     bool forceRefresh = false,
-  }) {
-    return _cachedInventoryMap(
-      namespace: 'sale-detail',
-      wsId: wsId,
-      forceRefresh: forceRefresh,
-      policy: CachePolicies.detail,
-      tags: const ['inventory:sale-detail'],
-      params: {'saleId': saleId},
-      fetch: () => _api.getJson(InventoryEndpoints.sale(wsId, saleId)),
-      decode: (response) => InventorySaleDetail.fromJson(
-        Map<String, dynamic>.from(response['data'] as Map),
-      ),
-    );
-  }
+  }) => _getSaleDetail(wsId, saleId, forceRefresh: forceRefresh);
 
   Future<InventorySaleDetail> updateSale({
     required String wsId,
@@ -580,6 +579,7 @@ class InventoryRepository {
       if (products != null) 'products': products,
     };
     final sale = await queueOrSendValue<InventorySaleDetail>(
+      queue: _mutationQueue,
       feature: 'inventory',
       method: 'PUT',
       path: path,
@@ -618,6 +618,7 @@ class InventoryRepository {
   Future<void> deleteSale(String wsId, String saleId) async {
     final path = InventoryEndpoints.sale(wsId, saleId);
     await queueOrSendVoid(
+      queue: _mutationQueue,
       feature: 'inventory',
       method: 'DELETE',
       path: path,
@@ -639,25 +640,15 @@ class InventoryRepository {
     int limit = 20,
     int offset = 0,
     bool forceRefresh = false,
-  }) {
-    return _cachedInventoryMap(
-      namespace: 'audit-logs',
-      wsId: wsId,
-      forceRefresh: forceRefresh,
-      tags: const ['inventory:audit'],
-      params: {'limit': '$limit', 'offset': '$offset'},
-      fetch: () => _api.getJson(
-        InventoryEndpoints.auditLogs(wsId, limit: limit, offset: offset),
-      ),
-      decode: (response) => (
-        data: (response['data'] as List<dynamic>? ?? const <dynamic>[])
-            .whereType<Map<String, dynamic>>()
-            .map(InventoryAuditLogEntry.fromJson)
-            .toList(growable: false),
-        count: (response['count'] as num?)?.toInt() ?? 0,
-      ),
-    );
-  }
+  }) => _getAuditLogs(
+    wsId,
+    limit: limit,
+    offset: offset,
+    forceRefresh: forceRefresh,
+  );
+
+  Future<InventoryCheckoutDefaults> getCheckoutDefaults(String wsId) =>
+      _getCheckoutDefaults(wsId);
 
   Future<List<InventorySalesPeriod>> getCheckoutSalesPeriods(String wsId) =>
       _getCheckoutSalesPeriods(wsId);

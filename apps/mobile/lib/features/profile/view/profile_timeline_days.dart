@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/features/profile/profile_timeline_repository.dart';
-import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -52,6 +51,9 @@ class ProfileTimelineDays extends StatelessWidget {
     final today = DateTime(date.year, date.month, date.day);
     // Calendar arithmetic remains correct across daylight-saving boundaries.
     final yesterday = DateTime(today.year, today.month, today.day - 1);
+    String time(ProfileTimelineItem item) => DateFormat.jm(
+      locale,
+    ).format(convertDate?.call(item.createdAt) ?? item.createdAt.toLocal());
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -85,31 +87,29 @@ class ProfileTimelineDays extends StatelessWidget {
             ),
           ),
           for (final item in entry.value)
-            Padding(
-              padding: const EdgeInsets.only(left: 12, bottom: 8),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  border: Border(
-                    left: BorderSide(color: theme.colorScheme.border, width: 2),
-                  ),
+            Material(
+              color: Colors.transparent,
+              child: ListTile(
+                key: itemKey?.call(item),
+                contentPadding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                leading: Icon(_icon(item.type), size: 22),
+                title: Text(
+                  item.title?.trim().isNotEmpty == true
+                      ? item.title!.trim()
+                      : _milestone(context, item),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 12),
-                  child: SettingsTile(
-                    key: itemKey?.call(item),
-                    icon: _icon(item.type),
-                    title: _milestone(context, item),
-                    value: item.title?.trim().isNotEmpty == true
-                        ? item.title!.trim()
-                        : null,
-                    subtitle: DateFormat.jm(locale).format(
-                      convertDate?.call(item.createdAt) ??
-                          item.createdAt.toLocal(),
-                    ),
-                    onTap: _canOpen(item) ? () => onOpen(item) : null,
-                    showChevron: _canOpen(item),
-                  ),
+                subtitle: Text(
+                  item.title?.trim().isNotEmpty == true
+                      ? '${_milestone(context, item)} · ${time(item)}'
+                      : time(item),
                 ),
+                trailing: _canOpen(item)
+                    ? const Icon(Icons.chevron_right_rounded, size: 18)
+                    : null,
+                onTap: _canOpen(item) ? () => onOpen(item) : null,
               ),
             ),
         ],

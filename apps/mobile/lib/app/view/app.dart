@@ -7,7 +7,10 @@ import 'package:flutter/material.dart'
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/app/view/auth_session_boundary.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
+import 'package:mobile/core/cache/offline_download_manifest.dart';
+import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/router/deep_link_launcher.dart';
@@ -30,6 +33,7 @@ import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/repositories/version_check_repository.dart';
+import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/repositories/workspace_repository.dart';
 import 'package:mobile/features/app_version/cubit/app_version_cubit.dart';
 import 'package:mobile/features/app_version/view/app_version_gate.dart';
@@ -80,6 +84,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'app_push_navigation.dart';
 part 'app_inventory_warmup.dart';
+part 'app_offline_preparation.dart';
 
 class App extends StatefulWidget {
   const App({
@@ -210,6 +215,7 @@ class _AppState extends State<App> {
     _lifecycleObserver = _AppLifecycleObserver(_handleLifecycleState);
     WidgetsBinding.instance.addObserver(_lifecycleObserver);
     _registerWarmupTasks();
+    _registerOfflinePreparation();
     unawaited(_appTabCubit.loadLastApp());
     _router = createAppRouter(
       _authCubit,
@@ -343,190 +349,9 @@ class _AppState extends State<App> {
     return null;
   }
 
-  void _registerWarmupTasks() {
-    _registerInventoryWarmupTask();
-    CacheWarmupCoordinator.instance.register('home_payload', ({
-      forceRefresh = false,
-    }) async {
-      final workspace = _workspaceCubit.state.currentWorkspace;
-      if (workspace == null) return;
-      await Future.wait([
-        TaskListCubit.prewarm(
-          taskRepository: _taskRepository,
-          wsId: workspace.id,
-          isPersonal: workspace.personal,
-          forceRefresh: forceRefresh,
-        ),
-        CalendarCubit.prewarm(
-          calendarRepository: _calendarRepository,
-          wsId: workspace.id,
-          forceRefresh: forceRefresh,
-        ),
-      ]);
-    });
-    CacheWarmupCoordinator.instance.register('assistant_metadata', ({
-      forceRefresh = false,
-    }) async {
-      final workspace = _workspaceCubit.state.currentWorkspace;
-      if (workspace == null) return;
-      await _assistantRepository.prewarmWorkspace(
-        wsId: workspace.id,
-        isPersonal: workspace.personal,
-        forceRefresh: forceRefresh,
-      );
-    });
-    CacheWarmupCoordinator.instance.register(
-      'apps_registry',
-      ({forceRefresh = false}) async {},
-    );
-    CacheWarmupCoordinator.instance.register('tasks_list', ({
-      forceRefresh = false,
-    }) async {
-      final workspace = _workspaceCubit.state.currentWorkspace;
-      if (workspace == null) return;
-      await TaskListCubit.prewarm(
-        taskRepository: _taskRepository,
-        wsId: workspace.id,
-        isPersonal: workspace.personal,
-        forceRefresh: forceRefresh,
-      );
-    });
-    CacheWarmupCoordinator.instance.register('task_boards', ({
-      forceRefresh = false,
-    }) async {
-      final workspace = _workspaceCubit.state.currentWorkspace;
-      if (workspace == null) return;
-      await TaskBoardsCubit.prewarm(
-        taskRepository: _taskRepository,
-        wsId: workspace.id,
-        forceRefresh: forceRefresh,
-      );
-    });
-    CacheWarmupCoordinator.instance.register('task_estimates', ({
-      forceRefresh = false,
-    }) async {
-      final workspace = _workspaceCubit.state.currentWorkspace;
-      if (workspace == null) return;
-      await TaskEstimatesCubit.prewarm(
-        taskRepository: _taskRepository,
-        wsId: workspace.id,
-        forceRefresh: forceRefresh,
-      );
-    });
-    CacheWarmupCoordinator.instance.register('task_labels', ({
-      forceRefresh = false,
-    }) async {
-      final workspace = _workspaceCubit.state.currentWorkspace;
-      if (workspace == null) return;
-      await TaskLabelsCubit.prewarm(
-        taskRepository: _taskRepository,
-        wsId: workspace.id,
-        forceRefresh: forceRefresh,
-      );
-    });
-    CacheWarmupCoordinator.instance.register('task_portfolio', ({
-      forceRefresh = false,
-    }) async {
-      final workspace = _workspaceCubit.state.currentWorkspace;
-      if (workspace == null) return;
-      await TaskPortfolioCubit.prewarm(
-        taskRepository: _taskRepository,
-        wsId: workspace.id,
-        forceRefresh: forceRefresh,
-      );
-    });
-    CacheWarmupCoordinator.instance.register('calendar_root', ({
-      forceRefresh = false,
-    }) async {
-      final workspace = _workspaceCubit.state.currentWorkspace;
-      if (workspace == null) return;
-      await CalendarCubit.prewarm(
-        calendarRepository: _calendarRepository,
-        wsId: workspace.id,
-        forceRefresh: forceRefresh,
-      );
-    });
-    CacheWarmupCoordinator.instance.register('finance_overview', ({
-      forceRefresh = false,
-    }) async {
-      final workspace = _workspaceCubit.state.currentWorkspace;
-      if (workspace == null) return;
-      await FinanceCubit.prewarm(
-        financeRepository: _financeRepository,
-        wsId: workspace.id,
-        forceRefresh: forceRefresh,
-      );
-    });
-    CacheWarmupCoordinator.instance.register(
-      'finance_transactions',
-      ({forceRefresh = false}) async {},
-    );
-    CacheWarmupCoordinator.instance.register('habits_overview', ({
-      forceRefresh = false,
-    }) async {
-      final workspace = _workspaceCubit.state.currentWorkspace;
-      if (workspace == null) return;
-      final accessState = _habitsAccessCubit.state;
-      if (accessState.wsId != workspace.id ||
-          accessState.status != HabitsAccessStatus.loaded ||
-          !accessState.enabled) {
-        return;
-      }
-      await HabitsCubit.prewarm(
-        repository: HabitTrackerRepository(),
-        wsId: workspace.id,
-        forceRefresh: forceRefresh,
-      );
-    });
-    CacheWarmupCoordinator.instance.register('habits_activity', ({
-      forceRefresh = false,
-    }) async {
-      final workspace = _workspaceCubit.state.currentWorkspace;
-      if (workspace == null) return;
-      final accessState = _habitsAccessCubit.state;
-      if (accessState.wsId != workspace.id ||
-          accessState.status != HabitsAccessStatus.loaded ||
-          !accessState.enabled) {
-        return;
-      }
-      await HabitsCubit.prewarm(
-        repository: HabitTrackerRepository(),
-        wsId: workspace.id,
-        includeActivity: true,
-        forceRefresh: forceRefresh,
-      );
-    });
-    CacheWarmupCoordinator.instance.register('time_tracker_root', ({
-      forceRefresh = false,
-    }) async {
-      final workspace = _workspaceCubit.state.currentWorkspace;
-      final userId = _authCubit.state.user?.id;
-      if (workspace == null || userId == null || userId.isEmpty) return;
-      await TimeTrackerCubit.prewarm(
-        repository: _timeTrackerRepository,
-        wsId: workspace.id,
-        userId: userId,
-        forceRefresh: forceRefresh,
-      );
-    });
-    CacheWarmupCoordinator.instance.register('time_tracker_requests', ({
-      forceRefresh = false,
-    }) async {
-      final workspace = _workspaceCubit.state.currentWorkspace;
-      final userId = _authCubit.state.user?.id;
-      if (workspace == null || userId == null || userId.isEmpty) return;
-      await TimeTrackerRequestsCubit.prewarm(
-        workspace.id,
-        repository: _timeTrackerRepository,
-        selectedUserId: userId,
-        statusFilter: 'pending',
-        forceRefresh: forceRefresh,
-      );
-    });
-  }
-
   @override
   void dispose() {
+    _unregisterOfflinePreparation();
     WidgetsBinding.instance.removeObserver(_lifecycleObserver);
     unawaited(_appLinkSubscription?.cancel());
     _router.dispose();
@@ -581,6 +406,7 @@ class _AppState extends State<App> {
               listenWhen: (prev, curr) =>
                   prev.status != curr.status || prev.user?.id != curr.user?.id,
               listener: (context, state) {
+                _syncOfflinePreparationScope(resetWorkspace: true);
                 ProfileCubit.clearMemoryCache();
                 if (state.status == AuthStatus.authenticated) {
                   unawaited(
@@ -613,6 +439,7 @@ class _AppState extends State<App> {
               listenWhen: (previous, current) =>
                   previous.currentWorkspace?.id != current.currentWorkspace?.id,
               listener: (context, state) {
+                _syncOfflinePreparationScope();
                 unawaited(
                   context.read<HabitsAccessCubit>().syncWorkspace(
                     state.currentWorkspace?.id,

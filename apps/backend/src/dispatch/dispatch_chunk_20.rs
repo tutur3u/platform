@@ -106,14 +106,8 @@ pub(super) async fn dispatch_chunk_20(
         return Some(response);
     }
 
-    if let Some(response) =
-        workspaces_wsid_storage_share::handle_workspaces_wsid_storage_share_route(
-            config, request, outbound,
-        )
-        .await
-    {
-        return Some(response);
-    }
+    // Storage sharing remains on Next.js: its opaque relay tickets enforce
+    // byte budgets on every download. Never redirect to the old CDN bearer URL.
 
     if let Some(response) =
         workspaces_wsid_user_groups_groupid_storage::handle_workspaces_wsid_user_groups_groupid_storage_route(config, request, outbound).await

@@ -37,6 +37,56 @@ void main() {
           1000,
     );
   });
+  test('scoped owner rejects account switch before injected request', () async {
+    var requests = 0;
+    final api = ApiClient(
+      baseUrl: 'https://example.test',
+      authClient: client,
+      httpClient: MockClient((_) async {
+        requests++;
+        return http.Response('{}', 200);
+      }),
+    );
+    await expectLater(
+      ApiClient.runForUser('user-a', () async {
+        await Future<void>.delayed(Duration.zero);
+        when(() => auth.currentUser).thenReturn(
+          const User(
+            id: 'user-b',
+            appMetadata: {},
+            userMetadata: {},
+            aud: 'authenticated',
+            createdAt: '2026-01-01',
+          ),
+        );
+        return await api.getJson('/tasks');
+      }),
+      throwsA(isA<ApiException>()),
+    );
+    expect(requests, 0);
+    expect(() => api.checkUser('user-a'), throwsA(isA<ApiException>()));
+    api.dispose();
+  });
+  test('nested owner scope restores the outer injected client owner', () async {
+    var requests = 0;
+    final api = ApiClient(
+      baseUrl: 'https://example.test',
+      authClient: client,
+      httpClient: MockClient((_) async {
+        requests++;
+        return http.Response('{}', 200);
+      }),
+    );
+    await ApiClient.runForUser('user-a', () async {
+      await expectLater(
+        ApiClient.runForUser('user-b', () => api.getJson('/tasks')),
+        throwsA(isA<ApiException>()),
+      );
+      await api.getJson('/tasks');
+    });
+    expect(requests, 1);
+    api.dispose();
+  });
   tearDown(() => ApiVerification.requestToken = null);
   for (final token in <String?>[null, 'one-use']) {
     test('explicit challenge retries at most once: $token', () async {
@@ -244,5 +294,72 @@ void main() {
     );
     await expectLater(api.getJson('/private'), throwsA(isA<ApiException>()));
     httpClient.close();
+  });
+  for (final method in ['POST', 'MULTIPART', 'STREAM']) {
+    test('bound replay rejects switched account before $method HTTP', () async {
+      var requests = 0;
+      final api = ApiClient(
+        baseUrl: 'https://example.test',
+        authClient: client,
+        expectedUserId: 'user-a',
+        httpClient: MockClient((_) async {
+          requests++;
+          return http.Response('{}', 200);
+        }),
+      );
+      // Mirrors the async ID-mapping gap before replay's first request.
+      await Future<void>.delayed(Duration.zero);
+      when(() => auth.currentUser).thenReturn(
+        const User(
+          id: 'user-b',
+          appMetadata: {},
+          userMetadata: {},
+          aud: 'authenticated',
+          createdAt: '2026-01-01',
+        ),
+      );
+      final Future<Object?> operation = switch (method) {
+        'POST' => api.postJson('/tasks', {'private': 'account-a'}),
+        'MULTIPART' => api.sendMultipart('POST', '/attachments'),
+        _ => api.sendJsonStream('POST', '/chat', {'private': 'account-a'}),
+      };
+      await expectLater(
+        operation,
+        throwsA(isA<ApiException>().having((e) => e.statusCode, 'status', 401)),
+      );
+      expect(requests, 0);
+      verifyNever(() => auth.refreshSession());
+      api.dispose();
+    });
+  }
+
+  test('bound multi-request replay cannot adopt another account', () async {
+    var requests = 0;
+    final api = ApiClient(
+      baseUrl: 'https://example.test',
+      authClient: client,
+      expectedUserId: 'user-a',
+      httpClient: MockClient((request) async {
+        requests++;
+        expect(request.headers['Authorization'], 'Bearer access-a');
+        return http.Response('{"nextCursor":"next"}', 200);
+      }),
+    );
+    expect((await api.postJson('/read-all', {}))['nextCursor'], 'next');
+    when(() => auth.currentUser).thenReturn(
+      const User(
+        id: 'user-b',
+        appMetadata: {},
+        userMetadata: {},
+        aud: 'authenticated',
+        createdAt: '2026-01-01',
+      ),
+    );
+    await expectLater(
+      api.postJson('/read-all', {'cursor': 'next'}),
+      throwsA(isA<ApiException>().having((e) => e.statusCode, 'status', 401)),
+    );
+    expect(requests, 1);
+    api.dispose();
   });
 }

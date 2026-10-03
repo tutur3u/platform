@@ -10,7 +10,10 @@ List<CalendarEvent> overlayPendingCalendarEvents(
 }) {
   final rows = {for (final event in source) event.id: event};
   for (final mutation in pending) {
-    if (mutation.feature != 'calendar' || mutation.workspaceId != workspaceId) {
+    final base = '/api/v1/workspaces/$workspaceId/calendar/events';
+    if (mutation.feature != 'calendar' ||
+        mutation.workspaceId != workspaceId ||
+        (mutation.path != base && !mutation.path.startsWith('$base/'))) {
       continue;
     }
     final id = mutation.entityId;
@@ -45,7 +48,18 @@ List<CalendarEvent> overlayPendingCalendarEvents(
       rows[id] = event;
     }
   }
-  return rows.values.toList(growable: false)..sort(
-    (a, b) => (a.startAt ?? DateTime(0)).compareTo(b.startAt ?? DateTime(0)),
-  );
+  return rows.values
+      .where(
+        (event) =>
+            (start == null ||
+                event.endAt == null ||
+                event.endAt!.isAfter(start)) &&
+            (end == null ||
+                event.startAt == null ||
+                event.startAt!.isBefore(end)),
+      )
+      .toList(growable: false)
+    ..sort(
+      (a, b) => (a.startAt ?? DateTime(0)).compareTo(b.startAt ?? DateTime(0)),
+    );
 }

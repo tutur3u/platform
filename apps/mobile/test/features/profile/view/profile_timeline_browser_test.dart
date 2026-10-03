@@ -28,6 +28,33 @@ Finder date(DateTime day) =>
     find.byKey(ValueKey('timeline-date-${day.toIso8601String()}'));
 
 void main() {
+  testWidgets('untitled activity announces its milestone only once', (
+    tester,
+  ) async {
+    await tester.pumpApp(
+      ProfileTimelineDays(
+        items: [
+          ProfileTimelineItem(
+            id: 'empty',
+            type: 'task',
+            createdAt: DateTime(2026, 10, 1, 15),
+            scope: 'personal',
+          ),
+        ],
+        onOpen: (_) {},
+      ),
+    );
+    expect(
+      find.descendant(
+        of: find.byType(ListTile),
+        matching: find.text('Created 1 task'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Created 1 task ·'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     final font = Platform.environment['TIMELINE_MATERIAL_FONT'];

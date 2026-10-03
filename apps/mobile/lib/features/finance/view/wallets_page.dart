@@ -411,10 +411,12 @@ class _WalletsViewState extends State<_WalletsView> {
 
     try {
       final results = await Future.wait<dynamic>([
-        repository.getWallets(wsId),
-        repository.getWorkspaceDefaultCurrency(
-          wsId,
-          forceRefresh: forceRefresh,
+        CacheStore.awaitRevalidation(() => repository.getWallets(wsId)),
+        CacheStore.awaitRevalidation(
+          () => repository.getWorkspaceDefaultCurrency(
+            wsId,
+            forceRefresh: forceRefresh,
+          ),
         ),
       ]);
       final wallets = results[0] as List<Wallet>;
