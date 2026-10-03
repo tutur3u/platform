@@ -39,8 +39,11 @@ print access tokens, account details, request cookies, or raw customer responses
 Retain status, content type, safe error code, envelope shape, and route presence.
 If no authorized session is available, report that limit and use bounded ingress
 checks; do not manufacture authenticated evidence. Determine whether the requested
-recovery requires signed-in verification before promotion. Missing required QA
-blocks that action; ingress checks alone cannot satisfy a business recovery claim.
+recovery requires signed-in verification before promotion. Signed-in staging QA
+is optional when authorized and must stop if the user revokes it. When no extra
+pre-promotion QA is required, passing the maintained identity/API gates can support
+an already-authorized promotion. Missing required QA blocks that action; ingress
+checks alone cannot satisfy a business recovery claim.
 
 Compare the client contract with the **live upstream** source. A newer Learn
 sidebar can link to an existing Programming page while an older Web artifact
@@ -81,12 +84,12 @@ marker. Audit the live Web alias and affected API contracts before declaring a
 satellite-only recovery safe. Cloudflare and direct-owned routes retain their own gates.
 
 Before an authorized sync, fetch and inspect the full pinned promotion range,
-including intervening commits and schema changes. Require exact-candidate CI and
-the applicable staging migration success before sync. After the authorized sync,
-verify its production deployment marker and gated production migration result
+including intervening commits and schema changes. Confirm authorization for that
+full range, successful exact-main-candidate CI, and the applicable staging migration
+success before sync. After the authorized sync, verify its production deployment
+marker and gated production migration result
 separately before declaring delivery complete. The planner can deploy code before
-production migrations execute: new
-code must tolerate the old schema during that interval. Rollback artifacts must
+production migrations execute: new code must tolerate the old schema during that interval. Rollback artifacts must
 also tolerate already-applied forward migrations. Never reverse an applied
 migration file or manually run `bun sb:push`/`bun sb:linkpush`. If compatibility or
 migration evidence is missing, retain the rollback and report the actual blocker.
@@ -95,7 +98,9 @@ Use CI builds; do not build applications locally to unblock delivery.
 After authorized promotion, re-audit canonical aliases and verify the requested
 signed-in flows with bounded dedicated QA data. Record restore/cleanup for any
 explicitly authorized preference mutation; business writes require their own scope.
-Separate successful source/ingress gates from customer workflow recovery.
+Separate successful source/ingress gates from customer workflow recovery. If a
+requested production flow fails, pursue a scoped corrective action within the
+existing authorization and report the failed proof; do not claim recovery complete.
 
 ## Classify CI failures before retrying
 
@@ -109,8 +114,9 @@ Check owning notes and current E2E jobs before publishing a new head, cancelling
 or rerunning a workflow. Allocated image bundles, cohorts, and synthetic fixture
 resources remain protected until successful cleanup or independently verified
 resource absence. Failed or cancelled cleanup retains the hold until the owner
-verifies the resources are released. A queued job can
-become allocated between observations; do not use a cancel/push race as a gate.
+verifies the resources are released. Preserve the old failed/cancelled cleanup
+conclusion alongside any later read-only absence proof; do not relabel it success.
+A queued job can become allocated between observations; do not use a cancel/push race as a gate.
 Coordinate with the owner, preserve their resources, then perform only an authorized
 bounded rerun justified by failure evidence. Do not forge successful deployment or
 E2E markers. Record exact SHA, attempt/job IDs, cleanup proof, and remaining gates.
