@@ -64,13 +64,19 @@ function challenge() {
   );
 }
 
-/** Independent of the client marker: ordinary reads cannot evade the download
- * budgets by omitting it. Clearance satisfies CAPTCHA only, never authentication,
- * authorization, IP blocks, required MFA, or either rate-limit budget. */
+/** Explicit deployment activation follows dependency and canary verification.
+ * Once activated, ordinary reads cannot evade budgets by omitting the marker.
+ * Clearance never satisfies authentication, authorization, IP blocks, required
+ * MFA, or either rate-limit budget. Runtime failures remain fail-closed. */
 export async function guardOfflineDownloadRequest(request: NextRequest) {
   if (!isOfflineCapableRead(request) || process.env.NODE_ENV !== 'production')
     return null;
   const bulk = request.headers.get(OFFLINE_DOWNLOAD_HEADER) === '1';
+  if (process.env.OFFLINE_DOWNLOAD_PROTECTION_ENABLED !== 'true') {
+    // Keep baseline API/auth protections while this additional protection is
+    // unprovisioned. Offline prefetch is unavailable until explicitly enabled.
+    return bulk ? unavailable() : null;
+  }
   try {
     const redis = await getUpstashRestRedisClient();
     const limiterRedis = await getUpstashRatelimitRedisClient();

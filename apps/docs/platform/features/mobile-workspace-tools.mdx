@@ -872,20 +872,13 @@ another bulk run starts. Normal visits fill a bounded older history window with
 Bulk GETs are globally serialized on the device and spaced by at least 750 ms at the request boundary, using a monotonic clock after queued authentication preparation. Early timer wakeups are rechecked; regression coverage lives in `offline_api_pacer_test.dart` and `api_client_offline_preparation_test.dart`. This stays below the hourly session budget even
 when the gateway and owning app both enforce the guard, with room for ordinary
 foreground reads.
-The shared server proxy enforces distributed IP and session read budgets on
-eligible routes even without the bulk marker: 1,200/minute and 30,000/hour per
-IP, plus 600/minute and 12,000/hour per session when present. Gateway and
-owning-app enforcement may both count a request. Explicit bulk requests require
-Turnstile clearance unless the server has verified elevated trust; clearance lasts
-15 minutes and never bypasses authentication, permissions, MFA, blocks, or quotas.
-Regular reconnect refreshes are paced without the bulk marker; optional history
-fills use silent bulk mode. Background work never opens a verification modal
-and pauses when challenged.
-Verification-required 403 responses preserve existing authorized snapshots;
-authorization-denied responses purge the denied resource. A 429 stops downloads
-and delays queued replay according to Retry-After, with at least a minute's wait.
-Redis protection must be configured and available in production; protected reads
-return 503 when distributed enforcement is unavailable.
+The additional server download protection uses phased deployment activation. `OFFLINE_DOWNLOAD_PROTECTION_ENABLED` defaults to inactive and activates only for the exact value `true`. While inactive, ordinary reads continue through existing authentication, authorization, MFA, abuse and API protections without accessing this guard's Redis clients; marked bulk downloads return 503 with `Retry-After: 30`. This applies to the web API and every registered satellite proxy, including Finance and Contacts reads on eligible routes. It does not grant access or waive existing protections.
+
+Before enabling offline prefetch, provision `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` on every gateway and owning-app replica that can handle these reads. Verify distributed limiter operations, shared clearance storage, Turnstile configuration, and authenticated ordinary-read and marked-bulk canaries on the exact deployment. Enable the activation flag only after those checks pass, consistently across the request path; available Redis or elevated account trust never implicitly activates the feature. Keep the flag inactive during initial provisioning. Once activated, Redis/configuration/runtime failures still return 503; there is no automatic outage bypass or process-local substitute.
+
+When activated, the shared proxy enforces eligible reads even without the bulk marker: 1,200/minute and 30,000/hour per IP, plus 600/minute and 12,000/hour per session when present. Gateway and owning-app enforcement may both count a request. Explicit bulk requests require Turnstile clearance unless the server has verified elevated trust; clearance lasts 15 minutes and never bypasses authentication, permissions, MFA, blocks, or quotas.
+Regular reconnect refreshes are paced without the bulk marker; optional history fills use silent bulk mode. Background work never opens a verification modal and pauses when challenged. Verification-required 403 responses preserve existing authorized snapshots; authorization-denied responses purge the denied resource. A 429 stops downloads and delays queued replay according to Retry-After, with at least a minute's wait.
+Regression coverage in [offline-download-guard.test.ts](https://github.com/tutur3u/platform/blob/main/packages/utils/src/__tests__/offline-download-guard.test.ts) proves inactive ordinary reads avoid Redis, inactive bulk remains blocked, and activated storage failures, quotas and CAPTCHA remain enforced.
 
 Local Inventory search mirrors name-only SQL ILIKE, trimmed whole query, case
 insensitivity, preserved accents, `%`/`_` wildcards, and backslash escaping.

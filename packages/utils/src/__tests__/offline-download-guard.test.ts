@@ -74,6 +74,7 @@ function request({
 describe('offline download guards', () => {
   beforeEach(() => {
     vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('OFFLINE_DOWNLOAD_PROTECTION_ENABLED', 'true');
     vi.clearAllMocks();
     mocks.redis.mockResolvedValue({ get: mocks.get, set: mocks.set });
     mocks.limiterRedis.mockResolvedValue({});
@@ -84,6 +85,52 @@ describe('offline download guards', () => {
     mocks.set.mockResolvedValue('OK');
   });
   afterEach(() => vi.unstubAllEnvs());
+
+  it.each([
+    '/api/v1/workspaces/ws/wallets',
+    '/api/workspaces/ws/transactions/infinite',
+    '/api/v1/workspaces/ws/members',
+    '/api/v1/users/calendar-settings',
+  ])(
+    'preserves ordinary reads before protection activation: %s',
+    async (pathname) => {
+      vi.stubEnv('OFFLINE_DOWNLOAD_PROTECTION_ENABLED', '');
+      mocks.redis.mockResolvedValue(null);
+      mocks.limiterRedis.mockResolvedValue(null);
+      expect(
+        await guardOfflineDownloadRequest(request({ pathname }))
+      ).toBeNull();
+      expect(mocks.redis).not.toHaveBeenCalled();
+      expect(mocks.limiterRedis).not.toHaveBeenCalled();
+      expect(mocks.limit).not.toHaveBeenCalled();
+    }
+  );
+  it.each(['', 'false', 'TRUE', '1'])(
+    'blocks marked bulk downloads until explicit activation: %s',
+    async (enabled) => {
+      vi.stubEnv('OFFLINE_DOWNLOAD_PROTECTION_ENABLED', enabled);
+      const response = await guardOfflineDownloadRequest(
+        request({ bulk: true, token: 'captcha' })
+      );
+      expect(response?.status).toBe(503);
+      expect(response?.headers.get('Cache-Control')).toBe('no-store');
+      expect(response?.headers.get('Retry-After')).toBe('30');
+      expect(mocks.redis).not.toHaveBeenCalled();
+      expect(mocks.limit).not.toHaveBeenCalled();
+      expect(mocks.verify).not.toHaveBeenCalled();
+    }
+  );
+  it('does not infer activation from available Redis or account trust', async () => {
+    vi.stubEnv('OFFLINE_DOWNLOAD_PROTECTION_ENABLED', 'false');
+    mocks.trust.mockImplementation(
+      async ([key]) => new Map([[key, { m: 2, verified: true }]])
+    );
+    expect(
+      (await guardOfflineDownloadRequest(request({ bulk: true })))?.status
+    ).toBe(503);
+    expect(mocks.redis).not.toHaveBeenCalled();
+    expect(mocks.trust).not.toHaveBeenCalled();
+  });
 
   for (const pathname of [
     path,
