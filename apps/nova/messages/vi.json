@@ -181,6 +181,8 @@
   },
   "calendar": {
     "4-days": "4 ngày",
+    "creation_recovery_notice": "Lần tạo trước chưa được xác nhận. Hãy thử lại yêu cầu ban đầu; các chỉnh sửa vẫn được giữ để lưu sau khi xác nhận.",
+    "creation_recovery_retry": "Thử lại lần tạo ban đầu",
     "current": "Hiện tại",
     "day": "Ngày",
     "google_event_color": "Màu Google {id}",

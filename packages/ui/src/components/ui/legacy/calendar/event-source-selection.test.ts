@@ -87,3 +87,9 @@ it('sends only a title edit when an existing source cannot be resolved', () => {
     )
   ).toEqual({ title: 'Changed' });
 });
+
+it('recognizes a legacy Google event before considering native sources', () => {
+  const legacy = { google_event_id: 'external', source_calendar_id: 'two' };
+  expect(findEventSourceOption(options, legacy)?.id).toBe('two');
+  expect(eventSourceChanged(options, legacy, 'two')).toBe(false);
+});

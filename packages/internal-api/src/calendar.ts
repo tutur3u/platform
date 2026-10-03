@@ -4,6 +4,7 @@ import type {
 } from './calendar-event-payloads';
 
 export type {
+  RecoverableGoogleCalendarEventCreatePayload,
   WorkspaceCalendarEventCreatePayload,
   WorkspaceCalendarEventUpdatePayload,
 } from './calendar-event-payloads';

@@ -73,6 +73,7 @@ import {
   useState,
 } from 'react';
 import { z } from 'zod';
+import { useCalendarDraftSave } from './use-calendar-draft-save';
 import { Alert, AlertDescription, AlertTitle } from '../../alert';
 import { AutosizeTextarea } from '../../custom/autosize-textarea';
 import {
@@ -316,60 +317,36 @@ export function EventModal() {
     },
   });
 
-  // Handle manual event save
-  const handleManualSave = async () => {
-    if (!event.start_at || !event.end_at) return;
-
-    const startDate = new Date(event.start_at);
-    const endDate = new Date(event.end_at);
-
-    if (endDate <= startDate) {
-      setDateError('End date must be after start date');
-      return;
-    }
-
-    setDateError(null);
-    setIsSaving(true);
-
-    try {
-      // Clean event data to only include fields that should be updated
-      const eventData = eventModalSavePayload(
+  const draftSave = useCalendarDraftSave({
+    draft: event,
+    original: activeEvent,
+    buildPayload: () =>
+      eventModalSavePayload(
         event,
         activeEvent,
         sourceInputFromOption(selectedSourceOption),
         eventSourceChanged(sourceOptions, activeEvent ?? {}, selectedSourceId)
-      );
-
-      if (activeEvent?.id === 'new') {
-        const saved = await addEvent(eventData as Omit<CalendarEvent, 'id'>, {
-          requestId: event.requestId,
-        });
-        if (!saved?.id) throw new Error();
-      } else if (activeEvent?.id) {
-        // For multi-day events, always use the original event ID
-        // The activeEvent should already contain the original event from the database
-        const eventId = activeEvent.id;
-
-        if (eventId && eventId !== 'new') {
-          if (Object.keys(eventData).length)
-            await updateEvent(eventId, eventData);
-        } else {
-          throw new Error('Invalid event ID');
-        }
-      } else {
-        throw new Error('No event to save');
-      }
-
-      closeModal();
-    } catch (_) {
+      ),
+    addEvent,
+    updateEvent,
+    closeModal,
+    setIsSaving,
+    isSaving,
+    onError: () =>
       toast({
         title: 'Error',
         description: 'Failed to save or sync event. Please try again.',
         variant: 'destructive',
-      });
-    } finally {
-      setIsSaving(false);
+      }),
+  });
+  const handleManualSave = async () => {
+    if (!event.start_at || !event.end_at) return;
+    if (new Date(event.end_at) <= new Date(event.start_at)) {
+      setDateError('End date must be after start date');
+      return;
     }
+    setDateError(null);
+    await draftSave.save();
   };
 
   // Handle AI event generation
@@ -1107,6 +1084,7 @@ export function EventModal() {
 
                 {/* Action Buttons */}
                 <div className="mt-auto border-t p-2">
+                  {draftSave.recoveryNotice}
                   <div className="flex justify-between">
                     {isEditing ? (
                       <Button

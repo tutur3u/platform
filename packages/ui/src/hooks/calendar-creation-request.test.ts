@@ -2,6 +2,7 @@ import { validate, version } from 'uuid';
 import { expect, it } from 'vitest';
 import {
   createCalendarCreationRequests,
+  createOptimisticEventId,
   newCalendarCreationRequestId,
 } from './calendar-creation-request';
 
@@ -51,4 +52,11 @@ it('accepts the same serialized intent when object key order changes', () => {
       id
     )
   ).toBe(id);
+});
+
+it('keeps optimistic identifiers separate from multi-day segment delimiters', () => {
+  const id = createOptimisticEventId();
+  expect(id).toMatch(/^optimistic[a-zA-Z0-9]+$/);
+  expect(id).not.toContain('-');
+  expect(createOptimisticEventId()).not.toBe(id);
 });

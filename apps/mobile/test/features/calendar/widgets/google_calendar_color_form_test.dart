@@ -75,6 +75,47 @@ void main() {
     },
   );
 
+  for (final entry in [
+    ('inherit', 'inherit', <String, dynamic>{'inherited': true}),
+    ('event', '11', <String, dynamic>{'color_id': '11'}),
+    ('label', 'label-one', <String, dynamic>{'event_label_id': 'label-one'}),
+  ]) {
+    testWidgets('${entry.$1} stored choice appears when options arrive', (
+      tester,
+    ) async {
+      final pending = Completer<GoogleCalendarColorOptions?>();
+      await tester.pumpApp(
+        Builder(
+          builder: (context) => Material(
+            child: TextButton(
+              onPressed: () => showEventFormSheet(
+                context,
+                event: CalendarEvent.fromJson({
+                  'id': 'event',
+                  'title': 'Meeting',
+                  'provider': 'google',
+                  'start_at': '2026-10-02T10:00:00Z',
+                  'end_at': '2026-10-02T11:00:00Z',
+                  'scheduling_metadata': {'google_color': entry.$3},
+                }),
+                providerColorsFuture: pending.future,
+              ),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      pending.complete(_options());
+      await tester.pumpAndSettle();
+      final chip = tester.widget<ChoiceChip>(
+        find.byKey(ValueKey('google-color-${entry.$1}-${entry.$2}')),
+      );
+      expect(chip.selected, isTrue);
+    });
+  }
+
   for (final kind in ['inherit', 'event', 'label']) {
     testWidgets('$kind actual form selection sends only providerColor', (
       tester,

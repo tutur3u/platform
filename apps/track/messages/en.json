@@ -1391,6 +1391,8 @@
     "connected_calendars": "Connected Calendars",
     "create": "Create",
     "create_calendar": "Create Calendar",
+    "creation_recovery_notice": "The previous creation is unconfirmed. Retry the original request first; your edits will stay open to save after confirmation.",
+    "creation_recovery_retry": "Retry original creation",
     "current": "Current",
     "custom_calendars": "Custom",
     "danger_zone": "Danger Zone",

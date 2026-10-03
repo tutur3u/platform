@@ -26,3 +26,15 @@ export interface WorkspaceCalendarEventCreatePayload {
   task_id?: string | null;
   source?: CalendarSourceInput;
 }
+
+/** Explicit enabled-saga callers require a UUIDv7 ID; legacy flag-OFF callers
+ * retain the optional-ID create contract above. Runtime admission validates v7. */
+export type RecoverableGoogleCalendarEventCreatePayload = Omit<
+  WorkspaceCalendarEventCreatePayload,
+  'requestId' | 'source'
+> & {
+  requestId: string;
+  source: Extract<CalendarSourceInput, { provider: 'google' | 'microsoft' }> & {
+    provider: 'google';
+  };
+};

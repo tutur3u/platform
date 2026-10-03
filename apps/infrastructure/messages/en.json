@@ -3438,6 +3438,8 @@
     "create_event_ai_desc": "Describe what you need and get smart time suggestions.",
     "create_event_desc": "Fill in title, time, location, and details.",
     "create_habit_desc": "Create a recurring habit to track on your calendar.",
+    "creation_recovery_notice": "The previous creation is unconfirmed. Retry the original request first; your edits will stay open to save after confirmation.",
+    "creation_recovery_retry": "Retry original creation",
     "current": "Current",
     "custom_calendars": "Custom",
     "danger_zone": "Danger Zone",

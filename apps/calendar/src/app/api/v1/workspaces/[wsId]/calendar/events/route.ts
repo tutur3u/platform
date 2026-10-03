@@ -1,3 +1,4 @@
+import { getProviderSyncFields } from '@/lib/calendar/provider-sync-fields';
 import {
   MAX_CALENDAR_EVENT_DESCRIPTION_LENGTH,
   MAX_CALENDAR_EVENT_TITLE_LENGTH,
@@ -84,39 +85,6 @@ interface Params {
   params: Promise<{
     wsId: string;
   }>;
-}
-
-function getProviderSyncFields(args: {
-  error: unknown;
-  settingsAvailable: boolean;
-  synced: boolean;
-}) {
-  if (!args.settingsAvailable) return {};
-
-  if (args.synced) {
-    return {
-      last_synced_at: new Date().toISOString(),
-      sync_error: null,
-      sync_status: 'synced',
-    };
-  }
-
-  if (args.error) {
-    const message =
-      args.error instanceof Error
-        ? args.error.message
-        : 'External calendar sync failed';
-
-    return {
-      sync_error: message.slice(0, 1000),
-      sync_status: 'failed',
-    };
-  }
-
-  return {
-    sync_error: null,
-    sync_status: 'local_only',
-  };
 }
 
 export async function GET(request: Request, { params }: Params) {

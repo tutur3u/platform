@@ -3403,6 +3403,8 @@
     "create_event_ai_desc": "Mô tả nhu cầu và nhận gợi ý thời gian thông minh.",
     "create_event_desc": "Nhập tiêu đề, thời gian, địa điểm và chi tiết.",
     "create_habit_desc": "Tạo thói quen lặp lại để theo dõi trên lịch.",
+    "creation_recovery_notice": "Lần tạo trước chưa được xác nhận. Hãy thử lại yêu cầu ban đầu; các chỉnh sửa vẫn được giữ để lưu sau khi xác nhận.",
+    "creation_recovery_retry": "Thử lại lần tạo ban đầu",
     "current": "Hiện tại",
     "custom_calendars": "Tùy chỉnh",
     "danger_zone": "Vùng nguy hiểm",

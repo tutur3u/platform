@@ -1446,6 +1446,8 @@
     "connected_calendars": "Lịch đã kết nối",
     "create": "Tạo",
     "create_calendar": "Tạo lịch mới",
+    "creation_recovery_notice": "Lần tạo trước chưa được xác nhận. Hãy thử lại yêu cầu ban đầu; các chỉnh sửa vẫn được giữ để lưu sau khi xác nhận.",
+    "creation_recovery_retry": "Thử lại lần tạo ban đầu",
     "current": "Hiện tại",
     "custom_calendars": "Tùy chỉnh",
     "danger_zone": "Vùng nguy hiểm",

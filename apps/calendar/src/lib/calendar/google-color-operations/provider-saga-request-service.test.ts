@@ -148,6 +148,7 @@ describe('request saga preparation and generation admission', () => {
       reason: 'conflict',
     });
     expect(f.provider.observe).not.toHaveBeenCalled();
+    expect(mocks.getKey).not.toHaveBeenCalled();
   });
   it('does not refresh original provider version when a competing admission wins', async () => {
     const f = fixture();

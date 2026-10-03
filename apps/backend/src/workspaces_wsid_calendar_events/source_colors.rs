@@ -12,7 +12,7 @@ pub(super) async fn hydrate_source_colors(
     if !events.iter().any(|event| event["provider"] == "google") {
         return Ok(());
     }
-    let tokens = admin_rows(
+    let Ok(tokens) = admin_rows(
         config,
         outbound,
         "calendar_auth_tokens",
@@ -24,7 +24,10 @@ pub(super) async fn hydrate_source_colors(
             ("is_active", "eq.true".into()),
         ],
     )
-    .await?;
+    .await
+    else {
+        return Ok(());
+    };
     let ids: Vec<&str> = tokens
         .iter()
         .filter_map(|token| token["id"].as_str())
@@ -32,7 +35,7 @@ pub(super) async fn hydrate_source_colors(
     if ids.is_empty() {
         return Ok(());
     }
-    let connections = admin_rows(
+    let Ok(connections) = admin_rows(
         config,
         outbound,
         "calendar_connections",
@@ -44,7 +47,10 @@ pub(super) async fn hydrate_source_colors(
             ("auth_token_id", format!("in.({})", ids.join(","))),
         ],
     )
-    .await?;
+    .await
+    else {
+        return Ok(());
+    };
     apply_source_colors(events, &connections);
     Ok(())
 }
@@ -87,7 +93,7 @@ fn apply_source_colors(events: &mut [Value], connections: &[Value]) {
                 calendar.is_some()
                     && source["calendar_id"].as_str() == calendar
                     && source_id
-                        .is_none_or(|id| source["workspace_calendar_id"].as_str() == Some(id))
+                        .is_some_and(|id| source["workspace_calendar_id"].as_str() == Some(id))
             })
             .collect();
         if matches.len() == 1 {
@@ -109,6 +115,7 @@ mod tests {
             json!({"provider":"google","external_calendar_id":"source","source_calendar_id":"native"}),
             json!({"provider":"tuturuuu","color":"GREEN"}),
             json!({"provider":"google","external_calendar_id":"other"}),
+            json!({"provider":"google","external_calendar_id":"source"}),
         ];
         apply_source_colors(
             &mut events,
@@ -117,6 +124,7 @@ mod tests {
         assert_eq!(events[0]["_calendarColor"], "#d06b64");
         assert!(events[1].get("_calendarColor").is_none());
         assert!(events[2].get("_calendarColor").is_none());
+        assert!(events[3].get("_calendarColor").is_none());
     }
     #[test]
     fn rejects_ambiguous_sources_and_alpha_or_native_names() {

@@ -12,7 +12,17 @@ vi.mock('@/lib/calendar-event-permission', () => ({
 }));
 vi.mock('@/lib/calendar/source-resolver', () => ({
   resolveCalendarSourceForEvent: async () => m.fixture.source,
-  resolveCalendarSource: async () => m.fixture.source,
+  resolveCalendarSource: async ({
+    source,
+  }: {
+    source?: { provider: string };
+  }) =>
+    source?.provider === 'tuturuuu'
+      ? {
+          provider: 'tuturuuu',
+          workspaceCalendarId: 'distinct-native-destination',
+        }
+      : m.fixture.source,
 }));
 vi.mock('@/lib/workspace-encryption', () => ({
   decryptEventFromStorage: async (event: unknown) => event,
@@ -193,12 +203,15 @@ describe('actual recoverable color route vertical slice', () => {
     expect(f.patch).toHaveBeenCalledTimes(attempts);
     expect(f.rowWrites).not.toHaveBeenCalled();
   });
-  it('refuses forged source/generation/force recovery fields', async () => {
+  it.each([
+    { source: { provider: 'tuturuuu' } },
+    { generation: '0' },
+    { force: true },
+  ])('refuses forged recovery field %j', async (forged) => {
     const response = await RECOVER(
       request('POST', {
         operationId: routeFixtureIds.token,
-        force: true,
-        generation: '0',
+        ...forged,
       }),
       params()
     );

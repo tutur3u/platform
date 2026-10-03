@@ -480,8 +480,8 @@ mode supports same-source color, content/time/local-lock edits, invitation
 responses and deletion through the shared generation boundary. RSVP uses only
 the authenticated connected account's self attendee, seals the response against
 the original provider version, and projects the resulting event before reporting
-delivery. Cancelled meetings and superseded responses return a conflict. Source movement still returns 409 before
-side effects until its durable saga is implemented. A pending operation blocks
+delivery. Cancelled meetings and superseded responses return a conflict. Supported source movement uses the durable provider saga described below.
+Unsupported move types return 409 before side effects. A pending operation blocks
 content, color and delete successors. Attendee updates are `all` for content/time
 edits and deletion; color/local-lock-only edits use `none`. Recovery executes the
 server-stored operation kind and original conditional request, never a new
@@ -673,3 +673,17 @@ The shard-zero mobile test job additionally runs `agenda_view_test.dart` with
 `TZ=Asia/Ho_Chi_Minh` and `CALENDAR_NATIVE_TZ_REGRESSION=1`; its explicit native
 UTC+07 offset assertion prevents a UTC runner from silently weakening the
 wall-clock double-conversion regression.
+
+Creation recovery on the shared Calendar form keeps the original submitted request
+ID and body immutable after an uncertain failure. The original retry action preserves
+the edited form. Only a confirmed creation ID allows its next explicit Save to update
+that event; edited drafts never silently start another creation. This applies to
+shared web Calendar forms; legacy creation payloads keep optional IDs while explicit
+recoverable Google payloads require a UUIDv7 ID validated at enabled admission.
+Regression: `use-calendar-draft-save.test.tsx` and `calendar-creation-request.test.ts`.
+
+For copy-delete compensation, authoritative fresh absence at both bound endpoints
+settles a persisted `target-removed` checkpoint as a superseded tombstone under the
+current generation. Linked habits and cascading links are skipped. Retained generation
+and retired identities prevent a stale import from recreating the event. Regression:
+`calendar-provider-saga.sql` and provider saga projection tests.

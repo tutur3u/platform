@@ -83,7 +83,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.query.mockReturnValue({ data: options });
 });
-it('keeps the legacy picker when capability is absent or disabled', () => {
+it('keeps the legacy picker when capability is disabled', () => {
   mocks.query.mockReturnValue({
     data: { ...options, providerColorWrites: false },
   });
@@ -137,4 +137,11 @@ it('initializes an imported label identity rather than the compatibility color',
   expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe(
     'label:label-id'
   );
+});
+
+it('keeps the legacy picker while query data is unavailable', () => {
+  mocks.query.mockReturnValue({ data: undefined });
+  render(<ProviderColorPicker {...props()} />);
+  expect(screen.getByText('Legacy palette')).toBeTruthy();
+  expect(screen.queryByRole('combobox')).toBeNull();
 });

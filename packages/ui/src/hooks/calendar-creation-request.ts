@@ -29,6 +29,6 @@ export function createCalendarCreationRequests() {
 }
 export const createOptimisticEventId = () => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
-    return `optimistic-${crypto.randomUUID()}`;
-  return `optimistic-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    return `optimistic${crypto.randomUUID().replaceAll('-', '')}`;
+  return `optimistic${Date.now()}${Math.random().toString(36).slice(2)}`;
 };

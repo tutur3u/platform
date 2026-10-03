@@ -76,6 +76,7 @@ class _EventFormContentState extends State<_EventFormContent> {
   bool? _initialAllDay;
   String? _dateTimeError;
   GoogleCalendarColorChoice? _providerColor;
+  GoogleCalendarColorChoice? _initialProviderColor;
   GoogleCalendarColorOptions? _providerColors;
 
   bool get _canUseProviderColors =>
@@ -89,10 +90,14 @@ class _EventFormContentState extends State<_EventFormContent> {
   void initState() {
     super.initState();
     _providerColors = widget.providerColors;
+    _initialProviderColor = _storedProviderColor(_providerColors);
     unawaited(
       widget.providerColorsFuture?.then((colors) {
         if (!mounted || widget.isCurrentScope?.call() == false) return;
-        setState(() => _providerColors = colors);
+        setState(() {
+          _providerColors = colors;
+          _initialProviderColor = _storedProviderColor(colors);
+        });
       }),
     );
     _originalStart = widget.event?.startAt;
@@ -132,6 +137,31 @@ class _EventFormContentState extends State<_EventFormContent> {
       _isAllDay = false;
       _color = 'BLUE';
     }
+  }
+
+  GoogleCalendarColorChoice? _storedProviderColor(
+    GoogleCalendarColorOptions? colors,
+  ) {
+    final metadata = widget.event?.schedulingMetadata?['google_color'];
+    if (metadata is! Map || colors == null) return null;
+    final kind = metadata['inherited'] == true
+        ? 'inherit'
+        : metadata['event_label_id'] is String
+        ? 'label'
+        : metadata['color_id'] is String
+        ? 'event'
+        : null;
+    final id = kind == 'label'
+        ? metadata['event_label_id']
+        : kind == 'event'
+        ? metadata['color_id']
+        : null;
+    for (final option in colors.options) {
+      if (option.kind == kind && option.id == id) {
+        return option.choice(colors.connectionId);
+      }
+    }
+    return null;
   }
 
   DateTime _roundToQuarter(DateTime dt) {
@@ -395,7 +425,7 @@ class _EventFormContentState extends State<_EventFormContent> {
                 if (_canUseProviderColors)
                   GoogleCalendarColorPicker(
                     colors: _providerColors!,
-                    selected: _providerColor,
+                    selected: _providerColor ?? _initialProviderColor,
                     onChanged: (choice) =>
                         setState(() => _providerColor = choice),
                   )

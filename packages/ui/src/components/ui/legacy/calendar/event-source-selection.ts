@@ -26,9 +26,11 @@ export function findEventSourceOption(
   options: CalendarSourceOption[],
   event: Partial<CalendarEvent>
 ) {
-  if (event.provider === 'google' || event.provider === 'microsoft') {
+  const provider =
+    event.provider ?? (event.google_event_id ? 'google' : undefined);
+  if (provider === 'google' || provider === 'microsoft') {
     const matches = options.filter((option) => {
-      if (option.provider === 'tuturuuu' || option.provider !== event.provider)
+      if (option.provider === 'tuturuuu' || option.provider !== provider)
         return false;
       if (event.source_calendar_id)
         return option.workspaceCalendarId === event.source_calendar_id;

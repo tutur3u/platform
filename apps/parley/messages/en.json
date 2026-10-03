@@ -890,6 +890,8 @@
   "calendar": {
     "4-days": "4 Days",
     "agenda": "Agenda",
+    "creation_recovery_notice": "The previous creation is unconfirmed. Retry the original request first; your edits will stay open to save after confirmation.",
+    "creation_recovery_retry": "Retry original creation",
     "current": "Current",
     "day": "Day",
     "google_event_color": "Google color {id}",

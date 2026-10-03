@@ -61,3 +61,38 @@ describe('legacy provider generation preflight', () => {
     });
   });
 });
+
+it('checks all 250 rows with at most eight reads in flight before allowing the batch', async () => {
+  let active = 0;
+  let peak = 0;
+  const rpc = vi.fn(async () => {
+    active++;
+    peak = Math.max(peak, active);
+    await Promise.resolve();
+    active--;
+    return { data: null, error: null };
+  });
+  await assertLegacyCalendarWriteAllowed({
+    ...args,
+    eventIds: Array.from({ length: 250 }, (_, index) => `event${index}`),
+    sbAdmin: { rpc } as unknown as TypedSupabaseClient,
+  });
+  expect(rpc).toHaveBeenCalledTimes(250);
+  expect(peak).toBe(8);
+  expect(active).toBe(0);
+});
+
+it('blocks a retained final row in a full sync batch', async () => {
+  const rpc = vi.fn(async (_name, input) => ({
+    data: input.p_event_id === 'event249' ? { generation: '1' } : null,
+    error: null,
+  }));
+  await expect(
+    assertLegacyCalendarWriteAllowed({
+      ...args,
+      eventIds: Array.from({ length: 250 }, (_, index) => `event${index}`),
+      sbAdmin: { rpc } as unknown as TypedSupabaseClient,
+    })
+  ).rejects.toMatchObject({ status: 409 });
+  expect(rpc).toHaveBeenCalledTimes(250);
+});

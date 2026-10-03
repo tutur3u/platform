@@ -83,7 +83,7 @@ export function ProviderColorPicker({
             );
         }}
       >
-        <SelectTrigger>
+        <SelectTrigger aria-label={t('provider_color_label')}>
           <SelectValue placeholder={t('provider_color_label')} />
         </SelectTrigger>
         <SelectContent>

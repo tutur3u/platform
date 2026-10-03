@@ -269,7 +269,11 @@ describe('disabled provider saga SDK adapter', () => {
     expect(get).not.toHaveBeenCalled();
   });
   it('confirms an ambiguous successful delete using fresh authorized absence', async () => {
-    remove.mockRejectedValueOnce(new Error('ambiguous'));
+    events.set('source/original', { id: 'original', etag: 'original-etag' });
+    remove.mockImplementationOnce(async ({ calendarId, eventId }) => {
+      events.delete(`${calendarId}/${eventId}`);
+      throw new Error('ambiguous');
+    });
     await expect(
       adapter().deleteSource(transfer, payload)
     ).resolves.toBeUndefined();

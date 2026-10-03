@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import type { ColorOperationIdentity } from './protocol';
 
 export const SAGA_OPERATION_MARKER = 'tuturuuuSagaOperation';
 export const SagaConnectionSchema = z
@@ -170,24 +169,6 @@ export type SagaObservation =
       marker: string | null;
       event: Record<string, unknown>;
     };
-
-/** A ledger locator is not a fabricated Graph resource ID. Request access must
- * authenticate the endpoint binding and placeholder independently. */
-export function sagaLedgerIdentity(
-  binding: SagaBinding
-): ColorOperationIdentity {
-  const endpoint =
-    binding.source?.provider !== 'tuturuuu' && binding.source
-      ? binding.source
-      : binding.destination;
-  if (endpoint.provider === 'tuturuuu')
-    throw new Error('External ledger endpoint required');
-  return {
-    ...endpoint.identity,
-    providerEventId:
-      endpoint.identity.providerEventId ?? `saga:${binding.operationId}`,
-  };
-}
 
 export interface ProviderSagaAccess {
   assertAllowed(binding: SagaBinding): Promise<void>;
