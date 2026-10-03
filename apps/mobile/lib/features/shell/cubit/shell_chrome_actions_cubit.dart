@@ -97,6 +97,28 @@ class ShellChromeActionsState extends Equatable {
     return null;
   }
 
+  VoidCallback? resetSectionForLocation(String location) {
+    for (final registration in registrations.values.toList().reversed) {
+      if (registration.locations.contains(location) &&
+          registration.onResetSection != null) {
+        return registration.onResetSection;
+      }
+    }
+    // Existing section switches put the default section first in their group.
+    final seenGroups = <String>{};
+    for (final action in resolveForLocation(location)) {
+      final group = action.segmentGroup;
+      if (group != null &&
+          seenGroups.add(group) &&
+          !action.highlighted &&
+          action.enabled &&
+          action.onPressed != null) {
+        return action.onPressed;
+      }
+    }
+    return null;
+  }
+
   ShellChromeActionsState copyWith({
     Map<String, ShellChromeActionRegistration>? registrations,
   }) {
@@ -116,6 +138,7 @@ class ShellChromeActionRegistration extends Equatable {
     required this.actions,
     this.immersive = false,
     this.onBack,
+    this.onResetSection,
   });
 
   final bool immersive;
@@ -123,6 +146,7 @@ class ShellChromeActionRegistration extends Equatable {
   final Set<String> locations;
   final List<ShellActionSpec> actions;
   final Future<void> Function()? onBack;
+  final VoidCallback? onResetSection;
 
   @override
   List<Object?> get props => [
@@ -131,6 +155,7 @@ class ShellChromeActionRegistration extends Equatable {
     actions,
     immersive,
     onBack,
+    onResetSection,
   ];
 }
 
@@ -150,6 +175,7 @@ class ShellChromeActionsCubit extends Cubit<ShellChromeActionsState> {
     required List<ShellActionSpec> actions,
     bool immersive = false,
     Future<void> Function()? onBack,
+    VoidCallback? onResetSection,
   }) {
     if (isClosed) return;
     final nextRegistration = ShellChromeActionRegistration(
@@ -158,6 +184,7 @@ class ShellChromeActionsCubit extends Cubit<ShellChromeActionsState> {
       locations: Set<String>.from(locations),
       actions: List<ShellActionSpec>.from(actions),
       onBack: onBack,
+      onResetSection: onResetSection,
     );
     final currentRegistration = state.registrations[registrationId];
     if (currentRegistration == nextRegistration) {

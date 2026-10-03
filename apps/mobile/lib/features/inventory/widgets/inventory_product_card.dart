@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/inventory/widgets/inventory_product_image.dart';
 import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -15,12 +16,14 @@ class InventoryProductCard extends StatelessWidget {
     required this.product,
     required this.currency,
     this.onTap,
+    this.onDelete,
     super.key,
   });
 
   final InventoryProduct product;
   final String currency;
   final VoidCallback? onTap;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -45,11 +48,30 @@ class InventoryProductCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            product.name?.trim().isNotEmpty == true
-                ? product.name!.trim()
-                : l10n.inventoryProductUntitled,
-            style: theme.typography.small.copyWith(fontWeight: FontWeight.w700),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (product.avatarUrl?.isNotEmpty ?? false) ...[
+                InventoryProductImage(product: product),
+                const shad.Gap(12),
+              ],
+              Expanded(
+                child: Text(
+                  product.name?.trim().isNotEmpty == true
+                      ? product.name!.trim()
+                      : l10n.inventoryProductUntitled,
+                  style: theme.typography.small.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (onDelete != null)
+                IconButton(
+                  tooltip: l10n.commonDelete,
+                  onPressed: onDelete,
+                  icon: const Icon(Icons.delete_outline_rounded, size: 20),
+                ),
+            ],
           ),
           if (metadata.isNotEmpty) ...[
             const shad.Gap(4),

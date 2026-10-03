@@ -3,6 +3,7 @@
 import { ArrowLeft, Eye, EyeOff, Plus, Search, Star, X } from '@tuturuuu/icons';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useRef, useState } from 'react';
 import type { useWorkspaceVisibility } from '../../../hooks/use-workspace-visibility';
@@ -14,6 +15,7 @@ import {
   DialogTitle,
 } from '../dialog';
 import { Input } from '../input';
+import { PopoverClose, PopoverContent } from '../popover';
 import { TUTURUUU_LOGO_URL } from './tuturuuu-logo';
 import { WorkspaceIcon } from './workspace-select-icon';
 
@@ -32,6 +34,8 @@ export function WorkspacePickerContent({
   listLoading = false,
   listError,
   onRetryList,
+  presentation = 'fullscreen',
+  onClose,
 }: {
   workspaces: InternalApiWorkspaceSummary[];
   currentId?: string;
@@ -46,10 +50,15 @@ export function WorkspacePickerContent({
   listLoading?: boolean;
   listError?: Error | null;
   onRetryList?: () => void;
+  presentation?: 'fullscreen' | 'dropdown';
+  onClose?: () => void;
 }) {
+  const dropdown = presentation === 'dropdown';
+  const Title = dropdown ? 'h2' : DialogTitle;
+  const Description = dropdown ? 'p' : DialogDescription;
   const t = useTranslations('common');
   const [restoring, setRestoring] = useState(restoreOnly);
-  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchVisible, setSearchVisible] = useState(dropdown);
   const [search, setSearch] = useState('');
   const input = useRef<HTMLInputElement>(null);
   const query = search.trim().toLocaleLowerCase();
@@ -75,13 +84,14 @@ export function WorkspacePickerContent({
     setSearchVisible(true);
     requestAnimationFrame(() => input.current?.focus());
   }
-  return (
-    <DialogContent
-      presentation="fullscreen"
-      showCloseButton={false}
-      className="flex-col"
-    >
-      <div className="flex items-center gap-3 border-b p-4 pt-[max(1rem,env(safe-area-inset-top))]">
+  const content = (
+    <>
+      <div
+        className={cn(
+          'flex items-center gap-3 border-b p-4',
+          !dropdown && 'pt-[max(1rem,env(safe-area-inset-top))]'
+        )}
+      >
         {restoring && !restoreOnly && (
           <Button
             size="icon"
@@ -96,18 +106,31 @@ export function WorkspacePickerContent({
           </Button>
         )}
         <WorkspaceIcon fallbackLogoUrl={TUTURUUU_LOGO_URL} name="Tuturuuu" />
-        <DialogTitle className="min-w-0 flex-1">
+        <Title className="min-w-0 flex-1 font-semibold text-lg leading-none">
           {restoring ? t('hidden_workspaces') : t('workspaces')}
-        </DialogTitle>
-        <DialogClose asChild>
-          <Button size="icon" variant="ghost" aria-label={t('close')}>
-            <X />
-          </Button>
-        </DialogClose>
+        </Title>
+        {dropdown ? (
+          <PopoverClose asChild>
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label={t('close')}
+              onClick={onClose}
+            >
+              <X />
+            </Button>
+          </PopoverClose>
+        ) : (
+          <DialogClose asChild>
+            <Button size="icon" variant="ghost" aria-label={t('close')}>
+              <X />
+            </Button>
+          </DialogClose>
+        )}
       </div>
-      <DialogDescription className={restoring ? 'px-4 pt-3' : 'sr-only'}>
+      <Description className={restoring ? 'px-4 pt-3' : 'sr-only'}>
         {restoring ? t('hidden_workspaces_description') : t('select_workspace')}
-      </DialogDescription>
+      </Description>
       {searchVisible && (
         <div className="flex gap-2 px-4 pt-3">
           <Input
@@ -148,7 +171,12 @@ export function WorkspacePickerContent({
           </Button>
         </div>
       )}
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 pb-28">
+      <div
+        className={cn(
+          'min-h-0 flex-1 overflow-y-auto px-4 pt-4',
+          dropdown ? 'pb-3' : 'pb-28'
+        )}
+      >
         {!visibility.known || listLoading || listError ? (
           <p role="status">
             {visibility.isError || listError
@@ -161,7 +189,10 @@ export function WorkspacePickerContent({
             {results.map((workspace) => (
               <div
                 key={workspace.id}
-                className="mb-2 flex items-center gap-2 rounded-xl border p-2"
+                className={cn(
+                  'flex items-center gap-2',
+                  dropdown ? 'mb-1 rounded-md' : 'mb-2 rounded-xl border p-2'
+                )}
               >
                 {restoring ? (
                   <div className="flex min-w-0 flex-1 items-center gap-3 p-2">
@@ -174,7 +205,10 @@ export function WorkspacePickerContent({
                 ) : (
                   <Button
                     variant="ghost"
-                    className="h-auto min-w-0 flex-1 justify-start gap-3 whitespace-normal py-3 text-start"
+                    className={cn(
+                      'h-auto min-w-0 flex-1 justify-start gap-3 whitespace-normal text-start',
+                      dropdown ? 'py-2' : 'py-3'
+                    )}
                     aria-label={[
                       workspace.name ?? workspace.id,
                       workspace.tier ?? 'FREE',
@@ -268,26 +302,55 @@ export function WorkspacePickerContent({
           </Button>
         )}
       </div>
-      <div className="absolute right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] flex gap-3 rounded-full border bg-background p-2 shadow-lg">
-        <Button
-          size="icon"
-          className="rounded-full"
-          aria-label={t('search_workspace')}
-          onClick={openSearch}
-        >
-          <Search />
-        </Button>
-        {!restoring && onCreate && (
+      <div
+        className={
+          dropdown
+            ? restoring || !onCreate
+              ? 'hidden'
+              : 'flex gap-2 border-t p-2'
+            : 'absolute right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] flex gap-3 rounded-full border bg-background p-2 shadow-lg'
+        }
+      >
+        {!dropdown && (
           <Button
             size="icon"
             className="rounded-full"
+            aria-label={t('search_workspace')}
+            onClick={openSearch}
+          >
+            <Search />
+          </Button>
+        )}
+        {!restoring && onCreate && (
+          <Button
+            size={dropdown ? 'sm' : 'icon'}
+            className={dropdown ? 'w-full justify-start' : 'rounded-full'}
             aria-label={t('create_workspace_action')}
             onClick={onCreate}
           >
             <Plus />
+            {dropdown && t('create_workspace_action')}
           </Button>
         )}
       </div>
+    </>
+  );
+  return dropdown ? (
+    <PopoverContent
+      align="start"
+      aria-label={t(restoring ? 'hidden_workspaces' : 'workspaces')}
+      collisionPadding={8}
+      className="flex max-h-[min(32rem,var(--radix-popover-content-available-height))] w-80 max-w-[min(calc(100vw-1rem),var(--radix-popover-content-available-width))] flex-col overflow-hidden p-0"
+    >
+      {content}
+    </PopoverContent>
+  ) : (
+    <DialogContent
+      presentation="fullscreen"
+      showCloseButton={false}
+      className="flex-col"
+    >
+      {content}
     </DialogContent>
   );
 }

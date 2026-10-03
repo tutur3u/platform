@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart'
     hide NavigationBar, NavigationBarTheme, Scaffold;
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -83,7 +84,6 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
 
   final Stopwatch _tapStopwatch = Stopwatch();
   Timer? _longPressTimer;
-  DateTime? _lastAppsTabPointerUpAt;
   late final PageController _layerController;
   Widget? _cachedGlobalBody;
   int _activeLayerPage = 1;
@@ -107,6 +107,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     Routes.apps: 0,
   };
   final Map<String, WeakReference<ScrollableState>> _pageScrollables = {};
+  String? _lastScrolledDockRoute;
   shad.ToastOverlay? _exitConfirmationToast;
 
   void _markBackDispatch({required String source}) {
@@ -183,6 +184,9 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   @override
   void didUpdateWidget(covariant ShellPage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.matchedLocation != widget.matchedLocation) {
+      _lastScrolledDockRoute = null;
+    }
     final isRoot = _isRootTabLocation(widget.matchedLocation);
     if (isRoot) {
       _lastRootLocation = widget.matchedLocation;

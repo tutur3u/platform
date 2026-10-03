@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_sync_refresh.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
@@ -26,6 +28,9 @@ import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+part 'inventory_manage_item_widgets.dart';
+part 'inventory_manage_item_actions.dart';
+
 class InventoryManagePage extends StatefulWidget {
   const InventoryManagePage({
     super.key,
@@ -42,11 +47,15 @@ class InventoryManagePage extends StatefulWidget {
   State<InventoryManagePage> createState() => _InventoryManagePageState();
 }
 
-class _InventoryManagePageState extends State<InventoryManagePage> {
+class _InventoryManagePageState extends State<InventoryManagePage>
+    with OfflineSyncRefresh<InventoryManagePage> {
+  @override
+  Future<void> refreshAfterOfflineSync() => _reload();
   late final InventoryRepository _inventoryRepository;
   late final FinanceRepository _financeRepository;
   late final WorkspacePermissionsRepository _permissionsRepository;
   Future<_InventoryManageData>? _future;
+  _InventoryManageData? _cachedData;
   Future<_InventoryManageData>? _inFlight;
   (String?, String?)? _futureScope;
 
@@ -83,12 +92,20 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
     if (scope.$1 == null || wsId == null) {
       setState(() {
         _future = null;
+        _cachedData = null;
         _futureScope = scope;
       });
       return;
     }
     if (!forceRefresh && _futureScope == scope && _inFlight != null) return;
-    final future = _loadData(wsId, forceRefresh: forceRefresh);
+    if (_futureScope != scope) _cachedData = null;
+    final future = CacheStore.readWithRevalidation(
+      () => _loadData(wsId, forceRefresh: forceRefresh),
+      onSnapshot: (data) {
+        if (!mounted || _scope != scope) return;
+        setState(() => _cachedData = data);
+      },
+    );
     _inFlight = future;
     setState(() {
       _future = future;
@@ -208,6 +225,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
     required String title,
     required String confirmLabel,
     required Future<void> Function(String value) onConfirm,
+    String initialValue = '',
   }) async {
     final scope = _scope;
     final scopeError = context.l10n.commonSomethingWentWrong;
@@ -217,6 +235,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
       builder: (_) => _CreateManageItemDialog(
         title: title,
         confirmLabel: confirmLabel,
+        initialValue: initialValue,
         onConfirm: (value) async {
           if (!mounted || _scope != scope) {
             throw _InventoryScopeChanged(scopeError);
@@ -259,12 +278,14 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
               if (scope.$1 == null || scope.$2 == null) {
                 return const SizedBox.shrink();
               }
-              if (!snapshot.hasData &&
+              final data =
+                  snapshot.data ?? (_futureScope == scope ? _cachedData : null);
+              if (data == null &&
                   snapshot.connectionState != ConnectionState.done) {
                 return const InventoryOverviewSkeleton();
               }
 
-              if (snapshot.hasError || !snapshot.hasData) {
+              if (data == null) {
                 return Center(
                   child: FinanceEmptyState(
                     icon: Icons.error_outline,
@@ -278,8 +299,6 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                   ),
                 );
               }
-
-              final data = snapshot.data!;
 
               return ResponsiveWrapper(
                 maxWidth: ResponsivePadding.maxContentWidth(
@@ -295,6 +314,12 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                       32 + MediaQuery.paddingOf(context).bottom,
                     ),
                     children: [
+                      if (snapshot.hasError)
+                        shad.SecondaryButton(
+                          onPressed: () =>
+                              unawaited(_reload(forceRefresh: true)),
+                          child: Text(l10n.commonRetry),
+                        ),
                       Align(
                         alignment: AlignmentDirectional.centerEnd,
                         child: shad.OutlineButton(
@@ -316,6 +341,22 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                         ),
                         child: _ChipWrap(
                           workspaceId: _wsId ?? '',
+                          onEdit: data.canManageSetup
+                              ? (id, name) => _editSetupItem(
+                                  InventorySetupKind.owner,
+                                  id,
+                                  data.owners
+                                      .firstWhere((owner) => owner.id == id)
+                                      .name,
+                                )
+                              : null,
+                          onDelete: data.canManageSetup
+                              ? (id, name) => _deleteSetupItem(
+                                  InventorySetupKind.owner,
+                                  id,
+                                  name,
+                                )
+                              : null,
                           items: data.owners
                               .map((owner) {
                                 if (owner.archived) {
@@ -342,6 +383,20 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                         ),
                         child: _ChipWrap(
                           workspaceId: _wsId ?? '',
+                          onEdit: data.canManageSetup
+                              ? (id, name) => _editSetupItem(
+                                  InventorySetupKind.category,
+                                  id,
+                                  name,
+                                )
+                              : null,
+                          onDelete: data.canManageSetup
+                              ? (id, name) => _deleteSetupItem(
+                                  InventorySetupKind.category,
+                                  id,
+                                  name,
+                                )
+                              : null,
                           items: data.productCategories
                               .map((item) => (item.id, item.name))
                               .toList(growable: false),
@@ -359,6 +414,20 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                         ),
                         child: _ChipWrap(
                           workspaceId: _wsId ?? '',
+                          onEdit: data.canManageSetup
+                              ? (id, name) => _editSetupItem(
+                                  InventorySetupKind.manufacturer,
+                                  id,
+                                  name,
+                                )
+                              : null,
+                          onDelete: data.canManageSetup
+                              ? (id, name) => _deleteSetupItem(
+                                  InventorySetupKind.manufacturer,
+                                  id,
+                                  name,
+                                )
+                              : null,
                           items: data.manufacturers
                               .map((item) => (item.id, item.name))
                               .toList(growable: false),
@@ -376,6 +445,20 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                         ),
                         child: _ChipWrap(
                           workspaceId: _wsId ?? '',
+                          onEdit: data.canManageSetup
+                              ? (id, name) => _editSetupItem(
+                                  InventorySetupKind.unit,
+                                  id,
+                                  name,
+                                )
+                              : null,
+                          onDelete: data.canManageSetup
+                              ? (id, name) => _deleteSetupItem(
+                                  InventorySetupKind.unit,
+                                  id,
+                                  name,
+                                )
+                              : null,
                           items: data.units
                               .map((item) => (item.id, item.name))
                               .toList(growable: false),
@@ -393,6 +476,20 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                         ),
                         child: _ChipWrap(
                           workspaceId: _wsId ?? '',
+                          onEdit: data.canManageSetup
+                              ? (id, name) => _editSetupItem(
+                                  InventorySetupKind.warehouse,
+                                  id,
+                                  name,
+                                )
+                              : null,
+                          onDelete: data.canManageSetup
+                              ? (id, name) => _deleteSetupItem(
+                                  InventorySetupKind.warehouse,
+                                  id,
+                                  name,
+                                )
+                              : null,
                           items: data.warehouses
                               .map((item) => (item.id, item.name))
                               .toList(growable: false),
@@ -500,133 +597,6 @@ class _ManageSection extends StatelessWidget {
           child,
         ],
       ),
-    );
-  }
-}
-
-class _CreateManageItemDialog extends StatefulWidget {
-  const _CreateManageItemDialog({
-    required this.title,
-    required this.confirmLabel,
-    required this.onConfirm,
-  });
-
-  final String title;
-  final String confirmLabel;
-  final Future<void> Function(String value) onConfirm;
-
-  @override
-  State<_CreateManageItemDialog> createState() =>
-      _CreateManageItemDialogState();
-}
-
-class _CreateManageItemDialogState extends State<_CreateManageItemDialog> {
-  late final TextEditingController _controller;
-  bool _saving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AppDialogScaffold(
-      title: widget.title,
-      icon: Icons.add_circle_outline_rounded,
-      maxWidth: 420,
-      maxHeightFactor: 0.5,
-      actions: [
-        shad.OutlineButton(
-          onPressed: _saving ? null : () => Navigator.of(context).pop(false),
-          child: Text(context.l10n.commonCancel),
-        ),
-        shad.PrimaryButton(
-          onPressed: _saving ? null : _handleConfirm,
-          child: _saving
-              ? const SizedBox.square(
-                  dimension: 16,
-                  child: NovaLoadingIndicator(size: 20),
-                )
-              : Text(widget.confirmLabel),
-        ),
-      ],
-      child: TextField(
-        controller: _controller,
-        autofocus: true,
-        onSubmitted: (_) => unawaited(_handleConfirm()),
-      ),
-    );
-  }
-
-  Future<void> _handleConfirm() async {
-    final value = _controller.text.trim();
-    if (value.isEmpty) {
-      showInventoryToast(
-        context,
-        context.l10n.inventoryManageNameRequired,
-        destructive: true,
-      );
-      return;
-    }
-
-    setState(() => _saving = true);
-    try {
-      await widget.onConfirm(value);
-      if (!mounted) {
-        return;
-      }
-      Navigator.of(context).pop(true);
-    } on Exception catch (error) {
-      if (!mounted) {
-        return;
-      }
-      showInventoryToast(context, error.toString(), destructive: true);
-    } finally {
-      if (mounted) {
-        setState(() => _saving = false);
-      }
-    }
-  }
-}
-
-class _ChipWrap extends StatelessWidget {
-  const _ChipWrap({
-    required this.workspaceId,
-    required this.items,
-    this.feature = 'inventory',
-  });
-
-  final String workspaceId;
-  final List<(String, String)> items;
-  final String feature;
-
-  @override
-  Widget build(BuildContext context) {
-    if (items.isEmpty) {
-      return Text(context.l10n.inventoryManageEmpty);
-    }
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: items
-          .map(
-            (item) => PendingSyncFrame(
-              workspaceId: workspaceId,
-              entityId: item.$1,
-              feature: feature,
-              child: Chip(label: Text(item.$2)),
-            ),
-          )
-          .toList(growable: false),
     );
   }
 }

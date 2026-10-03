@@ -15,6 +15,7 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { writeFileAtomically } from './atomic-file.js';
 
 import {
   ensureSupabaseBinary,
@@ -28,7 +29,7 @@ import {
 
 const __filename = fileURLToPath(import.meta.url);
 const DISPOSABLE_PREFIX = 'tuturuuu-supabase-';
-const METADATA_FILE = '.tuturuuu-isolated-supabase.json';
+export const METADATA_FILE = '.tuturuuu-isolated-supabase.json';
 const PORT_BLOCK_SIZE = 8;
 const PORT_SLOT_COUNT = 2500;
 const PORT_SLOT_ATTEMPTS = 8;
@@ -289,10 +290,11 @@ export function validateFocusedTestPath(repositoryRoot, testPath) {
   return normalized;
 }
 
-async function writeMetadata(disposableRoot, metadata) {
-  await writeFile(
+export async function writeMetadata(disposableRoot, metadata, options = {}) {
+  return writeFileAtomically(
     path.join(disposableRoot, METADATA_FILE),
-    `${JSON.stringify(metadata, null, 2)}\n`
+    `${JSON.stringify(metadata, null, 2)}\n`,
+    { ...options, writeOptions: { flag: 'wx', mode: 0o600 } }
   );
 }
 

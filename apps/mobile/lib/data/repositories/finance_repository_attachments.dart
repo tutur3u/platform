@@ -2,6 +2,7 @@ part of 'finance_repository.dart';
 
 mixin FinanceRepositoryAttachments {
   ApiClient get _api;
+  OfflineMutationQueue get _mutationQueue;
 
   Future<bool> uploadTransactionAttachment({
     required String wsId,
@@ -15,6 +16,7 @@ mixin FinanceRepositoryAttachments {
         lookupMimeType(filename, headerBytes: bytes.take(12).toList()) ??
         'application/octet-stream';
     return queueOrSendValue<bool>(
+      queue: _mutationQueue,
       feature: 'finance',
       method: 'FINANCE_ATTACHMENT_UPLOAD',
       path: DriveEndpoints.uploadUrl(wsId),

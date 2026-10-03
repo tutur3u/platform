@@ -280,6 +280,10 @@ class _CheckoutProductCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (row.product.avatarUrl?.isNotEmpty ?? false) ...[
+                InventoryProductImage(product: row.product),
+                const shad.Gap(12),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -373,6 +377,10 @@ class _CheckoutCartRowCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (row.product.avatarUrl?.isNotEmpty ?? false) ...[
+                InventoryProductImage(product: row.product),
+                const shad.Gap(12),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

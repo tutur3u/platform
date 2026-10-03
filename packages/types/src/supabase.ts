@@ -12807,6 +12807,24 @@ export type Database = {
         };
         Relationships: [];
       };
+      security_budget_counters: {
+        Row: {
+          expires_at: string;
+          key: string;
+          used: number;
+        };
+        Insert: {
+          expires_at: string;
+          key: string;
+          used?: number;
+        };
+        Update: {
+          expires_at?: string;
+          key?: string;
+          used?: number;
+        };
+        Relationships: [];
+      };
       task_description_chunk_sessions: {
         Row: {
           created_at: string;
@@ -43975,6 +43993,10 @@ export type Database = {
           retention_rate: number;
         }[];
       };
+      get_security_budget_entitlement: {
+        Args: { p_user_id?: string; p_ws_id?: string };
+        Returns: Json;
+      };
       get_session_chain_root: {
         Args: { session_id_input: string };
         Returns: string;
@@ -45690,6 +45712,10 @@ export type Database = {
           reservation_id: string;
           success: boolean;
         }[];
+      };
+      reserve_security_budget: {
+        Args: { p_dimensions: Json };
+        Returns: number[];
       };
       resolve_guest_self_join_candidate: {
         Args: { p_user_id: string; p_ws_id: string };

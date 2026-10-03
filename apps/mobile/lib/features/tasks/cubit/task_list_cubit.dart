@@ -6,6 +6,7 @@ import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/models/user_task.dart';
 import 'package:mobile/data/models/user_tasks_page.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
@@ -21,9 +22,18 @@ class TaskListCubit extends Cubit<TaskListState> {
     TaskBroadcastClient? taskBroadcastClient,
     TaskListState? initialState,
   }) : _repo = taskRepository,
+       _cacheUserId = currentCacheUserId(),
        _taskBroadcastClient =
            taskBroadcastClient ?? CloudflareTaskBroadcastClient(),
-       super(initialState ?? const TaskListState());
+       super(initialState ?? const TaskListState()) {
+    OfflineMutationQueue.instance.syncRevision.addListener(_onSynchronized);
+  }
+
+  void _onSynchronized() {
+    if (!isClosed && _wsId != null) {
+      unawaited(reload());
+    }
+  }
 
   final TaskRepository _repo;
   final TaskBroadcastClient _taskBroadcastClient;
@@ -31,6 +41,7 @@ class TaskListCubit extends Cubit<TaskListState> {
   static const _cacheTag = 'tasks:list';
 
   String? _wsId;
+  String? _cacheUserId;
   String? _userId;
   bool _isPersonal = false;
   int _requestVersion = 0;
@@ -63,8 +74,14 @@ class TaskListCubit extends Cubit<TaskListState> {
     required bool isPersonal,
     bool forceRefresh = false,
   }) async {
+    final actor = currentCacheUserId();
     await CacheStore.instance.prefetch<UserTasksPage>(
       key: _cacheKey(wsId: wsId, isPersonal: isPersonal),
+      checkScope: () {
+        if (actor != currentCacheUserId()) {
+          throw StateError('Task account changed.');
+        }
+      },
       policy: _cachePolicy,
       decode: (json) => UserTasksPage.fromJson(_decodeCacheJson(json)),
       fetch: () async => (await taskRepository.getMyTasks(
@@ -111,8 +128,16 @@ class TaskListCubit extends Cubit<TaskListState> {
     bool forceRefresh = false,
     String? userId,
   }) async {
+    final cacheUserId = currentCacheUserId();
     final preserveData =
-        _wsId == wsId && _isPersonal == isPersonal && state.hasLoadedOnce;
+        _cacheUserId == cacheUserId &&
+        _wsId == wsId &&
+        _isPersonal == isPersonal &&
+        state.hasLoadedOnce;
+    if (_cacheUserId != cacheUserId || (_wsId != null && _wsId != wsId)) {
+      emit(const TaskListState());
+    }
+    _cacheUserId = cacheUserId;
     _wsId = wsId;
     if (userId != null && userId.trim().isNotEmpty) {
       _userId = userId.trim();
@@ -125,6 +150,11 @@ class TaskListCubit extends Cubit<TaskListState> {
       key: cacheKey,
       decode: (json) => UserTasksPage.fromJson(_decodeCacheJson(json)),
     );
+    if (isClosed ||
+        requestVersion != _requestVersion ||
+        cacheUserId != currentCacheUserId()) {
+      return;
+    }
     final cachedPage = cached.data;
     final hasCachedValue = cached.hasValue && cachedPage != null;
 
@@ -189,13 +219,22 @@ class TaskListCubit extends Cubit<TaskListState> {
 
     try {
       final page = await _repo.getMyTasks(wsId: wsId, isPersonal: isPersonal);
-      if (requestVersion != _requestVersion) return;
+      if (isClosed ||
+          requestVersion != _requestVersion ||
+          cacheUserId != currentCacheUserId()) {
+        return;
+      }
       await CacheStore.instance.write(
         key: cacheKey,
         policy: _cachePolicy,
         payload: page.toJson(),
         tags: [_cacheTag, 'workspace:$wsId', 'module:tasks'],
       );
+      if (isClosed ||
+          requestVersion != _requestVersion ||
+          cacheUserId != currentCacheUserId()) {
+        return;
+      }
 
       emit(
         state.copyWith(
@@ -217,7 +256,11 @@ class TaskListCubit extends Cubit<TaskListState> {
         ),
       );
     } on Exception catch (e) {
-      if (requestVersion != _requestVersion) return;
+      if (isClosed ||
+          requestVersion != _requestVersion ||
+          cacheUserId != currentCacheUserId()) {
+        return;
+      }
       if (shouldServeVisibleData) {
         emit(
           state.copyWith(
@@ -234,7 +277,9 @@ class TaskListCubit extends Cubit<TaskListState> {
 
   Future<void> reload() async {
     final wsId = _wsId;
-    if (wsId == null) return;
+    if (wsId == null) {
+      return;
+    }
     await loadTasks(wsId: wsId, isPersonal: _isPersonal, userId: _userId);
   }
 
@@ -256,7 +301,9 @@ class TaskListCubit extends Cubit<TaskListState> {
         isPersonal: _isPersonal,
         completedPage: state.completedPage + 1,
       );
-      if (requestVersion != _requestVersion) return;
+      if (requestVersion != _requestVersion) {
+        return;
+      }
 
       emit(
         state.copyWith(
@@ -272,7 +319,9 @@ class TaskListCubit extends Cubit<TaskListState> {
       );
       await _persistCurrentState();
     } on Exception catch (e) {
-      if (requestVersion != _requestVersion) return;
+      if (requestVersion != _requestVersion) {
+        return;
+      }
       emit(
         state.copyWith(
           status: TaskListStatus.loaded,
@@ -285,7 +334,9 @@ class TaskListCubit extends Cubit<TaskListState> {
 
   Future<void> _persistCurrentState() async {
     final wsId = _wsId;
-    if (wsId == null) return;
+    if (wsId == null) {
+      return;
+    }
     final page = UserTasksPage(
       overdue: state.overdueTasks,
       today: state.todayTasks,
@@ -433,6 +484,7 @@ class TaskListCubit extends Cubit<TaskListState> {
 
   @override
   Future<void> close() async {
+    OfflineMutationQueue.instance.syncRevision.removeListener(_onSynchronized);
     _realtimeReloadTimer?.cancel();
     _seenRealtimeEventIds.clear();
     final subscription = _userBroadcastSubscription;

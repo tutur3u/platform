@@ -3,6 +3,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import policy from '../ci/release-note-policy.js';
 import { appleGet, listIosPrereleaseVersionRecords } from './build-name.mjs';
 
 const repoRoot = fileURLToPath(new URL('../..', import.meta.url));
@@ -69,17 +70,17 @@ function historyBaseTag(version, sha, git) {
 export function changesBetween(fromSha, toSha, git = execFileSync) {
   const lines = git(
     'git',
-    [
-      'log',
-      '--first-parent',
-      '--format=%s',
-      `${fromSha}..${toSha}`,
-      '--',
-      'apps/mobile',
-    ],
+    ['log', '--format=%s', `${fromSha}..${toSha}`, '--', 'apps/mobile'],
     { cwd: repoRoot, encoding: 'utf8' }
   ).split('\n');
-  return [...new Set(lines.map(readableSubject).filter(Boolean))];
+  return [
+    ...new Set(
+      lines
+        .filter((line) => !policy.isReleaseBookkeeping(line))
+        .map(readableSubject)
+        .filter(Boolean)
+    ),
+  ];
 }
 
 async function githubGet(path, token) {

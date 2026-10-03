@@ -1,14 +1,14 @@
 {
-  "workspaceHiddenTitle": "Hidden workspaces",
-  "workspaceHideAction": "Hide",
-  "workspaceRestoreAction": "Restore",
-  "workspaceHiddenDescription": "Only you can see this list. Hiding does not change membership or notifications.",
-  "workspaceHiddenEmpty": "No Hidden workspaces",
-  "workspaceHiddenLoadError": "Unable to refresh Hidden workspaces. Your saved list is kept.",
-  "workspaceHiddenUpdateError": "Unable to save this change. Try again when connected.",
-  "workspaceAllHidden": "Your workspaces are hidden. Restore one to continue.",
-  "workspacePickerClose": "Close workspace picker",
-  "commonLoading": "Loading",
+    "workspaceHiddenTitle": "Hidden workspaces",
+    "workspaceHideAction": "Hide",
+    "workspaceRestoreAction": "Restore",
+    "workspaceHiddenDescription": "Only you can see this list. Hiding does not change membership or notifications.",
+    "workspaceHiddenEmpty": "No Hidden workspaces",
+    "workspaceHiddenLoadError": "Workspace visibility preferences are unavailable. Saved hidden choices are kept.",
+    "workspaceHiddenUpdateError": "Unable to save this change. Try again when connected.",
+    "workspaceAllHidden": "Your workspaces are hidden. Restore one to continue.",
+    "workspacePickerClose": "Close workspace picker",
+    "commonLoading": "Loading",
     "@@locale": "en",
     "appTitle": "Tuturuuu",
     "chatAccept": "Accept",
@@ -4076,5 +4076,50 @@
     },
     "meetFixtureConnected": "Local meeting connected",
     "meetFixtureRevoke": "Host: stop screen share",
-    "meetFixtureReconnect": "Reconnect meeting"
+    "meetFixtureReconnect": "Reconnect meeting",
+    "offlineEditSyncing": "Syncing…",
+    "inventorySetupSyncFirst": "Sync this new item before using, editing, or deleting it.",
+    "inventoryProductDeleteConfirm": "Remove this product? If existing sales reference it, the server will archive it when syncing.",
+    "inventorySeasonPriceCached": "Offline draft using saved season prices. Prices and availability will be checked when syncing.",
+    "offlinePreparationTitle": "Available offline",
+    "offlinePreparationCacheAll": "Download all",
+    "offlinePreparationDescription": "Download workspace data for offline use. Cached data uses your storage limit; files and online services may still need connectivity.",
+    "offlinePreparationQueued": "Not downloaded",
+    "offlinePreparationWaiting": "Queued",
+    "offlinePreparationDownloading": "Downloading",
+    "offlinePreparationReady": "Downloaded",
+    "offlinePreparationFailed": "Download failed",
+    "offlinePreparationUnavailable": "Unavailable",
+    "offlinePreparationLastSuccess": "Last downloaded: {time}",
+    "offlinePreparationProgress": "{completed} of {total} modules downloaded",
+    "@offlinePreparationLastSuccess": {
+        "placeholders": {
+            "time": {
+                "type": "String"
+            }
+        }
+    },
+    "@offlinePreparationProgress": {
+        "placeholders": {
+            "completed": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
+        }
+    },
+    "offlinePreparationNeedsRefresh": "Needs refresh",
+    "inventoryCheckoutReconcileCart": "Reconcile cart",
+    "inventoryCheckoutReconcileCartHelp": "Refresh prices and remove items that no longer match this period.",
+    "inventoryCheckoutCartReconciled": "Cart updated. Review the total before submitting.",
+    "inventoryCheckoutCartRemoved": "{count, plural, one{Removed {count} unavailable item. Review the cart before submitting.} other{Removed {count} unavailable items. Review the cart before submitting.}}",
+    "inventoryCheckoutPeriodRulesChanged": "Some items do not match this period. Reconcile the cart to continue.",
+    "@inventoryCheckoutCartRemoved": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    }
 }

@@ -50,8 +50,17 @@ extension _InventoryCheckoutPricing on _InventoryCheckoutPageState {
     return row.inventory.price;
   }
 
+  bool _periodAllowsProduct(String id) {
+    final selected = _selectedPeriod;
+    return selected == null || inventoryPeriodAllowsProduct(selected, id);
+  }
+
+  bool get _cartMatchesPeriod =>
+      _selectedRows.every((row) => _periodAllowsProduct(row.product.id));
+
   bool get _completeQuote =>
       _periodResolved &&
+      _cartMatchesPeriod &&
       (!_scheduled ||
           ((_season.hasPending || _season.ready) &&
               _selectedRows.every((row) => _priceFor(row) != null)));

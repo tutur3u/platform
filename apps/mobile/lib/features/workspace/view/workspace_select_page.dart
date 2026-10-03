@@ -67,15 +67,9 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
           }
 
           if (context.read<WorkspaceCubit>().hasAuthenticatedActor &&
-              !state.visibilityResolved) {
-            return state.visibilityStatus == WorkspaceStatus.error
-                ? _ErrorView(
-                    error: l10n.workspaceHiddenLoadError,
-                    onRetry: () => context
-                        .read<WorkspaceCubit>()
-                        .refreshHiddenWorkspaces(),
-                  )
-                : const Center(child: NovaLoadingIndicator());
+              !state.visibilityResolved &&
+              state.visibilityStatus != WorkspaceStatus.error) {
+            return const Center(child: NovaLoadingIndicator());
           }
           if (state.workspaces.isNotEmpty && state.visibleWorkspaces.isEmpty) {
             return Center(
@@ -102,7 +96,7 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
             );
           }
 
-          return _WorkspaceListView(
+          final list = _WorkspaceListView(
             state: state,
             isSelecting: _isSelecting,
             selectingWorkspaceId: _selectingWorkspaceId,
@@ -110,6 +104,26 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
               forceRefresh: true,
             ),
             onSelect: _onSelectWorkspace,
+          );
+          if (state.visibilityStatus != WorkspaceStatus.error) return list;
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(l10n.workspaceHiddenLoadError)),
+                    shad.GhostButton(
+                      onPressed: () => context
+                          .read<WorkspaceCubit>()
+                          .refreshHiddenWorkspaces(),
+                      child: Text(l10n.commonRetry),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(child: list),
+            ],
           );
         },
       ),

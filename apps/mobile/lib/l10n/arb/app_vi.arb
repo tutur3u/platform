@@ -1,14 +1,14 @@
 {
-  "workspaceHiddenTitle": "Không gian làm việc đã ẩn",
-  "workspaceHideAction": "Ẩn",
-  "workspaceRestoreAction": "Hiện lại",
-  "workspaceHiddenDescription": "Chỉ bạn thấy danh sách này. Ẩn không thay đổi tư cách thành viên hay thông báo.",
-  "workspaceHiddenEmpty": "Không có không gian làm việc đã ẩn",
-  "workspaceHiddenLoadError": "Không thể làm mới danh sách đã ẩn. Danh sách đã lưu được giữ lại.",
-  "workspaceHiddenUpdateError": "Không thể lưu thay đổi. Hãy thử lại khi có kết nối.",
-  "workspaceAllHidden": "Các không gian làm việc của bạn đã bị ẩn. Hiện lại một không gian để tiếp tục.",
-  "workspacePickerClose": "Đóng danh sách không gian làm việc",
-  "commonLoading": "Đang tải",
+    "workspaceHiddenTitle": "Không gian làm việc đã ẩn",
+    "workspaceHideAction": "Ẩn",
+    "workspaceRestoreAction": "Hiện lại",
+    "workspaceHiddenDescription": "Chỉ bạn thấy danh sách này. Ẩn không thay đổi tư cách thành viên hay thông báo.",
+    "workspaceHiddenEmpty": "Không có không gian làm việc đã ẩn",
+    "workspaceHiddenLoadError": "Không thể tải tùy chọn hiển thị. Các lựa chọn ẩn đã lưu được giữ lại.",
+    "workspaceHiddenUpdateError": "Không thể lưu thay đổi. Hãy thử lại khi có kết nối.",
+    "workspaceAllHidden": "Các không gian làm việc của bạn đã bị ẩn. Hiện lại một không gian để tiếp tục.",
+    "workspacePickerClose": "Đóng danh sách không gian làm việc",
+    "commonLoading": "Đang tải",
     "@@locale": "vi",
     "appTitle": "Tuturuuu",
     "chatAccept": "Chấp nhận",
@@ -4079,5 +4079,50 @@
     },
     "meetFixtureConnected": "Đã kết nối cuộc họp cục bộ",
     "meetFixtureRevoke": "Chủ phòng: dừng chia sẻ màn hình",
-    "meetFixtureReconnect": "Kết nối lại cuộc họp"
+    "meetFixtureReconnect": "Kết nối lại cuộc họp",
+    "offlineEditSyncing": "Đang đồng bộ…",
+    "inventorySetupSyncFirst": "Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa.",
+    "inventoryProductDeleteConfirm": "Xóa sản phẩm này? Nếu giao dịch đã có tham chiếu đến sản phẩm, máy chủ sẽ lưu trữ sản phẩm khi đồng bộ.",
+    "inventorySeasonPriceCached": "Bản nháp ngoại tuyến sử dụng giá mùa đã lưu. Giá và tình trạng hàng sẽ được kiểm tra khi đồng bộ.",
+    "offlinePreparationTitle": "Dữ liệu ngoại tuyến",
+    "offlinePreparationCacheAll": "Tải tất cả",
+    "offlinePreparationDescription": "Tải dữ liệu không gian làm việc để dùng ngoại tuyến. Bộ nhớ đệm chịu giới hạn lưu trữ; tệp và dịch vụ trực tuyến vẫn có thể cần kết nối.",
+    "offlinePreparationQueued": "Chưa tải",
+    "offlinePreparationWaiting": "Đang chờ",
+    "offlinePreparationDownloading": "Đang tải",
+    "offlinePreparationReady": "Đã tải",
+    "offlinePreparationFailed": "Tải thất bại",
+    "offlinePreparationUnavailable": "Không khả dụng",
+    "offlinePreparationLastSuccess": "Lần tải gần nhất: {time}",
+    "offlinePreparationProgress": "Đã tải {completed}/{total} mô-đun",
+    "@offlinePreparationLastSuccess": {
+        "placeholders": {
+            "time": {
+                "type": "String"
+            }
+        }
+    },
+    "@offlinePreparationProgress": {
+        "placeholders": {
+            "completed": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
+        }
+    },
+    "offlinePreparationNeedsRefresh": "Cần làm mới",
+    "inventoryCheckoutReconcileCart": "Đối soát giỏ hàng",
+    "inventoryCheckoutReconcileCartHelp": "Làm mới giá và loại bỏ sản phẩm không còn phù hợp với kỳ bán hàng này.",
+    "inventoryCheckoutCartReconciled": "Đã cập nhật giỏ hàng. Kiểm tra tổng tiền trước khi tạo đơn.",
+    "inventoryCheckoutCartRemoved": "{count, plural, other{Đã loại bỏ {count} sản phẩm không còn khả dụng. Kiểm tra giỏ hàng trước khi tạo đơn.}}",
+    "inventoryCheckoutPeriodRulesChanged": "Một số sản phẩm không phù hợp với kỳ bán hàng này. Đối soát giỏ hàng để tiếp tục.",
+    "@inventoryCheckoutCartRemoved": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    }
 }

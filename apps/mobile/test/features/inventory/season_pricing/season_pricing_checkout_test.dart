@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
+import 'package:mobile/data/models/inventory/inventory_checkout_defaults.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
@@ -32,6 +33,10 @@ class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
 class _Inventory extends InventoryRepository {
   _Inventory({super.apiClient, super.cacheStore});
+  InventoryCheckoutDefaults defaults = const InventoryCheckoutDefaults();
+  @override
+  Future<InventoryCheckoutDefaults> getCheckoutDefaults(String wsId) async =>
+      defaults;
   int periodReads = 0;
   List<Map<String, dynamic>>? legacy;
   List<InventorySalesPeriod> periods = [period()];
@@ -89,10 +94,16 @@ class _Finance extends FinanceRepository {
   @override
   Future<List<Wallet>> getWallets(String wsId) async => const [
     Wallet(id: 'wallet', name: 'Wallet', currency: 'USD'),
+    Wallet(id: 'configured-wallet', name: 'Revenue wallet', currency: 'USD'),
   ];
   @override
   Future<List<TransactionCategory>> getCategories(String wsId) async => const [
     TransactionCategory(id: 'category', name: 'Sales', isExpense: false),
+    TransactionCategory(
+      id: 'configured-category',
+      name: 'Configured sales',
+      isExpense: false,
+    ),
   ];
 }
 
@@ -185,10 +196,66 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets(
+    'explicit cart reconciliation removes products excluded by period rules',
+    (tester) async {
+      final inventory = _Inventory()
+        ..periods = [
+          const InventorySalesPeriod(
+            id: 'season',
+            name: 'Season',
+            status: 'active',
+            saleCount: 0,
+            productScope: 'allowlist',
+          ),
+        ];
+      final controller = InventorySeasonPricingController(
+        journal: MemorySaleStore().journal,
+        fetch: (_, _) async => quote(),
+        send: (_, _) async => 'invoice',
+        isOnline: () async => true,
+        now: () => DateTime.utc(2026, 10),
+      );
+      await mount(tester, inventory, controller);
+      await tester.tap(find.byIcon(Icons.add_circle_outline_rounded).first);
+      await selectSeason(tester);
+      expect(
+        find.textContaining('Some items do not match this period'),
+        findsOneWidget,
+      );
+      final form = tester.widget<FinanceFullscreenFormScaffold>(
+        find.byType(FinanceFullscreenFormScaffold),
+      );
+      expect(form.onPrimaryPressed, isNull);
+      await tester.tap(find.text('Reconcile cart'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'Removed 1 unavailable item. Review the cart before submitting.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Add products from the browse tab to review and submit the sale.',
+        ),
+        findsOneWidget,
+      );
+      expect(inventory.legacy, isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.drainShadToastTimers();
+    },
+  );
+
   testWidgets('actual scheduled checkout uses quote price, currency/as-of and '
       'stable retry', (tester) async {
     final sent = <Map<String, dynamic>>[];
-    final inventory = _Inventory();
+    final inventory = _Inventory()
+      ..defaults = const InventoryCheckoutDefaults(
+        salesPeriodId: 'season',
+        revenueWalletId: 'configured-wallet',
+        financeCategoryId: 'configured-category',
+      );
     final controller = InventorySeasonPricingController(
       journal: MemorySaleStore().journal,
       lookupReceipt: (_, _) async => null,
@@ -202,6 +269,7 @@ void main() {
       requestId: () => 'request',
     );
     await mount(tester, inventory, controller);
+    expect(controller.period?.id, 'season');
     await tester.tap(find.byIcon(Icons.add_circle_outline_rounded).first);
     await selectSeason(tester);
     expect(find.textContaining('as of 2026-10-01 01:00:00'), findsOneWidget);
@@ -211,6 +279,8 @@ void main() {
     await tester.tap(find.text('Create sale'));
     await tester.pumpAndSettle();
     expect(sent, hasLength(1));
+    expect(sent.single['wallet_id'], 'configured-wallet');
+    expect(sent.single['category_id'], 'configured-category');
     expect(inventory.legacy, isNull);
     expect(
       (sent.single['products'] as List<dynamic>).single,

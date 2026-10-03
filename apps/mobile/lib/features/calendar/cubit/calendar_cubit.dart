@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +7,7 @@ import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/calendar_event_deduplication.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
@@ -28,7 +31,22 @@ class CalendarCubit extends Cubit<CalendarState> {
              ? initialState!
              : (initialState ?? CalendarState(selectedDate: DateTime.now()))
                    .copyWith(viewMode: defaultViewMode),
-       );
+       ) {
+    OfflineMutationQueue.instance.syncRevision.addListener(_onSynchronized);
+  }
+
+  void _onSynchronized() {
+    final wsId = _wsId;
+    if (!isClosed && wsId != null) {
+      unawaited(loadEvents(wsId).then<void>((_) {}, onError: (Object _) {}));
+    }
+  }
+
+  @override
+  Future<void> close() {
+    OfflineMutationQueue.instance.syncRevision.removeListener(_onSynchronized);
+    return super.close();
+  }
 
   CalendarViewMode _defaultViewMode;
 
@@ -241,7 +259,7 @@ class CalendarCubit extends Cubit<CalendarState> {
       emit(_restoreView(cached.state));
     }
 
-    if (hasVisibleData || cached != null) {
+    if (hasVisibleData || cached != null || diskCached?.hasValue == true) {
       emit(
         state.copyWith(
           status: CalendarStatus.loading,
