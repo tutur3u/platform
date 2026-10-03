@@ -179,7 +179,7 @@ describe('independent merge product lookup', () => {
   it('shows a selected-name error and retry instead of loading forever', async () => {
     api.list.mockResolvedValue({ data: [], count: 0 });
     api.product
-      .mockRejectedValueOnce(new Error('Unavailable'))
+      .mockResolvedValueOnce({ id: 'selected', name: null })
       .mockResolvedValue({ id: 'selected', name: 'Recovered selection' });
     renderQuery(
       <InventoryMergeProductSelect
