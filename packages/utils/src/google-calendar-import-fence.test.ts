@@ -41,8 +41,15 @@ function fixture(providerEvent: unknown = { id: 'event', summary: 'fresh' }) {
   });
   const format = vi.fn(async (events: unknown[]) => events as object[]);
   const client = { rpc } as unknown as SupabaseClient;
-  const calendar = { events: { get } } as unknown as calendar_v3.Calendar;
-  return { client, calendar, scope, format, order, rpc, get };
+  const calendarGet = vi.fn(async () => {
+    order.push('calendar-get');
+    return { data: { id: scope.calendarId, accessRole: 'reader' } };
+  });
+  const calendar = {
+    events: { get },
+    calendarList: { get: calendarGet },
+  } as unknown as calendar_v3.Calendar;
+  return { client, calendar, scope, format, order, rpc, get, calendarGet };
 }
 
 describe('guarded Google import boundaries', () => {
@@ -83,16 +90,66 @@ describe('guarded Google import boundaries', () => {
     expect(f.format).not.toHaveBeenCalled();
     expect(f.rpc).toHaveBeenCalledTimes(2);
   });
-  it('converts only a verified 404 to a scoped tombstone', async () => {
+  it.each([404, 410])(
+    'confirms calendar access before treating %s as a tombstone',
+    async (status) => {
+      const f = fixture();
+      f.get.mockRejectedValue({ response: { status } });
+      await replayDeferredGoogleImports(f);
+      expect(f.rpc.mock.calls[2]?.[1]).toEqual({
+        p_capture_id: capture.id,
+        p_events: [],
+        p_tombstones: ['event'],
+      });
+      expect(f.format).not.toHaveBeenCalled();
+      expect(f.calendarGet).toHaveBeenCalledWith({
+        calendarId: scope.calendarId,
+      });
+      expect(f.order).toEqual([
+        'list_deferred_calendar_google_imports',
+        'capture_calendar_google_import',
+        'calendar-get',
+        'apply_calendar_google_import',
+      ]);
+    }
+  );
+  it.each([403, 404, 410, 503])(
+    'keeps a missing event deferred when calendar access fails with %s',
+    async (status) => {
+      const f = fixture();
+      f.get.mockRejectedValue({ response: { status: 404 } });
+      f.calendarGet.mockRejectedValue({ response: { status } });
+      await expect(replayDeferredGoogleImports(f)).resolves.toEqual({
+        deferred: 1,
+      });
+      expect(f.rpc).toHaveBeenCalledTimes(2);
+      expect(f.format).not.toHaveBeenCalled();
+    }
+  );
+  it.each(['freeBusyReader', 'none', ''])(
+    'does not mistake %s metadata access for event access',
+    async (accessRole) => {
+      const f = fixture();
+      f.get.mockRejectedValue({ response: { status: 404 } });
+      f.calendarGet.mockResolvedValue({
+        data: { id: scope.calendarId, accessRole },
+      });
+      await expect(replayDeferredGoogleImports(f)).resolves.toEqual({
+        deferred: 1,
+      });
+      expect(f.rpc).toHaveBeenCalledTimes(2);
+    }
+  );
+  it('keeps deferred entries when calendar metadata has a different identity', async () => {
     const f = fixture();
     f.get.mockRejectedValue({ response: { status: 404 } });
-    await replayDeferredGoogleImports(f);
-    expect(f.rpc.mock.calls[2]?.[1]).toEqual({
-      p_capture_id: capture.id,
-      p_events: [],
-      p_tombstones: ['event'],
+    f.calendarGet.mockResolvedValue({
+      data: { id: 'another-calendar', accessRole: 'reader' },
     });
-    expect(f.format).not.toHaveBeenCalled();
+    await expect(replayDeferredGoogleImports(f)).resolves.toEqual({
+      deferred: 1,
+    });
+    expect(f.rpc).toHaveBeenCalledTimes(2);
   });
   it('leaves deletion-disabled entries queued without an apply', async () => {
     const f = fixture({ id: 'event', status: 'cancelled' });

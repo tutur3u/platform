@@ -28,26 +28,32 @@ export async function performIncrementalSyncForWorkspace(
   const calendar = google.calendar({ version: 'v3', auth: calendarAuth });
 
   try {
-    const colorContext = await getGoogleCalendarColorContext(
-      calendar,
-      calendarId
-    );
     const client = await createAdminClient({ noCookie: true });
     const scope = {
       wsId: ws_id,
       calendarId,
       authTokenId: await verifiedGoogleImportToken(client, ws_id, access_token),
     };
+    const capture = await captureGoogleImport(client, scope);
+    const colorContext = await getGoogleCalendarColorContext(
+      calendar,
+      calendarId
+    );
     await replayDeferredGoogleImports({
       client,
       calendar,
       scope,
       format: async (events) =>
         events.map((event) =>
-          formatEventForDb(event, ws_id, calendarId, colorContext)
+          formatEventForDb(
+            event,
+            ws_id,
+            calendarId,
+            colorContext,
+            scope.authTokenId
+          )
         ),
     });
-    const capture = await captureGoogleImport(client, scope);
     const syncToken = await getSyncToken(ws_id, calendarId);
     let allEvents: calendar_v3.Schema$Event[] = [];
     let pageToken: string | undefined;

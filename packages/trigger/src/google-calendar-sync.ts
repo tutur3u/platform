@@ -52,7 +52,8 @@ export const formatEventForDb = (
   event: calendar_v3.Schema$Event,
   ws_id: string,
   google_calendar_id?: string,
-  colorContext: GoogleColorContext = {}
+  colorContext: GoogleColorContext = {},
+  authTokenId: string | null = null
 ) => {
   const { start_at, end_at } = convertGoogleAllDayEvent(
     event.start?.dateTime || event.start?.date || '',
@@ -77,6 +78,23 @@ export const formatEventForDb = (
         ...colorContext,
         calendarId: google_calendar_id || 'primary',
       }),
+      ...(event.recurringEventId || event.originalStartTime || event.recurrence
+        ? {
+            google_recurrence: {
+              version: 1,
+              calendar_id: google_calendar_id || 'primary',
+              auth_token_id: authTokenId,
+              recurring_event_id: event.recurringEventId ?? null,
+              original_start_time: {
+                date_time: event.originalStartTime?.dateTime ?? null,
+                date: event.originalStartTime?.date ?? null,
+                time_zone: event.originalStartTime?.timeZone ?? null,
+              },
+              recurrence: event.recurrence ?? null,
+              status: event.status ?? null,
+            },
+          }
+        : {}),
       ...(event.eventType === 'workingLocation'
         ? {
             google_event_type: 'workingLocation',
@@ -106,7 +124,15 @@ const syncGoogleCalendarEventsForWorkspaceBatched = async (
     const sbAdmin = await createAdminClient({ noCookie: true });
     const upserts = events_to_sync
       .filter((event) => event.status !== 'cancelled')
-      .map((event) => formatEventForDb(event, ws_id, calendarId, colorContext));
+      .map((event) =>
+        formatEventForDb(
+          event,
+          ws_id,
+          calendarId,
+          colorContext,
+          capture.authTokenId
+        )
+      );
     const tombstones = events_to_sync.flatMap((event) =>
       event.status === 'cancelled' && event.id ? [event.id] : []
     );

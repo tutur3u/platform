@@ -43,26 +43,32 @@ export async function performFullSyncForWorkspace(
   });
 
   try {
-    const colorContext = await getGoogleCalendarColorContext(
-      calendar,
-      calendarId
-    );
     const client = await createAdminClient({ noCookie: true });
     const scope = {
       wsId: ws_id,
       calendarId,
       authTokenId: await verifiedGoogleImportToken(client, ws_id, access_token),
     };
+    const capture = await captureGoogleImport(client, scope);
+    const colorContext = await getGoogleCalendarColorContext(
+      calendar,
+      calendarId
+    );
     await replayDeferredGoogleImports({
       client,
       calendar,
       scope,
       format: async (events) =>
         events.map((event) =>
-          formatEventForDb(event, ws_id, calendarId, colorContext)
+          formatEventForDb(
+            event,
+            ws_id,
+            calendarId,
+            colorContext,
+            scope.authTokenId
+          )
         ),
     });
-    const capture = await captureGoogleImport(client, scope);
     const res = await calendar.events.list({
       calendarId,
       showDeleted: true,

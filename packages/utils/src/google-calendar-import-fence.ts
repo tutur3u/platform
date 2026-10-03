@@ -107,6 +107,27 @@ export async function replayDeferredGoogleImports(args: {
       providerEvent = result.data.status === 'cancelled' ? null : result.data;
     } catch (failure) {
       if (!missingProviderEvent(failure)) throw failure;
+      // Missing events and inaccessible/deleted calendars share 404/410. Only
+      // confirmed access to this exact calendar can justify a local tombstone.
+      try {
+        const access = await args.calendar.calendarList.get({
+          calendarId: args.scope.calendarId,
+        });
+        if (
+          !['reader', 'writer', 'owner'].includes(
+            access.data.accessRole ?? ''
+          ) ||
+          !access.data.id ||
+          (args.scope.calendarId !== 'primary' &&
+            access.data.id !== args.scope.calendarId)
+        ) {
+          deferred++;
+          continue;
+        }
+      } catch {
+        deferred++;
+        continue;
+      }
       providerEvent = null;
     }
     if (!providerEvent && args.syncDeletes === false) {

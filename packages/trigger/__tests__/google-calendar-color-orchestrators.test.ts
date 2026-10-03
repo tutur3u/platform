@@ -195,9 +195,10 @@ for (const [mode, sync] of [
       const captureIndex = mocks.rpc.mock.calls.findIndex(
         ([name]) => name === 'capture_calendar_google_import'
       );
-      expect(mocks.rpc.mock.invocationCallOrder[captureIndex]).toBeLessThan(
-        mocks.list.mock.invocationCallOrder[0]!
-      );
+      for (const read of [mocks.colors, mocks.entry, mocks.details, mocks.list])
+        expect(mocks.rpc.mock.invocationCallOrder[captureIndex]).toBeLessThan(
+          read.mock.invocationCallOrder[0]!
+        );
       expect(tokenWrites()).toEqual([
         [
           'atomic_sync_token_operation',
@@ -207,6 +208,42 @@ for (const [mode, sync] of [
           }),
         ],
       ]);
+    });
+    it('persists recurrence identity and original slot in the complete snapshot', async () => {
+      mocks.list.mockResolvedValue({
+        data: {
+          items: [
+            event('instance', {
+              recurringEventId: 'series',
+              originalStartTime: {
+                dateTime: '2026-09-29T10:00:00Z',
+                timeZone: 'Asia/Ho_Chi_Minh',
+              },
+              status: 'confirmed',
+            }),
+          ],
+        },
+      });
+      await sync(source, workspace, 'access', 'refresh');
+      expect(rows()[0].scheduling_metadata.google_recurrence).toEqual({
+        version: 1,
+        calendar_id: source,
+        auth_token_id: token,
+        recurring_event_id: 'series',
+        original_start_time: {
+          date_time: '2026-09-29T10:00:00Z',
+          date: null,
+          time_zone: 'Asia/Ho_Chi_Minh',
+        },
+        recurrence: null,
+        status: 'confirmed',
+      });
+    });
+    it('does not leave stale recurrence metadata on ordinary snapshots', async () => {
+      await sync(source, workspace, 'access', 'refresh');
+      expect(rows()[0].scheduling_metadata).not.toHaveProperty(
+        'google_recurrence'
+      );
     });
     it('uses calendar palette when custom source RGB is absent', async () => {
       mocks.entry.mockResolvedValue({ data: { colorId: '3' } });
@@ -245,7 +282,8 @@ for (const [mode, sync] of [
       await expect(
         sync(source, workspace, 'access', 'refresh')
       ).rejects.toThrow('Google import guard is unavailable');
-      expect(mocks.list).not.toHaveBeenCalled();
+      for (const read of [mocks.colors, mocks.entry, mocks.details, mocks.list])
+        expect(read).not.toHaveBeenCalled();
       expect(applies()).toEqual([]);
       expect(tokenWrites()).toEqual([]);
     });

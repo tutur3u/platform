@@ -12,7 +12,14 @@ vi.mock('@tuturuuu/google', () => ({
   google: { calendar: () => ({ events: { list: m.list } }) },
 }));
 vi.mock('../src/google-calendar-color-context', () => ({
-  getGoogleCalendarColorContext: async () => ({}),
+  getGoogleCalendarColorContext: async () => {
+    m.order.push(
+      'provider-palette',
+      'provider-calendar-entry',
+      'provider-calendar-details'
+    );
+    return {};
+  },
 }));
 vi.mock('../src/calendar-sync-coordination', () => ({
   updateLastUpsert: async () => {},
@@ -79,9 +86,15 @@ for (const [label, sync] of [
   describe(`${label} guarded import orchestration`, () => {
     it('captures before provider read and commits deferral before advancing token', async () => {
       await sync('selected', wsId, 'fixture-access', 'fixture-refresh');
-      expect(m.order.indexOf('capture_calendar_google_import')).toBeLessThan(
-        m.order.indexOf('provider-list')
-      );
+      for (const read of [
+        'provider-palette',
+        'provider-calendar-entry',
+        'provider-calendar-details',
+        'provider-list',
+      ])
+        expect(m.order.indexOf('capture_calendar_google_import')).toBeLessThan(
+          m.order.indexOf(read)
+        );
       expect(m.order.indexOf('apply_calendar_google_import')).toBeLessThan(
         m.order.indexOf('token')
       );
@@ -114,6 +127,7 @@ for (const [label, sync] of [
         sync('selected', wsId, 'fixture-access', 'fixture-refresh')
       ).rejects.toThrow();
       expect(m.list).not.toHaveBeenCalled();
+      expect(m.order.some((read) => read.startsWith('provider-'))).toBe(false);
     });
   });
 }
