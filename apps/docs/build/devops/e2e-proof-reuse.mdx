@@ -1,0 +1,62 @@
+---
+title: "E2E Proof Reuse"
+description: "Exact-input E2E caching, inactive proposal guards, and conservative fallbacks."
+---
+
+## Suite inputs and trusted results
+
+`e2e-tests.yaml` covers application source, E2E specs, shared packages, database
+fixtures, dependencies, Docker configuration, and runner scripts. A broad `**`
+push filter reaches unknown future inputs; explicit negative paths omit known
+non-runtime apps, documentation, and agent tooling. Its planner
+hashes each suite's tracked inputs before allocating Docker or Playwright jobs.
+Only an exact, same-day success cache from protected `main` can omit a suite.
+Keys include shared runtime/schema/auth helpers, the suite's specs and satellite,
+workflow/toolchain inputs, runner image, and `E2E_RESULT_CACHE_EPOCH` (default `1`).
+General shards conservatively share all web spec inputs because changing test
+counts can redistribute Playwright shards. Shared API/package changes invalidate
+all dependent suites; an unrelated suite's cached proof can remain valid.
+Missing, unavailable, or uncertain evidence runs tests. Failed, flaky, empty,
+and malformed reports never publish proofs. Cached receipts contain counts and
+source/run provenance, not raw reports, credentials, or customer data. Failure
+artifacts contain sanitized text diagnostics only; raw traces, blob reports,
+HTML reports, and test-result directories are not uploaded. Sanitize collected
+server/probe output before printing console groups, and block artifact upload
+if sanitization fails. Omit unstructured files containing credential-valued
+collections or header records; reject symlinked diagnostics paths. Cancelled workflows do not allocate new E2E cohorts;
+started jobs retain their cleanup steps. Branch
+runs cannot publish trusted proofs. Manual dispatch always runs all suites;
+there is no cron. Increment repository variable `E2E_RESULT_CACHE_EPOCH` to
+invalidate all proofs. A new UTC day refreshes proofs on the next relevant push.
+Release-only changes retain the existing skip. Validate with
+`node --test scripts/ci/e2e-result-plan.test.js scripts/ci/e2e-result-receipt.test.js`.
+
+## Inactive database proposal
+
+The default fingerprints include database migrations, seeds, real SQL tests,
+active helpers, and unknown database inputs in all eleven suites. The sole
+conditional exception is `apps/database/tests/programming-hosted-typegen-review/`,
+which currently contains an inactive proposal and its review fixtures.
+
+Before planning, a bounded, quiet Git scan checks the same immutable source ref
+used to enumerate inputs. Any tracked reference to the directory basename outside
+the proposal itself, documentation, and the planner's own policy/regressions keeps
+the directory in every fingerprint. This covers CI, scripts, applications,
+packages, and root configuration without interpreting their dependency graphs.
+A timeout, invalid ref, or uncertain Git result includes the inputs and executes
+all suites without consulting cached proofs. The scan never logs source contents.
+
+Only a definitive no-reference result excludes this directory. Other database
+paths retain their existing conservative ownership; similarly named active paths
+are included. Before activating the proposal, move its helpers into a runtime
+location or remove this exception. Use explicit imports/callers; do not construct
+hidden dynamic references into an excluded review directory. Review tests exercise
+real Git trees with CI/script/app/package/root-config activation, and an older
+immutable tree remains independent of later worktree or index changes.
+
+Changing the planner itself changes its global input hash, so this policy update
+requires one fresh baseline. Existing caches are retained; there is no epoch
+change, cache flush, legacy-key fallback, or weakened main/platform/freshness
+requirement. Subsequent proposal-only edits can reuse otherwise eligible results
+for all ten web suites and Inventory/Storefront. Eligibility is not evidence of
+an actual cache hit or measured time saving; verify the workflow summary first.
