@@ -12,6 +12,33 @@ class AppLocalizationsVi extends AppLocalizations {
   AppLocalizationsVi([String locale = 'vi']) : super(locale);
 
   @override
+  String get workspaceHiddenTitle => 'Không gian làm việc đã ẩn';
+
+  @override
+  String get workspaceHideAction => 'Ẩn';
+
+  @override
+  String get workspaceRestoreAction => 'Hiện lại';
+
+  @override
+  String get workspaceHiddenDescription => 'Chỉ bạn thấy danh sách này. Ẩn không thay đổi tư cách thành viên hay thông báo.';
+
+  @override
+  String get workspaceHiddenEmpty => 'Không có không gian làm việc đã ẩn';
+
+  @override
+  String get workspaceHiddenLoadError => 'Không thể tải tùy chọn hiển thị. Các lựa chọn ẩn đã lưu được giữ lại.';
+
+  @override
+  String get workspaceHiddenUpdateError => 'Không thể lưu thay đổi. Hãy thử lại khi có kết nối.';
+
+  @override
+  String get workspaceAllHidden => 'Các không gian làm việc của bạn đã bị ẩn. Hiện lại một không gian để tiếp tục.';
+
+  @override
+  String get workspacePickerClose => 'Đóng danh sách không gian làm việc';
+
+  @override
   String get commonLoading => 'Đang tải';
 
   @override
@@ -9326,9 +9353,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get offlineDependencyContract => 'Đang chờ máy chủ hỗ trợ. Thay đổi đã được lưu và sẽ tự động thử lại.';
 
   @override
-  String get offlineEditSyncing => 'Đang đồng bộ…';
-
-  @override
   String get offlineEditQueued => 'Đang chờ đồng bộ';
 
   @override
@@ -9620,47 +9644,36 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventorySeasonHistoricalReadOnly => 'Lịch sử bán theo mùa chỉ có thể xem tại đây. Giá đã ghi nhận được giữ nguyên.';
 
   @override
-  String get calendarGoogleColorInherit => 'Dùng màu lịch';
+  String get meetCollaboration => 'Cộng tác';
 
   @override
-  String calendarGoogleColorLabel(String id) {
-    return 'Nhãn tùy chỉnh $id';
+  String get meetCollaborationUnavailable => 'Cộng tác hiện không khả dụng. Hãy vào lại cuộc họp rồi thử lại.';
+
+  @override
+  String get meetScreenFixtureTitle => 'Kiểm thử chia sẻ màn hình gốc';
+
+  @override
+  String get meetScreenFixtureHint => 'Tham gia cuộc họp giả lập cục bộ và chia sẻ màn hình. Nội dung chỉ ở trên thiết bị này; theo dõi số khung hình nhận được.';
+
+  @override
+  String meetScreenFixtureFrames(int count) {
+    return 'Số khung hình đã giải mã: $count';
   }
 
   @override
-  String calendarGoogleColorEvent(String id) {
-    return 'Màu Google $id';
-  }
+  String get meetFixtureConnected => 'Đã kết nối cuộc họp cục bộ';
 
   @override
-  String get calendarProviderColorSeparateEdit => 'Lưu các thay đổi khác trước khi đổi màu Google.';
+  String get meetFixtureRevoke => 'Chủ phòng: dừng chia sẻ màn hình';
 
   @override
-  String get workspaceHiddenTitle => 'Không gian làm việc đã ẩn';
+  String get meetFixtureReconnect => 'Kết nối lại cuộc họp';
 
   @override
-  String get workspaceHideAction => 'Ẩn';
+  String get offlineEditSyncing => 'Đang đồng bộ…';
 
   @override
-  String get workspaceRestoreAction => 'Hiện lại';
-
-  @override
-  String get workspaceHiddenDescription => 'Chỉ bạn thấy danh sách này. Ẩn không thay đổi tư cách thành viên hay thông báo.';
-
-  @override
-  String get workspaceHiddenEmpty => 'Không có không gian làm việc đã ẩn';
-
-  @override
-  String get workspaceHiddenLoadError => 'Không thể tải tùy chọn hiển thị. Các lựa chọn ẩn đã lưu được giữ lại.';
-
-  @override
-  String get workspaceHiddenUpdateError => 'Không thể lưu thay đổi. Hãy thử lại khi có kết nối.';
-
-  @override
-  String get workspaceAllHidden => 'Các không gian làm việc của bạn đã bị ẩn. Hiện lại một không gian để tiếp tục.';
-
-  @override
-  String get workspacePickerClose => 'Đóng danh sách không gian làm việc';
+  String get inventorySetupSyncFirst => 'Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa.';
 
   @override
   String get inventoryProductDeleteConfirm => 'Xóa sản phẩm này? Nếu giao dịch đã có tham chiếu đến sản phẩm, máy chủ sẽ lưu trữ sản phẩm khi đồng bộ.';
@@ -9729,24 +9742,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventoryCheckoutPeriodRulesChanged => 'Một số sản phẩm không phù hợp với kỳ bán hàng này. Đối soát giỏ hàng để tiếp tục.';
-
-  @override
-  String get inventorySetupSyncFirst => 'Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa.';
-
-  @override
-  String get homePersonalAgenda => 'Lịch cá nhân';
-
-  @override
-  String get homePersonalAgendaUnavailable => 'Lịch cá nhân hiện không khả dụng.';
-
-  @override
-  String get assistantExpandNavigation => 'Hiện điều hướng';
-
-  @override
-  String get assistantCollapseNavigation => 'Ẩn điều hướng';
-
-  @override
-  String get assistantCloseComposer => 'Đóng ô nhập';
 
   @override
   String get offlineSectionTitle => 'Ngoại tuyến';
@@ -9860,4 +9855,35 @@ class AppLocalizationsVi extends AppLocalizations {
   String offlineStoredItemId(String id) {
     return 'ID mục: $id';
   }
+
+  @override
+  String get homePersonalAgenda => 'Lịch cá nhân';
+
+  @override
+  String get homePersonalAgendaUnavailable => 'Lịch cá nhân hiện không khả dụng.';
+
+  @override
+  String get assistantExpandNavigation => 'Hiện điều hướng';
+
+  @override
+  String get assistantCollapseNavigation => 'Ẩn điều hướng';
+
+  @override
+  String get assistantCloseComposer => 'Đóng ô nhập';
+
+  @override
+  String get calendarGoogleColorInherit => 'Dùng màu lịch';
+
+  @override
+  String calendarGoogleColorLabel(String id) {
+    return 'Nhãn tùy chỉnh $id';
+  }
+
+  @override
+  String calendarGoogleColorEvent(String id) {
+    return 'Màu Google $id';
+  }
+
+  @override
+  String get calendarProviderColorSeparateEdit => 'Lưu các thay đổi khác trước khi đổi màu Google.';
 }

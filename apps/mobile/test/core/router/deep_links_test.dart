@@ -4,6 +4,21 @@ import 'package:mobile/core/router/routes.dart';
 
 void main() {
   group('resolveMobileDeepLink', () {
+    test('platform app links preserve the native meeting destination', () {
+      final link = resolveMobileDeepLink(
+        Uri.parse(
+          'https://tuturuuu.com/personal/meet?room=abc123-def456&token=discarded',
+        ),
+      );
+      expect(link?.location, '/meet?room=abc123-def456');
+      expect(link?.workspaceSlug, 'personal');
+      expect(
+        resolveMobileDeepLink(
+          Uri.parse('https://tuturuuu.com/personal/meet?room=%2Fbad'),
+        )?.location,
+        '/meet',
+      );
+    });
     test('preserves meeting room links and rejects other origins', () {
       expect(
         resolveMobileDeepLink(

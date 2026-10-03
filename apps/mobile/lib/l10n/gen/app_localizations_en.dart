@@ -12,6 +12,33 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get workspaceHiddenTitle => 'Hidden workspaces';
+
+  @override
+  String get workspaceHideAction => 'Hide';
+
+  @override
+  String get workspaceRestoreAction => 'Restore';
+
+  @override
+  String get workspaceHiddenDescription => 'Only you can see this list. Hiding does not change membership or notifications.';
+
+  @override
+  String get workspaceHiddenEmpty => 'No Hidden workspaces';
+
+  @override
+  String get workspaceHiddenLoadError => 'Workspace visibility preferences are unavailable. Saved hidden choices are kept.';
+
+  @override
+  String get workspaceHiddenUpdateError => 'Unable to save this change. Try again when connected.';
+
+  @override
+  String get workspaceAllHidden => 'Your workspaces are hidden. Restore one to continue.';
+
+  @override
+  String get workspacePickerClose => 'Close workspace picker';
+
+  @override
   String get commonLoading => 'Loading';
 
   @override
@@ -9392,9 +9419,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineDependencyContract => 'Waiting for server support. This change is saved and retries automatically.';
 
   @override
-  String get offlineEditSyncing => 'Syncing…';
-
-  @override
   String get offlineEditQueued => 'Waiting to sync';
 
   @override
@@ -9686,47 +9710,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventorySeasonHistoricalReadOnly => 'Scheduled sale history is read only here. Recorded prices are preserved.';
 
   @override
-  String get calendarGoogleColorInherit => 'Use calendar color';
+  String get meetCollaboration => 'Collaborate';
 
   @override
-  String calendarGoogleColorLabel(String id) {
-    return 'Custom label $id';
+  String get meetCollaborationUnavailable => 'Collaboration is unavailable. Rejoin the meeting and try again.';
+
+  @override
+  String get meetScreenFixtureTitle => 'Native screen capture test';
+
+  @override
+  String get meetScreenFixtureHint => 'Join the synthetic local meeting and share your screen. Media stays on this device; watch the receiver frame counter.';
+
+  @override
+  String meetScreenFixtureFrames(int count) {
+    return 'Decoded receiver frames: $count';
   }
 
   @override
-  String calendarGoogleColorEvent(String id) {
-    return 'Google color $id';
-  }
+  String get meetFixtureConnected => 'Local meeting connected';
 
   @override
-  String get calendarProviderColorSeparateEdit => 'Save other changes before changing the Google color.';
+  String get meetFixtureRevoke => 'Host: stop screen share';
 
   @override
-  String get workspaceHiddenTitle => 'Hidden workspaces';
+  String get meetFixtureReconnect => 'Reconnect meeting';
 
   @override
-  String get workspaceHideAction => 'Hide';
+  String get offlineEditSyncing => 'Syncing…';
 
   @override
-  String get workspaceRestoreAction => 'Restore';
-
-  @override
-  String get workspaceHiddenDescription => 'Only you can see this list. Hiding does not change membership or notifications.';
-
-  @override
-  String get workspaceHiddenEmpty => 'No Hidden workspaces';
-
-  @override
-  String get workspaceHiddenLoadError => 'Workspace visibility preferences are unavailable. Saved hidden choices are kept.';
-
-  @override
-  String get workspaceHiddenUpdateError => 'Unable to save this change. Try again when connected.';
-
-  @override
-  String get workspaceAllHidden => 'Your workspaces are hidden. Restore one to continue.';
-
-  @override
-  String get workspacePickerClose => 'Close workspace picker';
+  String get inventorySetupSyncFirst => 'Sync this new item before using, editing, or deleting it.';
 
   @override
   String get inventoryProductDeleteConfirm => 'Remove this product? If existing sales reference it, the server will archive it when syncing.';
@@ -9796,24 +9809,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryCheckoutPeriodRulesChanged => 'Some items do not match this period. Reconcile the cart to continue.';
-
-  @override
-  String get inventorySetupSyncFirst => 'Sync this new item before using, editing, or deleting it.';
-
-  @override
-  String get homePersonalAgenda => 'Personal Agenda';
-
-  @override
-  String get homePersonalAgendaUnavailable => 'Personal calendar is unavailable.';
-
-  @override
-  String get assistantExpandNavigation => 'Show navigation';
-
-  @override
-  String get assistantCollapseNavigation => 'Hide navigation';
-
-  @override
-  String get assistantCloseComposer => 'Close prompt';
 
   @override
   String get offlineSectionTitle => 'Offline';
@@ -9957,4 +9952,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String offlineStoredItemId(String id) {
     return 'Item ID: $id';
   }
+
+  @override
+  String get homePersonalAgenda => 'Personal Agenda';
+
+  @override
+  String get homePersonalAgendaUnavailable => 'Personal calendar is unavailable.';
+
+  @override
+  String get assistantExpandNavigation => 'Show navigation';
+
+  @override
+  String get assistantCollapseNavigation => 'Hide navigation';
+
+  @override
+  String get assistantCloseComposer => 'Close prompt';
+
+  @override
+  String get calendarGoogleColorInherit => 'Use calendar color';
+
+  @override
+  String calendarGoogleColorLabel(String id) {
+    return 'Custom label $id';
+  }
+
+  @override
+  String calendarGoogleColorEvent(String id) {
+    return 'Google color $id';
+  }
+
+  @override
+  String get calendarProviderColorSeparateEdit => 'Save other changes before changing the Google color.';
 }

@@ -26,7 +26,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     TaskBroadcastClient? taskBroadcastClient,
   }) : _taskRepository = taskRepository,
        _taskBroadcastClient =
-           taskBroadcastClient ?? SupabaseTaskBroadcastClient(),
+           taskBroadcastClient ?? CloudflareTaskBroadcastClient(),
        super(const TaskBoardDetailState());
 
   static const int _listTaskPageSize = 50;

@@ -24,7 +24,7 @@ class TaskListCubit extends Cubit<TaskListState> {
   }) : _repo = taskRepository,
        _cacheUserId = currentCacheUserId(),
        _taskBroadcastClient =
-           taskBroadcastClient ?? SupabaseTaskBroadcastClient(),
+           taskBroadcastClient ?? CloudflareTaskBroadcastClient(),
        super(initialState ?? const TaskListState()) {
     OfflineMutationQueue.instance.syncRevision.addListener(_onSynchronized);
   }

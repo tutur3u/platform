@@ -97,6 +97,60 @@ abstract class AppLocalizations {
     Locale('vi')
   ];
 
+  /// No description provided for @workspaceHiddenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden workspaces'**
+  String get workspaceHiddenTitle;
+
+  /// No description provided for @workspaceHideAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get workspaceHideAction;
+
+  /// No description provided for @workspaceRestoreAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get workspaceRestoreAction;
+
+  /// No description provided for @workspaceHiddenDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you can see this list. Hiding does not change membership or notifications.'**
+  String get workspaceHiddenDescription;
+
+  /// No description provided for @workspaceHiddenEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No Hidden workspaces'**
+  String get workspaceHiddenEmpty;
+
+  /// No description provided for @workspaceHiddenLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace visibility preferences are unavailable. Saved hidden choices are kept.'**
+  String get workspaceHiddenLoadError;
+
+  /// No description provided for @workspaceHiddenUpdateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to save this change. Try again when connected.'**
+  String get workspaceHiddenUpdateError;
+
+  /// No description provided for @workspaceAllHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Your workspaces are hidden. Restore one to continue.'**
+  String get workspaceAllHidden;
+
+  /// No description provided for @workspacePickerClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close workspace picker'**
+  String get workspacePickerClose;
+
   /// No description provided for @commonLoading.
   ///
   /// In en, this message translates to:
@@ -17935,12 +17989,6 @@ abstract class AppLocalizations {
   /// **'Waiting for server support. This change is saved and retries automatically.'**
   String get offlineDependencyContract;
 
-  /// No description provided for @offlineEditSyncing.
-  ///
-  /// In en, this message translates to:
-  /// **'Syncing…'**
-  String get offlineEditSyncing;
-
   /// No description provided for @offlineEditQueued.
   ///
   /// In en, this message translates to:
@@ -18487,83 +18535,65 @@ abstract class AppLocalizations {
   /// **'Scheduled sale history is read only here. Recorded prices are preserved.'**
   String get inventorySeasonHistoricalReadOnly;
 
-  /// No description provided for @calendarGoogleColorInherit.
+  /// No description provided for @meetCollaboration.
   ///
   /// In en, this message translates to:
-  /// **'Use calendar color'**
-  String get calendarGoogleColorInherit;
+  /// **'Collaborate'**
+  String get meetCollaboration;
 
-  /// No description provided for @calendarGoogleColorLabel.
+  /// No description provided for @meetCollaborationUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'Custom label {id}'**
-  String calendarGoogleColorLabel(String id);
+  /// **'Collaboration is unavailable. Rejoin the meeting and try again.'**
+  String get meetCollaborationUnavailable;
 
-  /// No description provided for @calendarGoogleColorEvent.
+  /// No description provided for @meetScreenFixtureTitle.
   ///
   /// In en, this message translates to:
-  /// **'Google color {id}'**
-  String calendarGoogleColorEvent(String id);
+  /// **'Native screen capture test'**
+  String get meetScreenFixtureTitle;
 
-  /// No description provided for @calendarProviderColorSeparateEdit.
+  /// No description provided for @meetScreenFixtureHint.
   ///
   /// In en, this message translates to:
-  /// **'Save other changes before changing the Google color.'**
-  String get calendarProviderColorSeparateEdit;
+  /// **'Join the synthetic local meeting and share your screen. Media stays on this device; watch the receiver frame counter.'**
+  String get meetScreenFixtureHint;
 
-  /// No description provided for @workspaceHiddenTitle.
+  /// No description provided for @meetScreenFixtureFrames.
   ///
   /// In en, this message translates to:
-  /// **'Hidden workspaces'**
-  String get workspaceHiddenTitle;
+  /// **'Decoded receiver frames: {count}'**
+  String meetScreenFixtureFrames(int count);
 
-  /// No description provided for @workspaceHideAction.
+  /// No description provided for @meetFixtureConnected.
   ///
   /// In en, this message translates to:
-  /// **'Hide'**
-  String get workspaceHideAction;
+  /// **'Local meeting connected'**
+  String get meetFixtureConnected;
 
-  /// No description provided for @workspaceRestoreAction.
+  /// No description provided for @meetFixtureRevoke.
   ///
   /// In en, this message translates to:
-  /// **'Restore'**
-  String get workspaceRestoreAction;
+  /// **'Host: stop screen share'**
+  String get meetFixtureRevoke;
 
-  /// No description provided for @workspaceHiddenDescription.
+  /// No description provided for @meetFixtureReconnect.
   ///
   /// In en, this message translates to:
-  /// **'Only you can see this list. Hiding does not change membership or notifications.'**
-  String get workspaceHiddenDescription;
+  /// **'Reconnect meeting'**
+  String get meetFixtureReconnect;
 
-  /// No description provided for @workspaceHiddenEmpty.
+  /// No description provided for @offlineEditSyncing.
   ///
   /// In en, this message translates to:
-  /// **'No Hidden workspaces'**
-  String get workspaceHiddenEmpty;
+  /// **'Syncing…'**
+  String get offlineEditSyncing;
 
-  /// No description provided for @workspaceHiddenLoadError.
+  /// No description provided for @inventorySetupSyncFirst.
   ///
   /// In en, this message translates to:
-  /// **'Workspace visibility preferences are unavailable. Saved hidden choices are kept.'**
-  String get workspaceHiddenLoadError;
-
-  /// No description provided for @workspaceHiddenUpdateError.
-  ///
-  /// In en, this message translates to:
-  /// **'Unable to save this change. Try again when connected.'**
-  String get workspaceHiddenUpdateError;
-
-  /// No description provided for @workspaceAllHidden.
-  ///
-  /// In en, this message translates to:
-  /// **'Your workspaces are hidden. Restore one to continue.'**
-  String get workspaceAllHidden;
-
-  /// No description provided for @workspacePickerClose.
-  ///
-  /// In en, this message translates to:
-  /// **'Close workspace picker'**
-  String get workspacePickerClose;
+  /// **'Sync this new item before using, editing, or deleting it.'**
+  String get inventorySetupSyncFirst;
 
   /// No description provided for @inventoryProductDeleteConfirm.
   ///
@@ -18678,42 +18708,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Some items do not match this period. Reconcile the cart to continue.'**
   String get inventoryCheckoutPeriodRulesChanged;
-
-  /// No description provided for @inventorySetupSyncFirst.
-  ///
-  /// In en, this message translates to:
-  /// **'Sync this new item before using, editing, or deleting it.'**
-  String get inventorySetupSyncFirst;
-
-  /// No description provided for @homePersonalAgenda.
-  ///
-  /// In en, this message translates to:
-  /// **'Personal Agenda'**
-  String get homePersonalAgenda;
-
-  /// No description provided for @homePersonalAgendaUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Personal calendar is unavailable.'**
-  String get homePersonalAgendaUnavailable;
-
-  /// No description provided for @assistantExpandNavigation.
-  ///
-  /// In en, this message translates to:
-  /// **'Show navigation'**
-  String get assistantExpandNavigation;
-
-  /// No description provided for @assistantCollapseNavigation.
-  ///
-  /// In en, this message translates to:
-  /// **'Hide navigation'**
-  String get assistantCollapseNavigation;
-
-  /// No description provided for @assistantCloseComposer.
-  ///
-  /// In en, this message translates to:
-  /// **'Close prompt'**
-  String get assistantCloseComposer;
 
   /// No description provided for @offlineSectionTitle.
   ///
@@ -18912,6 +18906,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Item ID: {id}'**
   String offlineStoredItemId(String id);
+
+  /// No description provided for @homePersonalAgenda.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal Agenda'**
+  String get homePersonalAgenda;
+
+  /// No description provided for @homePersonalAgendaUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal calendar is unavailable.'**
+  String get homePersonalAgendaUnavailable;
+
+  /// No description provided for @assistantExpandNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Show navigation'**
+  String get assistantExpandNavigation;
+
+  /// No description provided for @assistantCollapseNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide navigation'**
+  String get assistantCollapseNavigation;
+
+  /// No description provided for @assistantCloseComposer.
+  ///
+  /// In en, this message translates to:
+  /// **'Close prompt'**
+  String get assistantCloseComposer;
+
+  /// No description provided for @calendarGoogleColorInherit.
+  ///
+  /// In en, this message translates to:
+  /// **'Use calendar color'**
+  String get calendarGoogleColorInherit;
+
+  /// No description provided for @calendarGoogleColorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom label {id}'**
+  String calendarGoogleColorLabel(String id);
+
+  /// No description provided for @calendarGoogleColorEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Google color {id}'**
+  String calendarGoogleColorEvent(String id);
+
+  /// No description provided for @calendarProviderColorSeparateEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Save other changes before changing the Google color.'**
+  String get calendarProviderColorSeparateEdit;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
