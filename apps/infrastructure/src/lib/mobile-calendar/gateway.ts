@@ -5,6 +5,18 @@ export const GATEWAY_HEADER = 'x-tuturuuu-calendar-gateway';
 const CALENDAR_ORIGIN = 'https://calendar.tuturuuu.com';
 const MAX_REQUEST_BYTES = 512 * 1024;
 const MAX_RESPONSE_BYTES = 8 * 1024 * 1024;
+// Scalar diagnostics only: never relay cookies, credentials or upstream routing.
+const DIAGNOSTIC_HEADERS: Record<string, RegExp> = {
+  'retry-after': /^[\w ,:+-]{1,128}$/,
+  'x-proxy-block-reason': /^[a-zA-Z0-9_.:-]{1,96}$/,
+  'x-ratelimit-policy': /^[a-zA-Z0-9_.:-]{1,96}$/,
+  'x-ratelimit-caller-class': /^[a-zA-Z0-9_.:-]{1,96}$/,
+  'x-ratelimit-window': /^[a-zA-Z0-9_.:-]{1,96}$/,
+  'x-ratelimit-limit': /^\d{1,20}$/,
+  'x-ratelimit-remaining': /^\d{1,20}$/,
+  'x-ratelimit-reset': /^\d{1,20}$/,
+  'x-abuse-challenge': /^turnstile$/,
+};
 
 type Dependencies = {
   verifyToken: (token: string) => Promise<boolean>;
@@ -201,8 +213,10 @@ export function forwardCalendarRequest(request: Request, deps: Dependencies) {
           'Cache-Control': 'private, no-store',
           'Content-Type': 'application/json',
         });
-        const retryAfter = upstream.headers.get('retry-after');
-        if (retryAfter) responseHeaders.set('Retry-After', retryAfter);
+        for (const [name, pattern] of Object.entries(DIAGNOSTIC_HEADERS)) {
+          const value = upstream.headers.get(name);
+          if (value && pattern.test(value)) responseHeaders.set(name, value);
+        }
         return new Response(upstream.status === 204 ? null : bytes, {
           status: upstream.status,
           headers: responseHeaders,

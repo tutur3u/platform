@@ -27,7 +27,20 @@ class _Workspaces extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
 class _Events extends Mock implements CalendarRepository {}
 
-class _Zones extends Mock implements TimezoneSettingsRepository {}
+class _Zones extends Mock implements TimezoneSettingsRepository {
+  // Keep existing caller fixtures while the real repository owns coalescing.
+  @override
+  Future<String> readPersonal(
+    String userId, {
+    Duration timeout = const Duration(seconds: 15),
+  }) => loadPersonal();
+  @override
+  Future<String> readWorkspace(
+    String userId,
+    String id, {
+    Duration timeout = const Duration(seconds: 15),
+  }) => loadWorkspace(id);
+}
 
 void main() {
   setUpAll(() => registerFallbackValue(DateTime.utc(2026)));
