@@ -22,6 +22,13 @@ export default defineConfig({
     alias: [
       { find: '@', replacement: resolve(__dirname, './src') },
       {
+        find: /^@tuturuuu\/storage-core\/profile-upload-budget$/,
+        replacement: resolve(
+          import.meta.dirname,
+          '../storage-core/src/lib/profile-upload-budget.ts'
+        ),
+      },
+      {
         find: '@tuturuuu/supabase/next/server',
         replacement: resolve(
           import.meta.dirname,
