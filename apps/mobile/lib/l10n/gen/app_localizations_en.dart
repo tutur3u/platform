@@ -8633,12 +8633,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appsReorder => 'Drag to reorder';
 
   @override
-  String get homePersonalAgenda => 'Personal Agenda';
-
-  @override
-  String get homePersonalAgendaUnavailable => 'Personal calendar is unavailable.';
-
-  @override
   String get homeCustomize => 'Customize Home';
 
   @override
@@ -9815,6 +9809,155 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryCheckoutPeriodRulesChanged => 'Some items do not match this period. Reconcile the cart to continue.';
+
+  @override
+  String get offlineSectionTitle => 'Offline';
+
+  @override
+  String get offlineSectionDescription => 'Downloads, stored data, and unsynchronized changes for the selected account and workspace.';
+
+  @override
+  String get offlinePreferencesTitle => 'Offline preferences';
+
+  @override
+  String get offlineStorageScope => 'Storage limit applies to this device. Clearing cached data preserves queued changes.';
+
+  @override
+  String get offlineRefreshModule => 'Download / refresh';
+
+  @override
+  String get offlineModuleDetails => 'Stored data and settings';
+
+  @override
+  String get offlineDownloadRetryHint => 'Retry downloads to refresh retained data.';
+
+  @override
+  String get offlineCoverageUnknown => 'A normal fetch may contain only part of a collection. Query totals are shown only when stored pages agree. Explicit downloads cover supported collections, not every module resource.';
+
+  @override
+  String get offlineBytesExplanation => 'Sizes are logical persisted payload bytes, including snapshot and replica copies. Disk overhead, expected download size, and transferred network bytes are unknown.';
+
+  @override
+  String offlineLogicalBytes(String bytes) {
+    return '$bytes payload bytes';
+  }
+
+  @override
+  String offlinePendingCoverage(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count queued changes. They are kept separately and are not counted as downloaded items.',
+      one: '$count queued change. It is kept separately and is not counted as a downloaded item.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get offlineSearchStored => 'Search stored collections';
+
+  @override
+  String get offlineNoStoredItems => 'No stored collections match.';
+
+  @override
+  String offlineAvailableItems(int items, int snapshots) {
+    String _temp0 = intl.Intl.pluralLogic(
+      items,
+      locale: localeName,
+      other: '$items unique indexed items',
+      one: '$items unique indexed item',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      snapshots,
+      locale: localeName,
+      other: '$snapshots stored snapshots',
+      one: '$snapshots stored snapshot',
+    );
+    return '$_temp0 across $_temp1';
+  }
+
+  @override
+  String offlineFreshness(int stale, int expired) {
+    String _temp0 = intl.Intl.pluralLogic(
+      stale,
+      locale: localeName,
+      other: '$stale stale snapshots',
+      one: '$stale stale snapshot',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      expired,
+      locale: localeName,
+      other: '$expired expired snapshots',
+      one: '$expired expired snapshot',
+    );
+    return '$_temp0 · $_temp1 retained for offline use';
+  }
+
+  @override
+  String offlineLastFetch(String time) {
+    return 'Latest fetch: $time';
+  }
+
+  @override
+  String get offlineEvictTitle => 'Remove stored module data';
+
+  @override
+  String get offlineEvictDescription => 'Remove only this module’s snapshots in the selected account and workspace. Queued writes remain. Download again to restore offline data.';
+
+  @override
+  String get offlineInventoryError => 'Stored data could not be inspected or updated. Retry.';
+
+  @override
+  String get settingsAppearanceLanguage => 'Appearance & language';
+
+  @override
+  String get settingsCalendarTimezone => 'Calendar & timezone';
+
+  @override
+  String get settingsNotificationsInteraction => 'Notifications & interaction';
+
+  @override
+  String get settingsAppPreferences => 'App preferences';
+
+  @override
+  String get offlinePauseDownloads => 'Pause downloads';
+
+  @override
+  String get offlineResumeDownloads => 'Resume unfinished downloads';
+
+  @override
+  String get offlineClearScopeDescription => 'Remove cached data only for this account and workspace. Queued writes remain. Storage limits apply to the whole device.';
+
+  @override
+  String offlineExpectedTotal(int count) {
+    return 'Server-reported query total: $count. This does not establish complete coverage.';
+  }
+
+  @override
+  String get offlineExpectedTotalUnknown => 'Server-reported query total: unknown.';
+
+  @override
+  String get offlineStorageNeedsWorkspace => 'Select a workspace to view or clear its cached data. The storage limit applies to this device.';
+
+  @override
+  String get offlineBrowseStoredItems => 'Browse stored items';
+
+  @override
+  String get offlineSearchItems => 'Search stored items by name or ID';
+
+  @override
+  String get offlineNoMatchingItems => 'No stored items match.';
+
+  @override
+  String offlineStoredItemId(String id) {
+    return 'Item ID: $id';
+  }
+
+  @override
+  String get homePersonalAgenda => 'Personal Agenda';
+
+  @override
+  String get homePersonalAgendaUnavailable => 'Personal calendar is unavailable.';
 
   @override
   String get assistantExpandNavigation => 'Show navigation';

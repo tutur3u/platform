@@ -1,32 +1,64 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_storage_snapshot.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/settings/view/cache_storage_chart.dart';
+import 'package:mobile/features/settings/view/settings_scoped_sheet.dart';
+import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-Future<void> showCacheStorageSheet(BuildContext context) =>
-    showModalBottomSheet<void>(
-      context: context,
-      useRootNavigator: true,
-      useSafeArea: true,
-      isScrollControlled: true,
-      builder: (_) => const FractionallySizedBox(
-        heightFactor: 0.82,
-        child: CacheStorageSheet(),
+Future<void> showCacheStorageSheet(
+  BuildContext context, {
+  CacheStore? store,
+  OfflinePreparationCoordinator? coordinator,
+}) async {
+  final userId = context.read<AuthCubit?>()?.state.user?.id;
+  final workspaceId = context
+      .read<WorkspaceCubit?>()
+      ?.state
+      .currentWorkspace
+      ?.id;
+  if (userId == null) return;
+  await showScopedSettingsSheet<void>(
+    context: context,
+    builder: (_) => FractionallySizedBox(
+      heightFactor: 0.82,
+      child: CacheStorageSheet(
+        userId: userId,
+        workspaceId: workspaceId,
+        store: store,
+        coordinator: coordinator,
       ),
-    );
+    ),
+  );
+}
 
 class CacheStorageSheet extends StatefulWidget {
-  const CacheStorageSheet({super.key});
+  const CacheStorageSheet({
+    required this.userId,
+    required this.workspaceId,
+    this.store,
+    this.coordinator,
+    super.key,
+  });
+  final CacheStore? store;
+  final OfflinePreparationCoordinator? coordinator;
+  final String userId;
+  final String? workspaceId;
 
   @override
   State<CacheStorageSheet> createState() => _CacheStorageSheetState();
 }
 
 class _CacheStorageSheetState extends State<CacheStorageSheet> {
+  CacheStore get _store => widget.store ?? CacheStore.instance;
+  OfflinePreparationCoordinator get _coordinator =>
+      widget.coordinator ?? OfflinePreparationCoordinator.instance;
+
   CacheStorageSnapshot? _snapshot;
   bool _busy = false;
   String? _error;
@@ -34,12 +66,28 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
   @override
   void initState() {
     super.initState();
+    _coordinator.state.addListener(_preparationChanged);
     unawaited(_refresh());
+  }
+
+  void _preparationChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _coordinator.state.removeListener(_preparationChanged);
+    super.dispose();
   }
 
   Future<void> _refresh() async {
     try {
-      final snapshot = await CacheStore.instance.storageSnapshot();
+      final snapshot = widget.workspaceId == null
+          ? await _store.storageLimitSnapshot()
+          : await _store.storageSnapshot(
+              userId: widget.userId,
+              workspaceId: widget.workspaceId,
+            );
       if (!mounted) return;
       setState(() {
         _snapshot = snapshot;
@@ -51,12 +99,13 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
   }
 
   Future<void> _setLimit(int bytes) async {
+    if (_coordinator.state.value.running) return;
     setState(() => _busy = true);
     try {
       if (bytes < (_snapshot?.maxBytes ?? bytes)) {
-        OfflinePreparationCoordinator.instance.invalidateRetainedData();
+        _coordinator.invalidateRetainedData();
       }
-      await CacheStore.instance.setMaxStorageBytes(bytes);
+      await _store.setMaxStorageBytes(bytes);
       await _refresh();
     } on Object {
       if (mounted) setState(() => _error = context.l10n.cacheStorageError);
@@ -66,11 +115,13 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
   }
 
   Future<void> _clear() async {
+    if (widget.workspaceId == null) return;
+    if (_coordinator.state.value.running) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(context.l10n.cacheStorageClear),
-        content: Text(context.l10n.cacheStorageClearDescription),
+        content: Text(context.l10n.offlineClearScopeDescription),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -83,11 +134,17 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
         ],
       ),
     );
-    if (confirmed != true || !mounted) return;
+    if (confirmed != true || !mounted || _coordinator.state.value.running) {
+      return;
+    }
     setState(() => _busy = true);
     try {
-      OfflinePreparationCoordinator.instance.invalidateRetainedData();
-      await CacheStore.instance.clearResourceCache();
+      _coordinator.invalidateRetainedData();
+      await _store.clearScope(
+        userId: widget.userId,
+        workspaceId: widget.workspaceId,
+        resourceOnly: true,
+      );
       await _refresh();
     } on Object {
       if (mounted) setState(() => _error = context.l10n.cacheStorageError);
@@ -100,6 +157,7 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final snapshot = _snapshot;
+    final disabled = _busy || _coordinator.state.value.running;
     final scheme = Theme.of(context).colorScheme;
     final colors = [
       scheme.primary,
@@ -140,40 +198,47 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
             const SizedBox(height: 28),
             const Center(child: CircularProgressIndicator()),
           ] else ...[
-            const SizedBox(height: 26),
-            Center(
-              child: CacheStorageChart(
-                bytes: snapshot.totalBytes,
-                limitBytes: snapshot.maxBytes,
-                categoryBytes: [
-                  for (final category in categories)
-                    snapshot.categoryBytes[category] ?? 0,
-                ],
-                colors: colors,
+            if (widget.workspaceId != null) ...[
+              const SizedBox(height: 26),
+              Center(
+                child: CacheStorageChart(
+                  bytes: snapshot.totalBytes,
+                  limitBytes: snapshot.maxBytes,
+                  categoryBytes: [
+                    for (final category in categories)
+                      snapshot.categoryBytes[category] ?? 0,
+                  ],
+                  colors: colors,
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Center(
-              child: Text(
-                '${_formatBytes(snapshot.totalBytes)} / ${_formatBytes(snapshot.maxBytes)}',
+              const SizedBox(height: 12),
+              Center(
+                child: Text(
+                  '${_formatBytes(snapshot.totalBytes)} / '
+                  '${_formatBytes(snapshot.maxBytes)}',
+                ),
               ),
-            ),
-            const SizedBox(height: 6),
-            Center(
-              child: Text(
-                l10n.cacheStorageEstimateNote,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall,
+              const SizedBox(height: 6),
+              Center(
+                child: Text(
+                  '${l10n.cacheStorageEstimateNote}\n'
+                  '${l10n.offlineStorageScope}',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ),
-            ),
-            const SizedBox(height: 22),
-            for (var index = 0; index < categories.length; index++)
-              _CategoryRow(
-                label: _categoryLabel(context, categories[index]),
-                bytes: snapshot.categoryBytes[categories[index]] ?? 0,
-                total: snapshot.totalBytes,
-                color: colors[index],
-              ),
+              const SizedBox(height: 22),
+              for (var index = 0; index < categories.length; index++)
+                _CategoryRow(
+                  label: _categoryLabel(context, categories[index]),
+                  bytes: snapshot.categoryBytes[categories[index]] ?? 0,
+                  total: snapshot.totalBytes,
+                  color: colors[index],
+                ),
+            ] else ...[
+              const SizedBox(height: 20),
+              Text(l10n.offlineStorageNeedsWorkspace),
+            ],
             const SizedBox(height: 20),
             Text(
               l10n.cacheStorageLimit,
@@ -187,7 +252,7 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
                   ChoiceChip(
                     label: Text(_formatBytes(bytes)),
                     selected: snapshot.maxBytes == bytes,
-                    onSelected: _busy
+                    onSelected: disabled
                         ? null
                         : (_) => unawaited(_setLimit(bytes)),
                   ),
@@ -195,7 +260,10 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
             ),
             const SizedBox(height: 24),
             OutlinedButton.icon(
-              onPressed: _busy || snapshot.totalBytes == 0
+              onPressed:
+                  disabled ||
+                      widget.workspaceId == null ||
+                      snapshot.totalBytes == 0
                   ? null
                   : () => unawaited(_clear()),
               icon: const Icon(Icons.delete_outline_rounded),

@@ -58,6 +58,68 @@ void main() {
     await cubit.close();
     repository.dispose();
   });
+  test('Automatic persists even when native device lookup fails', () async {
+    await cubit.close();
+    repository.personal = 'UTC';
+    cubit = TimezoneSettingsCubit(
+      repository: repository,
+      deviceLoader: () async =>
+          throw Exception('Synthetic native lookup failure'),
+    );
+    await cubit.load(userId: 'user', workspaceId: null);
+    await cubit.save('auto');
+    expect(repository.personal, 'auto');
+    expect(repository.writes, 1);
+    expect(cubit.state.personal, 'auto');
+    expect(cubit.state.personalLoaded, true);
+    expect(cubit.state.resolved, false);
+    await cubit.reload();
+    expect(cubit.state.personal, 'auto');
+  });
+
+  for (final deviceResult in ['', '   ']) {
+    test(
+      'Automatic persists but blank device lookup remains unresolved',
+      () async {
+        await cubit.close();
+        repository.personal = 'UTC';
+        cubit = TimezoneSettingsCubit(
+          repository: repository,
+          deviceLoader: () async => deviceResult,
+        );
+        await cubit.load(userId: 'user', workspaceId: null);
+        await cubit.save('auto');
+        expect(repository.personal, 'auto');
+        expect(repository.writes, 1);
+        expect(cubit.state.device, isEmpty);
+        expect(cubit.state.resolved, false);
+        expect(cubit.state.failed, true);
+        expect(
+          cubit.state.errorMessage,
+          contains('Device timezone is unavailable'),
+        );
+      },
+    );
+  }
+
+  test(
+    'load and save retain error details, then clear them after recovery',
+    () async {
+      repository.failLoad = true;
+      await cubit.load(userId: 'user', workspaceId: null);
+      expect(cubit.state.errorMessage, contains('load failed'));
+      repository.failLoad = false;
+      await cubit.reload();
+      expect(cubit.state.errorMessage, isNull);
+      repository.failSave = true;
+      await cubit.save('UTC');
+      expect(cubit.state.errorMessage, contains('failed'));
+      expect(cubit.state.failedSaveZone, 'UTC');
+      repository.failSave = false;
+      await cubit.save('UTC');
+      expect(cubit.state.errorMessage, isNull);
+    },
+  );
   for (final scope in ['resume', 'workspace', 'account']) {
     test(
       'overlapping $scope load preserves only eligible personal snapshot',

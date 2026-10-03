@@ -1,5 +1,19 @@
 import { expect, it, vi } from 'vitest';
-import { collectSyntheticContainerLogs } from './devbox-playground-runtime-diagnostics';
+import {
+  collectSyntheticContainerLogs,
+  syntheticContainerLoggingArgs,
+} from './devbox-playground-runtime-diagnostics';
+
+it('enables bounded readable logs only for opted-in synthetic CI identities', () => {
+  expect(syntheticContainerLoggingArgs('ci-123-1', true)).toEqual([
+    '--log-driver=local',
+    '--log-opt=max-size=8k',
+    '--log-opt=max-file=1',
+  ]);
+  expect(syntheticContainerLoggingArgs('ci-123-1', false)).toEqual([]);
+  expect(syntheticContainerLoggingArgs('production', true)).toEqual([]);
+  expect(syntheticContainerLoggingArgs('ci-', true)).toEqual([]);
+});
 
 it('collects bounded PID 1 logs without exec, configuration or environment', async () => {
   const docker = vi.fn().mockResolvedValue({

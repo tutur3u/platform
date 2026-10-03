@@ -3548,8 +3548,6 @@
     "appsHideConfirmTitle": "Hide this app?",
     "appsHideConfirmDescription": "It will move below your shown apps. You can show it again at any time.",
     "appsReorder": "Drag to reorder",
-    "homePersonalAgenda": "Personal Agenda",
-    "homePersonalAgendaUnavailable": "Personal calendar is unavailable.",
     "homeCustomize": "Customize Home",
     "homeHideWidget": "Hide widget",
     "homeShowWidget": "Show widget",
@@ -4131,6 +4129,96 @@
             }
         }
     },
+    "offlineSectionTitle": "Offline",
+    "offlineSectionDescription": "Downloads, stored data, and unsynchronized changes for the selected account and workspace.",
+    "offlinePreferencesTitle": "Offline preferences",
+    "offlineStorageScope": "Storage limit applies to this device. Clearing cached data preserves queued changes.",
+    "offlineRefreshModule": "Download / refresh",
+    "offlineModuleDetails": "Stored data and settings",
+    "offlineDownloadRetryHint": "Retry downloads to refresh retained data.",
+    "offlineCoverageUnknown": "A normal fetch may contain only part of a collection. Query totals are shown only when stored pages agree. Explicit downloads cover supported collections, not every module resource.",
+    "offlineBytesExplanation": "Sizes are logical persisted payload bytes, including snapshot and replica copies. Disk overhead, expected download size, and transferred network bytes are unknown.",
+    "offlineLogicalBytes": "{bytes} payload bytes",
+    "@offlineLogicalBytes": {
+        "placeholders": {
+            "bytes": {
+                "type": "String"
+            }
+        }
+    },
+    "offlinePendingCoverage": "{count, plural, one{{count} queued change. It is kept separately and is not counted as a downloaded item.} other{{count} queued changes. They are kept separately and are not counted as downloaded items.}}",
+    "@offlinePendingCoverage": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "offlineSearchStored": "Search stored collections",
+    "offlineNoStoredItems": "No stored collections match.",
+    "offlineAvailableItems": "{items, plural, one{{items} unique indexed item} other{{items} unique indexed items}} across {snapshots, plural, one{{snapshots} stored snapshot} other{{snapshots} stored snapshots}}",
+    "@offlineAvailableItems": {
+        "placeholders": {
+            "items": {
+                "type": "int"
+            },
+            "snapshots": {
+                "type": "int"
+            }
+        }
+    },
+    "offlineFreshness": "{stale, plural, one{{stale} stale snapshot} other{{stale} stale snapshots}} · {expired, plural, one{{expired} expired snapshot} other{{expired} expired snapshots}} retained for offline use",
+    "@offlineFreshness": {
+        "placeholders": {
+            "stale": {
+                "type": "int"
+            },
+            "expired": {
+                "type": "int"
+            }
+        }
+    },
+    "offlineLastFetch": "Latest fetch: {time}",
+    "@offlineLastFetch": {
+        "placeholders": {
+            "time": {
+                "type": "String"
+            }
+        }
+    },
+    "offlineEvictTitle": "Remove stored module data",
+    "offlineEvictDescription": "Remove only this module’s snapshots in the selected account and workspace. Queued writes remain. Download again to restore offline data.",
+    "offlineInventoryError": "Stored data could not be inspected or updated. Retry.",
+    "settingsAppearanceLanguage": "Appearance & language",
+    "settingsCalendarTimezone": "Calendar & timezone",
+    "settingsNotificationsInteraction": "Notifications & interaction",
+    "settingsAppPreferences": "App preferences",
+    "offlinePauseDownloads": "Pause downloads",
+    "offlineResumeDownloads": "Resume unfinished downloads",
+    "offlineClearScopeDescription": "Remove cached data only for this account and workspace. Queued writes remain. Storage limits apply to the whole device.",
+    "offlineExpectedTotal": "Server-reported query total: {count}. This does not establish complete coverage.",
+    "offlineExpectedTotalUnknown": "Server-reported query total: unknown.",
+    "@offlineExpectedTotal": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "offlineStorageNeedsWorkspace": "Select a workspace to view or clear its cached data. The storage limit applies to this device.",
+    "offlineBrowseStoredItems": "Browse stored items",
+    "offlineSearchItems": "Search stored items by name or ID",
+    "offlineNoMatchingItems": "No stored items match.",
+    "offlineStoredItemId": "Item ID: {id}",
+    "@offlineStoredItemId": {
+        "placeholders": {
+            "id": {
+                "type": "String"
+            }
+        }
+    },
+    "homePersonalAgenda": "Personal Agenda",
+    "homePersonalAgendaUnavailable": "Personal calendar is unavailable.",
     "assistantExpandNavigation": "Show navigation",
     "assistantCollapseNavigation": "Hide navigation",
     "assistantCloseComposer": "Close prompt"
