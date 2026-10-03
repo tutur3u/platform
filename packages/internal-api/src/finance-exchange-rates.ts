@@ -1,5 +1,11 @@
-import type { ExchangeRate } from '@tuturuuu/utils/exchange-rates';
 import { getInternalApiClient, type InternalApiClientOptions } from './client';
+
+export interface ExchangeRate {
+  base_currency: string;
+  target_currency: string;
+  rate: number;
+  date: string;
+}
 
 export interface ExchangeRatesResponse {
   data: ExchangeRate[];
