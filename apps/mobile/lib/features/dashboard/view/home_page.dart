@@ -18,15 +18,30 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool _agenda = false;
+  bool _agendaVisited = false;
 
   @override
   Widget build(BuildContext context) => Stack(
     fit: StackFit.expand,
     children: [
-      if (_agenda)
-        PersonalAgenda(replayToken: widget.replayToken)
-      else
-        DashboardPage(replayToken: widget.replayToken),
+      Offstage(
+        offstage: _agenda,
+        child: TickerMode(
+          enabled: !_agenda,
+          child: DashboardPage(
+            replayToken: widget.replayToken,
+            active: !_agenda,
+          ),
+        ),
+      ),
+      if (_agendaVisited)
+        Offstage(
+          offstage: !_agenda,
+          child: TickerMode(
+            enabled: _agenda,
+            child: PersonalAgenda(replayToken: widget.replayToken),
+          ),
+        ),
       ShellTitleOverride(
         ownerId: 'home-views',
         locations: const {Routes.home},
@@ -53,7 +68,10 @@ class _HomePageState extends State<HomePage> {
             tooltip: context.l10n.homePersonalAgenda,
             highlighted: _agenda,
             callbackToken: _agenda,
-            onPressed: () => setState(() => _agenda = true),
+            onPressed: () => setState(() {
+              _agendaVisited = true;
+              _agenda = true;
+            }),
           ),
         ],
       ),
