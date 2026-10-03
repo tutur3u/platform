@@ -710,6 +710,22 @@ identities. While `RELEASE_PLEASE_TOKEN` is unset both are `github-actions[bot]`
 and the script reports `blocked` and leaves the run green rather than failing.
 Use `--dry-run` to see the decision without posting a review.
 
+Generated release formatting also refreshes Bun workspace-version metadata with
+pinned Bun 1.4.1 using `--lockfile-only --ignore-scripts`. The shared
+`release-workspace-lock.js` validator accepts only workspace `version` string
+changes matching the generated package manifests. It rejects dependency,
+resolution, workspace identity, root version and unrelated formatting changes;
+every other lockfile byte must remain identical. Auto-approval independently
+loads complete lock/package files at immutable base/head SHAs and reruns that
+validation; `bun.lock` is never an unconditional generated-path exception.
+Run this refresh and the merge helper in CI; the merge helper invokes broad
+checks and must not run on agent machines where local builds are prohibited.
+Formatting amends the original release commit without resetting its author and
+pushes with an exact lease. Approval is pinned to the validated head. If refs
+move or validation fails, regenerate/review the release instead of publishing
+an ordinary authored repair commit. Published notes stay unchanged; ancestry
+alone does not prove differently worded features are duplicates.
+
 `release-please-auto-merge.yaml` closes the loop on the generated release PR. It
 runs daily at 00:00 UTC (`cron: "0 0 * * *"`), which is 07:00 in Vietnam
 (UTC+7), and on manual dispatch. It does not reimplement the merge in YAML: it
