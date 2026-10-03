@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   parseDevboxExecutionMode,
   preflightProtectedService,
@@ -6,19 +6,30 @@ import {
 } from './devbox-host-protection';
 import { renderSystemdUnit } from './devbox-setup-service-templates';
 
+const permissions = vi.hoisted(() => ({
+  directory: 0o700,
+  socket: 0o660,
+  uid: 0,
+}));
+
 vi.mock('node:os', () => ({
   platform: () => 'linux',
-  userInfo: () => ({ username: 'personal' }),
+  userInfo: () => ({ username: 'personal', uid: permissions.uid }),
 }));
 vi.mock('node:fs/promises', () => ({
   realpath: async (path: string) => path,
   stat: async (path: string) =>
     path.endsWith('.sock')
-      ? { isSocket: () => true, uid: 0, gid: 997, mode: 0o660 }
-      : { isDirectory: () => true, uid: 997, mode: 0o700 },
+      ? { isSocket: () => true, uid: 0, gid: 997, mode: permissions.socket }
+      : { isDirectory: () => true, uid: 997, mode: permissions.directory },
 }));
 
 describe('protected Judge setup', () => {
+  afterEach(() => {
+    permissions.directory = 0o700;
+    permissions.socket = 0o660;
+    permissions.uid = 0;
+  });
   it('rejects unknown execution policies', () => {
     expect(() => parseDevboxExecutionMode('judge')).toThrow('execution-mode');
     expect(parseDevboxExecutionMode('judge-only')).toBe('judge-only');
@@ -67,6 +78,21 @@ describe('protected Judge setup', () => {
     await expect(preflightProtectedService(options)).resolves.toBe(
       '/var/lib/judge'
     );
+    permissions.directory = 0o770;
+    await expect(preflightProtectedService(options)).rejects.toThrow(
+      'private token directory'
+    );
+    permissions.directory = 0o700;
+    permissions.socket = 0o600;
+    await expect(preflightProtectedService(options)).rejects.toThrow(
+      'Dedicated Docker socket'
+    );
+    permissions.socket = 0o660;
+    permissions.uid = 1000;
+    await expect(preflightProtectedService(options)).rejects.toThrow(
+      'must run as root'
+    );
+    permissions.uid = 0;
     await expect(
       preflightProtectedService({
         ...options,

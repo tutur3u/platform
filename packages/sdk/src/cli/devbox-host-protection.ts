@@ -72,6 +72,10 @@ export async function preflightProtectedService({
     throw new Error(
       'Judge-only services require an existing dedicated non-root OS user, not your personal login.'
     );
+  if (userInfo().uid !== 0)
+    throw new Error(
+      'Protected setup and repair must run as root with an authenticated operator CLI context; private service directories must not be opened to the operator group.'
+    );
   if (!dockerHost?.startsWith('unix:///'))
     throw new Error(
       'Judge-only services require --docker-host unix:///path/to/dedicated/docker.sock.'
@@ -134,7 +138,7 @@ export async function preflightProtectedService({
   if (
     !privateDirectory.isDirectory() ||
     privateDirectory.uid !== Number(fields[2]) ||
-    (privateDirectory.mode & 0o007) !== 0
+    (privateDirectory.mode & 0o077) !== 0
   )
     throw new Error(
       'Prepare the private token directory with the service user as owner and no access for other users before setup.'
@@ -144,6 +148,7 @@ export async function preflightProtectedService({
     !socketStat.isSocket() ||
     socketStat.uid !== 0 ||
     socketStat.gid !== Number(fields[3]) ||
+    (socketStat.mode & 0o060) !== 0o060 ||
     (socketStat.mode & 0o007) !== 0
   )
     throw new Error(

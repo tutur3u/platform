@@ -7,6 +7,23 @@ import {
 } from './platform-devbox-fleet';
 
 describe('platform-owned fleet boundary', () => {
+  it('maps supported local Infrastructure origins and preserves custom origins', () => {
+    expect(getInfrastructureOrigin('https://tuturuuu.localhost')).toBe(
+      'https://infra.tuturuuu.localhost'
+    );
+    expect(getInfrastructureOrigin('http://tuturuuu.localhost:1355')).toBe(
+      'http://infra.tuturuuu.localhost:1355'
+    );
+    expect(getInfrastructureOrigin('http://localhost:7803')).toBe(
+      'http://localhost:7823'
+    );
+    expect(getInfrastructureOrigin('http://127.0.0.1:7803')).toBe(
+      'http://127.0.0.1:7823'
+    );
+    expect(getInfrastructureOrigin('https://custom.example:7803')).toBe(
+      'https://custom.example:7803'
+    );
+  });
   it('authenticates Infrastructure requests without sending custom deployment tokens there', async () => {
     const fetchMock = vi
       .fn<typeof fetch>()

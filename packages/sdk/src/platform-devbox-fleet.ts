@@ -42,7 +42,14 @@ export function getInfrastructureOrigin(baseUrl: string) {
   if (url.hostname === 'tuturuuu.com')
     return 'https://infrastructure.tuturuuu.com';
   if (url.hostname === 'tuturuuu.localhost')
-    return 'https://infrastructure.tuturuuu.localhost';
+    return `${url.protocol}//infra.tuturuuu.localhost${url.port ? `:${url.port}` : ''}`;
+  if (
+    ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) &&
+    url.port === '7803'
+  ) {
+    url.port = '7823';
+    return url.origin;
+  }
   // Custom deployments must explicitly point their client at their own server.
   // Never redirect a custom deployment's credentials to the hosted platform.
   return url.origin;
