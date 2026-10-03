@@ -51,13 +51,16 @@
 8. Verify every `main` workflow for the merge SHA is green. This is a hard gate:
    do not run `bun git-sync` while any main workflow is queued, in progress, or
    failed.
-9. Stop after main verification when only main integration was requested.
+9. For main-only integration, skip production gates 10–11 and proceed to
+   cleanup at gate 12 after main verification.
    Run `bun git-sync` only with production authorization, after main is fully
    green and the exact promotion range is authorized. If main advanced with unrelated commits, obtain broader
    authorization or use the supported pinned-SHA sync path.
-10. Verify remote production contains the approved SHA. Report local refs
+10. For authorized production delivery only, verify remote production contains
+    the approved SHA. Report local refs
     separately if another checkout owns them or main has advanced.
-11. Verify every `production` workflow for that SHA is green.
+11. For authorized production delivery only, verify every `production` workflow
+    for that SHA is green.
 12. After all required delivery gates pass, remove only the completed clean
     PR worktree and its local task branch.
 
