@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const {
   READS,
   curlArguments,
+  main,
   parseCurlOutput,
   verifyStagedApp,
 } = require('./verify-staged-critical-app.js');
@@ -155,3 +156,72 @@ test('blocks Web promotion when the Learn catalog API is missing', async () => {
     /auth-boundary probe failed/
   );
 });
+
+const probeEnv = {
+  VERCEL_STAGED_DEPLOYMENT_URL: 'https://candidate.vercel.app',
+  VERCEL_STAGED_APP: 'tasks',
+  GITHUB_SHA: sha,
+  VERCEL_TOKEN: 'synthetic-cli-token',
+};
+for (const fixture of [
+  { error: { code: 2, message: 'private-cli-output' }, reason: 'exit 2' },
+  {
+    error: { signal: 'SIGTERM', stderr: 'private-cli-output' },
+    reason: 'SIGTERM',
+  },
+  { error: { code: 'private-cli-output' }, reason: 'unknown' },
+  { error: { code: Number.NaN }, reason: 'unknown' },
+  { error: { code: Number.POSITIVE_INFINITY }, reason: 'unknown' },
+  { error: { signal: 'private-cli-output' }, reason: 'unknown' },
+  {
+    error: { message: 'private-cli-output', stdout: 'private-cli-output' },
+    reason: 'unknown',
+  },
+  { error: null, reason: 'unknown' },
+]) {
+  test(`CLI probe uses safe failure reason ${fixture.reason}`, async () => {
+    await assert.rejects(
+      main({
+        env: probeEnv,
+        runCommand: async () => {
+          throw fixture.error;
+        },
+      }),
+      (error) => {
+        assert.equal(
+          error.message,
+          `Staged tasks GET probe could not complete (${fixture.reason})`
+        );
+        assert.ok(!error.message.includes('private-cli-output'));
+        return true;
+      }
+    );
+  });
+}
+for (const fixture of [
+  {
+    stdout: 'private-cli-output',
+    reason: 'Deployment probe did not return an HTTP status',
+  },
+  {
+    stdout: 'private-cli-output\nTTR_HTTP_STATUS:000',
+    reason: 'Invalid deployment probe HTTP status',
+  },
+]) {
+  test(`CLI probe preserves known parser failure: ${fixture.reason}`, async () => {
+    await assert.rejects(
+      main({
+        env: probeEnv,
+        runCommand: async () => ({ stdout: fixture.stdout }),
+      }),
+      (error) => {
+        assert.equal(
+          error.message,
+          `Staged tasks GET probe could not complete (${fixture.reason})`
+        );
+        assert.ok(!error.message.includes('private-cli-output'));
+        return true;
+      }
+    );
+  });
+}

@@ -92,13 +92,38 @@ function curlArguments(path, method, url) {
   if (method === 'HEAD') args.push('--head');
   return args;
 }
-async function main() {
+function safeProbeFailureReason(error) {
+  if (Number.isSafeInteger(error?.code)) return `exit ${error.code}`;
+  if (
+    [
+      'SIGABRT',
+      'SIGHUP',
+      'SIGINT',
+      'SIGKILL',
+      'SIGPIPE',
+      'SIGQUIT',
+      'SIGTERM',
+      'SIGBUS',
+      'SIGSEGV',
+    ].includes(error?.signal)
+  )
+    return error.signal;
+  if (
+    [
+      'Deployment probe did not return an HTTP status',
+      'Invalid deployment probe HTTP status',
+    ].includes(error?.message)
+  )
+    return error.message;
+  return 'unknown';
+}
+async function main({ runCommand = run, env = process.env } = {}) {
   const {
     VERCEL_STAGED_DEPLOYMENT_URL: url,
     VERCEL_STAGED_APP: app,
     GITHUB_SHA: sha,
     VERCEL_TOKEN: token,
-  } = process.env;
+  } = env;
   if (!url || !/^https:\/\/[a-z0-9-]+\.vercel\.app\/?$/.test(url) || !token)
     throw new Error('A staged Vercel URL and authenticated CLI are required');
   await verifyStagedApp({
@@ -107,13 +132,15 @@ async function main() {
     request: async (path, method) => {
       const args = curlArguments(path, method, url);
       try {
-        const { stdout } = await run('vercel', args, {
+        const { stdout } = await runCommand('vercel', args, {
           timeout: 45000,
           maxBuffer: 128 * 1024,
         });
         return parseCurlOutput(stdout);
-      } catch {
-        throw new Error(`Staged ${app} ${method} probe could not complete`);
+      } catch (error) {
+        throw new Error(
+          `Staged ${app} ${method} probe could not complete (${safeProbeFailureReason(error)})`
+        );
       }
     },
   });
@@ -121,7 +148,13 @@ async function main() {
     `Verified staged ${app} source identity and ordinary API auth boundaries.`
   );
 }
-module.exports = { READS, curlArguments, parseCurlOutput, verifyStagedApp };
+module.exports = {
+  READS,
+  curlArguments,
+  main,
+  parseCurlOutput,
+  verifyStagedApp,
+};
 if (require.main === module)
   main().catch((error) => {
     console.error(error.message);
