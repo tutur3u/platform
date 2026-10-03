@@ -233,13 +233,27 @@ describe('durable dual-endpoint provider saga', () => {
   });
   it('reauthorizes recovery before any network effect', async () => {
     const f = await fixture();
-    f.access.assertAllowed.mockRejectedValueOnce(
-      new ColorOperationError('unauthorized', 'Revoked')
-    );
+    f.access.assertAllowed.mockClear();
+    f.state().phase = 'dispatched';
+    f.state().checkpoint = {
+      step: 'target-created',
+      targetEventId: destination.identity.providerEventId!,
+      targetETag: 'target-original',
+    };
+    f.access.assertAllowed
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(
+        new ColorOperationError('unauthorized', 'Revoked')
+      );
     await expect(f.executor.execute(id)).rejects.toMatchObject({
       reason: 'unauthorized',
     });
     expect(f.provider.insert).not.toHaveBeenCalled();
+    expect(f.provider.observe).not.toHaveBeenCalled();
+    expect(f.provider.deleteSource).not.toHaveBeenCalled();
+    expect(f.repository.dispatch).toHaveBeenCalledOnce();
+    expect(f.access.assertAllowed).toHaveBeenCalledTimes(3);
   });
   it('creation finalizes its deterministic target without deleting any existing source', async () => {
     const f = await fixture(true);
@@ -250,7 +264,7 @@ describe('durable dual-endpoint provider saga', () => {
   });
 });
 
-it('keeps compensated source absence pending until an atomic tombstone contract exists', async () => {
+it('atomically finalizes compensated source absence after rechecking both endpoints', async () => {
   const f = await fixture();
   f.state().phase = 'dispatched';
   f.state().checkpoint = {
@@ -259,11 +273,36 @@ it('keeps compensated source absence pending until an atomic tombstone contract 
     targetETag: 'target-original',
   };
   vi.mocked(f.provider.observe).mockResolvedValue({ absent: true });
+  await expect(f.executor.execute(id)).resolves.toMatchObject({
+    phase: 'superseded',
+  });
+  expect(f.repository.finalize).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({
+      outcome: 'superseded',
+      endpoint: source,
+      observation: { absent: true },
+    })
+  );
+  expect(f.provider.observe).toHaveBeenCalledTimes(2);
+  expect(f.provider.insert).not.toHaveBeenCalled();
+  expect(f.provider.deleteSource).not.toHaveBeenCalled();
+});
+
+it('retains compensation generation when the removed target reappears', async () => {
+  const f = await fixture();
+  f.state().phase = 'dispatched';
+  f.state().checkpoint = {
+    step: 'target-removed',
+    targetEventId: destination.identity.providerEventId!,
+    targetETag: 'target-original',
+  };
+  vi.mocked(f.provider.observe)
+    .mockResolvedValueOnce({ absent: true })
+    .mockResolvedValueOnce(target);
   await expect(f.executor.execute(id)).rejects.toMatchObject({
     reason: 'unavailable',
   });
   expect(f.repository.finalize).not.toHaveBeenCalled();
-  expect(f.provider.insert).not.toHaveBeenCalled();
-  expect(f.provider.deleteSource).not.toHaveBeenCalled();
   expect(f.state().phase).toBe('dispatched');
 });

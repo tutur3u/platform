@@ -47,6 +47,7 @@ function fixture(savedBinding = binding, assignedEventId?: string) {
   vi.clearAllMocks();
   let tokenActive = true;
   let moved = false;
+  let absent = false;
   const filters: Array<[string, unknown]> = [];
   const rpc = vi.fn().mockResolvedValue({
     data: {
@@ -71,19 +72,21 @@ function fixture(savedBinding = binding, assignedEventId?: string) {
           error: null,
           data:
             table === 'workspace_calendar_events'
-              ? {
-                  provider: moved
-                    ? savedBinding.destination.provider
-                    : 'google',
-                  source_calendar_id: null,
-                  external_calendar_id: moved ? 'new' : 'old',
-                  external_event_id: moved
-                    ? savedBinding.destination.provider !== 'tuturuuu'
-                      ? (assignedEventId ??
-                        savedBinding.destination.identity.providerEventId)
-                      : ''
-                    : 'original',
-                }
+              ? absent
+                ? null
+                : {
+                    provider: moved
+                      ? savedBinding.destination.provider
+                      : 'google',
+                    source_calendar_id: null,
+                    external_calendar_id: moved ? 'new' : 'old',
+                    external_event_id: moved
+                      ? savedBinding.destination.provider !== 'tuturuuu'
+                        ? (assignedEventId ??
+                          savedBinding.destination.identity.providerEventId)
+                        : ''
+                      : 'original',
+                  }
               : table === 'calendar_connections'
                 ? {
                     auth_token_id:
@@ -122,6 +125,9 @@ function fixture(savedBinding = binding, assignedEventId?: string) {
   return {
     filters,
     rpc,
+    remove: () => {
+      absent = true;
+    },
     revoke: () => {
       tokenActive = false;
     },
@@ -225,5 +231,33 @@ it('authenticates a server-assigned Graph destination ID from the immutable serv
   });
   await expect(f.access.assertAllowed(graphBinding)).rejects.toMatchObject({
     reason: 'identity',
+  });
+});
+
+it('recovers only a same-binding terminal persisted deletion with fresh both-endpoint authorization', async () => {
+  const f = fixture();
+  f.remove();
+  const terminal = {
+    phase: 'superseded',
+    deleted: true,
+    prepared: { binding },
+    checkpoint: { step: 'target-removed', targetEventId: 'target' },
+  };
+  f.rpc.mockResolvedValue({ data: terminal, error: null });
+  await expect(f.access.assertAllowed(binding)).resolves.toBeUndefined();
+  for (const changed of [
+    { ...terminal, deleted: false },
+    { ...terminal, phase: 'dispatched' },
+    { ...terminal, checkpoint: { step: 'target-created' } },
+    { ...terminal, prepared: { binding: { ...binding, baseETag: 'forged' } } },
+  ]) {
+    f.rpc.mockResolvedValueOnce({ data: changed, error: null });
+    await expect(f.access.assertAllowed(binding)).rejects.toMatchObject({
+      reason: 'identity',
+    });
+  }
+  f.revoke();
+  await expect(f.access.assertAllowed(binding)).rejects.toMatchObject({
+    reason: 'unauthorized',
   });
 });

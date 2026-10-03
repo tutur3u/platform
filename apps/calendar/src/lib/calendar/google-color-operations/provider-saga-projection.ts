@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from 'node:util';
 import type { calendar_v3 } from '@tuturuuu/google';
 import { formatEventForDb } from '@tuturuuu/trigger/google-calendar-sync';
 import type { GoogleColorContext } from '@tuturuuu/utils/google-calendar-colors';
@@ -31,6 +32,20 @@ export function createProviderSagaProjection(args: {
   return async (completion: ProviderSagaCompletion) => {
     const { binding, endpoint, observation } = completion;
     await args.access.assertAllowed(binding);
+    if (observation?.absent) {
+      if (
+        completion.outcome !== 'superseded' ||
+        binding.mode !== 'copy-delete' ||
+        endpoint.provider === 'tuturuuu' ||
+        !isDeepStrictEqual(endpoint, binding.source)
+      )
+        throw new ColorOperationError(
+          'identity',
+          'Provider saga deletion unavailable'
+        );
+      await args.access.assertAllowed(binding);
+      return { deleted: true, outcome: completion.outcome, endpoint };
+    }
     const scope = sagaScope(endpoint);
     const key = await (args.getKey ?? getWorkspaceKey)(scope.wsId);
     if (!Buffer.isBuffer(key) || key.length !== 32)

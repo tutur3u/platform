@@ -105,10 +105,21 @@ export function createProviderSagaExecutor(args: {
         if (!binding.source)
           return unavailable('Compensated saga source unavailable');
         const source = await observe(binding.source);
-        if (source.absent)
-          return unavailable(
-            'Compensated source deletion requires tombstone reconciliation'
-          );
+        if (source.absent) {
+          // Persisted compensation is rechecked before releasing its generation.
+          if (
+            !(
+              await observe(
+                binding.destination,
+                operation.checkpoint.targetEventId
+              )
+            ).absent
+          )
+            return unavailable(
+              'Provider saga compensation no longer confirmed'
+            );
+          return finalize('superseded', binding.source, source);
+        }
         if (source.etag === binding.baseETag)
           return unavailable('Provider saga source is not fenced');
         return finalize('superseded', binding.source, source);

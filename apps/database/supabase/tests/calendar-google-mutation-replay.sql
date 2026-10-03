@@ -55,6 +55,10 @@ insert into public.workspace_habits(id,ws_id,name) values('00000000-0000-4000-80
  '00000000-0000-4000-8000-000000009711','Isolated habit');
 insert into public.habit_calendar_events(habit_id,event_id,occurrence_date) values(
  '00000000-0000-4000-8000-000000009771','00000000-0000-4000-8000-000000009741','2026-10-02');
+insert into public.workspace_habits(id,ws_id,name) values('00000000-0000-4000-8000-000000009772',
+ '00000000-0000-4000-8000-000000009711','Second linked habit');
+insert into public.habit_calendar_events(habit_id,event_id,occurrence_date) values(
+ '00000000-0000-4000-8000-000000009772','00000000-0000-4000-8000-000000009741','2026-10-03');
 commit;
 -- The fixture is committed because the second independent SQL connection must
 -- see it. The owning isolated lifecycle destroys this entire disposable stack.
@@ -82,7 +86,7 @@ select dblink_disconnect('competitor');
 begin;
 select is(public.fixture_color_call('cancel')->>'phase','canceled','unsent color admission canceled');
 select is(public.fixture_mutation_call('admit',public.fixture_mutation_input(1))->>'phase','prepared','encrypted preparation is atomically admitted');
-select is((select intent->>'kind' from private.calendar_google_color_operations),'mutation','generic operations share existing import/color ledger');
+select is((select intent->>'kind' from private.calendar_google_color_operations where ws_id='00000000-0000-4000-8000-000000009711' and event_id='00000000-0000-4000-8000-000000009741'),'mutation','generic operations share existing import/color ledger');
 select ok(not has_function_privilege('authenticated','public.calendar_google_mutation_operation(text,uuid,uuid,uuid,jsonb)','EXECUTE'),'customer clients cannot admit or forge mutation snapshots');
 select throws_ok($$select public.fixture_mutation_call('admit',public.fixture_mutation_input(1)||'{"id":"00000000-0000-4000-8000-000000009762"}')$$,
  '40001',null,'no successor can replace a pending encrypted operation');
@@ -106,9 +110,10 @@ select is(public.fixture_mutation_call('finalize','{"id":"00000000-0000-4000-800
 select is((select count(*) from public.workspace_calendar_events where id='00000000-0000-4000-8000-000000009741'),0::bigint,'local event deleted');
 select is((select count(*) from public.habit_calendar_events where event_id='00000000-0000-4000-8000-000000009741'),0::bigint,'habit linkage cascades in same transaction');
 select is((select count(*) from public.habit_skipped_occurrences where habit_id='00000000-0000-4000-8000-000000009771' and occurrence_date='2026-10-02' and revoked_at is null),1::bigint,'habit skip persists before event deletion');
-select is((select completion->>'skippedHabitId' from private.calendar_google_color_operations),'00000000-0000-4000-8000-000000009771','tombstone preserves deletion summary after links disappear');
+select is((select count(*) from public.habit_skipped_occurrences where habit_id in ('00000000-0000-4000-8000-000000009771','00000000-0000-4000-8000-000000009772') and revoked_at is null),2::bigint,'all linked habits skipped before cascade');
+select is((select completion->>'skippedHabitId' from private.calendar_google_color_operations where ws_id='00000000-0000-4000-8000-000000009711' and event_id='00000000-0000-4000-8000-000000009741'),'00000000-0000-4000-8000-000000009771','tombstone preserves deletion summary after links disappear');
 select is(public.fixture_mutation_call('read','{"id":"00000000-0000-4000-8000-000000009761"}')->>'phase','applied','authorized terminal recovery survives local row deletion');
-select is((select current_generation from private.calendar_google_color_operations),3::bigint,'tombstone retains provider generation');
+select is((select current_generation from private.calendar_google_color_operations where ws_id='00000000-0000-4000-8000-000000009711' and event_id='00000000-0000-4000-8000-000000009741'),3::bigint,'tombstone retains provider generation');
 select is((select count(*) from private.calendar_google_color_write_permits),0::bigint,'no capability survives finalization');
 select is(public.fixture_mutation_call('result','{"id":"00000000-0000-4000-8000-000000009761"}')->>'skippedHabitId',
  '00000000-0000-4000-8000-000000009771','terminal response retains atomic deletion summary');

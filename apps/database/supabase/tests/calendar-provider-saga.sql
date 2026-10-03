@@ -116,24 +116,37 @@ select is((select current_generation::text from private.calendar_google_color_op
 select ok(not has_function_privilege('authenticated','public.calendar_native_generation_mutation(text,uuid,uuid,uuid,jsonb)','EXECUTE'),'customer clients cannot forge native write permits');
 -- Independent ledgerless writer changes the captured row without a native mutation timestamp.
 insert into public.workspace_calendar_events(id,ws_id,provider,source_calendar_id,title,description,is_encrypted,start_at,end_at)
-values('00000000-0000-4000-8000-000000008744','00000000-0000-4000-8000-000000008711','tuturuuu','00000000-0000-4000-8000-000000008791','encrypted-old','encrypted-description',true,'2026-10-02T10:00:00Z','2026-10-02T11:00:00Z');
+values('00000000-0000-4000-8000-000000008744','00000000-0000-4000-8000-000000008711','tuturuuu',null,'encrypted-old','encrypted-description',true,'2026-10-02T10:00:00Z','2026-10-02T11:00:00Z');
 create function public.fixture_native_outbound_input() returns jsonb language sql as $$
  select jsonb_build_object('id','00000000-0000-4000-8000-000000008755','expectedGeneration','0','requestHash',repeat('c',64),
  'nativeSnapshot',to_jsonb(e),
  'prepared',jsonb_build_object('binding',jsonb_build_object('operationId','00000000-0000-4000-8000-000000008755','generation','1','action','move','mode','insert','baseETag',null,
- 'source',jsonb_build_object('provider','tuturuuu','wsId',e.ws_id::text,'eventId',e.id::text,'workspaceCalendarId',e.source_calendar_id::text),
+ 'source',jsonb_build_object('provider','tuturuuu','wsId',e.ws_id::text,'eventId',e.id::text,'workspaceCalendarId',coalesce(e.source_calendar_id,(select c.id from private.workspace_calendars c where c.ws_id=e.ws_id and c.calendar_type='primary' and c.is_enabled))::text),
  'destination',jsonb_set(jsonb_set(public.fixture_saga_endpoint(true),'{identity,eventId}',to_jsonb(e.id::text)),'{identity,providerEventId}','"tt00000000000040008000000000008755"')),
  'journal','{"version":1,"ciphertext":"sealed-native-outbound"}'::jsonb)) from public.workspace_calendar_events e where id='00000000-0000-4000-8000-000000008744';
 $$;
-create temporary table fixture_native_capture as select public.fixture_native_outbound_input() as input;
+create table public.fixture_native_capture as select public.fixture_native_outbound_input() as input;
+create function public.fixture_native_stale_admit() returns text language plpgsql as $$
+ begin perform public.calendar_provider_saga_operation('admit','00000000-0000-4000-8000-000000008711','00000000-0000-4000-8000-000000008744','00000000-0000-4000-8000-000000008701',(select input from public.fixture_native_capture));
+ return 'unexpected'; exception when others then return sqlstate||':'||sqlerrm; end;
+$$;
 commit;
 select dblink_connect('native_writer','dbname=postgres user=postgres password=postgres host=127.0.0.1');
 -- The update holds the row lock before admission; generation remains zero.
 select dblink_exec('native_writer','begin');
 select dblink_exec('native_writer',$$update public.workspace_calendar_events set title='encrypted-fresh' where id='00000000-0000-4000-8000-000000008744'$$);
-select dblink_send_query('native_writer','commit');
+select dblink_connect('native_admission','dbname=postgres user=postgres password=postgres host=127.0.0.1');
+select dblink_send_query('native_admission','select public.fixture_native_stale_admit()');
+do $$ declare deadline timestamptz:=clock_timestamp()+interval '3 seconds'; begin
+ loop exit when exists(select 1 from pg_stat_activity where query='select public.fixture_native_stale_admit()' and wait_event_type='Lock');
+ if clock_timestamp()>deadline then raise exception 'Native admission did not wait on writer row lock'; end if;
+ perform pg_sleep(0.01); end loop;
+end $$;
+select is(dblink_is_busy('native_admission'),1,'stale native admission waits on independently held writer lock');
+select dblink_exec('native_writer','commit');
+select is(result,'40001:Provider saga native snapshot changed','stale ledgerless native row rejects after writer commits') from dblink_get_result('native_admission') as result(result text);
+select dblink_disconnect('native_admission');
 begin;
-select throws_ok($$select public.calendar_provider_saga_operation('admit','00000000-0000-4000-8000-000000008711','00000000-0000-4000-8000-000000008744','00000000-0000-4000-8000-000000008701',(select input from fixture_native_capture))$$,'40001','Provider saga native snapshot changed','stale ledgerless native row rejects under the admission lock');
 select ok(not exists(select 1 from private.calendar_google_color_operations where event_id='00000000-0000-4000-8000-000000008744'),'stale snapshot creates no retained operation or dispatch permission');
 select is((select title from public.workspace_calendar_events where id='00000000-0000-4000-8000-000000008744'),'encrypted-fresh','concurrent native content survives stale admission');
 select is((select external_updated_at from public.workspace_calendar_events where id='00000000-0000-4000-8000-000000008744'),((select input from fixture_native_capture)->'nativeSnapshot'->>'external_updated_at')::timestamptz,'native content changes are fenced without a provider timestamp change');
@@ -143,12 +156,58 @@ select ok(not ((select prepared from private.calendar_google_color_operations wh
 select public.calendar_provider_saga_operation('cancel','00000000-0000-4000-8000-000000008711','00000000-0000-4000-8000-000000008744','00000000-0000-4000-8000-000000008701','{"id":"00000000-0000-4000-8000-000000008755","generation":"1"}');
 select public.calendar_native_generation_mutation('delete','00000000-0000-4000-8000-000000008711','00000000-0000-4000-8000-000000008744','00000000-0000-4000-8000-000000008701','{"expectedGeneration":"1"}');
 select dblink_disconnect('native_writer');
+-- A separately admitted copy-delete saga loses both provider endpoints after compensation.
+insert into public.workspace_calendar_events(id,ws_id,provider,external_calendar_id,external_event_id,title,start_at,end_at)
+values('00000000-0000-4000-8000-000000008745','00000000-0000-4000-8000-000000008711','google','old-calendar','absent-source','Synthetic','2026-10-02T10:00:00Z','2026-10-02T11:00:00Z');
+create function public.fixture_absent_saga(action text, extra jsonb default '{}') returns jsonb language sql as $$
+ select public.calendar_provider_saga_operation(action,'00000000-0000-4000-8000-000000008711','00000000-0000-4000-8000-000000008745','00000000-0000-4000-8000-000000008701',
+ '{"id":"00000000-0000-4000-8000-000000008756","generation":"1"}'::jsonb||extra);
+$$;
+select is(public.fixture_absent_saga('admit',replace(replace(replace(public.fixture_saga_input()::text,'008741','008745'),'008751','008756'),'original-event','absent-source')::jsonb)->>'phase','prepared','compensated deletion fixture admits its own generation');
+create temporary table absent_snapshot as select jsonb_build_object('snapshot',jsonb_build_object('deleted',true,'outcome','superseded','endpoint',
+ replace(replace(public.fixture_saga_endpoint()::text,'008741','008745'),'original-event','absent-source')::jsonb)) as input;
+select throws_ok($$select public.fixture_absent_saga('finalize',(select input from absent_snapshot))$$,'22023',null,'prepared operation cannot delete a local event');
+select public.fixture_absent_saga('dispatch');
+select throws_ok($$select public.fixture_absent_saga('finalize',(select input from absent_snapshot))$$,'22023',null,'absence alone cannot bypass persisted compensation checkpoint');
+select public.fixture_absent_saga('checkpoint','{"checkpoint":{"step":"target-created","targetEventId":"tt00000000000040008000000000008756","targetETag":"target-original"}}');
+select public.fixture_absent_saga('checkpoint','{"checkpoint":{"step":"target-removed","targetEventId":"tt00000000000040008000000000008756","targetETag":"target-original"}}');
+select throws_ok($$select public.fixture_absent_saga('finalize',jsonb_set((select input from absent_snapshot),'{snapshot,endpoint,identity,calendarId}','"forged"'))$$,'22023',null,'forged tombstone endpoint cannot delete');
+select throws_ok($$select public.fixture_absent_saga('finalize',(select input from absent_snapshot)||'{"generation":"2"}')$$,'40001',null,'stale generation cannot delete');
+select throws_ok($$select public.fixture_absent_saga('finalize',jsonb_set((select input from absent_snapshot),'{snapshot,outcome}','"applied"'))$$,'22023',null,'absence cannot falsely apply the intended move');
+select throws_ok($$select public.fixture_absent_saga('finalize',jsonb_set((select input from absent_snapshot),'{snapshot,projection}','{}'))$$,'22023',null,'deletion cannot carry a conflicting present projection');
+insert into public.workspace_habits(id,ws_id,name) values
+ ('00000000-0000-4000-8000-000000008781','00000000-0000-4000-8000-000000008711','Compensated habit one'),
+ ('00000000-0000-4000-8000-000000008782','00000000-0000-4000-8000-000000008711','Compensated habit two');
+insert into public.habit_calendar_events(habit_id,event_id,occurrence_date) values
+ ('00000000-0000-4000-8000-000000008781','00000000-0000-4000-8000-000000008745','2026-10-02'),
+ ('00000000-0000-4000-8000-000000008782','00000000-0000-4000-8000-000000008745','2026-10-03');
+insert into public.workspace_boards(id,ws_id,name) values('00000000-0000-4000-8000-000000008783','00000000-0000-4000-8000-000000008711','Compensated tasks');
+insert into public.tasks(id,board_id,name) values
+ ('00000000-0000-4000-8000-000000008784','00000000-0000-4000-8000-000000008783','Linked task one'),
+ ('00000000-0000-4000-8000-000000008785','00000000-0000-4000-8000-000000008783','Linked task two');
+insert into public.task_calendar_events(task_id,event_id) values
+ ('00000000-0000-4000-8000-000000008784','00000000-0000-4000-8000-000000008745'),
+ ('00000000-0000-4000-8000-000000008785','00000000-0000-4000-8000-000000008745');
+select is(public.fixture_absent_saga('finalize',(select input from absent_snapshot))->>'phase','superseded','confirmed compensated absence atomically tombstones the local event');
+select ok(not exists(select 1 from public.workspace_calendar_events where id='00000000-0000-4000-8000-000000008745'),'terminal absence removes local row');
+select is((select count(*) from public.habit_skipped_occurrences where habit_id in ('00000000-0000-4000-8000-000000008781','00000000-0000-4000-8000-000000008782') and revoked_at is null),2::bigint,'terminal absence settles every linked habit before cascade');
+select is((select count(*) from public.habit_calendar_events where event_id='00000000-0000-4000-8000-000000008745'),0::bigint,'terminal absence cascades all occurrence links');
+select is((select count(*) from public.task_calendar_events where event_id='00000000-0000-4000-8000-000000008745'),0::bigint,'terminal absence settles every linked task in its transaction');
+select is((select current_generation from private.calendar_google_color_operations where event_id='00000000-0000-4000-8000-000000008745'),1::bigint,'terminal absence retains exact ledger generation');
+select is((select count(*) from private.calendar_provider_saga_scopes where event_id='00000000-0000-4000-8000-000000008745'),2::bigint,'terminal absence retains both retired identities');
+select is(public.fixture_absent_saga('read')->>'deleted','true','terminal recovery exposes only persisted deletion proof');
+select is(public.fixture_absent_saga('finalize',(select input from absent_snapshot))->>'phase','superseded','terminal absence replay is idempotent without the local row');
+select is(public.apply_calendar_google_import((public.capture_calendar_google_import('00000000-0000-4000-8000-000000008711','old-calendar','00000000-0000-4000-8000-000000008721')->>'id')::uuid,
+ '[{"id":"00000000-0000-4000-8000-000000008748","ws_id":"00000000-0000-4000-8000-000000008711","provider":"google","external_calendar_id":"old-calendar","external_event_id":"absent-source","google_calendar_id":"old-calendar","google_event_id":"absent-source","title":"Synthetic","start_at":"2026-10-02T10:00:00Z","end_at":"2026-10-02T11:00:00Z"}]')->>'deferred','1','retired source cannot resurrect a compensated tombstone');
+select is((select count(*) from private.calendar_google_color_write_permits),0::bigint,'terminal absence releases only transaction permits');
 update public.calendar_auth_tokens set is_active=false where id='00000000-0000-4000-8000-000000008721';
 select throws_ok($$select public.fixture_native_saga('read','{"id":"00000000-0000-4000-8000-000000008754"}')$$,'42501',null,'revoked source/account denies even terminal saga recovery');
 select * from finish();
 rollback;
+drop function if exists public.fixture_absent_saga(text,jsonb);
 drop function if exists public.fixture_native_outbound_input();
 drop table fixture_native_capture;
+drop function public.fixture_native_stale_admit();
 drop function if exists public.fixture_native_saga(text,jsonb);
 drop function if exists public.fixture_native_endpoint();
 drop function public.fixture_saga_competitor();

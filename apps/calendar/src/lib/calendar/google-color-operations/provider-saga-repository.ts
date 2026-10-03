@@ -29,6 +29,7 @@ export const ProviderSagaOperationSchema = z
       .object({ binding: SagaBindingSchema, journal: SealedJournalSchema })
       .strict(),
     checkpoint: SagaCheckpointSchema.nullable(),
+    deleted: z.literal(true).optional(),
   })
   .strict();
 

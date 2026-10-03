@@ -77,6 +77,9 @@ insert into captures values('restore',pg_temp.import_capture());
 select is(public.apply_calendar_google_import((select id from captures where name='restore'),pg_temp.import_event())->>'inserted','1','genuinely fresh provider read may restore resource');
 select is((select id::text from public.workspace_calendar_events where external_event_id='fixture-event'),
  '00000000-0000-4000-8000-000000009741','restore retains protected logical ID');
+insert into captures values('invalid',pg_temp.import_capture());
+select throws_ok($$select public.apply_calendar_google_import((select id from captures where name='invalid'),
+ jsonb_set(pg_temp.import_event(),'{0,start_at}','"2026-10-03T12:00:00Z"'))$$,'22023','Google import event was not applied','skipped invalid import is rejected before generation or deferred cleanup');
 update public.calendar_auth_tokens set is_active=false where id='00000000-0000-4000-8000-000000009721';
 select throws_ok($$select public.apply_calendar_google_import((select id from captures where name='restore'),pg_temp.import_event())$$,
  '42501',null,'revoked token prevents apply after provider read');

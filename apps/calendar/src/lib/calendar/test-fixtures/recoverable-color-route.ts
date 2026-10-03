@@ -153,6 +153,7 @@ export function recoverableColorRouteFixture() {
       } else if (args.p_action === 'finalize') {
         if (failFinalize) return error('XX000');
         if (!['applied', 'superseded'].includes(operation.phase)) {
+          if (operation.phase !== 'dispatched') return error();
           event.color = input.snapshot.compatibilityColor;
           event.scheduling_metadata = {
             ...event.scheduling_metadata,

@@ -142,15 +142,23 @@ export function createRequestProviderSagaAccess(
       const saved = operation as unknown as {
         phase?: string;
         prepared?: { binding?: unknown };
-        checkpoint?: { targetEventId?: string };
+        checkpoint?: { step?: string; targetEventId?: string };
+        deleted?: boolean;
       } | null;
       const storedBinding = SagaBindingSchema.safeParse(
         saved?.prepared?.binding
       );
       if (
         operationError ||
-        saved?.phase !== 'applied' ||
-        !matches(binding.destination, saved?.checkpoint?.targetEventId) ||
+        !(
+          (saved?.phase === 'applied' &&
+            matches(binding.destination, saved?.checkpoint?.targetEventId)) ||
+          (!row &&
+            saved?.phase === 'superseded' &&
+            saved.deleted === true &&
+            binding.mode === 'copy-delete' &&
+            saved.checkpoint?.step === 'target-removed')
+        ) ||
         !storedBinding.success ||
         JSON.stringify(storedBinding.data) !== JSON.stringify(binding)
       )

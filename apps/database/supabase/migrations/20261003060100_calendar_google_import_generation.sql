@@ -399,6 +399,9 @@ begin
           'background',old_color->'background','foreground',old_color->'foreground','resolution',old_color->'resolution'));
       end if;
       counts:=public.upsert_calendar_events_and_count(jsonb_build_array(item));
+      if coalesce((counts->>'inserted')::integer,0)+coalesce((counts->>'updated')::integer,0)=0 then
+        raise exception using errcode='22023',message='Google import event was not applied';
+      end if;
       inserted:=inserted+coalesce((counts->>'inserted')::integer,0);
       updated:=updated+coalesce((counts->>'updated')::integer,0);
     end if;

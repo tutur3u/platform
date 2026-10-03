@@ -33,7 +33,8 @@ revoke all on function private.calendar_saga_endpoint_allowed(jsonb,uuid,uuid) f
 create function private.calendar_provider_saga_json(op private.calendar_google_color_operations)
 returns jsonb language sql immutable set search_path='' as $$
   select jsonb_build_object('id',op.operation_id::text,'generation',op.generation::text,'phase',op.phase,
-    'prepared',op.prepared,'checkpoint',op.completion->'checkpoint');
+    'prepared',op.prepared,'checkpoint',op.completion->'checkpoint')
+    ||case when op.completion->'deleted'='true'::jsonb then '{"deleted":true}'::jsonb else '{}'::jsonb end;
 $$;
 revoke all on function private.calendar_provider_saga_json(private.calendar_google_color_operations) from public,anon,authenticated,service_role;
 
@@ -60,6 +61,8 @@ declare
   action text;
   mode text;
   outcome text;
+  deleted boolean;
+  linked_habit record;
 begin
   if not exists(select 1 from public.workspace_members m where m.ws_id=p_ws_id and m.user_id=p_actor_id and m.type='MEMBER')
     or public.has_workspace_permission(p_ws_id,p_actor_id,'manage_calendar') is not true then
@@ -146,7 +149,9 @@ begin
         coalesce(placeholder->'metadata','{}'::jsonb)||jsonb_build_object('provider_saga_operation',operation_id::text),'syncing');
     else
       if not has_event or event_row.provider::text is distinct from source_endpoint->>'provider'
-        or event_row.source_calendar_id is distinct from (source_endpoint->>'workspaceCalendarId')::uuid
+        or (case when event_row.provider='tuturuuu' then coalesce(event_row.source_calendar_id,
+          (select c.id from private.workspace_calendars c where c.ws_id=p_ws_id and c.calendar_type='primary' and c.is_enabled))
+          else event_row.source_calendar_id end) is distinct from (source_endpoint->>'workspaceCalendarId')::uuid
         or (source_endpoint->>'provider'<>'tuturuuu' and (
           coalesce(event_row.external_calendar_id,event_row.google_calendar_id) is distinct from source_endpoint->'identity'->>'calendarId'
           or coalesce(event_row.external_event_id,event_row.google_event_id) is distinct from source_endpoint->'identity'->>'providerEventId')) then
@@ -229,23 +234,44 @@ begin
       if op.phase in ('applied','superseded') then return private.calendar_provider_saga_json(op); end if;
       snapshot:=p_input->'snapshot'; outcome:=snapshot->>'outcome'; endpoint:=snapshot->'endpoint'; projection:=snapshot->'projection';
       checkpoint:=op.completion->'checkpoint';
+      deleted:=snapshot->>'deleted'='true';
+      if snapshot ? 'deleted' and snapshot->'deleted' is distinct from 'true'::jsonb then
+        raise exception using errcode='22023',message='Invalid authoritative provider saga deletion';
+      end if;
+      if coalesce(deleted,false) and (outcome is distinct from 'superseded' or mode<>'copy-delete'
+        or checkpoint->>'step' is distinct from 'target-removed' or source_endpoint->>'provider' not in ('google','microsoft')
+        or (snapshot-'deleted'-'outcome'-'endpoint')<>'{}'::jsonb) then
+        raise exception using errcode='22023',message='Invalid authoritative provider saga deletion';
+      end if;
       if op.phase<>'dispatched' or coalesce(outcome,'') not in ('applied','superseded')
         or (outcome='superseded' and source_endpoint='null'::jsonb)
         or endpoint is distinct from (case when outcome='applied' then destination else source_endpoint end)
         or (outcome='applied' and source_endpoint<>'null'::jsonb and source_endpoint->>'provider'<>'tuturuuu' and checkpoint->>'step' is distinct from 'source-deleted')
         or (outcome='applied' and destination->>'provider'<>'tuturuuu' and coalesce(checkpoint->>'step','') not in ('target-created','source-deleted'))
         or (outcome='superseded' and mode<>'external-to-native' and checkpoint->>'step' is distinct from 'target-removed')
-        or projection->>'is_encrypted' is distinct from 'true' or jsonb_typeof(projection->'title') is distinct from 'string'
+        or (not coalesce(deleted,false) and (projection->>'is_encrypted' is distinct from 'true' or jsonb_typeof(projection->'title') is distinct from 'string'
         or jsonb_typeof(projection->'description') is distinct from 'string' or jsonb_typeof(snapshot->'metadata') is distinct from 'object'
         or (projection-'title'-'description'-'location'-'is_encrypted'-'start_at'-'end_at'-'locked')<>'{}'::jsonb
         or (outcome='superseded' and (snapshot->>'etag' is not distinct from binding->>'baseETag' or projection ? 'locked'))
         or (endpoint->>'provider'<>'tuturuuu' and (coalesce(snapshot->>'providerEventId','')='' or coalesce(snapshot->>'etag','')=''))
         or (outcome='applied' and endpoint->>'provider'<>'tuturuuu' and mode<>'google-move'
           and snapshot->>'operationMarker' is distinct from operation_id::text)
-        or (outcome='applied' and checkpoint ? 'targetEventId' and snapshot->>'providerEventId' is distinct from checkpoint->>'targetEventId') then
+        or (outcome='applied' and checkpoint ? 'targetEventId' and snapshot->>'providerEventId' is distinct from checkpoint->>'targetEventId'))) then
         raise exception using errcode='22023',message='Invalid authoritative provider saga projection';
       end if;
       insert into private.calendar_google_color_write_permits values(txid_current(),p_ws_id,p_event_id,op.operation_id,op.current_generation);
+      if coalesce(deleted,false) then
+        for linked_habit in select h.habit_id,h.occurrence_date from public.habit_calendar_events h
+          where h.event_id=p_event_id order by h.habit_id,h.occurrence_date loop
+          if linked_habit.occurrence_date is not null then
+            insert into public.habit_skipped_occurrences(ws_id,habit_id,occurrence_date,created_by,source_event_id,revoked_at)
+            values(p_ws_id,linked_habit.habit_id,linked_habit.occurrence_date,p_actor_id,p_event_id,null)
+            on conflict(ws_id,habit_id,occurrence_date) do update set revoked_at=null,
+              created_by=excluded.created_by,source_event_id=excluded.source_event_id;
+          end if;
+        end loop;
+        delete from public.workspace_calendar_events where ws_id=p_ws_id and id=p_event_id;
+      else
       update public.workspace_calendar_events set title=projection->>'title',description=projection->>'description',location=projection->>'location',is_encrypted=true,
         start_at=(projection->>'start_at')::timestamptz,end_at=(projection->>'end_at')::timestamptz,
         locked=case when projection ? 'locked' then (projection->>'locked')::boolean else locked end,
@@ -257,9 +283,12 @@ begin
         scheduling_metadata=(coalesce(scheduling_metadata,'{}'::jsonb)-'provider_saga_operation')||(snapshot->'metadata'),
         color=snapshot->>'compatibilityColor',last_synced_at=now(),sync_status=case when outcome='applied' then 'synced' else 'conflict' end,
         sync_error=case when outcome='superseded' then 'Provider move was superseded' end where ws_id=p_ws_id and id=p_event_id;
+      end if;
       if not found then raise exception using errcode='40001',message='Provider saga event unavailable'; end if;
       delete from private.calendar_google_color_write_permits where transaction_id=txid_current() and ws_id=p_ws_id and event_id=p_event_id;
-      if endpoint->>'provider'<>'tuturuuu' then
+      if coalesce(deleted,false) then
+        locator:=locator||jsonb_build_object('calendarId','tombstone:'||p_event_id::text,'providerEventId',p_event_id::text);
+      elsif endpoint->>'provider'<>'tuturuuu' then
         locator:=endpoint->'identity'||jsonb_build_object('providerEventId',snapshot->>'providerEventId');
       else
         -- Retired provider scopes remain mapped separately; the current locator

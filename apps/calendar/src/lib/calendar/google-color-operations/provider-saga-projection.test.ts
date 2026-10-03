@@ -103,7 +103,7 @@ describe('encrypted authoritative saga projection', () => {
       expect.objectContaining({ title: 'Authoritative title' }),
       expect.any(Buffer)
     );
-    expect(projected.projection).toEqual({
+    expect('projection' in projected ? projected.projection : null).toEqual({
       title: 'ciphertext-title',
       description: 'ciphertext-description',
       is_encrypted: true,
@@ -179,4 +179,42 @@ describe('encrypted authoritative saga projection', () => {
       factory().project({ ...nativeCompletion, outcome: 'superseded' })
     ).rejects.toMatchObject({ reason: 'identity' });
   });
+});
+
+it('projects only authorized compensated source absence as a deletion snapshot', async () => {
+  const f = factory();
+  const absent: ProviderSagaCompletion = {
+    ...completion,
+    outcome: 'superseded',
+    endpoint,
+    observation: { absent: true },
+    localPatch: {},
+    binding: {
+      ...completion.binding,
+      action: 'move',
+      mode: 'copy-delete',
+      source: endpoint,
+      baseETag: 'original',
+    },
+  };
+  await expect(f.project(absent)).resolves.toEqual({
+    deleted: true,
+    outcome: 'superseded',
+    endpoint,
+  });
+  expect(f.assertAllowed).toHaveBeenCalledTimes(2);
+  expect(mocks.key).not.toHaveBeenCalled();
+  expect(mocks.encrypt).not.toHaveBeenCalled();
+  await expect(
+    f.project({ ...absent, outcome: 'applied' })
+  ).rejects.toMatchObject({ reason: 'identity' });
+  await expect(
+    f.project({
+      ...absent,
+      endpoint: {
+        ...endpoint,
+        identity: { ...endpoint.identity, calendarId: 'forged' },
+      },
+    })
+  ).rejects.toMatchObject({ reason: 'identity' });
 });

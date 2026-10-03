@@ -18,6 +18,7 @@ declare
   linked_habit_id uuid;
   habit_date date;
   result_completion jsonb;
+  linked_habit record;
 begin
   select * into event_row from public.workspace_calendar_events
     where ws_id=p_ws_id and id=p_event_id for update;
@@ -140,14 +141,16 @@ begin
         (txid_current(),p_ws_id,p_event_id,op.operation_id,op.current_generation);
       if snapshot->>'deleted'='true' then
         select t.task_id into task_id from public.task_calendar_events t where t.event_id=p_event_id;
-        select h.habit_id,h.occurrence_date into linked_habit_id,habit_date
-          from public.habit_calendar_events h where h.event_id=p_event_id;
-        if linked_habit_id is not null and habit_date is not null then
-          insert into public.habit_skipped_occurrences(ws_id,habit_id,occurrence_date,created_by,source_event_id,revoked_at)
-          values(p_ws_id,linked_habit_id,habit_date,p_actor_id,p_event_id,null)
-          on conflict(ws_id,habit_id,occurrence_date) do update set revoked_at=null,
-            created_by=excluded.created_by,source_event_id=excluded.source_event_id;
-        end if;
+        for linked_habit in select h.habit_id,h.occurrence_date
+          from public.habit_calendar_events h where h.event_id=p_event_id order by h.habit_id,h.occurrence_date loop
+          if linked_habit_id is null then linked_habit_id:=linked_habit.habit_id; habit_date:=linked_habit.occurrence_date; end if;
+          if linked_habit.habit_id is not null and linked_habit.occurrence_date is not null then
+            insert into public.habit_skipped_occurrences(ws_id,habit_id,occurrence_date,created_by,source_event_id,revoked_at)
+            values(p_ws_id,linked_habit.habit_id,linked_habit.occurrence_date,p_actor_id,p_event_id,null)
+            on conflict(ws_id,habit_id,occurrence_date) do update set revoked_at=null,
+              created_by=excluded.created_by,source_event_id=excluded.source_event_id;
+          end if;
+        end loop;
         result_completion := snapshot || jsonb_build_object('linkedTaskId',task_id,'skippedHabitId',linked_habit_id,'skippedHabitDate',habit_date);
         delete from public.workspace_calendar_events where ws_id=p_ws_id and id=p_event_id;
       else
