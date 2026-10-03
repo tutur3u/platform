@@ -1,7 +1,7 @@
 import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
-export const NOTIFICATION_REFRESH_INTERVAL_MS = 30_000;
+export const NOTIFICATION_REFRESH_INTERVAL_MS = 120_000;
 
 interface NotificationSubscriptionEntry {
   queryClients: Map<QueryClient, number>;
@@ -12,7 +12,8 @@ interface NotificationSubscriptionEntry {
 const registry = new Map<string, NotificationSubscriptionEntry>();
 
 function invalidateVisibleNotifications(entry: NotificationSubscriptionEntry) {
-  if (document.visibilityState === 'hidden') return;
+  if (document.visibilityState === 'hidden' || navigator.onLine === false)
+    return;
   for (const queryClient of entry.queryClients.keys()) {
     // Only active queries refetch; closed inboxes remain lazy.
     void queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -22,6 +23,7 @@ function invalidateVisibleNotifications(entry: NotificationSubscriptionEntry) {
 function stopEntry(entry: NotificationSubscriptionEntry) {
   clearInterval(entry.interval);
   document.removeEventListener('visibilitychange', entry.onVisibilityChange);
+  window.removeEventListener('online', entry.onVisibilityChange);
 }
 
 /**
@@ -50,6 +52,7 @@ export function useNotificationSubscription(
       };
       registry.set(userId, entry);
       document.addEventListener('visibilitychange', refresh);
+      window.addEventListener('online', refresh);
     }
     entry.queryClients.set(
       queryClient,

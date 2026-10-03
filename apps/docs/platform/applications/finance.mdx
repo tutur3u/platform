@@ -233,10 +233,19 @@ from the RPC replacement and do not add transaction wrappers.
 
 ## Notification refresh diagnostics
 
-The shared notification hook refreshes active notification API queries every 30
+The shared notification hook refreshes active notification API queries every 120
 seconds while the browser tab is visible and immediately when the tab becomes
 visible again. Consumers for the same user share one timer. Closed inbox queries
-remain lazy, and existing mutations invalidate the cache immediately.
+remain lazy, and existing mutations invalidate the cache immediately. Offline
+tabs pause periodic invalidation and refresh immediately on reconnect. This is
+the default across Next.js satellites and the central web notification surfaces;
+satellites without the shared subscription use the same two-minute query polling
+interval. Foreground notifications may therefore take up to two minutes to
+appear without a mutation or resume event. Colab retains its separate 30-second
+native polling implementation, and Mail inbox/snooze timers are unchanged.
+Regression coverage in `use-notifications-subscription.test.tsx` verifies 30
+refreshes per visible hour, shared consumers, hidden/offline pauses, reconnect,
+actor teardown and lazy closed inboxes.
 
 Do not subscribe directly to `public.notifications` with browser
 `postgres_changes` filters. Production notifications are server-owned; the
