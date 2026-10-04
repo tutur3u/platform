@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 
-import { getByLabelText } from '@testing-library/react';
 import type { LettinNode } from '@tuturuuu/internal-api/lettin';
 import { act, useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -54,10 +53,10 @@ it('initializes the real editor and applies Markdown to the current draft', asyn
     await act(async () =>
       container.querySelector<HTMLButtonElement>('button')!.click()
     );
-    const textarea = getByLabelText(container, 'markdownSource', {
-      exact: true,
-    }) as HTMLTextAreaElement;
+    const textarea = container.querySelector('textarea')!;
     expect(textarea).not.toBeNull();
+    // The explicit name must exclude the hint inside the wrapping label.
+    expect(textarea.getAttribute('aria-label')).toBe('markdownSource');
     await act(async () => {
       Object.getOwnPropertyDescriptor(
         HTMLTextAreaElement.prototype,
