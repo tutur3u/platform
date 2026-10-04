@@ -1113,15 +1113,15 @@ an authenticated app-owned WebView. This preserves Yjs, formatting, remote
 cursors, pointers, selections and reconnect behavior across web and mobile.
 The app bridges a small allowlist of meeting-scoped API actions; it never sends
 platform tokens to editor JavaScript or runner preview content. A separate
-loopback capability serves private preview assets. External navigation and
-preview requests cannot invoke the collaboration bridge. The call continues
-while the collaboration panel is open.
+loopback capability serves private preview assets. Android denies mixed content;
+[Chromium treats loopback as trustworthy](https://codereview.chromium.org/1931063004), preserving the private `127.0.0.1` preview exception.
+External navigation and previews cannot invoke the bridge; calls continue.
 
 Native collaboration pins the account separately from the admitted device ID.
 Account/device changes, revoked admission and ended calls suppress late results;
 preview capabilities never transfer access. Server admission remains authoritative.
 Task cubits cancel subscriptions and close only default-owned clients/APIs;
-injected clients remain caller-owned. Disposed channels stop ticket refreshes.
+injected clients remain caller-owned. Refresh cleanup failures reconnect; disposal fences late cleanup.
 Navigation denies malformed, hostless and non-HTTP schemes without throwing.
 One-shot broadcasts preserve ticket/handshake errors; subscribed channels reconnect.
 Per-send socket setup remains a tradeoff; shared-channel reuse is not implemented.

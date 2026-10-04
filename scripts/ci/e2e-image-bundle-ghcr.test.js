@@ -147,3 +147,88 @@ test('exhausted later-page 500 fails closed before any package deletion', async 
   assert.equal(deleted, 0);
   assert.deepEqual(fake.seenPages.slice(-3), [27, 27, 27]);
 });
+
+for (const status of [200, 500]) {
+  test(`safe GET retries interrupted ${status} response body`, async () => {
+    let calls = 0;
+    const result = await githubRequest('/versions', {
+      env,
+      sleep: async () => {},
+      fetch: async () =>
+        ++calls < 3
+          ? {
+              status,
+              ok: status === 200,
+              text: async () => {
+                throw new TypeError('body reset');
+              },
+            }
+          : json([{ id: 1 }]),
+    });
+    assert.deepEqual(result, [{ id: 1 }]);
+    assert.equal(calls, 3);
+  });
+}
+for (const status of [401, 403, 429]) {
+  test(`GET ${status} body failure never retries`, async () => {
+    let calls = 0;
+    await assert.rejects(
+      githubRequest('/versions', {
+        env,
+        sleep: async () => assert.fail('must not retry'),
+        fetch: async () => {
+          calls++;
+          return {
+            status,
+            ok: false,
+            text: async () => {
+              throw new TypeError('body reset');
+            },
+          };
+        },
+      }),
+      /body reset/
+    );
+    assert.equal(calls, 1);
+  });
+}
+test('malformed successful JSON is not a transient body error', async () => {
+  let calls = 0;
+  await assert.rejects(
+    githubRequest('/versions', {
+      env,
+      sleep: async () => assert.fail('must not retry'),
+      fetch: async () => {
+        calls++;
+        return new Response('{', { status: 200 });
+      },
+    }),
+    SyntaxError
+  );
+  assert.equal(calls, 1);
+});
+test('exhausted successful body reset preserves cause and DELETE never retries', async () => {
+  for (const method of ['GET', 'DELETE']) {
+    const failure = new TypeError('body reset');
+    let calls = 0;
+    await assert.rejects(
+      githubRequest('/versions', {
+        env,
+        method,
+        sleep: async () => {},
+        fetch: async () => {
+          calls++;
+          return {
+            status: 200,
+            ok: true,
+            text: async () => {
+              throw failure;
+            },
+          };
+        },
+      }),
+      (error) => error === failure
+    );
+    assert.equal(calls, method === 'GET' ? 3 : 1);
+  }
+});

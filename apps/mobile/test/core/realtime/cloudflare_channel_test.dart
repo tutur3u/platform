@@ -304,6 +304,93 @@ void main() {
       }
     },
   );
+  test(
+    'refresh cleanup failure still reconnects with a fresh ticket',
+    () async {
+      final first = _Channel();
+      final second = _Channel();
+      final broken = _Sink();
+      final healthy = _Sink();
+      final firstStream = StreamController<dynamic>.broadcast();
+      final secondStream = StreamController<dynamic>.broadcast();
+      when(() => first.ready).thenAnswer((_) async {});
+      when(() => second.ready).thenAnswer((_) async {});
+      when(() => first.stream).thenAnswer((_) => firstStream.stream);
+      when(() => second.stream).thenAnswer((_) => secondStream.stream);
+      when(() => first.sink).thenReturn(broken);
+      when(() => second.sink).thenReturn(healthy);
+      when(
+        broken.close,
+      ).thenAnswer((_) async => throw StateError('close failed'));
+      when(healthy.close).thenAnswer((_) async {});
+      var tickets = 0;
+      var sockets = 0;
+      final reconnected = Completer<void>();
+      final channel = CloudflareChannel(
+        refreshInterval: const Duration(milliseconds: 20),
+        resolveTicket: () async {
+          if (++tickets == 2) throw StateError('refresh denied');
+          return {
+            'endpoint': 'wss://example.test/channels',
+            'token': 'ticket-$tickets',
+          };
+        },
+        connectSocket: (_) {
+          if (++sockets == 1) return first;
+          if (!reconnected.isCompleted) reconnected.complete();
+          return second;
+        },
+        onMessage: (_) {},
+      );
+      try {
+        await channel.connect();
+        await reconnected.future.timeout(const Duration(seconds: 2));
+        expect(tickets, greaterThanOrEqualTo(3));
+        expect(sockets, 2);
+      } finally {
+        await channel.close();
+        await firstStream.close();
+        await secondStream.close();
+      }
+    },
+  );
+  test('closing while refresh cleanup is pending fences reconnect', () async {
+    final socket = _Channel();
+    final sink = _Sink();
+    final stream = StreamController<dynamic>.broadcast();
+    final started = Completer<void>();
+    final cleanup = Completer<void>();
+    when(() => socket.ready).thenAnswer((_) async {});
+    when(() => socket.stream).thenAnswer((_) => stream.stream);
+    when(() => socket.sink).thenReturn(sink);
+    when(sink.close).thenAnswer((_) {
+      if (!started.isCompleted) started.complete();
+      return cleanup.future;
+    });
+    var tickets = 0;
+    final channel = CloudflareChannel(
+      refreshInterval: const Duration(milliseconds: 20),
+      resolveTicket: () async {
+        if (++tickets > 1) throw StateError('refresh denied');
+        return {'endpoint': 'wss://example.test/channels', 'token': 'initial'};
+      },
+      connectSocket: (_) => socket,
+      onMessage: (_) {},
+    );
+    try {
+      await channel.connect();
+      await started.future.timeout(const Duration(seconds: 2));
+      final closing = channel.close();
+      cleanup.complete();
+      await closing;
+      await Future<void>.delayed(const Duration(milliseconds: 650));
+      expect(tickets, 2);
+    } finally {
+      if (!cleanup.isCompleted) cleanup.complete();
+      await channel.close();
+      await stream.close();
+    }
+  });
   test('never sends a ticket to an insecure external endpoint', () async {
     var connections = 0;
     final channel = CloudflareChannel(

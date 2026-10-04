@@ -66,9 +66,20 @@ async function githubRequest(
       await sleepImpl(1000 * 2 ** (attempt - 1));
       continue;
     }
-    if (response.status === 404) return null;
+    if (response.status === 404 || response.status === 204) return null;
+    let body;
+    try {
+      body = await response.text();
+    } catch (error) {
+      const safeBodyRetry =
+        method === 'GET' &&
+        (response.ok || [500, 502, 503, 504].includes(response.status));
+      if (!safeBodyRetry || attempt === attempts) throw error;
+      await sleepImpl(1000 * 2 ** (attempt - 1));
+      continue;
+    }
     if (!response.ok) {
-      const detail = (await response.text()).trim().slice(0, 500);
+      const detail = body.trim().slice(0, 500);
       if (
         [500, 502, 503, 504].includes(response.status) &&
         attempt < attempts
@@ -82,7 +93,7 @@ async function githubRequest(
         }`
       );
     }
-    return response.status === 204 ? null : response.json();
+    return JSON.parse(body);
   }
 }
 

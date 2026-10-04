@@ -161,7 +161,9 @@ class _MeetCollaborationPageState extends State<MeetCollaborationPage> {
               initialUrlRequest: URLRequest(url: WebUri(_editor.toString())),
               initialSettings: InAppWebViewSettings(
                 useShouldOverrideUrlLoading: true,
-                mixedContentMode: MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,
+                // Chromium treats the private 127.0.0.1 preview as trustworthy;
+                // allowing arbitrary HTTP mixed content is unnecessary.
+                mixedContentMode: MixedContentMode.MIXED_CONTENT_NEVER_ALLOW,
                 allowFileAccess: false,
               ),
               onWebViewCreated: (controller) {

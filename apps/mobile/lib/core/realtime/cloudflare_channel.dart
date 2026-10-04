@@ -118,7 +118,12 @@ class CloudflareChannel {
       _scheduleRefresh(generation);
     } on Object {
       if (!_closed && generation == _generation) {
-        await _socket?.sink.close();
+        try {
+          await _socket?.sink.close();
+        } on Object {
+          // A failed cleanup must not suppress reauthorization and reconnect.
+        }
+        if (_closed || generation != _generation) return;
         _disconnected(generation);
       }
     }
