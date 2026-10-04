@@ -35,6 +35,7 @@ class FloatingDockRail extends StatelessWidget {
         child: Row(
           key: const ValueKey('floating-dock-visible-group'),
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Flexible(
               key: const ValueKey('floating-dock-navigation-slot'),
