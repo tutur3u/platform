@@ -334,3 +334,28 @@ allocates a production pool automatically.
 
 Regressions: first-class `apps/web/src/app/api/v1/devboxes/agents/routes.test.ts`,
 `apps/devbox-control/src/worker.test.ts`, and the SDK capability collector tests.
+
+
+### Guest process limits and runtime overhead
+
+Judge and Playground keep the configured `sandbox_pids` guest task ceiling
+(16–256) as an OCI soft and hard `RLIMIT_NPROC`. The non-root guest has no
+`CAP_SYS_ADMIN` or `CAP_SYS_RESOURCE`, so gVisor rejects extra guest tasks with
+`EAGAIN`. Docker's host PID cgroup also counts Sentry/gofer runtime threads; it
+is bounded separately to the guest ceiling plus a fixed 128-task runtime
+allowance, for a hard range of 144–384 host tasks per sandbox. This allowance is
+a bounded provisioned budget, not a measured runtime overhead or an increase to
+the guest ceiling. CPU, memory, privileges, network isolation, timeout, output,
+capacity, and cleanup controls remain unchanged. Readiness probes and actual
+Judge/Playground execution use the same process-budget helper.
+
+The pinned runsc release copies OCI rlimits in
+[boot/limits.go](https://github.com/google/gvisor/blob/release-20260928.0/runsc/boot/limits.go)
+and enforces guest process counts in
+[kernel.go](https://github.com/google/gvisor/blob/release-20260928.0/pkg/sentry/kernel/kernel.go).
+Host and guest task accounting differ as described by the
+[gVisor resource model](https://gvisor.dev/docs/architecture_guide/resources/).
+The disposable real acceptance must show the guest fork loop receives `EAGAIN`
+at its configured limit, cleans up every child, and still checkpoints and serves
+its warm preview. Helper unit tests prove argument construction only; passing
+exact-source real gVisor CI remains the runtime gate.

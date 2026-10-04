@@ -10,6 +10,7 @@ import {
   judgeLanguageBinary,
   minimumJudgeMemoryMb,
 } from './devbox-judge-languages';
+import { sandboxProcessArgs } from './devbox-sandbox-pids';
 
 export interface JudgeResourceLimits {
   max_cpu_percent: number;
@@ -166,7 +167,7 @@ export async function getJudgeReadiness(
           '--cpus=0.25',
           '--memory=128m',
           '--memory-swap=128m',
-          '--pids-limit=64',
+          ...sandboxProcessArgs(64),
           image,
           'sh',
           '-c',
@@ -305,7 +306,7 @@ export function createJudgeDockerArgs({
     `--cpus=${cpuQuota.toFixed(3)}`,
     `--memory=${memoryMb}m`,
     `--memory-swap=${memoryMb}m`,
-    `--pids-limit=${limits.sandbox_pids}`,
+    ...sandboxProcessArgs(limits.sandbox_pids),
     image,
     ...createJudgeLanguageCommand({ language, memoryMb, source }),
   ];
