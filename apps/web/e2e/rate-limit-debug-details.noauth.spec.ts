@@ -10,9 +10,22 @@ async function openAppPage(page: Page) {
     })
   );
 
+  // The login form is server-rendered: DOM visibility does not prove the
+  // client providers have installed the fetch interceptor. The existing OTP
+  // query runs after hydration, so wait for that mocked request before sending
+  // the request whose rate-limit handling this spec exercises.
+  const clientReady = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === '/api/v1/auth/otp/settings' &&
+      new URL(response.url()).searchParams.get('client') === 'web' &&
+      response.request().method() === 'GET' &&
+      response.status() === 200
+  );
+
   await page.goto(`/${DEFAULT_LOCALE}/login`, {
     waitUntil: 'domcontentloaded',
   });
+  await (await clientReady).finished();
 
   await expect(
     page.getByPlaceholder('Enter your email or username').first()

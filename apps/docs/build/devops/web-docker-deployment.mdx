@@ -644,6 +644,13 @@ uploads diagnostics, Playwright reports, and `apps/web/test-results` for every
 non-cancelled shard so traces and screenshots stay available when the job output
 is too short.
 
+Browser fixtures exercising client-installed behavior must wait for client
+readiness, not only server-rendered DOM visibility. The rate-limit debug-details
+spec waits for its existing mocked login OTP-settings query before sending the
+429 request; toast visibility, retry counts, and sensitive-query redaction remain
+required assertions. This avoids testing native fetch before client hydration
+has installed the interceptor.
+
 The Playwright global setup refuses non-local web origins and refuses Supabase
 origins outside `localhost`, `127.0.0.1`, or `host.docker.internal` on port
 `8001`. CI shards E2E with `--shard=x/4`; each shard gets its own Compose
