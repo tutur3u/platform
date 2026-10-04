@@ -18,5 +18,11 @@ pub(super) async fn dispatch_chunk_23(
         return Some(response);
     }
 
+    if let Some(response) =
+        workspaces_inventory_season_merges::handle_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
     None
 }

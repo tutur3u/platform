@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, RotateCcw, Save, Trash2 } from '@tuturuuu/icons';
+import { Plus, Trash2 } from '@tuturuuu/icons';
 import { updateTutoringPolicy } from '@tuturuuu/internal-api/tutoring';
 import {
   EASY_CENTER_TUTORING_POLICY,
@@ -18,6 +18,10 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import {
+  type PolicySectionId,
+  TutoringPolicySection,
+} from './tutoring-policy-section';
 import { TutoringWeakRules } from './tutoring-weak-rules';
 
 interface Props {
@@ -46,10 +50,41 @@ export function TutoringPolicyCard({
   const t = useTranslations('ws-tutoring');
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<TutoringPolicy>(policy);
-  const changed = JSON.stringify(draft) !== JSON.stringify(policy);
-  const valid = Boolean(parseTutoringPolicy(draft));
+  const [editing, setEditing] = useState<PolicySectionId | null>(null);
+  const sectionFields: Record<
+    Exclude<PolicySectionId, 'presets'>,
+    (keyof TutoringPolicy)[]
+  > = {
+    timing: NUMERIC_FIELDS.map(([field]) => field),
+    exceptions: ['timeRules'],
+    weak: ['weakContentReviewDays', 'groupExclusions'],
+    campuses: ['campusByGroupId'],
+    message: ['parentMessageTemplate'],
+  };
+  const submittedPolicy =
+    !editing || editing === 'presets'
+      ? draft
+      : {
+          ...policy,
+          ...Object.fromEntries(
+            sectionFields[editing].map((field) => [field, draft[field]])
+          ),
+          preset: 'custom' as const,
+        };
+  const changed =
+    editing === 'presets'
+      ? JSON.stringify(draft) !== JSON.stringify(policy)
+      : Boolean(
+          editing &&
+            sectionFields[editing].some(
+              (field) =>
+                JSON.stringify(draft[field]) !== JSON.stringify(policy[field])
+            )
+        );
+  const valid = Boolean(parseTutoringPolicy(submittedPolicy));
   const save = useMutation({
-    mutationFn: () => updateTutoringPolicy(wsId, draft),
+    mutationFn: (submitted: TutoringPolicy) =>
+      updateTutoringPolicy(wsId, submitted),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: ['tutoring-policy', wsId],
@@ -57,6 +92,7 @@ export function TutoringPolicyCard({
       void queryClient.invalidateQueries({
         queryKey: ['tutoring-queue', wsId],
       });
+      setEditing(null);
       toast.success(t('policy_saved'));
     },
     onError: () => toast.error(t('policy_save_failed')),
@@ -74,8 +110,27 @@ export function TutoringPolicyCard({
       ),
     });
 
+  const sectionProps = {
+    canConfigure,
+    changed,
+    editing,
+    groups,
+    policy,
+    pending: save.isPending,
+    valid,
+    onEdit: (id: PolicySectionId) => {
+      setDraft(policy);
+      setEditing(id);
+    },
+    onCancel: () => {
+      setDraft(policy);
+      setEditing(null);
+    },
+    onSave: () => save.mutate(submittedPolicy),
+  };
+
   return (
-    <section className="mx-auto max-w-5xl space-y-5">
+    <section className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="font-semibold text-lg tracking-tight">
@@ -85,30 +140,9 @@ export function TutoringPolicyCard({
             {t('policy_description')}
           </p>
         </div>
-        {canConfigure ? (
-          <div className="flex gap-2">
-            <Button
-              disabled={!changed || save.isPending}
-              onClick={() => setDraft(policy)}
-              size="sm"
-              variant="ghost"
-            >
-              <RotateCcw className="h-4 w-4" />
-              {t('policy_discard')}
-            </Button>
-            <Button
-              disabled={!changed || !valid || save.isPending}
-              onClick={() => save.mutate()}
-              size="sm"
-            >
-              <Save className="h-4 w-4" />
-              {t('policy_save')}
-            </Button>
-          </div>
-        ) : null}
       </div>
 
-      <div className="space-y-3 rounded-xl border bg-card p-4">
+      <TutoringPolicySection {...sectionProps} id="presets">
         <div>
           <h3 className="font-medium">{t('policy_presets')}</h3>
           <p className="text-muted-foreground text-sm">
@@ -149,9 +183,9 @@ export function TutoringPolicyCard({
         <p className="text-muted-foreground text-xs">
           {t('policy_review_note')}
         </p>
-      </div>
+      </TutoringPolicySection>
 
-      <div className="space-y-3 rounded-xl border bg-card p-4">
+      <TutoringPolicySection {...sectionProps} id="timing">
         <div>
           <h3 className="font-medium">{t('policy_timing')}</h3>
           <p className="text-muted-foreground text-sm">
@@ -176,9 +210,9 @@ export function TutoringPolicyCard({
             </div>
           ))}
         </div>
-      </div>
+      </TutoringPolicySection>
 
-      <div className="space-y-3 rounded-xl border bg-card p-4">
+      <TutoringPolicySection {...sectionProps} id="exceptions">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
             <h3 className="font-medium">{t('policy_exceptions')}</h3>
@@ -197,7 +231,7 @@ export function TutoringPolicyCard({
                       weekdays: [0, 6],
                       classStartTime: '08:00',
                       tutoringStartTime: '09:30',
-                      durationMinutes: 50,
+                      durationMinutes: 60,
                     },
                   ],
                 })
@@ -325,15 +359,17 @@ export function TutoringPolicyCard({
             </div>
           </div>
         ))}
-      </div>
+      </TutoringPolicySection>
 
-      <TutoringWeakRules
-        canConfigure={canConfigure}
-        onChange={edit}
-        policy={draft}
-      />
+      <TutoringPolicySection {...sectionProps} id="weak">
+        <TutoringWeakRules
+          canConfigure={canConfigure}
+          onChange={edit}
+          policy={draft}
+        />
+      </TutoringPolicySection>
 
-      <div className="space-y-3 rounded-xl border bg-card p-4">
+      <TutoringPolicySection {...sectionProps} id="campuses">
         <div>
           <h3 className="font-medium">{t('policy_campuses')}</h3>
           <p className="text-muted-foreground text-sm">
@@ -400,9 +436,9 @@ export function TutoringPolicyCard({
             selected=""
           />
         ) : null}
-      </div>
+      </TutoringPolicySection>
 
-      <div className="space-y-2 rounded-xl border bg-card p-4">
+      <TutoringPolicySection {...sectionProps} id="message">
         <Label htmlFor="policy-parent-template">
           {t('policy_parent_template')}
         </Label>
@@ -418,8 +454,8 @@ export function TutoringPolicyCard({
           rows={4}
           value={draft.parentMessageTemplate}
         />
-      </div>
-      {!valid ? (
+      </TutoringPolicySection>
+      {editing && !valid ? (
         <p className="text-destructive text-sm" role="alert">
           {t('policy_invalid')}
         </p>

@@ -596,7 +596,7 @@ class AssistantRepository {
         creditSource: _chatCreditSource(creditSource),
         creditWsId: creditWsId,
         modelId: modelId,
-        thinkingMode: _chatThinkingMode(thinkingMode),
+        thinkingMode: ChatAiThinkingMode.thinking,
       );
 
       var assistantStarted = false;
@@ -716,7 +716,7 @@ class AssistantRepository {
       'messages': messages.map((message) => message.toJson()).toList(),
       'isMiraMode': true,
       'timezone': timezone,
-      'thinkingMode': thinkingMode.name,
+      'thinkingMode': AssistantThinkingMode.thinking.name,
       'creditSource': creditSource.name,
       if (creditWsId != null) 'creditWsId': creditWsId,
     }, accept: 'text/event-stream');
@@ -980,13 +980,6 @@ class AssistantRepository {
     return switch (source) {
       AssistantCreditSource.personal => ChatAiCreditSource.personal,
       AssistantCreditSource.workspace => ChatAiCreditSource.workspace,
-    };
-  }
-
-  ChatAiThinkingMode _chatThinkingMode(AssistantThinkingMode mode) {
-    return switch (mode) {
-      AssistantThinkingMode.fast => ChatAiThinkingMode.fast,
-      AssistantThinkingMode.thinking => ChatAiThinkingMode.thinking,
     };
   }
 

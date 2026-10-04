@@ -8,6 +8,7 @@ export const INVENTORY_SQL_FIXTURES = [
   'inventory-merge-restoration.sql',
   'inventory-merge-readiness.sql',
   'inventory-merge-lock-bounds.sql',
+  'inventory-season-merge.sql',
 ];
 
 export function hasCompletePassingTap(tap) {
@@ -65,16 +66,22 @@ export function runInventoryContractTests(
   }
   // The .mjs executor validates owned metadata, exact repository and container,
   // then opens three clients to prove independent concurrent writer behavior.
-  execute(
-    process.execPath,
-    [
-      path.resolve(
-        metadata.repositoryRoot,
-        'apps/database/supabase/tests/inventory-merge-concurrency.mjs'
-      ),
-      metadata.disposableRoot,
-    ],
-    { cwd: metadata.repositoryRoot, stdio: 'inherit', timeout: 120000 }
-  );
+  for (const executor of [
+    'inventory-merge-concurrency.mjs',
+    'inventory-season-merge-concurrency.mjs',
+  ]) {
+    execute(
+      process.execPath,
+      [
+        path.resolve(
+          metadata.repositoryRoot,
+          'apps/database/supabase/tests',
+          executor
+        ),
+        metadata.disposableRoot,
+      ],
+      { cwd: metadata.repositoryRoot, stdio: 'inherit', timeout: 120000 }
+    );
+  }
   return { code: 0 };
 }

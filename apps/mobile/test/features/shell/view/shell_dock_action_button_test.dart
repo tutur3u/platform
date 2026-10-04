@@ -49,11 +49,8 @@ void main() {
         );
         final tooltip = tester.widget<Tooltip>(find.byType(Tooltip));
         expect(tooltip.excludeFromSemantics, isTrue);
-        if (width >= 600) {
-          final text = tester.widget<Text>(find.text(label));
-          expect(text.maxLines, 1);
-          expect(text.overflow, TextOverflow.ellipsis);
-        }
+        expect(find.text(label), findsNothing);
+        expect(tester.getSize(find.byType(FilledButton)).width, 48);
         semantics.dispose();
       });
     }

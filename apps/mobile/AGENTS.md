@@ -25,10 +25,11 @@ Flutter/Dart toolchain and app package configuration.
   rows currently lack a reliable creator and must be labeled as workspace
   activity. Keep note content and private activity out of shared profile reads.
 - Shell-contained settings and detail screens inherit the shell background and
-  use its single top navbar title/back control. Never add an inner AppBar/body
+  use its single top navbar title and actions. Never put a Back button in a
+  top navbar: the floating bottom navbar owns in-app Back navigation. Never add an inner AppBar/body
   topbar or a second top SafeArea. Include shell-provided bottom MediaQuery
   padding in scroll content for floating-dock clearance. Full-screen forms and
-  system-owned flows open above the shell. Test top-navbar, Android system and
+  system-owned flows open above the shell. Test title geometry, Android system and
   dock back, including direct deep links and enlarged text.
 - Use `AppHaptics` for semantic pickup, selection, drop, success, and warning
   feedback. Respect the persisted Preferences toggle and throttle repeated
