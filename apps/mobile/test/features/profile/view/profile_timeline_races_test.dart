@@ -162,18 +162,38 @@ void main() {
     expect(_limitedTooltip(), findsNothing);
     expect(tester.takeException(), isNull);
   });
-  testWidgets('partial refresh retains unavailable cached source rows', (
+  testWidgets('partial refresh uses authoritative retained-provider rows', (
     tester,
   ) async {
     repository.cache = snapshot('Retained task');
     await mount(tester);
-    repository.requests.single.complete(snapshot('New task', partial: true));
+    repository.requests.single.complete((
+      items: [
+        ...snapshot('Retained task').items,
+        ...snapshot('New task').items,
+      ],
+      partial: true,
+      limited: false,
+    ));
     await tester.pumpAndSettle();
     await tester.drainShadToastTimers();
     await tester.pumpAndSettle();
     expect(find.text('Retained task'), findsOneWidget);
     expect(find.text('New task'), findsOneWidget);
     expect(find.text('Retry'), findsNothing);
+  });
+
+  testWidgets('partial refresh does not restore pruned provider rows', (
+    tester,
+  ) async {
+    repository.cache = snapshot('Removed calendar row');
+    await mount(tester);
+    repository.requests.single.complete(snapshot('New task', partial: true));
+    await tester.pumpAndSettle();
+    await tester.drainShadToastTimers();
+    await tester.pumpAndSettle();
+    expect(find.text('Removed calendar row'), findsNothing);
+    expect(find.text('New task'), findsOneWidget);
   });
 
   testWidgets('workspace switch rejects a delayed old cache read', (

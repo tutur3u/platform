@@ -137,6 +137,7 @@ describe('mobile profile activity', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
       partial: true,
+      failedSources: ['notes'],
       items: [
         { id: 'task-1', type: 'task' },
         { id: 'transaction-1', type: 'transaction' },
@@ -195,6 +196,7 @@ describe('mobile profile activity', () => {
       expect(adminFrom).not.toHaveBeenCalledWith('workspace_calendar_events');
       expect(await response.json()).toMatchObject({
         partial: Boolean(result.error),
+        failedSources: result.error ? ['events'] : [],
       });
     }
   });

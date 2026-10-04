@@ -183,6 +183,7 @@ export async function GET(
       until,
       nextPage: hasMore && page < 999 ? page + 1 : null,
       partial: failedSources.length > 0,
+      failedSources: failedSources.map(([source]) => source),
       limited: [tasks, transactions, notes, events].some(
         (result) => (result.data?.length ?? 0) === 200
       ),

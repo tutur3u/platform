@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -13,6 +14,8 @@ import 'package:mocktail/mocktail.dart';
 class _Storage extends Mock implements FlutterSecureStorage {}
 
 class _Api extends ApiClient {
+  @override
+  void checkUser(String userId) {}
   @override
   Future<Map<String, dynamic>> getJson(
     String path, {
@@ -33,6 +36,8 @@ class _Api extends ApiClient {
 }
 
 class _PageApi extends ApiClient {
+  @override
+  void checkUser(String userId) {}
   final paths = <String>[];
   bool partial = false;
   @override
@@ -51,6 +56,38 @@ class _PageApi extends ApiClient {
     };
   }
 }
+
+class _ScenarioApi extends _Api {
+  final responses = <Map<String, dynamic>>[];
+  String actor = 'owner';
+  Completer<Map<String, dynamic>>? pending;
+  @override
+  void checkUser(String userId) {
+    if (actor != userId) throw const FormatException('Account changed');
+  }
+
+  @override
+  Future<Map<String, dynamic>> getJson(
+    String path, {
+    bool requiresAuth = true,
+    Duration timeout = const Duration(seconds: 30),
+  }) async => pending != null ? await pending!.future : responses.removeAt(0);
+}
+
+Map<String, dynamic> _item(String id, String type) => {
+  'id': id,
+  'type': type,
+  'createdAt': '2026-09-30T10:00:00Z',
+  'scope': type == 'calendar' ? 'workspace' : 'personal',
+};
+Map<String, dynamic> _page(List<Map<String, dynamic>> items, {int? nextPage}) =>
+    {
+      'items': items,
+      'partial': false,
+      'limited': nextPage != null,
+      'until': '2026-10-04T07:00:00.000Z',
+      'nextPage': nextPage,
+    };
 
 void main() {
   late Directory directory;
@@ -121,6 +158,120 @@ void main() {
     expect(paged.nextPage('personal', 'owner'), 2);
     expect(paged.nextPage('other', 'owner'), isNull);
     paged.dispose();
+  });
+
+  test('partial refresh retains only failed providers after reopen', () async {
+    final api = _ScenarioApi();
+    repository.dispose();
+    repository = ProfileTimelineRepository(apiClient: api, cacheStore: store);
+    api.responses.add(
+      _page([
+        _item('old-task', 'task'),
+        _item('old-event', 'calendar'),
+        _item('old-note', 'note'),
+      ]),
+    );
+    await repository.refresh('personal', 'owner');
+    api.responses.add({
+      ..._page([_item('new-task', 'task')]),
+      'partial': true,
+      'failedSources': ['events'],
+    });
+    final fresh = await repository.refresh('personal', 'owner');
+    expect(fresh.items.map((item) => item.id), ['old-event', 'new-task']);
+    expect(repository.nextPage('personal', 'owner'), isNull);
+    await reopen();
+    final retained = await repository.cached('personal', 'owner');
+    expect(retained!.items.map((item) => item.id), ['old-event', 'new-task']);
+    expect(retained.partial, isTrue);
+    expect(await repository.cached('personal', 'other-owner'), isNull);
+    expect(await repository.cached('other-workspace', 'owner'), isNull);
+  });
+
+  test('partial refresh prunes Calendar when only Notes failed', () async {
+    final api = _ScenarioApi();
+    repository.dispose();
+    repository = ProfileTimelineRepository(apiClient: api, cacheStore: store);
+    api.responses.add(
+      _page([_item('old-event', 'calendar'), _item('old-note', 'note')]),
+    );
+    await repository.refresh('personal', 'owner');
+    // Empty/omitted Calendar is successful, not an unavailable source.
+    api.responses.add({
+      ..._page([_item('new-task', 'task')]),
+      'partial': true,
+      'failedSources': ['notes'],
+    });
+    await repository.refresh('personal', 'owner');
+    await reopen();
+    final retained = await repository.cached('personal', 'owner');
+    expect(retained!.items.map((item) => item.id), ['old-note', 'new-task']);
+    expect(retained.partial, isTrue);
+  });
+
+  test('loaded pages persist deduplicated history after reopen', () async {
+    final api = _ScenarioApi();
+    repository.dispose();
+    repository = ProfileTimelineRepository(apiClient: api, cacheStore: store);
+    api.responses.add(_page([_item('first', 'task')], nextPage: 1));
+    await repository.refresh('personal', 'owner');
+    api.responses.add(
+      _page([
+        {..._item('first', 'task'), 'title': 'updated'},
+        _item('second', 'note'),
+      ]),
+    );
+    await repository.loadMore('personal', 'owner', 1);
+    await reopen();
+    final retained = await repository.cached('personal', 'owner');
+    expect(retained!.items.map((item) => item.id), ['first', 'second']);
+    expect(retained.items.first.title, 'updated');
+    expect(retained.partial, isFalse);
+    expect(retained.limited, isFalse);
+    expect(await repository.cached('personal', 'other-owner'), isNull);
+  });
+
+  test(
+    'account switch during paging cannot overwrite retained history',
+    () async {
+      final api = _ScenarioApi();
+      repository.dispose();
+      repository = ProfileTimelineRepository(apiClient: api, cacheStore: store);
+      api.responses.add(_page([_item('first', 'task')], nextPage: 1));
+      await repository.refresh('personal', 'owner');
+      api.pending = Completer<Map<String, dynamic>>();
+      final loading = repository.loadMore('personal', 'owner', 1);
+      api.actor = 'other-owner';
+      api.pending!.complete(_page([_item('stale', 'note')]));
+      await expectLater(loading, throwsFormatException);
+      await reopen();
+      expect(
+        (await repository.cached('personal', 'owner'))!.items.single.id,
+        'first',
+      );
+      expect(await repository.cached('personal', 'other-owner'), isNull);
+    },
+  );
+
+  test('refresh fences a delayed prior page before durable writes', () async {
+    final api = _ScenarioApi();
+    repository.dispose();
+    repository = ProfileTimelineRepository(apiClient: api, cacheStore: store);
+    api.responses.add(_page([_item('first', 'task')], nextPage: 1));
+    await repository.refresh('personal', 'owner');
+    final oldPage = Completer<Map<String, dynamic>>();
+    api.pending = oldPage;
+    final loading = repository.loadMore('personal', 'owner', 1);
+    api.pending = null;
+    api.responses.add(_page([_item('fresh-session', 'task')]));
+    await repository.refresh('personal', 'owner');
+    oldPage.complete(_page([_item('stale-page', 'note')]));
+    await expectLater(loading, throwsFormatException);
+    await reopen();
+    expect(
+      (await repository.cached('personal', 'owner'))!.items.single.id,
+      'fresh-session',
+    );
   });
 
   test(

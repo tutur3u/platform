@@ -119,12 +119,7 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
       final fresh = await _repository.refresh(workspaceId, userId);
       if (mounted && request == _request) {
         setState(() {
-          _items = fresh.partial
-              ? {
-                  for (final item in [...?_items, ...fresh.items])
-                    '${item.type}:${item.id}': item,
-                }.values.toList()
-              : fresh.items;
+          _items = fresh.items;
           _partial = fresh.partial;
           _limited = fresh.limited;
           _failed = false;

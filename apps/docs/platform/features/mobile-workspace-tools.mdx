@@ -1021,8 +1021,12 @@ continuation and keeps loaded rows. No persistent warning, retry row or completi
 footer occupies the Timeline; a failure notice automatically dismisses after five
 seconds. A capped or partial result must not claim an empty complete history.
 
-The initial snapshot is encrypted and actor/personal-workspace scoped, shown before
-revalidation. Additional pages are session data. Missing, ambiguous or unverified
+The loaded snapshot is encrypted and actor/personal-workspace scoped, shown before
+revalidation. Successful pages persist merged, deduplicated history. Partial
+refreshes retain stored rows from failed providers while replacing successful
+providers, with truthful partial flags; they do not retain newly permission-denied
+Calendar rows. Older partial responses without source metadata retain their
+stored rows as explicitly incomplete. Missing, ambiguous or unverified
 personal membership fails closed; neither Overview nor Timeline follows the
 selected team or tracked-time sharing preference. An unreadable local snapshot
 does not block refresh. Regression coverage includes
