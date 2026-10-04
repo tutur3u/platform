@@ -36,6 +36,7 @@ export function Structure({
   const pathname = usePathname();
   const isCodingLab =
     pathname.endsWith('/coding') ||
+    /\/programming\/playgrounds\/[0-9a-f-]{36}$/iu.test(pathname) ||
     /\/programming\/problems\/[0-9a-f-]{36}$/iu.test(pathname);
   const activeWorkspace = bootstrap.workspaces.find((item) => item.id === wsId);
   const hasLinkedStudents = bootstrap.linkedStudents.some(

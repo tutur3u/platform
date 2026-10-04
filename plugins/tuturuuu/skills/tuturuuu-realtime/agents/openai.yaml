@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tuturuuu Realtime"
+  short_description: "Build shared rooms, presence and collaboration"
+  default_prompt: "Implement a scoped realtime feature with durable state and reconnect recovery."

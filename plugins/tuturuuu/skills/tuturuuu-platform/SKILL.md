@@ -27,3 +27,6 @@ when that operation is part of the request. Do not load them for unrelated code 
 Run focused checks, then `bun check` for TS/JS or root-script/config changes.
 Build the affected app for route/page/dependency changes because `bun check` does
 not compile Next routes. Production schema pushes remain user-only.
+
+For shared rooms, cursors, collaborative editing or realtime checkpoint services,
+use `$tuturuuu-realtime` and its focused implementation reference.

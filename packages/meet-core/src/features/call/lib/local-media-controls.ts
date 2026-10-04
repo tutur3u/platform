@@ -247,14 +247,15 @@ export function createLocalMediaControls({
           'NotSupportedError'
         );
       }
-      const display = await navigator.mediaDevices
-        .getDisplayMedia(SCREEN_CAPTURE_OPTIONS)
-        .catch((error: unknown) => {
-          if (error instanceof Error && error.name === 'NotAllowedError')
-            return null;
-          throw error;
+      const display = await navigator.mediaDevices.getDisplayMedia(
+        SCREEN_CAPTURE_OPTIONS
+      );
+      if (!display.getVideoTracks().length) {
+        display.getTracks().forEach((track) => {
+          track.stop();
         });
-      if (!display) return;
+        throw new DOMException('No screen track', 'NotSupportedError');
+      }
       if (!activeRef.current) {
         display.getTracks().forEach((track) => {
           track.stop();

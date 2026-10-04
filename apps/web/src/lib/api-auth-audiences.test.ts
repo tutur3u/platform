@@ -1,7 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { getDefaultAppSessionVerificationOptions } from './api-auth-audiences';
+import {
+  ALL_SATELLITE_APP_SESSION_TARGETS,
+  getDefaultAppSessionVerificationOptions,
+} from './api-auth-audiences';
 
 describe('shared app-session API audiences', () => {
+  it('allows shared realtime identity/tickets across satellites while keeping checkpoints service-only', () => {
+    for (const path of [
+      '/api/v1/realtime/channels',
+      '/api/v1/realtime/session',
+    ]) {
+      expect(getDefaultAppSessionVerificationOptions(path).targetApp).toEqual(
+        ALL_SATELLITE_APP_SESSION_TARGETS
+      );
+    }
+    expect(
+      getDefaultAppSessionVerificationOptions(
+        '/api/v1/realtime/documents/checkpoint'
+      ).targetApp
+    ).toBe('platform');
+  });
   it('includes Meet in current-user API access', () => {
     expect(
       getDefaultAppSessionVerificationOptions(

@@ -64,7 +64,7 @@ function warnOnce() {
   console.warn(
     '[@tuturuuu/supabase] `next/client` is deprecated for CRUD/storage access. ' +
       'Use @tuturuuu/internal-api for data access and prefer ' +
-      '`@tuturuuu/supabase/next/auth-browser` or `@tuturuuu/supabase/next/realtime-browser` ' +
+      '`@tuturuuu/supabase/next/auth-browser` ' +
       'for temporary browser exceptions.'
   );
 }
@@ -74,7 +74,7 @@ function assertDeprecatedBrowserClientAllowed() {
     throw new Error(
       'Deprecated Supabase browser client access is disabled. ' +
         'Set SUPABASE_CLIENT_FORCE_BYPASS=true only for temporary compatibility, ' +
-        'or migrate to @tuturuuu/internal-api / explicit auth-browser and realtime-browser modules.'
+        'or migrate to @tuturuuu/internal-api / explicit auth-browser modules.'
     );
   }
 
@@ -85,7 +85,7 @@ function assertDeprecatedBrowserClientAllowed() {
 // This is intentional for cases where the database schema type is determined at runtime.
 /**
  * @deprecated Use `@tuturuuu/internal-api` for CRUD/storage, or
- * `@tuturuuu/supabase/next/realtime-browser` for temporary realtime exceptions.
+ * `@tuturuuu/internal-api/realtime` for Cloudflare realtime.
  */
 export function createDynamicClient(
   config?: BrowserSupabaseClientConfig

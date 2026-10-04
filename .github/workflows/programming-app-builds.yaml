@@ -1,0 +1,56 @@
+name: Programming application builds
+on:
+  pull_request:
+    paths:
+      - 'apps/learn/**'
+      - 'apps/infrastructure/**'
+      - 'apps/web/**'
+      - 'packages/**'
+      - 'bun.lock'
+      - 'turbo.json'
+      - 'tuturuuu.ci.ts'
+      - '.github/workflows/programming-app-builds.yaml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: programming-app-builds-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  check-ci:
+    permissions:
+      contents: read
+      deployments: read
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: programming-app-builds.yaml
+  build:
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [web, learn, infrastructure]
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://programming-ci.supabase.invalid
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_programming_ci_placeholder
+      NEXT_PUBLIC_APP_URL: https://programming-ci.invalid
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      NODE_OPTIONS: --max-old-space-size=8192
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Build application and shared dependencies without deployment
+        run: bun turbo:local run build --concurrency=2 --filter=@tuturuuu/${{ matrix.app }}

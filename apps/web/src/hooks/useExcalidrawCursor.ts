@@ -1,5 +1,5 @@
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { RealtimeChannel } from '@tuturuuu/supabase/next/realtime';
+import type { RealtimeChannel } from '@tuturuuu/internal-api/realtime';
+import { createRealtimeClient } from '@tuturuuu/internal-api/realtime';
 import { usePageVisibility } from '@tuturuuu/ui/hooks/use-page-visibility';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -314,7 +314,7 @@ export function useExcalidrawCursor({
                   // Ignore errors during cleanup
                 }
               }
-              createClient().removeChannel(channel);
+              createRealtimeClient().removeChannel(channel);
               channelRef.current = null;
             }
           }, 100);
@@ -324,15 +324,15 @@ export function useExcalidrawCursor({
 
     // ── Fresh creation path ─────────────────────────────────────────
     isCleanedUpRef.current = false;
-    const supabase = createClient();
+    const realtime = createRealtimeClient();
 
     // Clean up stale channel from a previous config if present
     if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
+      realtime.removeChannel(channelRef.current);
       channelRef.current = null;
     }
 
-    const channel = supabase.channel(`${channelName}-cursors`, {
+    const channel = realtime.channel(`${channelName}-cursors`, {
       config: {
         broadcast: {
           self: false,
@@ -476,7 +476,7 @@ export function useExcalidrawCursor({
               // Ignore errors during cleanup
             }
           }
-          supabase.removeChannel(ch);
+          realtime.removeChannel(ch);
           channelRef.current = null;
         }
       }, 100);

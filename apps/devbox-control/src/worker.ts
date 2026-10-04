@@ -157,6 +157,7 @@ function isCapabilities(value: unknown): value is Record<string, unknown> {
         ![
           'cli',
           'judge',
+          'playground',
           'os',
           'reportedAt',
           'resources',
@@ -182,6 +183,33 @@ function isCapabilities(value: unknown): value is Record<string, unknown> {
       item.reason !== null &&
       item.reason !== undefined &&
       (typeof item.reason !== 'string' || item.reason.length > 500)
+    )
+      return false;
+  }
+  const playground = data.playground;
+  if (playground !== undefined) {
+    if (
+      !playground ||
+      typeof playground !== 'object' ||
+      Array.isArray(playground)
+    )
+      return false;
+    const item = playground as Record<string, unknown>;
+    if (
+      Object.keys(item).some(
+        (key) => !['ready', 'languages', 'environments'].includes(key)
+      ) ||
+      typeof item.ready !== 'boolean' ||
+      !Array.isArray(item.languages) ||
+      item.languages.length > 11 ||
+      item.languages.some(
+        (lang) =>
+          typeof lang !== 'string' || (!LANGUAGES.has(lang) && lang !== 'shell')
+      ) ||
+      typeof item.environments !== 'number' ||
+      !Number.isInteger(item.environments) ||
+      item.environments < 0 ||
+      item.environments > 8
     )
       return false;
   }

@@ -10289,6 +10289,18 @@
       "title": "Ngày Phụ nữ Việt Nam 2025: Phụ nữ trong công nghệ"
     }
   },
+  "meet": {
+    "collaboration": {
+      "checkpoint_conflict": "Tài liệu không gian làm việc đã được sửa ở nơi khác. Nội dung cộng tác vẫn được giữ trong phòng; bản lưu tại không gian làm việc đang xung đột.",
+      "checkpoint_deferred": "Bản lưu tại không gian làm việc đang bị chậm. Nội dung cộng tác vẫn được giữ trong phòng trong khi hệ thống thử lưu lại.",
+      "connecting": "Đang kết nối tài liệu chung…",
+      "document": "Tài liệu chung",
+      "live": "Trực tiếp · đồng bộ tự động",
+      "placeholder": "Cùng nhau viết…",
+      "reconnecting": "Đang kết nối lại…",
+      "unavailable": "Tài liệu chung hiện không khả dụng."
+    }
+  },
   "meet-together": {
     "agenda": "Nội dung cuộc họp",
     "agenda_content_placeholder": "Thêm các mục nghị sự, điểm thảo luận và mục tiêu cuộc họp...",
@@ -14916,6 +14928,51 @@
         "title": "Nơi việc thủ công thường trốn"
       }
     }
+  },
+  "programmingPlayground": {
+    "accessError": "Không thể truy cập lập trình. Kiểm tra quyền tài khoản hoặc phòng.",
+    "accountId": "ID tài khoản cộng tác",
+    "addFile": "Thêm tệp",
+    "backgroundSave": "Thay đổi được lưu trong nền",
+    "benefitHint": "Quyền lợi tài khoản được quản lý trong Infrastructure.",
+    "chooseResource": "Chủ phòng có thể mở bài tập Learn hoặc playground cho cuộc họp này.",
+    "close": "Đóng phòng lập trình",
+    "coding": "Lập trình cùng nhau",
+    "command": "Lệnh",
+    "connecting": "Đang kết nối…",
+    "console": "Bảng điều khiển",
+    "create": "Tạo dự án",
+    "description": "Xây dựng và chạy dự án trên môi trường được quản lý. Tệp thuộc Tuturuuu Drive cá nhân của bạn.",
+    "driveHint": "Lưu nền ghi các tệp đã thay đổi vào Drive cá nhân.",
+    "empty": "Dự án của bạn sẽ xuất hiện ở đây.",
+    "failed": "Yêu cầu thất bại. Thay đổi chưa lưu vẫn còn trong phòng. Hãy thử lại.",
+    "files": "Tệp dự án",
+    "invite": "Cho phép chỉnh sửa",
+    "language": "Ngôn ngữ",
+    "name": "Tên dự án",
+    "newFile": "Đường dẫn tệp mới",
+    "noRunners": "Chưa có môi trường ngôn ngữ được quản lý sẵn sàng.",
+    "offline": "Đang kết nối lại…",
+    "open": "Mở",
+    "paidRequired": "Cần tài khoản trả phí hoặc quyền lợi playground",
+    "playground": "Playground được lưu trữ",
+    "preview": "Xem trước riêng tư",
+    "previewPort": "Cổng xem trước",
+    "problem": "Bài tập Learn",
+    "resource": "Tài nguyên lập trình",
+    "resourceId": "ID bài tập hoặc dự án",
+    "revoke": "Thu hồi quyền",
+    "run": "Chạy",
+    "running": "Đang chạy…",
+    "save": "Lưu vào Drive",
+    "saved": "Đã lưu vào Drive",
+    "saveFailed": "Lưu Drive thất bại. Giữ phòng mở và thử lại.",
+    "share": "Mời cộng tác",
+    "shared": "Đã cập nhật quyền cộng tác.",
+    "stdin": "Đầu vào chuẩn",
+    "stop": "Dừng môi trường",
+    "test": "Chạy kiểm thử công khai",
+    "title": "Playground được lưu trữ"
   },
   "promotion-data-table": {
     "code": "Mã giảm giá",

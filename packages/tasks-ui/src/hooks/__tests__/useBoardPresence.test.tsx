@@ -3,8 +3,8 @@
  */
 
 import { act, renderHook } from '@testing-library/react';
+import { createRealtimeClient } from '@tuturuuu/internal-api/realtime';
 import { getCurrentUserProfile } from '@tuturuuu/internal-api/users';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBoardPresence } from '../useBoardPresence';
 
@@ -18,7 +18,7 @@ type MockChannel = {
   untrack: ReturnType<typeof vi.fn>;
 };
 
-type MockSupabaseClient = {
+type MockRealtimeClient = {
   auth: {
     getUser: ReturnType<typeof vi.fn>;
   };
@@ -27,12 +27,12 @@ type MockSupabaseClient = {
 };
 
 type MockCreateClientFn = {
-  (): MockSupabaseClient;
-  mockReturnValue: (value: MockSupabaseClient) => void;
+  (): MockRealtimeClient;
+  mockReturnValue: (value: MockRealtimeClient) => void;
 };
 
-vi.mock('@tuturuuu/supabase/next/client', () => ({
-  createClient: vi.fn(),
+vi.mock('@tuturuuu/internal-api/realtime', () => ({
+  createRealtimeClient: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/internal-api/users', () => ({
@@ -45,7 +45,7 @@ vi.mock('@tuturuuu/utils/constants', () => ({
 
 describe('useBoardPresence', () => {
   let mockChannel: MockChannel;
-  let mockClient: MockSupabaseClient;
+  let mockClient: MockRealtimeClient;
   let presenceListeners: Map<string, PresenceListener>;
 
   beforeEach(() => {
@@ -90,7 +90,9 @@ describe('useBoardPresence', () => {
       removeChannel: vi.fn(() => Promise.resolve()),
     };
 
-    (createClient as unknown as MockCreateClientFn).mockReturnValue(mockClient);
+    (createRealtimeClient as unknown as MockCreateClientFn).mockReturnValue(
+      mockClient
+    );
     vi.mocked(getCurrentUserProfile).mockResolvedValue({
       avatar_url: 'https://example.com/ada.png',
       created_at: '2026-01-01T00:00:00.000Z',

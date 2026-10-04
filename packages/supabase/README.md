@@ -119,39 +119,14 @@ const user = await getUser();
 const user = await getCurrentUser();
 ```
 
-### Realtime Subscriptions
+### Realtime transport
 
-Subscribe to realtime database changes:
-
-```typescript
-'use client';
-
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { useEffect } from 'react';
-
-export default function RealtimeComponent() {
-  useEffect(() => {
-    const supabase = createClient();
-
-    const channel = supabase
-      .channel('table-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'your_table'
-      }, (payload) => {
-        console.log('Change received!', payload);
-      })
-      .subscribe();
-
-    return () => {
-      channel.unsubscribe();
-    };
-  }, []);
-
-  return <div>{/* Your component */}</div>;
-}
-```
+Supabase owns authentication, database queries and storage. Application realtime
+uses Cloudflare Durable Objects through `@tuturuuu/internal-api/realtime` and the
+shared `@tuturuuu/realtime` protocols. Do not use database-change subscriptions or
+the Supabase channel factory for application features. Resource authorization,
+ticket refresh, reconnect recovery and durable collaborative documents are
+covered in the programming realtime runbook under `apps/docs/build/devops`.
 
 ### API Proxy
 
@@ -258,15 +233,9 @@ const supabase = createClient<Database>();
    }
    ```
 
-4. **Realtime Cleanup**: Always unsubscribe from realtime channels to prevent memory leaks:
-
-   ```typescript
-   useEffect(() => {
-     const channel = supabase.channel('my-channel');
-     // ... subscription setup
-     return () => channel.unsubscribe();
-   }, []);
-   ```
+4. **Realtime Cleanup**: Own Cloudflare channel lifetimes in the feature's
+   subscription hook and call `removeChannel` or `unsubscribe` on cleanup.
+   Keep auth/database clients separate from realtime transports.
 
 ## Development
 

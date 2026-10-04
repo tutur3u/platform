@@ -8497,7 +8497,8 @@
     "timezones": "Múi giờ",
     "translations": "Bản dịch",
     "users": "Người dùng",
-    "workspaces": "Không gian làm việc"
+    "workspaces": "Không gian làm việc",
+    "account_benefits": "Quyền lợi tài khoản"
   },
   "integrations-page": {
     "sepay-connected-description": "SePay đã được kết nối thành công. Việc đồng bộ tài khoản ngân hàng và cấu hình webhook đã sẵn sàng để kiểm tra trong không gian làm việc này.",
@@ -23238,5 +23239,32 @@
     "unnamed_wallet": "Ví không tên",
     "wallet": "Phương thức thanh toán",
     "wallet_deleted": "Đã xóa ví thành công"
+  },
+  "accountBenefits": {
+    "title": "Quyền lợi tài khoản",
+    "description": "Cấp tính năng, quyền truy cập sớm và tín dụng AI bổ sung kèm lý do được ghi nhận.",
+    "userId": "ID tài khoản",
+    "benefit": "Loại quyền lợi",
+    "feature": "Quyền tính năng",
+    "earlyAccess": "Truy cập sớm",
+    "credits": "Tín dụng AI bổ sung",
+    "key": "Mã quyền lợi",
+    "amount": "Số tín dụng",
+    "expiry": "Hết hạn lúc (tùy chọn)",
+    "reason": "Lý do",
+    "grant": "Cấp quyền lợi",
+    "failed": "Yêu cầu quyền lợi thất bại. Hãy thử lại.",
+    "revoked": "Đã thu hồi",
+    "expired": "Đã hết hạn",
+    "active": "Đang có hiệu lực",
+    "revoke": "Thu hồi"
+  },
+  "navigation": {
+    "account-benefits": "Quyền lợi tài khoản"
+  },
+  "devboxes": {
+    "features": {
+      "playground": "Playground được lưu trữ"
+    }
   }
 }

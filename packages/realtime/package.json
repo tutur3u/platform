@@ -17,13 +17,22 @@
     "./hive": "./src/hive/index.ts",
     "./hive/yjs": "./src/hive/yjs.ts",
     "./meet": "./src/meet/index.ts",
-    "./meet/token": "./src/meet/token.ts"
+    "./meet/token": "./src/meet/token.ts",
+    "./core/token": "./src/core/token.ts",
+    "./collaboration": "./src/collaboration/index.ts",
+    "./channels": "./src/channels/index.ts",
+    "./channels/server": "./src/channels/server.ts",
+    "./documents": "./src/documents/index.ts",
+    "./documents/server": "./src/documents/server.ts"
   },
   "packageManager": "bun@1.4.1",
   "dependencies": {
+    "lib0": "^0.2.119",
     "mdast-util-from-markdown": "^2.0.3",
     "mdast-util-gfm": "^3.1.0",
     "micromark-extension-gfm": "^3.0.0",
+    "y-prosemirror": "^1.3.7",
+    "y-protocols": "^1.0.7",
     "yjs": "^13.6.33",
     "zod": "^4.6.2"
   },
