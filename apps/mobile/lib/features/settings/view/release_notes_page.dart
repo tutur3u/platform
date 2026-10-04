@@ -53,13 +53,6 @@ class _ReleaseNotesPageState extends State<ReleaseNotesPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          l10n.settingsWhatsNew,
-                          style: theme.typography.large.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
                           l10n.settingsReleaseHistoryDescription,
                           style: theme.typography.textSmall.copyWith(
                             color: theme.colorScheme.mutedForeground,

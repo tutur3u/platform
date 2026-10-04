@@ -15,7 +15,6 @@ import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
-import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
@@ -161,8 +160,7 @@ class _ProfileView extends StatelessWidget {
                     child: _ProfileHeroCard(profile: profile, state: state),
                   ),
                   const shad.Gap(20),
-                  SettingsCompactSection(
-                    title: l10n.authManageAccounts,
+                  SettingsGroup(
                     children: [
                       SettingsTile(
                         grouped: true,
@@ -195,9 +193,6 @@ class _ProfileView extends StatelessWidget {
                                     value:
                                         profile.displayName ??
                                         l10n.profileMissingValue,
-                                    isValuePlaceholder:
-                                        profile.displayName?.trim().isEmpty ??
-                                        true,
                                     onTap: () => _showEditFieldSheet(
                                       context,
                                       title: l10n.profileDisplayName,
@@ -220,9 +215,6 @@ class _ProfileView extends StatelessWidget {
                                     value:
                                         profile.fullName ??
                                         l10n.profileMissingValue,
-                                    isValuePlaceholder:
-                                        profile.fullName?.trim().isEmpty ??
-                                        true,
                                     onTap: () => _showEditFieldSheet(
                                       context,
                                       title: l10n.profileFullName,
@@ -252,8 +244,6 @@ class _ProfileView extends StatelessWidget {
                                         : l10n.profileEmailPendingChange(
                                             profile.newEmail!,
                                           ),
-                                    isValuePlaceholder:
-                                        profile.email?.trim().isEmpty ?? true,
                                     onTap: () => _showEditFieldSheet(
                                       context,
                                       title: l10n.profileEmail,
@@ -294,8 +284,6 @@ class _ProfileView extends StatelessWidget {
                                           false
                                       ? l10n.profileAvatarSet
                                       : l10n.profileMissingValue,
-                                  isValuePlaceholder:
-                                      profile.avatarUrl?.trim().isEmpty ?? true,
                                   onTap: () => _pickAndUploadAvatar(context),
                                 ),
                                 if (profile.avatarUrl != null)
