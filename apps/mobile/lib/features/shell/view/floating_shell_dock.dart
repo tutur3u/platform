@@ -363,11 +363,18 @@ class _DockActionsState extends State<_DockActions> {
           widget.navigation,
           primary: actions.isEmpty
               ? null
-              : ShellDockActionButton(action: actions.first),
+              : ShellDockActionButton(
+                  key: ValueKey(('dock-primary', actions.first.id)),
+                  action: actions.first,
+                ),
           secondary: actions.length < 2
               ? null
               : actions.length == 2
-              ? ShellDockActionButton(action: actions[1], primary: false)
+              ? ShellDockActionButton(
+                  key: ValueKey(('dock-secondary', actions[1].id)),
+                  action: actions[1],
+                  primary: false,
+                )
               : PopupMenuButton<ShellActionSpec>(
                   tooltip: context.l10n.navMore,
                   icon: const Icon(Icons.more_horiz),
