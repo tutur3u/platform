@@ -4,6 +4,9 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/pending_mutation_record.dart';
+import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
@@ -20,6 +23,21 @@ import 'package:supabase_flutter/supabase_flutter.dart' show User;
 import '../../../helpers/helpers.dart';
 
 class _Inventory extends Mock implements InventoryRepository {}
+
+class _Queue extends Mock implements OfflineMutationQueue {}
+
+class _Api extends Mock implements ApiClient {}
+
+class _PendingInventory extends InventoryRepository {
+  _PendingInventory(_Queue queue, _Api api)
+    : super(mutationQueue: queue, apiClient: api, cacheUserId: () => 'actor');
+
+  @override
+  InventorySaleDetail? peekSaleDetail(String wsId, String saleId) =>
+      InventorySaleDetail.fromJson(
+        detail('Saved sale')['data'] as Map<String, dynamic>,
+      );
+}
 
 class _Auth extends MockCubit<AuthState> implements AuthCubit {}
 
@@ -83,7 +101,11 @@ void main() {
     await workspace.close();
   });
 
-  Future<void> open(WidgetTester tester) async {
+  Future<void> open(
+    WidgetTester tester, {
+    InventoryRepository? inventory,
+    bool editable = false,
+  }) async {
     tester.view.physicalSize = const Size(1000, 1200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -98,9 +120,9 @@ void main() {
           wsId: 'ws',
           saleId: 'sale',
           currency: 'USD',
-          inventoryRepository: repository,
-          canUpdateSales: false,
-          canDeleteSales: false,
+          inventoryRepository: inventory ?? repository,
+          canUpdateSales: editable,
+          canDeleteSales: editable,
         ),
       ),
     );
@@ -143,13 +165,15 @@ void main() {
           forceRefresh: any(named: 'forceRefresh'),
         ),
       ).thenAnswer((_) => response.future);
-      await open(tester);
+      await open(tester, editable: true);
       response.completeError(
         const ApiException.transport(message: 'Disconnected'),
       );
       await tester.pumpAndSettle();
       expect(find.text('Saved sale'), findsOneWidget);
       expect(find.byType(InventoryReadWarning), findsOneWidget);
+      expect(find.text('Edit sale'), findsOneWidget);
+      expect(find.text('Delete sale'), findsOneWidget);
       final retry = Completer<InventorySaleDetail>();
       when(
         () => repository.getSaleDetail('ws', 'sale', forceRefresh: true),
@@ -186,6 +210,57 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Saved sale'), findsNothing);
     expect(find.textContaining('Denied'), findsOneWidget);
+  });
+
+  testWidgets('server 404 clears cached detail and mutation controls', (
+    tester,
+  ) async {
+    final response = Completer<InventorySaleDetail>();
+    when(
+      () => repository.getSaleDetail('ws', 'sale'),
+    ).thenAnswer((_) => response.future);
+    await open(tester, editable: true);
+    expect(find.text('Saved sale'), findsOneWidget);
+    expect(find.text('Edit sale'), findsOneWidget);
+    expect(find.text('Delete sale'), findsOneWidget);
+    response.completeError(
+      const ApiException(message: 'Sale not found', statusCode: 404),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Saved sale'), findsNothing);
+    expect(find.text('Edit sale'), findsNothing);
+    expect(find.text('Delete sale'), findsNothing);
+    expect(find.textContaining('Sale not found'), findsOneWidget);
+  });
+
+  testWidgets('pending local DELETE clears cached detail without server read', (
+    tester,
+  ) async {
+    final queue = _Queue();
+    final api = _Api();
+    when(queue.listPending).thenAnswer(
+      (_) async => [
+        PendingMutationRecord(
+          id: 'delete-sale',
+          feature: 'inventory',
+          method: 'DELETE',
+          path: InventoryEndpoints.sale('ws', 'sale'),
+          createdAt: DateTime.utc(2026),
+          userId: 'actor',
+          workspaceId: 'ws',
+          optimisticPatch: const {'entityId': 'sale'},
+        ),
+      ],
+    );
+    final inventory = _PendingInventory(queue, api);
+    addTearDown(inventory.dispose);
+    await open(tester, inventory: inventory, editable: true);
+    await tester.pumpAndSettle();
+    expect(find.text('Saved sale'), findsNothing);
+    expect(find.text('Edit sale'), findsNothing);
+    expect(find.text('Delete sale'), findsNothing);
+    expect(find.textContaining('Sale removed locally'), findsOneWidget);
+    verifyNever(() => api.getJson(any()));
   });
 
   testWidgets('account change clears snapshot and ignores late response', (

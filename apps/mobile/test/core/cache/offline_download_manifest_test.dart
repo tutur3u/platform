@@ -272,6 +272,16 @@ void main() {
       final inventory = OfflineDownloadManifest(store, 'user', () => userId);
       await inventory.save(key('verified', ws: 'verify-products'), []);
       inventory.retain('inventory', 'verify-products');
+      final permissions = OfflineDownloadManifest(store, 'user', () => userId);
+      await permissions.save(
+        const CacheKey(
+          namespace: 'workspace.permissions',
+          userId: 'user',
+          workspaceId: 'verify-products',
+        ),
+        {'read_inventory': true},
+      );
+      permissions.retain('permissions', 'verify-products');
       await OfflineDownloadManifest.verifyProduct(
         'user',
         'verify-products',
@@ -296,4 +306,45 @@ void main() {
       );
     },
   );
+  for (final product in ['finance', 'inventory', 'tasks', 'calendar']) {
+    test('$product readiness rejects missing or evicted permissions', () async {
+      final workspace = 'permissions-$product';
+      final manifest = OfflineDownloadManifest(store, 'user', () => userId);
+      await manifest.save(
+        CacheKey(
+          namespace: '$product.catalog',
+          userId: 'user',
+          workspaceId: workspace,
+        ),
+        [],
+      );
+      manifest.retain(product, workspace);
+      if (product == 'finance') {
+        final rates = OfflineDownloadManifest(store, 'user', () => userId);
+        await rates.save(
+          const CacheKey(
+            namespace: 'finance.exchangeRates',
+            userId: 'user',
+            workspaceId: 'global',
+          ),
+          {'rates': <String, dynamic>{}},
+        );
+        rates.retain('finance-rates', workspace);
+      }
+      Future<void> verify() =>
+          OfflineDownloadManifest.verifyProduct('user', workspace, product);
+      await expectLater(verify(), throwsStateError);
+      final permissions = OfflineDownloadManifest(store, 'user', () => userId);
+      final permissionKey = CacheKey(
+        namespace: 'workspace.permissions',
+        userId: 'user',
+        workspaceId: workspace,
+      );
+      await permissions.save(permissionKey, {'read_$product': true});
+      permissions.retain('permissions', workspace);
+      await verify();
+      await store.remove(permissionKey);
+      await expectLater(verify(), throwsStateError);
+    });
+  }
 }

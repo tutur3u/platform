@@ -76,7 +76,8 @@ class InventorySaleDetailDialogState extends State<InventorySaleDetailDialog> {
       return detail;
     } on ApiException catch (error) {
       if (current() &&
-          (error.statusCode == 401 ||
+          (error.statusCode == 404 ||
+              error.statusCode == 401 ||
               error.statusCode == 403 && !error.isVerificationRequired)) {
         setState(() => _snapshot = null);
       }

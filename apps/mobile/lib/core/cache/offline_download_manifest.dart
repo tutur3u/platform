@@ -61,6 +61,11 @@ class OfflineDownloadManifest {
     if (manifest == null) {
       throw StateError('Offline product retention is not verified.');
     }
+    final permissions = manifests?['permissions'];
+    if (permissions == null) {
+      throw StateError('Offline permissions are not verified.');
+    }
+    await permissions.verify();
     await manifest.verify();
     if (product == 'finance') {
       final rates = manifests?['finance-rates'];

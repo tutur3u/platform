@@ -283,7 +283,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
     required bool replaySafe,
     String? expectedUserId,
   }) async {
-    if (error.statusCode != 0 &&
+    if (!isOfflineTransportFailure(error) &&
         !(replaySafe && error.code == 'OFFLINE_CONTRACT_UNAVAILABLE')) {
       return false;
     }

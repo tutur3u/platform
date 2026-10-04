@@ -483,6 +483,9 @@ results. Explicit setup/catalog refreshes report transport failure; ordinary
 offline reads retain confirmed rows and project queued edits. Checkout coalesces overlapping quote reads, while an explicit retry after
 a settled request remains available. Removing one retained resource invalidates
 only the corresponding downloaded product for its actor and workspace.
+Each product must retain its shared permission snapshot before download readiness
+is accepted; Finance also requires retained exchange rates. Eviction of either
+dependency prevents readiness even when the product's own catalog is complete.
 
 Snapshot replacement, source indexes, authoritative download reconciliation,
 and pressure eviction share one resource ordering boundary. An encrypted durable
@@ -501,11 +504,18 @@ oversized bodies, and failed session refreshes remain visible failures rather
 than presenting a cached response as a successful refresh. Download pacing wait
 is outside the actual HTTP request timeout. Search patterns are compiled once per
 retained search pattern rather than once per candidate row.
+Mutation queue admission uses the same typed transport rule. The explicit
+`OFFLINE_CONTRACT_UNAVAILABLE` exception is admitted only for replay-safe writes;
+session, malformed-response, and unknown failures never become pending writes.
 
 Reopened sale details immediately project queued sales-period assignments,
 including explicit removal, over the scoped confirmed snapshot. They retain
 queued status and local IDs until acknowledgment; pending IDs never become server
-mutation targets. Regression evidence: `cache_revalidation_test.dart`,
+mutation targets.
+Definitive not-found responses, including a locally queued deletion, clear
+retained sale details and mutation controls. Transient refresh failures retain
+the authorized snapshot. Regression evidence: `offline_mutation_admission_test.dart`,
+`cache_revalidation_test.dart`,
 `offline_download_manifest_test.dart`, `offline_preparation_coordinator_test.dart`,
 `api_client_transport_failure_test.dart`, `inventory_sale_period_projection_test.dart`,
 `inventory_sale_detail_refresh_test.dart`, and `season_pricing_controller_test.dart`
