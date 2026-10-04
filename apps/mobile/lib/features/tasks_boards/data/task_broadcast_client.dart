@@ -125,19 +125,88 @@ abstract class TaskBroadcastClient {
   });
 }
 
+/// Cubits own factory-created clients. Injected clients stay shared.
+TaskBroadcastClient defaultTaskBroadcastClient({
+  ApiClient Function()? createApiClient,
+}) => TaskBroadcastOwner(null, createApiClient: createApiClient);
+
+Future<void> closeOwnedTaskBroadcastClient(
+  TaskBroadcastClient client,
+  TaskBroadcastSubscription? subscription,
+) async {
+  try {
+    await subscription?.cancel();
+  } finally {
+    if (client is TaskBroadcastOwner) client.dispose();
+  }
+}
+
+/// Tracks ownership per cubit, even when a factory-created client is injected.
+class TaskBroadcastOwner implements TaskBroadcastClient {
+  TaskBroadcastOwner(
+    TaskBroadcastClient? client, {
+    ApiClient Function()? createApiClient,
+  }) : _owned = client == null,
+       _client =
+           client ??
+           CloudflareTaskBroadcastClient._owned(
+             createApiClient?.call() ?? ApiClient(),
+           );
+  final TaskBroadcastClient _client;
+  final bool _owned;
+  void dispose() {
+    final client = _client;
+    if (_owned && client is CloudflareTaskBroadcastClient) client.dispose();
+  }
+
+  @override
+  TaskBroadcastSubscription subscribeToBoard({
+    required String boardId,
+    required TaskBroadcastHandler onEvent,
+  }) => _client.subscribeToBoard(boardId: boardId, onEvent: onEvent);
+  @override
+  TaskBroadcastSubscription subscribeToUser({
+    required String userId,
+    required TaskBroadcastHandler onEvent,
+  }) => _client.subscribeToUser(userId: userId, onEvent: onEvent);
+  @override
+  Future<void> sendBroadcastMessage({
+    required String channelName,
+    required String event,
+    required Map<String, dynamic> payload,
+  }) => _client.sendBroadcastMessage(
+    channelName: channelName,
+    event: event,
+    payload: payload,
+  );
+}
+
 class CloudflareTaskBroadcastClient implements TaskBroadcastClient {
   CloudflareTaskBroadcastClient({ApiClient? apiClient})
-    : _api = apiClient ?? ApiClient();
+    : _api = apiClient ?? ApiClient(),
+      _ownsApi = apiClient == null;
+  CloudflareTaskBroadcastClient._owned(this._api) : _ownsApi = true;
   final ApiClient _api;
+  final bool _ownsApi;
+  bool _disposed = false;
+
+  void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    if (_ownsApi) _api.dispose();
+  }
 
   CloudflareChannel _channel(
     String topic,
     void Function(Map<String, dynamic>) onMessage,
-  ) => CloudflareChannel(
-    resolveTicket: () =>
-        _api.postJson('/api/v1/realtime/channels', {'topic': topic}),
-    onMessage: onMessage,
-  );
+  ) {
+    if (_disposed) throw StateError('Task broadcast client is closed');
+    return CloudflareChannel(
+      resolveTicket: () =>
+          _api.postJson('/api/v1/realtime/channels', {'topic': topic}),
+      onMessage: onMessage,
+    );
+  }
 
   @override
   TaskBroadcastSubscription subscribeToBoard({

@@ -31,10 +31,13 @@ class _MeetCollaborationPageState extends State<MeetCollaborationPage> {
   ).join();
   late final ApiClient _api = widget.apiClient ?? ApiClient();
   late final String? _admittedUserId = widget.call.selfUserId;
+  late final String? _accountUserId = supabase.auth.currentUser?.id;
   late final _owner = MeetCollaborationOwner(
-    userId: _admittedUserId,
+    userId: _accountUserId,
     currentUserId: () => supabase.auth.currentUser?.id,
     isAdmitted: () =>
+        _admittedUserId != null &&
+        _admittedUserId.isNotEmpty &&
         !widget.call.ended &&
         widget.call.admission == 'admitted' &&
         widget.call.selfUserId == _admittedUserId,

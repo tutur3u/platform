@@ -1,6 +1,6 @@
 import 'package:mobile/data/sources/api_client.dart';
 
-/// Pins editor actions and preview responses to the admitted native actor.
+/// Pins authenticated account ownership independently of room device admission.
 class MeetCollaborationOwner {
   MeetCollaborationOwner({
     required this.userId,

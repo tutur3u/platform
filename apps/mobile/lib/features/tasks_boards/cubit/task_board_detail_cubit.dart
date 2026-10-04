@@ -25,8 +25,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     required TaskRepository taskRepository,
     TaskBroadcastClient? taskBroadcastClient,
   }) : _taskRepository = taskRepository,
-       _taskBroadcastClient =
-           taskBroadcastClient ?? CloudflareTaskBroadcastClient(),
+       _taskBroadcastClient = TaskBroadcastOwner(taskBroadcastClient),
        super(const TaskBoardDetailState());
 
   static const int _listTaskPageSize = 50;
@@ -2948,9 +2947,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     final subscription = _boardBroadcastSubscription;
     _boardBroadcastSubscription = null;
     _subscribedRealtimeBoardId = null;
-    if (subscription != null) {
-      await subscription.cancel();
-    }
+    await closeOwnedTaskBroadcastClient(_taskBroadcastClient, subscription);
     return await super.close();
   }
 }

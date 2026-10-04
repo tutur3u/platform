@@ -15,6 +15,41 @@ class _Auth extends Mock implements GoTrueClient {}
 class _Session extends Mock implements Session {}
 
 void main() {
+  test(
+    'distinct authenticated account and admitted device remain authorized',
+    () async {
+      String? account = 'account-a';
+      var device = 'device-identity-a';
+      var admitted = true;
+      final owner = MeetCollaborationOwner(
+        userId: account,
+        currentUserId: () => account,
+        isAdmitted: () => admitted && device == 'device-identity-a',
+      );
+      expect(
+        await owner.run(() async => 'authorized-document'),
+        'authorized-document',
+      );
+      device = 'device-identity-b';
+      await expectLater(
+        owner.run(() async => 'document'),
+        throwsA(isA<ApiException>().having((e) => e.statusCode, 'status', 403)),
+      );
+      device = 'device-identity-a';
+      admitted = false;
+      await expectLater(
+        owner.run(() async => 'document'),
+        throwsA(isA<ApiException>()),
+      );
+      admitted = true;
+      account = 'account-b';
+      await expectLater(
+        owner.run(() async => 'document'),
+        throwsA(isA<ApiException>().having((e) => e.statusCode, 'status', 401)),
+      );
+    },
+  );
+
   for (final mutate in [false, true]) {
     test(
       'admitted A cannot send ${mutate ? 'mutation' : 'read'} as B',

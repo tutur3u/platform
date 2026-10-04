@@ -23,8 +23,7 @@ class TaskListCubit extends Cubit<TaskListState> {
     TaskListState? initialState,
   }) : _repo = taskRepository,
        _cacheUserId = currentCacheUserId(),
-       _taskBroadcastClient =
-           taskBroadcastClient ?? CloudflareTaskBroadcastClient(),
+       _taskBroadcastClient = TaskBroadcastOwner(taskBroadcastClient),
        super(initialState ?? const TaskListState()) {
     OfflineMutationQueue.instance.syncRevision.addListener(_onSynchronized);
   }
@@ -490,9 +489,7 @@ class TaskListCubit extends Cubit<TaskListState> {
     final subscription = _userBroadcastSubscription;
     _userBroadcastSubscription = null;
     _subscribedRealtimeUserId = null;
-    if (subscription != null) {
-      await subscription.cancel();
-    }
+    await closeOwnedTaskBroadcastClient(_taskBroadcastClient, subscription);
     return await super.close();
   }
 }
