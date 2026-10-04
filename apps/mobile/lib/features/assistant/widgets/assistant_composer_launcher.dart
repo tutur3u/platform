@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AssistantComposerFab extends StatelessWidget {
@@ -55,4 +58,28 @@ class AssistantScrollToBottomFab extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Same primary action slot switches the persistent rail back to navigation.
+class AssistantNavigationToggle extends StatelessWidget {
+  const AssistantNavigationToggle({
+    required this.focusNode,
+    required this.onToggle,
+    super.key,
+  });
+  final FocusNode focusNode;
+  final VoidCallback onToggle;
+  @override
+  Widget build(BuildContext context) => ShellDockActionButton(
+    key: const ValueKey('assistant-navigation-toggle'),
+    action: ShellActionSpec(
+      id: 'assistant-navigation',
+      tooltip: context.l10n.assistantExpandNavigation,
+      icon: Icons.menu_rounded,
+      onPressed: () {
+        focusNode.unfocus();
+        onToggle();
+      },
+    ),
+  );
 }

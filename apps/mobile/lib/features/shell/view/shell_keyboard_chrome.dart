@@ -9,10 +9,12 @@ class ShellKeyboardChrome extends StatefulWidget {
     this.child,
     this.builder,
     this.keyboardVisible = false,
+    this.keepVisible = false,
     super.key,
   }) : assert(child != null || builder != null, 'Provide a child or builder');
   final Widget? child;
   final bool keyboardVisible;
+  final bool keepVisible;
   final Widget Function(
     BuildContext context, {
     required bool hidden,
@@ -45,9 +47,10 @@ class _ShellKeyboardChromeState extends State<ShellKeyboardChrome> {
     final textFocused =
         FocusManager.instance.primaryFocus?.debugLabel == 'shell-search';
     final hidden =
-        widget.keyboardVisible ||
-        MediaQuery.viewInsetsOf(context).bottom > 0 ||
-        textFocused;
+        !widget.keepVisible &&
+        (widget.keyboardVisible ||
+            MediaQuery.viewInsetsOf(context).bottom > 0 ||
+            textFocused);
     if (hidden == _hidden) return;
     _hideTimer?.cancel();
     _hidden = hidden;

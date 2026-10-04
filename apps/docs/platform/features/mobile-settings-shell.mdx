@@ -40,8 +40,13 @@ Home Agenda, Profile Overview/Timeline and Calendar Agenda reclaim the dock's
 bottom scroll clearance while it is hidden, retaining the physical safe area.
 The viewport remains full height; reverse scrolling or idle restores the dock
 and its clearance. Other screens keep stable clearance by default. Text Assistant
-owns one morphing dock in both prompt and navigation modes; the shell adds no
-second footer, navigation island or dock inset. Live retains its existing shell
+publishes a lifecycle-scoped composer/action slot into the same shell-owned
+floating dock used by every root and detail destination. The material stays
+mounted as navigation and prompt content change; width and root bodies animate
+independently, with only the current dock controls interactive. No page mounts a
+second dock. Reduced motion disables transitions, and a focused composer remains
+visible above the keyboard. Draft controllers stay with the cached Assistant
+page, while disposed publishers cannot overwrite a newer registration. Live retains its existing shell
 navigation. While no workspace is resolved, shell navigation remains available.
 
 Shell profile reads and cache mutations are fenced by current actor and request
@@ -64,9 +69,11 @@ its actions whenever they fit. Empty action columns do not consume space. Action
 keep 52px slots and share the bottom baseline, including when large text makes
 the composer taller; narrow layouts keep secondary actions in the top navbar. The
 navigation and Assistant dock share horizontal and safe-area bottom insets, and
-switching root destinations paints only the current body and dock. Visited tabs
-remain mounted, preserving drafts and scroll positions without crossfading two
-pages or two docks. Coverage: `floating_dock_rail_test.dart`,
+switching root destinations retains one dock while bodies ease between tabs.
+Only the active body receives pointer input or semantics. Visited tabs remain
+mounted, preserving drafts and scroll positions; reduced-motion changes retain
+the same page elements. Navigation and prompt slots never paint two docks.
+Coverage: `persistent_shell_dock_test.dart`, `lazy_indexed_stack_test.dart`, `floating_dock_rail_test.dart`,
 `apps_search_submit_test.dart`, and `shell_assistant_composer_test.dart`.
 
 Leaving Apps or launching a module clears Apps search so returning starts in
@@ -87,7 +94,10 @@ Unchanged counts do not serialize the retained feed again. Workspace switches
 clear the visible feed and reload the selected tab; responses from an older
 workspace or actor cannot replace current reads. Pagination and offline pending
 read overlays retain their existing behavior. These defaults apply to the native
-Inbox and Archive; the sheet also updates its unread header.
+Inbox and Archive; the sheet also updates its unread header. Empty and error
+messages use a minimum height rather than a fixed height, so narrow screens and
+enlarged text can wrap without clipping. The real 320px root transition matrix
+in `shell_assistant_composer_test.dart` covers this responsive empty-state path.
 
 `notifications_cubit_test.dart` covers coalescing, retry, delayed scope responses
 and close safety. Focused tests establish request behavior, not a measured device

@@ -1,31 +1,6 @@
-import 'dart:ui';
+import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 
-import 'package:flutter/material.dart';
-
-/// Shared theme material for the prompt and its contextual menu.
-class AssistantDockSurface extends StatelessWidget {
-  const AssistantDockSurface({required this.child, super.key});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final solid = MediaQuery.highContrastOf(context);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(26),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-        child: Container(
-          decoration: BoxDecoration(
-            color: colors.surface.withValues(alpha: solid ? 1 : 0.72),
-            borderRadius: BorderRadius.circular(26),
-            border: Border.all(
-              color: colors.outlineVariant.withValues(alpha: 0.4),
-            ),
-          ),
-          child: Material(color: Colors.transparent, child: child),
-        ),
-      ),
-    );
-  }
+/// Assistant sheets use the shell dock's shared glass material.
+class AssistantDockSurface extends ShellDockSurface {
+  const AssistantDockSurface({required super.child, super.key});
 }
