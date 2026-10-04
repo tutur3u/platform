@@ -100,6 +100,31 @@ describe('devbox repair', () => {
     await rm(root, { force: true, recursive: true });
   });
 
+  it('refuses to weaken a persisted Judge-only policy, including exported settings', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ttr-devbox-policy-'));
+    const tokenFile = join(root, 'runner.env');
+    await writeFile(
+      tokenFile,
+      "TUTURUUU_DEVBOX_RUNNER_TOKEN=test-token\nexport TUTURUUU_DEVBOX_EXECUTION_MODE='judge-only'\n",
+      { mode: 0o600 }
+    );
+    const runCommand = vi.fn();
+    try {
+      await expect(
+        runDevboxRepair({
+          executionMode: 'trusted',
+          tokenFile,
+          serviceManager: 'systemd',
+          runCommand,
+        })
+      ).rejects.toThrow('cannot weaken');
+      expect(runCommand).not.toHaveBeenCalled();
+      expect(await readFile(tokenFile, 'utf8')).toContain("='judge-only'");
+    } finally {
+      await rm(root, { force: true, recursive: true });
+    }
+  });
+
   it('supports dry-run repair without writing service files or running sudo', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ttr-devbox-repair-dry-'));
     const checkoutDir = join(root, 'checkout');

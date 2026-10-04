@@ -46,6 +46,14 @@ abstract final class Routes {
   static const meet = '/meet';
   static const timer = '/timer';
   static const settings = '/settings';
+  static const settingsProfile = '/settings/profile';
+  static const settingsAccounts = '/settings/accounts';
+  static const settingsOffline = '/settings/offline';
+  static const settingsOfflineModule = '/settings/offline/:moduleId';
+  static const settingsInternalAccounts = '/settings/infrastructure/accounts';
+  static String settingsOfflineModulePath(String moduleId) =>
+      '$settingsOffline/${Uri.encodeComponent(moduleId)}';
+
   static const settingsPreferences = '/settings/preferences';
   static const settingsExperiments = '/settings/experiments';
   static const settingsInfrastructure = '/settings/infrastructure';
@@ -80,6 +88,10 @@ abstract final class Routes {
   static const inventoryProductDetail = '/inventory/products/:productId';
   static const inventorySales = '/inventory/sales';
   static const inventoryManage = '/inventory/manage';
+  static const inventoryCatalog = '/inventory/manage/:catalog';
+  static const inventorySalesPeriods = '/inventory/sales-periods';
+  static String inventoryCatalogPath(String catalog) =>
+      '/inventory/manage/$catalog';
   static const inventoryAuditLogs = '/inventory/audit-logs';
   static const inventoryCheckout = '/inventory/checkout';
   static const storefronts = '/inventory/storefronts';

@@ -22,12 +22,18 @@ import {
   createDevboxDoctorReport,
   printDevboxDoctorReport,
 } from './devbox-doctor';
+import { parseDurationSeconds } from './devbox-duration';
+import { runDevboxFleetCommand } from './devbox-fleet';
+import { parseDevboxExecutionMode } from './devbox-host-protection';
 import { getJudgeReadiness } from './devbox-judge-sandbox';
+import {
+  createDevboxRestartPayload,
+  createDevboxUpgradePayload,
+} from './devbox-maintenance';
 import { runDevboxRepairCommand } from './devbox-repair';
 import { runDevboxSetupCommand } from './devbox-setup';
 
 const DEFAULT_ONE_OFF_TIMEOUT_SECONDS = 30 * 60;
-const DEFAULT_UPGRADE_TIMEOUT_SECONDS = 10 * 60;
 const DEVBOX_RUN_POLL_INTERVAL_MS = 1000;
 const DEVBOX_RUN_POLL_GRACE_MS = 30_000;
 
@@ -63,19 +69,7 @@ export function extractDevboxForwardedCommand(argv: string[]) {
   return argv.slice(2).filter((entry) => !entry.startsWith('--'));
 }
 
-export function parseDurationSeconds(value: string | undefined) {
-  if (!value) return undefined;
-  const match = value.trim().match(/^(\d+)([smh])?$/iu);
-  if (!match) {
-    throw new Error(`Invalid duration: ${value}`);
-  }
-
-  const amount = Number.parseInt(match[1]!, 10);
-  const unit = match[2]?.toLowerCase() ?? 's';
-  if (unit === 'h') return amount * 3600;
-  if (unit === 'm') return amount * 60;
-  return amount;
-}
+export { parseDurationSeconds } from './devbox-duration';
 
 function parsePreviewPorts(value: string | undefined) {
   return value
@@ -365,32 +359,6 @@ async function waitForDevboxRun({
   return latest;
 }
 
-function createDevboxUpgradePayload(flags: Record<string, FlagValue>) {
-  return {
-    command: ['bun', 'i', '-g', 'tuturuuu'],
-    keep: false,
-    leaseMode: 'auto' as const,
-    runnerId: getFlag(flags, 'runner'),
-    timeoutSeconds:
-      parseDurationSeconds(getFlag(flags, 'timeout')) ??
-      DEFAULT_UPGRADE_TIMEOUT_SECONDS,
-    workload: 'maintenance' as const,
-  };
-}
-
-function createDevboxRestartPayload(flags: Record<string, FlagValue>) {
-  const runnerId = getFlag(flags, 'runner');
-  if (!runnerId) throw new Error('Restart requires --runner <id>.');
-  return {
-    command: ['__ttr_restart_agent_v1__'],
-    keep: false,
-    leaseMode: 'auto' as const,
-    runnerId,
-    timeoutSeconds: 60,
-    workload: 'maintenance' as const,
-  };
-}
-
 async function createAndPrintDevboxRun({
   client,
   json,
@@ -482,6 +450,16 @@ export async function runDevboxCommand({
 }) {
   const resolvedAction = action || 'list';
 
+  if (resolvedAction === 'agent' && argv[2] === 'policy') {
+    printJson({
+      executionMode: parseDevboxExecutionMode(
+        process.env.TUTURUUU_DEVBOX_EXECUTION_MODE
+      ),
+      supportedModes: ['trusted', 'judge-only'],
+    });
+    return;
+  }
+
   if (resolvedAction === 'doctor') {
     printDevboxDoctorReport(await createDevboxDoctorReport(), json);
     return;
@@ -560,6 +538,23 @@ export async function runDevboxCommand({
       json,
       payload,
       wait: flags.wait === true,
+    });
+    return;
+  }
+
+  if (
+    ['runners', 'inspect'].includes(resolvedAction) ||
+    (['upgrade', 'restart'].includes(resolvedAction) &&
+      (flags.all === true ||
+        flags.runners !== undefined ||
+        flags['dry-run'] === true ||
+        flags.apply === true))
+  ) {
+    await runDevboxFleetCommand({
+      action: resolvedAction,
+      client,
+      flags,
+      json,
     });
     return;
   }

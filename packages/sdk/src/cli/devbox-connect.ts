@@ -1,6 +1,6 @@
 import type { TuturuuuUserClient } from '../platform';
 import { type FlagValue, getFlag } from './args';
-import { getJudgeReadiness } from './devbox-judge-sandbox';
+import { parseDevboxExecutionMode } from './devbox-host-protection';
 import { defaultDevboxSetupRunCommand } from './devbox-setup-command';
 import {
   type DevboxServiceManager,
@@ -25,15 +25,14 @@ export async function runDevboxConnect({
     throw new Error('Invalid --service-manager value.');
   }
   const judgeImages = getFlag(flags, 'judge-images');
-  if (judgeImages) {
-    const readiness = await getJudgeReadiness(judgeImages);
-    if (!readiness.ready) {
-      throw new Error(readiness.reason ?? 'Judge is not ready.');
-    }
-  }
   const result = await setupDevboxRunner({
     checkoutDir: process.cwd(),
     options: {
+      executionMode: getFlag(flags, 'execution-mode')
+        ? parseDevboxExecutionMode(getFlag(flags, 'execution-mode'))
+        : undefined,
+      dockerHost: getFlag(flags, 'docker-host'),
+      controlUrl: getFlag(flags, 'control-url'),
       agent: true,
       client,
       judgeImages,

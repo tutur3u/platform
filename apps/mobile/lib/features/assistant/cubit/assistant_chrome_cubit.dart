@@ -75,6 +75,9 @@ class AssistantChromeState extends Equatable {
     this.hasSelectedMode = false,
   });
 
+  /// One active mode: prompt or navigation, never both.
+  bool get isComposing => composerVisible && !navigationExpanded;
+
   final bool composerVisible;
   final bool navigationExpanded;
   final bool isFullscreen;

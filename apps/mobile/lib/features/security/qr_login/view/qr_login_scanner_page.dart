@@ -174,29 +174,10 @@ class _QrLoginScannerPageState extends State<QrLoginScannerPage> {
 
     return shad.Scaffold(
       child: SafeArea(
+        top: false,
+        bottom: false,
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Row(
-                children: [
-                  shad.OutlineButton(
-                    alignment: Alignment.center,
-                    onPressed: () => context.pop(),
-                    child: const Icon(Icons.arrow_back_rounded),
-                  ),
-                  const shad.Gap(12),
-                  Expanded(
-                    child: Text(
-                      l10n.qrLoginScannerTitle,
-                      style: theme.typography.large.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -243,7 +224,12 @@ class _QrLoginScannerPageState extends State<QrLoginScannerPage> {
             Flexible(
               child: SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    0,
+                    16,
+                    20 + MediaQuery.paddingOf(context).bottom,
+                  ),
                   child: _payload == null
                       ? Column(
                           mainAxisSize: MainAxisSize.min,

@@ -19,24 +19,13 @@ class OfflinePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final body = ListView(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        16,
+        20,
+        24 + MediaQuery.paddingOf(context).bottom,
+      ),
       children: [
-        if (embedded)
-          Row(
-            children: [
-              IconButton(
-                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-                onPressed: () => Navigator.of(context).maybePop(),
-                icon: const Icon(Icons.arrow_back),
-              ),
-              Expanded(
-                child: Text(
-                  l10n.offlineSectionTitle,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-              ),
-            ],
-          ),
         Text(l10n.offlineSectionDescription),
         const SizedBox(height: 20),
         const OfflinePreparationSection(showModuleDetails: true),

@@ -12,6 +12,33 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get workspaceHiddenTitle => 'Hidden workspaces';
+
+  @override
+  String get workspaceHideAction => 'Hide';
+
+  @override
+  String get workspaceRestoreAction => 'Restore';
+
+  @override
+  String get workspaceHiddenDescription => 'Only you can see this list. Hiding does not change membership or notifications.';
+
+  @override
+  String get workspaceHiddenEmpty => 'No Hidden workspaces';
+
+  @override
+  String get workspaceHiddenLoadError => 'Workspace visibility preferences are unavailable. Saved hidden choices are kept.';
+
+  @override
+  String get workspaceHiddenUpdateError => 'Unable to save this change. Try again when connected.';
+
+  @override
+  String get workspaceAllHidden => 'Your workspaces are hidden. Restore one to continue.';
+
+  @override
+  String get workspacePickerClose => 'Close workspace picker';
+
+  @override
   String get commonLoading => 'Loading';
 
   @override
@@ -9577,6 +9604,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileTimelineHasActivity => 'Activity in loaded snapshot';
 
   @override
+  String get profileTimelineLoadedEnd => 'All loaded activity shown';
+
+  @override
   String get profileTimelineMoreDays => 'Show more loaded days';
 
   @override
@@ -9657,6 +9687,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryStockHealthUnknown => 'Unavailable';
 
   @override
+  String get inventoryProductDeleteConfirm => 'Remove this product? If existing sales reference it, the server will archive it when syncing.';
+
+  @override
+  String get inventorySeasonPriceCached => 'Offline draft using saved season prices. Prices and availability will be checked when syncing.';
+
+  @override
   String get inventorySeasonPriceLoading => 'Checking current season prices…';
 
   @override
@@ -9684,55 +9720,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventorySeasonHistoricalReadOnly => 'Scheduled sale history is read only here. Recorded prices are preserved.';
-
-  @override
-  String get calendarGoogleColorInherit => 'Use calendar color';
-
-  @override
-  String calendarGoogleColorLabel(String id) {
-    return 'Custom label $id';
-  }
-
-  @override
-  String calendarGoogleColorEvent(String id) {
-    return 'Google color $id';
-  }
-
-  @override
-  String get calendarProviderColorSeparateEdit => 'Save other changes before changing the Google color.';
-
-  @override
-  String get workspaceHiddenTitle => 'Hidden workspaces';
-
-  @override
-  String get workspaceHideAction => 'Hide';
-
-  @override
-  String get workspaceRestoreAction => 'Restore';
-
-  @override
-  String get workspaceHiddenDescription => 'Only you can see this list. Hiding does not change membership or notifications.';
-
-  @override
-  String get workspaceHiddenEmpty => 'No Hidden workspaces';
-
-  @override
-  String get workspaceHiddenLoadError => 'Workspace visibility preferences are unavailable. Saved hidden choices are kept.';
-
-  @override
-  String get workspaceHiddenUpdateError => 'Unable to save this change. Try again when connected.';
-
-  @override
-  String get workspaceAllHidden => 'Your workspaces are hidden. Restore one to continue.';
-
-  @override
-  String get workspacePickerClose => 'Close workspace picker';
-
-  @override
-  String get inventoryProductDeleteConfirm => 'Remove this product? If existing sales reference it, the server will archive it when syncing.';
-
-  @override
-  String get inventorySeasonPriceCached => 'Offline draft using saved season prices. Prices and availability will be checked when syncing.';
 
   @override
   String get offlinePreparationTitle => 'Available offline';
@@ -9796,24 +9783,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryCheckoutPeriodRulesChanged => 'Some items do not match this period. Reconcile the cart to continue.';
-
-  @override
-  String get inventorySetupSyncFirst => 'Sync this new item before using, editing, or deleting it.';
-
-  @override
-  String get homePersonalAgenda => 'Personal Agenda';
-
-  @override
-  String get homePersonalAgendaUnavailable => 'Personal calendar is unavailable.';
-
-  @override
-  String get assistantExpandNavigation => 'Show navigation';
-
-  @override
-  String get assistantCollapseNavigation => 'Hide navigation';
-
-  @override
-  String get assistantCloseComposer => 'Close prompt';
 
   @override
   String get offlineSectionTitle => 'Offline';
@@ -9957,4 +9926,117 @@ class AppLocalizationsEn extends AppLocalizations {
   String offlineStoredItemId(String id) {
     return 'Item ID: $id';
   }
+
+  @override
+  String get homePersonalAgenda => 'Agenda';
+
+  @override
+  String get homePersonalAgendaUnavailable => 'Personal calendar is unavailable.';
+
+  @override
+  String get assistantExpandNavigation => 'Show navigation';
+
+  @override
+  String get assistantCollapseNavigation => 'Hide navigation';
+
+  @override
+  String get assistantCloseComposer => 'Close prompt';
+
+  @override
+  String get inventoryRedesignLimitedData => 'Limited data. Last available snapshot shown.';
+
+  @override
+  String get inventoryRedesignReceiptActivity => 'Receipt activity';
+
+  @override
+  String get inventoryRedesignReceiptCoverage => 'Counts from the available recent receipts, not a complete period total. Missing days are unknown. Currency and quantity totals are not inferred.';
+
+  @override
+  String inventoryRedesignDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String inventoryRedesignRecentSample(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count available records',
+      one: '1 available record',
+    );
+    return '$_temp0 · limited coverage';
+  }
+
+  @override
+  String inventoryRedesignUnknownDates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count records without a date',
+      one: '1 record without a date',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inventoryRedesignLoadedRevenue => 'Revenue in loaded receipts';
+
+  @override
+  String inventoryRedesignUnknownCurrencies(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count receipts with unknown currency excluded',
+      one: '1 receipt with unknown currency excluded',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inventoryRedesignPendingDeletion => 'Deletion pending confirmation';
+
+  @override
+  String inventoryRedesignPendingCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count unsynchronized edits',
+      one: '1 unsynchronized edit',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inventoryRedesignLoadedSearch => 'Search available records';
+
+  @override
+  String get inventoryRedesignAllEvents => 'All events';
+
+  @override
+  String get inventoryRedesignSelectedLines => 'Selected lines';
+
+  @override
+  String get calendarGoogleColorInherit => 'Use calendar color';
+
+  @override
+  String calendarGoogleColorLabel(String id) {
+    return 'Custom label $id';
+  }
+
+  @override
+  String calendarGoogleColorEvent(String id) {
+    return 'Google color $id';
+  }
+
+  @override
+  String get calendarProviderColorSeparateEdit => 'Save other changes before changing the Google color.';
+
+  @override
+  String get inventorySetupSyncFirst => 'Sync this new item before using, editing, or deleting it.';
 }

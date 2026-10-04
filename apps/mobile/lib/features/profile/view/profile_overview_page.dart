@@ -11,23 +11,25 @@ import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/profile/view/profile_account_actions.dart';
 import 'package:mobile/features/profile/view/profile_activity_section.dart';
 import 'package:mobile/features/profile/view/profile_timeline_section.dart';
-import 'package:mobile/features/profile/view/workspace_activity_section.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
-import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
-import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Account home. Opening personal activity never implies consent to share it.
 class ProfileOverviewPage extends StatefulWidget {
-  const ProfileOverviewPage({this.replayToken = 0, super.key});
+  const ProfileOverviewPage({
+    this.replayToken = 0,
+    this.cacheUserId,
+    super.key,
+  });
 
   final int replayToken;
+  final String? Function()? cacheUserId;
 
   @override
   State<ProfileOverviewPage> createState() => _ProfileOverviewPageState();
@@ -42,10 +44,12 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
     final userId = context.watch<AuthCubit>().state.user?.id;
-    final workspace = context.watch<WorkspaceCubit>().state.currentWorkspace;
     return BlocBuilder<ShellProfileCubit, ShellProfileState>(
       builder: (context, state) {
-        final profile = state.profile;
+        final profile = state.userId == userId && state.profile?.id == userId
+            ? state.profile
+            : null;
+        final avatarUrl = profile == null ? null : state.avatarUrl;
         final name =
             profile?.displayName ?? profile?.fullName ?? l10n.profileTitle;
         return Stack(
@@ -128,15 +132,12 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                     ResponsivePadding.horizontal(context.deviceClass);
                 if (_timeline) {
                   return Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      horizontal,
-                      floatingShellHeaderInset(context) + 10,
-                      horizontal,
-                      0,
-                    ),
+                    padding: EdgeInsets.fromLTRB(horizontal, 0, horizontal, 0),
                     child: ProfileTimelineSection(
                       replayToken: widget.replayToken,
+                      cacheUserId: widget.cacheUserId,
                       fullSurface: true,
+                      contentTopPadding: floatingShellHeaderInset(context) + 10,
                       datesOpen: _dates,
                       onDatesChanged: (open) => setState(() => _dates = open),
                     ),
@@ -168,20 +169,18 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                                 borderRadius: BorderRadius.circular(24),
                                 child: SizedBox.square(
                                   dimension: 68,
-                                  child:
-                                      state.profile == null &&
-                                          state.error == null
+                                  child: profile == null && state.error == null
                                       ? const FinanceSkeletonBlock(
                                           height: 68,
                                           radius: 24,
                                         )
-                                      : state.avatarUrl == null
+                                      : avatarUrl == null
                                       ? const Icon(
                                           Icons.person_outline,
                                           size: 48,
                                         )
                                       : Image.network(
-                                          state.avatarUrl!,
+                                          avatarUrl,
                                           fit: BoxFit.cover,
                                           errorBuilder: (_, error, stack) =>
                                               const Icon(
@@ -198,8 +197,7 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    if (state.profile == null &&
-                                        state.error == null)
+                                    if (profile == null && state.error == null)
                                       const FinanceSkeletonBlock(
                                         height: 24,
                                         width: 150,
@@ -219,15 +217,13 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                    shad.GhostButton(
+                                    IconButton(
+                                      tooltip: l10n.profileIdentitySectionTitle,
                                       onPressed: () =>
-                                          context.go(Routes.profileEdit),
-                                      leading: const Icon(
+                                          context.push(Routes.settingsProfile),
+                                      icon: const Icon(
                                         Icons.edit_outlined,
-                                        size: 18,
-                                      ),
-                                      child: Text(
-                                        l10n.profileIdentitySectionTitle,
+                                        size: 20,
                                       ),
                                     ),
                                   ],
@@ -238,43 +234,11 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                         },
                       ),
                     ),
-                    if (userId != null && workspace != null) ...[
+                    if (userId != null) ...[
                       const SizedBox(height: 14),
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final activity = ProfileActivitySection(
-                            replayToken: widget.replayToken,
-                          );
-                          if (workspace.personal) {
-                            return activity;
-                          }
-                          final workspaceActivity = WorkspaceActivitySection(
-                            key: ValueKey('$userId:${workspace.id}'),
-                            workspaceId: workspace.id,
-                            replayToken: widget.replayToken,
-                            workspaceName: displayWorkspaceNameOrFallback(
-                              context,
-                              workspace,
-                            ),
-                          );
-                          if (constraints.maxWidth < 840) {
-                            return Column(
-                              children: [
-                                activity,
-                                const shad.Gap(16),
-                                workspaceActivity,
-                              ],
-                            );
-                          }
-                          return Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(child: activity),
-                              const SizedBox(width: 20),
-                              Expanded(child: workspaceActivity),
-                            ],
-                          );
-                        },
+                      ProfileActivitySection(
+                        replayToken: widget.replayToken,
+                        cacheUserId: widget.cacheUserId,
                       ),
                     ],
                   ],

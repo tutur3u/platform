@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
+import 'package:mobile/features/inventory/view/inventory_catalog_hub.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 enum ShellNavMode { global, miniApp, hidden }
@@ -13,6 +14,26 @@ class ShellChromeConfig {
     String matchedLocation,
   ) {
     final l10n = context.l10n;
+    final catalog = InventoryCatalogSection.values
+        .where((s) => Routes.inventoryCatalogPath(s.name) == matchedLocation)
+        .firstOrNull;
+    if (catalog != null) {
+      return ShellChromeConfig(
+        title: inventoryCatalogTitle(context, catalog),
+        navMode: ShellNavMode.miniApp,
+      );
+    }
+    if (matchedLocation.startsWith('${Routes.settingsOffline}/')) {
+      final module = matchedLocation.split('/').last;
+      final title = switch (module) {
+        'finance' => l10n.financeTitle,
+        'inventory' => l10n.inventoryTitle,
+        'tasks' => l10n.tasksTitle,
+        'calendar' => l10n.calendarTitle,
+        _ => l10n.offlineSectionTitle,
+      };
+      return ShellChromeConfig(title: title, navMode: ShellNavMode.miniApp);
+    }
     final title = switch (matchedLocation) {
       Routes.home => l10n.navHome,
       Routes.apps => l10n.navApps,
@@ -24,6 +45,9 @@ class ShellChromeConfig {
       Routes.inventoryProducts => l10n.inventoryProductsLabel,
       Routes.inventorySales => l10n.inventorySalesLabel,
       Routes.inventoryManage => l10n.inventoryManageLabel,
+      Routes.inventorySalesPeriods => l10n.inventorySalesPeriodsTitle,
+      Routes.inventoryCheckout => l10n.inventoryCheckoutTitle,
+      Routes.inventoryProductCreate => l10n.inventoryCreateProduct,
       Routes.inventoryAuditLogs => l10n.inventoryAuditLabel,
       Routes.storefronts => l10n.storefrontTitle,
       Routes.transactions => l10n.financeActivityLabel,
@@ -41,8 +65,16 @@ class ShellChromeConfig {
       Routes.taskEstimates => l10n.taskPlanningTitle,
       Routes.taskPortfolio => l10n.taskPlanningTitle,
       Routes.profileRoot => l10n.profileTitle,
-      Routes.profileEdit => l10n.profileTitle,
-      Routes.profileAccounts => l10n.authManageAccounts,
+      Routes.profileEdit || Routes.settingsProfile => l10n.settingsNavYou,
+      Routes.profileAccounts ||
+      Routes.settingsAccounts => l10n.authManageAccounts,
+      Routes.settingsOffline => l10n.offlineSectionTitle,
+      Routes.settingsInternalAccounts => l10n.adminAccountsTitle,
+      Routes.settingsWhatsNew => l10n.settingsWhatsNew,
+      Routes.settingsReminders => l10n.remindersTitle,
+      Routes.settingsAccountSecurity => l10n.securitySessionsTitle,
+      Routes.settingsMfaApproval => l10n.deviceMfaNumberTitle,
+      Routes.settingsQrLoginScan => l10n.qrLoginSettingsTitle,
       Routes.settings => l10n.settingsTitle,
       Routes.settingsPreferences => l10n.settingsPreferencesSectionTitle,
       Routes.settingsExperiments => l10n.settingsExperimentalAppsSectionTitle,

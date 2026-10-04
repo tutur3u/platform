@@ -67,7 +67,20 @@ extension _ShellPageLayout on _ShellPageState {
   Widget _buildNormalizedChild() {
     return _trackPageScrolling(
       widget.matchedLocation,
-      SizedBox.expand(child: widget.child),
+      Builder(
+        builder: (bodyContext) => MediaQuery.removePadding(
+          context: bodyContext,
+          removeTop: true,
+          child: Theme(
+            data: Theme.of(bodyContext).copyWith(
+              scaffoldBackgroundColor: shad.Theme.of(
+                bodyContext,
+              ).colorScheme.background,
+            ),
+            child: SizedBox.expand(child: widget.child),
+          ),
+        ),
+      ),
     );
   }
 
@@ -221,6 +234,10 @@ extension _ShellPageLayout on _ShellPageState {
       bottomInset: bodyBottomInset,
       navigationBottomOffset: navigationBottomOffset,
       reserveNavigationClearance: !composerVisible,
+      reclaimNavigationClearanceWhenHidden:
+          widget.matchedLocation == Routes.profileRoot ||
+          widget.matchedLocation == Routes.home ||
+          widget.matchedLocation == Routes.calendar,
       keepNavigationVisible: composerVisible,
       navigation: navigationBar,
       header: header,
@@ -284,11 +301,20 @@ extension _ShellPageLayout on _ShellPageState {
           widget.matchedLocation,
         ) ??
         false;
+    final workspace = context.watch<WorkspaceCubit>().state;
+    final hasAssistantWorkspace =
+        (workspace.currentWorkspace ?? workspace.personalWorkspaceOrCurrent) !=
+        null;
+    final textAssistant =
+        widget.matchedLocation == Routes.assistant &&
+        !assistantChrome.isLiveMode &&
+        hasAssistantWorkspace;
     final composerVisible =
         widget.matchedLocation == Routes.assistant &&
-        assistantChrome.composerVisible &&
+        assistantChrome.isComposing &&
         !assistantChrome.isLiveMode;
     final showBottomNav =
+        !textAssistant &&
         (!composerVisible || assistantChrome.navigationExpanded) &&
         (!widget.matchedLocation.startsWith(Routes.assistant) ||
             !assistantChrome.isFullscreen) &&
@@ -311,7 +337,12 @@ extension _ShellPageLayout on _ShellPageState {
         child: navContent,
       ),
     );
-    final globalBody = _buildGlobalBody();
+    // Keep this wrapper present across routes and modes: changing its shape
+    // would remount the cached Assistant page and discard its draft/focus.
+    final globalBody = AssistantDockNavigation(
+      navigation: navContent,
+      child: _buildGlobalBody(),
+    );
     final floatingNavInset = (!isCompact || composerVisible) && showBottomNav
         ? _floatingNavBodyInset()
         : 0.0;
@@ -340,7 +371,7 @@ extension _ShellPageLayout on _ShellPageState {
             : const SizedBox.shrink(),
         bodyBottomInset: floatingNavInset,
         composerVisible: composerVisible,
-        navigationBottomOffset: composerVisible
+        navigationBottomOffset: composerVisible && !textAssistant
             ? assistantComposerHeight(context) + assistantComposerBottomGap * 2
             : 0,
       ),
@@ -534,6 +565,22 @@ extension _ShellPageLayout on _ShellPageState {
       height: mobileSectionAppBarHeightFor(context),
       padding: mobileSectionAppBarPadding,
       backgroundColor: Colors.transparent,
+      leading:
+          Routes.isSettingsHubLocation(widget.matchedLocation) &&
+              widget.matchedLocation != Routes.settings &&
+              widget.matchedLocation != Routes.profileRoot
+          ? [
+              IconButton(
+                key: const ValueKey('shell-settings-back'),
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                onPressed: () => _dispatchBackNavigation(
+                  context,
+                  source: 'settings-top-bar',
+                ),
+                icon: const Icon(Icons.arrow_back_rounded),
+              ),
+            ]
+          : const [],
       trailingGap: 6,
       trailing: [
         SizedBox(

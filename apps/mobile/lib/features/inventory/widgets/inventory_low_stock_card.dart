@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Short summaries share a row; longer quantities retain the full card width.
@@ -38,6 +39,7 @@ class InventoryLowStockCard extends StatelessWidget {
                           product.ownerName,
                           product.categoryName,
                           product.warehouseName,
+                          product.unitName,
                         ]
                         .whereType<String>()
                         .where((name) => name.isNotEmpty)
@@ -51,7 +53,10 @@ class InventoryLowStockCard extends StatelessWidget {
               child: Text(
                 [
                   inventoryStockAmount(context, product.amount),
-                  inventoryStockAmount(context, product.minAmount ?? 0),
+                  if (product.minAmount == null)
+                    context.l10n.inventoryStockHealthUnknown
+                  else
+                    inventoryStockAmount(context, product.minAmount),
                 ].join(' / '),
                 style: theme.typography.large.copyWith(
                   fontWeight: FontWeight.w800,
