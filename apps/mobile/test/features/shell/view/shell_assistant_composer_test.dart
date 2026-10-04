@@ -199,6 +199,21 @@ void main() {
           identical(tester.state(find.byType(FloatingShellDock)), dockBefore),
           isTrue,
         );
+        chrome.enterFullscreen();
+        await settle();
+        expect(find.byType(TextField), findsOneWidget);
+        expect(find.byType(PersistentShellDock), findsOneWidget);
+        expect(
+          identical(
+            tester.element(
+              find.byKey(const ValueKey('persistent-shell-dock-material')),
+            ),
+            materialBefore,
+          ),
+          isTrue,
+        );
+        chrome.exitFullscreen();
+        await settle();
         tester.view.viewInsets = const FakeViewPadding(bottom: 260);
         addTearDown(tester.view.resetViewInsets);
         await settle();

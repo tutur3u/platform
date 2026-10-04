@@ -308,14 +308,23 @@ extension _ShellPageLayout on _ShellPageState {
           widget.matchedLocation,
         ) ??
         false;
+    final workspace = context.watch<WorkspaceCubit>().state;
+    final textAssistant =
+        widget.matchedLocation == Routes.assistant &&
+        !assistantChrome.isLiveMode &&
+        (workspace.currentWorkspace ?? workspace.personalWorkspaceOrCurrent) !=
+            null;
     final composerVisible =
         widget.matchedLocation == Routes.assistant &&
         assistantChrome.isComposing &&
         !assistantChrome.isLiveMode;
+    // Text immersive mode still needs its only composer/exit control surface.
+    // Live fullscreen and other immersive pages retain their existing policy.
     final showBottomNav =
-        (!widget.matchedLocation.startsWith(Routes.assistant) ||
-            !assistantChrome.isFullscreen) &&
-        !immersive;
+        textAssistant ||
+        ((!widget.matchedLocation.startsWith(Routes.assistant) ||
+                !assistantChrome.isFullscreen) &&
+            !immersive);
     final navContent = MorphingNavigationBar(
       selectedKey: selectedKey,
       paintSurface: false,
