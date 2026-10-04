@@ -15,6 +15,7 @@ void main() {
     bool showHeader = false,
     bool scrollableHeader = false,
     bool keepNavigationVisible = false,
+    bool reclaimNavigationClearanceWhenHidden = false,
     ScrollController? scrollController,
     ValueChanged<bool>? onVisibilityChanged,
   }) async {
@@ -29,6 +30,8 @@ void main() {
             location: '/settings',
             bottomInset: 68,
             keepNavigationVisible: keepNavigationVisible,
+            reclaimNavigationClearanceWhenHidden:
+                reclaimNavigationClearanceWhenHidden,
             header: showHeader
                 ? Padding(
                     padding: EdgeInsets.only(
@@ -153,6 +156,25 @@ void main() {
       1,
     );
     expect(visibility.last, isTrue);
+  });
+
+  testWidgets('personal scroll reclaims hidden dock padding, not viewport', (
+    tester,
+  ) async {
+    await mount(tester, reclaimNavigationClearanceWhenHidden: true);
+    final viewport = tester.getRect(find.byType(ListView));
+    EdgeInsets padding() =>
+        tester.widget<ListView>(find.byType(ListView)).padding! as EdgeInsets;
+    final visibleBottom = padding().bottom;
+    await tester.drag(find.byType(ListView), const Offset(0, -160));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(padding().bottom, visibleBottom - 68);
+    expect(tester.getRect(find.byType(ListView)), viewport);
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
+    expect(padding().bottom, visibleBottom);
+    expect(tester.getRect(find.byType(ListView)), viewport);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('fixed header stays visible when the dock hides', (tester) async {

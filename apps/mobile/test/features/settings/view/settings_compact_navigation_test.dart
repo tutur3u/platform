@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/router/settings_routes.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
 import 'package:mobile/core/utils/supported_timezones.dart';
 import 'package:mobile/data/models/workspace.dart';
@@ -26,6 +27,8 @@ import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
+import 'package:mobile/features/settings/view/offline_module_page.dart';
+import 'package:mobile/features/settings/view/offline_page.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/settings/view/settings_workspace_page.dart';
@@ -50,9 +53,12 @@ import '../../../helpers/helpers.dart';
 
 part 'settings_compact_harness.dart';
 part 'settings_hidden_recovery_checks.dart';
+part 'settings_detail_shell_checks.dart';
 
 void main() {
+  tearDown(() => GoRouter.optionURLReflectsImperativeAPIs = false);
   registerHiddenRecoveryChecks();
+  registerSettingsDetailShellChecks();
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await supa.Supabase.initialize(
@@ -74,6 +80,7 @@ void main() {
     }
   });
   setUp(() {
+    GoRouter.optionURLReflectsImperativeAPIs = true;
     SharedPreferences.setMockInitialValues({});
     AppHaptics.enabled = true;
     PackageInfo.setMockInitialValues(

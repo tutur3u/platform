@@ -99,7 +99,10 @@ void main() {
         );
       }),
     );
-    final repository = TimezoneSettingsRepository(apiClient: api);
+    final repository = TimezoneSettingsRepository(
+      apiClient: api,
+      clock: () => now,
+    );
     final cubit = TimezoneSettingsCubit(
       repository: repository,
       deviceLoader: getVerifiedDeviceTimezoneIdentifier,
@@ -135,7 +138,10 @@ void main() {
               : http.Response('{}', 500);
         }),
       );
-      final repository = TimezoneSettingsRepository(apiClient: api);
+      final repository = TimezoneSettingsRepository(
+        apiClient: api,
+        clock: () => now,
+      );
       final cubit = TimezoneSettingsCubit(
         repository: repository,
         deviceLoader: getVerifiedDeviceTimezoneIdentifier,
@@ -192,7 +198,10 @@ void main() {
         return http.Response('{"timezone":"auto"}', 200);
       }),
     );
-    final repository = TimezoneSettingsRepository(apiClient: api);
+    final repository = TimezoneSettingsRepository(
+      apiClient: api,
+      clock: () => now,
+    );
     final cubit = TimezoneSettingsCubit(
       repository: repository,
       deviceLoader: getVerifiedDeviceTimezoneIdentifier,
@@ -230,7 +239,10 @@ void main() {
           return http.Response('{}', 429, headers: {'retry-after': '30'});
         }),
       );
-      final repository = TimezoneSettingsRepository(apiClient: api);
+      final repository = TimezoneSettingsRepository(
+        apiClient: api,
+        clock: () => now,
+      );
       final cubit = TimezoneSettingsCubit(
         repository: repository,
         deviceLoader: getVerifiedDeviceTimezoneIdentifier,
@@ -271,7 +283,10 @@ void main() {
             : http.Response('{"timezone":"Europe/Paris"}', 200);
       }),
     );
-    final repository = TimezoneSettingsRepository(apiClient: api);
+    final repository = TimezoneSettingsRepository(
+      apiClient: api,
+      clock: () => now,
+    );
     final cubit = TimezoneSettingsCubit(
       repository: repository,
       deviceLoader: getVerifiedDeviceTimezoneIdentifier,

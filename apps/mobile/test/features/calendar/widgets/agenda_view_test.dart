@@ -193,4 +193,59 @@ void main() {
       });
     }
   }
+  testWidgets(
+    'all-day progress uses the card edge and scrolls header space away',
+    (tester) async {
+      final start = calendarDate(2030);
+      await tester.pumpApp(
+        AgendaView(
+          contentTopPadding: 100,
+          selectedDate: start,
+          events: [
+            CalendarEvent(
+              id: 'multi-day',
+              title: 'Synthetic multi-day',
+              isAllDayOverride: true,
+              startAt: start,
+              endAt: calendarDate(2030, 1, 8),
+            ),
+          ],
+          onEventTap: (_) {},
+          onDaySelected: (_) {},
+        ),
+      );
+      await tester.pumpAndSettle();
+      final progress = find.byType(LinearProgressIndicator).first;
+      expect(
+        tester.widget<LinearProgressIndicator>(progress).borderRadius,
+        BorderRadius.zero,
+      );
+      final card = find
+          .ancestor(
+            of: progress,
+            matching: find.byWidgetPredicate(
+              (widget) =>
+                  widget is Container && widget.clipBehavior == Clip.antiAlias,
+            ),
+          )
+          .first;
+      final container = tester.widget<Container>(card);
+      expect(
+        (container.decoration! as BoxDecoration).borderRadius,
+        BorderRadius.circular(10),
+      );
+      final decorated = find
+          .ancestor(of: progress, matching: find.byType(DecoratedBox))
+          .first;
+      expect(
+        tester.getRect(progress).bottom,
+        closeTo(tester.getRect(decorated).bottom, .01),
+      );
+      final top = tester.getTopLeft(progress).dy;
+      await tester.drag(find.byType(ListView), const Offset(0, -250));
+      await tester.pumpAndSettle();
+      expect(tester.getTopLeft(progress).dy, lessThan(top - 100));
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

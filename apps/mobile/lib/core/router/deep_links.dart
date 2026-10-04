@@ -193,6 +193,12 @@ String? _moduleLocation(Uri uri, List<String> segments) {
     'meet' => Routes.meet,
     'timer' => _timerLocation(uri, segments),
     'settings' => _settingsLocation(segments),
+    'profile' =>
+      segments.length > 1 && segments[1] == 'edit'
+          ? Routes.settingsProfile
+          : segments.length > 1 && segments[1] == 'accounts'
+          ? Routes.settingsAccounts
+          : Routes.profileRoot,
     _ => null,
   };
 }
@@ -334,6 +340,26 @@ String _timerLocation(Uri uri, List<String> segments) {
 }
 
 String _settingsLocation(List<String> segments) {
+  if (segments.length > 1) {
+    switch (segments[1]) {
+      case 'profile':
+        return Routes.settingsProfile;
+      case 'accounts':
+        return Routes.settingsAccounts;
+      case 'offline':
+        if (segments.length > 2 &&
+            const {
+              'finance',
+              'inventory',
+              'tasks',
+              'calendar',
+            }.contains(segments[2])) {
+          return Routes.settingsOfflineModulePath(segments[2]);
+        }
+        return Routes.settingsOffline;
+    }
+  }
+
   if (segments.length > 1 && segments[1] == 'whats-new') {
     return Routes.settingsWhatsNew;
   }

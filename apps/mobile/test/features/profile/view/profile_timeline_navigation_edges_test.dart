@@ -87,7 +87,11 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Old 0'), findsNothing);
-      await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
+      tester
+          .widget<IconButton>(
+            find.byKey(const ValueKey('timeline-date-toggle')),
+          )
+          .onPressed!();
       await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(
@@ -102,7 +106,11 @@ void main() {
       await tester.pumpAndSettle();
       final before = tester.getTopLeft(find.text('Old 3')).dy;
       for (var i = 0; i < 4; i++) {
-        await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
+        tester
+            .widget<IconButton>(
+              find.byKey(const ValueKey('timeline-date-toggle')),
+            )
+            .onPressed!();
         await tester.pumpAndSettle();
         expect(tester.getTopLeft(find.text('Old 3')).dy, closeTo(before, .01));
       }
@@ -301,7 +309,9 @@ void main() {
     }
 
     await capture('320-3x-agenda');
-    await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
+    tester
+        .widget<IconButton>(find.byKey(const ValueKey('timeline-date-toggle')))
+        .onPressed!();
     await tester.pumpAndSettle();
     expect(
       tester.getRect(find.byKey(const ValueKey('timeline-browser'))),

@@ -29,10 +29,14 @@ class AgendaView extends StatefulWidget {
     required this.onEventTap,
     required this.onDaySelected,
     this.onLoadMore,
+    this.contentTopPadding = 0,
+    this.scrollHeader,
     this.isLoadingMore = false,
     super.key,
   });
 
+  final double contentTopPadding;
+  final Widget? scrollHeader;
   final DateTime selectedDate;
   final List<CalendarEvent> events;
   final ValueChanged<CalendarEvent> onEventTap;
@@ -121,7 +125,7 @@ class _AgendaViewState extends State<AgendaView> {
     final l10n = context.l10n;
     final items = _buildItems(widget.events, widget.selectedDate);
 
-    if (items.isEmpty && !widget.isLoadingMore) {
+    if (items.isEmpty && !widget.isLoadingMore && widget.scrollHeader == null) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -144,28 +148,35 @@ class _AgendaViewState extends State<AgendaView> {
     }
 
     // +1 for loading indicator at bottom.
-    final itemCount = items.length + (widget.isLoadingMore ? 1 : 0);
+    final itemCount =
+        items.length +
+        (widget.isLoadingMore ? 1 : 0) +
+        (widget.scrollHeader == null ? 0 : 1);
 
     return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(
         math.max(0, (MediaQuery.sizeOf(context).width - 1120) / 2),
-        8,
+        8 + widget.contentTopPadding,
         math.max(0, (MediaQuery.sizeOf(context).width - 1120) / 2),
         16 + MediaQuery.paddingOf(context).bottom,
       ),
       itemCount: itemCount,
       controller: _scrollController,
       itemBuilder: (context, index) {
+        if (widget.scrollHeader != null && index == 0) {
+          return widget.scrollHeader!;
+        }
+        final itemIndex = index - (widget.scrollHeader == null ? 0 : 1);
         // Loading spinner at the very end.
-        if (index >= items.length) {
+        if (itemIndex >= items.length) {
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 24),
             child: Center(child: NovaLoadingIndicator()),
           );
         }
 
-        final item = items[index];
+        final item = items[itemIndex];
         if (item is _DateHeaderItem) {
           return _DateHeader(
             date: item.date,
