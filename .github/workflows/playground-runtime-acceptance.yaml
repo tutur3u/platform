@@ -47,7 +47,7 @@ jobs:
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Verify cleanup failure and ownership contracts
-        run: node --test scripts/ci/playground-runtime-cleanup.test.js
+        run: node --test scripts/ci/playground-runtime-cleanup.test.js scripts/ci/playground-runtime-panic.test.js
       - name: Install verified official gVisor on this disposable VM
         run: |
           set -euo pipefail
@@ -59,6 +59,18 @@ jobs:
           # Keep runsc and its gvisor-bin companion directory together.
           sudo tar --zstd -xf gvisor.tar.zstd -C /usr/local/bin
           sudo /usr/local/bin/runsc install
+          # Only this disposable job retains runtime panic files. No debug,
+          # strace, profiling, or sandbox-limit changes are enabled.
+          panic_dir="$RUNNER_TEMP/ttr-runsc-panic-$TUTURUUU_PLAYGROUND_POOL_ID"
+          sudo mkdir -m 700 "$panic_dir"
+          sudo python3 - "$panic_dir" <<'PY'
+          import json, pathlib, sys
+          path = pathlib.Path('/etc/docker/daemon.json')
+          config = json.loads(path.read_text())
+          runtime = config['runtimes']['runsc']
+          runtime['runtimeArgs'] = [*runtime.get('runtimeArgs', []), '--panic-log=' + sys.argv[1] + '/']
+          path.write_text(json.dumps(config))
+          PY
           sudo systemctl reload docker
           /usr/local/bin/runsc --version
       - name: Build a synthetic immutable Python fixture in a localhost-only registry
@@ -79,8 +91,12 @@ jobs:
           test -n "$digest"
           echo "TUTURUUU_PLAYGROUND_IMAGES={\"python\":\"$digest\"}" >> "$GITHUB_ENV"
       - name: Execute actual SDK sandbox and checkpoint acceptance
+        id: sdk_acceptance
         working-directory: packages/sdk
         run: bun x --no-install vitest run --config vitest.playground-acceptance.config.ts
+      - name: Classify bounded synthetic runtime panic signatures
+        if: failure() && steps.sdk_acceptance.outcome == 'failure'
+        run: sudo node scripts/ci/playground-runtime-panic.js "$RUNNER_TEMP" "$TUTURUUU_PLAYGROUND_POOL_ID"
       - name: Always remove only this run's owned containers and registry volume
         if: always()
         run: |
