@@ -11,8 +11,8 @@ import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/cache/profile_avatar_delivery.dart';
 import 'package:mobile/core/cache/profile_banner_write.dart';
 import 'package:mobile/core/config/api_config.dart';
+import 'package:mobile/core/media/profile_media_optimizer.dart';
 import 'package:mobile/data/models/user_profile.dart';
-import 'package:mobile/data/repositories/profile_media_optimization.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -169,15 +169,18 @@ class ProfileRepository {
       if (actor == null) {
         throw const FormatException('Profile actor is unavailable');
       }
-      final optimized = await optimizeProfileMedia(file, banner: banner);
+      final optimized = await optimizeProfileMediaFile(
+        file,
+        kind: banner ? ProfileMediaKind.banner : ProfileMediaKind.avatar,
+      );
       if (getCurrentUserIdSync() != actor) {
         throw const FormatException('Profile actor changed');
       }
       final payload = {
-        'filename': banner ? 'banner.jpg' : 'avatar.jpg',
+        'filename': optimized.filename,
         if (banner) 'operationId': newLocalMutationId(),
-        'contentType': 'image/jpeg',
-        'bytes': base64Encode(optimized),
+        'contentType': optimized.contentType,
+        'bytes': base64Encode(optimized.bytes),
       };
       Future<void> send() => ApiClient.runForUser(
         actor,

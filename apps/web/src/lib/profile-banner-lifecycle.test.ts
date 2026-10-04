@@ -1,3 +1,4 @@
+import sharp from 'sharp';
 import { describe, expect, it, vi } from 'vitest';
 import {
   type BannerLifecycleAdmin,
@@ -64,9 +65,11 @@ describe('authenticated immutable banner retirement', () => {
     expect(await cleanRetiredBanners(f.admin, actor, origin)).toBe(true);
     expect(f.upload).toHaveBeenCalledWith(path, expect.any(Buffer), {
       upsert: true,
-      contentType: 'image/png',
+      contentType: 'image/webp',
       cacheControl: '0',
     });
+    const metadata = await sharp(f.upload.mock.calls[0]![1]).metadata();
+    expect(metadata).toMatchObject({ format: 'webp', width: 1, height: 1 });
     expect(f.remove).not.toHaveBeenCalled();
     expect(f.rpc).toHaveBeenCalledWith('complete_profile_banner_retirement', {
       p_user_id: actor,

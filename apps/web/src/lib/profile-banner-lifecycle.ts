@@ -103,11 +103,19 @@ export async function cleanRetiredBanners(
     const storage = admin.storage.from('banners');
     const removed = row.delete_ready
       ? await storage.remove([path])
-      : await storage.upload(path, Buffer.from('retired'), {
-          upsert: true,
-          contentType: 'image/png',
-          cacheControl: '0',
-        });
+      : await storage.upload(
+          path,
+          // A transparent pixel replaces private content and satisfies WebP-only buckets.
+          Buffer.from(
+            'UklGRkAAAABXRUJQVlA4WAoAAAAQAAAAAAAAAAAAQUxQSAIAAAAAAFZQOCAYAAAAMAEAnQEqAQABAAFAJiWkAANwAP79NmgA',
+            'base64'
+          ),
+          {
+            upsert: true,
+            contentType: 'image/webp',
+            cacheControl: '0',
+          }
+        );
     if (removed.error) {
       complete = false;
       continue;

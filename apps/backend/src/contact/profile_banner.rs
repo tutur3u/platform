@@ -72,28 +72,12 @@ pub(super) async fn clean_retired_banners(
         };
         let auth = format!("Bearer {key}");
         let delete_body = json!({"prefixes":[path]}).to_string();
-        // A non-sensitive inert slot blocks outstanding non-upsert upload tokens.
-        let request = OutboundRequest::new(
-            if deleted {
-                OutboundMethod::Delete
-            } else {
-                OutboundMethod::Post
-            },
+        let request = retirement_storage_request(
             &storage_url,
-        )
-        .with_header("Authorization", &auth)
-        .with_header("apikey", key)
-        .with_header(
-            "Content-Type",
-            if deleted {
-                APPLICATION_JSON
-            } else {
-                "image/png"
-            },
-        )
-        .with_header("x-upsert", "true")
-        .with_header("Cache-Control", "max-age=0")
-        .with_body(if deleted { &delete_body } else { "retired" });
+            &auth,
+            key,
+            if deleted { Some(&delete_body) } else { None },
+        );
         let Ok(removed) = outbound.send(request).await else {
             complete = false;
             continue;
@@ -124,6 +108,45 @@ pub(super) async fn clean_retired_banners(
     complete
 }
 
+// Same transparent 1x1 WebP as the live Web lifecycle, valid in WebP-only buckets.
+const RETIRED_BANNER_WEBP: &[u8] = &[
+    82, 73, 70, 70, 64, 0, 0, 0, 87, 69, 66, 80, 86, 80, 56, 88, 10, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 65, 76, 80, 72, 2, 0, 0, 0, 0, 0, 86, 80, 56, 32, 24, 0, 0, 0, 48, 1, 0, 157, 1, 42,
+    1, 0, 1, 0, 1, 64, 38, 37, 164, 0, 3, 112, 0, 254, 253, 54, 104, 0,
+];
+
+fn retirement_storage_request<'a>(
+    url: &'a str,
+    auth: &'a str,
+    key: &'a str,
+    delete_body: Option<&'a str>,
+) -> OutboundRequest<'a> {
+    let request = OutboundRequest::new(
+        if delete_body.is_some() {
+            OutboundMethod::Delete
+        } else {
+            OutboundMethod::Post
+        },
+        url,
+    )
+    .with_header("Authorization", auth)
+    .with_header("apikey", key)
+    .with_header(
+        "Content-Type",
+        if delete_body.is_some() {
+            APPLICATION_JSON
+        } else {
+            "image/webp"
+        },
+    )
+    .with_header("x-upsert", "true")
+    .with_header("Cache-Control", "max-age=0");
+    match delete_body {
+        Some(body) => request.with_body(body),
+        None => request.with_bytes(RETIRED_BANNER_WEBP),
+    }
+}
+
 fn owned_banner_path<'a>(value: &'a str, actor: &str, origin: &str) -> Option<&'a str> {
     let prefix = format!("{origin}/storage/v1/object/public/banners/{actor}/");
     let file = value.strip_prefix(&prefix)?;
@@ -149,6 +172,60 @@ fn owned_banner_path<'a>(value: &'a str, actor: &str, origin: &str) -> Option<&'
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn retirement_scrub_uses_exact_webp_bytes_and_storage_metadata() {
+        let request = retirement_storage_request(
+            "https://example.test/object",
+            "Bearer synthetic",
+            "synthetic",
+            None,
+        );
+        assert_eq!(request.method, OutboundMethod::Post);
+        assert_eq!(request.body, None);
+        assert_eq!(request.body_bytes, Some(RETIRED_BANNER_WEBP));
+        assert_eq!(RETIRED_BANNER_WEBP.len(), 72);
+        assert_eq!(&RETIRED_BANNER_WEBP[..4], b"RIFF");
+        assert_eq!(&RETIRED_BANNER_WEBP[8..12], b"WEBP");
+        for (name, value) in [
+            ("Content-Type", "image/webp"),
+            ("x-upsert", "true"),
+            ("Cache-Control", "max-age=0"),
+        ] {
+            assert!(
+                request
+                    .headers
+                    .iter()
+                    .any(|header| header.name == name && header.value == value)
+            );
+        }
+    }
+
+    #[test]
+    fn retirement_delete_keeps_json_body_and_auth_headers() {
+        let body = "{\"prefixes\":[\"actor/file.webp\"]}";
+        let request = retirement_storage_request(
+            "https://example.test/object",
+            "Bearer synthetic",
+            "synthetic",
+            Some(body),
+        );
+        assert_eq!(request.method, OutboundMethod::Delete);
+        assert_eq!(request.body, Some(body));
+        assert_eq!(request.body_bytes, None);
+        assert!(
+            request
+                .headers
+                .iter()
+                .any(|header| header.name == "Content-Type" && header.value == APPLICATION_JSON)
+        );
+        assert!(
+            request
+                .headers
+                .iter()
+                .any(|header| header.name == "Authorization" && header.value == "Bearer synthetic")
+        );
+    }
+
     #[test]
     fn ownership_is_exact_and_never_foreign_external_or_encoded() {
         let actor = "00000000-0000-4000-8000-000000000001";

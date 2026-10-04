@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:image/image.dart' as img;
 import 'package:mobile/core/cache/workspace_avatar_delivery.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -20,7 +21,7 @@ class _WorkspaceAvatarApi extends ApiClient {
     Duration timeout = const Duration(seconds: 30),
   }) async {
     expect(path, WorkspaceEndpoints.avatarUploadUrl('server-ws'));
-    expect(body, {'filename': 'logo.png'});
+    expect(body, {'filename': 'avatar.png'});
     return {
       'uploadUrl': 'https://upload.example.test/logo',
       'token': 'fresh-token',
@@ -57,9 +58,13 @@ void main() {
         workspaceId: 'server-ws',
         filename: 'logo.png',
         contentType: 'image/png',
-        encodedBytes: base64Encode([1, 2, 3]),
+        encodedBytes: base64Encode(
+          img.encodePng(img.Image(width: 2, height: 2)),
+        ),
       );
-      expect(requests.single.bodyBytes, [1, 2, 3]);
+      expect(img.decodePng(requests.single.bodyBytes)?.width, 2);
+      expect(requests.single.bodyBytes.length, lessThanOrEqualTo(1000000));
+      expect(requests.single.headers['content-type'], 'image/png');
       expect(requests.single.headers['authorization'], 'Bearer fresh-token');
       expect(api.updates, [
         {'filePath': 'avatars/server-ws/logo.png'},

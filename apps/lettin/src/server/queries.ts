@@ -12,6 +12,9 @@ import {
   worldRole,
 } from './context';
 
+import { isTuturuuuStaffEmail } from './staff-access';
+import { publishedReferences } from './wiki-references';
+
 export async function readWorld(
   db: Store,
   actor: Actor,
@@ -123,6 +126,10 @@ export async function readOverview(
   return {
     approved,
     canCreate: approved && actor.canManage,
+    canImportExocorpse:
+      approved &&
+      actor.canManage &&
+      isTuturuuuStaffEmail(await actor.verifiedEmail()),
     isAdmin: actor.isAdmin,
     canInvite,
     worlds,
@@ -160,7 +167,7 @@ export async function readPublic(
   // Catalogue pages contain only card fields; documents are loaded for one world.
   const projection = worldId
     ? 'published'
-    : "json_remove(published,'$.content','$.links','$.tags') AS published";
+    : "json_remove(published,'$.content','$.links','$.tags','$.wiki') AS published";
   const rows = await db
     .prepare(
       `SELECT id,owner_id,${projection} FROM worlds WHERE ${conditions.join(' AND ')} ORDER BY published_at DESC,id LIMIT ? OFFSET ?`
@@ -190,18 +197,18 @@ export async function readPublic(
   return rows.results.map((row) => ({
     id: row.id,
     creatorId: row.owner_id,
-    published: {
-      content: { type: 'doc', content: [] },
-      tags: [],
-      ...JSON.parse(row.published),
-      links: [],
-    },
+    published: publishedReferences(
+      {
+        content: { type: 'doc', content: [] },
+        tags: [],
+        ...JSON.parse(row.published),
+        links: [],
+      },
+      publicIds
+    ),
     entries: entries.map((entry) => ({
       ...entry,
-      published: {
-        ...entry.published,
-        links: entry.published.links.filter((id) => publicIds.has(id)),
-      },
+      published: publishedReferences(entry.published, publicIds),
     })),
   }));
 }

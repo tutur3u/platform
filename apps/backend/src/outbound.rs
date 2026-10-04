@@ -49,6 +49,7 @@ pub(crate) struct OutboundHeader<'a> {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct OutboundRequest<'a> {
     pub(crate) body: Option<&'a str>,
+    pub(crate) body_bytes: Option<&'a [u8]>,
     pub(crate) headers: Vec<OutboundHeader<'a>>,
     pub(crate) method: OutboundMethod,
     pub(crate) url: &'a str,
@@ -58,6 +59,7 @@ impl<'a> OutboundRequest<'a> {
     pub(crate) fn new(method: OutboundMethod, url: &'a str) -> Self {
         Self {
             body: None,
+            body_bytes: None,
             headers: Vec::new(),
             method,
             url,
@@ -71,6 +73,13 @@ impl<'a> OutboundRequest<'a> {
 
     pub(crate) fn with_body(mut self, body: &'a str) -> Self {
         self.body = Some(body);
+        self.body_bytes = None;
+        self
+    }
+
+    pub(crate) fn with_bytes(mut self, body: &'a [u8]) -> Self {
+        self.body = None;
+        self.body_bytes = Some(body);
         self
     }
 }
@@ -164,7 +173,9 @@ impl OutboundHttpClient for NativeOutboundHttpClient {
                 builder = builder.header(header.name, header.value);
             }
 
-            if let Some(body) = request.body {
+            if let Some(body) = request.body_bytes {
+                builder = builder.body(body.to_vec());
+            } else if let Some(body) = request.body {
                 builder = builder.body(body.to_owned());
             }
 
@@ -219,7 +230,9 @@ impl OutboundHttpClient for WorkerFetchOutboundHttpClient {
             init.with_method(worker_method(request.method))
                 .with_headers(headers);
 
-            if let Some(body) = request.body {
+            if let Some(body) = request.body_bytes {
+                init.with_body(Some(worker::js_sys::Uint8Array::from(body).into()));
+            } else if let Some(body) = request.body {
                 init.with_body(Some(worker::wasm_bindgen::JsValue::from_str(body)));
             }
 
@@ -255,5 +268,29 @@ fn worker_method(method: OutboundMethod) -> worker::Method {
         OutboundMethod::Patch => worker::Method::Patch,
         OutboundMethod::Post => worker::Method::Post,
         OutboundMethod::Put => worker::Method::Put,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn binary_body_preserves_non_utf8_and_replaces_text() {
+        let bytes = [0, 0xff, 0x80, 0x41];
+        let request = OutboundRequest::new(OutboundMethod::Post, "https://example.test")
+            .with_body("obsolete")
+            .with_bytes(&bytes);
+        assert_eq!(request.body, None);
+        assert_eq!(request.body_bytes, Some(bytes.as_slice()));
+    }
+
+    #[test]
+    fn text_body_replaces_binary_without_changing_json() {
+        let request = OutboundRequest::new(OutboundMethod::Delete, "https://example.test")
+            .with_bytes(&[0xff])
+            .with_body("{\"prefixes\":[]}");
+        assert_eq!(request.body, Some("{\"prefixes\":[]}"));
+        assert_eq!(request.body_bytes, None);
     }
 }

@@ -11,6 +11,7 @@ import {
   bannerStorageOrigin,
   cleanRetiredBanners,
 } from '@/lib/profile-banner-lifecycle';
+import { createOptimizedBannerOperationTicket } from '@/lib/profile-media-ticket';
 
 const PostBannerUploadSchema = z.object({
   operationId: z.uuid().optional(),
@@ -38,7 +39,7 @@ export const POST = withSessionAuth(
         );
       }
 
-      const filePath = `${user.id}/${operationId}.${fileExt}`;
+      const filePath = `${user.id}/${operationId}.webp`;
       const supabase = await createDynamicAdminClient();
       const publicUrl = `${bannerStorageOrigin()}/storage/v1/object/public/banners/${filePath}`;
       const claimed = await supabase.rpc('claim_profile_banner_upload', {
@@ -114,18 +115,11 @@ export const POST = withSessionAuth(
           { message: 'Unable to verify upload state' },
           { status: 503 }
         );
-      const { data: signedUrlData, error: signedUrlError } =
-        await supabase.storage.from('banners').createSignedUploadUrl(filePath, {
-          upsert: false,
-        });
-
-      if (signedUrlError || !signedUrlData) {
-        console.error('Error creating signed upload URL:', signedUrlError);
-        return NextResponse.json(
-          { message: 'Error generating upload URL' },
-          { status: 500 }
-        );
-      }
+      const ticket = createOptimizedBannerOperationTicket(
+        user.id,
+        operationId,
+        process.env.NEXT_PUBLIC_APP_URL || req.url
+      );
 
       const leased = await supabase.rpc('record_profile_banner_ticket', {
         p_user_id: user.id,
@@ -138,13 +132,16 @@ export const POST = withSessionAuth(
         );
       // Banners are explicitly public profile media, never a private signed read URL.
 
-      return NextResponse.json({
-        operationId,
-        uploadUrl: signedUrlData.signedUrl,
-        publicUrl,
-        filePath,
-        token: signedUrlData.token,
-      });
+      return NextResponse.json(
+        {
+          operationId,
+          uploadUrl: ticket.uploadUrl,
+          publicUrl,
+          filePath,
+          token: ticket.token,
+        },
+        { headers: { 'Cache-Control': 'no-store' } }
+      );
     } catch (error) {
       if (error instanceof ProfileUploadError) {
         return NextResponse.json(

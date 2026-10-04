@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:image/image.dart' as image;
 import 'package:mobile/core/cache/profile_avatar_delivery.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -64,7 +65,9 @@ void main() {
           httpClient: client,
           filename: 'banner.png',
           contentType: 'image/png',
-          encodedBytes: base64Encode([1, 2]),
+          encodedBytes: base64Encode(
+            image.encodePng(image.Image(width: 16, height: 16)),
+          ),
           banner: true,
           operationId: '00000000-0000-4000-8000-000000000901',
         );
@@ -90,7 +93,9 @@ void main() {
         httpClient: client,
         filename: 'banner.png',
         contentType: 'image/png',
-        encodedBytes: base64Encode([1]),
+        encodedBytes: base64Encode(
+          image.encodePng(image.Image(width: 16, height: 16)),
+        ),
         banner: true,
         operationId: '00000000-0000-4000-8000-000000000901',
       );

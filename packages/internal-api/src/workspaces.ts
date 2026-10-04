@@ -9,6 +9,7 @@ import {
   getInternalApiClient,
   type InternalApiClientOptions,
 } from './client';
+import { optimizeProfileMediaFile } from './profile-media';
 
 type InternalApiErrorPayload = {
   error?: string;
@@ -250,12 +251,21 @@ export async function uploadWorkspaceAvatarFile(
   target: Pick<WorkspaceAvatarUploadTarget, 'signedUrl' | 'token'>,
   file: Blob
 ) {
+  const optimized = await optimizeProfileMediaFile(
+    file instanceof File
+      ? file
+      : new File([file], 'avatar.png', { type: file.type }),
+    'avatar'
+  );
   const response = await fetch(target.signedUrl, {
-    body: file,
+    body: optimized,
     cache: 'no-store',
+    credentials: 'omit',
     headers: {
-      Authorization: `Bearer ${target.token}`,
-      'Content-Type': file.type || 'application/octet-stream',
+      ...(target.token.startsWith('ttr_app_')
+        ? {}
+        : { Authorization: `Bearer ${target.token}` }),
+      'Content-Type': optimized.type,
     },
     method: 'PUT',
   });

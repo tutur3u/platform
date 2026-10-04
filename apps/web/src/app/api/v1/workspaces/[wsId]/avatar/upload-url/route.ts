@@ -1,86 +1,41 @@
-import {
-  ProfileUploadError,
-  reserveProfileUploadBudget,
-} from '@tuturuuu/storage-core/profile-upload-budget';
-import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
+import { ProfileUploadError } from '@tuturuuu/storage-core/profile-upload-budget';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
-import { normalizeWorkspaceId } from '@/lib/workspace-helper';
-
-const UploadWorkspaceAvatarSchema = z.object({
-  filename: z
-    .string()
-    .min(3)
-    .regex(/^[^\\/]+\.[^\\/]+$/),
-});
+import { createOptimizedProfileMediaTicket } from '@/lib/profile-media-ticket';
+import { profileMediaFilenameSchema } from '@/lib/profile-media-upload';
 
 export const POST = withSessionAuth<{ wsId: string }>(
   async (request, { user }, { wsId }) => {
     try {
-      const permissions = await getPermissions({ wsId, request });
-
-      if (!permissions) {
+      const permissions = await getPermissions({ wsId, user, request });
+      if (
+        !permissions ||
+        permissions.withoutPermission('manage_workspace_settings')
+      )
         return NextResponse.json(
           { message: 'Workspace access denied' },
           { status: 403 }
         );
-      }
-
-      if (permissions.withoutPermission('manage_workspace_settings')) {
-        return NextResponse.json(
-          { message: 'Insufficient permissions' },
-          { status: 403 }
-        );
-      }
-
-      const body = UploadWorkspaceAvatarSchema.safeParse(await request.json());
-
-      if (!body.success) {
-        return NextResponse.json(
-          { message: 'Invalid request data', errors: body.error.issues },
-          { status: 400 }
-        );
-      }
-
-      const normalizedWsId = await normalizeWorkspaceId(wsId);
-      const fileExt = body.data.filename.split('.').pop()?.toLowerCase();
-      const allowedExtensions = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp']);
-
-      if (!fileExt || !allowedExtensions.has(fileExt)) {
-        return NextResponse.json(
-          { message: 'Invalid file extension' },
-          { status: 400 }
-        );
-      }
-
-      await reserveProfileUploadBudget(user.id, 'avatar');
-      const filePath = `workspaces/${normalizedWsId}/avatar-${Date.now()}.${fileExt}`;
-      const sbStorageAdmin = await createDynamicAdminClient();
-      const { data, error } = await sbStorageAdmin.storage
-        .from('avatars')
-        .createSignedUploadUrl(filePath, { upsert: false });
-
-      if (error || !data) {
-        return NextResponse.json(
-          { message: 'Failed to generate upload URL' },
-          { status: 500 }
-        );
-      }
-
-      const { data: publicUrlData } = sbStorageAdmin.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      return NextResponse.json({
-        signedUrl: data.signedUrl,
-        token: data.token,
-        filePath,
-        publicUrl: publicUrlData.publicUrl,
+      profileMediaFilenameSchema.parse(await request.json());
+      const ticket = await createOptimizedProfileMediaTicket(
+        user.id,
+        'avatar',
+        process.env.NEXT_PUBLIC_APP_URL || request.url,
+        permissions.wsId
+      );
+      return NextResponse.json(ticket, {
+        headers: { 'Cache-Control': 'no-store' },
       });
     } catch (error) {
-      if (error instanceof ProfileUploadError) {
+      if (error instanceof z.ZodError || error instanceof SyntaxError)
+        return NextResponse.json(
+          { message: 'Invalid avatar filename' },
+          { status: 400 }
+        );
+      if (error instanceof ProfileUploadError)
         return NextResponse.json(
           { message: error.message },
           {
@@ -90,12 +45,16 @@ export const POST = withSessionAuth<{ wsId: string }>(
               : undefined,
           }
         );
-      }
-      console.error('Error generating workspace avatar upload URL:', error);
+      console.error('Unable to issue workspace avatar optimization ticket');
       return NextResponse.json(
-        { message: 'Internal server error' },
-        { status: 500 }
+        { message: 'Avatar upload unavailable' },
+        { status: 503 }
       );
     }
+  },
+  {
+    allowAppSessionAuth: CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH,
+    rateLimit: { windowMs: 60000, maxRequests: 10 },
+    skipAppSessionStepUpChallenge: true,
   }
 );

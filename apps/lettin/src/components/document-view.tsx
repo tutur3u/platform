@@ -1,55 +1,17 @@
-import type { LettinDraft, LettinNode } from '@tuturuuu/internal-api/lettin';
-import { Fragment, type ReactNode } from 'react';
+import type { LettinDraft } from '@tuturuuu/internal-api/lettin';
+import { useTranslations } from 'next-intl';
+import { renderDocumentNode } from './document-nodes';
+import { wikiOf } from './wiki-model';
 
-function renderNode(node: LettinNode, depth = 0): ReactNode {
-  if (depth > 25) return null;
-  if (node.type === 'text') {
-    let text: ReactNode = node.text;
-    for (const mark of node.marks ?? []) {
-      if (mark.type === 'bold') text = <strong>{text}</strong>;
-      if (mark.type === 'italic') text = <em>{text}</em>;
-      if (mark.type === 'strike') text = <s>{text}</s>;
-      if (mark.type === 'code') text = <code>{text}</code>;
-    }
-    return text;
-  }
-  const children = node.content?.map((child, i) => (
-    <Fragment key={`${depth}-${i}`}>{renderNode(child, depth + 1)}</Fragment>
-  ));
-  switch (node.type) {
-    case 'paragraph':
-      return <p>{children}</p>;
-    case 'heading':
-      return node.attrs?.level === 3 ? (
-        <h3>{children}</h3>
-      ) : (
-        <h2>{children}</h2>
-      );
-    case 'bulletList':
-      return <ul>{children}</ul>;
-    case 'orderedList':
-      return <ol>{children}</ol>;
-    case 'listItem':
-      return <li>{children}</li>;
-    case 'blockquote':
-      return <blockquote>{children}</blockquote>;
-    case 'codeBlock':
-      return (
-        <pre>
-          <code>{children}</code>
-        </pre>
-      );
-    case 'hardBreak':
-      return <br />;
-    case 'horizontalRule':
-      return <hr />;
-    default:
-      return children;
-  }
-}
 export function DocumentView({ draft }: { draft: LettinDraft }) {
+  const t = useTranslations('lettin');
   return (
-    <article className="lettin-prose">
+    <article
+      className="lettin-prose wiki-theme"
+      data-wiki-theme={draft.theme?.palette}
+      data-wiki-type={draft.theme?.typography}
+      data-wiki-motion={draft.theme?.motion}
+    >
       {draft.image && (
         // biome-ignore lint/performance/noImgElement: Artwork must bypass optimizer caching so private media access can be revoked.
         <img
@@ -65,7 +27,7 @@ export function DocumentView({ draft }: { draft: LettinDraft }) {
       )}
       <p className="text-lg text-muted-foreground">{draft.description}</p>
       <div className="flex flex-wrap gap-2">
-        {draft.tags.map((tag) => (
+        {(draft.tags ?? []).map((tag) => (
           <span
             className="border border-foreground bg-secondary px-3 py-1 font-bold text-xs uppercase tracking-wider"
             key={tag}
@@ -74,7 +36,30 @@ export function DocumentView({ draft }: { draft: LettinDraft }) {
           </span>
         ))}
       </div>
-      {renderNode(draft.content)}
+      {wikiOf(draft).aliases.length > 0 && (
+        <p className="text-muted-foreground text-sm">
+          {wikiOf(draft).aliases.join(' · ')}
+        </p>
+      )}
+      {wikiOf(draft).facts.length > 0 && (
+        <dl className="wiki-facts">
+          {wikiOf(draft).facts.map((fact, index) => (
+            <div key={`${index}-${fact.label}`}>
+              <dt>{fact.label}</dt>
+              <dd>{fact.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      {wikiOf(draft).chronology && (
+        <p className="wiki-date">
+          {wikiOf(draft).chronology?.era} · {wikiOf(draft).chronology?.label}
+        </p>
+      )}
+      {renderDocumentNode(draft.content, 0, {
+        completed: t('completedTask'),
+        incomplete: t('incompleteTask'),
+      })}
     </article>
   );
 }

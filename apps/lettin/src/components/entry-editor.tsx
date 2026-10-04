@@ -22,6 +22,9 @@ import { useRef, useState } from 'react';
 import { DocumentView } from './document-view';
 import { RichEditor } from './rich-editor';
 import { useLettinMutation } from './use-lettin';
+import { WikiDetailsEditor } from './wiki-details-editor';
+import { entryKinds, validWiki } from './wiki-model';
+import { WikiThemeEditor } from './wiki-theme-editor';
 export function EntryEditor({
   wsId,
   worldId,
@@ -44,7 +47,13 @@ export function EntryEditor({
   const [draft, setDraft] = useState(record.draft);
   const [version, setVersion] = useState(record.version);
   const [dirty, setDirty] = useState(false);
-  const [tagsText, setTagsText] = useState(record.draft.tags.join(', '));
+  const [tagsText, setTagsText] = useState(
+    (record.draft.tags ?? []).join(', ')
+  );
+  const [markdownEditing, setMarkdownEditing] = useState(false);
+  const [editorKey, setEditorKey] = useState(0);
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const [savedDraft, setSavedDraft] = useState(record.draft);
   const [saved, setSaved] = useState(false);
   const editGeneration = useRef(0);
   const update = (patch: Partial<LettinDraft>) => {
@@ -72,6 +81,7 @@ export function EntryEditor({
           : { action: 'saveEntry', worldId, entryId: record.id, version, draft }
       );
       setVersion((v) => v + 1);
+      setSavedDraft(draft);
       // Typing and artwork uploads can finish while the save is in flight.
       if (editGeneration.current === submittedGeneration) {
         setDirty(false);
@@ -169,11 +179,9 @@ export function EntryEditor({
                 update({ kind: e.target.value as LettinDraft['kind'] })
               }
             >
-              {(
-                ['page', 'character', 'location', 'lore', 'story'] as const
-              ).map((kind) => (
+              {entryKinds.map((kind) => (
                 <option key={kind} value={kind}>
-                  {t(kind)}
+                  {t(`kind${kind}`)}
                 </option>
               ))}
             </select>
@@ -211,7 +219,27 @@ export function EntryEditor({
         <span className="text-muted-foreground text-xs">{t('uploadHint')}</span>
       </label>
       {upload.isError && <p role="alert">{t('requestFailed')}</p>}
+      {isWorld && (
+        <WikiThemeEditor
+          theme={draft.theme}
+          onChange={(theme) => update({ theme })}
+        />
+      )}
+      <WikiDetailsEditor
+        draft={draft}
+        entries={entries}
+        recordId={record.id}
+        onChange={(wiki) => update({ wiki })}
+      />
       <RichEditor
+        key={editorKey}
+        onSourceModeChange={(editing) => {
+          setMarkdownEditing(editing);
+          if (editing) update({});
+        }}
+        onImageUpload={async (file) =>
+          (await uploadLettinArtwork(wsId, worldId, file)).image
+        }
         value={draft.content}
         onChange={(content) => update({ content })}
       />
@@ -251,17 +279,64 @@ export function EntryEditor({
               mutation.isPending ||
               upload.isPending ||
               !dirty ||
-              !draft.title.trim()
+              markdownEditing ||
+              !draft.title.trim() ||
+              !validWiki(draft)
             }
             onClick={save}
           >
             {t('saveDraft')}
           </Button>
+          {dirty && (
+            <Dialog open={discardOpen} onOpenChange={setDiscardOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  disabled={mutation.isPending || upload.isPending}
+                >
+                  {t('discardDraft')}
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{t('discardDraft')}</DialogTitle>
+                  <DialogDescription>{t('discardDraftHint')}</DialogDescription>
+                </DialogHeader>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setDiscardOpen(false)}
+                  >
+                    {t('cancel')}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setDraft(savedDraft);
+                      setTagsText((savedDraft.tags ?? []).join(', '));
+                      setEditorKey((key) => key + 1);
+                      setMarkdownEditing(false);
+                      setDirty(false);
+                      onDirty(false);
+                      setSaved(false);
+                      setDiscardOpen(false);
+                    }}
+                  >
+                    {t('discardDraft')}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
           {worldRole !== 'editor' && (
             <>
               <Button
                 variant="outline"
-                disabled={mutation.isPending || upload.isPending || dirty}
+                disabled={
+                  mutation.isPending ||
+                  upload.isPending ||
+                  dirty ||
+                  markdownEditing
+                }
                 onClick={() => publish(true)}
               >
                 {t(record.published_at ? 'republish' : 'publish')}
@@ -269,7 +344,12 @@ export function EntryEditor({
               {record.published_at && (
                 <Button
                   variant="ghost"
-                  disabled={mutation.isPending || upload.isPending || dirty}
+                  disabled={
+                    mutation.isPending ||
+                    upload.isPending ||
+                    dirty ||
+                    markdownEditing
+                  }
                   onClick={() => publish(false)}
                 >
                   {t('unpublish')}
@@ -281,6 +361,11 @@ export function EntryEditor({
             {dirty ? t('unsaved') : saved ? t('saved') : t('draftHint')}
           </span>
         </div>
+        {!validWiki(draft) && (
+          <p role="alert" className="text-sm">
+            {t('invalidWiki')}
+          </p>
+        )}
         {mutation.errorMessage && (
           <p className="text-sm" role="alert">
             {mutation.errorMessage}

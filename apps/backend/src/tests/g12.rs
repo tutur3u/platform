@@ -568,7 +568,7 @@ async fn current_user_profile_patch_persists_to_supabase() {
             "avatar_url": "https://cdn.example.test/avatar.png",
             "bio": null,
             "display_name": "Ada",
-        }})
+        } })
     );
 }
 
