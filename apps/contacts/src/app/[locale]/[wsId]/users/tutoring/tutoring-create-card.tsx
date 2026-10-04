@@ -111,9 +111,6 @@ export function TutoringCreateCard({
     return options;
   }, [form.groupId, groups]);
 
-  const singleTeacherId =
-    teacherOptions.length === 1 ? teacherOptions[0]?.value : undefined;
-
   /**
    * The queue hand-off prefills a student that the search page may not contain
    * yet, so keep its label selectable until the picker loads that person.
@@ -177,6 +174,7 @@ export function TutoringCreateCard({
 
   return (
     <section className="space-y-4">
+      <p className="text-muted-foreground text-sm">{t('creation_steps')}</p>
       <div className="grid gap-3 md:grid-cols-3">
         <div className="space-y-2">
           <Label>{t('group')}</Label>
@@ -184,28 +182,10 @@ export function TutoringCreateCard({
             emptyText={t('no_groups')}
             onChange={(value) => {
               const nextGroupId = value as string;
-              const managerIds = new Set(
-                (
-                  groups.find((group) => group.id === nextGroupId)?.managers ??
-                  []
-                )
-                  .map((manager) => manager.id)
-                  .filter((id): id is string => Boolean(id))
-              );
-              const nextSingleTeacherId =
-                managerIds.size === 1 ? [...managerIds][0] : undefined;
 
               onChange({
                 ...form,
                 groupId: nextGroupId,
-                sessionSlots: form.sessionSlots.map((slot) => ({
-                  ...slot,
-                  teacherUserId:
-                    nextSingleTeacherId ??
-                    (managerIds.has(slot.teacherUserId)
-                      ? slot.teacherUserId
-                      : ''),
-                })),
                 sourceFeedbackId: null,
               });
             }}
@@ -252,6 +232,15 @@ export function TutoringCreateCard({
             selected={form.reasonType}
           />
         </div>
+      </div>
+
+      <div className="rounded-lg bg-muted/30 p-3 text-sm">
+        <span className="font-medium">{t('homeroom_teacher')}: </span>
+        {teacherOptions.map((option) => option.label).join(', ') ||
+          t('homeroom_unassigned')}
+        <p className="mt-1 text-muted-foreground">
+          {t('tutoring_teacher_help')}
+        </p>
       </div>
 
       {form.reasonType !== 'CUSTOM' ? (
@@ -350,8 +339,8 @@ export function TutoringCreateCard({
         conflictingIndexes={conflictingIndexes}
         form={form}
         onChange={onChange}
-        singleTeacherId={singleTeacherId}
         teacherOptions={teacherOptions}
+        wsId={wsId}
       />
 
       <div className="space-y-2">

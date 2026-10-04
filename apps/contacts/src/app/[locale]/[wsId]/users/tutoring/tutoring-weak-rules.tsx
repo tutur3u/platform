@@ -36,7 +36,7 @@ export function TutoringWeakRules({ canConfigure, policy, onChange }: Props) {
     });
 
   return (
-    <section className="space-y-3 rounded-xl border bg-card p-4">
+    <section className="space-y-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h3 className="font-medium">{t('policy_weak_rules')}</h3>
