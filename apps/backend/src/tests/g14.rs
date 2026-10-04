@@ -11,7 +11,7 @@ async fn contact_api_routes_reject_unsupported_methods() {
     )
     .await;
     assert_eq!(profile_response.status, 405);
-    assert_eq!(profile_response.allow, Some("GET, PATCH"));
+    assert_eq!(profile_response.allow, Some("GET, HEAD, PATCH"));
 
     let full_name_response = handle_backend_request(
         &config,
@@ -23,7 +23,7 @@ async fn contact_api_routes_reject_unsupported_methods() {
     assert_eq!(full_name_response.allow, Some("PATCH"));
 
     let inquiry_response =
-        handle_backend_request(&config, request("GET", SUPPORT_INQUIRIES_PATH), &outbound).await;
+        handle_backend_request(&config, request("PUT", SUPPORT_INQUIRIES_PATH), &outbound).await;
     assert_eq!(inquiry_response.status, 405);
     assert_eq!(inquiry_response.allow, Some("POST"));
 
@@ -620,4 +620,27 @@ fn legacy_workspace_slides_collection_rejects_unsupported_methods() {
 
     assert_eq!(response.status, 405);
     assert_eq!(response.allow, Some("GET, POST"));
+}
+
+#[tokio::test]
+async fn unported_support_list_reads_fall_through_to_next() {
+    let config = BackendConfig::new("test", "backend");
+    let outbound = RecordingOutboundClient::default();
+    for method in ["GET", "HEAD"] {
+        let response =
+            handle_backend_request(&config, request(method, SUPPORT_INQUIRIES_PATH), &outbound)
+                .await;
+        assert_eq!(response.status, 404);
+        assert_eq!(response.body["error"], "not found");
+        assert_eq!(response.allow, None);
+        assert!(
+            crate::contact::handle_contact_route(
+                &config,
+                request(method, SUPPORT_INQUIRIES_PATH),
+                &outbound
+            )
+            .await
+            .is_none()
+        );
+    }
 }

@@ -5,6 +5,11 @@ const { withSessionAuthMock } = vi.hoisted(() => ({
   withSessionAuthMock: vi.fn((handler: unknown, _options?: unknown) => handler),
 }));
 
+vi.mock('next/server', async () => ({
+  ...(await vi.importActual('next/server')),
+  connection: vi.fn(),
+}));
+
 vi.mock('@/lib/api-auth', () => ({
   withSessionAuth: (handler: unknown, options?: unknown) =>
     withSessionAuthMock(handler, options),
@@ -58,7 +63,7 @@ describe('current user profile route', () => {
   });
 
   it('wires GET and PATCH with scoped internal-or-external profile auth policies', async () => {
-    await import('@/legacy-api-routes/v1/users/me/profile/route');
+    await import('./route');
 
     expect(withSessionAuthMock).toHaveBeenCalledTimes(2);
     expect(withSessionAuthMock.mock.calls[0]?.[1]).toEqual({
@@ -95,7 +100,7 @@ describe('current user profile route', () => {
         { requiredScope: 'users:profile:read' },
         { requiredScope: 'users:profile:write' },
       ],
-      cache: { maxAge: 60, swr: 30 },
+      cache: { maxAge: 0, swr: 0 },
     });
     expect(withSessionAuthMock.mock.calls[1]?.[1]).toEqual({
       allowAppSessionAuth: [
@@ -135,7 +140,7 @@ describe('current user profile route', () => {
   });
 
   it('returns public profile fields with email from private user details', async () => {
-    const route = await import('@/legacy-api-routes/v1/users/me/profile/route');
+    const route = await import('./route');
     const supabase = createProfileSupabase({
       userResult: {
         data: {
@@ -177,7 +182,7 @@ describe('current user profile route', () => {
   });
 
   it('does not fall back to auth email when private email is missing', async () => {
-    const route = await import('@/legacy-api-routes/v1/users/me/profile/route');
+    const route = await import('./route');
     const supabase = createProfileSupabase({
       userResult: {
         data: {
@@ -216,7 +221,7 @@ describe('current user profile route', () => {
   });
 
   it('returns current app-session identity when the public profile row is absent', async () => {
-    const route = await import('@/legacy-api-routes/v1/users/me/profile/route');
+    const route = await import('./route');
     const supabase = createProfileSupabase({
       userResult: {
         data: null,
