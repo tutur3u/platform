@@ -5,6 +5,7 @@ import {
   render,
   screen,
 } from '@testing-library/react';
+import type { InventorySalesPeriod } from '@tuturuuu/internal-api/inventory';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { InventorySeasonMergeDialog } from './inventory-season-merge-dialog';
@@ -141,7 +142,7 @@ vi.mock('@tuturuuu/ui/select', () => ({
     <option value={value}>{children}</option>
   ),
 }));
-const period = {
+const period: InventorySalesPeriod = {
   id: 'a',
   name: 'Source',
   description: null,
@@ -155,6 +156,7 @@ const period = {
   status: 'active' as const,
   ws_id: 'ws',
   created_at: '',
+  updated_at: '',
 };
 const periods = [
   period,
