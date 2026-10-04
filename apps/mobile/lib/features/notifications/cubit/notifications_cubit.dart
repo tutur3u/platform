@@ -24,6 +24,11 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   static const _cacheTag = 'notifications:feed';
 
   bool _scopeInitialized = false;
+  int _scopeEpoch = 0;
+  Future<void>? _unreadRefresh;
+
+  bool _isCurrentScope(int epoch, String? userId) =>
+      !isClosed && epoch == _scopeEpoch && userId == currentCacheUserId();
 
   static CacheKey _cacheKey({String? wsId}) {
     return CacheKey(
@@ -57,6 +62,8 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     }
 
     _scopeInitialized = true;
+    _scopeEpoch++;
+    _unreadRefresh = null;
     final isSeededState =
         state.scopeWorkspaceId == nextScopeWorkspaceId &&
         (state.inbox.hasLoadedOnce ||
@@ -95,28 +102,40 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     await refreshUnreadCount();
   }
 
-  Future<void> refreshUnreadCount() async {
-    if (isClosed) {
-      return;
-    }
+  Future<void> refreshUnreadCount() {
+    if (isClosed) return Future<void>.value();
+    final running = _unreadRefresh;
+    if (running != null) return running;
 
+    final completion = Completer<void>();
+    _unreadRefresh = completion.future;
+    unawaited(_fetchUnreadCount(completion));
+    return completion.future;
+  }
+
+  Future<void> _fetchUnreadCount(Completer<void> completion) async {
+    final epoch = _scopeEpoch;
+    final userId = currentCacheUserId();
+    final workspaceId = state.scopeWorkspaceId;
     emit(state.copyWith(isUnreadCountLoading: true));
     try {
       final unreadCount = await _notificationsRepository.fetchUnreadCount(
-        wsId: state.scopeWorkspaceId,
+        wsId: workspaceId,
       );
-      if (isClosed) {
-        return;
-      }
+      if (!_isCurrentScope(epoch, userId)) return;
+      final changed = state.unreadCount != unreadCount;
       emit(
         state.copyWith(unreadCount: unreadCount, isUnreadCountLoading: false),
       );
-      await _persistCurrentState();
+      // A badge refresh must not serialize the entire feed when unchanged.
+      if (changed) await _persistCurrentState();
     } on Exception {
-      if (isClosed) {
-        return;
+      if (_isCurrentScope(epoch, userId)) {
+        emit(state.copyWith(isUnreadCountLoading: false));
       }
-      emit(state.copyWith(isUnreadCountLoading: false));
+    } finally {
+      if (identical(_unreadRefresh, completion.future)) _unreadRefresh = null;
+      completion.complete();
     }
   }
 
@@ -125,6 +144,9 @@ class NotificationsCubit extends Cubit<NotificationsState> {
       return;
     }
 
+    final epoch = _scopeEpoch;
+    final userId = currentCacheUserId();
+    final workspaceId = state.scopeWorkspaceId;
     final feed = state.feedFor(tab);
     if (!refresh && feed.hasLoadedOnce) {
       return;
@@ -144,12 +166,12 @@ class NotificationsCubit extends Cubit<NotificationsState> {
 
     try {
       final page = await _notificationsRepository.fetchNotifications(
-        wsId: state.scopeWorkspaceId,
+        wsId: workspaceId,
         unreadOnly: tab == NotificationsTab.inbox,
         readOnly: tab == NotificationsTab.archive,
         limit: feed.pageSize,
       );
-      if (isClosed) {
+      if (!_isCurrentScope(epoch, userId)) {
         return;
       }
       emit(
@@ -165,7 +187,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
       );
       await _persistCurrentState();
     } on Exception catch (error) {
-      if (isClosed) {
+      if (!_isCurrentScope(epoch, userId)) {
         return;
       }
       emit(
@@ -187,6 +209,9 @@ class NotificationsCubit extends Cubit<NotificationsState> {
       return;
     }
 
+    final epoch = _scopeEpoch;
+    final userId = currentCacheUserId();
+    final workspaceId = state.scopeWorkspaceId;
     final feed = state.feedFor(tab);
     if (!feed.hasLoadedOnce ||
         !feed.hasMore ||
@@ -204,13 +229,13 @@ class NotificationsCubit extends Cubit<NotificationsState> {
 
     try {
       final page = await _notificationsRepository.fetchNotifications(
-        wsId: state.scopeWorkspaceId,
+        wsId: workspaceId,
         unreadOnly: tab == NotificationsTab.inbox,
         readOnly: tab == NotificationsTab.archive,
         limit: feed.pageSize,
         offset: feed.items.length,
       );
-      if (isClosed) {
+      if (!_isCurrentScope(epoch, userId)) {
         return;
       }
       final merged = _dedupeNotifications([
@@ -232,7 +257,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
       );
       await _persistCurrentState();
     } on Exception catch (error) {
-      if (isClosed) {
+      if (!_isCurrentScope(epoch, userId)) {
         return;
       }
       emit(
@@ -343,6 +368,8 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   }
 
   Future<void> _refreshLoadedTabs({NotificationsTab? preferredTab}) async {
+    // A completed mutation needs a count requested after the write.
+    await _unreadRefresh;
     await refreshUnreadCount();
     if (isClosed) {
       return;

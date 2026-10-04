@@ -46,3 +46,18 @@ text, navbar/system/dock back, and unknown module links;
 `shell_assistant_composer_test.dart` verifies one dock, draft/focus and Live
 transitions, and `shell_profile_races_test.dart` covers delayed account/cache
 completion. These widget checks do not establish installed-device or production evidence.
+
+## Notification navigation and refresh
+
+Mobile Notifications keeps its scoped snapshot visible while revalidating on
+entry. Concurrent unread badge refreshes share one awaitable request; the visible
+feed owns its push listener, and count-only changes do not rebuild page rows.
+Unchanged counts do not serialize the retained feed again. Workspace switches
+clear the visible feed and reload the selected tab; responses from an older
+workspace or actor cannot replace current reads. Pagination and offline pending
+read overlays retain their existing behavior. These defaults apply to the native
+Inbox and Archive; the sheet also updates its unread header.
+
+`notifications_cubit_test.dart` covers coalescing, retry, delayed scope responses
+and close safety. Focused tests establish request behavior, not a measured device
+frame-time improvement.

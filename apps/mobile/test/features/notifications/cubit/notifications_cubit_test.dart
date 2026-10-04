@@ -245,6 +245,110 @@ void main() {
       },
     );
 
+    test('concurrent badge refreshes share one awaitable request', () async {
+      final response = Completer<int>();
+      when(
+        () => repository.fetchUnreadCount(wsId: any(named: 'wsId')),
+      ).thenAnswer((_) => response.future);
+      final first = cubit.refreshUnreadCount();
+      final second = cubit.refreshUnreadCount();
+      expect(identical(first, second), isTrue);
+      verify(() => repository.fetchUnreadCount()).called(1);
+      response.complete(3);
+      await Future.wait([first, second]);
+      expect(cubit.state.unreadCount, 3);
+      expect(cubit.state.isUnreadCountLoading, isFalse);
+      await cubit.refreshUnreadCount();
+      verify(() => repository.fetchUnreadCount()).called(1);
+    });
+    test(
+      'write refresh does not reuse a count requested before the write',
+      () async {
+        final beforeWrite = Completer<int>();
+        var calls = 0;
+        when(
+          () => repository.fetchUnreadCount(wsId: any(named: 'wsId')),
+        ).thenAnswer(
+          (_) => ++calls == 1 ? beforeWrite.future : Future.value(0),
+        );
+        when(
+          () => repository.markRead(id: 'read_me', read: true),
+        ).thenAnswer((_) async {});
+        when(
+          () => repository.fetchNotifications(
+            wsId: any(named: 'wsId'),
+            unreadOnly: any(named: 'unreadOnly'),
+            readOnly: any(named: 'readOnly'),
+            limit: any(named: 'limit'),
+            offset: any(named: 'offset'),
+          ),
+        ).thenAnswer(
+          (_) async => const NotificationsPage(
+            notifications: [],
+            count: 0,
+            limit: 20,
+            offset: 0,
+          ),
+        );
+        final refresh = cubit.refreshUnreadCount();
+        final write = cubit.toggleRead(buildNotification(id: 'read_me'));
+        beforeWrite.complete(1);
+        await Future.wait([refresh, write]);
+        expect(calls, 2);
+        expect(cubit.state.unreadCount, 0);
+      },
+    );
+
+    test('badge refresh failure releases the request for retry', () async {
+      when(
+        () => repository.fetchUnreadCount(wsId: any(named: 'wsId')),
+      ).thenThrow(Exception('offline'));
+      await cubit.refreshUnreadCount();
+      expect(cubit.state.isUnreadCountLoading, isFalse);
+      when(
+        () => repository.fetchUnreadCount(wsId: any(named: 'wsId')),
+      ).thenAnswer((_) async => 7);
+      await cubit.refreshUnreadCount();
+      expect(cubit.state.unreadCount, 7);
+    });
+    test('late old-scope badge and feed cannot replace new scope', () async {
+      final oldCount = Completer<int>();
+      final oldFeed = Completer<NotificationsPage>();
+      when(
+        () => repository.fetchUnreadCount(wsId: any(named: 'wsId')),
+      ).thenAnswer(
+        (invocation) => invocation.namedArguments[#wsId] == 'team_ws'
+            ? oldCount.future
+            : Future.value(2),
+      );
+      when(
+        () => repository.fetchNotifications(
+          wsId: any(named: 'wsId'),
+          unreadOnly: any(named: 'unreadOnly'),
+          readOnly: any(named: 'readOnly'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+        ),
+      ).thenAnswer((_) => oldFeed.future);
+      final oldWorkspace = cubit.setWorkspace(teamWorkspace);
+      final oldLoad = cubit.loadTab(NotificationsTab.inbox);
+      await cubit.setWorkspace(personalWorkspace);
+      oldCount.complete(99);
+      oldFeed.complete(
+        NotificationsPage(
+          notifications: [buildNotification(id: 'private_team')],
+          count: 1,
+          limit: 20,
+          offset: 0,
+        ),
+      );
+      await Future.wait([oldWorkspace, oldLoad]);
+      expect(cubit.state.scopeWorkspaceId, isNull);
+      expect(cubit.state.unreadCount, 2);
+      expect(cubit.state.inbox.items, isEmpty);
+      expect(cubit.state.inbox.status, NotificationFeedStatus.initial);
+    });
+
     test('refreshUnreadCount ignores completion after close', () async {
       final unreadCountCompleter = Completer<int>();
       when(
