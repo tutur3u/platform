@@ -36,11 +36,17 @@ export function sortSaleStockOptions(
   return [...options].sort((left, right) => {
     if (sort === 'price-asc' || sort === 'price-desc') {
       const difference = left.price - right.price;
-      return sort === 'price-asc' ? difference : -difference;
+      return (
+        (sort === 'price-asc' ? difference : -difference) ||
+        left.key.localeCompare(right.key)
+      );
     }
 
     const difference = left.productName.localeCompare(right.productName);
-    return sort === 'name-asc' ? difference : -difference;
+    return (
+      (sort === 'name-asc' ? difference : -difference) ||
+      left.key.localeCompare(right.key)
+    );
   });
 }
 
@@ -107,8 +113,8 @@ export function SaleProductPicker({
   ];
 
   return (
-    <section className="grid min-w-0 content-start gap-2 sm:gap-3">
-      <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
+    <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 sm:gap-3">
+      <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2">
         <label className="relative flex min-w-0 flex-1 items-center">
           <Search className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground" />
           <Input
@@ -221,7 +227,7 @@ export function SaleProductPicker({
       </div>
 
       {query && searchState ? (
-        <div className="flex flex-wrap items-center gap-1.5 text-muted-foreground text-xs">
+        <div className="flex shrink-0 flex-wrap items-center gap-1.5 text-muted-foreground text-xs">
           <Badge className="gap-1" variant="outline">
             <Database className="h-3 w-3" />
             {hybridT(searchState)}
@@ -230,7 +236,7 @@ export function SaleProductPicker({
         </div>
       ) : null}
 
-      <div className="grid gap-1.5 sm:max-h-[24rem] sm:gap-2 sm:overflow-y-auto sm:pr-1">
+      <div className="grid min-h-0 flex-1 content-start gap-1.5 overflow-y-auto overscroll-contain sm:gap-2 sm:pr-1">
         {options.map((option) => {
           const quantity =
             lines.find((line) => line.key === option.key)?.quantity ?? 0;

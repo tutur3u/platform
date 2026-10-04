@@ -479,6 +479,7 @@ export function SaleCreateDialog({
                 icon: <PackagePlus className="h-4 w-4" />,
                 label: t('itemsTab'),
                 value: 'items',
+                contentClassName: 'flex flex-col overflow-hidden',
               },
               {
                 badge: lines.length,

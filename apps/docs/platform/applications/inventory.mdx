@@ -8,6 +8,25 @@ Inventory lives in `apps/inventory` and runs locally through Portless at
 `https://inventory.tuturuuu.localhost`. Production is intended for
 `https://inventory.tuturuuu.com`.
 
+## Web sale item picker
+
+Record sale shows one selectable row per product, unit and warehouse identity.
+Overlapping loaded pages and repeated stock entries do not create duplicate rows
+or add stock quantities. The later provided complete product snapshot supplies
+amounts, prices and archived status; page position does not guarantee chronological
+freshness, so server sale validation remains authoritative. Distinct products
+with the same name and distinct unit/warehouse variants remain separate. Equal name or price
+sort results use stock identity as a stable tie-breaker. Season eligibility and
+scheduled pricing continue to apply after catalog normalization, and server
+permissions and checkout validation remain authoritative.
+
+The item list occupies the space remaining beneath the search/filter controls
+and above the pinned sale footer. It scrolls within that space on mobile and
+desktop, rather than stopping at a fixed list height. This behavior is covered
+by `sale-create-items.test.ts`, `sale-product-picker.test.ts` and the mounted
+`sale-product-picker-layout.test.tsx` regression; DOM checks do not establish
+browser layout or customer-flow success.
+
 ## Native Inventory presentation
 
 The Flutter mini-app keeps Overview, Products, Sales, Manage and Storefront

@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import type { InventoryProductSummary } from '@tuturuuu/internal-api/inventory';
 import { describe, expect, it } from 'vitest';
+import { collectHybridSearchResults } from './hybrid-search';
 import {
   getSaleStockOptions,
   type SaleStockOption,
@@ -54,6 +56,93 @@ describe('getSaleStockOptions', () => {
         warehouseName: 'Counter',
       }),
     ]);
+  });
+
+  it.each(['', 'Demo'])(
+    'collapses overlapping pages for query %j without merging warehouse/unit variants',
+    (query) => {
+      const first: InventoryProductSummary = {
+        id: 'product-1',
+        name: 'Demo product',
+        inventory: [
+          {
+            amount: 4,
+            price: 8.1,
+            unit_id: 'unit-1',
+            warehouse_id: 'warehouse-1',
+          },
+        ],
+      };
+      const refreshed: InventoryProductSummary = {
+        ...first,
+        inventory: [
+          {
+            amount: 3,
+            price: 7.2,
+            unit_id: 'unit-1',
+            warehouse_id: 'warehouse-1',
+          },
+          {
+            amount: 3,
+            price: 7.2,
+            unit_id: 'unit-1',
+            warehouse_id: 'warehouse-1',
+          },
+          {
+            amount: null,
+            price: 8.1,
+            unit_id: 'unit-2',
+            warehouse_id: 'warehouse-1',
+          },
+          {
+            amount: 0,
+            price: 8.1,
+            unit_id: 'unit-1',
+            warehouse_id: 'warehouse-2',
+          },
+        ],
+      };
+      const pages = [{ data: [first] }, { data: [refreshed] }];
+      const visibleItems = pages.flatMap((page) => page.data);
+      const products = collectHybridSearchResults({
+        entries: [],
+        getId: (product: InventoryProductSummary) => product.id,
+        query,
+        visibleItems,
+      });
+      const options = getSaleStockOptions(products);
+      expect(options.map((row) => [row.key, row.amount])).toEqual([
+        ['product-1:unit-1:warehouse-1', 3],
+        ['product-1:unit-2:warehouse-1', null],
+        ['product-1:unit-1:warehouse-2', 0],
+      ]);
+      const cart = updateSaleCartQuantity(
+        updateSaleCartQuantity([], options[0]!, 1),
+        options[0]!,
+        2
+      );
+      expect(options[0]?.price).toBe(7.2);
+      expect(cart).toHaveLength(1);
+      expect(cart[0]?.quantity).toBe(2);
+      expect(first.inventory?.[0]?.amount).toBe(4);
+      expect(refreshed.inventory).toHaveLength(4);
+    }
+  );
+
+  it('keeps distinct product IDs with the same name and honors a refreshed archive', () => {
+    const product: InventoryProductSummary = {
+      id: 'first',
+      name: 'Same name',
+      inventory: [{ unit_id: 'unit', warehouse_id: 'warehouse', price: 1 }],
+    };
+    expect(
+      getSaleStockOptions([product, { ...product, id: 'second' }]).map(
+        (row) => row.productId
+      )
+    ).toEqual(['first', 'second']);
+    expect(
+      getSaleStockOptions([product, { ...product, archived: true }])
+    ).toEqual([]);
   });
 
   it('excludes archived products and incomplete stock targets', () => {
