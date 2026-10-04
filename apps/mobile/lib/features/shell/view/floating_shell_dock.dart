@@ -6,8 +6,11 @@ import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
+import 'package:mobile/features/shell/view/persistent_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
+import 'package:mobile/features/shell/view/shell_dock_slot.dart';
 import 'package:mobile/features/shell/view/shell_keyboard_chrome.dart';
+import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -35,6 +38,9 @@ class FloatingShellDock extends StatefulWidget {
     this.reserveNavigationClearance = true,
     this.reclaimNavigationClearanceWhenHidden = false,
     this.keepNavigationVisible = false,
+    this.composerVisible = false,
+    this.navigationWidth = 264,
+    this.allowDockSlot = true,
     super.key,
   });
 
@@ -42,6 +48,9 @@ class FloatingShellDock extends StatefulWidget {
   final bool reserveNavigationClearance;
   final bool reclaimNavigationClearanceWhenHidden;
   final bool keepNavigationVisible;
+  final bool composerVisible;
+  final double navigationWidth;
+  final bool allowDockSlot;
   final String location;
   final double bottomInset;
   final Widget navigation;
@@ -209,6 +218,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                 top: false,
                 child: ShellKeyboardChrome(
                   keyboardVisible: widget.keyboardVisible,
+                  keepVisible: widget.composerVisible,
                   builder: (context, {required hidden, required settled}) =>
                       ExcludeSemantics(
                         excluding: navigationHidden || hidden,
@@ -234,6 +244,8 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                                 offstage: hidden && settled,
                                 child: _DockActions(
                                   location: widget.location,
+                                  navigationWidth: widget.navigationWidth,
+                                  allowDockSlot: widget.allowDockSlot,
                                   navigation: widget.navigation,
                                 ),
                               ),
@@ -251,9 +263,16 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
 }
 
 class _DockActions extends StatefulWidget {
-  const _DockActions({required this.location, required this.navigation});
+  const _DockActions({
+    required this.location,
+    required this.navigation,
+    required this.navigationWidth,
+    required this.allowDockSlot,
+  });
   final String location;
   final Widget navigation;
+  final double navigationWidth;
+  final bool allowDockSlot;
 
   @override
   State<_DockActions> createState() => _DockActionsState();
@@ -289,13 +308,42 @@ class _DockActionsState extends State<_DockActions> {
     super.dispose();
   }
 
+  Widget _registeredDock(
+    Widget navigation, {
+    Widget? primary,
+    Widget? secondary,
+  }) {
+    final controller = ShellDockScope.maybeOf(context);
+    final workspace = context.watch<WorkspaceCubit?>()?.state;
+    final workspaceId =
+        (workspace?.currentWorkspace ?? workspace?.personalWorkspaceOrCurrent)
+            ?.id;
+    Widget dock() {
+      final slot = controller?.slot;
+      final active =
+          widget.allowDockSlot &&
+          slot?.location == widget.location &&
+          (slot?.workspaceId == null || slot?.workspaceId == workspaceId);
+      return PersistentShellDock(
+        content: active && slot!.composing ? slot.content : navigation,
+        composing: active && slot!.composing,
+        navigationWidth: widget.navigationWidth,
+        primary: active ? slot!.primary : primary,
+        secondary: active && slot!.composing ? null : secondary,
+      );
+    }
+
+    if (controller == null) return dock();
+    return ListenableBuilder(listenable: controller, builder: (_, _) => dock());
+  }
+
   @override
   Widget build(BuildContext context) {
     ShellChromeActionsCubit? cubit;
     try {
       cubit = context.read<ShellChromeActionsCubit>();
     } on ProviderNotFoundException {
-      return FloatingDockRail(navigation: widget.navigation);
+      return _registeredDock(widget.navigation);
     }
     return BlocBuilder<ShellChromeActionsCubit, ShellChromeActionsState>(
       bloc: cubit,
@@ -311,8 +359,8 @@ class _DockActionsState extends State<_DockActions> {
                   .toList();
         // Narrow docks keep secondary actions in the top navbar and reserve
         // one primary slot; wider docks add a second fixed slot.
-        return FloatingDockRail(
-          navigation: widget.navigation,
+        return _registeredDock(
+          widget.navigation,
           primary: actions.isEmpty
               ? null
               : ShellDockActionButton(action: actions.first),

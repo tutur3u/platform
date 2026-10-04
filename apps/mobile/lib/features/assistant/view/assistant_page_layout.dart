@@ -235,20 +235,13 @@ extension _AssistantPageLayout on _AssistantPageState {
                                             ),
                                         ],
                                       ),
-                                      Positioned(
-                                        left: floatingDockHorizontalInset,
-                                        right: floatingDockHorizontalInset,
-                                        bottom: assistantComposerBottomOffset(
-                                          context,
-                                        ),
-                                        child: AssistantMorphingDock(
-                                          isComposing: _isComposerVisible,
-                                          navigation:
-                                              AssistantDockNavigation.maybeOf(
-                                                context,
-                                              ) ??
-                                              const SizedBox.shrink(),
-                                          composer: AssistantComposerDock(
+                                      ShellDockPublisher(
+                                        slot: ShellDockSlot(
+                                          location: Routes.assistant,
+                                          workspaceId: currentWorkspace.id,
+                                          composing: _isComposerVisible,
+                                          content: AssistantComposerDock(
+                                            embedded: true,
                                             repository: _repository,
                                             chatState: chatState,
                                             liveState: liveState,
@@ -294,10 +287,19 @@ extension _AssistantPageLayout on _AssistantPageState {
                                             onRemoveAttachment:
                                                 removeComposerAttachment,
                                           ),
-                                          composeLabel: context
-                                              .l10n
-                                              .assistantAskPlaceholder,
-                                          onCompose: _restoreComposerAndFocus,
+                                          primary: _isComposerVisible
+                                              ? AssistantNavigationToggle(
+                                                  focusNode: _inputFocusNode,
+                                                  onToggle:
+                                                      _toggleComposerNavigation,
+                                                )
+                                              : AssistantComposerFab(
+                                                  label: context
+                                                      .l10n
+                                                      .assistantAskPlaceholder,
+                                                  onPressed:
+                                                      _restoreComposerAndFocus,
+                                                ),
                                         ),
                                       ),
                                       if (hasTranscript)

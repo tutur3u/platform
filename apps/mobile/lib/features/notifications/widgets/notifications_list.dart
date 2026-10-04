@@ -95,8 +95,8 @@ class _NotificationsListState extends State<_NotificationsList> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.only(top: pageTopInset),
         children: [
-          SizedBox(
-            height: 320,
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 320),
             child: StaggeredEntrance(
               replayKey: '${widget.tab.name}-notifications-error',
               delay: const Duration(milliseconds: 40),
@@ -115,8 +115,8 @@ class _NotificationsListState extends State<_NotificationsList> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.only(top: pageTopInset),
         children: [
-          SizedBox(
-            height: 320,
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 320),
             child: StaggeredEntrance(
               replayKey: '${widget.tab.name}-notifications-empty',
               delay: const Duration(milliseconds: 40),
