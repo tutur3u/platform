@@ -2,6 +2,7 @@ import {
   BarChart3,
   BookOpen,
   ClipboardCheck,
+  ClipboardList,
   Code2,
   HeartPulse,
   Home,
@@ -22,6 +23,11 @@ export async function getNavigationLinks(wsId: string): Promise<NavLink[]> {
       href: base,
       icon: <Home className="size-4" />,
       matchExact: true,
+    },
+    {
+      title: t('todo'),
+      href: `${base}/todo`,
+      icon: <ClipboardList className="size-4" />,
     },
     {
       title: t('practice'),

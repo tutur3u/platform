@@ -23,6 +23,11 @@ export async function getNavigationLinks(wsId: string): Promise<NavLink[]> {
       matchExact: true,
     },
     {
+      title: t('todo'),
+      href: `${base}/todo`,
+      icon: <ClipboardList className="size-4" />,
+    },
+    {
       title: t('courses'),
       href: `${base}/courses`,
       aliases: [`${base}/modules`],
