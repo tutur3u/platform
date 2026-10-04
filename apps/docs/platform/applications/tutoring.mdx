@@ -108,8 +108,9 @@ the form (the offending rows are highlighted before submit) and again in
 incoming slots and the sessions already stored. A teacher conflict needs the
 same teacher on both slots; a learner conflict needs only the same learner.
 
-Teachers are the managers of the selected group. Choosing a group with exactly
-one manager assigns that teacher to every slot.
+Group managers identify the homeroom teachers. Tutoring assignment is separate
+and accepts eligible teachers from across the verified workspace; see
+[teacher assignment](#tutoring-teacher-assignment).
 
 For an absence, staff enter the missed class date and select **Suggest all
 sessions**. The form scans the selected group's upcoming scheduled classes and
@@ -184,3 +185,25 @@ placeholders while data is in flight.
 
 The create button stays disabled until the group, learner, and every slot
 (date, time, 1–480 minutes, teacher) are complete and no two slots overlap.
+
+## Tutoring teacher assignment
+
+In Contacts, a tutoring teacher is selected separately from the student's
+homeroom teacher. By default, both session creation and editing accept any
+workspace user with an actual `TEACHER` membership in a group belonging to the
+same verified workspace. A teacher need not manage the student's selected class.
+Student membership in that class, staff management permission, and scheduling
+conflict checks still apply. Users without a teacher role and teachers belonging
+only to another workspace remain ineligible.
+
+The teacher selector uses the paginated, searchable tutoring teacher catalog,
+not the general people directory or the currently loaded class managers. Multiple
+teacher memberships produce one catalog identity. This contract applies to the
+live Next.js API; the teacher catalog and unported tutoring mutations remain
+tracked Rust migration backlog, while the existing Rust session-list GET is
+unchanged.
+
+Regression coverage: `apps/web/src/lib/tutoring/teachers.test.ts`,
+`apps/web/src/lib/tutoring/teacher-assignment-routes.test.ts`, and the tutoring
+teacher catalog's colocated `route.test.ts` cover workspace boundaries, teacher
+eligibility, permission denial, error handling, pagination, and session writes.
