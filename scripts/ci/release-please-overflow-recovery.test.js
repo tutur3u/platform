@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
+  GitHubClient,
   buildReleaseNotesDocument,
   extractChangelogEntry,
   extractOverflowBranchName,
@@ -14,8 +15,15 @@ function createFakeGitHub(overrides = {}) {
   const calls = [];
   const fake = {
     calls,
-    async createBranch(branchName, sha) {
-      calls.push(['createBranch', branchName, sha]);
+    async createBranchWithFile(branchName, sha, filePath, content, message) {
+      calls.push([
+        'createBranchWithFile',
+        branchName,
+        sha,
+        filePath,
+        content,
+        message,
+      ]);
     },
     async createFile(filePath, branchName, content, message) {
       calls.push(['createFile', filePath, branchName, content, message]);
@@ -209,21 +217,24 @@ test('builds a Release Please parseable overflow body', () => {
 test('recovers a missing overflow release-notes branch and file', async () => {
   const github = createFakeGitHub();
   const result = await recoverReleasePleaseOverflowNotes({ github });
-  const createFileCall = github.calls.find((call) => call[0] === 'createFile');
+  const createFileCall = github.calls.find(
+    (call) => call[0] === 'createBranchWithFile'
+  );
 
   assert.deepEqual(result, {
     branch: 'release-please--branches--production--release-notes',
     pullRequestNumber: 4767,
     status: 'created',
   });
-  assert.deepEqual(github.calls[0], [
-    'createBranch',
+  assert.equal(github.calls.length, 1);
+  assert.deepEqual(createFileCall.slice(0, 4), [
+    'createBranchWithFile',
     'release-please--branches--production--release-notes',
     'production-sha',
+    'release-notes.md',
   ]);
-  assert.equal(createFileCall[1], 'release-notes.md');
-  assert.match(createFileCall[3], /<summary>platform: 0\.4\.0<\/summary>/);
-  assert.match(createFileCall[3], /<summary>utils: 0\.3\.0<\/summary>/);
+  assert.match(createFileCall[4], /<summary>platform: 0\.4\.0<\/summary>/);
+  assert.match(createFileCall[4], /<summary>utils: 0\.3\.0<\/summary>/);
 });
 
 test('skips recovery when the overflow file already exists', async () => {
@@ -244,4 +255,78 @@ test('skips recovery when the overflow file already exists', async () => {
     status: 'exists',
   });
   assert.equal(github.calls.length, 0);
+});
+
+test('atomic recovery publishes the ref only after the final content commit exists', async () => {
+  const client = new GitHubClient({
+    repository: 'example/repo',
+    token: 'synthetic',
+  });
+  const calls = [];
+  client.request = async (method, path, options) => {
+    calls.push({ method, path, body: options?.body });
+    if (path === '/git/commits/base') return { tree: { sha: 'base-tree' } };
+    return {
+      sha:
+        path === '/git/blobs'
+          ? 'notes-blob'
+          : path === '/git/trees'
+            ? 'notes-tree'
+            : 'final-commit',
+    };
+  };
+  await client.createBranchWithFile(
+    'notes',
+    'base',
+    'release-notes.md',
+    'Synthetic notes',
+    'Synthetic recovery'
+  );
+  assert.deepEqual(
+    calls.map(({ path }) => path),
+    [
+      '/git/commits/base',
+      '/git/blobs',
+      '/git/trees',
+      '/git/commits',
+      '/git/refs',
+    ]
+  );
+  assert.deepEqual(calls[2].body, {
+    base_tree: 'base-tree',
+    tree: [
+      {
+        path: 'release-notes.md',
+        mode: '100644',
+        type: 'blob',
+        sha: 'notes-blob',
+      },
+    ],
+  });
+  assert.deepEqual(calls[3].body.parents, ['base']);
+  assert.equal(calls[4].body.sha, 'final-commit');
+});
+
+test('failure before final commit publication never creates a bootstrap ref', async () => {
+  const client = new GitHubClient({
+    repository: 'example/repo',
+    token: 'synthetic',
+  });
+  const paths = [];
+  client.request = async (_method, path) => {
+    paths.push(path);
+    if (path === '/git/commits/base') return { tree: { sha: 'base-tree' } };
+    throw new Error('Synthetic blob failure');
+  };
+  await assert.rejects(
+    client.createBranchWithFile(
+      'notes',
+      'base',
+      'release-notes.md',
+      'notes',
+      'recovery'
+    ),
+    /Synthetic blob failure/
+  );
+  assert.deepEqual(paths, ['/git/commits/base', '/git/blobs']);
 });

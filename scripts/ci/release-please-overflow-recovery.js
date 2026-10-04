@@ -144,6 +144,31 @@ class GitHubClient {
     });
   }
 
+  async createBranchWithFile(
+    branchName,
+    sourceSha,
+    filePath,
+    content,
+    message
+  ) {
+    const source = await this.request('GET', `/git/commits/${sourceSha}`);
+    const blob = await this.request('POST', '/git/blobs', {
+      body: { content, encoding: 'utf-8' },
+    });
+    const tree = await this.request('POST', '/git/trees', {
+      body: {
+        base_tree: source.tree.sha,
+        tree: [{ path: filePath, mode: '100644', type: 'blob', sha: blob.sha }],
+      },
+    });
+    const commit = await this.request('POST', '/git/commits', {
+      body: { message, tree: tree.sha, parents: [sourceSha] },
+    });
+    // Publish only the final notes commit. A ref at production's SHA would emit
+    // duplicate checks that the immediately following file write cancels.
+    return this.createBranch(branchName, commit.sha);
+  }
+
   async createFile(filePath, branchName, content, message) {
     return this.request('PUT', `/contents/${encodeRepoPath(filePath)}`, {
       body: {

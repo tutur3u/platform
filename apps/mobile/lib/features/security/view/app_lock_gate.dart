@@ -74,32 +74,21 @@ class _LockCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Center(child: _MinimalLockMark()),
-          const SizedBox(height: 28),
+          const SizedBox(height: 16),
           Text(
             l10n.appLockLockedTitle,
             textAlign: TextAlign.center,
-            style: theme.typography.h2.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            l10n.appLockLockedDescription,
-            textAlign: TextAlign.center,
             style: theme.typography.textSmall.copyWith(
               color: colorScheme.mutedForeground,
-              height: 1.45,
             ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 20),
           SizedBox(
             key: const ValueKey('app-lock-unlock-button'),
-            width: double.infinity,
-            height: 52,
+            width: 200,
+            height: authenticating ? 72 : 52,
             child: shad.PrimaryButton(
               enabled: !authenticating,
               onPressed: onUnlock,
@@ -116,12 +105,14 @@ class _LockCard extends StatelessWidget {
                   else
                     const Icon(Icons.fingerprint_rounded, size: 21),
                   const SizedBox(width: 9),
-                  Text(
-                    authenticating
-                        ? l10n.appLockUnlockingAction
-                        : l10n.appLockUnlockAction,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  Flexible(
+                    child: Text(
+                      authenticating
+                          ? l10n.appLockUnlockingAction
+                          : l10n.appLockUnlockAction,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
                   ),
                 ],
               ),

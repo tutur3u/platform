@@ -203,6 +203,7 @@
     "@tanstack/react-table": "^9.0.0"
   },
   "exports": {
+    "./custom/education-todo": "./src/components/ui/custom/education-todo.tsx",
     "./globals.css": "./src/globals.css",
     "./marketing": "./src/components/ui/marketing/index.ts",
     "./postcss.config": "./postcss.config.mjs",

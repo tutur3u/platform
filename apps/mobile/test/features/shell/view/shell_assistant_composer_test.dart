@@ -227,6 +227,22 @@ void main() {
           find.byKey(const ValueKey('floating-shell-dock-opacity')),
           findsNothing,
         );
+        // Retained root pages must never paint two bodies/docks, even on
+        // the first frame after leaving or reentering Assistant.
+        for (final destination in [Routes.apps, Routes.assistant]) {
+          router.go(destination);
+          for (final frame in [0, 16, 100, 280]) {
+            await tester.pump(Duration(milliseconds: frame));
+            expect(
+              find.byType(AssistantMorphingDock),
+              destination == Routes.assistant ? findsOneWidget : findsNothing,
+            );
+            expect(
+              find.byKey(const ValueKey('floating-shell-dock-opacity')),
+              destination == Routes.assistant ? findsNothing : findsOneWidget,
+            );
+          }
+        }
         expect(tester.takeException(), isNull);
       },
     );
