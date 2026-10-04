@@ -187,6 +187,16 @@ function serializeBlock(
       return '---';
     case 'table':
       return serializeTable(node, format);
+    case 'image':
+    case 'imageResize': {
+      const src = typeof node.attrs.src === 'string' ? node.attrs.src : '';
+      const alt = typeof node.attrs.alt === 'string' ? node.attrs.alt : '';
+      return format === 'markdown'
+        ? src
+          ? `![${alt}](${src})`
+          : alt
+        : [alt || 'Image', src].filter(Boolean).join(': ');
+    }
     case 'video':
       return node.attrs.src
         ? format === 'markdown'

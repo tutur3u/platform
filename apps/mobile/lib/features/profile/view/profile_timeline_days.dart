@@ -32,6 +32,8 @@ class ProfileTimelineDays extends StatelessWidget {
     this.convertDate,
     this.now,
     this.itemKey,
+    this.showHeader = true,
+    this.showItems = true,
     super.key,
   });
 
@@ -40,6 +42,8 @@ class ProfileTimelineDays extends StatelessWidget {
   final DateTime Function(DateTime)? convertDate;
   final DateTime? now;
   final Key Function(ProfileTimelineItem)? itemKey;
+  final bool showHeader;
+  final bool showItems;
 
   @override
   Widget build(BuildContext context) {
@@ -58,35 +62,40 @@ class ProfileTimelineDays extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (final entry in groups.entries) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Semantics(
-              header: true,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    entry.key == today
-                        ? context.l10n.profileTimelineToday
-                        : entry.key == yesterday
-                        ? context.l10n.profileTimelineYesterday
-                        : DateFormat.yMMMd(locale).format(entry.key),
-                    style: theme.typography.base.copyWith(
-                      fontWeight: FontWeight.w700,
+          if (showHeader)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Semantics(
+                header: true,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      entry.key == today
+                          ? context.l10n.profileTimelineToday
+                          : entry.key == yesterday
+                          ? context.l10n.profileTimelineYesterday
+                          : DateFormat.yMMMd(locale).format(entry.key),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.base.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  const shad.Gap(4),
-                  Text(
-                    _summary(context, entry.value),
-                    style: theme.typography.textSmall.copyWith(
-                      color: theme.colorScheme.mutedForeground,
+                    const shad.Gap(4),
+                    Text(
+                      _summary(context, entry.value),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.textSmall.copyWith(
+                        color: theme.colorScheme.mutedForeground,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          for (final item in entry.value)
+          for (final item in showItems ? entry.value : <ProfileTimelineItem>[])
             Material(
               color: Colors.transparent,
               child: ListTile(
@@ -100,11 +109,15 @@ class ProfileTimelineDays extends StatelessWidget {
                       : _milestone(context, item),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
+                  style: theme.typography.base,
                 ),
                 subtitle: Text(
                   item.title?.trim().isNotEmpty == true
                       ? '${_milestone(context, item)} · ${time(item)}'
                       : time(item),
+                  style: theme.typography.textSmall,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 trailing: _canOpen(item)
                     ? const Icon(Icons.chevron_right_rounded, size: 18)

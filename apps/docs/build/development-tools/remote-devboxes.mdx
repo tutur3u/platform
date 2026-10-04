@@ -665,3 +665,24 @@ is deferred when a runner does not report its hostname. Fleet upgrades honor
 `--timeout`; a timed-out run requests cancellation and reports whether that
 request succeeded. Verify its run and lease before retrying or touching another
 runner, since a stop request does not prove immediate process termination.
+
+
+## Runtime Acceptance Diagnostics
+
+Judge capacity discovery runs a strict four-second `docker info` metadata probe
+before allocating a sandbox. A failure reports a fixed timeout, spawn
+(not found, permission denied, or other), numeric exit, signal, or missing-exit
+classification. These diagnostics omit Docker hosts, command arguments, raw
+output, and provider error messages. A timeout is not proof that the engine is
+absent: inspect the owning CI job and runner lifecycle before repairing or
+retrying. Successful discovery still requires registered gVisor, enforced
+cgroups, and reported CPU/memory capacity. Mocked process tests verify the
+classification and failure boundary; they do not verify a runner's Docker engine.
+
+The Lettin persistence browser regression separately reports project-navigation
+confirmation and the notebook-button action, retaining their existing deadlines
+and assertions. Phase failures emit an allowlisted error name and a fixed message
+summary rather than authenticated URLs or response bodies. A runner shutdown
+without a final assertion report leaves the underlying cause unproven. Preserve
+allocated fixtures until successful final cleanup or independently verified
+resource absence, and use the next exact-source CI result for runtime evidence.

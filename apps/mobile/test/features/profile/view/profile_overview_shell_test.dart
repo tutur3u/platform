@@ -564,7 +564,7 @@ void main() {
           expect(selected.bottom, lessThan(tester.view.physicalSize.height));
           final inner = find.descendant(
             of: browser,
-            matching: find.byType(SingleChildScrollView),
+            matching: find.byType(CustomScrollView),
           );
           await tester.drag(inner, const Offset(0, -220));
           await _pump(tester);
@@ -629,37 +629,29 @@ void main() {
     expect(find.byType(SettingsPanel), findsNothing);
     expect(tester.takeException(), isNull);
   });
-  testWidgets(
-    'Profile uses actual shell selector and navigates back at large text',
-    (tester) async {
-      await mount(tester);
-      expect(find.byKey(const ValueKey('profile-views')), findsOneWidget);
-      expect(find.byType(ProfileOverviewPage), findsOneWidget);
-      await tester.tap(find.byTooltip('Timeline'));
-      await _pump(tester);
-      expect(find.text('Timeline'), findsOneWidget);
-      await tester.tap(find.byTooltip('Overview'));
-      await _pump(tester);
-      expect(find.text('Overview'), findsOneWidget);
-      expect(
-        find.descendant(
-          of: find.byType(ProfileOverviewPage),
-          matching: find.text('Overview'),
-        ),
-        findsNothing,
-      );
-      await tester.tap(find.byTooltip('Identity'));
-      await _pump(tester);
-      expect(router.state.matchedLocation, Routes.settingsProfile);
-      await tester.binding.handlePopRoute();
-      await _pump(tester);
-      expect(
-        router.routeInformationProvider.value.uri.path,
-        Routes.profileRoot,
-      );
-      expect(tester.takeException(), isNull);
-    },
-  );
+  testWidgets('Profile shell keeps editing in consolidated settings', (
+    tester,
+  ) async {
+    await mount(tester);
+    expect(find.byKey(const ValueKey('profile-views')), findsOneWidget);
+    expect(find.byType(ProfileOverviewPage), findsOneWidget);
+    await tester.tap(find.byTooltip('Timeline'));
+    await _pump(tester);
+    expect(find.text('Timeline'), findsOneWidget);
+    await tester.tap(find.byTooltip('Overview'));
+    await _pump(tester);
+    expect(find.text('Overview'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(ProfileOverviewPage),
+        matching: find.text('Overview'),
+      ),
+      findsNothing,
+    );
+    expect(find.byTooltip('Identity'), findsNothing);
+    expect(router.state.matchedLocation, Routes.profileRoot);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('actual Profile account action selects stored account', (
     tester,
   ) async {

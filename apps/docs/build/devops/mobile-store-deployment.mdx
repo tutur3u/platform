@@ -551,3 +551,16 @@ cancel system consent, switch apps, rotate, stop from system UI, mute on iOS,
 change account/workspace, reconnect Live, and lock/unlock the device. Confirm the
 assistant receives the selected screen and that no frames continue after stop.
 Simulator tests and passing Dart tests do not prove background broadcast delivery.
+
+
+### Local Cloudflare channel parity
+
+Run `bun apps/meet-realtime/tests/mobile-local-check.ts` through the shared
+resource queue to exercise the real local Worker with Web and Dart clients.
+The fixture delays native startup beyond five seconds; its Web ticket lasts
+60 seconds to support the normal 45-second renewal cadence. Native tickets
+still expire after five seconds and renew every second, with account-bound
+presence and multiple-ticket assertions. A five-second reply deadline remains
+in place. Failure diagnostics report only statuses and counters, never tickets
+or signing secrets. The harness closes both clients, its loopback fixture and
+the Worker; it does not validate hosted SFU or physical-device screen capture.

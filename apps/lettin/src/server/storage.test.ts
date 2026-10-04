@@ -54,6 +54,7 @@ beforeAll(async () => {
     '0001_worldbuilding.sql',
     '0002_public_indexes.sql',
     '0003_media_cleanup.sql',
+    '0004_creator_imports_and_moderation.sql',
   ]) {
     const migration = await readFile(
       new URL(`../../migrations/${name}`, import.meta.url),
@@ -461,4 +462,170 @@ it('allows invitation owners to revoke after delegation is disabled', async () =
       invitationId: invitation.id,
     })
   ).resolves.toEqual(invitation);
+});
+
+describe('Wiki graph and inline artwork', () => {
+  it('saves typed relationships, rejects foreign targets, and hides unpublished references in world and entry snapshots', async () => {
+    const a = (
+      await mutate(db, owner, {
+        action: 'createEntry',
+        worldId,
+        draft: { ...draft, kind: 'character' },
+      })
+    ).id;
+    const b = (
+      await mutate(db, owner, {
+        action: 'createEntry',
+        worldId,
+        draft: { ...draft, kind: 'location' },
+      })
+    ).id;
+    const wiki = {
+      aliases: ['The Wanderer'],
+      facts: [{ label: 'Origin', value: 'North' }],
+      chronology: {
+        order: -120,
+        label: 'Before the crossing',
+        era: 'First age',
+      },
+      relationships: [
+        { targetId: b, kind: 'located' as const, label: 'Lives in' },
+      ],
+    };
+    await mutate(db, owner, {
+      action: 'saveEntry',
+      worldId,
+      entryId: a,
+      version: 1,
+      draft: { ...draft, wiki },
+    });
+    await mutate(db, owner, {
+      action: 'saveWorld',
+      worldId,
+      version: 1,
+      draft: { ...draft, wiki },
+    });
+    await mutate(db, owner, {
+      action: 'publishEntry',
+      worldId,
+      entryId: a,
+      version: 2,
+    });
+    await mutate(db, owner, { action: 'publishWorld', worldId, version: 2 });
+    let publicWorld = (await readPublic(db, worldId))[0]!;
+    expect(publicWorld.published.wiki?.relationships).toEqual([]);
+    expect(publicWorld.entries[0]?.published.wiki).toMatchObject({
+      aliases: ['The Wanderer'],
+      relationships: [],
+      chronology: { order: -120 },
+    });
+    await mutate(db, owner, {
+      action: 'publishEntry',
+      worldId,
+      entryId: b,
+      version: 1,
+    });
+    publicWorld = (await readPublic(db, worldId))[0]!;
+    expect(publicWorld.published.wiki?.relationships).toHaveLength(1);
+    expect(
+      publicWorld.entries.find((entry) => entry.id === a)?.published.wiki
+        ?.relationships[0]?.targetId
+    ).toBe(b);
+    const other = (await mutate(db, owner, { action: 'createWorld', draft }))
+      .id;
+    const foreign = (
+      await mutate(db, owner, { action: 'createEntry', worldId: other, draft })
+    ).id;
+    await expect(
+      mutate(db, owner, {
+        action: 'saveEntry',
+        worldId,
+        entryId: a,
+        version: 3,
+        draft: {
+          ...draft,
+          wiki: {
+            ...wiki,
+            relationships: [{ targetId: foreign, kind: 'related', label: '' }],
+          },
+        },
+      })
+    ).rejects.toBeInstanceOf(LettinError);
+    await expect(
+      mutate(db, owner, {
+        action: 'saveEntry',
+        worldId,
+        entryId: a,
+        version: 3,
+        draft: {
+          ...draft,
+          wiki: {
+            ...wiki,
+            relationships: [{ targetId: a, kind: 'related', label: '' }],
+          },
+        },
+      })
+    ).rejects.toMatchObject({ status: 400 });
+    await mutate(db, owner, {
+      action: 'unpublishEntry',
+      worldId,
+      entryId: b,
+      version: 2,
+    });
+    expect(JSON.stringify(await readPublic(db, worldId))).not.toContain(b);
+  });
+  it('keeps inline uploads alive and grants anonymous access only while their snapshot is published', async () => {
+    const artwork = await uploadMedia(
+      db,
+      bucket,
+      owner,
+      worldId,
+      new File(['inline'], 'inline.png', { type: 'image/png' })
+    );
+    const id = artwork.image.split('/').at(-1)!;
+    const anonymous = async () => {
+      throw new LettinError(401);
+    };
+    const content = {
+      type: 'doc',
+      content: [
+        { type: 'imageResize', attrs: { src: artwork.image, width: '320px' } },
+      ],
+    };
+    await mutate(db, owner, {
+      action: 'saveWorld',
+      worldId,
+      version: 1,
+      draft: { ...draft, content },
+    });
+    await db
+      .prepare("UPDATE media SET created_at='2000-01-01T00:00:00.000Z'")
+      .run();
+    await cleanupMedia(db, bucket, worldId);
+    expect((await getMedia(db, bucket, id, async () => owner)).status).toBe(
+      200
+    );
+    await expect(getMedia(db, bucket, id, anonymous)).rejects.toMatchObject({
+      status: 404,
+    });
+    await mutate(db, owner, { action: 'publishWorld', worldId, version: 2 });
+    await mutate(db, owner, {
+      action: 'saveWorld',
+      worldId,
+      version: 3,
+      draft,
+    });
+    await cleanupMedia(db, bucket, worldId);
+    expect(await (await getMedia(db, bucket, id, anonymous)).text()).toBe(
+      'inline'
+    );
+    await mutate(db, owner, { action: 'unpublishWorld', worldId, version: 4 });
+    await expect(getMedia(db, bucket, id, anonymous)).rejects.toMatchObject({
+      status: 404,
+    });
+    await cleanupMedia(db, bucket, worldId);
+    await expect(
+      getMedia(db, bucket, id, async () => owner)
+    ).rejects.toMatchObject({ status: 404 });
+  });
 });

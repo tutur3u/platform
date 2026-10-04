@@ -1,6 +1,11 @@
 'use client';
 
 import { Loader2, Settings, UserIcon } from '@tuturuuu/icons';
+import {
+  removeCurrentUserAvatar,
+  uploadCurrentUserAvatar,
+} from '@tuturuuu/internal-api';
+import { optimizeProfileMediaFile } from '@tuturuuu/internal-api/profile-media';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -37,9 +42,6 @@ const FormSchema = z.object({
   }, 'Please upload a valid image file'),
 });
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024;
-const AVATAR_SIZE = 500;
-
 export default function UserAvatar({ user }: AvatarProps) {
   const t = useTranslations();
   const router = useRouter();
@@ -55,89 +57,14 @@ export default function UserAvatar({ user }: AvatarProps) {
     resolver: zodResolver(FormSchema),
   });
 
-  const compressImage = (file: File): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target?.result as string;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          canvas.width = AVATAR_SIZE;
-          canvas.height = AVATAR_SIZE;
-
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
-            canvas.toBlob(
-              (blob) => {
-                if (blob) {
-                  resolve(blob);
-                } else {
-                  reject(new Error('Blob creation failed'));
-                }
-              },
-              file.type,
-              0.7 // 70% quality
-            );
-          } else {
-            reject(new Error('Canvas context is null'));
-          }
-        };
-      };
-      reader.onerror = (error) => reject(error);
-    });
-  };
-
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     if (!data.file) return;
 
     setSaving(true);
 
     try {
-      const compressedBlob = await compressImage(data.file);
-      const compressedFile = new File([compressedBlob], data.file.name, {
-        type: data.file.type,
-      });
-
-      if (compressedFile.size > MAX_FILE_SIZE) {
-        throw new Error('Compressed file is still too large');
-      }
-
-      const filename = data.file.name;
-
-      const urlRes = await fetch('/api/v1/users/me/avatar/upload-url', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ filename }),
-      });
-
-      if (!urlRes.ok) throw new Error('Failed to get upload URL');
-
-      const { uploadUrl, publicUrl } = await urlRes.json();
-
-      const uploadRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': compressedFile.type,
-        },
-        body: compressedFile,
-      });
-
-      if (!uploadRes.ok) throw new Error('Failed to upload file');
-
-      const updateRes = await fetch('/api/v1/users/me/profile', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ avatar_url: publicUrl }),
-      });
-
-      if (!updateRes.ok) throw new Error('Failed to update profile');
+      const result = await uploadCurrentUserAvatar(data.file);
+      if (!result.finalizeOk) throw new Error(result.finalizeError);
 
       toast({
         title: 'Avatar updated',
@@ -168,11 +95,12 @@ export default function UserAvatar({ user }: AvatarProps) {
       return;
     }
 
-    const res = await fetch('/api/v1/users/me/avatar', {
-      method: 'DELETE',
-    });
+    const removed = await removeCurrentUserAvatar().then(
+      () => true,
+      () => false
+    );
 
-    if (!res.ok) {
+    if (!removed) {
       toast({
         title: 'Remove failed',
         description:
@@ -192,13 +120,10 @@ export default function UserAvatar({ user }: AvatarProps) {
 
   const handleFileSelect = async (file: File) => {
     try {
-      const compressedBlob = await compressImage(file);
-      const fileURL = URL.createObjectURL(compressedBlob);
+      const optimizedFile = await optimizeProfileMediaFile(file, 'avatar');
+      const fileURL = URL.createObjectURL(optimizedFile);
       setPreviewSrc(fileURL);
-      form.setValue(
-        'file',
-        new File([compressedBlob], file.name, { type: file.type })
-      );
+      form.setValue('file', optimizedFile);
     } catch (error) {
       console.error('Error compressing image:', error);
       toast({

@@ -974,9 +974,9 @@ Profile uses the shell title for Overview and Timeline, with no duplicate
 body heading. Place the day-trail action before the rightmost Overview/Timeline
 switch, including compact/overflow layouts. Identity and metric layouts adapt to
 available width and text scale; avoid nested bordered panels and fixed three-column
-cards on small screens. Timeline uses short rows and a compact retry/status
-line. Preserve privacy and incomplete-source information in accessible tooltips
-or concise status, rather than long explanatory paragraphs. These are defaults
+cards on small screens. Timeline mounts activity rows lazily and keeps transient
+provider failures in a bounded toast, without a persistent retry/status row.
+Preserve privacy and do not announce a partial response as complete history. These are defaults
 for the mobile Profile and comparable shell section switches; semantic borders
 for unsynchronized drafts and destructive confirmation dialogs remain intentional.
 
@@ -994,31 +994,45 @@ Synthetic Profile renders use placeholder identity and activity data:
 ## Profile activity privacy
 
 The Profile timeline shows the signed-in user's task creations, transaction
-creations, and notes from the verified personal workspace for the most recent 30 days.
-Calendar rows are explicitly labeled as **workspace events** because the calendar
-table does not record a reliable creator. The timeline groups rows by the device's
-local day, expands to individual items, and links to their native mobile views.
-Overview is the default Profile view. Overview and Timeline use the same shell
-segmented action control as Notifications, Assistant, and Apps. Overview contains
-responsive identity and tracked-time sections; Timeline contains creation records, newest
-first within local-day groups, with returned days revealed incrementally.
-Each record states the creation action and time; calendar creation is explicitly
-workspace activity. This is a bounded recent feed, not lifetime achievements,
-completion history, or an inferred account milestone. The existing API's display
-limit and partial-source flags are visible. Failed refreshes keep cached rows and
-show retry. Completeness and display-limit flags persist with the encrypted
-snapshot, so reopening offline keeps the same warnings. Older list snapshots
-remain readable. Sharing tracked time does not share Timeline content.
+creations, and notes from the verified personal workspace. Calendar rows are
+**workspace events**, shown only with `manage_calendar` permission. The API first
+checks actor membership and Calendar permission before its audited Calendar read;
+missing permission omits that source, while lookup failures mark the result partial.
+Finance keeps its permission-aware RPC. Calendar titles are not returned.
 
-Its snapshot is encrypted and scoped by user and workspace; opening Profile returns
-it first and then revalidates. Overview and Timeline ignore the selected team;
-missing, ambiguous or unverified personal membership fails closed. Identity and avatars
-reject late shell profiles from another account. Timeline never follows the
-tracked-time sharing preference.
-If one activity source is unavailable, Profile keeps the other sources visible,
-labels the result as partial, and offers retry. An unreadable local snapshot
-does not prevent the network refresh. If every source fails, the existing retry
-state remains.
+Overview is the default view and has no edit shortcut. Profile editing and full
+banner controls live in consolidated account settings. Avatar/banner uploads are
+optimized off the UI isolate: input is bounded to 20 MiB/40 MP, orientation is
+applied, and JPEG output is limited to 1024/2048 pixels and the existing 2/5 MiB
+bucket ceilings. Animated images become a static first frame; re-encoding strips
+source metadata. Banner tickets reserve the existing actor-derived upload budget;
+failed tickets retain their reservation. Only public first-party actor-owned
+avatars/banners enter the scoped disk cache. Signed, private and foreign URLs do
+not. Account changes fence asynchronous profile loads and media dispatch.
+
+Timeline groups records by local day, links to native views, and reveals days near
+the bottom, including an initially short viewport. Day headings and activity rows
+are mounted lazily, with row extents adapted to the effective text scale. Further API pages contain at
+most 200 rows per source, with a pinned upper time boundary and a maximum of 1000
+pages per browsing session. Offset continuation can omit or repeat records during
+concurrent inserts/deletes; client deduplication does not guarantee snapshot
+isolation. Refresh starts a new session. A partial or failed page pauses automatic
+continuation and keeps loaded rows. No persistent warning, retry row or completion
+footer occupies the Timeline; a failure notice automatically dismisses after five
+seconds. A capped or partial result must not claim an empty complete history.
+
+The loaded snapshot is encrypted and actor/personal-workspace scoped, shown before
+revalidation. Successful pages persist merged, deduplicated history. Partial
+refreshes retain stored rows from failed providers while replacing successful
+providers, with truthful partial flags; they do not retain newly permission-denied
+Calendar rows. Older partial responses without source metadata retain their
+stored rows as explicitly incomplete. Missing, ambiguous or unverified
+personal membership fails closed; neither Overview nor Timeline follows the
+selected team or tracked-time sharing preference. An unreadable local snapshot
+does not block refresh. Regression coverage includes
+`profile_timeline_incremental_test.dart`, `profile_timeline_races_test.dart`,
+`profile_media_optimization_test.dart`, `profile_media_image_test.dart`, and the
+first-class mobile-activity/banner-ticket API tests.
 
 Profile Overview and Timeline show personal data only and expose no team-sharing
 controls or opt-in team aggregates. Nothing is shared by default. Existing team
@@ -1147,15 +1161,14 @@ Overview and Timeline read only the signed-in account's verified personal
 membership, even with a team selected. Missing or ambiguous personal memberships,
 authentication mismatch and account transitions clear data and make no
 fallback request. Cached and delayed responses stay scoped; opening records selects their personal workspace.
-Timeline has one primary scroll: compact partial-error/retry status and optional
-week controls scroll with activity, rather than pinning a second header. Closed
-shell-controlled dates add no month row or empty refresh slot. Header clearance
-is inside the scroll; it leaves the viewport as the shell hides. Five returned
-days append near the bottom, with an accessible button fallback, stable item
-positions and type/id deduplication. Date navigation expands returned days as
-needed. The end label means all **loaded** activity, never complete history:
-the API still returns a 30-day snapshot capped at 200 rows per source. Partial
-and limited warnings persist offline; retries retain rows and cannot overlap.
+Timeline has one primary scroll: optional week controls scroll with activity,
+rather than pinning a second header. Closed shell-controlled dates add no month
+row or empty refresh slot. Header clearance is inside the scroll; it leaves the
+viewport as the shell hides. Returned days and further provider pages append near
+the bottom, including a short viewport, with stable item positions and type/id
+deduplication. Date navigation expands returned days as needed. No completion
+label implies that the user's complete history has been loaded. Partial responses
+retain existing rows and pause continuation; refresh starts a new paging session.
 Calendar attribution, device-local grouping, reduced motion and DST stay intact.
 
 Home's personal calendar tab is titled **Agenda** in English and **Lịch trình**
@@ -1177,8 +1190,8 @@ Opening date controls before the first activity response does not lock the
 default date: the newest returned day is revealed unless the user explicitly
 chooses a date. Empty stored snapshots stay provisional while revalidation is
 pending, using the fixed skeleton viewport rather than announcing absence.
-The section owns its failure/partial retry banner; the embedded browser does
-not repeat that status. Standalone browsers still report incomplete state.
+The section owns one bounded failure toast per failure streak; the embedded
+browser does not add a persistent provider-status banner or retry row.
 
 Mounted Profile regressions locate the lazy activity section by its rendered
 position and wait within a bounded interval for fetched statistics. Fixed pixel

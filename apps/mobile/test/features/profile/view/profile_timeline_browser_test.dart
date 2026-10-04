@@ -152,7 +152,10 @@ void main() {
       expect(find.text('No recent activity in this workspace'), findsNothing);
       tester
           .widget<IconButton>(
-            find.byKey(const ValueKey('timeline-date-toggle')),
+            find.byKey(
+              const ValueKey('timeline-date-toggle'),
+              skipOffstage: false,
+            ),
           )
           .onPressed!();
       await tester.pumpAndSettle();
@@ -167,12 +170,15 @@ void main() {
     (tester) async {
       await mount(tester);
       expect(find.text('October task'), findsOneWidget);
-      expect(find.text('September task'), findsOneWidget);
-      expect(find.text('Older task'), findsOneWidget);
+      expect(find.text('September task', skipOffstage: false), findsOneWidget);
+      expect(find.text('Older task'), findsNothing);
       final semantics = tester.ensureSemantics();
       tester
           .widget<IconButton>(
-            find.byKey(const ValueKey('timeline-date-toggle')),
+            find.byKey(
+              const ValueKey('timeline-date-toggle'),
+              skipOffstage: false,
+            ),
           )
           .onPressed!();
       await tester.pumpAndSettle();
@@ -194,7 +200,10 @@ void main() {
       for (var i = 0; i < 4; i++) {
         tester
             .widget<IconButton>(
-              find.byKey(const ValueKey('timeline-date-toggle')),
+              find.byKey(
+                const ValueKey('timeline-date-toggle'),
+                skipOffstage: false,
+              ),
             )
             .onPressed!();
         await tester.pumpAndSettle();
@@ -222,16 +231,19 @@ void main() {
       final browserScroll = find
           .descendant(
             of: find.byType(ProfileTimelineBrowser),
-            matching: find.byType(SingleChildScrollView),
+            matching: find.byType(CustomScrollView),
           )
           .last;
       await tester.drag(browserScroll, const Offset(0, -220));
       await tester.pumpAndSettle();
-      final before = tester.getTopLeft(find.text('Task 3')).dy;
+      final before = tester.getTopLeft(find.text('Task 2')).dy;
       for (var i = 0; i < 6; i++) {
         tester
             .widget<IconButton>(
-              find.byKey(const ValueKey('timeline-date-toggle')),
+              find.byKey(
+                const ValueKey('timeline-date-toggle'),
+                skipOffstage: false,
+              ),
             )
             .onPressed!();
         await tester.pumpAndSettle();
@@ -239,7 +251,7 @@ void main() {
           tester.getRect(find.byKey(const ValueKey('timeline-browser'))),
           browserRect,
         );
-        expect(tester.getTopLeft(find.text('Task 3')).dy, closeTo(before, .01));
+        expect(tester.getTopLeft(find.text('Task 2')).dy, closeTo(before, .01));
       }
       expect(tester.takeException(), isNull);
     },
@@ -251,16 +263,34 @@ void main() {
       await mount(tester, pageSize: 2);
       expect(find.text('Older task'), findsNothing);
       await tester.ensureVisible(
-        find.byKey(const ValueKey('timeline-more-days')),
+        find.byKey(const ValueKey('timeline-more-days'), skipOffstage: false),
       );
       await tester.pumpAndSettle();
-      final before = tester.getTopLeft(find.text('October task'));
+      final before = tester.getTopLeft(
+        find.text('September task', skipOffstage: false),
+      );
       // Scrolling near the action reveals the next page automatically.
       await tester.pump();
       await tester.pumpAndSettle();
+      expect(
+        tester.getTopLeft(find.text('September task', skipOffstage: false)),
+        before,
+      );
+      final scroll = tester.state<ScrollableState>(
+        find
+            .descendant(
+              of: find.byType(CustomScrollView),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      scroll.position.jumpTo(scroll.position.maxScrollExtent);
+      await tester.pumpAndSettle();
       expect(find.text('Older task'), findsOneWidget);
-      expect(tester.getTopLeft(find.text('October task')), before);
-      expect(find.byKey(const ValueKey('timeline-more-days')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('timeline-more-days'), skipOffstage: false),
+        findsNothing,
+      );
     },
   );
 
@@ -283,7 +313,10 @@ void main() {
       );
       tester
           .widget<IconButton>(
-            find.byKey(const ValueKey('timeline-date-toggle')),
+            find.byKey(
+              const ValueKey('timeline-date-toggle'),
+              skipOffstage: false,
+            ),
           )
           .onPressed!();
       await tester.pumpAndSettle();
@@ -319,7 +352,10 @@ void main() {
       await mount(tester, reduceMotion: true, scale: 2);
       tester
           .widget<IconButton>(
-            find.byKey(const ValueKey('timeline-date-toggle')),
+            find.byKey(
+              const ValueKey('timeline-date-toggle'),
+              skipOffstage: false,
+            ),
           )
           .onPressed!();
       await tester.pump();
@@ -443,7 +479,12 @@ void main() {
 
     await capture('agenda');
     tester
-        .widget<IconButton>(find.byKey(const ValueKey('timeline-date-toggle')))
+        .widget<IconButton>(
+          find.byKey(
+            const ValueKey('timeline-date-toggle'),
+            skipOffstage: false,
+          ),
+        )
         .onPressed!();
     await tester.pumpAndSettle();
     await capture('selected-day');

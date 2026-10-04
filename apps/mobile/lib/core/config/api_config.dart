@@ -5,6 +5,7 @@ import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/config/env.dart';
 
 export 'meet_endpoints.dart' show MeetEndpoints;
+export 'profile_endpoints.dart' show ProfileEndpoints;
 
 class ApiConfig {
   const ApiConfig._();
@@ -64,15 +65,6 @@ abstract final class AuthEndpoints {
 
   static String qrLoginChallenge(String challengeId) =>
       '/api/v1/auth/qr-login/challenges/$challengeId';
-}
-
-/// Profile endpoint paths.
-abstract final class ProfileEndpoints {
-  static const profile = '/api/v1/users/me/profile';
-  static const email = '/api/v1/users/me/email';
-  static const fullName = '/api/v1/users/me/full-name';
-  static const avatarUploadUrl = '/api/v1/users/me/avatar/upload-url';
-  static const avatar = '/api/v1/users/me/avatar';
 }
 
 /// Notification endpoint paths.

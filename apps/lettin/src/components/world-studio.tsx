@@ -1,6 +1,6 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Plus } from '@tuturuuu/icons';
+import { ArrowLeft, ArrowUpRight, BookOpen, Search } from '@tuturuuu/icons';
 import { getLettinWorld } from '@tuturuuu/internal-api/lettin';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
@@ -10,17 +10,28 @@ import { Link } from '@/i18n/navigation';
 import { Collaborators } from './collaborators';
 import { EntryEditor } from './entry-editor';
 import { useNavigationGuard } from './navigation-guard';
-import { emptyDraft, useLettinMutation } from './use-lettin';
+import { WikiBrowser } from './wiki-browser';
+import { WikiCreateEntry } from './wiki-create-entry';
+import {
+  filterWiki,
+  sectionKind,
+  type WikiSection,
+  wikiOf,
+} from './wiki-model';
+import { WikiSidebar } from './wiki-sidebar';
 export function WorldStudio({
   wsId,
   worldId,
+  section = 'overview',
+  initialEntry,
 }: {
   wsId: string;
   worldId: string;
+  section?: WikiSection;
+  initialEntry?: string;
 }) {
   const t = useTranslations('lettin');
-  const [selected, setSelected] = useState<string | null>(null);
-  const [title, setTitle] = useState('');
+  const [selected, setSelected] = useState<string | null>(initialEntry ?? null);
   const [search, setSearch] = useState('');
   const { dirty, setDirty } = useNavigationGuard();
   useEffect(() => () => setDirty(false), [setDirty]);
@@ -28,7 +39,14 @@ export function WorldStudio({
     queryKey: ['lettin', wsId, worldId],
     queryFn: () => getLettinWorld(wsId, worldId),
   });
-  const mutation = useLettinMutation(wsId);
+  const select = (id: string | null) => {
+    if (dirty) return;
+    setSelected(id);
+    const url = new URL(window.location.href);
+    if (id) url.searchParams.set('entry', id);
+    else url.searchParams.delete('entry');
+    window.history.replaceState(null, '', url);
+  };
   if (query.isPending)
     return (
       <p role="status" className="p-10">
@@ -44,130 +62,167 @@ export function WorldStudio({
     );
   const data = query.data;
   if (!data) return null;
-  const record = data.entries.find((e) => e.id === selected) ?? data.world;
+  const record =
+    selected === worldId
+      ? data.world
+      : data.entries.find((entry) => entry.id === selected);
+  const filtered = filterWiki(data.entries, section, search);
+  const related = record ? wikiOf(record.draft).relationships : [];
+  const backlinks = record
+    ? data.entries.filter(
+        (entry) =>
+          entry.draft.links.includes(record.id) ||
+          wikiOf(entry.draft).relationships.some(
+            (relation) => relation.targetId === record.id
+          )
+      )
+    : [];
   return (
-    <main className="mx-auto max-w-7xl px-5 py-8 md:px-10">
+    <main
+      className="wiki-studio wiki-theme"
+      data-wiki-theme={data.world.draft.theme?.palette}
+      data-wiki-type={data.world.draft.theme?.typography}
+      data-wiki-motion={data.world.draft.theme?.motion}
+    >
       {query.isError && (
         <p role="alert">
           {t('requestFailed')}{' '}
           <Button onClick={() => query.refetch()}>{t('retry')}</Button>
         </p>
       )}
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <Link
-          href={`/${wsId}`}
-          className="flex items-center gap-2 text-sm"
-          onClick={(e) => {
-            if (dirty) e.preventDefault();
-          }}
-        >
-          <ArrowLeft className="size-4" />
-          {t('myWorlds')}
+      <header className="wiki-world-header">
+        <Link href={`/${wsId}/wiki`} className="wiki-back">
+          <ArrowLeft size={16} />
+          {t('wikiLibrary')}
         </Link>
-        <h1 className="max-w-xl break-words text-3xl">
-          {data.world.draft.title}
-        </h1>
+        <div>
+          <p className="lettin-kicker">{t('worldWiki')}</p>
+          <h1>{data.world.draft.title}</h1>
+          <p>{data.world.draft.description || t('worldWikiHint')}</p>
+        </div>
         {data.world.published_at && (
           <Link
-            className="text-sm underline"
             href={`/worlds/${worldId}`}
             target="_blank"
+            className="wiki-public-link"
           >
             {t('viewPublic')}
+            <ArrowUpRight size={16} />
           </Link>
         )}
-      </div>
-      <div className="grid items-start gap-8 lg:grid-cols-[260px_minmax(0,1fr)]">
-        <aside className="lettin-sidebar space-y-4 lg:sticky lg:top-5">
-          <Button
-            variant={selected === null ? 'secondary' : 'ghost'}
-            className="w-full justify-start"
-            disabled={dirty}
-            onClick={() => setSelected(null)}
-          >
-            {t('worldDetails')}
-          </Button>
-          <label className="block text-sm">
-            {t('searchEntries')}
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} />
-          </label>
-          <nav
-            aria-label={t('entries')}
-            className="max-h-64 space-y-1 overflow-y-auto lg:max-h-[40vh]"
-          >
-            {data.entries
-              .filter((e) =>
-                `${e.draft.title} ${e.draft.kind} ${e.draft.tags.join(' ')}`
-                  .toLowerCase()
-                  .includes(search.toLowerCase())
-              )
-              .map((e) => (
-                <Button
-                  key={e.id}
-                  disabled={dirty}
-                  variant={e.id === selected ? 'secondary' : 'ghost'}
-                  className="h-auto w-full justify-start whitespace-normal break-words text-left"
-                  onClick={() => setSelected(e.id)}
-                >
-                  {e.draft.title}
-                  <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
-                    {t(e.published_at ? 'published' : 'draft')}
-                  </span>
-                </Button>
-              ))}
-          </nav>
-          <form
-            className="space-y-2 border-border border-t pt-4"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              try {
-                const result = await mutation.mutateAsync({
-                  action: 'createEntry',
-                  worldId,
-                  draft: emptyDraft(title),
-                });
-                setSelected(result.id);
-                setTitle('');
-              } catch {
-                /* Render mutation error below. */
-              }
-            }}
-          >
-            <Input
-              aria-label={t('newEntry')}
-              placeholder={t('newEntry')}
-              required
-              maxLength={160}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-            <Button
-              disabled={dirty || mutation.isPending || !title.trim()}
-              variant="outline"
-              className="w-full"
-            >
-              <Plus />
-              {t('addEntry')}
-            </Button>
-          </form>
-          {dirty && (
-            <p role="status" className="text-muted-foreground text-xs">
-              {t('saveBeforeSwitch')}
-            </p>
-          )}
-          {mutation.errorMessage && <p role="alert">{mutation.errorMessage}</p>}
-        </aside>
-        <div className="min-w-0 space-y-8">
-          <EntryEditor
-            key={record.id}
-            record={record}
+      </header>
+      <div className="wiki-workspace-grid">
+        <aside className="wiki-side-panel">
+          <WikiSidebar
             wsId={wsId}
             worldId={worldId}
-            worldRole={data.role}
-            isWorld={record.id === worldId}
             entries={data.entries}
-            onDirty={setDirty}
+            section={section}
+            disabled={dirty}
+            onOverview={() => select(worldId)}
           />
+          <WikiCreateEntry
+            key={section}
+            wsId={wsId}
+            worldId={worldId}
+            defaultKind={sectionKind[section]}
+            disabled={dirty}
+            onCreated={(id) => select(id)}
+          />
+        </aside>
+        <div className="wiki-main-panel">
+          {record ? (
+            <>
+              <Button
+                variant="ghost"
+                disabled={dirty}
+                onClick={() => select(null)}
+              >
+                <ArrowLeft size={16} />
+                {t(`section${section}`)}
+              </Button>
+              <EntryEditor
+                key={record.id}
+                record={record}
+                wsId={wsId}
+                worldId={worldId}
+                worldRole={data.role}
+                isWorld={record.id === worldId}
+                entries={data.entries}
+                onDirty={setDirty}
+              />
+              {(related.length > 0 || backlinks.length > 0) && (
+                <section className="wiki-reading-links">
+                  <h2>{t('connections')}</h2>
+                  {related.map((relation) => {
+                    const target = data.entries.find(
+                      (entry) => entry.id === relation.targetId
+                    );
+                    return target ? (
+                      <Button
+                        key={`${relation.targetId}-${relation.kind}`}
+                        variant="outline"
+                        disabled={dirty}
+                        onClick={() => select(target.id)}
+                      >
+                        {relation.label || t(`relationship${relation.kind}`)} ·{' '}
+                        {target.draft.title}
+                      </Button>
+                    ) : null;
+                  })}
+                  {backlinks.map((entry) => (
+                    <Button
+                      key={entry.id}
+                      variant="ghost"
+                      disabled={dirty}
+                      onClick={() => select(entry.id)}
+                    >
+                      {t('backlinks')} · {entry.draft.title}
+                    </Button>
+                  ))}
+                </section>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="wiki-browser-header">
+                <div>
+                  <h2>{t(`section${section}`)}</h2>
+                  <p>{t('wikiEntryCount', { count: filtered.length })}</p>
+                </div>
+                <label>
+                  <span className="sr-only">{t('searchWiki')}</span>
+                  <Search size={16} />
+                  <Input
+                    placeholder={t('searchWiki')}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </label>
+              </div>
+              {section === 'overview' && (
+                <button
+                  type="button"
+                  className="wiki-world-summary"
+                  onClick={() => select(worldId)}
+                >
+                  <BookOpen size={24} />
+                  <div>
+                    <h3>{t('worldDetails')}</h3>
+                    <p>{t('worldDetailsHint')}</p>
+                  </div>
+                  <ArrowUpRight size={18} />
+                </button>
+              )}
+              <WikiBrowser
+                entries={section === 'relationships' ? data.entries : filtered}
+                search={search}
+                section={section}
+                onSelect={select}
+                disabled={dirty}
+              />
+            </>
+          )}
           {data.role === 'owner' && <Collaborators wsId={wsId} data={data} />}
         </div>
       </div>

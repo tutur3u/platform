@@ -18997,6 +18997,54 @@ abstract class AppLocalizations {
   /// **'Sync this new item before using, editing, or deleting it.'**
   String get inventorySetupSyncFirst;
 
+  /// No description provided for @meetCollaboration.
+  ///
+  /// In en, this message translates to:
+  /// **'Collaborate'**
+  String get meetCollaboration;
+
+  /// No description provided for @meetCollaborationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Collaboration is unavailable. Rejoin the meeting and try again.'**
+  String get meetCollaborationUnavailable;
+
+  /// No description provided for @meetScreenFixtureTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Native screen capture test'**
+  String get meetScreenFixtureTitle;
+
+  /// No description provided for @meetScreenFixtureHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Join the synthetic local meeting and share your screen. Media stays on this device; watch the receiver frame counter.'**
+  String get meetScreenFixtureHint;
+
+  /// No description provided for @meetScreenFixtureFrames.
+  ///
+  /// In en, this message translates to:
+  /// **'Decoded receiver frames: {count}'**
+  String meetScreenFixtureFrames(int count);
+
+  /// No description provided for @meetFixtureConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Local meeting connected'**
+  String get meetFixtureConnected;
+
+  /// No description provided for @meetFixtureRevoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Host: stop screen share'**
+  String get meetFixtureRevoke;
+
+  /// No description provided for @meetFixtureReconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect meeting'**
+  String get meetFixtureReconnect;
+
   /// No description provided for @connectedOnboardingMiraTitle.
   ///
   /// In en, this message translates to:
@@ -19080,6 +19128,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Discard changes'**
   String get mailDiscardSettingsAction;
+
+  /// No description provided for @profileBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile banner'**
+  String get profileBanner;
+
+  /// No description provided for @profileBannerDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a wide photo to personalize your profile.'**
+  String get profileBannerDescription;
+
+  /// No description provided for @profileChangeBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Change banner'**
+  String get profileChangeBanner;
+
+  /// No description provided for @profileAddBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Add banner'**
+  String get profileAddBanner;
+
+  /// No description provided for @profileRemoveBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove banner'**
+  String get profileRemoveBanner;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

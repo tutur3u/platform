@@ -1,4 +1,7 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createDynamicAdminClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   MAX_BIO_LENGTH,
   MAX_DISPLAY_NAME_LENGTH,
@@ -12,6 +15,11 @@ import {
   CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH,
 } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
+import {
+  bannerStorageOrigin,
+  canonicalManagedBanner,
+  cleanRetiredBanners,
+} from '@/lib/profile-banner-lifecycle';
 
 function isHttpsUrl(value: string) {
   try {
@@ -144,11 +152,30 @@ export const PATCH = withSessionAuth(
         }
       }
 
+      if (
+        'banner_url' in updates &&
+        !canonicalManagedBanner(updates.banner_url, user.id)
+      )
+        return NextResponse.json(
+          { message: 'Managed banner URL must be canonical' },
+          { status: 400 }
+        );
       const admin = await createAdminClient({ noCookie: true });
-      let { error } = await admin.rpc('update_public_user_profile', {
-        p_user_id: user.id,
-        p_patch: updates,
-      });
+      const bannerAdmin =
+        'banner_url' in updates ? await createDynamicAdminClient() : null;
+      let { error } = bannerAdmin
+        ? await bannerAdmin.rpc(
+            'update_public_user_profile_with_banner_lifecycle',
+            {
+              p_user_id: user.id,
+              p_patch: updates,
+              p_storage_origin: bannerStorageOrigin(),
+            }
+          )
+        : await admin.rpc('update_public_user_profile', {
+            p_user_id: user.id,
+            p_patch: updates,
+          });
 
       if (error && ['42883', 'PGRST202'].includes(error.code)) {
         if (
@@ -203,7 +230,13 @@ export const PATCH = withSessionAuth(
         );
       }
 
-      return NextResponse.json({ message: 'Profile updated successfully' });
+      const cleanupPending = bannerAdmin
+        ? !(await cleanRetiredBanners(bannerAdmin, user.id))
+        : false;
+      return NextResponse.json({
+        message: 'Profile updated successfully',
+        ...(bannerAdmin ? { cleanupPending } : {}),
+      });
     } catch (error) {
       if (error instanceof z.ZodError || error instanceof SyntaxError) {
         return NextResponse.json(

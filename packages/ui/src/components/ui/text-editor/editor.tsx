@@ -84,6 +84,7 @@ export interface RichTextEditorProps {
   savedButtonLabel?: string;
   className?: string;
   workspaceId?: string;
+  allowEmbeds?: boolean;
   onImageUpload?: (file: File) => Promise<string>;
   flushPendingRef?: { current: (() => JSONContent | null) | undefined };
   onArrowUp?: (cursorOffset?: number) => void;
@@ -158,6 +159,7 @@ export function RichTextEditor({
   yjsProvider,
   collaborationUser,
   allowCollaboration = false,
+  allowEmbeds = true,
   revealToolbarOnFocus = false,
   mentionTranslations,
   renderTaskMention,
@@ -453,7 +455,7 @@ export function RichTextEditor({
         attributes: { class: getEditorClasses },
       },
     });
-    editor.setEditable(!readOnly);
+    editor.setEditable(!readOnly, false);
   }, [editor, readOnly, getEditorClasses]);
 
   // Update editor content when the content prop changes externally
@@ -657,6 +659,7 @@ export function RichTextEditor({
         <ToolBar
           editor={editor}
           fixedToolbarVisible={fixedToolbarVisible}
+          allowEmbeds={allowEmbeds}
           saveButtonLabel={saveButtonLabel}
           savedButtonLabel={savedButtonLabel}
           workspaceId={workspaceId}
@@ -671,3 +674,5 @@ export function RichTextEditor({
     </div>
   );
 }
+
+export { parseEditorMarkdown, serializeEditorMarkdown } from './markdown';

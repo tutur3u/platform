@@ -8,7 +8,7 @@ import {
   writeAccess,
 } from './context';
 import { mutateInvitation } from './invitations';
-import { validArtwork } from './media-cleanup';
+import { draftArtwork, referenceIds } from './wiki-references';
 
 export async function mutate(
   db: Store,
@@ -26,7 +26,7 @@ export async function mutate(
     throw new LettinError(403);
   if (command.action === 'createWorld') {
     const id = crypto.randomUUID();
-    const image = validArtwork(command.draft.image, id);
+    const image = draftArtwork(command.draft, id);
     const result = await db
       .prepare(
         `INSERT INTO worlds(id,ws_id,owner_id,draft) SELECT ?,?,?,? WHERE (?=1 OR EXISTS(SELECT 1 FROM creators WHERE user_id=? AND enabled=1)) AND ${image.sql} RETURNING id`
@@ -92,7 +92,7 @@ export async function mutate(
   const access = writeAccess(actor, command.worldId, publishing);
   if (command.action === 'createEntry') {
     const id = crypto.randomUUID();
-    const image = validArtwork(command.draft.image, command.worldId);
+    const image = draftArtwork(command.draft, command.worldId);
     const result = await db
       .prepare(
         `INSERT INTO entries(id,ws_id,world_id,draft) SELECT ?,?,?,? WHERE ${access.sql} AND ${image.sql} RETURNING id`
@@ -122,11 +122,12 @@ export async function mutate(
     : `published=${publish ? 'draft' : 'NULL'},published_at=?`;
   const value = saving ? JSON.stringify(command.draft) : publish ? now : null;
   // Reject cross-world link IDs inside the same atomic write as the revision check.
-  const links = saving ? command.draft.links : [];
-  const image = validArtwork(
-    saving ? command.draft.image : '',
-    command.worldId
-  );
+  const links = saving ? referenceIds(command.draft) : [];
+  const image = saving
+    ? draftArtwork(command.draft, command.worldId)
+    : { sql: '1=1', values: [] };
+  if (saving && referenceIds(command.draft).includes(id))
+    throw new LettinError(400, 'Self references are not allowed');
   const validLinks = `NOT EXISTS(SELECT 1 FROM json_each(?) link WHERE NOT EXISTS(SELECT 1 FROM entries e WHERE e.id=link.value AND e.ws_id=? AND e.world_id=?))`;
   const result = await db
     .prepare(`UPDATE ${table} SET ${assignments},version=version+1,updated_at=?

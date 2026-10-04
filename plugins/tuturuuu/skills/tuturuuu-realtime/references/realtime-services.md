@@ -106,7 +106,9 @@ content snapshot.
 
 For native capture without a hosted backend, Android CI provides the separate
 `android-meet-capture-fixture-apk` artifact from `main_realtime_fixture.dart`.
-It uses production consent/capture and a local WebRTC receiver. Require increasing
+It starts a capability-scoped loopback session/signaling backend and synthetic
+SFU receiver, using the production native controller, signaling and media
+publisher. The debug entrypoint skips accounts and production bootstrap. Require increasing
 decoded frame counts, Stop/revoke cleanup and repeated-start evidence; a returned
 track is insufficient. The fixture neither tests hosted SFU nor replaces native
 WebView acceptance. See the runbook before installing/driving its exact-commit

@@ -10041,6 +10041,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventorySetupSyncFirst => 'Sync this new item before using, editing, or deleting it.';
 
   @override
+  String get meetCollaboration => 'Collaborate';
+
+  @override
+  String get meetCollaborationUnavailable => 'Collaboration is unavailable. Rejoin the meeting and try again.';
+
+  @override
+  String get meetScreenFixtureTitle => 'Native screen capture test';
+
+  @override
+  String get meetScreenFixtureHint => 'Join the synthetic local meeting and share your screen. Media stays on this device; watch the receiver frame counter.';
+
+  @override
+  String meetScreenFixtureFrames(int count) {
+    return 'Decoded receiver frames: $count';
+  }
+
+  @override
+  String get meetFixtureConnected => 'Local meeting connected';
+
+  @override
+  String get meetFixtureRevoke => 'Host: stop screen share';
+
+  @override
+  String get meetFixtureReconnect => 'Reconnect meeting';
+
+  @override
   String get connectedOnboardingMiraTitle => 'Meet Mira, your AI companion';
 
   @override
@@ -10083,4 +10109,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mailDiscardSettingsAction => 'Discard changes';
+
+  @override
+  String get profileBanner => 'Profile banner';
+
+  @override
+  String get profileBannerDescription => 'Add a wide photo to personalize your profile.';
+
+  @override
+  String get profileChangeBanner => 'Change banner';
+
+  @override
+  String get profileAddBanner => 'Add banner';
+
+  @override
+  String get profileRemoveBanner => 'Remove banner';
 }

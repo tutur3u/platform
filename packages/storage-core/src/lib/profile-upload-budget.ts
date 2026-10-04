@@ -15,7 +15,7 @@ export const PROFILE_MEDIA_MAX_BYTES = {
   banner: 5 * 1024 ** 2,
 } as const;
 
-/** Charge the bucket ceiling, never an untrusted client byte count. Tickets count even if unused. */
+/** Charge the source upload ceiling, never an untrusted client byte count. Tickets count even if unused. */
 export async function reserveProfileUploadBudget(
   actorId: string,
   kind: ProfileMediaKind,
@@ -95,4 +95,21 @@ export async function reserveProfileUploadBudget(
       Math.max(1, Math.ceil((denied[4] - time) / 1000))
     );
   }
+}
+
+/** Atomically consume a short-lived ticket once, before reading or decoding bytes. */
+export async function consumeProfileUploadTicket(ticketId: string) {
+  let result: [number, number];
+  try {
+    result = await reserveSecurityBudget([
+      [`api-cost:v1:profile-upload:ticket:${ticketId}`, 1, 1, 1200],
+    ]);
+  } catch {
+    throw new ProfileUploadError(
+      'Profile upload protection is unavailable',
+      503
+    );
+  }
+  if (result[0] === 0)
+    throw new ProfileUploadError('Upload ticket has already been used', 409);
 }

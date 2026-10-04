@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
 import 'package:mobile/features/meet/data/meet_call_controller.dart';
+import 'package:mobile/features/meet/view/meet_collaboration_page.dart';
 import 'package:mobile/features/meet/view/meet_device_choice.dart';
 import 'package:mobile/features/meet/view/meet_ended_review.dart';
 import 'package:mobile/features/meet/view/meet_media_status_banner.dart';
@@ -543,6 +544,18 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage>
                         alignment: WrapAlignment.center,
                         spacing: 8,
                         children: [
+                          IconButton.filledTonal(
+                            tooltip: l10n.meetCollaboration,
+                            onPressed: () => unawaited(
+                              Navigator.of(context).push<void>(
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      MeetCollaborationPage(call: _call),
+                                ),
+                              ),
+                            ),
+                            icon: const Icon(Icons.edit_note_outlined),
+                          ),
                           IconButton.filledTonal(
                             tooltip: l10n.meetMicrophone,
                             onPressed: _toggleAudio,

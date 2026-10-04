@@ -6,10 +6,12 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/widgets/profile_media_image.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/profile/view/profile_account_actions.dart';
 import 'package:mobile/features/profile/view/profile_activity_section.dart';
+import 'package:mobile/features/profile/view/profile_banner.dart';
 import 'package:mobile/features/profile/view/profile_timeline_section.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
@@ -152,6 +154,7 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                   ),
                   key: ValueKey(_timeline),
                   children: [
+                    if (profile != null) ProfileBanner(profile: profile),
                     Container(
                       key: const ValueKey('profile-overview-content'),
                       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -179,8 +182,11 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                                           Icons.person_outline,
                                           size: 48,
                                         )
-                                      : Image.network(
-                                          avatarUrl,
+                                      : Image(
+                                          image: profileMediaImage(
+                                            avatarUrl,
+                                            userId ?? '',
+                                          ),
                                           fit: BoxFit.cover,
                                           errorBuilder: (_, error, stack) =>
                                               const Icon(
@@ -217,15 +223,6 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                    IconButton(
-                                      tooltip: l10n.profileIdentitySectionTitle,
-                                      onPressed: () =>
-                                          context.push(Routes.settingsProfile),
-                                      icon: const Icon(
-                                        Icons.edit_outlined,
-                                        size: 20,
-                                      ),
-                                    ),
                                   ],
                                 ),
                               ),
@@ -234,6 +231,10 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                         },
                       ),
                     ),
+                    if (profile?.bio?.trim().isNotEmpty == true) ...[
+                      const SizedBox(height: 8),
+                      Text(profile!.bio!, style: theme.typography.textSmall),
+                    ],
                     if (userId != null) ...[
                       const SizedBox(height: 14),
                       ProfileActivitySection(

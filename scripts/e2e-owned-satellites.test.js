@@ -106,6 +106,7 @@ test('supports explicit satellite enable and disable controls', () => {
       E2E_FORMS_SATELLITE_ENABLED: '0',
       E2E_INFRASTRUCTURE_SATELLITE_ENABLED: '0',
       E2E_MAIL_SATELLITE_ENABLED: '0',
+      E2E_LETTIN_SATELLITE_ENABLED: '0',
     }),
     false
   );
@@ -245,5 +246,49 @@ test('starts an owned satellite and reports an early readiness exit', async () =
   await assert.rejects(
     readiness,
     /forms satellite stopped before it became ready.*exit=1/u
+  );
+});
+
+test('selects Tulletin only for its authenticated wiki browser suite', () => {
+  const selected = getRequiredOwnedSatellites(
+    ['lettin-wiki.noauth.spec.ts'],
+    {}
+  );
+  assert.deepEqual(
+    selected.map((satellite) => satellite.appName),
+    ['lettin']
+  );
+  assert.equal(
+    getOwnedSatellitesPlaywrightEnv(selected, {}).LETTIN_BASE_URL,
+    'https://lettin.tuturuuu.localhost:1355'
+  );
+});
+
+test('registers the local Storage HTTPS alias before satellite upload verification', async () => {
+  const { startOwnedSatelliteFixtures } = require('./e2e-owned-satellites');
+  const registrations = [];
+  await startOwnedSatelliteFixtures([], [], {
+    env: {
+      NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:8001',
+      PORTLESS_PORT: '1355',
+    },
+    ensurePortlessRoute: async (options) => registrations.push(options.env),
+    waitForUrl: async () => {},
+  });
+  assert.equal(registrations.length, 1);
+  assert.equal(registrations[0].PORTLESS_ROUTE_NAME, 'supabase.tuturuuu');
+  assert.equal(registrations[0].DOCKER_WEB_PROXY_HOST_PORT, '8001');
+});
+test('refuses to route Storage E2E traffic to a remote Supabase project', async () => {
+  const { startOwnedSatelliteFixtures } = require('./e2e-owned-satellites');
+  await assert.rejects(
+    startOwnedSatelliteFixtures([], [], {
+      env: { NEXT_PUBLIC_SUPABASE_URL: 'https://remote.supabase.co' },
+      ensurePortlessRoute: async () => {
+        throw new Error('Must not register');
+      },
+      waitForUrl: async () => {},
+    }),
+    /local Supabase fixture/
   );
 });

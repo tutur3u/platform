@@ -1,3 +1,15 @@
+import { uploadCurrentUserProfileMedia } from './profile-media';
+import { optimizeProfileMediaFile } from './profile-media-optimize';
+import type {
+  CurrentUserProfileResponse,
+  UpdateCurrentUserProfilePayload,
+} from './user-profile-types';
+
+export type {
+  CurrentUserProfileResponse,
+  UpdateCurrentUserProfilePayload,
+} from './user-profile-types';
+
 import type {
   PostApprovalItem,
   PostLogEntry,
@@ -206,17 +218,6 @@ export function normalizeRootNavigationConfig(
   };
 }
 
-export type CurrentUserProfileResponse = {
-  id: string;
-  email: string | null;
-  display_name: string | null;
-  avatar_url: string | null;
-  full_name: string | null;
-  new_email: string | null;
-  created_at: string;
-  default_workspace_id: string | null;
-};
-
 export type CurrentUserDefaultWorkspaceResponse = {
   id: string;
   name: string;
@@ -346,12 +347,6 @@ export type UploadCurrentUserAvatarResult = {
   publicUrl: string;
   finalizeOk: boolean;
   finalizeError?: string;
-};
-
-export type UpdateCurrentUserProfilePayload = {
-  avatar_url?: string | null;
-  display_name?: string | null;
-  full_name?: string | null;
 };
 
 export type UpdatePlatformUserRolesPayload = {
@@ -581,24 +576,13 @@ export async function uploadCurrentUserAvatar(
   filename = file.name,
   options?: InternalApiClientOptions
 ): Promise<UploadCurrentUserAvatarResult> {
-  const client = getInternalApiClient(options);
-  const { uploadUrl, publicUrl } = await createCurrentUserAvatarUploadUrl(
-    filename,
+  // Preserve the legacy optional filename argument; generated names match output MIME.
+  void filename;
+  const publicUrl = await uploadCurrentUserProfileMedia(
+    'avatar',
+    file,
     options
   );
-
-  const uploadResponse = await client.fetch(uploadUrl, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': file.type,
-    },
-    body: file,
-    cache: 'no-store',
-  });
-
-  if (!uploadResponse.ok) {
-    throw new Error('Failed to upload file');
-  }
 
   try {
     await updateCurrentUserProfile({ avatar_url: publicUrl }, options);
@@ -1244,19 +1228,17 @@ export async function uploadUserProfileLinkAvatar(
   file: File,
   options?: InternalApiClientOptions
 ): Promise<{ publicUrl: string }> {
-  const client = getInternalApiClient(options);
+  const optimized = await optimizeProfileMediaFile(file, 'avatar');
   const { signedUrl, publicUrl } = await createUserProfileLinkAvatarUploadUrl(
     code,
-    file.type,
+    optimized.type,
     options
   );
-
-  const uploadResponse = await client.fetch(signedUrl, {
+  const uploadResponse = await (options?.fetch ?? globalThis.fetch)(signedUrl, {
     method: 'PUT',
-    headers: {
-      'Content-Type': file.type,
-    },
-    body: file,
+    credentials: 'omit',
+    headers: { 'Content-Type': optimized.type },
+    body: optimized,
     cache: 'no-store',
   });
 

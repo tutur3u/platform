@@ -89,7 +89,10 @@ void main() {
       expect(find.text('Old 0'), findsNothing);
       tester
           .widget<IconButton>(
-            find.byKey(const ValueKey('timeline-date-toggle')),
+            find.byKey(
+              const ValueKey('timeline-date-toggle'),
+              skipOffstage: false,
+            ),
           )
           .onPressed!();
       await tester.pumpAndSettle();
@@ -99,20 +102,32 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.drag(
-        find.byType(SingleChildScrollView),
-        const Offset(0, -240),
-      );
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -240));
       await tester.pumpAndSettle();
-      final before = tester.getTopLeft(find.text('Old 3')).dy;
+      final viewport = tester.getRect(find.byType(CustomScrollView));
+      final visible = find
+          .byWidgetPredicate(
+            (widget) =>
+                widget is Text && (widget.data?.startsWith('Old ') ?? false),
+          )
+          .evaluate()
+          .firstWhere((element) {
+            final top = tester.getTopLeft(find.byWidget(element.widget)).dy;
+            return top >= viewport.top && top < viewport.bottom;
+          });
+      final title = (visible.widget as Text).data!;
+      final before = tester.getTopLeft(find.text(title)).dy;
       for (var i = 0; i < 4; i++) {
         tester
             .widget<IconButton>(
-              find.byKey(const ValueKey('timeline-date-toggle')),
+              find.byKey(
+                const ValueKey('timeline-date-toggle'),
+                skipOffstage: false,
+              ),
             )
             .onPressed!();
         await tester.pumpAndSettle();
-        expect(tester.getTopLeft(find.text('Old 3')).dy, closeTo(before, .01));
+        expect(tester.getTopLeft(find.text(title)).dy, closeTo(before, .01));
       }
       expect(tester.takeException(), isNull);
     },
@@ -310,7 +325,12 @@ void main() {
 
     await capture('320-3x-agenda');
     tester
-        .widget<IconButton>(find.byKey(const ValueKey('timeline-date-toggle')))
+        .widget<IconButton>(
+          find.byKey(
+            const ValueKey('timeline-date-toggle'),
+            skipOffstage: false,
+          ),
+        )
         .onPressed!();
     await tester.pumpAndSettle();
     expect(

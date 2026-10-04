@@ -32,8 +32,14 @@ extension CacheStorePending on CacheStore {
     return record;
   });
 
-  Future<void> savePendingMutation(PendingMutationRecord record) =>
-      _serializePending(() => _mutationBox.put(record.id, record.toJson()));
+  Future<void> savePendingMutation(
+    PendingMutationRecord record, {
+    void Function()? checkScope,
+  }) => _serializePending(() async {
+    checkScope?.call();
+    await _mutationBox.put(record.id, record.toJson());
+    checkScope?.call();
+  });
 
   Future<void> deletePendingMutation(String id) =>
       _serializePending(() => _mutationBox.delete(id));

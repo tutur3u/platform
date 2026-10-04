@@ -46,9 +46,7 @@ import { ToolbarButton, ToolbarSeparator } from './toolbar-controls';
 
 type LinkEditorContext = 'bubble' | 'popover' | null;
 
-// ---------------------------------------------------------------------------
 // Main ToolBar (BubbleMenu)
-// ---------------------------------------------------------------------------
 
 interface ToolBarProps {
   editor: Editor | null;
@@ -59,12 +57,14 @@ interface ToolBarProps {
   onConvertToTask?: () => void | Promise<void>;
   /** When true, the BubbleMenu is hidden because the fixed toolbar is visible */
   fixedToolbarVisible?: boolean;
+  allowEmbeds?: boolean;
   toggleBlockLabel?: string;
 }
 
 export function ToolBar({
   editor,
   fixedToolbarVisible,
+  allowEmbeds = true,
   workspaceId,
   onImageUpload,
   onConvertToTask,
@@ -459,9 +459,7 @@ export function ToolBar({
     toast.success('YouTube video added');
   }, [editor, youtubeUrl]);
 
-  // -----------------------------------------------------------------------
   // Render helpers
-  // -----------------------------------------------------------------------
 
   /** Renders the core formatting buttons (used by both fixed and bubble toolbar) */
   const renderFormattingOptions = useCallback(
@@ -478,11 +476,9 @@ export function ToolBar({
           />
         ))}
 
-        {/* Color controls */}
         <ToolbarSeparator />
         <TextEditorColorControls editor={editor} />
 
-        {/* Link */}
         <ToolbarSeparator />
         <ToolbarButton
           id="link"
@@ -491,8 +487,7 @@ export function ToolBar({
           onClick={() => openLinkEditor(source)}
         />
 
-        {/* Media uploads */}
-        {workspaceId && onImageUpload && (
+        {onImageUpload && (
           <>
             <ToolbarSeparator />
             <ToolbarButton
@@ -508,30 +503,33 @@ export function ToolBar({
               onClick={triggerImageUpload}
               disabled={isUploadingImage}
             />
-            <ToolbarButton
-              id="video"
-              icon={
-                isUploadingVideo ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <FileVideo className="size-4" />
-                )
-              }
-              pressed={false}
-              onClick={triggerVideoUpload}
-              disabled={isUploadingVideo}
-            />
+            {workspaceId && (
+              <ToolbarButton
+                id="video"
+                icon={
+                  isUploadingVideo ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <FileVideo className="size-4" />
+                  )
+                }
+                pressed={false}
+                onClick={triggerVideoUpload}
+                disabled={isUploadingVideo}
+              />
+            )}
           </>
         )}
 
-        <ToolbarButton
-          id="youtube"
-          icon={<YoutubeIcon className="size-4" />}
-          pressed={showYoutubeInput}
-          onClick={() => setShowYoutubeInput(!showYoutubeInput)}
-        />
+        {allowEmbeds && (
+          <ToolbarButton
+            id="youtube"
+            icon={<YoutubeIcon className="size-4" />}
+            pressed={showYoutubeInput}
+            onClick={() => setShowYoutubeInput(!showYoutubeInput)}
+          />
+        )}
 
-        {/* Convert to task */}
         {onConvertToTask && (
           <>
             <ToolbarSeparator />
@@ -557,6 +555,7 @@ export function ToolBar({
       triggerVideoUpload,
       isUploadingVideo,
       showYoutubeInput,
+      allowEmbeds,
       onConvertToTask,
       toggleBlockLabel,
     ]
@@ -1133,8 +1132,7 @@ export function FixedToolbar({
       <ToolbarSeparator />
       <TextEditorColorControls editor={editor} />
 
-      {/* Media group */}
-      {workspaceId && onImageUpload && (
+      {onImageUpload && (
         <>
           <ToolbarSeparator />
           <ToolbarButton
@@ -1150,23 +1148,24 @@ export function FixedToolbar({
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploadingImage}
           />
-          <ToolbarButton
-            id="video"
-            icon={
-              isUploadingVideo ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <FileVideo className="size-4" />
-              )
-            }
-            pressed={false}
-            onClick={() => videoInputRef.current?.click()}
-            disabled={isUploadingVideo}
-          />
+          {workspaceId && (
+            <ToolbarButton
+              id="video"
+              icon={
+                isUploadingVideo ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <FileVideo className="size-4" />
+                )
+              }
+              pressed={false}
+              onClick={() => videoInputRef.current?.click()}
+              disabled={isUploadingVideo}
+            />
+          )}
         </>
       )}
 
-      {/* Convert to task */}
       {onConvertToTask && (
         <>
           <ToolbarSeparator />

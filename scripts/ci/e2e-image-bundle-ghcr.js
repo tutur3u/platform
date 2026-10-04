@@ -35,33 +35,66 @@ function parsePackageRepository(repository) {
 
 async function githubRequest(
   pathname,
-  { env = process.env, method = 'GET', token = env.GITHUB_TOKEN } = {}
+  {
+    env = process.env,
+    method = 'GET',
+    token = env.GITHUB_TOKEN,
+    fetch: fetchImpl = fetch,
+    sleep: sleepImpl = sleep,
+  } = {}
 ) {
   if (!token) throw new Error('GITHUB_TOKEN is required for GHCR cleanup.');
-
-  const response = await fetch(
-    `${env.GITHUB_API_URL ?? 'https://api.github.com'}${pathname}`,
-    {
-      headers: {
-        accept: 'application/vnd.github+json',
-        authorization: `Bearer ${token}`,
-        'x-github-api-version': '2022-11-28',
-      },
-      method,
+  // GET is safe to retry. DELETE already has its own explicit lifecycle policy.
+  const attempts = method === 'GET' ? 3 : 1;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    let response;
+    try {
+      response = await fetchImpl(
+        `${env.GITHUB_API_URL ?? 'https://api.github.com'}${pathname}`,
+        {
+          headers: {
+            accept: 'application/vnd.github+json',
+            authorization: `Bearer ${token}`,
+            'x-github-api-version': '2022-11-28',
+          },
+          method,
+          ...(method === 'GET' ? { signal: AbortSignal.timeout(15_000) } : {}),
+        }
+      );
+    } catch (error) {
+      if (attempt === attempts) throw error;
+      await sleepImpl(1000 * 2 ** (attempt - 1));
+      continue;
     }
-  );
-
-  if (response.status === 404) return null;
-  if (!response.ok) {
-    const detail = (await response.text()).trim().slice(0, 500);
-    throw new Error(
-      `GitHub API ${method} ${pathname} failed (${response.status})${
-        detail ? `: ${detail}` : '.'
-      }`
-    );
+    if (response.status === 404 || response.status === 204) return null;
+    let body;
+    try {
+      body = await response.text();
+    } catch (error) {
+      const safeBodyRetry =
+        method === 'GET' &&
+        (response.ok || [500, 502, 503, 504].includes(response.status));
+      if (!safeBodyRetry || attempt === attempts) throw error;
+      await sleepImpl(1000 * 2 ** (attempt - 1));
+      continue;
+    }
+    if (!response.ok) {
+      const detail = body.trim().slice(0, 500);
+      if (
+        [500, 502, 503, 504].includes(response.status) &&
+        attempt < attempts
+      ) {
+        await sleepImpl(1000 * 2 ** (attempt - 1));
+        continue;
+      }
+      throw new Error(
+        `GitHub API ${method} ${pathname} failed (${response.status})${
+          detail ? `: ${detail}` : '.'
+        }`
+      );
+    }
+    return JSON.parse(body);
   }
-
-  return response.status === 204 ? null : response.json();
 }
 
 async function verifyPackageVisibility(

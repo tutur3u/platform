@@ -266,20 +266,42 @@ denial in `playground-preview.test.ts`; reload an expired preview.
 Android CI builds `lib/main_realtime_fixture.dart` as a separate debug artifact,
 `android-meet-capture-fixture-apk`, alongside the regular development APK. Install
 that exact-commit artifact on a disposable emulator/device through T3 Device.
-It deliberately skips account bootstrap and joins no meeting. Press Share screen,
-accept native OS consent, and check that **decoded receiver frames increase**.
-The fixture uses the production `MeetScreenCapture` service and two WebRTC peers
-on the same device, with no external ICE/TURN servers. Screen bytes are not saved
-or sent to Cloudflare. Cancel consent, use in-app Stop and the system Stop action,
-then repeat capture. Confirm the counter stops, controls reset, and no projection
-service remains after Stop. Consent must remain a separate user action.
+It skips account bootstrap and starts a synthetic meeting backend on a random
+IPv4 loopback port. A per-process random capability scopes HTTP session creation
+and the signaling WebSocket to one synthetic workspace/meeting and one active
+client. No account, production secret, or hosted backend is needed. The fixture
+entrypoint rejects non-debug builds and is not imported by the normal app.
 
-This verifies native capture and local encode/decode, not hosted SFU publication,
-admission, or native WebView rendering. Run the bridge, preview, capture and real
-Cloudflare cross-client tests separately. Android PR builds include base-chained
-stack layers. No local release build is needed. iOS ReplayKit acceptance still
-requires a macOS/Xcode host and a physical device for app-switching/receiver
-coverage; do not claim it from an Android result.
+The production `MeetCallController`, `MeetSignaling`, `MeetNativeMedia` and
+`MeetScreenCapture` join this room. A synthetic SFU adapter answers the production
+publisher's SDP and receives actual screen media using a local WebRTC peer with
+no external ICE/TURN servers. Received tracks get a local stream even when the
+SDP does not contain stream IDs. Screen bytes are neither saved nor sent off the
+device. The receiver renderer and decoded frame counter provide device evidence.
+
+Wait for **Local meeting connected**, press Share screen and accept native OS
+consent. Verify decoded frames increase. Test cancellation, in-app Stop, the
+system Stop action, **Host: stop screen share**, and **Reconnect meeting** while
+sharing. Capture should stop on reconnect; after admission returns, repeat Share
+screen. Verify no projection service remains after Stop. Consent remains a
+separate user action. App closure tears down signaling, local SFU sessions,
+streams and renderers.
+
+Run the backend protocol regression without a device:
+
+```bash
+cd apps/mobile
+ttr resources run -- flutter test test/features/meet/fixtures/meet_fixture_server_test.dart --concurrency=1
+```
+
+The tests cover capability/room rejection, admission/presence, SFU request
+correlation, host revocation, reconnect cleanup, stale response isolation and
+malformed/oversized frames. The native codec and OS picker require installing
+the exact-commit CI APK; unit protocol tests are not device capture evidence.
+This fixture verifies the synthetic native meeting path, not Cloudflare SFU
+routing, TURN, billing, multiple-device delivery or native WebView rendering.
+Run bridge/preview and real Cloudflare cross-client tests separately. Physical
+iOS ReplayKit still requires a macOS/Xcode host and a physical device.
 
 ## Document backup status
 

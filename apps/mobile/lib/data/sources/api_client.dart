@@ -361,11 +361,13 @@ class ApiClient {
     String path, {
     String accept = 'application/octet-stream',
     bool requiresAuth = true,
+    bool followRedirects = true,
   }) async {
     final url = _url(path);
 
     return await _performStreamedRequest(() async {
       final request = http.Request('GET', url)
+        ..followRedirects = followRedirects
         ..headers.addAll(
           await _getHeaders(
             accept: accept,

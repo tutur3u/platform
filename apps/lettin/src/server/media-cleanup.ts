@@ -12,9 +12,9 @@ export async function cleanupMedia(
     .prepare(`UPDATE media SET deleting=1 WHERE id IN (
     SELECT m.id FROM media m WHERE m.world_id=? AND (m.deleting=1 OR (m.created_at<?
     AND NOT EXISTS(SELECT 1 FROM worlds w WHERE w.id=m.world_id AND
-      (json_extract(w.draft,'$.image')='/api/v1/lettin/media/'||m.id OR json_extract(w.published,'$.image')='/api/v1/lettin/media/'||m.id))
+      (EXISTS(SELECT 1 FROM json_tree(w.draft) WHERE value='/api/v1/lettin/media/'||m.id) OR EXISTS(SELECT 1 FROM json_tree(w.published) WHERE value='/api/v1/lettin/media/'||m.id)))
     AND NOT EXISTS(SELECT 1 FROM entries e WHERE e.world_id=m.world_id AND
-      (json_extract(e.draft,'$.image')='/api/v1/lettin/media/'||m.id OR json_extract(e.published,'$.image')='/api/v1/lettin/media/'||m.id))))
+      (EXISTS(SELECT 1 FROM json_tree(e.draft) WHERE value='/api/v1/lettin/media/'||m.id) OR EXISTS(SELECT 1 FROM json_tree(e.published) WHERE value='/api/v1/lettin/media/'||m.id)))))
     ORDER BY m.created_at LIMIT 10) RETURNING id,object_path`)
     .bind(worldId, cutoff)
     .all<{ id: string; object_path: string }>();

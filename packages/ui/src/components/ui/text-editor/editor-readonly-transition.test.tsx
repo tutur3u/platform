@@ -53,6 +53,7 @@ it('removes click-blocking classes after sync without recreating the editor', as
   await act(async () => {});
   await waitFor(() => expect(editorRef.current).not.toBeNull());
   const original = editorRef.current!;
+  expect(onImmediateChange).not.toHaveBeenCalled();
   expect(original.view.dom.className).toContain(
     '[&_.task-list-checkbox]:!pointer-events-none'
   );
@@ -67,6 +68,7 @@ it('removes click-blocking classes after sync without recreating the editor', as
   await act(async () => {});
   expect(editorRef.current).toBe(original);
   expect(original.isEditable).toBe(true);
+  expect(onImmediateChange).not.toHaveBeenCalled();
   expect(original.view.dom.className).not.toContain(
     '[&_.task-list-checkbox]:!pointer-events-none'
   );
