@@ -4,7 +4,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { createRealtimeClient } from '@tuturuuu/internal-api/realtime';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { ReactNode } from 'react';
@@ -14,15 +14,14 @@ import { useBoardRealtime } from '../useBoardRealtime';
 type BroadcastMessage = { payload: Record<string, unknown> };
 type BroadcastListener = (msg: BroadcastMessage) => void;
 
-type MockSupabaseClient = {
+type MockRealtimeClient = {
   channel: ReturnType<typeof vi.fn>;
   removeChannel: ReturnType<typeof vi.fn>;
-  from: ReturnType<typeof vi.fn>;
 };
 
 type MockCreateClientFn = {
-  (): MockSupabaseClient;
-  mockReturnValue: (value: MockSupabaseClient) => void;
+  (): MockRealtimeClient;
+  mockReturnValue: (value: MockRealtimeClient) => void;
 };
 
 class MockBroadcastChannel {
@@ -53,9 +52,9 @@ const { toastMock } = vi.hoisted(() => ({
   toastMock: vi.fn(),
 }));
 
-// Mock Supabase client
-vi.mock('@tuturuuu/supabase/next/client', () => ({
-  createClient: vi.fn(),
+// Mock Cloudflare realtime client
+vi.mock('@tuturuuu/internal-api/realtime', () => ({
+  createRealtimeClient: vi.fn(),
 }));
 
 // Mock DEV_MODE constant
@@ -78,7 +77,6 @@ describe('useBoardRealtime', () => {
     subscribe: ReturnType<typeof vi.fn>;
     send: ReturnType<typeof vi.fn>;
   };
-  let mockFrom: ReturnType<typeof vi.fn>;
   let mockRemoveChannel: ReturnType<typeof vi.fn>;
   let broadcastListeners: Map<string, BroadcastListener>;
   let subscribeCallback: ((status: string, err?: unknown) => void) | undefined;
@@ -143,14 +141,13 @@ describe('useBoardRealtime', () => {
     };
 
     mockRemoveChannel = vi.fn();
-    mockFrom = vi.fn();
 
-    const mockCreateClient = createClient as unknown as MockCreateClientFn;
+    const mockCreateClient =
+      createRealtimeClient as unknown as MockCreateClientFn;
 
     mockCreateClient.mockReturnValue({
       channel: vi.fn(() => mockChannel),
       removeChannel: mockRemoveChannel,
-      from: mockFrom,
     });
 
     vi.clearAllMocks();
@@ -177,7 +174,7 @@ describe('useBoardRealtime', () => {
       });
 
       const supabaseInstance = (
-        createClient as unknown as MockCreateClientFn
+        createRealtimeClient as unknown as MockCreateClientFn
       )();
       expect(supabaseInstance.channel).toHaveBeenCalledWith(
         'board-realtime-board-1',
@@ -862,7 +859,6 @@ describe('useBoardRealtime', () => {
         vi.advanceTimersByTime(200);
       });
 
-      expect(mockFrom).not.toHaveBeenCalled();
       expect(invalidateQueriesSpy).not.toHaveBeenCalledWith({
         queryKey: ['tasks', 'board-1'],
       });
@@ -907,7 +903,7 @@ describe('useBoardRealtime', () => {
       ).toBe('task-1');
     });
 
-    it('calls onTaskRelationsChange for Supabase relation broadcasts', async () => {
+    it('calls onTaskRelationsChange for Cloudflare relation broadcasts', async () => {
       const onTaskRelationsChange = vi.fn();
 
       renderHook(
@@ -997,7 +993,7 @@ describe('useBoardRealtime', () => {
       }).not.toThrow();
     });
 
-    it('applies local tab broadcasts even when Supabase realtime is disabled', async () => {
+    it('applies local tab broadcasts even when Cloudflare realtime is disabled', async () => {
       queryClient.setQueryData(['tasks', 'board-1'], []);
 
       renderHook(() => useBoardRealtime('board-1', { enabled: false }), {
@@ -1020,7 +1016,7 @@ describe('useBoardRealtime', () => {
       ]);
     });
 
-    it('calls onTaskRelationsChange for local relation broadcasts when Supabase realtime is disabled', async () => {
+    it('calls onTaskRelationsChange for local relation broadcasts when Cloudflare realtime is disabled', async () => {
       const onTaskRelationsChange = vi.fn();
 
       renderHook(
@@ -1045,7 +1041,7 @@ describe('useBoardRealtime', () => {
       expect(onTaskRelationsChange).toHaveBeenCalledWith(['task-1']);
     });
 
-    it('delivers outgoing broadcasts to another local tab when Supabase realtime is disabled', () => {
+    it('delivers outgoing broadcasts to another local tab when Cloudflare realtime is disabled', () => {
       const receiverQueryClient = new QueryClient({
         defaultOptions: {
           queries: { retry: false },
@@ -1082,7 +1078,7 @@ describe('useBoardRealtime', () => {
       ).toEqual([expect.objectContaining({ id: 'task-1' })]);
     });
 
-    it('deduplicates the same event received locally and through Supabase', async () => {
+    it('deduplicates the same event received locally and through Cloudflare', async () => {
       queryClient.setQueryData(['tasks', 'board-1'], []);
 
       renderHook(() => useBoardRealtime('board-1', { enabled: true }), {

@@ -1,14 +1,8 @@
+import { publishChannelBroadcast } from '@tuturuuu/realtime/channels/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 
 export const BOARD_TASK_REALTIME_CHANNEL_PREFIX = 'board-realtime';
 export const TASK_USER_REALTIME_CHANNEL_PREFIX = 'task-user-realtime';
-
-const PRIVATE_TASK_REALTIME_CHANNEL_CONFIG = {
-  config: {
-    broadcast: { self: false },
-    private: true,
-  },
-} as const;
 
 export type TaskRealtimeEvent =
   | 'task:upsert'
@@ -114,6 +108,28 @@ function boardRealtimeChannelName(boardId: string) {
   return `${BOARD_TASK_REALTIME_CHANNEL_PREFIX}-${boardId}`;
 }
 
+const BROADCAST_TIMEOUT_MS = 5000;
+const LEGACY_PRIVATE_CHANNEL_OPTIONS = {
+  config: { broadcast: { self: false }, private: true },
+};
+
+async function boundedBroadcast<T>(operation: () => Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      Promise.resolve().then(operation),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error('Task realtime publication timed out')),
+          BROADCAST_TIMEOUT_MS
+        );
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function sendTaskBroadcast({
   sbAdmin,
   channelNames,
@@ -127,43 +143,37 @@ async function sendTaskBroadcast({
   payload: Record<string, unknown>;
   logWarning?: BroadcastLogFn;
 }) {
-  if (
-    typeof sbAdmin.channel !== 'function' ||
-    typeof sbAdmin.removeChannel !== 'function'
-  ) {
-    logWarning?.('Task realtime broadcast skipped: channel API unavailable', {
-      channelNames,
-      event,
-    });
-    return;
-  }
-
+  // Both transports receive only fanout derived from the authorized mutation.
+  // New consumers use Cloudflare; the private server bridge preserves released clients.
   await Promise.all(
     channelNames.map(async (channelName) => {
-      const channel = sbAdmin.channel(
-        channelName,
-        PRIVATE_TASK_REALTIME_CHANNEL_CONFIG
-      );
-      try {
-        await channel.send({
-          type: 'broadcast',
-          event,
-          payload,
-        });
-      } catch (error) {
-        logWarning?.('Task realtime broadcast failed', {
-          channelName,
-          error,
-          event,
-        });
-      } finally {
-        await sbAdmin.removeChannel(channel).catch((error) => {
-          logWarning?.('Task realtime channel cleanup failed', {
+      const message = { type: 'broadcast' as const, event, payload };
+      const results = await Promise.allSettled([
+        boundedBroadcast(() => publishChannelBroadcast(channelName, message)),
+        (async () => {
+          if (typeof sbAdmin.channel !== 'function') return;
+          const channel = sbAdmin.channel(
             channelName,
-            error,
+            LEGACY_PRIVATE_CHANNEL_OPTIONS
+          );
+          try {
+            const result = await boundedBroadcast(() =>
+              channel.send(message, { timeout: BROADCAST_TIMEOUT_MS })
+            );
+            if (result !== 'ok') throw new Error('Legacy publication failed');
+          } finally {
+            await boundedBroadcast(() => sbAdmin.removeChannel(channel));
+          }
+        })(),
+      ]);
+      results.forEach((result, index) => {
+        if (result.status === 'rejected')
+          logWarning?.('Task realtime broadcast failed', {
+            channelName,
+            event,
+            transport: index === 0 ? 'cloudflare' : 'legacy-supabase',
           });
-        });
-      }
+      });
     })
   );
 }

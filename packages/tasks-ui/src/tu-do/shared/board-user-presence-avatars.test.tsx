@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
-import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
+import type { RealtimePresenceState } from '@tuturuuu/internal-api/realtime';
 import type { UserPresenceState } from '@tuturuuu/tasks-ui/hooks/usePresence';
 import type { ComponentProps, ImgHTMLAttributes } from 'react';
 import { describe, expect, it, vi } from 'vitest';

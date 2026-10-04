@@ -252,6 +252,15 @@ function getTopLevelNavigation({
       icon: icon(Users),
       title: t('infrastructure-navigation.groups.platform_admin.title'),
       children: [
+        ...(canManageInternalAccounts
+          ? [
+              {
+                href: href(wsId, '/account-benefits'),
+                icon: icon(ShieldCheck),
+                title: t('infrastructure-tabs.account_benefits'),
+              },
+            ]
+          : []),
         {
           href: href(wsId, '/users'),
           icon: icon(Users),

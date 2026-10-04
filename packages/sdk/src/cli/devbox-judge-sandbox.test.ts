@@ -57,7 +57,8 @@ describe('Judge sandbox', () => {
     expect(args).toContain('--cpus=1.000');
     expect(args).toContain('--memory=256m');
     expect(args).toContain('--memory-swap=256m');
-    expect(args).toContain('--pids-limit=64');
+    expect(args).toContain('--pids-limit=192');
+    expect(args).toContain('--ulimit=nproc=64:64');
     expect(args.some((arg) => arg.startsWith('--volume'))).toBe(false);
   });
 

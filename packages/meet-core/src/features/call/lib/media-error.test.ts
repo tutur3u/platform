@@ -10,7 +10,7 @@ it('distinguishes missing input devices from permissions and transmission', () =
   expect(getMediaErrorKey(missing, 'camera')).toBe('camera_not_found');
   expect(getMediaErrorKey(missing, 'screen')).toBe('screen_not_found');
   expect(getMediaErrorKey({ name: 'NotSupportedError' }, 'screen')).toBe(
-    'screen_not_found'
+    'screen_browser_unsupported'
   );
   expect(getMediaErrorKey({ name: 'NotAllowedError' }, 'camera')).toBe(
     'media_permission_denied'

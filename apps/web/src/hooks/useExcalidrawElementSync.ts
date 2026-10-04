@@ -1,6 +1,6 @@
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { RealtimeChannel } from '@tuturuuu/supabase/next/realtime';
+import type { RealtimeChannel } from '@tuturuuu/internal-api/realtime';
+import { createRealtimeClient } from '@tuturuuu/internal-api/realtime';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { debounce } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -170,7 +170,7 @@ export function useExcalidrawElementSync({
           destroyTimerRef.current = setTimeout(() => {
             destroyTimerRef.current = null;
             if (channel && channelRef.current === channel) {
-              createClient().removeChannel(channel);
+              createRealtimeClient().removeChannel(channel);
               channelRef.current = null;
             }
           }, 100);
@@ -180,15 +180,15 @@ export function useExcalidrawElementSync({
 
     // ── Fresh creation path ─────────────────────────────────────────
     isCleanedUpRef.current = false;
-    const supabase = createClient();
+    const realtime = createRealtimeClient();
 
     // Clean up stale channel from a previous config if present
     if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
+      realtime.removeChannel(channelRef.current);
       channelRef.current = null;
     }
 
-    const channel = supabase.channel(`${channelName}-elements`, {
+    const channel = realtime.channel(`${channelName}-elements`, {
       config: {
         broadcast: {
           self: false, // Don't receive own broadcasts
@@ -264,7 +264,7 @@ export function useExcalidrawElementSync({
       destroyTimerRef.current = setTimeout(() => {
         destroyTimerRef.current = null;
         if (ch && channelRef.current === ch) {
-          supabase.removeChannel(ch);
+          realtime.removeChannel(ch);
           channelRef.current = null;
         }
       }, 100);

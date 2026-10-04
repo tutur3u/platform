@@ -37,7 +37,7 @@ export interface YjsCollaborationResult {
 }
 
 /**
- * Hook for managing Yjs collaboration with Supabase Realtime.
+ * Hook for managing Yjs collaboration with Cloudflare realtime.
  *
  * Uses deferred cleanup so that React StrictMode's double-invoke cycle
  * (mount → cleanup → remount) reuses the existing SupabaseProvider instead
@@ -72,17 +72,27 @@ export function useYjsCollaboration(
   // Ref that event listeners check — survives StrictMode cleanup/remount
   const mountedRef = useRef(false);
 
-  // Create Yjs document and awareness (stable references)
-  const doc = useMemo(() => (enabled ? new Y.Doc() : null), [enabled]);
-
-  const awareness = useMemo(
-    () => (enabled && doc ? new Awareness(doc) : null),
-    [enabled, doc]
+  const hasUser = !!user;
+  // Create the document without starting awareness timers during render.
+  const documentScope = JSON.stringify([
+    channel,
+    tableName,
+    columnName,
+    id,
+    user?.id,
+  ]);
+  const doc = useMemo(
+    () => (enabled && hasUser ? new Y.Doc({ guid: documentScope }) : null),
+    [enabled, hasUser, documentScope]
   );
+
+  const awareness =
+    providerState && providerState.id === doc?.clientID
+      ? providerState.awareness
+      : null;
 
   // Stabilize callback and user refs — these should never cause provider
   // destruction/recreation.
-  const hasUser = !!user;
   const userRef = useRef(user);
   userRef.current = user;
   const onSyncRef = useRef(onSync);
@@ -94,19 +104,22 @@ export function useYjsCollaboration(
 
   // Provider lifecycle: create/destroy based on channel config
   useEffect(() => {
-    if (!enabled || !doc || !awareness || !hasUser) return;
+    if (!enabled || !doc || !hasUser) return;
 
     mountedRef.current = true;
 
     // ── StrictMode reuse path ───────────────────────────────────────
     // If a pending deferred destruction exists, cancel it and reuse
-    // the existing provider. This prevents the Supabase Realtime
-    // "leave then immediate re-join" race that causes a 10s timeout.
+    // the existing provider only when its document identity still matches.
     if (destroyTimerRef.current) {
       clearTimeout(destroyTimerRef.current);
       destroyTimerRef.current = null;
 
-      if (providerRef.current && !providerRef.current.destroyed) {
+      if (
+        providerRef.current &&
+        !providerRef.current.destroyed &&
+        providerRef.current.id === doc.clientID
+      ) {
         console.log('♻️ Reusing existing SupabaseProvider (StrictMode)');
         return () => {
           mountedRef.current = false;
@@ -133,6 +146,7 @@ export function useYjsCollaboration(
     }
 
     const supabase = createClient();
+    const awareness = new Awareness(doc);
 
     // Set initial awareness state
     const currentUser = userRef.current;
@@ -152,6 +166,7 @@ export function useYjsCollaboration(
       tableName: tableName,
       columnName: columnName,
       awareness,
+      ownsDocument: true,
       resyncInterval: 30000,
       saveDebounceMs: saveDebounceMs ?? 300,
       loadState: loadDocumentState,
@@ -165,25 +180,25 @@ export function useYjsCollaboration(
     // Listen to provider events — use mountedRef so listeners stay valid
     // across StrictMode cleanup/remount without re-registration.
     provider.on('status', ([{ status }]) => {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || providerRef.current !== provider) return;
       console.log('📡 Provider status:', status);
       setConnected(status === 'connected');
     });
 
     provider.on('synced', ([syncState]) => {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || providerRef.current !== provider) return;
       console.log('🔄 Provider synced:', syncState);
       setSynced(syncState);
       onSyncRef.current?.(syncState);
     });
 
     provider.on('sync', ([syncState]) => {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || providerRef.current !== provider) return;
       console.log('🔄 Provider sync event:', syncState);
     });
 
     provider.on('save', (version) => {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || providerRef.current !== provider) return;
       console.log('💾 Document saved to database, version:', version);
       onSaveRef.current?.(version);
     });
@@ -196,7 +211,7 @@ export function useYjsCollaboration(
         channel: string;
         status: string;
       }) => {
-        if (!mountedRef.current) return;
+        if (!mountedRef.current || providerRef.current !== provider) return;
         console.error('❌ Provider error:', {
           message: errorInfo.message,
           channel: errorInfo.channel,
@@ -207,19 +222,19 @@ export function useYjsCollaboration(
     );
 
     provider.on('connect', () => {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || providerRef.current !== provider) return;
       console.log('✅ Provider connected');
     });
 
     provider.on('disconnect', () => {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || providerRef.current !== provider) return;
       console.log('🔌 Provider disconnected');
       setConnected(false);
       setSynced(false);
     });
 
     provider.on('dom-error', (error: DOMException) => {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || providerRef.current !== provider) return;
       console.warn(
         '⚠️ DOM reconciliation error handled gracefully:',
         error.message
@@ -227,7 +242,7 @@ export function useYjsCollaboration(
     });
 
     provider.on('reconnect-failed', () => {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || providerRef.current !== provider) return;
       // If page is visible (user is active but network dropped), restart
       // the backoff cycle after a short delay to avoid hammering
       if (
@@ -240,8 +255,8 @@ export function useYjsCollaboration(
         setTimeout(() => {
           if (
             mountedRef.current &&
-            providerRef.current &&
-            !providerRef.current.destroyed
+            providerRef.current === provider &&
+            !provider.destroyed
           ) {
             providerRef.current.resetAndReconnect();
           }
@@ -269,7 +284,6 @@ export function useYjsCollaboration(
     columnName,
     hasUser,
     doc,
-    awareness,
     enabled,
     broadcastDebounceMs,
     saveDebounceMs,
@@ -290,8 +304,12 @@ export function useYjsCollaboration(
   return {
     doc,
     awareness,
-    provider: providerState,
-    synced,
-    connected,
+    provider:
+      providerState && providerState.id === doc?.clientID
+        ? providerState
+        : null,
+    synced: !!providerState && providerState.id === doc?.clientID && synced,
+    connected:
+      !!providerState && providerState.id === doc?.clientID && connected,
   };
 }
