@@ -26,39 +26,80 @@ class OnboardingChoiceSlide extends StatelessWidget {
 
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: 24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const shad.Gap(32),
-          Text(
-            title,
-            style: theme.typography.h2.copyWith(fontWeight: FontWeight.bold),
-            textAlign: TextAlign.center,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const shad.Gap(8),
+              Text(
+                title,
+                style: theme.typography.h2.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const shad.Gap(12),
+              Text(
+                subtitle,
+                style: theme.typography.lead.copyWith(
+                  color: theme.colorScheme.mutedForeground,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const shad.Gap(28),
+              ...List.generate(options.length, (index) {
+                final active = selected.contains(index);
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Semantics(
+                    selected: active,
+                    child: Material(
+                      color: active
+                          ? theme.colorScheme.primary.withValues(alpha: .1)
+                          : theme.colorScheme.card,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        side: BorderSide(
+                          color: active
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.border,
+                        ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => onToggle(index),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              Icon(
+                                active
+                                    ? Icons.check_circle_outline
+                                    : Icons.circle_outlined,
+                                size: 22,
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Text(
+                                  options[index],
+                                  style: theme.typography.base.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
           ),
-          const shad.Gap(12),
-          Text(
-            subtitle,
-            style: theme.typography.lead.copyWith(
-              color: theme.colorScheme.mutedForeground,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const shad.Gap(28),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 10,
-            runSpacing: 10,
-            children: List.generate(options.length, (index) {
-              final active = selected.contains(index);
-              return ChoiceChip(
-                label: Text(options[index]),
-                selected: active,
-                onSelected: (_) => onToggle(index),
-                avatar: active ? const Icon(Icons.check, size: 16) : null,
-              );
-            }),
-          ),
-        ],
+        ),
       ),
     );
   }

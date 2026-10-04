@@ -189,7 +189,8 @@ void main() {
           );
           await tester.pumpAndSettle();
           expect(find.text('Test model', findRichText: true), findsNothing);
-          expect(find.text('Fast'), findsOneWidget);
+          expect(find.text('Fast'), findsNothing);
+          expect(find.text('Thinking'), findsNothing);
           expect(tester.takeException(), isNull);
           await tester.tapAt(const Offset(5, 5));
           await tester.pumpAndSettle();
@@ -198,7 +199,7 @@ void main() {
     }
   }
 
-  testWidgets('plus menu controls attachments, thinking, credits and close '
+  testWidgets('plus menu controls attachments, credits and close '
       'without clearing draft', (tester) async {
     final controller = TextEditingController(text: 'Unsent');
     final focus = FocusNode();
@@ -244,10 +245,9 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    await choose('Attach files');
+    await choose('Add attachments');
     expect(attaches, 1);
-    await choose('Thinking');
-    expect(mode, AssistantThinkingMode.thinking);
+    expect(mode, isNull);
     await choose('Source: Personal');
     expect(credits, 1);
     await choose('Close prompt');
@@ -315,8 +315,8 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(focus.hasFocus, isFalse);
-      expect(find.byIcon(Icons.flash_on_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.psychology_alt_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.flash_on_rounded), findsNothing);
+      expect(find.byIcon(Icons.psychology_alt_rounded), findsNothing);
       await tester.tapAt(const Offset(5, 5));
       await tester.pumpAndSettle();
       await tester.tap(find.byType(TextField));

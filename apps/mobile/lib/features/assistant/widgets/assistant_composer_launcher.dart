@@ -13,31 +13,15 @@ class AssistantComposerFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tablet = MediaQuery.sizeOf(context).shortestSide >= 600;
     return Tooltip(
       message: label,
       child: SizedBox(
         height: 52,
-        width: tablet ? 220 : 52,
+        width: 52,
         child: FilledButton(
           onPressed: onPressed,
           style: FilledButton.styleFrom(padding: const EdgeInsets.all(12)),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.chat_bubble_outline_rounded, size: 22),
-              if (tablet) ...[
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ],
-          ),
+          child: const Icon(Icons.chat_bubble_outline_rounded, size: 22),
         ),
       ),
     );

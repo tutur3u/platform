@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
+import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 
 /// Exactly one interactive dock branch, including during mode transitions.
 class AssistantMorphingDock extends StatelessWidget {
@@ -30,13 +31,13 @@ class AssistantMorphingDock extends StatelessWidget {
             key: const ValueKey('assistant-dock-chat'),
             child: composer,
           )
-        : Row(
+        : FloatingDockRail(
             key: const ValueKey('assistant-dock-navigation'),
-            children: [
-              Expanded(child: navigation),
-              const SizedBox(width: 8),
-              AssistantComposerFab(label: composeLabel, onPressed: onCompose),
-            ],
+            navigation: navigation,
+            primary: AssistantComposerFab(
+              label: composeLabel,
+              onPressed: onCompose,
+            ),
           ),
   );
 }

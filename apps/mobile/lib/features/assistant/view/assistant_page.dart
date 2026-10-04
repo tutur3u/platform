@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:camera/camera.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -33,6 +34,7 @@ import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_mobile_screen_context.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_sheet_body.dart';
+import 'package:mobile/features/assistant/widgets/assistant_capture_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_chat_feedback.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
@@ -49,6 +51,7 @@ import 'package:mobile/features/assistant/widgets/assistant_starter_prompts.dart
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
 import 'package:mobile/features/assistant/widgets/assistant_voice_message_sheet.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -59,6 +62,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'assistant_page_live_actions.dart';
 part 'assistant_page_layout.dart';
+part 'assistant_page_attachments.dart';
 
 class AssistantPage extends StatefulWidget {
   const AssistantPage({this.replayToken = 0, super.key});
@@ -467,7 +471,11 @@ class _AssistantPageState extends State<AssistantPage>
     AssistantChatState chatState,
     AssistantLiveState liveState,
   ) async {
-    if (_chatCubit.state.status == AssistantChatStatus.restoring) return;
+    final workspaceVersion = _chatCubit.attachmentScopeVersion;
+    if (_chatCubit.state.workspaceId != wsId ||
+        _chatCubit.state.status == AssistantChatStatus.restoring) {
+      return;
+    }
     if (chatState.composerAttachments.any(
       (attachment) =>
           attachment.uploadState == AssistantAttachmentUploadState.uploading,
@@ -498,6 +506,7 @@ class _AssistantPageState extends State<AssistantPage>
         attachments: attachments,
       );
       if (!mounted ||
+          _chatCubit.attachmentScopeVersion != workspaceVersion ||
           _liveCubit.state.status == AssistantLiveConnectionStatus.error) {
         return;
       }
@@ -505,6 +514,7 @@ class _AssistantPageState extends State<AssistantPage>
     } else {
       final timezone = await getCurrentTimezoneIdentifier();
       if (!mounted ||
+          _chatCubit.attachmentScopeVersion != workspaceVersion ||
           _chatCubit.state.status == AssistantChatStatus.restoring ||
           _chatCubit.state.workspaceId != wsId) {
         return;
@@ -527,61 +537,6 @@ class _AssistantPageState extends State<AssistantPage>
 
     _inputController.clear();
     _scheduleScrollToBottom();
-  }
-
-  Future<void> _recordVoiceMessage(String wsId) async {
-    final recording = await showAdaptiveSheet<AssistantVoiceMessageResult>(
-      context: context,
-      useRootNavigator: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      builder: (_) => const AssistantVoiceMessageSheet(),
-    );
-    if (!mounted || recording == null) return;
-    await _chatCubit.addComposerAttachments(
-      wsId: wsId,
-      files: [recording.file],
-      modelId: _shellCubit.state.selectedModel.value,
-      timezone: await getCurrentTimezoneIdentifier(),
-    );
-    if (mounted && recording.sendNow) {
-      await _handleSend(
-        wsId,
-        _shellCubit.state,
-        _chatCubit.state,
-        _liveCubit.state,
-      );
-    }
-  }
-
-  Future<void> _pickFiles(String wsId) async {
-    final result = await FilePicker.pickFiles();
-    if (result.isEmpty) {
-      return;
-    }
-
-    await _chatCubit.addComposerAttachments(
-      wsId: wsId,
-      files: result,
-      modelId: _shellCubit.state.selectedModel.value,
-      timezone: await getCurrentTimezoneIdentifier(),
-    );
-  }
-
-  Future<void> _pickGalleryMedia(String wsId) async {
-    try {
-      final media = await ImagePicker().pickMultipleMedia();
-      if (media.isEmpty || !mounted) return;
-      final files = media.map(GalleryPlatformFile.new).toList();
-      if (!mounted) return;
-      await _chatCubit.addComposerAttachments(
-        wsId: wsId,
-        files: files,
-        modelId: _shellCubit.state.selectedModel.value,
-        timezone: await getCurrentTimezoneIdentifier(),
-      );
-    } on Exception {
-      if (mounted) _showInlineNotice(context.l10n.assistantGalleryPickError);
-    }
   }
 
   void _showInlineNotice(String message) {
@@ -621,35 +576,6 @@ class _AssistantPageState extends State<AssistantPage>
             await _exitLiveMode();
           }
           await _chatCubit.openChat(wsId, chat);
-        },
-      ),
-    );
-  }
-
-  Future<void> _showAttachmentSheet(BuildContext context, String wsId) async {
-    await showAdaptiveSheet<void>(
-      context: context,
-      builder: (sheetContext) => AssistantAttachmentSheetBody(
-        hasAttachments: _chatCubit.state.composerAttachments.isNotEmpty,
-        onPickFiles: () async {
-          await Navigator.of(sheetContext).maybePop();
-          await _pickFiles(wsId);
-        },
-        onPickGalleryMedia: () async {
-          await Navigator.of(sheetContext).maybePop();
-          await _pickGalleryMedia(wsId);
-        },
-        onClearAttachments: () async {
-          final attachments = _chatCubit.state.composerAttachments
-              .map((attachment) => attachment.id)
-              .toList(growable: false);
-          await Navigator.of(sheetContext).maybePop();
-          for (final attachmentId in attachments) {
-            await _chatCubit.removeComposerAttachment(
-              wsId: wsId,
-              attachmentId: attachmentId,
-            );
-          }
         },
       ),
     );

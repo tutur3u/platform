@@ -18,7 +18,7 @@ void registerSettingsDetailShellChecks() {
       expect(find.text('Offline'), findsOneWidget);
       expect(find.text('Settings'), findsNothing);
       expect(find.byType(AppBar), findsNothing);
-      expect(find.byKey(const ValueKey('shell-settings-back')), findsOneWidget);
+      expect(find.byKey(const ValueKey('shell-settings-back')), findsNothing);
       final list = find
           .descendant(
             of: find.byType(OfflinePage),
@@ -45,7 +45,9 @@ void registerSettingsDetailShellChecks() {
         tester.getTopLeft(list).dy,
         closeTo(tester.getBottomLeft(header).dy, 1),
       );
-      await tester.tap(find.byKey(const ValueKey('shell-settings-back')));
+      tester
+          .widget<MorphingNavigationBar>(find.byType(MorphingNavigationBar))
+          .onSelected(const ValueKey('back-to-root'));
       await _settle(tester);
       expect(h.router.state.matchedLocation, Routes.settings);
       expect(tester.takeException(), isNull);
@@ -67,7 +69,7 @@ void registerSettingsDetailShellChecks() {
       await h.pump(tester, scale: 2);
       expect(find.byType(OfflineModulePage), findsOneWidget);
       expect(find.byType(AppBar), findsNothing);
-      expect(find.byKey(const ValueKey('shell-settings-back')), findsOneWidget);
+      expect(find.byKey(const ValueKey('shell-settings-back')), findsNothing);
       expect(find.text('Finance'), findsOneWidget);
       await tester.binding.handlePopRoute();
       await _settle(tester);

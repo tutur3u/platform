@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
-import 'package:mobile/features/shell/view/dock_action_transition.dart';
+import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/features/shell/view/shell_keyboard_chrome.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// The floating header includes the system status bar and the section bar.
@@ -201,9 +202,9 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
             ),
           if (active)
             Positioned(
-              left: 0,
-              right: 0,
-              bottom: widget.navigationBottomOffset,
+              left: floatingDockHorizontalInset,
+              right: floatingDockHorizontalInset,
+              bottom: floatingDockBottomGap + widget.navigationBottomOffset,
               child: SafeArea(
                 top: false,
                 child: ShellKeyboardChrome(
@@ -294,7 +295,10 @@ class _DockActionsState extends State<_DockActions> {
     try {
       cubit = context.read<ShellChromeActionsCubit>();
     } on ProviderNotFoundException {
-      return widget.navigation;
+      return FloatingDockRail(
+        navigation: widget.navigation,
+        reserveEmptyActions: usesRootDockSlots(widget.location),
+      );
     }
     return BlocBuilder<ShellChromeActionsCubit, ShellChromeActionsState>(
       bloc: cubit,
@@ -308,65 +312,38 @@ class _DockActionsState extends State<_DockActions> {
                   .resolveForLocation(widget.location)
                   .where((a) => a.inDock)
                   .toList();
-        // Two compact actions fit beside the flexible navigation on a phone.
-        // Keep both primary and secondary actions one tap away (for example,
-        // Search and New note) instead of hiding the latter behind a menu.
-        final visibleCount = MediaQuery.sizeOf(context).width >= 320 ? 2 : 1;
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                child: widget.navigation,
-              ),
-            ),
-            DockActionTransition(
-              identity: Object.hashAll([
-                visibleCount,
-                MediaQuery.sizeOf(context).shortestSide >= 600,
-                actions.length,
-              ]),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (final (index, action)
-                      in actions.take(visibleCount).indexed)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                      child: ShellDockActionButton(
-                        action: action,
-                        primary: index == 0,
+        // Narrow docks keep secondary actions in the top navbar and reserve
+        // one primary slot; wider docks add a second fixed slot.
+        return FloatingDockRail(
+          navigation: widget.navigation,
+          reserveEmptyActions: usesRootDockSlots(widget.location),
+          primary: actions.isEmpty
+              ? null
+              : ShellDockActionButton(action: actions.first),
+          secondary: actions.length < 2
+              ? null
+              : actions.length == 2
+              ? ShellDockActionButton(action: actions[1], primary: false)
+              : PopupMenuButton<ShellActionSpec>(
+                  tooltip: context.l10n.navMore,
+                  icon: const Icon(Icons.more_horiz),
+                  onSelected: (action) {
+                    unawaited(AppHaptics.selection());
+                    action.onPressed?.call();
+                  },
+                  itemBuilder: (context) => [
+                    for (final action in actions.skip(1))
+                      PopupMenuItem(
+                        value: action,
+                        enabled: action.enabled && !action.isLoading,
+                        child: ListTile(
+                          leading: Icon(action.icon),
+                          title: Text(action.tooltip ?? ''),
+                          dense: true,
+                        ),
                       ),
-                    ),
-                  if (actions.length > visibleCount)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                      child: PopupMenuButton<ShellActionSpec>(
-                        tooltip: '',
-                        icon: const Icon(Icons.more_horiz),
-                        onSelected: (action) {
-                          unawaited(AppHaptics.selection());
-                          action.onPressed?.call();
-                        },
-                        itemBuilder: (context) => [
-                          for (final action in actions.skip(visibleCount))
-                            PopupMenuItem(
-                              value: action,
-                              enabled: action.enabled && !action.isLoading,
-                              child: ListTile(
-                                leading: Icon(action.icon),
-                                title: Text(action.tooltip ?? ''),
-                                dense: true,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
+                  ],
+                ),
         );
       },
     );

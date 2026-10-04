@@ -1282,3 +1282,22 @@ scroll action clears the composer with safe-area insets, large text and keyboard
 visibility; both exclude physical bottom padding while the keyboard is visible.
 Widget coverage does not establish
 physical-device microphone, provider, camera, or production behavior.
+
+## Native onboarding and brand introduction
+
+The first-run and replay guide introduces Tuturuuu and Mira alongside Tasks,
+Calendar, Finance, and Inventory. Native gradient surfaces and brand assets provide
+visual context; tool labels describe existing surfaces rather than enabling access
+or promising automatic actions. Role and goal selection remain optional local
+recommendation preferences, not permissions or subscription changes.
+
+The four-page guide keeps the existing completion flag, role and goal preferences,
+login destination, and replay return behavior. Skip completes the same guide.
+Content scrolls independently of its primary action, including on small screens
+and with enlarged text. Light and dark themes retain solid readable controls.
+Reduced-motion settings remove animated page, progress, and background transitions;
+there is no continuous animation. This introduction is a full-screen flow outside
+the consolidated shell and does not add a nested shell navbar.
+
+Regression evidence: `apps/mobile/test/features/onboarding/onboarding_page_test.dart`
+covers progression, preferences, skip, replay, and compact enlarged-text layouts.

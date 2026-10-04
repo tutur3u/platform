@@ -8,7 +8,6 @@ class _ProfileActionTile extends StatelessWidget {
     required this.onTap,
     this.isDestructive = false,
     this.subtitle,
-    this.isValuePlaceholder = false,
   });
 
   final IconData icon;
@@ -17,88 +16,17 @@ class _ProfileActionTile extends StatelessWidget {
   final String? subtitle;
   final VoidCallback onTap;
   final bool isDestructive;
-  final bool isValuePlaceholder;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final accent = isDestructive
-        ? theme.colorScheme.destructive
-        : theme.colorScheme.primary;
-    final valueColor = isValuePlaceholder
-        ? theme.colorScheme.foreground.withValues(alpha: 0.58)
-        : theme.colorScheme.foreground;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: onTap,
-        child: Ink(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.background.withValues(alpha: 0.78),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                alignment: Alignment.center,
-                child: Icon(icon, size: 20, color: accent),
-              ),
-              const shad.Gap(12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: theme.typography.small.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: isDestructive ? accent : null,
-                      ),
-                    ),
-                    const shad.Gap(4),
-                    Text(
-                      value,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.base.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: valueColor,
-                      ),
-                    ),
-                    if (subtitle?.trim().isNotEmpty ?? false) ...[
-                      const shad.Gap(4),
-                      Text(
-                        subtitle!,
-                        style: theme.typography.textSmall.copyWith(
-                          color: theme.colorScheme.mutedForeground,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const shad.Gap(10),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 18,
-                color: theme.colorScheme.mutedForeground,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => SettingsTile(
+    icon: icon,
+    title: title,
+    value: value,
+    subtitle: subtitle,
+    onTap: onTap,
+    isDestructive: isDestructive,
+    wrapSupportingText: true,
+  );
 }
 
 class _ProfileHeroCard extends StatelessWidget {
@@ -110,11 +38,6 @@ class _ProfileHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
-    final palette = AppCardPalette.resolve(
-      context,
-      index: 0,
-      moduleId: 'tasks',
-    );
     final l10n = context.l10n;
     final displayName = profile.displayName?.trim().isNotEmpty ?? false
         ? profile.displayName!.trim()
@@ -122,20 +45,7 @@ class _ProfileHeroCard extends StatelessWidget {
         ? profile.fullName!.trim()
         : profile.email ?? l10n.profileTitle;
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: LinearGradient(
-          colors: [
-            palette.background,
-            theme.colorScheme.card,
-            palette.iconBackground,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      padding: const EdgeInsets.all(22),
+    return SettingsPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
