@@ -12,6 +12,7 @@ import 'package:mobile/features/profile/view/profile_activity_section.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
@@ -49,6 +50,7 @@ void main() {
         addTearDown(tester.view.resetDevicePixelRatio);
         final auth = _Auth();
         final workspace = _Workspace();
+        when(() => workspace.hasAuthenticatedActor).thenReturn(true);
         whenListen(
           auth,
           const Stream<AuthState>.empty(),
@@ -58,6 +60,7 @@ void main() {
           workspace,
           const Stream<WorkspaceState>.empty(),
           initialState: const WorkspaceState(
+            workspaces: [Workspace(id: 'personal', personal: true)],
             currentWorkspace: Workspace(id: 'team', name: 'Team'),
           ),
         );
@@ -76,6 +79,7 @@ void main() {
               ),
               child: SingleChildScrollView(
                 child: ProfileActivitySection(
+                  cacheUserId: () => auth.state.user?.id,
                   timezoneLoader: () async => 'UTC',
                   statsLoader: (ws, user, tz, {required personal}) async =>
                       const TimeTrackerStats(
@@ -102,12 +106,14 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final auth = _Auth();
     final workspace = _Workspace();
+    when(() => workspace.hasAuthenticatedActor).thenReturn(true);
     final authChanges = StreamController<AuthState>();
     whenListen(auth, authChanges.stream, initialState: _signedIn('first'));
     whenListen(
       workspace,
       const Stream<WorkspaceState>.empty(),
       initialState: const WorkspaceState(
+        workspaces: [Workspace(id: 'personal', personal: true)],
         currentWorkspace: Workspace(id: 'workspace', name: 'Team'),
       ),
     );
@@ -123,9 +129,11 @@ void main() {
         ],
         child: SingleChildScrollView(
           child: ProfileActivitySection(
+            cacheUserId: () => auth.state.user?.id,
             timezoneLoader: () async => 'Asia/Ho_Chi_Minh',
             statsLoader: (wsId, userId, timezone, {required personal}) {
-              expect(wsId, 'workspace');
+              expect(wsId, 'personal');
+              expect(personal, isTrue);
               expect(timezone, 'Asia/Ho_Chi_Minh');
               requestedUsers.add(userId);
               return userId == 'first' ? first.future : second.future;

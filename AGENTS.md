@@ -203,6 +203,12 @@ merge, or production evidence only when that delivery is authorized.
 - For new or substantially edited TypeScript server/service orchestration,
   prefer `@tuturuuu/utils/effect` when typed expected errors, dependency
   services, retry/scheduling, or controlled concurrency make the flow safer.
+- Mobile screens inside the app shell inherit its background, single top navbar
+  title/back control, and header clearance. Do not put another AppBar or body
+  topbar below it. Scrollable content consumes shell-provided bottom padding so
+  the floating dock cannot cover its final controls. Explicit full-screen forms
+  and system-owned flows must open above the shell, never stack their navbar
+  inside its body.
 - After Flutter ARB key changes, run `flutter gen-l10n` before Flutter analysis
   or tests.
 

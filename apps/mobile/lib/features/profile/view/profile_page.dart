@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -11,6 +12,7 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/features/apps/widgets/app_card_palette.dart';
@@ -18,6 +20,7 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
 import 'package:mobile/features/profile/cubit/profile_state.dart';
+import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
@@ -157,7 +160,19 @@ class _ProfileView extends StatelessWidget {
                     playOnceKey: 'profile-hero',
                     child: _ProfileHeroCard(profile: profile, state: state),
                   ),
-                  const shad.Gap(32),
+                  const shad.Gap(20),
+                  SettingsCompactSection(
+                    title: l10n.authManageAccounts,
+                    children: [
+                      SettingsTile(
+                        grouped: true,
+                        icon: Icons.manage_accounts_outlined,
+                        title: l10n.authManageAccounts,
+                        onTap: () => context.push(Routes.settingsAccounts),
+                      ),
+                    ],
+                  ),
+                  const shad.Gap(20),
                   LayoutBuilder(
                     builder: (context, constraints) {
                       final panels = <Widget>[

@@ -32,7 +32,7 @@ class _SettingsOverviewSection extends StatelessWidget {
           icon: Icons.person_outline_rounded,
           title: l10n.settingsNavYou,
           value: context.watch<AuthCubit?>()?.state.user?.email,
-          onTap: () => context.push(Routes.profileRoot),
+          onTap: () => context.push(Routes.settingsProfile),
         ),
         SettingsTile(
           grouped: true,
@@ -45,9 +45,7 @@ class _SettingsOverviewSection extends StatelessWidget {
           grouped: true,
           icon: Icons.offline_pin_outlined,
           title: l10n.offlineSectionTitle,
-          onTap: () => Navigator.of(
-            context,
-          ).push(MaterialPageRoute<void>(builder: (_) => const OfflinePage())),
+          onTap: () => context.push(Routes.settingsOffline),
         ),
         if (showInfrastructure)
           SettingsTile(
@@ -71,7 +69,7 @@ class _SettingsOverviewSection extends StatelessWidget {
           grouped: true,
           icon: Icons.explore_outlined,
           title: l10n.connectedOnboardingSettingsTitle,
-          onTap: () => Navigator.of(context).push(
+          onTap: () => Navigator.of(context, rootNavigator: true).push(
             MaterialPageRoute<void>(
               builder: (_) => const OnboardingPage(replay: true),
             ),
@@ -172,11 +170,7 @@ class _InfrastructureSection extends StatelessWidget {
           icon: Icons.admin_panel_settings_outlined,
           title: l10n.adminAccountsTitle,
           subtitle: l10n.adminAccountsDescription,
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => const InternalAccountsPage(),
-            ),
-          ),
+          onTap: () => context.push(Routes.settingsInternalAccounts),
         ),
         SettingsTile(
           icon: Icons.system_update_alt_rounded,

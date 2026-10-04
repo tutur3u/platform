@@ -6,7 +6,20 @@ import 'package:mobile/data/repositories/timezone_settings_repository.dart';
 import 'package:mobile/features/reminders/reminder_timezone_resolver.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _Repository extends Mock implements TimezoneSettingsRepository {}
+class _Repository extends Mock implements TimezoneSettingsRepository {
+  // Keep existing caller fixtures while the real repository owns coalescing.
+  @override
+  Future<String> readPersonal(
+    String userId, {
+    Duration timeout = const Duration(seconds: 15),
+  }) => loadPersonal();
+  @override
+  Future<String> readWorkspace(
+    String userId,
+    String id, {
+    Duration timeout = const Duration(seconds: 15),
+  }) => loadWorkspace(id);
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

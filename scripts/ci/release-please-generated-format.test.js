@@ -69,3 +69,18 @@ test('generated formatting is path-scoped and race-safe', () => {
     /--force-with-lease="refs\/heads\/\$\{RELEASE_BRANCH\}:\$\{release_sha\}"/
   );
 });
+
+test('generated lock refresh is bounded, version-only, and preserves authors', () => {
+  assert.match(releaseJob, /bun-version: 1\.4\.1/);
+  assert.match(releaseJob, /bun install --lockfile-only --ignore-scripts/);
+  assert.match(
+    releaseJob,
+    /release-workspace-lock\.js origin\/production HEAD --working/
+  );
+  assert.match(releaseJob, /changed_files\+=\("bun\.lock"\)/);
+  assert.doesNotMatch(releaseJob, /--reset-author|git add --all/);
+  assert.ok(
+    releaseJob.indexOf('release-workspace-lock.js origin/production HEAD') <
+      releaseJob.indexOf('node scripts/ci/normalize-release-notes.js')
+  );
+});

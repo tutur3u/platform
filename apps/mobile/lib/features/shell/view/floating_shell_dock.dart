@@ -18,7 +18,8 @@ double floatingShellHeaderInset(BuildContext context) =>
 
 /// Overlays the dock without shortening the page viewport.
 /// Pages consume bottom MediaQuery padding inside their scrollable content.
-/// Clearance stays stable while the dock hides so scroll positions never jump.
+/// Stable clearance is the default; personal scrolling surfaces opt into
+/// reclaiming hidden navigation clearance inside their scroll content.
 class FloatingShellDock extends StatefulWidget {
   const FloatingShellDock({
     required this.location,
@@ -31,12 +32,14 @@ class FloatingShellDock extends StatefulWidget {
     this.onVisibilityChanged,
     this.navigationBottomOffset = 0,
     this.reserveNavigationClearance = true,
+    this.reclaimNavigationClearanceWhenHidden = false,
     this.keepNavigationVisible = false,
     super.key,
   });
 
   final double navigationBottomOffset;
   final bool reserveNavigationClearance;
+  final bool reclaimNavigationClearanceWhenHidden;
   final bool keepNavigationVisible;
   final String location;
   final double bottomInset;
@@ -141,10 +144,14 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
             .background ??
         Theme.of(context).colorScheme.surface;
     final active = widget.bottomInset > 0;
-    final clearance = active && widget.reserveNavigationClearance
+    final navigationHidden = _hidden && !widget.keepNavigationVisible;
+    final reserveClearance =
+        widget.reserveNavigationClearance &&
+        !(widget.reclaimNavigationClearanceWhenHidden &&
+            (navigationHidden || widget.keyboardVisible));
+    final clearance = active && reserveClearance
         ? widget.bottomInset + media.padding.bottom
         : media.padding.bottom;
-    final navigationHidden = _hidden && !widget.keepNavigationVisible;
     final headerClearance = widget.header == null || widget.scrollableHeader
         ? 0.0
         : _headerInset;

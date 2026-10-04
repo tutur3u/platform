@@ -3996,6 +3996,7 @@
     "profileTimelineAgenda": "Days with activity",
     "profileTimelineDayEmpty": "No activity was returned for this day.",
     "profileTimelineHasActivity": "Activity in loaded snapshot",
+    "profileTimelineLoadedEnd": "All loaded activity shown",
     "profileTimelineMoreDays": "Show more loaded days",
     "meetNoticeJoined": "{name} joined the meeting",
     "meetNoticeWaiting": "{name} is asking to join",
@@ -4201,7 +4202,7 @@
             }
         }
     },
-    "homePersonalAgenda": "Personal Agenda",
+    "homePersonalAgenda": "Agenda",
     "homePersonalAgendaUnavailable": "Personal calendar is unavailable.",
     "assistantExpandNavigation": "Show navigation",
     "assistantCollapseNavigation": "Hide navigation",
