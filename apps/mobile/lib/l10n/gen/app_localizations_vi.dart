@@ -9914,6 +9914,32 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventorySetupSyncFirst => 'Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa.';
 
   @override
+  String get meetCollaboration => 'Cộng tác';
+
+  @override
+  String get meetCollaborationUnavailable => 'Cộng tác hiện không khả dụng. Hãy vào lại cuộc họp rồi thử lại.';
+
+  @override
+  String get meetScreenFixtureTitle => 'Kiểm thử chia sẻ màn hình gốc';
+
+  @override
+  String get meetScreenFixtureHint => 'Tham gia cuộc họp giả lập cục bộ và chia sẻ màn hình. Nội dung chỉ ở trên thiết bị này; theo dõi số khung hình nhận được.';
+
+  @override
+  String meetScreenFixtureFrames(int count) {
+    return 'Số khung hình đã giải mã: $count';
+  }
+
+  @override
+  String get meetFixtureConnected => 'Đã kết nối cuộc họp cục bộ';
+
+  @override
+  String get meetFixtureRevoke => 'Chủ phòng: dừng chia sẻ màn hình';
+
+  @override
+  String get meetFixtureReconnect => 'Kết nối lại cuộc họp';
+
+  @override
   String get connectedOnboardingMiraTitle => 'Gặp Mira, trợ lý AI của bạn';
 
   @override

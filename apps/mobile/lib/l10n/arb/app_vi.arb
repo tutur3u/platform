@@ -4277,6 +4277,21 @@
         }
     },
     "inventorySetupSyncFirst": "Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa.",
+    "meetCollaboration": "Cộng tác",
+    "meetCollaborationUnavailable": "Cộng tác hiện không khả dụng. Hãy vào lại cuộc họp rồi thử lại.",
+    "meetScreenFixtureTitle": "Kiểm thử chia sẻ màn hình gốc",
+    "meetScreenFixtureHint": "Tham gia cuộc họp giả lập cục bộ và chia sẻ màn hình. Nội dung chỉ ở trên thiết bị này; theo dõi số khung hình nhận được.",
+    "meetScreenFixtureFrames": "Số khung hình đã giải mã: {count}",
+    "@meetScreenFixtureFrames": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "meetFixtureConnected": "Đã kết nối cuộc họp cục bộ",
+    "meetFixtureRevoke": "Chủ phòng: dừng chia sẻ màn hình",
+    "meetFixtureReconnect": "Kết nối lại cuộc họp",
     "connectedOnboardingMiraTitle": "Gặp Mira, trợ lý AI của bạn",
     "connectedOnboardingMiraSubtitle": "Bắt đầu trò chuyện, lên kế hoạch hoặc suy nghĩ về bước tiếp theo. Mira đồng hành cùng các công cụ bạn sử dụng mỗi ngày.",
     "connectedOnboardingMiraToolkit": "Một nơi để trò chuyện với Mira và truy cập công việc, lịch, tài chính và kho hàng. Chọn những gì phù hợp với bạn.",

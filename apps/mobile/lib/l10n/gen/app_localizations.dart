@@ -18997,6 +18997,54 @@ abstract class AppLocalizations {
   /// **'Sync this new item before using, editing, or deleting it.'**
   String get inventorySetupSyncFirst;
 
+  /// No description provided for @meetCollaboration.
+  ///
+  /// In en, this message translates to:
+  /// **'Collaborate'**
+  String get meetCollaboration;
+
+  /// No description provided for @meetCollaborationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Collaboration is unavailable. Rejoin the meeting and try again.'**
+  String get meetCollaborationUnavailable;
+
+  /// No description provided for @meetScreenFixtureTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Native screen capture test'**
+  String get meetScreenFixtureTitle;
+
+  /// No description provided for @meetScreenFixtureHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Join the synthetic local meeting and share your screen. Media stays on this device; watch the receiver frame counter.'**
+  String get meetScreenFixtureHint;
+
+  /// No description provided for @meetScreenFixtureFrames.
+  ///
+  /// In en, this message translates to:
+  /// **'Decoded receiver frames: {count}'**
+  String meetScreenFixtureFrames(int count);
+
+  /// No description provided for @meetFixtureConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Local meeting connected'**
+  String get meetFixtureConnected;
+
+  /// No description provided for @meetFixtureRevoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Host: stop screen share'**
+  String get meetFixtureRevoke;
+
+  /// No description provided for @meetFixtureReconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect meeting'**
+  String get meetFixtureReconnect;
+
   /// No description provided for @connectedOnboardingMiraTitle.
   ///
   /// In en, this message translates to:
