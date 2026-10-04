@@ -13,7 +13,7 @@ permissions:
   contents: read
 concurrency:
   group: supabase-baseline-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/release-please--branches--production--release-notes' }}
 jobs:
   cold-warm-corrupt:
     runs-on: ubuntu-latest

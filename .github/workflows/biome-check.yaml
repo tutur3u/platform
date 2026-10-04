@@ -2,17 +2,14 @@ name: Biome Check
 
 on:
   push:
-    # Overflow notes briefly reuse the production SHA before their content commit.
-    # Exclude them before creating checks that a subsequent push would cancel.
-    branches-ignore:
-      - 'release-please--branches--**--release-notes'
   workflow_dispatch:
 
 # Release Please pushes generated files, then amends them with Biome formatting.
-# Only the latest commit on each ref should validate or publish follow-up actions.
+# Ordinary refs supersede stale commits; validated overflow notes finish the
+# shared no-work decision instead of cancelling an earlier production-SHA check.
 concurrency:
   group: biome-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/release-please--branches--production--release-notes' }}
 
 jobs:
   check-ci:
