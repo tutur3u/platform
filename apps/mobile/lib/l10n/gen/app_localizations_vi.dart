@@ -9914,6 +9914,23 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventorySetupSyncFirst => 'Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa.';
 
   @override
+  String get connectedOnboardingMiraTitle => 'Gặp Mira, trợ lý AI của bạn';
+
+  @override
+  String get connectedOnboardingMiraSubtitle => 'Bắt đầu trò chuyện, lên kế hoạch hoặc suy nghĩ về bước tiếp theo. Mira đồng hành cùng các công cụ bạn sử dụng mỗi ngày.';
+
+  @override
+  String get connectedOnboardingMiraToolkit => 'Một nơi để trò chuyện với Mira và truy cập công việc, lịch, tài chính và kho hàng. Chọn những gì phù hợp với bạn.';
+
+  @override
+  String get connectedOnboardingOptional => 'Nhịp độ của bạn. Không gian của bạn. Luôn tùy chọn.';
+
+  @override
+  String connectedOnboardingStep(int step, int total) {
+    return 'Bước $step trên $total';
+  }
+
+  @override
   String get assistantAttachCaptureAction => 'Chụp và ghi âm';
 
   @override

@@ -4277,6 +4277,21 @@
         }
     },
     "inventorySetupSyncFirst": "Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa.",
+    "connectedOnboardingMiraTitle": "Gặp Mira, trợ lý AI của bạn",
+    "connectedOnboardingMiraSubtitle": "Bắt đầu trò chuyện, lên kế hoạch hoặc suy nghĩ về bước tiếp theo. Mira đồng hành cùng các công cụ bạn sử dụng mỗi ngày.",
+    "connectedOnboardingMiraToolkit": "Một nơi để trò chuyện với Mira và truy cập công việc, lịch, tài chính và kho hàng. Chọn những gì phù hợp với bạn.",
+    "connectedOnboardingOptional": "Nhịp độ của bạn. Không gian của bạn. Luôn tùy chọn.",
+    "connectedOnboardingStep": "Bước {step} trên {total}",
+    "@connectedOnboardingStep": {
+        "placeholders": {
+            "step": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
+        }
+    },
     "assistantAttachCaptureAction": "Chụp và ghi âm",
     "assistantAttachFilesSource": "Tệp",
     "assistantCaptureAudio": "Ghi âm",

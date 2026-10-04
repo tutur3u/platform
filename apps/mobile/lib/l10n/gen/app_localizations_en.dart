@@ -10041,6 +10041,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventorySetupSyncFirst => 'Sync this new item before using, editing, or deleting it.';
 
   @override
+  String get connectedOnboardingMiraTitle => 'Meet Mira, your AI companion';
+
+  @override
+  String get connectedOnboardingMiraSubtitle => 'Start a conversation, shape a plan, or think through your next step. Mira lives alongside the tools you use every day.';
+
+  @override
+  String get connectedOnboardingMiraToolkit => 'One place to chat with Mira and reach your tasks, calendar, finances, and inventory. Choose what works for you.';
+
+  @override
+  String get connectedOnboardingOptional => 'Your pace. Your workspace. Always optional.';
+
+  @override
+  String connectedOnboardingStep(int step, int total) {
+    return 'Step $step of $total';
+  }
+
+  @override
   String get assistantAttachCaptureAction => 'Capture & Record';
 
   @override
