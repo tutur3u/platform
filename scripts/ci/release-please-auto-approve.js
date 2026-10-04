@@ -18,6 +18,11 @@
  */
 
 const fs = require('node:fs');
+const {
+  decodeReleaseFileBody,
+  validateReleaseFileMetadata,
+} = require('./release-file-body');
+const { validateWorkspaceLock } = require('./release-workspace-lock');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const {
@@ -89,7 +94,7 @@ class GitHubClient {
     this.token = token;
   }
 
-  async request(method, route, { body, query } = {}) {
+  async request(method, route, { body, query, accept } = {}) {
     const url = new URL(
       `${this.apiUrl}/repos/${this.repository}/${route.replace(/^\//u, '')}`
     );
@@ -103,7 +108,7 @@ class GitHubClient {
     const response = await fetch(url, {
       body: body ? JSON.stringify(body) : undefined,
       headers: {
-        Accept: 'application/vnd.github+json',
+        Accept: accept || 'application/vnd.github+json',
         Authorization: `Bearer ${this.token}`,
         'Content-Type': 'application/json',
         'X-GitHub-Api-Version': '2022-11-28',
@@ -124,6 +129,25 @@ class GitHubClient {
     }
 
     return data;
+  }
+
+  async readFileAt(file, sha) {
+    if (!/^[a-f0-9]{40}$/.test(sha))
+      throw new Error('Immutable file ref required');
+    const response = await this.request('GET', `/contents/${file}`, {
+      query: { ref: sha },
+      // The object representation retains immutable blob metadata above 1 MiB.
+      accept: 'application/vnd.github.object+json',
+    });
+    validateReleaseFileMetadata(response, file);
+    if (response.encoding === 'base64')
+      return decodeReleaseFileBody(response, response);
+    if (response.encoding !== 'none' || response.content !== '')
+      throw new Error('Cannot read complete release file');
+    // Derive the route only from validated metadata returned for this exact
+    // commit/path. Never follow git_url or download_url supplied in a response.
+    const blob = await this.request('GET', `/git/blobs/${response.sha}`);
+    return decodeReleaseFileBody(blob, response);
   }
 
   async findReleasePullRequest(targetBranch) {
@@ -158,9 +182,13 @@ class GitHubClient {
     return this.listAll('reviews', number);
   }
 
-  async approve(number, body) {
+  async approve(number, body, headSha) {
     return this.request('POST', `/pulls/${number}/reviews`, {
-      body: { body, event: 'APPROVE' },
+      body: {
+        body,
+        event: 'APPROVE',
+        ...(headSha ? { commit_id: headSha } : {}),
+      },
     });
   }
 }
@@ -203,8 +231,60 @@ async function autoApproveReleasePullRequest({
     github.listAll('files', pullRequest.number),
   ]);
 
+  // Narrow author/ref/path eligibility before reading any additional file bodies.
+  const eligibility = evaluateReleasePullRequest({
+    allowedPaths: buildAllowedPaths(config),
+    approvedAuthors,
+    commits,
+    files,
+    pullRequest,
+    targetBranch,
+    verifiedWorkspaceLock: true,
+  });
+  if (!eligibility.approve)
+    return {
+      number: pullRequest.number,
+      reason: eligibility.reason,
+      status: 'skipped',
+    };
+  let verifiedWorkspaceLock = false;
+  if (files.some((file) => file.filename === 'bun.lock')) {
+    try {
+      const [before, after] = await Promise.all([
+        github.readFileAt('bun.lock', pullRequest.base.sha),
+        github.readFileAt('bun.lock', pullRequest.head.sha),
+      ]);
+      // Immutable package contents are fetched independently; never trust a PR
+      // patch (which GitHub can truncate) or the formatter's own assertion.
+      const { readLock } = require('./release-workspace-lock');
+      const packages = new Map();
+      const previous = readLock(before);
+      const current = readLock(after);
+      for (const [workspace, next] of current.versions) {
+        const old = previous.versions.get(workspace);
+        if (old && old.value !== next.value) {
+          if (!/^(?:apps|packages)\/[a-zA-Z0-9_-]+$/.test(workspace))
+            throw new Error('Unsupported workspace');
+          const file = `${workspace}/package.json`;
+          packages.set(
+            file,
+            JSON.parse(await github.readFileAt(file, pullRequest.head.sha))
+          );
+        }
+      }
+      validateWorkspaceLock(before, after, (file) => packages.get(file));
+      verifiedWorkspaceLock = true;
+    } catch {
+      return {
+        number: pullRequest.number,
+        reason: 'lockfile is not a verified workspace-version-only repair',
+        status: 'skipped',
+      };
+    }
+  }
   const decision = evaluateReleasePullRequest({
     allowedPaths: buildAllowedPaths(config),
+    verifiedWorkspaceLock,
     approvedAuthors,
     commits,
     files,
@@ -228,6 +308,16 @@ async function autoApproveReleasePullRequest({
     };
   }
 
+  const latest = await github.findReleasePullRequest(targetBranch);
+  if (
+    latest?.head?.sha !== pullRequest.head.sha ||
+    latest?.base?.sha !== pullRequest.base.sha
+  )
+    return {
+      number: pullRequest.number,
+      reason: 'release refs changed during validation',
+      status: 'skipped',
+    };
   const reviews = await github.listReviews(pullRequest.number);
 
   if (hasCurrentApproval(reviews, pullRequest.head.sha)) {
@@ -241,7 +331,8 @@ async function autoApproveReleasePullRequest({
   try {
     await github.approve(
       pullRequest.number,
-      'Approved automatically: this release pull request contains only release-please generated version and changelog updates.'
+      'Approved automatically: this release pull request contains only verified generated release metadata and changelog updates.',
+      pullRequest.head.sha
     );
   } catch (error) {
     // GitHub refuses a review by the account that opened the PR. That is what
