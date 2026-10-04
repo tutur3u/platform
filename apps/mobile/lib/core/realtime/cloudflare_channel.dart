@@ -28,7 +28,7 @@ class CloudflareChannel {
   int _generation = 0;
   int _attempt = 0;
 
-  Future<void> connect() async {
+  Future<void> connect({bool retryOnFailure = true}) async {
     if (_closed) return;
     _retry?.cancel();
     _retry = null;
@@ -87,8 +87,13 @@ class CloudflareChannel {
       _attempt = 0;
       _refresh?.cancel();
       _scheduleRefresh(generation);
-    } on Object {
-      await candidate?.sink.close();
+    } on Object catch (error, stack) {
+      try {
+        await candidate?.sink.close();
+      } on Object {
+        // Cleanup errors must not replace the original authorization/transport error.
+      }
+      if (!retryOnFailure) Error.throwWithStackTrace(error, stack);
       if (!_closed && generation == _generation) _disconnected(generation);
     }
   }

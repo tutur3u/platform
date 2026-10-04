@@ -1117,15 +1117,15 @@ loopback capability serves private preview assets. External navigation and
 preview requests cannot invoke the collaboration bridge. The call continues
 while the collaboration panel is open.
 
-Native collaboration pins the authenticated account separately from the admitted
-device identity; these IDs intentionally differ. Account changes, device changes,
-revoked admission or ended calls deny requests and suppress late private results.
-Preview capability possession never transfers room access. Disposed channels never
-schedule ticket refreshes after cleanup. Task cubits cancel their subscriptions and
-close only factory-owned broadcast clients/APIs; injected shared APIs remain owned
-by their caller. Server admission remains authoritative. Regression coverage:
-`meet_collaboration_owner_test.dart`, `meet_preview_proxy_test.dart`,
-`task_broadcast_lifecycle_test.dart` and `cloudflare_channel_test.dart`.
+Native collaboration pins the account separately from the admitted device ID.
+Account/device changes, revoked admission and ended calls suppress late results;
+preview capabilities never transfer access. Server admission remains authoritative.
+Task cubits cancel subscriptions and close only default-owned clients/APIs;
+injected clients remain caller-owned. Disposed channels stop ticket refreshes.
+Navigation denies malformed, hostless and non-HTTP schemes without throwing.
+One-shot broadcasts preserve ticket/handshake errors; subscribed channels reconnect.
+Per-send socket setup remains a tradeoff; shared-channel reuse is not implemented.
+Coverage: `meet_collaboration_owner_test.dart`, `meet_preview_proxy_test.dart`, `meet_collaboration_policy_test.dart`, `task_broadcast_lifecycle_test.dart` and `cloudflare_channel_test.dart`.
 
 Both clients refresh short-lived channel tickets on the existing socket. Actual
 reconnects reauthorize admission and replay missing document updates. Expired

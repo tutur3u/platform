@@ -7,9 +7,27 @@ class MeetCollaborationPolicy {
   final String nonce;
 
   bool allowsNavigation(Uri url) =>
+      const {'http', 'https'}.contains(url.scheme) &&
+      url.host.isNotEmpty &&
+      url.scheme == editor.scheme &&
       url.origin == editor.origin &&
       url.path == editor.path &&
       url.queryParameters['meetingId'] == editor.queryParameters['meetingId'];
+
+  /// Invalid plugin input always produces a denial, never an escaped callback.
+  bool allowsNavigationRequest(String? raw, {required bool isMainFrame}) {
+    try {
+      final url = raw == null ? null : Uri.tryParse(raw);
+      if (url == null ||
+          !const {'http', 'https'}.contains(url.scheme) ||
+          url.host.isEmpty) {
+        return false;
+      }
+      return !isMainFrame || allowsNavigation(url);
+    } on Object {
+      return false;
+    }
+  }
 
   ({String action, Object? payload}) authorize({
     required List<dynamic> arguments,

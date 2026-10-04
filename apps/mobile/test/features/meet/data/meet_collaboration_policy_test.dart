@@ -65,6 +65,42 @@ void main() {
       isTrue,
     );
   });
+  test('unsupported and malformed navigation always returns a denial', () {
+    for (final raw in [
+      null,
+      'about:blank',
+      'data:text/html,x',
+      'javascript:alert(1)',
+      'file:///tmp/editor',
+      '//meet.example/en/native-collaboration',
+      'https:/en/native-collaboration',
+      'https://meet.example:invalid/',
+    ]) {
+      expect(policy.allowsNavigationRequest(raw, isMainFrame: true), isFalse);
+      expect(policy.allowsNavigationRequest(raw, isMainFrame: false), isFalse);
+    }
+    for (final raw in ['about:blank', 'data:text/html,x', 'https:/no-host']) {
+      expect(policy.allowsNavigation(Uri.parse(raw)), isFalse);
+    }
+    expect(
+      policy.allowsNavigationRequest(editor.toString(), isMainFrame: true),
+      isTrue,
+    );
+    expect(
+      policy.allowsNavigationRequest(
+        'http://127.0.0.1:3000/preview',
+        isMainFrame: false,
+      ),
+      isTrue,
+    );
+    expect(
+      policy.allowsNavigationRequest(
+        'https://evil.example/editor',
+        isMainFrame: true,
+      ),
+      isFalse,
+    );
+  });
   test('bounds UTF-8 bytes and rejects malformed run identifiers', () {
     expect(
       () => authorize(['native-secret', 'checkpoint', '界' * 1000001]),

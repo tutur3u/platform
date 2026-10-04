@@ -238,7 +238,7 @@ class CloudflareTaskBroadcastClient implements TaskBroadcastClient {
   }) async {
     final channel = _channel(channelName, (_) {});
     try {
-      await channel.connect();
+      await channel.connect(retryOnFailure: false);
       await channel.send({
         'type': 'broadcast',
         'event': event,

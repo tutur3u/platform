@@ -12,7 +12,49 @@ class _Api extends ApiClient {
   }
 }
 
+class _DeniedApi extends ApiClient {
+  _DeniedApi() : super(baseUrl: 'https://example.test');
+  int attempts = 0;
+  final denied = const ApiException(
+    message: 'Admission denied',
+    statusCode: 403,
+  );
+  @override
+  Future<Map<String, dynamic>> postJson(
+    String path,
+    Object? body, {
+    bool requiresAuth = true,
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    attempts++;
+    throw denied;
+  }
+}
+
 void main() {
+  test(
+    'broadcast preserves ticket authorization failure and closes retries',
+    () async {
+      final api = _DeniedApi();
+      final client = CloudflareTaskBroadcastClient(apiClient: api);
+      try {
+        await expectLater(
+          client.sendBroadcastMessage(
+            channelName: 'board-realtime-board',
+            event: 'task:upsert',
+            payload: {'id': 'task'},
+          ),
+          throwsA(same(api.denied)),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 600));
+        expect(api.attempts, 1);
+      } finally {
+        client.dispose();
+        api.dispose();
+      }
+    },
+  );
+
   test('injected factory-created client remains caller owned', () async {
     final api = _Api();
     final client = defaultTaskBroadcastClient(createApiClient: () => api);

@@ -173,13 +173,12 @@ class _MeetCollaborationPageState extends State<MeetCollaborationPage> {
               },
               onLoadStop: (_, _) => _settingsChanged(),
               shouldOverrideUrlLoading: (_, navigation) async {
-                final url = navigation.request.url;
-                if (url == null) return NavigationActionPolicy.CANCEL;
-                if (navigation.isForMainFrame &&
-                    !_policy.allowsNavigation(Uri.parse(url.toString()))) {
-                  return NavigationActionPolicy.CANCEL;
-                }
-                return NavigationActionPolicy.ALLOW;
+                return _policy.allowsNavigationRequest(
+                      navigation.request.url?.toString(),
+                      isMainFrame: navigation.isForMainFrame,
+                    )
+                    ? NavigationActionPolicy.ALLOW
+                    : NavigationActionPolicy.CANCEL;
               },
               onReceivedError: (_, request, _) {
                 if (request.isForMainFrame == true && mounted) {

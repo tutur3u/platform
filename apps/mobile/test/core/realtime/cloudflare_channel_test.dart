@@ -13,6 +13,65 @@ class _Sink extends Mock implements WebSocketSink {}
 
 void main() {
   test(
+    'one-shot ticket denial preserves original error without retry',
+    () async {
+      final denied = StateError('ticket denied');
+      var attempts = 0;
+      final channel = CloudflareChannel(
+        resolveTicket: () async {
+          attempts++;
+          throw denied;
+        },
+        onMessage: (_) {},
+      );
+      try {
+        await expectLater(
+          channel.connect(retryOnFailure: false),
+          throwsA(same(denied)),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 600));
+        expect(attempts, 1);
+      } finally {
+        await channel.close();
+      }
+    },
+  );
+  test(
+    'one-shot handshake failure closes socket and preserves cause',
+    () async {
+      final socket = _Channel();
+      final sink = _Sink();
+      final failed = StateError('handshake failed');
+      var attempts = 0;
+      when(() => socket.ready).thenAnswer((_) async => throw failed);
+      when(() => socket.sink).thenReturn(sink);
+      when(sink.close).thenAnswer((_) async {});
+      final channel = CloudflareChannel(
+        resolveTicket: () async {
+          attempts++;
+          return {
+            'endpoint': 'wss://example.test/channels',
+            'token': 'synthetic',
+          };
+        },
+        connectSocket: (_) => socket,
+        onMessage: (_) {},
+      );
+      try {
+        await expectLater(
+          channel.connect(retryOnFailure: false),
+          throwsA(same(failed)),
+        );
+        verify(sink.close).called(1);
+        await Future<void>.delayed(const Duration(milliseconds: 600));
+        expect(attempts, 1);
+      } finally {
+        await channel.close();
+      }
+    },
+  );
+
+  test(
     'closing during old socket cleanup never resumes authorization',
     () async {
       final old = _Channel();
