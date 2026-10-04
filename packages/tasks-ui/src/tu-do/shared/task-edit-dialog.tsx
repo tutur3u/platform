@@ -19,6 +19,7 @@ import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
 import { getTaskApiUrl } from '@tuturuuu/ui/lib/tasks-app-url';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
+import { scrollToCollaborationCaret } from '@tuturuuu/ui/text-editor/collaboration-carets';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { MAX_TASK_DESCRIPTION_LENGTH } from '@tuturuuu/utils/constants';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
@@ -2175,35 +2176,11 @@ export function TaskEditDialog({
     setEditorInstance(editor);
   }, []);
 
-  // Navigate to a collaborator's cursor position in the editor.
-  // The CollaborationCaret extension renders `<span class="collaboration-carets__label">`
-  // with the user's display name. We match by name and scroll it into view.
+  // Navigate to a collaborator's cursor by its stable user id.
   const scrollToUserCursor = useCallback(
-    (_userId: string, displayName: string) => {
-      if (!editorInstance) return;
-
-      // Search inside the ProseMirror editor DOM for caret labels
-      const labels = editorInstance.view.dom.querySelectorAll(
-        '.collaboration-carets__label'
-      );
-      for (const label of labels) {
-        if (label.textContent?.trim() === displayName) {
-          // Scroll the parent caret element into view (the label is positioned absolute)
-          const caret = label.closest('.collaboration-carets__caret');
-          (caret ?? label).scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-          });
-          // Briefly flash the label so the user spots it
-          const el = label as HTMLElement;
-          el.style.opacity = '1';
-          el.style.animation = 'none';
-          setTimeout(() => {
-            el.style.animation = '';
-          }, 2000);
-          return;
-        }
-      }
+    (userId: string) => {
+      if (editorInstance)
+        scrollToCollaborationCaret(editorInstance.view.dom, userId);
     },
     [editorInstance]
   );

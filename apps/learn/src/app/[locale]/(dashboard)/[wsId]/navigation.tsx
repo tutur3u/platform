@@ -38,6 +38,19 @@ export async function getNavigationLinks(wsId: string): Promise<NavLink[]> {
       title: t('coding'),
       href: `${base}/programming`,
       aliases: [`${base}/coding`],
+      children: [
+        {
+          href: `${base}/programming`,
+          matchExact: true,
+          title: t('coding'),
+          icon: <Code2 className="size-4" />,
+        },
+        {
+          href: `${base}/programming/playgrounds`,
+          title: t('playgrounds'),
+          icon: <Code2 className="size-4" />,
+        },
+      ],
       icon: <Code2 className="size-4" />,
     },
     {

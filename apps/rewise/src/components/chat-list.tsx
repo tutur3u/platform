@@ -1,6 +1,6 @@
 import type { UIMessage } from '@tuturuuu/ai/types';
 import { Box, Globe, Lock, Sparkle } from '@tuturuuu/icons';
-import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
+import type { RealtimePresenceState } from '@tuturuuu/internal-api/realtime';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';

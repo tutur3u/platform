@@ -34,6 +34,11 @@ export function ProgrammingCatalog({
     <section className="w-full space-y-5 p-4 md:p-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-semibold text-2xl">{t('title')}</h1>
+        <Button asChild variant="outline">
+          <Link href={`/${wsId}/programming/playgrounds`}>
+            {t('playgrounds')}
+          </Link>
+        </Button>
         {author ? (
           <Button asChild>
             <Link href={`/${wsId}/programming/problems/new`}>

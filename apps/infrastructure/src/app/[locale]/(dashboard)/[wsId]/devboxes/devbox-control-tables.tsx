@@ -60,12 +60,18 @@ const managedFeatures: DevboxRunnerFeature[] = [
   'serve',
   'tunnel',
   'judge',
+  'playground',
 ];
 
-function isJudgeReady(capabilities: unknown) {
+function isSandboxReady(
+  capabilities: unknown,
+  feature: 'judge' | 'playground'
+) {
   if (!capabilities || typeof capabilities !== 'object') return false;
-  const judge = (capabilities as { judge?: { ready?: boolean } }).judge;
-  return judge?.ready === true;
+  return (
+    (capabilities as Record<string, { ready?: boolean } | undefined>)[feature]
+      ?.ready === true
+  );
 }
 
 export function RunnersTable({
@@ -202,9 +208,18 @@ export function RunnersTable({
                                   className={actionButtonClassName}
                                   disabled={
                                     runner.status === 'revoked' ||
-                                    (feature === 'judge' &&
+                                    ((feature === 'judge' ||
+                                      feature === 'playground') &&
                                       !enabled &&
-                                      !isJudgeReady(runner.capabilities))
+                                      (!isSandboxReady(
+                                        runner.capabilities,
+                                        feature
+                                      ) ||
+                                        runner.enabled_features?.[
+                                          feature === 'judge'
+                                            ? 'playground'
+                                            : 'judge'
+                                        ] === true))
                                   }
                                   type="submit"
                                 >

@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { recordEvents, runCases, spawnProcess } = vi.hoisted(() => ({
-  recordEvents: vi.fn(),
-  spawnProcess: vi.fn(),
-  runCases: vi.fn(),
-}));
+const { recordEvents, runCases, spawnProcess, runPlayground } = vi.hoisted(
+  () => ({
+    recordEvents: vi.fn(),
+    spawnProcess: vi.fn(),
+    runCases: vi.fn(),
+    runPlayground: vi.fn(),
+  })
+);
 
 vi.mock('node:child_process', () => ({ spawn: spawnProcess }));
 
@@ -20,6 +23,10 @@ vi.mock('./devbox-judge-sandbox', () => ({
   }),
   parseJudgeResourceLimits: () => ({}),
   runJudgeCases: runCases,
+}));
+
+vi.mock('./devbox-playground-sandbox', () => ({
+  runPlaygroundJob: runPlayground,
 }));
 
 import { executeDevboxAgentJob } from './devbox-runner';
@@ -61,7 +68,7 @@ describe('Judge job dispatch', () => {
   });
 });
 
-describe('Reserved Playground command before hosted API integration', () => {
+describe('Typed hosted Playground command boundary', () => {
   it.each([
     ['__ttr_playground_v1__', 'encoded-private-payload'],
     ['__ttr_playground_v1__'],
@@ -75,6 +82,7 @@ describe('Reserved Playground command before hosted API integration', () => {
     expect(result).toEqual({ exitCode: 1, status: 'failed' });
     expect(spawnProcess).not.toHaveBeenCalled();
     expect(runCases).not.toHaveBeenCalled();
+    expect(runPlayground).not.toHaveBeenCalled();
     expect(recordEvents).toHaveBeenCalledWith(
       expect.objectContaining({
         payload: {
@@ -87,4 +95,48 @@ describe('Reserved Playground command before hosted API integration', () => {
       'encoded-private-payload'
     );
   });
+});
+
+it('dispatches hosted jobs to the sandbox and saves only through the canonical callback', async () => {
+  vi.clearAllMocks();
+  recordEvents.mockResolvedValue({ ok: true });
+  const delta = {
+    files: [{ path: 'main.py', content: 'synthetic' }],
+    paths: ['main.py'],
+  };
+  runPlayground.mockImplementation(async (_payload, _limits, save) => {
+    await save(delta);
+    return { code: 0, output: 'completed' };
+  });
+  const request = vi.fn<typeof fetch>(
+    async () => new Response('{}', { status: 200 })
+  );
+  const result = await executeDevboxAgentJob(
+    {
+      command: ['__ttr_playground_v1__', 'encoded-private-payload'],
+      env: { __TTR_RESOURCE_LIMITS: '{}' },
+      leaseId: 'lease-1',
+      runId: 'run-1',
+    },
+    { baseUrl: 'https://example.com', token: 'synthetic-token', fetch: request }
+  );
+  expect(result).toEqual({ exitCode: 0, status: 'succeeded' });
+  expect(runPlayground).toHaveBeenCalledOnce();
+  expect(spawnProcess).not.toHaveBeenCalled();
+  expect(runCases).not.toHaveBeenCalled();
+  const [url, options] = request.mock.calls[0]!;
+  expect(String(url)).toBe(
+    'https://example.com/api/v1/devboxes/agents/playground-files'
+  );
+  expect(options?.method).toBe('POST');
+  expect(options?.headers).toMatchObject({
+    'X-Devbox-Runner-Token': 'synthetic-token',
+  });
+  expect(JSON.parse(String(options?.body))).toEqual({
+    runId: 'run-1',
+    ...delta,
+  });
+  expect(JSON.stringify(recordEvents.mock.calls)).not.toContain(
+    'encoded-private-payload'
+  );
 });

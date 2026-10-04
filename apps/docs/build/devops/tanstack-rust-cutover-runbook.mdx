@@ -113,3 +113,16 @@ For terminal cutover, do not pass any `--skip-*` evidence flags.
 
 Keep `apps/web` available as rollback fallback until the cutover window is
 complete and the post-cutover smoke has stayed green.
+
+## Satellite additions during migration
+
+The main manifest inventories the live Web API and dashboard. New satellite
+surfaces must also remain visible: register their exact source-based route IDs in
+`apps/tanstack-web/migration/satellite-route-overrides.json`. The manifest command
+also generates `satellite-route-backlog.json`; `bun migration:tanstack:check`
+verifies both inventories. The satellite registry currently covers hosted Learn
+playground pages, Infrastructure account benefits and the native Meet editor
+shell. Adding an app derives its inventory from the registered source path;
+removing a registered route requires an explicit accepted-removal decision.
+Preserve shared Internal API contracts and authorization when migrating each
+surface. This backlog does not change live routing or authorize a Rust cutover.

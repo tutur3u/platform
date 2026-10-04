@@ -1,5 +1,5 @@
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { RealtimeChannel } from '@tuturuuu/supabase/next/realtime';
+import type { RealtimeChannel } from '@tuturuuu/internal-api/realtime';
+import { createRealtimeClient } from '@tuturuuu/internal-api/realtime';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { usePageVisibility } from '@tuturuuu/ui/hooks/use-page-visibility';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
@@ -270,7 +270,7 @@ export function useCursorTracking(
     if (!channelName) return;
     isCleanedUpRef.current = false;
 
-    const supabase = createClient();
+    const realtime = createRealtimeClient();
     let container: HTMLElement | null = null;
 
     const setupCursorTracking = async () => {
@@ -279,11 +279,11 @@ export function useCursorTracking(
       try {
         // Clean up existing channel before creating a new one
         if (channelRef.current) {
-          await supabase.removeChannel(channelRef.current);
+          await realtime.removeChannel(channelRef.current);
           channelRef.current = null;
         }
 
-        const channel = supabase.channel(
+        const channel = realtime.channel(
           channelName,
           PRIVATE_TASK_REALTIME_CHANNEL_CONFIG
         );
@@ -375,7 +375,7 @@ export function useCursorTracking(
 
       // Remove channel subscription
       if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
+        realtime.removeChannel(channelRef.current);
         channelRef.current = null;
       }
 

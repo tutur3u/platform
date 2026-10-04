@@ -1,7 +1,7 @@
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types';
 import type { Collaborator, SocketId } from '@excalidraw/excalidraw/types';
+import type { RealtimePresenceState } from '@tuturuuu/internal-api/realtime';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import type { User } from '@tuturuuu/types/primitives/User';
 import type { WorkspacePresenceState } from '@tuturuuu/ui/hooks/use-workspace-presence';
 import { useEffect, useMemo, useRef, useState } from 'react';

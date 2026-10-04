@@ -35,6 +35,8 @@
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/offline": "workspace:*",
+    "@tuturuuu/programming-ui": "workspace:*",
+    "@tuturuuu/realtime": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/turnstile": "workspace:*",
@@ -51,6 +53,7 @@
     "postgres": "^3.4.9",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "server-only": "^0.0.1",
     "zod": "^4.6.2"
   },
   "devDependencies": {

@@ -39,7 +39,11 @@ it.each(['toggleMicrophone', 'toggleCamera', 'toggleScreenShare'] as const)(
     // Let the serialized microphone operation begin its permission request.
     await Promise.resolve();
     activeRef.current = false;
-    resolve({ getTracks: () => [{ stop }] } as unknown as MediaStream);
+    const track = { stop };
+    resolve({
+      getTracks: () => [track],
+      getVideoTracks: () => (method === 'toggleScreenShare' ? [track] : []),
+    } as unknown as MediaStream);
     await pending;
     expect(stop).toHaveBeenCalledOnce();
     expect(applyMedia).not.toHaveBeenCalled();

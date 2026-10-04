@@ -1,0 +1,29 @@
+{
+  "routes": {
+    "page:/:locale/:wsId/programming/playgrounds:apps/learn/src/app/[locale]/(dashboard)/[wsId]/programming/playgrounds/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Satellite hosted programming, benefits or native collaboration surface. Reuse shared Internal API data contracts when migrating this page to TanStack Start."
+    },
+    "page:/:locale/:wsId/programming/playgrounds/:projectId:apps/learn/src/app/[locale]/(dashboard)/[wsId]/programming/playgrounds/[projectId]/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Satellite hosted programming, benefits or native collaboration surface. Reuse shared Internal API data contracts when migrating this page to TanStack Start."
+    },
+    "api:/api/v1/admin/account-benefits:apps/infrastructure/src/app/api/v1/admin/account-benefits/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Infrastructure owns service-only account benefit administration; preserve root MEMBER and manage-roles/manage-secrets authorization when porting to Rust."
+    },
+    "page:/:locale/:wsId/account-benefits:apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/account-benefits/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Satellite hosted programming, benefits or native collaboration surface. Reuse shared Internal API data contracts when migrating this page to TanStack Start."
+    },
+    "page:/:locale/native-collaboration:apps/meet/src/app/[locale]/native-collaboration/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Satellite hosted programming, benefits or native collaboration surface. Reuse shared Internal API data contracts when migrating this page to TanStack Start."
+    }
+  }
+}
