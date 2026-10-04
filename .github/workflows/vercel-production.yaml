@@ -46,7 +46,9 @@ jobs:
         id: plan
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: node --experimental-strip-types scripts/ci/resolve-production-vercel-targets.ts --step-summary "${GITHUB_STEP_SUMMARY}"
+          PRODUCTION_PACKAGE_RESUME: ${{ inputs.package_resume }}
+          PRODUCTION_EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: node --experimental-strip-types scripts/ci/resolve-production-vercel-targets.ts --package-resume "$PRODUCTION_PACKAGE_RESUME" --expected-sha "$PRODUCTION_EXPECTED_SHA" --step-summary "${GITHUB_STEP_SUMMARY}"
 
   deploy-colab-cloudflare:
     needs: plan

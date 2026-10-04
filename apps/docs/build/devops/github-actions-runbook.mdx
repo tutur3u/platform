@@ -931,7 +931,12 @@ fully paginates planner runs/jobs, and skips active, already resumed, failed,
 promoted, or stale candidates. Planner completion also wakes recovery when the
 last package became visible before the original planner finished. The dispatch
 carries `expected_sha`; the planner skips a recovery if production moves before
-it starts. Satellite deployments still require the normal verified platform
+it starts. Recovery uses commit-driven deployment-marker and affected-path
+selection; ordinary operator dispatches continue selecting all enabled targets.
+Every snapshotted planner's attempt, status, and conclusion must remain unchanged;
+the latest job evidence and run attempt are checked again before reserving an
+intent. A completed rerun with the same run ID therefore blocks stale recovery.
+Satellite deployments still require the normal verified platform
 promotion marker. Completion events use [`queue: max`](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#example-queueing-multiple-pending-runs) with cancellation disabled,
 so up to 100 completions wait instead of replacing the single pending event;
 GitHub cancels overflow beyond that limit. API and npm calls are bounded to

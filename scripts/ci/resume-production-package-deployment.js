@@ -170,6 +170,13 @@ async function resumeProductionDeployment({
   if (exact.some((run) => run.display_title === `${RESUME_TITLE}${sha}`)) {
     return skip('resume already requested');
   }
+  if (
+    exact.some(
+      (run) => !Number.isSafeInteger(run.run_attempt) || run.run_attempt < 1
+    )
+  ) {
+    return skip('planner attempt unreadable');
+  }
   const latest = exact.sort((a, b) => Number(b.id) - Number(a.id))[0];
   if (latest?.conclusion !== 'success') return skip('no successful planner');
   const jobs = await listPages(
@@ -230,9 +237,50 @@ async function resumeProductionDeployment({
         run.status !== 'completed' ||
         run.display_title === `${RESUME_TITLE}${sha}`
     ) ||
-    freshExact.some((run) => Number(run.id) > Number(latest.id))
+    freshExact.length !== exact.length ||
+    freshExact.some((run) => {
+      const before = exact.find((previous) => previous.id === run.id);
+      return (
+        !before ||
+        before.run_attempt !== run.run_attempt ||
+        before.status !== run.status ||
+        before.conclusion !== run.conclusion
+      );
+    })
   ) {
     return skip('planner changed before dispatch');
+  }
+  const freshJobs = await listPages(
+    api,
+    `actions/runs/${latest.id}/jobs?filter=latest`,
+    'jobs'
+  );
+  const freshPlatform = freshJobs.find(
+    (job) => job.name === 'deploy-platform / Deploy-Production'
+  );
+  if (
+    freshPlatform?.conclusion !== 'success' ||
+    !freshPlatform.steps?.some(
+      (step) =>
+        step.name === 'Skip build while package releases publish' &&
+        step.conclusion === 'success'
+    ) ||
+    freshPlatform.steps?.some(
+      (step) =>
+        step.name === 'Promote verified production deployment' &&
+        step.conclusion === 'success'
+    )
+  ) {
+    return skip('planner jobs changed before dispatch');
+  }
+  const finalRun = await api(`actions/runs/${latest.id}`);
+  if (
+    finalRun.head_sha !== sha ||
+    finalRun.run_attempt !== latest.run_attempt ||
+    finalRun.status !== latest.status ||
+    finalRun.conclusion !== latest.conclusion
+  ) {
+    return skip('planner attempt changed before dispatch');
   }
   if (now() >= deadline) throw new Error('Production resume deadline exceeded');
   // Reserve before POST, even though the planner run may not yet be listed.

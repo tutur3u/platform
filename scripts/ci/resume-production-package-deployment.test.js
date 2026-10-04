@@ -26,6 +26,7 @@ function fixture() {
     runs: [
       {
         id: 1,
+        run_attempt: 1,
         head_sha: sha,
         head_branch: 'production',
         status: 'completed',
@@ -73,6 +74,7 @@ function fixture() {
       return null;
     }
     if (route === 'actions/runs/4') return f.live;
+    if (route === 'actions/runs/1') return f.runs[0];
     if (route === 'git/ref/heads/production') {
       f.refs++;
       return { object: { sha: f.production } };
@@ -429,4 +431,69 @@ test('uncertain intent creation blocks later completion without planner POST', a
   );
   assert.deepEqual(f.posts, []);
   assert.equal(f.intentPosts.length, 1);
+});
+
+for (const conclusion of ['failure', 'success']) {
+  test(`same run ID rerun completed with ${conclusion} prevents intent and dispatch`, async () => {
+    const f = fixture();
+    const api = f.api;
+    let lists = 0;
+    f.api = async (route, options) => {
+      if (route.includes('/runs?') && ++lists === 2)
+        return {
+          workflow_runs: [
+            {
+              ...f.runs[0],
+              run_attempt: 2,
+              conclusion,
+            },
+          ],
+        };
+      return api(route, options);
+    };
+    assert.equal((await f.run()).reason, 'planner changed before dispatch');
+    assert.deepEqual(f.intentPosts, []);
+    assert.deepEqual(f.posts, []);
+  });
+}
+
+test('latest planner jobs promoted after snapshot prevent intent and dispatch', async () => {
+  const f = fixture();
+  const api = f.api;
+  let jobs = 0;
+  f.api = async (route, options) => {
+    if (route.includes('/jobs?') && ++jobs === 2)
+      return {
+        jobs: [
+          {
+            ...f.jobs[0],
+            steps: [
+              {
+                name: 'Promote verified production deployment',
+                conclusion: 'success',
+              },
+            ],
+          },
+        ],
+      };
+    return api(route, options);
+  };
+  assert.equal((await f.run()).reason, 'planner jobs changed before dispatch');
+  assert.deepEqual(f.intentPosts, []);
+  assert.deepEqual(f.posts, []);
+});
+
+test('rerun between fresh jobs and final attempt check prevents intent', async () => {
+  const f = fixture();
+  const api = f.api;
+  f.api = async (route, options) =>
+    route === 'actions/runs/1'
+      ? { ...f.runs[0], run_attempt: 2 }
+      : api(route, options);
+  assert.equal(
+    (await f.run()).reason,
+    'planner attempt changed before dispatch'
+  );
+  assert.deepEqual(f.intentPosts, []);
+  assert.deepEqual(f.posts, []);
 });

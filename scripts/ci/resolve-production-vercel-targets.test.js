@@ -32,7 +32,14 @@ const testTargets = [
   },
 ];
 
-function resolveFixtureTargets({ baseSha, headSha, rootDir }) {
+function resolveFixtureTargets({
+  baseSha,
+  headSha,
+  rootDir,
+  eventName = 'push',
+  packageResume = false,
+  expectedSha = '',
+}) {
   const output = execFileSync(
     'bun',
     [
@@ -40,7 +47,9 @@ function resolveFixtureTargets({ baseSha, headSha, rootDir }) {
       `
         import { resolveProductionVercelTargets } from './scripts/ci/resolve-production-vercel-targets.ts';
         const decisions = await resolveProductionVercelTargets({
-          eventName: 'push',
+          eventName: ${JSON.stringify(eventName)},
+          packageResume: ${JSON.stringify(packageResume)},
+          expectedSha: ${JSON.stringify(expectedSha)},
           headSha: ${JSON.stringify(headSha)},
           refName: 'production',
           rootDir: ${JSON.stringify(rootDir)},
@@ -126,4 +135,52 @@ test('production planner retries Cloudflare when no successful marker exists', (
   const decisions = resolveFixtureTargets({ baseSha: '', headSha, rootDir });
   assert.equal(decisions[0].workflowName, 'meet-cloudflare.yaml');
   assert.equal(decisions[0].shouldRun, true);
+});
+
+test('exact package recovery retains push subset while normal manual dispatch selects all', () => {
+  const rootDir = createFixtureRoot();
+  const baseSha = initializeGitRepo(rootDir);
+  const headSha = commitFile(
+    rootDir,
+    'apps/storefront/src/app/page.tsx',
+    'export default function Page() { return null; }\n',
+    'storefront change'
+  );
+  const push = resolveFixtureTargets({ baseSha, headSha, rootDir });
+  const recovery = resolveFixtureTargets({
+    baseSha,
+    headSha,
+    rootDir,
+    eventName: 'workflow_dispatch',
+    packageResume: true,
+    expectedSha: headSha,
+  });
+  assert.deepEqual(recovery, push);
+  assert.equal(recovery.filter((decision) => decision.shouldRun).length, 1);
+  const manual = resolveFixtureTargets({
+    baseSha,
+    headSha,
+    rootDir,
+    eventName: 'workflow_dispatch',
+  });
+  assert.equal(manual.filter((decision) => decision.shouldRun).length, 3);
+});
+
+test('recovery mode refuses an unpinned or mismatched SHA', () => {
+  const rootDir = createFixtureRoot();
+  const headSha = initializeGitRepo(rootDir);
+  for (const expectedSha of ['', 'a'.repeat(40)]) {
+    assert.throws(
+      () =>
+        resolveFixtureTargets({
+          baseSha: headSha,
+          headSha,
+          rootDir,
+          eventName: 'workflow_dispatch',
+          packageResume: true,
+          expectedSha,
+        }),
+      /Package recovery requires the exact production dispatch SHA/
+    );
+  }
 });
