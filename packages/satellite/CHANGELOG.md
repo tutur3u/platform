@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.24.0](https://github.com/tutur3u/platform/compare/satellite-v0.23.0...satellite-v0.24.0) (2026-10-04)
+
+
+### Features
+
+* **identity:** protect creator usernames and profile media ([#5740](https://github.com/tutur3u/platform/issues/5740)) ([f8e18a4](https://github.com/tutur3u/platform/commit/f8e18a4c39d5bb65acfc5a680ccb9b2557ae4bed))
+* **workspaces:** add private Hidden choices and fullscreen picker ([#5699](https://github.com/tutur3u/platform/issues/5699)) ([9cab7ef](https://github.com/tutur3u/platform/commit/9cab7efc0e75f71c6b1a2436eea6885e48f6bfe4))
+
+
+### Bug Fixes
+
+* **satellite:** keep native guard mock CommonJS compatible ([8f7f54b](https://github.com/tutur3u/platform/commit/8f7f54b8cf59be2435395420f202e13a8266a3d7))
+* **satellite:** reserve workspace avatar upload budgets ([afd3953](https://github.com/tutur3u/platform/commit/afd39538ec27829d82c022de20122db9a7bb20d8))
+* **satellite:** resolve server helper source in tests ([e3cf781](https://github.com/tutur3u/platform/commit/e3cf781126e78a4a6d61f83bfdc7eee16f73684a))
+* **satellite:** transform upload budget source in tests ([16c0b94](https://github.com/tutur3u/platform/commit/16c0b94696242fff9ee93166d397cb7506d75126))
+* **storage:** isolate profile upload error identity ([f5c3486](https://github.com/tutur3u/platform/commit/f5c34863bbcac45513ef28bf98d1636a7443424b))
+
 ## [0.23.0](https://github.com/tutur3u/platform/compare/satellite-v0.22.0...satellite-v0.23.0) (2026-09-26)
 
 

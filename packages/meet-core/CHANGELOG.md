@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.3.0](https://github.com/tutur3u/platform/compare/meet-core-v1.2.1...meet-core-v1.3.0) (2026-10-04)
+
+
+### Features
+
+* **workspaces:** add private Hidden choices and fullscreen picker ([#5699](https://github.com/tutur3u/platform/issues/5699)) ([9cab7ef](https://github.com/tutur3u/platform/commit/9cab7efc0e75f71c6b1a2436eea6885e48f6bfe4))
+
+
+### Bug Fixes
+
+* **identity:** integrate main and order unapplied creator migrations ([5512e24](https://github.com/tutur3u/platform/commit/5512e2414abaa0c78b68cbdd3186a1d4bab861e7))
+* **meet:** restore mobile capture and room notifications ([#5721](https://github.com/tutur3u/platform/issues/5721)) ([d116a54](https://github.com/tutur3u/platform/commit/d116a54262fb74da780968d27ee8bbe0245d5812))
+
 ## [1.2.1](https://github.com/tutur3u/platform/compare/meet-core-v1.2.0...meet-core-v1.2.1) (2026-09-28)
 
 

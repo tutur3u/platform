@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.16.3...tasks-ui-v0.17.0) (2026-10-04)
+
+
+### Features
+
+* **workspaces:** add private Hidden choices and fullscreen picker ([#5699](https://github.com/tutur3u/platform/issues/5699)) ([9cab7ef](https://github.com/tutur3u/platform/commit/9cab7efc0e75f71c6b1a2436eea6885e48f6bfe4))
+
 ## [0.16.3](https://github.com/tutur3u/platform/compare/tasks-ui-v0.16.2...tasks-ui-v0.16.3) (2026-09-28)
 
 

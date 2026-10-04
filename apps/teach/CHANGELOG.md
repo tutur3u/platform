@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.26.0](https://github.com/tutur3u/platform/compare/teach-v0.25.1...teach-v0.26.0) (2026-10-04)
+
+
+### Features
+
+* **calendar:** support full Google color choices and scoped edits ([#5661](https://github.com/tutur3u/platform/issues/5661)) ([8cafac5](https://github.com/tutur3u/platform/commit/8cafac53438b504eafa8bcc8213d18448e4a17bc))
+* **education:** add personal to do destinations to Teach and Learn ([9587942](https://github.com/tutur3u/platform/commit/9587942deeebcb6aca3a774f4289178771bcabd6))
+* **education:** add personal To do in Teach and Learn ([#5785](https://github.com/tutur3u/platform/issues/5785)) ([0a5e302](https://github.com/tutur3u/platform/commit/0a5e302fa9b09c140c717751005bbda23a1dc0b1))
+* **education:** scope to do APIs to assigned actors ([eaa88a4](https://github.com/tutur3u/platform/commit/eaa88a499a7e962b934c2bb8101cb9ef0f2fcaff))
+* **workspaces:** add private Hidden choices and fullscreen picker ([#5699](https://github.com/tutur3u/platform/issues/5699)) ([9cab7ef](https://github.com/tutur3u/platform/commit/9cab7efc0e75f71c6b1a2436eea6885e48f6bfe4))
+
+
+### Bug Fixes
+
+* **calendar:** gate uncertain creation retries on durable capability ([4a0a088](https://github.com/tutur3u/platform/commit/4a0a0883ddfff464be0880afd13758908e65203f))
+* **calendar:** recover edited drafts and align provider color parity ([d97142a](https://github.com/tutur3u/platform/commit/d97142abe22188b6a31a4a6b0e7b3a97d35d07f5))
+* **calendar:** wire recoverable routes and gated provider palette ([ecfc1e7](https://github.com/tutur3u/platform/commit/ecfc1e7dd1c5556b94c64cde62635df15d024747))
+
 ## [0.25.1](https://github.com/tutur3u/platform/compare/teach-v0.25.0...teach-v0.25.1) (2026-09-27)
 
 

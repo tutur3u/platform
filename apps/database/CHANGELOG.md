@@ -1,5 +1,61 @@
 # Changelog
 
+## [1.39.0](https://github.com/tutur3u/platform/compare/database-v1.38.1...database-v1.39.0) (2026-10-04)
+
+
+### Features
+
+* **calendar:** support full Google color choices and scoped edits ([#5661](https://github.com/tutur3u/platform/issues/5661)) ([8cafac5](https://github.com/tutur3u/platform/commit/8cafac53438b504eafa8bcc8213d18448e4a17bc))
+* **database:** add atomic public creator identity ([abade81](https://github.com/tutur3u/platform/commit/abade81f81dc993543aec2ea6c5d296f817ed426)) ([ac126f9](https://github.com/tutur3u/platform/commit/ac126f9a13ce403ac1516e290a4a30f09be41594))
+* **identity:** enforce creator identity and media policies ([1078119](https://github.com/tutur3u/platform/commit/1078119eb4871568f76e4bc31005ba9f1b1ddd76)) ([e71e94f](https://github.com/tutur3u/platform/commit/e71e94fd1a643c5ee76979ba9444976ad4798906))
+* **identity:** protect creator usernames and profile media ([#5740](https://github.com/tutur3u/platform/issues/5740)) ([f8e18a4](https://github.com/tutur3u/platform/commit/f8e18a4c39d5bb65acfc5a680ccb9b2557ae4bed))
+* **inventory:** add historical-safe season merge review ([eb7c84c](https://github.com/tutur3u/platform/commit/eb7c84cda3db0bdf849e87bda1424e7dd13d6828))
+* **inventory:** add transactional offline create receipts ([d52a973](https://github.com/tutur3u/platform/commit/d52a973166abf9d2c2e7fbc8553ad53556f02669))
+* **inventory:** expose authorized deduplicated native creates ([d71325d](https://github.com/tutur3u/platform/commit/d71325d22043ea80357770269f325e6ee1e5cd7b))
+* **inventory:** merge products and warehouses with conflict previews ([ebcd1d9](https://github.com/tutur3u/platform/commit/ebcd1d9b16f100743c346c1665f42f4f867f379d)) ([#5765](https://github.com/tutur3u/platform/issues/5765)) ([35e584c](https://github.com/tutur3u/platform/commit/35e584c50061a17d9515563e0ee71c04f0cec53a))
+* **inventory:** merge sales periods with conflict review ([#5770](https://github.com/tutur3u/platform/issues/5770)) ([c8d07d1](https://github.com/tutur3u/platform/commit/c8d07d17e2869a8e271086d310be7a07e8ee8545))
+* **learn:** persist workspace Programming problems and authorized catalog APIs ([#5709](https://github.com/tutur3u/platform/issues/5709)) ([f39c84b](https://github.com/tutur3u/platform/commit/f39c84b9df76448683f439c78f1897847b609299))
+* **mobile:** sync inventory prerequisites and dependent writes automatically ([#5743](https://github.com/tutur3u/platform/issues/5743)) ([242fbbd](https://github.com/tutur3u/platform/commit/242fbbdb90671325af104f6c9fe79c43b81a82c1))
+* **security:** scale abuse budgets by paid plans and memberships ([93ccf02](https://github.com/tutur3u/platform/commit/93ccf0237c79addaed3ab8b653bd8b57b27a9557))
+* **workspaces:** add private Hidden choices and fullscreen picker ([#5699](https://github.com/tutur3u/platform/issues/5699)) ([9cab7ef](https://github.com/tutur3u/platform/commit/9cab7efc0e75f71c6b1a2436eea6885e48f6bfe4))
+
+
+### Bug Fixes
+
+* **calendar:** atomically fence native transfer snapshots ([8b34406](https://github.com/tutur3u/platform/commit/8b34406a0133769d0e995ee8fb6e62c5dcf36d50))
+* **calendar:** finalize compensated source deletion atomically ([14b2f73](https://github.com/tutur3u/platform/commit/14b2f73fe07056a63ff8c430ef3c73e505b082ce))
+* **calendar:** harden compatibility contract validation ([c3b3a2f](https://github.com/tutur3u/platform/commit/c3b3a2ff7a9a7b8c2851f0c4f7a942ef56c43e6c))
+* **calendar:** order unapplied provider migrations after main ([e230dc0](https://github.com/tutur3u/platform/commit/e230dc05567f8185710d0ccdc4b779275955beca))
+* **calendar:** retain native generations and immutable saga retries ([adb8662](https://github.com/tutur3u/platform/commit/adb8662ba727911f21a685b30bbb031c027f9cbc))
+* **calendar:** seal provider source fingerprints and label version ([3110590](https://github.com/tutur3u/platform/commit/311059005645374c9156193db5a473ddda764483))
+* **calendar:** stage retained generation compatibility guard ([7795818](https://github.com/tutur3u/platform/commit/7795818d776bcb6a069450faab615de86ee0761b)) ([#5727](https://github.com/tutur3u/platform/issues/5727)) ([5c87bfe](https://github.com/tutur3u/platform/commit/5c87bfee00c5cd9574fe984909fd40d64629db0f))
+* **ci:** allow isolated database configuration rewrite ([42a8251](https://github.com/tutur3u/platform/commit/42a82519ba80a3274a2f404e52fb7dc8187129a7))
+* **database:** abort owned helpers on diagnostic callback errors ([4e97654](https://github.com/tutur3u/platform/commit/4e97654b7d68b06ee1b7c71e4b5ac77d1ccf0b52))
+* **database:** correct season validation migration timestamp ([9a98a45](https://github.com/tutur3u/platform/commit/9a98a45e00dd9827130b734ef560cce3b37c8520))
+* **database:** keep fixture pipe failures inside cleanup lifecycle ([4211eef](https://github.com/tutur3u/platform/commit/4211eef2742f0014ab437eca0defc8ccfd9ea8d1))
+* **database:** review isolated native CLI environment ([#5717](https://github.com/tutur3u/platform/issues/5717)) ([6442b65](https://github.com/tutur3u/platform/commit/6442b654f96ac7939d1ce19586ddbaa8a14f3d69))
+* **database:** use current inventory migration timestamp ([2db1fa9](https://github.com/tutur3u/platform/commit/2db1fa9974a10f18134f8ece0bddd30dfc3a44e8))
+* **identity:** close profile policy and upload bypasses ([6f5aae5](https://github.com/tutur3u/platform/commit/6f5aae52c2ba3e633b4f24dd3f683d4b564a952f))
+* **identity:** enforce verified upload budgets and canonical profile validation ([8138fb5](https://github.com/tutur3u/platform/commit/8138fb59276191508416031f69195de291b2b06a))
+* **identity:** integrate main and order unapplied creator migrations ([5512e24](https://github.com/tutur3u/platform/commit/5512e2414abaa0c78b68cbdd3186a1d4bab861e7))
+* **identity:** order unapplied creator migrations after inventory ([576b7c6](https://github.com/tutur3u/platform/commit/576b7c6e4e4770ff9db2b933372aeb57041ee709))
+* **identity:** preserve budgeted avatar tickets and atomic handle claims ([b18092f](https://github.com/tutur3u/platform/commit/b18092fb7bf8632f6ba5f99ab8a61308d09544b9))
+* **identity:** preserve seeded and legacy handle ownership ([fe6a128](https://github.com/tutur3u/platform/commit/fe6a128e93ab88e68c71d1f5a6cd0607ba4fc991))
+* **inventory:** bound identity locks by workspace buckets ([279a56c](https://github.com/tutur3u/platform/commit/279a56c38e251f876bba4e6788c2ee100bb70bbc))
+* **inventory:** close merge API and contract review gaps ([37a0f44](https://github.com/tutur3u/platform/commit/37a0f446517318a270037a3ec0fb1937dfb13373))
+* **inventory:** filter merged warehouse aliases in database ([33450b7](https://github.com/tutur3u/platform/commit/33450b777075e5093434e26a36c5161f13243db0))
+* **inventory:** harden durable offline replay and validation ([7166401](https://github.com/tutur3u/platform/commit/7166401d06e357d24ab92ec104cf4e48ef1f5b3a))
+* **inventory:** preserve invoice recovery and scope merge locks ([ec5352e](https://github.com/tutur3u/platform/commit/ec5352e557eb934219816f21710a169e6412df22))
+* **inventory:** settle concurrent fixtures and retry missing labels ([7c279ba](https://github.com/tutur3u/platform/commit/7c279ba4e0517d189efb840aa171f3fcb3d3ba57))
+* **inventory:** validate season constraints after DDL commit ([2ec639a](https://github.com/tutur3u/platform/commit/2ec639af488b1bbf958cb87ee219aa5bf31bff7f))
+* **learn:** harden Programming boundaries and prove database contract ([f7723c3](https://github.com/tutur3u/platform/commit/f7723c31a74dadacd4a4352bfcb59e5f86e1bfb5))
+* **mobile:** preserve sales receipts and finance API contracts ([#5750](https://github.com/tutur3u/platform/issues/5750)) ([1c3ee92](https://github.com/tutur3u/platform/commit/1c3ee9280aa144ed2417a0b1fd09da4794ece089))
+* **profile:** enforce upload budgets and quota responses ([42368b6](https://github.com/tutur3u/platform/commit/42368b6a5e03c8cfc01f5c3c7040a0b55ba389c5))
+* **programming:** preserve bounded startup diagnostics ([c16ff0c](https://github.com/tutur3u/platform/commit/c16ff0ca79f692eee26804d497b6d82679de13d3))
+* **security:** address egress guard review findings ([1e4916a](https://github.com/tutur3u/platform/commit/1e4916a7c9216ac1d5f9beadab0e69144337db7c))
+* **security:** isolate caller budgets and preserve download semantics ([de5e090](https://github.com/tutur3u/platform/commit/de5e090f57e58b94bd235c47c494264a1192f5bf))
+* **storage:** bound CMS downloads and API usage without Redis ([277ffeb](https://github.com/tutur3u/platform/commit/277ffebb738fbdb787fbe465cf6400de7ae910b2)) ([#5736](https://github.com/tutur3u/platform/issues/5736)) ([bbfc428](https://github.com/tutur3u/platform/commit/bbfc42886a0953ab11d303cdcceed8968127d40b))
+
 ## [1.38.1](https://github.com/tutur3u/platform/compare/database-v1.38.0...database-v1.38.1) (2026-10-01)
 
 

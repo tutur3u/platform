@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.49.0](https://github.com/tutur3u/platform/compare/internal-api-v0.48.0...internal-api-v0.49.0) (2026-10-04)
+
+
+### Features
+
+* **ai:** support self-hosted ChatGPT subscriptions ([a6ce805](https://github.com/tutur3u/platform/commit/a6ce8059077c312369e1693d0e1d8fbcfbdde131)) ([#5728](https://github.com/tutur3u/platform/issues/5728)) ([67be76a](https://github.com/tutur3u/platform/commit/67be76ad4e140a2883afb488f5af2e28e40f13a2))
+* **calendar:** support full Google color choices and scoped edits ([#5661](https://github.com/tutur3u/platform/issues/5661)) ([8cafac5](https://github.com/tutur3u/platform/commit/8cafac53438b504eafa8bcc8213d18448e4a17bc))
+* **contacts:** simplify tutoring scheduling and section settings ([#5782](https://github.com/tutur3u/platform/issues/5782)) ([bb52198](https://github.com/tutur3u/platform/commit/bb521980ea0d90b8a1f15a70d5cd4beeaa1340f6))
+* **education:** add personal To do in Teach and Learn ([#5785](https://github.com/tutur3u/platform/issues/5785)) ([0a5e302](https://github.com/tutur3u/platform/commit/0a5e302fa9b09c140c717751005bbda23a1dc0b1))
+* **education:** scope to do APIs to assigned actors ([eaa88a4](https://github.com/tutur3u/platform/commit/eaa88a499a7e962b934c2bb8101cb9ef0f2fcaff))
+* **inventory:** add historical-safe season merge review ([eb7c84c](https://github.com/tutur3u/platform/commit/eb7c84cda3db0bdf849e87bda1424e7dd13d6828))
+* **inventory:** merge products and warehouses with conflict previews ([ebcd1d9](https://github.com/tutur3u/platform/commit/ebcd1d9b16f100743c346c1665f42f4f867f379d)) ([#5765](https://github.com/tutur3u/platform/issues/5765)) ([35e584c](https://github.com/tutur3u/platform/commit/35e584c50061a17d9515563e0ee71c04f0cec53a))
+* **inventory:** merge sales periods with conflict review ([#5770](https://github.com/tutur3u/platform/issues/5770)) ([c8d07d1](https://github.com/tutur3u/platform/commit/c8d07d17e2869a8e271086d310be7a07e8ee8545))
+* **learn:** persist workspace Programming problems and authorized catalog APIs ([#5709](https://github.com/tutur3u/platform/issues/5709)) ([f39c84b](https://github.com/tutur3u/platform/commit/f39c84b9df76448683f439c78f1897847b609299))
+* **mail:** link invitations to Calendar with explicit preview on web and mobile ([#5673](https://github.com/tutur3u/platform/issues/5673)) ([726d57b](https://github.com/tutur3u/platform/commit/726d57bb095e3a85120274c315e093c7388bb45b))
+* **workspaces:** add private Hidden choices and fullscreen picker ([#5699](https://github.com/tutur3u/platform/issues/5699)) ([9cab7ef](https://github.com/tutur3u/platform/commit/9cab7efc0e75f71c6b1a2436eea6885e48f6bfe4))
+
+
+### Bug Fixes
+
+* **ai:** address ChatGPT subscription review findings ([f0bf14f](https://github.com/tutur3u/platform/commit/f0bf14f22cdec1029a29a2a9cf7fd108d6558504))
+* **calendar:** recover edited drafts and align provider color parity ([d97142a](https://github.com/tutur3u/platform/commit/d97142abe22188b6a31a4a6b0e7b3a97d35d07f5))
+* **calendar:** wire recoverable routes and gated provider palette ([ecfc1e7](https://github.com/tutur3u/platform/commit/ecfc1e7dd1c5556b94c64cde62635df15d024747))
+* **contacts:** allow center-wide tutoring teacher assignment ([cc84180](https://github.com/tutur3u/platform/commit/cc84180d6022b5088ca67ef55558c6cceae9fa52))
+* **contacts:** allow verified center teachers for tutoring ([#5781](https://github.com/tutur3u/platform/issues/5781)) ([695ca06](https://github.com/tutur3u/platform/commit/695ca067cfc88732bfb4943095af2a4c433a0239))
+* **contacts:** correct tutoring preset attendance days and duration ([8316743](https://github.com/tutur3u/platform/commit/83167438359ddc638c90036c99f44b20213a30c9))
+* **finance:** authenticate exchange rates with satellite sessions ([33368f1](https://github.com/tutur3u/platform/commit/33368f1c00f86f71b4a66702899af262a90122e2)) ([#5760](https://github.com/tutur3u/platform/issues/5760)) ([759b1e5](https://github.com/tutur3u/platform/commit/759b1e52f8867aced2d64288af43b861d5ebccdc))
+* **finance:** keep exchange rate wire types in API package ([878be3d](https://github.com/tutur3u/platform/commit/878be3d1b0c98ec2a42173b3fe410a4b3ad76d71))
+* **inventory:** make merge review searchable and mobile accessible ([b1f2859](https://github.com/tutur3u/platform/commit/b1f2859934400b12f364161244bae24ca5e234d6))
+
 ## [0.48.0](https://github.com/tutur3u/platform/compare/internal-api-v0.47.0...internal-api-v0.48.0) (2026-10-01)
 
 

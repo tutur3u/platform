@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.10.0](https://github.com/tutur3u/platform/compare/users-core-v0.9.4...users-core-v0.10.0) (2026-10-04)
+
+
+### Features
+
+* **identity:** protect creator usernames and profile media ([#5740](https://github.com/tutur3u/platform/issues/5740)) ([f8e18a4](https://github.com/tutur3u/platform/commit/f8e18a4c39d5bb65acfc5a680ccb9b2557ae4bed))
+
+
+### Bug Fixes
+
+* **identity:** enforce verified upload budgets and canonical profile validation ([8138fb5](https://github.com/tutur3u/platform/commit/8138fb59276191508416031f69195de291b2b06a))
+
 ## [0.9.4](https://github.com/tutur3u/platform/compare/users-core-v0.9.3...users-core-v0.9.4) (2026-10-01)
 
 

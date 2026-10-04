@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.27.0](https://github.com/tutur3u/platform/compare/sdk-v0.26.0...sdk-v0.27.0) (2026-10-04)
+
+
+### Features
+
+* **devbox:** protect and maintain platform-owned runners ([2e2cb4a](https://github.com/tutur3u/platform/commit/2e2cb4ad84b8b05b94699723b4e44899cd3f249d)) ([#5772](https://github.com/tutur3u/platform/issues/5772)) ([89d289f](https://github.com/tutur3u/platform/commit/89d289f60483ae9154c71faab1f3f306cf1a9cb2))
+
+
+### Bug Fixes
+
+* **cli:** preserve optional actions in command dispatch ([27b9e20](https://github.com/tutur3u/platform/commit/27b9e20790b02df23a1bf8dad6fda4608add6a74))
+* **devboxes:** reserve exact integer host shares ([d282009](https://github.com/tutur3u/platform/commit/d2820097fc84b6b814be24e2f23200dba389ff7b))
+* **devbox:** harden fleet maintenance and runner policy repair ([0433d0c](https://github.com/tutur3u/platform/commit/0433d0cd83646ac7fff50d954cb91d4911f431cb))
+* **devbox:** preserve service identity and reject truncated fleets ([3aadfb3](https://github.com/tutur3u/platform/commit/3aadfb3b62705050a524c1eead911461903a3b99))
+* **devbox:** reject truncated runner snapshots ([8244d01](https://github.com/tutur3u/platform/commit/8244d01768a74642d1550e72fab1a1c5b2715a85))
+* **devbox:** report actual host execution policy ([4653c34](https://github.com/tutur3u/platform/commit/4653c34a34cb48e0801d85ace1ce99fef7082a21))
+* **devbox:** require policy support for protected services ([d378858](https://github.com/tutur3u/platform/commit/d37885841085f98fae7c2aeb585da0c3da087a93))
+* **devbox:** retry shared CLI upgrade contention promptly ([d4d30a3](https://github.com/tutur3u/platform/commit/d4d30a388aaeaac80fac55ddff7675184811336f))
+* **devbox:** stop failed dispatch and retain sandbox ownership ([85d1e61](https://github.com/tutur3u/platform/commit/85d1e613e65af1441fa54fc192c24ee359746723))
+* **devbox:** tighten protected installer permissions ([fb395bb](https://github.com/tutur3u/platform/commit/fb395bb8d3df5947592d236c652b377ba3eb42b9))
+* **devbox:** verify Judge daemon readiness and recover upgrade locks ([16a6660](https://github.com/tutur3u/platform/commit/16a66609b0418e9693725f1f7f4125887f456133))
+* **devbox:** wait for admitted creation before stopping ([b1edb12](https://github.com/tutur3u/platform/commit/b1edb127f164fa9ab8cd8598d93eb51faff9b919))
+* **identity:** integrate main and order unapplied creator migrations ([5512e24](https://github.com/tutur3u/platform/commit/5512e2414abaa0c78b68cbdd3186a1d4bab861e7))
+* **sdk:** bound mixed judge jobs and validate playground exports ([c5efff9](https://github.com/tutur3u/platform/commit/c5efff9427dc36cae6c4212871a335f9cd4bde03))
+* **sdk:** defer hosted playground adapter to canonical API ([a18e65a](https://github.com/tutur3u/platform/commit/a18e65a862ab22b664b92f615a9e35d56e123a82))
+* **sdk:** fence playground eviction and failed startup ([f208dcb](https://github.com/tutur3u/platform/commit/f208dcbd7a55385f2aa62ed8a822b029d7b5bc8f))
+* **sdk:** fence playground lifecycle and keep agent leases alive ([d92e437](https://github.com/tutur3u/platform/commit/d92e437af1b2e2fdefa1036d40a71d1d45be4703))
+* **sdk:** probe playground tools with the managed image path ([9571f35](https://github.com/tutur3u/platform/commit/9571f353f277efdddeeb22335a81b4475c2f4461))
+
+
+### Performance Improvements
+
+* **devboxes:** parallelize bounded execution and retain warm playgrounds ([#5746](https://github.com/tutur3u/platform/issues/5746)) ([efd8ac4](https://github.com/tutur3u/platform/commit/efd8ac44b5c9f8cbf2ab5d64fbe89e1f7afe4f96))
+* **devboxes:** parallelize bounded runner execution and retain warm playgrounds ([c31cbf3](https://github.com/tutur3u/platform/commit/c31cbf3a2a7cb5214d75183896791366affdc7e6))
+
 ## [0.26.0](https://github.com/tutur3u/platform/compare/sdk-v0.25.0...sdk-v0.26.0) (2026-09-29)
 
 

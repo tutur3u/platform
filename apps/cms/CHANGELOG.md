@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.36.0](https://github.com/tutur3u/platform/compare/cms-v0.35.0...cms-v0.36.0) (2026-10-04)
+
+
+### Features
+
+* **calendar:** support full Google color choices and scoped edits ([#5661](https://github.com/tutur3u/platform/issues/5661)) ([8cafac5](https://github.com/tutur3u/platform/commit/8cafac53438b504eafa8bcc8213d18448e4a17bc))
+* **workspaces:** add private Hidden choices and fullscreen picker ([#5699](https://github.com/tutur3u/platform/issues/5699)) ([9cab7ef](https://github.com/tutur3u/platform/commit/9cab7efc0e75f71c6b1a2436eea6885e48f6bfe4))
+
+
+### Bug Fixes
+
+* **calendar:** gate uncertain creation retries on durable capability ([4a0a088](https://github.com/tutur3u/platform/commit/4a0a0883ddfff464be0880afd13758908e65203f))
+* **calendar:** recover edited drafts and align provider color parity ([d97142a](https://github.com/tutur3u/platform/commit/d97142abe22188b6a31a4a6b0e7b3a97d35d07f5))
+* **calendar:** wire recoverable routes and gated provider palette ([ecfc1e7](https://github.com/tutur3u/platform/commit/ecfc1e7dd1c5556b94c64cde62635df15d024747))
+* **cms:** isolate machine credentials from browser assurance ([7647689](https://github.com/tutur3u/platform/commit/7647689ab07ab3b73f2290b33eab681a2077f3bf))
+* **cms:** preserve rollout probes at API auth boundary ([f881e98](https://github.com/tutur3u/platform/commit/f881e981b4f5a0debad76f1b216ee7dcc1380640)) ([#5766](https://github.com/tutur3u/platform/issues/5766)) ([d6e05ee](https://github.com/tutur3u/platform/commit/d6e05ee2b72648dea1ad83ee025d5ac3f7f3389d))
+* **mobile:** integrate current main into offline settings ([218a6e6](https://github.com/tutur3u/platform/commit/218a6e663ce51cea6be5d8d0080888fa32c39fc3))
+
 ## [0.35.0](https://github.com/tutur3u/platform/compare/cms-v0.34.0...cms-v0.35.0) (2026-09-25)
 
 

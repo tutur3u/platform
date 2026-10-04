@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.30.0](https://github.com/tutur3u/platform/compare/learn-v0.29.0...learn-v0.30.0) (2026-10-04)
+
+
+### Features
+
+* **calendar:** support full Google color choices and scoped edits ([#5661](https://github.com/tutur3u/platform/issues/5661)) ([8cafac5](https://github.com/tutur3u/platform/commit/8cafac53438b504eafa8bcc8213d18448e4a17bc))
+* **education:** add personal to do destinations to Teach and Learn ([9587942](https://github.com/tutur3u/platform/commit/9587942deeebcb6aca3a774f4289178771bcabd6))
+* **education:** add personal To do in Teach and Learn ([#5785](https://github.com/tutur3u/platform/issues/5785)) ([0a5e302](https://github.com/tutur3u/platform/commit/0a5e302fa9b09c140c717751005bbda23a1dc0b1))
+* **education:** scope to do APIs to assigned actors ([eaa88a4](https://github.com/tutur3u/platform/commit/eaa88a499a7e962b934c2bb8101cb9ef0f2fcaff))
+* **learn:** add canonical Programming catalog, author forms and scoped drafts ([#5710](https://github.com/tutur3u/platform/issues/5710)) ([4e658d8](https://github.com/tutur3u/platform/commit/4e658d8c2c3c14b3b66b5e0accbf74fa4b16917e))
+* **workspaces:** add private Hidden choices and fullscreen picker ([#5699](https://github.com/tutur3u/platform/issues/5699)) ([9cab7ef](https://github.com/tutur3u/platform/commit/9cab7efc0e75f71c6b1a2436eea6885e48f6bfe4))
+
+
+### Bug Fixes
+
+* **calendar:** gate uncertain creation retries on durable capability ([4a0a088](https://github.com/tutur3u/platform/commit/4a0a0883ddfff464be0880afd13758908e65203f))
+* **calendar:** recover edited drafts and align provider color parity ([d97142a](https://github.com/tutur3u/platform/commit/d97142abe22188b6a31a4a6b0e7b3a97d35d07f5))
+* **calendar:** wire recoverable routes and gated provider palette ([ecfc1e7](https://github.com/tutur3u/platform/commit/ecfc1e7dd1c5556b94c64cde62635df15d024747))
+* **identity:** integrate main and order unapplied creator migrations ([5512e24](https://github.com/tutur3u/platform/commit/5512e2414abaa0c78b68cbdd3186a1d4bab861e7))
+
 ## [0.29.0](https://github.com/tutur3u/platform/compare/learn-v0.28.0...learn-v0.29.0) (2026-09-29)
 
 

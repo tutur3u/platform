@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.28.0](https://github.com/tutur3u/platform/compare/mail-v0.27.0...mail-v0.28.0) (2026-10-04)
+
+
+### Features
+
+* **calendar:** support full Google color choices and scoped edits ([#5661](https://github.com/tutur3u/platform/issues/5661)) ([8cafac5](https://github.com/tutur3u/platform/commit/8cafac53438b504eafa8bcc8213d18448e4a17bc))
+* **mail:** link invitations to Calendar with explicit preview on web and mobile ([#5673](https://github.com/tutur3u/platform/issues/5673)) ([726d57b](https://github.com/tutur3u/platform/commit/726d57bb095e3a85120274c315e093c7388bb45b))
+
+
+### Bug Fixes
+
+* **calendar:** gate uncertain creation retries on durable capability ([4a0a088](https://github.com/tutur3u/platform/commit/4a0a0883ddfff464be0880afd13758908e65203f))
+* **calendar:** recover edited drafts and align provider color parity ([d97142a](https://github.com/tutur3u/platform/commit/d97142abe22188b6a31a4a6b0e7b3a97d35d07f5))
+* **calendar:** wire recoverable routes and gated provider palette ([ecfc1e7](https://github.com/tutur3u/platform/commit/ecfc1e7dd1c5556b94c64cde62635df15d024747))
+* **mail:** preserve actor scope and calendar link metadata ([e59ffc8](https://github.com/tutur3u/platform/commit/e59ffc873fde1cc3274ab18e851bb7c90b6a3ff5))
+
 ## [0.27.0](https://github.com/tutur3u/platform/compare/mail-v0.26.1...mail-v0.27.0) (2026-10-01)
 
 
