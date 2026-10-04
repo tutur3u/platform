@@ -1,0 +1,336 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const {
+  resumeProductionDeployment,
+  listPages,
+} = require('./resume-production-package-deployment.js');
+
+const sha = 'a'.repeat(40);
+const env = { GITHUB_REPOSITORY: 'owner/repo' };
+function fixture() {
+  const trigger = {
+    id: 4,
+    name: 'Release @tuturuuu/ui package',
+    head_sha: sha,
+    head_branch: 'production',
+    head_repository: { full_name: env.GITHUB_REPOSITORY },
+    conclusion: 'success',
+    event: 'workflow_dispatch',
+    run_attempt: 1,
+  };
+  const f = {
+    event: { workflow_run: trigger },
+    live: { ...trigger, status: 'completed' },
+    production: sha,
+    runs: [
+      {
+        id: 1,
+        head_sha: sha,
+        head_branch: 'production',
+        status: 'completed',
+        conclusion: 'success',
+      },
+    ],
+    jobs: [
+      {
+        name: 'deploy-platform / Deploy-Production',
+        conclusion: 'success',
+        steps: [
+          {
+            name: 'Skip build while package releases publish',
+            conclusion: 'success',
+          },
+          {
+            name: 'Promote verified production deployment',
+            conclusion: 'skipped',
+          },
+        ],
+      },
+    ],
+    visible: true,
+    posts: [],
+    refs: 0,
+  };
+  f.api = async (route, options) => {
+    if (options?.method === 'POST') {
+      f.posts.push(JSON.parse(options.body));
+      return null;
+    }
+    if (route === 'actions/runs/4') return f.live;
+    if (route === 'git/ref/heads/production') {
+      f.refs++;
+      return { object: { sha: f.production } };
+    }
+    if (route.startsWith('actions/workflows/vercel-production.yaml/runs?'))
+      return { workflow_runs: f.runs };
+    if (route.startsWith('actions/runs/1/jobs?')) return { jobs: f.jobs };
+    throw Error(`Unexpected route ${route}`);
+  };
+  f.run = () =>
+    resumeProductionDeployment({
+      event: f.event,
+      env,
+      api: f.api,
+      changedPackages: [
+        { packageJson: { name: '@tuturuuu/ui' }, version: '1.0.0' },
+      ],
+      versionExists: () => f.visible,
+      logger: { log() {} },
+    });
+  return f;
+}
+
+test('published dependency resumes owning deferred planner with exact SHA', async () => {
+  const f = fixture();
+  assert.equal((await f.run()).dispatched, true);
+  assert.deepEqual(f.posts, [
+    {
+      ref: 'production',
+      inputs: { expected_sha: sha, package_resume: 'true' },
+    },
+  ]);
+  assert.equal(f.refs, 2);
+});
+
+test('planner completion also resumes when packages finished first', async () => {
+  const f = fixture();
+  f.event.workflow_run.name = 'Production Deployment Planner';
+  f.live.name = 'Production Deployment Planner';
+  f.event.workflow_run.event = 'push';
+  f.live.event = 'push';
+  assert.equal((await f.run()).dispatched, true);
+});
+
+for (const [name, change] of [
+  [
+    'fork completion',
+    (f) => {
+      f.event.workflow_run.head_repository = { full_name: 'fork/repo' };
+    },
+  ],
+  [
+    'nonproduction completion',
+    (f) => {
+      f.event.workflow_run.head_branch = 'main';
+    },
+  ],
+  [
+    'failed completion',
+    (f) => {
+      f.event.workflow_run.conclusion = 'failure';
+    },
+  ],
+  [
+    'untrusted event',
+    (f) => {
+      f.event.workflow_run.event = 'pull_request';
+    },
+  ],
+  [
+    'unknown workflow',
+    (f) => {
+      f.event.workflow_run.name = f.live.name = 'Other';
+    },
+  ],
+  [
+    'live attempt changed',
+    (f) => {
+      f.live.run_attempt = 2;
+    },
+  ],
+  [
+    'live conclusion changed',
+    (f) => {
+      f.live.conclusion = 'failure';
+    },
+  ],
+  [
+    'production moved',
+    (f) => {
+      f.production = 'b'.repeat(40);
+    },
+  ],
+  [
+    'planner active',
+    (f) => {
+      f.runs[0].status = 'in_progress';
+    },
+  ],
+  [
+    'prior resume even if failed',
+    (f) => {
+      f.runs[0].display_title = `Production package resume ${sha}`;
+    },
+  ],
+  [
+    'failed latest planner',
+    (f) => {
+      f.runs[0].conclusion = 'failure';
+    },
+  ],
+  [
+    'no planner',
+    (f) => {
+      f.runs = [];
+    },
+  ],
+  [
+    'platform not deferred',
+    (f) => {
+      f.jobs[0].steps[0].conclusion = 'skipped';
+    },
+  ],
+  [
+    'already promoted',
+    (f) => {
+      f.jobs[0].steps[1].conclusion = 'success';
+    },
+  ],
+  [
+    'package still missing',
+    (f) => {
+      f.visible = false;
+    },
+  ],
+]) {
+  test(`${name} never dispatches`, async () => {
+    const f = fixture();
+    change(f);
+    assert.equal((await f.run()).dispatched, false);
+    assert.deepEqual(f.posts, []);
+  });
+}
+
+test('production movement after registry check prevents dispatch', async () => {
+  const f = fixture();
+  const api = f.api;
+  f.api = async (...args) => {
+    if (args[0] === 'git/ref/heads/production' && f.refs === 1)
+      f.production = 'b'.repeat(40);
+    return api(...args);
+  };
+  assert.equal((await f.run()).dispatched, false);
+  assert.deepEqual(f.posts, []);
+});
+
+test('later-page active planner prevents duplicate dispatch', async () => {
+  const f = fixture();
+  const api = f.api;
+  f.api = async (route, options) => {
+    if (route.includes('/runs?'))
+      return {
+        workflow_runs: route.endsWith('page=1')
+          ? Array.from({ length: 100 }, (_, i) => ({ ...f.runs[0], id: i + 1 }))
+          : [{ ...f.runs[0], id: 999, status: 'queued' }],
+      };
+    return api(route, options);
+  };
+  assert.equal((await f.run()).reason, 'planner active');
+  assert.deepEqual(f.posts, []);
+});
+
+test('unreadable or truncated pages fail closed', async () => {
+  await assert.rejects(
+    listPages(async () => ({}), 'runs', 'workflow_runs'),
+    /Unreadable/
+  );
+  await assert.rejects(
+    listPages(
+      async () => ({ workflow_runs: Array(100).fill({}) }),
+      'runs',
+      'workflow_runs'
+    ),
+    /Incomplete/
+  );
+});
+
+test('workflow checks production before trusted checkout and planner pins recovery', () => {
+  const workflow = fs.readFileSync(
+    '.github/workflows/production-package-resume.yaml',
+    'utf8'
+  );
+  assert.ok(
+    workflow.indexOf('Verify current production before checkout') <
+      workflow.indexOf('uses: actions/checkout')
+  );
+  assert.match(
+    workflow,
+    /ref: \$\{\{ github\.event\.workflow_run\.head_sha \}\}/
+  );
+  assert.match(workflow, /cancel-in-progress: false/);
+  assert.match(workflow, /- "Production Deployment Planner"/);
+  const planner = fs.readFileSync(
+    '.github/workflows/vercel-production.yaml',
+    'utf8'
+  );
+  assert.match(
+    planner,
+    /inputs\.expected_sha == '' \|\| inputs\.expected_sha == github\.sha/
+  );
+  assert.match(planner, /Production package resume \{0\}/);
+});
+
+test('planner appearing after registry reads prevents duplicate dispatch', async () => {
+  const f = fixture();
+  const api = f.api;
+  let lists = 0;
+  f.api = async (route, options) => {
+    if (route.includes('/runs?') && ++lists === 2)
+      f.runs.push({
+        ...f.runs[0],
+        id: 2,
+        status: 'queued',
+      });
+    return api(route, options);
+  };
+  assert.equal((await f.run()).reason, 'planner changed before dispatch');
+  assert.deepEqual(f.posts, []);
+});
+
+test('API body and request stalls are bounded without another request', async () => {
+  const { createApi } = require('./resume-production-package-deployment.js');
+  for (const response of [
+    null,
+    { ok: true, status: 200, json: () => new Promise(() => {}) },
+  ]) {
+    let requests = 0;
+    const api = createApi(
+      env,
+      async () => {
+        requests++;
+        return response ?? (await new Promise(() => {}));
+      },
+      { requestTimeoutMs: 5, totalTimeoutMs: 50 }
+    );
+    await assert.rejects(api('test'), /request timeout/);
+    assert.equal(requests, 1);
+  }
+});
+
+test('overall API deadline expires before starting any extra call', async () => {
+  const { createApi } = require('./resume-production-package-deployment.js');
+  let clock = 0;
+  let requests = 0;
+  const api = createApi(
+    env,
+    async () => {
+      requests++;
+      return { ok: true, status: 204 };
+    },
+    { now: () => clock, totalTimeoutMs: 20 }
+  );
+  await api('first');
+  clock = 20;
+  await assert.rejects(api('extra'), /deadline exceeded/);
+  assert.equal(requests, 1);
+});
+
+test('completion queue retains multiple pending events without cancellation', () => {
+  const workflow = fs.readFileSync(
+    '.github/workflows/production-package-resume.yaml',
+    'utf8'
+  );
+  assert.match(workflow, /cancel-in-progress: false\n {2}queue: max/);
+  assert.doesNotMatch(workflow, /cancel-in-progress: true/);
+});

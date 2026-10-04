@@ -1,0 +1,71 @@
+name: Resume Deferred Production Deployment
+on:
+  workflow_run:
+    workflows:
+      - "Production Deployment Planner"
+      - "Release @tuturuuu/ai package"
+      - "Release @tuturuuu/apis package"
+      - "Release @tuturuuu/devbox package"
+      - "Release @tuturuuu/editor package"
+      - "Release @tuturuuu/google package"
+      - "Release @tuturuuu/hooks package"
+      - "Release @tuturuuu/icons package"
+      - "Release @tuturuuu/internal-api package"
+      - "Release tuturuuu package"
+      - "Release @tuturuuu/supabase package"
+      - "Release @tuturuuu/types package"
+      - "Release @tuturuuu/typescript-config package"
+      - "Release @tuturuuu/ui package"
+      - "Release @tuturuuu/utils package"
+    types: [completed]
+    branches: [production]
+
+# Package and planner completions share one exact-production dispatch window.
+concurrency:
+  group: production-package-resume-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+  queue: max
+permissions:
+  contents: read
+  actions: write
+jobs:
+  resume:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'production' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify current production before checkout
+        id: current
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EVENT_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$EVENT_SHA" =~ ^[a-f0-9]{40}$ ]]
+          current_sha="$(gh api "repos/${GH_REPO}/git/ref/heads/production" --jq '.object.sha')"
+          if [[ "$current_sha" == "$EVENT_SHA" ]]; then
+            echo 'matches=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Check out trusted exact production source
+        if: steps.current.outputs.matches == 'true'
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Use Node.js 24
+        if: steps.current.outputs.matches == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Resume only a deferred planner with published package versions
+        if: steps.current.outputs.matches == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node --experimental-strip-types scripts/ci/resume-production-package-deployment.js

@@ -29,6 +29,7 @@ export const ci = {
   'meet-cloudflare.yaml': true,
   'parley-cloudflare.yaml': true,
   'mobile.yaml': true,
+  'production-package-resume.yaml': true,
   'release-ai-package.yaml': true,
   'release-apis-package.yaml': true,
   'release-devbox-package.yaml': true,

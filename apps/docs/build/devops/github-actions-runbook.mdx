@@ -922,6 +922,25 @@ deployment for database migrations. Database paths therefore select the
 platform deployment in the production planner, and `supabase-production.yaml`
 requires both the successful planner run and the `vercel-production-platform`
 deployment marker for the same SHA before it can run production migrations.
+
+`production-package-resume.yaml` listens to successful package release and planner
+completions. It resumes the owning planner once per exact current production SHA
+only when the prior platform job explicitly deferred for package publishing and
+all changed package versions are visible on npm. It checks the live completion,
+fully paginates planner runs/jobs, and skips active, already resumed, failed,
+promoted, or stale candidates. Planner completion also wakes recovery when the
+last package became visible before the original planner finished. The dispatch
+carries `expected_sha`; the planner skips a recovery if production moves before
+it starts. Satellite deployments still require the normal verified platform
+promotion marker. Completion events use [`queue: max`](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#example-queueing-multiple-pending-runs) with cancellation disabled,
+so up to 100 completions wait instead of replacing the single pending event;
+GitHub cancels overflow beyond that limit. API and npm calls are bounded to
+15 seconds each with a four-minute recovery deadline, below the five-minute
+job limit. Planner runs are rechecked immediately before dispatch. Timeouts,
+unreadable/incomplete results, and changed candidates never request a retry.
+A deferred successful workflow is not deployment evidence.
+Validate this guard with `node --test scripts/ci/resume-production-package-deployment.test.js`.
+
 The gate queries the planner run because reusable app workflows do not create
 standalone Actions runs.
 

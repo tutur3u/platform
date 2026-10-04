@@ -4,6 +4,17 @@ on:
     branches:
       - production
   workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: "Optional exact production SHA for guarded recovery"
+        type: string
+        default: ""
+      package_resume:
+        description: "Identify one automatic package-deferred recovery"
+        type: string
+        default: "false"
+
+run-name: ${{ inputs.package_resume == 'true' && format('Production package resume {0}', inputs.expected_sha) || 'Production Deployment Planner' }}
 
 concurrency:
   group: production-deployment-planner-${{ github.ref }}
@@ -16,7 +27,7 @@ permissions:
 
 jobs:
   plan:
-    if: github.ref == 'refs/heads/production'
+    if: github.ref == 'refs/heads/production' && (inputs.expected_sha == '' || inputs.expected_sha == github.sha)
     runs-on: ubuntu-latest
     outputs:
       workflows_json: ${{ steps.plan.outputs.workflows_json }}
