@@ -21,6 +21,10 @@ void main() {
   testWidgets(
     'near-bottom reveal is incremental, deduplicated and ends honestly',
     (tester) async {
+      tester.view.physicalSize = const Size(800, 300);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpApp(
         ProfileTimelineBrowser(
           fullSurface: true,
@@ -31,7 +35,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Day 0 row 0'), findsOneWidget);
+      expect(find.text('Day 0 row 3'), findsOneWidget);
       expect(find.text('Day 2 row 0'), findsNothing);
       expect(find.text('Day 14 row 0'), findsNothing);
       expect(find.text('Oct 2026'), findsNothing);
@@ -44,20 +48,68 @@ void main() {
       scroll.position.jumpTo(scroll.position.maxScrollExtent);
       await tester.pump();
       await tester.pump();
-      expect(find.text('Day 2 row 0'), findsOneWidget);
+      expect(find.text('Day 2 row 3', skipOffstage: false), findsOneWidget);
       expect(find.text('Day 4 row 0'), findsNothing);
       for (var i = 0; i < 10; i++) {
         scroll.position.jumpTo(scroll.position.maxScrollExtent);
         await tester.pump();
         await tester.pump();
       }
+      scroll.position.jumpTo(scroll.position.maxScrollExtent);
       await tester.pumpAndSettle();
       expect(find.text('Day 14 row 0'), findsOneWidget);
       expect(find.byKey(const ValueKey('timeline-more-days')), findsNothing);
-      expect(find.text('All loaded activity shown'), findsOneWidget);
+      expect(find.text('All loaded activity shown'), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('short viewport automatically fills without a scroll gesture', (
+    tester,
+  ) async {
+    await tester.pumpApp(
+      ProfileTimelineBrowser(
+        fullSurface: true,
+        datesOpen: false,
+        pageSize: 1,
+        items: [items[0], items[4], items[8]],
+        onOpen: (_) {},
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Day 0 row 0'), findsOneWidget);
+    expect(find.text('Day 1 row 0'), findsOneWidget);
+    expect(find.text('Day 2 row 0', skipOffstage: false), findsOneWidget);
+    expect(find.byKey(const ValueKey('timeline-loaded-end')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a large single day mounts only viewport rows', (tester) async {
+    await tester.pumpApp(
+      ProfileTimelineBrowser(
+        fullSurface: true,
+        datesOpen: false,
+        items: [
+          for (var i = 0; i < 2000; i++)
+            ProfileTimelineItem(
+              id: '$i',
+              type: 'task',
+              title: 'Large row $i',
+              createdAt: DateTime(2026, 10, 4, 12),
+              scope: 'personal',
+            ),
+        ],
+        onOpen: (_) {},
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byType(ListTile, skipOffstage: false).evaluate().length,
+      lessThan(20),
+    );
+    expect(find.text('Large row 500'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets(
     'status and initial header clearance leave the viewport on scroll',
@@ -73,17 +125,35 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      final row = find.text('Day 0 row 3');
-      final top = tester.getTopLeft(row).dy;
-      await tester.drag(
-        find.byType(SingleChildScrollView),
-        const Offset(0, -350),
-      );
+      final top = tester
+          .getTopLeft(
+            find.text(
+              'Some activity is unavailable. Retry',
+              skipOffstage: false,
+            ),
+          )
+          .dy;
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -350));
       await tester.pumpAndSettle();
-      expect(tester.getTopLeft(row).dy, lessThan(top - 100));
       expect(
         tester
-            .getBottomLeft(find.text('Some activity is unavailable. Retry'))
+            .getTopLeft(
+              find.text(
+                'Some activity is unavailable. Retry',
+                skipOffstage: false,
+              ),
+            )
+            .dy,
+        lessThan(top - 100),
+      );
+      expect(
+        tester
+            .getBottomLeft(
+              find.text(
+                'Some activity is unavailable. Retry',
+                skipOffstage: false,
+              ),
+            )
             .dy,
         lessThan(0),
       );

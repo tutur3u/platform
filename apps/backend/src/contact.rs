@@ -12,6 +12,7 @@ use crate::{
 mod current_user_session_targets;
 mod datetime;
 mod profile;
+mod profile_banner;
 mod session;
 mod support;
 mod validation;

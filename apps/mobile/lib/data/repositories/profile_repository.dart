@@ -9,8 +9,10 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/cache/profile_avatar_delivery.dart';
+import 'package:mobile/core/cache/profile_banner_write.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/user_profile.dart';
+import 'package:mobile/data/repositories/profile_media_optimization.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,11 +25,14 @@ class ProfileRepository {
     http.Client? httpClient,
     bool ownsApiClient = false,
     bool ownsHttpClient = false,
+    OfflineMutationQueue? bannerMutationQueue,
   }) : _apiClient = apiClient ?? ApiClient(),
        _httpClient = httpClient ?? http.Client(),
+       _bannerMutationQueue = bannerMutationQueue,
        _ownsApiClient = apiClient == null || ownsApiClient,
        _ownsHttpClient = httpClient == null || ownsHttpClient;
 
+  final OfflineMutationQueue? _bannerMutationQueue;
   final ApiClient _apiClient;
   final http.Client _httpClient;
   final bool _ownsApiClient;
@@ -53,7 +58,11 @@ class ProfileRepository {
     final json = profile.toJson();
     for (final item in await OfflineMutationQueue.instance.listPending()) {
       if (item.feature != 'profile' || item.workspaceId != 'personal') continue;
-      if (item.path == ProfileEndpoints.avatar && item.method == 'DELETE') {
+      if (item.path == ProfileEndpoints.banner &&
+          item.payload?['action'] == 'remove') {
+        json['banner_url'] = null;
+      } else if (item.path == ProfileEndpoints.avatar &&
+          item.method == 'DELETE') {
         json['avatar_url'] = null;
       } else if (item.path == ProfileEndpoints.email) {
         json['new_email'] = item.payload?['email'];
@@ -113,28 +122,93 @@ class ProfileRepository {
     }
   }
 
-  Future<({bool success, String? error})> saveAvatar(File file) async {
+  Future<({bool success, String? error})> saveAvatar(File file) =>
+      _saveMedia(file, banner: false);
+
+  Future<({bool success, String? error})> saveBanner(File file) =>
+      _saveMedia(file, banner: true);
+
+  Future<({bool success, String? error})> removeBanner() async {
     try {
-      final payload = {
-        'filename': file.uri.pathSegments.last,
-        'contentType': lookupMimeType(file.path) ?? 'application/octet-stream',
-        'bytes': base64Encode(await file.readAsBytes()),
-      };
-      await queueOrSendVoid(
-        feature: 'profile',
-        method: 'PROFILE_AVATAR_UPLOAD',
-        path: ProfileEndpoints.avatarUploadUrl,
-        workspaceId: 'personal',
-        entityId: getCurrentUserIdSync(),
+      final actor = getCurrentUserIdSync();
+      if (actor == null) {
+        throw const ApiException(
+          message: 'Profile actor is unavailable',
+          statusCode: 401,
+        );
+      }
+      final payload = {'action': 'remove', 'operationId': newLocalMutationId()};
+      await queueBannerWrite(
+        actor: actor,
+        currentActor: getCurrentUserIdSync,
+        queue: _bannerMutationQueue,
+        method: 'POST',
+        path: ProfileEndpoints.banner,
         payload: payload,
-        send: () => deliverProfileAvatar(
+        send: () => ApiClient.runForUser(actor, () async {
+          await _apiClient.postJson(ProfileEndpoints.banner, payload);
+        }),
+      );
+      return (success: true, error: null);
+    } on ApiException catch (error) {
+      return (success: false, error: error.message);
+    } on Exception {
+      return (success: false, error: 'Profile update failed');
+    }
+  }
+
+  Future<({bool success, String? error})> _saveMedia(
+    File file, {
+    required bool banner,
+  }) async {
+    try {
+      final actor = getCurrentUserIdSync();
+      if (actor == null) {
+        throw const FormatException('Profile actor is unavailable');
+      }
+      final optimized = await optimizeProfileMedia(file, banner: banner);
+      if (getCurrentUserIdSync() != actor) {
+        throw const FormatException('Profile actor changed');
+      }
+      final payload = {
+        'filename': banner ? 'banner.jpg' : 'avatar.jpg',
+        if (banner) 'operationId': newLocalMutationId(),
+        'contentType': 'image/jpeg',
+        'bytes': base64Encode(optimized),
+      };
+      Future<void> send() => ApiClient.runForUser(
+        actor,
+        () => deliverProfileAvatar(
           api: _apiClient,
           httpClient: _httpClient,
           filename: payload['filename']!,
           contentType: payload['contentType']!,
           encodedBytes: payload['bytes']!,
+          banner: banner,
+          operationId: payload['operationId'],
         ),
       );
+      if (banner) {
+        await queueBannerWrite(
+          actor: actor,
+          currentActor: getCurrentUserIdSync,
+          queue: _bannerMutationQueue,
+          method: 'PROFILE_BANNER_UPLOAD',
+          path: ProfileEndpoints.bannerUploadUrl,
+          payload: payload,
+          send: send,
+        );
+      } else {
+        await queueOrSendVoid(
+          feature: 'profile',
+          method: 'PROFILE_AVATAR_UPLOAD',
+          path: ProfileEndpoints.avatarUploadUrl,
+          workspaceId: 'personal',
+          entityId: actor,
+          payload: payload,
+          send: send,
+        );
+      }
       return (success: true, error: null);
     } on ApiException catch (error) {
       return (success: false, error: error.message);

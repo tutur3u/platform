@@ -1527,7 +1527,7 @@
     "api:/api/v1/workspaces/:wsId/mobile-activity:apps/web/src/app/api/v1/workspaces/[wsId]/mobile-activity/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Mobile profile activity: request-scoped workspace membership before admin-backed, workspace-scoped user-created task reads; permission-aware finance RPC for the caller's own transactions; request-scoped notes and workspace calendar events. Return available sources with a partial flag when one source fails; retain private no-store responses. Rust parity pending."
+      "note": "Actor-attributed native Profile activity verifies membership; Calendar manage_calendar verification runs concurrently but precedes scoped admin metadata. Tasks audited creator read, Finance permission RPC applies pinned created_at upper boundary before pagination and unique id ordering; Notes RLS. Private no-store partial failures; Rust parity pending."
     },
     "api:/api/v1/workspaces/:wsId/mobile/module-flags:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/mobile/module-flags/route.ts": {
       "status": "migrated",
@@ -2802,6 +2802,16 @@
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles GET/POST browser-state recovery with no-store HTML, same-origin POST protection, Clear-Site-Data, redirect, and Supabase auth cookie clearing behavior."
+    },
+    "api:/api/v1/users/me/banner/upload-url:apps/web/src/app/api/v1/users/me/banner/upload-url/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class actor-derived banner tickets preserve existing quotas, stable immutable operation paths and committed replay receipts. Signed non-upsert tokens are returned only after durable expiry lease recording. Rust endpoint parity pending."
+    },
+    "api:/api/v1/users/me/banner:apps/web/src/app/api/v1/users/me/banner/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class authenticated personal banner finalize/remove/cleanup uses service-only row-locked durable operation receipts and immutable actor-owned retirement tombstones; Storage token leases bound scrub/deferred deletion. Rust endpoint parity pending; generic profile PATCH lifecycle is mirrored."
     }
   }
 }

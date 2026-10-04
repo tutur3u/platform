@@ -9956,4 +9956,19 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mailDiscardSettingsAction => 'Bỏ thay đổi';
+
+  @override
+  String get profileBanner => 'Ảnh bìa hồ sơ';
+
+  @override
+  String get profileBannerDescription => 'Thêm ảnh ngang để cá nhân hóa hồ sơ của bạn.';
+
+  @override
+  String get profileChangeBanner => 'Đổi ảnh bìa';
+
+  @override
+  String get profileAddBanner => 'Thêm ảnh bìa';
+
+  @override
+  String get profileRemoveBanner => 'Gỡ ảnh bìa';
 }

@@ -342,6 +342,11 @@
       "import": "./dist/chatgpt.js",
       "require": "./dist/chatgpt.js"
     },
+    "./profile-media": {
+      "types": "./dist/profile-media.d.ts",
+      "import": "./dist/profile-media.js",
+      "require": "./dist/profile-media.js"
+    },
     "./realtime": {
       "types": "./dist/realtime.d.ts",
       "import": "./dist/realtime.js",

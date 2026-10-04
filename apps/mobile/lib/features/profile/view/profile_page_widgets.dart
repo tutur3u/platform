@@ -49,6 +49,7 @@ class _ProfileHeroCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          ProfileBanner(profile: profile),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -116,8 +117,8 @@ class _LargeProfileAvatar extends StatelessWidget {
       child: profile.avatarUrl?.trim().isNotEmpty ?? false
           ? ClipRRect(
               borderRadius: BorderRadius.circular(22),
-              child: Image.network(
-                profile.avatarUrl!,
+              child: Image(
+                image: profileMediaImage(profile.avatarUrl!, profile.id),
                 width: 74,
                 height: 74,
                 fit: BoxFit.cover,

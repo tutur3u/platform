@@ -13,10 +13,27 @@ Future<void> deliverProfileAvatar({
   required String filename,
   required String contentType,
   required String encodedBytes,
+  bool banner = false,
+  String? operationId,
 }) async {
-  final signed = await api.postJson(ProfileEndpoints.avatarUploadUrl, {
-    'filename': filename,
-  });
+  final signed = await api.postJson(
+    banner
+        ? ProfileEndpoints.bannerUploadUrl
+        : ProfileEndpoints.avatarUploadUrl,
+    {
+      'filename': filename,
+      if (banner && operationId != null) 'operationId': operationId,
+    },
+  );
+  final bannerOperation = operationId ?? signed['operationId'] as String?;
+  if (banner && signed['committed'] == true) return;
+  if (banner && signed['uploaded'] == true) {
+    await api.postJson(ProfileEndpoints.banner, {
+      'action': 'finalize',
+      'operationId': bannerOperation,
+    });
+    return;
+  }
   final uploadUrl = (signed['uploadUrl'] ?? signed['signedUrl']) as String?;
   final publicUrl = signed['publicUrl'] as String?;
   if (uploadUrl == null || publicUrl == null) {
@@ -53,5 +70,12 @@ Future<void> deliverProfileAvatar({
       statusCode: uploaded.statusCode,
     );
   }
-  await api.patchJson(ProfileEndpoints.profile, {'avatar_url': publicUrl});
+  if (banner) {
+    await api.postJson(ProfileEndpoints.banner, {
+      'action': 'finalize',
+      'operationId': bannerOperation,
+    });
+  } else {
+    await api.patchJson(ProfileEndpoints.profile, {'avatar_url': publicUrl});
+  }
 }

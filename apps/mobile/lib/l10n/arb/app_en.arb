@@ -4297,5 +4297,10 @@
     "settingsProductSettings": "App settings",
     "mailDiscardSettingsTitle": "Discard changes?",
     "mailDiscardSettingsDescription": "Your Mail settings changes have not been saved.",
-    "mailDiscardSettingsAction": "Discard changes"
+    "mailDiscardSettingsAction": "Discard changes",
+    "profileBanner": "Profile banner",
+    "profileBannerDescription": "Add a wide photo to personalize your profile.",
+    "profileChangeBanner": "Change banner",
+    "profileAddBanner": "Add banner",
+    "profileRemoveBanner": "Remove banner"
 }

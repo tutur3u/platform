@@ -19080,6 +19080,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Discard changes'**
   String get mailDiscardSettingsAction;
+
+  /// No description provided for @profileBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile banner'**
+  String get profileBanner;
+
+  /// No description provided for @profileBannerDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a wide photo to personalize your profile.'**
+  String get profileBannerDescription;
+
+  /// No description provided for @profileChangeBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Change banner'**
+  String get profileChangeBanner;
+
+  /// No description provided for @profileAddBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Add banner'**
+  String get profileAddBanner;
+
+  /// No description provided for @profileRemoveBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove banner'**
+  String get profileRemoveBanner;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

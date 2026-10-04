@@ -313,3 +313,44 @@ them, so blank-looking messages are rejected. Regression coverage includes
 `support-inquiry-guard.test.ts`, `contact-form-values.test.ts`, and the Rust
 support payload boundary tests. Unported inquiry GET/HEAD methods retain the
 backend dispatcher’s fall-through sentinel instead of claiming a 405 response.
+
+### Personal banner replacement and deletion
+
+The current-user banner endpoints and consolidated mobile Account settings use
+actor-scoped durable operation receipts. Offline and ambiguous mobile upload/removal retries preserve the same
+operation ID in the encrypted outbox. Replaying a committed
+operation finishes cleanup without applying an old upload or removal over a
+newer profile edit. A staged upload captures the prior banner; an intervening
+change returns a conflict rather than overwriting it. Avatar behavior is unchanged.
+
+Profile writes retire only canonical banner object paths under the configured
+Storage origin and the authenticated actor's directory. External URLs and another
+actor's objects are never deleted. Retirement is atomic with the existing locked
+profile mutation, including the live Web and future Rust profile handler. Permanent
+URL tombstones prevent restoring retired files during asynchronous cleanup.
+
+Supabase signed upload tokens are valid for two hours. The server records a
+conservative three-hour lease **before returning a token**, and retirement
+preserves an inert non-sensitive Storage slot until all leases have expired.
+Cleanup replaces the retired image with a tiny non-image marker using the bucket's
+allowed image metadata; outstanding non-upsert tokens cannot overwrite that slot.
+The slot is removed only after the lease grace period. This removes original bytes
+at the origin after successful cleanup; CDN propagation and previously downloaded
+images are not an immediate erasure guarantee. See the
+[Storage signed-upload contract](https://supabase.com/docs/reference/javascript/file-buckets-createsigneduploadurl).
+
+Storage failures remain in a service-only durable queue. Authenticated banner
+requests perform bounded sweeps; later requests finish expired-slot deletion.
+There is no claim that a background scheduler has run. Unfinalized staged receipts
+are retired after a 30-day replay window; receipts that already committed remain
+idempotent. Receipt creation is bounded to 100 new actor operations per UTC day;
+existing ticket/hour/day/week/global/byte quotas remain authoritative. Interrupted
+quota reservations are conservatively charged again, never refunded or bypassed.
+
+Regression evidence: `personal-banner-lifecycle.sql` covers actor grants, locked
+replacement, ABA prevention, stale-finalize conflict and committed replay;
+`profile-banner-lifecycle.test.ts` and banner route tests cover exact path ownership,
+lease ordering, storage failure/retry, malformed input and object validation.
+`profile_banner_delivery_test.dart` covers stable replay IDs and lost-finalize
+responses. SQL application/type generation, real Storage/CDN behavior and device
+offline delivery require exact CI and authenticated deployment verification.
