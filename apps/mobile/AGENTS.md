@@ -24,8 +24,12 @@ Flutter/Dart toolchain and app package configuration.
 - The Profile timeline must attribute actions to the signed-in user. Calendar
   rows currently lack a reliable creator and must be labeled as workspace
   activity. Keep note content and private activity out of shared profile reads.
-- Keep the shell top bar on mini-app detail screens and handle back through the
-  shell or a floating content action. Test both Android system back and dock back.
+- Shell-contained settings and detail screens inherit the shell background and
+  use its single top navbar title/back control. Never add an inner AppBar/body
+  topbar or a second top SafeArea. Include shell-provided bottom MediaQuery
+  padding in scroll content for floating-dock clearance. Full-screen forms and
+  system-owned flows open above the shell. Test top-navbar, Android system and
+  dock back, including direct deep links and enlarged text.
 - Use `AppHaptics` for semantic pickup, selection, drop, success, and warning
   feedback. Respect the persisted Preferences toggle and throttle repeated
   gesture feedback; do not vibrate for background refreshes or replay.

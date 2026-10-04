@@ -115,6 +115,7 @@ function evaluateReleasePullRequest({
   files,
   pullRequest,
   targetBranch,
+  verifiedWorkspaceLock = false,
 }) {
   if (pullRequest?.state !== 'open') {
     return skip(`pull request is ${pullRequest?.state || 'missing'}`);
@@ -162,7 +163,11 @@ function evaluateReleasePullRequest({
 
   const unexpected = (files || [])
     .map((file) => file.filename)
-    .filter((filename) => !allowedPaths.has(filename));
+    .filter(
+      (filename) =>
+        !allowedPaths.has(filename) &&
+        !(filename === 'bun.lock' && verifiedWorkspaceLock)
+    );
 
   if (unexpected.length > 0) {
     return skip(

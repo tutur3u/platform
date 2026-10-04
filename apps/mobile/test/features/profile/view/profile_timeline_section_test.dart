@@ -10,6 +10,7 @@ import 'package:mobile/features/profile/view/profile_timeline_days.dart';
 import 'package:mobile/features/profile/view/profile_timeline_section.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 import '../../../helpers/helpers.dart';
@@ -26,26 +27,30 @@ class _Repository extends ProfileTimelineRepository {
   ) async => null;
   @override
   Future<({List<ProfileTimelineItem> items, bool partial, bool limited})>
-  refresh(String workspaceId, String userId) async => (
-    items: [
-      ProfileTimelineItem(
-        id: 'early',
-        type: 'task',
-        createdAt: DateTime(2026, 9, 30, 8),
-        scope: 'personal',
-        title: 'Earlier task',
-      ),
-      ProfileTimelineItem(
-        id: 'late',
-        type: 'calendar',
-        createdAt: DateTime(2026, 9, 30, 17),
-        scope: 'workspace',
-        title: 'Later event',
-      ),
-    ],
-    partial: false,
-    limited: false,
-  );
+  refresh(String workspaceId, String userId) async {
+    expect(workspaceId, 'personal');
+    expect(userId, 'owner');
+    return (
+      items: [
+        ProfileTimelineItem(
+          id: 'early',
+          type: 'task',
+          createdAt: DateTime(2026, 9, 30, 8),
+          scope: 'personal',
+          title: 'Earlier task',
+        ),
+        ProfileTimelineItem(
+          id: 'late',
+          type: 'calendar',
+          createdAt: DateTime(2026, 9, 30, 17),
+          scope: 'workspace',
+          title: 'Later event',
+        ),
+      ],
+      partial: false,
+      limited: false,
+    );
+  }
 }
 
 void main() {
@@ -117,6 +122,7 @@ void main() {
     (tester) async {
       final auth = _Auth();
       final workspace = _Workspace();
+      when(() => workspace.hasAuthenticatedActor).thenReturn(true);
       whenListen(
         auth,
         const Stream<AuthState>.empty(),
@@ -134,6 +140,7 @@ void main() {
         workspace,
         const Stream<WorkspaceState>.empty(),
         initialState: const WorkspaceState(
+          workspaces: [Workspace(id: 'personal', personal: true)],
           currentWorkspace: Workspace(id: 'team', name: 'Team'),
         ),
       );
@@ -147,6 +154,7 @@ void main() {
           ],
           child: SingleChildScrollView(
             child: ProfileTimelineSection(
+              cacheUserId: () => auth.state.user?.id,
               replayToken: 0,
               repository: _Repository(),
             ),

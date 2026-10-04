@@ -17989,6 +17989,12 @@ abstract class AppLocalizations {
   /// **'Waiting for server support. This change is saved and retries automatically.'**
   String get offlineDependencyContract;
 
+  /// No description provided for @offlineEditSyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing…'**
+  String get offlineEditSyncing;
+
   /// No description provided for @offlineEditQueued.
   ///
   /// In en, this message translates to:
@@ -18337,6 +18343,12 @@ abstract class AppLocalizations {
   /// **'Activity in loaded snapshot'**
   String get profileTimelineHasActivity;
 
+  /// No description provided for @profileTimelineLoadedEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'All loaded activity shown'**
+  String get profileTimelineLoadedEnd;
+
   /// No description provided for @profileTimelineMoreDays.
   ///
   /// In en, this message translates to:
@@ -18481,6 +18493,18 @@ abstract class AppLocalizations {
   /// **'Unavailable'**
   String get inventoryStockHealthUnknown;
 
+  /// No description provided for @inventoryProductDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this product? If existing sales reference it, the server will archive it when syncing.'**
+  String get inventoryProductDeleteConfirm;
+
+  /// No description provided for @inventorySeasonPriceCached.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline draft using saved season prices. Prices and availability will be checked when syncing.'**
+  String get inventorySeasonPriceCached;
+
   /// No description provided for @inventorySeasonPriceLoading.
   ///
   /// In en, this message translates to:
@@ -18534,78 +18558,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scheduled sale history is read only here. Recorded prices are preserved.'**
   String get inventorySeasonHistoricalReadOnly;
-
-  /// No description provided for @meetCollaboration.
-  ///
-  /// In en, this message translates to:
-  /// **'Collaborate'**
-  String get meetCollaboration;
-
-  /// No description provided for @meetCollaborationUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Collaboration is unavailable. Rejoin the meeting and try again.'**
-  String get meetCollaborationUnavailable;
-
-  /// No description provided for @meetScreenFixtureTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Native screen capture test'**
-  String get meetScreenFixtureTitle;
-
-  /// No description provided for @meetScreenFixtureHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Join the synthetic local meeting and share your screen. Media stays on this device; watch the receiver frame counter.'**
-  String get meetScreenFixtureHint;
-
-  /// No description provided for @meetScreenFixtureFrames.
-  ///
-  /// In en, this message translates to:
-  /// **'Decoded receiver frames: {count}'**
-  String meetScreenFixtureFrames(int count);
-
-  /// No description provided for @meetFixtureConnected.
-  ///
-  /// In en, this message translates to:
-  /// **'Local meeting connected'**
-  String get meetFixtureConnected;
-
-  /// No description provided for @meetFixtureRevoke.
-  ///
-  /// In en, this message translates to:
-  /// **'Host: stop screen share'**
-  String get meetFixtureRevoke;
-
-  /// No description provided for @meetFixtureReconnect.
-  ///
-  /// In en, this message translates to:
-  /// **'Reconnect meeting'**
-  String get meetFixtureReconnect;
-
-  /// No description provided for @offlineEditSyncing.
-  ///
-  /// In en, this message translates to:
-  /// **'Syncing…'**
-  String get offlineEditSyncing;
-
-  /// No description provided for @inventorySetupSyncFirst.
-  ///
-  /// In en, this message translates to:
-  /// **'Sync this new item before using, editing, or deleting it.'**
-  String get inventorySetupSyncFirst;
-
-  /// No description provided for @inventoryProductDeleteConfirm.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove this product? If existing sales reference it, the server will archive it when syncing.'**
-  String get inventoryProductDeleteConfirm;
-
-  /// No description provided for @inventorySeasonPriceCached.
-  ///
-  /// In en, this message translates to:
-  /// **'Offline draft using saved season prices. Prices and availability will be checked when syncing.'**
-  String get inventorySeasonPriceCached;
 
   /// No description provided for @offlinePreparationTitle.
   ///
@@ -18910,7 +18862,7 @@ abstract class AppLocalizations {
   /// No description provided for @homePersonalAgenda.
   ///
   /// In en, this message translates to:
-  /// **'Personal Agenda'**
+  /// **'Agenda'**
   String get homePersonalAgenda;
 
   /// No description provided for @homePersonalAgendaUnavailable.
@@ -18937,6 +18889,84 @@ abstract class AppLocalizations {
   /// **'Close prompt'**
   String get assistantCloseComposer;
 
+  /// No description provided for @inventoryRedesignLimitedData.
+  ///
+  /// In en, this message translates to:
+  /// **'Limited data. Last available snapshot shown.'**
+  String get inventoryRedesignLimitedData;
+
+  /// No description provided for @inventoryRedesignReceiptActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt activity'**
+  String get inventoryRedesignReceiptActivity;
+
+  /// No description provided for @inventoryRedesignReceiptCoverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Counts from the available recent receipts, not a complete period total. Missing days are unknown. Currency and quantity totals are not inferred.'**
+  String get inventoryRedesignReceiptCoverage;
+
+  /// No description provided for @inventoryRedesignDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day} other{{count} days}}'**
+  String inventoryRedesignDays(int count);
+
+  /// No description provided for @inventoryRedesignRecentSample.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 available record} other{{count} available records}} · limited coverage'**
+  String inventoryRedesignRecentSample(int count);
+
+  /// No description provided for @inventoryRedesignUnknownDates.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 record without a date} other{{count} records without a date}}'**
+  String inventoryRedesignUnknownDates(int count);
+
+  /// No description provided for @inventoryRedesignLoadedRevenue.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue in loaded receipts'**
+  String get inventoryRedesignLoadedRevenue;
+
+  /// No description provided for @inventoryRedesignUnknownCurrencies.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 receipt with unknown currency excluded} other{{count} receipts with unknown currency excluded}}'**
+  String inventoryRedesignUnknownCurrencies(int count);
+
+  /// No description provided for @inventoryRedesignPendingDeletion.
+  ///
+  /// In en, this message translates to:
+  /// **'Deletion pending confirmation'**
+  String get inventoryRedesignPendingDeletion;
+
+  /// No description provided for @inventoryRedesignPendingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 unsynchronized edit} other{{count} unsynchronized edits}}'**
+  String inventoryRedesignPendingCount(int count);
+
+  /// No description provided for @inventoryRedesignLoadedSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search available records'**
+  String get inventoryRedesignLoadedSearch;
+
+  /// No description provided for @inventoryRedesignAllEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'All events'**
+  String get inventoryRedesignAllEvents;
+
+  /// No description provided for @inventoryRedesignSelectedLines.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected lines'**
+  String get inventoryRedesignSelectedLines;
+
   /// No description provided for @calendarGoogleColorInherit.
   ///
   /// In en, this message translates to:
@@ -18960,6 +18990,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save other changes before changing the Google color.'**
   String get calendarProviderColorSeparateEdit;
+
+  /// No description provided for @inventorySetupSyncFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync this new item before using, editing, or deleting it.'**
+  String get inventorySetupSyncFirst;
+
+  /// No description provided for @meetCollaboration.
+  ///
+  /// In en, this message translates to:
+  /// **'Collaborate'**
+  String get meetCollaboration;
+
+  /// No description provided for @meetCollaborationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Collaboration is unavailable. Rejoin the meeting and try again.'**
+  String get meetCollaborationUnavailable;
+
+  /// No description provided for @meetScreenFixtureTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Native screen capture test'**
+  String get meetScreenFixtureTitle;
+
+  /// No description provided for @meetScreenFixtureHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Join the synthetic local meeting and share your screen. Media stays on this device; watch the receiver frame counter.'**
+  String get meetScreenFixtureHint;
+
+  /// No description provided for @meetScreenFixtureFrames.
+  ///
+  /// In en, this message translates to:
+  /// **'Decoded receiver frames: {count}'**
+  String meetScreenFixtureFrames(int count);
+
+  /// No description provided for @meetFixtureConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Local meeting connected'**
+  String get meetFixtureConnected;
+
+  /// No description provided for @meetFixtureRevoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Host: stop screen share'**
+  String get meetFixtureRevoke;
+
+  /// No description provided for @meetFixtureReconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect meeting'**
+  String get meetFixtureReconnect;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -25,6 +25,30 @@ count covers loaded search results, not the entire catalog. Native presentation
 does not change server permissions, mutation authorization, or canonical workspace
 membership. Existing pending-sync indicators remain attached to their owning rows.
 
+Native Overview analytics describe the loaded sample, not workspace-wide totals.
+Receipt activity groups unique dated receipts by device-local day for the selected
+7- or 30-day view and reports records without dates separately. Loaded revenue
+keeps currencies separate, excludes pending receipts and duplicate IDs, and
+reports receipts without an explicit currency. Stock summaries keep incompatible
+units separate and preserve unlimited versus unconfigured stock. These rules are
+covered by `inventory_analytics_redesign_test.dart`.
+
+Manage opens dedicated catalog, sales-period and audit destinations. The native
+product and checkout forms retain their primary actions while options refresh;
+queued deletion rows retain their existing retry or manual-conflict controls.
+Verified permission hints remain isolated by account and workspace and are
+revalidated online; an online denial revokes them. Server authorization remains
+authoritative. `inventory_access_scope_test.dart`,
+`workspace_permissions_offline_test.dart` and the Inventory editor tests cover
+scope changes, revocation and pending writes.
+
+Products, Sales and searchable forms submit through native search actions. An
+empty or whitespace-only submission closes search and clears the filter. A
+nonempty submission keeps results visible and dismisses the keyboard. Old shell
+search callbacks cannot replace the current query or update an unmounted owner.
+`inventory_search_submit_test.dart` covers mounted shell and standalone form
+submissions; the shared Apps search policy uses the same empty-query behavior.
+
 The product editor preserves unlimited stock when an unrelated field is edited.
 Leave quantity empty to represent unlimited stock; finite zero remains zero.
 Manage clears previous rows and add controls when the authenticated account or

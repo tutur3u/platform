@@ -96,8 +96,9 @@ class ProfileTimelineRepository {
     String workspaceId,
     String userId,
   ) async {
-    final response = await _api.getJson(
-      '/api/v1/workspaces/$workspaceId/mobile-activity',
+    final response = await ApiClient.runForUser(
+      userId,
+      () => _api.getJson('/api/v1/workspaces/$workspaceId/mobile-activity'),
     );
     final items = _decode(response['items']);
     final snapshot = (

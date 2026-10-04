@@ -9353,6 +9353,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get offlineDependencyContract => 'Đang chờ máy chủ hỗ trợ. Thay đổi đã được lưu và sẽ tự động thử lại.';
 
   @override
+  String get offlineEditSyncing => 'Đang đồng bộ…';
+
+  @override
   String get offlineEditQueued => 'Đang chờ đồng bộ';
 
   @override
@@ -9535,6 +9538,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileTimelineHasActivity => 'Có hoạt động trong dữ liệu đã tải';
 
   @override
+  String get profileTimelineLoadedEnd => 'Đã hiển thị toàn bộ hoạt động đã tải';
+
+  @override
   String get profileTimelineMoreDays => 'Hiện thêm ngày đã tải';
 
   @override
@@ -9615,6 +9621,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryStockHealthUnknown => 'Chưa có dữ liệu';
 
   @override
+  String get inventoryProductDeleteConfirm => 'Xóa sản phẩm này? Nếu giao dịch đã có tham chiếu đến sản phẩm, máy chủ sẽ lưu trữ sản phẩm khi đồng bộ.';
+
+  @override
+  String get inventorySeasonPriceCached => 'Bản nháp ngoại tuyến sử dụng giá mùa đã lưu. Giá và tình trạng hàng sẽ được kiểm tra khi đồng bộ.';
+
+  @override
   String get inventorySeasonPriceLoading => 'Đang kiểm tra giá mùa hiện tại…';
 
   @override
@@ -9642,44 +9654,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventorySeasonHistoricalReadOnly => 'Lịch sử bán theo mùa chỉ có thể xem tại đây. Giá đã ghi nhận được giữ nguyên.';
-
-  @override
-  String get meetCollaboration => 'Cộng tác';
-
-  @override
-  String get meetCollaborationUnavailable => 'Cộng tác hiện không khả dụng. Hãy vào lại cuộc họp rồi thử lại.';
-
-  @override
-  String get meetScreenFixtureTitle => 'Kiểm thử chia sẻ màn hình gốc';
-
-  @override
-  String get meetScreenFixtureHint => 'Tham gia cuộc họp giả lập cục bộ và chia sẻ màn hình. Nội dung chỉ ở trên thiết bị này; theo dõi số khung hình nhận được.';
-
-  @override
-  String meetScreenFixtureFrames(int count) {
-    return 'Số khung hình đã giải mã: $count';
-  }
-
-  @override
-  String get meetFixtureConnected => 'Đã kết nối cuộc họp cục bộ';
-
-  @override
-  String get meetFixtureRevoke => 'Chủ phòng: dừng chia sẻ màn hình';
-
-  @override
-  String get meetFixtureReconnect => 'Kết nối lại cuộc họp';
-
-  @override
-  String get offlineEditSyncing => 'Đang đồng bộ…';
-
-  @override
-  String get inventorySetupSyncFirst => 'Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa.';
-
-  @override
-  String get inventoryProductDeleteConfirm => 'Xóa sản phẩm này? Nếu giao dịch đã có tham chiếu đến sản phẩm, máy chủ sẽ lưu trữ sản phẩm khi đồng bộ.';
-
-  @override
-  String get inventorySeasonPriceCached => 'Bản nháp ngoại tuyến sử dụng giá mùa đã lưu. Giá và tình trạng hàng sẽ được kiểm tra khi đồng bộ.';
 
   @override
   String get offlinePreparationTitle => 'Dữ liệu ngoại tuyến';
@@ -9857,7 +9831,7 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get homePersonalAgenda => 'Lịch cá nhân';
+  String get homePersonalAgenda => 'Lịch trình';
 
   @override
   String get homePersonalAgendaUnavailable => 'Lịch cá nhân hiện không khả dụng.';
@@ -9870,6 +9844,55 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantCloseComposer => 'Đóng ô nhập';
+
+  @override
+  String get inventoryRedesignLimitedData => 'Dữ liệu hạn chế. Đang hiển thị bản lưu gần nhất.';
+
+  @override
+  String get inventoryRedesignReceiptActivity => 'Hoạt động hóa đơn';
+
+  @override
+  String get inventoryRedesignReceiptCoverage => 'Số lượng từ các hóa đơn gần đây có sẵn, không phải tổng đầy đủ của kỳ. Ngày thiếu dữ liệu chưa xác định. Không suy ra tổng tiền hay số lượng sản phẩm.';
+
+  @override
+  String inventoryRedesignDays(int count) {
+    return '$count ngày';
+  }
+
+  @override
+  String inventoryRedesignRecentSample(int count) {
+    return '$count bản ghi có sẵn · phạm vi hạn chế';
+  }
+
+  @override
+  String inventoryRedesignUnknownDates(int count) {
+    return '$count bản ghi chưa có ngày';
+  }
+
+  @override
+  String get inventoryRedesignLoadedRevenue => 'Doanh thu từ hóa đơn đã tải';
+
+  @override
+  String inventoryRedesignUnknownCurrencies(int count) {
+    return 'Đã loại $count hóa đơn chưa xác định tiền tệ';
+  }
+
+  @override
+  String get inventoryRedesignPendingDeletion => 'Đang chờ xác nhận xóa';
+
+  @override
+  String inventoryRedesignPendingCount(int count) {
+    return '$count thay đổi chưa đồng bộ';
+  }
+
+  @override
+  String get inventoryRedesignLoadedSearch => 'Tìm trong bản ghi có sẵn';
+
+  @override
+  String get inventoryRedesignAllEvents => 'Tất cả sự kiện';
+
+  @override
+  String get inventoryRedesignSelectedLines => 'Dòng đã chọn';
 
   @override
   String get calendarGoogleColorInherit => 'Dùng màu lịch';
@@ -9886,4 +9909,33 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get calendarProviderColorSeparateEdit => 'Lưu các thay đổi khác trước khi đổi màu Google.';
+
+  @override
+  String get inventorySetupSyncFirst => 'Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa.';
+
+  @override
+  String get meetCollaboration => 'Cộng tác';
+
+  @override
+  String get meetCollaborationUnavailable => 'Cộng tác hiện không khả dụng. Hãy vào lại cuộc họp rồi thử lại.';
+
+  @override
+  String get meetScreenFixtureTitle => 'Kiểm thử chia sẻ màn hình gốc';
+
+  @override
+  String get meetScreenFixtureHint => 'Tham gia cuộc họp giả lập cục bộ và chia sẻ màn hình. Nội dung chỉ ở trên thiết bị này; theo dõi số khung hình nhận được.';
+
+  @override
+  String meetScreenFixtureFrames(int count) {
+    return 'Số khung hình đã giải mã: $count';
+  }
+
+  @override
+  String get meetFixtureConnected => 'Đã kết nối cuộc họp cục bộ';
+
+  @override
+  String get meetFixtureRevoke => 'Chủ phòng: dừng chia sẻ màn hình';
+
+  @override
+  String get meetFixtureReconnect => 'Kết nối lại cuộc họp';
 }

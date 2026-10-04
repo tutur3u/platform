@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/models/workspace.dart';
@@ -15,16 +16,22 @@ import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_pending_overlay.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/inventory/view/inventory_products_page.dart';
 import 'package:mobile/features/inventory/widgets/inventory_product_card.dart';
 import 'package:mobile/features/inventory/widgets/inventory_sales_periods.dart';
 import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
 import '../../../helpers/helpers.dart';
+
+class _Auth extends MockCubit<AuthState> implements AuthCubit {}
 
 class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
@@ -458,6 +465,28 @@ void main() {
       final inventory = _Inventory();
       final finance = _Finance();
       final permissions = _Permissions();
+      final auth = _Auth();
+      final shell = ShellChromeActionsCubit();
+      when(() => auth.state).thenReturn(
+        const AuthState.authenticated(
+          User(
+            id: 'actor',
+            aud: 'authenticated',
+            appMetadata: {},
+            userMetadata: {},
+            createdAt: '2026-01-01T00:00:00Z',
+          ),
+        ),
+      );
+      when(() => permissions.peekPermissions(any())).thenReturn(null);
+      when(() => permissions.readCachedPermissions(any())).thenAnswer(
+        (_) async =>
+            const WorkspacePermissions(permissions: {}, isCreator: false),
+      );
+      addTearDown(() async {
+        await auth.close();
+        await shell.close();
+      });
       const state = WorkspaceState(
         status: WorkspaceStatus.loaded,
         currentWorkspace: Workspace(
@@ -483,8 +512,12 @@ void main() {
       );
       final key = GlobalKey();
       await tester.pumpApp(
-        BlocProvider<WorkspaceCubit>.value(
-          value: workspace,
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<WorkspaceCubit>.value(value: workspace),
+            BlocProvider<AuthCubit>.value(value: auth),
+            BlocProvider<ShellChromeActionsCubit>.value(value: shell),
+          ],
           child: _scaled(
             InventoryProductsPage(
               inventoryRepository: inventory,
@@ -502,11 +535,20 @@ void main() {
       expect(find.text('Create product'), findsNothing);
       expect(tester.takeException(), isNull);
       await _capture(tester, key, 'compact-products-mounted');
-      await tester.enterText(find.byType(TextField), 'missing');
+      shell.state
+          .resolveForLocation(Routes.inventoryProducts)
+          .first
+          .onPressed!();
+      await tester.pump();
+      final search = shell.state
+          .resolveForLocation(Routes.inventoryProducts)
+          .first;
+      search.searchController!.text = 'missing';
+      search.onSearchChanged!('missing');
       await tester.pump(const Duration(milliseconds: 600));
       await tester.pumpAndSettle();
       expect(find.text('Festival coffee'), findsNothing);
-      await tester.tap(find.byTooltip('Clear'));
+      search.onCloseSearch!();
       await tester.pump(const Duration(milliseconds: 600));
       await tester.pumpAndSettle();
       expect(find.text('Festival coffee'), findsOneWidget);

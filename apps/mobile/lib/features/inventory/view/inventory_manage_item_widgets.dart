@@ -126,9 +126,8 @@ class _ChipWrap extends StatelessWidget {
       return Text(context.l10n.inventoryManageEmpty);
     }
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: items
           .map(
             (item) => PendingSyncFrame(
@@ -136,9 +135,8 @@ class _ChipWrap extends StatelessWidget {
               entityId: item.$1,
               feature: feature,
               child: Row(
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Flexible(
+                  Expanded(
                     child: Text(
                       item.$2,
                       maxLines: 2,

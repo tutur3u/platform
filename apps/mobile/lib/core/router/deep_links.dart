@@ -193,6 +193,12 @@ String? _moduleLocation(Uri uri, List<String> segments) {
     'meet' => _meetLocation(uri),
     'timer' => _timerLocation(uri, segments),
     'settings' => _settingsLocation(segments),
+    'profile' =>
+      segments.length > 1 && segments[1] == 'edit'
+          ? Routes.settingsProfile
+          : segments.length > 1 && segments[1] == 'accounts'
+          ? Routes.settingsAccounts
+          : Routes.profileRoot,
     _ => null,
   };
 }
@@ -286,6 +292,21 @@ String _inventoryLocation(List<String> segments) {
   if (segments.length > 1 && segments[1] == 'sales') {
     return Routes.inventorySales;
   }
+  if (segments.length > 1 && segments[1] == 'sales-periods') {
+    return Routes.inventorySalesPeriods;
+  }
+  if (segments.length > 2 &&
+      segments[1] == 'manage' &&
+      const {
+        'owners',
+        'categories',
+        'manufacturers',
+        'units',
+        'warehouses',
+        'financeCategories',
+      }.contains(segments[2])) {
+    return Routes.inventoryCatalogPath(segments[2]);
+  }
   if (segments.length > 1 && segments[1] == 'manage') {
     return Routes.inventoryManage;
   }
@@ -329,6 +350,26 @@ String _timerLocation(Uri uri, List<String> segments) {
 }
 
 String _settingsLocation(List<String> segments) {
+  if (segments.length > 1) {
+    switch (segments[1]) {
+      case 'profile':
+        return Routes.settingsProfile;
+      case 'accounts':
+        return Routes.settingsAccounts;
+      case 'offline':
+        if (segments.length > 2 &&
+            const {
+              'finance',
+              'inventory',
+              'tasks',
+              'calendar',
+            }.contains(segments[2])) {
+          return Routes.settingsOfflineModulePath(segments[2]);
+        }
+        return Routes.settingsOffline;
+    }
+  }
+
   if (segments.length > 1 && segments[1] == 'whats-new') {
     return Routes.settingsWhatsNew;
   }

@@ -165,11 +165,6 @@ class _ReminderSettingsPageState extends State<ReminderSettingsPage> {
           24 + MediaQuery.paddingOf(context).bottom,
         ),
         children: [
-          Text(
-            l10n.remindersTitle,
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 4),
           Text(l10n.remindersDescription),
           const SizedBox(height: 20),
           _timingCard(ReminderKind.task),
