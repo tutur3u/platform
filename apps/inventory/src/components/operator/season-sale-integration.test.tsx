@@ -522,7 +522,7 @@ describe('mounted season sales integrations', () => {
         wsId="ws"
         workspaceCurrency="VND"
         products={products}
-        periods={[{ ...period, pricing_mode: 'legacy', wallet_id: null }]}
+        periods={[{ ...period, pricing_mode: 'legacy' }]}
         options={{ ...withoutWallets, defaultSalesPeriodId: period.id }}
       />
     );
