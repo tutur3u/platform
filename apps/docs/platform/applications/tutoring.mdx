@@ -34,7 +34,11 @@ payroll.
 - **Settings** stores a workspace tutoring policy with standard and English
   center presets. Each section starts as a read-only summary; **Edit section**
   opens only that section with **Save** and **Cancel**. Cancel discards the
-  section draft, and other sections stay read-only while it is open. Operators can adjust session length, lead time, support
+  section draft, and other sections stay read-only while it is open. Saving merges
+  only that section’s fields into the latest loaded policy, preserving refreshed
+  values in other sections. Applying a preset intentionally replaces the full
+  draft. Save, Cancel, and editor inputs are disabled during a pending save; a
+  failed save retains the draft for retry. Operators can adjust session length, lead time, support
   session count, absence lookback, reassessment and follow-up intervals, scheduling horizon,
   class-time exceptions, named shifts, scoped group-name exclusion rules,
   the unchanged-content review interval, group-to-campus labels, and the parent
@@ -152,6 +156,7 @@ preset never falls back to an unlisted class day or time.
 Regression coverage: `tutoring-policy.test.ts`, `tutoring-suggestion.test.ts`,
 and the Contacts `tutoring-policy-card.test.tsx`, `tutoring-teacher-picker.test.tsx`,
 and `tutoring-create-card.test.tsx` mounted section/teacher controls.
+`tutoring-policy-save.test.tsx` covers refreshed-section isolation and pending/failed saves.
 
 The schedule displays a matching shift name alongside the actual
 date and time. Staff can rename, add, or change each rule. Suggestions need an

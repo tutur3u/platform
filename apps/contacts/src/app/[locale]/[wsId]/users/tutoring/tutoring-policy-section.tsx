@@ -186,7 +186,9 @@ export function TutoringPolicySection({
         </>
       ) : (
         <>
-          {children}
+          <fieldset className="space-y-3" disabled={pending}>
+            {children}
+          </fieldset>
           <div className="flex justify-end gap-2 border-t pt-3">
             <Button
               disabled={pending}

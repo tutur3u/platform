@@ -51,10 +51,40 @@ export function TutoringPolicyCard({
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<TutoringPolicy>(policy);
   const [editing, setEditing] = useState<PolicySectionId | null>(null);
-  const changed = JSON.stringify(draft) !== JSON.stringify(policy);
-  const valid = Boolean(parseTutoringPolicy(draft));
+  const sectionFields: Record<
+    Exclude<PolicySectionId, 'presets'>,
+    (keyof TutoringPolicy)[]
+  > = {
+    timing: NUMERIC_FIELDS.map(([field]) => field),
+    exceptions: ['timeRules'],
+    weak: ['weakContentReviewDays', 'groupExclusions'],
+    campuses: ['campusByGroupId'],
+    message: ['parentMessageTemplate'],
+  };
+  const submittedPolicy =
+    !editing || editing === 'presets'
+      ? draft
+      : {
+          ...policy,
+          ...Object.fromEntries(
+            sectionFields[editing].map((field) => [field, draft[field]])
+          ),
+          preset: 'custom' as const,
+        };
+  const changed =
+    editing === 'presets'
+      ? JSON.stringify(draft) !== JSON.stringify(policy)
+      : Boolean(
+          editing &&
+            sectionFields[editing].some(
+              (field) =>
+                JSON.stringify(draft[field]) !== JSON.stringify(policy[field])
+            )
+        );
+  const valid = Boolean(parseTutoringPolicy(submittedPolicy));
   const save = useMutation({
-    mutationFn: () => updateTutoringPolicy(wsId, draft),
+    mutationFn: (submitted: TutoringPolicy) =>
+      updateTutoringPolicy(wsId, submitted),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: ['tutoring-policy', wsId],
@@ -96,7 +126,7 @@ export function TutoringPolicyCard({
       setDraft(policy);
       setEditing(null);
     },
-    onSave: () => save.mutate(),
+    onSave: () => save.mutate(submittedPolicy),
   };
 
   return (
