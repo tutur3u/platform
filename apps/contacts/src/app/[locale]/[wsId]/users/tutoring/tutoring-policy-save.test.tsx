@@ -49,7 +49,9 @@ describe('tutoring section save isolation', () => {
     const refreshed = {
       ...EASY_CENTER_TUTORING_POLICY,
       parentMessageTemplate: 'A refreshed synthetic template',
-      campusByGroupId: { synthetic: 'Updated campus' },
+      campusByGroupId: {
+        '11111111-1111-4111-8111-111111111111': 'Updated campus',
+      },
     };
     rerender(view(refreshed, client));
     fireEvent.click(screen.getByRole('button', { name: 'policy_save' }));
