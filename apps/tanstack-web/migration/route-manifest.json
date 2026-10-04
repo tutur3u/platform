@@ -7,11 +7,11 @@
         "key": "api",
         "label": "api",
         "legacyNext": 536,
-        "migrated": 62,
-        "percentComplete": 12.13,
+        "migrated": 63,
+        "percentComplete": 12.27,
         "remaining": 536,
-        "terminal": 74,
-        "total": 610,
+        "terminal": 75,
+        "total": 611,
         "unknownStatus": 0
       },
       {
@@ -117,11 +117,11 @@
         "key": "rust-backend",
         "label": "Rust backend",
         "legacyNext": 546,
-        "migrated": 67,
-        "percentComplete": 12.64,
+        "migrated": 68,
+        "percentComplete": 12.78,
         "remaining": 546,
-        "terminal": 79,
-        "total": 625,
+        "terminal": 80,
+        "total": 626,
         "unknownStatus": 0
       },
       {
@@ -364,11 +364,11 @@
       "key": "total",
       "label": "All route artifacts",
       "legacyNext": 624,
-      "migrated": 215,
-      "percentComplete": 26.85,
+      "migrated": 216,
+      "percentComplete": 26.93,
       "remaining": 624,
-      "terminal": 229,
-      "total": 853,
+      "terminal": 230,
+      "total": 854,
       "unknownStatus": 0
     }
   },
@@ -4682,6 +4682,18 @@
       "routePath": "/api/v1/workspaces/:wsId/inventory/offline-mutations",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/inventory/offline-mutations/route.ts",
       "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/inventory/sales-periods/merges:apps/web/src/app/api/v1/workspaces/[wsId]/inventory/sales-periods/merges/route.ts",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "routePath": "/api/v1/workspaces/:wsId/inventory/sales-periods/merges",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/inventory/sales-periods/merges/route.ts",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
@@ -9673,20 +9685,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 610,
+    "apiRoutes": 611,
     "cronRoutes": 10,
     "layouts": 68,
     "pages": 156,
-    "routeHandlers": 625,
+    "routeHandlers": 626,
     "methodCounts": {
-      "GET": 316,
+      "GET": 317,
       "HEAD": 11,
-      "POST": 307,
+      "POST": 308,
       "PUT": 56,
       "PATCH": 64,
       "DELETE": 101,
       "OPTIONS": 24
     },
-    "total": 853
+    "total": 854
   }
 }

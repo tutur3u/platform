@@ -1617,6 +1617,11 @@
       "targetOwner": "rust-backend",
       "note": "Workspace-scoped tutoring route accepts verified Contacts and platform app sessions or Supabase auth, then enforces tutoring permissions. Rust parity pending. Next.js POST/PUT allow any actual teacher in the verified workspace, independently of the student homeroom; student group, management permission and conflict checks remain. Rust GET is unchanged and unported mutations fall through."
     },
+    "api:/api/v1/workspaces/:wsId/inventory/sales-periods/merges:apps/web/src/app/api/v1/workspaces/[wsId]/inventory/sales-periods/merges/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Web remains live. Source Rust mirror owns GET/POST; inventory-only authenticated actor/workspace role conjunction, readiness, bounded actor-bound expiring preview pages, explicit policies, sanitized statuses/no-store. Future backend compile/runtime coverage and exact app build required before cutover."
+    },
     "api:/api/v1/workspaces/:wsId/tutoring/teachers:apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/teachers/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",

@@ -2,6 +2,7 @@ import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/a
 import { canUpdateInventorySales } from '@tuturuuu/inventory-core/permissions';
 import {
   InventorySalesPeriodProductRuleError,
+  isInventorySeasonMergedError,
   setInventorySalesPeriodBulk,
 } from '@tuturuuu/inventory-core/sales-periods';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -61,6 +62,15 @@ export async function PUT(request: Request, { params }: Params) {
     }
     return NextResponse.json({ data, updated: parsed.data.sales.length });
   } catch (error) {
+    if (isInventorySeasonMergedError(error)) {
+      return NextResponse.json(
+        {
+          message:
+            'Sales period was merged. Refresh and choose its destination.',
+        },
+        { status: 409 }
+      );
+    }
     if (error instanceof InventorySalesPeriodProductRuleError) {
       return NextResponse.json(
         { message: 'One or more sales do not match the period product rules' },
