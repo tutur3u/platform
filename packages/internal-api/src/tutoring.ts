@@ -289,3 +289,27 @@ export async function exportTutoringSessions(
     | { mode: 'payroll'; data: TutoringPayrollExportRow[] }
   >(`${basePath(workspaceId)}/export`, { cache: 'no-store', query: params });
 }
+
+export interface TutoringTeacher {
+  id: string;
+  full_name: string | null;
+  display_name: string | null;
+}
+
+export async function listTutoringTeachers(
+  workspaceId: string,
+  params: InternalApiQuery & {
+    page?: number;
+    pageSize?: number;
+    q?: string;
+  } = {},
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: TutoringTeacher[];
+    count: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  }>(`${basePath(workspaceId)}/teachers`, { cache: 'no-store', query: params });
+}
