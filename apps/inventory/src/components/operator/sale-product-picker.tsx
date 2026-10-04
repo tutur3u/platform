@@ -21,6 +21,7 @@ import { useTranslations } from 'next-intl';
 import { SelectField } from './operator-form-fields';
 import { currency } from './operator-format';
 import type { SaleCartLine, SaleStockOption } from './sale-create-items';
+import { SalePickerPagination } from './sale-picker-pagination';
 import { SaleProductImageDialog } from './sale-product-image-dialog';
 
 export type SaleProductSort =
@@ -59,6 +60,8 @@ export function SaleProductPicker({
   hasNextPage,
   isFetchingNextPage,
   isRefreshing,
+  isPaginationError = false,
+  paginationVersion,
   lines,
   onCategoryFilterChange,
   onQueryChange,
@@ -82,6 +85,8 @@ export function SaleProductPicker({
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
   isRefreshing: boolean;
+  isPaginationError?: boolean;
+  paginationVersion?: number;
   lines: SaleCartLine[];
   onCategoryFilterChange: (value: string) => void;
   onQueryChange: (value: string) => void;
@@ -102,7 +107,6 @@ export function SaleProductPicker({
   const t = useTranslations('inventory.operator.commerce.createSale');
   const filtersT = useTranslations('inventory.operator.filters');
   const hybridT = useTranslations('inventory.operator.hybridSearch');
-  const paginationT = useTranslations('inventory.operator.pagination');
   const activeFilterCount =
     Number(Boolean(categoryFilter)) + Number(Boolean(warehouseFilter));
   const sortOptions: Array<{ label: string; value: SaleProductSort }> = [
@@ -343,19 +347,14 @@ export function SaleProductPicker({
             {t('emptyProducts')}
           </p>
         ) : null}
-        {hasNextPage ? (
-          <Button
-            className="w-full"
-            disabled={isFetchingNextPage}
-            onClick={() => fetchNextPage?.()}
-            type="button"
-            variant="outline"
-          >
-            {isFetchingNextPage
-              ? paginationT('loadingMore')
-              : paginationT('loadMore')}
-          </Button>
-        ) : null}
+        <SalePickerPagination
+          key={`${query}:${categoryFilter}:${warehouseFilter}:${sort}`}
+          fetchNextPage={fetchNextPage}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          isError={isPaginationError}
+          loadVersion={paginationVersion ?? options.length}
+        />
       </div>
     </section>
   );

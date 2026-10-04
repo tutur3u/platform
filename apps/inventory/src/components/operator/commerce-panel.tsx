@@ -50,6 +50,8 @@ export function CommercePanel({
   hasNextProductsPage,
   hasNextSalesPage,
   isFetchingNextProductsPage,
+  isProductsError = false,
+  productsPageCount,
   isFetchingNextSalesPage,
   products,
   selectedPeriodId,
@@ -77,6 +79,8 @@ export function CommercePanel({
   hasNextProductsPage: boolean;
   hasNextSalesPage: boolean;
   isFetchingNextProductsPage: boolean;
+  isProductsError?: boolean;
+  productsPageCount?: number;
   isFetchingNextSalesPage: boolean;
   products: InventoryProductSummary[];
   selectedPeriodId: string;
@@ -130,6 +134,8 @@ export function CommercePanel({
           fetchNextProductsPage={fetchNextProductsPage}
           hasNextProductsPage={hasNextProductsPage}
           isFetchingNextProductsPage={isFetchingNextProductsPage}
+          isProductsError={isProductsError}
+          productsPageCount={productsPageCount}
           mobileFab
           options={formOptions}
           periods={salesPeriods}
@@ -250,6 +256,8 @@ export function CommercePanel({
                     fetchNextProductsPage={fetchNextProductsPage}
                     hasNextProductsPage={hasNextProductsPage}
                     isFetchingNextProductsPage={isFetchingNextProductsPage}
+                    isProductsError={isProductsError}
+                    productsPageCount={productsPageCount}
                     options={formOptions}
                     periods={salesPeriods}
                     products={products}

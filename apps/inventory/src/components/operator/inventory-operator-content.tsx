@@ -90,6 +90,11 @@ function renderPanel({
         fetchNextProductsPage={() => data.periodProducts.fetchNextPage()}
         hasNextProductsPage={data.periodProducts.hasNextPage}
         isFetchingNextProductsPage={data.periodProducts.isFetchingNextPage}
+        productsPageCount={data.periodProducts.data?.pages.length ?? 0}
+        isProductsError={
+          data.periodProducts.isError ||
+          data.periodProducts.isFetchNextPageError
+        }
         formOptions={data.formOptions.data}
         filters={data.filters}
         products={periodProducts}

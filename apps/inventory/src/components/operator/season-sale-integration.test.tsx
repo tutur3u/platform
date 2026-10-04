@@ -114,11 +114,7 @@ async function add(name: string) {
   fireEvent.click(await screen.findByRole('button', { name: `Add ${name}` }));
 }
 function review() {
-  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Revenue' }), {
-    button: 0,
-    ctrlKey: false,
-  });
-  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Review' }), {
+  fireEvent.mouseDown(screen.getByRole('tab', { name: /Checkout/ }), {
     button: 0,
     ctrlKey: false,
   });
@@ -393,11 +389,7 @@ describe('mounted season sales integrations', () => {
         hidden: true,
       })
     );
-    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Revenue' }), {
-      button: 0,
-      ctrlKey: false,
-    });
-    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Review' }), {
+    fireEvent.mouseDown(screen.getByRole('tab', { name: /Checkout/ }), {
       button: 0,
       ctrlKey: false,
     });
@@ -406,6 +398,123 @@ describe('mounted season sales integrations', () => {
     fireEvent.click(save);
     expect(api.sale).not.toHaveBeenCalled();
   });
+  it('keeps centralized checkout edits across Back and preserves request identity on an uncertain retry', async () => {
+    let fail!: (error: Error) => void;
+    api.sale
+      .mockImplementationOnce(
+        () =>
+          new Promise((_resolve, reject) => {
+            fail = reject;
+          })
+      )
+      .mockResolvedValue({ data: {} });
+    mount(
+      <SaleCreateDialog
+        wsId="ws"
+        workspaceCurrency="VND"
+        products={products}
+        periods={[{ ...period, pricing_mode: 'legacy' }]}
+        options={{
+          ...options,
+          defaultSalesPeriodId: period.id,
+          wallets: [
+            ...options.wallets,
+            { id: 'other-wallet', name: 'Other wallet' },
+          ],
+          financeCategories: [
+            ...options.financeCategories,
+            { id: 'other-finance', name: 'Other revenue', ws_id: 'ws' },
+          ],
+        }}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Record sale' }));
+    await add('Alpha');
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(
+      (screen.getByRole('button', { name: 'Record sale' }) as HTMLButtonElement)
+        .disabled
+    ).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Record sale' }));
+    expect(api.sale).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Sale name' }), {
+      target: { value: 'Synthetic checkout' },
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Internal note' }), {
+      target: { value: 'Synthetic note' },
+    });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Revenue wallet' }));
+    fireEvent.click(
+      await screen.findByRole('option', { name: 'Other wallet' })
+    );
+    fireEvent.click(screen.getByRole('combobox', { name: 'Finance category' }));
+    fireEvent.click(
+      await screen.findByRole('option', { name: 'Other revenue' })
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Increase Alpha' })
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: /^Revenue Other wallet/ })
+    );
+    expect(
+      (screen.getByRole('textbox', { name: 'Sale name' }) as HTMLInputElement)
+        .value
+    ).toBe('Synthetic checkout');
+    expect(
+      (
+        screen.getByRole('textbox', {
+          name: 'Internal note',
+        }) as HTMLInputElement
+      ).value
+    ).toBe('Synthetic note');
+    fireEvent.click(
+      screen.getByRole('button', { name: /^Review Ready to confirm/ })
+    );
+    expect(screen.getByText('Synthetic checkout')).toBeTruthy();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Keep open' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Record sale' }));
+    await waitFor(() => expect(api.sale).toHaveBeenCalledTimes(1));
+    expect(
+      (
+        screen.getByRole('button', {
+          name: messages.inventory.operator.commerce.createSale.creating,
+        }) as HTMLButtonElement
+      ).disabled
+    ).toBe(true);
+    fail(new Error('Synthetic uncertain response'));
+    await waitFor(() =>
+      expect(
+        (
+          screen.getByRole('button', {
+            name: 'Record sale',
+          }) as HTMLButtonElement
+        ).disabled
+      ).toBe(false)
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Record sale' }));
+    await waitFor(() => expect(api.sale).toHaveBeenCalledTimes(2));
+    expect(api.sale.mock.calls[1]?.[1]).toEqual(api.sale.mock.calls[0]?.[1]);
+    await screen.findByRole('button', { name: 'Add Alpha' });
+    expect(
+      screen
+        .getByRole('checkbox', { name: 'Keep open' })
+        .getAttribute('data-state')
+    ).toBe('checked');
+    expect(api.sale.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        content: 'Synthetic checkout',
+        notes: 'Synthetic note',
+        wallet_id: 'other-wallet',
+        category_id: 'other-finance',
+        request_id: expect.any(String),
+        products: [expect.objectContaining({ quantity: 2 })],
+      })
+    );
+  });
+
   it('requires manual choice for an implicit legacy-only current period', async () => {
     mount(
       <SaleCreateDialog
