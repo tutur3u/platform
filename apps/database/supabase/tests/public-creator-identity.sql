@@ -104,6 +104,7 @@ select throws_ok($$update public.users set avatar_url='https://example.test/has 
 select lives_ok($$update public.users set avatar_url='https://example.test/avatar.png' where id='00000000-0000-4000-8000-000000009501'$$,'direct writes accept valid HTTPS avatars');
 select lives_ok($$update public.users set avatar_url=null where id='00000000-0000-4000-8000-000000009501'$$,'direct writes can clear avatars');
 -- A JSON number must not bypass type validation by matching a legacy handle.
+insert into public.handles(value,creator_id) values ('12345','00000000-0000-4000-8000-000000009505');
 alter table public.users disable trigger enforce_public_user_profile_policy;
 update public.users set handle='12345' where id='00000000-0000-4000-8000-000000009505';
 alter table public.users enable trigger enforce_public_user_profile_policy;
