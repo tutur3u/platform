@@ -60,12 +60,14 @@ export const POST = withSessionAuth(
                 { status: 503 }
               );
             const size = object.data.size;
+            const contentType = object.data.contentType;
             if (
               typeof size !== 'number' ||
               size <= 0 ||
               size > 5 * 1024 * 1024 ||
+              typeof contentType !== 'string' ||
               !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(
-                object.data.contentType
+                contentType
               )
             ) {
               await admin.rpc('abandon_profile_banner_operation', {

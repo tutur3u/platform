@@ -122,6 +122,74 @@ describe('receipt-based banner lifecycle', () => {
       expect.anything()
     );
   });
+  it('rejects SDK object metadata with missing content type', async () => {
+    f.info.mockResolvedValue({
+      error: null,
+      data: { size: 100 } satisfies Pick<
+        BannerObjectInfo,
+        'size' | 'contentType'
+      >,
+    });
+    expect((await invoke({ action: 'finalize', operationId })).status).toBe(
+      400
+    );
+    expect(f.rpc).toHaveBeenCalledWith('abandon_profile_banner_operation', {
+      p_user_id: actor,
+      p_operation_id: operationId,
+      p_storage_origin: origin,
+    });
+    expect(f.rpc).not.toHaveBeenCalledWith(
+      'commit_profile_banner_operation',
+      expect.anything()
+    );
+  });
+  it.each([null, 12, {}, 'text/plain'])(
+    'rejects invalid content type %j',
+    async (contentType) => {
+      f.info.mockResolvedValue({
+        error: null,
+        data: { size: 100, contentType },
+      });
+      expect((await invoke({ action: 'finalize', operationId })).status).toBe(
+        400
+      );
+      expect(f.rpc).not.toHaveBeenCalledWith(
+        'commit_profile_banner_operation',
+        expect.anything()
+      );
+    }
+  );
+  it.each(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])(
+    'accepts supported content type %s',
+    async (contentType) => {
+      f.info.mockResolvedValue({
+        error: null,
+        data: { size: 100, contentType } satisfies Pick<
+          BannerObjectInfo,
+          'size' | 'contentType'
+        >,
+      });
+      expect((await invoke({ action: 'finalize', operationId })).status).toBe(
+        200
+      );
+    }
+  );
+  it.each([0, -1, 5 * 1024 * 1024 + 1, '100'])(
+    'rejects invalid object size %j',
+    async (size) => {
+      f.info.mockResolvedValue({
+        error: null,
+        data: { size, contentType: 'image/png' },
+      });
+      expect((await invoke({ action: 'finalize', operationId })).status).toBe(
+        400
+      );
+      expect(f.rpc).not.toHaveBeenCalledWith(
+        'commit_profile_banner_operation',
+        expect.anything()
+      );
+    }
+  );
   it('reports durable cleanup failure after commit so receipt can safely retry', async () => {
     f.rpc.mockImplementation(async (name: string) => ({
       error: null,
