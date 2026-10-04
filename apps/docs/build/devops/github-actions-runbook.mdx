@@ -390,6 +390,19 @@ identify the last entered phase; an incomplete runner log alone does not prove a
 browser, server, or database root cause. Do not include tokens, SQL, account IDs,
 response bodies, or authenticated URLs in phase logs.
 
+The general shard and dedicated invitation runtime commands use GNU `timeout`
+against the job's recorded start, allowing up to 37 minutes minus setup
+time so eight minutes remain inside the unchanged 45-minute job deadline. Timeout is
+an ordinary failed step (exit 124), not a passing or skipped test. TERM is
+followed by KILL after 30 seconds if the owned command cannot exit. Existing
+failure diagnostics, redaction, artifact upload, and `always()` cleanup still
+run; the reserve is a budget, not proof that runner or Docker failures cannot
+prevent them. Setup exhausting the runtime budget fails before starting tests.
+Validate this policy with `node --test scripts/ci/e2e-runtime-budget.test.js`.
+The Markdown persistence helper also logs page creation before navigation,
+using the same fixed phase summaries. This exposes a previously silent browser
+boundary without claiming it caused the recurring stall.
+
 ### Meet, Lettin, and Parley Cloudflare validation
 
 The standalone Meet and Lettin Cloudflare validation jobs build

@@ -3,6 +3,7 @@ import { safeLettinPhaseFailure } from './lettin-phase-diagnostics';
 
 // Fixed phase names only: never log fixture IDs, response bodies, or credentials.
 type Phase =
+  | 'create Markdown page'
   | 'open wiki'
   | 'create project'
   | 'confirm project navigation'
@@ -27,7 +28,7 @@ export async function verifyLettinMarkdownPersistence(
   origin: string,
   workspaceId: string
 ) {
-  const page = await context.newPage();
+  const page = await phase('create Markdown page', () => context.newPage());
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await phase('open wiki', async () => {
