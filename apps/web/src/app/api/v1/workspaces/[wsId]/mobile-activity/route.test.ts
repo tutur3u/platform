@@ -253,4 +253,35 @@ describe('mobile profile activity', () => {
       body.items.filter((item: { type: string }) => item.type === 'task')
     ).toHaveLength(200);
   });
+  it('starts other activity reads while Calendar permission is unresolved', async () => {
+    let permit!: (value: { data: boolean; error: null }) => void;
+    mocks.calendarAccess.mockReturnValueOnce(
+      new Promise((resolve) => {
+        permit = resolve;
+      })
+    );
+    const pending = GET(request(), params);
+    await vi.waitFor(() => expect(rpc).toHaveBeenCalled());
+    expect(adminFrom).toHaveBeenCalledWith('tasks');
+    expect(from).toHaveBeenCalledWith('notes');
+    expect(adminFrom).not.toHaveBeenCalledWith('workspace_calendar_events');
+    permit({ data: false, error: null });
+    expect((await pending).status).toBe(200);
+    expect(adminFrom).not.toHaveBeenCalledWith('workspace_calendar_events');
+  });
+  it('passes the pinned creation boundary into finance before pagination', async () => {
+    const until = '2026-09-30T00:00:00.000Z';
+    await GET(
+      new NextRequest(`https://example.test/api?page=1&until=${until}`),
+      params
+    );
+    expect(rpc).toHaveBeenCalledWith(
+      'get_wallet_transactions_with_permissions',
+      expect.objectContaining({
+        p_created_at_until: until,
+        p_offset: 200,
+        p_limit: 200,
+      })
+    );
+  });
 });

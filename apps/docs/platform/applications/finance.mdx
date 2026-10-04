@@ -422,3 +422,29 @@ the real session middleware with injected authentication dependencies;
 `packages/internal-api/src/finance-exchange-rates.test.ts` covers transport and
 error propagation. Rust source parity is covered by
 `apps/backend/src/tests/exchange_rates_session.rs`; Rust does not serve production.
+
+## Profile Timeline creation boundary
+
+Native Profile Timeline requests pin `until` when loading the first activity
+page. The Finance activity RPC applies the optional `p_created_at_until`
+constraint to transaction creation time **before** limit, offset, or total-count
+calculation. `created_at` ordering uses transaction ID as the unique tie-breaker.
+Newer transactions therefore cannot shift the next page of the pinned traversal.
+This is an upper creation boundary, not a historical snapshot: edits, deletions,
+and explicitly backdated creation timestamps can still change visible records.
+
+This rule applies to the Web-owned mobile activity API and shared Finance RPC.
+Existing Finance list, export, attachment, and Rust migration callers omit the
+new parameter and retain their unbounded default; `p_start_date` and
+`p_end_date` continue filtering the transaction's business date (`taken_at`).
+Actor checks, wallet viewing windows, granular permissions, and confidential
+field redaction remain unchanged. Calendar permission verification runs alongside
+other activity sources, but Calendar metadata is read only after permission
+succeeds; denied access is omitted, and permission failures remain partial errors.
+
+Regression evidence lives in the mobile activity route tests and
+`apps/database/supabase/tests/mobile-activity-transaction-boundary.sql`. The latter
+covers unique ordering, insertion between pages, the optional default, and actor
+visibility. Schema application, pgTAP execution, and generated Supabase types
+require the exact-commit CI migration/typegen gate; source inspection and route
+unit tests do not prove that a deployed RPC accepts the new parameter.

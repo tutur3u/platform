@@ -64,11 +64,20 @@ export async function GET(
   });
   // Match Calendar SELECT authorization before the audited service-role read.
   // Raw authenticated SELECT is not granted in production.
-  const calendarAccess = await supabase.rpc('has_workspace_permission', {
+  const calendarAccess = supabase.rpc('has_workspace_permission', {
     p_ws_id: wsId,
     p_user_id: user.id,
     p_permission: 'manage_calendar',
   });
+  const financeArgs = {
+    p_ws_id: wsId,
+    p_user_id: user.id,
+    p_creator_ids: [user.id],
+    p_order_by: 'created_at',
+    p_limit: 200,
+    p_offset: offset,
+    p_created_at_until: until,
+  };
   const [tasks, transactions, notes, events] = await Promise.all([
     admin
       .from('tasks')
@@ -84,14 +93,7 @@ export async function GET(
       .order('id', { ascending: false })
       .range(offset, offset + 199),
     // The finance RPC applies wallet visibility and confidentiality permissions.
-    supabase.rpc('get_wallet_transactions_with_permissions', {
-      p_ws_id: wsId,
-      p_user_id: user.id,
-      p_creator_ids: [user.id],
-      p_order_by: 'created_at',
-      p_limit: 200,
-      p_offset: offset,
-    }),
+    supabase.rpc('get_wallet_transactions_with_permissions', financeArgs),
     supabase
       .from('notes')
       .select('id,title,created_at,updated_at')
@@ -103,19 +105,21 @@ export async function GET(
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
       .range(offset, offset + 199),
-    calendarAccess.error
-      ? { data: [], error: calendarAccess.error }
-      : calendarAccess.data !== true
-        ? { data: [], error: null }
-        : admin
-            .from('workspace_calendar_events')
-            .select('id,created_at')
-            .eq('ws_id', wsId)
-            .gte('created_at', since)
-            .lte('created_at', until)
-            .order('created_at', { ascending: false })
-            .order('id', { ascending: false })
-            .range(offset, offset + 199),
+    calendarAccess.then((access) =>
+      access.error
+        ? { data: [], error: access.error }
+        : access.data !== true
+          ? { data: [], error: null }
+          : admin
+              .from('workspace_calendar_events')
+              .select('id,created_at')
+              .eq('ws_id', wsId)
+              .gte('created_at', since)
+              .lte('created_at', until)
+              .order('created_at', { ascending: false })
+              .order('id', { ascending: false })
+              .range(offset, offset + 199)
+    ),
   ]);
 
   const sources = { tasks, transactions, notes, events };
