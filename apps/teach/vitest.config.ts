@@ -14,6 +14,12 @@ export default defineConfig({
     testTimeout: 30_000,
   },
   resolve: {
-    alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
+    alias: [
+      { find: '@', replacement: resolve(__dirname, './src') },
+      {
+        find: '@tuturuuu/supabase/next',
+        replacement: resolve(__dirname, '../../packages/supabase/src/next'),
+      },
+    ],
   },
 });

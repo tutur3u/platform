@@ -5,6 +5,7 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
+    "./todo/service": "./src/todo/service.ts",
     ".": "./src/index.ts",
     "./tulearn": "./src/tulearn/index.ts",
     "./tulearn/*": "./src/tulearn/*.ts",
