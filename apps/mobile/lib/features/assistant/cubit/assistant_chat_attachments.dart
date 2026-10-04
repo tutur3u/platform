@@ -1,15 +1,26 @@
 part of 'assistant_chat_cubit.dart';
 
 extension AssistantChatAttachments on AssistantChatCubit {
+  int get attachmentScopeVersion => _workspaceVersion;
+
   Future<void> addComposerAttachments({
     required String wsId,
     required List<PlatformFile> files,
     required String modelId,
     required String timezone,
+    int? expectedWorkspaceVersion,
   }) async {
+    final workspaceVersion = expectedWorkspaceVersion ?? _workspaceVersion;
+    bool isCurrentScope() =>
+        !isClosed &&
+        state.workspaceId == wsId &&
+        _workspaceVersion == workspaceVersion;
+    if (!isCurrentScope()) return;
     for (final file in files) {
+      if (!isCurrentScope()) return;
       final id = _repository.generateUuid();
       final picked = await AssistantFilePickerResult.fromPlatformFile(file, id);
+      if (!isCurrentScope()) return;
       final pendingAttachment = AssistantAttachment(
         id: id,
         name: picked.name,
@@ -34,12 +45,13 @@ extension AssistantChatAttachments on AssistantChatCubit {
           modelId: modelId,
           timezone: timezone,
         );
+        if (!isCurrentScope()) return;
         final uploaded = await _repository.uploadAttachment(
           wsId: wsId,
           chatId: chatId,
           file: picked,
         );
-        if (isClosed || state.workspaceId != wsId) return;
+        if (!isCurrentScope()) return;
         _emitIfOpen(
           state.copyWith(
             composerAttachments: state.composerAttachments
@@ -50,7 +62,7 @@ extension AssistantChatAttachments on AssistantChatCubit {
           ),
         );
       } on Exception {
-        if (isClosed || state.workspaceId != wsId) return;
+        if (!isCurrentScope()) return;
         _emitIfOpen(
           state.copyWith(
             composerAttachments: state.composerAttachments

@@ -71,6 +71,7 @@ jobs:
         uses: ./.github/actions/setup-turbo-fallback-cache
         with:
           family: type-check
+          cross-lock-restore: 'true'
 
       - name: Install dependencies
         if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'

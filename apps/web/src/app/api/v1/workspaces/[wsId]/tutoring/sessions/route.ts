@@ -8,7 +8,6 @@ import {
 } from '@/legacy-api-routes/head';
 import {
   buildTutoringSessionSlots,
-  listGroupTeacherIds,
   listPotentialSchedulingConflicts,
   validateTutoringSessionScope,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/tutoring/sessions/session-create-helpers';
@@ -23,6 +22,7 @@ import {
   createTutoringRequestClient,
   resolveTutoringRouteAccess,
 } from '@/lib/tutoring/route-access';
+import { listWorkspaceTeacherIds } from '@/lib/tutoring/teachers';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -255,8 +255,7 @@ export async function POST(request: Request, { params }: Params) {
   ];
 
   if (teacherIdsToValidate.length > 0) {
-    const teacherCheck = await listGroupTeacherIds({
-      groupId: payload.groupId,
+    const teacherCheck = await listWorkspaceTeacherIds({
       normalizedWsId,
       sbAdmin,
       teacherUserIds: teacherIdsToValidate,
@@ -282,7 +281,7 @@ export async function POST(request: Request, { params }: Params) {
 
     if (!allTeachersValid) {
       return NextResponse.json(
-        { message: 'Teacher must be a manager of the selected group' },
+        { message: 'Teacher must be an eligible teacher in this workspace' },
         { status: 400 }
       );
     }

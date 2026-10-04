@@ -110,7 +110,22 @@ class _NotificationsViewState extends State<NotificationsView> {
     final maxHeight =
         MediaQuery.sizeOf(context).height * (context.isCompact ? 0.82 : 0.76);
 
-    return BlocBuilder<NotificationsCubit, NotificationsState>(
+    return BlocConsumer<NotificationsCubit, NotificationsState>(
+      listenWhen: (previous, current) =>
+          previous.scopeWorkspaceId != current.scopeWorkspaceId,
+      listener: (context, state) => unawaited(
+        context.read<NotificationsCubit>().loadTab(_selectedTab, refresh: true),
+      ),
+      buildWhen: (previous, current) =>
+          previous.scopeWorkspaceId != current.scopeWorkspaceId ||
+          !identical(
+            previous.feedFor(_selectedTab),
+            current.feedFor(_selectedTab),
+          ) ||
+          !identical(previous.pendingIds, current.pendingIds) ||
+          (!widget.pageMode &&
+              (previous.unreadCount != current.unreadCount ||
+                  previous.isArchivingAll != current.isArchivingAll)),
       builder: (context, state) {
         final feed = state.feedFor(_selectedTab);
         final list = _NotificationsList(

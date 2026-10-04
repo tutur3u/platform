@@ -2764,13 +2764,13 @@ abstract class AppLocalizations {
   /// No description provided for @assistantAttachFilesAction.
   ///
   /// In en, this message translates to:
-  /// **'Attach files'**
+  /// **'Add attachments'**
   String get assistantAttachFilesAction;
 
   /// No description provided for @assistantAttachGalleryMediaAction.
   ///
   /// In en, this message translates to:
-  /// **'Photos and videos'**
+  /// **'Photos & Videos Library'**
   String get assistantAttachGalleryMediaAction;
 
   /// No description provided for @assistantGalleryPickError.
@@ -18996,6 +18996,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sync this new item before using, editing, or deleting it.'**
   String get inventorySetupSyncFirst;
+
+  /// No description provided for @connectedOnboardingMiraTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Meet Mira, your AI companion'**
+  String get connectedOnboardingMiraTitle;
+
+  /// No description provided for @connectedOnboardingMiraSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a conversation, shape a plan, or think through your next step. Mira lives alongside the tools you use every day.'**
+  String get connectedOnboardingMiraSubtitle;
+
+  /// No description provided for @connectedOnboardingMiraToolkit.
+  ///
+  /// In en, this message translates to:
+  /// **'One place to chat with Mira and reach your tasks, calendar, finances, and inventory. Choose what works for you.'**
+  String get connectedOnboardingMiraToolkit;
+
+  /// No description provided for @connectedOnboardingOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Your pace. Your workspace. Always optional.'**
+  String get connectedOnboardingOptional;
+
+  /// No description provided for @connectedOnboardingStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {step} of {total}'**
+  String connectedOnboardingStep(int step, int total);
+
+  /// No description provided for @assistantAttachCaptureAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture & Record'**
+  String get assistantAttachCaptureAction;
+
+  /// No description provided for @assistantAttachFilesSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get assistantAttachFilesSource;
+
+  /// No description provided for @assistantCaptureAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Record audio'**
+  String get assistantCaptureAudio;
+
+  /// No description provided for @assistantCapturePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo'**
+  String get assistantCapturePhoto;
+
+  /// No description provided for @assistantCaptureVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Record video'**
+  String get assistantCaptureVideo;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

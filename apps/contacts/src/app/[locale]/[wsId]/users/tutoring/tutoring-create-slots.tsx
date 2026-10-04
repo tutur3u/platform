@@ -2,12 +2,13 @@
 
 import { CalendarPlus, CopyPlus, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
+import type { ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { formatSessionTimeRange } from './tutoring-filters';
+import { TutoringTeacherPicker } from './tutoring-teacher-picker';
 import {
   DURATION_PRESETS,
   nextWeeklySlot,
@@ -27,6 +28,7 @@ function SlotRow({
   slot,
   teacherDisabled,
   teacherOptions,
+  wsId,
 }: {
   conflicting: boolean;
   index: number;
@@ -36,6 +38,7 @@ function SlotRow({
   slot: SessionSlot;
   teacherDisabled: boolean;
   teacherOptions: ComboboxOption[];
+  wsId: string;
 }) {
   const t = useTranslations('ws-tutoring');
 
@@ -129,17 +132,16 @@ function SlotRow({
         </div>
 
         <div className="space-y-1">
-          <Label className="text-xs">{t('teacher')}</Label>
-          <Combobox
+          <Label className="text-xs">{t('tutoring_teacher')}</Label>
+          <TutoringTeacherPicker
+            key={wsId}
+            wsId={wsId}
+            knownOptions={teacherOptions}
             disabled={teacherDisabled}
-            emptyText={t('no_teachers')}
             onChange={(value) =>
               onChange({ teacherUserId: (value as string) || '' })
             }
-            options={teacherOptions}
-            placeholder={t('select_teacher')}
-            searchPlaceholder={t('search_teachers')}
-            selected={slot.teacherUserId}
+            value={slot.teacherUserId}
           />
         </div>
       </div>
@@ -153,12 +155,14 @@ export function TutoringCreateSlots({
   onChange,
   singleTeacherId,
   teacherOptions,
+  wsId,
 }: {
   conflictingIndexes: Set<number>;
   form: TutoringFormValues;
   onChange: (next: TutoringFormValues) => void;
   singleTeacherId?: string;
   teacherOptions: ComboboxOption[];
+  wsId: string;
 }) {
   const t = useTranslations('ws-tutoring');
   const atLimit = form.sessionSlots.length >= MAX_SLOTS;
@@ -237,6 +241,7 @@ export function TutoringCreateSlots({
             slot={slot}
             teacherDisabled={!form.groupId}
             teacherOptions={teacherOptions}
+            wsId={wsId}
           />
         ))}
       </div>
