@@ -61,3 +61,11 @@ Inbox and Archive; the sheet also updates its unread header.
 `notifications_cubit_test.dart` covers coalescing, retry, delayed scope responses
 and close safety. Focused tests establish request behavior, not a measured device
 frame-time improvement.
+
+The persistent notifications action button coalesces unread refreshes only for
+the same signed-in actor and workspace. An account transition clears the badge,
+retained feeds and pending state before starting a new request, including a
+switch away and back in the same workspace. Delayed old requests cannot replace
+the new count or end its loading state. This applies to the native shell action
+button and shared notifications cubit; delayed-actor and same-workspace ABA
+regressions are in `notifications_cubit_test.dart`.

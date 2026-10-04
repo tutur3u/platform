@@ -349,6 +349,79 @@ void main() {
       expect(cubit.state.inbox.status, NotificationFeedStatus.initial);
     });
 
+    test(
+      'badge refresh replaces an old actor future and clears private feed',
+      () async {
+        await cubit.close();
+        var actor = 'actor-a';
+        cubit = NotificationsCubit(
+          notificationsRepository: repository,
+          currentUserId: () => actor,
+          initialState: NotificationsState(
+            scopeWorkspaceId: 'team_ws',
+            unreadCount: 5,
+            inbox: NotificationFeedState(
+              items: [buildNotification(id: 'private')],
+            ),
+          ),
+        );
+        final oldCount = Completer<int>();
+        final newCount = Completer<int>();
+        when(() => repository.fetchUnreadCount(wsId: 'team_ws')).thenAnswer(
+          (_) => actor == 'actor-a' ? oldCount.future : newCount.future,
+        );
+        final first = cubit.refreshUnreadCount();
+        actor = 'actor-b';
+        final second = cubit.refreshUnreadCount();
+        expect(identical(first, second), isFalse);
+        expect(cubit.state.unreadCount, 0);
+        expect(cubit.state.inbox.items, isEmpty);
+        expect(cubit.state.isUnreadCountLoading, isTrue);
+        newCount.complete(2);
+        await second;
+        oldCount.complete(99);
+        await first;
+        expect(cubit.state.unreadCount, 2);
+        expect(cubit.state.isUnreadCountLoading, isFalse);
+      },
+    );
+
+    test(
+      'same-workspace actor ABA cannot restore an old badge request',
+      () async {
+        await cubit.close();
+        var actor = 'actor-a';
+        cubit = NotificationsCubit(
+          notificationsRepository: repository,
+          currentUserId: () => actor,
+        );
+        final oldA = Completer<int>();
+        final b = Completer<int>();
+        final newA = Completer<int>();
+        var request = 0;
+        when(
+          () => repository.fetchUnreadCount(wsId: any(named: 'wsId')),
+        ).thenAnswer((_) => [oldA.future, b.future, newA.future][request++]);
+        final first = cubit.refreshUnreadCount();
+        actor = 'actor-b';
+        final second = cubit.refreshUnreadCount();
+        actor = 'actor-a';
+        final third = cubit.refreshUnreadCount();
+        oldA.complete(99);
+        b.complete(88);
+        await Future.wait([first, second]);
+        expect(cubit.state.unreadCount, 0);
+        expect(cubit.state.isUnreadCountLoading, isTrue);
+        newA.complete(3);
+        await third;
+        expect(cubit.state.unreadCount, 3);
+        expect(cubit.state.isUnreadCountLoading, isFalse);
+        verify(
+          () => repository.fetchUnreadCount(wsId: any(named: 'wsId')),
+        ).called(3);
+      },
+    );
+
     test('refreshUnreadCount ignores completion after close', () async {
       final unreadCountCompleter = Completer<int>();
       when(

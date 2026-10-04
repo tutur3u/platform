@@ -16,10 +16,15 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   NotificationsCubit({
     required NotificationsRepository notificationsRepository,
     NotificationsState? initialState,
+    String? Function()? currentUserId,
   }) : _notificationsRepository = notificationsRepository,
+       _currentUserId = currentUserId ?? currentCacheUserId,
+       _scopeUserId = (currentUserId ?? currentCacheUserId)(),
        super(initialState ?? const NotificationsState());
 
   final NotificationsRepository _notificationsRepository;
+  final String? Function() _currentUserId;
+  String? _scopeUserId;
   static const CachePolicy _cachePolicy = CachePolicies.summary;
   static const _cacheTag = 'notifications:feed';
 
@@ -28,7 +33,17 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   Future<void>? _unreadRefresh;
 
   bool _isCurrentScope(int epoch, String? userId) =>
-      !isClosed && epoch == _scopeEpoch && userId == currentCacheUserId();
+      !isClosed && epoch == _scopeEpoch && userId == _currentUserId();
+
+  void _syncActorScope() {
+    final userId = _currentUserId();
+    if (_scopeUserId == userId) return;
+    _scopeUserId = userId;
+    _scopeInitialized = false;
+    _scopeEpoch++;
+    _unreadRefresh = null;
+    emit(NotificationsState(scopeWorkspaceId: state.scopeWorkspaceId));
+  }
 
   static CacheKey _cacheKey({String? wsId}) {
     return CacheKey(
@@ -56,6 +71,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
       return;
     }
 
+    _syncActorScope();
     final nextScopeWorkspaceId = _resolveScopeWorkspaceId(workspace);
     if (_scopeInitialized && state.scopeWorkspaceId == nextScopeWorkspaceId) {
       return;
@@ -104,6 +120,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
 
   Future<void> refreshUnreadCount() {
     if (isClosed) return Future<void>.value();
+    _syncActorScope();
     final running = _unreadRefresh;
     if (running != null) return running;
 
@@ -115,7 +132,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
 
   Future<void> _fetchUnreadCount(Completer<void> completion) async {
     final epoch = _scopeEpoch;
-    final userId = currentCacheUserId();
+    final userId = _currentUserId();
     final workspaceId = state.scopeWorkspaceId;
     emit(state.copyWith(isUnreadCountLoading: true));
     try {
@@ -145,7 +162,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     }
 
     final epoch = _scopeEpoch;
-    final userId = currentCacheUserId();
+    final userId = _currentUserId();
     final workspaceId = state.scopeWorkspaceId;
     final feed = state.feedFor(tab);
     if (!refresh && feed.hasLoadedOnce) {
@@ -210,7 +227,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     }
 
     final epoch = _scopeEpoch;
-    final userId = currentCacheUserId();
+    final userId = _currentUserId();
     final workspaceId = state.scopeWorkspaceId;
     final feed = state.feedFor(tab);
     if (!feed.hasLoadedOnce ||
