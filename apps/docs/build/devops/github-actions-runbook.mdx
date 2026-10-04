@@ -372,6 +372,37 @@ publishes only the `next` image bundle. Maintained Next.js Playwright coverage
 continues to run; the retained TanStack dual-stack and comparison matrix is a
 manual source reference until migration work resumes.
 
+### Retrying allocated Playwright runs
+
+E2E image bundle tags include the run ID, run attempt, and source SHA. A
+failed-jobs-only retry increments the attempt without necessarily rerunning the
+successful image preparation job. Shards can then miss that attempt's bundle
+and fall back to local image builds, spending their deadline before assertions
+finish. After the allocated run's final cleanup succeeds, retry the full workflow
+when fresh bundle preparation is needed; never cancel allocated runs, repeatedly
+retry blindly, or push over an active allocation to recover a missing bundle.
+
+Lettin fixture phases print fixed names for account creation, D1 migration and
+seeding, browser context/cookie installation, and cleanup. Timed-out owned fixture
+subprocesses receive SIGKILL at the existing 60-second deadline so a child ignoring
+SIGTERM cannot block Playwright's event loop indefinitely. These diagnostics
+identify the last entered phase; an incomplete runner log alone does not prove a
+browser, server, or database root cause. Do not include tokens, SQL, account IDs,
+response bodies, or authenticated URLs in phase logs.
+
+The general shard and dedicated invitation runtime commands use GNU `timeout`
+against the job's recorded start, allowing up to 37 minutes minus setup
+time so eight minutes remain inside the unchanged 45-minute job deadline. Timeout is
+an ordinary failed step (exit 124), not a passing or skipped test. TERM is
+followed by KILL after 30 seconds if the owned command cannot exit. Existing
+failure diagnostics, redaction, artifact upload, and `always()` cleanup still
+run; the reserve is a budget, not proof that runner or Docker failures cannot
+prevent them. Setup exhausting the runtime budget fails before starting tests.
+Validate this policy with `node --test scripts/ci/e2e-runtime-budget.test.js`.
+The Markdown persistence helper also logs page creation before navigation,
+using the same fixed phase summaries. This exposes a previously silent browser
+boundary without claiming it caused the recurring stall.
+
 ### Meet, Lettin, and Parley Cloudflare validation
 
 The standalone Meet and Lettin Cloudflare validation jobs build

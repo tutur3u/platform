@@ -259,6 +259,9 @@ jobs:
       PORTLESS_PORT: "1355"
 
     steps:
+      - name: Start E2E job budget
+        run: echo "E2E_JOB_STARTED_AT=$(date +%s)" >> "$GITHUB_ENV"
+
       - name: Check out code
         uses: actions/checkout@v7
 
@@ -353,7 +356,8 @@ jobs:
         run: |
           mkdir -p ../../tmp/e2e-diagnostics
           set -o pipefail
-          bun test:e2e -- --shard=${{ matrix.shard }}/${{ matrix.total_shards }} --grep-invert "workspace invitation|Workspace invitation" --reporter=line,blob,json 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
+          runtime_seconds=$(node ../../scripts/ci/e2e-runtime-budget.js "$E2E_JOB_STARTED_AT")
+          timeout --signal=TERM --kill-after=30s "${runtime_seconds}s" bun test:e2e -- --shard=${{ matrix.shard }}/${{ matrix.total_shards }} --grep-invert "workspace invitation|Workspace invitation" --reporter=line,blob,json 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
 
       - name: Run dedicated workspace invitation Playwright suite
         if: matrix.mode != 'shard'
@@ -361,7 +365,8 @@ jobs:
         run: |
           mkdir -p ../../tmp/e2e-diagnostics
           set -o pipefail
-          bun test:e2e -- "e2e/${{ matrix.spec }}" --reporter=line,json 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
+          runtime_seconds=$(node ../../scripts/ci/e2e-runtime-budget.js "$E2E_JOB_STARTED_AT")
+          timeout --signal=TERM --kill-after=30s "${runtime_seconds}s" bun test:e2e -- "e2e/${{ matrix.spec }}" --reporter=line,json 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
 
       - name: Collect Dockerized E2E diagnostics
         if: ${{ failure() }}
