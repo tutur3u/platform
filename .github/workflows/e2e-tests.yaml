@@ -58,8 +58,8 @@ on:
         default: cache
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' }}
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/release-please--branches--production--release-notes' && github.sha || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && github.ref != 'refs/heads/release-please--branches--production--release-notes' }}
 
 permissions:
   contents: read
@@ -101,7 +101,9 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           BEFORE_SHA: ${{ github.event.before }}
         run: |
-          if [ "$EVENT_NAME" = 'workflow_dispatch' ]; then
+          if [ "$(node scripts/ci/overflow-notes-ci.js)" = true ]; then
+            echo 'run_e2e=false' >> "$GITHUB_OUTPUT"
+          elif [ "$EVENT_NAME" = 'workflow_dispatch' ]; then
             echo 'run_e2e=true' >> "$GITHUB_OUTPUT"
           else
             result="$(node scripts/ci/release-only-changes.js "$BEFORE_SHA" "$GITHUB_SHA")"
