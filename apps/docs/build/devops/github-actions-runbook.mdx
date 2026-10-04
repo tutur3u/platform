@@ -922,6 +922,12 @@ deployment for database migrations. Database paths therefore select the
 platform deployment in the production planner, and `supabase-production.yaml`
 requires both the successful planner run and the `vercel-production-platform`
 deployment marker for the same SHA before it can run production migrations.
+The marker must explicitly name the platform workflow, deployment kind, and
+matching payload SHA, and its latest status must be successful. GitHub
+environment records with an empty payload only describe job completion; they
+are not deployment evidence. In particular, a package-deferred platform job can
+succeed without deploying the API and must never unlock contract-changing
+migrations.
 
 `production-package-resume.yaml` listens to successful package release and planner
 completions. It resumes the owning planner once per exact current production SHA
