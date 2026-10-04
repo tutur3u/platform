@@ -9,16 +9,23 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/inventory/widgets/inventory_read_warning.dart';
+import 'package:mobile/features/inventory/widgets/inventory_search_chrome.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+
+part 'inventory_audit_widgets.dart';
 
 class InventoryAuditLogsPage extends StatefulWidget {
   const InventoryAuditLogsPage({super.key});
@@ -34,6 +41,11 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage>
   static const int _pageSize = 24;
 
   late final InventoryRepository _repository;
+  final TextEditingController _searchController = TextEditingController();
+  String? _eventKind;
+  (String?, String?)? _loadedScope;
+  (String?, String?) get _scope =>
+      (context.read<AuthCubit>().state.user?.id, _wsId);
   final ScrollController _scrollController = ScrollController();
   List<InventoryAuditLogEntry> _entries = const [];
   int _count = 0;
@@ -56,6 +68,7 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage>
 
   @override
   void dispose() {
+    _searchController.dispose();
     _scrollController
       ..removeListener(_onScroll)
       ..dispose();
@@ -68,6 +81,13 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage>
       return;
     }
     final requestToken = ++_requestToken;
+    if (_loadedScope != _scope) {
+      _entries = const [];
+      _count = 0;
+      _eventKind = null;
+      _searchController.clear();
+    }
+    _loadedScope = _scope;
 
     setState(() {
       _isLoadingInitial = true;
@@ -83,7 +103,11 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage>
           forceRefresh: forceRefresh,
         ),
         onSnapshot: (result) {
-          if (!mounted || requestToken != _requestToken) return;
+          if (!mounted ||
+              requestToken != _requestToken ||
+              _loadedScope != _scope) {
+            return;
+          }
           setState(() {
             _entries = result.data;
             _count = result.count;
@@ -92,7 +116,7 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage>
         },
       );
 
-      if (!mounted || requestToken != _requestToken) {
+      if (!mounted || requestToken != _requestToken || _loadedScope != _scope) {
         return;
       }
 
@@ -103,7 +127,7 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage>
         _error = null;
       });
     } on ApiException catch (error) {
-      if (!mounted || requestToken != _requestToken) {
+      if (!mounted || requestToken != _requestToken || _loadedScope != _scope) {
         return;
       }
       setState(() {
@@ -118,7 +142,7 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage>
             : context.l10n.commonSomethingWentWrong;
       });
     } on Exception {
-      if (!mounted || requestToken != _requestToken) {
+      if (!mounted || requestToken != _requestToken || _loadedScope != _scope) {
         return;
       }
       setState(() {
@@ -151,7 +175,7 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage>
         offset: _entries.length,
       );
 
-      if (!mounted || requestToken != _requestToken) {
+      if (!mounted || requestToken != _requestToken || _loadedScope != _scope) {
         return;
       }
 
@@ -161,7 +185,7 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage>
         _hasMore = _entries.length < _count;
       });
     } on Exception {
-      if (!mounted || requestToken != _requestToken) {
+      if (!mounted || requestToken != _requestToken || _loadedScope != _scope) {
         return;
       }
       setState(() {
@@ -197,418 +221,163 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage>
   @override
   Widget build(BuildContext context) {
     return shad.Scaffold(
-      child: BlocListener<WorkspaceCubit, WorkspaceState>(
-        listenWhen: (previous, current) =>
-            previous.currentWorkspace?.id != current.currentWorkspace?.id,
-        listener: (context, state) => unawaited(_loadInitial()),
-        child: Builder(
-          builder: (context) {
-            if (_isLoadingInitial && _entries.isEmpty) {
-              return const Center(child: NovaLoadingIndicator());
-            }
+      child: BlocListener<AuthCubit, AuthState>(
+        listenWhen: (a, b) => a.user?.id != b.user?.id,
+        listener: (_, _) => unawaited(_loadInitial()),
+        child: BlocListener<WorkspaceCubit, WorkspaceState>(
+          listenWhen: (previous, current) =>
+              previous.currentWorkspace?.id != current.currentWorkspace?.id,
+          listener: (context, state) => unawaited(_loadInitial()),
+          child: Builder(
+            builder: (context) {
+              if (_isLoadingInitial && _entries.isEmpty) {
+                return const Center(child: NovaLoadingIndicator());
+              }
 
-            if (_error != null && _entries.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.all(16),
-                child: Center(
-                  child: FinanceEmptyState(
-                    icon: Icons.error_outline,
-                    title: context.l10n.commonSomethingWentWrong,
-                    body: _error ?? context.l10n.inventoryAuditLabel,
-                    action: shad.SecondaryButton(
-                      onPressed: () =>
-                          unawaited(_loadInitial(forceRefresh: true)),
-                      child: Text(context.l10n.commonRetry),
+              if (_error != null && _entries.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Center(
+                    child: FinanceEmptyState(
+                      icon: Icons.error_outline,
+                      title: context.l10n.commonSomethingWentWrong,
+                      body: _error ?? context.l10n.inventoryAuditLabel,
+                      action: shad.SecondaryButton(
+                        onPressed: () =>
+                            unawaited(_loadInitial(forceRefresh: true)),
+                        child: Text(context.l10n.commonRetry),
+                      ),
                     ),
+                  ),
+                );
+              }
+
+              return ResponsiveWrapper(
+                maxWidth: ResponsivePadding.maxContentWidth(
+                  context.deviceClass,
+                ),
+                child: NovaRefreshIndicator(
+                  onRefresh: () => _loadInitial(forceRefresh: true),
+                  child: ListView(
+                    controller: _scrollController,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      8,
+                      16,
+                      32 + MediaQuery.paddingOf(context).bottom,
+                    ),
+                    children: [
+                      InventorySearchChrome(
+                        location: Routes.inventoryAuditLogs,
+                        controller: _searchController,
+                        hint: context.l10n.inventoryRedesignLoadedSearch,
+                        onChanged: (_) => setState(() {}),
+                      ),
+                      if (_error != null)
+                        InventoryReadWarning(
+                          onRetry: () =>
+                              unawaited(_loadInitial(forceRefresh: true)),
+                        ),
+                      DropdownButtonFormField<String>(
+                        isExpanded: true,
+                        initialValue: _eventKind ?? '',
+                        items: [
+                          DropdownMenuItem(
+                            value: '',
+                            child: Text(
+                              context.l10n.inventoryRedesignAllEvents,
+                            ),
+                          ),
+                          for (final kind
+                              in _entries.map((e) => e.eventKind).toSet())
+                            DropdownMenuItem(
+                              value: kind,
+                              child: Text(_labelForEventKind(context, kind)),
+                            ),
+                        ],
+                        onChanged: (value) => setState(
+                          () => _eventKind = value?.isEmpty == true
+                              ? null
+                              : value,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        context.l10n.inventoryRedesignRecentSample(
+                          _entries.length,
+                        ),
+                      ),
+                      FinancePanel(
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            FinanceStatChip(
+                              label: context.l10n.inventoryAuditLabel,
+                              value: '$_count',
+                              icon: Icons.history_rounded,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const shad.Gap(18),
+                      if (_entries.isEmpty)
+                        FinanceEmptyState(
+                          icon: Icons.history_toggle_off_outlined,
+                          title: context.l10n.inventoryAuditLabel,
+                          body: context.l10n.inventoryAuditEmpty,
+                        )
+                      else ...[
+                        FinanceSectionHeader(
+                          title: context.l10n.inventoryAuditRecentTitle,
+                        ),
+                        const shad.Gap(12),
+                        ..._entries
+                            .where(
+                              (e) =>
+                                  (_eventKind == null ||
+                                      e.eventKind == _eventKind) &&
+                                  [
+                                        e.summary,
+                                        e.entityLabel,
+                                        e.actorDisplayName,
+                                        ...e.changedFields,
+                                      ]
+                                      .whereType<String>()
+                                      .join(' ')
+                                      .toLowerCase()
+                                      .contains(
+                                        _searchController.text
+                                            .trim()
+                                            .toLowerCase(),
+                                      ),
+                            )
+                            .map(
+                              (entry) => Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _AuditEntryCard(
+                                  entry: entry,
+                                  onTap: () => _openDetails(entry),
+                                ),
+                              ),
+                            ),
+                        if (_isLoadingMore)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: NovaLoadingIndicator(size: 20),
+                            ),
+                          ),
+                      ],
+                    ],
                   ),
                 ),
               );
-            }
-
-            return ResponsiveWrapper(
-              maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-              child: NovaRefreshIndicator(
-                onRefresh: () => _loadInitial(forceRefresh: true),
-                child: ListView(
-                  controller: _scrollController,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    8,
-                    16,
-                    32 + MediaQuery.paddingOf(context).bottom,
-                  ),
-                  children: [
-                    FinancePanel(
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          FinanceStatChip(
-                            label: context.l10n.inventoryAuditLabel,
-                            value: '$_count',
-                            icon: Icons.history_rounded,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const shad.Gap(18),
-                    if (_entries.isEmpty)
-                      FinanceEmptyState(
-                        icon: Icons.history_toggle_off_outlined,
-                        title: context.l10n.inventoryAuditLabel,
-                        body: context.l10n.inventoryAuditEmpty,
-                      )
-                    else ...[
-                      FinanceSectionHeader(
-                        title: context.l10n.inventoryAuditRecentTitle,
-                      ),
-                      const shad.Gap(12),
-                      ..._entries.map(
-                        (entry) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _AuditEntryCard(
-                            entry: entry,
-                            onTap: () => _openDetails(entry),
-                          ),
-                        ),
-                      ),
-                      if (_isLoadingMore)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          child: Center(child: NovaLoadingIndicator(size: 20)),
-                        ),
-                    ],
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class _AuditEntryCard extends StatelessWidget {
-  const _AuditEntryCard({required this.entry, required this.onTap});
-
-  final InventoryAuditLogEntry entry;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final palette = FinancePalette.of(context);
-    final changeCount = entry.fieldChanges.isNotEmpty
-        ? entry.fieldChanges.length
-        : entry.changedFields.length;
-
-    return FinancePanel(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  _displaySummary(context, entry),
-                  style: theme.typography.large.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              const shad.Gap(12),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 18,
-                color: theme.colorScheme.mutedForeground,
-              ),
-            ],
-          ),
-          const shad.Gap(8),
-          Text(
-            [
-              _labelForEntityKind(context, entry.entityKind),
-              _labelForEventKind(context, entry.eventKind),
-              if (entry.actorDisplayName?.trim().isNotEmpty ?? false)
-                entry.actorDisplayName!.trim(),
-            ].join(' • '),
-            style: theme.typography.textSmall.copyWith(
-              color: theme.colorScheme.mutedForeground,
-            ),
-          ),
-          const shad.Gap(10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _AuditBadge(
-                label: changeCount > 0
-                    ? context.l10n.inventoryAuditChanges(changeCount)
-                    : context.l10n.inventoryAuditNoChanges,
-                color: palette.accent,
-              ),
-              ...entry.fieldChanges
-                  .take(2)
-                  .map(
-                    (change) => _AuditBadge(
-                      label: _prettyFieldLabel(change.label, change.field),
-                      color: theme.colorScheme.mutedForeground,
-                    ),
-                  ),
-            ],
-          ),
-          const shad.Gap(10),
-          Text(
-            DateFormat.yMMMd().add_jm().format(entry.occurredAt.toLocal()),
-            style: theme.typography.xSmall.copyWith(
-              color: theme.colorScheme.mutedForeground,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AuditEntryDetailDialog extends StatelessWidget {
-  const _AuditEntryDetailDialog({required this.entry});
-
-  final InventoryAuditLogEntry entry;
-
-  @override
-  Widget build(BuildContext context) {
-    final fieldChanges = entry.fieldChanges;
-
-    return AppDialogScaffold(
-      title: _displaySummary(context, entry),
-      icon: Icons.history_rounded,
-      maxWidth: 680,
-      actions: [
-        shad.OutlineButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(context.l10n.commonCancel),
-        ),
-      ],
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _AuditBadge(
-                label: _labelForEntityKind(context, entry.entityKind),
-                color: FinancePalette.of(context).accent,
-              ),
-              _AuditBadge(
-                label: _labelForEventKind(context, entry.eventKind),
-                color: FinancePalette.of(context).positive,
-              ),
-            ],
-          ),
-          const shad.Gap(16),
-          _AuditDetailRow(
-            label: context.l10n.inventoryAuditActorLabel,
-            value: entry.actorDisplayName?.trim().isNotEmpty == true
-                ? entry.actorDisplayName!.trim()
-                : '—',
-          ),
-          _AuditDetailRow(
-            label: context.l10n.inventoryAuditOccurredAt,
-            value: DateFormat.yMMMd().add_jm().format(
-              entry.occurredAt.toLocal(),
-            ),
-          ),
-          if (entry.entityLabel?.trim().isNotEmpty ?? false)
-            _AuditDetailRow(
-              label: context.l10n.inventoryAuditSubject,
-              value: entry.entityLabel!.trim(),
-            ),
-          const shad.Gap(16),
-          FinanceSectionHeader(title: context.l10n.inventoryAuditChangedFields),
-          const shad.Gap(12),
-          if (fieldChanges.isEmpty)
-            Text(context.l10n.inventoryAuditNoChanges)
-          else
-            ...fieldChanges.map(
-              (change) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: FinancePanel(
-                  radius: 18,
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _prettyFieldLabel(change.label, change.field),
-                        style: shad.Theme.of(context).typography.small.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const shad.Gap(10),
-                      _AuditDiffRow(
-                        label: context.l10n.inventoryAuditBefore,
-                        value: change.before,
-                      ),
-                      const shad.Gap(6),
-                      _AuditDiffRow(
-                        label: context.l10n.inventoryAuditAfter,
-                        value: change.after,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AuditDetailRow extends StatelessWidget {
-  const _AuditDetailRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 112,
-            child: Text(
-              label,
-              style: shad.Theme.of(context).typography.textSmall.copyWith(
-                color: shad.Theme.of(context).colorScheme.mutedForeground,
-              ),
-            ),
-          ),
-          const shad.Gap(12),
-          Expanded(
-            child: Text(
-              value,
-              style: shad.Theme.of(
-                context,
-              ).typography.small.copyWith(fontWeight: FontWeight.w700),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AuditDiffRow extends StatelessWidget {
-  const _AuditDiffRow({required this.label, required this.value});
-
-  final String label;
-  final String? value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: shad.Theme.of(context).typography.xSmall.copyWith(
-            color: shad.Theme.of(context).colorScheme.mutedForeground,
+            },
           ),
         ),
-        const shad.Gap(4),
-        Text(
-          value?.trim().isNotEmpty == true ? value!.trim() : '—',
-          style: shad.Theme.of(context).typography.textSmall,
-        ),
-      ],
-    );
-  }
-}
-
-class _AuditBadge extends StatelessWidget {
-  const _AuditBadge({required this.label, required this.color});
-
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.22)),
-      ),
-      child: Text(
-        label,
-        style: theme.typography.xSmall.copyWith(
-          color: color,
-          fontWeight: FontWeight.w700,
-        ),
       ),
     );
   }
-}
-
-String _labelForEntityKind(BuildContext context, String value) {
-  return switch (value) {
-    'owner' => context.l10n.inventoryManageOwners,
-    'product' => context.l10n.inventoryProductsLabel,
-    'stock' => context.l10n.inventoryProductInventory,
-    'category' => context.l10n.inventoryManageCategories,
-    'unit' => context.l10n.inventoryManageUnits,
-    'warehouse' => context.l10n.inventoryManageWarehouses,
-    'sale' => context.l10n.inventorySalesLabel,
-    _ => _prettyFieldLabel('', value),
-  };
-}
-
-String _labelForEventKind(BuildContext context, String value) {
-  return switch (value) {
-    'created' => context.l10n.inventoryAuditEventCreated,
-    'updated' => context.l10n.inventoryAuditEventUpdated,
-    'archived' => context.l10n.inventoryAuditEventArchived,
-    'reactivated' => context.l10n.inventoryAuditEventReactivated,
-    'deleted' => context.l10n.inventoryAuditEventDeleted,
-    'sale_created' => context.l10n.inventoryAuditEventSaleCreated,
-    _ => _prettyFieldLabel('', value),
-  };
-}
-
-String _displaySummary(BuildContext context, InventoryAuditLogEntry entry) {
-  final trimmed = entry.summary.trim();
-  if (trimmed.isNotEmpty) {
-    return trimmed;
-  }
-
-  if (entry.entityLabel?.trim().isNotEmpty ?? false) {
-    return '${_labelForEventKind(context, entry.eventKind)} '
-        '${entry.entityLabel!.trim()}';
-  }
-
-  return [
-    _labelForEventKind(context, entry.eventKind),
-    _labelForEntityKind(context, entry.entityKind),
-  ].join(' ');
-}
-
-String _prettyFieldLabel(String label, String fallback) {
-  final source = label.trim().isNotEmpty ? label : fallback;
-  final normalized = source.replaceAll('_', ' ').trim();
-  if (normalized.isEmpty) {
-    return fallback;
-  }
-
-  return normalized[0].toUpperCase() + normalized.substring(1);
 }

@@ -1,10 +1,13 @@
 use super::*;
 
 pub(super) fn is_reserved_username(value: &str) -> bool {
-    let policy: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../../packages/utils/src/username-policy.json"
-    ))
-    .expect("Canonical username policy is valid JSON");
+    static POLICY: std::sync::OnceLock<serde_json::Value> = std::sync::OnceLock::new();
+    let policy = POLICY.get_or_init(|| {
+        serde_json::from_str(include_str!(
+            "../../../../packages/utils/src/username-policy.json"
+        ))
+        .expect("Canonical username policy is valid JSON")
+    });
     let normalized = value.to_lowercase().replace('_', "");
     ["common", "brands"].iter().any(|category| {
         policy[*category].as_array().is_some_and(|names| {
@@ -71,13 +74,10 @@ mod tests {
                 result.body,
                 json!({"message":"Profile change limit reached","code":"display_name_change_limit","retryAfter":expected})
             );
-            assert!(
-                result
-                    .headers
-                    .iter()
-                    .any(|(k, v)| k.eq_ignore_ascii_case("Retry-After")
-                        && v == &expected.to_string())
-            );
+            assert!(result
+                .headers
+                .iter()
+                .any(|(k, v)| k.eq_ignore_ascii_case("Retry-After") && v == &expected.to_string()));
         }
     }
     #[test]

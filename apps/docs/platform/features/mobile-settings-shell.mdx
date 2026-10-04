@@ -1,0 +1,48 @@
+---
+title: Mobile settings shell
+description: Shared shell chrome, profile settings routes and accessible edit entry
+---
+
+## Settings detail shell and profile settings
+
+All mobile Settings children use the same shell background and one shell top
+navbar with the destination title and Back. Offline is `/settings/offline`; its
+Finance, Inventory, Tasks and Calendar details are `/settings/offline/<module>`.
+They do not add body title/back bars, nested AppBars or another top safe area.
+Their scroll content reserves the shell-provided bottom padding, so the floating
+dock clears the last actionable row. Pushed destinations return to the screen
+that opened them; direct links fall back to their Settings parent.
+
+Settings → You now opens identity, avatar and account-status settings at
+`/settings/profile`, with account management at `/settings/accounts`. Legacy
+`/profile/edit` and `/profile/accounts` links redirect to those destinations.
+`/profile` retains the Overview/Timeline activity surface. Its edit entry is a
+compact icon with an accessible Identity label and tooltip. Account-switching
+shortcuts remain available there. These defaults apply in both mobile languages;
+workspace permissions and queued profile writes retain their existing rules.
+
+Licenses, onboarding replay and explicit admin edit forms intentionally open
+above the shell on the root navigator with their own full-screen chrome. Sheet
+editors retain their existing modal presentation. They never stack a second
+navbar within a shell body.
+
+Home Agenda, Profile Overview/Timeline and Calendar Agenda reclaim the dock's
+bottom scroll clearance while it is hidden, retaining the physical safe area.
+The viewport remains full height; reverse scrolling or idle restores the dock
+and its clearance. Other screens keep stable clearance by default. Text Assistant
+owns one morphing dock in both prompt and navigation modes; the shell adds no
+second footer, navigation island or dock inset. Live retains its existing shell
+navigation. While no workspace is resolved, shell navigation remains available.
+
+Shell profile reads and cache mutations are fenced by current actor and request
+generation. Account changes, logout and newer edits reject late results; cache
+writes and clearing remain ordered. Feature-level identity guards also remain.
+
+Regression coverage: `settings_detail_shell_checks.dart` exercises actual
+Offline registrations, inherited background/header and dock clearance, enlarged
+text, navbar/system/dock back, and unknown module links;
+`profile_overview_shell_test.dart` covers the icon edit entry and return path.
+`floating_shell_dock_test.dart` verifies hidden clearance and stable viewport;
+`shell_assistant_composer_test.dart` verifies one dock, draft/focus and Live
+transitions, and `shell_profile_races_test.dart` covers delayed account/cache
+completion. These widget checks do not establish installed-device or production evidence.

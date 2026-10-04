@@ -5,6 +5,8 @@ import {
   MAX_SUPPORT_INQUIRY_SUBJECT_LENGTH,
 } from '@tuturuuu/utils/constants';
 import { z } from 'zod';
+export const withinCodePointLimit = (limit: number) => (value: string) =>
+  Array.from(value).length <= limit;
 export const INQUIRY_PRODUCTS = [
   'web',
   'nova',
@@ -20,12 +22,22 @@ export const INQUIRY_PRODUCTS = [
   'other',
 ] as const;
 export const createInquirySchema = z.object({
-  name: z.string().min(2).max(MAX_SUPPORT_INQUIRY_NAME_LENGTH),
+  name: z
+    .string()
+    .min(2)
+    .refine(withinCodePointLimit(MAX_SUPPORT_INQUIRY_NAME_LENGTH)),
   email: z.email().max(MAX_EMAIL_LENGTH),
   type: z.enum(['bug', 'feature-request', 'support', 'job-application']),
   product: z.enum(INQUIRY_PRODUCTS),
-  subject: z.string().min(5).max(MAX_SUPPORT_INQUIRY_SUBJECT_LENGTH),
-  message: z.string().trim().min(10).max(MAX_SUPPORT_INQUIRY_MESSAGE_LENGTH),
+  subject: z
+    .string()
+    .min(5)
+    .refine(withinCodePointLimit(MAX_SUPPORT_INQUIRY_SUBJECT_LENGTH)),
+  message: z
+    .string()
+    .trim()
+    .min(10)
+    .refine(withinCodePointLimit(MAX_SUPPORT_INQUIRY_MESSAGE_LENGTH)),
 });
 export function permitsSupportCookieMutation(request: Request) {
   if (

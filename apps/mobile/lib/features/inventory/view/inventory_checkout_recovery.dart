@@ -66,7 +66,8 @@ extension _InventoryCheckoutRecovery on _InventoryCheckoutPageState {
     final record = _season.operation;
     final completed = _saleCompleted || _season.completedInvoiceId != null;
     final payload = record?.payload;
-    return FinanceFullscreenFormScaffold(
+    return InventoryFormScaffold(
+      embedded: widget.embedded,
       title: l10n.inventorySeasonRecoveryTitle,
       primaryActionLabel: l10n.inventorySeasonRecoveryCheck,
       onPrimaryPressed:

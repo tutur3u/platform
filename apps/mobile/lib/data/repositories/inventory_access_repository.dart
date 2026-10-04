@@ -48,21 +48,36 @@ class InventoryAccessRepository {
     );
   }
 
-  Future<CacheReadResult<bool>> readCachedInventoryAccess(String wsId) {
-    return CacheStore.instance.read<bool>(
+  Future<CacheReadResult<bool>> readCachedInventoryAccess(String wsId) async {
+    final actor = currentCacheUserId();
+    if (actor == null) {
+      return const CacheReadResult<bool>(state: CacheEntryState.missing);
+    }
+    final result = await CacheStore.instance.read<bool>(
       key: _cacheKey(wsId),
       decode: _decodeEnabled,
     );
+    return currentCacheUserId() == actor
+        ? result
+        : const CacheReadResult<bool>(state: CacheEntryState.missing);
   }
 
   Future<bool> isInventoryEnabled(String wsId) async {
+    final actor = currentCacheUserId();
+    if (actor == null) return false;
     final result = await CacheStore.instance.prefetch<bool>(
       key: _cacheKey(wsId),
       policy: _cachePolicy,
       decode: _decodeEnabled,
-      fetch: () => _api.getJson(InventoryEndpoints.access(wsId)),
+      fetch: () async {
+        final data = await _api.getJson(InventoryEndpoints.access(wsId));
+        if (currentCacheUserId() != actor) {
+          throw Exception('Inventory actor changed.');
+        }
+        return data;
+      },
       tags: const [_cacheTag],
     );
-    return result.data ?? false;
+    return currentCacheUserId() == actor && (result.data ?? false);
   }
 }

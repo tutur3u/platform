@@ -230,8 +230,10 @@ class ProfileRepository {
   }
 
   Future<void> clearCachedProfile() async {
-    final prefs = await SharedPreferences.getInstance();
+    // Capture the actor before awaiting storage: a switch must not clear the
+    // next account's profile replica.
     final userId = getCurrentUserIdSync();
+    final prefs = await SharedPreferences.getInstance();
     if (userId != null && userId.isNotEmpty) {
       await CacheStore.instance.remove(_replicaKey(userId));
       await prefs.remove(_cachedProfileKeyFor(userId));

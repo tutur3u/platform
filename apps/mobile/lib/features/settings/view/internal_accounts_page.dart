@@ -7,7 +7,13 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 class InternalAccountsPage extends StatefulWidget {
-  const InternalAccountsPage({this.repository, super.key});
+  const InternalAccountsPage({
+    this.repository,
+    this.embedded = false,
+    super.key,
+  });
+
+  final bool embedded;
 
   final InternalAccountRepository? repository;
 
@@ -81,15 +87,16 @@ class _InternalAccountsPageState extends State<InternalAccountsPage> {
     InternalAccountEdit action,
   ) async {
     final generation = _generation;
-    final updated = await Navigator.of(context).push<InternalAccount>(
-      MaterialPageRoute(
-        builder: (_) => InternalAccountEditor(
-          account: account,
-          action: action,
-          repository: _repository,
-        ),
-      ),
-    );
+    final updated = await Navigator.of(context, rootNavigator: true)
+        .push<InternalAccount>(
+          MaterialPageRoute(
+            builder: (_) => InternalAccountEditor(
+              account: account,
+              action: action,
+              repository: _repository,
+            ),
+          ),
+        );
     if (!mounted || updated == null || generation != _generation) return;
     setState(() {
       _accounts = [
@@ -102,134 +109,135 @@ class _InternalAccountsPageState extends State<InternalAccountsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.adminAccountsTitle)),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 960),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: TextField(
-                  controller: _search,
-                  decoration: InputDecoration(
-                    hintText: l10n.adminAccountsSearch,
-                    prefixIcon: const Icon(Icons.search),
-                  ),
-                  onChanged: (_) {
-                    _debounce?.cancel();
-                    // Invalidate in-flight results before debounce.
-                    _generation++;
-                    _debounce = Timer(
-                      const Duration(milliseconds: 300),
-                      () => unawaited(_load()),
-                    );
-                  },
+    final body = Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 960),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                controller: _search,
+                decoration: InputDecoration(
+                  hintText: l10n.adminAccountsSearch,
+                  prefixIcon: const Icon(Icons.search),
                 ),
+                onChanged: (_) {
+                  _debounce?.cancel();
+                  // Invalidate in-flight results before debounce.
+                  _generation++;
+                  _debounce = Timer(
+                    const Duration(milliseconds: 300),
+                    () => unawaited(_load()),
+                  );
+                },
               ),
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-                    children: [
-                      if (_loading && _accounts.isEmpty)
-                        const Center(child: NovaLoadingIndicator()),
-                      if (_failed)
-                        ListTile(
-                          title: Text(l10n.adminAccountsUnavailable),
-                          trailing: IconButton(
-                            tooltip: l10n.commonRetry,
-                            onPressed: _load,
-                            icon: const Icon(Icons.refresh),
-                          ),
+            ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _load,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    0,
+                    16,
+                    32 + MediaQuery.paddingOf(context).bottom,
+                  ),
+                  children: [
+                    if (_loading && _accounts.isEmpty)
+                      const Center(child: NovaLoadingIndicator()),
+                    if (_failed)
+                      ListTile(
+                        title: Text(l10n.adminAccountsUnavailable),
+                        trailing: IconButton(
+                          tooltip: l10n.commonRetry,
+                          onPressed: _load,
+                          icon: const Icon(Icons.refresh),
                         ),
-                      if (!_loading && !_failed && _accounts.isEmpty)
-                        ListTile(title: Text(l10n.adminAccountsEmpty)),
-                      for (final account in _accounts)
-                        ExpansionTile(
-                          key: ValueKey(account.id),
-                          title: Text(account.displayName ?? account.email),
-                          subtitle: Text(
-                            [
-                              account.email,
-                              if (account.isDisabled)
-                                l10n.adminAccountsDisabled
-                              else
-                                l10n.adminAccountsActive,
-                            ].join('\n'),
+                      ),
+                    if (!_loading && !_failed && _accounts.isEmpty)
+                      ListTile(title: Text(l10n.adminAccountsEmpty)),
+                    for (final account in _accounts)
+                      ExpansionTile(
+                        key: ValueKey(account.id),
+                        title: Text(account.displayName ?? account.email),
+                        subtitle: Text(
+                          [
+                            account.email,
+                            if (account.isDisabled)
+                              l10n.adminAccountsDisabled
+                            else
+                              l10n.adminAccountsActive,
+                          ].join('\n'),
+                        ),
+                        children: [
+                          ListTile(
+                            leading: const Icon(Icons.edit_outlined),
+                            title: Text(l10n.adminAccountsEditProfile),
+                            onTap: () =>
+                                _edit(account, InternalAccountEdit.profile),
                           ),
-                          children: [
+                          if (!account.isSelf) ...[
                             ListTile(
-                              leading: const Icon(Icons.edit_outlined),
-                              title: Text(l10n.adminAccountsEditProfile),
+                              leading: const Icon(Icons.password_outlined),
+                              title: Text(l10n.adminAccountsResetPassword),
                               onTap: () =>
-                                  _edit(account, InternalAccountEdit.profile),
+                                  _edit(account, InternalAccountEdit.password),
                             ),
-                            if (!account.isSelf) ...[
-                              ListTile(
-                                leading: const Icon(Icons.password_outlined),
-                                title: Text(l10n.adminAccountsResetPassword),
-                                onTap: () => _edit(
-                                  account,
-                                  InternalAccountEdit.password,
-                                ),
+                            ListTile(
+                              leading: const Icon(Icons.phonelink_lock),
+                              title: Text(l10n.adminAccountsResetMfa),
+                              onTap: () => _edit(
+                                account,
+                                InternalAccountEdit.authenticators,
                               ),
-                              ListTile(
-                                leading: const Icon(Icons.phonelink_lock),
-                                title: Text(l10n.adminAccountsResetMfa),
-                                onTap: () => _edit(
-                                  account,
-                                  InternalAccountEdit.authenticators,
-                                ),
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.verified_user_outlined),
+                              title: Text(
+                                account.mfaRequired
+                                    ? l10n.adminAccountsOptionalMfa
+                                    : l10n.adminAccountsRequireMfa,
                               ),
-                              ListTile(
-                                leading: const Icon(
-                                  Icons.verified_user_outlined,
-                                ),
-                                title: Text(
-                                  account.mfaRequired
-                                      ? l10n.adminAccountsOptionalMfa
-                                      : l10n.adminAccountsRequireMfa,
-                                ),
-                                enabled: account.mfaPolicyAvailable,
-                                onTap: () => _edit(
-                                  account,
-                                  InternalAccountEdit.mfaPolicy,
-                                ),
+                              enabled: account.mfaPolicyAvailable,
+                              onTap: () =>
+                                  _edit(account, InternalAccountEdit.mfaPolicy),
+                            ),
+                            ListTile(
+                              leading: Icon(
+                                account.isDisabled
+                                    ? Icons.lock_open_outlined
+                                    : Icons.lock_outline,
                               ),
-                              ListTile(
-                                leading: Icon(
-                                  account.isDisabled
-                                      ? Icons.lock_open_outlined
-                                      : Icons.lock_outline,
-                                ),
-                                title: Text(
-                                  account.isDisabled
-                                      ? l10n.adminAccountsEnableAccess
-                                      : l10n.adminAccountsDisableAccess,
-                                ),
-                                onTap: () =>
-                                    _edit(account, InternalAccountEdit.access),
+                              title: Text(
+                                account.isDisabled
+                                    ? l10n.adminAccountsEnableAccess
+                                    : l10n.adminAccountsDisableAccess,
                               ),
-                            ],
+                              onTap: () =>
+                                  _edit(account, InternalAccountEdit.access),
+                            ),
                           ],
-                        ),
-                      if (_cursor != null)
-                        TextButton(
-                          onPressed: _loading ? null : () => _load(more: true),
-                          child: Text(l10n.adminAccountsMore),
-                        ),
-                    ],
-                  ),
+                        ],
+                      ),
+                    if (_cursor != null)
+                      TextButton(
+                        onPressed: _loading ? null : () => _load(more: true),
+                        child: Text(l10n.adminAccountsMore),
+                      ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
+    );
+    if (widget.embedded) return body;
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.adminAccountsTitle)),
+      body: body,
     );
   }
 }

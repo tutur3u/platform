@@ -85,7 +85,9 @@ import { refreshCliSession } from './cli/auth';
 import { type CliSession, normalizeBaseUrl } from './cli/config';
 import { CalendarClient } from './platform-calendar';
 import { DevboxesClient } from './platform-devbox';
+import { getInfrastructureOrigin } from './platform-devbox-fleet';
 import { ExternalClient } from './platform-external-admin';
+import { shouldAttachSdkAuth } from './platform-sdk-auth';
 
 export { ExternalClient } from './platform-external-admin';
 
@@ -118,7 +120,6 @@ export interface TuturuuuUserClientConfig {
 }
 
 const SESSION_REFRESH_SKEW_MS = 60_000;
-const PROTOCOL_RELATIVE_URL_PATTERN = /^\/\//u;
 const TASK_DESCRIPTION_CHUNK_SIZE = 180_000;
 const DEFAULT_CALENDAR_BASE_URL = 'https://calendar.tuturuuu.com';
 const DEFAULT_FINANCE_BASE_URL = 'https://finance.tuturuuu.com';
@@ -141,43 +142,6 @@ type TaskDescriptionChunkPayloadField =
 
 function getAuthorizationHeader(accessToken: string) {
   return `Bearer ${accessToken}`;
-}
-
-function getRequestInfoUrl(input: RequestInfo | URL) {
-  if (typeof input === 'string') {
-    return input;
-  }
-
-  if (input instanceof URL) {
-    return input.toString();
-  }
-
-  if (typeof Request !== 'undefined' && input instanceof Request) {
-    return input.url;
-  }
-
-  const requestLike = input as { url?: unknown };
-  return typeof requestLike.url === 'string' ? requestLike.url : null;
-}
-
-function shouldAttachSdkAuth(input: RequestInfo | URL, baseUrl: string) {
-  const requestUrl = getRequestInfoUrl(input);
-
-  if (!requestUrl) {
-    return false;
-  }
-
-  const trimmedUrl = requestUrl.trim();
-
-  if (PROTOCOL_RELATIVE_URL_PATTERN.test(trimmedUrl)) {
-    return false;
-  }
-
-  try {
-    return new URL(trimmedUrl).origin === baseUrl;
-  } catch {
-    return true;
-  }
 }
 
 function inferSatelliteAppBaseUrl(
@@ -921,7 +885,10 @@ export class TuturuuuUserClient {
     this.onSessionRefresh = config.onSessionRefresh;
     this.refreshToken = config.refreshToken;
     this.calendar = new CalendarClient(this);
-    this.devboxes = new DevboxesClient(this.getClientOptions());
+    this.devboxes = new DevboxesClient(
+      this.getClientOptions(),
+      this.createClientOptions(getInfrastructureOrigin(this.baseUrl))
+    );
     this.external = new ExternalClient(this);
     this.finance = new FinanceClient(this);
     this.tasks = new TasksClient(this);

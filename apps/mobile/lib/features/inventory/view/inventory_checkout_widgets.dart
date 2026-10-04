@@ -209,29 +209,32 @@ class _CategoryFilterChip extends StatelessWidget {
     final accent = FinancePalette.of(context).accent;
     final theme = shad.Theme.of(context);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: selected
-                ? accent.withValues(alpha: 0.14)
-                : theme.colorScheme.card,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 44),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(999),
+          child: Ink(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
               color: selected
-                  ? accent.withValues(alpha: 0.4)
-                  : theme.colorScheme.border.withValues(alpha: 0.72),
+                  ? accent.withValues(alpha: 0.14)
+                  : theme.colorScheme.card,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: selected
+                    ? accent.withValues(alpha: 0.4)
+                    : theme.colorScheme.border.withValues(alpha: 0.72),
+              ),
             ),
-          ),
-          child: Text(
-            label,
-            style: theme.typography.xSmall.copyWith(
-              fontWeight: FontWeight.w700,
-              color: selected ? accent : theme.colorScheme.mutedForeground,
+            child: Text(
+              label,
+              style: theme.typography.xSmall.copyWith(
+                fontWeight: FontWeight.w700,
+                color: selected ? accent : theme.colorScheme.mutedForeground,
+              ),
             ),
           ),
         ),
@@ -269,7 +272,7 @@ class _CheckoutProductCard extends StatelessWidget {
     final amountLabel = row.inventory.amount == null
         ? null
         : [
-            row.inventory.amount!.toStringAsFixed(0),
+            inventoryStockAmount(context, row.inventory.amount),
             row.inventory.unitName ?? '',
           ].join(' ').trim();
 
@@ -289,7 +292,7 @@ class _CheckoutProductCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      row.product.name ?? 'Untitled product',
+                      row.product.name ?? context.l10n.inventoryProductUntitled,
                       style: theme.typography.large.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -386,7 +389,7 @@ class _CheckoutCartRowCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      row.product.name ?? 'Untitled product',
+                      row.product.name ?? context.l10n.inventoryProductUntitled,
                       style: theme.typography.large.copyWith(
                         fontWeight: FontWeight.w700,
                       ),

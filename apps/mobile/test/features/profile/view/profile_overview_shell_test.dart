@@ -37,6 +37,7 @@ import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
+import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -61,6 +62,7 @@ Future<void> _pump(WidgetTester tester) async {
 }
 
 void main() {
+  tearDown(() => GoRouter.optionURLReflectsImperativeAPIs = false);
   late AppTabCubit apps;
   late ExperimentalAppsCubit experiments;
   late _Auth auth;
@@ -116,6 +118,7 @@ void main() {
   });
 
   setUp(() async {
+    GoRouter.optionURLReflectsImperativeAPIs = true;
     textScale = 2;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
@@ -130,6 +133,7 @@ void main() {
     await experiments.load();
     auth = _Auth();
     workspaces = _Workspaces();
+    when(() => workspaces.hasAuthenticatedActor).thenReturn(true);
     profile = _Profile();
     whenListen(
       auth,
@@ -158,6 +162,7 @@ void main() {
       workspaces,
       const Stream<WorkspaceState>.empty(),
       initialState: const WorkspaceState(
+        workspaces: [Workspace(id: 'synthetic-personal', personal: true)],
         currentWorkspace: Workspace(id: 'synthetic-personal', personal: true),
       ),
     );
@@ -182,10 +187,11 @@ void main() {
             GoRoute(path: Routes.home, builder: (_, _) => const SizedBox()),
             GoRoute(
               path: Routes.profileRoot,
-              builder: (_, _) => const ProfileOverviewPage(),
+              builder: (_, _) =>
+                  ProfileOverviewPage(cacheUserId: () => auth.state.user?.id),
             ),
             GoRoute(
-              path: Routes.profileEdit,
+              path: Routes.settingsProfile,
               builder: (_, _) => const Text('Identity editor'),
             ),
             GoRoute(
@@ -531,7 +537,11 @@ void main() {
           );
           expect(find.byTooltip('Switch account'), findsNothing);
           final navbarRect = tester.getRect(find.byType(shad.AppBar).first);
-          expect(browserRect.top, greaterThanOrEqualTo(navbarRect.bottom));
+          expect(browserRect.top, lessThanOrEqualTo(navbarRect.top));
+          expect(
+            tester.getTopLeft(find.text('Synthetic task creation')).dy,
+            greaterThanOrEqualTo(navbarRect.bottom),
+          );
           await tester.tap(
             find.byKey(const ValueKey('shell-action-button-profile-day-trail')),
           );
@@ -584,6 +594,12 @@ void main() {
   ) async {
     await mount(tester);
     expect(find.byType(ProfileOverviewPage), findsOneWidget);
+    expect(
+      tester
+          .widget<FloatingShellDock>(find.byType(FloatingShellDock))
+          .reclaimNavigationClearanceWhenHidden,
+      isTrue,
+    );
     expect(find.byType(SettingsPanel), findsNothing);
     expect(tester.takeException(), isNull);
   });
@@ -632,12 +648,9 @@ void main() {
         ),
         findsNothing,
       );
-      await tester.tap(find.text('Identity'));
+      await tester.tap(find.byTooltip('Identity'));
       await _pump(tester);
-      expect(
-        router.routeInformationProvider.value.uri.path,
-        Routes.profileEdit,
-      );
+      expect(router.state.matchedLocation, Routes.settingsProfile);
       await tester.binding.handlePopRoute();
       await _pump(tester);
       expect(

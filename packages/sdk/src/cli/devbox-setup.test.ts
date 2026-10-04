@@ -335,6 +335,10 @@ describe('devbox setup checkout and runner service', () => {
     const wrapperFile = join(configDir, 'devbox-runner.sh');
     await expect(readFile(wrapperFile, 'utf8')).resolves.toContain('set -a');
     await expect(readFile(wrapperFile, 'utf8')).resolves.toContain(
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: generated shell syntax.
+      ': "${TUTURUUU_DEVBOX_AUTO_UPGRADE:=false}"'
+    );
+    await expect(readFile(wrapperFile, 'utf8')).resolves.toContain(
       `. '${tokenFile}'\nset +a`
     );
     await expect(readFile(wrapperFile, 'utf8')).resolves.toContain(

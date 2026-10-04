@@ -69,3 +69,50 @@ test('omits known Git bookkeeping in new notes but preserves published originals
     `${header}* **contacts:** merge duplicate contacts ${commit(second)}\n${old}`
   );
 });
+
+const offlineHash = 'a45d63498cc1e686d1d070f5861cf938c4e9a9ef';
+const offlineMerge = '2f0f39763daea56f1029fcc3e99e0be53c60e106';
+const offlineTitle =
+  '* **mobile:** support offline data and safe inventory checkout';
+const offlineMergeTitle =
+  '* **mobile:** support offline data, cached images, and safe inventory checkout';
+
+test('consolidates only the proven #5734 source and merge pair in either order', () => {
+  const original = `${offlineTitle} ${commit(offlineHash)}`;
+  const merge = `${offlineMergeTitle} ${issue} ${commit(offlineMerge)}`;
+  for (const reverse of [false, true]) {
+    const lines = reverse ? [merge, original] : [original, merge];
+    const result = normalizeReleaseNotes(
+      `${header}${lines.join('\n')}\n${old}`,
+      old
+    );
+    const references = reverse
+      ? `${issue} ${commit(offlineMerge)} ${commit(offlineHash)}`
+      : `${commit(offlineHash)} ${issue} ${commit(offlineMerge)}`;
+    assert.equal(result, `${header}${offlineMergeTitle} ${references}\n${old}`);
+    assert.equal(normalizeReleaseNotes(result, old), result);
+  }
+});
+
+test('does not infer equivalent releases from similar titles or unrelated hashes', () => {
+  for (const [left, right] of [
+    [hash, offlineMerge],
+    [offlineHash, second],
+    [offlineHash, offlineHash],
+  ]) {
+    const input = `${header}${offlineTitle} ${commit(left)}\n${offlineMergeTitle} ${commit(right)}\n${old}`;
+    assert.equal(normalizeReleaseNotes(input, old), input);
+  }
+  const standalone = `${header}${offlineTitle} ${commit(offlineHash)}\n${old}`;
+  assert.equal(normalizeReleaseNotes(standalone, old), standalone);
+});
+
+test('keeps the proven mobile pair separate across sections and published history', () => {
+  const source = `${offlineTitle} ${commit(offlineHash)}`;
+  const merge = `${offlineMergeTitle} ${commit(offlineMerge)}`;
+  const separated = `${header}${source}\n### Features\n${merge}\n${old}`;
+  assert.equal(normalizeReleaseNotes(separated, old), separated);
+  const published = `## [1.0.0](https://example.test/old)\n${source}\n${merge}\n`;
+  const input = `${header}${source}\n${published}`;
+  assert.equal(normalizeReleaseNotes(input, published), input);
+});

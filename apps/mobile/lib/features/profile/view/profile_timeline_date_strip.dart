@@ -33,6 +33,11 @@ class ProfileTimelineDateStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!open && !showToggle) {
+      return const Column(
+        children: [SizedBox(height: 0, key: ValueKey('timeline-date-slot'))],
+      );
+    }
     final theme = shad.Theme.of(context);
     final locale = Localizations.localeOf(context).toString();
     final l10n = context.l10n;

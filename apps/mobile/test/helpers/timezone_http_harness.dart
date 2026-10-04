@@ -16,7 +16,10 @@ class _Auth extends Mock implements GoTrueClient {}
 class _Session extends Mock implements Session {}
 
 class TimezoneHttpHarness {
-  TimezoneHttpHarness({bool rotateTokenOnRefresh = false}) {
+  TimezoneHttpHarness({
+    bool rotateTokenOnRefresh = false,
+    DateTime Function()? clock,
+  }) {
     final origins = ApiOrigins.forFlavor(AppFlavor.production);
     final client = _Client();
     final auth = _Auth();
@@ -49,8 +52,9 @@ class TimezoneHttpHarness {
         requests.add(request);
         return await respond(request);
       }),
+      clock: clock,
     );
-    repository = TimezoneSettingsRepository(apiClient: api);
+    repository = TimezoneSettingsRepository(apiClient: api, clock: clock);
   }
   int refreshes = 0;
   String accessToken = 'synthetic-access';

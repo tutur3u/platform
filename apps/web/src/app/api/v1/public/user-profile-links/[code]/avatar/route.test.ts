@@ -103,3 +103,27 @@ it.each(['image/svg+xml', 'image/avif', 'text/plain'])(
     expect(f.ticket).not.toHaveBeenCalled();
   }
 );
+
+it.each(['image/png', 'image/jpeg', 'image/webp', 'image/gif'])(
+  'accepts validated %s through the optimized WebP ticket',
+  async (contentType) => {
+    const response = await POST(
+      new Request('https://example.test/api/avatar', {
+        method: 'POST',
+        body: JSON.stringify({ contentType }),
+      }),
+      context
+    );
+    expect(response.status).toBe(200);
+    expect(f.ticket).toHaveBeenCalledWith(
+      expect.stringMatching(/^[0-9a-f-]{36}$/),
+      'avatar',
+      expect.any(String),
+      undefined,
+      `${wsId}/users/profile-link/active-link`
+    );
+    const body = await response.json();
+    expect(body.path).toBe('synthetic.webp');
+    expect(body).not.toHaveProperty('signedUrl');
+  }
+);

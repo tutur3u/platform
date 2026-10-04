@@ -4,6 +4,54 @@ import 'package:mobile/core/router/routes.dart';
 
 void main() {
   group('resolveMobileDeepLink', () {
+    test('Settings profile and Offline links preserve native destinations', () {
+      for (final entry in {
+        'settings/profile': Routes.settingsProfile,
+        'settings/accounts': Routes.settingsAccounts,
+        'profile/edit': Routes.settingsProfile,
+        'profile/accounts': Routes.settingsAccounts,
+        'settings/offline': Routes.settingsOffline,
+        'settings/offline/finance': Routes.settingsOfflineModulePath('finance'),
+        'settings/offline/unknown': Routes.settingsOffline,
+      }.entries) {
+        expect(
+          resolveMobileDeepLink(
+            Uri.parse('https://tuturuuu.com/en/personal/${entry.key}'),
+          )?.location,
+          entry.value,
+        );
+      }
+    });
+    test('preserves dedicated native Inventory catalog and period routes', () {
+      for (final catalog in [
+        'owners',
+        'categories',
+        'manufacturers',
+        'units',
+        'warehouses',
+        'financeCategories',
+      ]) {
+        expect(
+          resolveMobileDeepLink(
+            Uri.parse('https://tuturuuu.com/ws/inventory/manage/$catalog'),
+          )?.location,
+          Routes.inventoryCatalogPath(catalog),
+        );
+      }
+      expect(
+        resolveMobileDeepLink(
+          Uri.parse('https://tuturuuu.com/ws/inventory/sales-periods'),
+        )?.location,
+        Routes.inventorySalesPeriods,
+      );
+      expect(
+        resolveMobileDeepLink(
+          Uri.parse('https://tuturuuu.com/ws/inventory/manage/unknown'),
+        )?.location,
+        Routes.inventoryManage,
+      );
+    });
+
     test('preserves meeting room links and rejects other origins', () {
       expect(
         resolveMobileDeepLink(

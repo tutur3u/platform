@@ -37,13 +37,14 @@ import { useEffect, useState } from 'react';
 import * as z from 'zod';
 import { Panel } from '@/components/landing/shared/section-shell';
 import { useCurrentUserProfile } from '@/hooks/use-current-user-profile';
+import { withinCodePointLimit } from '@/lib/support-inquiry-guard';
 import { inquiryPrefillName } from './contact-form-values';
 
 const formSchema = z.object({
   name: z
     .string()
     .min(2, 'Name must be at least 2 characters')
-    .max(MAX_SUPPORT_INQUIRY_NAME_LENGTH),
+    .refine(withinCodePointLimit(MAX_SUPPORT_INQUIRY_NAME_LENGTH)),
   email: z.string().email('Please enter a valid email').max(MAX_EMAIL_LENGTH),
   type: z.enum(['bug', 'feature-request', 'support', 'job-application'], {
     error: 'Please select an inquiry type',
@@ -65,12 +66,12 @@ const formSchema = z.object({
   subject: z
     .string()
     .min(5, 'Subject must be at least 5 characters')
-    .max(MAX_SUPPORT_INQUIRY_SUBJECT_LENGTH),
+    .refine(withinCodePointLimit(MAX_SUPPORT_INQUIRY_SUBJECT_LENGTH)),
   message: z
     .string()
     .trim()
     .min(10, 'Message must be at least 10 characters')
-    .max(MAX_SUPPORT_INQUIRY_MESSAGE_LENGTH),
+    .refine(withinCodePointLimit(MAX_SUPPORT_INQUIRY_MESSAGE_LENGTH)),
 });
 
 /** Mono micro-label: the same treatment used for eyebrows across marketing. */
