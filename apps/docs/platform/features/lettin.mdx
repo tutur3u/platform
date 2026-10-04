@@ -91,7 +91,14 @@ name independent of its formatting hint or validation message. This applies to
 Markdown editing on the world notebook and entry editor; read-only documents
 retain their existing editing restriction. The mounted `rich-editor.test.tsx`
 regression checks the exact field label with the real editor, and
-`lettin-wiki.noauth.spec.ts` checks browser save and reload behavior.
+`lettin-wiki.noauth.spec.ts` checks browser save and reload behavior. Its first
+scenario logs fixed phase names and completion/failure markers without fixture
+IDs, credentials, or response bodies. The project creation response has a
+30-second deadline within the unchanged 180-second scenario limit. Use the last
+phase marker to locate interrupted browser runs; missing trace artifacts or a
+runner shutdown do not establish that the product scenario passed.
+`lettin-e2e-phase.test.ts` covers the bounded response wait, exact response
+matching, failure propagation, and safe phase diagnostics.
 
 Saving never changes the public revision. Publish a world's notebook to make its
 public page visible, and publish entries separately. Unpublishing a world hides all

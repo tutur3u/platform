@@ -7,6 +7,7 @@ import {
   assertSafeE2EEnvironment,
   LOCAL_E2E_APP_COORDINATION_SECRET,
 } from './helpers/environment';
+import { verifyLettinMarkdownPersistence } from './helpers/lettin-markdown-persistence';
 import { assertLettinProfileLimits } from './helpers/lettin-profile-limits';
 import { createLettinBrowserContext } from './helpers/lettin-session';
 import {
@@ -151,75 +152,11 @@ test.describe
         session
       );
       try {
-        const page = await context.newPage();
-        const errors: string[] = [];
-        page.on('pageerror', (error) => errors.push(error.message));
-        await page.goto(`${origin}/${workspaceId}/wiki`);
-        await page
-          .getByRole('button', { name: 'Start a project', exact: true })
-          .click();
-        await page
-          .getByRole('dialog')
-          .getByLabel('Title', { exact: true })
-          .fill('Synthetic browser notebook');
-        const creationResponse = page.waitForResponse(
-          (response) =>
-            response.request().method() === 'POST' &&
-            new URL(response.url()).pathname ===
-              `/api/v1/workspaces/${workspaceId}/lettin`
-        );
-        await page
-          .getByRole('button', { name: 'Create project', exact: true })
-          .click();
-        const created = await creationResponse;
-        expect(created.status(), await created.text()).toBe(200);
-        const project = await created.json();
-        expect(project.id).toMatch(/^[0-9a-f-]{36}$/);
-        await expect(page).toHaveURL(
-          new RegExp(`/worlds/${project.id}(?:[?]|$)`),
-          { timeout: 30_000 }
-        );
-        await page
-          .getByRole('button', { name: 'World notebook', exact: true })
-          .click({ timeout: 15_000 });
-        await test.step('Open the initialized Markdown editor', async () => {
-          await page
-            .getByRole('button', { name: 'Markdown', exact: true })
-            .click({ timeout: 15_000 });
-        });
-        await page
-          .getByLabel('Markdown source', { exact: true })
-          .fill(
-            '# Synthetic chapter\n\n**A memorable opening.**\n\n- First scene\n- Second scene',
-            { timeout: 15_000 }
-          );
-        await expect(
-          page.getByRole('button', { name: 'Save draft', exact: true })
-        ).toBeDisabled();
-        await test.step('Apply Markdown and save its draft', async () => {
-          await page
-            .getByRole('button', { name: 'Apply Markdown', exact: true })
-            .click({ timeout: 15_000 });
-          await page
-            .getByRole('button', { name: 'Save draft', exact: true })
-            .click({ timeout: 15_000 });
-        });
-        await expect(
-          page.getByText('Draft saved', { exact: true })
-        ).toBeVisible();
-        await page.reload();
-        await page
-          .getByRole('button', { name: 'World notebook', exact: true })
-          .click({ timeout: 15_000 });
-        await expect(page.locator('.wiki-text-editor')).toContainText(
-          'A memorable opening.'
-        );
-        await expect(page.locator('.wiki-text-editor strong')).toContainText(
-          'A memorable opening.'
-        );
-        expect(errors).toEqual([]);
+        await verifyLettinMarkdownPersistence(context, origin!, workspaceId);
       } finally {
+        console.info('[lettin-e2e] close browser context: started');
         await context.close();
+        console.info('[lettin-e2e] close browser context: completed');
       }
     });
 
