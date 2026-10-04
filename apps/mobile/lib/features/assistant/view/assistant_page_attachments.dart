@@ -2,6 +2,7 @@ part of 'assistant_page.dart';
 
 extension _AssistantAttachments on _AssistantPageState {
   Future<void> _recordVoiceMessage(String wsId) async {
+    final scopeVersion = _chatCubit.attachmentScopeVersion;
     final recording = await showAdaptiveSheet<AssistantVoiceMessageResult>(
       context: context,
       useRootNavigator: true,
@@ -16,8 +17,12 @@ extension _AssistantAttachments on _AssistantPageState {
       files: [recording.file],
       modelId: _shellCubit.state.selectedModel.value,
       timezone: await getCurrentTimezoneIdentifier(),
+      expectedWorkspaceVersion: scopeVersion,
     );
-    if (mounted && recording.sendNow) {
+    if (mounted &&
+        recording.sendNow &&
+        _chatCubit.state.workspaceId == wsId &&
+        _chatCubit.attachmentScopeVersion == scopeVersion) {
       await _handleSend(
         wsId,
         _shellCubit.state,
@@ -28,6 +33,7 @@ extension _AssistantAttachments on _AssistantPageState {
   }
 
   Future<void> _pickFiles(String wsId) async {
+    final scopeVersion = _chatCubit.attachmentScopeVersion;
     final result = await FilePicker.pickFiles();
     if (result.isEmpty || !mounted || _chatCubit.state.workspaceId != wsId) {
       return;
@@ -38,10 +44,12 @@ extension _AssistantAttachments on _AssistantPageState {
       files: result,
       modelId: _shellCubit.state.selectedModel.value,
       timezone: await getCurrentTimezoneIdentifier(),
+      expectedWorkspaceVersion: scopeVersion,
     );
   }
 
   Future<void> _pickGalleryMedia(String wsId) async {
+    final scopeVersion = _chatCubit.attachmentScopeVersion;
     try {
       final media = await ImagePicker().pickMultipleMedia();
       if (media.isEmpty || !mounted || _chatCubit.state.workspaceId != wsId) {
@@ -54,6 +62,7 @@ extension _AssistantAttachments on _AssistantPageState {
         files: files,
         modelId: _shellCubit.state.selectedModel.value,
         timezone: await getCurrentTimezoneIdentifier(),
+        expectedWorkspaceVersion: scopeVersion,
       );
     } on Exception {
       if (mounted) _showInlineNotice(context.l10n.assistantGalleryPickError);
@@ -119,6 +128,7 @@ extension _AssistantAttachments on _AssistantPageState {
   }
 
   Future<void> _captureMedia(String wsId, {required bool video}) async {
+    final scopeVersion = _chatCubit.attachmentScopeVersion;
     try {
       final picker = ImagePicker();
       final media = video
@@ -132,6 +142,7 @@ extension _AssistantAttachments on _AssistantPageState {
         files: [GalleryPlatformFile(media)],
         modelId: _shellCubit.state.selectedModel.value,
         timezone: await getCurrentTimezoneIdentifier(),
+        expectedWorkspaceVersion: scopeVersion,
       );
     } on Exception {
       if (mounted) _showInlineNotice(context.l10n.assistantGalleryPickError);

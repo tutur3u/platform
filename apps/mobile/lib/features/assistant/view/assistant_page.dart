@@ -471,7 +471,11 @@ class _AssistantPageState extends State<AssistantPage>
     AssistantChatState chatState,
     AssistantLiveState liveState,
   ) async {
-    if (_chatCubit.state.status == AssistantChatStatus.restoring) return;
+    final workspaceVersion = _chatCubit.attachmentScopeVersion;
+    if (_chatCubit.state.workspaceId != wsId ||
+        _chatCubit.state.status == AssistantChatStatus.restoring) {
+      return;
+    }
     if (chatState.composerAttachments.any(
       (attachment) =>
           attachment.uploadState == AssistantAttachmentUploadState.uploading,
@@ -502,6 +506,7 @@ class _AssistantPageState extends State<AssistantPage>
         attachments: attachments,
       );
       if (!mounted ||
+          _chatCubit.attachmentScopeVersion != workspaceVersion ||
           _liveCubit.state.status == AssistantLiveConnectionStatus.error) {
         return;
       }
@@ -509,6 +514,7 @@ class _AssistantPageState extends State<AssistantPage>
     } else {
       final timezone = await getCurrentTimezoneIdentifier();
       if (!mounted ||
+          _chatCubit.attachmentScopeVersion != workspaceVersion ||
           _chatCubit.state.status == AssistantChatStatus.restoring ||
           _chatCubit.state.workspaceId != wsId) {
         return;

@@ -357,3 +357,11 @@ phones. Registered mini-app actions consume space only when present; secondary
 actions remain reachable from the top navbar on narrow screens. The six-item
 320px no-action regression checks that touch targets stay at least 44px; this
 does not claim every possible mini-app/action combination has that width.
+
+Native attachment requests retain the workspace version captured before opening
+a picker or recording. They reject a workspace switch, including a switch back,
+before decoding, adding a pending attachment, creating a chat, or starting an
+upload. An upload already in flight retains its original workspace and does not
+update a replacement composer. Voice send-now also checks the original scope.
+Delayed file decoding and stale pre-timezone scope are covered by
+`assistant_chat_restore_test.dart`.
