@@ -138,3 +138,28 @@ it('keeps a manual fallback without IntersectionObserver', async () => {
   expect(fetch).toHaveBeenCalledTimes(1);
   expect(observers).toHaveLength(0);
 });
+
+it('allows an initial-query error retry without a next page and never starts it automatically', async () => {
+  let finish!: () => void;
+  const fetch = vi.fn(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      })
+  );
+  render(fetch, { hasNextPage: false, isError: true });
+  expect(observers).toHaveLength(0);
+  expect(container.querySelector('[role="status"]')?.textContent).toBe(
+    'loadMoreError'
+  );
+  await act(async () => {
+    container.querySelector('button')!.click();
+    container.querySelector('button')!.click();
+  });
+  expect(fetch).toHaveBeenCalledTimes(1);
+  await act(async () => finish());
+  render(fetch, { hasNextPage: false, isError: false });
+  expect(container.querySelector('button')).toBeNull();
+  expect(observers).toHaveLength(0);
+  expect(fetch).toHaveBeenCalledTimes(1);
+});

@@ -27,7 +27,7 @@ export function SalePickerPagination({
       if (
         !mounted.current ||
         !fetchNextPage ||
-        !hasNextPage ||
+        (!hasNextPage && !(manual && isError)) ||
         isFetchingNextPage ||
         pending.current ||
         (!manual && (failed || isError))
@@ -83,7 +83,7 @@ export function SalePickerPagination({
     },
     [hasNextPage, isFetchingNextPage, failed, isError, request, loadVersion]
   );
-  if (!hasNextPage) return null;
+  if (!hasNextPage && !isError) return null;
   return (
     <div ref={attach}>
       {failed || isError ? (
