@@ -9944,4 +9944,16 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantCaptureVideo => 'Quay video';
+
+  @override
+  String get settingsProductSettings => 'Cài đặt ứng dụng';
+
+  @override
+  String get mailDiscardSettingsTitle => 'Bỏ thay đổi?';
+
+  @override
+  String get mailDiscardSettingsDescription => 'Các thay đổi cài đặt Mail của bạn chưa được lưu.';
+
+  @override
+  String get mailDiscardSettingsAction => 'Bỏ thay đổi';
 }

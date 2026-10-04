@@ -19,6 +19,7 @@ import 'package:mobile/features/mail/view/mail_settings_page.dart';
 import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
 import 'package:mobile/features/mail/view/mail_swipe_tile.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
+import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
@@ -35,6 +36,7 @@ part 'mail_shell_actions.dart';
 part 'mail_workspace_cache.dart';
 part 'mail_workspace_swipes.dart';
 part 'mail_workspace_open_retry.dart';
+part 'mail_workspace_refresh.dart';
 
 class MailPage extends StatelessWidget {
   const MailPage({super.key, this.destination});
@@ -221,17 +223,6 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     unawaited(_bootstrap());
   }
 
-  void _refreshVisibleMailbox() {
-    if (mounted &&
-        _accessVerified &&
-        !_mutating &&
-        !_loading &&
-        _openingId == null &&
-        !_childRouteOpen) {
-      unawaited(_load());
-    }
-  }
-
   void _onCacheAccessRevoked() {
     if (mounted &&
         !_accessDenied &&
@@ -261,68 +252,6 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     if (widget.repository == null) _repository.dispose();
     _notificationsRepository.dispose();
     super.dispose();
-  }
-
-  Future<void> _bootstrap() async {
-    final generation = ++_bootstrapGeneration;
-    setState(() {
-      _loading = true;
-      _failed = false;
-    });
-    await _restoreView(generation);
-    try {
-      final result = await _repository.bootstrap(widget.workspaceId);
-      if (!mounted || generation != _bootstrapGeneration) return;
-      setState(() {
-        _mailboxes = mailRows(result['mailboxes']);
-        _accessVerified = true;
-        if (!_mailboxes.any((box) => box['id'] == _mailboxId)) {
-          _mailboxId = _mailboxes.firstOrNull?['id'] as String?;
-          _items = [];
-          _labelId = null;
-          _folderId = null;
-        }
-      });
-      if (_mailboxes.isEmpty) {
-        await _repository.saveView(widget.workspaceId, {
-          'mailboxes': <Map<String, dynamic>>[],
-          'items': <Map<String, dynamic>>[],
-        });
-      }
-      final destination = _pushDestinationHandled ? null : widget.destination;
-      final canOpenDestination =
-          destination != null &&
-          _mailboxes.any((box) => box['id'] == destination.mailboxId);
-      if (canOpenDestination) {
-        setState(() {
-          _mailboxId = destination.mailboxId;
-          _folder = 'inbox';
-          _labelId = null;
-          _folderId = null;
-          _search.clear();
-          _items = [];
-        });
-      }
-      if (canOpenDestination) {
-        unawaited(_load());
-        _pushDestinationHandled = true;
-        await _open({'id': destination.threadId});
-      } else {
-        await _load();
-      }
-    } on Object catch (error) {
-      if (!mounted || generation != _bootstrapGeneration) return;
-      if (error is ApiException &&
-          (error.statusCode == 401 || error.statusCode == 403)) {
-        await _denyCachedAccess();
-      }
-      if (mounted) {
-        setState(() {
-          _failed = true;
-          _loading = false;
-        });
-      }
-    }
   }
 
   Future<void> _load({bool more = false, bool forceRefresh = true}) async {
@@ -376,7 +305,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     try {
       if (!more) unawaited(_loadOrganization(box));
       _saveView();
-      final result = await _repository.list(
+      final result = await _readInboxWithRetry(
         widget.workspaceId,
         box,
         folder: _folder,
@@ -484,18 +413,29 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   }
 
   Future<void> _manage() async {
-    await _pushChild(
-      MaterialPageRoute(
-        builder: (_) => MailSettingsPage(
+    if (_mailboxId == null) return;
+    _dismissSwipeFeedback();
+    setState(() => _childRouteOpen = true);
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    try {
+      await pushScopedSettingsPage(
+        context,
+        builder: (_, isCurrent) => MailSettingsPage(
           repository: _repository,
           workspaceId: widget.workspaceId,
           mailboxId: _mailboxId!,
           swipePreferences: _swipePreferences,
           canManage: ['owner', 'admin'].contains(_mailbox['role']),
+          isScopeCurrent: isCurrent,
         ),
-      ),
-    );
-    if (mounted) await _load();
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _childRouteOpen = false);
+        await _load();
+      }
+    }
   }
 
   Future<void> _bulk(String action, {String? labelId, String? folderId}) async {
