@@ -12,7 +12,7 @@ import 'package:mobile/features/assistant/widgets/assistant_composer_menu_surfac
 import 'package:mobile/features/assistant/widgets/assistant_model_picker_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-enum _ComposerOption { attach, model, fast, thinking, source, close }
+enum _ComposerOption { attach, model, source, close }
 
 /// Secondary controls stay in one anchored menu, leaving room for the prompt.
 class AssistantComposerOptions extends StatelessWidget {
@@ -48,10 +48,6 @@ class AssistantComposerOptions extends StatelessWidget {
         await onOpenAttachments();
       case _ComposerOption.source:
         await onOpenCreditSourceSheet();
-      case _ComposerOption.fast:
-        await onThinkingModeChanged(AssistantThinkingMode.fast);
-      case _ComposerOption.thinking:
-        await onThinkingModeChanged(AssistantThinkingMode.thinking);
       case _ComposerOption.model:
         final choice = await showAdaptiveSheet<AssistantGatewayModel>(
           context: context,
@@ -107,19 +103,6 @@ class AssistantComposerOptions extends StatelessWidget {
               Icons.auto_awesome_outlined,
               modelLabel,
               enabled: shellState.availableModels.isNotEmpty,
-            ),
-            _item(
-              _ComposerOption.fast,
-              Icons.flash_on_rounded,
-              context.l10n.assistantModeFast,
-              selected: shellState.thinkingMode == AssistantThinkingMode.fast,
-            ),
-            _item(
-              _ComposerOption.thinking,
-              Icons.psychology_alt_rounded,
-              context.l10n.assistantModeThinking,
-              selected:
-                  shellState.thinkingMode == AssistantThinkingMode.thinking,
             ),
             _item(
               _ComposerOption.source,

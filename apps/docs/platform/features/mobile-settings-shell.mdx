@@ -46,3 +46,21 @@ text, navbar/system/dock back, and unknown module links;
 `shell_assistant_composer_test.dart` verifies one dock, draft/focus and Live
 transitions, and `shell_profile_races_test.dart` covers delayed account/cache
 completion. These widget checks do not establish installed-device or production evidence.
+
+### Consistent dock slots
+
+Root destinations use the same fixed 52px primary slot, including screens with
+no primary action. At widths below 400px, secondary dock actions remain reachable
+in the top navbar; wider screens reserve a second slot. Navigation and Assistant
+share horizontal/bottom insets so switching screens cannot recenter the root
+icons around a newly appearing action. Actions stay icon-only with semantic
+labels and tooltips. Coverage: `floating_dock_rail_test.dart` and
+`dock_secondary_actions_test.dart`; device visual/keyboard checks remain required.
+
+The fixed empty action columns apply to the five root destinations (Home, Apps,
+Assistant, Notifications, and Profile). Mini-app navigation intentionally keeps
+its available width when it has no actions, including six-item docks on narrow
+phones. Registered mini-app actions consume space only when present; secondary
+actions remain reachable from the top navbar on narrow screens. The six-item
+320px no-action regression checks that touch targets stay at least 44px; this
+does not claim every possible mini-app/action combination has that width.

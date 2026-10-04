@@ -2764,13 +2764,13 @@ abstract class AppLocalizations {
   /// No description provided for @assistantAttachFilesAction.
   ///
   /// In en, this message translates to:
-  /// **'Attach files'**
+  /// **'Add attachments'**
   String get assistantAttachFilesAction;
 
   /// No description provided for @assistantAttachGalleryMediaAction.
   ///
   /// In en, this message translates to:
-  /// **'Photos and videos'**
+  /// **'Photos & Videos Library'**
   String get assistantAttachGalleryMediaAction;
 
   /// No description provided for @assistantGalleryPickError.
@@ -18996,6 +18996,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sync this new item before using, editing, or deleting it.'**
   String get inventorySetupSyncFirst;
+
+  /// No description provided for @assistantAttachCaptureAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture & Record'**
+  String get assistantAttachCaptureAction;
+
+  /// No description provided for @assistantAttachFilesSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get assistantAttachFilesSource;
+
+  /// No description provided for @assistantCaptureAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Record audio'**
+  String get assistantCaptureAudio;
+
+  /// No description provided for @assistantCapturePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo'**
+  String get assistantCapturePhoto;
+
+  /// No description provided for @assistantCaptureVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Record video'**
+  String get assistantCaptureVideo;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -1374,10 +1374,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantConversationTitle => 'Conversation';
 
   @override
-  String get assistantAttachFilesAction => 'Attach files';
+  String get assistantAttachFilesAction => 'Add attachments';
 
   @override
-  String get assistantAttachGalleryMediaAction => 'Photos and videos';
+  String get assistantAttachGalleryMediaAction => 'Photos & Videos Library';
 
   @override
   String get assistantGalleryPickError => 'Could not open your photo library. Try again.';
@@ -10039,4 +10039,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventorySetupSyncFirst => 'Sync this new item before using, editing, or deleting it.';
+
+  @override
+  String get assistantAttachCaptureAction => 'Capture & Record';
+
+  @override
+  String get assistantAttachFilesSource => 'Files';
+
+  @override
+  String get assistantCaptureAudio => 'Record audio';
+
+  @override
+  String get assistantCapturePhoto => 'Take photo';
+
+  @override
+  String get assistantCaptureVideo => 'Record video';
 }

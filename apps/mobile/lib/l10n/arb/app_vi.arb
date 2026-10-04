@@ -518,8 +518,8 @@
     "assistantSaveAction": "Lưu",
     "assistantCreditsTitle": "Tín dụng",
     "assistantConversationTitle": "Cuộc trò chuyện",
-    "assistantAttachFilesAction": "Đính kèm tệp",
-    "assistantAttachGalleryMediaAction": "Ảnh và video",
+    "assistantAttachFilesAction": "Thêm đính kèm",
+    "assistantAttachGalleryMediaAction": "Thư viện ảnh và video",
     "assistantGalleryPickError": "Không thể mở thư viện ảnh. Vui lòng thử lại.",
     "assistantEnterFullscreenAction": "Vào toàn màn hình",
     "assistantExitFullscreenAction": "Thoát toàn màn hình",
@@ -4276,5 +4276,10 @@
             }
         }
     },
-    "inventorySetupSyncFirst": "Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa."
+    "inventorySetupSyncFirst": "Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa.",
+    "assistantAttachCaptureAction": "Chụp và ghi âm",
+    "assistantAttachFilesSource": "Tệp",
+    "assistantCaptureAudio": "Ghi âm",
+    "assistantCapturePhoto": "Chụp ảnh",
+    "assistantCaptureVideo": "Quay video"
 }

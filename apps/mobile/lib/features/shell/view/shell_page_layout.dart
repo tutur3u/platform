@@ -156,10 +156,7 @@ extension _ShellPageLayout on _ShellPageState {
 
     // The morphing island owns its glass, outline and glow. A second surface
     // here leaves a visible double stroke around the floating navigation.
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      child: child,
-    );
+    return Padding(padding: EdgeInsets.zero, child: child);
   }
 
   Widget _buildNavigationBarContainer({
