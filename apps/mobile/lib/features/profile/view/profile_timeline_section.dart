@@ -7,6 +7,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/profile/personal_profile_workspace.dart';
+import 'package:mobile/features/profile/profile_timeline_access.dart';
 import 'package:mobile/features/profile/profile_timeline_repository.dart';
 import 'package:mobile/features/profile/view/profile_timeline_browser.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -141,7 +142,7 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
       if (mounted && request == _request) {
         setState(() {
           _failed = true;
-          if (_isAccessDenied(error)) {
+          if (timelineAccessDenied(error)) {
             _items = null;
             _partial = false;
             _limited = false;
@@ -187,7 +188,7 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
       if (mounted && request == _request) {
         setState(() {
           _pagingPaused = true;
-          if (_isAccessDenied(error)) {
+          if (timelineAccessDenied(error)) {
             _items = null;
             _failed = true;
             _partial = false;
@@ -205,10 +206,6 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
       if (mounted && request == _request) setState(() => _loadingMore = false);
     }
   }
-
-  bool _isAccessDenied(ApiException error) =>
-      error.statusCode == 401 ||
-      error.statusCode == 403 && !error.isVerificationRequired;
 
   void _reportFailure(int request) {
     final unavailable = _failed || (_items?.isEmpty ?? true);

@@ -330,7 +330,14 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
                   ),
                   if (widget.loading ||
                       (widget.refreshing && widget.items.isEmpty))
-                    const FinanceSkeletonBlock(height: 112, radius: 20)
+                    Semantics(
+                      label: context.l10n.commonLoading,
+                      liveRegion: true,
+                      child: const FinanceSkeletonBlock(
+                        height: 112,
+                        radius: 20,
+                      ),
+                    )
                   else if (entries.isEmpty &&
                       !(widget.statusReportedByParent &&
                           widget.availability !=

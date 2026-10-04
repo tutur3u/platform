@@ -153,6 +153,23 @@ void main() {
     expect(find.text('Revalidated row'), findsOneWidget);
   });
 
+  testWidgets('MFA-required challenge preserves visible activity', (
+    tester,
+  ) async {
+    repository.cache = snapshot('Private MFA row');
+    await mount(tester);
+    repository.requests.single.completeError(
+      const ApiException(
+        message: 'MFA required',
+        statusCode: 403,
+        code: 'MFA_REQUIRED',
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.drainShadToastTimers();
+    expect(find.text('Private MFA row'), findsOneWidget);
+  });
+
   for (final status in [401, 403]) {
     testWidgets('denied $status refresh clears retained private rows', (
       tester,
