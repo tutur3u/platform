@@ -25,6 +25,7 @@ import {
   syntheticContainerLoggingArgs,
   syntheticContainerStartFailure,
 } from './devbox-playground-runtime-diagnostics';
+import { sandboxProcessArgs } from './devbox-sandbox-pids';
 import { sandboxDocker } from './devbox-sandbox-process';
 
 const PLAYGROUND_PATH =
@@ -356,7 +357,7 @@ export async function getPlaygroundReadiness() {
           '--memory=128m',
           '--memory-swap=128m',
           '--cpus=0.25',
-          '--pids-limit=32',
+          ...sandboxProcessArgs(32),
           `--env=PATH=${PLAYGROUND_PATH}`,
           image,
           'sh',

@@ -42,6 +42,9 @@ void main() {
     );
     await tester.tap(find.byIcon(Icons.auto_awesome_outlined).first);
     await tester.pumpAndSettle();
+    expect(find.text('Vision'), findsNothing);
+    await tester.tap(find.byType(Switch).first);
+    await tester.pumpAndSettle();
     expect(
       tester.widget<ListTile>(find.widgetWithText(ListTile, 'Vision')).enabled,
       false,
@@ -93,6 +96,8 @@ void main() {
     expect(repository.toggledModelId, 'provider/fast');
     expect(repository.wasFavorite, false);
     expect(find.text('No models match these filters'), findsOneWidget);
+    await tester.tap(find.byType(Switch).first);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Other'));
     await tester.pumpAndSettle();
     expect(find.text('Vision'), findsOneWidget);

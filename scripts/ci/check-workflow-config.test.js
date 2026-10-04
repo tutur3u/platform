@@ -731,7 +731,7 @@ test('secretless Turbo fallback caches are task-scoped and trusted-write only', 
   assert.match(setupAction, /uses: actions\/cache@v6/);
   assert.match(setupAction, /uses: actions\/cache\/restore@v6/);
   assert.match(setupAction, /\$\{\{ inputs\.family \}\}/);
-  assert.match(setupAction, /hashFiles\('bun\.lock', 'turbo\.json'\)/);
+  assert.match(setupAction, /hashFiles\('(bun\.lock|turbo\.json)'\)/);
   assert.match(setupAction, /runner\.os/);
   assert.match(setupAction, /runner\.arch/);
   assert.match(setupAction, /github\.event\.pull_request\.base\.sha/);

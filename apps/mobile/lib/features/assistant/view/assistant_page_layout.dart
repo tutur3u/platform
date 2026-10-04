@@ -236,8 +236,8 @@ extension _AssistantPageLayout on _AssistantPageState {
                                         ],
                                       ),
                                       Positioned(
-                                        left: _horizontalPadding(context),
-                                        right: _horizontalPadding(context),
+                                        left: floatingDockHorizontalInset,
+                                        right: floatingDockHorizontalInset,
                                         bottom: assistantComposerBottomOffset(
                                           context,
                                         ),

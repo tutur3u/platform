@@ -96,6 +96,19 @@ describe('managed playground removal ownership', () => {
     expect(logged.slice(-3)).toEqual(['sh', '-c', 'exec sleep 7200']);
   });
 
+  it('applies the same guest and host ceilings to readiness probes', async () => {
+    const { getPlaygroundReadiness } = await import(
+      './devbox-playground-sandbox'
+    );
+    expect((await getPlaygroundReadiness()).ready).toBe(true);
+    const calls = docker.mock.calls.filter(([args]) => args[0] === 'run');
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.[0]).toContain('--pids-limit=160');
+    expect(calls[0]?.[0]).toContain('--ulimit=nproc=32:32');
+    expect(calls[0]?.[0]).toContain('--cap-drop=ALL');
+    expect(calls[0]?.[0]).toContain('--memory=128m');
+  });
+
   it('keeps capacity owned when removal fails and the container remains', async () => {
     const { runPlaygroundJob, playgroundEnvironmentCount } = await import(
       './devbox-playground-sandbox'

@@ -1374,10 +1374,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantConversationTitle => 'Cuộc trò chuyện';
 
   @override
-  String get assistantAttachFilesAction => 'Đính kèm tệp';
+  String get assistantAttachFilesAction => 'Thêm đính kèm';
 
   @override
-  String get assistantAttachGalleryMediaAction => 'Ảnh và video';
+  String get assistantAttachGalleryMediaAction => 'Thư viện ảnh và video';
 
   @override
   String get assistantGalleryPickError => 'Không thể mở thư viện ảnh. Vui lòng thử lại.';
@@ -9938,4 +9938,36 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get meetFixtureReconnect => 'Kết nối lại cuộc họp';
+
+  @override
+  String get connectedOnboardingMiraTitle => 'Gặp Mira, trợ lý AI của bạn';
+
+  @override
+  String get connectedOnboardingMiraSubtitle => 'Bắt đầu trò chuyện, lên kế hoạch hoặc suy nghĩ về bước tiếp theo. Mira đồng hành cùng các công cụ bạn sử dụng mỗi ngày.';
+
+  @override
+  String get connectedOnboardingMiraToolkit => 'Một nơi để trò chuyện với Mira và truy cập công việc, lịch, tài chính và kho hàng. Chọn những gì phù hợp với bạn.';
+
+  @override
+  String get connectedOnboardingOptional => 'Nhịp độ của bạn. Không gian của bạn. Luôn tùy chọn.';
+
+  @override
+  String connectedOnboardingStep(int step, int total) {
+    return 'Bước $step trên $total';
+  }
+
+  @override
+  String get assistantAttachCaptureAction => 'Chụp và ghi âm';
+
+  @override
+  String get assistantAttachFilesSource => 'Tệp';
+
+  @override
+  String get assistantCaptureAudio => 'Ghi âm';
+
+  @override
+  String get assistantCapturePhoto => 'Chụp ảnh';
+
+  @override
+  String get assistantCaptureVideo => 'Quay video';
 }

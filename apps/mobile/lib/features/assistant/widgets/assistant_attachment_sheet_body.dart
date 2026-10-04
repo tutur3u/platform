@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/features/assistant/widgets/assistant_dock_surface.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 class AssistantAttachmentSheetBody extends StatelessWidget {
@@ -7,9 +8,11 @@ class AssistantAttachmentSheetBody extends StatelessWidget {
     required this.onPickFiles,
     required this.onPickGalleryMedia,
     required this.onClearAttachments,
+    this.onCapture,
     super.key,
   });
 
+  final Future<void> Function()? onCapture;
   final bool hasAttachments;
   final Future<void> Function() onPickFiles;
   final Future<void> Function() onPickGalleryMedia;
@@ -19,9 +22,7 @@ class AssistantAttachmentSheetBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       top: false,
-      child: Material(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
+      child: AssistantDockSurface(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
           child: Column(
@@ -38,7 +39,7 @@ class AssistantAttachmentSheetBody extends StatelessWidget {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.attach_file_rounded),
-                title: Text(context.l10n.assistantAttachFilesAction),
+                title: Text(context.l10n.assistantAttachFilesSource),
                 onTap: onPickFiles,
               ),
               ListTile(
@@ -47,6 +48,13 @@ class AssistantAttachmentSheetBody extends StatelessWidget {
                 title: Text(context.l10n.assistantAttachGalleryMediaAction),
                 onTap: onPickGalleryMedia,
               ),
+              if (onCapture != null)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.camera_alt_outlined),
+                  title: Text(context.l10n.assistantAttachCaptureAction),
+                  onTap: onCapture,
+                ),
               if (hasAttachments)
                 ListTile(
                   contentPadding: EdgeInsets.zero,

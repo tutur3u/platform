@@ -1,3 +1,5 @@
+export * from './inventory-season-merge';
+
 import { getInternalApiClient, type InternalApiClientOptions } from './client';
 
 export type InventoryMergeKind = 'product' | 'warehouse';

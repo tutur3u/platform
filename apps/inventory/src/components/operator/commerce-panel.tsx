@@ -34,6 +34,7 @@ import { useWorkspaceCurrency } from './workspace-currency';
 
 export function CommercePanel({
   canExportSales = false,
+  canMergeSeasons = false,
   checkouts,
   isLoading,
   query,
@@ -60,6 +61,7 @@ export function CommercePanel({
   wsId,
 }: {
   canExportSales?: boolean;
+  canMergeSeasons?: boolean;
   checkouts: InventoryCheckoutSession[];
   isLoading?: boolean;
   query: string;
@@ -105,6 +107,7 @@ export function CommercePanel({
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 md:grid-cols-1">
         <SalesPeriodsPanel
           canExport={canExportSales}
+          canMerge={canMergeSeasons}
           fetchNextProductsPage={fetchNextProductsPage}
           hasNextProductsPage={hasNextProductsPage}
           isFetchingNextProductsPage={isFetchingNextProductsPage}

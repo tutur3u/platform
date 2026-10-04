@@ -325,6 +325,17 @@ The acceptance covers non-root/read-only/no-host-mount/no-network execution, res
 
 Each test stops its synthetic projects through the SDK before the next test, so a failed warm-preview assertion cannot consume the next test's capacity. On a generic export failure, the fixture retries the same export only in its disposable, labeled containers and logs exit/timeout/output-budget flags, output byte count, and at most 2 KiB of terminal-sanitized stderr. It also records the retained container exit/OOM status and up to 20 lines of PID 1 stdout/stderr through a five-second, 2 KiB-bounded `docker logs` command. Explicit acceptance mode in a `ci-<run>-<attempt>` pool selects Docker's local log driver with an 8 KiB single-file limit; ordinary pools retain `--log-driver=none`. Synthetic Docker-create failures record at most 2 KiB of sanitized stderr plus exit/timeout/output-budget status before unchanged confirmed cleanup, including failures before PID 1 exists. Without that disposable opt-in, Docker cannot read startup logs. PID 1 logs expose startup failures even when the container has stopped and `docker exec` cannot run; ANSI terminal sequences are stripped before JSON logging. It never dumps container environment/configuration or exported file contents. These diagnostics do not change production error redaction; inspect the hosted acceptance log to establish the cause before changing runtime behavior.
 
+An empty PID 1 log does not rule out a host-side runsc panic. The disposable
+acceptance VM also enables only runsc's documented `--panic-log` option in a
+run-owned temporary directory; it does not enable debug, strace or profiling. On
+SDK acceptance failure, `playground-runtime-panic.js` reads at most 16 regular
+non-symlink files, 32 KiB per file, and emits fixed crash classifications only.
+It never prints raw panic text, stacks, environment values or project contents.
+The sandbox caps and always-run owned cleanup remain unchanged. Resource failure
+classifications are diagnostic evidence to investigate, not acceptance success or
+a reason to weaken limits. See [gVisor debugging](https://gvisor.dev/docs/user_guide/debugging/).
+
+
 This proves synthetic Python sandbox behavior only. It does not provision a managed playground pool, prove every language image, authorize production flags, or prove authenticated Drive uploads. Operator-managed pool readiness, approved immutable language images, and the real account Drive acceptance remain separate prerequisites. Existing Judge pools must stay separate and unchanged. See the [runtime fixture regression](https://github.com/tutur3u/platform/blob/main/packages/sdk/src/cli/devbox-playground-runtime.acceptance.ts) and [official runtime installation](https://gvisor.dev/docs/user_guide/install/).
 
 
@@ -345,3 +356,28 @@ allocates a production pool automatically.
 
 Regressions: first-class `apps/web/src/app/api/v1/devboxes/agents/routes.test.ts`,
 `apps/devbox-control/src/worker.test.ts`, and the SDK capability collector tests.
+
+
+### Guest process limits and runtime overhead
+
+Judge and Playground keep the configured `sandbox_pids` guest task ceiling
+(16–256) as an OCI soft and hard `RLIMIT_NPROC`. The non-root guest has no
+`CAP_SYS_ADMIN` or `CAP_SYS_RESOURCE`, so gVisor rejects extra guest tasks with
+`EAGAIN`. Docker's host PID cgroup also counts Sentry/gofer runtime threads; it
+is bounded separately to the guest ceiling plus a fixed 128-task runtime
+allowance, for a hard range of 144–384 host tasks per sandbox. This allowance is
+a bounded provisioned budget, not a measured runtime overhead or an increase to
+the guest ceiling. CPU, memory, privileges, network isolation, timeout, output,
+capacity, and cleanup controls remain unchanged. Readiness probes and actual
+Judge/Playground execution use the same process-budget helper.
+
+The pinned runsc release copies OCI rlimits in
+[boot/limits.go](https://github.com/google/gvisor/blob/release-20260928.0/runsc/boot/limits.go)
+and enforces guest process counts in
+[kernel.go](https://github.com/google/gvisor/blob/release-20260928.0/pkg/sentry/kernel/kernel.go).
+Host and guest task accounting differ as described by the
+[gVisor resource model](https://gvisor.dev/docs/architecture_guide/resources/).
+The disposable real acceptance must show the guest fork loop receives `EAGAIN`
+at its configured limit, cleans up every child, and still checkpoints and serves
+its warm preview. Helper unit tests prove argument construction only; passing
+exact-source real gVisor CI remains the runtime gate.

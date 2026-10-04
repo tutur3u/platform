@@ -82,6 +82,24 @@ successful preflight, check the vault replay policy before rerunning the job.
 | `android_google_services_json` (file) | Firebase Android config (`google-services.json`). | [Firebase Console](https://console.firebase.google.com) → Project settings → Android app. |
 | `ios_google_service_info_plist` (file) | Firebase iOS config (`GoogleService-Info.plist`). | Firebase Console → Project settings → iOS app. |
 
+## Apple validation builds
+
+The iOS simulator and macOS development CI workflows copy the checked-in
+`GoogleService-Info-development.plist` into Xcode's generic resource path.
+They do not generate dummy configuration or retrieve production vault assets.
+After building, CI verifies the bundled plist matches the development source and
+its bundle ID matches the app's `Info.plist`; missing, malformed, dummy, or
+wrong-flavor resources fail before artifact upload.
+
+Production TestFlight builds continue to retrieve `ios_google_service_info_plist`
+from Infrastructure using the protected deployment token and GitHub OIDC.
+That policy remains restricted to the production store workflow and environment.
+Do not grant PR validation workflows access to the production signing bundle.
+
+Run the fixture controls without building an app:
+`python3 scripts/mobile-deployment/test_firebase_service_config.py`.
+The two development workflows run these controls before preparing configuration.
+
 ## Production mobile diagnostics
 
 The production Flutter flavor uses the existing Firebase configuration for

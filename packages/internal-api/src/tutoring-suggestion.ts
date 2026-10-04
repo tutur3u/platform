@@ -1,6 +1,7 @@
 import {
   STANDARD_TUTORING_POLICY,
   type TutoringPolicy,
+  usesEasyCenterPresetShifts,
 } from './tutoring-policy';
 import type { WorkspaceUserGroupSession } from './user-group-schedule';
 
@@ -111,6 +112,7 @@ export function suggestTutoringSlots(
           entry.weekdays.includes(weekdayOf(local.date)) &&
           entry.classStartTime === local.time
       );
+      if (!rule && usesEasyCenterPresetShifts(policy)) continue;
       const duration = rule?.durationMinutes ?? policy.durationMinutes;
       const anchor = rule
         ? minutesOf(rule.tutoringStartTime)

@@ -249,6 +249,7 @@ mod workspace_mobile_module_flags;
 #[cfg(test)]
 mod workspace_mobile_module_flags_test;
 mod workspace_permission_check;
+mod workspaces_inventory_season_merges;
 mod workspace_post_permissions;
 mod workspace_user_group_member_count;
 mod workspace_users_me;

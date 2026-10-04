@@ -7,6 +7,7 @@ import {
 } from './devbox-playground-files';
 import { collectSyntheticContainerLogs } from './devbox-playground-runtime-diagnostics';
 import { runPlaygroundJob } from './devbox-playground-sandbox';
+import { sandboxProcessBudget } from './devbox-sandbox-pids';
 import { sandboxDocker } from './devbox-sandbox-process';
 
 // Opt-in, real Docker/runsc acceptance. Never included in the ordinary unit suite.
@@ -134,7 +135,30 @@ it('runs the actual SDK, checkpoints only safe text, and retains an isolated war
       operation: 'run',
       files: [{ path: 'index.html', content: 'initial' }],
       command: `python3 - <<'PY'
-import os, socket
+import errno, os, resource, signal, socket, time
+assert resource.getrlimit(resource.RLIMIT_NPROC) == (32, 32)
+children = []
+limited = False
+try:
+    # The bounded loop must hit guest EAGAIN, never create unbounded work.
+    for attempt in range(33):
+        try:
+            pid = os.fork()
+        except OSError as error:
+            assert error.errno == errno.EAGAIN
+            limited = True
+            break
+        if pid == 0:
+            time.sleep(10)
+            os._exit(0)
+        children.append(pid)
+    assert limited and 0 < len(children) < 32
+finally:
+    for pid in children:
+        os.kill(pid, signal.SIGKILL)
+    for pid in children:
+        os.waitpid(pid, 0)
+print('guest process cap enforced')
 assert os.getuid() == 65534
 assert 'TTR_HOST_CANARY' not in os.environ
 assert not os.path.exists('/var/run/docker.sock')
@@ -177,6 +201,7 @@ PY`,
   });
   expect(result.code).toBe(0);
   expect(result.output).toContain('isolated');
+  expect(result.output).toContain('guest process cap enforced');
   expect(changes).toHaveLength(1);
   expect(changes[0]?.files).toEqual([
     { path: 'index.html', content: 'synthetic preview' },
@@ -195,7 +220,14 @@ PY`,
   expect(container.HostConfig.Privileged).toBe(false);
   expect(container.HostConfig.Binds ?? []).toEqual([]);
   for (const mount of container.Mounts) expect(mount.Type).toBe('tmpfs');
-  expect(container.HostConfig.PidsLimit).toBe(32);
+  expect(container.HostConfig.PidsLimit).toBe(
+    sandboxProcessBudget(32).hostTasks
+  );
+  expect(container.HostConfig.Ulimits).toContainEqual({
+    Name: 'nproc',
+    Soft: 32,
+    Hard: 32,
+  });
   expect(container.HostConfig.Memory).toBeLessThanOrEqual(256 * 1024 * 1024);
   expect(container.HostConfig.Memory).toBeGreaterThanOrEqual(128 * 1024 * 1024);
   expect(container.HostConfig.NanoCpus).toBeGreaterThan(0);

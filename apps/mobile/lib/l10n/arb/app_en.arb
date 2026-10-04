@@ -518,8 +518,8 @@
     "assistantSaveAction": "Save",
     "assistantCreditsTitle": "Credits",
     "assistantConversationTitle": "Conversation",
-    "assistantAttachFilesAction": "Attach files",
-    "assistantAttachGalleryMediaAction": "Photos and videos",
+    "assistantAttachFilesAction": "Add attachments",
+    "assistantAttachGalleryMediaAction": "Photos & Videos Library",
     "assistantGalleryPickError": "Could not open your photo library. Try again.",
     "assistantEnterFullscreenAction": "Enter fullscreen",
     "assistantExitFullscreenAction": "Exit fullscreen",
@@ -4288,5 +4288,25 @@
     },
     "meetFixtureConnected": "Local meeting connected",
     "meetFixtureRevoke": "Host: stop screen share",
-    "meetFixtureReconnect": "Reconnect meeting"
+    "meetFixtureReconnect": "Reconnect meeting",
+    "connectedOnboardingMiraTitle": "Meet Mira, your AI companion",
+    "connectedOnboardingMiraSubtitle": "Start a conversation, shape a plan, or think through your next step. Mira lives alongside the tools you use every day.",
+    "connectedOnboardingMiraToolkit": "One place to chat with Mira and reach your tasks, calendar, finances, and inventory. Choose what works for you.",
+    "connectedOnboardingOptional": "Your pace. Your workspace. Always optional.",
+    "connectedOnboardingStep": "Step {step} of {total}",
+    "@connectedOnboardingStep": {
+        "placeholders": {
+            "step": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
+        }
+    },
+    "assistantAttachCaptureAction": "Capture & Record",
+    "assistantAttachFilesSource": "Files",
+    "assistantCaptureAudio": "Record audio",
+    "assistantCapturePhoto": "Take photo",
+    "assistantCaptureVideo": "Record video"
 }

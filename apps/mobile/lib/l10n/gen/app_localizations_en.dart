@@ -1374,10 +1374,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantConversationTitle => 'Conversation';
 
   @override
-  String get assistantAttachFilesAction => 'Attach files';
+  String get assistantAttachFilesAction => 'Add attachments';
 
   @override
-  String get assistantAttachGalleryMediaAction => 'Photos and videos';
+  String get assistantAttachGalleryMediaAction => 'Photos & Videos Library';
 
   @override
   String get assistantGalleryPickError => 'Could not open your photo library. Try again.';
@@ -10065,4 +10065,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meetFixtureReconnect => 'Reconnect meeting';
+
+  @override
+  String get connectedOnboardingMiraTitle => 'Meet Mira, your AI companion';
+
+  @override
+  String get connectedOnboardingMiraSubtitle => 'Start a conversation, shape a plan, or think through your next step. Mira lives alongside the tools you use every day.';
+
+  @override
+  String get connectedOnboardingMiraToolkit => 'One place to chat with Mira and reach your tasks, calendar, finances, and inventory. Choose what works for you.';
+
+  @override
+  String get connectedOnboardingOptional => 'Your pace. Your workspace. Always optional.';
+
+  @override
+  String connectedOnboardingStep(int step, int total) {
+    return 'Step $step of $total';
+  }
+
+  @override
+  String get assistantAttachCaptureAction => 'Capture & Record';
+
+  @override
+  String get assistantAttachFilesSource => 'Files';
+
+  @override
+  String get assistantCaptureAudio => 'Record audio';
+
+  @override
+  String get assistantCapturePhoto => 'Take photo';
+
+  @override
+  String get assistantCaptureVideo => 'Record video';
 }
