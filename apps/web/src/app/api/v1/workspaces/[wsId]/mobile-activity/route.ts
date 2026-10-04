@@ -105,7 +105,7 @@ export async function GET(
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
       .range(offset, offset + 199),
-    calendarAccess.then((access) =>
+    Promise.resolve(calendarAccess).then(async (access) =>
       access.error
         ? { data: [], error: access.error }
         : access.data !== true

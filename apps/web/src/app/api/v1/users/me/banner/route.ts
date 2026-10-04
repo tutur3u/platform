@@ -65,7 +65,7 @@ export const POST = withSessionAuth(
               size <= 0 ||
               size > 5 * 1024 * 1024 ||
               !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(
-                object.data.content_type
+                object.data.contentType
               )
             ) {
               await admin.rpc('abandon_profile_banner_operation', {

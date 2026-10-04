@@ -1,4 +1,11 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+type BannerObjectInfo = NonNullable<
+  Awaited<
+    ReturnType<ReturnType<SupabaseClient['storage']['from']>['info']>
+  >['data']
+>;
 
 const f = vi.hoisted(() => ({
   rpc: vi.fn(),
@@ -53,7 +60,10 @@ beforeEach(() => {
   }));
   f.info.mockResolvedValue({
     error: null,
-    data: { size: 100, content_type: 'image/png' },
+    data: { size: 100, contentType: 'image/png' } satisfies Pick<
+      BannerObjectInfo,
+      'size' | 'contentType'
+    >,
   });
   f.remove.mockResolvedValue({ error: null });
   f.upload.mockResolvedValue({ error: null });
