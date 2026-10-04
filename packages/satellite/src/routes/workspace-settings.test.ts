@@ -28,7 +28,8 @@ vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/storage-core/security-budget', async () => {
   // Native CommonJS requires bypass Vitest mocks, just like a built dependency.
   const { createRequire } = await import('node:module');
-  return createRequire(import.meta.url)('server-only');
+  const { resolve } = await import('node:path');
+  return createRequire(resolve('package.json'))('server-only');
 });
 vi.mock('@tuturuuu/storage-core/profile-upload-budget', async () => ({
   // Keep the production error identity without importing server orchestration.
