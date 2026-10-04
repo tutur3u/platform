@@ -15,8 +15,6 @@ import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
-import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
-import 'package:mobile/features/assistant/widgets/assistant_dock_navigation.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/dashboard/view/home_page.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
@@ -27,6 +25,7 @@ import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
+import 'package:mobile/features/shell/view/shell_dock_slot.dart';
 import 'package:mobile/features/shell/view/shell_keyboard_chrome.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_search_field.dart';
@@ -85,6 +84,8 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   static const double _compactMiniBackButtonMinWidth = 52;
 
   bool _usesCompactNavigation(BuildContext context) => false;
+
+  final _dockSlotController = ShellDockSlotController();
 
   final Stopwatch _tapStopwatch = Stopwatch();
   Timer? _longPressTimer;
@@ -625,6 +626,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     _dismissExitConfirmationToast();
     _suppressPointerTimer?.cancel();
     _layerController.dispose();
+    _dockSlotController.dispose();
     super.dispose();
   }
 

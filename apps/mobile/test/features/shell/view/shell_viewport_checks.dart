@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/apps/view/apps_hub_page.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
+import 'package:mobile/features/shell/view/persistent_shell_dock.dart';
 
 void registerShellViewportChecks(
   Future<void> Function(WidgetTester tester) pumpShell,
@@ -58,6 +59,13 @@ void registerShellViewportChecks(
         expect(
           find.descendant(
             of: find.byType(MorphingNavigationBar),
+            matching: find.byType(BackdropFilter),
+          ),
+          findsNothing,
+        );
+        expect(
+          find.descendant(
+            of: find.byType(PersistentShellDock),
             matching: find.byType(BackdropFilter),
           ),
           findsOneWidget,
