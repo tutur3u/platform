@@ -31,6 +31,10 @@ Flutter/Dart toolchain and app package configuration.
   padding in scroll content for floating-dock clearance. Full-screen forms and
   system-owned flows open above the shell. Test title geometry, Android system and
   dock back, including direct deep links and enlarged text.
+- Root and detail navigation share one shell-owned floating dock. Assistant
+  publishes lifecycle-scoped content into that dock; never mount another dock
+  in a page body or crossfade two interactive bars. Retain its material through
+  navigation/composer transitions, and test intermediate frames and IME geometry.
 - Use `AppHaptics` for semantic pickup, selection, drop, success, and warning
   feedback. Respect the persisted Preferences toggle and throttle repeated
   gesture feedback; do not vibrate for background refreshes or replay.
