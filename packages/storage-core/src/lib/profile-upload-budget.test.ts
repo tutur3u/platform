@@ -4,7 +4,11 @@ const f = vi.hoisted(() => ({ reserve: vi.fn() }));
 vi.mock('server-only', () => ({}));
 vi.mock('./security-budget', () => ({ reserveSecurityBudget: f.reserve }));
 
-import { reserveProfileUploadBudget } from './profile-upload-budget';
+import {
+  ProfileUploadError as BudgetProfileUploadError,
+  reserveProfileUploadBudget,
+} from './profile-upload-budget';
+import { ProfileUploadError } from './profile-upload-error';
 
 const now = new Date('2026-10-03T12:30:00Z');
 beforeEach(() => {
@@ -49,4 +53,16 @@ it('rejects invalid denied dimensions', async () => {
   await expect(
     reserveProfileUploadBudget('actor', 'avatar', now)
   ).rejects.toMatchObject({ status: 503 });
+});
+
+it('preserves the shared error identity when the budget denies or fails closed', async () => {
+  expect(BudgetProfileUploadError).toBe(ProfileUploadError);
+  f.reserve.mockResolvedValue([0, 1]);
+  await expect(
+    reserveProfileUploadBudget('actor', 'avatar', now)
+  ).rejects.toBeInstanceOf(ProfileUploadError);
+  f.reserve.mockRejectedValue(new Error('Budget unavailable'));
+  await expect(
+    reserveProfileUploadBudget('actor', 'avatar', now)
+  ).rejects.toBeInstanceOf(ProfileUploadError);
 });

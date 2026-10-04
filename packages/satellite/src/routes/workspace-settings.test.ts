@@ -1,4 +1,4 @@
-import { ProfileUploadError } from '@tuturuuu/storage-core/profile-upload-budget';
+import { ProfileUploadError } from '@tuturuuu/storage-core/profile-upload-error';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createSatelliteAiCreditsRouteHandler,
@@ -24,13 +24,19 @@ const {
 }));
 
 vi.mock('server-only', () => ({}));
-vi.mock(
-  '@tuturuuu/storage-core/profile-upload-budget',
-  async (importOriginal) => ({
-    ...(await importOriginal<object>()),
-    reserveProfileUploadBudget,
-  })
-);
+// Route tests must not load the real server-only budget dependency graph.
+vi.mock('@tuturuuu/storage-core/security-budget', async () => {
+  // Native CommonJS requires bypass Vitest mocks, just like a built dependency.
+  const { createRequire } = await import('node:module');
+  return createRequire(import.meta.url)('server-only');
+});
+vi.mock('@tuturuuu/storage-core/profile-upload-budget', async () => ({
+  // Keep the production error identity without importing server orchestration.
+  ProfileUploadError: (
+    await import('@tuturuuu/storage-core/profile-upload-error')
+  ).ProfileUploadError,
+  reserveProfileUploadBudget,
+}));
 
 vi.mock('../auth', () => ({ getSatelliteAppSessionUser }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({ getPermissions }));

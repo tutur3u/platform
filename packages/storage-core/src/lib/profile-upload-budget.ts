@@ -1,24 +1,19 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
+import { ProfileUploadError } from './profile-upload-error';
+
 import {
   reserveSecurityBudget,
   type SecurityBudgetDimension,
 } from './security-budget';
+
+export { ProfileUploadError } from './profile-upload-error';
 
 export type ProfileMediaKind = 'avatar' | 'banner';
 export const PROFILE_MEDIA_MAX_BYTES = {
   avatar: 2 * 1024 ** 2,
   banner: 5 * 1024 ** 2,
 } as const;
-export class ProfileUploadError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-    public readonly retryAfter?: number
-  ) {
-    super(message);
-  }
-}
 
 /** Charge the bucket ceiling, never an untrusted client byte count. Tickets count even if unused. */
 export async function reserveProfileUploadBudget(
