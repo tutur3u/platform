@@ -1,4 +1,47 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+interface BannerLifecycleResult {
+  data?: unknown;
+  error: unknown;
+}
+
+interface BannerRetirementRow {
+  public_url: string;
+  file_path: string;
+  delete_ready: boolean;
+}
+
+/** The lifecycle helper requires only these service-side RPC/Storage capabilities. */
+export interface BannerLifecycleAdmin {
+  rpc(
+    name:
+      | 'expire_profile_banner_operations'
+      | 'pending_profile_banner_retirements'
+      | 'complete_profile_banner_retirement',
+    args: Record<string, string | boolean>
+  ): PromiseLike<BannerLifecycleResult>;
+  storage: {
+    from(bucket: 'banners'): {
+      remove(paths: string[]): PromiseLike<BannerLifecycleResult>;
+      upload(
+        path: string,
+        bytes: Buffer,
+        options: { upsert: boolean; contentType: string; cacheControl: string }
+      ): PromiseLike<BannerLifecycleResult>;
+    };
+  };
+}
+
+function isRetirementRow(value: unknown): value is BannerRetirementRow {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'public_url' in value &&
+    typeof value.public_url === 'string' &&
+    'file_path' in value &&
+    typeof value.file_path === 'string' &&
+    'delete_ready' in value &&
+    typeof value.delete_ready === 'boolean'
+  );
+}
 
 /** Never infer ownership from a substring or from a client-supplied origin. */
 export function bannerStorageOrigin() {
@@ -26,7 +69,7 @@ export function ownedBannerPath(url: string, actor: string, origin: string) {
 
 /** Retirements are permanent tombstones; removing immutable files is retry-safe. */
 export async function cleanRetiredBanners(
-  admin: SupabaseClient<any>,
+  admin: BannerLifecycleAdmin,
   actor: string,
   origin = bannerStorageOrigin()
 ) {
@@ -43,7 +86,12 @@ export async function cleanRetiredBanners(
   );
   if (error || !Array.isArray(data)) return false;
   let complete = data.length < 20;
-  for (const row of data) {
+  for (const value of data) {
+    if (!isRetirementRow(value)) {
+      complete = false;
+      continue;
+    }
+    const row = value;
     const path = ownedBannerPath(row.public_url, actor, origin);
     if (!path || path !== row.file_path) {
       complete = false;

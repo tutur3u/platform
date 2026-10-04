@@ -1,6 +1,6 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  type BannerLifecycleAdmin,
   canonicalManagedBanner,
   cleanRetiredBanners,
   ownedBannerPath,
@@ -20,7 +20,7 @@ function fixture(rows: unknown[]) {
   const admin = {
     rpc,
     storage: { from: vi.fn().mockReturnValue({ remove, upload }) },
-  } as unknown as SupabaseClient<any>;
+  } satisfies BannerLifecycleAdmin;
   return { admin, remove, upload, rpc };
 }
 describe('authenticated immutable banner retirement', () => {
@@ -94,6 +94,19 @@ describe('authenticated immutable banner retirement', () => {
     f.remove.mockResolvedValue({ error: null });
     expect(await cleanRetiredBanners(f.admin, actor, origin)).toBe(true);
   });
+  it.each([
+    null,
+    {},
+    { public_url: url, file_path: path, delete_ready: 'true' },
+  ])(
+    'never performs Storage writes for malformed retirement row %j',
+    async (row) => {
+      const f = fixture([row]);
+      expect(await cleanRetiredBanners(f.admin, actor, origin)).toBe(false);
+      expect(f.remove).not.toHaveBeenCalled();
+      expect(f.upload).not.toHaveBeenCalled();
+    }
+  );
   it('never deletes an inconsistent or foreign queue row', async () => {
     const f = fixture([
       { public_url: url, file_path: 'foreign/path.png', delete_ready: true },
