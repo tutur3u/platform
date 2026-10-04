@@ -1,4 +1,3 @@
-import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
@@ -7,6 +6,10 @@ import {
   assertSafeE2EEnvironment,
   LOCAL_E2E_APP_COORDINATION_SECRET,
 } from './helpers/environment';
+import {
+  lettinFixturePhase,
+  runLettinFixtureCommand,
+} from './helpers/lettin-fixture-diagnostics';
 import { verifyLettinMarkdownPersistence } from './helpers/lettin-markdown-persistence';
 import { assertLettinProfileLimits } from './helpers/lettin-profile-limits';
 import { createLettinBrowserContext } from './helpers/lettin-session';
@@ -49,8 +52,7 @@ const draft = (title: string, kind = 'page') => ({
   content: { type: 'doc', content: [{ type: 'paragraph' }] },
 });
 function localSql(sql: string) {
-  execFileSync(
-    'bunx',
+  runLettinFixtureCommand(
     [
       '--no-install',
       'wrangler',
@@ -61,7 +63,7 @@ function localSql(sql: string) {
       '--command',
       sql,
     ],
-    { cwd: appDirectory, timeout: 60000, stdio: 'pipe' }
+    appDirectory
   );
 }
 
@@ -73,72 +75,84 @@ test.describe
         origin,
         'LETTIN_BASE_URL must be provided by the owned satellite runner'
       ).toBeTruthy();
-      const account = await request.post(
-        `${SUPABASE_URL}/auth/v1/admin/users`,
-        {
+      const account = await lettinFixturePhase('create fixture account', () =>
+        request.post(`${SUPABASE_URL}/auth/v1/admin/users`, {
           headers: serviceHeaders(),
           data: {
             email: creatorEmail,
             password: randomUUID(),
             email_confirm: true,
           },
-        }
+        })
       );
       expect(account.status(), await account.text()).toBe(200);
       creatorId = (await account.json()).id;
       expect(creatorId).toMatch(/^[0-9a-f-]{36}$/);
       // Wrangler and Next/OpenNext share the real local D1 persistence directory.
-      execFileSync(
-        'bunx',
-        [
-          '--no-install',
-          'wrangler',
-          'd1',
-          'migrations',
-          'apply',
-          'LETTIN_DB',
-          '--local',
-        ],
-        { cwd: appDirectory, timeout: 60000, stdio: 'pipe' }
+      await lettinFixturePhase('apply D1 migrations', () =>
+        runLettinFixtureCommand(
+          [
+            '--no-install',
+            'wrangler',
+            'd1',
+            'migrations',
+            'apply',
+            'LETTIN_DB',
+            '--local',
+          ],
+          appDirectory
+        )
       );
       d1Ready = true;
-      localSql(
-        `INSERT OR IGNORE INTO creators(user_id) VALUES ('${creatorId}')`
+      await lettinFixturePhase('seed D1 creator', () =>
+        localSql(
+          `INSERT OR IGNORE INTO creators(user_id) VALUES ('${creatorId}')`
+        )
       );
-      await postRestRow({
-        request,
-        table: 'workspaces',
-        data: {
-          id: workspaceId,
-          creator_id: creatorId,
-          name: 'Synthetic Tulletin E2E',
-          personal: false,
-          handle: `e2e-lettin-${workspaceId.slice(0, 8)}`,
-        },
-      });
+      await lettinFixturePhase('seed fixture workspace', () =>
+        postRestRow({
+          request,
+          table: 'workspaces',
+          data: {
+            id: workspaceId,
+            creator_id: creatorId,
+            name: 'Synthetic Tulletin E2E',
+            personal: false,
+            handle: `e2e-lettin-${workspaceId.slice(0, 8)}`,
+          },
+        })
+      );
     });
     test.afterAll(async ({ request }) => {
       if (!creatorId) return;
       for (const { bucket, path } of profileMediaPaths) {
         if (!path?.startsWith(`${creatorId}/`))
           throw new Error('Unsafe profile fixture cleanup path');
-        await request.delete(`${SUPABASE_URL}/storage/v1/object/${bucket}`, {
-          headers: serviceHeaders(),
-          data: { prefixes: [path] },
-        });
+        await lettinFixturePhase('delete fixture media', () =>
+          request.delete(`${SUPABASE_URL}/storage/v1/object/${bucket}`, {
+            headers: serviceHeaders(),
+            data: { prefixes: [path] },
+          })
+        );
       }
       if (d1Ready)
-        localSql(
-          `DELETE FROM import_previews WHERE ws_id='${workspaceId}'; DELETE FROM creator_blacklist WHERE ws_id='${workspaceId}'; DELETE FROM worlds WHERE ws_id='${workspaceId}'; DELETE FROM creator_profiles WHERE user_id='${creatorId}'; DELETE FROM creators WHERE user_id='${creatorId}'`
+        await lettinFixturePhase('delete D1 fixtures', () =>
+          localSql(
+            `DELETE FROM import_previews WHERE ws_id='${workspaceId}'; DELETE FROM creator_blacklist WHERE ws_id='${workspaceId}'; DELETE FROM worlds WHERE ws_id='${workspaceId}'; DELETE FROM creator_profiles WHERE user_id='${creatorId}'; DELETE FROM creators WHERE user_id='${creatorId}'`
+          )
         );
-      await deleteRestRows({
-        request,
-        table: 'workspaces',
-        filter: `id=eq.${workspaceId}`,
-      });
-      await request.delete(`${SUPABASE_URL}/auth/v1/admin/users/${creatorId}`, {
-        headers: serviceHeaders(),
-      });
+      await lettinFixturePhase('delete fixture workspace', () =>
+        deleteRestRows({
+          request,
+          table: 'workspaces',
+          filter: `id=eq.${workspaceId}`,
+        })
+      );
+      await lettinFixturePhase('delete fixture account', () =>
+        request.delete(`${SUPABASE_URL}/auth/v1/admin/users/${creatorId}`, {
+          headers: serviceHeaders(),
+        })
+      );
     });
 
     test('creates a project in the browser, edits Markdown, saves, and reloads', async ({
