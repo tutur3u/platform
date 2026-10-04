@@ -39,7 +39,7 @@ class ProfileCubit extends Cubit<ProfileState> {
       emit(
         ProfileState(
           status: ProfileStatus.loading,
-          isLoading: _updatingActor == currentUserId,
+          isLoading: currentUserId != null && _updatingActor == currentUserId,
         ),
       );
     }
@@ -67,7 +67,7 @@ class ProfileCubit extends Cubit<ProfileState> {
           status: ProfileStatus.loaded,
           profile: visibleProfile,
           error: null,
-          isLoading: _updatingActor == currentUserId,
+          isLoading: currentUserId != null && _updatingActor == currentUserId,
           isRefreshing: false,
           isFromCache: true,
           lastUpdatedAt: persistedProfile == null
@@ -82,7 +82,7 @@ class ProfileCubit extends Cubit<ProfileState> {
         state.copyWith(
           status: ProfileStatus.loading,
           error: null,
-          isLoading: _updatingActor == currentUserId,
+          isLoading: currentUserId != null && _updatingActor == currentUserId,
           isRefreshing: false,
         ),
       );
@@ -110,7 +110,7 @@ class ProfileCubit extends Cubit<ProfileState> {
           status: ProfileStatus.loaded,
           profile: result.profile,
           error: null,
-          isLoading: _updatingActor == currentUserId,
+          isLoading: currentUserId != null && _updatingActor == currentUserId,
           isRefreshing: false,
           isFromCache: false,
           lastUpdatedAt: _memoryCachedAt,
@@ -122,7 +122,7 @@ class ProfileCubit extends Cubit<ProfileState> {
           state.copyWith(
             status: ProfileStatus.loaded,
             error: null,
-            isLoading: _updatingActor == currentUserId,
+            isLoading: currentUserId != null && _updatingActor == currentUserId,
             isRefreshing: false,
             isFromCache: true,
           ),
@@ -133,7 +133,7 @@ class ProfileCubit extends Cubit<ProfileState> {
         state.copyWith(
           status: ProfileStatus.error,
           error: result.error,
-          isLoading: _updatingActor == currentUserId,
+          isLoading: currentUserId != null && _updatingActor == currentUserId,
           isRefreshing: false,
         ),
       );

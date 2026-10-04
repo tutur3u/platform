@@ -406,12 +406,33 @@ pub(super) async fn current_user_profile_patch_data_response(
         }
     }
 
-    let Some(profile_url) = config.contact_data.rpc_url("update_public_user_profile") else {
+    if !super::profile_banner::canonical_profile_banner_patch(
+        &updates,
+        &actor.claims.sub,
+        &config.contact_data,
+    ) {
+        return no_store_response(json_response(
+            400,
+            json!({"message":"Managed banner URL must be canonical"}),
+        ));
+    }
+    let banner_change = updates.get("banner_url").is_some();
+    let rpc = if banner_change {
+        "update_public_user_profile_with_banner_lifecycle"
+    } else {
+        "update_public_user_profile"
+    };
+    let Some(profile_url) = config.contact_data.rpc_url(rpc) else {
         return contact_data_layer_not_ready_response(request);
     };
-    let body = match serde_json::to_string(
-        &json!({ "p_user_id": actor.claims.sub, "p_patch": updates }),
-    ) {
+    let mut payload = json!({ "p_user_id": actor.claims.sub, "p_patch": updates });
+    if banner_change {
+        let Some(origin) = url_origin(&config.contact_data.supabase_url) else {
+            return contact_data_layer_not_ready_response(request);
+        };
+        payload["p_storage_origin"] = json!(origin);
+    }
+    let body = match serde_json::to_string(&payload) {
         Ok(body) => body,
         Err(_) => {
             return no_store_response(json_response(
@@ -431,10 +452,20 @@ pub(super) async fn current_user_profile_patch_data_response(
     )
     .await
     {
-        Ok(response) if is_success_status(response.status) => no_store_response(json_response(
-            200,
-            json!({ "message": "Profile updated successfully" }),
-        )),
+        Ok(response) if is_success_status(response.status) => {
+            let mut body = json!({ "message": "Profile updated successfully" });
+            if banner_change {
+                body["cleanupPending"] = json!(
+                    !super::profile_banner::clean_retired_banners(
+                        &config.contact_data,
+                        &actor.claims.sub,
+                        outbound
+                    )
+                    .await
+                );
+            }
+            no_store_response(json_response(200, body))
+        }
         Ok(response) => {
             let code = postgrest_code(&response);
             if matches!(code.as_deref(), Some("42883" | "PGRST202")) {

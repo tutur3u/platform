@@ -11,6 +11,7 @@ const f = vi.hoisted(() => ({
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: f.admin,
+  createDynamicAdminClient: f.admin,
 }));
 vi.mock('next/server', async () => ({
   ...(await vi.importActual('next/server')),
@@ -39,7 +40,11 @@ const request = (body: unknown) =>
 beforeEach(() => {
   vi.clearAllMocks();
   f.admin.mockResolvedValue({ rpc: f.rpc });
-  f.rpc.mockResolvedValue({ error: null });
+  vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://storage.example.test');
+  f.rpc.mockImplementation(async (name: string) => ({
+    error: null,
+    data: name === 'pending_profile_banner_retirements' ? [] : null,
+  }));
   f.current.mockResolvedValue({ data: { handle: null }, error: null });
   f.eq.mockReturnValue({ maybeSingle: f.current });
   f.read.mockReturnValue({ select: vi.fn().mockReturnValue({ eq: f.eq }) });
@@ -67,23 +72,31 @@ describe('Canonical profile API', () => {
       undefined as never
     );
     expect(response.status).toBe(200);
-    expect(f.rpc).toHaveBeenCalledWith('update_public_user_profile', {
-      p_user_id: f.actor,
-      p_patch: {
-        handle: 'creator_name',
-        banner_url: 'https://example.test/banner.png',
-      },
-    });
+    expect(f.rpc).toHaveBeenCalledWith(
+      'update_public_user_profile_with_banner_lifecycle',
+      {
+        p_user_id: f.actor,
+        p_storage_origin: 'https://storage.example.test',
+        p_patch: {
+          handle: 'creator_name',
+          banner_url: 'https://example.test/banner.png',
+        },
+      }
+    );
   });
   it('supports explicit clearing and reports conflicts without retrying a partial write', async () => {
     await PATCH(
       request({ handle: null, banner_url: null }),
       undefined as never
     );
-    expect(f.rpc).toHaveBeenCalledWith('update_public_user_profile', {
-      p_user_id: f.actor,
-      p_patch: { handle: null, banner_url: null },
-    });
+    expect(f.rpc).toHaveBeenCalledWith(
+      'update_public_user_profile_with_banner_lifecycle',
+      {
+        p_user_id: f.actor,
+        p_storage_origin: 'https://storage.example.test',
+        p_patch: { handle: null, banner_url: null },
+      }
+    );
     f.rpc.mockResolvedValue({ error: { code: '23505' } });
     expect(
       (await PATCH(request({ handle: 'someone_else' }), undefined as never))

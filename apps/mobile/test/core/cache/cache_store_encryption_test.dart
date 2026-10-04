@@ -64,6 +64,35 @@ void main() {
   String decode(Object? value) => value! as String;
 
   test(
+    'pending scope callback blocks publication after delayed cache init',
+    () async {
+      final directory = Completer<Directory>();
+      var actor = 'old';
+      cacheStore = CacheStore.forTesting(
+        secureStorage: secureStorage,
+        directoryResolver: () => directory.future,
+      );
+      final saving = cacheStore.savePendingMutation(
+        PendingMutationRecord(
+          id: 'scope-test',
+          feature: 'profile',
+          method: 'POST',
+          path: '/banner',
+          createdAt: DateTime.utc(2030),
+          userId: 'old',
+        ),
+        checkScope: () {
+          if (actor != 'old') throw StateError('Actor changed');
+        },
+      );
+      await Future<void>.delayed(Duration.zero);
+      actor = 'new';
+      directory.complete(tempDir);
+      await expectLater(saving, throwsStateError);
+      expect(await cacheStore.listPendingMutations(), isEmpty);
+    },
+  );
+  test(
     'reports category use and clears resources without offline changes',
     () async {
       await cacheStore.write(

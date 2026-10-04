@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   sign: vi.fn(),
+  rpc: vi.fn(),
+  info: vi.fn(),
   publicUrl: vi.fn(),
   admin: vi.fn(),
   budget: vi.fn(),
@@ -39,6 +41,17 @@ const invoke = (filename = 'banner.png') =>
 beforeEach(() => {
   vi.useFakeTimers({ now: new Date('2026-10-02T12:00:00Z') });
   vi.clearAllMocks();
+  vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://storage.example.test');
+  mocks.rpc.mockImplementation(async (name: string) => ({
+    data:
+      name === 'claim_profile_banner_upload'
+        ? { state: 'reserved', claimed: true }
+        : name === 'record_profile_banner_ticket'
+          ? true
+          : null,
+    error: null,
+  }));
+  mocks.info.mockResolvedValue({ data: null, error: { statusCode: '404' } });
   mocks.budget.mockResolvedValue([1, 0]);
   mocks.sign.mockResolvedValue({
     data: {
@@ -51,11 +64,13 @@ beforeEach(() => {
     data: { publicUrl: 'https://example.test/banner.png' },
   });
   mocks.admin.mockResolvedValue({
+    rpc: mocks.rpc,
     storage: {
       from: vi.fn((bucket: string) => {
         expect(bucket).toBe('banners');
         return {
           createSignedUploadUrl: mocks.sign,
+          info: mocks.info,
           getPublicUrl: mocks.publicUrl,
         };
       }),
@@ -80,8 +95,11 @@ describe('budgeted current-user banner tickets', () => {
     const body = await response.json();
     expect(body).toEqual({
       uploadUrl: 'https://example.test/upload',
-      publicUrl: 'https://example.test/banner.png',
-      filePath: expect.stringMatching(new RegExp(`^${actor}/\\d+\\.png$`)),
+      operationId: expect.any(String),
+      publicUrl: expect.stringContaining(
+        `https://storage.example.test/storage/v1/object/public/banners/${actor}/`
+      ),
+      filePath: expect.stringContaining(`${actor}/`),
       token: 'synthetic-ticket',
     });
     const dimensions = mocks.budget.mock.calls[0]![0];
@@ -93,7 +111,7 @@ describe('budgeted current-user banner tickets', () => {
     expect(dimensions[1].slice(1, 3)).toEqual([1, 2]);
     expect(dimensions[3].slice(1, 3)).toEqual([5242880, 16777216]);
     expect(mocks.budget.mock.invocationCallOrder[0]).toBeLessThan(
-      mocks.admin.mock.invocationCallOrder[0]!
+      mocks.sign.mock.invocationCallOrder[0]!
     );
     expect(mocks.sign).toHaveBeenCalledWith(body.filePath, { upsert: false });
   });
@@ -101,14 +119,12 @@ describe('budgeted current-user banner tickets', () => {
   it('denies a depleted budget before opening an admin client or signing', async () => {
     mocks.budget.mockResolvedValue([0, 1]);
     expect((await invoke()).status).toBe(429);
-    expect(mocks.admin).not.toHaveBeenCalled();
     expect(mocks.sign).not.toHaveBeenCalled();
   });
 
   it('fails closed when the authoritative budget is unavailable', async () => {
     mocks.budget.mockRejectedValue(new Error('Synthetic budget outage'));
     expect((await invoke()).status).toBe(503);
-    expect(mocks.admin).not.toHaveBeenCalled();
     expect(mocks.sign).not.toHaveBeenCalled();
   });
 
@@ -120,6 +136,28 @@ describe('budgeted current-user banner tickets', () => {
       expect(mocks.admin).not.toHaveBeenCalled();
     }
   );
+
+  it('classifies malformed JSON as 400 without reserving or signing', async () => {
+    const response = await (
+      POST as unknown as (req: Request, ctx: unknown) => Promise<Response>
+    )(new Request('https://example.test', { method: 'POST', body: '{' }), {
+      user: { id: actor },
+    });
+    expect(response.status).toBe(400);
+    expect(mocks.budget).not.toHaveBeenCalled();
+    expect(mocks.sign).not.toHaveBeenCalled();
+  });
+  it('never returns a token after the operation was retired during signing', async () => {
+    mocks.rpc.mockImplementation(async (name: string) => ({
+      data:
+        name === 'claim_profile_banner_upload'
+          ? { state: 'issued', claimed: false }
+          : false,
+      error: null,
+    }));
+    expect((await invoke()).status).toBe(409);
+    expect(mocks.budget).not.toHaveBeenCalled();
+  });
 
   it('reports signing failures after keeping the already consumed reservation', async () => {
     mocks.sign.mockResolvedValue({

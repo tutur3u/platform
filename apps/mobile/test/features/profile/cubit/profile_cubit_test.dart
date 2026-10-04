@@ -24,6 +24,20 @@ void main() {
       when(() => profileRepository.dispose()).thenReturn(null);
     });
 
+    test('logged-out load never owns a busy update', () async {
+      when(() => profileRepository.getCurrentUserIdSync()).thenReturn(null);
+      when(
+        () => profileRepository.getCachedProfile(),
+      ).thenAnswer((_) async => (profile: null, fetchedAt: null));
+      when(
+        () => profileRepository.getProfile(),
+      ).thenAnswer((_) async => (profile: null, error: 'Signed out'));
+      final cubit = ProfileCubit(profileRepository: profileRepository);
+      await cubit.loadProfile();
+      expect(cubit.state.isLoading, isFalse);
+      await cubit.close();
+    });
+
     test(
       'rejects a previous actor response before memory or disk caching',
       () async {

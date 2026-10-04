@@ -324,6 +324,9 @@ extension OfflineMutationDispatch on OfflineMutationQueue {
               contentType: payload['contentType'] as String,
               encodedBytes: payload['bytes'] as String,
               banner: record.method == 'PROFILE_BANNER_UPLOAD',
+              operationId:
+                  payload['operationId'] as String? ??
+                  (record.method == 'PROFILE_BANNER_UPLOAD' ? record.id : null),
             );
           } finally {
             httpClient.close();

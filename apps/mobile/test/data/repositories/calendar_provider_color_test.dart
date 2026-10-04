@@ -60,6 +60,7 @@ class _Queue extends Fake implements OfflineMutationQueue {
     Map<String, dynamic>? payload,
     String? entityId,
     bool replaySafe = false,
+    String? expectedUserId,
   }) async => false;
   @override
   Future<bool> enqueueAfterNetworkFailure({
@@ -71,6 +72,7 @@ class _Queue extends Fake implements OfflineMutationQueue {
     required Map<String, dynamic> payload,
     required String entityId,
     required bool replaySafe,
+    String? expectedUserId,
   }) async {
     failedPayload = payload;
     safe = replaySafe;

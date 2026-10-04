@@ -9,6 +9,7 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/cache/profile_avatar_delivery.dart';
+import 'package:mobile/core/cache/profile_banner_write.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/repositories/profile_media_optimization.dart';
@@ -24,11 +25,14 @@ class ProfileRepository {
     http.Client? httpClient,
     bool ownsApiClient = false,
     bool ownsHttpClient = false,
+    OfflineMutationQueue? bannerMutationQueue,
   }) : _apiClient = apiClient ?? ApiClient(),
        _httpClient = httpClient ?? http.Client(),
+       _bannerMutationQueue = bannerMutationQueue,
        _ownsApiClient = apiClient == null || ownsApiClient,
        _ownsHttpClient = httpClient == null || ownsHttpClient;
 
+  final OfflineMutationQueue? _bannerMutationQueue;
   final ApiClient _apiClient;
   final http.Client _httpClient;
   final bool _ownsApiClient;
@@ -54,7 +58,11 @@ class ProfileRepository {
     final json = profile.toJson();
     for (final item in await OfflineMutationQueue.instance.listPending()) {
       if (item.feature != 'profile' || item.workspaceId != 'personal') continue;
-      if (item.path == ProfileEndpoints.avatar && item.method == 'DELETE') {
+      if (item.path == ProfileEndpoints.banner &&
+          item.payload?['action'] == 'remove') {
+        json['banner_url'] = null;
+      } else if (item.path == ProfileEndpoints.avatar &&
+          item.method == 'DELETE') {
         json['avatar_url'] = null;
       } else if (item.path == ProfileEndpoints.email) {
         json['new_email'] = item.payload?['email'];
@@ -122,12 +130,28 @@ class ProfileRepository {
 
   Future<({bool success, String? error})> removeBanner() async {
     try {
-      await _writeProfile(
-        'PATCH',
-        ProfileEndpoints.profile,
-        payload: {'banner_url': null},
+      final actor = getCurrentUserIdSync();
+      if (actor == null) {
+        throw const ApiException(
+          message: 'Profile actor is unavailable',
+          statusCode: 401,
+        );
+      }
+      final payload = {'action': 'remove', 'operationId': newLocalMutationId()};
+      await queueBannerWrite(
+        actor: actor,
+        currentActor: getCurrentUserIdSync,
+        queue: _bannerMutationQueue,
+        method: 'POST',
+        path: ProfileEndpoints.banner,
+        payload: payload,
+        send: () => ApiClient.runForUser(actor, () async {
+          await _apiClient.postJson(ProfileEndpoints.banner, payload);
+        }),
       );
       return (success: true, error: null);
+    } on ApiException catch (error) {
+      return (success: false, error: error.message);
     } on Exception {
       return (success: false, error: 'Profile update failed');
     }
@@ -148,30 +172,43 @@ class ProfileRepository {
       }
       final payload = {
         'filename': banner ? 'banner.jpg' : 'avatar.jpg',
+        if (banner) 'operationId': newLocalMutationId(),
         'contentType': 'image/jpeg',
         'bytes': base64Encode(optimized),
       };
-      await queueOrSendVoid(
-        feature: 'profile',
-        method: banner ? 'PROFILE_BANNER_UPLOAD' : 'PROFILE_AVATAR_UPLOAD',
-        path: banner
-            ? ProfileEndpoints.bannerUploadUrl
-            : ProfileEndpoints.avatarUploadUrl,
-        workspaceId: 'personal',
-        entityId: actor,
-        payload: payload,
-        send: () => ApiClient.runForUser(
-          actor,
-          () => deliverProfileAvatar(
-            api: _apiClient,
-            httpClient: _httpClient,
-            filename: payload['filename']!,
-            contentType: payload['contentType']!,
-            encodedBytes: payload['bytes']!,
-            banner: banner,
-          ),
+      Future<void> send() => ApiClient.runForUser(
+        actor,
+        () => deliverProfileAvatar(
+          api: _apiClient,
+          httpClient: _httpClient,
+          filename: payload['filename']!,
+          contentType: payload['contentType']!,
+          encodedBytes: payload['bytes']!,
+          banner: banner,
+          operationId: payload['operationId'],
         ),
       );
+      if (banner) {
+        await queueBannerWrite(
+          actor: actor,
+          currentActor: getCurrentUserIdSync,
+          queue: _bannerMutationQueue,
+          method: 'PROFILE_BANNER_UPLOAD',
+          path: ProfileEndpoints.bannerUploadUrl,
+          payload: payload,
+          send: send,
+        );
+      } else {
+        await queueOrSendVoid(
+          feature: 'profile',
+          method: 'PROFILE_AVATAR_UPLOAD',
+          path: ProfileEndpoints.avatarUploadUrl,
+          workspaceId: 'personal',
+          entityId: actor,
+          payload: payload,
+          send: send,
+        );
+      }
       return (success: true, error: null);
     } on ApiException catch (error) {
       return (success: false, error: error.message);
