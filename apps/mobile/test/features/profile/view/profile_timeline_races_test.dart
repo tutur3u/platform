@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/profile/profile_timeline_repository.dart';
@@ -43,6 +44,8 @@ class _Repository extends ProfileTimelineRepository {
   bool delayCache = false;
   final cacheReads = <Completer<ProfileTimelineSnapshot?>>[];
   final requests = <Completer<ProfileTimelineSnapshot>>[];
+  @override
+  ProfileTimelineSnapshot? peek(String ws, String user) => cache;
   @override
   Future<ProfileTimelineSnapshot?> cached(String ws, String user) async {
     if (!delayCache) return cache;
@@ -130,6 +133,41 @@ void main() {
       ),
     );
     await tester.pump();
+  }
+
+  testWidgets('memory snapshot precedes disk read and no body refresh icon', (
+    tester,
+  ) async {
+    repository
+      ..cache = snapshot('Immediate private row')
+      ..delayCache = true;
+    await mount(tester);
+    expect(find.text('Immediate private row'), findsOneWidget);
+    expect(repository.requests, isEmpty);
+    expect(find.byIcon(Icons.sync), findsNothing);
+    expect(find.byKey(const ValueKey('timeline-refreshing')), findsNothing);
+    repository.cacheReads.single.complete(repository.cache);
+    await tester.pump();
+    repository.requests.single.complete(snapshot('Revalidated row'));
+    await tester.pumpAndSettle();
+    expect(find.text('Revalidated row'), findsOneWidget);
+  });
+
+  for (final status in [401, 403]) {
+    testWidgets('denied $status refresh clears retained private rows', (
+      tester,
+    ) async {
+      repository.cache = snapshot('Private row');
+      await mount(tester);
+      expect(find.text('Private row'), findsOneWidget);
+      repository.requests.single.completeError(
+        ApiException(message: 'Denied', statusCode: status),
+      );
+      await tester.pumpAndSettle();
+      await tester.drainShadToastTimers();
+      expect(find.text('Private row'), findsNothing);
+      expect(find.text('Retry'), findsNothing);
+    });
   }
 
   testWidgets(
@@ -295,7 +333,8 @@ void main() {
     'cold partial refresh shows a bounded notice and refresh retains rows',
     (tester) async {
       await mount(tester);
-      expect(find.bySemanticsLabel('Loading'), findsOneWidget);
+      expect(find.byKey(const ValueKey('timeline-browser')), findsOneWidget);
+      expect(find.byIcon(Icons.sync), findsNothing);
       repository.requests.single.complete(
         snapshot('Partial task', partial: true),
       );
@@ -420,10 +459,7 @@ void main() {
         await tester.pumpAndSettle();
         await tester.drainShadToastTimers();
         await tester.pumpAndSettle();
-        expect(
-          find.byKey(const ValueKey('timeline-refreshing')),
-          findsOneWidget,
-        );
+        expect(find.byKey(const ValueKey('timeline-refreshing')), findsNothing);
         expect(find.text('No recent activity in this workspace'), findsNothing);
         final before = tester.getRect(
           find.byKey(const ValueKey('timeline-browser')),

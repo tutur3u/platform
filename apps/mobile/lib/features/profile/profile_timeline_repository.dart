@@ -76,10 +76,7 @@ class ProfileTimelineRepository {
       path: '/api/v1/workspaces/$workspaceId/mobile-activity',
       queryParameters: {'page': '$page', 'until': until},
     ).toString();
-    final response = await ApiClient.runForUser(
-      userId,
-      () => _api.getJson(path),
-    );
+    final response = await _readActivity(workspaceId, userId, path, generation);
     _checkSession(userId, generation);
     if (_boundaries['$userId:$workspaceId'] != until) {
       throw const FormatException('Activity session changed');
@@ -131,6 +128,13 @@ class ProfileTimelineRepository {
     );
   }
 
+  ProfileTimelineSnapshot? peek(String workspaceId, String userId) => _store
+      .peek<ProfileTimelineSnapshot>(
+        key: _key(workspaceId, userId),
+        decode: _decodeSnapshot,
+      )
+      .data;
+
   Future<ProfileTimelineSnapshot?> cached(
     String workspaceId,
     String userId,
@@ -147,9 +151,11 @@ class ProfileTimelineRepository {
     String userId,
   ) async {
     final generation = ++_generation;
-    final response = await ApiClient.runForUser(
+    final response = await _readActivity(
+      workspaceId,
       userId,
-      () => _api.getJson('/api/v1/workspaces/$workspaceId/mobile-activity'),
+      '/api/v1/workspaces/$workspaceId/mobile-activity',
+      generation,
     );
     _checkSession(userId, generation);
     ProfileTimelineSnapshot? previous;
@@ -198,6 +204,39 @@ class ProfileTimelineRepository {
     _checkSession(userId, generation);
     _snapshots['$userId:$workspaceId'] = snapshot;
     return snapshot;
+  }
+
+  Future<Map<String, dynamic>> _readActivity(
+    String workspaceId,
+    String userId,
+    String path,
+    int generation,
+  ) async {
+    try {
+      return await ApiClient.runForUser(userId, () => _api.getJson(path));
+    } on ApiException catch (error) {
+      if (generation == _generation &&
+          (error.statusCode == 401 ||
+              error.statusCode == 403 && !error.isVerificationRequired)) {
+        ++_generation;
+        final scope = '$userId:$workspaceId';
+        _continuations.remove(scope);
+        _boundaries.remove(scope);
+        _snapshots.remove(scope);
+        final predecessor = _writes;
+        final done = Completer<void>();
+        _writes = done.future;
+        await predecessor;
+        try {
+          await _store.remove(_key(workspaceId, userId));
+        } on Object {
+          // Preserve the definitive denial even if disk removal fails.
+        } finally {
+          done.complete();
+        }
+      }
+      rethrow;
+    }
   }
 
   List<ProfileTimelineItem> _merge(

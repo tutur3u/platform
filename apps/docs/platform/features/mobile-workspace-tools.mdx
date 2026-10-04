@@ -1191,7 +1191,18 @@ default date: the newest returned day is revealed unless the user explicitly
 chooses a date. Empty stored snapshots stay provisional while revalidation is
 pending, using the fixed skeleton viewport rather than announcing absence.
 The section owns one bounded failure toast per failure streak; the embedded
-browser does not add a persistent provider-status banner or retry row.
+browser does not add a persistent provider-status banner, refresh icon, retry row,
+or completion label. Every entry shows the last authorized in-memory snapshot
+immediately and revalidates in the background, including snapshots marked fresh.
+Temporary network failures and verification challenges retain those rows;
+definitive authentication or permission denial clears both visible rows and the
+stored snapshot. An account or personal-workspace change fences delayed responses.
+These defaults apply to mobile Profile Timeline; partial provider failures retain
+only previously loaded rows from the failed sources and pause provider continuation
+until a successful complete refresh. Viewport-near-end loading still expands
+returned days and complete provider pages automatically, including short lists.
+Regression evidence: `profile_timeline_repository_test.dart`,
+`profile_timeline_races_test.dart`, and `profile_timeline_paging_test.dart`.
 
 Mounted Profile regressions locate the lazy activity section by its rendered
 position and wait within a bounded interval for fetched statistics. Fixed pixel
