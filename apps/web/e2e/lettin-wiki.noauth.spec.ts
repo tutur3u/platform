@@ -248,13 +248,16 @@ test.describe
       try {
         const page = await guest.newPage();
         await page.goto(`${origin}/worlds/${world.id}`);
-        await expect(page.locator('[data-wiki-theme="forest"]')).toBeVisible();
+        const publicWorld = page.getByRole('main');
+        await expect(publicWorld).toBeVisible();
+        await expect(publicWorld).toHaveAttribute('data-wiki-theme', 'forest');
         await expect(
           page.getByText('Unpublished secret character')
         ).toHaveCount(0);
-        await expect(
-          page.locator('[data-wiki-motion="reduced"]')
-        ).toBeVisible();
+        await expect(publicWorld).toHaveAttribute(
+          'data-wiki-motion',
+          'reduced'
+        );
         const privateResponse = await guest.request.get(api);
         expect(privateResponse.status()).toBe(401);
         const importResponse = await guest.request.post(`${api}/exocorpse`, {
