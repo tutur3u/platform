@@ -1,4 +1,12 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  ProfileUploadError,
+  reserveProfileUploadBudget,
+} from '@tuturuuu/storage-core/profile-upload-budget';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
@@ -61,8 +69,20 @@ export async function handleCreateAvatarUploadRequest(
 ) {
   const { wsId } = await params;
 
-  // Check permissions
-  const permissions = await getPermissions({ wsId, request: req, user: actor });
+  // Contacts injects its verified satellite actor; Web resolves the request session.
+  const session =
+    actor === undefined
+      ? await resolveAuthenticatedSessionUser(await createClient(req))
+      : { user: actor, authError: null };
+  const principal = session.authError ? null : session.user;
+  if (!principal?.id) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+  const permissions = await getPermissions({
+    wsId,
+    request: req,
+    user: principal,
+  });
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
@@ -83,7 +103,27 @@ export async function handleCreateAvatarUploadRequest(
     );
   }
 
-  // Use admin client to create signed upload URL
+  try {
+    await reserveProfileUploadBudget(principal.id, 'avatar');
+  } catch (error) {
+    if (error instanceof ProfileUploadError) {
+      return NextResponse.json(
+        { message: error.message },
+        {
+          status: error.status,
+          headers: error.retryAfter
+            ? { 'Retry-After': String(error.retryAfter) }
+            : undefined,
+        }
+      );
+    }
+    return NextResponse.json(
+      { message: 'Profile upload protection is unavailable' },
+      { status: 503 }
+    );
+  }
+
+  // Issue a privileged ticket only after charging the verified actor's ceilings.
   const sbAdmin = await createAdminClient();
   const filePath = `${wsId}/users/${fileName}`;
 

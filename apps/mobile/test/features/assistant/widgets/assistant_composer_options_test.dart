@@ -82,20 +82,13 @@ void main() {
           find.byKey(const ValueKey('assistant-composer-options')),
         );
         await tester.pumpAndSettle();
+        expect(find.text('Fast'), findsNothing);
+        expect(find.text('Thinking'), findsNothing);
+        expect(find.text('Add attachments'), findsOneWidget);
         await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
         await tester.pumpAndSettle();
-        expect(
-          tester
-              .widget<ListTile>(find.widgetWithText(ListTile, 'Locked'))
-              .enabled,
-          isFalse,
-        );
-        expect(
-          tester
-              .widget<ListTile>(find.widgetWithText(ListTile, 'Disabled'))
-              .enabled,
-          isFalse,
-        );
+        expect(find.text('Locked'), findsNothing);
+        expect(find.text('Disabled'), findsNothing);
         expect(
           tester
               .widget<ListTile>(find.widgetWithText(ListTile, 'Allowed'))

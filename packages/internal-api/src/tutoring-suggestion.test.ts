@@ -105,8 +105,80 @@ describe('center scheduling policy', () => {
         now
       )
     ).toMatchObject([
-      { sessionDate: '2026-09-27', startTime: '09:30', durationMinutes: 50 },
+      { sessionDate: '2026-09-27', startTime: '09:30', durationMinutes: 60 },
     ]);
+  });
+
+  it('skips Monday without generic fallback and uses the next attended Wednesday or Friday', () => {
+    const classes = [
+      session('2026-09-28T11:00:00Z'),
+      session('2026-09-30T11:00:00Z'),
+      session('2026-10-02T11:00:00Z'),
+    ];
+    expect(
+      suggestTutoringSlots(
+        classes,
+        '2026-09-27',
+        2,
+        EASY_CENTER_TUTORING_POLICY,
+        'separate',
+        now
+      )
+    ).toMatchObject([
+      { sessionDate: '2026-09-30', startTime: '17:15', durationMinutes: 45 },
+      { sessionDate: '2026-10-02', startTime: '17:15', durationMinutes: 45 },
+    ]);
+    expect(
+      suggestTutoringSlots(
+        classes.slice(0, 1),
+        '2026-09-27',
+        1,
+        EASY_CENTER_TUTORING_POLICY,
+        'separate',
+        now
+      )
+    ).toEqual([]);
+    expect(
+      suggestTutoringSlots(
+        classes,
+        '2026-09-27',
+        1,
+        { ...EASY_CENTER_TUTORING_POLICY, preset: 'custom' },
+        'separate',
+        now
+      )
+    ).toMatchObject([{ sessionDate: '2026-09-28', startTime: '17:15' }]);
+  });
+
+  it('keeps staff-edited Easy Center timing and standard fallback intact', () => {
+    const custom = {
+      ...EASY_CENTER_TUTORING_POLICY,
+      timeRules: EASY_CENTER_TUTORING_POLICY.timeRules.map((rule, index) =>
+        index === 0
+          ? { ...rule, weekdays: [1, 3, 5], tutoringStartTime: '17:00' }
+          : rule
+      ),
+    };
+    expect(
+      suggestTutoringSlots(
+        [session('2026-09-28T11:00:00Z')],
+        '2026-09-27',
+        1,
+        custom,
+        'separate',
+        now
+      )
+    ).toMatchObject([{ startTime: '17:00' }]);
+    expect(
+      suggestTutoringSlots(
+        [session('2026-09-28T11:00:00Z')],
+        '2026-09-27',
+        1,
+        STANDARD_TUTORING_POLICY,
+        'separate',
+        now
+      )
+    ).toMatchObject([{ startTime: '17:15' }]);
   });
 
   it('fits two weak-support sessions before one evening class', () => {

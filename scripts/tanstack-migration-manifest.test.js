@@ -1053,13 +1053,13 @@ test('TanStack contact route stays terminal across Rust APIs and Start page', ()
   const routes = new Map(manifest.routes.map((route) => [route.id, route]));
   const terminalContactRoutes = [
     {
-      id: 'api:POST:/api/v1/inquiries:apps/web/src/legacy-api-routes/v1/inquiries/route.ts',
+      id: 'api:POST:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts',
       methods: ['POST'],
       targetOwner: 'rust-backend',
     },
     {
-      id: 'api:/api/v1/users/me/profile:apps/web/src/legacy-api-routes/v1/users/me/profile/route.ts',
-      methods: ['GET', 'PATCH'],
+      id: 'api:/api/v1/users/me/profile:apps/web/src/app/api/v1/users/me/profile/route.ts',
+      methods: ['GET', 'HEAD', 'PATCH'],
       targetOwner: 'rust-backend',
     },
     {

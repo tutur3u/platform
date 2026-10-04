@@ -19,9 +19,17 @@ export default async function InventorySalesPage({
       permissions.containsPermission('export_finance_data')
   );
 
+  const canMergeSeasons = Boolean(
+    permissions?.containsPermission('update_invoices') &&
+      permissions.containsPermission('delete_invoices') &&
+      (permissions.containsPermission('manage_inventory_catalog') ||
+        permissions.containsPermission('update_inventory'))
+  );
+
   return (
     <InventoryOperatorClient
       canExportSales={canExportSales}
+      canMergeSeasons={canMergeSeasons}
       view="sales"
       wsId={wsId}
     />

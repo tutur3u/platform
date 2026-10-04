@@ -55,9 +55,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
 
     try {
       final storedModel = await _preferences.loadModel(workspace.id);
-      final storedThinkingMode =
-          await _preferences.loadThinkingMode(workspace.id) ??
-          AssistantThinkingMode.fast;
+      const storedThinkingMode = AssistantThinkingMode.thinking;
       final storedCreditSource =
           await _preferences.loadCreditSource(workspace.id) ??
           AssistantCreditSource.workspace;
@@ -199,8 +197,11 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
   Future<void> setThinkingMode(AssistantThinkingMode mode) async {
     final workspace = state.workspace;
     if (workspace == null) return;
-    emit(state.copyWith(thinkingMode: mode));
-    await _preferences.saveThinkingMode(workspace.id, mode);
+    emit(state.copyWith(thinkingMode: AssistantThinkingMode.thinking));
+    await _preferences.saveThinkingMode(
+      workspace.id,
+      AssistantThinkingMode.thinking,
+    );
   }
 
   Future<bool> setCreditSource(AssistantCreditSource source) async {

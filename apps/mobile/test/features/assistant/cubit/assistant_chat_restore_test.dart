@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker/image_picker.dart' show XFile;
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_memory_file.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
@@ -13,6 +15,26 @@ import 'package:mocktail/mocktail.dart';
 class _Repository extends Mock implements AssistantRepository {}
 
 class _Preferences extends Mock implements AssistantPreferences {}
+
+final class _DelayedFile extends PlatformFile {
+  _DelayedFile(this.pendingLength);
+  final Completer<int> pendingLength;
+  final _file = AssistantMemoryFile(name: 'photo.png', bytes: Uint8List(4));
+  @override
+  String get name => _file.name;
+  @override
+  Uri get uri => _file.uri;
+  @override
+  XFile get xFile => _file.xFile;
+  @override
+  int? lengthSync() => null;
+  @override
+  Future<int> length() => pendingLength.future;
+  @override
+  Future<Uint8List> readAsBytes() => _file.readAsBytes();
+  @override
+  Stream<Uint8List> readAsByteStream() => _file.readAsByteStream();
+}
 
 void main() {
   late _Repository repository;
@@ -82,6 +104,58 @@ void main() {
     );
     addTearDown(cubit.close);
   });
+
+  test(
+    'attachment decode cannot cross a workspace switch and return',
+    () async {
+      await cubit.loadWorkspace('ws');
+      final length = Completer<int>();
+      final file = _DelayedFile(length);
+      final upload = cubit.addComposerAttachments(
+        wsId: 'ws',
+        files: [file],
+        modelId: 'model',
+        timezone: 'UTC',
+      );
+      await cubit.loadWorkspace('other');
+      await cubit.loadWorkspace('ws');
+      length.complete(4);
+      await upload;
+      expect(cubit.state.composerAttachments, isEmpty);
+      verifyNever(
+        () => repository.uploadAttachment(
+          wsId: any(named: 'wsId'),
+          chatId: any(named: 'chatId'),
+          file: any(named: 'file'),
+        ),
+      );
+    },
+  );
+
+  test(
+    'picker scope captured before timezone await rejects stale upload',
+    () async {
+      await cubit.loadWorkspace('ws');
+      final scope = cubit.attachmentScopeVersion;
+      await cubit.loadWorkspace('other');
+      await cubit.loadWorkspace('ws');
+      await cubit.addComposerAttachments(
+        wsId: 'ws',
+        files: [AssistantMemoryFile(name: 'a.png', bytes: Uint8List(4))],
+        modelId: 'model',
+        timezone: 'UTC',
+        expectedWorkspaceVersion: scope,
+      );
+      expect(cubit.state.composerAttachments, isEmpty);
+      verifyNever(
+        () => repository.uploadAttachment(
+          wsId: any(named: 'wsId'),
+          chatId: any(named: 'chatId'),
+          file: any(named: 'file'),
+        ),
+      );
+    },
+  );
 
   test(
     'voice attachment creates its chat before uploading and keeps its type',

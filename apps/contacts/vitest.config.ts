@@ -20,6 +20,44 @@ export default defineConfig({
     testTimeout: 30_000,
   },
   resolve: {
-    alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
+    alias: [
+      { find: '@', replacement: resolve(__dirname, './src') },
+      // Exercise tutoring's authored shared policy without requiring local package builds.
+      {
+        find: '@tuturuuu/internal-api/workspace-configs',
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/workspace-configs.ts'
+        ),
+      },
+      {
+        find: '@tuturuuu/internal-api/tutoring-suggestion',
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/tutoring-suggestion.ts'
+        ),
+      },
+      {
+        find: '@tuturuuu/internal-api/tutoring-policy',
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/tutoring-policy.ts'
+        ),
+      },
+      {
+        find: '@tuturuuu/internal-api/tutoring',
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/tutoring.ts'
+        ),
+      },
+      {
+        find: /^@tuturuuu\/internal-api$/,
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/index.ts'
+        ),
+      },
+    ],
   },
 });

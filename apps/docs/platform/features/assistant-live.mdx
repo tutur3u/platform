@@ -324,10 +324,44 @@ leaving the page, and tapping outside release prompt focus and dismiss the IME.
 Both modes use the same default 52 logical pixel rail, theme-derived glass and
 outline; prompt height grows for accessible text. Reduced-motion settings remove
 mode animation. The anchored plus popover uses one matching glass surface and
-consistent icon/title rows for attachments, model, thinking mode, credit source
+consistent icon/title rows for attachments, model, credit source
 and closing the prompt; existing per-attachment previews/removal remain available.
 Live mode keeps its explicit entry and transport behavior. This rule applies to
 normal native mobile text chat, not web chat or Live stage controls. Regression
 coverage is in `assistant_morphing_dock_test.dart` and
 `assistant_composer_dock_test.dart`; installed-device appearance/keyboard checks
 remain part of release verification.
+
+Native mobile text sends and regeneration always use Thinking, including chats
+restored from older Fast preferences and the legacy transport fallback. The mode
+selector is intentionally absent; web and Live behavior are unchanged. Model
+selection defaults to hiding locked or disabled models; users can reveal them
+for inspection but cannot select them. Model and attachment sheets use the dock
+glass material. Add attachments offers Files, Photos & Videos Library, and
+Capture & Record. Camera photo/video capture appears on Android and iOS only;
+recorded audio uses the existing microphone permission/recording flow. Cancelling
+a system picker adds nothing. Regression coverage includes the native request
+payload, stored preference migration, model default filter and source availability.
+
+Root mobile destinations and Assistant share 12px horizontal insets, an 8px
+bottom gap, and fixed 52px primary-action columns. A second column is reserved
+on viewports at least 400px wide, regardless of whether an action is present.
+Narrow phones keep secondary dock actions in the top navbar so five root
+navigation targets retain at least 44px. Apps and Assistant use the same rail;
+chat/navigation toggling changes content without moving the primary action.
+
+The fixed empty action columns apply to the five root destinations (Home, Apps,
+Assistant, Notifications, and Profile). Mini-app navigation intentionally keeps
+its available width when it has no actions, including six-item docks on narrow
+phones. Registered mini-app actions consume space only when present; secondary
+actions remain reachable from the top navbar on narrow screens. The six-item
+320px no-action regression checks that touch targets stay at least 44px; this
+does not claim every possible mini-app/action combination has that width.
+
+Native attachment requests retain the workspace version captured before opening
+a picker or recording. They reject a workspace switch, including a switch back,
+before decoding, adding a pending attachment, creating a chat, or starting an
+upload. An upload already in flight retains its original workspace and does not
+update a replacement composer. Voice send-now also checks the original scope.
+Delayed file decoding and stale pre-timezone scope are covered by
+`assistant_chat_restore_test.dart`.

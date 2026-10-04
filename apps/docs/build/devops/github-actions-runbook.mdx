@@ -524,6 +524,28 @@ jobs pass the dedicated repository `TURBO_TOKEN` and `TURBO_TEAM` variable,
 while pull-request and Dependabot jobs leave both inputs empty and use the
 task-family local fallback cache.
 
+The secretless fallback archives only `.turbo/cache` under v2 keys partitioned
+by OS, architecture, task family, Turbo configuration hash, lockfile hash, and
+commit. Restoration tries the exact key, then the same-lock prefix. Only
+`type-check.yaml` opts into a final same-config prefix across lock generations.
+Turbo still validates each task hash and both dependency builds and type checks
+run; a changed lockfile can invalidate every task even after archive restoration.
+Only non-PR, non-Dependabot jobs on the repository default branch save archives.
+Feature, production, PR, and Dependabot runs remain restore-only, with GitHub's
+branch cache scope preventing main from restoring feature-produced entries.
+The protected remote-token expressions remain unchanged: this does not enable
+feature-branch Turbo Remote Cache.
+
+The action exposes `cache-hit` (exact-key match) and `cache-matched-key` (empty on
+miss). Its job summary distinguishes archive MISS, exact restore, and prefix
+restore from actual Turbo task hits. Inspect each command's Cached/Tasks totals
+before claiming reuse. A successful default-branch run must seed a new v2 archive;
+deleted archives cannot be recovered by broader prefixes. Before claiming a
+speedup, record the exact CI SHA, archive size, matched key, per-task hits, and
+elapsed time; archive download cost and retention can outweigh reuse.
+Regression coverage: `node --test .github/actions/setup-turbo-fallback-cache/action.test.js`.
+
+
 Vercel deploy credentials must stay environment-scoped. Do not put
 `${{ secrets.* }}` values in a Vercel workflow-level `env:` block, and do not
 export production Supabase, encryption, or provider secrets from GitHub
@@ -647,6 +669,16 @@ reported as `release-please failed: other side closed`. It checks that the run
 is still failed on the current production SHA, then reruns failed jobs for at
 most three total attempts. Other failures remain visible for investigation;
 a manual rerun supersedes a queued automatic retry.
+Generated release-note normalization preserves published history and unrelated
+feature descriptions. The offline checkout entry from #5734 is a narrow exception:
+when both its original commit and merge commit appear in the same unpublished
+section, the normalizer retains one description that includes cached images and
+all references. Both exact commit identities and titles must match; similar
+wording or a lone commit never enables this consolidation. Regression coverage is
+in `scripts/ci/normalize-release-notes.test.js`. Regenerate through the maintained
+production Release Please workflow after promoting a generator fix; do not edit
+generated changelogs or version fields manually.
+
 Package publish workflows consume release-please version bumps on `production`;
 they must not recreate checksum or PR-title version bump automation. Package
 release workflows use npm trusted publishing: build and artifact-pack work runs

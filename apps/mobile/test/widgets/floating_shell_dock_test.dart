@@ -385,7 +385,8 @@ void main() {
         ),
       ),
     );
-    expect(find.text('Compose'), findsOneWidget);
+    expect(find.text('Compose'), findsNothing);
+    expect(find.byTooltip('Compose'), findsOneWidget);
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -400,7 +401,8 @@ void main() {
     expect(find.text('Compose'), findsNothing);
     tester.view.physicalSize = const Size(1194, 834);
     await tester.pumpAndSettle();
-    expect(find.text('Compose'), findsOneWidget);
+    expect(find.text('Compose'), findsNothing);
+    expect(find.byTooltip('Compose'), findsOneWidget);
     await tester.tap(find.byType(FilledButton));
     expect(calls, 2);
     expect(tester.takeException(), isNull);

@@ -5,6 +5,7 @@ on:
       - 'apps/database/supabase/migrations/**'
       - 'apps/database/supabase/tests/inventory-*.sql'
       - 'apps/database/supabase/tests/inventory-merge-concurrency.mjs'
+      - 'apps/database/supabase/tests/inventory-season-merge-concurrency.mjs'
       - 'apps/database/scripts/inventory-contract-tests.mjs'
       - 'apps/database/scripts/verify-inventory-offline-contract.mjs'
       - 'apps/database/scripts/run-supabase*.js'

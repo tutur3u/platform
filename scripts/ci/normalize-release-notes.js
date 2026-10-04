@@ -5,6 +5,34 @@ const { execFileSync } = require('node:child_process');
 const referencePattern =
   /\(\[[^\]]+\]\(https:\/\/github\.com\/tutur3u\/platform\/(?:commit|issues|pull)\/[^)]+\)\)/g;
 
+// #5734 contains the original offline checkout commit and its merge commit.
+// Their titles differ because the merge also names cached images. Match this
+// proven pair by BOTH exact source identities; title similarity alone is unsafe.
+const mobileOfflinePair = [
+  {
+    hash: 'a45d63498cc1e686d1d070f5861cf938c4e9a9ef',
+    description:
+      '* **mobile:** support offline data and safe inventory checkout',
+  },
+  {
+    hash: '2f0f39763daea56f1029fcc3e99e0be53c60e106',
+    description:
+      '* **mobile:** support offline data, cached images, and safe inventory checkout',
+  },
+];
+
+function equivalentMobileEntry(entries, description, hashes) {
+  const index = mobileOfflinePair.findIndex(
+    (entry) => entry.description === description && hashes.includes(entry.hash)
+  );
+  if (index < 0) return undefined;
+  const counterpart = mobileOfflinePair[1 - index];
+  const existing = entries.get(counterpart.description);
+  if (!existing?.hashes.includes(counterpart.hash)) return undefined;
+  existing.description = mobileOfflinePair[1].description;
+  return existing;
+}
+
 /** Only normalize unpublished additions; published release text is immutable. */
 function normalizeReleaseNotes(
   content,
@@ -45,15 +73,24 @@ function normalizeReleaseNotes(
       return hash ? [hash] : [];
     });
     if (hashes.length && hashes.every(isIntegrationCommit)) continue;
-    const existing = entries.get(description);
+    const existing =
+      entries.get(description) ||
+      equivalentMobileEntry(entries, description, hashes);
     if (existing) {
       existing.references = [
         ...new Set([...existing.references, ...references]),
       ];
       output[existing.index] =
-        `${description} ${existing.references.join(' ')}`;
+        `${existing.description} ${existing.references.join(' ')}`;
+      existing.hashes = [...new Set([...existing.hashes, ...hashes])];
+      entries.set(description, existing);
     } else {
-      entries.set(description, { index: output.length, references });
+      entries.set(description, {
+        index: output.length,
+        references,
+        description,
+        hashes,
+      });
       output.push(line);
     }
   }

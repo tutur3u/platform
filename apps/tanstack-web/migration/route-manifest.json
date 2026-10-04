@@ -6,12 +6,12 @@
         "acceptedRemoval": 12,
         "key": "api",
         "label": "api",
-        "legacyNext": 547,
-        "migrated": 62,
-        "percentComplete": 11.92,
-        "remaining": 547,
-        "terminal": 74,
-        "total": 621,
+        "legacyNext": 549,
+        "migrated": 63,
+        "percentComplete": 12.02,
+        "remaining": 549,
+        "terminal": 75,
+        "total": 624,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 12,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 557,
-        "migrated": 67,
-        "percentComplete": 12.42,
-        "remaining": 557,
-        "terminal": 79,
-        "total": 636,
+        "legacyNext": 559,
+        "migrated": 68,
+        "percentComplete": 12.52,
+        "remaining": 559,
+        "terminal": 80,
+        "total": 639,
         "unknownStatus": 0
       },
       {
@@ -363,12 +363,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 635,
-      "migrated": 215,
-      "percentComplete": 26.5,
-      "remaining": 635,
-      "terminal": 229,
-      "total": 864,
+      "legacyNext": 637,
+      "migrated": 216,
+      "percentComplete": 26.53,
+      "remaining": 637,
+      "terminal": 230,
+      "total": 867,
       "unknownStatus": 0
     }
   },
@@ -1961,39 +1961,52 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:GET:/api/v1/inquiries:apps/web/src/legacy-api-routes/v1/inquiries/route.ts",
+      "id": "api:GET:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts",
       "kind": "api",
       "methods": [
         "GET"
       ],
       "routePath": "/api/v1/inquiries",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/inquiries/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/inquiries/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "method": "GET",
-      "parentId": "api:/api/v1/inquiries:apps/web/src/legacy-api-routes/v1/inquiries/route.ts"
+      "parentId": "api:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts"
     },
     {
-      "id": "api:POST:/api/v1/inquiries:apps/web/src/legacy-api-routes/v1/inquiries/route.ts",
+      "id": "api:HEAD:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts",
+      "kind": "api",
+      "methods": [
+        "HEAD"
+      ],
+      "routePath": "/api/v1/inquiries",
+      "sourceFile": "apps/web/src/app/api/v1/inquiries/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "method": "HEAD",
+      "parentId": "api:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts",
       "kind": "api",
       "methods": [
         "POST"
       ],
       "routePath": "/api/v1/inquiries",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/inquiries/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/inquiries/route.ts",
       "status": "migrated",
       "targetOwner": "rust-backend",
       "method": "POST",
-      "parentId": "api:/api/v1/inquiries:apps/web/src/legacy-api-routes/v1/inquiries/route.ts"
+      "parentId": "api:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts"
     },
     {
-      "id": "api:/api/v1/inquiries/:id:apps/web/src/legacy-api-routes/v1/inquiries/[id]/route.ts",
+      "id": "api:/api/v1/inquiries/:id:apps/web/src/app/api/v1/inquiries/[id]/route.ts",
       "kind": "api",
       "methods": [
         "PATCH"
       ],
       "routePath": "/api/v1/inquiries/:id",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/inquiries/[id]/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/inquiries/[id]/route.ts",
       "status": "migrated",
       "targetOwner": "rust-backend"
     },
@@ -2549,13 +2562,13 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/public/user-profile-links/:code/avatar:apps/web/src/legacy-api-routes/v1/public/user-profile-links/[code]/avatar/route.ts",
+      "id": "api:/api/v1/public/user-profile-links/:code/avatar:apps/web/src/app/api/v1/public/user-profile-links/[code]/avatar/route.ts",
       "kind": "api",
       "methods": [
         "POST"
       ],
       "routePath": "/api/v1/public/user-profile-links/:code/avatar",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/public/user-profile-links/[code]/avatar/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/public/user-profile-links/[code]/avatar/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -2795,13 +2808,13 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/users/me/avatar/upload-url:apps/web/src/legacy-api-routes/v1/users/me/avatar/upload-url/route.ts",
+      "id": "api:/api/v1/users/me/avatar/upload-url:apps/web/src/app/api/v1/users/me/avatar/upload-url/route.ts",
       "kind": "api",
       "methods": [
         "POST"
       ],
       "routePath": "/api/v1/users/me/avatar/upload-url",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/users/me/avatar/upload-url/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/users/me/avatar/upload-url/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -3026,14 +3039,15 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/users/me/profile:apps/web/src/legacy-api-routes/v1/users/me/profile/route.ts",
+      "id": "api:/api/v1/users/me/profile:apps/web/src/app/api/v1/users/me/profile/route.ts",
       "kind": "api",
       "methods": [
         "GET",
+        "HEAD",
         "PATCH"
       ],
       "routePath": "/api/v1/users/me/profile",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/users/me/profile/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/users/me/profile/route.ts",
       "status": "migrated",
       "targetOwner": "rust-backend"
     },
@@ -3269,13 +3283,13 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/avatar/upload-url:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/avatar/upload-url/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/avatar/upload-url:apps/web/src/app/api/v1/workspaces/[wsId]/avatar/upload-url/route.ts",
       "kind": "api",
       "methods": [
         "POST"
       ],
       "routePath": "/api/v1/workspaces/:wsId/avatar/upload-url",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/avatar/upload-url/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/avatar/upload-url/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -4819,6 +4833,18 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/workspaces/:wsId/inventory/sales-periods/merges:apps/web/src/app/api/v1/workspaces/[wsId]/inventory/sales-periods/merges/route.ts",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "routePath": "/api/v1/workspaces/:wsId/inventory/sales-periods/merges",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/inventory/sales-periods/merges/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/workspaces/:wsId/logo:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/logo/route.ts",
       "kind": "api",
       "methods": [
@@ -6308,6 +6334,17 @@
       ],
       "routePath": "/api/v1/workspaces/:wsId/tutoring/sessions/:id/message-preview",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/message-preview/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/tutoring/teachers:apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/teachers/route.ts",
+      "kind": "api",
+      "methods": [
+        "GET"
+      ],
+      "routePath": "/api/v1/workspaces/:wsId/tutoring/teachers",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/teachers/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -9796,20 +9833,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 621,
+    "apiRoutes": 624,
     "cronRoutes": 10,
     "layouts": 68,
     "pages": 156,
-    "routeHandlers": 636,
+    "routeHandlers": 639,
     "methodCounts": {
-      "GET": 323,
-      "HEAD": 9,
-      "POST": 315,
+      "GET": 325,
+      "HEAD": 11,
+      "POST": 316,
       "PUT": 58,
       "PATCH": 64,
       "DELETE": 101,
       "OPTIONS": 24
     },
-    "total": 864
+    "total": 867
   }
 }

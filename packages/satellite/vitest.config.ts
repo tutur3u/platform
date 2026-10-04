@@ -6,6 +6,22 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: /^@tuturuuu\/supabase\/next\/server$/,
+        replacement: path.resolve(
+          import.meta.dirname,
+          '../supabase/src/next/server.ts'
+        ),
+      },
+      // Match the default config selected by `vitest run` in fresh CI.
+      // Source loading lets Vitest apply the test's server-only partial mock.
+      {
+        find: /^@tuturuuu\/storage-core\/profile-upload-budget$/,
+        replacement: path.resolve(
+          import.meta.dirname,
+          '../storage-core/src/lib/profile-upload-budget.ts'
+        ),
+      },
+      {
         find: /^@tuturuuu\/internal-api$/,
         replacement: path.resolve(
           import.meta.dirname,
