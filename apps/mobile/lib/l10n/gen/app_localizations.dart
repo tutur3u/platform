@@ -19104,6 +19104,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Record video'**
   String get assistantCaptureVideo;
+
+  /// No description provided for @settingsProductSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'App settings'**
+  String get settingsProductSettings;
+
+  /// No description provided for @mailDiscardSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes?'**
+  String get mailDiscardSettingsTitle;
+
+  /// No description provided for @mailDiscardSettingsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Mail settings changes have not been saved.'**
+  String get mailDiscardSettingsDescription;
+
+  /// No description provided for @mailDiscardSettingsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes'**
+  String get mailDiscardSettingsAction;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

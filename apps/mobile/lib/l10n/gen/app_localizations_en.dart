@@ -10097,4 +10097,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantCaptureVideo => 'Record video';
+
+  @override
+  String get settingsProductSettings => 'App settings';
+
+  @override
+  String get mailDiscardSettingsTitle => 'Discard changes?';
+
+  @override
+  String get mailDiscardSettingsDescription => 'Your Mail settings changes have not been saved.';
+
+  @override
+  String get mailDiscardSettingsAction => 'Discard changes';
 }

@@ -57,23 +57,26 @@ text, system/dock back without a top Back button, and unknown module links;
 transitions, and `shell_profile_races_test.dart` covers delayed account/cache
 completion. These widget checks do not establish installed-device or production evidence.
 
-### Consistent dock slots
+### Centered navigation and action group
 
-Root destinations use the same fixed 52px primary slot, including screens with
-no primary action. At widths below 400px, secondary dock actions remain reachable
-in the top navbar; wider screens reserve a second slot. Navigation and Assistant
-share horizontal/bottom insets so switching screens cannot recenter the root
-icons around a newly appearing action. Actions stay icon-only with semantic
-labels and tooltips. Coverage: `floating_dock_rail_test.dart` and
-`dock_secondary_actions_test.dart`; device visual/keyboard checks remain required.
+Root and mini-app destinations center the combined visible navigation island and
+its actions whenever they fit. Empty action columns do not consume space. Actions
+keep 52px slots and share the bottom baseline, including when large text makes
+the composer taller; narrow layouts keep secondary actions in the top navbar. The
+navigation and Assistant dock share horizontal and safe-area bottom insets, and
+switching root destinations paints only the current body and dock. Visited tabs
+remain mounted, preserving drafts and scroll positions without crossfading two
+pages or two docks. Coverage: `floating_dock_rail_test.dart`,
+`apps_search_submit_test.dart`, and `shell_assistant_composer_test.dart`.
 
-The fixed empty action columns apply to the five root destinations (Home, Apps,
-Assistant, Notifications, and Profile). Mini-app navigation intentionally keeps
-its available width when it has no actions, including six-item docks on narrow
-phones. Registered mini-app actions consume space only when present; secondary
-actions remain reachable from the top navbar on narrow screens. The six-item
-320px no-action regression checks that touch targets stay at least 44px; this
-does not claim every possible mini-app/action combination has that width.
+Leaving Apps or launching a module clears Apps search so returning starts in
+navigation mode. Workspace picker search replaces the shell title, and its
+visible footer actions are centered. Hiding and restoring workspace shortcuts
+belongs to Settings; the normal picker never exposes hide buttons. Coverage:
+`workspace_picker_sheet_test.dart`. Native dark launch backgrounds match the
+actual app theme, checked by `native_splash_theme_test.dart`; the locked screen
+shows only the lock status and unlock action. Device visual, transition, and
+keyboard checks on the exact CI-built artifact remain required.
 
 ## Notification navigation and refresh
 
@@ -97,3 +100,16 @@ switch away and back in the same workspace. Delayed old requests cannot replace
 the new count or end its loading state. This applies to the native shell action
 button and shared notifications cubit; delayed-actor and same-workspace ABA
 regressions are in `notifications_cubit_test.dart`.
+
+## Product settings entry points
+
+The central Settings overview lists native products with maintained settings
+entries in `product_settings_registry.dart`. Calendar and Finance open the
+existing shared Preferences controls; Mail resolves the selected workspace's
+mailboxes and opens its existing quick-settings editor. Entries are shown only
+when the product's corresponding state/access is available; this registry does
+not grant permissions or fabricate settings for unimplemented products. App
+quick settings and central entries share implementations and persisted state.
+Mail's nested editor uses the shell title, bottom navigation/actions and inherited
+background. A scoped route is cancelled on any account/workspace transition;
+request completion cannot replace an editor opened for another scope.

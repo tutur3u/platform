@@ -3,7 +3,7 @@ flutter_native_splash:
   android: true
   web: false
   color: "#FFFFFF"
-  color_dark: "#363636"
+  color_dark: "#09090B"
   image: ../web/public/media/logos/light.png
   image_dark: ../web/public/media/logos/dark.png
   image_android: assets/logos/light_android.png
@@ -12,6 +12,6 @@ flutter_native_splash:
   android_gravity: center
   android_12:
     color: "#FFFFFF"
-    color_dark: "#363636"
+    color_dark: "#09090B"
     image: assets/logos/light_android12.png
     image_dark: assets/logos/dark_android12.png

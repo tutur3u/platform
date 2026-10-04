@@ -4308,5 +4308,9 @@
     "assistantAttachFilesSource": "Files",
     "assistantCaptureAudio": "Record audio",
     "assistantCapturePhoto": "Take photo",
-    "assistantCaptureVideo": "Record video"
+    "assistantCaptureVideo": "Record video",
+    "settingsProductSettings": "App settings",
+    "mailDiscardSettingsTitle": "Discard changes?",
+    "mailDiscardSettingsDescription": "Your Mail settings changes have not been saved.",
+    "mailDiscardSettingsAction": "Discard changes"
 }
