@@ -647,6 +647,16 @@ reported as `release-please failed: other side closed`. It checks that the run
 is still failed on the current production SHA, then reruns failed jobs for at
 most three total attempts. Other failures remain visible for investigation;
 a manual rerun supersedes a queued automatic retry.
+Generated release-note normalization preserves published history and unrelated
+feature descriptions. The offline checkout entry from #5734 is a narrow exception:
+when both its original commit and merge commit appear in the same unpublished
+section, the normalizer retains one description that includes cached images and
+all references. Both exact commit identities and titles must match; similar
+wording or a lone commit never enables this consolidation. Regression coverage is
+in `scripts/ci/normalize-release-notes.test.js`. Regenerate through the maintained
+production Release Please workflow after promoting a generator fix; do not edit
+generated changelogs or version fields manually.
+
 Package publish workflows consume release-please version bumps on `production`;
 they must not recreate checksum or PR-title version bump automation. Package
 release workflows use npm trusted publishing: build and artifact-pack work runs
