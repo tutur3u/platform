@@ -1119,3 +1119,15 @@ migrations; an absent RPC or API schema cache is not proof that a ledger is abse
 The guard checks actual PostgreSQL relation presence and fails closed on partial
 or incompatible ledger schemas. Never replace a missing guard with an unguarded
 provider write.
+
+### i18n PR report evidence
+
+The i18n report requires both a completed job result and its explicit validator
+output. Cancelled, skipped, missing-output, and contradictory results are reported
+as incomplete; they establish neither a translation defect nor passing validation.
+Only confirmed validator failures offer repair commands. Reports identify the
+source head and workflow run. Comment writes are serialized per PR, paginate all
+existing comments, reject superseded heads, and preserve newer run/attempt reports.
+A branch can still advance after the final API head check; the embedded source
+identity makes that evidence boundary visible. Existing cancelled job conclusions
+are unchanged. Regression coverage: `node --test scripts/ci/i18n-report.test.js`.
