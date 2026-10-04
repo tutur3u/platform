@@ -183,6 +183,21 @@ void main() {
     await _pump(tester);
   }
 
+  testWidgets('leaving Apps clears retained query and search chrome', (
+    tester,
+  ) async {
+    await mount(tester);
+    await search(tester, 'calendar');
+    router.go(Routes.home);
+    await _pump(tester);
+    router.go(Routes.apps);
+    await _pump(tester);
+    expect(searchField, findsNothing);
+    await tester.tap(find.byIcon(Icons.search_rounded).first);
+    await _pump(tester);
+    expect(tester.widget<TextField>(searchField).controller!.text, isEmpty);
+  });
+
   testWidgets('Home tabs retain Dashboard cubits and Grid precedes List', (
     tester,
   ) async {
