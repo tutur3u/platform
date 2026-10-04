@@ -5,9 +5,15 @@ import {
   type DevboxSetupPackageManager,
   type DevboxSetupTool,
 } from '@tuturuuu/devbox';
+import {
+  type DevboxExecutionMode,
+  parseDevboxExecutionMode,
+} from './devbox-host-protection';
 
 export interface DevboxDoctorReport {
-  containerized: true;
+  containerized: boolean;
+  executionMode?: DevboxExecutionMode;
+  executionPolicyError?: string;
   missingTools: DevboxSetupTool[];
   packageManager: DevboxSetupPackageManager | null;
   setupCommands: string[][];
@@ -48,6 +54,16 @@ function detectPackageManager(): DevboxSetupPackageManager | null {
 }
 
 export async function createDevboxDoctorReport(): Promise<DevboxDoctorReport> {
+  let executionMode: DevboxExecutionMode | undefined;
+  let executionPolicyError: string | undefined;
+  try {
+    executionMode = parseDevboxExecutionMode(
+      process.env.TUTURUUU_DEVBOX_EXECUTION_MODE
+    );
+  } catch {
+    executionPolicyError =
+      'TUTURUUU_DEVBOX_EXECUTION_MODE must be trusted or judge-only; correct it before starting the agent.';
+  }
   const tools = {
     bun: getToolVersion('bun', ['--version']),
     docker: getToolVersion('docker', ['--version']),
@@ -68,11 +84,14 @@ export async function createDevboxDoctorReport(): Promise<DevboxDoctorReport> {
       : null;
 
   return {
-    containerized: true,
+    containerized: executionMode === 'judge-only',
+    executionMode,
+    executionPolicyError,
     missingTools,
     packageManager,
     setupCommands: setupPlan?.commands ?? [],
-    status: missingTools.length > 0 ? 'needs-setup' : 'ok',
+    status:
+      missingTools.length > 0 || executionPolicyError ? 'needs-setup' : 'ok',
     tools,
   };
 }
@@ -97,7 +116,11 @@ export function printDevboxDoctorReport(
       `Bun: ${report.tools.bun ?? 'missing'}`,
       `Docker: ${report.tools.docker ?? 'missing'}`,
       `Git: ${report.tools.git ?? 'missing'}`,
-      'Execution: containerized',
+      report.executionPolicyError
+        ? `Execution: invalid policy. ${report.executionPolicyError}`
+        : report.executionMode === 'judge-only'
+          ? 'Execution: Judge-only; verify gVisor readiness with box judge doctor'
+          : 'Execution: trusted host commands; use a dedicated VM for untrusted workloads',
     ].join('\n')}\n`
   );
 }

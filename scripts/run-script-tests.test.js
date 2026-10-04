@@ -139,7 +139,11 @@ test('passes spaced paths as arguments and propagates the child exit code', (t) 
 
   assert.equal(exitCode, 7);
   assert.equal(invocation.command, process.execPath);
-  assert.deepEqual(invocation.args, ['--test', 'scripts/space name.test.js']);
+  assert.deepEqual(invocation.args, [
+    '--experimental-strip-types',
+    '--test',
+    'scripts/space name.test.js',
+  ]);
   assert.equal(invocation.options.cwd, repoRoot);
   assert.equal(invocation.options.stdio, 'inherit');
 });

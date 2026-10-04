@@ -8,6 +8,7 @@ import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_model_eligibility.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_attachment_menu_entry.dart';
+import 'package:mobile/features/assistant/widgets/assistant_composer_menu_surface.dart';
 import 'package:mobile/features/assistant/widgets/assistant_model_picker_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -25,9 +26,11 @@ class AssistantComposerOptions extends StatelessWidget {
     required this.onRemoveAttachment,
     required this.onCloseComposer,
     this.repository,
+    this.onDismissKeyboard,
     super.key,
   });
   final VoidCallback onCloseComposer;
+  final VoidCallback? onDismissKeyboard;
   final AssistantChatState chatState;
   final AssistantShellState shellState;
   final AssistantRepository? repository;
@@ -80,45 +83,56 @@ class AssistantComposerOptions extends StatelessWidget {
       key: const ValueKey('assistant-composer-options'),
       tooltip: context.l10n.assistantSettingsTitle,
       padding: EdgeInsets.zero,
+      onOpened: onDismissKeyboard,
+      color: Colors.transparent,
+      elevation: 0,
+      menuPadding: EdgeInsets.zero,
       constraints: const BoxConstraints(minWidth: 220, maxWidth: 300),
       onSelected: (option) => unawaited(_select(context, option)),
       itemBuilder: (context) => [
-        for (final attachment in chatState.composerAttachments)
-          AssistantComposerAttachmentMenuEntry<_ComposerOption>(
-            attachment: attachment,
-            onRemove: onRemoveAttachment,
-          ),
-        _item(
-          _ComposerOption.attach,
-          Icons.attach_file,
-          context.l10n.assistantAttachFilesAction,
-        ),
-        _item(
-          _ComposerOption.model,
-          Icons.auto_awesome_outlined,
-          modelLabel,
-          enabled: shellState.availableModels.isNotEmpty,
-        ),
-        CheckedPopupMenuItem(
-          value: _ComposerOption.fast,
-          checked: shellState.thinkingMode == AssistantThinkingMode.fast,
-          child: Text(context.l10n.assistantModeFast),
-        ),
-        CheckedPopupMenuItem(
-          value: _ComposerOption.thinking,
-          checked: shellState.thinkingMode == AssistantThinkingMode.thinking,
-          child: Text(context.l10n.assistantModeThinking),
-        ),
-        _item(
-          _ComposerOption.source,
-          Icons.toll_rounded,
-          '${l10n.assistantSourceLabel}: $source',
-        ),
-        const PopupMenuDivider(),
-        _item(
-          _ComposerOption.close,
-          Icons.keyboard_hide_rounded,
-          context.l10n.assistantCloseComposer,
+        AssistantComposerMenuSurface(
+          entries: [
+            for (final attachment in chatState.composerAttachments)
+              AssistantComposerAttachmentMenuEntry<_ComposerOption>(
+                attachment: attachment,
+                onRemove: onRemoveAttachment,
+              ),
+            _item(
+              _ComposerOption.attach,
+              Icons.attach_file,
+              context.l10n.assistantAttachFilesAction,
+            ),
+            _item(
+              _ComposerOption.model,
+              Icons.auto_awesome_outlined,
+              modelLabel,
+              enabled: shellState.availableModels.isNotEmpty,
+            ),
+            _item(
+              _ComposerOption.fast,
+              Icons.flash_on_rounded,
+              context.l10n.assistantModeFast,
+              selected: shellState.thinkingMode == AssistantThinkingMode.fast,
+            ),
+            _item(
+              _ComposerOption.thinking,
+              Icons.psychology_alt_rounded,
+              context.l10n.assistantModeThinking,
+              selected:
+                  shellState.thinkingMode == AssistantThinkingMode.thinking,
+            ),
+            _item(
+              _ComposerOption.source,
+              Icons.toll_rounded,
+              '${l10n.assistantSourceLabel}: $source',
+            ),
+            const PopupMenuDivider(),
+            _item(
+              _ComposerOption.close,
+              Icons.keyboard_hide_rounded,
+              context.l10n.assistantCloseComposer,
+            ),
+          ],
         ),
       ],
       child: SizedBox(
@@ -140,6 +154,7 @@ class AssistantComposerOptions extends StatelessWidget {
     IconData icon,
     String label, {
     bool enabled = true,
+    bool selected = false,
   }) => PopupMenuItem(
     value: value,
     enabled: enabled,
@@ -148,6 +163,10 @@ class AssistantComposerOptions extends StatelessWidget {
         Icon(icon, size: 20),
         const SizedBox(width: 12),
         Expanded(child: Text(label)),
+        if (selected) ...[
+          const SizedBox(width: 8),
+          const Icon(Icons.check_rounded, size: 20),
+        ],
       ],
     ),
   );

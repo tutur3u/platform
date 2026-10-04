@@ -95,5 +95,5 @@ Future<void> _openManageAccountsPage(BuildContext context) async {
   if (!context.mounted) {
     return;
   }
-  await context.push(Routes.profileAccounts);
+  await context.push(Routes.settingsAccounts);
 }

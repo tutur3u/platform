@@ -4,6 +4,7 @@ import {
   encodePathSegment,
   type InternalApiClientOptions,
 } from '@tuturuuu/internal-api/client';
+import { DevboxFleetClient } from './platform-devbox-fleet';
 
 export interface DevboxRunPayload {
   command: string[];
@@ -89,9 +90,11 @@ export interface DevboxAgentShutdownResponse {
 
 export class DevboxesClient {
   private readonly api;
+  readonly fleet: DevboxFleetClient;
 
-  constructor(options: InternalApiClientOptions) {
+  constructor(options: InternalApiClientOptions, fleetOptions = options) {
     this.api = createInternalApiClient(options);
+    this.fleet = new DevboxFleetClient(fleetOptions);
   }
 
   createRun(payload: DevboxRunPayload) {

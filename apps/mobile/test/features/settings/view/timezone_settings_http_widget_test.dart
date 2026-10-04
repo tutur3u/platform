@@ -15,8 +15,8 @@ void main() {
     testWidgets(
       'scope workspace=$workspace resume during 429 retains PATCH retry',
       (tester) async {
-        final h = TimezoneHttpHarness();
         var now = DateTime.now();
+        final h = TimezoneHttpHarness(clock: () => now);
         final cubit = TimezoneSettingsCubit(
           repository: h.repository,
           deviceLoader: () async => 'UTC',
