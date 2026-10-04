@@ -148,3 +148,59 @@ it('requires the internal token for wake notifications', async () => {
   );
   expect(response.status).toBe(401);
 });
+
+const playgroundHeartbeat = (playground: unknown) =>
+  new Request('https://control.test/v1/heartbeat', {
+    method: 'POST',
+    headers: { 'X-Devbox-Runner-Token': token },
+    body: JSON.stringify({ capabilities: { playground } }),
+  });
+it('accepts optional playground readiness and forwards it unchanged', async () => {
+  const playground = {
+    ready: true,
+    languages: ['python', 'shell'],
+    environments: 1,
+  };
+  expect(
+    (await worker.fetch(playgroundHeartbeat(playground), env)).status
+  ).toBe(200);
+  expect(writes).toBe(1);
+  const write = vi
+    .mocked(globalThis.fetch)
+    .mock.calls.find(([, init]) => init?.method === 'PATCH');
+  expect(JSON.parse(String(write?.[1]?.body)).capabilities.playground).toEqual(
+    playground
+  );
+});
+it.each([
+  { ready: 'true', languages: ['python'], environments: 0 },
+  { ready: true, languages: ['unknown'], environments: 0 },
+  { ready: true, languages: Array(12).fill('python'), environments: 0 },
+  { ready: true, languages: [], environments: -1 },
+  { ready: true, languages: [], environments: 9 },
+  { ready: true, languages: [], environments: 1.5 },
+  { ready: true, languages: [], environments: 0, command: ['unsafe'] },
+])(
+  'rejects malformed playground readiness without writes: %j',
+  async (playground) => {
+    expect(
+      (await worker.fetch(playgroundHeartbeat(playground), env)).status
+    ).toBe(400);
+    expect(writes).toBe(0);
+  }
+);
+it('still rejects unknown top-level capability keys', async () => {
+  expect(
+    (
+      await worker.fetch(
+        new Request('https://control.test/v1/heartbeat', {
+          method: 'POST',
+          headers: { 'X-Devbox-Runner-Token': token },
+          body: JSON.stringify({ capabilities: { unexpected: true } }),
+        }),
+        env
+      )
+    ).status
+  ).toBe(400);
+  expect(writes).toBe(0);
+});

@@ -32,7 +32,6 @@ export {
   getSupabaseAuthStorageKey,
   getSupabaseCookieOptions,
 } from './next/common';
-export type { RealtimeChannel, RealtimePresenceState } from './next/realtime';
 export type { SupabaseSession, SupabaseUser } from './next/user';
 export type { SupabaseClient, TypedSupabaseClient } from './types';
 

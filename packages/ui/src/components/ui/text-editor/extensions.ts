@@ -19,9 +19,13 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import Youtube from '@tiptap/extension-youtube';
 import type { Extensions } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import type SupabaseProvider from '@tuturuuu/ui/hooks/supabase-provider';
+import type { Awareness } from 'y-protocols/awareness';
 import type * as Y from 'yjs';
 import { BackgroundColor } from './background-color-extension';
+import {
+  renderCollaborationCaret,
+  renderCollaborationSelection,
+} from './collaboration-carets';
 import { ThemeAwareHighlight } from './highlight-extension';
 import { CustomImage } from './image-extension';
 import { ListConverter } from './list-converter-extension';
@@ -38,7 +42,7 @@ interface EditorExtensionsOptions {
   titlePlaceholder?: string;
   writePlaceholder?: string;
   doc?: Y.Doc;
-  provider?: SupabaseProvider;
+  provider?: { awareness: Awareness };
   /** User info for CollaborationCaret labels (name shown on remote cursors). */
   collaborationUser?: { id?: string; name: string; color: string };
   onImageUpload?: (file: File) => Promise<string>;
@@ -98,6 +102,8 @@ export function getEditorExtensions({
           CollaborationCaret.configure({
             provider,
             user: collaborationUser,
+            render: renderCollaborationCaret,
+            selectionRender: renderCollaborationSelection,
           }),
         ]
       : []),

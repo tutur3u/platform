@@ -1,8 +1,8 @@
 'use client';
 
+import type { RealtimePresenceState } from '@tuturuuu/internal-api/realtime';
+import { createRealtimeClient } from '@tuturuuu/internal-api/realtime';
 import { getCurrentUserProfile } from '@tuturuuu/internal-api/users';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -149,14 +149,14 @@ export function useWorkspacePresence({
     if (setupPromiseRef.current) return setupPromiseRef.current;
 
     const promise = (async (): Promise<boolean> => {
-      const supabase = createClient();
+      const realtime = createRealtimeClient();
 
       try {
         if (isCleanedUpRef.current) return false;
 
         const {
           data: { user },
-        } = await supabase.auth.getUser();
+        } = await realtime.auth.getUser();
 
         if (!user?.id || isCleanedUpRef.current) return false;
 
@@ -184,12 +184,12 @@ export function useWorkspacePresence({
 
         // Clean up any stale channel
         if (channelRef.current) {
-          await supabase.removeChannel(channelRef.current);
+          await realtime.removeChannel(channelRef.current);
           channelRef.current = null;
           lastTrackSignatureRef.current = null;
         }
 
-        const channel = supabase.channel(channelKey, {
+        const channel = realtime.channel(channelKey, {
           config: {
             presence: {
               key: user.id,
@@ -238,7 +238,7 @@ export function useWorkspacePresence({
                   setupPromiseRef.current = null;
                   lastTrackSignatureRef.current = null;
                   if (deadCh) {
-                    supabase.removeChannel(deadCh).catch(() => {});
+                    realtime.removeChannel(deadCh).catch(() => {});
                   }
                   if (
                     retryCountRef.current < MAX_RETRIES &&
@@ -269,7 +269,7 @@ export function useWorkspacePresence({
                     setupPromiseRef.current = null;
                     lastTrackSignatureRef.current = null;
                     if (deadCh) {
-                      supabase.removeChannel(deadCh).catch(() => {});
+                      realtime.removeChannel(deadCh).catch(() => {});
                     }
                     // Attempt reconnection
                     if (retryCountRef.current < MAX_RETRIES) {
@@ -320,7 +320,7 @@ export function useWorkspacePresence({
       setupPromiseRef.current = null;
       if (channelRef.current) {
         channelRef.current.untrack?.().catch(() => {});
-        createClient().removeChannel(channelRef.current);
+        createRealtimeClient().removeChannel(channelRef.current);
         channelRef.current = null;
         lastTrackSignatureRef.current = null;
       }

@@ -1,7 +1,7 @@
 import type { AppSessionTargetApp } from '@tuturuuu/auth/app-session';
 
 const LEARN_TEACH_APP_SESSION_TARGETS = ['learn', 'teach'] as const;
-const ALL_SATELLITE_APP_SESSION_TARGETS = [
+export const ALL_SATELLITE_APP_SESSION_TARGETS = [
   'ai',
   'calendar',
   'chat',
@@ -33,6 +33,10 @@ const APP_SESSION_ROUTE_AUDIENCE_RULES: readonly {
   pattern: RegExp;
   targetApp: AppSessionTargetApp | readonly AppSessionTargetApp[];
 }[] = [
+  {
+    pattern: /^\/api\/v1\/realtime\/(?:channels|session)\/?$/u,
+    targetApp: ALL_SATELLITE_APP_SESSION_TARGETS,
+  },
   {
     pattern: /^\/api\/v1\/users\/me\/hidden-workspaces(?:\/|$)/u,
     targetApp: [...ALL_SATELLITE_APP_SESSION_TARGETS, 'git'],

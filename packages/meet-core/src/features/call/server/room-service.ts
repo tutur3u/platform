@@ -1,6 +1,8 @@
 import 'server-only';
 import { WorkspaceStorageError } from '@tuturuuu/storage-core/workspace-storage-provider';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { AccountServiceError } from '@tuturuuu/utils/account-benefits-server';
+import { z } from 'zod';
 import { getMeetCallAccess, MeetCallAccessError } from '../lib/call-access';
 import { getMeetCallSession } from '../lib/call-session';
 
@@ -74,10 +76,13 @@ export async function roomRoute(
     });
   } catch (error) {
     const status =
+      error instanceof AccountServiceError ||
       error instanceof MeetCallAccessError ||
       error instanceof WorkspaceStorageError
         ? error.status
-        : 500;
+        : error instanceof z.ZodError || error instanceof SyntaxError
+          ? 400
+          : 500;
     if (status >= 500)
       console.error('Meet room action failed', {
         name: error instanceof Error ? error.name : 'unknown',

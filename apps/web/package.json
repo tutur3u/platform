@@ -101,6 +101,7 @@
     "@tuturuuu/inventory-core": "workspace:*",
     "@tuturuuu/legal": "workspace:*",
     "@tuturuuu/masonry": "workspace:*",
+    "@tuturuuu/meet-core": "workspace:*",
     "@tuturuuu/microsoft": "workspace:*",
     "@tuturuuu/mind-core": "workspace:*",
     "@tuturuuu/mind-ui": "workspace:*",

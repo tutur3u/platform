@@ -1,0 +1,33 @@
+---
+title: Account benefits
+description: Central audited grants for features, early access and bonus AI credits.
+updatedAt: 2026-10-02
+---
+
+Infrastructure owns the Account benefits dashboard. Operators require root
+workspace membership plus both `manage_workspace_roles` and
+`manage_workspace_secrets`. Grants record their issuer, target account, reason,
+time and stable request UUID. A retry with the same UUID and payload returns the
+same grant; changed payloads conflict.
+
+Feature keys use `feature.*`; early access uses `early_access.*`. Both are
+boolean flags with optional expiration and explicit revocation. Services consume
+specific keys on the server. Creating an arbitrary key does not enable unrelated
+product features. `feature.learn.playgrounds` is the first hosted-programming
+consumer.
+
+`ai_credits` allocates a one-time bonus to the account's personal-workspace credit
+balance and records a credit transaction in the same database transaction. Credit
+grants have no feature expiry and cannot be revoked as an access flag after
+delivery. Repeated grant requests never allocate twice. Existing credit accounting
+and billing-period rules continue to govern the resulting balance.
+
+The default is no benefits. Normal playground access also accepts a paid personal
+subscription. Meet's verified internal-admin room exception is evaluated in that
+room and never added to this ledger. Team-workspace benefits, global staff roles
+and permanent workspace access are outside this grant model.
+
+Test active, expired and revoked flags, duplicate grant IDs, changed replay
+payloads, failed credit transactions and unauthorized operators before changing
+benefit consumers. Never use profile metadata or client-provided email domains
+as entitlement evidence.

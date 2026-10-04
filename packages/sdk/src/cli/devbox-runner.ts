@@ -16,6 +16,7 @@ import {
   parseJudgeResourceLimits,
   runJudgeCases,
 } from './devbox-judge-sandbox';
+import { runPlaygroundJob } from './devbox-playground-sandbox';
 
 type DevboxAgentCompletionStatus = 'cancelled' | 'failed' | 'succeeded';
 
@@ -212,25 +213,73 @@ export async function executeDevboxAgentJob(
     return { exitCode: 0, status: 'succeeded' as const };
   }
 
-  // The hosted Playground adapter ships with its canonical API in the child PR.
-  // Reserved envelopes must never fall through to arbitrary host execution.
   if (command[0] === '__ttr_playground_v1__') {
-    await postAgentEvents({
-      ...eventOptions,
-      events: [
-        {
-          eventType: 'error',
-          message:
-            'Hosted Playground execution is not available in this runner.',
-        },
-      ],
-    });
-    await postAgentCompletion({
-      ...eventOptions,
-      exitCode: 1,
-      status: 'failed',
-    });
-    return { exitCode: 1, status: 'failed' as const };
+    try {
+      if (
+        command.length !== 2 ||
+        job.envFiles?.length ||
+        !job.env?.__TTR_RESOURCE_LIMITS
+      )
+        throw new Error('Invalid playground envelope');
+      const result = await runPlaygroundJob(
+        command[1]!,
+        parseJudgeResourceLimits(job.env.__TTR_RESOURCE_LIMITS),
+        async (delta) => {
+          const response = await (options.fetch ?? fetch)(
+            new URL(
+              '/api/v1/devboxes/agents/playground-files',
+              options.baseUrl
+            ),
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Devbox-Runner-Token': options.token,
+              },
+              body: JSON.stringify({ runId: job.runId, ...delta }),
+              signal: AbortSignal.timeout(30_000),
+            }
+          );
+          if (!response.ok) throw new Error('Drive save failed');
+        }
+      );
+      await postAgentEvents({
+        ...eventOptions,
+        events: [
+          {
+            eventType: result.preview
+              ? 'playground_preview'
+              : 'playground_output',
+            message: result.preview ?? result.output,
+          },
+        ],
+      });
+      const status =
+        result.code === 0 ? ('succeeded' as const) : ('failed' as const);
+      await postAgentCompletion({
+        ...eventOptions,
+        exitCode: result.code,
+        status,
+      });
+      return { exitCode: result.code, status };
+    } catch {
+      await postAgentEvents({
+        ...eventOptions,
+        events: [
+          {
+            eventType: 'error',
+            message:
+              'Playground execution or Drive save failed. Check runner capacity and try again.',
+          },
+        ],
+      });
+      await postAgentCompletion({
+        ...eventOptions,
+        exitCode: 1,
+        status: 'failed',
+      });
+      return { exitCode: 1, status: 'failed' as const };
+    }
   }
 
   if (command[0] === '__ttr_judge_v1__') {

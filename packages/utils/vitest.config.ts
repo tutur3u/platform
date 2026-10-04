@@ -17,6 +17,13 @@ export default defineConfig({
     alias: [
       { find: '@', replacement: resolve(__dirname, './src') },
       {
+        find: '@tuturuuu/types/primitives/playgrounds',
+        replacement: resolve(
+          __dirname,
+          '../types/src/primitives/playgrounds.ts'
+        ),
+      },
+      {
         find: '@tuturuuu/internal-api/tasks',
         replacement: resolve(__dirname, '../internal-api/src/tasks.ts'),
       },

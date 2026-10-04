@@ -32,6 +32,8 @@ import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 const AUTH_PUBLIC_PATHS = [
   ...PUBLIC_PATHS,
   '/login',
+  '/native-collaboration',
+  ...supportedLocales.map((locale) => `/${locale}/native-collaboration`),
   ...supportedLocales.map((locale) => `/${locale}/login`),
 ];
 const LEGACY_PLAN_ID_PATTERN = /^[0-9a-f]{32}$/iu;

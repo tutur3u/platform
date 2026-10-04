@@ -1,0 +1,55 @@
+{
+  "generatedBy": "scripts/tanstack-satellite-backlog.js",
+  "scope": "Registered satellite routes; the main Web manifest remains authoritative for live Web/Rust migration.",
+  "routes": [
+    {
+      "id": "api:/api/v1/admin/account-benefits:apps/infrastructure/src/app/api/v1/admin/account-benefits/route.ts",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "routePath": "/api/v1/admin/account-benefits",
+      "sourceFile": "apps/infrastructure/src/app/api/v1/admin/account-benefits/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "page:/:locale/:wsId/account-benefits:apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/account-benefits/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/:wsId/account-benefits",
+      "sourceFile": "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/account-benefits/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
+      "id": "page:/:locale/:wsId/programming/playgrounds:apps/learn/src/app/[locale]/(dashboard)/[wsId]/programming/playgrounds/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/:wsId/programming/playgrounds",
+      "sourceFile": "apps/learn/src/app/[locale]/(dashboard)/[wsId]/programming/playgrounds/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
+      "id": "page:/:locale/:wsId/programming/playgrounds/:projectId:apps/learn/src/app/[locale]/(dashboard)/[wsId]/programming/playgrounds/[projectId]/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/:wsId/programming/playgrounds/:projectId",
+      "sourceFile": "apps/learn/src/app/[locale]/(dashboard)/[wsId]/programming/playgrounds/[projectId]/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
+      "id": "page:/:locale/native-collaboration:apps/meet/src/app/[locale]/native-collaboration/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/native-collaboration",
+      "sourceFile": "apps/meet/src/app/[locale]/native-collaboration/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    }
+  ]
+}
