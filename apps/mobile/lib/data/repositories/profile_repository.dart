@@ -154,6 +154,9 @@ class ProfileRepository {
       return (success: false, error: error.message);
     } on Exception {
       return (success: false, error: 'Profile update failed');
+    } on Object catch (error) {
+      if (error is! StateError) rethrow;
+      return (success: false, error: 'Profile update failed');
     }
   }
 
@@ -214,6 +217,9 @@ class ProfileRepository {
       return (success: false, error: error.message);
     } on Exception catch (error) {
       return (success: false, error: error.toString());
+    } on Object catch (error) {
+      if (error is! StateError) rethrow;
+      return (success: false, error: 'Profile update failed');
     }
   }
 
