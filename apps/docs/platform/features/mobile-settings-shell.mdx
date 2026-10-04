@@ -6,7 +6,9 @@ description: Shared shell chrome, profile settings routes and accessible edit en
 ## Settings detail shell and profile settings
 
 All mobile Settings children use the same shell background and one shell top
-navbar with the destination title and Back. Offline is `/settings/offline`; its
+navbar with the destination title and actions. In-app Back appears only in the
+floating bottom navbar, never in the top navbar. Android system Back remains
+available. Offline is `/settings/offline`; its
 Finance, Inventory, Tasks and Calendar details are `/settings/offline/<module>`.
 They do not add body title/back bars, nested AppBars or another top safe area.
 Their scroll content reserves the shell-provided bottom padding, so the floating
@@ -20,6 +22,14 @@ Settings → You now opens identity, avatar and account-status settings at
 compact icon with an accessible Identity label and tooltip. Account-switching
 shortcuts remain available there. These defaults apply in both mobile languages;
 workspace permissions and queued profile writes retain their existing rules.
+
+Profile identity fields use the shared Settings tiles and panel material, with
+read-only values until a field is opened for editing. Manage accounts uses the
+same grouped Add account row and account panels; its shell title is not repeated
+in a hero card. The Profile account-management entry has one label, and What's
+new keeps its description and installed version without repeating the shell
+heading. Account removal confirmations and queued profile writes are unchanged.
+These defaults apply to both languages, light/dark themes and enlarged text.
 
 Licenses, onboarding replay and explicit admin edit forms intentionally open
 above the shell on the root navigator with their own full-screen chrome. Sheet
@@ -40,7 +50,7 @@ writes and clearing remain ordered. Feature-level identity guards also remain.
 
 Regression coverage: `settings_detail_shell_checks.dart` exercises actual
 Offline registrations, inherited background/header and dock clearance, enlarged
-text, navbar/system/dock back, and unknown module links;
+text, system/dock back without a top Back button, and unknown module links;
 `profile_overview_shell_test.dart` covers the icon edit entry and return path.
 `floating_shell_dock_test.dart` verifies hidden clearance and stable viewport;
 `shell_assistant_composer_test.dart` verifies one dock, draft/focus and Live
