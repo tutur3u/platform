@@ -17,7 +17,7 @@ describe('Easy Center tutoring shifts', () => {
       EASY_CENTER_TUTORING_POLICY.timeRules.find(
         (rule) => rule.label === 'Shift 4'
       )
-    ).toMatchObject({ durationMinutes: 50, tutoringStartTime: '09:30' });
+    ).toMatchObject({ durationMinutes: 60, tutoringStartTime: '09:30' });
     expect(
       getTutoringShiftLabel(
         EASY_CENTER_TUTORING_POLICY,
@@ -35,10 +35,40 @@ describe('Easy Center tutoring shifts', () => {
     expect(
       getTutoringShiftLabel(
         EASY_CENTER_TUTORING_POLICY,
-        '2026-09-28',
+        '2026-09-30',
         '17:15:00'
       )
     ).toBe('Shift 1');
+  });
+
+  it('upgrades untouched legacy shifts without overwriting staff changes', () => {
+    const oldRules = EASY_CENTER_TUTORING_POLICY.timeRules.map((rule) => ({
+      ...rule,
+      ...(rule.label === 'Shift 1' ? { weekdays: [1, 3, 5] } : {}),
+      ...(rule.label === 'Shift 4' ? { durationMinutes: 50 } : {}),
+    }));
+    expect(
+      parseTutoringPolicy({
+        ...EASY_CENTER_TUTORING_POLICY,
+        timeRules: oldRules,
+      })?.timeRules
+    ).toEqual(EASY_CENTER_TUTORING_POLICY.timeRules);
+    expect(
+      parseTutoringPolicy({
+        ...EASY_CENTER_TUTORING_POLICY,
+        preset: 'custom',
+        timeRules: oldRules,
+      })?.timeRules
+    ).toEqual(oldRules);
+    const staffRules = oldRules.map((rule, index) =>
+      index === 0 ? { ...rule, tutoringStartTime: '17:00' } : rule
+    );
+    expect(
+      parseTutoringPolicy({
+        ...EASY_CENTER_TUTORING_POLICY,
+        timeRules: staffRules,
+      })?.timeRules
+    ).toEqual(staffRules);
   });
 
   it('accepts editable labels and the attendance lookback', () => {

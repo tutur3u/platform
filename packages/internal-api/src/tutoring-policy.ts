@@ -71,7 +71,7 @@ export const EASY_CENTER_TUTORING_POLICY: TutoringPolicy = {
   timeRules: [
     {
       label: 'Shift 1',
-      weekdays: [1, 3, 5],
+      weekdays: [3, 5],
       classStartTime: '18:00',
       tutoringStartTime: '17:15',
       durationMinutes: 45,
@@ -88,7 +88,7 @@ export const EASY_CENTER_TUTORING_POLICY: TutoringPolicy = {
       weekdays: [0, 6],
       classStartTime: '08:00',
       tutoringStartTime: '09:30',
-      durationMinutes: 50,
+      durationMinutes: 60,
     },
     {
       label: 'Shift 3',
@@ -121,6 +121,47 @@ export const EASY_CENTER_TUTORING_POLICY: TutoringPolicy = {
   ],
 };
 
+/** Only untouched preset shifts receive the corrected attendance-day rules. */
+function matchesTimeRules(value: unknown, expected: TutoringTimeRule[]) {
+  return (
+    Array.isArray(value) &&
+    value.length === expected.length &&
+    value.every((rule, index) => {
+      const match = expected[index];
+      return (
+        match &&
+        rule &&
+        typeof rule === 'object' &&
+        rule.label === match.label &&
+        rule.classStartTime === match.classStartTime &&
+        rule.tutoringStartTime === match.tutoringStartTime &&
+        rule.durationMinutes === match.durationMinutes &&
+        Array.isArray(rule.weekdays) &&
+        rule.weekdays.length === match.weekdays.length &&
+        rule.weekdays.every(
+          (day: unknown, dayIndex: number) => day === match.weekdays[dayIndex]
+        )
+      );
+    })
+  );
+}
+
+const LEGACY_EASY_CENTER_TIME_RULES = EASY_CENTER_TUTORING_POLICY.timeRules.map(
+  (rule) => ({
+    ...rule,
+    ...(rule.label === 'Shift 1' ? { weekdays: [1, 3, 5] } : {}),
+    ...(rule.label === 'Shift 4' ? { durationMinutes: 50 } : {}),
+  })
+);
+
+/** The canonical preset must not fall back to Monday or an unlisted shift. */
+export function usesEasyCenterPresetShifts(policy: TutoringPolicy) {
+  return (
+    policy.preset === 'easy_center' &&
+    matchesTimeRules(policy.timeRules, EASY_CENTER_TUTORING_POLICY.timeRules)
+  );
+}
+
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 const FIELDS = [
   'durationMinutes',
@@ -152,6 +193,12 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     groupExclusions: defaults.groupExclusions,
     ...saved,
   };
+  if (
+    saved.preset === 'easy_center' &&
+    matchesTimeRules(saved.timeRules, LEGACY_EASY_CENTER_TIME_RULES)
+  ) {
+    candidate.timeRules = EASY_CENTER_TUTORING_POLICY.timeRules;
+  }
   // Earlier Easy Center policies stored only the DDT rule. Carry the expanded
   // kindergarten preset forward without replacing staff-edited custom rules.
   if (
