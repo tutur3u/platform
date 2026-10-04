@@ -1,9 +1,9 @@
 -- Preserve period/quote provenance; merging changes future selection and reporting only.
 alter table private.inventory_sales_periods add column merged_into_id uuid;
 alter table private.inventory_sales_periods add constraint inventory_period_merge_destination
- foreign key (merged_into_id,ws_id) references private.inventory_sales_periods(id,ws_id) deferrable initially deferred;
+ foreign key (merged_into_id,ws_id) references private.inventory_sales_periods(id,ws_id) deferrable initially deferred not valid;
 alter table private.inventory_sales_periods add constraint inventory_period_merge_not_self
- check (merged_into_id is null or merged_into_id<>id);
+ check (merged_into_id is null or merged_into_id<>id) not valid;
 create table private.inventory_season_merges (
  ws_id uuid not null references public.workspaces(id) on delete cascade,
  source_id uuid primary key,

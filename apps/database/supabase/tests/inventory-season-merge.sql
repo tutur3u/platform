@@ -28,6 +28,14 @@ insert into private.inventory_product_prices(id,ws_id,period_id,product_id,unit_
  (ism_id(41),ism_id(10),ism_id(31),ism_id(24),ism_id(22),ism_id(23),'USD',20,now()+interval '2 days',now()+interval '3 days'),
  (ism_id(42),ism_id(10),ism_id(30),ism_id(24),ism_id(22),ism_id(23),'USD',7,now()-interval '4 days',now()-interval '1 day');
 -- A real recoverable historical invoice, with a durable season quote tombstone.
+select ok((select convalidated and condeferrable and condeferred
+ from pg_constraint where conrelid='private.inventory_sales_periods'::regclass
+ and conname='inventory_period_merge_destination'),
+ 'separate migration validates the destination FK and preserves deferred semantics');
+select ok((select convalidated from pg_constraint
+ where conrelid='private.inventory_sales_periods'::regclass
+ and conname='inventory_period_merge_not_self'),
+ 'separate migration validates the no-self-merge check');
 insert into private.workspace_wallets(id,ws_id,name) values(ism_id(70),ism_id(10),'Historical wallet');
 insert into public.transaction_categories(id,ws_id,name,is_expense) values(ism_id(71),ism_id(10),'Income',false);
 insert into public.finance_invoices(id,ws_id,wallet_id,category_id,price,note) values(ism_id(50),ism_id(10),ism_id(70),ism_id(71),14,'Historical season invoice');
