@@ -582,10 +582,10 @@ exact-prefix cleanup remove every run tag without deleting the package or
 touching another concurrent workflow. Bootstrap cleanup preserves one final
 version when no sentinel exists yet; the next successful publish creates the
 sentinel so a later stale sweep can remove it. Bundle publication is
-best-effort, but cleanup is a required storage-safety gate. Investigate package
-visibility, `packages` token permissions, or GHCR deletion errors when cleanup
-fails; do not make the package public or replace these images with
-long-retention Actions artifacts.
+best-effort, but cleanup is required. Safe GETs retry transport failures and HTTP 500/502/503/504 up to three attempts,
+with 15-second timeouts and 1/2-second delays; authorization/rate-limit errors and DELETEs gain no new retries.
+Cleanup never deletes from a partial inventory; exhausted listing errors remain fatal. Coverage: `e2e-image-bundle-ghcr.test.js`.
+Investigate package visibility/token permissions/service errors. Never make the package public or use long-retention artifacts.
 
 The producer also maintains one mutable `cache-<service>` tag per planned image.
 These tags anchor the latest runnable layers in private GHCR after run-scoped
