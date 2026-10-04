@@ -732,6 +732,11 @@ E2E, Biome, or baseline runs before this decision. A successful preflight with
 skipped downstream jobs means no compilation or runtime validation occurred.
 Historical cancelled job conclusions cannot be changed by this fix.
 
+Generated production overflow-notes validation uses a commit-specific concurrency
+group. Disabling active-run cancellation alone still lets GitHub replace a pending
+run in a shared group; a separate notes group for each SHA preserves the validated
+skip result for rapid generated updates. Other branches keep their existing groups.
+
 Regression coverage: `overflow-notes-ci.test.js` and
 `release-please-overflow-recovery.test.js` cover committed source/content
 boundaries and final-ref publication ordering. If the script reports

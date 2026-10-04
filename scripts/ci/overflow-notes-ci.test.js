@@ -107,11 +107,18 @@ test('shared, inline and E2E preflights validate notes rather than trusting ref 
     'e2e-tests.yaml',
     'biome-check.yaml',
     'supabase-baseline.yaml',
-  ])
+  ]) {
     assert.ok(
       readWorkflow(name).concurrency['cancel-in-progress'].includes(
         `github.ref != '${NOTES_REF}'`
       )
     );
+    assert.ok(
+      readWorkflow(name).concurrency.group.includes(
+        `github.ref == '${NOTES_REF}' && github.sha || github.ref`
+      ),
+      `${name}: notes pending runs need unique commit groups`
+    );
+  }
   assert.equal(readWorkflow('biome-check.yaml').on.push, null);
 });

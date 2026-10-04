@@ -12,7 +12,7 @@ env:
 permissions:
   contents: read
 concurrency:
-  group: supabase-baseline-${{ github.ref }}
+  group: supabase-baseline-${{ github.ref == 'refs/heads/release-please--branches--production--release-notes' && github.sha || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/release-please--branches--production--release-notes' }}
 jobs:
   cold-warm-corrupt:

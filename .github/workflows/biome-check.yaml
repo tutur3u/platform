@@ -8,7 +8,7 @@ on:
 # Ordinary refs supersede stale commits; validated overflow notes finish the
 # shared no-work decision instead of cancelling an earlier production-SHA check.
 concurrency:
-  group: biome-${{ github.ref }}
+  group: biome-${{ github.ref == 'refs/heads/release-please--branches--production--release-notes' && github.sha || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/release-please--branches--production--release-notes' }}
 
 jobs:

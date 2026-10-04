@@ -110,7 +110,7 @@ for (const [name, aggregate, checkName, shardName] of [
       });
       assert.equal(
         workflow.concurrency.group,
-        `${expression('github.workflow')}-${expression('github.ref')}`
+        `${expression('github.workflow')}-${expression("github.ref == 'refs/heads/release-please--branches--production--release-notes' && github.sha || github.ref")}`
       );
       assert.equal(
         workflow.concurrency['cancel-in-progress'],
