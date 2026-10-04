@@ -16,36 +16,25 @@ import {
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
 import { useMemo } from 'react';
-import { AuditRows } from './audit-rows';
-import { BundleComponentsPanel } from './bundle-components-panel';
-import { CatalogWorkspacePanel } from './catalog-workspace-panel';
-import { CommercePanel } from './commerce-panel';
-import { CostingPanel } from './costing-panel';
 import { BundleForm, StorefrontForm } from './inventory-forms';
-import { InventoryGuidance } from './inventory-guidance';
+import { InventoryOperatorContent } from './inventory-operator-content';
+import {
+  getInventorySearchStatus,
+  getInventoryStatuses,
+  getInventoryTabs,
+} from './inventory-operator-view';
 import { getInventoryQueryState } from './inventory-query-state';
 import { OperatorAdvancedFilters } from './operator-advanced-filters';
 import {
-  InfiniteListFooter,
   LoadingRows,
   SectionShell,
   StatePanel,
   Toolbar,
 } from './operator-shell';
 import type {
-  InventoryCatalogTab,
-  InventoryCommerceTab,
   InventoryOperatorView,
   InventoryStatusOption,
 } from './operator-types';
-import { OverviewPanel } from './overview-panel';
-import { PaymentsHubPanel } from './payments-hub-panel';
-import { PromotionsWorkspacePanel } from './promotions-workspace-panel';
-import { SetupPanel } from './setup-panel';
-import { SimpleRows } from './simple-rows';
-import { StockWorkspacePanel } from './stock-workspace-panel';
-import { StorefrontAnalyticsPanel } from './storefront-analytics-panel';
-import { StorefrontListingsPanel } from './storefront-listings-panel';
 import { useInventoryData } from './use-inventory-data';
 import { useInventorySearchResults } from './use-inventory-search-results';
 import { WorkspaceCurrencyProvider } from './workspace-currency';
@@ -59,9 +48,6 @@ type InventoryOperatorClientProps = {
   wsId: string;
 };
 
-const commerceTabs = ['checkouts', 'cart', 'revenue-share'] as const;
-const catalogTabs = ['products', 'categories'] as const;
-
 export function InventoryOperatorClient({
   canExportSales = false,
   canMergeSeasons,
@@ -73,94 +59,18 @@ export function InventoryOperatorClient({
     'tab',
     parseAsString.withDefault('').withOptions({ shallow: true })
   );
-  const commerceTab: InventoryCommerceTab =
-    view === 'sales'
-      ? 'sales'
-      : commerceTabs.includes(tabValue as (typeof commerceTabs)[number])
-        ? (tabValue as InventoryCommerceTab)
-        : 'checkouts';
-  const catalogTab: InventoryCatalogTab = catalogTabs.includes(
-    tabValue as InventoryCatalogTab
-  )
-    ? (tabValue as InventoryCatalogTab)
-    : 'products';
+  const { catalogTab, commerceTab } = getInventoryTabs(view, tabValue);
   const data = useInventoryData(wsId, view, { catalogTab, commerceTab });
   const search = useInventorySearchResults(data);
-  const {
-    batches,
-    bundleSearch,
-    categorySearch,
-    checkoutSearch,
-    costingSearch,
-    periodProducts,
-    productSearch,
-    products,
-    promotionSearch,
-    revenueShareSearch,
-    sales,
-    saleSearch,
-    setupSearchCount,
-    storefrontSearch,
-    suppliers,
-  } = search;
-  const categories = categorySearch.results;
-  const storefronts = storefrontSearch.results;
-  const bundles = bundleSearch.results;
-  const lowStock = data.overview.data?.low_stock_products ?? [];
-  const statusOptions = useMemo<InventoryStatusOption[]>(() => {
-    const all = { label: t('statuses.all'), value: 'all' };
-
-    if (view === 'storefront') {
-      return [
-        all,
-        { label: t('statuses.draft'), value: 'draft' },
-        { label: t('statuses.published'), value: 'published' },
-        { label: t('statuses.paused'), value: 'paused' },
-      ];
-    }
-
-    if (view === 'bundles') {
-      return [
-        all,
-        { label: t('statuses.draft'), value: 'draft' },
-        { label: t('statuses.active'), value: 'active' },
-      ];
-    }
-
-    if (view === 'costing') {
-      return [
-        all,
-        { label: t('statuses.draft'), value: 'draft' },
-        { label: t('statuses.active'), value: 'active' },
-        { label: t('statuses.archived'), value: 'archived' },
-      ];
-    }
-
-    if (view === 'commerce' && commerceTab === 'checkouts') {
-      return [
-        all,
-        { label: t('statuses.reserved'), value: 'reserved' },
-        { label: t('statuses.completed'), value: 'completed' },
-      ];
-    }
-
-    if (
-      view === 'promotions' ||
-      view === 'sales' ||
-      (view === 'commerce' &&
-        (commerceTab === 'cart' ||
-          commerceTab === 'sales' ||
-          commerceTab === 'revenue-share'))
-    ) {
-      return [all];
-    }
-
-    return [
-      all,
-      { label: t('statuses.active'), value: 'active' },
-      { label: t('statuses.archived'), value: 'archived' },
-    ];
-  }, [commerceTab, t, view]);
+  const { products } = search;
+  const statusOptions = useMemo<InventoryStatusOption[]>(
+    () =>
+      getInventoryStatuses(view, commerceTab).map((value) => ({
+        value,
+        label: t(`statuses.${value}`),
+      })),
+    [commerceTab, t, view]
+  );
   const section = useMemo(
     () =>
       ({
@@ -250,33 +160,12 @@ export function InventoryOperatorClient({
           <Toolbar
             filters={data.filters}
             hideStatus={view === 'catalog' && catalogTab === 'categories'}
-            searchStatus={
-              view === 'catalog' && catalogTab === 'categories'
-                ? categorySearch.status
-                : view === 'storefront'
-                  ? storefrontSearch.status
-                  : view === 'bundles'
-                    ? bundleSearch.status
-                    : view === 'costing'
-                      ? costingSearch.status
-                      : view === 'promotions'
-                        ? promotionSearch.status
-                        : view === 'sales'
-                          ? saleSearch.status
-                          : view === 'setup'
-                            ? {
-                                cachedCount: setupSearchCount,
-                                hasCompleteCache: true,
-                                isLocalFirst: false,
-                                isRefreshing: false,
-                              }
-                            : view === 'commerce' && commerceTab === 'checkouts'
-                              ? checkoutSearch.status
-                              : view === 'commerce' &&
-                                  commerceTab === 'revenue-share'
-                                ? revenueShareSearch.status
-                                : productSearch.status
-            }
+            searchStatus={getInventorySearchStatus(
+              view,
+              catalogTab,
+              commerceTab,
+              search
+            )}
             setFilters={data.setFilters}
             statusOptions={statusOptions}
           />
@@ -305,198 +194,23 @@ export function InventoryOperatorClient({
               tone="danger"
             />
           ) : null}
-          {!isLoading && !isError && view === 'overview' ? (
-            <>
-              <InventoryGuidance
-                costingProfilesCount={
-                  data.costingProfiles.data?.data.length ?? 0
-                }
-                productsCount={
-                  data.products.data?.pages[0]?.count ?? products.length
-                }
-                storefrontsCount={storefronts.length}
-                view={view}
-                wsId={wsId}
-              />
-              <OverviewPanel
-                bundles={bundles}
-                dashboard={data.overview.data?.dashboard}
-                formOptions={data.formOptions.data}
-                lowStock={lowStock}
-                polarSettings={data.polarSettings.data}
-                products={products}
-                storefronts={storefronts}
-                wsId={wsId}
-              />
-            </>
-          ) : null}
-          {!isLoading && !isError && view === 'catalog' ? (
-            <CatalogWorkspacePanel
-              categories={categories}
-              categoryPagination={{
-                fetchNextPage: () => {
-                  void data.categories.fetchNextPage();
-                },
-                hasNextPage: data.categories.hasNextPage,
-                isFetchingNextPage: data.categories.isFetchingNextPage,
-                totalCount:
-                  data.categories.data?.pages[0]?.count ?? categories.length,
-              }}
-              costingProfiles={data.costingProfiles.data?.data ?? []}
-              filters={data.filters}
-              formOptions={data.formOptions.data}
-              onTabChange={(tab) => {
-                void data.setFilters({ status: 'all' });
-                void setTabValue(tab);
-              }}
-              productPagination={{
-                fetchNextPage: () => {
-                  void data.products.fetchNextPage();
-                },
-                hasNextPage: data.products.hasNextPage,
-                isFetchingNextPage: data.products.isFetchingNextPage,
-                totalCount:
-                  data.products.data?.pages[0]?.count ?? products.length,
-              }}
-              products={products}
-              tab={catalogTab}
-              wsId={wsId}
-            />
-          ) : null}
-          {!isLoading && !isError && view === 'stock' ? (
-            <StockWorkspacePanel
-              costingProfiles={data.costingProfiles.data?.data ?? []}
-              filters={data.filters}
-              formOptions={data.formOptions.data}
-              pagination={{
-                fetchNextPage: () => {
-                  void data.products.fetchNextPage();
-                },
-                hasNextPage: data.products.hasNextPage,
-                isFetchingNextPage: data.products.isFetchingNextPage,
-                totalCount:
-                  data.products.data?.pages[0]?.count ?? products.length,
-              }}
-              products={products}
-              wsId={wsId}
-            />
-          ) : null}
-          {!isLoading && !isError && view === 'setup' ? (
-            <SetupPanel
-              batches={batches}
-              options={data.formOptions.data}
-              query={data.filters.q}
-              suppliers={suppliers}
-              wsId={wsId}
-            />
-          ) : null}
-          {!isLoading && !isError && view === 'costing' ? (
-            <CostingPanel
-              analytics={data.costingAnalytics.data}
-              options={data.formOptions.data}
-              profiles={costingSearch.results}
-              products={products}
-              wsId={wsId}
-            />
-          ) : null}
-          {!isLoading && !isError && view === 'storefront' ? (
-            <>
-              <SimpleRows rows={storefronts} type="storefronts" wsId={wsId} />
-              {storefronts.length > 0 ? (
-                <>
-                  <StorefrontAnalyticsPanel wsId={wsId} />
-                  <StorefrontListingsPanel
-                    bundles={bundles}
-                    products={products}
-                    storefronts={storefronts}
-                    wsId={wsId}
-                  />
-                </>
-              ) : null}
-            </>
-          ) : null}
-          {!isLoading && !isError && view === 'bundles' ? (
-            <>
-              <SimpleRows
-                categories={data.formOptions.data?.categories}
-                products={products}
-                rows={bundles}
-                type="bundles"
-                wsId={wsId}
-              />
-              {bundles.length > 0 ? (
-                <BundleComponentsPanel
-                  bundles={bundles}
-                  products={products}
-                  wsId={wsId}
-                />
-              ) : null}
-            </>
-          ) : null}
-          {!isError && (view === 'commerce' || view === 'sales') ? (
-            <CommercePanel
-              canExportSales={canExportSales}
-              canMergeSeasons={canMergeSeasons}
-              checkouts={checkoutSearch.results}
-              isLoading={commerceLoading}
-              query={data.filters.q}
-              revenueShares={revenueShareSearch.results}
-              sales={sales}
-              salesCount={data.sales.data?.pages[0]?.count ?? sales.length}
-              salesSummary={data.commerceSummary.data}
-              salesPeriods={data.salesPeriods.data?.data ?? []}
-              fetchNextSalesPage={() => data.sales.fetchNextPage()}
-              hasNextSalesPage={data.sales.hasNextPage}
-              isFetchingNextSalesPage={data.sales.isFetchingNextPage}
-              fetchNextProductsPage={() => data.periodProducts.fetchNextPage()}
-              hasNextProductsPage={data.periodProducts.hasNextPage}
-              isFetchingNextProductsPage={
-                data.periodProducts.isFetchingNextPage
-              }
-              formOptions={data.formOptions.data}
-              filters={data.filters}
-              products={periodProducts}
-              selectedPeriodId={data.filters.period}
-              setFilters={data.setFilters}
-              setPeriodId={(period) => {
-                void data.setFilters({ period });
-              }}
-              setTab={(tab: InventoryCommerceTab) => {
-                void data.setFilters({ status: 'all' });
-                void setTabValue(tab);
-              }}
-              tab={commerceTab}
-              standaloneSales={view === 'sales'}
-              wsId={wsId}
-            />
-          ) : null}
-          {!isLoading && !isError && view === 'promotions' ? (
-            <PromotionsWorkspacePanel
-              promotions={promotionSearch.results}
-              wsId={wsId}
-            />
-          ) : null}
-          {!isLoading && !isError && view === 'audits' ? (
-            <AuditRows rows={data.audits.data?.data ?? []} wsId={wsId} />
-          ) : null}
-          {!isError && view === 'payments' ? (
-            <PaymentsHubPanel wsId={wsId} />
-          ) : null}
-          {!isLoading &&
-          !isError &&
-          ['bundles', 'costing', 'storefront'].includes(view) ? (
-            <InfiniteListFooter
-              hasNextPage={data.products.hasNextPage}
-              isFetchingNextPage={data.products.isFetchingNextPage}
-              loadedCount={products.length}
-              onLoadMore={() => {
-                void data.products.fetchNextPage();
-              }}
-              totalCount={
-                data.products.data?.pages[0]?.count ?? products.length
-              }
-            />
-          ) : null}
+          <InventoryOperatorContent
+            data={data}
+            search={search}
+            catalogTab={catalogTab}
+            commerceTab={commerceTab}
+            view={view}
+            wsId={wsId}
+            isLoading={isLoading}
+            isError={isError}
+            commerceLoading={commerceLoading}
+            canExportSales={canExportSales}
+            canMergeSeasons={canMergeSeasons}
+            onTabChange={(tab) => {
+              void data.setFilters({ status: 'all' });
+              void setTabValue(tab);
+            }}
+          />
         </div>
       </SectionShell>
     </WorkspaceCurrencyProvider>
