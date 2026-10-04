@@ -8,6 +8,7 @@ const {
 
 const PLANNER = 'vercel-production.yaml';
 const RESUME_TITLE = 'Production package resume ';
+const INTENT_ENVIRONMENT = 'production-package-resume';
 
 const DEADLINE_MS = 240_000;
 const CALL_TIMEOUT_MS = 15_000;
@@ -88,9 +89,11 @@ async function listPages(api, route, key) {
     const payload = await api(
       `${route}${route.includes('?') ? '&' : '?'}per_page=100&page=${page}`
     );
-    if (!Array.isArray(payload[key])) throw new Error(`Unreadable ${key}`);
-    rows.push(...payload[key]);
-    if (payload[key].length < 100) return rows;
+    const pageRows = key == null ? payload : payload[key];
+    if (!Array.isArray(pageRows))
+      throw new Error(`Unreadable ${key ?? 'deployments'}`);
+    rows.push(...pageRows);
+    if (pageRows.length < 100) return rows;
   }
   throw new Error(`Incomplete ${key} pagination; no deployment dispatched`);
 }
@@ -141,6 +144,19 @@ async function resumeProductionDeployment({
   if (!allowed) return skip('unrecognized workflow');
   const current = await api('git/ref/heads/production');
   if (current.object?.sha !== sha) return skip('production moved');
+  const intents = await listPages(
+    api,
+    `deployments?sha=${sha}&environment=${INTENT_ENVIRONMENT}`,
+    null
+  );
+  if (
+    intents.some(
+      (intent) =>
+        intent.sha === sha && intent.environment === INTENT_ENVIRONMENT
+    )
+  ) {
+    return skip('durable dispatch intent already exists');
+  }
   const runs = await listPages(
     api,
     `actions/workflows/${PLANNER}/runs?head_sha=${sha}&branch=production`,
@@ -217,6 +233,36 @@ async function resumeProductionDeployment({
     freshExact.some((run) => Number(run.id) > Number(latest.id))
   ) {
     return skip('planner changed before dispatch');
+  }
+  if (now() >= deadline) throw new Error('Production resume deadline exceeded');
+  // Reserve before POST, even though the planner run may not yet be listed.
+  // Never delete this intent or retry an uncertain/failed dispatch automatically.
+  const intent = await api('deployments', {
+    method: 'POST',
+    body: JSON.stringify({
+      ref: sha,
+      environment: INTENT_ENVIRONMENT,
+      task: 'resume:production-package-deployment',
+      auto_merge: false,
+      required_contexts: [],
+      production_environment: false,
+      transient_environment: true,
+      description:
+        'Durable planner dispatch intent; not a production deployment',
+      payload: {
+        purpose: 'production-package-resume',
+        sha,
+        plannerRunId: latest.id,
+      },
+    }),
+  });
+  if (
+    !Number.isSafeInteger(intent?.id) ||
+    intent.id <= 0 ||
+    intent.sha !== sha ||
+    intent.environment !== INTENT_ENVIRONMENT
+  ) {
+    throw new Error('Unreadable dispatch intent; manual inspection required');
   }
   if (now() >= deadline) throw new Error('Production resume deadline exceeded');
   await api(`actions/workflows/${PLANNER}/dispatches`, {

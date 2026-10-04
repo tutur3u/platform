@@ -50,9 +50,24 @@ function fixture() {
     ],
     visible: true,
     posts: [],
+    intents: [],
+    intentPosts: [],
     refs: 0,
   };
   f.api = async (route, options) => {
+    if (route.startsWith('deployments?')) return f.intents;
+    if (route === 'deployments' && options?.method === 'POST') {
+      const body = JSON.parse(options.body);
+      f.intentPosts.push(body);
+      const intent = {
+        id: 9,
+        sha: body.ref,
+        environment: body.environment,
+        payload: body.payload,
+      };
+      f.intents.push(intent);
+      return intent;
+    }
     if (options?.method === 'POST') {
       f.posts.push(JSON.parse(options.body));
       return null;
@@ -333,4 +348,85 @@ test('completion queue retains multiple pending events without cancellation', ()
   );
   assert.match(workflow, /cancel-in-progress: false\n {2}queue: max/);
   assert.doesNotMatch(workflow, /cancel-in-progress: true/);
+});
+
+test('durable intent blocks second completion before run visibility catches up', async () => {
+  const f = fixture();
+  assert.equal((await f.run()).dispatched, true);
+  assert.equal(
+    (await f.run()).reason,
+    'durable dispatch intent already exists'
+  );
+  assert.equal(f.posts.length, 1);
+  assert.equal(f.intentPosts.length, 1);
+  assert.equal(f.runs.length, 1);
+  assert.deepEqual(f.intentPosts[0], {
+    ref: sha,
+    environment: 'production-package-resume',
+    task: 'resume:production-package-deployment',
+    auto_merge: false,
+    required_contexts: [],
+    production_environment: false,
+    transient_environment: true,
+    description: 'Durable planner dispatch intent; not a production deployment',
+    payload: { purpose: 'production-package-resume', sha, plannerRunId: 1 },
+  });
+});
+
+test('uncertain planner POST retains intent and never automatically retries', async () => {
+  const f = fixture();
+  const api = f.api;
+  f.api = async (route, options) => {
+    if (route.endsWith('/dispatches')) {
+      f.posts.push(JSON.parse(options.body));
+      throw Error('GitHub request timeout; result unknown');
+    }
+    return api(route, options);
+  };
+  await assert.rejects(f.run(), /result unknown/);
+  assert.equal(f.intents.length, 1);
+  assert.equal(
+    (await f.run()).reason,
+    'durable dispatch intent already exists'
+  );
+  assert.equal(f.posts.length, 1);
+});
+
+test('malformed deployment reservation response never dispatches', async () => {
+  const f = fixture();
+  const api = f.api;
+  f.api = async (route, options) =>
+    route === 'deployments' ? {} : api(route, options);
+  await assert.rejects(f.run(), /Unreadable dispatch intent/);
+  assert.deepEqual(f.posts, []);
+});
+
+test('unreadable intent listing fails closed before any write', async () => {
+  const f = fixture();
+  const api = f.api;
+  f.api = async (route, options) =>
+    route.startsWith('deployments?') ? {} : api(route, options);
+  await assert.rejects(f.run(), /Unreadable deployments/);
+  assert.deepEqual(f.posts, []);
+  assert.deepEqual(f.intentPosts, []);
+});
+
+test('uncertain intent creation blocks later completion without planner POST', async () => {
+  const f = fixture();
+  const api = f.api;
+  f.api = async (route, options) => {
+    const response = await api(route, options);
+    if (route === 'deployments' && options?.method === 'POST') {
+      throw Error('Intent creation response timed out');
+    }
+    return response;
+  };
+  await assert.rejects(f.run(), /Intent creation response timed out/);
+  assert.equal(f.intents.length, 1);
+  assert.equal(
+    (await f.run()).reason,
+    'durable dispatch intent already exists'
+  );
+  assert.deepEqual(f.posts, []);
+  assert.equal(f.intentPosts.length, 1);
 });

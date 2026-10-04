@@ -938,6 +938,16 @@ GitHub cancels overflow beyond that limit. API and npm calls are bounded to
 15 seconds each with a four-minute recovery deadline, below the five-minute
 job limit. Planner runs are rechecked immediately before dispatch. Timeouts,
 unreadable/incomplete results, and changed candidates never request a retry.
+Before dispatch it reserves a durable exact-SHA intent in the dedicated
+`production-package-resume` deployment environment with `auto_merge=false`,
+empty required contexts, `production_environment=false`, and
+`transient_environment=true`. This is a dispatch lock, not deployment or
+migration evidence: no success status is emitted and the real platform marker
+still uses `vercel-production-platform`. An existing intent blocks subsequent
+completions even before the planner appears in GitHub's run list. Failed,
+uncertain, or timed-out requests retain the intent and require operator
+inspection; the automation never deletes it or retries automatically. This
+requires `deployments: write` only in the recovery workflow.
 A deferred successful workflow is not deployment evidence.
 Validate this guard with `node --test scripts/ci/resume-production-package-deployment.test.js`.
 

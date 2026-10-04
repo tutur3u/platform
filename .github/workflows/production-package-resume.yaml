@@ -28,6 +28,7 @@ concurrency:
 permissions:
   contents: read
   actions: write
+  deployments: write
 jobs:
   resume:
     if: >-
