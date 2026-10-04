@@ -20,6 +20,7 @@ import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
+import 'package:mobile/features/settings/view/product_settings_registry.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/features/settings/view/settings_session_section.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
@@ -221,6 +222,8 @@ class _SettingsViewState extends State<_SettingsView> {
               showInfrastructure: _canManageMobileVersions,
             ),
           ),
+          const SizedBox(height: 20),
+          const ProductSettingsSection(),
         ];
       case SettingsSectionDestination.preferences:
         return [

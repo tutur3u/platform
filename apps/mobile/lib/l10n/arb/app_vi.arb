@@ -4296,5 +4296,9 @@
     "assistantAttachFilesSource": "Tệp",
     "assistantCaptureAudio": "Ghi âm",
     "assistantCapturePhoto": "Chụp ảnh",
-    "assistantCaptureVideo": "Quay video"
+    "assistantCaptureVideo": "Quay video",
+    "settingsProductSettings": "Cài đặt ứng dụng",
+    "mailDiscardSettingsTitle": "Bỏ thay đổi?",
+    "mailDiscardSettingsDescription": "Các thay đổi cài đặt Mail của bạn chưa được lưu.",
+    "mailDiscardSettingsAction": "Bỏ thay đổi"
 }

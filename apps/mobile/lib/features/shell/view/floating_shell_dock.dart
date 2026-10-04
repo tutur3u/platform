@@ -295,10 +295,7 @@ class _DockActionsState extends State<_DockActions> {
     try {
       cubit = context.read<ShellChromeActionsCubit>();
     } on ProviderNotFoundException {
-      return FloatingDockRail(
-        navigation: widget.navigation,
-        reserveEmptyActions: usesRootDockSlots(widget.location),
-      );
+      return FloatingDockRail(navigation: widget.navigation);
     }
     return BlocBuilder<ShellChromeActionsCubit, ShellChromeActionsState>(
       bloc: cubit,
@@ -316,7 +313,6 @@ class _DockActionsState extends State<_DockActions> {
         // one primary slot; wider docks add a second fixed slot.
         return FloatingDockRail(
           navigation: widget.navigation,
-          reserveEmptyActions: usesRootDockSlots(widget.location),
           primary: actions.isEmpty
               ? null
               : ShellDockActionButton(action: actions.first),

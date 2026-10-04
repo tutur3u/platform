@@ -716,7 +716,30 @@ Release Please can move an oversized generated pull request body into
 before `googleapis/release-please-action@v5`; when a merged pending release PR
 still points at a missing overflow file, the script recreates the branch and
 file from the merged manifest bump and current `production` changelogs, then the
-normal Release Please action can create the releases. If the script reports
+normal Release Please action can create the releases. Missing companion refs are
+published only after their notes blob, tree, and final commit exist: recovery
+never first creates a ref at the production SHA. This prevents a second notes
+push from cancelling duplicate checks on the production commit.
+
+For the exact production overflow-notes ref, CI verifies the committed delta
+against production history with `scripts/ci/overflow-notes-ci.js`. An ancestor
+bootstrap with no new work, or a generated notes-only addition/change, skips
+heavy downstream jobs through the shared preflight; the inline type-check and
+E2E preflight use the same predicate. Source changes, malformed notes, missing
+history, ordinary generated release PRs, manual events, main, and production
+retain normal validation. Notes refs cannot supersede their own coverage, unit,
+E2E, Biome, or baseline runs before this decision. A successful preflight with
+skipped downstream jobs means no compilation or runtime validation occurred.
+Historical cancelled job conclusions cannot be changed by this fix.
+
+Generated production overflow-notes validation uses a commit-specific concurrency
+group. Disabling active-run cancellation alone still lets GitHub replace a pending
+run in a shared group; a separate notes group for each SHA preserves the validated
+skip result for rapid generated updates. Other branches keep their existing groups.
+
+Regression coverage: `overflow-notes-ci.test.js` and
+`release-please-overflow-recovery.test.js` cover committed source/content
+boundaries and final-ref publication ordering. If the script reports
 `skipped`, inspect the pending labels and merged release PR body before retrying.
 
 The same workflow then runs
@@ -1096,3 +1119,15 @@ migrations; an absent RPC or API schema cache is not proof that a ledger is abse
 The guard checks actual PostgreSQL relation presence and fails closed on partial
 or incompatible ledger schemas. Never replace a missing guard with an unguarded
 provider write.
+
+### i18n PR report evidence
+
+The i18n report requires both a completed job result and its explicit validator
+output. Cancelled, skipped, missing-output, and contradictory results are reported
+as incomplete; they establish neither a translation defect nor passing validation.
+Only confirmed validator failures offer repair commands. Reports identify the
+source head and workflow run. Comment writes are serialized per PR, paginate all
+existing comments, reject superseded heads, and preserve newer run/attempt reports.
+A branch can still advance after the final API head check; the embedded source
+identity makes that evidence boundary visible. Existing cancelled job conclusions
+are unchanged. Regression coverage: `node --test scripts/ci/i18n-report.test.js`.

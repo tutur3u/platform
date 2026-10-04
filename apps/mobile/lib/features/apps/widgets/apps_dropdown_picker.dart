@@ -82,6 +82,19 @@ class _AppsScreenState extends State<AppsScreen> {
   }
 
   @override
+  void didUpdateWidget(covariant AppsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isActive && !widget.isActive) {
+      // Retained root pages must not reopen a previous query on return.
+      _searching = false;
+      _pendingSubmit = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_searching) _search.clear();
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _search.dispose();
     super.dispose();
@@ -227,6 +240,16 @@ class _AppsScreenState extends State<AppsScreen> {
               query: _search.text,
               showGrid: _showGrid,
               replayToken: widget.replayToken,
+              onSelected: (module) {
+                setState(() {
+                  _searching = false;
+                  _pendingSubmit = null;
+                  _search.clear();
+                });
+                FocusManager.instance.primaryFocus?.unfocus();
+                unawaited(context.read<AppTabCubit>().select(module));
+                context.go(module.route);
+              },
             ),
           ),
         ],

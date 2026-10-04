@@ -238,17 +238,24 @@ async function recoverReleasePleaseOverflowNotes({
     { allowMissing: true }
   );
 
+  const message = `chore(release): recover overflow notes for ${targetBranch}`;
   if (!existingBranchSha) {
     const sourceSha = await github.getBranchSha(targetBranch);
-    await github.createBranch(recoveryTarget.notesBranch, sourceSha);
+    await github.createBranchWithFile(
+      recoveryTarget.notesBranch,
+      sourceSha,
+      RELEASE_NOTES_FILENAME,
+      notes,
+      message
+    );
+  } else {
+    await github.createFile(
+      RELEASE_NOTES_FILENAME,
+      recoveryTarget.notesBranch,
+      notes,
+      message
+    );
   }
-
-  await github.createFile(
-    RELEASE_NOTES_FILENAME,
-    recoveryTarget.notesBranch,
-    notes,
-    `chore(release): recover overflow notes for ${targetBranch}`
-  );
 
   return {
     branch: recoveryTarget.notesBranch,
