@@ -52,7 +52,7 @@ export function SaleCheckout({
     0
   );
   const units = lines.reduce((sum, line) => sum + line.quantity, 0);
-  const wallet = options?.wallets.find((row) => row.id === walletId)?.name;
+  const wallet = options?.wallets?.find((row) => row.id === walletId)?.name;
   const category = options?.financeCategories.find(
     (row) => row.id === categoryId
   )?.name;

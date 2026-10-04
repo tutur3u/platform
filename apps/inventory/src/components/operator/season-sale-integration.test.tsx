@@ -418,7 +418,7 @@ describe('mounted season sales integrations', () => {
           ...options,
           defaultSalesPeriodId: period.id,
           wallets: [
-            ...options.wallets,
+            ...(options.wallets ?? []),
             { id: 'other-wallet', name: 'Other wallet' },
           ],
           financeCategories: [
@@ -513,6 +513,33 @@ describe('mounted season sales integrations', () => {
         products: [expect.objectContaining({ quantity: 2 })],
       })
     );
+  });
+
+  it('keeps checkout usable when wallet options have not arrived', async () => {
+    const { wallets: _wallets, ...withoutWallets } = options;
+    mount(
+      <SaleCreateDialog
+        wsId="ws"
+        workspaceCurrency="VND"
+        products={products}
+        periods={[{ ...period, pricing_mode: 'legacy', wallet_id: null }]}
+        options={{ ...withoutWallets, defaultSalesPeriodId: period.id }}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Record sale' }));
+    await add('Alpha');
+    fireEvent.mouseDown(screen.getByRole('tab', { name: /Checkout/ }), {
+      button: 0,
+      ctrlKey: false,
+    });
+    expect(
+      screen.getByRole('button', { name: /Revenue Choose a wallet/ })
+    ).toBeTruthy();
+    expect(
+      (screen.getByRole('button', { name: 'Record sale' }) as HTMLButtonElement)
+        .disabled
+    ).toBe(true);
+    expect(api.sale).not.toHaveBeenCalled();
   });
 
   it('requires manual choice for an implicit legacy-only current period', async () => {
