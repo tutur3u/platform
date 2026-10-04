@@ -45,6 +45,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.1
@@ -73,6 +74,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@stable
       - name: Validate backend profile parity and dispatcher
         working-directory: apps/backend

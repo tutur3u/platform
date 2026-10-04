@@ -269,6 +269,11 @@ signing. Registered satellites use the same actor reservation before their local
 admin-backed workspace avatar signer; changing apps cannot bypass the shared
 account or global limits. Permission denials reserve nothing; quota exhaustion and unavailable
 protection return 429 and 503 without issuing a ticket.
+Workspace-user avatar uploads also charge the same verified actor used for
+`manage_users` authorization: Web revalidates the request session, while Contacts
+injects its verified satellite session. Request body identifiers never select the
+budget account; authentication errors, missing membership, and permission denials
+cannot reserve or sign. Regression evidence: `packages/users-core/src/routes/users/avatar.test.ts`.
 Shared public profile-link avatar tickets reserve the account media ceilings above
 against the verified workspace and link identity, plus the shared global ceilings,
 before issuing a signed URL; revoked or unauthorized links cannot reserve tickets.

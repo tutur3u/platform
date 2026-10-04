@@ -49,11 +49,22 @@ describe('Canonical username policy', () => {
     const sql = readFileSync(
       resolve(
         __dirname,
-        '../../../../apps/database/supabase/migrations/20261003080000_public_creator_identity.sql'
+        '../../../../apps/database/supabase/migrations/20261004004000_public_creator_identity.sql'
       ),
       'utf8'
     );
-    for (const value of [...reserved.common, ...reserved.brands])
-      expect(sql).toContain(`"${value}"`);
+    const seeds = [
+      ...sql.matchAll(
+        /jsonb_array_elements_text\('([^']+)'::jsonb\),'(common|brand)'/g
+      ),
+    ];
+    expect(seeds).toHaveLength(2);
+    for (const [category, values] of [
+      ['common', reserved.common],
+      ['brand', reserved.brands],
+    ] as const) {
+      const seed = seeds.find((match) => match[2] === category);
+      expect(JSON.parse(seed![1]!)).toEqual(values);
+    }
   });
 });

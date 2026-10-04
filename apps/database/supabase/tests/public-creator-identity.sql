@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(64);
+select plan(68);
 select is((select creator_id from public.handles where value='local'),'00000000-0000-0000-0000-000000000001'::uuid,'full-schema seed reserves the canonical handle for its actual actor');
 select lives_ok($$select public.update_public_user_profile('00000000-0000-0000-0000-000000000001','{"handle":"local"}')$$,'the existing canonical seed handle remains a valid no-op');
 select is((select count(*) from private.user_profile_change_events where user_id='00000000-0000-0000-0000-000000000001' and field='handle'),1::bigint,'existing-handle no-op adds no quota event to the seeded initial claim');
@@ -103,5 +103,14 @@ select throws_ok($$update public.users set avatar_url='javascript:alert(1)' wher
 select throws_ok($$update public.users set avatar_url='https://example.test/has space.png' where id='00000000-0000-4000-8000-000000009501'$$,'22023',null,'direct writes reject whitespace in avatars');
 select lives_ok($$update public.users set avatar_url='https://example.test/avatar.png' where id='00000000-0000-4000-8000-000000009501'$$,'direct writes accept valid HTTPS avatars');
 select lives_ok($$update public.users set avatar_url=null where id='00000000-0000-4000-8000-000000009501'$$,'direct writes can clear avatars');
+-- A JSON number must not bypass type validation by matching a legacy handle.
+alter table public.users disable trigger enforce_public_user_profile_policy;
+update public.users set handle='12345' where id='00000000-0000-4000-8000-000000009505';
+alter table public.users enable trigger enforce_public_user_profile_policy;
+select lives_ok($$select public.update_public_user_profile('00000000-0000-4000-8000-000000009505','{"handle":"12345"}')$$,'unchanged numeric-looking string handle remains valid');
+select throws_ok($$select public.update_public_user_profile('00000000-0000-4000-8000-000000009505','{"handle":12345}')$$,'22023',null,'matching JSON number cannot bypass handle type validation');
+select is((select handle from public.users where id='00000000-0000-4000-8000-000000009505'),'12345','rejected JSON number preserves canonical string handle');
+select is((select count(*) from private.user_profile_change_events where user_id='00000000-0000-4000-8000-000000009505' and field='handle'),0::bigint,'type rejection and genuine no-op consume no quota');
+
 select * from finish();
 rollback;

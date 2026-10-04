@@ -116,8 +116,11 @@ BEGIN
     RAISE EXCEPTION 'Invalid image URL' USING ERRCODE = '22023';
   END IF;
   IF p_patch ? 'handle' THEN
+    IF p_patch->'handle' <> 'null'::jsonb AND jsonb_typeof(p_patch->'handle') <> 'string' THEN
+      RAISE EXCEPTION 'Invalid username' USING ERRCODE = '22023';
+    END IF;
     requested_handle := p_patch->>'handle';
-    IF requested_handle IS DISTINCT FROM (SELECT handle FROM public.users WHERE id=p_user_id) AND p_patch->'handle' <> 'null'::jsonb AND (jsonb_typeof(p_patch->'handle') <> 'string' OR (requested_handle !~ '^[a-z0-9][a-z0-9_]{4,31}$' OR public.is_reserved_username(requested_handle))) THEN
+    IF requested_handle IS DISTINCT FROM (SELECT handle FROM public.users WHERE id=p_user_id) AND p_patch->'handle' <> 'null'::jsonb AND (requested_handle !~ '^[a-z0-9][a-z0-9_]{4,31}$' OR public.is_reserved_username(requested_handle)) THEN
       RAISE EXCEPTION 'Invalid username' USING ERRCODE = '22023';
     END IF;
     IF requested_handle IS NOT NULL AND requested_handle IS DISTINCT FROM (SELECT handle FROM public.users WHERE id=p_user_id) THEN

@@ -92,7 +92,13 @@ export async function POST(req: Request, { params }: Params) {
 
   // Scope the upload path under the workspace user-avatar tree, namespaced by
   // the link code so an external user cannot write elsewhere.
-  const filePath = `${link.ws_id}/users/profile-link/${code}/${crypto.randomUUID()}.jpg`;
+  const extension = {
+    'image/png': 'png',
+    'image/jpeg': 'jpg',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
+  }[parsed.data.contentType];
+  const filePath = `${link.ws_id}/users/profile-link/${code}/${crypto.randomUUID()}.${extension}`;
 
   const { data, error } = await sbAdmin.storage
     .from('avatars')

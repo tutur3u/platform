@@ -81,7 +81,7 @@ const runner = async (command, args, cwd) => {
   if (args.includes('test')) {
     const container = `supabase_db_${metadata.projectId}`;
     for (const fixture of fixtures) {
-      const target = '/tmp/public-creator-identity.sql';
+      const target = `/tmp/${fixture}`;
       execFileSync('docker', [
         'cp',
         path.resolve(metadata.disposableRoot, 'supabase/tests', fixture),

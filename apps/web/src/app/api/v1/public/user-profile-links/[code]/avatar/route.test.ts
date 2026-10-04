@@ -97,3 +97,22 @@ it.each(['image/svg+xml', 'image/avif', 'text/plain'])(
     expect(f.sign).not.toHaveBeenCalled();
   }
 );
+
+it.each([
+  ['image/png', 'png'],
+  ['image/jpeg', 'jpg'],
+  ['image/webp', 'webp'],
+  ['image/gif', 'gif'],
+])('uses the validated %s extension', async (contentType, extension) => {
+  const response = await POST(
+    new Request('https://example.test/api/avatar', {
+      method: 'POST',
+      body: JSON.stringify({ contentType }),
+    }),
+    context
+  );
+  expect(response.status).toBe(200);
+  expect(f.sign).toHaveBeenCalledWith(
+    expect.stringMatching(new RegExp(`\\.${extension}$`))
+  );
+});
