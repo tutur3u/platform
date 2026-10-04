@@ -545,7 +545,6 @@ speedup, record the exact CI SHA, archive size, matched key, per-task hits, and
 elapsed time; archive download cost and retention can outweigh reuse.
 Regression coverage: `node --test .github/actions/setup-turbo-fallback-cache/action.test.js`.
 
-
 Vercel deploy credentials must stay environment-scoped. Do not put
 `${{ secrets.* }}` values in a Vercel workflow-level `env:` block, and do not
 export production Supabase, encryption, or provider secrets from GitHub
@@ -699,15 +698,35 @@ uses required-file behavior, one-day retention, and compression level 0 because
 through root Turbo first, then calls `npm pack --ignore-scripts` so `prepack`
 cannot bypass the shared cache wrapper.
 
-Biome's automatic push trigger excludes only
-`release-please--branches--**--release-notes` metadata branches. Their creation
-briefly points at the production SHA before the notes commit is pushed; running
-Biome on both pushes leaves cancelled checks on that shared SHA, which GitHub
-also displays on main and production. Keep this exclusion at the trigger level:
-a job-level skip does not prevent the cancelled workflow checks. Actual release
-PR branches still receive lint and format validation, and manual dispatch remains
-available. When verifying a release, inspect all check runs for its SHA in addition
-to branch-filtered workflow runs.
+Test, Coverage, and Biome preserve separate immutable `workflow + ref + SHA`
+concurrency groups for main, production, and all generated Release Please refs.
+A rapid generated branch reset followed by its metadata commit must not cancel
+checks for a SHA also used by main or production. Ordinary feature refs retain
+branch supersession for obsolete source commits; that cancellation is not a
+successful validation or a valid duplicate skip. Resource-owning E2E and database
+workflows retain their own lifecycle policies.
+
+Generated duplicate pushes can cleanly skip these three workflows' validation
+jobs only after `scripts/ci/check-completed-validation.js` proves a completed
+successful main or production push at the exact same SHA. It selects the newest
+run per canonical branch from complete history, including pending and failed
+runs; a newer non-success run vetoes older success. Test and Coverage
+require all four successful shard jobs and their successful aggregate. Biome
+requires both successful format and lint jobs. The helper checks the current run
+attempt again after reading its jobs. Pending, cancelled, skipped, neutral,
+partial, failed, or inaccessible proof never substitutes for validation; checks
+run normally when proof is unavailable. Main and production always validate
+independently. This changes future runs only and does not rewrite historical
+cancelled checks attached to a shared SHA.
+
+Biome retains automatic validation on generated release and overflow-notes
+branches plus manual dispatch. The CI switchboard checks committed overflow
+content before expensive work, and completed exact-commit duplicate proof can
+skip validation without creating cancelled checks. Keep generated mutation and
+report guards: skipped or cancelled lint/format jobs must not publish a success
+report or open a format follow-up. When verifying a release, inspect all check
+runs for its SHA as well as branch-filtered workflow runs. Proof queries share a
+45-second overall deadline and fail open to normal validation on timeout.
 
 Release Please can move an oversized generated pull request body into
 `release-notes.md` on a companion
@@ -1100,7 +1119,6 @@ full Xcode before claiming the iOS archive has been verified locally.
 2. Add its key to `tuturuuu.ts` unless you intentionally want it always on by default.
 3. Document the workflow in `apps/docs`.
 4. If it changes a docs-visible page, add that page to `apps/docs/docs.json`.
-
 
 ### Calendar retained generation rollout
 
