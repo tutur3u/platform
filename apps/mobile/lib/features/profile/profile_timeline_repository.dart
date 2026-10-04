@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/profile/profile_timeline_access.dart';
 
 class ProfileTimelineItem {
   const ProfileTimelineItem({
@@ -49,12 +51,19 @@ typedef ProfileTimelineSnapshot = ({
 });
 
 class ProfileTimelineRepository {
-  ProfileTimelineRepository({ApiClient? apiClient, CacheStore? cacheStore})
-    : _api = apiClient ?? ApiClient(),
-      _store = cacheStore ?? CacheStore.instance;
+  ProfileTimelineRepository({
+    ApiClient? apiClient,
+    CacheStore? cacheStore,
+    FlutterSecureStorage? secureStorage,
+  }) : _api = apiClient ?? ApiClient(),
+       _store = cacheStore ?? CacheStore.instance,
+       _access = ProfileTimelineAccess(
+         secureStorage ?? const FlutterSecureStorage(),
+       );
 
   final ApiClient _api;
   final CacheStore _store;
+  final ProfileTimelineAccess _access;
   final _continuations = <String, int?>{};
   final _boundaries = <String, String>{};
   final _snapshots = <String, ProfileTimelineSnapshot>{};
@@ -76,10 +85,7 @@ class ProfileTimelineRepository {
       path: '/api/v1/workspaces/$workspaceId/mobile-activity',
       queryParameters: {'page': '$page', 'until': until},
     ).toString();
-    final response = await ApiClient.runForUser(
-      userId,
-      () => _api.getJson(path),
-    );
+    final response = await _readActivity(workspaceId, userId, path, generation);
     _checkSession(userId, generation);
     if (_boundaries['$userId:$workspaceId'] != until) {
       throw const FormatException('Activity session changed');
@@ -131,15 +137,24 @@ class ProfileTimelineRepository {
     );
   }
 
+  ProfileTimelineSnapshot? peek(String workspaceId, String userId) {
+    final key = _key(workspaceId, userId);
+    if (!_access.canPeek(key)) return null;
+    return _store
+        .peek<ProfileTimelineSnapshot>(key: key, decode: _decodeSnapshot)
+        .data;
+  }
+
   Future<ProfileTimelineSnapshot?> cached(
     String workspaceId,
     String userId,
   ) async {
+    if (!await _access.canRead(_key(workspaceId, userId))) return null;
     final result = await _store.read<ProfileTimelineSnapshot>(
       key: _key(workspaceId, userId),
       decode: _decodeSnapshot,
     );
-    return result.data;
+    return _access.canPeek(_key(workspaceId, userId)) ? result.data : null;
   }
 
   Future<ProfileTimelineSnapshot> refresh(
@@ -147,9 +162,11 @@ class ProfileTimelineRepository {
     String userId,
   ) async {
     final generation = ++_generation;
-    final response = await ApiClient.runForUser(
+    final response = await _readActivity(
+      workspaceId,
       userId,
-      () => _api.getJson('/api/v1/workspaces/$workspaceId/mobile-activity'),
+      '/api/v1/workspaces/$workspaceId/mobile-activity',
+      generation,
     );
     _checkSession(userId, generation);
     ProfileTimelineSnapshot? previous;
@@ -194,10 +211,82 @@ class ProfileTimelineRepository {
       partial: response['partial'] == true,
       limited: response['limited'] == true || (previous?.limited ?? false),
     );
-    await _persist(workspaceId, userId, snapshot, generation);
+    final persisted = await _persist(workspaceId, userId, snapshot, generation);
+    _checkSession(userId, generation);
+    if (persisted) {
+      await _allowAccess(workspaceId, userId, generation);
+    }
     _checkSession(userId, generation);
     _snapshots['$userId:$workspaceId'] = snapshot;
     return snapshot;
+  }
+
+  Future<void> _allowAccess(
+    String workspaceId,
+    String userId,
+    int generation,
+  ) async {
+    final predecessor = _writes;
+    final done = Completer<void>();
+    _writes = done.future;
+    await predecessor;
+    try {
+      await _access.allow(
+        _key(workspaceId, userId),
+        () => _checkSession(userId, generation),
+      );
+    } finally {
+      done.complete();
+    }
+  }
+
+  Future<Map<String, dynamic>> _readActivity(
+    String workspaceId,
+    String userId,
+    String path,
+    int generation,
+  ) async {
+    try {
+      return await ApiClient.runForUser(userId, () => _api.getJson(path));
+    } on ApiException catch (error) {
+      if (generation == _generation && timelineAccessDenied(error)) {
+        ++_generation;
+        _access.block(_key(workspaceId, userId));
+        final scope = '$userId:$workspaceId';
+        _continuations.remove(scope);
+        _boundaries.remove(scope);
+        _snapshots.remove(scope);
+        final predecessor = _writes;
+        final done = Completer<void>();
+        _writes = done.future;
+        await predecessor;
+        Object? markerFailure;
+        try {
+          try {
+            await _access.persistDenial(_key(workspaceId, userId));
+          } on Object catch (failure) {
+            markerFailure = failure;
+          }
+          try {
+            await _store.remove(_key(workspaceId, userId));
+          } on Object {
+            if (markerFailure != null) {
+              throw ApiException(
+                message:
+                    'Activity access was revoked but local storage '
+                    'could not record the revocation.',
+                statusCode: error.statusCode,
+                code: 'TIMELINE_CACHE_REVOCATION_FAILED',
+              );
+            }
+            // The durable revocation marker denies reopening the old snapshot.
+          }
+        } finally {
+          done.complete();
+        }
+      }
+      rethrow;
+    }
   }
 
   List<ProfileTimelineItem> _merge(
@@ -207,7 +296,7 @@ class ProfileTimelineRepository {
     for (final item in [...previous, ...fresh]) '${item.type}:${item.id}': item,
   }.values.toList();
 
-  Future<void> _persist(
+  Future<bool> _persist(
     String workspaceId,
     String userId,
     ProfileTimelineSnapshot snapshot,
@@ -232,8 +321,12 @@ class ProfileTimelineRepository {
           },
           tags: ['module:profile', 'workspace:$workspaceId'],
         );
+        _checkSession(userId, generation);
+        return true;
       } on Object {
-        // A failed snapshot write must not hide activity returned by the API.
+        // Fresh API rows may remain visible, but failed persistence must not
+        // remove a durable revocation fence protecting the old disk snapshot.
+        return false;
       }
     } finally {
       done.complete();

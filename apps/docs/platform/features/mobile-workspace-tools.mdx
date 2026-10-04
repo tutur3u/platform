@@ -1191,7 +1191,30 @@ default date: the newest returned day is revealed unless the user explicitly
 chooses a date. Empty stored snapshots stay provisional while revalidation is
 pending, using the fixed skeleton viewport rather than announcing absence.
 The section owns one bounded failure toast per failure streak; the embedded
-browser does not add a persistent provider-status banner or retry row.
+browser does not add a persistent provider-status banner, refresh icon, retry row,
+or completion label. Every entry shows the last authorized in-memory snapshot
+immediately and revalidates in the background, including snapshots marked fresh.
+Temporary network failures and verification challenges retain those rows;
+definitive authentication or permission denial clears both visible rows and the
+stored snapshot. A scoped secure-storage revocation marker is written before
+cache removal, so cache initialization or deletion failure cannot reopen that
+history after a restart. Until a new repository checks that marker, synchronous
+peek stays empty; unreadable markers fail closed. A successful actor-fenced refresh
+confirms a new snapshot was persisted before clearing the marker. If that write
+fails, fresh online rows may display but the stored denied history remains blocked. If both marker persistence and
+cache deletion fail, the client reports `TIMELINE_CACHE_REVOCATION_FAILED` and
+blocks the current session; durable erasure cannot be guaranteed during combined
+storage failure. Verification challenges, including `MFA_REQUIRED`, preserve
+history and continuation. Cold skeletons announce Loading as a live region without
+adding a visible refresh control. An account or personal-workspace change fences
+delayed responses.
+These defaults apply to mobile Profile Timeline; partial provider failures retain
+only previously loaded rows from the failed sources and pause provider continuation
+until a successful complete refresh. Viewport-near-end loading still expands
+returned days and complete provider pages automatically, including short lists.
+Regression evidence: `profile_timeline_repository_test.dart`,
+`profile_timeline_races_test.dart`, `profile_timeline_revocation_test.dart`,
+`profile_timeline_browser_test.dart`, and `profile_timeline_paging_test.dart`.
 
 Mounted Profile regressions locate the lazy activity section by its rendered
 position and wait within a bounded interval for fetched statistics. Fixed pixel
