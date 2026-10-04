@@ -58,7 +58,7 @@ async function githubRequest(
             'x-github-api-version': '2022-11-28',
           },
           method,
-          signal: AbortSignal.timeout(15_000),
+          ...(method === 'GET' ? { signal: AbortSignal.timeout(15_000) } : {}),
         }
       );
     } catch (error) {

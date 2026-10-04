@@ -79,7 +79,8 @@ test('GET keeps missing-package 404 semantics and DELETE has no nested retry', a
     githubRequest('/versions/1', {
       env,
       method: 'DELETE',
-      fetch: async () => {
+      fetch: async (_, options) => {
+        assert.equal('signal' in options, false);
         calls++;
         return new Response('', { status: 500 });
       },
