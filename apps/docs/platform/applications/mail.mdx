@@ -908,8 +908,10 @@ cookie/Bearer authentication, with no Calendar table access.
 Opening a Mail notification prepares the inbox alongside the reader. An existing
 snapshot for the same inbox remains visible, and the inbox revalidates while its
 reader is open. Background refresh pauses during outstanding optimistic Mail
-mutations. Network, timeout, and server list failures retry once; rate limits and revoked authentication/access are
-not retried and clears cached content. A failed refresh preserves a previously
+mutations. Network, timeout, and server list failures retry once. Rate limits are
+not automatically retried and preserve the authorized snapshot; revoked
+authentication/access is not retried and clears cached content. A failed refresh
+preserves a previously
 resolved empty inbox and shows a retry action rather than replacing it with a
 full-screen error. Cold failures remain visible. These rules apply only within
 the same account/workspace/mailbox and retain the existing cache permission
