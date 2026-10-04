@@ -6,6 +6,7 @@ export type InventorySalesPeriodProductScope =
   | 'blocklist';
 
 export type InventorySalesPeriod = {
+  merged_into_id?: string | null;
   created_at: string;
   description: string | null;
   ends_at: string | null;

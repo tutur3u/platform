@@ -15,6 +15,9 @@ vi.mock('@tuturuuu/inventory-core/commerce/auth', () => ({
 }));
 vi.mock('@tuturuuu/inventory-core/sales-periods', () => ({
   InventorySalesPeriodProductRuleError: class extends Error {},
+  isInventorySeasonMergedError: (error: { code?: string; message?: string }) =>
+    error?.code === '23514' &&
+    error.message?.startsWith('Sales period was merged;'),
   setInventorySalesPeriodBulk: (...args: unknown[]) =>
     mocks.setInventorySalesPeriodBulk(...args),
 }));
@@ -65,5 +68,24 @@ describe('bulk sales period route', () => {
       sbAdmin: { id: 'admin' },
       wsId: 'ws-real',
     });
+  });
+  it('returns actionable conflict for a merged source after concurrent write', async () => {
+    mocks.setInventorySalesPeriodBulk.mockRejectedValue({
+      code: '23514',
+      message: 'Sales period was merged; refresh and select its destination',
+    });
+    const { PUT } = await import('./route');
+    const response = await PUT(
+      new Request('https://test/api', {
+        method: 'PUT',
+        body: JSON.stringify({
+          period_id: PERIOD_ID,
+          sales: [{ id: SALE_ID, source: 'finance_invoice' }],
+        }),
+      }),
+      { params: Promise.resolve({ wsId: 'ws' }) }
+    );
+    expect(response.status).toBe(409);
+    expect(await response.text()).toContain('Refresh');
   });
 });
