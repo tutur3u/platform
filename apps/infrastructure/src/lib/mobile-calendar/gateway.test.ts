@@ -202,6 +202,13 @@ describe('authenticated native Calendar gateway', () => {
             headers: {
               'Set-Cookie': 'private=value',
               'Retry-After': '60',
+              'X-Proxy-Block-Reason': 'route-rate-limit',
+              'X-RateLimit-Policy': 'default',
+              'X-RateLimit-Caller-Class': 'anonymous',
+              'X-RateLimit-Window': 'hour',
+              'X-RateLimit-Limit': '240',
+              'X-RateLimit-Remaining': '0',
+              'X-RateLimit-Reset': '1800000000',
               [GATEWAY_HEADER]: secret,
             },
           }
@@ -210,6 +217,17 @@ describe('authenticated native Calendar gateway', () => {
       const response = await forwardCalendarRequest(request(), deps);
       expect(response.status).toBe(status);
       expect(response.headers.get('retry-after')).toBe('60');
+      for (const name of [
+        'X-Proxy-Block-Reason',
+        'X-RateLimit-Policy',
+        'X-RateLimit-Caller-Class',
+        'X-RateLimit-Window',
+        'X-RateLimit-Limit',
+        'X-RateLimit-Remaining',
+        'X-RateLimit-Reset',
+      ]) {
+        expect(response.headers.get(name)).toBeTruthy();
+      }
       expect(response.headers.has('set-cookie')).toBe(false);
       expect(response.headers.has(GATEWAY_HEADER)).toBe(false);
     }

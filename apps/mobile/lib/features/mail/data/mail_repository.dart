@@ -375,6 +375,10 @@ class MailRepository extends MailInvitationRepository {
     await _cache.mutate(wsId, () => _api.deleteJson(path));
   }
 
+  /// Settings entry requires current membership; never reuse cached grants.
+  Future<Map<String, dynamic>> settingsBootstrap(String wsId) =>
+      _api.getJson('${workspacePath(wsId)}/bootstrap');
+
   Future<Map<String, dynamic>> settings(String wsId, String mailboxId) =>
       _api.getJson('${mailboxPath(wsId, mailboxId)}/settings');
 

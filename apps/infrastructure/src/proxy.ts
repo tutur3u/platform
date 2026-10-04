@@ -22,6 +22,11 @@ import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME } from './constants/common';
 import { type Locale, routing, supportedLocales } from './i18n/routing';
+import {
+  calendarPreferenceBlockDiagnostic,
+  calendarPreferenceGuardPrefix,
+  isCalendarPreferenceRead,
+} from './lib/mobile-calendar/preference-guard';
 
 const intlMiddleware = createIntlMiddleware(routing);
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
@@ -116,10 +121,16 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     }
 
     const guardResponse = await guardApiProxyRequest(request, {
-      prefixBase: 'proxy:infra:api',
+      prefixBase: calendarPreferenceGuardPrefix(request),
     });
 
     if (guardResponse) {
+      if (guardResponse.status === 429 && isCalendarPreferenceRead(request)) {
+        console.warn(
+          'Calendar preference gateway blocked',
+          calendarPreferenceBlockDiagnostic(guardResponse.headers)
+        );
+      }
       if (appSessionRefresh?.ok) {
         propagateAuthCookies(appSessionRefresh.response, guardResponse);
       }

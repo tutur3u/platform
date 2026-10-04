@@ -83,21 +83,37 @@ void main() {
             final firstIcon = tester.getRect(
               find.byKey(const ValueKey('icon-0')),
             );
-            final primary = tester.getRect(
-              find.byKey(const ValueKey('floating-dock-primary-slot')),
+            final appsGroup = tester.getRect(
+              find.byKey(const ValueKey('floating-dock-visible-group')),
             );
+            expect(appsGroup.center.dx, closeTo(width / 2, 0.01));
+            final primary = actionCount == 0
+                ? null
+                : tester.getRect(
+                    find.byKey(const ValueKey('floating-dock-primary-slot')),
+                  );
             await pump(assistant: true);
-            expect(tester.getRect(find.byKey(navKey)), apps);
-            expect(
-              tester.getRect(find.byKey(const ValueKey('icon-0'))),
-              firstIcon,
+            final assistant = tester.getRect(find.byKey(navKey));
+            expect(assistant.bottom, apps.bottom);
+            final assistantGroup = tester.getRect(
+              find.byKey(const ValueKey('floating-dock-visible-group')),
             );
-            expect(
-              tester.getRect(
-                find.byKey(const ValueKey('floating-dock-primary-slot')),
-              ),
-              primary,
-            );
+            expect(assistantGroup.center.dx, closeTo(width / 2, 0.01));
+            // Equal visible actions have identical geometry; missing actions
+            // must not reserve invisible columns or shift the combined group.
+            if (actionCount == 1 || (actionCount == 2 && width < 400)) {
+              expect(assistant, apps);
+              expect(
+                tester.getRect(find.byKey(const ValueKey('icon-0'))),
+                firstIcon,
+              );
+              expect(
+                tester.getRect(
+                  find.byKey(const ValueKey('floating-dock-primary-slot')),
+                ),
+                primary,
+              );
+            }
             final target = find.byWidgetPredicate(
               (widget) =>
                   widget is PositionedDirectional &&
@@ -132,7 +148,6 @@ void main() {
                 horizontal: floatingDockHorizontalInset,
               ),
               child: FloatingDockRail(
-                reserveEmptyActions: false,
                 navigation: MorphingNavigationBar(
                   selectedKey: const ValueKey('mini-0'),
                   onSelected: (_) {},
