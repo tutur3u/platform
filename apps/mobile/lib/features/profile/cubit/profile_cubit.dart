@@ -13,6 +13,8 @@ class ProfileCubit extends Cubit<ProfileState> {
 
   final ProfileRepository _repository;
   int _loadGeneration = 0;
+  int _updateGeneration = 0;
+  String? _updatingActor;
 
   bool _sameActor(String? actor) =>
       !isClosed && actor != null && _repository.getCurrentUserIdSync() == actor;
@@ -34,7 +36,12 @@ class ProfileCubit extends Cubit<ProfileState> {
     final generation = ++_loadGeneration;
     final currentUserId = _repository.getCurrentUserIdSync();
     if (state.profile != null && state.profile!.id != currentUserId) {
-      emit(const ProfileState(status: ProfileStatus.loading));
+      emit(
+        ProfileState(
+          status: ProfileStatus.loading,
+          isLoading: _updatingActor == currentUserId,
+        ),
+      );
     }
     final cachedProfile = _memoryCachedUserId == currentUserId
         ? _memoryCachedProfile
@@ -60,7 +67,7 @@ class ProfileCubit extends Cubit<ProfileState> {
           status: ProfileStatus.loaded,
           profile: visibleProfile,
           error: null,
-          isLoading: false,
+          isLoading: _updatingActor == currentUserId,
           isRefreshing: false,
           isFromCache: true,
           lastUpdatedAt: persistedProfile == null
@@ -75,7 +82,7 @@ class ProfileCubit extends Cubit<ProfileState> {
         state.copyWith(
           status: ProfileStatus.loading,
           error: null,
-          isLoading: false,
+          isLoading: _updatingActor == currentUserId,
           isRefreshing: false,
         ),
       );
@@ -103,7 +110,7 @@ class ProfileCubit extends Cubit<ProfileState> {
           status: ProfileStatus.loaded,
           profile: result.profile,
           error: null,
-          isLoading: false,
+          isLoading: _updatingActor == currentUserId,
           isRefreshing: false,
           isFromCache: false,
           lastUpdatedAt: _memoryCachedAt,
@@ -115,7 +122,7 @@ class ProfileCubit extends Cubit<ProfileState> {
           state.copyWith(
             status: ProfileStatus.loaded,
             error: null,
-            isLoading: false,
+            isLoading: _updatingActor == currentUserId,
             isRefreshing: false,
             isFromCache: true,
           ),
@@ -126,7 +133,7 @@ class ProfileCubit extends Cubit<ProfileState> {
         state.copyWith(
           status: ProfileStatus.error,
           error: result.error,
-          isLoading: false,
+          isLoading: _updatingActor == currentUserId,
           isRefreshing: false,
         ),
       );
@@ -157,26 +164,31 @@ class ProfileCubit extends Cubit<ProfileState> {
   ) async {
     final actor = _repository.getCurrentUserIdSync();
     if (!_sameActor(actor)) return false;
+    final operation = ++_updateGeneration;
+    _updatingActor = actor;
+    bool current() => operation == _updateGeneration && _sameActor(actor);
     emit(state.copyWith(isLoading: true, error: null));
-
-    final result = await update();
-    if (!_sameActor(actor)) return false;
-
-    if (result.success) {
+    try {
+      final result = await update();
+      if (!current()) return false;
+      if (!result.success) {
+        emit(state.copyWith(error: result.error));
+        return false;
+      }
       final cached = await _repository.getCachedProfile();
-      if (!_sameActor(actor)) return false;
+      if (!current()) return false;
       if (cached.profile?.id == actor) {
         emit(state.copyWith(profile: cached.profile));
       }
-      // Reload profile to get updated data
       await loadProfile(forceRefresh: true, emitLoading: false);
-      if (!_sameActor(actor)) return false;
-      emit(state.copyWith(isLoading: false));
-      return true;
+      return current();
+    } finally {
+      // An obsolete completion must never release a newer actor's operation.
+      if (!isClosed && operation == _updateGeneration) {
+        _updatingActor = null;
+        emit(state.copyWith(isLoading: false));
+      }
     }
-
-    emit(state.copyWith(isLoading: false, error: result.error));
-    return false;
   }
 
   /// Uploads avatar.

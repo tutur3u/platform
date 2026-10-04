@@ -174,14 +174,20 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
   }
 
   void _reportFailure(int request) {
+    final unavailable = _failed || (_items?.isEmpty ?? true);
     if (_failureReported) return;
     _failureReported = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || request != _request) return;
       shad.showToast(
         context: context,
-        builder: (context, _) =>
-            shad.Alert(content: Text(context.l10n.profileTimelinePartial)),
+        builder: (context, _) => shad.Alert(
+          content: Text(
+            unavailable
+                ? context.l10n.profileTimelineUnavailable
+                : context.l10n.profileTimelinePartial,
+          ),
+        ),
       );
     });
   }
@@ -250,27 +256,29 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
     return widget.fullSurface ? SizedBox.expand(child: browser) : browser;
   }
 
-  Widget _browser(List<ProfileTimelineItem>? items, {Widget? status}) =>
-      ProfileTimelineBrowser(
-        key: ValueKey(_scope),
-        fullSurface: widget.fullSurface,
-        contentTopPadding: widget.contentTopPadding,
-        status: status,
-        datesOpen: widget.datesOpen,
-        onDatesChanged: widget.onDatesChanged,
-        items: items ?? const [],
-        loading: items == null && !_failed,
-        refreshing: _refreshing,
-        loadingMore: _loadingMore,
-        onLoadMore: _pagingPaused || _partial
-            ? null
-            : () => unawaited(_loadMore()),
-        statusReportedByParent: _failed || _partial || _limited,
-        availability: _failed || items == null
-            ? ProfileTimelineAvailability.unavailable
-            : _partial || _limited
-            ? ProfileTimelineAvailability.partial
-            : ProfileTimelineAvailability.complete,
-        onOpen: _open,
-      );
+  Widget _browser(
+    List<ProfileTimelineItem>? items, {
+    Widget? status,
+  }) => ProfileTimelineBrowser(
+    key: ValueKey(_scope),
+    fullSurface: widget.fullSurface,
+    contentTopPadding: widget.contentTopPadding,
+    status: status,
+    datesOpen: widget.datesOpen,
+    onDatesChanged: widget.onDatesChanged,
+    items: items ?? const [],
+    loading: items == null && !_failed,
+    refreshing: _refreshing,
+    loadingMore: _loadingMore,
+    onLoadMore: _pagingPaused || _partial ? null : () => unawaited(_loadMore()),
+    statusReportedByParent:
+        (_items?.isNotEmpty ?? false) && (_failed || _partial || _limited),
+    availability:
+        _failed || items == null || (items.isEmpty && (_partial || _limited))
+        ? ProfileTimelineAvailability.unavailable
+        : _partial || _limited
+        ? ProfileTimelineAvailability.partial
+        : ProfileTimelineAvailability.complete,
+    onOpen: _open,
+  );
 }

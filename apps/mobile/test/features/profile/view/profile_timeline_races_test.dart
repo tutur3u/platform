@@ -132,6 +132,21 @@ void main() {
     await tester.pump();
   }
 
+  testWidgets(
+    'cold failure remains meaningfully unavailable after toast closes',
+    (tester) async {
+      await mount(tester);
+      repository.requests.single.completeError(Exception('Unavailable'));
+      await tester.pumpAndSettle();
+      expect(find.text('Some activity is unavailable.'), findsNothing);
+      await tester.drainShadToastTimers();
+      await tester.pumpAndSettle();
+      expect(find.text('Activity could not be refreshed.'), findsOneWidget);
+      expect(find.text('Retry'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('offline reopen retains rows and a bounded failure notice', (
     tester,
   ) async {
@@ -311,14 +326,14 @@ void main() {
       await tester.drainShadToastTimers();
       await tester.pumpAndSettle();
       expect(find.text('No recent activity in this workspace'), findsNothing);
-      expect(find.text('Activity could not be refreshed.'), findsNothing);
+      expect(find.text('Activity could not be refreshed.'), findsOneWidget);
       expect(find.text('Retry'), findsNothing);
       await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
       await tester.pumpAndSettle();
       await tester.drainShadToastTimers();
       await tester.pumpAndSettle();
       expect(find.text('No activity was returned for this day.'), findsNothing);
-      expect(find.text('Activity could not be refreshed.'), findsNothing);
+      expect(find.text('Activity could not be refreshed.'), findsOneWidget);
       replay.value++;
       await tester.pump();
       repository.requests.last.complete((
