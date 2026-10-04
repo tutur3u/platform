@@ -230,7 +230,7 @@ class InventoryRepository {
         decode: InventoryProduct.fromJson,
       );
     } on ApiException catch (error) {
-      if (error.statusCode != 0) rethrow;
+      if (!isOfflineTransportFailure(error)) rethrow;
       offlineError = error;
     }
     final rows = overlayPendingProducts(wsId, [

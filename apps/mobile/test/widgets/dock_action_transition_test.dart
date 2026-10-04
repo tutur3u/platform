@@ -3,23 +3,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/shell/view/dock_action_transition.dart';
 
 void main() {
-  testWidgets('entry and exit move adjacent navigation continuously', (
+  testWidgets('entry reserves and exit releases adjacent navigation space', (
     tester,
   ) async {
-    final width = ValueNotifier<double>(0);
-    addTearDown(width.dispose);
+    final show = ValueNotifier<bool>(false);
+    addTearDown(show.dispose);
     await tester.pumpWidget(
       MaterialApp(
-        home: ValueListenableBuilder<double>(
-          valueListenable: width,
+        home: ValueListenableBuilder<bool>(
+          valueListenable: show,
           builder: (context, value, _) => Center(
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 const SizedBox(key: Key('nav'), width: 160, height: 60),
                 DockActionTransition(
-                  identity: value,
-                  child: SizedBox(width: value, height: 48),
+                  identity: 'create',
+                  slotKey: const Key('action-slot'),
+                  child: value ? const SizedBox(width: 52, height: 52) : null,
                 ),
               ],
             ),
@@ -29,28 +30,31 @@ void main() {
     );
     double position() => tester.getTopLeft(find.byKey(const Key('nav'))).dx;
     final start = position();
-    width.value = 100;
+    show.value = true;
     await tester.pump();
     expect(position(), start);
     await tester.pump(const Duration(milliseconds: 180));
-    expect(position(), allOf(lessThan(start), greaterThan(start - 50)));
+    expect(position(), allOf(lessThan(start), greaterThan(start - 30)));
     await tester.pumpAndSettle();
-    expect(position(), start - 50);
-    width.value = 0;
+    expect(position(), start - 30);
+    expect(tester.getSize(find.byKey(const Key('action-slot'))).width, 60);
+    show.value = false;
     await tester.pump();
-    expect(position(), start - 50);
-    await tester.pump(const Duration(milliseconds: 180));
-    expect(position(), allOf(lessThan(start), greaterThan(start - 50)));
-    // Interrupt an exit with a wider replacement. No first-frame jump.
+    await tester.pump(const Duration(milliseconds: 100));
+    // The visible control hides before the reserved width is released.
+    expect(position(), start - 30);
+    await tester.pump(const Duration(milliseconds: 80));
+    expect(position(), allOf(lessThan(start), greaterThan(start - 30)));
     final interrupted = position();
-    width.value = 200;
+    show.value = true;
     await tester.pump();
     expect(position(), interrupted);
     await tester.pumpAndSettle();
-    expect(position(), start - 100);
-    width.value = 0;
+    expect(position(), start - 30);
+    show.value = false;
     await tester.pumpAndSettle();
     expect(position(), start);
+    expect(find.byKey(const Key('action-slot')), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -65,11 +69,12 @@ void main() {
           child: ValueListenableBuilder<bool>(
             valueListenable: show,
             builder: (context, value, _) => DockActionTransition(
-              key: const Key('slot'),
-              identity: value,
+              key: const Key('transition'),
+              slotKey: const Key('slot'),
+              identity: 'pill',
               child: value
-                  ? const SizedBox(key: Key('pill'), width: 140, height: 48)
-                  : const SizedBox.shrink(),
+                  ? const SizedBox(key: Key('pill'), width: 52, height: 52)
+                  : null,
             ),
           ),
         ),
@@ -101,12 +106,20 @@ void main() {
     show.value = true;
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 180));
+    expect(tester.widget<Opacity>(find.byType(Opacity)).opacity, 0);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(
+      tester.widget<Opacity>(find.byType(Opacity)).opacity,
+      greaterThan(0),
+    );
     expectUnclippedPill();
     await tester.pumpAndSettle();
     show.value = false;
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 180));
+    await tester.pump(const Duration(milliseconds: 100));
     expectUnclippedPill();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tester.widget<Opacity>(find.byType(Opacity)).opacity, 0);
     await tester.pumpAndSettle();
   });
 
@@ -124,13 +137,14 @@ void main() {
             child: ValueListenableBuilder<bool>(
               valueListenable: show,
               builder: (context, value, _) => DockActionTransition(
-                identity: value,
+                identity: 'create',
+                slotKey: const Key('action-slot'),
                 child: value
                     ? TextButton(
                         onPressed: () => calls++,
                         child: const Text('Create'),
                       )
-                    : const SizedBox.shrink(),
+                    : null,
               ),
             ),
           ),

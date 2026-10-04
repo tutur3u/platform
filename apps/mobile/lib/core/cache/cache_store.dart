@@ -11,6 +11,7 @@ import 'package:hive/hive.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_replica_policy.dart';
+import 'package:mobile/core/cache/cache_resource_removal.dart';
 import 'package:mobile/core/cache/cache_storage_snapshot.dart';
 import 'package:mobile/core/cache/cached_resource_record.dart';
 import 'package:mobile/core/cache/offline_cache_inventory.dart';
@@ -122,7 +123,7 @@ class CacheStore {
   }
 
   final ValueNotifier<int> resourceRemovalRevision = ValueNotifier(0);
-  final ValueNotifier<CachedResourceRecord?> removedResource = ValueNotifier(
+  final ValueNotifier<CacheResourceRemoval?> removedResource = ValueNotifier(
     null,
   );
 
@@ -132,7 +133,12 @@ class CacheStore {
     final previous = _memory.remove(key);
     if (previous != null) {
       _resourceBytes -= utf8.encode(previous.jsonPayload).length;
-      removedResource.value = previous;
+      removedResource.value = CacheResourceRemoval(
+        key: CacheResourceRemoval.identityForKey(previous.key),
+        namespace: previous.namespace,
+        userId: previous.userId,
+        workspaceId: previous.workspaceId,
+      );
       resourceRemovalRevision.value++;
     }
   }

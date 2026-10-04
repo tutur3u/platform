@@ -434,6 +434,58 @@ void main() {
     expect(sales.count, 1);
     expect((await repository.getSales('ws-2')).data, isEmpty);
   });
+  for (final kind in [
+    ApiFailureKind.response,
+    ApiFailureKind.session,
+    ApiFailureKind.unknown,
+    ApiFailureKind.transport,
+  ]) {
+    test(
+      'product detail fallback honors $kind failure with a pending create',
+      () async {
+        final api = _MockApiClient();
+        final queue = _Queue();
+        final error = ApiException(
+          message: 'failure',
+          statusCode: 0,
+          failureKind: kind,
+        );
+        when(() => api.getJson(any())).thenThrow(error);
+        when(queue.listPending).thenAnswer(
+          (_) async => [
+            PendingMutationRecord(
+              id: 'create-product',
+              feature: 'inventory',
+              method: 'POST',
+              path: InventoryEndpoints.products('ws'),
+              createdAt: DateTime.utc(2026),
+              userId: 'user',
+              workspaceId: 'ws',
+              payload: const {'name': 'Pending product'},
+              optimisticPatch: const {'entityId': 'local-product'},
+            ),
+          ],
+        );
+        final repository = InventoryRepository(
+          apiClient: api,
+          mutationQueue: queue,
+          cacheUserId: () => 'user',
+          networkAvailable: () async => true,
+        );
+        final request = repository.getProduct(
+          'ws',
+          'local-product',
+          forceRefresh: true,
+        );
+        if (kind == ApiFailureKind.transport) {
+          expect((await request)!.name, 'Pending product');
+        } else {
+          await expectLater(request, throwsA(same(error)));
+          verifyNever(queue.listPending);
+        }
+      },
+    );
+  }
 }
 
 Map<String, dynamic> _overviewResponse({required num revenue}) => {

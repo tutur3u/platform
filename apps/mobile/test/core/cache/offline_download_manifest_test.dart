@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_resource_removal.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_download_manifest.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
@@ -194,7 +195,7 @@ void main() {
           OfflineDownloadManifest.affectedProducts(
             userId: source.userId!,
             workspaceId: source.workspaceId!,
-            key: source.value,
+            key: CacheResourceRemoval.identityForKey(source.value),
             namespace: source.namespace,
           );
       expect(affected(retained), {'inventory'});
@@ -212,6 +213,39 @@ void main() {
       );
     },
   );
+  test('opaque private-query removal matches only retained source', () async {
+    final manifest = OfflineDownloadManifest(store, 'user', () => userId);
+    const retained = CacheKey(
+      namespace: namespace,
+      userId: 'user',
+      workspaceId: 'opaque-removal',
+      params: {'query': 'private-query-fixture'},
+    );
+    await manifest.save(retained, []);
+    manifest.retain('inventory', 'opaque-removal');
+    const unrelated = CacheKey(
+      namespace: namespace,
+      userId: 'user',
+      workspaceId: 'opaque-removal',
+      params: {'query': 'different-query-fixture'},
+    );
+    await seed(unrelated, 'unrelated');
+    Set<String> affectedRemoval() {
+      final removal = store.removedResource.value!;
+      return OfflineDownloadManifest.affectedProducts(
+        userId: removal.userId!,
+        workspaceId: removal.workspaceId!,
+        key: removal.key,
+        namespace: removal.namespace,
+      );
+    }
+
+    await store.remove(unrelated);
+    expect(affectedRemoval(), isEmpty);
+    await store.remove(retained);
+    expect(affectedRemoval(), {'inventory'});
+    expect(store.removedResource.value!.key, isNot(contains('private-query')));
+  });
   test('shared exchange-rate dependency invalidates finance only', () async {
     final rates = OfflineDownloadManifest(store, 'user', () => userId);
     const source = CacheKey(
@@ -225,7 +259,7 @@ void main() {
       OfflineDownloadManifest.affectedProducts(
         userId: 'user',
         workspaceId: 'rates-workspace',
-        key: source.value,
+        key: CacheResourceRemoval.identityForKey(source.value),
         namespace: source.namespace,
       ),
       {'finance'},

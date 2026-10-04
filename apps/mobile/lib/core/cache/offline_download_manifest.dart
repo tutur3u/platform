@@ -1,5 +1,6 @@
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_resource_removal.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 
 /// Strict downloads fail on disk errors and cache eviction.
@@ -29,7 +30,10 @@ class OfflineDownloadManifest {
     final affected = <String>{
       if (manifests != null)
         for (final entry in manifests.entries)
-          if (entry.value._keys.any((source) => source.value == key))
+          if (entry.value._keys.any(
+            (source) =>
+                CacheResourceRemoval.identityForKey(source.value) == key,
+          ))
             if (entry.key == 'finance-rates') 'finance' else entry.key,
     };
     // Restored readiness can coexist with just one newly retained manifest.

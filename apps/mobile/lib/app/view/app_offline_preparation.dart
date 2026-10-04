@@ -56,8 +56,7 @@ extension _AppOfflinePreparation on _AppState {
         (!sharedRates && removed.workspaceId != scope.workspaceId)) {
       return;
     }
-    if (!coordinator.state.value.running &&
-        coordinator.state.value.completed > 0) {
+    if (scope.running || scope.completed > 0) {
       coordinator.invalidateRetainedData(
         productIds: OfflineDownloadManifest.affectedProducts(
           userId: removed.userId!,

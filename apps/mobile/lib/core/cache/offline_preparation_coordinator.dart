@@ -84,6 +84,7 @@ class OfflinePreparationCoordinator {
   int _generation = 0;
   bool _busy = false;
   int? _activeGeneration;
+  final Set<String> _removedDuringRun = {};
 
   bool canContinue(String userId, String workspaceId) =>
       _busy &&
@@ -111,6 +112,7 @@ class OfflinePreparationCoordinator {
       return;
     }
     final generation = ++_generation;
+    _removedDuringRun.clear();
     state.value = OfflinePreparationState(
       userId: userId,
       workspaceId: workspaceId,
@@ -164,6 +166,7 @@ class OfflinePreparationCoordinator {
     final generation = ++_generation;
     _busy = true;
     _activeGeneration = generation;
+    _removedDuringRun.clear();
     final ids = productId != null
         ? [productId]
         : resume
@@ -177,6 +180,19 @@ class OfflinePreparationCoordinator {
         : productIds;
     final products = {...state.value.products};
     void publish({required bool running}) {
+      // Retention reads yield; a verified earlier product can be evicted while
+      // a later product is checked. Never overwrite those removal events.
+      for (final id in _removedDuringRun) {
+        final product = products[id];
+        if (product?.status == OfflinePreparationStatus.ready) {
+          products[id] = OfflineProductPreparation(
+            status: _tasks.containsKey(id)
+                ? OfflinePreparationStatus.queued
+                : OfflinePreparationStatus.unavailable,
+            lastSuccess: product!.lastSuccess,
+          );
+        }
+      }
       state.value = OfflinePreparationState(
         userId: userId,
         workspaceId: workspaceId,
@@ -307,7 +323,11 @@ class OfflinePreparationCoordinator {
   /// Cache clear or budget reduction removes any claim of current readiness.
   void invalidateRetainedData({Set<String>? productIds}) {
     if (productIds?.isEmpty ?? false) return;
-    if (state.value.running) cancel();
+    if (state.value.running) {
+      _removedDuringRun.addAll(
+        productIds ?? OfflinePreparationCoordinator.productIds,
+      );
+    }
     final latest = state.value;
     state.value = OfflinePreparationState(
       userId: latest.userId,

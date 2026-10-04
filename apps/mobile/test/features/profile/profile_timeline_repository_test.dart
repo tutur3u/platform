@@ -61,6 +61,7 @@ class _ScenarioApi extends _Api {
   final responses = <Map<String, dynamic>>[];
   String actor = 'owner';
   Completer<Map<String, dynamic>>? pending;
+  ApiException? failure;
   @override
   void checkUser(String userId) {
     if (actor != userId) throw const FormatException('Account changed');
@@ -71,7 +72,10 @@ class _ScenarioApi extends _Api {
     String path, {
     bool requiresAuth = true,
     Duration timeout = const Duration(seconds: 30),
-  }) async => pending != null ? await pending!.future : responses.removeAt(0);
+  }) async {
+    if (failure case final ApiException error) throw error;
+    return pending != null ? await pending!.future : responses.removeAt(0);
+  }
 }
 
 Map<String, dynamic> _item(String id, String type) => {
@@ -111,6 +115,9 @@ void main() {
       secureValues[call.namedArguments[#key] as String] =
           call.namedArguments[#value] as String?;
     });
+    when(() => storage.delete(key: any(named: 'key'))).thenAnswer((call) async {
+      secureValues.remove(call.namedArguments[#key]);
+    });
     store = CacheStore.forTesting(
       secureStorage: storage,
       directoryResolver: () async => directory,
@@ -118,6 +125,7 @@ void main() {
     repository = ProfileTimelineRepository(
       apiClient: _Api(),
       cacheStore: store,
+      secureStorage: storage,
     );
   });
   tearDown(() async {
@@ -137,12 +145,17 @@ void main() {
     repository = ProfileTimelineRepository(
       apiClient: _Api(),
       cacheStore: store,
+      secureStorage: storage,
     );
   }
 
   test('continuations pin boundaries and reject partial pages', () async {
     final api = _PageApi();
-    final paged = ProfileTimelineRepository(apiClient: api, cacheStore: store);
+    final paged = ProfileTimelineRepository(
+      apiClient: api,
+      cacheStore: store,
+      secureStorage: storage,
+    );
     await paged.refresh('personal', 'owner');
     expect(paged.nextPage('personal', 'owner'), 1);
     await paged.loadMore('personal', 'owner', 1);
@@ -163,7 +176,11 @@ void main() {
   test('partial refresh retains only failed providers after reopen', () async {
     final api = _ScenarioApi();
     repository.dispose();
-    repository = ProfileTimelineRepository(apiClient: api, cacheStore: store);
+    repository = ProfileTimelineRepository(
+      apiClient: api,
+      cacheStore: store,
+      secureStorage: storage,
+    );
     api.responses.add(
       _page([
         _item('old-task', 'task'),
@@ -191,7 +208,11 @@ void main() {
   test('partial refresh prunes Calendar when only Notes failed', () async {
     final api = _ScenarioApi();
     repository.dispose();
-    repository = ProfileTimelineRepository(apiClient: api, cacheStore: store);
+    repository = ProfileTimelineRepository(
+      apiClient: api,
+      cacheStore: store,
+      secureStorage: storage,
+    );
     api.responses.add(
       _page([_item('old-event', 'calendar'), _item('old-note', 'note')]),
     );
@@ -209,10 +230,86 @@ void main() {
     expect(retained.partial, isTrue);
   });
 
+  for (final status in [401, 403]) {
+    for (final pagination in [false, true]) {
+      test(
+        'denial $status clears scoped snapshot paging=$pagination',
+        () async {
+          final api = _ScenarioApi();
+          repository.dispose();
+          repository = ProfileTimelineRepository(
+            apiClient: api,
+            cacheStore: store,
+            secureStorage: storage,
+          );
+          api.responses.add(_page([_item('private', 'task')], nextPage: 1));
+          await repository.refresh('personal', 'owner');
+          expect(
+            repository.peek('personal', 'owner')!.items.single.id,
+            'private',
+          );
+          api.failure = ApiException(message: 'Denied', statusCode: status);
+          await expectLater(
+            pagination
+                ? repository.loadMore('personal', 'owner', 1)
+                : repository.refresh('personal', 'owner'),
+            throwsA(isA<ApiException>()),
+          );
+          expect(await repository.cached('personal', 'owner'), isNull);
+          expect(repository.nextPage('personal', 'owner'), isNull);
+          expect(repository.peek('personal', 'owner'), isNull);
+        },
+      );
+    }
+  }
+
+  test(
+    'transient refresh and verification challenge retain scoped history',
+    () async {
+      final api = _ScenarioApi();
+      repository.dispose();
+      repository = ProfileTimelineRepository(
+        apiClient: api,
+        cacheStore: store,
+        secureStorage: storage,
+      );
+      api.responses.add(_page([_item('private', 'task')], nextPage: 1));
+      await repository.refresh('personal', 'owner');
+      for (final error in [
+        const ApiException(message: 'Disconnected', statusCode: 0),
+        const ApiException(
+          message: 'MFA required',
+          statusCode: 403,
+          code: 'MFA_REQUIRED',
+        ),
+        const ApiException(
+          message: 'Verification required',
+          statusCode: 403,
+          isVerificationRequired: true,
+        ),
+      ]) {
+        api.failure = error;
+        await expectLater(
+          repository.refresh('personal', 'owner'),
+          throwsA(isA<ApiException>()),
+        );
+        expect(
+          (await repository.cached('personal', 'owner'))!.items.single.id,
+          'private',
+        );
+        expect(repository.nextPage('personal', 'owner'), 1);
+      }
+    },
+  );
+
   test('loaded pages persist deduplicated history after reopen', () async {
     final api = _ScenarioApi();
     repository.dispose();
-    repository = ProfileTimelineRepository(apiClient: api, cacheStore: store);
+    repository = ProfileTimelineRepository(
+      apiClient: api,
+      cacheStore: store,
+      secureStorage: storage,
+    );
     api.responses.add(_page([_item('first', 'task')], nextPage: 1));
     await repository.refresh('personal', 'owner');
     api.responses.add(
@@ -236,7 +333,11 @@ void main() {
     () async {
       final api = _ScenarioApi();
       repository.dispose();
-      repository = ProfileTimelineRepository(apiClient: api, cacheStore: store);
+      repository = ProfileTimelineRepository(
+        apiClient: api,
+        cacheStore: store,
+        secureStorage: storage,
+      );
       api.responses.add(_page([_item('first', 'task')], nextPage: 1));
       await repository.refresh('personal', 'owner');
       api.pending = Completer<Map<String, dynamic>>();
@@ -256,7 +357,11 @@ void main() {
   test('refresh fences a delayed prior page before durable writes', () async {
     final api = _ScenarioApi();
     repository.dispose();
-    repository = ProfileTimelineRepository(apiClient: api, cacheStore: store);
+    repository = ProfileTimelineRepository(
+      apiClient: api,
+      cacheStore: store,
+      secureStorage: storage,
+    );
     api.responses.add(_page([_item('first', 'task')], nextPage: 1));
     await repository.refresh('personal', 'owner');
     final oldPage = Completer<Map<String, dynamic>>();
@@ -293,6 +398,7 @@ void main() {
         repository = ProfileTimelineRepository(
           apiClient: api,
           cacheStore: store,
+          secureStorage: storage,
         );
         api.responses.add(_page([_item('obsolete', 'task')]));
         final oldRefresh = repository.refresh('personal', 'owner');

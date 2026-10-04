@@ -279,4 +279,54 @@ void main() {
       OfflinePreparationStatus.ready,
     );
   });
+  test(
+    'removal after verification cannot republish an earlier product ready',
+    () async {
+      for (final id in OfflinePreparationCoordinator.productIds) {
+        coordinator.register(id, (_) async {});
+      }
+      coordinator.verifyProductRetention = (_, _, product) async {
+        if (product == 'calendar') {
+          // Finance passed its check; an unrelated cache writer now evicts it.
+          coordinator.invalidateRetainedData(productIds: {'finance'});
+        }
+      };
+      await coordinator.run(userId: 'owner', workspaceId: 'team');
+      expect(coordinator.state.value.running, isFalse);
+      expect(
+        coordinator.state.value.products['finance']!.status,
+        OfflinePreparationStatus.queued,
+      );
+      for (final id in ['inventory', 'tasks', 'calendar']) {
+        expect(
+          coordinator.state.value.products[id]!.status,
+          OfflinePreparationStatus.ready,
+        );
+      }
+      expect(
+        coordinator.state.value.products['finance']!.lastSuccess,
+        isNotNull,
+      );
+    },
+  );
+  test('running removal preserves unrelated download completion', () async {
+    for (final id in OfflinePreparationCoordinator.productIds) {
+      coordinator.register(id, (_) async {
+        if (id == 'inventory') {
+          coordinator.invalidateRetainedData(productIds: {'finance'});
+        }
+      });
+    }
+    await coordinator.run(userId: 'owner', workspaceId: 'team');
+    expect(
+      coordinator.state.value.products['finance']!.status,
+      OfflinePreparationStatus.queued,
+    );
+    for (final id in ['inventory', 'tasks', 'calendar']) {
+      expect(
+        coordinator.state.value.products[id]!.status,
+        OfflinePreparationStatus.ready,
+      );
+    }
+  });
 }

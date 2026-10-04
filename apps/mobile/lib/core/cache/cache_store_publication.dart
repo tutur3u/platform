@@ -27,7 +27,8 @@ extension CacheStorePublication on CacheStore {
   Future<void> _removeCorruptRecord(CachedResourceRecord record) =>
       _serializeResources(() async {
         if (!identical(_memory[record.key], record)) return;
-        _advanceKey(record.key);
+        // Corruption is a missing snapshot, not an actor or mutation fence.
+        // Do not invalidate the fresh network request that discovered it.
         _dropRecord(record.key);
         await _resourceBox.delete(record.key);
         await _removeReplicaSource(record.key);

@@ -1,6 +1,6 @@
 ---
-title: 'Mobile Workspace Tools'
-description: 'Shared mobile navigation, tablet layouts, caching, and workspace application behavior.'
+title: "Mobile Workspace Tools"
+description: "Shared mobile navigation, tablet layouts, caching, and workspace application behavior."
 updatedAt: 2026-10-03
 ---
 
@@ -1038,7 +1038,6 @@ Synthetic Profile renders use placeholder identity and activity data:
 
 ![Profile Timeline at double text scale, synthetic Flutter fixture](/images/mobile-profile-timeline-large-text-synthetic.png)
 
-
 ## Profile activity privacy
 
 The Profile timeline shows the signed-in user's task creations, transaction
@@ -1150,7 +1149,6 @@ label, description, and module ID; this submission change adds no plural stemmin
 A queued selection is canceled if workspace, account, experiment, access, or
 locale inputs change after its match was resolved and before navigation.
 
-
 ## Workspace picker search selection
 
 The mobile current-workspace and launch-default pickers keep search text and
@@ -1160,7 +1158,6 @@ uses its workspace ID for identity and selects its rendered workspace object,
 including after sorting, duplicate display names, and list refreshes. This rule
 applies to the sheet opened from the navbar, dashboard and Workspace Settings;
 it does not change membership discovery, permissions, or default persistence.
-
 
 ## Private Hidden workspace recovery
 
@@ -1177,6 +1174,7 @@ in `settings_hidden_recovery_checks.dart` (actual Settings/Shell root, one mini
 navigation item, guest/no-active/all-Hidden, Back and 320px/2× text) and
 `workspace_visibility_test.dart` (rollback, logout/account replacement, deferred
 module flags and explicit deep links before preference discovery).
+
 ## Shared navbar text scaling
 
 The compact mobile navbar keeps its normal size at the default text scale. At
@@ -1201,7 +1199,6 @@ Title measurements follow inherited text style and platform bold, line-height,
 letter-spacing and word-spacing overrides. The painted-prefix check selects a
 complete first grapheme, so emoji and joined characters retain ordinary ellipsis
 when they fit. Full title semantics remain available in either overflow mode.
-
 
 ## Profile Timeline date navigation
 
@@ -1239,7 +1236,30 @@ default date: the newest returned day is revealed unless the user explicitly
 chooses a date. Empty stored snapshots stay provisional while revalidation is
 pending, using the fixed skeleton viewport rather than announcing absence.
 The section owns one bounded failure toast per failure streak; the embedded
-browser does not add a persistent provider-status banner or retry row.
+browser does not add a persistent provider-status banner, refresh icon, retry row,
+or completion label. Every entry shows the last authorized in-memory snapshot
+immediately and revalidates in the background, including snapshots marked fresh.
+Temporary network failures and verification challenges retain those rows;
+definitive authentication or permission denial clears both visible rows and the
+stored snapshot. A scoped secure-storage revocation marker is written before
+cache removal, so cache initialization or deletion failure cannot reopen that
+history after a restart. Until a new repository checks that marker, synchronous
+peek stays empty; unreadable markers fail closed. A successful actor-fenced refresh
+confirms a new snapshot was persisted before clearing the marker. If that write
+fails, fresh online rows may display but the stored denied history remains blocked. If both marker persistence and
+cache deletion fail, the client reports `TIMELINE_CACHE_REVOCATION_FAILED` and
+blocks the current session; durable erasure cannot be guaranteed during combined
+storage failure. Verification challenges, including `MFA_REQUIRED`, preserve
+history and continuation. Cold skeletons announce Loading as a live region without
+adding a visible refresh control. An account or personal-workspace change fences
+delayed responses.
+These defaults apply to mobile Profile Timeline; partial provider failures retain
+only previously loaded rows from the failed sources and pause provider continuation
+until a successful complete refresh. Viewport-near-end loading still expands
+returned days and complete provider pages automatically, including short lists.
+Regression evidence: `profile_timeline_repository_test.dart`,
+`profile_timeline_races_test.dart`, `profile_timeline_revocation_test.dart`,
+`profile_timeline_browser_test.dart`, and `profile_timeline_paging_test.dart`.
 
 Mounted Profile regressions locate the lazy activity section by its rendered
 position and wait within a bounded interval for fetched statistics. Fixed pixel
@@ -1295,7 +1315,18 @@ Pause cancels subsequent download steps. Resume retries unfinished modules while
 skipping modules verified ready in the current session. It restarts a module's
 supported collection download; it does not promise byte-level continuation.
 Across launches, retained timestamps are historical evidence and never alone
-establish readiness. Explicit downloads continue to use the existing bounded
+establish readiness. Cache removals during a download or its final retention
+checks are retained until completion: affected products return to queued status,
+while unrelated products can finish. The next explicit retry must verify the
+removed dependencies again. Cache removal notifications retain only scoped
+identity with an event-only opaque key digest, never the removed response payload
+or literal query/search parameters. Persisted cache keys remain unchanged. A corrupt stored response is treated
+as missing and still attempts network revalidation; account switches and explicit
+cache clearing continue to fence that response. Inventory product details permit
+pending-item fallback only for typed transport failures. Invalid response bodies,
+session failures, and unknown status-zero errors surface instead.
+Regression coverage: `offline_preparation_coordinator_test.dart`,
+`cache_revalidation_corruption_test.dart`, and `inventory_repository_test.dart`. Explicit downloads continue to use the existing bounded
 Finance, Inventory, Tasks, and Calendar collections; neither these pages nor a
 Ready label promise all server data or every attachment.
 
@@ -1312,6 +1343,7 @@ Regression evidence: `test/core/cache/offline_cache_inventory_test.dart`,
 `apps/mobile`. Widget tests are source-level evidence; native airplane-mode and
 installed-client behavior require a new exact-source CI artifact and separate
 runtime verification.
+
 ## Native Assistant prompt and navigation
 
 On the mobile Assistant text-chat surface, opening the prompt collapses the
