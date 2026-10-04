@@ -4296,5 +4296,10 @@
     "assistantAttachFilesSource": "Tệp",
     "assistantCaptureAudio": "Ghi âm",
     "assistantCapturePhoto": "Chụp ảnh",
-    "assistantCaptureVideo": "Quay video"
+    "assistantCaptureVideo": "Quay video",
+    "profileBanner": "Ảnh bìa hồ sơ",
+    "profileBannerDescription": "Thêm ảnh ngang để cá nhân hóa hồ sơ của bạn.",
+    "profileChangeBanner": "Đổi ảnh bìa",
+    "profileAddBanner": "Thêm ảnh bìa",
+    "profileRemoveBanner": "Gỡ ảnh bìa"
 }

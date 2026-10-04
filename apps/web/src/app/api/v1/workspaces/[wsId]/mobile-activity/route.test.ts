@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   resolveSessionAuthContext: vi.fn(),
   verifyWorkspaceMembershipType: vi.fn(),
   createAdminClient: vi.fn(),
+  calendarAccess: vi.fn(),
 }));
 vi.mock('@/lib/api-auth', () => mocks);
 vi.mock('@tuturuuu/utils/workspace-helper', () => mocks);
@@ -30,8 +31,9 @@ function query(data: unknown[]) {
     eq: vi.fn().mockReturnThis(),
     is: vi.fn().mockReturnThis(),
     gte: vi.fn().mockReturnThis(),
+    lte: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockResolvedValue({ data, error: null }),
+    range: vi.fn().mockResolvedValue({ data, error: null }),
   };
 }
 
@@ -68,10 +70,17 @@ describe('mobile profile activity', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.calendarAccess.mockResolvedValue({ data: true, error: null });
     mocks.resolveSessionAuthContext.mockResolvedValue({
       ok: true,
       user: { id: 'viewer' },
-      supabase: { from, rpc },
+      supabase: {
+        from,
+        rpc: (name: string, args: unknown) =>
+          name === 'has_workspace_permission'
+            ? mocks.calendarAccess(args)
+            : rpc(name, args),
+      },
     });
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
     mocks.createAdminClient.mockResolvedValue({ from: adminFrom });
@@ -120,7 +129,7 @@ describe('mobile profile activity', () => {
   });
 
   it('keeps available activity when one source fails', async () => {
-    tables.notes.limit.mockResolvedValueOnce({
+    tables.notes.range.mockResolvedValueOnce({
       data: null,
       error: { code: 'permission_denied' },
     });
@@ -137,10 +146,109 @@ describe('mobile profile activity', () => {
 
   it('offers retry when every activity source fails', async () => {
     const failure = { data: null, error: { code: 'unavailable' } };
-    tables.tasks.limit.mockResolvedValueOnce(failure);
-    tables.notes.limit.mockResolvedValueOnce(failure);
-    tables.workspace_calendar_events.limit.mockResolvedValueOnce(failure);
+    tables.tasks.range.mockResolvedValueOnce(failure);
+    tables.notes.range.mockResolvedValueOnce(failure);
+    tables.workspace_calendar_events.range.mockResolvedValueOnce(failure);
     rpc.mockResolvedValueOnce(failure);
     expect((await GET(request(), params)).status).toBe(500);
+  });
+  it('authorizes Calendar permission before scoped admin metadata reads', async () => {
+    tables.workspace_calendar_events.range.mockResolvedValueOnce({
+      data: [{ id: 'event', created_at: '2026-09-28T08:00:00Z' }],
+      error: null,
+    });
+    const response = await GET(request(), params);
+    expect(mocks.calendarAccess).toHaveBeenCalledWith({
+      p_ws_id: 'workspace',
+      p_user_id: 'viewer',
+      p_permission: 'manage_calendar',
+    });
+    expect(adminFrom).toHaveBeenCalledWith('workspace_calendar_events');
+    expect(from).not.toHaveBeenCalledWith('workspace_calendar_events');
+    expect(tables.workspace_calendar_events.eq).toHaveBeenCalledWith(
+      'ws_id',
+      'workspace'
+    );
+    expect(tables.workspace_calendar_events.select).toHaveBeenCalledWith(
+      'id,created_at'
+    );
+    expect(await response.json()).toMatchObject({
+      partial: false,
+      items: expect.arrayContaining([
+        {
+          id: 'event',
+          type: 'calendar',
+          createdAt: '2026-09-28T08:00:00Z',
+          scope: 'workspace',
+        },
+      ]),
+    });
+  });
+  it('omits Calendar metadata without permission or on failed verification', async () => {
+    for (const result of [
+      { data: false, error: null },
+      { data: null, error: { code: 'unavailable' } },
+    ]) {
+      adminFrom.mockClear();
+      mocks.calendarAccess.mockResolvedValueOnce(result);
+      const response = await GET(request(), params);
+      expect(adminFrom).not.toHaveBeenCalledWith('workspace_calendar_events');
+      expect(await response.json()).toMatchObject({
+        partial: Boolean(result.error),
+      });
+    }
+  });
+  it('validates pages before privileged reads and bounds every source', async () => {
+    const invalid = await GET(
+      new NextRequest('https://example.test/api?page=-1'),
+      params
+    );
+    expect(invalid.status).toBe(400);
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    const valid = await GET(
+      new NextRequest('https://example.test/api?page=2'),
+      params
+    );
+    expect(valid.status).toBe(200);
+    expect(tables.tasks.range).toHaveBeenCalledWith(400, 599);
+    expect(tables.notes.range).toHaveBeenCalledWith(400, 599);
+    expect(tables.workspace_calendar_events.range).toHaveBeenCalledWith(
+      400,
+      599
+    );
+    expect(rpc).toHaveBeenCalledWith(
+      'get_wallet_transactions_with_permissions',
+      expect.objectContaining({
+        p_offset: 400,
+        p_limit: 200,
+        p_creator_ids: ['viewer'],
+      })
+    );
+  });
+  it('keeps a pinned upper boundary and continues authoritative full source pages with tied timestamps', async () => {
+    const until = '2026-09-30T00:00:00.000Z';
+    tables.tasks.range.mockResolvedValueOnce({
+      data: Array.from({ length: 200 }, (_, i) => ({
+        id: `task-${i}`,
+        name: 'Task',
+        created_at: '2026-09-29T00:00:00.000Z',
+        task_lists: { board_id: 'board' },
+      })),
+      error: null,
+    });
+    const response = await GET(
+      new NextRequest(
+        `https://example.test/api?until=${encodeURIComponent(until)}`
+      ),
+      params
+    );
+    const body = await response.json();
+    expect(body.until).toBe(until);
+    expect(body.nextPage).toBe(1);
+    expect(tables.tasks.lte).toHaveBeenCalledWith('created_at', until);
+    expect(tables.tasks.order).toHaveBeenCalledWith('id', { ascending: false });
+    expect(
+      body.items.filter((item: { type: string }) => item.type === 'task')
+    ).toHaveLength(200);
   });
 });

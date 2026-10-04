@@ -11,6 +11,7 @@ import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/cache/profile_avatar_delivery.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/user_profile.dart';
+import 'package:mobile/data/repositories/profile_media_optimization.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -113,26 +114,62 @@ class ProfileRepository {
     }
   }
 
-  Future<({bool success, String? error})> saveAvatar(File file) async {
+  Future<({bool success, String? error})> saveAvatar(File file) =>
+      _saveMedia(file, banner: false);
+
+  Future<({bool success, String? error})> saveBanner(File file) =>
+      _saveMedia(file, banner: true);
+
+  Future<({bool success, String? error})> removeBanner() async {
     try {
+      await _writeProfile(
+        'PATCH',
+        ProfileEndpoints.profile,
+        payload: {'banner_url': null},
+      );
+      return (success: true, error: null);
+    } on Exception {
+      return (success: false, error: 'Profile update failed');
+    }
+  }
+
+  Future<({bool success, String? error})> _saveMedia(
+    File file, {
+    required bool banner,
+  }) async {
+    try {
+      final actor = getCurrentUserIdSync();
+      if (actor == null) {
+        throw const FormatException('Profile actor is unavailable');
+      }
+      final optimized = await optimizeProfileMedia(file, banner: banner);
+      if (getCurrentUserIdSync() != actor) {
+        throw const FormatException('Profile actor changed');
+      }
       final payload = {
-        'filename': file.uri.pathSegments.last,
-        'contentType': lookupMimeType(file.path) ?? 'application/octet-stream',
-        'bytes': base64Encode(await file.readAsBytes()),
+        'filename': banner ? 'banner.jpg' : 'avatar.jpg',
+        'contentType': 'image/jpeg',
+        'bytes': base64Encode(optimized),
       };
       await queueOrSendVoid(
         feature: 'profile',
-        method: 'PROFILE_AVATAR_UPLOAD',
-        path: ProfileEndpoints.avatarUploadUrl,
+        method: banner ? 'PROFILE_BANNER_UPLOAD' : 'PROFILE_AVATAR_UPLOAD',
+        path: banner
+            ? ProfileEndpoints.bannerUploadUrl
+            : ProfileEndpoints.avatarUploadUrl,
         workspaceId: 'personal',
-        entityId: getCurrentUserIdSync(),
+        entityId: actor,
         payload: payload,
-        send: () => deliverProfileAvatar(
-          api: _apiClient,
-          httpClient: _httpClient,
-          filename: payload['filename']!,
-          contentType: payload['contentType']!,
-          encodedBytes: payload['bytes']!,
+        send: () => ApiClient.runForUser(
+          actor,
+          () => deliverProfileAvatar(
+            api: _apiClient,
+            httpClient: _httpClient,
+            filename: payload['filename']!,
+            contentType: payload['contentType']!,
+            encodedBytes: payload['bytes']!,
+            banner: banner,
+          ),
         ),
       );
       return (success: true, error: null);

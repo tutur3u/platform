@@ -313,6 +313,7 @@ extension OfflineMutationDispatch on OfflineMutationQueue {
             httpClient.close();
           }
         case 'PROFILE_AVATAR_UPLOAD':
+        case 'PROFILE_BANNER_UPLOAD':
           final payload = resolved.payload ?? const <String, dynamic>{};
           final httpClient = http.Client();
           try {
@@ -322,6 +323,7 @@ extension OfflineMutationDispatch on OfflineMutationQueue {
               filename: payload['filename'] as String,
               contentType: payload['contentType'] as String,
               encodedBytes: payload['bytes'] as String,
+              banner: record.method == 'PROFILE_BANNER_UPLOAD',
             );
           } finally {
             httpClient.close();

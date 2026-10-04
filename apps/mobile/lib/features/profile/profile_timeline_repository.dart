@@ -53,6 +53,36 @@ class ProfileTimelineRepository {
 
   final ApiClient _api;
   final CacheStore _store;
+  final _continuations = <String, int?>{};
+  final _boundaries = <String, String>{};
+
+  int? nextPage(String workspaceId, String userId) =>
+      _continuations['$userId:$workspaceId'];
+
+  Future<ProfileTimelineSnapshot> loadMore(
+    String workspaceId,
+    String userId,
+    int page,
+  ) async {
+    final until = _boundaries['$userId:$workspaceId'];
+    if (until == null) throw const FormatException('Activity session expired');
+    final path = Uri(
+      path: '/api/v1/workspaces/$workspaceId/mobile-activity',
+      queryParameters: {'page': '$page', 'until': until},
+    ).toString();
+    final response = await ApiClient.runForUser(
+      userId,
+      () => _api.getJson(path),
+    );
+    final partial = response['partial'] == true;
+    if (partial) throw const FormatException('Activity page is incomplete');
+    _continuations['$userId:$workspaceId'] = response['nextPage'] as int?;
+    return (
+      items: _decode(response['items']),
+      partial: false,
+      limited: response['limited'] == true,
+    );
+  }
 
   CacheKey _key(String workspaceId, String userId) => CacheKey(
     namespace: 'profile.timeline',
@@ -100,6 +130,14 @@ class ProfileTimelineRepository {
       userId,
       () => _api.getJson('/api/v1/workspaces/$workspaceId/mobile-activity'),
     );
+    _continuations.clear();
+    _boundaries.clear();
+    if (response['until'] case final String until) {
+      _boundaries['$userId:$workspaceId'] = until;
+    }
+    _continuations['$userId:$workspaceId'] = response['partial'] == true
+        ? null
+        : response['nextPage'] as int?;
     final items = _decode(response['items']);
     final snapshot = (
       items: items,

@@ -21,12 +21,12 @@ CLI, documentation, local services, and deployment tooling behind that system.
 <!-- tanstack-rust-migration-progress:start -->
 _Generated from `apps/tanstack-web/migration/route-manifest.json`. Refresh with `bun migration:tanstack:readme` after route ownership changes._
 
-![Overall migration progress](https://img.shields.io/static/v1?color=fb8c00&label=Overall&message=26.93%25+terminal&style=flat-square) ![Rust backend migration progress](https://img.shields.io/static/v1?color=cf222e&label=Rust+backend&message=12.78%25+terminal&style=flat-square) ![TanStack Start migration progress](https://img.shields.io/static/v1?color=d29922&label=TanStack+Start&message=65.79%25+terminal&style=flat-square)
+![Overall migration progress](https://img.shields.io/static/v1?color=fb8c00&label=Overall&message=26.9%25+terminal&style=flat-square) ![Rust backend migration progress](https://img.shields.io/static/v1?color=cf222e&label=Rust+backend&message=12.76%25+terminal&style=flat-square) ![TanStack Start migration progress](https://img.shields.io/static/v1?color=d29922&label=TanStack+Start&message=65.79%25+terminal&style=flat-square)
 
 | Track | Progress | Terminal | Migrated | Removed | Remaining |
 | --- | --- | ---: | ---: | ---: | ---: |
-| Overall | `[#####---------------]` 26.93% | 230 / 854 | 216 | 14 | 624 |
-| Rust backend | `[###-----------------]` 12.78% | 80 / 626 | 68 | 12 | 546 |
+| Overall | `[#####---------------]` 26.9% | 230 / 855 | 216 | 14 | 625 |
+| Rust backend | `[###-----------------]` 12.76% | 80 / 627 | 68 | 12 | 547 |
 | TanStack Start | `[#############-------]` 65.79% | 150 / 228 | 148 | 2 | 78 |
 
 <details>
@@ -34,7 +34,7 @@ _Generated from `apps/tanstack-web/migration/route-manifest.json`. Refresh with 
 
 | Kind | Progress | Terminal | Remaining |
 | --- | --- | ---: | ---: |
-| api | `[##--------------]` 12.27% | 75 / 611 | 536 |
+| api | `[##--------------]` 12.25% | 75 / 612 | 537 |
 | page | `[##########------]` 64.74% | 101 / 156 | 55 |
 | layout | `[###########-----]` 69.12% | 47 / 68 | 21 |
 | cron | `[###-------------]` 20% | 2 / 10 | 8 |

@@ -13,10 +13,14 @@ Future<void> deliverProfileAvatar({
   required String filename,
   required String contentType,
   required String encodedBytes,
+  bool banner = false,
 }) async {
-  final signed = await api.postJson(ProfileEndpoints.avatarUploadUrl, {
-    'filename': filename,
-  });
+  final signed = await api.postJson(
+    banner
+        ? ProfileEndpoints.bannerUploadUrl
+        : ProfileEndpoints.avatarUploadUrl,
+    {'filename': filename},
+  );
   final uploadUrl = (signed['uploadUrl'] ?? signed['signedUrl']) as String?;
   final publicUrl = signed['publicUrl'] as String?;
   if (uploadUrl == null || publicUrl == null) {
@@ -53,5 +57,7 @@ Future<void> deliverProfileAvatar({
       statusCode: uploaded.statusCode,
     );
   }
-  await api.patchJson(ProfileEndpoints.profile, {'avatar_url': publicUrl});
+  await api.patchJson(ProfileEndpoints.profile, {
+    banner ? 'banner_url' : 'avatar_url': publicUrl,
+  });
 }

@@ -12,6 +12,10 @@ class ProfileCubit extends Cubit<ProfileState> {
       super(const ProfileState());
 
   final ProfileRepository _repository;
+  int _loadGeneration = 0;
+
+  bool _sameActor(String? actor) =>
+      !isClosed && actor != null && _repository.getCurrentUserIdSync() == actor;
   static UserProfile? _memoryCachedProfile;
   static DateTime? _memoryCachedAt;
   static String? _memoryCachedUserId;
@@ -27,7 +31,11 @@ class ProfileCubit extends Cubit<ProfileState> {
     bool forceRefresh = false,
     bool emitLoading = true,
   }) async {
+    final generation = ++_loadGeneration;
     final currentUserId = _repository.getCurrentUserIdSync();
+    if (state.profile != null && state.profile!.id != currentUserId) {
+      emit(const ProfileState(status: ProfileStatus.loading));
+    }
     final cachedProfile = _memoryCachedUserId == currentUserId
         ? _memoryCachedProfile
         : null;
@@ -35,6 +43,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     final persistedCache = cachedProfile == null
         ? await _repository.getCachedProfile()
         : (profile: cachedProfile, fetchedAt: cachedAt);
+    if (!_sameActor(currentUserId) || generation != _loadGeneration) return;
     final persistedProfile = switch (persistedCache.profile?.id) {
       final String profileId when profileId == currentUserId =>
         persistedCache.profile,
@@ -82,11 +91,13 @@ class ProfileCubit extends Cubit<ProfileState> {
 
     final result = await _repository.getProfile();
 
-    if (result.profile != null) {
+    if (!_sameActor(currentUserId) || generation != _loadGeneration) return;
+    if (result.profile != null && result.profile!.id == currentUserId) {
       _memoryCachedProfile = result.profile;
       _memoryCachedAt = DateTime.now();
       _memoryCachedUserId = result.profile!.id;
       await _repository.saveCachedProfile(result.profile!);
+      if (!_sameActor(currentUserId) || generation != _loadGeneration) return;
       emit(
         state.copyWith(
           status: ProfileStatus.loaded,
@@ -144,17 +155,22 @@ class ProfileCubit extends Cubit<ProfileState> {
   Future<bool> _updateProfileField(
     Future<({bool success, String? error})> Function() update,
   ) async {
+    final actor = _repository.getCurrentUserIdSync();
+    if (!_sameActor(actor)) return false;
     emit(state.copyWith(isLoading: true, error: null));
 
     final result = await update();
+    if (!_sameActor(actor)) return false;
 
     if (result.success) {
       final cached = await _repository.getCachedProfile();
-      if (cached.profile != null) {
+      if (!_sameActor(actor)) return false;
+      if (cached.profile?.id == actor) {
         emit(state.copyWith(profile: cached.profile));
       }
       // Reload profile to get updated data
       await loadProfile(forceRefresh: true, emitLoading: false);
+      if (!_sameActor(actor)) return false;
       emit(state.copyWith(isLoading: false));
       return true;
     }
@@ -164,36 +180,16 @@ class ProfileCubit extends Cubit<ProfileState> {
   }
 
   /// Uploads avatar.
-  Future<bool> uploadAvatar(File file) async {
-    emit(state.copyWith(isLoading: true));
-    final result = await _repository.saveAvatar(file);
-    if (result.success) {
-      // Reload profile to get updated data
-      await loadProfile(forceRefresh: true, emitLoading: false);
-      emit(state.copyWith(isLoading: false));
-      return true;
-    } else {
-      emit(state.copyWith(isLoading: false, error: result.error));
-      return false;
-    }
-  }
+  Future<bool> uploadAvatar(File file) =>
+      _updateProfileField(() => _repository.saveAvatar(file));
+
+  Future<bool> uploadBanner(File file) =>
+      _updateProfileField(() => _repository.saveBanner(file));
+
+  Future<bool> removeBanner() => _updateProfileField(_repository.removeBanner);
 
   /// Removes avatar.
-  Future<bool> removeAvatar() async {
-    emit(state.copyWith(isLoading: true));
-
-    final result = await _repository.removeAvatar();
-
-    if (result.success) {
-      // Reload profile to get updated data
-      await loadProfile(forceRefresh: true, emitLoading: false);
-      emit(state.copyWith(isLoading: false));
-      return true;
-    } else {
-      emit(state.copyWith(isLoading: false, error: result.error));
-      return false;
-    }
-  }
+  Future<bool> removeAvatar() => _updateProfileField(_repository.removeAvatar);
 
   void clearError() => emit(state.copyWith(error: null));
 

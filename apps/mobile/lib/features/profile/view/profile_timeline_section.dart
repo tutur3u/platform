@@ -46,6 +46,9 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
   bool _partial = false;
   bool _limited = false;
   bool _refreshing = false;
+  bool _failureReported = false;
+  bool _loadingMore = false;
+  bool _pagingPaused = false;
 
   @override
   void didChangeDependencies() {
@@ -67,6 +70,9 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
     _limited = false;
     _refreshing = false;
     _request++;
+    _failureReported = false;
+    _loadingMore = false;
+    _pagingPaused = false;
     if (userId != null && workspaceId != null) {
       unawaited(_load(workspaceId, userId));
     }
@@ -90,7 +96,11 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
   Future<void> _load(String workspaceId, String userId) async {
     if (_refreshing) return;
     final request = ++_request;
-    setState(() => _refreshing = true);
+    setState(() {
+      _refreshing = true;
+      _loadingMore = false;
+      _pagingPaused = false;
+    });
     try {
       ProfileTimelineSnapshot? cached;
       try {
@@ -109,29 +119,76 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
       final fresh = await _repository.refresh(workspaceId, userId);
       if (mounted && request == _request) {
         setState(() {
-          _items = fresh.items;
+          _items = fresh.partial
+              ? {
+                  for (final item in [...?_items, ...fresh.items])
+                    '${item.type}:${item.id}': item,
+                }.values.toList()
+              : fresh.items;
           _partial = fresh.partial;
           _limited = fresh.limited;
           _failed = false;
         });
+        if (fresh.partial) {
+          _reportFailure(request);
+        } else {
+          _failureReported = false;
+        }
       }
     } on Exception {
-      if (mounted && request == _request) setState(() => _failed = true);
+      if (mounted && request == _request) {
+        setState(() => _failed = true);
+        _reportFailure(request);
+      }
     } finally {
       if (mounted && request == _request) setState(() => _refreshing = false);
     }
   }
 
-  void _retry() {
+  Future<void> _loadMore() async {
+    if (_refreshing || _loadingMore || _pagingPaused) return;
     final userId = context.read<AuthCubit>().state.user?.id;
-    final workspaceId = verifiedPersonalProfileWorkspace(
+    final ws = verifiedPersonalProfileWorkspace(
       userId: userId,
       cacheUserId: (widget.cacheUserId ?? currentPersonalProfileUserId)(),
       workspaces: context.read<WorkspaceCubit>(),
     )?.id;
-    if (userId == null || workspaceId == null || _refreshing) return;
-    setState(() => _failed = false);
-    unawaited(_load(workspaceId, userId));
+    if (userId == null || ws == null || _scope != '$userId:$ws') return;
+    final page = _repository.nextPage(ws, userId);
+    if (page == null) return;
+    final request = _request;
+    setState(() => _loadingMore = true);
+    try {
+      final fresh = await _repository.loadMore(ws, userId, page);
+      if (!mounted || request != _request) return;
+      setState(() {
+        _items = {
+          for (final item in [...?_items, ...fresh.items])
+            '${item.type}:${item.id}': item,
+        }.values.toList();
+        _limited = fresh.limited;
+      });
+    } on Exception {
+      if (mounted && request == _request) {
+        setState(() => _pagingPaused = true);
+        _reportFailure(request);
+      }
+    } finally {
+      if (mounted && request == _request) setState(() => _loadingMore = false);
+    }
+  }
+
+  void _reportFailure(int request) {
+    if (_failureReported) return;
+    _failureReported = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || request != _request) return;
+      shad.showToast(
+        context: context,
+        builder: (context, _) =>
+            shad.Alert(content: Text(context.l10n.profileTimelinePartial)),
+      );
+    });
   }
 
   @override
@@ -194,42 +251,7 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
       );
     }
     final items = _items;
-    final browser = _browser(
-      items,
-      status: _limited || _failed || _partial
-          ? Row(
-              children: [
-                if (_limited)
-                  Tooltip(
-                    message: l10n.profileTimelineLimited,
-                    child: Icon(
-                      Icons.info_outline_rounded,
-                      size: 18,
-                      semanticLabel: l10n.profileTimelineLimited,
-                    ),
-                  ),
-                if (_failed || _partial) ...[
-                  const shad.Gap(8),
-                  Expanded(
-                    child: Semantics(
-                      liveRegion: true,
-                      child: Text(
-                        _partial
-                            ? l10n.profileTimelinePartial
-                            : l10n.profileTimelineUnavailable,
-                      ),
-                    ),
-                  ),
-                  TextButton.icon(
-                    onPressed: _refreshing ? null : _retry,
-                    icon: const Icon(Icons.refresh_rounded, size: 18),
-                    label: Text(l10n.commonRetry),
-                  ),
-                ],
-              ],
-            )
-          : null,
-    );
+    final browser = _browser(items);
     return widget.fullSurface ? SizedBox.expand(child: browser) : browser;
   }
 
@@ -244,7 +266,11 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
         items: items ?? const [],
         loading: items == null && !_failed,
         refreshing: _refreshing,
-        statusReportedByParent: _failed || _partial,
+        loadingMore: _loadingMore,
+        onLoadMore: _pagingPaused || _partial
+            ? null
+            : () => unawaited(_loadMore()),
+        statusReportedByParent: _failed || _partial || _limited,
         availability: _failed || items == null
             ? ProfileTimelineAvailability.unavailable
             : _partial || _limited

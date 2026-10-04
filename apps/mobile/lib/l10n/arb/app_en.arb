@@ -4293,5 +4293,10 @@
     "assistantAttachFilesSource": "Files",
     "assistantCaptureAudio": "Record audio",
     "assistantCapturePhoto": "Take photo",
-    "assistantCaptureVideo": "Record video"
+    "assistantCaptureVideo": "Record video",
+    "profileBanner": "Profile banner",
+    "profileBannerDescription": "Add a wide photo to personalize your profile.",
+    "profileChangeBanner": "Change banner",
+    "profileAddBanner": "Add banner",
+    "profileRemoveBanner": "Remove banner"
 }

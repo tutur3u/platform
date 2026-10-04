@@ -10071,4 +10071,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantCaptureVideo => 'Record video';
+
+  @override
+  String get profileBanner => 'Profile banner';
+
+  @override
+  String get profileBannerDescription => 'Add a wide photo to personalize your profile.';
+
+  @override
+  String get profileChangeBanner => 'Change banner';
+
+  @override
+  String get profileAddBanner => 'Add banner';
+
+  @override
+  String get profileRemoveBanner => 'Remove banner';
 }

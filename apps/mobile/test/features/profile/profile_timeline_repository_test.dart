@@ -32,6 +32,26 @@ class _Api extends ApiClient {
   };
 }
 
+class _PageApi extends ApiClient {
+  final paths = <String>[];
+  bool partial = false;
+  @override
+  Future<Map<String, dynamic>> getJson(
+    String path, {
+    bool requiresAuth = true,
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    paths.add(path);
+    return {
+      'items': <Object>[],
+      'partial': partial,
+      'limited': true,
+      'until': '2026-10-04T07:00:00.000Z',
+      'nextPage': paths.length,
+    };
+  }
+}
+
 void main() {
   late Directory directory;
   late CacheStore store;
@@ -82,6 +102,26 @@ void main() {
       cacheStore: store,
     );
   }
+
+  test('continuations pin boundaries and reject partial pages', () async {
+    final api = _PageApi();
+    final paged = ProfileTimelineRepository(apiClient: api, cacheStore: store);
+    await paged.refresh('personal', 'owner');
+    expect(paged.nextPage('personal', 'owner'), 1);
+    await paged.loadMore('personal', 'owner', 1);
+    final url = Uri.parse(api.paths.last);
+    expect(url.queryParameters['until'], '2026-10-04T07:00:00.000Z');
+    expect(url.queryParameters['page'], '1');
+    expect(paged.nextPage('personal', 'owner'), 2);
+    api.partial = true;
+    await expectLater(
+      paged.loadMore('personal', 'owner', 2),
+      throwsFormatException,
+    );
+    expect(paged.nextPage('personal', 'owner'), 2);
+    expect(paged.nextPage('other', 'owner'), isNull);
+    paged.dispose();
+  });
 
   test(
     'capped partial result retains completeness through encrypted cache',

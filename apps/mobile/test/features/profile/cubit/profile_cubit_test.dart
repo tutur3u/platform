@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/user_profile.dart';
@@ -21,6 +23,38 @@ void main() {
       ProfileCubit.clearMemoryCache();
       when(() => profileRepository.dispose()).thenReturn(null);
     });
+
+    test(
+      'rejects a previous actor response before memory or disk caching',
+      () async {
+        var actor = 'first';
+        final response = Completer<({UserProfile? profile, String? error})>();
+        when(
+          () => profileRepository.getCurrentUserIdSync(),
+        ).thenAnswer((_) => actor);
+        when(
+          () => profileRepository.getCachedProfile(),
+        ).thenAnswer((_) async => (profile: null, fetchedAt: null));
+        when(
+          () => profileRepository.getProfile(),
+        ).thenAnswer((_) => response.future);
+        final cubit = ProfileCubit(profileRepository: profileRepository);
+        final pending = cubit.loadProfile();
+        await Future<void>.delayed(Duration.zero);
+        actor = 'second';
+        response.complete((
+          profile: const UserProfile(
+            id: 'first',
+            bannerUrl: 'https://example.test/banner',
+          ),
+          error: null,
+        ));
+        await pending;
+        expect(cubit.state.profile, isNull);
+        verifyNever(() => profileRepository.saveCachedProfile(any()));
+        await cubit.close();
+      },
+    );
 
     blocTest<ProfileCubit, ProfileState>(
       'ignores cached profile data from a different authenticated user',
