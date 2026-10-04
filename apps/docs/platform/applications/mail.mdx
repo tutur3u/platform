@@ -902,3 +902,25 @@ with `receipt`; DELETE removes the saved association with `receipt`. All respons
 are private and uncached. Calendar owns the read-only event authority endpoint;
 Mail accesses it using the configured Calendar origin and existing forwarded
 cookie/Bearer authentication, with no Calendar table access.
+
+## Native inbox refresh and settings
+
+Opening a Mail notification prepares the inbox alongside the reader. An existing
+snapshot for the same inbox remains visible, and the inbox revalidates while its
+reader is open. Background refresh pauses during outstanding optimistic Mail
+mutations. Network, timeout, and server list failures retry once; rate limits and revoked authentication/access are
+not retried and clears cached content. A failed refresh preserves a previously
+resolved empty inbox and shows a retry action rather than replacing it with a
+full-screen error. Cold failures remain visible. These rules apply only within
+the same account/workspace/mailbox and retain the existing cache permission
+checks. `mail_background_refresh_test.dart` and existing inbox mutation tests
+cover this behavior; authenticated provider/device proof remains a release gate.
+
+Mail quick settings and central App settings use the same mailbox settings
+editor. Central settings resolves real mailbox membership before opening the
+editor; members keep personal device options and only owners/admins edit mailbox
+configuration. Mail settings uses the existing shell title and bottom Back/Save
+actions, without a second app bar. Unsaved mailbox changes require confirmation
+to discard; saves block exit until settled. Account or workspace transitions
+cancel the editor, including a switch away and back.
+`mail_settings_navigation_test.dart` covers the title/actions and edit guards.

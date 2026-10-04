@@ -49,6 +49,11 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
       fit: StackFit.expand,
       children: [
         if (sharedShell && !_childRouteOpen) ...[
+          ShellTitleOverride(
+            ownerId: 'mail-inbox',
+            locations: const {Routes.mail},
+            title: l10n.mailInbox,
+          ),
           _buildMailShellActions(),
           ShellMiniNav(
             ownerId: 'mail-navigation',
@@ -211,7 +216,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                             ],
                           ),
                         ),
-                      if (_failed && _items.isNotEmpty)
+                      if (_failed && _listResolved)
                         TextButton.icon(
                           onPressed: !_accessVerified ? _bootstrap : _load,
                           icon: const Icon(Icons.refresh),
@@ -233,7 +238,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                               const NovaLoadingIndicator(size: 24)
                             else
                               Icon(
-                                _failed
+                                _failed && !_listResolved
                                     ? Icons.error_outline
                                     : Icons.inbox_outlined,
                                 size: 32,
@@ -242,12 +247,12 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                             Text(
                               _loading && !_listResolved
                                   ? l10n.commonLoading
-                                  : _failed
+                                  : _failed && !_listResolved
                                   ? l10n.commonSomethingWentWrong
                                   : l10n.mailEmpty,
                               textAlign: TextAlign.center,
                             ),
-                            if (_failed)
+                            if (_failed && !_listResolved)
                               TextButton.icon(
                                 onPressed: !_accessVerified
                                     ? _bootstrap

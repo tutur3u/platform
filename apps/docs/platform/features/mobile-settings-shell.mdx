@@ -97,3 +97,16 @@ switch away and back in the same workspace. Delayed old requests cannot replace
 the new count or end its loading state. This applies to the native shell action
 button and shared notifications cubit; delayed-actor and same-workspace ABA
 regressions are in `notifications_cubit_test.dart`.
+
+## Product settings entry points
+
+The central Settings overview lists native products with maintained settings
+entries in `product_settings_registry.dart`. Calendar and Finance open the
+existing shared Preferences controls; Mail resolves the selected workspace's
+mailboxes and opens its existing quick-settings editor. Entries are shown only
+when the product's corresponding state/access is available; this registry does
+not grant permissions or fabricate settings for unimplemented products. App
+quick settings and central entries share implementations and persisted state.
+Mail's nested editor uses the shell title, bottom navigation/actions and inherited
+background. A scoped route is cancelled on any account/workspace transition;
+request completion cannot replace an editor opened for another scope.
