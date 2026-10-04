@@ -146,6 +146,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(EditableText), findsOneWidget);
+      expect(
+        find.ancestor(
+          of: find.byType(EditableText),
+          matching: find.byType(shad.AppBar),
+        ),
+        findsOneWidget,
+      );
       await tester.enterText(find.byType(EditableText), 'Product');
       await tester.pumpAndSettle();
 
@@ -180,6 +187,9 @@ void main() {
       await tester.enterText(find.byType(EditableText), '   ');
       await tester.pumpAndSettle();
       FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      expect(find.byType(EditableText), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.close_rounded).last);
       await tester.pumpAndSettle();
       expect(find.byType(EditableText), findsNothing);
       expect(find.byIcon(Icons.add_rounded), findsOneWidget);
@@ -351,6 +361,15 @@ void main() {
         expect(find.byType(Dialog), findsOneWidget);
         expect(find.byType(FloatingActionButton), findsNothing);
         expect(find.byType(ShellDockActionButton), findsNWidgets(2));
+        final actionRects = find
+            .byType(ShellDockActionButton)
+            .evaluate()
+            .map((element) => tester.getRect(find.byWidget(element.widget)))
+            .toList();
+        expect(
+          (actionRects.first.left + actionRects.last.right) / 2,
+          closeTo(160, 0.1),
+        );
         expect(tester.takeException(), isNull);
         await tester.tap(find.byIcon(Icons.search_rounded).last);
         await tester.pumpAndSettle();
@@ -358,6 +377,9 @@ void main() {
         addTearDown(tester.view.resetViewInsets);
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
+        expect(find.byTooltip('Close workspace picker'), findsNothing);
+        await tester.tap(find.byIcon(Icons.close_rounded).last);
+        await tester.pumpAndSettle();
         expect(find.byTooltip('Close workspace picker'), findsOneWidget);
         await tester.tap(find.byTooltip('Close workspace picker'));
         await tester.pumpAndSettle();
@@ -511,39 +533,26 @@ void main() {
         );
       },
     );
-    testWidgets('recovers all-Hidden choices in the same fullscreen route '
-        'and returns in place', (tester) async {
-      const state = WorkspaceState(
-        status: WorkspaceStatus.loaded,
-        workspaces: [proWorkspace],
-        hiddenWorkspaceIds: ['ws_1'],
-        visibilityResolved: true,
-        visibilityStatus: WorkspaceStatus.loaded,
-      );
-      final updates = StreamController<WorkspaceState>();
-      addTearDown(updates.close);
-      when(() => workspaceCubit.hasAuthenticatedActor).thenReturn(true);
-      when(
-        () => workspaceCubit.setWorkspaceHidden('ws_1', hidden: false),
-      ).thenAnswer((_) async {
-        updates.add(state.copyWith(hiddenWorkspaceIds: []));
-      });
-      await openPicker(tester, state, stream: updates.stream);
-      await tester.tap(find.text('Hidden workspaces'));
-      await tester.pumpAndSettle();
-      expect(find.byType(Dialog), findsOneWidget);
-      expect(find.text('Product'), findsOneWidget);
-      await tester.tap(find.byTooltip('Restore: Product'));
-      await tester.pumpAndSettle();
-      expect(find.byType(Dialog), findsOneWidget);
-      await tester.tap(find.byTooltip('Back'));
-      await tester.pumpAndSettle();
-      expect(find.text('Product'), findsOneWidget);
-      verifyNever(() => workspaceCubit.selectWorkspace(proWorkspace));
-      await tester.binding.handlePopRoute();
-      await tester.pumpAndSettle();
-      expect(find.byType(Dialog), findsNothing);
-    });
+    testWidgets(
+      'normal picker leaves hidden-workspace management in Settings',
+      (tester) async {
+        const state = WorkspaceState(
+          status: WorkspaceStatus.loaded,
+          workspaces: [proWorkspace],
+          hiddenWorkspaceIds: ['ws_1'],
+          visibilityResolved: true,
+          visibilityStatus: WorkspaceStatus.loaded,
+        );
+        when(() => workspaceCubit.hasAuthenticatedActor).thenReturn(true);
+        await openPicker(tester, state);
+        expect(find.text('Hidden workspaces'), findsNothing);
+        expect(find.byTooltip('Restore: Product'), findsNothing);
+        expect(find.byTooltip('Hide: Product'), findsNothing);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.byType(Dialog), findsNothing);
+      },
+    );
     testWidgets(
       'save error keeps the whole viewport scrollable to the last row',
       (tester) async {

@@ -108,7 +108,8 @@ extension _ShellPageLayout on _ShellPageState {
                         child: _trackPageScrolling(
                           _lastRootLocation,
                           LazyIndexedStack(
-                            animate: true,
+                            // Switch root bodies atomically; crossfading also
+                            // paints the outgoing Assistant dock.
                             index: _ShellPageState._calculateSelectedIndex(
                               _lastRootLocation,
                             ),
