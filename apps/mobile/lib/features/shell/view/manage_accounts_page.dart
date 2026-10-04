@@ -179,7 +179,7 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
                     onAddAccount: _isMutating ? null : _startAddAccountFlow,
                   ),
                 ),
-                const shad.Gap(28),
+                const shad.Gap(20),
                 if (activeAccount != null)
                   StaggeredEntry(
                     index: 1,
@@ -203,7 +203,7 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
                       ],
                     ),
                   ),
-                if (activeAccount != null) const shad.Gap(28),
+                if (activeAccount != null) const shad.Gap(20),
                 StaggeredEntry(
                   index: 2,
                   playOnceKey: 'manage-accounts-saved',
@@ -257,76 +257,18 @@ class _ManageAccountsHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final theme = shad.Theme.of(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? const [Color(0xFF182434), Color(0xFF221B39), Color(0xFF12313A)]
-              : const [Color(0xFFE9F2FF), Color(0xFFF4ECFF), Color(0xFFE9FBF5)],
+    return SettingsGroup(
+      children: [
+        SettingsTile(
+          grouped: true,
+          icon: Icons.person_add_outlined,
+          title: context.l10n.authAddAccount,
+          subtitle: context.l10n.authManageAccountsDescription,
+          wrapSupportingText: true,
+          onTap: onAddAccount,
+          showChevron: onAddAccount != null,
         ),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.1)
-              : colorScheme.primary.withValues(alpha: 0.16),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.primary.withValues(alpha: isDark ? 0.14 : 0.08),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Icon(
-              Icons.manage_accounts_rounded,
-              size: 24,
-              color: colorScheme.primary,
-            ),
-          ),
-          const shad.Gap(16),
-          Text(
-            context.l10n.authManageAccounts,
-            style: theme.typography.h3.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const shad.Gap(8),
-          Text(
-            context.l10n.authManageAccountsDescription,
-            style: theme.typography.small.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const shad.Gap(18),
-          shad.PrimaryButton(
-            onPressed: onAddAccount,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.add_rounded, size: 18),
-                const shad.Gap(8),
-                Text(context.l10n.authAddAccount),
-              ],
-            ),
-          ),
-        ],
-      ),
+      ],
     );
   }
 }
