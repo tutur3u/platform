@@ -272,3 +272,30 @@ it.each(['', 'banner-operation:../other', `workspace:${randomUUID()}`])(
     expect(f.upload).not.toHaveBeenCalled();
   }
 );
+
+it.each([
+  null,
+  'issued',
+  [],
+  { state: 'issued' },
+  { state: 'issued', file_path: null },
+  { state: 'issued', file_path: 123 },
+])(
+  'rejects malformed lifecycle receipts before decoding or storage: %j',
+  async (data) => {
+    const operation = randomUUID();
+    const signed = createAppCoordinationToken({
+      userId: actor,
+      targetApp: 'profile-media-upload',
+      scopes: ['profile-media:banner', `banner-operation:${operation}`],
+      expiresInSeconds: 600,
+    });
+    f.rpc.mockResolvedValue({ data, error: null });
+    expect(
+      (await createProfileMediaPutHandler('banner')(request(signed.token)))
+        .status
+    ).toBe(409);
+    expect(f.optimize).not.toHaveBeenCalled();
+    expect(f.upload).not.toHaveBeenCalled();
+  }
+);

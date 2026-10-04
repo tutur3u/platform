@@ -54,7 +54,11 @@ function props(): InventoryOperatorContentProps {
     },
     categories: { data: { pages: [{ count: 5 }] }, fetchNextPage: vi.fn() },
     sales: { fetchNextPage: vi.fn() },
-    periodProducts: { fetchNextPage: vi.fn() },
+    periodProducts: {
+      fetchNextPage: vi.fn(),
+      data: { pages: [{ data: [] }, { data: [] }] },
+      isFetchNextPageError: true,
+    },
     formOptions: { data: options },
     costingProfiles: {},
     salesPeriods: {},
@@ -92,6 +96,13 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
 });
+it('passes raw sales product page progress and pagination failure even when no visible products were added', () => {
+  render(<InventoryOperatorContent {...props()} />);
+  const forwarded = panels.commerce.mock.calls.at(-1)?.[0];
+  expect(forwarded?.productsPageCount).toBe(2);
+  expect(forwarded?.isProductsError).toBe(true);
+});
+
 describe('inventory content dispatch', () => {
   it('keeps checkout loading mounted and forwards explicit or absent merge permission', () => {
     const initial = props();

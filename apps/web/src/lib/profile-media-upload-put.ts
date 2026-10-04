@@ -11,6 +11,24 @@ import { optimizeProfileMedia } from './profile-media-optimize';
 import { publicStorageUrl } from './profile-media-public-url';
 import { readProfileMediaBody } from './profile-media-upload-body';
 
+/** SQL-defined service-role RPC pending generated-schema refresh. */
+type BannerOperationStatusRpc = (
+  name: 'profile_banner_operation_status',
+  args: { p_user_id: string; p_operation_id: string }
+) => PromiseLike<{ data: unknown; error: unknown }>;
+
+function isIssuedBannerOperation(data: unknown, path: string | undefined) {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'state' in data &&
+    data.state === 'issued' &&
+    'file_path' in data &&
+    typeof data.file_path === 'string' &&
+    data.file_path === path
+  );
+}
+
 /** A signed capability, not a logged-in upload: preserves native/offline clients. */
 export function createProfileMediaPutHandler(kind: ProfileMediaKind) {
   return async (request: Request) => {
@@ -67,16 +85,19 @@ export function createProfileMediaPutHandler(kind: ProfileMediaKind) {
         ? `${verified.claims.sub}/${bannerOperation}.webp`
         : undefined;
       if (bannerOperation) {
-        const receipt = await admin.rpc('profile_banner_operation_status', {
-          p_user_id: verified.claims.sub,
-          p_operation_id: bannerOperation,
-        });
+        const operationStatus = admin.rpc.bind(
+          admin
+        ) as unknown as BannerOperationStatusRpc;
+        const receipt = await operationStatus(
+          'profile_banner_operation_status',
+          {
+            p_user_id: verified.claims.sub,
+            p_operation_id: bannerOperation,
+          }
+        );
         if (receipt.error)
           throw new ProfileUploadError('Banner lifecycle unavailable', 503);
-        if (
-          receipt.data?.state !== 'issued' ||
-          receipt.data.file_path !== operationPath
-        )
+        if (!isIssuedBannerOperation(receipt.data, operationPath))
           throw new ProfileUploadError('Banner operation changed', 409);
       }
       const original = await readProfileMediaBody(

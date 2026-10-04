@@ -1237,6 +1237,7 @@
           "cartSummary": "{items} line items · {units} units",
           "cartTab": "Cart",
           "category": "Finance category",
+          "checkoutTab": "Checkout",
           "chooseCategory": "Choose a category",
           "choosePeriod": "Choose a sales period",
           "chooseWallet": "Choose a wallet",
@@ -1267,6 +1268,8 @@
           "quantity": "Quantity",
           "refreshCart": "Prices or availability changed. Clear and refresh the cart",
           "removeItem": "Remove {name}",
+          "reviewReady": "Ready to confirm",
+          "reviewRequired": "Complete required details",
           "reviewSummary": "{items} line items · {units} units",
           "reviewTab": "Review",
           "saleName": "Sale name",
@@ -2276,6 +2279,7 @@
         "allLoaded": "All records loaded",
         "loadingMore": "Loading more...",
         "loadMore": "Load more",
+        "loadMoreError": "More products could not be loaded. Use Load more to retry.",
         "showing": "Showing {loaded} of {total}"
       },
       "payments": {

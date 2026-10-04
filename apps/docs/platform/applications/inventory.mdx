@@ -27,6 +27,24 @@ by `sale-create-items.test.ts`, `sale-product-picker.test.ts` and the mounted
 `sale-product-picker-layout.test.tsx` regression; DOM checks do not establish
 browser layout or customer-flow success.
 
+Web Record sale uses two tabs: Items and Checkout. Checkout combines editable
+cart, revenue details and review in compact accordions; collapsed headers retain
+item counts, selected revenue targets and confirmation readiness. Missing revenue
+or sale-name details open the Revenue section on entry. Going back to Items keeps
+those edits and quantities. Confirmation remains an explicit action and retains
+current season-price validation, required revenue fields, in-flight submission
+protection, and the same request ID when retrying an uncertain response.
+
+The Items list loads another page when its end is within 200 pixels of the
+actual list viewport, including when the initial list is shorter than that
+viewport. Raw page progress rearms loading even when filters/season eligibility
+hide every new item. Only one page request starts at a time. A thrown or resolved
+query error stops automatic loading and leaves a localized manual Load more
+retry. Filters and tab/dialog closure disconnect the old observer; manual loading
+also works when IntersectionObserver is unavailable. Regression evidence lives
+in `sale-picker-pagination.test.tsx` and `season-sale-integration.test.tsx`;
+these mounted tests do not establish live browser/provider success.
+
 ## Native Inventory presentation
 
 The Flutter mini-app keeps Overview, Products, Sales, Manage and Storefront
