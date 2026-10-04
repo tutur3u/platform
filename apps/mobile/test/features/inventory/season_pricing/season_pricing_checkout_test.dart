@@ -262,7 +262,7 @@ void main() {
       fetch: (_, _) async => quote(),
       send: (_, payload) async {
         sent.add(payload);
-        throw const ApiException(message: 'Synthetic timeout', statusCode: 0);
+        throw const ApiException.transport(message: 'Synthetic timeout');
       },
       isOnline: () async => true,
       now: () => DateTime.utc(2026, 10),
@@ -415,7 +415,7 @@ void main() {
       fetch: (_, _) async => quote(),
       send: (_, body) async {
         sent.add(body);
-        throw const ApiException(message: 'Lost', statusCode: 0);
+        throw const ApiException.transport(message: 'Lost');
       },
       isOnline: () async => true,
       now: () => DateTime.utc(2026, 10),
@@ -467,7 +467,7 @@ void main() {
           fetch: (_, _) async => quote(),
           send: (_, _) async {
             posts++;
-            throw const ApiException(message: 'Lost', statusCode: 0);
+            throw const ApiException.transport(message: 'Lost');
           },
           isOnline: () async => true,
           now: () => DateTime.utc(2026, 10),
@@ -541,7 +541,7 @@ void main() {
         lookupReceipt: (_, _) async => null,
         fetch: (_, _) async => quote(),
         send: (_, _) async =>
-            throw const ApiException(message: 'Lost', statusCode: 0),
+            throw const ApiException.transport(message: 'Lost'),
         isOnline: () async => true,
         now: () => DateTime.utc(2026, 10),
       );
@@ -633,7 +633,7 @@ void main() {
         send: (_, _) async {
           posts++;
           if (posts == 1) {
-            throw const ApiException(message: 'Lost', statusCode: 0);
+            throw const ApiException.transport(message: 'Lost');
           }
           return 'invoice';
         },

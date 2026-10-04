@@ -1,13 +1,14 @@
 part of 'inventory_sales_page.dart';
 
-class _InventorySaleDetailDialog extends StatefulWidget {
-  const _InventorySaleDetailDialog({
+class InventorySaleDetailDialog extends StatefulWidget {
+  const InventorySaleDetailDialog({
     required this.wsId,
     required this.saleId,
     required this.currency,
     required this.inventoryRepository,
     required this.canUpdateSales,
     required this.canDeleteSales,
+    super.key,
   });
 
   final String wsId;
@@ -18,30 +19,87 @@ class _InventorySaleDetailDialog extends StatefulWidget {
   final bool canDeleteSales;
 
   @override
-  State<_InventorySaleDetailDialog> createState() =>
-      _InventorySaleDetailDialogState();
+  State<InventorySaleDetailDialog> createState() =>
+      InventorySaleDetailDialogState();
 }
 
-class _InventorySaleDetailDialogState
-    extends State<_InventorySaleDetailDialog> {
+class InventorySaleDetailDialogState extends State<InventorySaleDetailDialog> {
   late Future<InventorySaleDetail> _future;
+  InventorySaleDetail? _snapshot;
+  late (String?, String?) _loadedScope;
+  int _request = 0;
+
+  (String?, String?) get _scope => (
+    context.read<AuthCubit>().state.status == AuthStatus.authenticated
+        ? context.read<AuthCubit>().state.user?.id
+        : null,
+    context.read<WorkspaceCubit>().state.currentWorkspace?.id,
+  );
+
+  bool get _authorizedScope =>
+      _scope == _loadedScope && _scope.$1 != null && _scope.$2 == widget.wsId;
 
   @override
   void initState() {
     super.initState();
-    _future = widget.inventoryRepository.getSaleDetail(
-      widget.wsId,
-      widget.saleId,
-    );
-  }
-
-  Future<void> _reload() async {
-    setState(() {
-      _future = widget.inventoryRepository.getSaleDetail(
+    _loadedScope = _scope;
+    if (_authorizedScope) {
+      _snapshot = widget.inventoryRepository.peekSaleDetail(
         widget.wsId,
         widget.saleId,
       );
+    }
+    _future = _read();
+  }
+
+  Future<InventorySaleDetail> _read({bool forceRefresh = false}) async {
+    final request = ++_request;
+    bool current() => mounted && request == _request && _authorizedScope;
+    if (!current()) {
+      throw const ApiException(message: 'Account changed', statusCode: 401);
+    }
+    try {
+      final detail = await CacheStore.readWithRevalidation(
+        () => widget.inventoryRepository.getSaleDetail(
+          widget.wsId,
+          widget.saleId,
+          forceRefresh: forceRefresh,
+        ),
+        onSnapshot: (detail) {
+          if (current()) setState(() => _snapshot = detail);
+        },
+      );
+      if (!current()) {
+        throw const ApiException(message: 'Account changed', statusCode: 401);
+      }
+      _snapshot = detail;
+      return detail;
+    } on ApiException catch (error) {
+      if (current() &&
+          (error.statusCode == 401 ||
+              error.statusCode == 403 && !error.isVerificationRequired)) {
+        setState(() => _snapshot = null);
+      }
+      rethrow;
+    }
+  }
+
+  void _scopeChanged() {
+    if (_authorizedScope) return;
+    _request++;
+    setState(() => _snapshot = null);
+  }
+
+  Future<void> _reload() async {
+    final future = _read(forceRefresh: true);
+    setState(() {
+      _future = future;
     });
+    try {
+      await future;
+    } on Object {
+      // The dialog retains authorized data and renders the refresh failure.
+    }
   }
 
   String _feedback(String confirmed) {
@@ -92,17 +150,30 @@ class _InventorySaleDetailDialogState
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => MultiBlocListener(
+    listeners: [
+      BlocListener<AuthCubit, AuthState>(listener: (_, _) => _scopeChanged()),
+      BlocListener<WorkspaceCubit, WorkspaceState>(
+        listener: (_, _) => _scopeChanged(),
+      ),
+    ],
+    child: _buildContent(context),
+  );
+
+  Widget _buildContent(BuildContext context) {
+    if (!_authorizedScope) return const SizedBox.shrink();
     final l10n = context.l10n;
     return FutureBuilder<InventorySaleDetail>(
       future: _future,
       builder: (context, snapshot) {
-        if (!snapshot.hasData &&
+        final sale = _authorizedScope ? _snapshot : null;
+        if (sale == null &&
+            !snapshot.hasError &&
             snapshot.connectionState != ConnectionState.done) {
           return const Center(child: NovaLoadingIndicator());
         }
 
-        if (snapshot.hasError || !snapshot.hasData) {
+        if (sale == null) {
           return AppDialogScaffold(
             title: l10n.commonSomethingWentWrong,
             icon: Icons.error_outline,
@@ -120,7 +191,6 @@ class _InventorySaleDetailDialogState
           );
         }
 
-        final sale = snapshot.data!;
         final pendingCreate = OfflineMutationQueue.instance.pending.value.any(
           (edit) =>
               edit.workspaceId == widget.wsId &&
@@ -154,6 +224,8 @@ class _InventorySaleDetailDialogState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (snapshot.hasError)
+                InventoryReadWarning(onRetry: () => unawaited(_reload())),
               Text(
                 pendingCreate
                     ? l10n.offlineEditQueued

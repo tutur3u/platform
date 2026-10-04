@@ -15,4 +15,17 @@ void main() {
     expect(localIlike('A\u{1F34E}B', 'A_B'), isTrue);
     expect(localIlike('line\nbreak', 'line_break'), isTrue);
   });
+  test('query compilation is reused across rows without changing matching', () {
+    final first = compileLocalIlike('Coffee%beans');
+    expect(identical(first, compileLocalIlike('Coffee%beans')), isTrue);
+    expect(first.hasMatch('Coffee roasted beans'), isTrue);
+    expect(first.hasMatch('Coffee beans'), isTrue);
+    expect(first.hasMatch('Tea beans'), isFalse);
+    for (var i = 0; i < 70; i++) {
+      compileLocalIlike('distinct query $i');
+    }
+    final recompiled = compileLocalIlike('Coffee%beans');
+    expect(recompiled.hasMatch('Coffee roasted beans'), isTrue);
+    expect(localIlike(null, ''), isTrue);
+  });
 }

@@ -13,6 +13,34 @@ class OfflineDownloadManifest {
   static final Map<String, Map<String, OfflineDownloadManifest>> _completed =
       {};
 
+  static Set<String> affectedProducts({
+    required String userId,
+    required String workspaceId,
+    required String key,
+    required String namespace,
+  }) {
+    const products = {'finance', 'inventory', 'tasks', 'calendar'};
+    if (namespace.startsWith('workspace.permissions')) return products;
+    final product = namespace.split('.').first;
+    final trackedProduct = namespace == 'finance.exchangeRates'
+        ? 'finance-rates'
+        : product;
+    final manifests = _completed['$userId:$workspaceId'];
+    final affected = <String>{
+      if (manifests != null)
+        for (final entry in manifests.entries)
+          if (entry.value._keys.any((source) => source.value == key))
+            if (entry.key == 'finance-rates') 'finance' else entry.key,
+    };
+    // Restored readiness can coexist with just one newly retained manifest.
+    // Use product fallback until that product has exact retained-key evidence.
+    if (products.contains(product) &&
+        !(manifests?.containsKey(trackedProduct) ?? false)) {
+      affected.add(product);
+    }
+    return affected;
+  }
+
   static Future<void> verifyScope(String userId, String workspaceId) async {
     final manifests = _completed['$userId:$workspaceId'];
     if (manifests == null) {
@@ -20,6 +48,26 @@ class OfflineDownloadManifest {
     }
     for (final manifest in manifests.values) {
       await manifest.verify();
+    }
+  }
+
+  static Future<void> verifyProduct(
+    String userId,
+    String workspaceId,
+    String product,
+  ) async {
+    final manifests = _completed['$userId:$workspaceId'];
+    final manifest = manifests?[product];
+    if (manifest == null) {
+      throw StateError('Offline product retention is not verified.');
+    }
+    await manifest.verify();
+    if (product == 'finance') {
+      final rates = manifests?['finance-rates'];
+      if (rates == null) {
+        throw StateError('Offline exchange rates are not verified.');
+      }
+      await rates.verify();
     }
   }
 

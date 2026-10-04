@@ -343,7 +343,7 @@ void main() {
               sent.add(payload);
               attempts++;
               if (attempts == 1) {
-                throw const ApiException(message: 'timeout', statusCode: 0);
+                throw const ApiException.transport(message: 'timeout');
               }
               return 'same-invoice';
             },
@@ -481,4 +481,39 @@ void main() {
     expect(reads, 3);
     expect(controller.quote, isNull);
   });
+  test(
+    'overlapping manual and automatic quotes share one scope request',
+    () async {
+      final response = Completer<InventorySeasonQuote>();
+      var reads = 0;
+      final controller =
+          InventorySeasonPricingController(
+            journal: MemorySaleStore().journal,
+            lookupReceipt: (_, _) async => null,
+            fetch: (_, _) {
+              reads++;
+              return response.future;
+            },
+            send: (_, _) async => 'unused',
+            isOnline: () async => true,
+          )..configure(
+            actorId: 'actor',
+            workspaceId: 'ws',
+            selectedPeriod: period(),
+            currency: 'USD',
+          );
+      final first = controller.refresh();
+      final second = controller.refresh(automatic: true);
+      final third = controller.refresh();
+      expect(identical(first, second), isTrue);
+      expect(identical(first, third), isTrue);
+      await Future<void>.delayed(Duration.zero);
+      expect(reads, 1);
+      response.complete(quote());
+      await Future.wait([first, second, third]);
+      expect(controller.loading, isFalse);
+      expect(controller.quote, isNotNull);
+      controller.dispose();
+    },
+  );
 }

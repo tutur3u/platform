@@ -15,7 +15,7 @@ extension _InventoryCheckoutPricing on _InventoryCheckoutPageState {
       selectedPeriod: _selectedPeriod,
       currency: _selectedWallet?.currency ?? '',
     );
-    if (_season.scheduled) unawaited(_season.refresh());
+    if (_season.scheduled) unawaited(_season.refresh(automatic: true));
   }
 
   bool get _periodResolved =>

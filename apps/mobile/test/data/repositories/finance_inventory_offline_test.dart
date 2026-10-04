@@ -101,7 +101,7 @@ void main() {
     api = _Api();
     when(
       () => api.getJson(any()),
-    ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));
+    ).thenThrow(const ApiException.transport(message: 'Offline'));
     finance = FinanceRepository(
       apiClient: api,
       cacheStore: store,
@@ -665,7 +665,7 @@ void main() {
     await finance.prepareOffline('ws');
     when(
       () => api.getJson(any()),
-    ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));
+    ).thenThrow(const ApiException.transport(message: 'Offline'));
     final summary = await CacheStore.awaitRevalidation(
       () => finance.getWalletCheckpointSummary(wsId: 'ws'),
     );

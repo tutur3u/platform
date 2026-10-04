@@ -42,7 +42,16 @@ part 'inventory_sales_card.dart';
 part 'inventory_sales_period_actions.dart';
 
 class InventorySalesPage extends StatefulWidget {
-  const InventorySalesPage({super.key});
+  const InventorySalesPage({
+    super.key,
+    this.inventoryRepository,
+    this.financeRepository,
+    this.permissionsRepository,
+  });
+
+  final InventoryRepository? inventoryRepository;
+  final FinanceRepository? financeRepository;
+  final WorkspacePermissionsRepository? permissionsRepository;
 
   @override
   State<InventorySalesPage> createState() => _InventorySalesPageState();
@@ -74,10 +83,15 @@ class _InventorySalesPageState extends State<InventorySalesPage>
   String? _error;
   bool _limitedData = false;
   int _requestToken = 0;
+  int? _deniedReadRequest;
   (String?, String?)? _loadedScope;
 
-  (String?, String?) get _scope =>
-      (context.read<AuthCubit>().state.user?.id, _wsId);
+  (String?, String?) get _scope => (
+    context.read<AuthCubit>().state.status == AuthStatus.authenticated
+        ? context.read<AuthCubit>().state.user?.id
+        : null,
+    _wsId,
+  );
 
   String? get _wsId =>
       context.read<WorkspaceCubit>().state.currentWorkspace?.id;
@@ -85,8 +99,8 @@ class _InventorySalesPageState extends State<InventorySalesPage>
   @override
   void initState() {
     super.initState();
-    _inventoryRepository = InventoryRepository();
-    _financeRepository = FinanceRepository();
+    _inventoryRepository = widget.inventoryRepository ?? InventoryRepository();
+    _financeRepository = widget.financeRepository ?? FinanceRepository();
     final workspaceId = context
         .read<WorkspaceCubit>()
         .state
@@ -97,7 +111,8 @@ class _InventorySalesPageState extends State<InventorySalesPage>
           _financeRepository.peekWorkspaceDefaultCurrency(workspaceId) ??
           _currency;
     }
-    _permissionsRepository = WorkspacePermissionsRepository();
+    _permissionsRepository =
+        widget.permissionsRepository ?? WorkspacePermissionsRepository();
     final cachedPermissions = workspaceId == null
         ? null
         : _permissionsRepository.peekPermissions(workspaceId);
@@ -123,7 +138,11 @@ class _InventorySalesPageState extends State<InventorySalesPage>
   }
 
   Future<void> _refreshPermissions((String?, String?) scope, int token) async {
-    bool current() => mounted && _scope == scope && token == _requestToken;
+    bool current() =>
+        mounted &&
+        _scope == scope &&
+        token == _requestToken &&
+        token != _deniedReadRequest;
     if (scope.$1 == null || scope.$2 == null) return;
     final cached = await _permissionsRepository.readCachedPermissions(
       scope.$2!,
@@ -169,8 +188,8 @@ class _InventorySalesPageState extends State<InventorySalesPage>
     final cachedPeriods = _inventoryRepository.peekSalesPeriods(wsId);
 
     setState(() {
-      _sales = cached?.data ?? const [];
-      _count = cached?.count ?? 0;
+      _sales = cached?.data ?? (sameScope ? _sales : const []);
+      _count = cached?.count ?? (sameScope ? _count : 0);
       _salesPeriods = cachedPeriods ?? _salesPeriods;
       _currency =
           _financeRepository.peekWorkspaceDefaultCurrency(wsId) ?? 'USD';
@@ -189,6 +208,11 @@ class _InventorySalesPageState extends State<InventorySalesPage>
       try {
         return await future;
       } on Object catch (error, stackTrace) {
+        if (error is ApiException &&
+            (error.statusCode == 401 ||
+                error.statusCode == 403 && !error.isVerificationRequired)) {
+          rethrow;
+        }
         _limitedData = true;
         debugPrint('Inventory sales $label load failed: $error\n$stackTrace');
         return fallback;
@@ -249,6 +273,10 @@ class _InventorySalesPageState extends State<InventorySalesPage>
         return;
       }
       setState(() {
+        if (error.statusCode == 401 ||
+            error.statusCode == 403 && !error.isVerificationRequired) {
+          _clearDeniedRead(requestToken);
+        }
         _error = error.message.isNotEmpty
             ? error.message
             : context.l10n.commonSomethingWentWrong;
@@ -267,6 +295,20 @@ class _InventorySalesPageState extends State<InventorySalesPage>
         });
       }
     }
+  }
+
+  bool _definitiveDenial(ApiException error) =>
+      error.statusCode == 401 ||
+      error.statusCode == 403 && !error.isVerificationRequired;
+
+  void _clearDeniedRead(int requestToken) {
+    _deniedReadRequest = requestToken;
+    _sales = const [];
+    _salesPeriods = const [];
+    _selectedPeriodId = null;
+    _count = 0;
+    _hasMore = false;
+    _canCreateSales = _canUpdateSales = _canDeleteSales = false;
   }
 
   Future<void> _loadMore() async {
@@ -296,6 +338,14 @@ class _InventorySalesPageState extends State<InventorySalesPage>
         _sales = [..._sales, ...result.data];
         _count = result.count;
         _hasMore = _sales.length < _count;
+      });
+    } on ApiException catch (error) {
+      if (!mounted || requestToken != _requestToken || _loadedScope != _scope) {
+        return;
+      }
+      setState(() {
+        if (_definitiveDenial(error)) _clearDeniedRead(requestToken);
+        _error = error.message;
       });
     } on Exception {
       if (!mounted || requestToken != _requestToken || _loadedScope != _scope) {
@@ -353,7 +403,7 @@ class _InventorySalesPageState extends State<InventorySalesPage>
     final changed = await showAdaptiveSheet<bool>(
       context: context,
       maxDialogWidth: 720,
-      builder: (_) => _InventorySaleDetailDialog(
+      builder: (_) => InventorySaleDetailDialog(
         wsId: _wsId!,
         saleId: saleId,
         currency: currency,

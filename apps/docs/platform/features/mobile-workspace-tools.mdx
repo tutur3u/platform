@@ -473,6 +473,44 @@ sale cards use the dashed treatment, and unknown outcomes require manual review.
 Invalidation and logout prevent older
 in-flight requests from writing back into the cache. Keys must include user,
 workspace, and all query filters.
+
+Offline refresh consistency (cache-backed reads in all mobile products): a
+two-phase read and its
+nested repository reads share one refresh cycle. Reconnect first revalidates
+visited resources, then visible projections reuse those completed reads. A later
+explicit refresh starts a new cycle; scope changes and invalidation fence earlier
+results. Explicit setup/catalog refreshes report transport failure; ordinary
+offline reads retain confirmed rows and project queued edits. Checkout coalesces overlapping quote reads, while an explicit retry after
+a settled request remains available. Removing one retained resource invalidates
+only the corresponding downloaded product for its actor and workspace.
+
+Snapshot replacement, source indexes, authoritative download reconciliation,
+and pressure eviction share one resource ordering boundary. An encrypted durable
+journal restores the previous completed snapshot after interrupted publication
+or cleanup. A persisted clear intent takes priority over rollback on restart;
+logout, actor changes and explicit invalidation must not resurrect old data.
+Resource-only clearing preserves unsynchronized outbox edits and local-ID mapping
+provenance. Replica extraction accepts known response envelopes, not arbitrary
+nested relation or metadata objects. Canonical domain fields survive sparse
+responses, while explicit clearing values stay cleared. Regression evidence:
+`cache_store_publication_test.dart` and `cache_replica_policy_test.dart`.
+
+Connectivity fallback is restricted to typed transport failures (socket, timeout,
+or HTTP-client transport errors). Invalid JSON, unexpected response shapes,
+oversized bodies, and failed session refreshes remain visible failures rather
+than presenting a cached response as a successful refresh. Download pacing wait
+is outside the actual HTTP request timeout. Search patterns are compiled once per
+retained search pattern rather than once per candidate row.
+
+Reopened sale details immediately project queued sales-period assignments,
+including explicit removal, over the scoped confirmed snapshot. They retain
+queued status and local IDs until acknowledgment; pending IDs never become server
+mutation targets. Regression evidence: `cache_revalidation_test.dart`,
+`offline_download_manifest_test.dart`, `offline_preparation_coordinator_test.dart`,
+`api_client_transport_failure_test.dart`, `inventory_sale_period_projection_test.dart`,
+`inventory_sale_detail_refresh_test.dart`, and `season_pricing_controller_test.dart`
+under `apps/mobile/test`.
+
 Failed disk writes do not hide successful network responses. Mail and Meet retain
 the original authorization error and disable their cache if denied-data cleanup fails.
 Keys longer than Hive's 255-byte UTF-8 limit use a SHA-256 digest of the complete

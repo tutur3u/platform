@@ -93,10 +93,10 @@ void main() {
     online = false;
     when(
       () => api.getJsonList(any()),
-    ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));
+    ).thenThrow(const ApiException.transport(message: 'Offline'));
     when(
       () => api.getJson(any()),
-    ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));
+    ).thenThrow(const ApiException.transport(message: 'Offline'));
   }
 
   test(

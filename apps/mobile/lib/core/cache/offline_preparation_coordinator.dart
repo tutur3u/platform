@@ -91,6 +91,8 @@ class OfflinePreparationCoordinator {
       state.value.userId == userId &&
       state.value.workspaceId == workspaceId;
   Future<void> Function(String userId, String workspaceId)? verifyRetention;
+  Future<void> Function(String userId, String workspaceId, String product)?
+  verifyProductRetention;
 
   void register(String productId, OfflinePreparationTask task) {
     _tasks[productId] = task;
@@ -241,6 +243,21 @@ class OfflinePreparationCoordinator {
         publish(running: true);
       }
       if (_current(generation, userId, workspaceId) &&
+          verifyProductRetention != null) {
+        for (final id in productIds) {
+          if (!_current(generation, userId, workspaceId)) return;
+          final product = products[id];
+          if (product?.status != OfflinePreparationStatus.ready) continue;
+          try {
+            await verifyProductRetention!(userId, workspaceId, id);
+          } on Object {
+            products[id] = OfflineProductPreparation(
+              status: OfflinePreparationStatus.failed,
+              lastSuccess: product!.lastSuccess,
+            );
+          }
+        }
+      } else if (_current(generation, userId, workspaceId) &&
           verifyRetention != null) {
         try {
           await verifyRetention!(userId, workspaceId);
@@ -288,8 +305,9 @@ class OfflinePreparationCoordinator {
   }
 
   /// Cache clear or budget reduction removes any claim of current readiness.
-  void invalidateRetainedData() {
-    cancel();
+  void invalidateRetainedData({Set<String>? productIds}) {
+    if (productIds?.isEmpty ?? false) return;
+    if (state.value.running) cancel();
     final latest = state.value;
     state.value = OfflinePreparationState(
       userId: latest.userId,
@@ -297,12 +315,14 @@ class OfflinePreparationCoordinator {
       running: _busy,
       products: {
         for (final entry in latest.products.entries)
-          entry.key: OfflineProductPreparation(
-            status: _tasks.containsKey(entry.key)
-                ? OfflinePreparationStatus.queued
-                : OfflinePreparationStatus.unavailable,
-            lastSuccess: entry.value.lastSuccess,
-          ),
+          entry.key: productIds != null && !productIds.contains(entry.key)
+              ? entry.value
+              : OfflineProductPreparation(
+                  status: _tasks.containsKey(entry.key)
+                      ? OfflinePreparationStatus.queued
+                      : OfflinePreparationStatus.unavailable,
+                  lastSuccess: entry.value.lastSuccess,
+                ),
       },
     );
   }

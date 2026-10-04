@@ -70,10 +70,10 @@ void main() {
     api = _Api();
     when(
       () => api.getJson(any()),
-    ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));
+    ).thenThrow(const ApiException.transport(message: 'Offline'));
     when(
       () => api.getJsonList(any()),
-    ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));
+    ).thenThrow(const ApiException.transport(message: 'Offline'));
     repo = FinanceRepository(
       apiClient: api,
       cacheStore: store,

@@ -54,7 +54,7 @@ void main() {
     test('shows a queued secret only in its workspace', () async {
       when(
         () => apiClient.getJsonList(any()),
-      ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));
+      ).thenThrow(const ApiException.transport(message: 'Offline'));
       OfflineMutationQueue.instance.pending.value = [
         PendingMutationRecord(
           id: 'secret-edit',

@@ -181,4 +181,119 @@ void main() {
     );
     expect(await ids(), ['previous']);
   });
+  test(
+    'removal events affect retained keys only in their owner scope',
+    () async {
+      final manifest = OfflineDownloadManifest(store, 'user', () => userId);
+      final retained = key('retained');
+      await manifest.save(retained, [
+        {'id': 'kept'},
+      ]);
+      manifest.retain('inventory', 'ws');
+      Set<String> affected(CacheKey source) =>
+          OfflineDownloadManifest.affectedProducts(
+            userId: source.userId!,
+            workspaceId: source.workspaceId!,
+            key: source.value,
+            namespace: source.namespace,
+          );
+      expect(affected(retained), {'inventory'});
+      expect(affected(key('unrelated')), isEmpty);
+      expect(affected(key('retained', user: 'other')), {'inventory'});
+      // The App consumer rejects other actors/workspaces before this fallback.
+      expect(
+        OfflineDownloadManifest.affectedProducts(
+          userId: 'user',
+          workspaceId: 'ws',
+          key: 'unknown',
+          namespace: 'mail.messages',
+        ),
+        isEmpty,
+      );
+    },
+  );
+  test('shared exchange-rate dependency invalidates finance only', () async {
+    final rates = OfflineDownloadManifest(store, 'user', () => userId);
+    const source = CacheKey(
+      namespace: 'finance.exchangeRates',
+      userId: 'user',
+      workspaceId: 'global',
+    );
+    await rates.save(source, {'rates': <String, dynamic>{}});
+    rates.retain('finance-rates', 'rates-workspace');
+    expect(
+      OfflineDownloadManifest.affectedProducts(
+        userId: 'user',
+        workspaceId: 'rates-workspace',
+        key: source.value,
+        namespace: source.namespace,
+      ),
+      {'finance'},
+    );
+  });
+  test(
+    'untracked restored product invalidates beside a tracked product',
+    () async {
+      final inventory = OfflineDownloadManifest(store, 'user', () => userId);
+      await inventory.save(key('only-inventory', ws: 'partial-manifests'), []);
+      inventory.retain('inventory', 'partial-manifests');
+      expect(
+        OfflineDownloadManifest.affectedProducts(
+          userId: 'user',
+          workspaceId: 'partial-manifests',
+          key: 'restored-finance-key',
+          namespace: 'finance.wallets',
+        ),
+        {'finance'},
+      );
+      expect(
+        OfflineDownloadManifest.affectedProducts(
+          userId: 'user',
+          workspaceId: 'partial-manifests',
+          key: 'unrelated-inventory-key',
+          namespace: 'inventory.products',
+        ),
+        isEmpty,
+      );
+      expect(
+        OfflineDownloadManifest.affectedProducts(
+          userId: 'user',
+          workspaceId: 'partial-manifests',
+          key: 'shared-permission-key',
+          namespace: 'workspace.permissions',
+        ),
+        {'finance', 'inventory', 'tasks', 'calendar'},
+      );
+    },
+  );
+  test(
+    'product verification requires its own manifest and dependencies',
+    () async {
+      final inventory = OfflineDownloadManifest(store, 'user', () => userId);
+      await inventory.save(key('verified', ws: 'verify-products'), []);
+      inventory.retain('inventory', 'verify-products');
+      await OfflineDownloadManifest.verifyProduct(
+        'user',
+        'verify-products',
+        'inventory',
+      );
+      await expectLater(
+        OfflineDownloadManifest.verifyProduct(
+          'user',
+          'verify-products',
+          'finance',
+        ),
+        throwsStateError,
+      );
+      await store.remove(key('verified', ws: 'verify-products'));
+      await expectLater(
+        OfflineDownloadManifest.verifyProduct(
+          'user',
+          'verify-products',
+          'inventory',
+        ),
+        throwsStateError,
+      );
+    },
+  );
 }

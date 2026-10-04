@@ -242,4 +242,41 @@ void main() {
       expect(coordinator.state.value.running, isFalse);
     },
   );
+  test('scoped removal keeps unrelated completed downloads ready', () async {
+    for (final product in OfflinePreparationCoordinator.productIds) {
+      coordinator.register(product, (_) async {});
+    }
+    await coordinator.run(userId: 'owner', workspaceId: 'team');
+    coordinator.invalidateRetainedData(productIds: {'inventory'});
+    expect(
+      coordinator.state.value.products['inventory']!.status,
+      OfflinePreparationStatus.queued,
+    );
+    for (final product in ['finance', 'tasks', 'calendar']) {
+      expect(
+        coordinator.state.value.products[product]!.status,
+        OfflinePreparationStatus.ready,
+      );
+    }
+    coordinator.invalidateRetainedData(productIds: {});
+    expect(coordinator.state.value.completed, 3);
+  });
+  test('end-of-download retention failure affects only its product', () async {
+    for (final product in OfflinePreparationCoordinator.productIds) {
+      coordinator.register(product, (_) async {});
+    }
+    coordinator.verifyProductRetention = (_, _, product) async {
+      if (product == 'inventory') throw StateError('Evicted during download');
+    };
+    await coordinator.run(userId: 'owner', workspaceId: 'team');
+    expect(
+      coordinator.state.value.products['inventory']!.status,
+      OfflinePreparationStatus.failed,
+    );
+    expect(coordinator.state.value.completed, 3);
+    expect(
+      coordinator.state.value.products['finance']!.status,
+      OfflinePreparationStatus.ready,
+    );
+  });
 }

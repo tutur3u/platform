@@ -19,6 +19,7 @@ extension CacheStoreInventory on CacheStore {
     }
     await init();
     await _replicaMigration;
+    await _resourceWrite;
     final sources = <String, CachedResourceRecord>{};
     for (final raw in _resourceBox.values) {
       if (raw is! Map) continue;

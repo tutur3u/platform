@@ -54,11 +54,11 @@ Future<DriveUploadResult> deliverDriveUpload({
       );
     }
   } on SocketException catch (_) {
-    throw const ApiException(message: 'Upload connection lost', statusCode: 0);
+    throw const ApiException.transport(message: 'Upload connection lost');
   } on http.ClientException catch (_) {
-    throw const ApiException(message: 'Upload connection lost', statusCode: 0);
+    throw const ApiException.transport(message: 'Upload connection lost');
   } on TimeoutException catch (_) {
-    throw const ApiException(message: 'Upload timed out', statusCode: 0);
+    throw const ApiException.transport(message: 'Upload timed out');
   }
   if (response.statusCode < 200 || response.statusCode >= 300) {
     throw ApiException(

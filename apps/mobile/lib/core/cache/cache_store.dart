@@ -10,6 +10,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_replica_policy.dart';
 import 'package:mobile/core/cache/cache_storage_snapshot.dart';
 import 'package:mobile/core/cache/cached_resource_record.dart';
 import 'package:mobile/core/cache/offline_cache_inventory.dart';
@@ -21,6 +22,8 @@ import 'package:path_provider/path_provider.dart';
 part 'cache_store_refresh.dart';
 part 'cache_store_revalidation.dart';
 part 'cache_store_storage.dart';
+part 'cache_store_publication.dart';
+part 'cache_store_journal.dart';
 part 'cache_store_inventory.dart';
 part 'cache_store_replica.dart';
 part 'cache_store_pending.dart';
@@ -34,17 +37,26 @@ class CacheStore {
   CacheStore._({
     FlutterSecureStorage? secureStorage,
     CacheDirectoryResolver? directoryResolver,
-  }) : _secureStorage = secureStorage ?? const FlutterSecureStorage(),
+  }) : persistenceCheckpoint = null,
+       _secureStorage = secureStorage ?? const FlutterSecureStorage(),
        _directoryResolver = directoryResolver;
 
   @visibleForTesting
   CacheStore.forTesting({
     required FlutterSecureStorage secureStorage,
     required CacheDirectoryResolver directoryResolver,
+    this.persistenceCheckpoint,
   }) : _secureStorage = secureStorage,
        _directoryResolver = directoryResolver;
 
+  /// Deterministic fault/interleaving injection; never configured in production.
+  @visibleForTesting
+  final FutureOr<void> Function(String stage)? persistenceCheckpoint;
+
   Future<void>? _pendingWrite;
+  Future<void>? _resourceWrite;
+  int _journalSequence = 0;
+  int _resourceJournalCount = 0;
 
   static final CacheStore instance = CacheStore._();
 
@@ -110,6 +122,9 @@ class CacheStore {
   }
 
   final ValueNotifier<int> resourceRemovalRevision = ValueNotifier(0);
+  final ValueNotifier<CachedResourceRecord?> removedResource = ValueNotifier(
+    null,
+  );
 
   int resourceRevisionFor(CacheKey key) => _revisionFor(key);
 
@@ -117,6 +132,7 @@ class CacheStore {
     final previous = _memory.remove(key);
     if (previous != null) {
       _resourceBytes -= utf8.encode(previous.jsonPayload).length;
+      removedResource.value = previous;
       resourceRemovalRevision.value++;
     }
   }
@@ -170,6 +186,7 @@ class CacheStore {
     _resourceBox = await _openEncryptedBox(_resourceBoxName, encryptionCipher);
     _mutationBox = await _openEncryptedBox(_mutationBoxName, encryptionCipher);
     _entityBox = await _openEncryptedBox(_entityBoxName, encryptionCipher);
+    await _recoverResourceJournals();
     _entityBytes = _countReplicaBytes();
     try {
       final storedMaxBytes = int.tryParse(
@@ -228,7 +245,6 @@ class CacheStore {
         await _resourceBox.put(entry.key, entry.value.toJson());
       }
     }
-    _initialized = true;
     _replicaMigration = _migrateReplicaFromSnapshots();
     unawaited(
       _replicaMigration!.catchError((Object error) {
@@ -236,6 +252,7 @@ class CacheStore {
       }),
     );
     await _pruneResourceCache();
+    _initialized = true;
   }
 
   Future<Directory> _resolveHiveDirectory() async {
@@ -377,7 +394,7 @@ class CacheStore {
   }) async {
     await init();
     final record = _memory[key.value];
-    if (record == null) {
+    if (record == null || _isClearing(key)) {
       return CacheReadResult<T>(state: CacheEntryState.missing);
     }
 
@@ -385,8 +402,7 @@ class CacheStore {
       record,
       decode: decode,
       onCorrupt: () async {
-        _dropRecord(key.value);
-        await _resourceBox.delete(key.value);
+        await _removeCorruptRecord(record);
       },
     );
     if (decoded == null) {
@@ -410,7 +426,7 @@ class CacheStore {
     }
 
     final record = _memory[key.value];
-    if (record == null) {
+    if (record == null || _isClearing(key)) {
       return CacheReadResult<T>(state: CacheEntryState.missing);
     }
 
@@ -418,8 +434,7 @@ class CacheStore {
       record,
       decode: decode,
       onCorrupt: () {
-        _dropRecord(key.value);
-        unawaited(_resourceBox.delete(key.value));
+        unawaited(_removeCorruptRecord(record));
       },
     );
     if (decoded == null) {
@@ -443,61 +458,35 @@ class CacheStore {
     int? expectedRevision,
     void Function()? checkScope,
   }) async {
-    await init();
     checkScope?.call();
     if (_isClearing(key)) return;
-    if (expectedRevision != null && expectedRevision != _revisionFor(key)) {
-      return;
-    }
     if (expectedRevision == null) _advanceKey(key.value);
-    final writeRevision = _revisionFor(key);
-    void checkCurrent() {
-      checkScope?.call();
-      if (_isClearing(key) || writeRevision != _revisionFor(key)) {
-        throw StateError('Cache write was invalidated.');
-      }
-    }
-
-    if (_nonPersistentResourceNamespaces.contains(key.namespace)) {
-      _dropRecord(key.value);
-      await _resourceBox.delete(key.value);
-      return;
-    }
-    final now = DateTime.now();
-    final record = CachedResourceRecord(
-      key: key.value,
-      namespace: key.namespace,
-      jsonPayload: jsonEncode(payload),
-      fetchedAt: now,
-      staleAt: now.add(policy.staleAfter),
-      expireAt: now.add(policy.expireAfter),
-      userId: key.userId,
-      workspaceId: key.workspaceId,
-      locale: key.locale,
-      schemaVersion: key.schemaVersion,
-      etag: etag,
-      tags: tags,
-      params: key.params,
-    );
-    _putRecord(record);
-    await _resourceBox.put(key.value, record.toJson());
-    checkCurrent();
+    final revision = expectedRevision ?? _revisionFor(key);
+    await init();
     await _replicaMigration;
-    checkCurrent();
-    await _replaceReplicaSource(record, checkCurrent: checkCurrent);
-    checkCurrent();
-    await _pruneResourceCache();
-    checkCurrent();
+    await _serializeResources(
+      () => _publishResource(
+        key: key,
+        policy: policy,
+        payload: payload,
+        etag: etag,
+        tags: tags,
+        expectedRevision: revision,
+        checkScope: checkScope,
+      ),
+    );
   }
 
   Future<void> remove(CacheKey key) async {
     _advanceKey(key.value);
     await init();
-    _refreshTasks.remove(key.value);
-    _dropRecord(key.value);
-    await _resourceBox.delete(key.value);
     await _replicaMigration;
-    await _removeReplicaSource(key.value);
+    await _serializeResources(() async {
+      _refreshTasks.remove(key.value);
+      _dropRecord(key.value);
+      await _resourceBox.delete(key.value);
+      await _removeReplicaSource(key.value);
+    });
   }
 
   Future<void> invalidateTags(
@@ -513,25 +502,28 @@ class CacheStore {
           (userId == null || key.userId == userId) &&
           flightTags.any(tagSet.contains),
     );
-    final now = DateTime.now();
-    final recordsToInvalidate = <String, CachedResourceRecord>{};
+    await _replicaMigration;
+    await _serializeResources(() async {
+      final now = DateTime.now();
+      final recordsToInvalidate = <String, CachedResourceRecord>{};
 
-    for (final entry in _memory.entries) {
-      final record = entry.value;
-      final matchesTags = record.tags.any(tagSet.contains);
-      final matchesWorkspace =
-          workspaceId == null || record.workspaceId == workspaceId;
-      final matchesUser = userId == null || record.userId == userId;
-      if (matchesTags && matchesWorkspace && matchesUser) {
-        recordsToInvalidate[entry.key] = record;
+      for (final entry in _memory.entries) {
+        final record = entry.value;
+        final matchesTags = record.tags.any(tagSet.contains);
+        final matchesWorkspace =
+            workspaceId == null || record.workspaceId == workspaceId;
+        final matchesUser = userId == null || record.userId == userId;
+        if (matchesTags && matchesWorkspace && matchesUser) {
+          recordsToInvalidate[entry.key] = record;
+        }
       }
-    }
 
-    for (final entry in recordsToInvalidate.entries) {
-      final invalidatedRecord = _markRecordStale(entry.value, now: now);
-      _putRecord(invalidatedRecord);
-      await _resourceBox.put(entry.key, invalidatedRecord.toJson());
-    }
+      for (final entry in recordsToInvalidate.entries) {
+        final invalidatedRecord = _markRecordStale(entry.value, now: now);
+        await _resourceBox.put(entry.key, invalidatedRecord.toJson());
+        _putRecord(invalidatedRecord);
+      }
+    });
   }
 
   Future<void> clearScope({

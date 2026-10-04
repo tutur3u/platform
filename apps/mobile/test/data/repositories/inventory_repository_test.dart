@@ -25,7 +25,10 @@ void main() {
     'shows queued inventory setup choices only in their workspace',
     () async {
       final apiClient = _MockApiClient();
-      final repository = InventoryRepository(apiClient: apiClient);
+      final repository = InventoryRepository(
+        apiClient: apiClient,
+        cacheUserId: () => 'user-1',
+      );
       when(
         () => apiClient.getJson(any()),
       ).thenAnswer((_) async => {'data': <dynamic>[]});
@@ -55,10 +58,13 @@ void main() {
     'shows a queued setup choice before any server snapshot exists',
     () async {
       final apiClient = _MockApiClient();
-      final repository = InventoryRepository(apiClient: apiClient);
+      final repository = InventoryRepository(
+        apiClient: apiClient,
+        cacheUserId: () => 'user-1',
+      );
       when(
         () => apiClient.getJson(any()),
-      ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));
+      ).thenThrow(const ApiException.transport(message: 'Offline'));
       OfflineMutationQueue.instance.pending.value = [
         PendingMutationRecord(
           id: 'edit-3',
@@ -83,7 +89,10 @@ void main() {
     'keeps confirmed and queued setup rows during an offline refresh',
     () async {
       final apiClient = _MockApiClient();
-      final repository = InventoryRepository(apiClient: apiClient);
+      final repository = InventoryRepository(
+        apiClient: apiClient,
+        cacheUserId: () => 'user-1',
+      );
       var requests = 0;
       when(() => apiClient.getJson(any())).thenAnswer((_) async {
         requests++;
@@ -94,7 +103,7 @@ void main() {
             ],
           };
         }
-        throw const ApiException(message: 'Offline', statusCode: 0);
+        throw const ApiException.transport(message: 'Offline');
       });
       await repository.getOwners('ws-1');
       OfflineMutationQueue.instance.pending.value = [
@@ -111,7 +120,17 @@ void main() {
         ),
       ];
 
-      final owners = await repository.getOwners('ws-1', forceRefresh: true);
+      await expectLater(
+        repository.getOwners('ws-1', forceRefresh: true),
+        throwsA(
+          isA<ApiException>().having(
+            (error) => error.failureKind,
+            'failureKind',
+            ApiFailureKind.transport,
+          ),
+        ),
+      );
+      final owners = await repository.getOwners('ws-1');
       expect(owners.map((owner) => owner.name), [
         'Confirmed owner',
         'Queued owner',
@@ -121,7 +140,10 @@ void main() {
 
   test('shows fresh workspace-scoped overview while revalidating', () async {
     final apiClient = _MockApiClient();
-    final repository = InventoryRepository(apiClient: apiClient);
+    final repository = InventoryRepository(
+      apiClient: apiClient,
+      cacheUserId: () => 'user-1',
+    );
     when(() => apiClient.getJson(any())).thenAnswer(
       (_) async => {
         'realtime_enabled': false,
@@ -157,7 +179,10 @@ void main() {
     'keeps the complete product options ready for offline checkout',
     () async {
       final apiClient = _MockApiClient();
-      final repository = InventoryRepository(apiClient: apiClient);
+      final repository = InventoryRepository(
+        apiClient: apiClient,
+        cacheUserId: () => 'user-1',
+      );
       when(() => apiClient.getJson(any())).thenAnswer(
         (_) async => {
           'data': [
@@ -178,7 +203,10 @@ void main() {
 
   test('does not reuse inventory data across workspaces', () async {
     final apiClient = _MockApiClient();
-    final repository = InventoryRepository(apiClient: apiClient);
+    final repository = InventoryRepository(
+      apiClient: apiClient,
+      cacheUserId: () => 'user-1',
+    );
     when(
       () => apiClient.getJson(any()),
     ).thenAnswer((_) async => _overviewResponse(revenue: 150));
@@ -191,7 +219,10 @@ void main() {
 
   test('serves stale overview while revalidating in the background', () async {
     final apiClient = _MockApiClient();
-    final repository = InventoryRepository(apiClient: apiClient);
+    final repository = InventoryRepository(
+      apiClient: apiClient,
+      cacheUserId: () => 'user-1',
+    );
     final refreshedResponse = Completer<Map<String, dynamic>>();
     var requestCount = 0;
     when(() => apiClient.getJson(any())).thenAnswer((_) {
@@ -212,8 +243,12 @@ void main() {
     expect(stale.totals.inventorySalesRevenue, 150);
     expect(requestCount, 2);
 
+    final joining = CacheStore.awaitRevalidation(
+      () => repository.getOverview('ws-swr'),
+    );
     refreshedResponse.complete(_overviewResponse(revenue: 225));
-    await Future<void>.delayed(const Duration(milliseconds: 20));
+    expect((await joining).totals.inventorySalesRevenue, 225);
+    expect(requestCount, 2);
 
     final refreshed = await repository.getOverview('ws-swr');
     expect(refreshed.totals.inventorySalesRevenue, 225);
@@ -234,6 +269,7 @@ void main() {
       final repository = InventoryRepository(
         apiClient: apiClient,
         mutationQueue: queue,
+        cacheUserId: () => 'user',
       );
       addTearDown(queue.dispose);
 
@@ -284,10 +320,11 @@ void main() {
       final repository = InventoryRepository(
         apiClient: apiClient,
         mutationQueue: queue,
+        cacheUserId: () => 'user-1',
       );
       when(
         () => apiClient.getJson(any()),
-      ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));
+      ).thenThrow(const ApiException.transport(message: 'Offline'));
       OfflineMutationQueue.instance.pending.value = [
         PendingMutationRecord(
           id: 'period-edit',
@@ -367,10 +404,11 @@ void main() {
     final repository = InventoryRepository(
       apiClient: apiClient,
       mutationQueue: queue,
+      cacheUserId: () => 'user-1',
     );
     when(
       () => apiClient.getJson(any()),
-    ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));
+    ).thenThrow(const ApiException.transport(message: 'Offline'));
     OfflineMutationQueue.instance.pending.value = [
       PendingMutationRecord(
         id: 'sale-edit',

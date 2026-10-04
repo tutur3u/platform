@@ -469,7 +469,7 @@ extension OfflineInventoryReplay on OfflineMutationQueue {
           _retryTimer = Timer(Duration(seconds: seconds), _scheduleSync);
         }
         if (error is ApiException &&
-            (error.statusCode == 0 ||
+            (isOfflineTransportFailure(error) ||
                 error.statusCode == 401 ||
                 error.statusCode == 429 ||
                 error.isVerificationRequired)) {

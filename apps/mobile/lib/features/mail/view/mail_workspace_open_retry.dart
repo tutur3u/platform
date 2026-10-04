@@ -26,7 +26,7 @@ extension _MailWorkspaceOpenRetry on _MailWorkspaceState {
         );
       } on ApiException catch (error) {
         final transient =
-            error.statusCode == 0 ||
+            error.failureKind == ApiFailureKind.transport ||
             error.statusCode == 408 ||
             error.statusCode >= 500;
         if (!transient ||
@@ -58,7 +58,7 @@ extension _MailWorkspaceOpenRetry on _MailWorkspaceState {
         final transient =
             error is TimeoutException ||
             (error is ApiException &&
-                (error.statusCode == 0 ||
+                (error.failureKind == ApiFailureKind.transport ||
                     error.statusCode == 408 ||
                     error.statusCode >= 500));
         if (!transient || attempt >= 1 || !mounted || mailboxId != _mailboxId) {

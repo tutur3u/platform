@@ -59,6 +59,7 @@ class InventorySeasonPricingController extends ChangeNotifier {
   int _generation = 0;
   bool _disposed = false;
   bool loading = false;
+  Future<void>? _quoteRefresh;
   bool sending = false;
   bool _lastNotifiedFresh = false;
   Map<String, dynamic>? _pending;
@@ -96,6 +97,7 @@ class InventorySeasonPricingController extends ChangeNotifier {
       return;
     }
     _generation++;
+    _quoteRefresh = null;
     _actor = actorId;
     _workspace = workspaceId;
     period = selectedPeriod;
@@ -176,8 +178,20 @@ class InventorySeasonPricingController extends ChangeNotifier {
     return ready && allowsProduct(productId) ? price : null;
   }
 
-  Future<void> refresh({bool automatic = false}) async {
+  Future<void> refresh({bool automatic = false}) {
+    final pending = _quoteRefresh;
+    if (pending != null) return pending;
+    late final Future<void> request;
+    request = _refreshQuote(automatic: automatic).whenComplete(() {
+      if (identical(_quoteRefresh, request)) _quoteRefresh = null;
+    });
+    return _quoteRefresh = request;
+  }
+
+  Future<void> _refreshQuote({required bool automatic}) async {
+    final requestedGeneration = _generation;
     await _restoreFuture;
+    if (requestedGeneration != _generation || _disposed) return;
     if (!journalReady ||
         !scheduled ||
         hasPending ||

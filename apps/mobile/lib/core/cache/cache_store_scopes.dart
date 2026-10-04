@@ -19,43 +19,35 @@ extension CacheStoreNamespaceScopes on CacheStore {
     try {
       await _serializePending(() async {
         await init();
-        final keysToDelete = <String>[];
-        for (final entry in _memory.entries) {
-          final record = entry.value;
-          final matchesUser = userId == null || record.userId == userId;
-          final matchesWorkspace =
-              workspaceId == null || record.workspaceId == workspaceId;
-          if (matchesUser &&
-              matchesWorkspace &&
-              (namespace == null || record.namespace == namespace)) {
-            keysToDelete.add(entry.key);
+        await _replicaMigration;
+        await _serializeResources(() async {
+          final intentKey = '@clear:${++_journalSequence}';
+          final intent = <String, dynamic>{
+            'kind': 'resource-clear',
+            'userId': userId,
+            'workspaceId': workspaceId,
+            'namespace': namespace,
+            'resourceOnly': resourceOnly,
+          };
+          await _entityBox.put(intentKey, intent);
+          _resourceJournalCount++;
+          await _entityBox.flush();
+          for (final record in _memory.values.toList(growable: false)) {
+            if (_matchesClear(record.toJson(), intent)) {
+              _dropRecord(record.key);
+            }
           }
-        }
-
-        for (final key in keysToDelete) {
-          _dropRecord(key);
-          await _resourceBox.delete(key);
-          await _replicaMigration;
-          await _removeReplicaSource(key);
-        }
-
-        // Resource-only purges must preserve unrelated queued offline changes.
-        if (namespace != null || resourceOnly) return;
-        final mutationIds = <dynamic>[];
-        for (final dynamic key in _mutationBox.keys) {
-          final raw = _mutationBox.get(key);
-          if (raw is! Map<dynamic, dynamic>) continue;
-          final matchesUser = userId == null || raw['userId'] == userId;
-          final matchesWorkspace =
-              workspaceId == null || raw['workspaceId'] == workspaceId;
-          if (matchesUser && matchesWorkspace) {
-            mutationIds.add(key);
+          await persistenceCheckpoint?.call('clear-intent');
+          // Recover unfinished publications while this durable clear intent
+          // still exists, so completing a clear cannot leave a resurrector.
+          await _recoverResourceJournals();
+          await _applyClearIntent(intent);
+          for (final record in _memory.values.toList(growable: false)) {
+            if (_matchesClear(record.toJson(), intent)) _dropRecord(record.key);
           }
-        }
-        for (final id in mutationIds) {
-          await _mutationBox.delete(id);
-        }
-        await _clearReplicaMappingsScope(userId, workspaceId);
+          _entityBytes = _countReplicaBytes();
+          await _finishResourceJournal(intentKey);
+        });
       });
     } finally {
       _scopeRevisions[scope] = ++_revision;
