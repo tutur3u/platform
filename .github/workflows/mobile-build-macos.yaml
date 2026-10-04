@@ -11,12 +11,14 @@ on:
     paths:
       - "apps/mobile/**"
       - ".github/workflows/mobile-build-macos.yaml"
+      - "scripts/mobile-deployment/*firebase*"
   pull_request:
     branches:
       - main
     paths:
       - "apps/mobile/**"
       - ".github/workflows/mobile-build-macos.yaml"
+      - "scripts/mobile-deployment/*firebase*"
 
 jobs:
   check-ci:
@@ -60,45 +62,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-flutter-macos-pods-
 
-      - name: Create dummy GoogleService-Info.plist
+      - name: Prepare development Firebase configuration
         run: |
-          mkdir -p macos/Runner
-          cat << 'EOF' > macos/Runner/GoogleService-Info.plist
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>CLIENT_ID</key>
-            <string>dummy</string>
-            <key>REVERSED_CLIENT_ID</key>
-            <string>dummy</string>
-            <key>API_KEY</key>
-            <string>dummy</string>
-            <key>GCM_SENDER_ID</key>
-            <string>dummy</string>
-            <key>PLIST_VERSION</key>
-            <string>1</string>
-            <key>BUNDLE_ID</key>
-            <string>dummy</string>
-            <key>PROJECT_ID</key>
-            <string>dummy</string>
-            <key>STORAGE_BUCKET</key>
-            <string>dummy</string>
-            <key>IS_ADS_ENABLED</key>
-            <false/>
-            <key>IS_ANALYTICS_ENABLED</key>
-            <false/>
-            <key>IS_APPINVITE_ENABLED</key>
-            <true/>
-            <key>IS_GCM_ENABLED</key>
-            <true/>
-            <key>IS_SIGNIN_ENABLED</key>
-            <true/>
-            <key>GOOGLE_APP_ID</key>
-            <string>1:dummy:ios:dummy</string>
-          </dict>
-          </plist>
-          EOF
+          python3 ../../scripts/mobile-deployment/test_firebase_service_config.py
+          python3 ../../scripts/mobile-deployment/firebase-service-config.py --platform macos
 
       - name: Build macOS
         run: flutter build macos --flavor development --target lib/main_development.dart
@@ -107,6 +74,7 @@ jobs:
         run: |
           app_path="$(find build/macos/Build/Products -maxdepth 2 -type d -name '*.app' -print -quit)"
           test -n "$app_path"
+          python3 ../../scripts/mobile-deployment/firebase-service-config.py --platform macos --app "$app_path"
           ditto -c -k --sequesterRsrc --keepParent "$app_path" "$RUNNER_TEMP/macos-dev-app.zip"
 
       - name: Upload macOS app artifact
