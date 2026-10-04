@@ -511,6 +511,34 @@
     "yourResponse": "Câu trả lời của bạn",
     "youtubeVideo": "Video YouTube"
   },
+  "educationTodo": {
+    "assignedCount": "{count} mục được giao trong loại này, bao gồm mục đã hoàn thành",
+    "assignments": "Bài tập",
+    "categories": "Loại công việc",
+    "completed": "Đã hoàn thành",
+    "empty": "Chưa có công việc được giao cho tài khoản của bạn trong loại này.",
+    "emptyPage": "Không có mục chưa hoàn thành trên trang này. Hiện mục đã hoàn thành hoặc xem trang khác.",
+    "error": "Không thể tải công việc được giao. Dữ liệu của bạn chưa bị thay đổi.",
+    "learnDescription": "Lịch kèm, bài tập và bài học được giao cho bạn. Danh sách cá nhân không chuyển sang học sinh do phụ huynh chọn.",
+    "lessons": "Bài học",
+    "loading": "Đang tải công việc…",
+    "minutes": "{count} phút",
+    "next": "Tiếp",
+    "open": "Mở",
+    "page": "Trang {page} / {total}",
+    "pages": "Trang công việc được giao",
+    "pendingCount": "{count} mục cần làm trong loại này",
+    "previous": "Trước",
+    "retry": "Thử lại",
+    "showCompleted": "Hiện mục đã hoàn thành trên trang này",
+    "student": "Học sinh",
+    "teachDescription": "Lịch kèm được giao, bản nháp bài tập và bài học chưa xuất bản trong các lớp bạn giảng dạy.",
+    "teacher": "Giáo viên kèm",
+    "tests": "Bài kiểm tra",
+    "title": "Việc cần làm",
+    "tutoring": "Học kèm",
+    "untitled": "Mục chưa có tiêu đề"
+  },
   "finance": {
     "new_debt": "Khoản nợ mới",
     "new_loan": "Khoản cho vay mới",
@@ -730,7 +758,8 @@
     "marks": "Điểm",
     "practice": "Luyện tập",
     "reports": "Báo cáo",
-    "settings": "Cài đặt Learn"
+    "settings": "Cài đặt Learn",
+    "todo": "Việc cần làm"
   },
   "notifications": {
     "accept": "Chấp nhận",

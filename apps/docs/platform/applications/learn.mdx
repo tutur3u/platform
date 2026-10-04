@@ -240,3 +240,33 @@ Run the finite parser and session regressions with
 Use the repository isolated lifecycle for local schema acceptance, never a shared
 or production database. A failed migration, TAP assertion, type generation, or
 owned-project cleanup blocks acceptance.
+
+## Personal To do
+
+The **To do** sidebar destination (`/{wsId}/todo`) is the signed-in actor's own
+work in this education-enabled workspace. It intentionally ignores parent learner
+selection: the actor's verified workspace-user link is resolved on the server,
+and `studentId`/other subject query overrides are rejected. A parent without an
+own learner link has an empty personal list; existing parent learner views remain
+available elsewhere.
+
+Tutoring lists explicitly assigned, pending, unresolved sessions. Assignments,
+lessons and tests come only from the actor's actual STUDENT course memberships
+in active, non-guest, published courses. Only approved assignments and published
+lessons/tests are visible. Completion comes from this actor's assignment checks,
+module completion records and submitted test attempts. Completed entries are
+hidden on the current page by default; the count includes assigned completed
+entries, and the toggle plus pagination avoids presenting an empty page as an
+empty workspace. Sessions show their recorded local date/time and duration,
+including explicit longer tutoring exceptions.
+
+Reads use Learn-owned `/api/v1/workspaces/{wsId}/tulearn/todo` and the shared
+internal API transport. They are private/no-store, paginated by category, and
+cached by app, workspace and verified actor. Failures offer Retry and do not
+turn unavailable data into an empty-success response. These existing app-owned
+education routes are outside the platform Web-to-Rust/TanStack migration inventory.
+
+Regression evidence: `packages/education-core/src/todo/service.test.ts`, both
+app-owned `todo/route.test.ts` files, internal API `education-todo.test.ts`, and
+shared UI `education-todo.test.tsx`. Exact app builds and authenticated runtime
+verification remain required delivery evidence.

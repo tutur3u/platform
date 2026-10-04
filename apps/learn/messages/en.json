@@ -511,6 +511,34 @@
     "yourResponse": "Your response",
     "youtubeVideo": "YouTube video"
   },
+  "educationTodo": {
+    "assignedCount": "{count} assigned items in this category, including completed items",
+    "assignments": "Assignments",
+    "categories": "Work categories",
+    "completed": "Completed",
+    "empty": "No work is assigned to your account in this category.",
+    "emptyPage": "No open items on this page. Show completed items or check another page.",
+    "error": "Could not load your assigned work. Your records have not been changed.",
+    "learnDescription": "Your assigned tutoring, coursework and lessons. This personal list does not switch to a parent-selected learner.",
+    "lessons": "Lessons",
+    "loading": "Loading your work…",
+    "minutes": "{count} minutes",
+    "next": "Next",
+    "open": "Open",
+    "page": "Page {page} of {total}",
+    "pages": "Assigned work pages",
+    "pendingCount": "{count} pending items in this category",
+    "previous": "Previous",
+    "retry": "Retry",
+    "showCompleted": "Show completed on this page",
+    "student": "Student",
+    "teachDescription": "Your assigned tutoring, assignment drafts and unpublished lessons in the classes you teach.",
+    "teacher": "Tutoring teacher",
+    "tests": "Tests",
+    "title": "To do",
+    "tutoring": "Tutoring",
+    "untitled": "Untitled item"
+  },
   "finance": {
     "new_debt": "New debt",
     "new_loan": "New loan",
@@ -730,7 +758,8 @@
     "marks": "Marks",
     "practice": "Practice",
     "reports": "Reports",
-    "settings": "Learn settings"
+    "settings": "Learn settings",
+    "todo": "To do"
   },
   "notifications": {
     "accept": "Accept",
