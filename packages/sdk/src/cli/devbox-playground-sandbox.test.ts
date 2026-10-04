@@ -92,6 +92,7 @@ describe('managed playground removal ownership', () => {
     expect(logged).toContain('--log-driver=local');
     expect(logged).toContain('--log-opt=max-size=8k');
     expect(logged).toContain('--log-opt=max-file=1');
+    expect(logged).toContain('--log-opt=compress=false');
     expect(logged.slice(-3)).toEqual(['sh', '-c', 'exec sleep 7200']);
   });
 

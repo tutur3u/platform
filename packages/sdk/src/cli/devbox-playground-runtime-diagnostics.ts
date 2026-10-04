@@ -4,7 +4,14 @@ import { sandboxDocker } from './devbox-sandbox-process';
 /** Only disposable, explicitly opted-in CI pools retain bounded startup logs. */
 export function syntheticContainerLoggingArgs(pool: string, enabled: boolean) {
   return enabled && /^ci-[0-9]+-[0-9]+$/.test(pool)
-    ? ['--log-driver=local', '--log-opt=max-size=8k', '--log-opt=max-file=1']
+    ? [
+        '--log-driver=local',
+        '--log-opt=max-size=8k',
+        '--log-opt=max-file=1',
+        // Docker's local driver defaults to compression, which requires
+        // rotation. A single bounded file must explicitly disable it.
+        '--log-opt=compress=false',
+      ]
     : [];
 }
 

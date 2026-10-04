@@ -10,6 +10,7 @@ it('enables bounded readable logs only for opted-in synthetic CI identities', ()
     '--log-driver=local',
     '--log-opt=max-size=8k',
     '--log-opt=max-file=1',
+    '--log-opt=compress=false',
   ]);
   expect(syntheticContainerLoggingArgs('ci-123-1', false)).toEqual([]);
   expect(syntheticContainerLoggingArgs('production', true)).toEqual([]);
