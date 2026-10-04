@@ -32,11 +32,7 @@ class ShellDockActionButton extends StatelessWidget {
               ? Theme.of(context).colorScheme.surface
               : Theme.of(context).colorScheme.onSurface,
           minimumSize: const Size(48, 48),
-          padding: EdgeInsets.symmetric(
-            horizontal: MediaQuery.sizeOf(context).shortestSide >= 600
-                ? 16
-                : 12,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           shape: const StadiumBorder(),
         ),
         onPressed: action.enabled && !action.isLoading
@@ -62,16 +58,6 @@ class ShellDockActionButton extends StatelessWidget {
                     size: 24,
                   ),
                 ),
-              if (MediaQuery.sizeOf(context).shortestSide >= 600) ...[
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    action.tooltip ?? '',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
             ],
           ),
         ),

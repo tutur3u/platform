@@ -1374,10 +1374,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantConversationTitle => 'Cuộc trò chuyện';
 
   @override
-  String get assistantAttachFilesAction => 'Đính kèm tệp';
+  String get assistantAttachFilesAction => 'Thêm đính kèm';
 
   @override
-  String get assistantAttachGalleryMediaAction => 'Ảnh và video';
+  String get assistantAttachGalleryMediaAction => 'Thư viện ảnh và video';
 
   @override
   String get assistantGalleryPickError => 'Không thể mở thư viện ảnh. Vui lòng thử lại.';
@@ -9929,4 +9929,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String connectedOnboardingStep(int step, int total) {
     return 'Bước $step trên $total';
   }
+
+  @override
+  String get assistantAttachCaptureAction => 'Chụp và ghi âm';
+
+  @override
+  String get assistantAttachFilesSource => 'Tệp';
+
+  @override
+  String get assistantCaptureAudio => 'Ghi âm';
+
+  @override
+  String get assistantCapturePhoto => 'Chụp ảnh';
+
+  @override
+  String get assistantCaptureVideo => 'Quay video';
 }

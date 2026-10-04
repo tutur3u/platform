@@ -518,8 +518,8 @@
     "assistantSaveAction": "Save",
     "assistantCreditsTitle": "Credits",
     "assistantConversationTitle": "Conversation",
-    "assistantAttachFilesAction": "Attach files",
-    "assistantAttachGalleryMediaAction": "Photos and videos",
+    "assistantAttachFilesAction": "Add attachments",
+    "assistantAttachGalleryMediaAction": "Photos & Videos Library",
     "assistantGalleryPickError": "Could not open your photo library. Try again.",
     "assistantEnterFullscreenAction": "Enter fullscreen",
     "assistantExitFullscreenAction": "Exit fullscreen",
@@ -4288,5 +4288,10 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "assistantAttachCaptureAction": "Capture & Record",
+    "assistantAttachFilesSource": "Files",
+    "assistantCaptureAudio": "Record audio",
+    "assistantCapturePhoto": "Take photo",
+    "assistantCaptureVideo": "Record video"
 }

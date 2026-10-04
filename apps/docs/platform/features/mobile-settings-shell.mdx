@@ -6,7 +6,9 @@ description: Shared shell chrome, profile settings routes and accessible edit en
 ## Settings detail shell and profile settings
 
 All mobile Settings children use the same shell background and one shell top
-navbar with the destination title and Back. Offline is `/settings/offline`; its
+navbar with the destination title and actions. In-app Back appears only in the
+floating bottom navbar, never in the top navbar. Android system Back remains
+available. Offline is `/settings/offline`; its
 Finance, Inventory, Tasks and Calendar details are `/settings/offline/<module>`.
 They do not add body title/back bars, nested AppBars or another top safe area.
 Their scroll content reserves the shell-provided bottom padding, so the floating
@@ -20,6 +22,14 @@ Settings → You now opens identity, avatar and account-status settings at
 compact icon with an accessible Identity label and tooltip. Account-switching
 shortcuts remain available there. These defaults apply in both mobile languages;
 workspace permissions and queued profile writes retain their existing rules.
+
+Profile identity fields use the shared Settings tiles and panel material, with
+read-only values until a field is opened for editing. Manage accounts uses the
+same grouped Add account row and account panels; its shell title is not repeated
+in a hero card. The Profile account-management entry has one label, and What's
+new keeps its description and installed version without repeating the shell
+heading. Account removal confirmations and queued profile writes are unchanged.
+These defaults apply to both languages, light/dark themes and enlarged text.
 
 Licenses, onboarding replay and explicit admin edit forms intentionally open
 above the shell on the root navigator with their own full-screen chrome. Sheet
@@ -40,12 +50,30 @@ writes and clearing remain ordered. Feature-level identity guards also remain.
 
 Regression coverage: `settings_detail_shell_checks.dart` exercises actual
 Offline registrations, inherited background/header and dock clearance, enlarged
-text, navbar/system/dock back, and unknown module links;
+text, system/dock back without a top Back button, and unknown module links;
 `profile_overview_shell_test.dart` covers the icon edit entry and return path.
 `floating_shell_dock_test.dart` verifies hidden clearance and stable viewport;
 `shell_assistant_composer_test.dart` verifies one dock, draft/focus and Live
 transitions, and `shell_profile_races_test.dart` covers delayed account/cache
 completion. These widget checks do not establish installed-device or production evidence.
+
+### Consistent dock slots
+
+Root destinations use the same fixed 52px primary slot, including screens with
+no primary action. At widths below 400px, secondary dock actions remain reachable
+in the top navbar; wider screens reserve a second slot. Navigation and Assistant
+share horizontal/bottom insets so switching screens cannot recenter the root
+icons around a newly appearing action. Actions stay icon-only with semantic
+labels and tooltips. Coverage: `floating_dock_rail_test.dart` and
+`dock_secondary_actions_test.dart`; device visual/keyboard checks remain required.
+
+The fixed empty action columns apply to the five root destinations (Home, Apps,
+Assistant, Notifications, and Profile). Mini-app navigation intentionally keeps
+its available width when it has no actions, including six-item docks on narrow
+phones. Registered mini-app actions consume space only when present; secondary
+actions remain reachable from the top navbar on narrow screens. The six-item
+320px no-action regression checks that touch targets stay at least 44px; this
+does not claim every possible mini-app/action combination has that width.
 
 ## Notification navigation and refresh
 
