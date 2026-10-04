@@ -197,6 +197,9 @@ jobs:
 
   comment:
     name: Comment on PR
+    concurrency:
+      group: i18n-report-${{ github.repository }}-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     needs: [i18n-sort-check, i18n-translation-check, i18n-key-parity-check, i18n-namespace-check]
     if: always() && github.event_name == 'pull_request'
@@ -223,16 +226,30 @@ jobs:
             const missingInEn = '${{ needs.i18n-key-parity-check.outputs.missing_in_en }}';
             const hasNamespaceIssues = '${{ needs.i18n-namespace-check.outputs.has_issues }}';
 
-            const timestamp = new Date().toLocaleString();
-
-            const sortStatus = isSorted === 'true' ? '✅ Sorted' : '❌ Not sorted';
-            const translationStatus = hasTranslationIssues === 'true' ? '❌ Issues found' : '✅ All in sync';
-            const parityStatus = hasParityIssues === 'true' ? '❌ Keys mismatch' : '✅ Keys in sync';
-            const namespaceStatus = hasNamespaceIssues === 'true' ? '❌ Missing namespaces' : '✅ All present';
-            const overallSuccess = isSorted === 'true' && hasTranslationIssues !== 'true' && hasParityIssues !== 'true' && hasNamespaceIssues !== 'true';
+            // Missing outputs never prove success or a translation defect.
+            const status = (result, output, passingValue, passLabel, failLabel) => {
+              if (result === 'success' && output === passingValue) return { kind: 'pass', label: passLabel };
+              if (result === 'failure' && output === (passingValue === 'true' ? 'false' : 'true')) return { kind: 'fail', label: failLabel };
+              return { kind: 'incomplete', label: `Incomplete (${result || 'unknown'})` };
+            };
+            const sorting = status('${{ needs.i18n-sort-check.result }}', isSorted, 'true', 'Sorted', 'Not sorted');
+            const translation = status('${{ needs.i18n-translation-check.result }}', hasTranslationIssues, 'false', 'All in sync', 'Issues found');
+            const parity = status('${{ needs.i18n-key-parity-check.result }}', hasParityIssues, 'false', 'Keys in sync', 'Keys mismatch');
+            const namespace = status('${{ needs.i18n-namespace-check.result }}', hasNamespaceIssues, 'false', 'All present', 'Missing namespaces');
+            const states = [sorting, translation, parity, namespace];
+            const overallSuccess = states.every(state => state.kind === 'pass');
+            const confirmedFailure = states.some(state => state.kind === 'fail');
+            const timestamp = new Date().toISOString();
+            const sortStatus = sorting.label;
+            const translationStatus = translation.label;
+            const parityStatus = parity.label;
+            const namespaceStatus = namespace.label;
+            const sourceHead = context.payload.pull_request.head.sha;
+            const runId = BigInt(context.runId);
+            const attempt = Number('${{ github.run_attempt }}');
 
             let parityDetails = '';
-            if (hasParityIssues === 'true') {
+            if (parity.kind === 'fail') {
               const details = [];
               if (parseInt(missingInVi) > 0) details.push(`${missingInVi} missing in vi.json`);
               if (parseInt(missingInEn) > 0) details.push(`${missingInEn} missing in en.json`);
@@ -240,19 +257,19 @@ jobs:
             }
 
             let nextSteps = '';
-            if (!overallSuccess) {
+            if (confirmedFailure) {
               nextSteps = '### 📋 Next Steps\n\n';
-              if (isSorted !== 'true') {
+              if (sorting.kind === 'fail') {
                 nextSteps += '**Sorting Issues:**\n```bash\nbun i18n:sort\n```\n\n';
               }
-              if (hasTranslationIssues === 'true') {
+              if (translation.kind === 'fail') {
                 nextSteps += '**Translation Issues:**\n```bash\nbun i18n:check\n```\n\n';
               }
-              if (hasParityIssues === 'true') {
+              if (parity.kind === 'fail') {
                 nextSteps += '**Key Parity Issues (en ↔ vi):**\n```bash\nbun i18n:key-parity\n```\n\n';
                 nextSteps += '> 💡 Use `bun i18n:sync` to auto-sync missing keys.\n\n';
               }
-              if (hasNamespaceIssues === 'true') {
+              if (namespace.kind === 'fail') {
                 nextSteps += '**Namespace Issues (shared → apps):**\n```bash\nbun i18n:namespace-check\n```\n\n';
                 nextSteps += '> 💡 Add missing namespaces to each app\'s `messages/en.json` and `vi.json`, or add exceptions to `i18n-namespace-check.config.json`.\n';
               }
@@ -263,27 +280,29 @@ jobs:
 
             <div align="center">
 
-            ${overallSuccess ? '### ✅ All i18n checks passed!' : '### ❌ i18n issues found'}
+            ${overallSuccess ? '### All i18n checks passed' : confirmedFailure ? '### Confirmed i18n issues found' : '### i18n validation incomplete'}
 
             </div>
 
             | Check | Status |
             |-------|--------|
             | 🔤 **Translation Sorting** | ${sortStatus} |
-            | 🔑 **Translation Keys** | ${translationStatus} ${hasTranslationIssues === 'true' ? `(${issueCount} issues)` : ''} |
+            | 🔑 **Translation Keys** | ${translationStatus} ${translation.kind === 'fail' ? `(${issueCount} issues)` : ''} |
             | 🔄 **Key Parity (en ↔ vi)** | ${parityStatus}${parityDetails} |
             | 📦 **Namespace Check (shared → apps)** | ${namespaceStatus} |
+
+            ${states.some(state => state.kind === 'incomplete') ? 'Some checks did not complete. This report does not establish passing validation; inspect the linked run.' : ''}
 
             ${nextSteps}
 
             <div align="center">
-            <sub>🤖 Auto-generated by <strong>i18n Check</strong> workflow • Last updated: ${timestamp}</sub>
+            <sub>🤖 Auto-generated by <strong>i18n Check</strong> workflow • Source: \`${sourceHead}\` • [Run ${context.runId}](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) • Last updated: ${timestamp}</sub>
             </div>
             `;
 
             // Find existing i18n Check comment and update it, or create new one
             try {
-              const { data: comments } = await github.rest.issues.listComments({
+              const comments = await github.paginate(github.rest.issues.listComments, {
                 issue_number: prNumber,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -294,7 +313,18 @@ jobs:
                 comment.body.includes('<!-- i18n-check-comment -->')
               );
 
-              const bodyWithMarker = '<!-- i18n-check-comment -->\n' + body;
+              const bodyWithMarker = `<!-- i18n-check-comment -->\n<!-- i18n-check-run:${runId}:${attempt} -->\n` + body;
+
+              const { data: livePr } = await github.rest.pulls.get({ ...context.repo, pull_number: prNumber });
+              if (livePr.head.sha !== sourceHead || livePr.state !== 'open') {
+                console.log('Ignoring stale or closed PR report');
+                return;
+              }
+              const previous = existingComment?.body.match(/<!-- i18n-check-run:(\d+):(\d+) -->/);
+              if (previous && (BigInt(previous[1]) > runId || (BigInt(previous[1]) === runId && Number(previous[2]) > attempt))) {
+                console.log('Ignoring an older run report');
+                return;
+              }
 
               if (existingComment) {
                 console.log(`Updating existing comment ${existingComment.id} on PR ${prNumber}`);
