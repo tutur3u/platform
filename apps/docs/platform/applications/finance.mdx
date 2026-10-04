@@ -109,6 +109,20 @@ Web exceptions until their dependent platform callers migrate. Expose shared
 access in `packages/internal-api` and consume it through TanStack Query or
 shared server components.
 
+## Wallet checkpoint reconciliation submission
+
+The shared Finance checkpoint adjustment dialog submits the category and
+annotation visible when the user presses Reconcile. The configured
+reconciliation category is selected after its options load; choosing no
+category still submits no category. Edits made while an already-started request
+is being scheduled must not change that request's payload or workspace, wallet
+and checkpoint identity. Completion invalidates the submitted target; a dialog
+that has moved to another target is not closed by the old request. The server continues
+to recompute the adjustment amount from the checkpoint rather than trusting a
+client preview. This applies to shared Web and satellite Finance dialogs.
+Regression: `wallet-checkpoints.test.tsx` covers configured defaults, explicit
+clearing, a subsequent edit before mutation execution, and retargeting before completion.
+
 ## Inventory sales reconciliation
 
 Finance owns the Inventory reconciliation inbox and its protected API under

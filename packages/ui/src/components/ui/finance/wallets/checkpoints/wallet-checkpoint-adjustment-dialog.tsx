@@ -29,7 +29,16 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { formatCurrency } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+
+type ReconciliationRequest = {
+  wsId: string;
+  walletId: string;
+  checkpointId: string;
+  payload: { category_id?: string; description: string };
+  onCreated: () => void;
+  onOpenChange: (open: boolean) => void;
+};
 
 const NO_CATEGORY = 'none';
 
@@ -57,6 +66,10 @@ export function WalletCheckpointAdjustmentDialog({
   wsId: string;
 }) {
   const t = useTranslations('wallet-checkpoints');
+  const activeTarget = useRef({ wsId, walletId, checkpointId, open });
+  useLayoutEffect(() => {
+    activeTarget.current = { wsId, walletId, checkpointId, open };
+  }, [wsId, walletId, checkpointId, open]);
   const [categoryId, setCategoryId] = useState(NO_CATEGORY);
   const [description, setDescription] = useState(
     t('reconciliation_description', {
@@ -129,17 +142,28 @@ export function WalletCheckpointAdjustmentDialog({
     [checkedAt]
   );
   const mutation = useMutation({
-    mutationFn: () =>
-      createWalletCheckpointReconciliation(wsId, walletId, checkpointId, {
-        category_id: categoryId === NO_CATEGORY ? undefined : categoryId,
-        description,
-      }),
-    onSuccess: (result) => {
+    mutationFn: (request: ReconciliationRequest) =>
+      createWalletCheckpointReconciliation(
+        request.wsId,
+        request.walletId,
+        request.checkpointId,
+        request.payload
+      ),
+    onSuccess: (result, request) => {
+      // Invalidate the submitted target even if the dialog has since moved.
+      request.onCreated();
+      const current = activeTarget.current;
+      if (
+        !current.open ||
+        current.wsId !== request.wsId ||
+        current.walletId !== request.walletId ||
+        current.checkpointId !== request.checkpointId
+      )
+        return;
       toast.success(
         result.created ? t('reconciliation_created') : t('reconciliation_clean')
       );
-      onCreated();
-      onOpenChange(false);
+      request.onOpenChange(false);
     },
     onError: (error) => {
       toast.error(
@@ -208,7 +232,20 @@ export function WalletCheckpointAdjustmentDialog({
           </Button>
           <Button
             disabled={mutation.isPending || !categoryInitialized}
-            onClick={() => mutation.mutate()}
+            onClick={() =>
+              mutation.mutate({
+                wsId,
+                walletId,
+                checkpointId,
+                payload: {
+                  category_id:
+                    categoryId === NO_CATEGORY ? undefined : categoryId,
+                  description,
+                },
+                onCreated,
+                onOpenChange,
+              })
+            }
           >
             {mutation.isPending ? t('creating') : t('reconcile')}
           </Button>
