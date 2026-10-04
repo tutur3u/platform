@@ -3,9 +3,9 @@ import {
   InternalApiError,
 } from '@tuturuuu/internal-api';
 
-vi.mock('@tuturuuu/internal-api', async () => ({
+vi.mock('@tuturuuu/internal-api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tuturuuu/internal-api')>()),
   createWorkspaceAvatarUploadTarget: vi.fn(),
-  ...(await import('../../../internal-api/src/internal-api-error.js')),
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
