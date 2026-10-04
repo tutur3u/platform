@@ -4273,5 +4273,20 @@
             }
         }
     },
-    "inventorySetupSyncFirst": "Sync this new item before using, editing, or deleting it."
+    "inventorySetupSyncFirst": "Sync this new item before using, editing, or deleting it.",
+    "connectedOnboardingMiraTitle": "Meet Mira, your AI companion",
+    "connectedOnboardingMiraSubtitle": "Start a conversation, shape a plan, or think through your next step. Mira lives alongside the tools you use every day.",
+    "connectedOnboardingMiraToolkit": "One place to chat with Mira and reach your tasks, calendar, finances, and inventory. Choose what works for you.",
+    "connectedOnboardingOptional": "Your pace. Your workspace. Always optional.",
+    "connectedOnboardingStep": "Step {step} of {total}",
+    "@connectedOnboardingStep": {
+        "placeholders": {
+            "step": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
+        }
+    }
 }

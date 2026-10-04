@@ -18996,6 +18996,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sync this new item before using, editing, or deleting it.'**
   String get inventorySetupSyncFirst;
+
+  /// No description provided for @connectedOnboardingMiraTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Meet Mira, your AI companion'**
+  String get connectedOnboardingMiraTitle;
+
+  /// No description provided for @connectedOnboardingMiraSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a conversation, shape a plan, or think through your next step. Mira lives alongside the tools you use every day.'**
+  String get connectedOnboardingMiraSubtitle;
+
+  /// No description provided for @connectedOnboardingMiraToolkit.
+  ///
+  /// In en, this message translates to:
+  /// **'One place to chat with Mira and reach your tasks, calendar, finances, and inventory. Choose what works for you.'**
+  String get connectedOnboardingMiraToolkit;
+
+  /// No description provided for @connectedOnboardingOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Your pace. Your workspace. Always optional.'**
+  String get connectedOnboardingOptional;
+
+  /// No description provided for @connectedOnboardingStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {step} of {total}'**
+  String connectedOnboardingStep(int step, int total);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
