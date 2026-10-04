@@ -9,33 +9,10 @@ import {
   TutoringSessionUpdateSchema,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/tutoring/shared';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
+import { listWorkspaceTeacherIds } from '@/lib/tutoring/teachers';
 
 interface Params {
   params: Promise<{ wsId: string; id: string }>;
-}
-
-async function isGroupTeacher(
-  wsId: string,
-  groupId: string,
-  teacherUserId: string,
-  sbAdmin: TypedSupabaseClient
-) {
-  const { data, error } = await sbAdmin
-    .from('workspace_user_groups_users')
-    .select(
-      'user_id,user:workspace_users!workspace_user_roles_users_user_id_fkey!inner(ws_id)'
-    )
-    .eq('group_id', groupId)
-    .eq('user_id', teacherUserId)
-    .eq('role', 'TEACHER')
-    .eq('user.ws_id', wsId)
-    .maybeSingle();
-
-  if (error) {
-    return { isValid: false, error };
-  }
-
-  return { isValid: Boolean(data), error: null };
 }
 
 export async function PUT(request: Request, { params }: Params) {
@@ -133,12 +110,11 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   if (parsed.data.teacherUserId) {
-    const teacherCheck = await isGroupTeacher(
+    const teacherCheck = await listWorkspaceTeacherIds({
       normalizedWsId,
-      currentSession.group_id,
-      parsed.data.teacherUserId,
-      sbAdmin
-    );
+      sbAdmin,
+      teacherUserIds: [parsed.data.teacherUserId],
+    });
 
     if (teacherCheck.error) {
       console.error('Failed to validate tutoring teacher assignment', {
@@ -154,9 +130,9 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    if (!teacherCheck.isValid) {
+    if (!teacherCheck.teacherIds.has(parsed.data.teacherUserId)) {
       return NextResponse.json(
-        { message: 'Teacher must be a manager of the selected group' },
+        { message: 'Teacher must be an eligible teacher in this workspace' },
         { status: 400 }
       );
     }
