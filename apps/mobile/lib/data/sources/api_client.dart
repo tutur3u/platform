@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/sources/api_error_payload.dart';
+import 'package:mobile/data/sources/api_rate_limit_diagnostics.dart';
 import 'package:mobile/data/sources/api_verification.dart';
 import 'package:mobile/data/sources/offline_api_request.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
@@ -559,8 +560,12 @@ class ApiClient {
         unawaited(refreshRequiredMfa(_auth));
       }
       final error = ApiErrorPayload(parsed);
+      final rateLimit = response.statusCode == 429
+          ? ApiRateLimitDiagnostics.fromHeaders(response.headers)
+          : null;
       developer.log(
-        'HTTP ${response.statusCode}; code=${error.code ?? 'unknown'}',
+        'HTTP ${response.statusCode}; code=${error.code ?? 'unknown'}'
+        '${rateLimit == null ? '' : '; ${rateLimit.safeSummary}'}',
         name: 'ApiClient',
       );
       throw ApiException(
@@ -569,6 +574,7 @@ class ApiClient {
         retryAfter:
             _retryAfter(response.headers['retry-after']) ?? error.retryAfter,
         code: error.code,
+        rateLimitDiagnostics: rateLimit,
         offlineContractObserved:
             response.headers['x-tuturuuu-offline-contract'] ==
             'inventory-offline-create-v1',
@@ -627,6 +633,7 @@ class ApiException implements Exception {
     required this.message,
     required this.statusCode,
     this.retryAfter,
+    this.rateLimitDiagnostics,
     this.code,
     this.isVerificationRequired = false,
     this.offlineContractObserved = false,
@@ -635,6 +642,7 @@ class ApiException implements Exception {
   final String message;
   final int statusCode;
   final int? retryAfter;
+  final ApiRateLimitDiagnostics? rateLimitDiagnostics;
   final String? code;
   final bool isVerificationRequired;
   final bool offlineContractObserved;
