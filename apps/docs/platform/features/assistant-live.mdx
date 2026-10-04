@@ -309,3 +309,25 @@ when changing discovery. They exercise real SDK model steps with a mock provider
 including deferred loading, denied permissions, workspace changes, explicit
 selection, and approval-gated writes. These tests do not replace authenticated
 provider or meeting-invitation round trips.
+
+
+### Mobile text dock modes
+
+Normal mobile Assistant text chat uses one floating bottom dock. Navigation mode
+shows the existing section icons with a chat-bubble primary action. Composing
+replaces that same slot with a single-row plus menu, prompt, microphone/send and
+hamburger primary action. The hamburger returns to navigation; it does not place
+navigation above the prompt. The draft and selection survive a toggle. Opening
+chat focuses the prompt; returning to navigation, opening the menu or microphone,
+leaving the page, and tapping outside release prompt focus and dismiss the IME.
+
+Both modes use the same default 52 logical pixel rail, theme-derived glass and
+outline; prompt height grows for accessible text. Reduced-motion settings remove
+mode animation. The anchored plus popover uses one matching glass surface and
+consistent icon/title rows for attachments, model, thinking mode, credit source
+and closing the prompt; existing per-attachment previews/removal remain available.
+Live mode keeps its explicit entry and transport behavior. This rule applies to
+normal native mobile text chat, not web chat or Live stage controls. Regression
+coverage is in `assistant_morphing_dock_test.dart` and
+`assistant_composer_dock_test.dart`; installed-device appearance/keyboard checks
+remain part of release verification.

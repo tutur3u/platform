@@ -54,6 +54,7 @@ Read only the section relevant to the current feature; paths are repository-rela
 ## 3. Mobile UX & Shell Patterns
 
 - **Immersive Mobile View Transitions**: When toggling between fullscreen/immersive and overview modes, reset scroll position deliberately and recompute bottom insets for restored nav/FAB chrome.
+- **Single Shell Detail Chrome**: Register dedicated settings/detail destinations in the app router so the shell owns their title and back behavior. Shell bodies inherit its background and header clearance, omit nested AppBars/body topbars and duplicate top SafeAreas, and consume bottom MediaQuery padding inside scrollables for floating-dock clearance. Preserve pushed-route origin on back; direct links use the registered parent fallback. Explicit full-screen forms/system flows use the root navigator above the shell. Verify compact/enlarged-text geometry plus top-navbar, Android system and dock back.
 - **Compact Shell Safe Areas**: Pages rendered inside `ShellPage` already sit under shell-managed app bar/footer chrome; avoid unconditional inner `SafeArea` top/bottom padding in feature pages.
 - **Flutter Compact Test Viewports**: Validate new cards and hero surfaces against the app widget-test viewport, not only simulator screenshots.
 - **shadcn Toast Timers in Widget Tests**: When tests trigger `shad.showToast`, drain the toast auto-close timer before teardown (for example `tester.drainShadToastTimers()` then settle) unless toast duration is explicitly overridden.

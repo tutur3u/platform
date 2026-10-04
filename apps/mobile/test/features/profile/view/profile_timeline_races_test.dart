@@ -11,6 +11,7 @@ import 'package:mobile/features/profile/profile_timeline_repository.dart';
 import 'package:mobile/features/profile/view/profile_timeline_section.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 import '../../../helpers/helpers.dart';
@@ -74,6 +75,7 @@ void main() {
   setUp(() {
     auth = _Auth();
     workspace = _Workspace();
+    when(() => workspace.hasAuthenticatedActor).thenReturn(true);
     repository = _Repository();
     scopes = StreamController<WorkspaceState>();
     accounts = StreamController<AuthState>();
@@ -94,6 +96,7 @@ void main() {
       workspace,
       scopes.stream,
       initialState: const WorkspaceState(
+        workspaces: [Workspace(id: 'personal', personal: true)],
         currentWorkspace: Workspace(id: 'team', name: 'Team'),
       ),
     );
@@ -112,7 +115,11 @@ void main() {
           BlocProvider<WorkspaceCubit>.value(value: workspace),
         ],
         child: SingleChildScrollView(
-          child: ProfileTimelineSection(replayToken: 0, repository: repository),
+          child: ProfileTimelineSection(
+            cacheUserId: () => auth.state.user?.id,
+            replayToken: 0,
+            repository: repository,
+          ),
         ),
       ),
     );
@@ -152,6 +159,7 @@ void main() {
     expect(repository.cacheReads, hasLength(1));
     scopes.add(
       const WorkspaceState(
+        workspaces: [Workspace(id: 'new-personal', personal: true)],
         currentWorkspace: Workspace(id: 'new-team', name: 'New team'),
       ),
     );
@@ -185,6 +193,7 @@ void main() {
     repository.cache = null;
     scopes.add(
       const WorkspaceState(
+        workspaces: [Workspace(id: 'new-personal', personal: true)],
         currentWorkspace: Workspace(id: 'new-team', name: 'New team'),
       ),
     );
@@ -392,4 +401,72 @@ void main() {
       },
     );
   }
+  testWidgets('selected team switch keeps the same personal load', (
+    tester,
+  ) async {
+    await mount(tester);
+    expect(repository.requests, hasLength(1));
+    scopes.add(
+      const WorkspaceState(
+        workspaces: [Workspace(id: 'personal', personal: true)],
+        currentWorkspace: Workspace(id: 'another-team'),
+      ),
+    );
+    await tester.pump();
+    repository.requests.single.complete(snapshot('Personal task'));
+    await tester.pumpAndSettle();
+    expect(repository.requests, hasLength(1));
+    expect(find.text('Personal task'), findsOneWidget);
+  });
+
+  testWidgets('unverified account transition clears and fences old responses', (
+    tester,
+  ) async {
+    repository.cache = snapshot('Previous private row');
+    await mount(tester);
+    expect(find.text('Previous private row'), findsOneWidget);
+    when(() => workspace.hasAuthenticatedActor).thenReturn(false);
+    accounts.add(
+      const AuthState.authenticated(
+        supa.User(
+          id: 'next-account',
+          appMetadata: {},
+          userMetadata: {},
+          aud: 'authenticated',
+          createdAt: '',
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Previous private row'), findsNothing);
+    expect(repository.requests, hasLength(1));
+    repository.requests.single.complete(snapshot('Late previous-account row'));
+    await tester.pumpAndSettle();
+    expect(find.text('Late previous-account row'), findsNothing);
+    expect(find.text('Activity could not be refreshed.'), findsOneWidget);
+  });
+
+  testWidgets('replay and repeated retry cannot overlap one refresh', (
+    tester,
+  ) async {
+    repository.cache = snapshot('Retained row', partial: true);
+    await mount(tester);
+    final retry = tester.widget<TextButton>(find.byType(TextButton).first);
+    expect(retry.onPressed, isNull);
+    repository.requests.single.completeError(Exception('Offline'));
+    await tester.pumpAndSettle();
+    final action = tester
+        .widget<TextButton>(find.byType(TextButton).first)
+        .onPressed!;
+    action();
+    action();
+    await tester.pump();
+    expect(repository.requests, hasLength(2));
+    expect(find.text('Retained row'), findsOneWidget);
+    repository.requests.last.complete(snapshot('Recovered row'));
+    await tester.pumpAndSettle();
+    expect(find.text('Recovered row'), findsOneWidget);
+    expect(find.text('Some activity is unavailable.'), findsNothing);
+  });
 }

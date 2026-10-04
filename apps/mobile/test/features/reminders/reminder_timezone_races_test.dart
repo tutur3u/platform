@@ -20,7 +20,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class _Calendar extends Mock implements CalendarRepository {}
 
-class _Preferences extends Mock implements TimezoneSettingsRepository {}
+class _Preferences extends Mock implements TimezoneSettingsRepository {
+  // Keep existing caller fixtures while the real repository owns coalescing.
+  @override
+  Future<String> readPersonal(
+    String userId, {
+    Duration timeout = const Duration(seconds: 15),
+  }) => loadPersonal();
+  @override
+  Future<String> readWorkspace(
+    String userId,
+    String id, {
+    Duration timeout = const Duration(seconds: 15),
+  }) => loadWorkspace(id);
+}
 
 class _Settings extends Mock implements SettingsRepository {}
 

@@ -65,3 +65,52 @@ Precision is bounded by the existing double model; source precision already lost
 during parsing is not recovered. Overview quantities wrap within narrow layouts.
 Regressions live in `inventory_ui_test.dart` and the mounted
 `inventory_fractional_stock_test.dart` 320px/2x text case.
+
+## Native Inventory navigation and analytics
+
+Native Overview defaults to the current confirmed stock snapshot. Its scope and
+possible overlap are available through the info control; there are no duplicate
+Sell or Create product actions. Products and Sales own their primary floating
+create action. While data refreshes, that action uses only a previously verified
+permission hint for the same signed-in actor and workspace. Unknown permissions
+never grant an action; fresh permission denial revokes it, and API authorization
+continues to govern writes and replay. Account/workspace switches clear visible
+records, grants and pending-response ownership before loading the new scope.
+
+The receipt activity chart defaults to seven days, with a thirty-day option.
+It groups the bounded recent Overview receipts by their recorded creation date
+in the device's local timezone, deduplicating IDs. It explicitly shows sample
+coverage and missing dates; absent days are unknown rather than fabricated zeros.
+This filter does not change the current stock snapshot. Financial totals in Sales
+are labeled as loaded receipts, separated by explicit receipt currency, and
+exclude receipts with unknown currency and locally pending edits. Quantities
+remain beside their original unit and warehouse; unlike units are never summed.
+
+Manage is a catalog hub with dedicated Owners, Categories, Manufacturers, Units,
+Warehouses, Finance categories and Sales periods screens. Finance categories
+remain a reference list with the existing Finance management contract; no new
+Inventory mutation capability is implied. Sales period editing preserves the
+existing API and immutable historical receipts. Creating a period requires the
+same create-sales permission as POST; editing or archiving requires the
+update-sales permission used by PATCH. Each action remains independently gated
+when using verified offline hints, and fresh denials revoke it. Audits has its own navigation
+entry and uses the existing audit source. Search in Sales and Audits filters
+available records and states that limited coverage; Products retains its existing
+server/local pagination search contract. Catalog pages use the shell navbar
+search and floating create action. Product editor and Checkout use one content
+scroll with a stable form action area and show prerequisite/read failures with
+retry. The native form navbar owns checkout search; category filters wrap instead
+of clipping at large text sizes.
+
+A provider read failure retains the last authorized scoped snapshot and displays
+limited-data feedback. Queued product deletion removes the catalog row
+optimistically while retaining a visible pending deletion entry linked to the
+existing offline retry/manual-conflict controls. Deletion confirmation and server
+history/destructive policies are unchanged.
+
+Regression evidence: `inventory_product_action_stability_test.dart`,
+`inventory_analytics_redesign_test.dart`, `workspace_permissions_offline_test.dart`,
+`inventory_access_cubit_test.dart`, the mounted stock-health/compact/fractional
+stock tests, and existing editor/checkout/season/offline replay tests. Source and
+widget checks do not establish physical-device, airplane-mode, or release proof;
+exact-commit native CI builds and device verification are separate delivery gates.

@@ -299,6 +299,37 @@ void main() {
     },
   );
 
+  testWidgets(
+    'menu and navigation release prompt focus without clearing draft',
+    (tester) async {
+      final controller = TextEditingController(text: 'Unsent');
+      final focus = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focus.dispose);
+      await tester.pumpWidget(_app(controller: controller, focus: focus));
+      await tester.tap(find.byType(TextField));
+      await tester.pump();
+      expect(focus.hasFocus, isTrue);
+      await tester.tap(
+        find.byKey(const ValueKey('assistant-composer-options')),
+      );
+      await tester.pumpAndSettle();
+      expect(focus.hasFocus, isFalse);
+      expect(find.byIcon(Icons.flash_on_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.psychology_alt_rounded), findsOneWidget);
+      await tester.tapAt(const Offset(5, 5));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(TextField));
+      await tester.pump();
+      await tester.tap(
+        find.byKey(const ValueKey('assistant-navigation-toggle')),
+      );
+      await tester.pump();
+      expect(focus.hasFocus, isFalse);
+      expect(controller.text, 'Unsent');
+    },
+  );
+
   testWidgets('empty keyboard submit never sends a blank message', (
     tester,
   ) async {

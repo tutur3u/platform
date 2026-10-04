@@ -46,6 +46,7 @@
                   "platform/features/meet-solo-mode",
                   "platform/features/meet-together",
                   "platform/features/mobile-workspace-tools",
+                  "platform/features/mobile-settings-shell",
                   "platform/features/hidden-workspaces",
                   "platform/features/inventory-stock-health",
                   "platform/features/inventory-season-pricing-mobile",

@@ -15,7 +15,10 @@ void main() {
 
     setUp(() {
       repository = _MockInventoryAccessRepository();
-      cubit = InventoryAccessCubit(repository: repository);
+      cubit = InventoryAccessCubit(
+        repository: repository,
+        currentUserId: () => 'actor',
+      );
     });
 
     tearDown(() async {
@@ -41,6 +44,10 @@ void main() {
       },
       act: (cubit) => cubit.syncWorkspace('team-1'),
       expect: () => const [
+        InventoryAccessState(
+          status: InventoryAccessStatus.loading,
+          wsId: 'team-1',
+        ),
         InventoryAccessState(
           status: InventoryAccessStatus.loaded,
           enabled: true,

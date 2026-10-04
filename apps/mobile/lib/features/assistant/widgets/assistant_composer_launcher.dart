@@ -17,8 +17,8 @@ class AssistantComposerFab extends StatelessWidget {
     return Tooltip(
       message: label,
       child: SizedBox(
-        height: 48,
-        width: tablet ? 220 : 48,
+        height: 52,
+        width: tablet ? 220 : 52,
         child: FilledButton(
           onPressed: onPressed,
           style: FilledButton.styleFrom(padding: const EdgeInsets.all(12)),

@@ -33,7 +33,7 @@ Preserve these user-visible defaults unless the user explicitly changes the prod
 - Selected end dates default to `11:59 PM` at the end of the day.
 - A task should become overdue only after today's midnight has passed, meaning the next day.
 - Task descriptions open in view mode. Enter edit mode only when the edit FAB is clicked.
-- Hide task-detail shell chrome that competes with the task title area when the route/view pattern supports it.
+- Keep the shell navbar on task details; register the task title and actions there and omit competing body AppBars/topbars.
 - After task mutations, refresh the affected task list instead of relying only on a full board reload.
 
 ## Code Patterns

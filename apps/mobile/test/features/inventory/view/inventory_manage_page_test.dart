@@ -15,6 +15,7 @@ import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/inventory/view/inventory_catalog_hub.dart';
 import 'package:mobile/features/inventory/view/inventory_manage_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -159,6 +160,7 @@ class _Harness {
           BlocProvider<AuthCubit>.value(value: auth),
         ],
         child: InventoryManagePage(
+          section: InventoryCatalogSection.owners,
           inventoryRepository: writes ?? inventory,
           financeRepository: finance,
           permissionsRepository: permissions,
@@ -212,7 +214,11 @@ void main() {
       await h.mount(tester, writes: writes);
       h.complete(0, 'Synthetic owner');
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip(deleting ? 'Delete' : 'Add owner'));
+      await tester.tap(
+        deleting
+            ? find.byTooltip('Delete')
+            : find.bySemanticsLabel('Add owner'),
+      );
       await tester.pumpAndSettle();
       if (!deleting) {
         await tester.enterText(find.byType(EditableText), 'Synthetic');
@@ -247,18 +253,18 @@ void main() {
       h.complete(0, 'Owner A');
       await tester.pumpAndSettle();
       expect(find.text('Owner A'), findsOneWidget);
-      expect(find.byTooltip('Add owner'), findsOneWidget);
+      expect(find.bySemanticsLabel('Add owner'), findsOneWidget);
       expect(find.byTooltip('Edit'), findsOneWidget);
       expect(find.byTooltip('Delete'), findsOneWidget);
       h.workspaceStream.add(_workspace('b'));
       await tester.pump();
       await tester.pump();
       expect(find.text('Owner A'), findsNothing);
-      expect(find.byTooltip('Add owner'), findsNothing);
+      expect(find.bySemanticsLabel('Add owner'), findsNothing);
       h.complete(1, 'Owner B', manage: false);
       await tester.pumpAndSettle();
       expect(find.text('Owner B'), findsOneWidget);
-      expect(find.byTooltip('Add owner'), findsNothing);
+      expect(find.bySemanticsLabel('Add owner'), findsNothing);
       expect(find.byTooltip('Edit'), findsNothing);
       expect(find.byTooltip('Delete'), findsNothing);
       expect(tester.takeException(), isNull);
@@ -305,7 +311,7 @@ void main() {
     h.grants[1].completeError(Exception('Synthetic permission error'));
     await tester.pumpAndSettle();
     expect(find.text('Owner A'), findsNothing);
-    expect(find.byTooltip('Add owner'), findsNothing);
+    expect(find.bySemanticsLabel('Add owner'), findsNothing);
     expect(find.text('Retry'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
@@ -322,11 +328,11 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(find.text('Actor A owner'), findsNothing);
-      expect(find.byTooltip('Add owner'), findsNothing);
+      expect(find.bySemanticsLabel('Add owner'), findsNothing);
       h.complete(1, 'Actor B owner', manage: false);
       await tester.pumpAndSettle();
       expect(find.text('Actor B owner'), findsOneWidget);
-      expect(find.byTooltip('Add owner'), findsNothing);
+      expect(find.bySemanticsLabel('Add owner'), findsNothing);
       h.authStream.add(const AuthState.unauthenticated());
       await tester.pump();
       await tester.pump();
@@ -343,7 +349,7 @@ void main() {
     await h.mount(tester);
     h.complete(0, 'Owner A');
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Add owner'));
+    await tester.tap(find.bySemanticsLabel('Add owner'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(EditableText), 'Synthetic new owner');
     h.workspaceStream.add(_workspace('b'));
@@ -407,7 +413,7 @@ void main() {
     await h.mount(tester);
     h.complete(0, 'Owner A');
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Add owner'));
+    await tester.tap(find.bySemanticsLabel('Add owner'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(EditableText), 'Synthetic new owner');
     await tester.testTextInput.receiveAction(TextInputAction.done);
@@ -425,7 +431,7 @@ void main() {
     h.complete(1, 'Owner B', manage: false);
     await tester.pumpAndSettle();
     expect(find.text('Owner B'), findsOneWidget);
-    expect(find.byTooltip('Add owner'), findsNothing);
+    expect(find.bySemanticsLabel('Add owner'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

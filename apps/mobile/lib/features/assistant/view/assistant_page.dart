@@ -36,12 +36,13 @@ import 'package:mobile/features/assistant/widgets/assistant_attachment_sheet_bod
 import 'package:mobile/features/assistant/widgets/assistant_chat_feedback.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
-import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet.dart';
+import 'package:mobile/features/assistant/widgets/assistant_dock_navigation.dart';
 import 'package:mobile/features/assistant/widgets/assistant_history_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_info_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_mode_view.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_stage_card.dart';
+import 'package:mobile/features/assistant/widgets/assistant_morphing_dock.dart';
 import 'package:mobile/features/assistant/widgets/assistant_scroll_to_bottom_overlay.dart';
 import 'package:mobile/features/assistant/widgets/assistant_settings_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_starter_prompts.dart';
@@ -79,9 +80,6 @@ class _AssistantPageState extends State<AssistantPage>
   static const _assistantScrollPhysics = AlwaysScrollableScrollPhysics(
     parent: BouncingScrollPhysics(),
   );
-  static const _hiddenComposerReservedSpace = 88.0;
-  static const _assistantFabBottomOffset = 16.0;
-  static const _assistantFabSideOffset = 16.0;
   static const _composerFabThreshold = 56.0;
   static const _scrollToBottomFabThreshold = 160.0;
 
@@ -335,7 +333,7 @@ class _AssistantPageState extends State<AssistantPage>
 
   void _toggleComposerNavigation() {
     _dismissKeyboard();
-    context.read<AssistantChromeCubit>().toggleComposerNavigation();
+    _collapseComposerToFab();
   }
 
   void _dismissKeyboard() {
@@ -412,6 +410,7 @@ class _AssistantPageState extends State<AssistantPage>
       return;
     }
 
+    if (!value) _dismissKeyboard();
     context.read<AssistantChromeCubit>().setComposerVisible(visible: value);
     setState(() => _isComposerVisible = value);
   }
@@ -677,15 +676,9 @@ class _AssistantPageState extends State<AssistantPage>
     BuildContext context, {
     required bool isComposerVisible,
   }) {
-    return (isComposerVisible
-            ? assistantComposerHeight(context) + 24
-            : _hiddenComposerReservedSpace) +
-        MediaQuery.paddingOf(context).bottom +
-        (isComposerVisible &&
-                context.read<AssistantChromeCubit>().state.navigationExpanded &&
-                MediaQuery.viewInsetsOf(context).bottom == 0
-            ? assistantExpandedNavigationClearance
-            : 0);
+    return assistantComposerHeight(context) +
+        24 +
+        assistantBottomSafeArea(context);
   }
 
   void _maybeResetEmptyStateScroll({

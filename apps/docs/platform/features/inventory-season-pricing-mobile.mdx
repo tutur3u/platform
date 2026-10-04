@@ -108,7 +108,12 @@ cannot turn confirmed creation into a resubmittable cart. Confirmation is stored
 before its journal can be acknowledged. A confirmation-write failure retains the
 prepared record for next-entry receipt reconciliation while keeping known success
 terminal in the current view. Acknowledgement removes only a matching confirmed
-record. Acknowledgement does not reopen the terminal controller/cart: another sale
+record. Embedded checkout exits through Android back, shell dock back, or
+ordinary navigation acknowledge a known completed receipt when the page leaves.
+Pending requests and confirmations not durably written remain recoverable; an
+exit never silently discards them. This is covered by the mounted
+`inventory_checkout_recovery_exit_test.dart` navigation matrix.
+Acknowledgement does not reopen the terminal controller/cart: another sale
 requires a new checkout instance. Corrupt or unknown-version journals intentionally
 fail closed for manual reconciliation; deletion without a verified receipt could
 produce a duplicate invoice. Expired quotes stay non-actionable and hidden while

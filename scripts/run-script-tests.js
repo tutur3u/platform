@@ -119,10 +119,14 @@ function runScriptTests({
     return 0;
   }
 
-  const result = spawnImpl(process.execPath, ['--test', ...files], {
-    cwd: repoRoot,
-    stdio: 'inherit',
-  });
+  const result = spawnImpl(
+    process.execPath,
+    ['--experimental-strip-types', '--test', ...files],
+    {
+      cwd: repoRoot,
+      stdio: 'inherit',
+    }
+  );
   if (result.error) throw result.error;
   return result.status ?? 1;
 }

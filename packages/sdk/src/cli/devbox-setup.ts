@@ -12,6 +12,10 @@ import {
   type DevboxDoctorReport,
 } from './devbox-doctor';
 import {
+  type DevboxExecutionMode,
+  parseDevboxExecutionMode,
+} from './devbox-host-protection';
+import {
   type DevboxSetupConfirm,
   ensurePlatformCheckout,
   resolveDevboxCheckout,
@@ -33,6 +37,10 @@ import {
 } from './devbox-setup-service';
 
 export interface DevboxSetupOptions {
+  executionMode?: DevboxExecutionMode;
+  dockerHost?: string;
+  controlUrl?: string;
+  judgeImages?: string;
   agent?: boolean;
   cloneInto?: string;
   client?: TuturuuuUserClient;
@@ -172,6 +180,16 @@ export async function runDevboxSetup(
   const stdout =
     options.stdout ?? ((value: string) => process.stdout.write(value));
   let doctor = options.doctorReport ?? (await createDevboxDoctorReport());
+
+  if (doctor.executionPolicyError) {
+    if (options.json) printJson(doctor, stdout);
+    else
+      stdout(
+        `Invalid runner execution policy: ${doctor.executionPolicyError}\n`
+      );
+    process.exitCode = 1;
+    return doctor;
+  }
 
   if (doctor.missingTools.length > 0) {
     if (!options.yes) {
@@ -324,6 +342,12 @@ export async function runDevboxSetupCommand({
   }
 
   await runDevboxSetup({
+    executionMode: getFlag(flags, 'execution-mode')
+      ? parseDevboxExecutionMode(getFlag(flags, 'execution-mode'))
+      : undefined,
+    dockerHost: getFlag(flags, 'docker-host'),
+    controlUrl: getFlag(flags, 'control-url'),
+    judgeImages: getFlag(flags, 'judge-images'),
     agent: flags.agent === true,
     client,
     cloneInto: getFlag(flags, 'clone-into'),

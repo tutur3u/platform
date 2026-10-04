@@ -81,6 +81,11 @@ export type {
   WorkspaceCalendarUpdatePayload,
 } from './platform-calendar';
 export { CalendarClient } from './platform-calendar';
+export type {
+  DevboxFleetRunner,
+  DevboxFleetSnapshot,
+} from './platform-devbox-fleet';
+export { DevboxFleetClient } from './platform-devbox-fleet';
 export type { ExternalAppConfiguration } from './platform-external-admin';
 export { ExternalAdminClient, ExternalClient } from './platform-external-admin';
 export type {
