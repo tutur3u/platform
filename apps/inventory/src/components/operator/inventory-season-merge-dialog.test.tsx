@@ -17,6 +17,7 @@ const state = vi.hoisted(() => ({
   error: false,
   fetching: false,
   mutationError: false,
+  formatDateTime: vi.fn(() => 'localized-expiry'),
   refetch: vi.fn(),
   mutate: vi.fn(),
   queries: [] as { enabled: boolean; queryKey: unknown[] }[],
@@ -53,7 +54,11 @@ vi.mock('@tuturuuu/internal-api/inventory', () => ({
   applyInventorySeasonMerge: vi.fn(),
   previewInventorySeasonMerge: vi.fn(),
 }));
-vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string, values?: { time?: string }) =>
+    key === 'expires' ? `expires ${values?.time}` : key,
+  useFormatter: () => ({ dateTime: state.formatDateTime }),
+}));
 vi.mock('@tuturuuu/ui/dialog', () => ({
   Dialog: ({
     children,
@@ -214,6 +219,14 @@ afterEach(() => {
   vi.useRealTimers();
 });
 describe('bounded season merge review', () => {
+  it('shows expiry through the locale-aware time formatter', () => {
+    open();
+    expect(screen.getByText('expires localized-expiry')).toBeTruthy();
+    expect(state.formatDateTime).toHaveBeenCalledWith(
+      new Date(state.data.expiresAt as string),
+      { timeStyle: 'short' }
+    );
+  });
   it('does not mount queries while closed and excludes permanent aliases', () => {
     render(<InventorySeasonMergeDialog wsId="ws" periods={periods} />);
     expect(state.queries).toHaveLength(0);

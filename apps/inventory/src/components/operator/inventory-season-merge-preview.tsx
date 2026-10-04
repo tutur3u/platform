@@ -1,7 +1,7 @@
 'use client';
 
 import type { InventorySeasonMergePreview } from '@tuturuuu/internal-api/inventory';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 
 export function InventorySeasonMergePreviewContent({
   data,
@@ -9,6 +9,7 @@ export function InventorySeasonMergePreviewContent({
   data: InventorySeasonMergePreview;
 }) {
   const t = useTranslations('inventory.operator.seasonMerge');
+  const format = useFormatter();
   const range = (from: string | null, to: string | null) =>
     `${from || t('unbounded')} → ${to || t('unbounded')}`;
   return (
@@ -118,7 +119,13 @@ export function InventorySeasonMergePreviewContent({
           ))}
         </div>
       ) : null}
-      <p>{t('expires', { time: data.expiresAt })}</p>
+      <p>
+        {t('expires', {
+          time: format.dateTime(new Date(data.expiresAt), {
+            timeStyle: 'short',
+          }),
+        })}
+      </p>
     </div>
   );
 }

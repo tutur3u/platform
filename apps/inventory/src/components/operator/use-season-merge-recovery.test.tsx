@@ -120,7 +120,7 @@ describe('season merge exact request recovery', () => {
       expect(hook.onComplete).not.toHaveBeenCalled();
     }
   );
-  it('retains an ambiguous request when retry times out with409 while the original can still commit', async () => {
+  it('retains an ambiguous request when retry times out with 409 while the original can still commit', async () => {
     api.apply
       .mockRejectedValueOnce(new TypeError('synthetic lost response'))
       .mockRejectedValueOnce(
