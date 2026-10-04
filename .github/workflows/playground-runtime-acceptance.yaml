@@ -96,7 +96,7 @@ jobs:
         run: bun x --no-install vitest run --config vitest.playground-acceptance.config.ts
       - name: Classify bounded synthetic runtime panic signatures
         if: failure() && steps.sdk_acceptance.outcome == 'failure'
-        run: sudo node scripts/ci/playground-runtime-panic.js "$RUNNER_TEMP" "$TUTURUUU_PLAYGROUND_POOL_ID"
+        run: sudo "$(command -v node)" scripts/ci/playground-runtime-panic.js "$RUNNER_TEMP" "$TUTURUUU_PLAYGROUND_POOL_ID"
       - name: Always remove only this run's owned containers and registry volume
         if: always()
         run: |

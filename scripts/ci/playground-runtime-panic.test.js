@@ -87,6 +87,11 @@ test('workflow retains panic-only instrumentation and unconditional owned cleanu
       "if: failure() && steps.sdk_acceptance.outcome == 'failure'"
     )
   );
+  assert.ok(
+    workflow.includes(
+      'sudo "$(command -v node)" scripts/ci/playground-runtime-panic.js'
+    )
+  );
   assert.ok(workflow.includes('sudo mkdir -m 700 "$panic_dir"'));
   assert.ok(
     workflow.includes(
