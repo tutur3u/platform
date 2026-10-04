@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { getByLabelText } from '@testing-library/react';
 import type { LettinNode } from '@tuturuuu/internal-api/lettin';
 import { act, useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -53,7 +54,9 @@ it('initializes the real editor and applies Markdown to the current draft', asyn
     await act(async () =>
       container.querySelector<HTMLButtonElement>('button')!.click()
     );
-    const textarea = container.querySelector('textarea')!;
+    const textarea = getByLabelText(container, 'markdownSource', {
+      exact: true,
+    }) as HTMLTextAreaElement;
     expect(textarea).not.toBeNull();
     await act(async () => {
       Object.getOwnPropertyDescriptor(

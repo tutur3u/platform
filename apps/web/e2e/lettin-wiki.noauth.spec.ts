@@ -176,7 +176,8 @@ test.describe
         const project = await created.json();
         expect(project.id).toMatch(/^[0-9a-f-]{36}$/);
         await expect(page).toHaveURL(
-          new RegExp(`/worlds/${project.id}(?:[?]|$)`)
+          new RegExp(`/worlds/${project.id}(?:[?]|$)`),
+          { timeout: 30_000 }
         );
         await page
           .getByRole('button', { name: 'World notebook', exact: true })

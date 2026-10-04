@@ -96,6 +96,7 @@ export function RichEditor({
         <label className="block p-4">
           <span className="sr-only">{t('markdownSource')}</span>
           <Textarea
+            aria-label={t('markdownSource')}
             className="min-h-80 font-mono"
             value={source}
             disabled={readOnly}

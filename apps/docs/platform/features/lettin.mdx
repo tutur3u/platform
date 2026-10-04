@@ -86,6 +86,13 @@ manage workspace membership and roles through the existing platform settings.
 
 ## Drafts and publishing
 
+The private notebook Markdown source field has a stable, localized accessible
+name independent of its formatting hint or validation message. This applies to
+Markdown editing on the world notebook and entry editor; read-only documents
+retain their existing editing restriction. The mounted `rich-editor.test.tsx`
+regression checks the exact field label with the real editor, and
+`lettin-wiki.noauth.spec.ts` checks browser save and reload behavior.
+
 Saving never changes the public revision. Publish a world's notebook to make its
 public page visible, and publish entries separately. Unpublishing a world hides all
 its entries from public reads. Publishing it again exposes entries that remain
