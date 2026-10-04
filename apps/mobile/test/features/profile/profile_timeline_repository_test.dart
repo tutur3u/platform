@@ -274,6 +274,51 @@ void main() {
     );
   });
 
+  for (final switchActor in [true, false]) {
+    test(
+      'delayed cache init rejects obsolete scope actor=$switchActor',
+      () async {
+        final api = _ScenarioApi();
+        repository.dispose();
+        await store.closeForTesting();
+        final entered = Completer<void>();
+        final release = Completer<Directory>();
+        store = CacheStore.forTesting(
+          secureStorage: storage,
+          directoryResolver: () {
+            if (!entered.isCompleted) entered.complete();
+            return release.future;
+          },
+        );
+        repository = ProfileTimelineRepository(
+          apiClient: api,
+          cacheStore: store,
+        );
+        api.responses.add(_page([_item('obsolete', 'task')]));
+        final oldRefresh = repository.refresh('personal', 'owner');
+        await entered.future;
+        Future<ProfileTimelineSnapshot>? newRefresh;
+        if (switchActor) {
+          api.actor = 'other-owner';
+        } else {
+          api.responses.add(_page([_item('new-session', 'task')]));
+          newRefresh = repository.refresh('personal', 'owner');
+        }
+        release.complete(directory);
+        await expectLater(oldRefresh, throwsFormatException);
+        if (newRefresh != null) await newRefresh;
+        await reopen();
+        final retained = await repository.cached('personal', 'owner');
+        if (switchActor) {
+          expect(retained, isNull);
+          expect(await repository.cached('personal', 'other-owner'), isNull);
+        } else {
+          expect(retained!.items.single.id, 'new-session');
+        }
+      },
+    );
+  }
+
   test(
     'capped partial result retains completeness through encrypted cache',
     () async {

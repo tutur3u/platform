@@ -222,6 +222,7 @@ class ProfileTimelineRepository {
       try {
         await _store.write(
           key: _key(workspaceId, userId),
+          checkScope: () => _checkSession(userId, generation),
           policy: CachePolicies.summary,
           payload: {
             'version': 1,
