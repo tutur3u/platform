@@ -84,15 +84,17 @@ for (const [name, aggregate, checkName, shardName] of [
     const job = workflow.jobs[aggregate];
     assert.equal(job.name, checkName);
     const condition =
-      "needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'";
+      "needs.duplicate-validation.outputs.run_checks == 'true' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'";
     assert.equal(job.if, shardName ? `always() && ${condition}` : condition);
     assert.deepEqual(
       job.needs,
-      shardName ? ['check-ci', 'test-shards'] : ['check-ci']
+      shardName
+        ? ['check-ci', 'duplicate-validation', 'test-shards']
+        : ['check-ci']
     );
     if (shardName) {
       const shard = workflow.jobs['test-shards'];
-      assert.deepEqual(shard.needs, ['check-ci']);
+      assert.deepEqual(shard.needs, ['check-ci', 'duplicate-validation']);
       assert.equal(shard.if, condition);
       assert.equal(shard.name, `${shardName} (${expression('matrix.shard')})`);
       assert.deepEqual(shard.strategy.matrix.shard, [0, 1, 2, 3]);
@@ -110,12 +112,12 @@ for (const [name, aggregate, checkName, shardName] of [
       });
       assert.equal(
         workflow.concurrency.group,
-        `${expression('github.workflow')}-${expression("github.ref == 'refs/heads/release-please--branches--production--release-notes' && github.sha || github.ref")}`
+        `${expression('github.workflow')}-${expression('github.ref')}-${expression("(github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')) && github.sha || 'latest'")}`
       );
       assert.equal(
         workflow.concurrency['cancel-in-progress'],
         expression(
-          "github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && github.ref != 'refs/heads/release-please--branches--production--release-notes'"
+          "github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--')"
         )
       );
     }
