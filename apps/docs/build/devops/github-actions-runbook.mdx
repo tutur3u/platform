@@ -524,6 +524,28 @@ jobs pass the dedicated repository `TURBO_TOKEN` and `TURBO_TEAM` variable,
 while pull-request and Dependabot jobs leave both inputs empty and use the
 task-family local fallback cache.
 
+The secretless fallback archives only `.turbo/cache` under v2 keys partitioned
+by OS, architecture, task family, Turbo configuration hash, lockfile hash, and
+commit. Restoration tries the exact key, then the same-lock prefix. Only
+`type-check.yaml` opts into a final same-config prefix across lock generations.
+Turbo still validates each task hash and both dependency builds and type checks
+run; a changed lockfile can invalidate every task even after archive restoration.
+Only non-PR, non-Dependabot jobs on the repository default branch save archives.
+Feature, production, PR, and Dependabot runs remain restore-only, with GitHub's
+branch cache scope preventing main from restoring feature-produced entries.
+The protected remote-token expressions remain unchanged: this does not enable
+feature-branch Turbo Remote Cache.
+
+The action exposes `cache-hit` (exact-key match) and `cache-matched-key` (empty on
+miss). Its job summary distinguishes archive MISS, exact restore, and prefix
+restore from actual Turbo task hits. Inspect each command's Cached/Tasks totals
+before claiming reuse. A successful default-branch run must seed a new v2 archive;
+deleted archives cannot be recovered by broader prefixes. Before claiming a
+speedup, record the exact CI SHA, archive size, matched key, per-task hits, and
+elapsed time; archive download cost and retention can outweigh reuse.
+Regression coverage: `node --test .github/actions/setup-turbo-fallback-cache/action.test.js`.
+
+
 Vercel deploy credentials must stay environment-scoped. Do not put
 `${{ secrets.* }}` values in a Vercel workflow-level `env:` block, and do not
 export production Supabase, encryption, or provider secrets from GitHub

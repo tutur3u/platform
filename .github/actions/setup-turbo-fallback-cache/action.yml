@@ -4,23 +4,73 @@ inputs:
   family:
     description: Stable task family used to isolate local Turbo cache entries.
     required: true
+  cross-lock-restore:
+    description: Allow older lock generations within the same family and Turbo configuration.
+    required: false
+    default: 'false'
+outputs:
+  cache-hit:
+    description: Whether the archive key matched exactly; false can still mean a prefix restore.
+    value: ${{ steps.trusted.outputs.cache-hit || steps.readonly.outputs.cache-hit }}
+  cache-matched-key:
+    description: Restored archive key; empty means an archive miss.
+    value: ${{ steps.trusted.outputs.cache-matched-key || steps.readonly.outputs.cache-matched-key }}
 runs:
   using: composite
   steps:
-    - name: Restore and save trusted Turbo fallback cache
+    - name: Restore trusted Turbo fallback cache
+      id: trusted
+      if: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+      uses: actions/cache/restore@v6
+      with:
+        path: .turbo/cache
+        key: turbo-fallback-v2-${{ runner.os }}-${{ runner.arch }}-${{ inputs.family }}-${{ hashFiles('turbo.json') }}-${{ hashFiles('bun.lock') }}-${{ github.sha }}
+        restore-keys: |
+          turbo-fallback-v2-${{ runner.os }}-${{ runner.arch }}-${{ inputs.family }}-${{ hashFiles('turbo.json') }}-${{ hashFiles('bun.lock') }}-
+          ${{ inputs['cross-lock-restore'] == 'true' && format('turbo-fallback-v2-{0}-{1}-{2}-{3}-', runner.os, runner.arch, inputs.family, hashFiles('turbo.json')) || '' }}
+
+    # The combined action exposes no matched-key output. Restore separately;
+    # lookup-only avoids a second download while retaining its success-only post save.
+    - name: Register trusted Turbo fallback post-job save
+      id: writer
       if: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
       uses: actions/cache@v6
       with:
-        path: .turbo
-        key: turbo-fallback-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.family }}-${{ hashFiles('bun.lock', 'turbo.json') }}-${{ github.sha }}
+        lookup-only: true
+        path: .turbo/cache
+        key: turbo-fallback-v2-${{ runner.os }}-${{ runner.arch }}-${{ inputs.family }}-${{ hashFiles('turbo.json') }}-${{ hashFiles('bun.lock') }}-${{ github.sha }}
         restore-keys: |
-          turbo-fallback-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.family }}-${{ hashFiles('bun.lock', 'turbo.json') }}-
+          turbo-fallback-v2-${{ runner.os }}-${{ runner.arch }}-${{ inputs.family }}-${{ hashFiles('turbo.json') }}-${{ hashFiles('bun.lock') }}-
+          ${{ inputs['cross-lock-restore'] == 'true' && format('turbo-fallback-v2-{0}-{1}-{2}-{3}-', runner.os, runner.arch, inputs.family, hashFiles('turbo.json')) || '' }}
 
     - name: Restore Turbo fallback cache without saving
+      id: readonly
       if: ${{ github.event_name == 'pull_request' || github.actor == 'dependabot[bot]' || github.ref != format('refs/heads/{0}', github.event.repository.default_branch) }}
       uses: actions/cache/restore@v6
       with:
-        path: .turbo
-        key: turbo-fallback-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.family }}-${{ hashFiles('bun.lock', 'turbo.json') }}-${{ github.event.pull_request.base.sha || github.sha }}
+        path: .turbo/cache
+        key: turbo-fallback-v2-${{ runner.os }}-${{ runner.arch }}-${{ inputs.family }}-${{ hashFiles('turbo.json') }}-${{ hashFiles('bun.lock') }}-${{ github.event.pull_request.base.sha || github.sha }}
         restore-keys: |
-          turbo-fallback-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.family }}-${{ hashFiles('bun.lock', 'turbo.json') }}-
+          turbo-fallback-v2-${{ runner.os }}-${{ runner.arch }}-${{ inputs.family }}-${{ hashFiles('turbo.json') }}-${{ hashFiles('bun.lock') }}-
+          ${{ inputs['cross-lock-restore'] == 'true' && format('turbo-fallback-v2-{0}-{1}-{2}-{3}-', runner.os, runner.arch, inputs.family, hashFiles('turbo.json')) || '' }}
+
+    - name: Report Turbo fallback archive restore
+      shell: bash
+      env:
+        MATCHED_KEY: ${{ steps.trusted.outputs.cache-matched-key || steps.readonly.outputs.cache-matched-key }}
+        CACHE_HIT: ${{ steps.trusted.outputs.cache-hit || steps.readonly.outputs.cache-hit }}
+      run: |
+        set -euo pipefail
+        if [[ -z "$MATCHED_KEY" ]]; then
+          result="MISS (no archive restored)"
+        elif [[ "$CACHE_HIT" == 'true' ]]; then
+          result="exact archive restore"
+        else
+          result="prefix archive restore"
+        fi
+        {
+          printf '### Turbo fallback archive\n\n'
+          printf 'Result: %s\n\n' "$result"
+          printf 'Matched key: `%s`\n\n' "${MATCHED_KEY:-none}"
+          printf 'Archive restoration is not a Turbo task hit. Turbo validates each task hash; inspect the build and type-check Cached/Tasks totals for actual reuse. Checks always run.\n'
+        } >> "$GITHUB_STEP_SUMMARY"
