@@ -187,7 +187,14 @@ without actor, workspace, IP, credentials or response bodies. This does not
 bypass an IP block or make an exhausted preferences bucket unlimited.
 Regression coverage: `preference-guard.test.ts` exact route/method boundaries
 and `gateway.test.ts` upstream diagnostic isolation. Actual authenticated
-mobile recovery must be verified after deployment.
+mobile recovery must be verified after deployment. Mobile's API error retains
+only fixed known reason, policy, caller and window values from a 429 response,
+and includes those safe fields in its diagnostic log. Unknown values become
+`unknown`; URLs, actor/workspace identifiers, IPs, cookies, credentials and
+response bodies are never included in that diagnostic. This preserves the
+server rejection and cooldown rather than treating an unavailable preference as
+success. Regression: `api_client_error_contract_test.dart` exercises the HTTP
+boundary and rejects private or arbitrary header values.
 
 ## OAuth Token Safety
 
