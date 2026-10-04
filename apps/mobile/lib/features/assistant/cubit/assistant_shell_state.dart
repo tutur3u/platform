@@ -17,7 +17,7 @@ class AssistantShellState extends Equatable {
     this.activeCredits = const AssistantCredits(),
     this.availableModels = const [],
     this.selectedModel = _defaultAssistantModel,
-    this.thinkingMode = AssistantThinkingMode.fast,
+    this.thinkingMode = AssistantThinkingMode.thinking,
     this.creditSource = AssistantCreditSource.workspace,
     this.workspaceContextId = 'personal',
     this.workspaceCreditLocked = false,

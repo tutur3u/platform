@@ -44,6 +44,19 @@ void main() {
     addTearDown(cubit.close);
   });
 
+  test('stored Fast is migrated and cannot change native Thinking', () async {
+    final preferences = AssistantPreferences(currentUserId: () => 'user');
+    await preferences.saveThinkingMode('ws', AssistantThinkingMode.fast);
+    await cubit.loadWorkspace(workspace);
+    expect(cubit.state.thinkingMode, AssistantThinkingMode.thinking);
+    await cubit.setThinkingMode(AssistantThinkingMode.fast);
+    expect(cubit.state.thinkingMode, AssistantThinkingMode.thinking);
+    expect(
+      await preferences.loadThinkingMode('ws'),
+      AssistantThinkingMode.thinking,
+    );
+  });
+
   test('missing optional Calendar does not erase Pro balances', () async {
     // Async errors model a real network failure after all requests start.
     when(() => repository.fetchCalendarInsight('ws')).thenAnswer((_) async {

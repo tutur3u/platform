@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/widgets/assistant_dock_surface.dart';
 import 'package:mobile/features/assistant/widgets/assistant_model_picker_tile.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
@@ -34,7 +35,7 @@ class _AssistantModelPickerSheetState extends State<AssistantModelPickerSheet> {
   String? _provider;
   String? _pendingFavorite;
   bool _favoritesOnly = false;
-  bool _hideLocked = false;
+  bool _hideLocked = true;
   bool _favoritesError = false;
   bool _favoritesLoading = true;
 
@@ -147,129 +148,137 @@ class _AssistantModelPickerSheetState extends State<AssistantModelPickerSheet> {
     final providers =
         widget.models.map((model) => model.provider).toSet().toList()..sort();
     final visible = _visible;
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewInsetsOf(context).bottom,
-        ),
-        child: SizedBox(
-          height: MediaQuery.sizeOf(context).height * 0.78,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: Text(
-                  context.l10n.assistantModelLabel,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TextField(
-                  controller: _search,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search_rounded),
-                    hintText: context.l10n.assistantSearchModels,
+    return AssistantDockSurface(
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.viewInsetsOf(context).bottom,
+          ),
+          child: SizedBox(
+            height:
+                (MediaQuery.sizeOf(context).height -
+                    MediaQuery.viewInsetsOf(context).bottom) *
+                0.78,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Text(
+                    context.l10n.assistantModelLabel,
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 42,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  children: [
-                    _filterChip(
-                      context.l10n.assistantModelAll,
-                      !_favoritesOnly && _provider == null,
-                      () => setState(() {
-                        _favoritesOnly = false;
-                        _provider = null;
-                      }),
-                    ),
-                    if (_canSyncFavorites)
-                      _filterChip(
-                        context.l10n.assistantModelFavorites,
-                        _favoritesOnly,
-                        () => setState(() {
-                          _favoritesOnly = true;
-                          _provider = null;
-                        }),
-                        enabled: !_favoritesLoading,
-                      ),
-                    for (final provider in providers)
-                      _filterChip(
-                        provider,
-                        !_favoritesOnly && _provider == provider,
-                        () => setState(() {
-                          _favoritesOnly = false;
-                          _provider = provider;
-                        }),
-                      ),
-                  ],
-                ),
-              ),
-              SwitchListTile.adaptive(
-                dense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                title: Text(context.l10n.assistantModelHideLocked),
-                value: _hideLocked,
-                onChanged: (value) => setState(() => _hideLocked = value),
-              ),
-              if (_favoritesError)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
+                  child: TextField(
+                    controller: _search,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      hintText: context.l10n.assistantSearchModels,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 42,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     children: [
-                      Expanded(
-                        child: Text(
-                          context.l10n.assistantModelFavoritesError,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
+                      _filterChip(
+                        context.l10n.assistantModelAll,
+                        !_favoritesOnly && _provider == null,
+                        () => setState(() {
+                          _favoritesOnly = false;
+                          _provider = null;
+                        }),
+                      ),
+                      if (_canSyncFavorites)
+                        _filterChip(
+                          context.l10n.assistantModelFavorites,
+                          _favoritesOnly,
+                          () => setState(() {
+                            _favoritesOnly = true;
+                            _provider = null;
+                          }),
+                          enabled: !_favoritesLoading,
                         ),
-                      ),
-                      IconButton(
-                        tooltip: context.l10n.commonRetry,
-                        onPressed: () => unawaited(_loadFavorites()),
-                        icon: const Icon(Icons.refresh_rounded),
-                      ),
+                      for (final provider in providers)
+                        _filterChip(
+                          provider,
+                          !_favoritesOnly && _provider == provider,
+                          () => setState(() {
+                            _favoritesOnly = false;
+                            _provider = provider;
+                          }),
+                        ),
                     ],
                   ),
                 ),
-              const Divider(height: 1),
-              Expanded(
-                child: visible.isEmpty
-                    ? Center(child: Text(context.l10n.assistantModelEmpty))
-                    : ListView.builder(
-                        itemCount: visible.length,
-                        itemBuilder: (context, index) {
-                          final model = visible[index];
-                          final tile = AssistantModelPickerTile(
-                            model: model,
-                            selected: model.value == widget.selected.value,
-                            allowed: widget.isAllowed(model),
-                            favorited: _favorites.contains(model.value),
-                            showFavorite: _canSyncFavorites,
-                            favoriteEnabled:
-                                !_favoritesLoading && _pendingFavorite == null,
-                            onFavorite: () => unawaited(_toggleFavorite(model)),
-                            onSelect: () => Navigator.of(context).pop(model),
-                          );
-                          return widget.workspaceId == null
-                              ? tile
-                              : PendingSyncFrame(
-                                  workspaceId: widget.workspaceId!,
-                                  feature: 'assistant',
-                                  entityId: model.value,
-                                  child: tile,
-                                );
-                        },
-                      ),
-              ),
-            ],
+                SwitchListTile.adaptive(
+                  dense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  title: Text(context.l10n.assistantModelHideLocked),
+                  value: _hideLocked,
+                  onChanged: (value) => setState(() => _hideLocked = value),
+                ),
+                if (_favoritesError)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            context.l10n.assistantModelFavoritesError,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: context.l10n.commonRetry,
+                          onPressed: () => unawaited(_loadFavorites()),
+                          icon: const Icon(Icons.refresh_rounded),
+                        ),
+                      ],
+                    ),
+                  ),
+                const Divider(height: 1),
+                Expanded(
+                  child: visible.isEmpty
+                      ? Center(child: Text(context.l10n.assistantModelEmpty))
+                      : ListView.builder(
+                          itemCount: visible.length,
+                          itemBuilder: (context, index) {
+                            final model = visible[index];
+                            final tile = AssistantModelPickerTile(
+                              model: model,
+                              selected: model.value == widget.selected.value,
+                              allowed: widget.isAllowed(model),
+                              favorited: _favorites.contains(model.value),
+                              showFavorite: _canSyncFavorites,
+                              favoriteEnabled:
+                                  !_favoritesLoading &&
+                                  _pendingFavorite == null,
+                              onFavorite: () =>
+                                  unawaited(_toggleFavorite(model)),
+                              onSelect: () => Navigator.of(context).pop(model),
+                            );
+                            return widget.workspaceId == null
+                                ? tile
+                                : PendingSyncFrame(
+                                    workspaceId: widget.workspaceId!,
+                                    feature: 'assistant',
+                                    entityId: model.value,
+                                    child: tile,
+                                  );
+                          },
+                        ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
