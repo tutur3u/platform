@@ -38,22 +38,21 @@ import 'package:mobile/features/assistant/widgets/assistant_capture_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_chat_feedback.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
+import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet.dart';
-import 'package:mobile/features/assistant/widgets/assistant_dock_navigation.dart';
 import 'package:mobile/features/assistant/widgets/assistant_history_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_info_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_mode_view.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_stage_card.dart';
-import 'package:mobile/features/assistant/widgets/assistant_morphing_dock.dart';
 import 'package:mobile/features/assistant/widgets/assistant_scroll_to_bottom_overlay.dart';
 import 'package:mobile/features/assistant/widgets/assistant_settings_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_starter_prompts.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
 import 'package:mobile/features/assistant/widgets/assistant_voice_message_sheet.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
-import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
+import 'package:mobile/features/shell/view/shell_dock_slot.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -62,6 +61,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'assistant_page_live_actions.dart';
 part 'assistant_page_layout.dart';
+part 'assistant_page_workspace.dart';
 part 'assistant_page_attachments.dart';
 
 class AssistantPage extends StatefulWidget {
@@ -233,36 +233,6 @@ class _AssistantPageState extends State<AssistantPage>
     },
     child: _buildPage(context),
   );
-
-  void _syncWorkspace(Workspace workspace) {
-    if (workspace.id == _loadedWorkspaceId) {
-      return;
-    }
-
-    _loadedWorkspaceId = workspace.id;
-    _keepLiveWhileBrowsing = false;
-    _liveBrowsingPreferenceLoad = _loadLiveBrowsingPreference(workspace.id);
-    _lastEmptyStateResetKey = null;
-    _wasAssistantEmptyLayout = false;
-    _isComposerVisible = false;
-    _showScrollToBottomFab = false;
-    _composerVisibilityAnchorOffset = null;
-    if (mounted) {
-      context.read<AssistantChromeCubit>()
-        ..setComposerVisible(visible: false)
-        ..exitLiveMode();
-      _inputController.clear();
-      _dismissKeyboard();
-    }
-    final previousDisconnect = _workspaceDisconnect;
-    _workspaceDisconnect = () async {
-      await previousDisconnect;
-      await _liveCubit.disconnect();
-    }();
-    unawaited(_shellCubit.loadWorkspace(workspace));
-    _shellCubit.setImmersiveMode(false);
-    unawaited(_chatCubit.loadWorkspace(workspace.id));
-  }
 
   Future<void> _loadLiveBrowsingPreference(String wsId) async {
     bool value;

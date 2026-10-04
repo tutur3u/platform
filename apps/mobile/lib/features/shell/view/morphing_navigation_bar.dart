@@ -8,10 +8,12 @@ class MorphingNavigationBar extends StatefulWidget {
     required this.children,
     required this.selectedKey,
     required this.onSelected,
+    this.paintSurface = true,
     super.key,
   });
 
   final List<shad.NavigationItem> children;
+  final bool paintSurface;
   final Key? selectedKey;
   final ValueChanged<Key?> onSelected;
 
@@ -209,15 +211,19 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
                     : Duration(milliseconds: _pressed ? 105 : 240),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(26),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(
-                        alpha: theme.brightness == Brightness.dark ? 0.3 : 0.14,
-                      ),
-                      blurRadius: 24,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+                  boxShadow: widget.paintSurface
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(
+                              alpha: theme.brightness == Brightness.dark
+                                  ? 0.3
+                                  : 0.14,
+                            ),
+                            blurRadius: 24,
+                            offset: const Offset(0, 8),
+                          ),
+                        ]
+                      : const [],
                 ),
                 child: SizedBox(
                   key: const ValueKey('navigation-morph-bounds'),
@@ -268,25 +274,28 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
                         borderRadius: BorderRadius.circular(26),
                         child: Stack(
                           children: [
-                            Positioned.fill(
-                              child: BackdropFilter(
-                                filter: ImageFilter.blur(
-                                  sigmaX: 24,
-                                  sigmaY: 24,
-                                ),
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.background
-                                        .withValues(
-                                          alpha:
-                                              MediaQuery.highContrastOf(context)
-                                              ? 1
-                                              : 0.72,
-                                        ),
+                            if (widget.paintSurface)
+                              Positioned.fill(
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(
+                                    sigmaX: 24,
+                                    sigmaY: 24,
+                                  ),
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: theme.colorScheme.background
+                                          .withValues(
+                                            alpha:
+                                                MediaQuery.highContrastOf(
+                                                  context,
+                                                )
+                                                ? 1
+                                                : 0.72,
+                                          ),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
                             if (highlightX != null)
                               AnimatedPositioned(
                                 duration:
@@ -411,21 +420,22 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
                                     ),
                                   ),
                                 ),
-                            Positioned.fill(
-                              child: IgnorePointer(
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(26),
-                                    border: Border.all(
-                                      color: theme.colorScheme.foreground
-                                          .withValues(
-                                            alpha: _pressed ? 0.26 : 0.16,
-                                          ),
+                            if (widget.paintSurface)
+                              Positioned.fill(
+                                child: IgnorePointer(
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(26),
+                                      border: Border.all(
+                                        color: theme.colorScheme.foreground
+                                            .withValues(
+                                              alpha: _pressed ? 0.26 : 0.16,
+                                            ),
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
                           ],
                         ),
                       ),

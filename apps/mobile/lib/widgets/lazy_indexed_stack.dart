@@ -27,6 +27,13 @@ class _LazyIndexedStackState extends State<LazyIndexedStack> {
   void didUpdateWidget(covariant LazyIndexedStack oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.index == widget.index || !widget.animate) return;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _transitionTimer?.cancel();
+      _previousIndex = null;
+      _enteringIndex = null;
+      _visited.add(widget.index);
+      return;
+    }
     _previousIndex = oldWidget.index;
     _enteringIndex = widget.index;
     _visited.add(widget.index);
@@ -42,6 +49,16 @@ class _LazyIndexedStackState extends State<LazyIndexedStack> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _transitionTimer?.cancel();
+      _previousIndex = null;
+      _enteringIndex = null;
+    }
+  }
+
+  @override
   void dispose() {
     _transitionTimer?.cancel();
     super.dispose();
@@ -50,7 +67,10 @@ class _LazyIndexedStackState extends State<LazyIndexedStack> {
   @override
   Widget build(BuildContext context) {
     _visited.add(widget.index);
-    if (widget.animate && !MediaQuery.disableAnimationsOf(context)) {
+    if (widget.animate) {
+      final duration = MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 240);
       return Stack(
         fit: StackFit.expand,
         children: [
@@ -63,11 +83,11 @@ class _LazyIndexedStackState extends State<LazyIndexedStack> {
                   child: ExcludeSemantics(
                     excluding: i != widget.index,
                     child: AnimatedOpacity(
-                      duration: const Duration(milliseconds: 240),
+                      duration: duration,
                       curve: Curves.easeOutCubic,
                       opacity: i == widget.index && i != _enteringIndex ? 1 : 0,
                       child: AnimatedSlide(
-                        duration: const Duration(milliseconds: 240),
+                        duration: duration,
                         curve: Curves.easeOutCubic,
                         offset: i == _enteringIndex
                             ? const Offset(0.025, 0)
