@@ -1,9 +1,11 @@
 import { type BrowserContext, expect, test } from '@playwright/test';
+import { safeLettinPhaseFailure } from './lettin-phase-diagnostics';
 
 // Fixed phase names only: never log fixture IDs, response bodies, or credentials.
 type Phase =
   | 'open wiki'
   | 'create project'
+  | 'confirm project navigation'
   | 'open notebook'
   | 'edit Markdown'
   | 'save Markdown'
@@ -15,7 +17,7 @@ async function phase<T>(name: Phase, action: () => Promise<T>): Promise<T> {
     console.info(`[lettin-e2e] ${name}: completed`);
     return result;
   } catch (error) {
-    console.warn(`[lettin-e2e] ${name}: failed`);
+    console.warn(`[lettin-e2e] ${name}: failed`, safeLettinPhaseFailure(error));
     throw error;
   }
 }
@@ -55,10 +57,12 @@ export async function verifyLettinMarkdownPersistence(
     expect(result.id).toMatch(/^[0-9a-f-]{36}$/);
     return result;
   });
-  await phase('open notebook', async () => {
+  await phase('confirm project navigation', async () => {
     await expect(page).toHaveURL(new RegExp(`/worlds/${project.id}(?:[?]|$)`), {
       timeout: 30_000,
     });
+  });
+  await phase('open notebook', async () => {
     await page
       .getByRole('button', { name: 'World notebook', exact: true })
       .click({ timeout: 15_000 });
