@@ -21,6 +21,7 @@
   "dependencies": {
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
+    "@tuturuuu/realtime": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/utils": "workspace:*",

@@ -32,33 +32,40 @@ class FloatingDockRail extends StatelessWidget {
     builder: (context, constraints) {
       final twoActions = constraints.maxWidth >= 376;
       return Center(
-        child: Row(
-          key: const ValueKey('floating-dock-visible-group'),
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Flexible(
-              key: const ValueKey('floating-dock-navigation-slot'),
-              child: Center(widthFactor: 1, child: navigation),
-            ),
-            if (reserveEmptyActions || primary != null) ...[
-              const SizedBox(width: 8),
-              SizedBox(
-                key: const ValueKey('floating-dock-primary-slot'),
-                width: floatingDockActionSize,
-                height: floatingDockActionSize,
-                child: primary,
+        child: AnimatedSize(
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 320),
+          curve: Curves.easeInOutCubic,
+          alignment: Alignment.bottomCenter,
+          child: Row(
+            key: const ValueKey('floating-dock-visible-group'),
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Flexible(
+                key: const ValueKey('floating-dock-navigation-slot'),
+                child: Center(widthFactor: 1, child: navigation),
               ),
+              if (reserveEmptyActions || primary != null) ...[
+                const SizedBox(width: 8),
+                SizedBox(
+                  key: const ValueKey('floating-dock-primary-slot'),
+                  width: floatingDockActionSize,
+                  height: floatingDockActionSize,
+                  child: primary,
+                ),
+              ],
+              if (twoActions && (reserveEmptyActions || secondary != null)) ...[
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: floatingDockActionSize,
+                  height: floatingDockActionSize,
+                  child: secondary,
+                ),
+              ],
             ],
-            if (twoActions && (reserveEmptyActions || secondary != null)) ...[
-              const SizedBox(width: 8),
-              SizedBox(
-                width: floatingDockActionSize,
-                height: floatingDockActionSize,
-                child: secondary,
-              ),
-            ],
-          ],
+          ),
         ),
       );
     },

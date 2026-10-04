@@ -195,7 +195,7 @@ truncates each field.
 
 ## Studio collaboration
 
-The studio joins a **private** Supabase Realtime channel per form, topic
+The studio joins a **private** Cloudflare channel per form, topic
 `form-studio-<formId>`, carrying presence (who is here, which block they are on)
 and broadcasts (someone saved).
 
@@ -204,8 +204,9 @@ tables live in the Postgres `private` schema with service-role-only access. They
 are deliberately off the public Data API, so a browser client cannot subscribe to
 row changes on them at all.
 
-Access is authorized by `private.can_join_form_realtime_topic(topic, user_id)`,
-which resolves the form from the topic suffix and defers to
+Access is authorized by the service-only `private.cloudflare_channel_role` RPC,
+which delegates form topics to `private.can_join_form_realtime_topic(topic, user_id)`.
+That helper resolves the form from the topic suffix and defers to
 `public.has_workspace_permission(ws_id, user_id, 'manage_forms')`. Presence is
 gated on the same permission the studio itself requires: analysts who can only
 read responses have no reason to appear in an editing session, and would leak
@@ -215,8 +216,10 @@ their identity to editors if they did.
 `apps/forms` is a registered satellite app, so the `internal-app-auth` guard
 forbids `supabase.auth.*` inside it. Resolve identity server-side with
 `getSatelliteAppSessionUser('forms')` and pass the id down as a prop, and take
-the realtime client from `@tuturuuu/supabase/next/realtime-browser`.
+the realtime client from `@tuturuuu/internal-api/realtime`.
 </Warning>
+
+Short-lived tickets recheck this permission at refresh and on reconnect.
 
 When a remote save arrives, the studio refetches immediately **only if your copy
 is clean**. If you have unsaved edits it raises a reload prompt instead —

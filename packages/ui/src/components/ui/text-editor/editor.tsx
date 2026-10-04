@@ -9,10 +9,10 @@ import {
   useEditor,
 } from '@tiptap/react';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import type SupabaseProvider from '@tuturuuu/ui/hooks/supabase-provider';
 import { debounce } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
+import type { Awareness } from 'y-protocols/awareness';
 import type * as Y from 'yjs';
 import { migrateInlineImagesToBlock } from './content-migration';
 import type { EditorCopyLabels } from './copy-menu';
@@ -84,6 +84,7 @@ export interface RichTextEditorProps {
   savedButtonLabel?: string;
   className?: string;
   workspaceId?: string;
+  allowEmbeds?: boolean;
   onImageUpload?: (file: File) => Promise<string>;
   flushPendingRef?: { current: (() => JSONContent | null) | undefined };
   onArrowUp?: (cursorOffset?: number) => void;
@@ -92,7 +93,7 @@ export interface RichTextEditorProps {
   initialCursorOffset?: number | null;
   onEditorReady?: (editor: Editor) => void;
   yjsDoc?: Y.Doc;
-  yjsProvider?: SupabaseProvider;
+  yjsProvider?: { awareness: Awareness };
   /** User info for collaboration cursor labels. */
   collaborationUser?: { id?: string; name: string; color: string };
   boardId?: string;
@@ -158,6 +159,7 @@ export function RichTextEditor({
   yjsProvider,
   collaborationUser,
   allowCollaboration = false,
+  allowEmbeds = true,
   revealToolbarOnFocus = false,
   mentionTranslations,
   renderTaskMention,
@@ -453,7 +455,7 @@ export function RichTextEditor({
         attributes: { class: getEditorClasses },
       },
     });
-    editor.setEditable(!readOnly);
+    editor.setEditable(!readOnly, false);
   }, [editor, readOnly, getEditorClasses]);
 
   // Update editor content when the content prop changes externally
@@ -657,6 +659,7 @@ export function RichTextEditor({
         <ToolBar
           editor={editor}
           fixedToolbarVisible={fixedToolbarVisible}
+          allowEmbeds={allowEmbeds}
           saveButtonLabel={saveButtonLabel}
           savedButtonLabel={savedButtonLabel}
           workspaceId={workspaceId}
@@ -671,3 +674,5 @@ export function RichTextEditor({
     </div>
   );
 }
+
+export { parseEditorMarkdown, serializeEditorMarkdown } from './markdown';

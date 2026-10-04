@@ -9,9 +9,7 @@ import {
 import {
   ArrowLeft,
   ArrowRight,
-  CheckCircle2,
   CircleDollarSign,
-  CreditCard,
   PackagePlus,
   Pin,
   ReceiptText,
@@ -43,10 +41,10 @@ import {
   OperatorDialogHeader,
   OperatorDialogTabs,
 } from './operator-dialog-shell';
-import { SelectField, TextAreaField, TextField } from './operator-form-fields';
+import { SelectField } from './operator-form-fields';
 import { currency } from './operator-format';
+import { SaleCheckout } from './sale-checkout';
 import {
-  CartEditor,
   getSaleStockOptions,
   type SaleCartLine,
   type SaleStockOption,
@@ -60,7 +58,7 @@ import {
 import { useSeasonSalePrices } from './season-sale-prices';
 import { useHybridSearchResults } from './use-hybrid-search-results';
 
-const SALE_TABS = ['items', 'cart', 'payment', 'review'] as const;
+const SALE_TABS = ['items', 'checkout'] as const;
 const SALE_PRODUCT_SEARCH_SCOPE = {
   category: '',
   owner: '',
@@ -76,6 +74,8 @@ export function SaleCreateDialog({
   fetchNextProductsPage,
   hasNextProductsPage = false,
   isFetchingNextProductsPage = false,
+  isProductsError = false,
+  productsPageCount,
   mobileFab = false,
   workspaceCurrency,
   wsId,
@@ -86,6 +86,8 @@ export function SaleCreateDialog({
   fetchNextProductsPage?: () => unknown;
   hasNextProductsPage?: boolean;
   isFetchingNextProductsPage?: boolean;
+  isProductsError?: boolean;
+  productsPageCount?: number;
   mobileFab?: boolean;
   workspaceCurrency: string;
   wsId: string;
@@ -257,12 +259,7 @@ export function SaleCreateDialog({
       seasonPricing.cartIsCurrent(lines)
   );
   const tabIndex = SALE_TABS.indexOf(tab as (typeof SALE_TABS)[number]);
-  const canGoNext =
-    tab === 'items' || tab === 'cart'
-      ? lines.length > 0
-      : tab === 'payment'
-        ? canSubmit
-        : false;
+  const canGoNext = lines.length > 0;
 
   const reset = () => {
     const wallets = options?.wallets ?? [];
@@ -450,6 +447,17 @@ export function SaleCreateDialog({
                         : isFetchingNextProductsPage
                     }
                     isRefreshing={productSearch.status.isRefreshing}
+                    isPaginationError={
+                      hasProductSearch
+                        ? productSearchQuery.isError ||
+                          productSearchQuery.isFetchNextPageError
+                        : isProductsError
+                    }
+                    paginationVersion={
+                      hasProductSearch
+                        ? (productSearchQuery.data?.pages.length ?? 0)
+                        : (productsPageCount ?? products.length)
+                    }
                     lines={lines}
                     onCategoryFilterChange={setProductCategoryFilter}
                     onQueryChange={setQuery}
@@ -479,130 +487,37 @@ export function SaleCreateDialog({
                 icon: <PackagePlus className="h-4 w-4" />,
                 label: t('itemsTab'),
                 value: 'items',
+                contentClassName: 'flex flex-col overflow-hidden',
               },
               {
                 badge: lines.length,
                 content: (
-                  <div className="mx-auto grid w-full max-w-3xl gap-3">
-                    <div className="flex items-center justify-between gap-2 rounded-lg border bg-muted/20 p-2 text-sm sm:gap-3 sm:p-3">
-                      <span className="text-muted-foreground">
-                        {t('cartSummary', {
-                          items: lines.length,
-                          units: lines.reduce(
-                            (sum, line) => sum + line.quantity,
-                            0
-                          ),
-                        })}
-                      </span>
-                      <span className="font-semibold tabular-nums">
-                        {currency(total, workspaceCurrency)}
-                      </span>
-                    </div>
-                    <CartEditor
-                      currencyCode={workspaceCurrency}
-                      lines={lines}
-                      onChange={setLines}
-                      showUnitOnMobile={showUnitOnMobile}
-                      showWarehouseOnMobile={showWarehouseOnMobile}
-                    />
-                  </div>
+                  <SaleCheckout
+                    lines={lines}
+                    onLinesChange={setLines}
+                    currencyCode={workspaceCurrency}
+                    showUnitOnMobile={showUnitOnMobile}
+                    showWarehouseOnMobile={showWarehouseOnMobile}
+                    content={content}
+                    onContentChange={setContent}
+                    notes={notes}
+                    onNotesChange={setNotes}
+                    walletId={walletId}
+                    onWalletChange={setWalletId}
+                    categoryId={categoryId}
+                    onCategoryChange={setCategoryId}
+                    options={options}
+                    canSubmit={canSubmit}
+                  />
                 ),
                 icon: <ShoppingCart className="h-4 w-4" />,
-                label: t('cartTab'),
-                value: 'cart',
-              },
-              {
-                content: (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <TextField
-                      className="sm:col-span-2"
-                      label={t('saleName')}
-                      maxLength={500}
-                      onChange={setContent}
-                      placeholder={t('defaultTitle')}
-                      value={content}
-                    />
-                    <SelectField
-                      allowEmpty={false}
-                      label={t('wallet')}
-                      onChange={setWalletId}
-                      options={options?.wallets}
-                      placeholder={t('chooseWallet')}
-                      searchPlaceholder={t('chooseWallet')}
-                      value={walletId}
-                    />
-                    <SelectField
-                      allowEmpty={false}
-                      label={t('category')}
-                      onChange={setCategoryId}
-                      options={(options?.financeCategories ?? []).flatMap(
-                        (category) =>
-                          category.id
-                            ? [{ id: category.id, name: category.name }]
-                            : []
-                      )}
-                      placeholder={t('chooseCategory')}
-                      searchPlaceholder={t('chooseCategory')}
-                      value={categoryId}
-                    />
-                    <TextAreaField
-                      className="sm:col-span-2"
-                      label={t('notes')}
-                      maxLength={2000}
-                      onChange={setNotes}
-                      placeholder={t('notesPlaceholder')}
-                      value={notes}
-                    />
-                    {!(options?.wallets?.length ?? 0) ||
-                    !(options?.financeCategories?.length ?? 0) ? (
-                      <p className="rounded-lg border border-dashed p-3 text-muted-foreground text-sm sm:col-span-2">
-                        {t('missingSetup')}
-                      </p>
-                    ) : null}
-                  </div>
-                ),
-                icon: <CreditCard className="h-4 w-4" />,
-                label: t('paymentTab'),
-                value: 'payment',
-              },
-              {
-                content: (
-                  <div className="grid gap-4">
-                    <div className="rounded-xl border bg-muted/20 p-4">
-                      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
-                        <div className="min-w-0">
-                          <p className="font-semibold">
-                            {content || t('untitled')}
-                          </p>
-                          <p className="mt-1 text-muted-foreground text-sm">
-                            {t('reviewSummary', {
-                              items: lines.length,
-                              units: lines.reduce(
-                                (sum, line) => sum + line.quantity,
-                                0
-                              ),
-                            })}
-                          </p>
-                        </div>
-                        <p className="font-bold text-xl tabular-nums sm:text-right">
-                          {currency(total, workspaceCurrency)}
-                        </p>
-                      </div>
-                    </div>
-                    <p className="flex items-start gap-2 text-muted-foreground text-sm leading-6">
-                      <CheckCircle2 className="mt-1 h-4 w-4 shrink-0" />
-                      {t('stockNotice')}
-                    </p>
-                  </div>
-                ),
-                icon: <CheckCircle2 className="h-4 w-4" />,
-                label: t('reviewTab'),
-                value: 'review',
+                label: t('checkoutTab'),
+                value: 'checkout',
               },
             ]}
             value={tab}
           />
-          <OperatorDialogFooter className="flex-row items-center gap-1.5 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:gap-2 sm:px-6 sm:py-4">
+          <OperatorDialogFooter className="flex-row flex-wrap items-center gap-1.5 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:gap-2 sm:px-6 sm:py-4">
             <p className="mr-auto flex min-w-0 items-center gap-1.5 font-semibold text-sm tabular-nums">
               <span className="sr-only">
                 {t('total', {
@@ -625,7 +540,7 @@ export function SaleCreateDialog({
                 }
               />
               <Pin className="h-3.5 w-3.5" />
-              <span>{t('keepOpen')}</span>
+              <span className="hidden sm:inline">{t('keepOpen')}</span>
             </label>
             {tabIndex > 0 ? (
               <Button
@@ -640,12 +555,12 @@ export function SaleCreateDialog({
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             ) : null}
-            {tab !== 'review' ? (
+            {tab !== 'checkout' ? (
               <Button
                 aria-label={t('next')}
                 className="h-9 w-9 shrink-0 touch-manipulation"
                 disabled={!canGoNext}
-                onClick={() => setTab(SALE_TABS[tabIndex + 1] ?? 'review')}
+                onClick={() => setTab(SALE_TABS[tabIndex + 1] ?? 'checkout')}
                 size="icon"
                 title={t('next')}
                 type="button"
@@ -655,14 +570,15 @@ export function SaleCreateDialog({
             ) : (
               <Button
                 aria-label={mutation.isPending ? t('creating') : t('create')}
-                className="h-9 w-9 shrink-0 touch-manipulation"
+                className="h-9 shrink-0 touch-manipulation gap-2 px-3"
                 disabled={!canSubmit || mutation.isPending}
                 onClick={submitSale}
-                size="icon"
+                size="sm"
                 title={mutation.isPending ? t('creating') : t('create')}
                 type="button"
               >
                 <Save className="h-4 w-4" />
+                <span>{mutation.isPending ? t('creating') : t('create')}</span>
               </Button>
             )}
           </OperatorDialogFooter>

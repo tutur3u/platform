@@ -7,16 +7,53 @@ import {
 export type LettinNode = {
   type: string;
   text?: string;
-  attrs?: { level?: number };
-  marks?: { type: string }[];
+  attrs?: Record<string, unknown>;
+  marks?: { type: string; attrs?: Record<string, unknown> }[];
   content?: LettinNode[];
 };
+export type LettinKind =
+  | 'page'
+  | 'character'
+  | 'location'
+  | 'lore'
+  | 'story'
+  | 'world'
+  | 'event'
+  | 'role'
+  | 'organization';
+export type LettinRelationshipKind =
+  | 'related'
+  | 'family'
+  | 'friend'
+  | 'rival'
+  | 'member'
+  | 'located'
+  | 'part'
+  | 'role'
+  | 'appears';
+export type LettinWiki = {
+  aliases: string[];
+  facts: { label: string; value: string }[];
+  chronology?: { order: number; label: string; era: string };
+  relationships: {
+    targetId: string;
+    kind: LettinRelationshipKind;
+    label: string;
+  }[];
+};
+export type LettinTheme = {
+  palette: 'paper' | 'forest' | 'midnight' | 'rose';
+  typography: 'editorial' | 'clean';
+  motion: 'full' | 'reduced';
+};
 export type LettinDraft = {
+  theme?: LettinTheme;
   title: string;
   description: string;
   image: string;
   credit: string;
-  kind: 'page' | 'character' | 'location' | 'lore' | 'story';
+  kind: LettinKind;
+  wiki?: LettinWiki;
   tags: string[];
   links: string[];
   content: LettinNode;
@@ -31,6 +68,7 @@ export type LettinRecord = {
 export type LettinRole = 'owner' | 'editor' | 'publisher';
 export type LettinOverview = {
   approved: boolean;
+  canImportExocorpse?: boolean;
   canCreate: boolean;
   isAdmin: boolean;
   canInvite: boolean;
@@ -165,5 +203,120 @@ export function uploadLettinArtwork(
   return client(options).json<{ image: string }>(`${path(wsId)}/media`, {
     method: 'POST',
     body,
+  });
+}
+
+export type LettinImportPreview = {
+  id: string;
+  title: string;
+  count: number;
+  blacklistCount: number;
+  skipped: number;
+  kinds: Record<string, number>;
+  entries: { title: string; kind: LettinKind }[];
+};
+export function previewLettinExocorpseImport(
+  wsId: string,
+  payload: { title: string; source: 'cms' | 'file'; payload?: unknown }
+) {
+  return client().json<LettinImportPreview>(`${path(wsId)}/exocorpse`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'preview', ...payload }),
+  });
+}
+export function applyLettinExocorpseImport(wsId: string, previewId: string) {
+  return client().json<{ id: string }>(`${path(wsId)}/exocorpse`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'apply', previewId }),
+  });
+}
+
+export const EXOCORPSE_WORKSPACE_ID = '3385bd92-3d5e-42f6-b3ad-0d1394af3509';
+export const exocorpseWikiCollections = [
+  'stories',
+  'worlds',
+  'characters',
+  'factions',
+  'locations',
+  'timelines',
+  'events',
+  'character-outfits',
+  'character-gallery',
+  'location-gallery',
+  'character-relationships',
+  'character-factions',
+  'character-locations',
+  'outfit-types',
+  'event-types',
+  'relationship-types',
+  'roles',
+  'about',
+  'about-content',
+  'about-faqs',
+  'portfolio-art',
+  'portfolio-writing',
+  'commission-services',
+  'commission-addons',
+  'commission-styles',
+  'commission-pictures',
+  'commission-blacklist',
+  'tags',
+];
+export type LettinBlacklistItem = {
+  id: string;
+  displayName: string;
+  reason: string;
+  referenceUrl: string;
+  sourceId: string | null;
+};
+export function getLettinBlacklist(wsId: string) {
+  return client().json<LettinBlacklistItem[]>(`${path(wsId)}/moderation`, {
+    cache: 'no-store',
+  });
+}
+export function mutateLettinBlacklist(
+  wsId: string,
+  command:
+    | {
+        action: 'save';
+        id?: string;
+        draft: Pick<
+          LettinBlacklistItem,
+          'displayName' | 'reason' | 'referenceUrl'
+        >;
+      }
+    | { action: 'remove'; id: string }
+) {
+  return client().json<{ id: string }>(`${path(wsId)}/moderation`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(command),
+  });
+}
+
+export type LettinCreatorAbout = {
+  headline: string;
+  pronouns: string;
+  location: string;
+  interests: string[];
+  links: { label: string; url: string }[];
+  content: LettinNode;
+  theme: LettinTheme;
+};
+export function getLettinCreatorAbout(wsId: string) {
+  return client().json<LettinCreatorAbout>(`${path(wsId)}/profile`, {
+    cache: 'no-store',
+  });
+}
+export function saveLettinCreatorAbout(
+  wsId: string,
+  details: LettinCreatorAbout
+) {
+  return client().json<LettinCreatorAbout>(`${path(wsId)}/profile`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(details),
   });
 }

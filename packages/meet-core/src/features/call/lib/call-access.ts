@@ -23,9 +23,17 @@ export async function getMeetCallAccess(
   meetingId: string,
   fallbackName: string
 ) {
+  const user = await getSatelliteAppSessionUser(MEETING_APP);
+  return getMeetCallAccessForUser(meetingId, fallbackName, user);
+}
+/** Actor injection lets the platform authenticate mobile Bearer sessions once. */
+export async function getMeetCallAccessForUser(
+  meetingId: string,
+  fallbackName: string,
+  user: Awaited<ReturnType<typeof getSatelliteAppSessionUser>>
+) {
   if (!z.uuid().safeParse(meetingId).success)
     throw new MeetCallAccessError(404, 'Meeting not found');
-  const user = await getSatelliteAppSessionUser(MEETING_APP);
   if (!user?.id) throw new MeetCallAccessError(401, 'Sign in to join');
   if (MEETING_APP === 'parley' && !(await hasParleyAccess(user.id)))
     throw new MeetCallAccessError(403, 'Parley access required');

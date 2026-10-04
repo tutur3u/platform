@@ -1067,3 +1067,73 @@ identifier. It plays only while the app is active and does not change the call's
 audio session. [Apple's System Sound Services](https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/MultimediaPG/UsingAudio/UsingAudio.html)
 owns sound-effects policy. Device mute/Focus behavior remains part of the user's
 post-merge physical acceptance.
+
+## Collaborative programming
+
+The in-call coding control opens the shared Learn programming/playground workbench
+with file cursors and transient pointers. Hosts select the resource; the server
+checks admission and resource access before issuing tickets. A verified
+`@tuturuuu.com` admin elevates admitted participants only within that room.
+See [programming playgrounds](/platform/features/programming-playgrounds) for
+Drive ownership, limits and the intentional entitlement exception.
+
+Web screen capture depends on browser getDisplayMedia support. Android and iOS
+browsers that lack it can receive screens and co-program, but cannot open a
+native screen picker. Missing support and capture denials now display guidance.
+See [mobile capture diagnostics](/build/devops/programming-realtime-runbook#mobile-screen-sharing).
+
+### Native mobile sharing
+
+Tuturuuu mobile calls use Android MediaProjection with a foreground capture
+service and iOS ReplayKit with the broadcast extension. The in-app Share screen
+control starts native OS consent and publishes the resulting track through the
+same meeting SFU. Native stop, meeting exit and revoked admission stop capture.
+On unsupported mobile browsers, Open mobile app preserves the room code in a
+verified platform app link. The app opens the native call; capture still requires
+a separate user action and OS consent. Tokens and capture permission are never
+carried in the link.
+
+## Collaborative documents and mobile parity
+
+Every admitted Meet participant can edit the room's private rich-text document.
+This document does not require a paid playground entitlement. It belongs to the
+meeting workspace and is created once per meeting. Cloudflare merges and persists
+Yjs updates, then checkpoints the rich-text content to the private workspace
+Document. Cursor labels and selected ranges use authenticated account identity;
+multiple connections from the same account remain separate sessions. Editing the
+workspace Document through another surface creates a conflict: a room checkpoint
+never overwrites that external edit silently. The durable room state is retained
+for reconciliation. Web and native editors display a backup conflict warning;
+transient checkpoint failures display a delayed-backup warning. Editing continues,
+and a successful checkpoint clears the warning. Rejoining restores the current
+backup status. The Worker rejects client-authored backup status notifications.
+
+Native mobile opens the same shared web rich-text and programming editors inside
+an authenticated app-owned WebView. This preserves Yjs, formatting, remote
+cursors, pointers, selections and reconnect behavior across web and mobile.
+The app bridges a small allowlist of meeting-scoped API actions; it never sends
+platform tokens to editor JavaScript or runner preview content. A separate
+loopback capability serves private preview assets. Android denies mixed content;
+[Chromium treats loopback as trustworthy](https://codereview.chromium.org/1931063004), preserving the private `127.0.0.1` preview exception.
+External navigation and previews cannot invoke the bridge; calls continue.
+
+Native collaboration pins the account separately from the admitted device ID.
+Account/device changes, revoked admission and ended calls suppress late results;
+preview capabilities never transfer access. Server admission remains authoritative.
+Task cubits cancel subscriptions and close only default-owned clients/APIs;
+injected clients remain caller-owned. Refresh cleanup failures reconnect; disposal fences late cleanup.
+Navigation denies malformed, hostless and non-HTTP schemes without throwing.
+One-shot broadcasts preserve ticket/handshake errors; subscribed channels reconnect.
+Per-send socket setup remains a tradeoff; shared-channel reuse is not implemented.
+Coverage: `meet_collaboration_owner_test.dart`, `meet_preview_proxy_test.dart`, `meet_collaboration_policy_test.dart`, `task_broadcast_lifecycle_test.dart` and `cloudflare_channel_test.dart`.
+
+Both clients refresh short-lived channel tickets on the existing socket. Actual
+reconnects reauthorize admission and replay missing document updates. Expired
+access closes quiet connections; disconnected editing and persistence failures
+must remain visible. Room programming editors can save and run the selected
+resource; only its owner can grant permanent collaborators outside the meeting.
+
+Regression coverage includes the real local Cloudflare document/channel probes,
+shared caret/range tests, mobile channel tests and meeting admission/entitlement
+checks. Native WebView bridge, private-preview and MediaProjection/ReplayKit
+acceptance additionally require configured exact-commit mobile CI artifacts.

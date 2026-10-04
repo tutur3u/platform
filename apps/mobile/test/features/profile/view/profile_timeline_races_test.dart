@@ -70,6 +70,7 @@ void main() {
   late _Auth auth;
   late _Workspace workspace;
   late _Repository repository;
+  late ValueNotifier<int> replay;
   late StreamController<WorkspaceState> scopes;
   late StreamController<AuthState> accounts;
   setUp(() {
@@ -77,6 +78,7 @@ void main() {
     workspace = _Workspace();
     when(() => workspace.hasAuthenticatedActor).thenReturn(true);
     repository = _Repository();
+    replay = ValueNotifier(0);
     scopes = StreamController<WorkspaceState>();
     accounts = StreamController<AuthState>();
     whenListen(
@@ -102,6 +104,7 @@ void main() {
     );
   });
   tearDown(() async {
+    replay.dispose();
     await scopes.close();
     await accounts.close();
     await auth.close();
@@ -115,10 +118,13 @@ void main() {
           BlocProvider<WorkspaceCubit>.value(value: workspace),
         ],
         child: SingleChildScrollView(
-          child: ProfileTimelineSection(
-            cacheUserId: () => auth.state.user?.id,
-            replayToken: 0,
-            repository: repository,
+          child: ValueListenableBuilder<int>(
+            valueListenable: replay,
+            builder: (_, value, _) => ProfileTimelineSection(
+              cacheUserId: () => auth.state.user?.id,
+              replayToken: value,
+              repository: repository,
+            ),
           ),
         ),
       ),
@@ -127,30 +133,84 @@ void main() {
   }
 
   testWidgets(
-    'offline reopen retains cap and partial warnings and retry rows',
+    'cold failure remains meaningfully unavailable after toast closes',
     (tester) async {
-      repository.cache = snapshot('Cached task', partial: true, limited: true);
       await mount(tester);
-      expect(find.textContaining('over the last 30 days'), findsNothing);
-      expect(find.text('Cached task'), findsOneWidget);
-      expect(find.text('Some activity is unavailable.'), findsOneWidget);
-      expect(_limitedTooltip(), findsOneWidget);
-      repository.requests.single.completeError(Exception('Offline'));
+      repository.requests.single.completeError(Exception('Unavailable'));
       await tester.pumpAndSettle();
-      expect(find.text('Cached task'), findsOneWidget);
-      expect(find.text('Some activity is unavailable.'), findsOneWidget);
-      expect(_limitedTooltip(), findsOneWidget);
-      await tester.tap(find.text('Retry'));
-      await tester.pump();
-      expect(repository.requests.length, 2);
-      repository.requests.last.complete(snapshot('Fresh task'));
-      await tester.pumpAndSettle();
-      expect(find.text('Fresh task'), findsOneWidget);
       expect(find.text('Some activity is unavailable.'), findsNothing);
-      expect(_limitedTooltip(), findsNothing);
+      await tester.drainShadToastTimers();
+      await tester.pumpAndSettle();
+      expect(find.text('Activity could not be refreshed.'), findsOneWidget);
+      expect(find.text('Retry'), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('offline reopen retains rows and a bounded failure notice', (
+    tester,
+  ) async {
+    repository.cache = snapshot('Cached task', partial: true, limited: true);
+    await mount(tester);
+    expect(find.textContaining('over the last 30 days'), findsNothing);
+    expect(find.text('Cached task'), findsOneWidget);
+    expect(find.text('Some activity is unavailable.'), findsNothing);
+    expect(_limitedTooltip(), findsNothing);
+    repository.requests.single.completeError(Exception('Offline'));
+    await tester.pumpAndSettle();
+    await tester.drainShadToastTimers();
+    await tester.pumpAndSettle();
+    expect(find.text('Cached task'), findsOneWidget);
+    expect(find.text('Some activity is unavailable.'), findsNothing);
+    expect(_limitedTooltip(), findsNothing);
+    await tester.pump(const Duration(seconds: 6));
+    expect(find.text('Some activity is unavailable.'), findsNothing);
+    replay.value++;
+    await tester.pump();
+    expect(repository.requests.length, 2);
+    repository.requests.last.complete(snapshot('Fresh task'));
+    await tester.pumpAndSettle();
+    await tester.drainShadToastTimers();
+    await tester.pumpAndSettle();
+    expect(find.text('Fresh task'), findsOneWidget);
+    expect(find.text('Some activity is unavailable.'), findsNothing);
+    expect(_limitedTooltip(), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('partial refresh uses authoritative retained-provider rows', (
+    tester,
+  ) async {
+    repository.cache = snapshot('Retained task');
+    await mount(tester);
+    repository.requests.single.complete((
+      items: [
+        ...snapshot('Retained task').items,
+        ...snapshot('New task').items,
+      ],
+      partial: true,
+      limited: false,
+    ));
+    await tester.pumpAndSettle();
+    await tester.drainShadToastTimers();
+    await tester.pumpAndSettle();
+    expect(find.text('Retained task'), findsOneWidget);
+    expect(find.text('New task'), findsOneWidget);
+    expect(find.text('Retry'), findsNothing);
+  });
+
+  testWidgets('partial refresh does not restore pruned provider rows', (
+    tester,
+  ) async {
+    repository.cache = snapshot('Removed calendar row');
+    await mount(tester);
+    repository.requests.single.complete(snapshot('New task', partial: true));
+    await tester.pumpAndSettle();
+    await tester.drainShadToastTimers();
+    await tester.pumpAndSettle();
+    expect(find.text('Removed calendar row'), findsNothing);
+    expect(find.text('New task'), findsOneWidget);
+  });
+
   testWidgets('workspace switch rejects a delayed old cache read', (
     tester,
   ) async {
@@ -181,6 +241,8 @@ void main() {
     expect(repository.requests, hasLength(1));
     repository.requests.single.complete(snapshot('New refreshed task'));
     await tester.pumpAndSettle();
+    await tester.drainShadToastTimers();
+    await tester.pumpAndSettle();
     expect(find.text('New refreshed task'), findsOneWidget);
     expect(find.text('Old cached task'), findsNothing);
     expect(tester.takeException(), isNull);
@@ -207,6 +269,8 @@ void main() {
     expect(find.text('Stale task'), findsNothing);
     repository.requests.last.complete(snapshot('New task'));
     await tester.pumpAndSettle();
+    await tester.drainShadToastTimers();
+    await tester.pumpAndSettle();
     expect(find.text('New task'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
@@ -222,50 +286,63 @@ void main() {
     expect(_limitedTooltip(), findsNothing);
     repository.requests.single.complete(snapshot('Late private task'));
     await tester.pumpAndSettle();
+    await tester.drainShadToastTimers();
+    await tester.pumpAndSettle();
     expect(find.text('Late private task'), findsNothing);
     expect(tester.takeException(), isNull);
   });
-  testWidgets('cold partial refresh exposes retry only after completion', (
-    tester,
-  ) async {
-    await mount(tester);
-    expect(find.bySemanticsLabel('Loading'), findsOneWidget);
-    repository.requests.single.complete(
-      snapshot('Partial task', partial: true),
-    );
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Some activity is unavailable'), findsOneWidget);
-    await tester.tap(find.text('Retry'));
-    await tester.pump();
-    expect(repository.requests.length, 2);
-    // A partial snapshot remains visible while the retry is in flight.
-    expect(find.text('Partial task'), findsOneWidget);
-    repository.requests.last.completeError(Exception('Offline'));
-    await tester.pumpAndSettle();
-    expect(find.text('Partial task'), findsOneWidget);
-    expect(find.text('Retry'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+  testWidgets(
+    'cold partial refresh shows a bounded notice and refresh retains rows',
+    (tester) async {
+      await mount(tester);
+      expect(find.bySemanticsLabel('Loading'), findsOneWidget);
+      repository.requests.single.complete(
+        snapshot('Partial task', partial: true),
+      );
+      await tester.pumpAndSettle();
+      await tester.drainShadToastTimers();
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Some activity is unavailable'), findsNothing);
+      replay.value++;
+      await tester.pump();
+      expect(repository.requests.length, 2);
+      // A partial snapshot remains visible while the retry is in flight.
+      expect(find.text('Partial task'), findsOneWidget);
+      repository.requests.last.completeError(Exception('Offline'));
+      await tester.pumpAndSettle();
+      await tester.drainShadToastTimers();
+      await tester.pumpAndSettle();
+      expect(find.text('Partial task'), findsOneWidget);
+      expect(find.text('Retry'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
   testWidgets(
     'failed cold fetch never claims empty activity; retry can confirm empty',
     (tester) async {
       await mount(tester);
       repository.requests.single.completeError(Exception('Offline'));
       await tester.pumpAndSettle();
+      await tester.drainShadToastTimers();
+      await tester.pumpAndSettle();
       expect(find.text('No recent activity in this workspace'), findsNothing);
       expect(find.text('Activity could not be refreshed.'), findsOneWidget);
-      expect(find.text('Retry'), findsOneWidget);
+      expect(find.text('Retry'), findsNothing);
       await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
+      await tester.pumpAndSettle();
+      await tester.drainShadToastTimers();
       await tester.pumpAndSettle();
       expect(find.text('No activity was returned for this day.'), findsNothing);
       expect(find.text('Activity could not be refreshed.'), findsOneWidget);
-      await tester.tap(find.text('Retry'));
+      replay.value++;
       await tester.pump();
       repository.requests.last.complete((
         items: <ProfileTimelineItem>[],
         partial: false,
         limited: false,
       ));
+      await tester.pumpAndSettle();
+      await tester.drainShadToastTimers();
       await tester.pumpAndSettle();
       expect(
         find.text('No activity was returned for this day.'),
@@ -286,10 +363,14 @@ void main() {
         await mount(tester);
         await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
         await tester.pumpAndSettle();
+        await tester.drainShadToastTimers();
+        await tester.pumpAndSettle();
         if (explicitDate) {
           await tester.tap(
             find.byKey(ValueKey('timeline-date-${today.toIso8601String()}')),
           );
+          await tester.pumpAndSettle();
+          await tester.drainShadToastTimers();
           await tester.pumpAndSettle();
         }
         repository.requests.single.complete((
@@ -305,6 +386,8 @@ void main() {
           partial: false,
           limited: false,
         ));
+        await tester.pumpAndSettle();
+        await tester.drainShadToastTimers();
         await tester.pumpAndSettle();
         if (explicitDate) {
           expect(find.text('First loaded activity'), findsOneWidget);
@@ -335,6 +418,8 @@ void main() {
         );
         await mount(tester);
         await tester.pumpAndSettle();
+        await tester.drainShadToastTimers();
+        await tester.pumpAndSettle();
         expect(
           find.byKey(const ValueKey('timeline-refreshing')),
           findsOneWidget,
@@ -345,6 +430,8 @@ void main() {
         );
         await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
         await tester.pumpAndSettle();
+        await tester.drainShadToastTimers();
+        await tester.pumpAndSettle();
         expect(
           find.text('No activity was returned for this day.'),
           findsNothing,
@@ -354,6 +441,8 @@ void main() {
               ? (items: <ProfileTimelineItem>[], partial: false, limited: false)
               : snapshot('Fresh response activity'),
         );
+        await tester.pumpAndSettle();
+        await tester.drainShadToastTimers();
         await tester.pumpAndSettle();
         expect(find.byKey(const ValueKey('timeline-refreshing')), findsNothing);
         expect(
@@ -388,15 +477,21 @@ void main() {
           limited: capped,
         ));
         await tester.pumpAndSettle();
+        await tester.drainShadToastTimers();
+        await tester.pumpAndSettle();
         expect(find.text('No recent activity in this workspace'), findsNothing);
-        expect(find.text('Some activity is unavailable.'), findsWidgets);
+        await tester.pump(const Duration(seconds: 6));
+        expect(find.text('Some activity is unavailable.'), findsNothing);
         await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
+        await tester.pumpAndSettle();
+        await tester.drainShadToastTimers();
         await tester.pumpAndSettle();
         expect(
           find.text('No activity was returned for this day.'),
           findsNothing,
         );
-        expect(find.text('Some activity is unavailable.'), findsWidgets);
+        await tester.pump(const Duration(seconds: 6));
+        expect(find.text('Some activity is unavailable.'), findsNothing);
         expect(tester.takeException(), isNull);
       },
     );
@@ -414,6 +509,8 @@ void main() {
     );
     await tester.pump();
     repository.requests.single.complete(snapshot('Personal task'));
+    await tester.pumpAndSettle();
+    await tester.drainShadToastTimers();
     await tester.pumpAndSettle();
     expect(repository.requests, hasLength(1));
     expect(find.text('Personal task'), findsOneWidget);
@@ -443,6 +540,8 @@ void main() {
     expect(repository.requests, hasLength(1));
     repository.requests.single.complete(snapshot('Late previous-account row'));
     await tester.pumpAndSettle();
+    await tester.drainShadToastTimers();
+    await tester.pumpAndSettle();
     expect(find.text('Late previous-account row'), findsNothing);
     expect(find.text('Activity could not be refreshed.'), findsOneWidget);
   });
@@ -452,19 +551,22 @@ void main() {
   ) async {
     repository.cache = snapshot('Retained row', partial: true);
     await mount(tester);
-    final retry = tester.widget<TextButton>(find.byType(TextButton).first);
-    expect(retry.onPressed, isNull);
+    replay.value++;
+    await tester.pump();
+    expect(repository.requests, hasLength(1));
     repository.requests.single.completeError(Exception('Offline'));
     await tester.pumpAndSettle();
-    final action = tester
-        .widget<TextButton>(find.byType(TextButton).first)
-        .onPressed!;
-    action();
-    action();
+    await tester.drainShadToastTimers();
+    await tester.pumpAndSettle();
+    replay.value++;
+    await tester.pump();
+    replay.value++;
     await tester.pump();
     expect(repository.requests, hasLength(2));
     expect(find.text('Retained row'), findsOneWidget);
     repository.requests.last.complete(snapshot('Recovered row'));
+    await tester.pumpAndSettle();
+    await tester.drainShadToastTimers();
     await tester.pumpAndSettle();
     expect(find.text('Recovered row'), findsOneWidget);
     expect(find.text('Some activity is unavailable.'), findsNothing);

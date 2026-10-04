@@ -21,6 +21,7 @@ Future<void> queueOrSendVoid({
   bool replaySafe = false,
   OfflineMutationQueue? queue,
   ApiClient? apiClient,
+  String? expectedUserId,
 }) async {
   final mutations = queue ?? OfflineMutationQueue.instance;
   final localId = entityId ?? newLocalMutationId();
@@ -45,6 +46,7 @@ Future<void> queueOrSendVoid({
     payload: payload,
     entityId: localId,
     replaySafe: replaySafe,
+    expectedUserId: expectedUserId,
   )) {
     return;
   }
@@ -60,6 +62,7 @@ Future<void> queueOrSendVoid({
       payload: payload ?? const {},
       entityId: localId,
       replaySafe: replaySafe,
+      expectedUserId: expectedUserId,
     )) {
       rethrow;
     }
@@ -78,6 +81,7 @@ Future<void> queueOrSendVoid({
       payload: payload ?? const {},
       entityId: localId,
       replaySafe: replaySafe,
+      expectedUserId: expectedUserId,
     );
     if (!queued) rethrow;
   }

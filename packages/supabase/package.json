@@ -57,15 +57,6 @@
       "bun": "./src/next/proxy.ts",
       "default": "./dist/next/proxy.js"
     },
-    "./next/realtime": {
-      "types": "./dist/next/realtime.d.ts",
-      "bun": "./src/next/realtime.ts",
-      "default": "./dist/next/realtime.js"
-    },
-    "./next/realtime-browser": {
-      "types": "./dist/next/realtime-browser.d.ts",
-      "default": "./dist/next/realtime-browser.js"
-    },
     "./next/realtime-log-provider": {
       "types": "./dist/next/realtime-log-provider.d.ts",
       "bun": "./src/next/realtime-log-provider.tsx",

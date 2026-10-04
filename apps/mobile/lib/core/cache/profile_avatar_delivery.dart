@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:mobile/core/config/api_config.dart';
+import 'package:mobile/core/media/profile_media_optimizer.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
 /// Obtains a fresh signed URL when a staged avatar leaves the outbox.
@@ -13,10 +14,31 @@ Future<void> deliverProfileAvatar({
   required String filename,
   required String contentType,
   required String encodedBytes,
+  bool banner = false,
+  String? operationId,
 }) async {
-  final signed = await api.postJson(ProfileEndpoints.avatarUploadUrl, {
-    'filename': filename,
-  });
+  final optimized = await optimizeProfileMediaBytes(
+    base64Decode(encodedBytes),
+    kind: banner ? ProfileMediaKind.banner : ProfileMediaKind.avatar,
+  );
+  final signed = await api.postJson(
+    banner
+        ? ProfileEndpoints.bannerUploadUrl
+        : ProfileEndpoints.avatarUploadUrl,
+    {
+      'filename': optimized.filename,
+      if (banner && operationId != null) 'operationId': operationId,
+    },
+  );
+  final bannerOperation = operationId ?? signed['operationId'] as String?;
+  if (banner && signed['committed'] == true) return;
+  if (banner && signed['uploaded'] == true) {
+    await api.postJson(ProfileEndpoints.banner, {
+      'action': 'finalize',
+      'operationId': bannerOperation,
+    });
+    return;
+  }
   final uploadUrl = (signed['uploadUrl'] ?? signed['signedUrl']) as String?;
   final publicUrl = signed['publicUrl'] as String?;
   if (uploadUrl == null || publicUrl == null) {
@@ -30,8 +52,8 @@ Future<void> deliverProfileAvatar({
     uploaded = await httpClient
         .put(
           Uri.parse(uploadUrl),
-          headers: {'Content-Type': contentType},
-          body: base64Decode(encodedBytes),
+          headers: {'Content-Type': optimized.contentType},
+          body: optimized.bytes,
         )
         .timeout(const Duration(seconds: 60));
   } on SocketException {
@@ -53,5 +75,12 @@ Future<void> deliverProfileAvatar({
       statusCode: uploaded.statusCode,
     );
   }
-  await api.patchJson(ProfileEndpoints.profile, {'avatar_url': publicUrl});
+  if (banner) {
+    await api.postJson(ProfileEndpoints.banner, {
+      'action': 'finalize',
+      'operationId': bannerOperation,
+    });
+  } else {
+    await api.patchJson(ProfileEndpoints.profile, {'avatar_url': publicUrl});
+  }
 }

@@ -1,0 +1,311 @@
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const {
+  authorizeDevboxAgentMock,
+  claimNextDevboxRunMock,
+  completeDevboxRunMock,
+  heartbeatDevboxRunnerMock,
+  recordDevboxRunEventsMock,
+  shutdownDevboxRunnerMock,
+} = vi.hoisted(() => ({
+  authorizeDevboxAgentMock: vi.fn(),
+  claimNextDevboxRunMock: vi.fn(),
+  completeDevboxRunMock: vi.fn(),
+  heartbeatDevboxRunnerMock: vi.fn(),
+  recordDevboxRunEventsMock: vi.fn(),
+  shutdownDevboxRunnerMock: vi.fn(),
+}));
+
+vi.mock('@/lib/devboxes/agent-auth', () => ({
+  authorizeDevboxAgent: authorizeDevboxAgentMock,
+}));
+
+vi.mock('@/lib/devboxes/agent-store', () => ({
+  claimNextDevboxRun: claimNextDevboxRunMock,
+  completeDevboxRun: completeDevboxRunMock,
+  heartbeatDevboxRunner: heartbeatDevboxRunnerMock,
+  recordDevboxRunEvents: recordDevboxRunEventsMock,
+  shutdownDevboxRunner: shutdownDevboxRunnerMock,
+}));
+
+import { POST as events } from '@/legacy-api-routes/v1/devboxes/agents/events/route';
+import { GET as poll } from '@/legacy-api-routes/v1/devboxes/agents/poll/route';
+import { POST as shutdown } from '@/legacy-api-routes/v1/devboxes/agents/shutdown/route';
+import { DEVBOX_AGENT_API_ENABLED_ENV } from '@/lib/devboxes/agent-traffic-gate';
+import { POST as heartbeat } from './heartbeat/route';
+
+const originalDevboxAgentApiEnabled = process.env[DEVBOX_AGENT_API_ENABLED_ENV];
+
+function createRequest(body?: unknown) {
+  return new Request('http://localhost/api/v1/devboxes/agents', {
+    body: body === undefined ? undefined : JSON.stringify(body),
+    headers:
+      body === undefined ? undefined : { 'Content-Type': 'application/json' },
+    method: body === undefined ? 'GET' : 'POST',
+  });
+}
+
+function mockAuthorizedRunner(heartbeatEnabled: boolean) {
+  authorizeDevboxAgentMock.mockResolvedValue({
+    ok: true,
+    runner: { heartbeatEnabled, id: 'runner-1' },
+  });
+}
+
+function enableDevboxAgentApi() {
+  process.env[DEVBOX_AGENT_API_ENABLED_ENV] = 'true';
+}
+
+describe('devbox agent routes', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    delete process.env[DEVBOX_AGENT_API_ENABLED_ENV];
+    mockAuthorizedRunner(false);
+  });
+
+  afterAll(() => {
+    if (originalDevboxAgentApiEnabled === undefined) {
+      delete process.env[DEVBOX_AGENT_API_ENABLED_ENV];
+    } else {
+      process.env[DEVBOX_AGENT_API_ENABLED_ENV] = originalDevboxAgentApiEnabled;
+    }
+  });
+
+  it('blocks runner heartbeats by default before authentication', async () => {
+    const response = await heartbeat(createRequest());
+
+    expect(response.status).toBe(403);
+    expect(authorizeDevboxAgentMock).not.toHaveBeenCalled();
+    expect(heartbeatDevboxRunnerMock).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({
+      message: `Devbox agent poll and heartbeat are disabled. Set ${DEVBOX_AGENT_API_ENABLED_ENV}=true to enable them.`,
+    });
+  });
+
+  it('blocks runner job polling by default before authentication', async () => {
+    const response = await poll(createRequest());
+
+    expect(response.status).toBe(403);
+    expect(authorizeDevboxAgentMock).not.toHaveBeenCalled();
+    expect(claimNextDevboxRunMock).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({
+      message: `Devbox agent poll and heartbeat are disabled. Set ${DEVBOX_AGENT_API_ENABLED_ENV}=true to enable them.`,
+    });
+  });
+
+  it('blocks runner heartbeats until an admin enables them', async () => {
+    enableDevboxAgentApi();
+
+    const response = await heartbeat(createRequest());
+
+    expect(response.status).toBe(403);
+    expect(authorizeDevboxAgentMock).toHaveBeenCalledOnce();
+    expect(heartbeatDevboxRunnerMock).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({
+      message: 'Heartbeat disabled for this runner',
+    });
+  });
+
+  it('preserves unauthorized heartbeat responses for invalid runner tokens', async () => {
+    enableDevboxAgentApi();
+    authorizeDevboxAgentMock.mockResolvedValue({
+      ok: false,
+      response: Response.json({ message: 'Unauthorized' }, { status: 401 }),
+    });
+
+    const response = await heartbeat(createRequest());
+
+    expect(response.status).toBe(401);
+    expect(heartbeatDevboxRunnerMock).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({
+      message: 'Unauthorized',
+    });
+  });
+
+  it('records runner heartbeats', async () => {
+    enableDevboxAgentApi();
+    mockAuthorizedRunner(true);
+    heartbeatDevboxRunnerMock.mockResolvedValue({
+      message: 'heartbeat accepted',
+    });
+
+    const response = await heartbeat(createRequest());
+
+    expect(response.status).toBe(200);
+    expect(heartbeatDevboxRunnerMock).toHaveBeenCalledWith(
+      'runner-1',
+      undefined
+    );
+    await expect(response.json()).resolves.toEqual({
+      message: 'heartbeat accepted',
+    });
+  });
+
+  it('records runner heartbeat capabilities', async () => {
+    enableDevboxAgentApi();
+    mockAuthorizedRunner(true);
+    heartbeatDevboxRunnerMock.mockResolvedValue({
+      message: 'heartbeat accepted',
+    });
+
+    const capabilities = {
+      cli: { name: 'ttr', version: '0.2.0' },
+      os: { arch: 'arm64', platform: 'darwin', release: '25.0.0' },
+      resources: {
+        cpu: { cores: 10, model: 'Apple' },
+        loadAverage: [1, 2, 3],
+        memory: { freeBytes: 1024, totalBytes: 2048 },
+        uptimeSeconds: 120,
+      },
+      runtimes: { bun: '1.4.0', node: 'v26.0.0' },
+      tools: { docker: 'Docker version 29.0.0', git: 'git version 2.54.0' },
+    };
+
+    const response = await heartbeat(createRequest({ capabilities }));
+
+    expect(response.status).toBe(200);
+    expect(heartbeatDevboxRunnerMock).toHaveBeenCalledWith(
+      'runner-1',
+      capabilities
+    );
+  });
+
+  it('rejects invalid runner heartbeat bodies after heartbeat is enabled', async () => {
+    enableDevboxAgentApi();
+    mockAuthorizedRunner(true);
+
+    const response = await heartbeat(
+      createRequest({
+        capabilities: {
+          cli: { name: 'ttr', version: '0.2.0' },
+          unexpected: true,
+        },
+      })
+    );
+
+    expect(response.status).toBe(400);
+    expect(heartbeatDevboxRunnerMock).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toMatchObject({
+      message: 'Invalid heartbeat body',
+    });
+  });
+
+  it('accepts bounded playground readiness without changing old heartbeat contracts', async () => {
+    enableDevboxAgentApi();
+    mockAuthorizedRunner(true);
+    const capabilities = {
+      playground: {
+        ready: true,
+        languages: ['python', 'shell'],
+        environments: 1,
+      },
+    };
+    heartbeatDevboxRunnerMock.mockResolvedValue({ message: 'accepted' });
+    expect((await heartbeat(createRequest({ capabilities }))).status).toBe(200);
+    expect(heartbeatDevboxRunnerMock).toHaveBeenCalledWith(
+      'runner-1',
+      capabilities
+    );
+  });
+  it.each([
+    { ready: 'true', languages: ['python'], environments: 0 },
+    { ready: true, languages: ['unknown'], environments: 0 },
+    { ready: true, languages: Array(12).fill('python'), environments: 0 },
+    { ready: true, languages: [], environments: -1 },
+    { ready: true, languages: [], environments: 9 },
+    { ready: true, languages: [], environments: 1.5 },
+    { ready: true, languages: [], environments: 0, command: ['unsafe'] },
+  ])(
+    'rejects malformed playground readiness without writing: %j',
+    async (playground) => {
+      enableDevboxAgentApi();
+      mockAuthorizedRunner(true);
+      expect(
+        (await heartbeat(createRequest({ capabilities: { playground } })))
+          .status
+      ).toBe(400);
+      expect(heartbeatDevboxRunnerMock).not.toHaveBeenCalled();
+    }
+  );
+  it('shuts down the authenticated runner', async () => {
+    shutdownDevboxRunnerMock.mockResolvedValue({
+      message: 'Devbox runner removed from the cluster.',
+      runner: { id: 'runner-1', status: 'revoked' },
+    });
+
+    const response = await shutdown(createRequest());
+
+    expect(response.status).toBe(200);
+    expect(shutdownDevboxRunnerMock).toHaveBeenCalledWith('runner-1');
+    await expect(response.json()).resolves.toEqual({
+      message: 'Devbox runner removed from the cluster.',
+      runner: { id: 'runner-1', status: 'revoked' },
+    });
+  });
+
+  it('claims queued jobs for the authenticated runner', async () => {
+    enableDevboxAgentApi();
+    claimNextDevboxRunMock.mockResolvedValue({
+      command: ['bun', '--version'],
+      leaseId: 'lease-1',
+      runId: 'run-1',
+    });
+
+    const request = createRequest();
+    const response = await poll(request);
+
+    expect(response.status).toBe(200);
+    expect(authorizeDevboxAgentMock).toHaveBeenCalledWith(request, {
+      requireOnline: true,
+    });
+    expect(claimNextDevboxRunMock).toHaveBeenCalledWith('runner-1');
+    await expect(response.json()).resolves.toEqual({
+      jobs: [
+        {
+          command: ['bun', '--version'],
+          leaseId: 'lease-1',
+          runId: 'run-1',
+        },
+      ],
+    });
+  });
+
+  it('stores logs and terminal completion events', async () => {
+    recordDevboxRunEventsMock.mockResolvedValue({ events: 1 });
+    completeDevboxRunMock.mockResolvedValue({
+      run: {
+        exitCode: 0,
+        id: 'run-1',
+        leaseId: 'lease-1',
+        status: 'succeeded',
+      },
+    });
+
+    const request = createRequest({
+      completion: { exitCode: 0, status: 'succeeded' },
+      events: [{ message: '1.4.0' }],
+      runId: 'run-1',
+    });
+    const response = await events(request);
+
+    expect(response.status).toBe(200);
+    expect(authorizeDevboxAgentMock).toHaveBeenCalledWith(request, {
+      requireOnline: true,
+    });
+    expect(recordDevboxRunEventsMock).toHaveBeenCalledWith({
+      events: [{ message: '1.4.0' }],
+      runId: 'run-1',
+      runnerId: 'runner-1',
+    });
+    expect(completeDevboxRunMock).toHaveBeenCalledWith({
+      exitCode: 0,
+      runId: 'run-1',
+      runnerId: 'runner-1',
+      status: 'succeeded',
+    });
+    await expect(response.json()).resolves.toMatchObject({
+      events: 1,
+      message: 'events accepted',
+    });
+  });
+});

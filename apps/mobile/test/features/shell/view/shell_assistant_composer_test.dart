@@ -11,7 +11,6 @@ import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
-import 'package:mobile/features/assistant/widgets/assistant_morphing_dock.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -19,6 +18,7 @@ import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
+import 'package:mobile/features/shell/view/persistent_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -109,6 +109,15 @@ void main() {
                   builder: (_, _) => const SizedBox(),
                 ),
                 GoRoute(path: Routes.apps, builder: (_, _) => const SizedBox()),
+                GoRoute(path: Routes.home, builder: (_, _) => const SizedBox()),
+                GoRoute(
+                  path: Routes.profileRoot,
+                  builder: (_, _) => const SizedBox(),
+                ),
+                GoRoute(
+                  path: Routes.notifications,
+                  builder: (_, _) => const SizedBox(),
+                ),
               ],
             ),
           ],
@@ -148,56 +157,77 @@ void main() {
 
         await settle();
         final dockBefore = tester.state(find.byType(FloatingShellDock));
+        final persistentBefore = tester.state(find.byType(PersistentShellDock));
+        final materialBefore = tester.element(
+          find.byKey(const ValueKey('persistent-shell-dock-material')),
+        );
         expect(
           find.byKey(const ValueKey('compact-shell-footer')),
           findsNothing,
         );
         expect(
           find.byKey(const ValueKey('floating-shell-dock-opacity')),
-          findsNothing,
+          findsOneWidget,
         );
-        expect(find.byType(AssistantMorphingDock), findsOneWidget);
+        expect(find.byType(PersistentShellDock), findsOneWidget);
         expect(
-          find.byKey(const ValueKey('assistant-dock-navigation')),
+          find.byKey(const ValueKey('navigation-morph-bounds')),
           findsOneWidget,
         );
         final navigationDock = tester.widget<FloatingShellDock>(
           find.byType(FloatingShellDock),
         );
-        expect(navigationDock.bottomInset, 0);
+        expect(navigationDock.bottomInset, greaterThan(0));
         expect(navigationDock.navigationBottomOffset, 0);
 
         await tester.tap(find.byType(AssistantComposerFab));
         await settle();
-        expect(find.byType(AssistantMorphingDock), findsOneWidget);
+        expect(find.byType(PersistentShellDock), findsOneWidget);
         expect(
-          find.byKey(const ValueKey('assistant-dock-chat')),
+          find.byKey(const ValueKey('persistent-shell-dock-material')),
           findsOneWidget,
         );
         expect(
-          find.byKey(const ValueKey('assistant-dock-navigation')),
+          find.byKey(const ValueKey('navigation-morph-bounds')),
           findsNothing,
         );
         expect(
           find.byKey(const ValueKey('floating-shell-dock-opacity')),
-          findsNothing,
+          findsOneWidget,
         );
         expect(
           identical(tester.state(find.byType(FloatingShellDock)), dockBefore),
           isTrue,
         );
+        chrome.enterFullscreen();
+        await settle();
+        expect(find.byType(TextField), findsOneWidget);
+        expect(find.byType(PersistentShellDock), findsOneWidget);
+        expect(
+          identical(
+            tester.element(
+              find.byKey(const ValueKey('persistent-shell-dock-material')),
+            ),
+            materialBefore,
+          ),
+          isTrue,
+        );
+        chrome.exitFullscreen();
+        await settle();
         tester.view.viewInsets = const FakeViewPadding(bottom: 260);
         addTearDown(tester.view.resetViewInsets);
         await settle();
         expect(
           tester
-              .getRect(find.byKey(const ValueKey('assistant-dock-chat')))
+              .getRect(
+                find.byKey(const ValueKey('persistent-shell-dock-material')),
+              )
               .bottom,
           lessThanOrEqualTo(900 - 260),
         );
         expect(
           find.byKey(const ValueKey('floating-shell-dock-opacity')),
-          findsNothing,
+          findsOneWidget,
         );
         tester.view.resetViewInsets();
         await settle();
@@ -206,7 +236,7 @@ void main() {
         expect(chrome.state.navigationExpanded, isFalse);
         expect(chrome.state.composerVisible, isFalse);
         expect(
-          find.byKey(const ValueKey('assistant-dock-navigation')),
+          find.byKey(const ValueKey('navigation-morph-bounds')),
           findsOneWidget,
         );
         expect(
@@ -215,31 +245,56 @@ void main() {
         );
         chrome.enterLiveMode();
         await settle();
-        expect(find.byType(AssistantMorphingDock), findsNothing);
+        expect(find.byType(PersistentShellDock), findsOneWidget);
         expect(
           find.byKey(const ValueKey('floating-shell-dock-opacity')),
           findsOneWidget,
         );
         chrome.exitLiveMode();
         await settle();
-        expect(find.byType(AssistantMorphingDock), findsOneWidget);
+        expect(find.byType(PersistentShellDock), findsOneWidget);
         expect(
           find.byKey(const ValueKey('floating-shell-dock-opacity')),
-          findsNothing,
+          findsOneWidget,
         );
         // Retained root pages must never paint two bodies/docks, even on
         // the first frame after leaving or reentering Assistant.
-        for (final destination in [Routes.apps, Routes.assistant]) {
+        for (final destination in [
+          Routes.home,
+          Routes.apps,
+          Routes.assistant,
+          Routes.profileRoot,
+          Routes.notifications,
+          Routes.assistant,
+        ]) {
           router.go(destination);
           for (final frame in [0, 16, 100, 280]) {
             await tester.pump(Duration(milliseconds: frame));
             expect(
-              find.byType(AssistantMorphingDock),
-              destination == Routes.assistant ? findsOneWidget : findsNothing,
+              tester.takeException(),
+              isNull,
+              reason: '$destination frame $frame',
             );
             expect(
+              identical(
+                tester.state(find.byType(PersistentShellDock)),
+                persistentBefore,
+              ),
+              isTrue,
+            );
+            expect(
+              identical(
+                tester.element(
+                  find.byKey(const ValueKey('persistent-shell-dock-material')),
+                ),
+                materialBefore,
+              ),
+              isTrue,
+            );
+            expect(find.byType(PersistentShellDock), findsOneWidget);
+            expect(
               find.byKey(const ValueKey('floating-shell-dock-opacity')),
-              destination == Routes.assistant ? findsNothing : findsOneWidget,
+              findsOneWidget,
             );
           }
         }
@@ -389,9 +444,9 @@ void main() {
       final dock = tester.widget<FloatingShellDock>(
         find.byType(FloatingShellDock),
       );
-      expect(dock.bottomInset, 0);
+      expect(dock.bottomInset, greaterThan(0));
       expect(dock.navigationBottomOffset, 0);
-      expect(find.byType(AssistantMorphingDock), findsOneWidget);
+      expect(find.byType(PersistentShellDock), findsOneWidget);
       chrome.setComposerVisible(visible: false);
       await settle();
       expect(input.text, 'Synthetic unsent draft');

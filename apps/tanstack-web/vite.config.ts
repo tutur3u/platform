@@ -31,12 +31,6 @@ const nextLinkShim = fileURLToPath(
 const supabaseNextClient = fileURLToPath(
   new URL('../../packages/supabase/src/next/client.ts', import.meta.url)
 );
-const supabaseRealtimeBrowser = fileURLToPath(
-  new URL(
-    '../../packages/supabase/src/next/realtime-browser.ts',
-    import.meta.url
-  )
-);
 
 const port = Number.parseInt(process.env.PORT ?? '7824', 10);
 const prerenderLocales = ['en', 'vi'] as const;
@@ -134,7 +128,6 @@ export default defineConfig(({ mode }) => {
         'next/link': nextLinkShim,
         'next/navigation': nextNavigationShim,
         '@tuturuuu/supabase/next/client': supabaseNextClient,
-        '@tuturuuu/supabase/next/realtime-browser': supabaseRealtimeBrowser,
       },
     },
     server: {

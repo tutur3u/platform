@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/user_profile.dart';
@@ -20,6 +22,133 @@ void main() {
       profileRepository = _MockProfileRepository();
       ProfileCubit.clearMemoryCache();
       when(() => profileRepository.dispose()).thenReturn(null);
+    });
+
+    test('logged-out load never owns a busy update', () async {
+      when(() => profileRepository.getCurrentUserIdSync()).thenReturn(null);
+      when(
+        () => profileRepository.getCachedProfile(),
+      ).thenAnswer((_) async => (profile: null, fetchedAt: null));
+      when(
+        () => profileRepository.getProfile(),
+      ).thenAnswer((_) async => (profile: null, error: 'Signed out'));
+      final cubit = ProfileCubit(profileRepository: profileRepository);
+      await cubit.loadProfile();
+      expect(cubit.state.isLoading, isFalse);
+      await cubit.close();
+    });
+
+    test(
+      'rejects a previous actor response before memory or disk caching',
+      () async {
+        var actor = 'first';
+        final response = Completer<({UserProfile? profile, String? error})>();
+        when(
+          () => profileRepository.getCurrentUserIdSync(),
+        ).thenAnswer((_) => actor);
+        when(
+          () => profileRepository.getCachedProfile(),
+        ).thenAnswer((_) async => (profile: null, fetchedAt: null));
+        when(
+          () => profileRepository.getProfile(),
+        ).thenAnswer((_) => response.future);
+        final cubit = ProfileCubit(profileRepository: profileRepository);
+        final pending = cubit.loadProfile();
+        await Future<void>.delayed(Duration.zero);
+        actor = 'second';
+        response.complete((
+          profile: const UserProfile(
+            id: 'first',
+            bannerUrl: 'https://example.test/banner',
+          ),
+          error: null,
+        ));
+        await pending;
+        expect(cubit.state.profile, isNull);
+        verifyNever(() => profileRepository.saveCachedProfile(any()));
+        await cubit.close();
+      },
+    );
+
+    for (final duringReload in [false, true]) {
+      test(
+        'actor switch releases only owned busy state reload=$duringReload',
+        () async {
+          var actor = 'first';
+          final update = Completer<({bool success, String? error})>();
+          final profile = Completer<({UserProfile? profile, String? error})>();
+          when(
+            () => profileRepository.getCurrentUserIdSync(),
+          ).thenAnswer((_) => actor);
+          when(
+            () => profileRepository.updateDisplayName('name'),
+          ).thenAnswer((_) => update.future);
+          when(
+            () => profileRepository.getCachedProfile(),
+          ).thenAnswer((_) async => (profile: null, fetchedAt: null));
+          when(
+            () => profileRepository.getProfile(),
+          ).thenAnswer((_) => profile.future);
+          final cubit = ProfileCubit(profileRepository: profileRepository);
+          final pending = cubit.updateDisplayName('name');
+          expect(cubit.state.isLoading, isTrue);
+          if (duringReload) {
+            update.complete((success: true, error: null));
+            await Future<void>.delayed(Duration.zero);
+          }
+          actor = 'second';
+          if (duringReload) {
+            profile.complete((profile: null, error: 'Unavailable'));
+          } else {
+            update.complete((success: false, error: 'Old actor failure'));
+          }
+          expect(await pending, isFalse);
+          expect(cubit.state.isLoading, isFalse);
+          expect(cubit.state.error, isNull);
+          await cubit.close();
+        },
+      );
+    }
+
+    test('old completion cannot release the next actor update', () async {
+      var actor = 'first';
+      final first = Completer<({bool success, String? error})>();
+      final second = Completer<({bool success, String? error})>();
+      when(
+        () => profileRepository.getCurrentUserIdSync(),
+      ).thenAnswer((_) => actor);
+      when(
+        () => profileRepository.updateDisplayName('first'),
+      ).thenAnswer((_) => first.future);
+      when(
+        () => profileRepository.updateDisplayName('second'),
+      ).thenAnswer((_) => second.future);
+      final refreshed = Completer<({UserProfile? profile, String? error})>();
+      when(
+        () => profileRepository.getCachedProfile(),
+      ).thenAnswer((_) async => (profile: null, fetchedAt: null));
+      when(
+        () => profileRepository.getProfile(),
+      ).thenAnswer((_) => refreshed.future);
+      final cubit = ProfileCubit(profileRepository: profileRepository);
+      final old = cubit.updateDisplayName('first');
+      actor = 'second';
+      final current = cubit.updateDisplayName('second');
+      final load = cubit.loadProfile();
+      await Future<void>.delayed(Duration.zero);
+      expect(cubit.state.isLoading, isTrue);
+      first.complete((success: false, error: 'Old failure'));
+      expect(await old, isFalse);
+      expect(cubit.state.isLoading, isTrue);
+      expect(cubit.state.error, isNull);
+      refreshed.complete((profile: null, error: 'Unavailable'));
+      await load;
+      expect(cubit.state.isLoading, isTrue);
+      second.complete((success: false, error: 'Current failure'));
+      expect(await current, isFalse);
+      expect(cubit.state.isLoading, isFalse);
+      expect(cubit.state.error, 'Current failure');
+      await cubit.close();
     });
 
     blocTest<ProfileCubit, ProfileState>(

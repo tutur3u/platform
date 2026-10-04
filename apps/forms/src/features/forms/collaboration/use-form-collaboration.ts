@@ -3,7 +3,7 @@
 import {
   createRealtimeClient,
   type RealtimePresenceState,
-} from '@tuturuuu/supabase/next/realtime-browser';
+} from '@tuturuuu/internal-api/realtime';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DEV_MODE } from '@/constants/common';
 import {
@@ -147,9 +147,9 @@ export function useFormCollaboration({
 
     disposedRef.current = false;
     sessionIdRef.current = getOrCreateSessionId();
-    const supabase = createRealtimeClient();
+    const realtime = createRealtimeClient();
 
-    const channel = supabase.channel(channelName, {
+    const channel = realtime.channel(channelName, {
       config: {
         broadcast: { self: false },
         presence: { enabled: true, key: currentUserId },
@@ -199,7 +199,7 @@ export function useFormCollaboration({
 
       channelRef.current = null;
       channel.untrack?.().catch(() => {});
-      supabase.removeChannel(channel).catch(() => {});
+      realtime.removeChannel(channel).catch(() => {});
     };
   }, [channelName, currentUserId, track]);
 

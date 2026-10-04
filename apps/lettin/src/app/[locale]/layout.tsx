@@ -12,6 +12,7 @@ import './notebook.css';
 import './creator.css';
 import './studio.css';
 import './spaces.css';
+import './wiki.css';
 
 const bodyFont = Be_Vietnam_Pro({
   subsets: ['latin', 'vietnamese'],

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { meetingProgrammingSchema } from './room-programming';
 
 export const meetReactionSchema = z.enum([
   'like',
@@ -18,6 +19,7 @@ export const meetRoomSettingsPatchSchema = z.object({
   shareNotesAfterMeeting: z.boolean().optional(),
 });
 export const meetRoomSettingsSchema = z.object({
+  programming: meetingProgrammingSchema.nullable().optional(),
   publicLinkPreview: z.boolean().optional(),
   saveChat: z.boolean().optional(),
   shareNotes: z.boolean().default(false),

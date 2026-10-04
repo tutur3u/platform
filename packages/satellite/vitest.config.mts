@@ -29,6 +29,13 @@ export default defineConfig({
         ),
       },
       {
+        find: /^@tuturuuu\/internal-api$/,
+        replacement: resolve(
+          import.meta.dirname,
+          '../internal-api/src/index.ts'
+        ),
+      },
+      {
         find: '@tuturuuu/supabase/next/server',
         replacement: resolve(
           import.meta.dirname,

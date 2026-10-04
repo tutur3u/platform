@@ -86,6 +86,31 @@ manage workspace membership and roles through the existing platform settings.
 
 ## Drafts and publishing
 
+The private notebook Markdown source field has a stable, localized accessible
+name independent of its formatting hint or validation message. This applies to
+Markdown editing on the world notebook and entry editor; read-only documents
+retain their existing editing restriction. The mounted `rich-editor.test.tsx`
+regression checks the exact field label with the real editor, and
+`lettin-wiki.noauth.spec.ts` checks browser save and reload behavior. Its first
+scenario logs fixed phase names and completion/failure markers without fixture
+IDs, credentials, or response bodies. The project creation response has a
+30-second deadline within the unchanged 180-second scenario limit. Use the last
+phase marker to locate interrupted browser runs; missing trace artifacts or a
+runner shutdown do not establish that the product scenario passed.
+`lettin-e2e-phase.test.ts` covers the bounded response wait, exact response
+matching, failure propagation, and safe phase diagnostics.
+
+Editor initialization and read-only permission transitions are presentation
+changes, not draft edits. The shared editor must not emit a content-update event
+for an unchanged document when synchronizing editable state. Saved notebooks
+therefore remain navigable after reload; genuine typing, checkbox edits, and
+applying Markdown still mark the draft dirty and keep the navigation guard. This
+applies to the shared rich-text editor and both private notebook surfaces.
+`rich-editor.test.tsx` mounts saved content with the real editor, and
+`editor-readonly-transition.test.tsx` checks permission changes without false
+edits while retaining real checkbox mutations. Browser save/reload assertions
+remain required in exact-commit CI.
+
 Saving never changes the public revision. Publish a world's notebook to make its
 public page visible, and publish entries separately. Unpublishing a world hides all
 its entries from public reads. Publishing it again exposes entries that remain
@@ -141,12 +166,20 @@ Run these commands from `apps/lettin` through the shared resource queue:
 bun run cf:typegen
 ttr resources run -- bun run db:migrate:local
 ttr resources run -- bun run test
-ttr resources run -- bun run type-check
-ttr resources run -- bun run build:cloudflare
+
 ```
 
 Local development initializes Cloudflare bindings through OpenNext. For runtime
-verification, `bun run preview:cloudflare` serves the built Worker in workerd.
+verification, use the collaborative preview or a previously CI-built Worker.
+Do not run app or package builds on the agent machine. The exact-commit Lettin
+Cloudflare CI workflow provides the real build and type-check evidence.
+The private wiki shelf and world routes provide localized route-level loading
+boundaries. Their request-time pages stream into these placeholders during client
+navigation; the locale layout's Suspense boundary sits above the shared workspace
+layout and cannot cover those transitions. The mounted `rich-editor.test.tsx`
+exercises the actual shared TipTap editor and Markdown parser. The authenticated
+wiki E2E retains creation, save, and reload assertions, with named, bounded editor
+actions so a pending control is reported before the overall test deadline.
 The storage tests use disposable Miniflare D1 and R2 resources and cover creator
 access, invitation delegation, conflicting writes, published snapshots, private
 relationships, and artwork publication/revocation.
@@ -189,8 +222,9 @@ bun run deploy:cloudflare
 domain. Verify the active Worker version and `/api/v1/lettin/health`, then verify
 central login, workspace switching, invite acceptance, collaborator roles,
 membership revocation, conflicting edits, artwork privacy, and anonymous published
-world browsing. Run `bun check` from the repository root before release; record
-unrelated repository blockers separately from Lettin's focused validation.
+world browsing. Require exact-commit CI test, lint, type-check, and real app build gates before
+release; record unrelated repository blockers separately from Lettin's focused
+validation. Do not run `bun check` locally because its task graph can build.
 
 Artwork cleanup runs before uploads and claims at most ten unused objects in that world per request after a seven-day grace period. Draft and published references are retained. Claimed objects cannot be newly referenced; failed R2 deletions remain queued for the next upload. A world with no further uploads retains its unused artwork.
 
@@ -209,8 +243,6 @@ published notebooks; they never expose email or private account details.
 resolve the authenticated actor before calling it. A conflicting username or
 invalid image rejects the complete patch and reserves no new username. Image
 URLs use HTTPS; avatar, banner, bio, and username can be cleared explicitly.
-Changed avatar URLs are checked by the database trigger on every update path;
-unchanged legacy URLs remain readable and do not block unrelated saves.
 The database contract fixture `public-creator-identity.sql` covers actor grants,
 claims, conflicts, rollback, rename, clearing, and private-field rejection.
 
@@ -220,6 +252,15 @@ actual database types. Its exact-head artifact is the type-generation source;
 manual production schema pushes are prohibited. This contract does not authorize
 production migration or deployment.
 
+The first-class `/api/v1/users/me/profile` endpoint owns identity updates. It
+accepts the authenticated actor, preserves same-origin checks for cookie writes,
+and returns 409 for a reserved username. Avatar, banner, and username writes are
+validated before database access. Until the additive migration arrives, reads
+fall back to existing identity fields and biography and avatar
+changes continue working; display-name, banner, and username changes return 503 rather than
+silently losing them. Rust migration handlers mirror this behavior; the Next.js
+API remains the live source of truth. Regression evidence includes the profile
+route tests and backend profile validation and outbound-transport tests.
 
 New usernames require 5–32 lowercase letters, digits, or underscores and start
 with a letter or digit. Common platform/service names and major brands are
@@ -237,8 +278,38 @@ well as the shared RPC; conflicting, invalid, or rate-limited saves roll back th
 whole patch. The private per-user change history is pruned to 28 days when a
 change succeeds. Public identity read surfaces never select this private history.
 
-Avatar uploads have a Storage-enforced 2 MiB ceiling; banners use 5 MiB. Both
-allow PNG, JPEG, WebP, and GIF and retain shared public identity semantics.
+Avatar uploads are automatically optimized to at most **1 MB (1,000,000 bytes)**;
+banners to **2 MB (2,000,000 bytes)**. Source PNG, JPEG, WebP and GIF files may be
+up to 2 MiB for avatars or 5 MiB for banners. This rule covers canonical personal
+identity uploads from Tulletin, platform web, Nova and mobile; existing objects
+remain readable. Browser clients resize and encode WebP before transport. Mobile
+uses its existing in-house image library off the UI isolate and stores optimized,
+metadata-free PNG in offline queues; older queued avatar payloads are optimized
+again before delivery. Contact avatars and public profile-link avatars also use the browser optimizer and
+single-use central upload capability. Active public links receive a stable,
+link-scoped budget identity and can only write inside their verified link path.
+Workspace avatar clients use the same client optimizer and shared server path,
+with workspace permission checks before issuance. Their tickets share the actor
+budget with personal images. Satellite workspace endpoints delegate issuance to
+the central API rather than granting raw Storage writes.
+Mobile Profile settings supports both avatar and banner selection. Banner removal
+and replacement use the same actor-scoped, retry-safe lifecycle as web profiles.
+
+The server independently decodes, applies EXIF orientation, strips metadata,
+resizes without enlarging (avatars within 1024 x 1024; banners within 2560 x 1440),
+and encodes WebP. Quality then dimensions are reduced as needed; output is checked
+before persistence. GIF and animated WebP use their first frame. Transparency is
+preserved. Unsupported/corrupt images and sources above 20 million pixels are
+rejected. Public buckets accept only WebP, with the final byte caps enforced by
+Storage; originals are never persisted. Identity artwork retains public semantics.
+Personal banner tickets bind the optimized WebP upload to an immutable actor and
+operation path. The optimized upload handler checks the issued lifecycle receipt
+before decoding; replay cannot write a different operation or bypass its budget.
+Native finalize and web profile saves retain banner retirement and concurrency
+checks. Before an outstanding ticket expires, a transparent one-pixel WebP replaces
+retired content while retaining its occupied slot; deletion follows expiry.
+Regression evidence: banner upload route tests, `profile-media-upload-put.test.ts`,
+`profile-banner-lifecycle.test.ts`, and native banner delivery/actor-race tests.
 Restrictive Storage policies require server-issued, budgeted upload tickets;
 ordinary authenticated bucket uploads cannot bypass quotas. These changes build
 on the shared Postgres counter foundation in storage anti-abuse PR #5736 and
@@ -246,28 +317,15 @@ require the complete dependent release. The identity contract additionally tests
 reserved names, rolling-window boundaries, no-ops, direct-write enforcement,
 atomic rollback, byte/MIME ceilings, and raw upload denial.
 
-Existing current-user avatar uploads keep their `/api/v1/users/me/avatar/upload-url`
-request and response contract across Web, mobile, and satellite app sessions. The
-API reserves the full 2 MiB ceiling before issuing an admin-backed signed ticket:
-The shared media contract permits two tickets per account per UTC hour, three
-avatar tickets or two banner tickets per UTC day, and ten combined tickets per
-Monday-start UTC week. Combined byte ceilings are 16 MiB per account per day and
-32 MiB per week; global ceilings are 10,000 tickets and 16 GiB per UTC day. All
-tiers use these limits. Unused or failed tickets consume their full bucket ceiling;
-budget failure prevents ticket issuance.
-Storage still checks actual MIME type and bytes. Raw handle reservations are
-blocked for ordinary clients; existing reservations and unchanged legacy handles
-remain available, while new claims use the atomic authenticated server RPC.
-Regression evidence: `public-creator-identity.sql` and the current-user avatar
-upload handler's colocated tests and `profile-upload-budget.test.ts`.
 
 The shared contract applies to current-user media ticket issuers, including the
 avatar endpoint in this foundation and the dependent banner endpoint. Existing
 workspace avatar tickets retain workspace-settings authorization and additionally
 reserve the resolved account media ceilings and the shared global ceilings before
-signing. Registered satellites use the same actor reservation before their local
-admin-backed workspace avatar signer; changing apps cannot bypass the shared
-account or global limits. Permission denials reserve nothing; quota exhaustion and unavailable
+signing. Registered satellites delegate workspace avatar tickets to the central
+optimized media endpoint, which reserves the same actor budget before issuing a
+ticket; changing apps cannot bypass the shared account or global limits.
+Permission denials reserve nothing; quota exhaustion and unavailable
 protection return 429 and 503 without issuing a ticket.
 Workspace-user avatar uploads also charge the same verified actor used for
 `manage_users` authorization: Web revalidates the request session, while Contacts
@@ -285,13 +343,112 @@ handlers' colocated tests and `packages/satellite/src/routes/workspace-settings.
 plus `profile-media-upload-limits.sql` for authenticated
 INSERT and UPDATE restrictions.
 
-Legacy handle rows with no recorded owner are attributed only when an existing
-canonical profile references that handle; explicitly owned reservations are never
-reassigned. Full-schema local seeds assign each synthetic reservation to its
-profile actor before updating the profile, so bootstrap obeys the same ownership
-and cooldown checks. The identity pgTAP fixture covers seeded ownership and a
-no-op save without consuming another allowance.
+## Wiki, About profiles, and themes
 
+Workspace wiki pages have dedicated directories for characters, worlds, stories,
+locations, timeline events, relationships, roles, organizations, lore, and pages.
+Entries retain a canonical world owner and optimistic version checks. Typed
+relationships and backlinks are world-scoped: self-references, missing targets,
+and cross-world edges are rejected atomically. Public rendering drops edges to
+unpublished entries. Dates order the timeline; undated entries remain accessible.
+The satellite Structure shell shares workspace navigation, notifications, and
+account controls with other Tuturuuu apps.
+
+The in-house editor accepts rich text and Markdown source, including headings,
+lists, task lists, tables, links, images, and inline formatting. Applying Markdown
+is explicit; saving is disabled until source edits are applied or cancelled.
+Artwork must belong to the notebook. Published inline artwork follows the same
+privacy and retention rules as cover images. Unsupported embed HTML cannot grant
+access to private task or workspace data.
+
+Canonical identity is available to workspace members. Approved creators with
+`manage_documents` can additionally edit their About profile: creative headline,
+pronouns, location, interests, portfolio links, and rich biography. About data is
+owned by the creator in Lettin D1; public creator pages require a published
+notebook and never select private account fields. Paper is the default palette;
+forest, midnight, and rose are alternatives, with clean or editorial typography.
+World and About themes save with their content. Reduced motion respects user
+preference and the saved theme setting.
+
+## Exocorpse imports and private moderation
+
+Only actors with a verified `@tuturuuu.com` email, approved creator access, and
+workspace document-management permission can see or call the importer. CMS reads
+use the fixed source workspace `3385bd92-3d5e-42f6-b3ad-0d1394af3509` and additionally
+require its `manage_external_projects` permission. Canonical JSON file imports do
+not require source membership unless they copy managed CMS artwork. Reading the
+source does not modify it.
+
+Imports are reviewed before applying, bounded by source collection and payload
+limits, and copied into a private notebook. Stable source identifiers map wiki
+references; excluded or missing targets are omitted. Import application is
+transactional and idempotent. Managed images are copied into owned private target
+storage; a failed transaction cleans up its newly copied objects. Interactive CMS
+collections are excluded. No source content is included in repository fixtures.
+
+The creator blacklist is a private personal record, scoped to actor and workspace.
+It supports adding, editing, and removing records and importing source blacklist
+entries. It is never published alongside a notebook. It does not change anonymous
+public browsing or imply platform-wide account blocking.
+
+## Profile upload budgets and regression evidence
+
+Avatar and banner tickets always use PR #5736's atomic Postgres budget primitive,
+independently of its optional storage-egress activation flag. Per account, both
+media kinds share two tickets per UTC hour and ten per UTC calendar week. Avatars
+allow three tickets per UTC day; banners allow two. Their combined reserved bytes
+are capped at 16 MiB per day and 32 MiB per week. Global caps are 10,000 tickets
+and 16 GiB per UTC day. Weeks begin Monday. The full source-upload transport ceiling (2 MiB/5 MiB) is
+charged, even for smaller files or unused tickets; clients cannot claim a lower
+size to bypass the budget. Quota failures return 429 with a bounded Retry-After; protection
+or schema outages return 503 without retry timing and issue no ticket. Tickets expire after ten minutes, are scoped to a fresh actor-owned WebP object,
+and prohibit overwrite. They authorize an unauthenticated binary PUT to the central
+API so native/offline clients retain their existing signed-upload contract. An
+atomic shared counter consumes each ticket once before reading or decoding; replay
+returns 409. Actual streamed source bytes are bounded even without Content-Length.
+The API stores only the optimized result using service-role credentials. Tickets
+never grant direct writes to public Storage. Images are public identity artwork.
+
+Coverage is in creator identity and profile-media pgTAP contracts, shared username
+and upload-budget tests, central profile/ticket API tests, actual editor Markdown
+round-trip tests, and Lettin's disposable D1/R2 tests. The owned satellite runner
+includes `lettin-wiki.noauth.spec.ts` for authenticated editing and reloads,
+public/private wiki projections, imports, blacklists, About profiles, actual
+banner uploads, Storage byte ceilings, and rename/upload quotas. CI/E2E success
+must be verified on the exact candidate before merging; test definitions alone
+are not runtime evidence.
+
+
+For a server using an internal HTTP Supabase origin, set
+`SUPABASE_PUBLIC_STORAGE_ORIGIN` to its externally reachable HTTPS Storage origin.
+Final profile image URLs use that public Storage origin. Signed upload URLs use
+the central web origin (`NEXT_PUBLIC_APP_URL`) and point to the optimization API;
+clients must not construct Storage upload URLs from the returned token. The E2E runner registers `supabase.tuturuuu.localhost` through
+Portless and pins this setting in its disposable environment file, so banner
+uploads use real HTTPS and the production HTTPS profile validation stays intact.
+
+Legacy null-owner handle reservations are reconciled only for a unique existing
+canonical profile. Non-null ownership is never reassigned, unmatched reservations
+remain unavailable, and unchanged legacy handles consume no change allowance.
+The full-schema seed preserves its synthetic names while assigning each profile
+reservation to its real actor. Regression evidence is the dependent identity
+fixture `public-creator-identity.sql`; ordinary authenticated handle INSERTs are
+denied so new claims use the atomic profile RPC.
+
+Both Web and Rust profile PATCH paths preserve bounded unchanged legacy handles
+verbatim after checking only the authenticated actor’s canonical handle. Changed
+invalid handles return 400 without claiming a reservation; the locked atomic SQL
+RPC repeats the new-handle checks and remains authoritative across concurrent saves. API regressions cover
+short, reserved, and historically mixed-case no-ops and SQL error mapping.
+
+Signed profile-media PUTs use only the Storage ticket and image MIME header, with
+cookies omitted; API authorization/default headers remain on the ticket request.
+`packages/internal-api/src/profile-media.test.ts` guards this transport boundary.
+
+Changed avatar URLs are also checked by the shared database trigger on direct
+writes; unchanged legacy values remain readable. The database media contract
+seeds otherwise-writable objects and verifies restrictive policies block both
+authenticated INSERT and UPDATE for avatar/banner buckets.
 
 ### Support API parity safeguards
 
@@ -313,3 +470,44 @@ them, so blank-looking messages are rejected. Regression coverage includes
 `support-inquiry-guard.test.ts`, `contact-form-values.test.ts`, and the Rust
 support payload boundary tests. Unported inquiry GET/HEAD methods retain the
 backend dispatcher’s fall-through sentinel instead of claiming a 405 response.
+
+### Personal banner replacement and deletion
+
+The current-user banner endpoints and consolidated mobile Account settings use
+actor-scoped durable operation receipts. Offline and ambiguous mobile upload/removal retries preserve the same
+operation ID in the encrypted outbox. Replaying a committed
+operation finishes cleanup without applying an old upload or removal over a
+newer profile edit. A staged upload captures the prior banner; an intervening
+change returns a conflict rather than overwriting it. Avatar behavior is unchanged.
+
+Profile writes retire only canonical banner object paths under the configured
+Storage origin and the authenticated actor's directory. External URLs and another
+actor's objects are never deleted. Retirement is atomic with the existing locked
+profile mutation, including the live Web and future Rust profile handler. Permanent
+URL tombstones prevent restoring retired files during asynchronous cleanup.
+
+Supabase signed upload tokens are valid for two hours. The server records a
+conservative three-hour lease **before returning a token**, and retirement
+preserves an inert non-sensitive Storage slot until all leases have expired.
+Cleanup replaces the retired image with a tiny non-image marker using the bucket's
+allowed image metadata; outstanding non-upsert tokens cannot overwrite that slot.
+The slot is removed only after the lease grace period. This removes original bytes
+at the origin after successful cleanup; CDN propagation and previously downloaded
+images are not an immediate erasure guarantee. See the
+[Storage signed-upload contract](https://supabase.com/docs/reference/javascript/file-buckets-createsigneduploadurl).
+
+Storage failures remain in a service-only durable queue. Authenticated banner
+requests perform bounded sweeps; later requests finish expired-slot deletion.
+There is no claim that a background scheduler has run. Unfinalized staged receipts
+are retired after a 30-day replay window; receipts that already committed remain
+idempotent. Receipt creation is bounded to 100 new actor operations per UTC day;
+existing ticket/hour/day/week/global/byte quotas remain authoritative. Interrupted
+quota reservations are conservatively charged again, never refunded or bypassed.
+
+Regression evidence: `personal-banner-lifecycle.sql` covers actor grants, locked
+replacement, ABA prevention, stale-finalize conflict and committed replay;
+`profile-banner-lifecycle.test.ts` and banner route tests cover exact path ownership,
+lease ordering, storage failure/retry, malformed input and object validation.
+`profile_banner_delivery_test.dart` covers stable replay IDs and lost-finalize
+responses. SQL application/type generation, real Storage/CDN behavior and device
+offline delivery require exact CI and authenticated deployment verification.

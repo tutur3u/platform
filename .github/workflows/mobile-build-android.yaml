@@ -12,8 +12,6 @@ on:
       - "apps/mobile/**"
       - ".github/workflows/mobile-build-android.yaml"
   pull_request:
-    branches:
-      - main
     paths:
       - "apps/mobile/**"
       - ".github/workflows/mobile-build-android.yaml"
@@ -68,10 +66,22 @@ jobs:
         run: flutter build apk --flavor development --target lib/main_development.dart
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: android-dev-apk
           path: apps/mobile/build/app/outputs/flutter-apk/app-development-release.apk
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+      - name: Build native Meet capture fixture (no account or hosted SFU)
+        run: flutter build apk --debug --flavor development --target lib/main_realtime_fixture.dart
+
+      - name: Upload native Meet capture fixture
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: android-meet-capture-fixture-apk
+          path: apps/mobile/build/app/outputs/flutter-apk/app-development-debug.apk
           if-no-files-found: error
           retention-days: 7
           compression-level: 0

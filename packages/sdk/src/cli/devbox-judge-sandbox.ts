@@ -2,6 +2,13 @@ import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { cpus, freemem, totalmem } from 'node:os';
 import { performance } from 'node:perf_hooks';
+import {
+  dockerMetadata,
+  dockerMetadataFailure,
+} from './devbox-docker-metadata';
+
+export { dockerMetadata } from './devbox-docker-metadata';
+
 import { runJudgeCaseBatch } from './devbox-judge-case-batch';
 import {
   createJudgeLanguageCommand,
@@ -10,6 +17,7 @@ import {
   judgeLanguageBinary,
   minimumJudgeMemoryMb,
 } from './devbox-judge-languages';
+import { sandboxProcessArgs } from './devbox-sandbox-pids';
 
 export interface JudgeResourceLimits {
   max_cpu_percent: number;
@@ -38,43 +46,18 @@ export type JudgeImages = Partial<Record<JudgeLanguage, string>>;
 const IMAGE_REFERENCE = /^[-\w./:]+@sha256:[a-f0-9]{64}$/u;
 const MEBIBYTE = 1024 * 1024;
 
-export async function dockerMetadata(
-  args: string[],
-  timeoutMs = 4000,
-  dockerHost?: string
-) {
-  const child = spawn(
-    'docker',
-    dockerHost ? ['--host', dockerHost, ...args] : args,
-    {
-      shell: false,
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }
-  );
-  let output = '';
-  child.stdout.on('data', (chunk) => {
-    output = (output + String(chunk)).slice(0, 65_536);
-  });
-  const timer = setTimeout(() => child.kill('SIGKILL'), timeoutMs);
-  try {
-    const code = await new Promise<number>((resolveExit, reject) => {
-      child.on('error', reject);
-      child.on('exit', (exitCode) => resolveExit(exitCode ?? 1));
-    });
-    return { code, output };
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 export async function readJudgeDockerCapacity(dockerHost?: string) {
-  const { code, output } = await dockerMetadata(
+  const metadata = await dockerMetadata(
     ['info', '--format', '{{json .}}'],
     4000,
     dockerHost
   );
-  if (code !== 0) throw new Error('Docker engine is unavailable for Judge.');
-  const info = JSON.parse(output) as {
+  if (metadata.code !== 0) {
+    throw new Error(
+      `Docker engine is unavailable for Judge (${dockerMetadataFailure(metadata)}).`
+    );
+  }
+  const info = JSON.parse(metadata.output) as {
     CgroupDriver?: string;
     MemTotal?: number;
     NCPU?: number;
@@ -166,7 +149,7 @@ export async function getJudgeReadiness(
           '--cpus=0.25',
           '--memory=128m',
           '--memory-swap=128m',
-          '--pids-limit=64',
+          ...sandboxProcessArgs(64),
           image,
           'sh',
           '-c',
@@ -305,7 +288,7 @@ export function createJudgeDockerArgs({
     `--cpus=${cpuQuota.toFixed(3)}`,
     `--memory=${memoryMb}m`,
     `--memory-swap=${memoryMb}m`,
-    `--pids-limit=${limits.sandbox_pids}`,
+    ...sandboxProcessArgs(limits.sandbox_pids),
     image,
     ...createJudgeLanguageCommand({ language, memoryMb, source }),
   ];

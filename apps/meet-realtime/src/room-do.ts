@@ -205,6 +205,8 @@ export class MeetRoomDurableObject implements DurableObject {
         client.createSession(message.sessionDescription),
         getSessionIceServers(this.env),
       ]);
+      if (!session || typeof session !== 'object' || Array.isArray(session))
+        throw new Error('Invalid SFU session response');
       return { ...session, iceServers };
     }
     if (

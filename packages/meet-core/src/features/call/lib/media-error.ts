@@ -5,7 +5,11 @@ export function getMediaErrorKey(
   const name =
     error && typeof error === 'object' && 'name' in error ? error.name : '';
   if (device === 'screen' && name === 'NotSupportedError')
-    return 'screen_not_found';
+    return 'screen_browser_unsupported';
+  if (device === 'screen' && name === 'NotAllowedError')
+    return 'screen_permission_denied';
+  if (device === 'screen' && name === 'InvalidStateError')
+    return 'screen_user_gesture_required';
   if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
     if (device === 'microphone') return 'microphone_not_found';
     if (device === 'camera') return 'camera_not_found';

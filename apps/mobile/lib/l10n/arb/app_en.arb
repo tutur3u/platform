@@ -4274,6 +4274,21 @@
         }
     },
     "inventorySetupSyncFirst": "Sync this new item before using, editing, or deleting it.",
+    "meetCollaboration": "Collaborate",
+    "meetCollaborationUnavailable": "Collaboration is unavailable. Rejoin the meeting and try again.",
+    "meetScreenFixtureTitle": "Native screen capture test",
+    "meetScreenFixtureHint": "Join the synthetic local meeting and share your screen. Media stays on this device; watch the receiver frame counter.",
+    "meetScreenFixtureFrames": "Decoded receiver frames: {count}",
+    "@meetScreenFixtureFrames": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "meetFixtureConnected": "Local meeting connected",
+    "meetFixtureRevoke": "Host: stop screen share",
+    "meetFixtureReconnect": "Reconnect meeting",
     "connectedOnboardingMiraTitle": "Meet Mira, your AI companion",
     "connectedOnboardingMiraSubtitle": "Start a conversation, shape a plan, or think through your next step. Mira lives alongside the tools you use every day.",
     "connectedOnboardingMiraToolkit": "One place to chat with Mira and reach your tasks, calendar, finances, and inventory. Choose what works for you.",
@@ -4297,5 +4312,10 @@
     "settingsProductSettings": "App settings",
     "mailDiscardSettingsTitle": "Discard changes?",
     "mailDiscardSettingsDescription": "Your Mail settings changes have not been saved.",
-    "mailDiscardSettingsAction": "Discard changes"
+    "mailDiscardSettingsAction": "Discard changes",
+    "profileBanner": "Profile banner",
+    "profileBannerDescription": "Add a wide photo to personalize your profile.",
+    "profileChangeBanner": "Change banner",
+    "profileAddBanner": "Add banner",
+    "profileRemoveBanner": "Remove banner"
 }

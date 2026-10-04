@@ -100,6 +100,9 @@ jobs:
       - run: bun run --cwd packages/supabase build
       - run: bun run test
         working-directory: packages/realtime
+      - name: Verify real local Durable Objects and collaboration protocols
+        timeout-minutes: 5
+        run: bun apps/meet-realtime/tests/local-check.ts
       - run: node --experimental-strip-types --test apps/meet-realtime/src/check-endpoint.test.ts apps/meet-realtime/src/turn-credentials.test.ts
       - run: bun x --no-install turbo run build --filter='@tuturuuu/meet-core^...' --concurrency=2
       - run: bun run test

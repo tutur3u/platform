@@ -93,6 +93,10 @@ export type {
   MeetRoomSettings,
 } from './room-options';
 export { meetReactionSchema, meetRoomSettingsSchema } from './room-options';
+export {
+  type MeetingProgramming,
+  meetingProgrammingSchema,
+} from './room-programming';
 export type {
   AddTracksInput,
   CloseTracksInput,

@@ -3,19 +3,25 @@ import {
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import NotificationPopover from '@tuturuuu/satellite/notification-popover';
+import { SidebarProvider } from '@tuturuuu/satellite/sidebar-context';
 import { getPendingWorkspaceInvitation } from '@tuturuuu/satellite/workspace-invitation';
+import {
+  getSidebarBehaviorUpdatedAt,
+  getSidebarCollapsedState,
+  parseSidebarBehavior,
+} from '@tuturuuu/satellite/workspace-layout-helpers';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
-import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
+import { AppUserNav } from '@/components/app-user-nav';
 import { Brand } from '@/components/brand';
 import { WorkspaceInvitation } from '@/components/workspace-invitation';
-import { WorkspaceNavigation } from '@/components/workspace-navigation';
-import { WorkspacePicker } from '@/components/workspace-picker';
-import { WEB_APP_URL } from '@/constants/common';
 import { getNavigationLinks } from './navigation';
+import { Structure } from './structure';
 export const metadata = { robots: { index: false, follow: false } };
 export default async function Layout({
   children,
@@ -46,21 +52,33 @@ export default async function Layout({
   const workspaces = await listWorkspaces(
     withForwardedInternalApiAuth(await headers())
   );
-  const t = await getTranslations('lettin');
+  const cookieStore = await cookies();
+  const behavior = parseSidebarBehavior(cookieStore);
   return (
-    <div className="notebook-theme min-h-screen">
-      <Brand />
-      <div className="lettin-workspace-bar flex flex-wrap items-center gap-4 px-6 py-3 text-sm">
-        <WorkspacePicker current={workspace.id} workspaces={workspaces} />
-        <WorkspaceNavigation links={await getNavigationLinks(workspace.id)} />
-        <a href={`${WEB_APP_URL}/${workspace.id}/settings/members`}>
-          {t('workspaceSettings')}
-        </a>
-        <a className="ml-auto" href="/api/auth/logout">
-          {t('signOut')}
-        </a>
-      </div>
-      {children}
-    </div>
+    <WorkspaceVisibilityProvider actorId={user.id}>
+      <SidebarProvider
+        initialBehavior={behavior}
+        initialBehaviorUpdatedAt={getSidebarBehaviorUpdatedAt(cookieStore)}
+      >
+        <Structure
+          wsId={workspace.id}
+          actorId={user.id}
+          workspace={workspace}
+          workspaces={workspaces}
+          links={await getNavigationLinks(workspace.id, user.id)}
+          defaultCollapsed={getSidebarCollapsedState(cookieStore, behavior)}
+          actions={
+            <>
+              <AppUserNav />
+              <NotificationPopover userId={user.id} />
+            </>
+          }
+          userPopover={<AppUserNav hideMetadata />}
+          notificationPopover={<NotificationPopover userId={user.id} />}
+        >
+          {children}
+        </Structure>
+      </SidebarProvider>
+    </WorkspaceVisibilityProvider>
   );
 }

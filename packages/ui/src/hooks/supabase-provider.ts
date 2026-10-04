@@ -1,5 +1,8 @@
+import {
+  createRealtimeClient,
+  type RealtimeChannel,
+} from '@tuturuuu/internal-api/realtime';
 import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
-import type { RealtimeChannel } from '@tuturuuu/supabase/next/realtime';
 import debug from 'debug';
 import { EventEmitter } from 'eventemitter3';
 import * as awarenessProtocol from 'y-protocols/awareness';
@@ -22,12 +25,15 @@ export interface SupabaseProviderConfig {
   broadcastDebounceMs?: number; // Debounce time for broadcasting updates (0 = immediate, default: 0)
   loadState?: () => Promise<number[] | null>;
   saveState?: (state: number[]) => Promise<boolean | undefined>;
+  ownsDocument?: boolean;
 }
 
 export default class SupabaseProvider extends EventEmitter {
   public awareness: awarenessProtocol.Awareness;
   public connected = false;
   private channel: RealtimeChannel | null = null;
+  private realtime = createRealtimeClient();
+  private pendingAwarenessClients = new Set<number>();
 
   private _synced: boolean = false;
   private resyncInterval: NodeJS.Timeout | undefined;
@@ -71,13 +77,11 @@ export default class SupabaseProvider extends EventEmitter {
       return;
     }
 
-    // Only broadcast and save if connected and not destroyed
     if (!this.connected || this.destroyed) {
       this.logger('skipping broadcast - not connected or destroyed');
       return;
     }
 
-    // Validate update size (avoid broadcasting empty or corrupted updates)
     if (!update || update.length === 0) {
       this.logger('skipping broadcast - empty update');
       return;
@@ -91,8 +95,6 @@ export default class SupabaseProvider extends EventEmitter {
     );
 
     if (this.broadcastDebounceMs > 0) {
-      // Debounced broadcast for free tier — merge rapid incremental edits so
-      // peers do not miss insertion structs that later updates depend on.
       this.pendingBroadcastUpdate = this.pendingBroadcastUpdate
         ? Y.mergeUpdates([this.pendingBroadcastUpdate, update])
         : update;
@@ -110,7 +112,6 @@ export default class SupabaseProvider extends EventEmitter {
         }
       }, this.broadcastDebounceMs);
     } else {
-      // Immediate broadcast for paid tier
       this.emit('message', update);
     }
 
@@ -118,12 +119,10 @@ export default class SupabaseProvider extends EventEmitter {
   }
 
   debouncedSave() {
-    // Clear any pending save
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
     }
 
-    // Schedule a new save after the debounce period
     this.saveTimeout = setTimeout(() => {
       this.saveTimeout = undefined;
       this.logger('debounce period elapsed, saving to database');
@@ -131,12 +130,7 @@ export default class SupabaseProvider extends EventEmitter {
     }, this.saveDebounceMs);
   }
 
-  /**
-   * Immediately save any pending changes without waiting for debounce period.
-   * Also flushes any pending broadcast.
-   */
   async flushSave() {
-    // Flush pending broadcast first
     if (this.broadcastDebounceTimeout) {
       clearTimeout(this.broadcastDebounceTimeout);
       this.broadcastDebounceTimeout = undefined;
@@ -156,24 +150,30 @@ export default class SupabaseProvider extends EventEmitter {
     }
   }
 
-  onAwarenessUpdate({ added, updated, removed }: any, _origin: any) {
-    const changedClients = added.concat(updated).concat(removed);
-    const awarenessUpdate = awarenessProtocol.encodeAwarenessUpdate(
-      this.awareness,
-      changedClients
-    );
-
-    // Debounce awareness broadcasts to coalesce rapid cursor/selection changes
-    if (this.awarenessDebounceTimeout) {
-      clearTimeout(this.awarenessDebounceTimeout);
-    }
+  onAwarenessUpdate(
+    {
+      added,
+      updated,
+      removed,
+    }: { added: number[]; updated: number[]; removed: number[] },
+    origin: unknown
+  ) {
+    if (origin === this || this.destroyed) return;
+    for (const id of [...added, ...updated, ...removed])
+      this.pendingAwarenessClients.add(id);
+    if (this.awarenessDebounceTimeout) return;
     this.awarenessDebounceTimeout = setTimeout(() => {
-      this.emit('awareness', awarenessUpdate);
+      this.awarenessDebounceTimeout = undefined;
+      const clients = [...this.pendingAwarenessClients];
+      this.pendingAwarenessClients.clear();
+      this.emit(
+        'awareness',
+        awarenessProtocol.encodeAwarenessUpdate(this.awareness, clients)
+      );
     }, 150);
   }
 
   removeSelfFromAwarenessOnUnload() {
-    // Flush any pending saves before unload
     this.flushSave();
     awarenessProtocol.removeAwarenessStates(
       this.awareness,
@@ -184,7 +184,6 @@ export default class SupabaseProvider extends EventEmitter {
 
   async save() {
     try {
-      // Don't save if not connected or destroyed
       if (!this.connected || this.destroyed) {
         this.logger('skipping save - not connected or destroyed');
         return false;
@@ -192,13 +191,11 @@ export default class SupabaseProvider extends EventEmitter {
 
       const content = Array.from(Y.encodeStateAsUpdate(this.doc));
 
-      // Skip save if content is empty or too small (likely invalid)
       if (!content || content.length === 0) {
         this.logger('skipping save - empty content');
         return false;
       }
 
-      // Skip save if content is suspiciously small (might be corrupted)
       if (content.length < 10) {
         this.logger('skipping save - content too small, possibly corrupted');
         return false;
@@ -229,7 +226,6 @@ export default class SupabaseProvider extends EventEmitter {
         if (error) {
           this.logger(`save failed with status ${status}:`, error);
 
-          // Handle 422 errors - task was deleted, validation failed, or RLS rejected
           if (status === 422) {
             console.warn(
               `Failed to save Yjs state (422 - Unprocessable Entity):`,
@@ -241,15 +237,12 @@ export default class SupabaseProvider extends EventEmitter {
               }
             );
 
-            // Mark as not synced so UI shows warning
             this.synced = false;
 
-            // Stop trying to save this document
             this.logger('stopping future saves due to 422 error');
             return false;
           }
 
-          // Handle 404 errors - task doesn't exist
           if (status === 404) {
             console.warn(`Task ${this.config.id} not found, stopping saves`);
             this.synced = false;
@@ -278,7 +271,6 @@ export default class SupabaseProvider extends EventEmitter {
   private async onConnect() {
     this.logger('connected');
 
-    // Reset reconnect attempts on successful connection
     this.reconnectAttempts = 0;
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
@@ -312,7 +304,6 @@ export default class SupabaseProvider extends EventEmitter {
     this.logger('setting connected flag to true');
     this.isOnline(true);
 
-    // Mark as synced after loading initial data
     this.synced = true;
 
     this.emit('status', [{ status: 'connected' }]);
@@ -331,9 +322,6 @@ export default class SupabaseProvider extends EventEmitter {
       this.version++;
       Y.applyUpdate(this.doc, update, origin);
     } catch (error) {
-      // Handle DOM reconciliation errors during Yjs sync
-      // This happens when ProseMirror/Tiptap tries to manipulate DOM nodes
-      // that React has already cleaned up during reconnection scenarios
       if (
         error instanceof DOMException &&
         error.name === 'NotFoundError' &&
@@ -343,33 +331,31 @@ export default class SupabaseProvider extends EventEmitter {
           'DOM reconciliation error during Yjs update - this can happen after AFK reconnection'
         );
         console.warn(
-          '[SupabaseProvider] DOM reconciliation error during Yjs sync. ' +
+          '[Cloudflare collaboration] DOM reconciliation error during Yjs sync. ' +
             'This is usually harmless and occurs when the editor reconnects after being idle.'
         );
-        // Emit event so the component can handle recovery if needed
         this.emit('dom-error', error);
         return;
       }
-      // Re-throw other errors
       throw error;
     }
   }
 
   private disconnect() {
     if (this.channel) {
-      this.supabase.removeChannel(this.channel);
+      this.realtime.removeChannel(this.channel);
       this.channel = null;
     }
   }
 
   private connect() {
-    this.channel = this.supabase.channel(this.config.channel);
+    this.channel = this.realtime.channel(this.config.channel);
     if (this.channel) {
       this.channel
-        .on('broadcast', { event: 'message' }, ({ payload }) => {
+        .on<number[]>('broadcast', { event: 'message' }, ({ payload }) => {
           this.onMessage(Uint8Array.from(payload), this);
         })
-        .on('broadcast', { event: 'awareness' }, ({ payload }) => {
+        .on<number[]>('broadcast', { event: 'awareness' }, ({ payload }) => {
           this.onAwareness(Uint8Array.from(payload));
         })
         .subscribe((status, err) => {
@@ -420,7 +406,6 @@ export default class SupabaseProvider extends EventEmitter {
     this.config = config || {};
     this.id = doc.clientID;
 
-    // Initialize debounce times
     (this as any).saveDebounceMs = this.config.saveDebounceMs ?? 1000;
     (this as any).broadcastDebounceMs = this.config.broadcastDebounceMs ?? 0;
 
@@ -429,11 +414,10 @@ export default class SupabaseProvider extends EventEmitter {
     this.on('disconnect', this.onDisconnect);
 
     this.logger = debug(`y-${doc.clientID}`);
-    // turn on debug logging to the console
     this.logger.enabled = true;
 
     this.logger('constructor initializing');
-    this.logger('connecting to Supabase Realtime', doc.guid);
+    this.logger('connecting to Cloudflare realtime', doc.guid);
     this.logger(`save debounce set to ${this.saveDebounceMs}ms`);
 
     if (
@@ -448,19 +432,16 @@ export default class SupabaseProvider extends EventEmitter {
         `setting resync interval to every ${interval / 1000} seconds`
       );
       this.resyncInterval = setInterval(() => {
-        // Only resync if connected and not destroyed
         if (!this.connected || this.destroyed) {
           this.logger('skipping resync - not connected or destroyed');
           return;
         }
 
-        // Skip resync when page is hidden (no one is watching)
         if (!isPageVisible()) {
           this.logger('skipping resync - page not visible');
           return;
         }
 
-        // Skip resync if no local changes since last resync
         if (!this._dirty) {
           this.logger('skipping resync - no local changes');
           return;
@@ -471,7 +452,6 @@ export default class SupabaseProvider extends EventEmitter {
         this.logger('resyncing (resync interval elapsed)');
         const update = Y.encodeStateAsUpdate(this.doc);
 
-        // Validate update before broadcasting
         if (!update || update.length === 0) {
           this.logger('skipping resync - empty update');
           return;
@@ -497,9 +477,7 @@ export default class SupabaseProvider extends EventEmitter {
       process.on('exit', this.processExitHandler);
     }
     this.on('awareness', (update) => {
-      // Only broadcast if connected and channel exists
       if (this.connected && this.channel && !this.destroyed) {
-        // Validate update before broadcasting
         if (update && update.length > 0) {
           this.channel.send({
             type: 'broadcast',
@@ -510,9 +488,7 @@ export default class SupabaseProvider extends EventEmitter {
       }
     });
     this.on('message', (update) => {
-      // Only broadcast if connected and channel exists
       if (this.connected && this.channel && !this.destroyed) {
-        // Validate update before broadcasting
         if (update && update.length > 0) {
           this.channel.send({
             type: 'broadcast',
@@ -525,7 +501,6 @@ export default class SupabaseProvider extends EventEmitter {
 
     this.connect();
 
-    // Reconnect when user returns from AFK (hidden → visible)
     if (typeof document !== 'undefined') {
       this._handleVisibilityChange = () => {
         if (this.destroyed) return;
@@ -535,7 +510,6 @@ export default class SupabaseProvider extends EventEmitter {
           this.resetAndReconnect();
         }
 
-        // Pause reconnect timer when page goes hidden to conserve attempts
         if (document.visibilityState === 'hidden' && this.reconnectTimeout) {
           this.logger('page hidden during reconnect backoff — pausing timer');
           clearTimeout(this.reconnectTimeout);
@@ -550,7 +524,6 @@ export default class SupabaseProvider extends EventEmitter {
 
     this.awareness.on('update', this.boundAwarenessUpdate);
 
-    // Listen to document updates and broadcast them to peers
     this.doc.on('update', this.boundDocumentUpdate);
   }
 
@@ -583,7 +556,6 @@ export default class SupabaseProvider extends EventEmitter {
       return;
     }
 
-    // Exponential backoff with jitter
     const delay = Math.min(
       this.reconnectDelay * 2 ** this.reconnectAttempts,
       this.maxReconnectDelay
@@ -600,19 +572,12 @@ export default class SupabaseProvider extends EventEmitter {
       this.reconnectAttempts++;
       this.logger(`reconnect attempt ${this.reconnectAttempts}`);
 
-      // Disconnect old channel if it exists
       this.disconnect();
 
-      // Try to reconnect
       this.connect();
     }, actualDelay);
   }
 
-  /**
-   * Reset backoff state and force a fresh connection cycle.
-   * Used when the user returns from AFK (visibilitychange) or when
-   * reconnect-failed fires while the page is still active.
-   */
   public resetAndReconnect() {
     if (this.destroyed || this.connected) return;
 
@@ -638,8 +603,6 @@ export default class SupabaseProvider extends EventEmitter {
       this.emit('status', [{ status: 'disconnected' }]);
     }
 
-    // update awareness (keep all users except local)
-    // FIXME? compare to broadcast channel behavior
     const states = Array.from(this.awareness.getStates().keys()).filter(
       (client) => client !== this.doc.clientID
     );
@@ -674,7 +637,9 @@ export default class SupabaseProvider extends EventEmitter {
   }
 
   public destroy() {
+    if (this.destroyed) return;
     this.logger('destroying');
+    const pendingSave = this.flushSave();
     this.destroyed = true;
 
     // Clear reconnect timeout
@@ -695,9 +660,6 @@ export default class SupabaseProvider extends EventEmitter {
       clearTimeout(this.broadcastDebounceTimeout);
     }
     this.pendingBroadcastUpdate = undefined;
-
-    // Save any pending changes before destroying
-    this.flushSave();
 
     // Remove visibility change listener
     if (this._handleVisibilityChange && typeof document !== 'undefined') {
@@ -721,5 +683,9 @@ export default class SupabaseProvider extends EventEmitter {
     this.doc.off('update', this.boundDocumentUpdate);
 
     if (this.channel) this.disconnect();
+    if (this.config.ownsDocument) {
+      this.awareness.destroy();
+      void pendingSave.finally(() => this.doc.destroy());
+    }
   }
 }

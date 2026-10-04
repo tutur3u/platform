@@ -1,8 +1,5 @@
-import crypto from 'node:crypto';
-import {
-  ProfileUploadError,
-  reserveProfileUploadBudget,
-} from '@tuturuuu/storage-core/profile-upload-budget';
+import { createHash } from 'node:crypto';
+import { ProfileUploadError } from '@tuturuuu/storage-core/profile-upload-budget';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -11,6 +8,7 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getLinkUnavailableReason } from '@/features/user-profile-links/server';
+import { createOptimizedProfileMediaTicket } from '@/lib/profile-media-ticket';
 
 interface Params {
   params: Promise<{ code: string }>;
@@ -67,58 +65,38 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
+  // A verified active link is the anonymous capability; charge its stable
+  // identity rather than a caller-supplied workspace or a fresh random ID.
+  const digest = createHash('sha256')
+    .update(`profile-link:${link.ws_id}:${code}`)
+    .digest('hex');
+  const actorId = `${digest.slice(0, 8)}-${digest.slice(8, 12)}-${digest.slice(12, 16)}-${digest.slice(16, 20)}-${digest.slice(20, 32)}`;
   try {
-    // Charge only a verified active capability, never a request-supplied actor.
-    await reserveProfileUploadBudget(
-      `profile-link:${link.ws_id}:${code}`,
-      'avatar'
+    if (!/^[a-zA-Z0-9_-]{1,100}$/.test(code))
+      return NextResponse.json({ message: 'Invalid link' }, { status: 400 });
+    const ticket = await createOptimizedProfileMediaTicket(
+      actorId,
+      'avatar',
+      process.env.NEXT_PUBLIC_APP_URL || req.url,
+      undefined,
+      `${link.ws_id}/users/profile-link/${code}`
+    );
+    return NextResponse.json(
+      { ...ticket, path: ticket.filePath },
+      {
+        headers: { 'Cache-Control': 'no-store' },
+      }
     );
   } catch (error) {
-    if (error instanceof ProfileUploadError)
-      return NextResponse.json(
-        { message: error.message },
-        {
-          status: error.status,
-          headers: error.retryAfter
+    return NextResponse.json(
+      { message: 'Avatar upload unavailable' },
+      {
+        status: error instanceof ProfileUploadError ? error.status : 503,
+        headers:
+          error instanceof ProfileUploadError && error.retryAfter
             ? { 'Retry-After': String(error.retryAfter) }
-            : {},
-        }
-      );
-    return NextResponse.json(
-      { message: 'Profile upload protection is unavailable' },
-      { status: 503 }
+            : undefined,
+      }
     );
   }
-
-  // Scope the upload path under the workspace user-avatar tree, namespaced by
-  // the link code so an external user cannot write elsewhere.
-  const extension = {
-    'image/png': 'png',
-    'image/jpeg': 'jpg',
-    'image/webp': 'webp',
-    'image/gif': 'gif',
-  }[parsed.data.contentType];
-  const filePath = `${link.ws_id}/users/profile-link/${code}/${crypto.randomUUID()}.${extension}`;
-
-  const { data, error } = await sbAdmin.storage
-    .from('avatars')
-    .createSignedUploadUrl(filePath);
-
-  if (error) {
-    console.error('Error creating profile-link avatar upload URL:', error);
-    return NextResponse.json(
-      { message: 'Error creating signed upload URL' },
-      { status: 500 }
-    );
-  }
-
-  const { data: publicUrlData } = sbAdmin.storage
-    .from('avatars')
-    .getPublicUrl(filePath);
-
-  return NextResponse.json({
-    ...data,
-    path: filePath,
-    publicUrl: publicUrlData.publicUrl,
-  });
 }

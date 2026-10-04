@@ -36,6 +36,7 @@ class AssistantComposerDock extends StatelessWidget {
     required this.onSend,
     required this.onRemoveAttachment,
     this.repository,
+    this.embedded = false,
     super.key,
   });
 
@@ -44,6 +45,7 @@ class AssistantComposerDock extends StatelessWidget {
   final AssistantLiveUiState liveUiState;
   final AssistantShellState shellState;
   final AssistantRepository? repository;
+  final bool embedded;
   final bool navigationExpanded;
   final double bottomInset;
   final bool isPersonalWorkspace;
@@ -61,96 +63,92 @@ class AssistantComposerDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final content = Row(
+      children: [
+        AssistantComposerOptions(
+          chatState: chatState,
+          shellState: shellState,
+          repository: repository,
+          onOpenAttachments: onOpenAttachments,
+          onModelSelected: onModelSelected,
+          onOpenCreditSourceSheet: onOpenCreditSourceSheet,
+          onThinkingModeChanged: onThinkingModeChanged,
+          onRemoveAttachment: onRemoveAttachment,
+          onCloseComposer: onCloseComposer,
+          onDismissKeyboard: focusNode.unfocus,
+        ),
+        Expanded(
+          child: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            style: const TextStyle(fontSize: 16, height: 1.25),
+            minLines: 1,
+            textInputAction: TextInputAction.send,
+            onSubmitted: chatState.status == AssistantChatStatus.restoring
+                ? null
+                : (_) {
+                    if (controller.text.trim().isNotEmpty ||
+                        chatState.composerAttachments.isNotEmpty) {
+                      unawaited(onSend());
+                    }
+                  },
+            onTapOutside: (_) => focusNode.unfocus(),
+            decoration: InputDecoration(
+              hintText: context.l10n.assistantAskPlaceholder,
+              border: InputBorder.none,
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+        ),
+        ValueListenableBuilder<TextEditingValue>(
+          valueListenable: controller,
+          builder: (context, value, _) {
+            final hasPrompt =
+                value.text.trim().isNotEmpty ||
+                chatState.composerAttachments.isNotEmpty;
+            return IconButton(
+              tooltip: hasPrompt
+                  ? context.l10n.assistantSendAction
+                  : context.l10n.voiceRecord,
+              constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+              padding: EdgeInsets.zero,
+              onPressed: chatState.status == AssistantChatStatus.restoring
+                  ? null
+                  : hasPrompt
+                  ? onSend
+                  : () {
+                      focusNode.unfocus();
+                      unawaited(onMicrophoneTap());
+                    },
+              icon: Icon(
+                hasPrompt ? Icons.arrow_upward_rounded : Icons.mic_none_rounded,
+              ),
+            );
+          },
+        ),
+      ],
+    );
+    if (embedded) return content;
     return SizedBox(
       height: assistantComposerHeight(context) + bottomInset,
       child: FloatingDockRail(
-        navigation: AssistantDockSurface(
-          key: const ValueKey('assistant-composer-surface'),
-          child: Row(
-            children: [
-              AssistantComposerOptions(
-                chatState: chatState,
-                shellState: shellState,
-                repository: repository,
-                onOpenAttachments: onOpenAttachments,
-                onModelSelected: onModelSelected,
-                onOpenCreditSourceSheet: onOpenCreditSourceSheet,
-                onThinkingModeChanged: onThinkingModeChanged,
-                onRemoveAttachment: onRemoveAttachment,
-                onCloseComposer: onCloseComposer,
-                onDismissKeyboard: focusNode.unfocus,
-              ),
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  focusNode: focusNode,
-                  style: const TextStyle(fontSize: 16, height: 1.25),
-                  minLines: 1,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: chatState.status == AssistantChatStatus.restoring
-                      ? null
-                      : (_) {
-                          if (controller.text.trim().isNotEmpty ||
-                              chatState.composerAttachments.isNotEmpty) {
-                            unawaited(onSend());
-                          }
-                        },
-                  onTapOutside: (_) => focusNode.unfocus(),
-                  decoration: InputDecoration(
-                    hintText: context.l10n.assistantAskPlaceholder,
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-              ValueListenableBuilder<TextEditingValue>(
-                valueListenable: controller,
-                builder: (context, value, _) {
-                  final hasPrompt =
-                      value.text.trim().isNotEmpty ||
-                      chatState.composerAttachments.isNotEmpty;
-                  return IconButton(
-                    tooltip: hasPrompt
-                        ? context.l10n.assistantSendAction
-                        : context.l10n.voiceRecord,
-                    constraints: const BoxConstraints.tightFor(
-                      width: 44,
-                      height: 44,
-                    ),
-                    padding: EdgeInsets.zero,
-                    onPressed: chatState.status == AssistantChatStatus.restoring
-                        ? null
-                        : hasPrompt
-                        ? onSend
-                        : () {
-                            focusNode.unfocus();
-                            unawaited(onMicrophoneTap());
-                          },
-                    icon: Icon(
-                      hasPrompt
-                          ? Icons.arrow_upward_rounded
-                          : Icons.mic_none_rounded,
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-        primary: ShellDockActionButton(
-          key: const ValueKey('assistant-navigation-toggle'),
-          action: ShellActionSpec(
-            id: 'assistant-navigation',
-            tooltip: context.l10n.assistantExpandNavigation,
-            icon: Icons.menu_rounded,
-            onPressed: () {
-              focusNode.unfocus();
-              onToggleNavigation();
-            },
-          ),
-        ),
+        navigation: AssistantDockSurface(child: content),
+        primary: navigationToggle(context),
       ),
     );
   }
+
+  Widget navigationToggle(BuildContext context) => ShellDockActionButton(
+    key: const ValueKey('assistant-navigation-toggle'),
+    action: ShellActionSpec(
+      id: 'assistant-navigation',
+      tooltip: context.l10n.assistantExpandNavigation,
+      icon: Icons.menu_rounded,
+      onPressed: () {
+        focusNode.unfocus();
+        onToggleNavigation();
+      },
+    ),
+  );
 }

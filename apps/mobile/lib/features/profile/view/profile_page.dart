@@ -13,12 +13,14 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/widgets/profile_media_image.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
 import 'package:mobile/features/profile/cubit/profile_state.dart';
+import 'package:mobile/features/profile/view/profile_banner.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -158,6 +160,16 @@ class _ProfileView extends StatelessWidget {
                     index: 0,
                     playOnceKey: 'profile-hero',
                     child: _ProfileHeroCard(profile: profile, state: state),
+                  ),
+                  const shad.Gap(20),
+                  PendingSyncFrame(
+                    workspaceId: 'personal',
+                    feature: 'profile',
+                    entityId: profile.id,
+                    child: ProfileBannerSettings(
+                      profile: profile,
+                      busy: state.isLoading,
+                    ),
                   ),
                   const shad.Gap(20),
                   SettingsGroup(

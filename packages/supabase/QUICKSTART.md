@@ -82,8 +82,9 @@ import { getUser, getCurrentUser } from '@tuturuuu/supabase/next/user';
 // Middleware proxy
 import { updateSession } from '@tuturuuu/supabase/next/proxy';
 
-// Realtime
-import type { RealtimeChannel } from '@tuturuuu/supabase/next/realtime';
+// Cloudflare application realtime (separate from this auth/database package)
+import { createRealtimeClient } from '@tuturuuu/internal-api/realtime';
+import type { RealtimeChannel } from '@tuturuuu/realtime/channels';
 ```
 
 ## Turborepo Integration

@@ -1,4 +1,5 @@
 export * from './infrastructure/abuse';
+export * from './infrastructure/account-benefits';
 export * from './infrastructure/ai';
 export * from './infrastructure/apps';
 export * from './infrastructure/auth-recovery';

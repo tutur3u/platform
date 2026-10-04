@@ -428,10 +428,15 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/cms/workspaces by preserving the legacy app-session and browser Supabase auth boundary, loading the caller's admin-visible workspaces through service-role Supabase REST, applying root-admin and per-workspace external-project permission checks, resolving active external-project bindings, and returning the raw legacy workspace array with subscription tier metadata."
     },
-    "api:/api/v1/devboxes/agents/heartbeat:apps/web/src/legacy-api-routes/v1/devboxes/agents/heartbeat/route.ts": {
+    "api:/api/v1/devboxes/agents/heartbeat:apps/web/src/app/api/v1/devboxes/agents/heartbeat/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Agent heartbeat accepts Judge sandbox readiness alongside host capability metrics. Rust parity is pending; Next.js remains the live owner."
+      "note": "First-class agent heartbeat accepts optional bounded Judge and playground sandbox readiness alongside host capability metrics; existing agent capability payloads remain valid. Rust parity is pending; Next.js remains the live owner."
+    },
+    "api:/api/v1/devboxes/agents/playground-files:apps/web/src/app/api/v1/devboxes/agents/playground-files/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class managed playground API with personal Drive ownership, server-only account benefits and bounded signed runner or realtime callbacks. Rust parity pending; production remains on Next.js."
     },
     "api:/api/v1/devboxes/cache/prune:apps/web/src/legacy-api-routes/v1/devboxes/cache/prune/route.ts": {
       "status": "migrated",
@@ -1102,6 +1107,16 @@
       "targetOwner": "rust-backend",
       "note": "First-class authenticated Tuturuuu Meet plan creation endpoint with timezone and duration validation. The Rust port is pending. Preserve required-MFA assurance on invitation tokens and refresh pairs, and recheck fresh policy before accepting an invitation."
     },
+    "api:/api/v1/meetings/:meetingId/collaboration/preview/:port/*path?:apps/web/src/app/api/v1/meetings/[meetingId]/collaboration/preview/[port]/[[...path]]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Cloudflare realtime and native Meet collaboration API; retain authenticated room admission, role-scoped tickets, private preview and signed monotonic checkpoints. Rust parity pending; Next.js serves live traffic."
+    },
+    "api:/api/v1/meetings/:meetingId/collaboration:apps/web/src/app/api/v1/meetings/[meetingId]/collaboration/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Cloudflare realtime and native Meet collaboration API; retain authenticated room admission, role-scoped tickets, private preview and signed monotonic checkpoints. Rust parity pending; Next.js serves live traffic."
+    },
     "api:/api/v1/mira/achievements:apps/web/src/legacy-api-routes/v1/mira/achievements/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
@@ -1154,7 +1169,27 @@
     "api:/api/v1/public/user-profile-links/:code/avatar:apps/web/src/app/api/v1/public/user-profile-links/[code]/avatar/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Verified profile-link avatar tickets reserve link-scoped and global media budgets before signing. The first-class web handler remains live; Rust has not implemented this path."
+      "note": "First-class optimized avatar upload; Rust parity pending."
+    },
+    "api:/api/v1/realtime/channels:apps/web/src/app/api/v1/realtime/channels/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Cloudflare realtime and native Meet collaboration API; retain authenticated room admission, role-scoped tickets, private preview and signed monotonic checkpoints. Rust parity pending; Next.js serves live traffic."
+    },
+    "api:/api/v1/realtime/documents/checkpoint:apps/web/src/app/api/v1/realtime/documents/checkpoint/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Cloudflare realtime and native Meet collaboration API; retain authenticated room admission, role-scoped tickets, private preview and signed monotonic checkpoints. Rust parity pending; Next.js serves live traffic."
+    },
+    "api:/api/v1/realtime/programming/checkpoint:apps/web/src/app/api/v1/realtime/programming/checkpoint/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class managed playground API with personal Drive ownership, server-only account benefits and bounded signed runner or realtime callbacks. Rust parity pending; production remains on Next.js."
+    },
+    "api:/api/v1/realtime/session:apps/web/src/app/api/v1/realtime/session/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Cloudflare realtime and native Meet collaboration API; retain authenticated room admission, role-scoped tickets, private preview and signed monotonic checkpoints. Rust parity pending; Next.js serves live traffic."
     },
     "api:/api/v1/storage/download/*path:apps/web/src/app/api/v1/storage/download/[...path]/route.ts": {
       "status": "legacy-next",
@@ -1204,7 +1239,22 @@
     "api:/api/v1/users/me/avatar/upload-url:apps/web/src/app/api/v1/users/me/avatar/upload-url/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Current-user avatar upload keeps browser/mobile/satellite app-session auth and the existing response. Reserve worst-case 2MiB via authoritative Postgres daily actor/global budgets before privileged scoped ticket creation; no raw client upload or request-scoped signing bypass. Rust port pending."
+      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Native/offline PUT compatibility retained. Rust parity pending."
+    },
+    "api:/api/v1/users/me/avatar/upload:apps/web/src/app/api/v1/users/me/avatar/upload/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Native/offline PUT compatibility retained. Rust parity pending."
+    },
+    "api:/api/v1/users/me/banner/upload-url:apps/web/src/app/api/v1/users/me/banner/upload-url/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Native/offline PUT compatibility retained. Rust parity pending."
+    },
+    "api:/api/v1/users/me/banner/upload:apps/web/src/app/api/v1/users/me/banner/upload/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Native/offline PUT compatibility retained. Rust parity pending."
     },
     "api:/api/v1/users/me/default-workspace:apps/web/src/legacy-api-routes/v1/users/me/default-workspace/route.ts": {
       "status": "migrated",
@@ -1231,6 +1281,36 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/users/me/identities by revalidating a normal Supabase browser session or non-app-session Bearer token with Supabase Auth, rejecting Tuturuuu app-session tokens, extracting the Auth JS-compatible identities array from the revalidated Supabase user JSON, returning the legacy identities plus canUnlink payload, and keeping the legacy private cache directive plus Unauthorized, Supabase Auth rejection, and internal error bodies."
     },
+    "api:/api/v1/users/me/playgrounds/:projectId/collaboration:apps/web/src/app/api/v1/users/me/playgrounds/[projectId]/collaboration/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class managed playground API with personal Drive ownership, server-only account benefits and bounded signed runner or realtime callbacks. Rust parity pending; production remains on Next.js."
+    },
+    "api:/api/v1/users/me/playgrounds/:projectId/preview/:port/*path?:apps/web/src/app/api/v1/users/me/playgrounds/[projectId]/preview/[port]/[[...path]]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class GET preview with authenticated initial authorization and 60-second project/port scoped asset capabilities for opaque iframes. Rust parity pending; production remains on Next.js."
+    },
+    "api:/api/v1/users/me/playgrounds/:projectId/runs/:runId:apps/web/src/app/api/v1/users/me/playgrounds/[projectId]/runs/[runId]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class managed playground API with personal Drive ownership, server-only account benefits and bounded signed runner or realtime callbacks. Rust parity pending; production remains on Next.js."
+    },
+    "api:/api/v1/users/me/playgrounds/:projectId/runs:apps/web/src/app/api/v1/users/me/playgrounds/[projectId]/runs/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class managed playground API with personal Drive ownership, server-only account benefits and bounded signed runner or realtime callbacks. Rust parity pending; production remains on Next.js."
+    },
+    "api:/api/v1/users/me/playgrounds/:projectId:apps/web/src/app/api/v1/users/me/playgrounds/[projectId]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class managed playground API with personal Drive ownership, server-only account benefits and bounded signed runner or realtime callbacks. Rust parity pending; production remains on Next.js."
+    },
+    "api:/api/v1/users/me/playgrounds:apps/web/src/app/api/v1/users/me/playgrounds/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class managed playground API with personal Drive ownership, server-only account benefits and bounded signed runner or realtime callbacks. Rust parity pending; production remains on Next.js."
+    },
     "api:/api/v1/users/me/profile:apps/web/src/app/api/v1/users/me/profile/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
@@ -1244,7 +1324,7 @@
     "api:/api/v1/workspaces/:wsId/avatar/upload-url:apps/web/src/app/api/v1/workspaces/[wsId]/avatar/upload-url/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "First-class authorized workspace avatar signer reserves the resolved actor shared profile-upload and global budgets before privileged avatars ticket creation; quotas fail closed with 429/503. Rust handler is explicit backlog."
+      "note": "Permission-checked workspace avatar ticket delegates to bounded central server WebP optimization, shared per-actor quotas and one-use capabilities. Rust parity pending."
     },
     "api:/api/v1/workspaces/:wsId/billing:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/billing/route.ts": {
       "status": "accepted-removal",
@@ -1402,6 +1482,11 @@
       "targetOwner": "rust-backend",
       "note": "First-class, captured-actor and workspace-authorized native offline create contract. Kind-specific current permissions and strict payload validation precede a private transactional RPC that atomically commits authoritative IDs, stock, audit and deduplicated receipts. No legacy POST fallback; unavailable schema returns retryable contract-unavailable 503. Rust mutation parity pending; current production remains Next.js."
     },
+    "api:/api/v1/workspaces/:wsId/inventory/sales-periods/merges:apps/web/src/app/api/v1/workspaces/[wsId]/inventory/sales-periods/merges/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Web remains live. Source Rust mirror owns GET/POST; inventory-only authenticated actor/workspace role conjunction, readiness, bounded actor-bound expiring preview pages, explicit policies, sanitized statuses/no-store. Future backend compile/runtime coverage and exact app build required before cutover."
+    },
     "api:/api/v1/workspaces/:wsId/meetings/:meetingId/assistant/personal:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/assistant/personal/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
@@ -1457,7 +1542,7 @@
     "api:/api/v1/workspaces/:wsId/mobile-activity:apps/web/src/app/api/v1/workspaces/[wsId]/mobile-activity/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Mobile profile activity: request-scoped workspace membership before admin-backed, workspace-scoped user-created task reads; permission-aware finance RPC for the caller's own transactions; request-scoped notes and workspace calendar events. Return available sources with a partial flag when one source fails; retain private no-store responses. Rust parity pending."
+      "note": "Actor-attributed native Profile activity verifies membership; Calendar manage_calendar verification runs concurrently but precedes scoped admin metadata. Tasks audited creator read, Finance permission RPC applies pinned created_at upper boundary before pagination and unique id ordering; Notes RLS. Private no-store partial failures; Rust parity pending."
     },
     "api:/api/v1/workspaces/:wsId/mobile/module-flags:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/mobile/module-flags/route.ts": {
       "status": "migrated",
@@ -1617,11 +1702,6 @@
       "targetOwner": "rust-backend",
       "note": "Workspace-scoped tutoring route accepts verified Contacts and platform app sessions or Supabase auth, then enforces tutoring permissions. Rust parity pending. Next.js POST/PUT allow any actual teacher in the verified workspace, independently of the student homeroom; student group, management permission and conflict checks remain. Rust GET is unchanged and unported mutations fall through."
     },
-    "api:/api/v1/workspaces/:wsId/inventory/sales-periods/merges:apps/web/src/app/api/v1/workspaces/[wsId]/inventory/sales-periods/merges/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Web remains live. Source Rust mirror owns GET/POST; inventory-only authenticated actor/workspace role conjunction, readiness, bounded actor-bound expiring preview pages, explicit policies, sanitized statuses/no-store. Future backend compile/runtime coverage and exact app build required before cutover."
-    },
     "api:/api/v1/workspaces/:wsId/tutoring/teachers:apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/teachers/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
@@ -1645,6 +1725,11 @@
           "note": "The live POST creates profile-completion request links. It resolves registered satellite app-session actors through resolveWorkspaceRouteAccess before authorizing manage_user_profile_links and recording the authenticated creator. The Rust port is pending. Preserve required-MFA assurance on invitation tokens and refresh pairs, and recheck fresh policy before accepting an invitation."
         }
       }
+    },
+    "api:/api/v1/workspaces/:wsId/users/avatar:apps/web/src/app/api/v1/workspaces/[wsId]/users/avatar/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "GET remains source-compatible with the Rust port. POST uses permission-checked single-use optimized upload capabilities and stays in Next.js; Rust returns None for non-GET methods."
     },
     "api:/api/v1/workspaces/:wsId/users/reports/:reportId/delivery:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/delivery/route.ts": {
       "status": "legacy-next",
@@ -2737,6 +2822,16 @@
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles GET/POST browser-state recovery with no-store HTML, same-origin POST protection, Clear-Site-Data, redirect, and Supabase auth cookie clearing behavior."
+    },
+    "api:/api/v1/users/me/banner/upload-url:apps/web/src/app/api/v1/users/me/banner/upload-url/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class actor-derived banner tickets preserve existing quotas, stable immutable operation paths and committed replay receipts. Signed non-upsert tokens are returned only after durable expiry lease recording. Rust endpoint parity pending."
+    },
+    "api:/api/v1/users/me/banner:apps/web/src/app/api/v1/users/me/banner/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class authenticated personal banner finalize/remove/cleanup uses service-only row-locked durable operation receipts and immutable actor-owned retirement tombstones; Storage token leases bound scrub/deferred deletion. Rust endpoint parity pending; generic profile PATCH lifecycle is mirrored."
     }
   }
 }

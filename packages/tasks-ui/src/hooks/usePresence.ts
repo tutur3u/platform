@@ -1,5 +1,6 @@
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
+import type { RealtimePresenceState } from '@tuturuuu/internal-api/realtime';
+import { createRealtimeClient } from '@tuturuuu/internal-api/realtime';
+import { getCurrentUserProfile } from '@tuturuuu/internal-api/users';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { useEffect, useRef, useState } from 'react';
@@ -42,14 +43,10 @@ export function usePresence(
       try {
         const {
           data: { user },
-        } = await createClient().auth.getUser();
+        } = await createRealtimeClient().auth.getUser();
         if (!user?.id) return;
 
-        const { data: userData } = await createClient()
-          .from('users')
-          .select('display_name, avatar_url')
-          .eq('id', user.id)
-          .single();
+        const userData = await getCurrentUserProfile();
 
         await channelRef.current.track({
           user: {
@@ -75,7 +72,7 @@ export function usePresence(
     if (!channelName) return;
     isCleanedUpRef.current = false;
 
-    const supabase = createClient();
+    const realtime = createRealtimeClient();
 
     const setupPresence = async () => {
       if (isCleanedUpRef.current) return;
@@ -83,32 +80,21 @@ export function usePresence(
       try {
         const {
           data: { user },
-        } = await supabase.auth.getUser();
+        } = await realtime.auth.getUser();
 
         if (!user?.id) return;
 
-        const { data: userData, error: userDataError } = await supabase
-          .from('users')
-          .select('display_name, avatar_url')
-          .eq('id', user.id)
-          .single();
-
-        if (userDataError) {
-          if (DEV_MODE) {
-            console.error('Error fetching user data:', userDataError);
-          }
-          return;
-        }
+        const userData = await getCurrentUserProfile();
 
         setCurrentUserId(user.id);
 
         // Clean up existing channel before creating a new one
         if (channelRef.current) {
-          await supabase.removeChannel(channelRef.current);
+          await realtime.removeChannel(channelRef.current);
           channelRef.current = null;
         }
 
-        const channel = supabase.channel(channelName, {
+        const channel = realtime.channel(channelName, {
           config: {
             presence: {
               key: user.id,
@@ -155,30 +141,6 @@ export function usePresence(
 
                 if (DEV_MODE) {
                   console.log('Presence track status:', presenceTrackStatus);
-                }
-
-                if (
-                  presenceTrackStatus === 'timed out' &&
-                  !isCleanedUpRef.current
-                ) {
-                  if (DEV_MODE) {
-                    console.warn('⚠️ Presence tracking timed out, retrying...');
-                  }
-                  // Retry once
-                  setTimeout(async () => {
-                    if (!isCleanedUpRef.current) {
-                      await channel.track({
-                        user: {
-                          id: user.id,
-                          display_name: userData?.display_name,
-                          email: user.email,
-                          avatar_url: userData?.avatar_url,
-                        },
-                        online_at: new Date().toISOString(),
-                        metadata: metadataRef.current,
-                      });
-                    }
-                  }, 1000);
                 }
 
                 // Reset retry count on success
@@ -259,7 +221,7 @@ export function usePresence(
       isCleanedUpRef.current = true;
       retryCountRef.current = 0;
       if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
+        realtime.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };

@@ -27,6 +27,11 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     },
+    "./lettin-server": {
+      "types": "./dist/lettin-server.d.ts",
+      "import": "./dist/lettin-server.js",
+      "require": "./dist/lettin-server.js"
+    },
     "./lettin": {
       "types": "./dist/lettin.d.ts",
       "import": "./dist/lettin.js",
@@ -341,6 +346,26 @@
       "types": "./dist/chatgpt.d.ts",
       "import": "./dist/chatgpt.js",
       "require": "./dist/chatgpt.js"
+    },
+    "./profile-media": {
+      "types": "./dist/profile-media.d.ts",
+      "import": "./dist/profile-media.js",
+      "require": "./dist/profile-media.js"
+    },
+    "./realtime": {
+      "types": "./dist/realtime.d.ts",
+      "import": "./dist/realtime.js",
+      "require": "./dist/realtime.js"
+    },
+    "./meet-call": {
+      "types": "./dist/meet-call.d.ts",
+      "import": "./dist/meet-call.js",
+      "require": "./dist/meet-call.js"
+    },
+    "./playgrounds": {
+      "types": "./dist/playgrounds.d.ts",
+      "import": "./dist/playgrounds.js",
+      "require": "./dist/playgrounds.js"
     }
   },
   "devDependencies": {
@@ -351,6 +376,7 @@
   },
   "packageManager": "bun@1.4.1",
   "dependencies": {
+    "@tuturuuu/realtime": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*"
   }

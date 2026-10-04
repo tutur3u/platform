@@ -242,7 +242,8 @@ export type DevboxRunnerFeature =
   | 'build'
   | 'serve'
   | 'tunnel'
-  | 'judge';
+  | 'judge'
+  | 'playground';
 
 export async function setDevboxRunnerFeature(
   runnerId: string,

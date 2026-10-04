@@ -7,6 +7,8 @@ class UserProfile extends Equatable {
     this.email,
     this.displayName,
     this.avatarUrl,
+    this.bannerUrl,
+    this.bio,
     this.fullName,
     this.newEmail,
     this.createdAt,
@@ -17,6 +19,8 @@ class UserProfile extends Equatable {
     email: json['email'] as String?,
     displayName: json['display_name'] as String?,
     avatarUrl: json['avatar_url'] as String?,
+    bannerUrl: json['banner_url'] as String?,
+    bio: json['bio'] as String?,
     fullName: json['full_name'] as String?,
     newEmail: json['new_email'] as String?,
     createdAt: json['created_at'] != null
@@ -28,6 +32,8 @@ class UserProfile extends Equatable {
   final String? email;
   final String? displayName;
   final String? avatarUrl;
+  final String? bannerUrl;
+  final String? bio;
   final String? fullName;
   final String? newEmail;
   final DateTime? createdAt;
@@ -37,6 +43,8 @@ class UserProfile extends Equatable {
     'email': email,
     'display_name': displayName,
     'avatar_url': avatarUrl,
+    'banner_url': bannerUrl,
+    'bio': bio,
     'full_name': fullName,
     'new_email': newEmail,
     'created_at': createdAt?.toIso8601String(),
@@ -47,6 +55,8 @@ class UserProfile extends Equatable {
     String? email,
     String? displayName,
     String? avatarUrl,
+    String? bannerUrl,
+    String? bio,
     String? fullName,
     String? newEmail,
     DateTime? createdAt,
@@ -56,6 +66,8 @@ class UserProfile extends Equatable {
       email: email ?? this.email,
       displayName: displayName ?? this.displayName,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      bannerUrl: bannerUrl ?? this.bannerUrl,
+      bio: bio ?? this.bio,
       fullName: fullName ?? this.fullName,
       newEmail: newEmail ?? this.newEmail,
       createdAt: createdAt ?? this.createdAt,
@@ -68,6 +80,8 @@ class UserProfile extends Equatable {
     email,
     displayName,
     avatarUrl,
+    bannerUrl,
+    bio,
     fullName,
     newEmail,
     createdAt,

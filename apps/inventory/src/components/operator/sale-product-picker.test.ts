@@ -41,6 +41,22 @@ describe('sortSaleStockOptions', () => {
     ).toEqual([4, 2]);
   });
 
+  it.each(['name-asc', 'name-desc', 'price-asc', 'price-desc'] as const)(
+    'breaks %s ties by stock identity independently of page order',
+    (sort) => {
+      const a = { ...option('Same', 5), key: 'product:unit-a:warehouse' };
+      const b = { ...option('Same', 5), key: 'product:unit-b:warehouse' };
+      expect(sortSaleStockOptions([b, a], sort).map((row) => row.key)).toEqual([
+        a.key,
+        b.key,
+      ]);
+      expect(sortSaleStockOptions([a, b], sort).map((row) => row.key)).toEqual([
+        a.key,
+        b.key,
+      ]);
+    }
+  );
+
   it('keeps redundant mobile metadata optional and unlimited stock compact', () => {
     const source = readFileSync(
       resolve(import.meta.dirname, 'sale-product-picker.tsx'),

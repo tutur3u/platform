@@ -108,8 +108,9 @@ extension _ShellPageLayout on _ShellPageState {
                         child: _trackPageScrolling(
                           _lastRootLocation,
                           LazyIndexedStack(
-                            // Switch root bodies atomically; crossfading also
-                            // paints the outgoing Assistant dock.
+                            // Body transitions are separate from the persistent
+                            // dock; outgoing bodies own no dock.
+                            animate: true,
                             index: _ShellPageState._calculateSelectedIndex(
                               _lastRootLocation,
                             ),
@@ -225,22 +226,30 @@ extension _ShellPageLayout on _ShellPageState {
     double bodyBottomInset = 0,
     double navigationBottomOffset = 0,
     bool composerVisible = false,
+    double navigationWidth = 264,
+    bool allowDockSlot = true,
   }) {
-    return FloatingShellDock(
-      location: widget.matchedLocation,
-      keyboardVisible: MediaQuery.viewInsetsOf(context).bottom > 0,
-      bottomInset: bodyBottomInset,
-      navigationBottomOffset: navigationBottomOffset,
-      reserveNavigationClearance: !composerVisible,
-      reclaimNavigationClearanceWhenHidden:
-          widget.matchedLocation == Routes.profileRoot ||
-          widget.matchedLocation == Routes.home ||
-          widget.matchedLocation == Routes.calendar,
-      keepNavigationVisible: composerVisible,
-      navigation: navigationBar,
-      header: header,
-      scrollableHeader: _isRootTabLocation(widget.matchedLocation),
-      child: body,
+    return ShellDockScope(
+      controller: _dockSlotController,
+      child: FloatingShellDock(
+        location: widget.matchedLocation,
+        navigationWidth: navigationWidth,
+        allowDockSlot: allowDockSlot,
+        keyboardVisible: MediaQuery.viewInsetsOf(context).bottom > 0,
+        bottomInset: bodyBottomInset,
+        navigationBottomOffset: navigationBottomOffset,
+        reserveNavigationClearance: !composerVisible,
+        reclaimNavigationClearanceWhenHidden:
+            widget.matchedLocation == Routes.profileRoot ||
+            widget.matchedLocation == Routes.home ||
+            widget.matchedLocation == Routes.calendar,
+        keepNavigationVisible: composerVisible,
+        composerVisible: composerVisible,
+        navigation: navigationBar,
+        header: header,
+        scrollableHeader: _isRootTabLocation(widget.matchedLocation),
+        child: body,
+      ),
     );
   }
 
@@ -300,25 +309,25 @@ extension _ShellPageLayout on _ShellPageState {
         ) ??
         false;
     final workspace = context.watch<WorkspaceCubit>().state;
-    final hasAssistantWorkspace =
-        (workspace.currentWorkspace ?? workspace.personalWorkspaceOrCurrent) !=
-        null;
     final textAssistant =
         widget.matchedLocation == Routes.assistant &&
         !assistantChrome.isLiveMode &&
-        hasAssistantWorkspace;
+        (workspace.currentWorkspace ?? workspace.personalWorkspaceOrCurrent) !=
+            null;
     final composerVisible =
         widget.matchedLocation == Routes.assistant &&
         assistantChrome.isComposing &&
         !assistantChrome.isLiveMode;
+    // Text immersive mode still needs its only composer/exit control surface.
+    // Live fullscreen and other immersive pages retain their existing policy.
     final showBottomNav =
-        !textAssistant &&
-        (!composerVisible || assistantChrome.navigationExpanded) &&
-        (!widget.matchedLocation.startsWith(Routes.assistant) ||
-            !assistantChrome.isFullscreen) &&
-        !immersive;
+        textAssistant ||
+        ((!widget.matchedLocation.startsWith(Routes.assistant) ||
+                !assistantChrome.isFullscreen) &&
+            !immersive);
     final navContent = MorphingNavigationBar(
       selectedKey: selectedKey,
+      paintSurface: false,
       onSelected: (key) => useInjectedMiniNav
           ? _onInjectedMiniNavItemTapped(key, injectedMiniNavRegistration)
           : isMiniAppRoute
@@ -335,15 +344,8 @@ extension _ShellPageLayout on _ShellPageState {
         child: navContent,
       ),
     );
-    // Keep this wrapper present across routes and modes: changing its shape
-    // would remount the cached Assistant page and discard its draft/focus.
-    final globalBody = AssistantDockNavigation(
-      navigation: navContent,
-      child: _buildGlobalBody(),
-    );
-    final floatingNavInset = (!isCompact || composerVisible) && showBottomNav
-        ? _floatingNavBodyInset()
-        : 0.0;
+    final globalBody = _buildGlobalBody();
+    final floatingNavInset = showBottomNav ? _floatingNavBodyInset() : 0.0;
 
     return shad.Scaffold(
       footers: showBottomNav && isCompact && !composerVisible
@@ -369,9 +371,9 @@ extension _ShellPageLayout on _ShellPageState {
             : const SizedBox.shrink(),
         bodyBottomInset: floatingNavInset,
         composerVisible: composerVisible,
-        navigationBottomOffset: composerVisible && !textAssistant
-            ? assistantComposerHeight(context) + assistantComposerBottomGap * 2
-            : 0,
+        allowDockSlot: !assistantChrome.isLiveMode,
+        navigationWidth:
+            (isMiniAppRoute ? miniItems.length : globalItems.length) * 52.0 + 4,
       ),
     );
   }

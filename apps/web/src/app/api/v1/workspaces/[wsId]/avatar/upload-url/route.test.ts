@@ -1,99 +1,97 @@
-// @vitest-environment node
+import { ProfileUploadError } from '@tuturuuu/storage-core/profile-upload-budget';
 import { NextRequest } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+// @vitest-environment node
+import { beforeEach, expect, it, vi } from 'vitest';
 
-const f = vi.hoisted(() => ({
-  budget: vi.fn(),
-  signer: vi.fn(),
-  permissions: vi.fn(),
-  admin: vi.fn(),
-}));
-vi.mock('server-only', () => ({}));
-vi.mock('@/lib/api-auth', () => ({
-  withSessionAuth: (handler: unknown) => handler,
-}));
-vi.mock('@/lib/workspace-helper', () => ({
-  normalizeWorkspaceId: vi.fn(async () => 'verified-workspace'),
-}));
+const f = vi.hoisted(() => ({ permissions: vi.fn(), ticket: vi.fn() }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: f.permissions,
 }));
-vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createDynamicAdminClient: f.admin,
+vi.mock('@/lib/profile-media-ticket', () => ({
+  createOptimizedProfileMediaTicket: f.ticket,
 }));
-vi.mock(
-  '@tuturuuu/storage-core/profile-upload-budget',
-  async (importOriginal) => ({
-    ...(await importOriginal<object>()),
-    reserveProfileUploadBudget: f.budget,
-  })
-);
+vi.mock('@/lib/api-auth', () => ({
+  withSessionAuth:
+    (
+      handler: (
+        request: Request,
+        context: { user: { id: string } },
+        params: { wsId: string }
+      ) => Promise<Response>
+    ) =>
+    (request: Request, context: { params: Promise<{ wsId: string }> }) =>
+      context.params.then((params) =>
+        handler(request, { user: { id: 'resolved-actor' } }, params)
+      ),
+}));
+vi.mock('server-only', () => ({}));
 
-import { ProfileUploadError } from '@tuturuuu/storage-core/profile-upload-budget';
 import { POST } from './route';
 
-async function request() {
-  return (POST as any)(
-    new NextRequest(
-      'https://example.test/api/v1/workspaces/verified-workspace/avatar/upload-url',
-      { method: 'POST', body: JSON.stringify({ filename: 'avatar.png' }) }
-    ),
-    { user: { id: 'resolved-actor' } },
-    { wsId: 'verified-workspace' }
-  );
-}
-describe('authorized workspace avatar budgets', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    f.permissions.mockResolvedValue({ withoutPermission: () => false });
-    f.budget.mockResolvedValue(undefined);
-    f.signer.mockResolvedValue({
-      data: {
-        signedUrl: 'https://example.test/ticket',
-        token: 'synthetic-ticket',
-      },
-      error: null,
-    });
-    f.admin.mockResolvedValue({
-      storage: {
-        from: () => ({
-          createSignedUploadUrl: f.signer,
-          getPublicUrl: () => ({
-            data: { publicUrl: 'https://example.test/avatar.png' },
-          }),
-        }),
-      },
-    });
-  });
-  it('reserves the resolved account before issuing privileged tickets', async () => {
-    expect((await request()).status).toBe(200);
-    expect(f.budget).toHaveBeenCalledWith('resolved-actor', 'avatar');
-    expect(f.budget.mock.invocationCallOrder[0]).toBeLessThan(
-      f.signer.mock.invocationCallOrder[0]!
-    );
-  });
-  it.each([429, 503])(
-    'quota/protection failure %s never signs or creates an admin client',
-    async (status) => {
-      f.budget.mockRejectedValue(
-        new ProfileUploadError(
-          'Shared budget unavailable',
-          status,
-          status === 429 ? 90 : undefined
-        )
-      );
-      const response = await request();
-      expect(response.status).toBe(status);
-      expect(f.signer).not.toHaveBeenCalled();
-      expect(f.admin).not.toHaveBeenCalled();
-      if (status === 429)
-        expect(response.headers.get('Retry-After')).toBe('90');
+const request = (filename = 'art.png') =>
+  new NextRequest(
+    'https://web.test/api/v1/workspaces/personal/avatar/upload-url',
+    {
+      method: 'POST',
+      body: JSON.stringify({ filename }),
     }
   );
-  it('unauthorized workspaces never reserve or sign', async () => {
-    f.permissions.mockResolvedValue(null);
-    expect((await request()).status).toBe(403);
-    expect(f.budget).not.toHaveBeenCalled();
-    expect(f.signer).not.toHaveBeenCalled();
+const context = { params: Promise.resolve({ wsId: 'personal' }) };
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://web.test');
+  f.permissions.mockResolvedValue({
+    wsId: 'normalized-workspace',
+    withoutPermission: () => false,
+  });
+  f.ticket.mockResolvedValue({
+    signedUrl: 'https://web.test/optimized',
+    filePath: 'workspaces/normalized-workspace/avatar.webp',
   });
 });
+it('issues an actor-budgeted workspace capability only after resolving settings permission', async () => {
+  expect((await POST(request(), context)).status).toBe(200);
+  expect(f.permissions).toHaveBeenCalledWith(
+    expect.objectContaining({
+      wsId: 'personal',
+      user: { id: 'resolved-actor' },
+    })
+  );
+  expect(f.ticket).toHaveBeenCalledWith(
+    'resolved-actor',
+    'avatar',
+    'https://web.test',
+    'normalized-workspace'
+  );
+});
+it('never reserves a ticket for forbidden workspace access', async () => {
+  f.permissions.mockResolvedValue({ withoutPermission: () => true });
+  expect((await POST(request(), context)).status).toBe(403);
+  expect(f.ticket).not.toHaveBeenCalled();
+});
+it.each(['../evil.png', 'art.svg', 'art\n.png'])(
+  'rejects invalid names before ticket issuance: %s',
+  async (filename) => {
+    expect((await POST(request(filename), context)).status).toBe(400);
+    expect(f.ticket).not.toHaveBeenCalled();
+  }
+);
+
+it.each([429, 503])(
+  'propagates optimized budget failure %s without returning a ticket',
+  async (status) => {
+    f.ticket.mockRejectedValue(
+      new ProfileUploadError(
+        'Shared budget unavailable',
+        status,
+        status === 429 ? 90 : undefined
+      )
+    );
+    const response = await POST(request(), context);
+    expect(response.status).toBe(status);
+    if (status === 429) expect(response.headers.get('Retry-After')).toBe('90');
+    const body = await response.json();
+    expect(body).not.toHaveProperty('signedUrl');
+    expect(body).not.toHaveProperty('token');
+  }
+);

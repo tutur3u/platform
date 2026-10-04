@@ -14,6 +14,11 @@ class Env {
     'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
   );
 
+  static const meetEditorBaseUrl = String.fromEnvironment(
+    'MEET_EDITOR_BASE_URL',
+    defaultValue: 'https://meet.tuturuuu.com',
+  );
+
   static const apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: 'http://localhost:7803',

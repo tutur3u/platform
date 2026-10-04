@@ -35,7 +35,10 @@ const trackedFiles = execFileSync(
 )
   .split('\0')
   .filter(Boolean);
-const fixtures = ['learn-programming-full-schema.sql'];
+const fixtures = [
+  'learn-programming-full-schema.sql',
+  'hosted-playgrounds.sql',
+];
 const ports = await chooseAvailablePortBlock(identity);
 const metadata = await stageDisposableProject({
   repositoryRoot,

@@ -1008,7 +1008,7 @@ async function onWorkspaceCreated(workspaceId: string, ownerId: string) {
 ```
 
 <Note>
-Trigger.dev v4 dispatches by **task id**, so the producer references each task explicitly rather than publishing to a named topic. To get topic-style fan-out where a producer is fully unaware of consumers, pair Trigger.dev with a database table, Supabase Realtime channel, or a dedicated dispatcher task that decides which downstream tasks to trigger.
+Trigger.dev v4 dispatches by **task id**, so the producer references each task explicitly rather than publishing to a named topic. To get topic-style fan-out where a producer is fully unaware of consumers, pair Trigger.dev with a database table, Cloudflare realtime channel, or a dedicated dispatcher task that decides which downstream tasks to trigger.
 </Note>
 
 **2. Natural Resilience**

@@ -1237,6 +1237,7 @@
           "cartSummary": "{items} dòng · {units} sản phẩm",
           "cartTab": "Giỏ hàng",
           "category": "Danh mục tài chính",
+          "checkoutTab": "Thanh toán",
           "chooseCategory": "Chọn danh mục",
           "choosePeriod": "Chọn mùa bán hàng",
           "chooseWallet": "Chọn ví",
@@ -1267,6 +1268,8 @@
           "quantity": "Số lượng",
           "refreshCart": "Giá hoặc tình trạng sản phẩm đã thay đổi. Xóa và tải lại giỏ hàng",
           "removeItem": "Bỏ {name}",
+          "reviewReady": "Sẵn sàng xác nhận",
+          "reviewRequired": "Hoàn tất thông tin bắt buộc",
           "reviewSummary": "{items} dòng · {units} sản phẩm",
           "reviewTab": "Rà soát",
           "saleName": "Tên giao dịch",
@@ -2276,6 +2279,7 @@
         "allLoaded": "Đã tải tất cả bản ghi",
         "loadingMore": "Đang tải thêm...",
         "loadMore": "Tải thêm",
+        "loadMoreError": "Không thể tải thêm sản phẩm. Chọn Tải thêm để thử lại.",
         "showing": "Đang hiển thị {loaded} trên {total}"
       },
       "payments": {

@@ -2,6 +2,11 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { AlertTriangle, Loader2, UserIcon } from '@tuturuuu/icons';
+import {
+  createWorkspaceAvatarUploadTarget,
+  updateWorkspaceAvatar,
+  uploadWorkspaceAvatarFile,
+} from '@tuturuuu/internal-api';
 import type { Workspace } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -17,7 +22,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
 import { ImageCropper } from '@/components/image-cropper';
-import { apiFetch, uploadToStorageUrl } from '@/lib/api-fetch';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface Props {
   workspace: Workspace;
@@ -97,28 +102,15 @@ export default function AvatarInput({ workspace, disabled }: Props) {
 
   const uploadAvatarMutation = useMutation({
     mutationFn: async (file: File) => {
-      const payload = await apiFetch<{
-        signedUrl: string;
-        token: string;
-        filePath: string;
-        publicUrl: string;
-      }>(`/api/v1/workspaces/${workspace.id}/avatar/upload-url`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: file.name }),
-      });
-
-      await uploadToStorageUrl(payload.signedUrl, file, payload.token);
-
-      const result = await apiFetch<{ avatarUrl: string }>(
-        `/api/v1/workspaces/${workspace.id}/avatar`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filePath: payload.filePath }),
-        }
+      const payload = await createWorkspaceAvatarUploadTarget(
+        workspace.id,
+        file.name
       );
-
+      await uploadWorkspaceAvatarFile(payload, file);
+      const result = await updateWorkspaceAvatar(
+        workspace.id,
+        payload.filePath
+      );
       return result.avatarUrl;
     },
     onSuccess: (avatarUrl) => {

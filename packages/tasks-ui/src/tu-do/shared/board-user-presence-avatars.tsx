@@ -1,7 +1,7 @@
 'use client';
 
 import { Eye, Moon, SquarePen, User as UserIcon } from '@tuturuuu/icons';
-import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
+import type { RealtimePresenceState } from '@tuturuuu/internal-api/realtime';
 import { useBoardPresence } from '@tuturuuu/tasks-ui/hooks/useBoardPresence';
 import type { UserPresenceState } from '@tuturuuu/tasks-ui/hooks/usePresence';
 import type { User } from '@tuturuuu/types/primitives/User';
