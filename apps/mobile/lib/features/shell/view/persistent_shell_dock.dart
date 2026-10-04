@@ -26,18 +26,12 @@ class _PersistentShellDockState extends State<PersistentShellDock> {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
-      final actions = widget.primary == null
-          ? 0
-          : widget.secondary != null && constraints.maxWidth >= 376
-          ? 120
-          : 60;
-      final available = (constraints.maxWidth - actions).clamp(
-        0.0,
-        double.infinity,
-      );
+      // Animate the unconstrained navigation/composer width independently.
+      // The rail's CURRENT occupied action slots supply the actual available
+      // width below, so removal cannot widen the composer before actions hide.
       final target = widget.composing
-          ? available
-          : widget.navigationWidth.clamp(0.0, available);
+          ? constraints.maxWidth
+          : widget.navigationWidth.clamp(0.0, constraints.maxWidth);
       return TweenAnimationBuilder<double>(
         tween: Tween(end: target),
         duration: MediaQuery.disableAnimationsOf(context)
@@ -45,20 +39,22 @@ class _PersistentShellDockState extends State<PersistentShellDock> {
             : const Duration(milliseconds: 320),
         curve: Curves.easeInOutCubic,
         builder: (context, width, _) => FloatingDockRail(
-          navigation: ShellDockSurface(
-            key: const ValueKey('persistent-shell-dock-material'),
-            child: SizedBox(
-              width: width,
-              child: AnimatedSwitcher(
-                duration: MediaQuery.disableAnimationsOf(context)
-                    ? Duration.zero
-                    : const Duration(milliseconds: 180),
-                // Fade the new slot in without retaining an outgoing dock,
-                // input or interactive navigation subtree.
-                layoutBuilder: (current, _) => current ?? const SizedBox(),
-                child: KeyedSubtree(
-                  key: ValueKey(widget.composing),
-                  child: widget.content,
+          navigation: LayoutBuilder(
+            builder: (context, available) => ShellDockSurface(
+              key: const ValueKey('persistent-shell-dock-material'),
+              child: SizedBox(
+                width: width.clamp(0.0, available.maxWidth),
+                child: AnimatedSwitcher(
+                  duration: MediaQuery.disableAnimationsOf(context)
+                      ? Duration.zero
+                      : const Duration(milliseconds: 180),
+                  // Fade the new slot in without retaining an outgoing dock,
+                  // input or interactive navigation subtree.
+                  layoutBuilder: (current, _) => current ?? const SizedBox(),
+                  child: KeyedSubtree(
+                    key: ValueKey(widget.composing),
+                    child: widget.content,
+                  ),
                 ),
               ),
             ),
