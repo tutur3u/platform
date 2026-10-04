@@ -435,7 +435,7 @@ async fn current_user_profile_reads_contact_data_from_supabase() {
     assert_eq!(calls[0].method, OutboundMethod::Get);
     assert_eq!(
         calls[0].url,
-        "https://project-ref.supabase.co/rest/v1/users?select=id%2Cdisplay_name%2Cavatar_url%2Ccreated_at&id=eq.app-session-user-1&limit=1"
+        "https://project-ref.supabase.co/rest/v1/users?select=id%2Cdisplay_name%2Cavatar_url%2Cbanner_url%2Cbio%2Chandle%2Ccreated_at&id=eq.app-session-user-1&limit=1"
     );
     assert_eq!(
         recorded_header(&calls[0], "apikey"),
@@ -556,19 +556,19 @@ async fn current_user_profile_patch_persists_to_supabase() {
 
     let calls = outbound.calls();
     assert_eq!(calls.len(), 1);
-    assert_eq!(calls[0].method, OutboundMethod::Patch);
+    assert_eq!(calls[0].method, OutboundMethod::Post);
     assert_eq!(
         calls[0].url,
-        "https://project-ref.supabase.co/rest/v1/users?id=eq.app-session-user-1"
+        "https://project-ref.supabase.co/rest/v1/rpc/update_public_user_profile"
     );
     assert_eq!(recorded_header(&calls[0], "prefer"), Some("return=minimal"));
     assert_eq!(
         serde_json::from_str::<Value>(calls[0].body.as_deref().unwrap()).unwrap(),
-        json!({
+        json!({ "p_user_id": "app-session-user-1", "p_patch": {
             "avatar_url": "https://cdn.example.test/avatar.png",
             "bio": null,
             "display_name": "Ada",
-        })
+        }})
     );
 }
 
@@ -615,4 +615,50 @@ async fn current_user_full_name_validates_body_after_auth() {
     assert_eq!(response.body["message"], "Invalid full name");
     assert_eq!(response.body["errors"][0]["path"], json!(["full_name"]));
     assert_eq!(outbound.calls().len(), 0);
+}
+
+#[tokio::test]
+async fn current_user_profile_head_matches_get_auth_status_without_a_body() {
+    let config = backend_config_with_app_session_secret();
+    let get_outbound = RecordingOutboundClient::default();
+    let head_outbound = RecordingOutboundClient::default();
+    let get = handle_backend_request(
+        &config,
+        request("GET", CURRENT_USER_PROFILE_PATH),
+        &get_outbound,
+    )
+    .await;
+    let head = handle_backend_request(
+        &config,
+        request("HEAD", CURRENT_USER_PROFILE_PATH),
+        &head_outbound,
+    )
+    .await;
+    assert_eq!(head.status, get.status);
+    assert_eq!(head.cache_control, get.cache_control);
+    assert!(head.body_empty);
+    assert!(head.body_text.is_none());
+    assert!(head_outbound.calls().is_empty());
+}
+
+#[tokio::test]
+async fn support_cookie_patch_rejects_cross_origin_before_supabase() {
+    let config = backend_config_with_contact_data();
+    let outbound = RecordingOutboundClient::default();
+    let response = handle_backend_request(
+        &config,
+        BackendRequest {
+            cookie: Some("sb-synthetic=invalid"),
+            origin: Some("https://cross-origin.test"),
+            ..request_with_body(
+                "PATCH",
+                "/api/v1/inquiries/synthetic-inquiry",
+                r#"{"is_read":true}"#,
+            )
+        },
+        &outbound,
+    )
+    .await;
+    assert_eq!(response.status, 403);
+    assert!(outbound.calls().is_empty());
 }

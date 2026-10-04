@@ -114,6 +114,7 @@ void main() {
                     ),
                   ).captured.single
                   as Map<String, dynamic>;
+          expect(payload['thinkingMode'], 'thinking');
           expect(payload['creditWsId'], 'credits');
           expect(payload['creditSource'], 'workspace');
           expect(payload['id'], 'chat');
@@ -128,6 +129,15 @@ void main() {
             ),
           );
         }
+        final settings =
+            verify(
+                  () => api.patchJson(
+                    '/api/v1/workspaces/ws/chat/conversations/chat/ai-settings',
+                    captureAny(),
+                  ),
+                ).captured.single
+                as Map<String, dynamic>;
+        expect(settings['thinkingMode'], 'thinking');
       },
     );
   }

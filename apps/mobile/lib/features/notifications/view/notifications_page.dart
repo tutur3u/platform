@@ -39,7 +39,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
   );
   late final NotificationsCubit _cubit;
   late NotificationsTab _selectedTab = widget.initialTab;
-  StreamSubscription<PushNotificationEvent>? _pushEventsSubscription;
 
   String? _lastWorkspaceId;
 
@@ -53,11 +52,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
         _scopeWorkspaceIdFor(workspace),
       ),
     );
-    _pushEventsSubscription = PushNotificationService.instance.events.listen((
-      _,
-    ) {
-      unawaited(_cubit.refreshUnreadCount());
-    });
     unawaited(PushNotificationService.instance.ensurePermissionPrompted());
   }
 
@@ -69,7 +63,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   @override
   void dispose() {
-    unawaited(_pushEventsSubscription?.cancel());
     unawaited(_cubit.close());
     _repository.dispose();
     super.dispose();
@@ -134,6 +127,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   ),
                   BlocBuilder<NotificationsCubit, NotificationsState>(
                     bloc: _cubit,
+                    buildWhen: (previous, current) =>
+                        previous.unreadCount != current.unreadCount ||
+                        previous.isArchivingAll != current.isArchivingAll,
                     builder: (context, state) {
                       return ShellChromeActions(
                         ownerId: 'notifications-root',

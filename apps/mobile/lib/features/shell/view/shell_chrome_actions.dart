@@ -207,8 +207,16 @@ class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
           (false, true) => _retainedActions,
           (false, false) => resolvedActions,
         };
+        final dockActions = resolvedPlacement
+            .where((action) => action.inDock)
+            .toList();
+        final narrowDock = MediaQuery.sizeOf(context).width < 400;
         final actions = resolvedPlacement
-            .where((action) => !action.inDock)
+            .where(
+              (action) =>
+                  !action.inDock ||
+                  (narrowDock && dockActions.indexOf(action) > 0),
+            )
             .toList();
         final showNotifications =
             widget.includeNotifications &&

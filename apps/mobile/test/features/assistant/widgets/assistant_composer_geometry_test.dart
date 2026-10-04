@@ -105,6 +105,10 @@ void main() {
               final composer = tester.getRect(
                 find.byType(AssistantComposerDock),
               );
+              final toggle = tester.getRect(
+                find.byKey(const ValueKey('assistant-navigation-toggle')),
+              );
+              expect(toggle.bottom, composer.bottom);
               final fab = tester.getRect(
                 find.byType(AssistantScrollToBottomFab),
               );

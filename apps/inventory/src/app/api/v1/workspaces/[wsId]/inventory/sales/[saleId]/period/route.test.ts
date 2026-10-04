@@ -13,6 +13,9 @@ vi.mock('@tuturuuu/inventory-core/commerce/auth', () => ({
 }));
 vi.mock('@tuturuuu/inventory-core/sales-periods', () => ({
   InventorySalesPeriodProductRuleError: mocks.ProductRuleError,
+  isInventorySeasonMergedError: (error: { code?: string; message?: string }) =>
+    error?.code === '23514' &&
+    error.message?.startsWith('Sales period was merged;'),
   setInventorySalePeriod: (...args: unknown[]) => mocks.setPeriod(...args),
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -109,5 +112,29 @@ describe('inventory sale period assignment', () => {
     await expect(response.json()).resolves.toEqual({
       message: 'This sale does not match the period product rules',
     });
+  });
+  it('returns actionable conflict for a merged source after concurrent write', async () => {
+    mocks.setPeriod.mockRejectedValue({
+      code: '23514',
+      message: 'Sales period was merged; refresh and select its destination',
+    });
+    const { PUT } = await import('./route');
+    const response = await PUT(
+      new Request('https://test/api', {
+        method: 'PUT',
+        body: JSON.stringify({
+          period_id: '11111111-1111-4111-8111-111111111111',
+          source: 'finance_invoice',
+        }),
+      }),
+      {
+        params: Promise.resolve({
+          wsId: 'ws',
+          saleId: '22222222-2222-4222-8222-222222222222',
+        }),
+      }
+    );
+    expect(response.status).toBe(409);
+    expect(await response.text()).toContain('Refresh');
   });
 });

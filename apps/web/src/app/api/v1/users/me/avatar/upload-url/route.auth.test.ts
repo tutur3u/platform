@@ -4,6 +4,8 @@ const { withSessionAuthMock } = vi.hoisted(() => ({
   withSessionAuthMock: vi.fn((handler: unknown, _options?: unknown) => handler),
 }));
 
+vi.mock('server-only', () => ({}));
+
 vi.mock('@/lib/api-auth', () => ({
   withSessionAuth: (handler: unknown, options?: unknown) =>
     withSessionAuthMock(handler, options),
@@ -16,7 +18,7 @@ describe('current user avatar upload URL route', () => {
   });
 
   it('allows profile-write app sessions without broadening storage access', async () => {
-    await import('@/legacy-api-routes/v1/users/me/avatar/upload-url/route');
+    await import('./route');
 
     expect(withSessionAuthMock).toHaveBeenCalledTimes(1);
     expect(withSessionAuthMock.mock.calls[0]?.[1]).toEqual({

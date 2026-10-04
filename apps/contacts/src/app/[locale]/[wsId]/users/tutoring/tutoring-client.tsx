@@ -305,15 +305,8 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
   const prefillFromQueue = async (item: TutoringQueueItem) => {
     const key = `${item.group_id}:${item.student_user_id}`;
     setSchedulingKey(key);
-    // A group with a single manager has only one possible teacher, so assign it
-    // now instead of leaving the prefilled form one required field short.
-    const managerIds = (
-      groupsQuery.data?.find((group) => group.id === item.group_id)?.managers ??
-      []
-    )
-      .map((manager) => manager.id)
-      .filter((id): id is string => Boolean(id));
-    const teacherUserId = managerIds.length === 1 ? (managerIds[0] ?? '') : '';
+    // The tutoring teacher is independent of the class's homeroom teacher.
+    const teacherUserId = '';
 
     const count = Math.min(
       50,
@@ -514,7 +507,7 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
           />
         </TabsContent>
 
-        <TabsContent value="queue">
+        <TabsContent className="space-y-4" value="queue">
           <TutoringQueueCard
             actions={{
               onGroupIdChange: (value) => {
@@ -562,7 +555,7 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
             wsId={wsId}
           />
         </TabsContent>
-        <TabsContent value="policy">
+        <TabsContent className="space-y-4" value="policy">
           {policyQuery.isLoading ? (
             <div className="space-y-3">
               <div className="h-12 animate-pulse rounded-xl bg-muted" />
