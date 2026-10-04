@@ -100,6 +100,17 @@ runner shutdown do not establish that the product scenario passed.
 `lettin-e2e-phase.test.ts` covers the bounded response wait, exact response
 matching, failure propagation, and safe phase diagnostics.
 
+Editor initialization and read-only permission transitions are presentation
+changes, not draft edits. The shared editor must not emit a content-update event
+for an unchanged document when synchronizing editable state. Saved notebooks
+therefore remain navigable after reload; genuine typing, checkbox edits, and
+applying Markdown still mark the draft dirty and keep the navigation guard. This
+applies to the shared rich-text editor and both private notebook surfaces.
+`rich-editor.test.tsx` mounts saved content with the real editor, and
+`editor-readonly-transition.test.tsx` checks permission changes without false
+edits while retaining real checkbox mutations. Browser save/reload assertions
+remain required in exact-commit CI.
+
 Saving never changes the public revision. Publish a world's notebook to make its
 public page visible, and publish entries separately. Unpublishing a world hides all
 its entries from public reads. Publishing it again exposes entries that remain

@@ -77,3 +77,41 @@ it('initializes the real editor and applies Markdown to the current draft', asyn
     container.remove();
   }
 });
+
+it('does not report a draft edit when the real editor initializes saved content', async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  const container = document.createElement('div');
+  document.body.append(container);
+  const root = createRoot(container);
+  const onChange = vi.fn();
+  try {
+    await act(async () =>
+      root.render(
+        <RichEditor
+          value={{
+            type: 'doc',
+            content: [
+              {
+                type: 'paragraph',
+                content: [{ type: 'text', text: 'Saved content' }],
+              },
+            ],
+          }}
+          onChange={onChange}
+        />
+      )
+    );
+    await vi.waitFor(() =>
+      expect(
+        container.querySelector<HTMLButtonElement>('button')?.disabled
+      ).toBe(false)
+    );
+    expect(container.querySelector('.wiki-text-editor')?.textContent).toContain(
+      'Saved content'
+    );
+    expect(onChange).not.toHaveBeenCalled();
+  } finally {
+    await act(async () => root.unmount());
+    container.remove();
+  }
+});

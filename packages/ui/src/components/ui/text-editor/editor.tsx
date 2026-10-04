@@ -455,7 +455,7 @@ export function RichTextEditor({
         attributes: { class: getEditorClasses },
       },
     });
-    editor.setEditable(!readOnly);
+    editor.setEditable(!readOnly, false);
   }, [editor, readOnly, getEditorClasses]);
 
   // Update editor content when the content prop changes externally
