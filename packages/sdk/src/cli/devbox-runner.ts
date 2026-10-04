@@ -174,6 +174,35 @@ export async function executeDevboxAgentJob(
   const command = job.command.filter(Boolean);
   const eventOptions = { ...options, cwd, runId: job.runId };
 
+  const executionMode =
+    (options.env ?? process.env).TUTURUUU_DEVBOX_EXECUTION_MODE ?? 'trusted';
+  const maintenance =
+    (command.length === 1 && command[0] === '__ttr_restart_agent_v1__') ||
+    (command.length === 4 && command.join(' ') === 'bun i -g tuturuuu');
+  if (
+    !['trusted', 'judge-only'].includes(executionMode) ||
+    (executionMode === 'judge-only' &&
+      (job.envFiles?.length ||
+        (!maintenance && command[0] !== '__ttr_judge_v1__') ||
+        (maintenance && Object.keys(job.env ?? {}).length > 0)))
+  ) {
+    await postAgentEvents({
+      ...eventOptions,
+      events: [
+        {
+          eventType: 'error',
+          message: 'Host execution policy rejected this job.',
+        },
+      ],
+    });
+    await postAgentCompletion({
+      ...eventOptions,
+      exitCode: 1,
+      status: 'failed',
+    });
+    return { exitCode: 1, status: 'failed' as const };
+  }
+
   if (command.length === 1 && command[0] === '__ttr_restart_agent_v1__') {
     await postAgentCompletion({
       ...eventOptions,

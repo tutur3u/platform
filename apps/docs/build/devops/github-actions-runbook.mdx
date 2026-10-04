@@ -669,6 +669,16 @@ reported as `release-please failed: other side closed`. It checks that the run
 is still failed on the current production SHA, then reruns failed jobs for at
 most three total attempts. Other failures remain visible for investigation;
 a manual rerun supersedes a queued automatic retry.
+Generated release-note normalization preserves published history and unrelated
+feature descriptions. The offline checkout entry from #5734 is a narrow exception:
+when both its original commit and merge commit appear in the same unpublished
+section, the normalizer retains one description that includes cached images and
+all references. Both exact commit identities and titles must match; similar
+wording or a lone commit never enables this consolidation. Regression coverage is
+in `scripts/ci/normalize-release-notes.test.js`. Regenerate through the maintained
+production Release Please workflow after promoting a generator fix; do not edit
+generated changelogs or version fields manually.
+
 Package publish workflows consume release-please version bumps on `production`;
 they must not recreate checksum or PR-title version bump automation. Package
 release workflows use npm trusted publishing: build and artifact-pack work runs
@@ -731,6 +741,29 @@ opened the pull request — release-please and the approval have to be different
 identities. While `RELEASE_PLEASE_TOKEN` is unset both are `github-actions[bot]`,
 and the script reports `blocked` and leaves the run green rather than failing.
 Use `--dry-run` to see the decision without posting a review.
+
+Generated release formatting also refreshes Bun workspace-version metadata with
+pinned Bun 1.4.1 using `--lockfile-only --ignore-scripts`. The shared
+`release-workspace-lock.js` validator accepts only workspace `version` string
+changes matching the generated package manifests. It rejects dependency,
+resolution, workspace identity, root version and unrelated formatting changes;
+every other lockfile byte must remain identical. Auto-approval independently
+loads complete lock/package files at immutable base/head SHAs and reruns that
+validation; `bun.lock` is never an unconditional generated-path exception.
+The working-tree guard includes nonignored untracked files and rejects authored
+spill without staging it. For files above the [Contents API inline-body limit](https://docs.github.com/en/rest/repos/contents#get-repository-content),
+approval reads object metadata at the immutable commit/path and retrieves the
+matching [Git blob](https://docs.github.com/en/rest/git/blobs#get-a-blob) through
+the same repository API. It ignores response-provided download URLs, caps file
+size at 16 MiB, and verifies complete canonical base64, byte size, Git blob SHA
+and UTF-8 before validating the lock. Missing or mismatched bodies fail closed.
+Run this refresh and the merge helper in CI; the merge helper invokes broad
+checks and must not run on agent machines where local builds are prohibited.
+Formatting amends the original release commit without resetting its author and
+pushes with an exact lease. Approval is pinned to the validated head. If refs
+move or validation fails, regenerate/review the release instead of publishing
+an ordinary authored repair commit. Published notes stay unchanged; ancestry
+alone does not prove differently worded features are duplicates.
 
 `release-please-auto-merge.yaml` closes the loop on the generated release PR. It
 runs daily at 00:00 UTC (`cron: "0 0 * * *"`), which is 07:00 in Vietnam

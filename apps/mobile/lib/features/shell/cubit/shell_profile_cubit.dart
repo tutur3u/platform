@@ -11,8 +11,25 @@ class ShellProfileCubit extends Cubit<ShellProfileState> {
       super(const ShellProfileState());
 
   final ProfileRepository _repository;
+  int _generation = 0;
+  Future<void> _cacheWrites = Future<void>.value();
+
+  bool _isCurrent(int generation, String userId) =>
+      !isClosed && _generation == generation && state.userId == userId;
+
+  Future<void> _saveIfCurrent(UserProfile profile, int generation) {
+    final write = _cacheWrites.catchError((Object _) {}).then((_) async {
+      if (_isCurrent(generation, profile.id)) {
+        await _repository.saveCachedProfile(profile);
+      }
+    });
+    _cacheWrites = write;
+    return write;
+  }
 
   void primeFromAuthenticatedUser(User user) {
+    if (isClosed) return;
+    if (state.userId != user.id) _generation++;
     // When the signed-in user changes, do not reuse the previous user's
     // `lastUpdatedAt`. Otherwise `loadFromAuthenticatedUser` treats the new
     // session as "fresh" and skips the API, leaving name/avatar empty until
@@ -34,6 +51,7 @@ class ShellProfileCubit extends Cubit<ShellProfileState> {
     User user, {
     bool forceRefresh = false,
   }) async {
+    if (isClosed) return;
     final userChanged = state.userId != user.id;
 
     if (userChanged) {
@@ -51,7 +69,9 @@ class ShellProfileCubit extends Cubit<ShellProfileState> {
       );
     }
 
+    final generation = ++_generation;
     final cachedResult = await _repository.getCachedProfile();
+    if (!_isCurrent(generation, user.id)) return;
     final cachedProfile = cachedResult.profile?.id == user.id
         ? cachedResult.profile
         : null;
@@ -73,11 +93,13 @@ class ShellProfileCubit extends Cubit<ShellProfileState> {
     emit(state.copyWith(isRefreshing: true, error: null));
 
     final result = await _repository.getProfile();
+    if (!_isCurrent(generation, user.id)) return;
     final profile = result.profile;
 
     if (profile != null && profile.id == user.id) {
       final fetchedAt = DateTime.now();
-      await _repository.saveCachedProfile(profile);
+      await _saveIfCurrent(profile, generation);
+      if (!_isCurrent(generation, user.id)) return;
       emit(
         _mergeProfile(
           profile: profile,
@@ -107,8 +129,11 @@ class ShellProfileCubit extends Cubit<ShellProfileState> {
     DateTime? lastUpdatedAt,
     bool isFromCache = false,
   }) async {
+    if (isClosed || state.userId != profile.id) return;
+    final generation = ++_generation;
     final effectiveUpdatedAt = lastUpdatedAt ?? DateTime.now();
-    await _repository.saveCachedProfile(profile);
+    await _saveIfCurrent(profile, generation);
+    if (!_isCurrent(generation, profile.id)) return;
     emit(
       _mergeProfile(
         profile: profile,
@@ -122,8 +147,18 @@ class ShellProfileCubit extends Cubit<ShellProfileState> {
   }
 
   Future<void> clear() async {
+    if (isClosed) return;
+    final generation = ++_generation;
     emit(const ShellProfileState());
-    await _repository.clearCachedProfile();
+    // Finish any already-started actor-keyed write before clearing it. Queued
+    // obsolete writes are skipped by their generation check.
+    final clear = _cacheWrites.catchError((Object _) {}).then((_) async {
+      if (!isClosed && _generation == generation && state.userId == null) {
+        await _repository.clearCachedProfile();
+      }
+    });
+    _cacheWrites = clear;
+    await clear;
   }
 
   ShellProfileState _mergeProfile({
@@ -175,6 +210,7 @@ class ShellProfileCubit extends Cubit<ShellProfileState> {
 
   @override
   Future<void> close() {
+    _generation++;
     _repository.dispose();
     return super.close();
   }

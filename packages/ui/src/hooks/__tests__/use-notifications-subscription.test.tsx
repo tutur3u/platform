@@ -31,6 +31,10 @@ describe('notification API refresh subscriptions', () => {
       configurable: true,
       value: 'visible',
     });
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
   });
   afterEach(() => {
     __resetNotificationSubscriptionRegistryForTests();
@@ -48,6 +52,32 @@ describe('notification API refresh subscriptions', () => {
     );
     expect(fetch).not.toHaveBeenCalled();
     hook.unmount();
+    client.clear();
+  });
+
+  it('makes 30 shared refreshes per visible hour, pauses offline, and refreshes on reconnect', () => {
+    const client = new QueryClient();
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    const hook = renderHook(() => useNotificationSubscription(null, 'user-1'), {
+      wrapper: wrapper(client),
+    });
+    act(() => vi.advanceTimersByTime(60 * 60_000));
+    expect(invalidate).toHaveBeenCalledTimes(30);
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: false,
+    });
+    act(() => vi.advanceTimersByTime(60 * 60_000));
+    expect(invalidate).toHaveBeenCalledTimes(30);
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+    act(() => window.dispatchEvent(new Event('online')));
+    expect(invalidate).toHaveBeenCalledTimes(31);
+    hook.unmount();
+    act(() => window.dispatchEvent(new Event('online')));
+    expect(invalidate).toHaveBeenCalledTimes(31);
     client.clear();
   });
 

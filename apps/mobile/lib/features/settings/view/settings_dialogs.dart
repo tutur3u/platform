@@ -72,7 +72,7 @@ Future<void> showSettingsLicensePage({
   required BuildContext context,
   String applicationName = 'Tuturuuu',
   String? applicationVersion,
-}) => Navigator.of(context).push<void>(
+}) => Navigator.of(context, rootNavigator: true).push<void>(
   MaterialPageRoute(
     builder: (licenseContext) => BackButtonListener(
       onBackButtonPressed: () async {

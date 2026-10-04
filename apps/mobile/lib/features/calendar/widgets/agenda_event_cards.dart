@@ -32,6 +32,7 @@ class _AllDayBanner extends StatelessWidget {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: baseColor,
           borderRadius: BorderRadius.circular(10),
@@ -91,17 +92,13 @@ class _AllDayBanner extends StatelessWidget {
             ),
             // Progress bar for multi-day events.
             if (info.totalDays > 1)
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  bottom: Radius.circular(10),
-                ),
-                child: LinearProgressIndicator(
-                  value: info.dayNumber / info.totalDays,
-                  minHeight: 3,
-                  backgroundColor: foreground.withValues(alpha: 0.2),
-                  valueColor: AlwaysStoppedAnimation(
-                    foreground.withValues(alpha: 0.7),
-                  ),
+              LinearProgressIndicator(
+                borderRadius: BorderRadius.zero,
+                value: info.dayNumber / info.totalDays,
+                minHeight: 3,
+                backgroundColor: foreground.withValues(alpha: 0.2),
+                valueColor: AlwaysStoppedAnimation(
+                  foreground.withValues(alpha: 0.7),
                 ),
               ),
           ],

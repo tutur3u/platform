@@ -196,24 +196,13 @@ class _OfflineModulePageState extends State<OfflineModulePage> {
       onRefresh: _refresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.fromLTRB(
+          20,
+          16,
+          20,
+          24 + MediaQuery.paddingOf(context).bottom,
+        ),
         children: [
-          if (widget.embedded)
-            Row(
-              children: [
-                IconButton(
-                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-                  onPressed: () => Navigator.of(context).maybePop(),
-                  icon: const Icon(Icons.arrow_back),
-                ),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                ),
-              ],
-            ),
           if (unavailable)
             Text(l10n.offlinePreparationUnavailable)
           else ...[

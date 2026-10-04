@@ -40,7 +40,7 @@ class TimezoneSettingsState {
       : device;
 }
 
-/// Each load invalidates earlier requests and clears the previous scope.
+/// Scope changes invalidate earlier requests; duplicate loads share one result.
 class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
   TimezoneSettingsCubit({
     required this.repository,
@@ -57,7 +57,22 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
   int _generation = 0;
   String? _userId;
   String? _workspaceId;
-  Future<void> load({
+  Future<void>? _pendingLoad;
+  Future<void> load({required String? userId, required String? workspaceId}) {
+    if (isClosed) return Future.value();
+    final sameScope = _userId == userId && _workspaceId == workspaceId;
+    if (sameScope && _pendingLoad != null) return _pendingLoad!;
+    // A resume refresh must not invalidate a write for the current scope.
+    if (sameScope && state.saving) return Future.value();
+    late final Future<void> pending;
+    pending = _load(userId: userId, workspaceId: workspaceId).whenComplete(() {
+      if (identical(_pendingLoad, pending)) _pendingLoad = null;
+    });
+    _pendingLoad = pending;
+    return pending;
+  }
+
+  Future<void> _load({
     required String? userId,
     required String? workspaceId,
   }) async {
@@ -65,6 +80,8 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
     final previous = state;
     final sameUser = userId != null && _userId == userId;
     final sameScope = _userId == userId && _workspaceId == workspaceId;
+    final failedSaveZone = sameScope ? previous.failedSaveZone : null;
+    final failedSaveWorkspace = sameScope && previous.failedSaveWorkspace;
     if (_userId != userId) _retryAt = null;
     _userId = userId;
     _workspaceId = workspaceId;
@@ -98,6 +115,10 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
         personalLoaded:
             sameUser && (previous.resolved || previous.personalLoaded),
         workspaceLoaded: sameScope && previous.workspaceLoaded,
+        failed: failedSaveZone != null,
+        errorMessage: failedSaveZone != null ? previous.errorMessage : null,
+        failedSaveZone: failedSaveZone,
+        failedSaveWorkspace: failedSaveWorkspace,
       ),
     );
     if (userId == null) {
@@ -121,7 +142,9 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
         return zone;
       } on ApiException catch (error) {
         if (error.statusCode == 429 &&
-            (error.retryAfter ?? 0) > (rateLimit?.retryAfter ?? 0)) {
+            (rateLimit == null ||
+                TimezoneSettingsRepository.rateLimitDelay(error) >
+                    TimezoneSettingsRepository.rateLimitDelay(rateLimit!))) {
           rateLimit = error;
         }
         rethrow;
@@ -141,9 +164,18 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
           },
         );
         final preferences = await Future.wait<String>([
-          readPreference(repository.loadPersonal(), personal: true),
+          readPreference(
+            repository.readPersonal(userId, timeout: loadTimeout),
+            personal: true,
+          ),
           if (workspaceId != null)
-            readPreference(repository.loadWorkspace(workspaceId))
+            readPreference(
+              repository.readWorkspace(
+                userId,
+                workspaceId,
+                timeout: loadTimeout,
+              ),
+            )
           else
             Future.value(workspaceRead = 'auto'),
         ]);
@@ -173,16 +205,19 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
           resolved: true,
           personalLoaded: true,
           workspaceLoaded: workspaceId != null,
+          failed: failedSaveZone != null,
+          errorMessage: failedSaveZone != null ? previous.errorMessage : null,
+          failedSaveZone: failedSaveZone,
+          failedSaveWorkspace: failedSaveWorkspace,
         ),
       );
     } on Object catch (error) {
       if (!isClosed && generation == _generation) {
         final failure = rateLimit ?? error;
         if (failure is ApiException && failure.statusCode == 429) {
-          final seconds = failure.retryAfter;
-          if (seconds != null && seconds > 0) {
-            _retryAt = _clock().add(Duration(seconds: seconds));
-          }
+          _retryAt = _clock().add(
+            TimezoneSettingsRepository.rateLimitDelay(failure),
+          );
         }
         emit(
           sameScope && previous.resolved
@@ -197,6 +232,8 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
                   failed: true,
                   errorMessage: _failureMessage(failure),
                   retryAt: _retryAt,
+                  failedSaveZone: failedSaveZone,
+                  failedSaveWorkspace: failedSaveWorkspace,
                 )
               : TimezoneSettingsState(
                   personal:
@@ -221,6 +258,8 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
                   failed: true,
                   errorMessage: _failureMessage(failure),
                   retryAt: _retryAt,
+                  failedSaveZone: failedSaveZone,
+                  failedSaveWorkspace: failedSaveWorkspace,
                 ),
         );
       }
@@ -278,8 +317,8 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
       final saved = await ApiClient.runForUser(
         _userId!,
         () => workspace
-            ? repository.saveWorkspace(_workspaceId!, zone)
-            : repository.savePersonal(zone),
+            ? repository.writeWorkspace(_userId!, _workspaceId!, zone)
+            : repository.writePersonal(_userId!, zone),
       );
       if (isClosed || generation != _generation) return;
       final personal = workspace ? previous.personal : saved;
@@ -314,10 +353,10 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
       );
     } on Exception catch (error) {
       if (!isClosed && generation == _generation) {
-        if (error is ApiException &&
-            error.statusCode == 429 &&
-            (error.retryAfter ?? 0) > 0) {
-          _retryAt = _clock().add(Duration(seconds: error.retryAfter!));
+        if (error is ApiException && error.statusCode == 429) {
+          _retryAt = _clock().add(
+            TimezoneSettingsRepository.rateLimitDelay(error),
+          );
         }
         emit(
           TimezoneSettingsState(

@@ -32,25 +32,19 @@ class _InventorySaleCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: theme.typography.large.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              const shad.Gap(12),
-              Text(
-                pendingCreate ? '—' : formatCurrency(sale.paidAmount, currency),
-                style: theme.typography.large.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
+          Text(
+            title,
+            style: theme.typography.large.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const shad.Gap(6),
+          Text(
+            pendingCreate
+                ? '—'
+                : sale.currency?.isNotEmpty == true
+                ? formatCurrency(sale.paidAmount, sale.currency!)
+                : '${sale.paidAmount} '
+                      '(${context.l10n.inventoryStockHealthUnknown})',
+            style: theme.typography.large.copyWith(fontWeight: FontWeight.w800),
           ),
           if (metadata.isNotEmpty) ...[
             const shad.Gap(8),
@@ -96,9 +90,11 @@ class _InventorySaleCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  DateFormat.yMMMd().add_jm().format(
-                    sale.createdAt?.toLocal() ?? DateTime.now(),
-                  ),
+                  sale.createdAt == null
+                      ? context.l10n.inventoryStockHealthUnknown
+                      : DateFormat.yMMMd().add_jm().format(
+                          sale.createdAt!.toLocal(),
+                        ),
                   style: theme.typography.xSmall.copyWith(
                     color: theme.colorScheme.mutedForeground,
                   ),

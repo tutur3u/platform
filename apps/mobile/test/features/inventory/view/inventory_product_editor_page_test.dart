@@ -18,6 +18,8 @@ import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/inventory/view/inventory_product_editor_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -26,9 +28,30 @@ import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
 import '../../../helpers/helpers.dart';
 import '../../../helpers/offline_inventory_harness.dart';
+
+class _MockAuthCubit extends MockCubit<AuthState> implements AuthCubit {}
+
+BlocProvider<AuthCubit> _actorProvider() => BlocProvider<AuthCubit>(
+  create: (_) {
+    final auth = _MockAuthCubit();
+    when(() => auth.state).thenReturn(
+      const AuthState.authenticated(
+        User(
+          id: 'actor',
+          aud: 'authenticated',
+          appMetadata: {},
+          userMetadata: {},
+          createdAt: '2026-01-01T00:00:00Z',
+        ),
+      ),
+    );
+    return auth;
+  },
+);
 
 class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
     implements WorkspaceCubit {}
@@ -351,8 +374,11 @@ void main() {
           });
           await _mountModal(
             tester,
-            BlocProvider<WorkspaceCubit>.value(
-              value: workspaceCubit,
+            MultiBlocProvider(
+              providers: [
+                BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
+                _actorProvider(),
+              ],
               child: InventoryProductEditorPage(
                 productId: 'synthetic-product',
                 inventoryRepository: _ExistingProductRepository(
@@ -472,8 +498,11 @@ void main() {
           }
           final reloadKey = await _mountModal(
             tester,
-            BlocProvider<WorkspaceCubit>.value(
-              value: workspaceCubit,
+            MultiBlocProvider(
+              providers: [
+                BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
+                _actorProvider(),
+              ],
               child: InventoryProductEditorPage(
                 productId: 'synthetic-product',
                 inventoryRepository: _ExistingProductRepository(
@@ -521,8 +550,11 @@ void main() {
         final cache = _MockCacheStore();
         await _mountModal(
           tester,
-          BlocProvider<WorkspaceCubit>.value(
-            value: workspaceCubit,
+          MultiBlocProvider(
+            providers: [
+              BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
+              _actorProvider(),
+            ],
             child: InventoryProductEditorPage(
               productId: 'synthetic-product',
               inventoryRepository: _ExistingProductRepository(
@@ -569,8 +601,11 @@ void main() {
       tester,
     ) async {
       await tester.pumpApp(
-        BlocProvider<WorkspaceCubit>.value(
-          value: workspaceCubit,
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
+            _actorProvider(),
+          ],
           child: InventoryProductEditorPage(
             inventoryRepository: inventoryRepository,
             financeRepository: financeRepository,
@@ -597,8 +632,11 @@ void main() {
       });
 
       await tester.pumpApp(
-        BlocProvider<WorkspaceCubit>.value(
-          value: workspaceCubit,
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
+            _actorProvider(),
+          ],
           child: InventoryProductEditorPage(
             inventoryRepository: inventoryRepository,
             financeRepository: _FailingFinanceRepository(),

@@ -21,6 +21,7 @@ bool shouldShowNotificationsActionForLocation(String matchedLocation) {
       matchedLocation == Routes.apps ||
       matchedLocation == Routes.profileRoot ||
       matchedLocation == Routes.profileAccounts ||
+      matchedLocation == Routes.settingsAccounts ||
       matchedLocation == Routes.tasks ||
       matchedLocation == Routes.taskBoards ||
       matchedLocation == Routes.taskPlanning ||

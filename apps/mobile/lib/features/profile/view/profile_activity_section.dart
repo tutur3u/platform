@@ -9,6 +9,7 @@ import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/profile/personal_profile_workspace.dart';
 import 'package:mobile/features/profile/view/profile_activity_chart.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -28,11 +29,13 @@ class ProfileActivitySection extends StatefulWidget {
   const ProfileActivitySection({
     this.replayToken = 0,
     this.statsLoader,
+    this.cacheUserId,
     this.timezoneLoader,
     super.key,
   });
 
   final int replayToken;
+  final String? Function()? cacheUserId;
   final ProfileStatsLoader? statsLoader;
   final Future<String> Function()? timezoneLoader;
 
@@ -56,7 +59,11 @@ class _ProfileActivitySectionState extends State<ProfileActivitySection> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final userId = context.watch<AuthCubit>().state.user?.id;
-    final workspace = context.watch<WorkspaceCubit>().state.currentWorkspace;
+    final workspace = verifiedPersonalProfileWorkspace(
+      userId: userId,
+      cacheUserId: (widget.cacheUserId ?? currentPersonalProfileUserId)(),
+      workspaces: context.watch<WorkspaceCubit>(),
+    );
     final scope = userId == null || workspace == null
         ? null
         : '$userId:${workspace.id}';
@@ -75,7 +82,11 @@ class _ProfileActivitySectionState extends State<ProfileActivitySection> {
     super.didUpdateWidget(oldWidget);
     if (widget.replayToken == oldWidget.replayToken) return;
     final user = context.read<AuthCubit>().state.user;
-    final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
+    final workspace = verifiedPersonalProfileWorkspace(
+      userId: user?.id,
+      cacheUserId: (widget.cacheUserId ?? currentPersonalProfileUserId)(),
+      workspaces: context.read<WorkspaceCubit>(),
+    );
     if (user != null && workspace != null) {
       unawaited(_load(workspace.id, user.id, workspace.personal));
     }
@@ -94,11 +105,14 @@ class _ProfileActivitySectionState extends State<ProfileActivitySection> {
               timezone,
               personal: personal,
             )
-          : await _repository.getStats(
-              workspaceId,
+          : await ApiClient.runForUser(
               userId,
-              isPersonal: personal,
-              timezone: timezone,
+              () => _repository.getStats(
+                workspaceId,
+                userId,
+                isPersonal: personal,
+                timezone: timezone,
+              ),
             );
       if (!mounted || request != _request) return;
       setState(() {
@@ -123,7 +137,7 @@ class _ProfileActivitySectionState extends State<ProfileActivitySection> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final stats = _stats;
-    if (_scope == null) return const SizedBox.shrink();
+    if (_scope == null) return Text(l10n.profileTimelineUnavailable);
     if (_failed) {
       return Center(
         child: TextButton.icon(
@@ -131,10 +145,12 @@ class _ProfileActivitySectionState extends State<ProfileActivitySection> {
           label: Text(l10n.commonRetry),
           onPressed: () {
             final user = context.read<AuthCubit>().state.user;
-            final workspace = context
-                .read<WorkspaceCubit>()
-                .state
-                .currentWorkspace;
+            final workspace = verifiedPersonalProfileWorkspace(
+              userId: user?.id,
+              cacheUserId:
+                  (widget.cacheUserId ?? currentPersonalProfileUserId)(),
+              workspaces: context.read<WorkspaceCubit>(),
+            );
             if (user != null && workspace != null) {
               setState(() => _failed = false);
               unawaited(_load(workspace.id, user.id, workspace.personal));

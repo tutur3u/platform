@@ -70,6 +70,11 @@ jobs:
         with:
           node-version: 24
 
+      - name: Setup pinned Bun for generated lock metadata
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+
       - name: Normalize generated release formatting
         shell: bash
         env:
@@ -96,8 +101,16 @@ jobs:
             exit 0
           fi
 
+          # Fail before formatting any path outside the generated release set.
+          node scripts/ci/release-workspace-lock.js origin/production HEAD
           node scripts/ci/normalize-release-notes.js origin/production
           npx --yes @biomejs/biome@2.5.13 format --write --files-ignore-unknown=true -- "${changed_files[@]}"
+
+          # Refresh only manager-owned metadata: no dependency installation or
+          # package lifecycle scripts. Independently reject any non-version delta.
+          bun install --lockfile-only --ignore-scripts
+          node scripts/ci/release-workspace-lock.js origin/production HEAD --working
+          if ! git diff --quiet -- bun.lock; then changed_files+=("bun.lock"); fi
 
           if git diff --quiet -- "${changed_files[@]}"; then
             echo "Generated release files already match Biome formatting."

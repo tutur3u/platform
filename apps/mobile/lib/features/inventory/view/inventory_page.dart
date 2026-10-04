@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_sync_refresh.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
@@ -16,11 +17,12 @@ import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
-import 'package:mobile/features/inventory/view/inventory_checkout_page.dart';
-import 'package:mobile/features/inventory/view/inventory_product_editor_page.dart';
 import 'package:mobile/features/inventory/widgets/inventory_low_stock_card.dart';
+import 'package:mobile/features/inventory/widgets/inventory_read_warning.dart';
+import 'package:mobile/features/inventory/widgets/inventory_receipt_activity.dart';
 import 'package:mobile/features/inventory/widgets/inventory_stock_health_panel.dart';
 import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
+import 'package:mobile/features/settings/view/offline_changes_sheet.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -43,6 +45,9 @@ class _InventoryPageState extends State<InventoryPage>
   late final InventoryRepository _repository;
   Future<InventoryOverview>? _future;
   Future<InventoryStockHealth>? _stockHealth;
+  InventoryOverview? _snapshot;
+  InventoryStockHealth? _healthSnapshot;
+  (String?, String?)? _loadedScope;
 
   String? get _actorId => context.read<AuthCubit>().state.user?.id;
 
@@ -66,10 +71,27 @@ class _InventoryPageState extends State<InventoryPage>
       });
       return;
     }
-    final future = CacheStore.awaitRevalidation(
+    final scope = (_actorId, wsId);
+    if (_loadedScope != scope) {
+      _snapshot = _repository.peekOverview(wsId);
+      _healthSnapshot = null;
+    }
+    _loadedScope = scope;
+    final future = CacheStore.readWithRevalidation(
       () => _repository.getOverview(wsId, forceRefresh: forceRefresh),
+      onSnapshot: (value) {
+        if (!mounted || (_actorId, _wsId) != scope) return;
+        setState(() => _snapshot = value);
+      },
     );
-    final stockHealth = _repository.getStockHealth(wsId);
+    final stockHealth = CacheStore.readWithRevalidation(
+      () => _repository.getStockHealth(wsId),
+      onSnapshot: (value) {
+        if (mounted && (_actorId, _wsId) == scope) {
+          setState(() => _healthSnapshot = value);
+        }
+      },
+    );
     setState(() {
       _future = future;
       _stockHealth = stockHealth;
@@ -120,14 +142,10 @@ class _InventoryPageState extends State<InventoryPage>
               return const InventoryOverviewSkeleton();
             }
 
-            if (snapshot.hasError || !snapshot.hasData) {
-              return _InventoryErrorView(
-                onRetry: () => unawaited(_reload(forceRefresh: true)),
-                body: snapshot.error?.toString(),
-              );
-            }
-
-            final overview = snapshot.data!;
+            final retained =
+                snapshot.data ??
+                (_loadedScope == (_actorId, _wsId) ? _snapshot : null);
+            final overview = retained;
             final l10n = context.l10n;
 
             return ResponsiveWrapper(
@@ -143,146 +161,122 @@ class _InventoryPageState extends State<InventoryPage>
                     32 + MediaQuery.paddingOf(context).bottom,
                   ),
                   children: [
-                    InventoryHeroCard(
-                      title: l10n.inventoryTitle,
-                      icon: Icons.inventory_2_outlined,
-                      showHeader: false,
-                      actions: [
-                        InventoryActionTile(
-                          icon: Icons.point_of_sale_rounded,
-                          primary: true,
-                          label: l10n.inventoryCheckoutTitle,
-                          onPressed: () async {
-                            final result =
-                                await showInventoryCheckoutPage<bool>(context);
-                            if (result == true && mounted) {
-                              await _reload(forceRefresh: true);
-                            }
-                          },
-                        ),
-                        InventoryActionTile(
-                          icon: Icons.add_box_outlined,
-                          label: l10n.inventoryCreateProduct,
-                          onPressed: () async {
-                            final result =
-                                await showInventoryProductEditorPage<bool>(
-                                  context,
-                                );
-                            if (result == true && mounted) {
-                              await _reload(forceRefresh: true);
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                    const shad.Gap(24),
+                    if (snapshot.hasError)
+                      InventoryReadWarning(
+                        onRetry: () => unawaited(_reload(forceRefresh: true)),
+                      ),
                     InventoryStockHealthPanel(
                       key: ValueKey(('stock-health', _actorId, _wsId)),
                       future: _stockHealth,
+                      retained: _healthSnapshot,
                     ),
                     const shad.Gap(16),
-                    FinanceSectionHeader(title: l10n.inventoryOverviewLowStock),
-                    const shad.Gap(12),
-                    if (overview.lowStockProducts.isEmpty)
-                      InventoryEmptyPanel(
-                        body: l10n.inventoryNoLowStockProducts,
-                      )
-                    else
-                      ...overview.lowStockProducts
-                          .take(5)
-                          .map(
-                            (product) => Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: InventoryLowStockCard(product: product),
-                            ),
-                          ),
-                    const shad.Gap(16),
-                    FinanceSectionHeader(
-                      title: l10n.inventoryOverviewRecentSales,
-                      action: shad.GhostButton(
-                        onPressed: () => context.go(Routes.inventorySales),
-                        child: Text(l10n.financeViewAll),
+                    ValueListenableBuilder(
+                      valueListenable: OfflineMutationQueue.instance.pending,
+                      builder: (context, pending, _) {
+                        final count = pending
+                            .where(
+                              (m) =>
+                                  m.userId == _actorId &&
+                                  m.workspaceId == _wsId &&
+                                  m.feature == 'inventory',
+                            )
+                            .length;
+                        return count == 0
+                            ? const SizedBox.shrink()
+                            : ListTile(
+                                leading: const Icon(Icons.sync_outlined),
+                                title: Text(
+                                  l10n.inventoryRedesignPendingCount(count),
+                                ),
+                                onTap: () => showOfflineChangesSheet(context),
+                              );
+                      },
+                    ),
+                    if (overview != null) ...[
+                      InventoryReceiptActivity(sales: overview.recentSales),
+                      const shad.Gap(16),
+                      FinanceSectionHeader(
+                        title: l10n.inventoryOverviewLowStock,
                       ),
-                    ),
-                    const shad.Gap(12),
-                    if (overview.recentSales.isEmpty)
-                      InventoryEmptyPanel(body: l10n.inventorySalesEmpty)
-                    else
-                      ...overview.recentSales
-                          .take(5)
-                          .map(
-                            (sale) => Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: FinancePanel(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            sale.owners.join(', '),
-                                            style: shad.Theme.of(context)
-                                                .typography
-                                                .large
-                                                .copyWith(
-                                                  fontWeight: FontWeight.w700,
-                                                ),
+                      const shad.Gap(12),
+                      if (overview.lowStockProducts.isEmpty)
+                        InventoryEmptyPanel(
+                          body: l10n.inventoryNoLowStockProducts,
+                        )
+                      else
+                        ...overview.lowStockProducts
+                            .take(5)
+                            .map(
+                              (product) => Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: InventoryLowStockCard(product: product),
+                              ),
+                            ),
+                      const shad.Gap(16),
+                      FinanceSectionHeader(
+                        title: l10n.inventoryOverviewRecentSales,
+                        action: shad.GhostButton(
+                          onPressed: () => context.go(Routes.inventorySales),
+                          child: Text(l10n.financeViewAll),
+                        ),
+                      ),
+                      const shad.Gap(12),
+                      if (overview.recentSales.isEmpty)
+                        InventoryEmptyPanel(body: l10n.inventorySalesEmpty)
+                      else
+                        ...overview.recentSales
+                            .take(5)
+                            .map(
+                              (sale) => Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: FinancePanel(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              sale.owners.join(', '),
+                                              style: shad.Theme.of(context)
+                                                  .typography
+                                                  .large
+                                                  .copyWith(
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                    const shad.Gap(6),
-                                    Text(
-                                      [
-                                        if (sale.walletName?.isNotEmpty ??
-                                            false)
-                                          sale.walletName!,
-                                        if (sale.categoryName?.isNotEmpty ??
-                                            false)
-                                          sale.categoryName!,
-                                        if (sale.createdAt != null)
-                                          DateFormat.yMMMd().add_jm().format(
-                                            sale.createdAt!.toLocal(),
-                                          ),
-                                      ].join(' • '),
-                                    ),
-                                  ],
+                                        ],
+                                      ),
+                                      const shad.Gap(6),
+                                      Text(
+                                        [
+                                          if (sale.walletName?.isNotEmpty ??
+                                              false)
+                                            sale.walletName!,
+                                          if (sale.categoryName?.isNotEmpty ??
+                                              false)
+                                            sale.categoryName!,
+                                          if (sale.createdAt != null)
+                                            DateFormat.yMMMd().add_jm().format(
+                                              sale.createdAt!.toLocal(),
+                                            ),
+                                        ].join(' • '),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                    const shad.Gap(16),
+                      const shad.Gap(16),
+                    ],
                   ],
                 ),
               ),
             );
           },
-        ),
-      ),
-    );
-  }
-}
-
-class _InventoryErrorView extends StatelessWidget {
-  const _InventoryErrorView({required this.onRetry, this.body});
-
-  final VoidCallback onRetry;
-  final String? body;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: FinanceEmptyState(
-          icon: Icons.error_outline,
-          title: context.l10n.commonSomethingWentWrong,
-          body: body ?? context.l10n.inventoryTitle,
-          action: shad.SecondaryButton(
-            onPressed: onRetry,
-            child: Text(context.l10n.commonRetry),
-          ),
         ),
       ),
     );

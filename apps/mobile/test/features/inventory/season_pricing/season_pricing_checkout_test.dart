@@ -18,9 +18,9 @@ import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
-import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/inventory/controllers/inventory_season_pricing_controller.dart';
 import 'package:mobile/features/inventory/view/inventory_checkout_page.dart';
+import 'package:mobile/features/inventory/widgets/inventory_form_scaffold.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
@@ -223,8 +223,8 @@ void main() {
         find.textContaining('Some items do not match this period'),
         findsOneWidget,
       );
-      final form = tester.widget<FinanceFullscreenFormScaffold>(
-        find.byType(FinanceFullscreenFormScaffold),
+      final form = tester.widget<InventoryFormScaffold>(
+        find.byType(InventoryFormScaffold),
       );
       expect(form.onPrimaryPressed, isNull);
       await tester.tap(find.text('Reconcile cart'));
@@ -355,8 +355,8 @@ void main() {
       ],
     );
     await mount(tester, inventory, controller, sale: sale);
-    final scaffold = tester.widget<FinanceFullscreenFormScaffold>(
-      find.byType(FinanceFullscreenFormScaffold),
+    final scaffold = tester.widget<InventoryFormScaffold>(
+      find.byType(InventoryFormScaffold),
     );
     expect(scaffold.onPrimaryPressed, isNull);
     expect(
@@ -392,8 +392,8 @@ void main() {
       expect(posts, 1);
       expect(settings.writes, 1);
       expect(controller.completedInvoiceId, 'invoice');
-      final form = tester.widget<FinanceFullscreenFormScaffold>(
-        find.byType(FinanceFullscreenFormScaffold),
+      final form = tester.widget<InventoryFormScaffold>(
+        find.byType(InventoryFormScaffold),
       );
       expect(form.onPrimaryPressed, isNull);
       expect(find.text('Create sale'), findsNothing);
@@ -435,8 +435,8 @@ void main() {
     inventory.denied = true;
     final reads = inventory.periodReads;
     expect(find.text('Retry'), findsNothing);
-    final form = tester.widget<FinanceFullscreenFormScaffold>(
-      find.byType(FinanceFullscreenFormScaffold),
+    final form = tester.widget<InventoryFormScaffold>(
+      find.byType(InventoryFormScaffold),
     );
     expect(form.onPrimaryPressed, isNotNull);
     expect(find.text('Test product · Each · Main'), findsOneWidget);
@@ -492,9 +492,7 @@ void main() {
     expect(inventory.legacy, isNull);
     expect(
       tester
-          .widget<FinanceFullscreenFormScaffold>(
-            find.byType(FinanceFullscreenFormScaffold),
-          )
+          .widget<InventoryFormScaffold>(find.byType(InventoryFormScaffold))
           .onPrimaryPressed,
       isNull,
     );
@@ -527,9 +525,7 @@ void main() {
     expect(controller.completedInvoiceId, 'invoice');
     expect(
       tester
-          .widget<FinanceFullscreenFormScaffold>(
-            find.byType(FinanceFullscreenFormScaffold),
-          )
+          .widget<InventoryFormScaffold>(find.byType(InventoryFormScaffold))
           .onPrimaryPressed,
       isNull,
     );
@@ -619,9 +615,7 @@ void main() {
     );
     expect(
       tester
-          .widget<FinanceFullscreenFormScaffold>(
-            find.byType(FinanceFullscreenFormScaffold),
-          )
+          .widget<InventoryFormScaffold>(find.byType(InventoryFormScaffold))
           .onPrimaryPressed,
       isNull,
     );
@@ -660,9 +654,7 @@ void main() {
       expect(controller.completedInvoiceId, 'invoice');
       expect(
         tester
-            .widget<FinanceFullscreenFormScaffold>(
-              find.byType(FinanceFullscreenFormScaffold),
-            )
+            .widget<InventoryFormScaffold>(find.byType(InventoryFormScaffold))
             .onPrimaryPressed,
         isNull,
       );

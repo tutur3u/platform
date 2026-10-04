@@ -223,7 +223,9 @@ that the room is still open or that its access has been verified.
 The sidebar notification bell uses the same inbox, archive, pagination, read
 actions, and invitation controls as Next.js satellites. Colab supplies native
 central-site links and polls the unread count and open notification list every 30 seconds while visible;
-Next.js satellites retain their Supabase realtime subscription. Only exact
+Next.js satellites use the shared authenticated API refresh subscription every
+120 seconds while visible and online; notification actions and return-to-app
+events refresh immediately. Only exact
 notification and workspace-invitation endpoints are proxied to the central app,
 with central authentication cookies, same-origin mutation checks, and preserved
 query filters. These account endpoints are never exposed to simulated AI tools.
