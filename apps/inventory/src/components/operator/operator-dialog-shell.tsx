@@ -160,6 +160,7 @@ export function OperatorDialogFooter({
 }
 
 export type OperatorDialogTab = {
+  contentClassName?: string;
   /** Optional badge/count shown after the label, e.g. a section count. */
   badge?: ReactNode;
   content: ReactNode;
@@ -230,7 +231,8 @@ export function OperatorDialogTabs({
         <TabsContent
           className={cn(
             'mt-0 min-h-0 flex-1 overflow-y-auto overscroll-contain focus-visible:outline-none sm:px-6 sm:py-5',
-            compactMobile ? 'px-3 py-3' : 'px-4 py-4'
+            compactMobile ? 'px-3 py-3' : 'px-4 py-4',
+            tab.contentClassName
           )}
           key={tab.value}
           value={tab.value}

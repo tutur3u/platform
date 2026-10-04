@@ -196,33 +196,39 @@ export function CartEditor({
 export function getSaleStockOptions(
   products: InventoryProductSummary[]
 ): SaleStockOption[] {
-  return products.flatMap((product) => {
-    if (product.archived) return [];
-    return (product.inventory ?? []).flatMap((raw) => {
+  // Each product response is a complete snapshot. Prefer the later visible
+  // snapshot when paginated/search results overlap; never add stock quantities.
+  const uniqueProducts = new Map(
+    products.map((product) => [product.id, product])
+  );
+  const options = new Map<string, SaleStockOption>();
+  for (const product of uniqueProducts.values()) {
+    if (product.archived) continue;
+    for (const raw of product.inventory ?? []) {
       const unitId = typeof raw.unit_id === 'string' ? raw.unit_id : '';
       const warehouseId =
         typeof raw.warehouse_id === 'string' ? raw.warehouse_id : '';
-      if (!unitId || !warehouseId) return [];
-      return [
-        {
-          amount: typeof raw.amount === 'number' ? raw.amount : null,
-          categoryId: product.category_id ?? null,
-          categoryName: product.category ?? null,
-          financeCategoryId: product.finance_category_id ?? null,
-          imageUrl: product.avatar_url ?? null,
-          key: `${product.id}:${unitId}:${warehouseId}`,
-          price: typeof raw.price === 'number' ? raw.price : 0,
-          productId: product.id,
-          productName: product.name,
-          unitId,
-          unitName: typeof raw.unit_name === 'string' ? raw.unit_name : 'Unit',
-          warehouseId,
-          warehouseName:
-            typeof raw.warehouse_name === 'string'
-              ? raw.warehouse_name
-              : 'Warehouse',
-        },
-      ];
-    });
-  });
+      if (!unitId || !warehouseId) continue;
+      const key = `${product.id}:${unitId}:${warehouseId}`;
+      options.set(key, {
+        amount: typeof raw.amount === 'number' ? raw.amount : null,
+        categoryId: product.category_id ?? null,
+        categoryName: product.category ?? null,
+        financeCategoryId: product.finance_category_id ?? null,
+        imageUrl: product.avatar_url ?? null,
+        key,
+        price: typeof raw.price === 'number' ? raw.price : 0,
+        productId: product.id,
+        productName: product.name,
+        unitId,
+        unitName: typeof raw.unit_name === 'string' ? raw.unit_name : 'Unit',
+        warehouseId,
+        warehouseName:
+          typeof raw.warehouse_name === 'string'
+            ? raw.warehouse_name
+            : 'Warehouse',
+      });
+    }
+  }
+  return [...options.values()];
 }
