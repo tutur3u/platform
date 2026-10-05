@@ -34,7 +34,8 @@ import { TaskBoardLoadingState } from './task-board-loading-state';
 import { TaskCardHotkeysProvider } from './task-card-hotkeys-provider';
 import { useProgressiveBoardLoader } from './use-progressive-board-loader';
 
-const BOARD_REVALIDATE_COOLDOWN_MS = 5 * 60_000;
+// Coalesce paired focus/visibility events without suppressing the next tab visit.
+const BOARD_REVALIDATE_COOLDOWN_MS = 1_000;
 const RELATION_REVALIDATE_DELAY_MS = 5_000;
 
 interface Props {
@@ -150,7 +151,7 @@ export function BoardClient({
     if (typeof window === 'undefined') return;
 
     let inFlightRevalidation: Promise<void> | null = null;
-    let lastSuccessfulRevalidateAt = 0;
+    let lastSuccessfulRevalidateAt = Number.NEGATIVE_INFINITY;
 
     const revalidateLoadedLists = () => {
       const now = Date.now();
@@ -165,10 +166,16 @@ export function BoardClient({
         .revalidateLoadedLists()
         .then(async () => {
           lastSuccessfulRevalidateAt = Date.now();
-          await queryClient.invalidateQueries({
-            queryKey: ['tasks-full', boardId],
-            refetchType: 'active',
-          });
+          await Promise.all([
+            queryClient.invalidateQueries({
+              queryKey: ['tasks-full', boardId],
+              refetchType: 'active',
+            }),
+            queryClient.invalidateQueries({
+              queryKey: ['task-board', workspace.id, boardId],
+              refetchType: 'active',
+            }),
+          ]);
         })
         .catch(() => {
           // best effort
@@ -178,7 +185,9 @@ export function BoardClient({
         });
     };
 
-    const onFocus = () => revalidateLoadedLists();
+    const onFocus = () => {
+      if (document.visibilityState === 'visible') revalidateLoadedLists();
+    };
     const onVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         revalidateLoadedLists();
@@ -204,6 +213,7 @@ export function BoardClient({
     cachedSnapshot,
     progressiveLoader.revalidateLoadedLists,
     queryClient,
+    workspace.id,
   ]);
 
   // Fetch workspace labels once at the board level

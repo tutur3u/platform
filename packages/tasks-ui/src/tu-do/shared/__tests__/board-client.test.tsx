@@ -385,7 +385,7 @@ describe('BoardClient', () => {
     expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
   });
 
-  it('throttles focus-driven list revalidation for five minutes', async () => {
+  it('coalesces paired wake events but refreshes again on the next tab visit', async () => {
     const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(1_000_000);
     const queryClient = new QueryClient({
       defaultOptions: {
@@ -415,7 +415,14 @@ describe('BoardClient', () => {
       expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
     });
 
-    nowSpy.mockReturnValue(1_001_500);
+    expect(getWorkspaceTaskBoardMock).toHaveBeenCalledTimes(2);
+    // Focus and visibility are delivered together when returning to a tab.
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
+
+    nowSpy.mockReturnValue(1_000_500);
 
     await act(async () => {
       window.dispatchEvent(new Event('focus'));
@@ -423,7 +430,7 @@ describe('BoardClient', () => {
 
     expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
 
-    nowSpy.mockReturnValue(1_299_999);
+    nowSpy.mockReturnValue(1_000_999);
 
     await act(async () => {
       window.dispatchEvent(new Event('focus'));
@@ -431,7 +438,7 @@ describe('BoardClient', () => {
 
     expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
 
-    nowSpy.mockReturnValue(1_300_000);
+    nowSpy.mockReturnValue(1_001_000);
 
     await act(async () => {
       window.dispatchEvent(new Event('focus'));
@@ -439,6 +446,42 @@ describe('BoardClient', () => {
 
     await waitFor(() => {
       expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(2);
+      expect(getWorkspaceTaskBoardMock).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  it('does not refresh a hidden tab, then refreshes when it becomes visible', async () => {
+    const visibility = vi.spyOn(document, 'visibilityState', 'get');
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, refetchOnWindowFocus: false },
+      },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId="board-1"
+          workspace={{ id: 'workspace-uuid', personal: false } as any}
+          currentUserId="user-1"
+        />
+      </QueryClientProvider>
+    );
+    expect(await screen.findByTestId('board-views')).toBeInTheDocument();
+
+    visibility.mockReturnValue('hidden');
+    await act(async () => {
+      window.dispatchEvent(new Event('focus'));
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(revalidateLoadedListsMock).not.toHaveBeenCalled();
+
+    visibility.mockReturnValue('visible');
+    await act(async () =>
+      document.dispatchEvent(new Event('visibilitychange'))
+    );
+    await waitFor(() => {
+      expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
+      expect(getWorkspaceTaskBoardMock).toHaveBeenCalledTimes(2);
     });
   });
 
