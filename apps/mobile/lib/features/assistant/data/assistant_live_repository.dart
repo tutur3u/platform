@@ -17,6 +17,7 @@ class AssistantLiveRepository {
     final resumableChatId = assistantLiveChatUuid(chatId);
     final response = await _apiClient.postJson('/api/v1/assistant/live/token', {
       'wsId': wsId,
+      'toolProtocol': 'canonical-v1',
       if (resumableChatId != null) 'chatId': resumableChatId,
       if (model != null) 'model': model,
       if (forceFresh) 'forceFresh': true,
@@ -50,13 +51,27 @@ class AssistantLiveRepository {
     required String wsId,
     required String functionName,
     required Map<String, dynamic> args,
+    String toolProtocol = 'legacy',
+    String? toolCallId,
   }) async {
-    final response = await _apiClient.postJson('/api/v1/live/tools/execute', {
-      'wsId': wsId,
-      'functionName': functionName,
-      'args': args,
-    });
-    return (response['result'] as Map<String, dynamic>?) ?? response;
+    final canonical = toolProtocol == 'canonical-v1';
+    if (canonical && (toolCallId == null || toolCallId.isEmpty)) {
+      throw ArgumentError('Canonical Live tools require a provider call ID');
+    }
+    final response = await _apiClient.postJson(
+      canonical
+          ? '/api/v1/assistant/live/tools/execute'
+          : '/api/v1/live/tools/execute',
+      {
+        'wsId': wsId,
+        'functionName': functionName,
+        if (canonical) 'toolCallId': toolCallId,
+        'args': args,
+      },
+    );
+    final result = response['result'];
+    if (result is Map<String, dynamic>) return result;
+    return response;
   }
 
   Future<void> persistLiveTurn({
