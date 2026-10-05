@@ -19,8 +19,8 @@ permissions:
   deployments: read
 
 concurrency:
-  group: mobile-linux-${{ github.head_ref || github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')) && format('{0}-{1}-{2}', github.sha, github.event_name, github.run_id) || 'latest' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--') }}
 
 jobs:
   check-ci:

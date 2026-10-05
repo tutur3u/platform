@@ -36,6 +36,7 @@ permissions:
 concurrency:
   group: lettin-cloudflare-${{ github.ref }}
   cancel-in-progress: false
+  queue: max
 
 jobs:
   check-ci:

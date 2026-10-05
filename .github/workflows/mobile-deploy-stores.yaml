@@ -3,6 +3,7 @@ name: Mobile Store Deployment
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
+  queue: max
 
 on:
   push:

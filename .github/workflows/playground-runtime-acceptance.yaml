@@ -19,6 +19,7 @@ concurrency:
   group: playground-runtime-${{ github.event.pull_request.number || github.ref }}
   # A started real sandbox must finish its bounded cleanup.
   cancel-in-progress: false
+  queue: max
 jobs:
   check-ci:
     permissions:
