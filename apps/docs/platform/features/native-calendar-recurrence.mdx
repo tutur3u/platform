@@ -92,3 +92,11 @@ Regression coverage: provider `capabilities.test.ts`, operation-route tests,
 `use-provider-recurrence-operation.test.tsx` cover source permissions, native
 fallback exclusion, ambiguous responses, dialog dismissal, tab reload recovery
 and actor separation.
+
+### Calendar settings workspace identity
+
+Calendar settings resolves route aliases such as `personal` before mounting
+integration sync or hours/timezone consumers. These consumers and their caches use
+the resolved workspace ID; resolution failures do not dispatch alias requests to
+UUID-only Calendar APIs. This applies to the standalone Calendar settings shell.
+Regression coverage: `apps/calendar/src/components/settings/settings-dialog.test.tsx`.

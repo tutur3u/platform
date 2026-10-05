@@ -65,13 +65,16 @@ export function SettingsDialog({
     staleTime: 5 * 60 * 1000,
   });
 
+  // Route aliases must resolve before calendar APIs that require a UUID mount.
+  const calendarWorkspaceId = workspace?.id;
+
   const { data: calendarConnections = [] } = useQuery({
-    queryKey: ['calendar-connections', wsId],
+    queryKey: ['calendar-connections', calendarWorkspaceId],
     queryFn: async () => {
-      if (!wsId) return [];
-      return listCalendarConnections(wsId);
+      if (!calendarWorkspaceId) return [];
+      return listCalendarConnections(calendarWorkspaceId);
     },
-    enabled: !!wsId,
+    enabled: !!calendarWorkspaceId,
     staleTime: 5 * 60 * 1000,
     refetchOnMount: false,
     refetchOnReconnect: false,
@@ -199,23 +202,26 @@ export function SettingsDialog({
       )}
 
       {(activeTab === 'calendar_hours' || activeTab === 'calendar_colors') &&
-        wsId && (
+        calendarWorkspaceId && (
           <div className="h-full">
             <CalendarSettingsContent
               section={activeTab}
-              wsId={wsId}
+              wsId={calendarWorkspaceId}
               workspace={workspace ?? null}
             />
           </div>
         )}
 
-      {activeTab === 'calendar_integrations' && wsId && (
+      {activeTab === 'calendar_integrations' && calendarWorkspaceId && (
         <CalendarSyncProvider
-          wsId={wsId}
+          wsId={calendarWorkspaceId}
           initialCalendarConnections={calendarConnections}
         >
           <div className="h-full">
-            <CalendarConnectionsUnified wsId={wsId} variant="settings" />
+            <CalendarConnectionsUnified
+              wsId={calendarWorkspaceId}
+              variant="settings"
+            />
           </div>
         </CalendarSyncProvider>
       )}

@@ -15,6 +15,20 @@ const { getWorkspaceMock, listCalendarConnectionsMock } = vi.hoisted(() => ({
   listCalendarConnectionsMock: vi.fn(),
 }));
 
+vi.mock('@tuturuuu/satellite/workspace-settings', () => ({
+  createWorkspaceSettingsNavGroup: () => ({ label: 'Workspace', items: [] }),
+  SatelliteProfileSettingsPanel: () => null,
+  SatelliteWorkspaceSettingsPanel: () => null,
+  SettingsWorkspaceBreadcrumb: () => null,
+}));
+vi.mock('@tuturuuu/ui/custom/settings/keyboard-shortcuts-settings', () => ({
+  KeyboardShortcutsSettings: () => null,
+}));
+vi.mock('@/context/sidebar-context', () => ({ useSidebar: () => ({}) }));
+vi.mock('./calendar/calendar-settings-content', () => ({
+  CalendarSettingsContent: () => null,
+}));
+
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
@@ -97,11 +111,17 @@ vi.mock('@tuturuuu/ui/hooks/use-calendar-sync', () => ({
   CalendarSyncProvider: ({
     children,
     initialCalendarConnections,
+    wsId,
   }: {
     children: ReactNode;
     initialCalendarConnections: unknown[];
+    wsId: string;
   }) => (
-    <div data-connection-count={initialCalendarConnections.length}>
+    <div
+      data-testid="sync-provider"
+      data-workspace={wsId}
+      data-connection-count={initialCalendarConnections.length}
+    >
       {children}
     </div>
   ),
@@ -118,7 +138,7 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-function renderSettingsDialog() {
+function renderSettingsDialog(wsId = 'workspace-1') {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -130,7 +150,7 @@ function renderSettingsDialog() {
   return render(
     <QueryClientProvider client={queryClient}>
       <SettingsDialog
-        wsId="workspace-1"
+        wsId={wsId}
         user={
           {
             display_name: 'Ada',
@@ -178,5 +198,45 @@ describe('Calendar settings dialog', () => {
     await waitFor(() =>
       expect(listCalendarConnectionsMock).toHaveBeenCalledWith('workspace-1')
     );
+  });
+  it('waits for the personal alias resolution before mounting UUID-only calendar consumers', async () => {
+    let resolveWorkspace!: (value: { id: string }) => void;
+    getWorkspaceMock.mockReturnValue(
+      new Promise((resolve) => {
+        resolveWorkspace = resolve;
+      })
+    );
+    listCalendarConnectionsMock.mockResolvedValue([]);
+    renderSettingsDialog('personal');
+    fireEvent.click(
+      screen.getByRole('button', { name: 'settings.calendar.integrations' })
+    );
+    expect(screen.queryByTestId('calendar-connections-manager')).toBeNull();
+    expect(listCalendarConnectionsMock).not.toHaveBeenCalled();
+    resolveWorkspace({ id: 'resolved-personal-workspace' });
+    const manager = await screen.findByTestId('calendar-connections-manager');
+    expect(manager.textContent).toBe('resolved-personal-workspace');
+    expect(
+      screen.getByTestId('sync-provider').getAttribute('data-workspace')
+    ).toBe('resolved-personal-workspace');
+    await waitFor(() =>
+      expect(listCalendarConnectionsMock).toHaveBeenCalledWith(
+        'resolved-personal-workspace'
+      )
+    );
+    expect(listCalendarConnectionsMock).not.toHaveBeenCalledWith('personal');
+  });
+
+  it('does not issue calendar requests when workspace resolution fails', async () => {
+    getWorkspaceMock.mockRejectedValue(new Error('Workspace unavailable'));
+    renderSettingsDialog('personal');
+    fireEvent.click(
+      screen.getByRole('button', { name: 'settings.calendar.integrations' })
+    );
+    await waitFor(() =>
+      expect(getWorkspaceMock).toHaveBeenCalledWith('personal')
+    );
+    expect(screen.queryByTestId('sync-provider')).toBeNull();
+    expect(listCalendarConnectionsMock).not.toHaveBeenCalled();
   });
 });
