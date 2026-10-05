@@ -408,6 +408,17 @@ has a ten-second bound and retains the original assertion failure if cleanup
 also fails; cleanup failure still fails an otherwise successful test. This
 prevents a disposed-context error from obscuring the first failed operation.
 Regression coverage lives in `lettin-context-cleanup.test.ts`.
+Markdown and canonical-import browser phases also use public `test.step` with a
+60-second whole-phase cap. It covers the complete awaited phase, including tracing
+instrumentation before or after an action; the inner action/navigation/assertion
+deadlines and tracing remain unchanged. A phase deadline fails the test and keeps
+fixed, safe diagnostics; it never turns the stalled phase into a success or skip.
+This contains a possible instrumentation wait and does not prove the cause of a
+slow application request or runner shutdown. Regression coverage in
+`lettin-browser-phase.test.ts` verifies the public step timeout option and
+propagation of a simulated timeout with safe failure diagnostics. This focused
+contract test does not launch a browser or prove a stalled browser operation
+exits within the deadline; exact-commit E2E remains required.
 
 ### Meet, Lettin, and Parley Cloudflare validation
 

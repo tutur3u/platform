@@ -1,28 +1,7 @@
-import { type BrowserContext, expect, test } from '@playwright/test';
-import { safeLettinPhaseFailure } from './lettin-phase-diagnostics';
+import { type BrowserContext, expect } from '@playwright/test';
+import { runLettinBrowserPhase as phase } from './lettin-browser-phase';
 
 // Fixed phase names only: never log fixture IDs, response bodies, or credentials.
-type Phase =
-  | 'create Markdown page'
-  | 'open wiki'
-  | 'create project'
-  | 'confirm project navigation'
-  | 'open notebook'
-  | 'edit Markdown'
-  | 'save Markdown'
-  | 'reload persisted Markdown';
-async function phase<T>(name: Phase, action: () => Promise<T>): Promise<T> {
-  console.info(`[lettin-e2e] ${name}: started`);
-  try {
-    const result = await test.step(name, action);
-    console.info(`[lettin-e2e] ${name}: completed`);
-    return result;
-  } catch (error) {
-    console.warn(`[lettin-e2e] ${name}: failed`, safeLettinPhaseFailure(error));
-    throw error;
-  }
-}
-
 export async function verifyLettinMarkdownPersistence(
   context: BrowserContext,
   origin: string,

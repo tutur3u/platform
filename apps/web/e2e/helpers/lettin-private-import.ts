@@ -1,26 +1,6 @@
 import { type BrowserContext, expect } from '@playwright/test';
+import { runLettinBrowserPhase as importPhase } from './lettin-browser-phase';
 import { withLettinContextCleanup } from './lettin-context-cleanup';
-import { safeLettinPhaseFailure } from './lettin-phase-diagnostics';
-
-type ImportPhase =
-  | 'create import page'
-  | 'open import wiki'
-  | 'open import dialog'
-  | 'configure import file'
-  | 'upload canonical export'
-  | 'review canonical export'
-  | 'apply private import';
-async function importPhase<T>(name: ImportPhase, action: () => Promise<T>) {
-  console.info(`[lettin-e2e] ${name}: started`);
-  try {
-    const result = await action();
-    console.info(`[lettin-e2e] ${name}: completed`);
-    return result;
-  } catch (error) {
-    console.warn(`[lettin-e2e] ${name}: failed`, safeLettinPhaseFailure(error));
-    throw error;
-  }
-}
 
 export async function verifyLettinPrivateImport(
   context: BrowserContext,
