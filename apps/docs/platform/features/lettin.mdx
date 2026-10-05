@@ -197,10 +197,14 @@ workspace invitation-status contract used by the invitation screen, forwarding
 only the refreshed request authentication. Missing or unjoined workspaces receive
 an HTTP 307 to the dashboard; anonymous or MFA-required requests return through
 login. Pending invitations keep their existing invitation screen, including when
-the requested child world ID is invalid. Joined workspace world routes reject
-non-GUID IDs with a localized, private, non-cacheable HTTP 404 before any loading
-fallback renders. Public worlds, creator pages, dashboard, and wiki routes retain
-their existing behavior. The render-time permission checks remain authoritative;
+the requested child world ID is invalid. Joined workspace world and wiki-section
+routes reject non-GUID IDs, and wiki routes reject unknown sections, with a
+localized, private, non-cacheable HTTP 404 before any loading fallback renders.
+The wiki-section, moderation, and creator-profile pages each have their own
+localized loading boundary around request-time work. This preserves initial wiki
+entry selection and actor-scoped profile editing; public worlds, creator pages,
+and dashboard retain their existing behavior. Deferred request-boundary coverage
+is in `remaining-request-boundaries.test.tsx`. The render-time permission checks remain authoritative;
 this preflight never grants access. Regression coverage is in
 `workspace-route-status.test.ts` and `proxy.test.ts`; mocked membership results
 and real `NextResponse` checks do not replace the exact-commit CI app build.
