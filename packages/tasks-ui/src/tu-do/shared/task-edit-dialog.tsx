@@ -542,18 +542,20 @@ export function TaskEditDialog({
 
   // Yjs collaboration — paid tiers get immediate broadcasts; free tier coalesces rapid edits
   // Note: realtimeEnabled controls Yjs sync (all tiers), collaborationMode controls cursors (paid tiers)
-  const { doc, provider, synced, connected } = useYjsCollaboration({
-    channel: `task-editor-${task?.id || 'new'}`,
-    tableName: 'tasks',
-    columnName: 'description_yjs_state',
-    id: task?.id || '',
-    user: yjsUser,
-    enabled: isOpen && !isCreateMode && effectiveRealtimeEnabled && !!task?.id,
-    broadcastDebounceMs: workspaceTier && workspaceTier !== 'FREE' ? 0 : 200,
-    saveDebounceMs: 5000,
-    loadDocumentState: loadTaskDescriptionState,
-    saveDocumentState: saveTaskDescriptionState,
-  });
+  const { doc, provider, synced, connected, hydrated, hydrationFailed } =
+    useYjsCollaboration({
+      channel: `task-editor-${task?.id || 'new'}`,
+      tableName: 'tasks',
+      columnName: 'description_yjs_state',
+      id: task?.id || '',
+      user: yjsUser,
+      enabled:
+        isOpen && !isCreateMode && effectiveRealtimeEnabled && !!task?.id,
+      broadcastDebounceMs: workspaceTier && workspaceTier !== 'FREE' ? 0 : 200,
+      saveDebounceMs: 5000,
+      loadDocumentState: loadTaskDescriptionState,
+      saveDocumentState: saveTaskDescriptionState,
+    });
 
   useEffect(() => {
     if (!isOpen || isCreateMode || !effectiveRealtimeEnabled || !task?.id) {
@@ -561,10 +563,8 @@ export function TaskEditDialog({
       return;
     }
 
-    if (synced) {
-      setHasHydratedYjsState(true);
-    }
-  }, [isOpen, isCreateMode, effectiveRealtimeEnabled, task?.id, synced]);
+    setHasHydratedYjsState(hydrated);
+  }, [isOpen, isCreateMode, effectiveRealtimeEnabled, task?.id, hydrated]);
 
   const isYjsSyncing = useMemo(() => {
     return (
@@ -572,17 +572,9 @@ export function TaskEditDialog({
       !isCreateMode &&
       effectiveRealtimeEnabled &&
       !!task?.id &&
-      !hasHydratedYjsState &&
-      !synced
+      !hydrated
     );
-  }, [
-    hasHydratedYjsState,
-    isOpen,
-    isCreateMode,
-    effectiveRealtimeEnabled,
-    task?.id,
-    synced,
-  ]);
+  }, [hydrated, isOpen, isCreateMode, effectiveRealtimeEnabled, task?.id]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -1210,6 +1202,8 @@ export function TaskEditDialog({
     editorInstance,
     doc,
     yjsProvider: provider,
+    hydrated,
+    connected,
     queryClient,
     flushEditorPendingRef,
   });
@@ -2940,6 +2934,8 @@ export function TaskEditDialog({
                           collaborationMode={effectiveCollaborationMode}
                           realtimeEnabled={effectiveRealtimeEnabled}
                           isYjsSyncing={isYjsSyncing}
+                          isYjsConnected={connected}
+                          isYjsHydrationFailed={hydrationFailed}
                           wsId={effectiveTaskWsId}
                           boardId={boardId}
                           taskId={task?.id}

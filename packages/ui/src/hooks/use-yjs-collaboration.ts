@@ -33,6 +33,8 @@ export interface YjsCollaborationResult {
   awareness: Awareness | null;
   provider: SupabaseProvider | null;
   synced: boolean;
+  hydrated: boolean;
+  hydrationFailed: boolean;
   connected: boolean;
 }
 
@@ -62,6 +64,10 @@ export function useYjsCollaboration(
     onSave,
   } = config;
 
+  const [hydratedProvider, setHydratedProvider] =
+    useState<SupabaseProvider | null>(null);
+  const [hydrationErrorProvider, setHydrationErrorProvider] =
+    useState<SupabaseProvider | null>(null);
   const [synced, setSynced] = useState(false);
   const [connected, setConnected] = useState(false);
   const [providerState, setProviderState] = useState<SupabaseProvider | null>(
@@ -176,6 +182,15 @@ export function useYjsCollaboration(
 
     providerRef.current = provider;
     setProviderState(provider);
+    setSynced(false);
+    setConnected(false);
+
+    provider.on('hydrated', () => {
+      if (!mountedRef.current || providerRef.current !== provider) return;
+      // Publish a new state value so hydration is observable without transport.
+      setHydratedProvider(provider);
+      setHydrationErrorProvider(null);
+    });
 
     // Listen to provider events — use mountedRef so listeners stay valid
     // across StrictMode cleanup/remount without re-registration.
@@ -217,6 +232,8 @@ export function useYjsCollaboration(
           channel: errorInfo.channel,
           status: errorInfo.status,
         });
+        if (errorInfo.status === 'DOCUMENT_ERROR')
+          setHydrationErrorProvider(provider);
         onErrorRef.current?.(new Error(errorInfo.message));
       }
     );
@@ -308,6 +325,12 @@ export function useYjsCollaboration(
       providerState && providerState.id === doc?.clientID
         ? providerState
         : null,
+    hydrated:
+      !!hydratedProvider &&
+      hydratedProvider.id === doc?.clientID &&
+      hydratedProvider.hydrated,
+    hydrationFailed:
+      !!hydrationErrorProvider && hydrationErrorProvider.id === doc?.clientID,
     synced: !!providerState && providerState.id === doc?.clientID && synced,
     connected:
       !!providerState && providerState.id === doc?.clientID && connected,

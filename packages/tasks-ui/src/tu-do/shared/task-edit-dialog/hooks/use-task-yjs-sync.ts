@@ -39,6 +39,8 @@ export interface UseTaskYjsSyncProps {
   editorInstance: Editor | null;
   doc: Y.Doc | null;
   yjsProvider?: SupabaseProvider | null;
+  hydrated?: boolean;
+  connected?: boolean;
   queryClient: QueryClient;
   flushEditorPendingRef: React.MutableRefObject<
     (() => JSONContent | null) | undefined
@@ -59,6 +61,8 @@ export function useTaskYjsSync({
   editorInstance,
   doc,
   yjsProvider,
+  hydrated = false,
+  connected = false,
   queryClient,
   flushEditorPendingRef,
 }: UseTaskYjsSyncProps): void {
@@ -66,7 +70,12 @@ export function useTaskYjsSync({
 
   // Initialize Yjs state for task description if not present
   useEffect(() => {
-    if (!taskId || !editorInstance?.schema || !doc) return;
+    if (!isOpen || isCreateMode || !taskId || !editorInstance?.schema || !doc)
+      return;
+    if (realtimeEnabled && (!hydrated || !connected)) return;
+    let active = true;
+    const isActive = () =>
+      active && !doc.isDestroyed && !yjsProvider?.destroyed;
     if (initializedTaskIdRef.current === taskId) return;
 
     const initializeYjsState = async () => {
@@ -75,6 +84,7 @@ export function useTaskYjsSync({
           wsId,
           taskId
         );
+        if (!isActive()) return;
         const currentYjsState = Array.isArray(
           taskDescription.description_yjs_state
         )
@@ -112,6 +122,7 @@ export function useTaskYjsSync({
             description_yjs_state: nextYjsState,
           });
 
+          if (!isActive()) return;
           applyYjsStateToDoc(yjsState);
           initializedTaskIdRef.current = taskId;
           return;
@@ -138,6 +149,7 @@ export function useTaskYjsSync({
           await updateWorkspaceTaskDescription(wsId, taskId, {
             description_yjs_state: Array.from(healedYjsState),
           });
+          if (!isActive()) return;
           applyYjsStateToDoc(healedYjsState);
         }
 
@@ -153,8 +165,22 @@ export function useTaskYjsSync({
       }
     };
 
-    initializeYjsState();
-  }, [doc, editorInstance, taskId, wsId, yjsProvider]);
+    void initializeYjsState();
+    return () => {
+      active = false;
+    };
+  }, [
+    doc,
+    editorInstance,
+    taskId,
+    wsId,
+    yjsProvider,
+    hydrated,
+    connected,
+    realtimeEnabled,
+    isOpen,
+    isCreateMode,
+  ]);
 
   useEffect(() => {
     if (
@@ -169,6 +195,7 @@ export function useTaskYjsSync({
   useEffect(() => {
     if (
       !realtimeEnabled ||
+      !hydrated ||
       isCreateMode ||
       !isOpen ||
       !taskId ||
@@ -213,6 +240,7 @@ export function useTaskYjsSync({
     };
   }, [
     realtimeEnabled,
+    hydrated,
     isCreateMode,
     isOpen,
     taskId,

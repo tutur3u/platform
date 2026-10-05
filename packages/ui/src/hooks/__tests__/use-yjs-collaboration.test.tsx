@@ -16,6 +16,7 @@ vi.mock('@tuturuuu/ui/hooks/supabase-provider', () => ({
   default: class {
     id: number;
     destroyed = false;
+    hydrated = false;
     awareness: { destroy: () => void };
     private listeners = new Map<string, (value: unknown) => void>();
     constructor(
@@ -31,6 +32,7 @@ vi.mock('@tuturuuu/ui/hooks/supabase-provider', () => ({
       this.listeners.set(event, callback);
     }
     emit(event: string, value: unknown) {
+      if (event === 'hydrated') this.hydrated = true;
       this.listeners.get(event)?.(value);
     }
     destroy() {
@@ -104,5 +106,42 @@ describe('collaboration hook lifecycle', () => {
     await act(() => vi.advanceTimersByTimeAsync(100));
     expect(second.destroyed).toBe(true);
     expect(vi.getTimerCount()).toBe(0);
+  });
+  it('publishes durable hydration independently and fences an old document', async () => {
+    const { result, rerender, unmount } = renderHook(
+      (id) =>
+        useYjsCollaboration({ ...config, id, channel: `task-editor-${id}` }),
+      { wrapper, initialProps: 'one' }
+    );
+    const first = instances[0]!;
+    act(() => first.emit('hydrated', undefined));
+    expect(result.current.hydrated).toBe(true);
+    expect(result.current.connected).toBe(false);
+    rerender('two');
+    expect(result.current.hydrated).toBe(false);
+    act(() => first.emit('hydrated', undefined));
+    expect(result.current.hydrated).toBe(false);
+    unmount();
+    await act(() => vi.advanceTimersByTimeAsync(100));
+  });
+  it('reports a durable read failure until a successful hydration', async () => {
+    const { result, unmount } = renderHook(() => useYjsCollaboration(config), {
+      wrapper,
+    });
+    const provider = instances[0]!;
+    act(() =>
+      provider.emit('error', {
+        message: 'Unable to load',
+        status: 'DOCUMENT_ERROR',
+        channel: config.channel,
+      })
+    );
+    expect(result.current.hydrationFailed).toBe(true);
+    expect(result.current.hydrated).toBe(false);
+    act(() => provider.emit('hydrated', undefined));
+    expect(result.current.hydrationFailed).toBe(false);
+    expect(result.current.hydrated).toBe(true);
+    unmount();
+    await act(() => vi.advanceTimersByTimeAsync(100));
   });
 });

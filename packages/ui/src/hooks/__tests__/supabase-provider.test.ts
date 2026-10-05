@@ -66,9 +66,7 @@ describe('SupabaseProvider', () => {
 
     channel.trigger('SUBSCRIBED');
 
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(provider.connected).toBe(true);
+    await waitFor(() => expect(provider.connected).toBe(true));
     expect(provider.synced).toBe(true);
 
     doc.getMap('prosemirror').set('text', 'hello');
@@ -165,8 +163,7 @@ describe('SupabaseProvider', () => {
     try {
       channel.trigger('SUBSCRIBED');
 
-      await Promise.resolve();
-      await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(0);
       expect(provider.connected).toBe(true);
 
       const sendsBefore = channel.send.mock.calls.length;
@@ -223,8 +220,7 @@ describe('SupabaseProvider', () => {
     try {
       channel.trigger('SUBSCRIBED');
 
-      await Promise.resolve();
-      await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(0);
       expect(provider.connected).toBe(true);
 
       const sendsBefore = channel.send.mock.calls.length;
@@ -351,5 +347,103 @@ describe('SupabaseProvider', () => {
     expect(saveState).not.toHaveBeenCalled();
 
     provider.destroy();
+  });
+});
+
+describe('durable hydration without peer transport', () => {
+  it('loads saved content even when the channel never subscribes', async () => {
+    createRealtimeChannel();
+    const saved = new Y.Doc();
+    saved.getText('description').insert(0, 'saved text');
+    const doc = new Y.Doc();
+    const provider = new SupabaseProvider(doc, {} as any, {
+      channel: 'task-editor-offline',
+      tableName: 'tasks',
+      columnName: 'state',
+      id: 'offline',
+      loadState: async () => Array.from(Y.encodeStateAsUpdate(saved)),
+      resyncInterval: false,
+    });
+    await waitFor(() => expect(provider.hydrated).toBe(true));
+    expect(doc.getText('description').toString()).toBe('saved text');
+    expect(provider.connected).toBe(false);
+    expect(provider.synced).toBe(false);
+    provider.destroy();
+    saved.destroy();
+  });
+
+  it('coalesces startup and connection loads and ignores disconnect during hydration', async () => {
+    const channel = createRealtimeChannel();
+    let finish!: (state: number[] | null) => void;
+    const loadState = vi.fn(
+      () =>
+        new Promise<number[] | null>((resolve) => {
+          finish = resolve;
+        })
+    );
+    const provider = new SupabaseProvider(new Y.Doc(), {} as any, {
+      channel: 'task-editor-pending',
+      tableName: 'tasks',
+      columnName: 'state',
+      id: 'pending',
+      loadState,
+      resyncInterval: false,
+    });
+    channel.trigger('SUBSCRIBED');
+    channel.trigger('CLOSED');
+    finish(null);
+    await waitFor(() => expect(provider.hydrated).toBe(true));
+    expect(loadState).toHaveBeenCalledTimes(1);
+    expect(provider.connected).toBe(false);
+    provider.destroy();
+  });
+
+  it('does not hydrate a denied read and retries without unhandled rejection', async () => {
+    const channel = createRealtimeChannel();
+    const loadState = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('Access denied'))
+      .mockResolvedValueOnce(null);
+    const provider = new SupabaseProvider(new Y.Doc(), {} as any, {
+      channel: 'task-editor-denied',
+      tableName: 'tasks',
+      columnName: 'state',
+      id: 'denied',
+      loadState,
+      resyncInterval: false,
+    });
+    const report = vi.fn();
+    provider.on('error', report);
+    await waitFor(() => expect(report).toHaveBeenCalledTimes(1));
+    expect(provider.hydrated).toBe(false);
+    channel.trigger('SUBSCRIBED');
+    await waitFor(() => expect(provider.connected).toBe(true));
+    expect(provider.hydrated).toBe(true);
+    provider.destroy();
+  });
+
+  it('ignores a durable read completing after teardown', async () => {
+    createRealtimeChannel();
+    let finish!: (state: number[] | null) => void;
+    const doc = new Y.Doc();
+    const provider = new SupabaseProvider(doc, {} as any, {
+      channel: 'task-editor-old',
+      tableName: 'tasks',
+      columnName: 'state',
+      id: 'old',
+      loadState: () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+      resyncInterval: false,
+    });
+    const apply = vi.fn();
+    doc.on('update', apply);
+    provider.destroy();
+    finish(null);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(provider.hydrated).toBe(false);
+    expect(apply).not.toHaveBeenCalled();
   });
 });

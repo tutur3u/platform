@@ -1238,3 +1238,22 @@ My Tasks uses its separate 30-second TanStack Query freshness policy; unrelated
 satellite queries retain their defaults. Regression coverage lives in
 `packages/tasks-ui/src/tu-do/shared/__tests__/board-client.test.tsx` and
 `use-progressive-board-loader-resume.test.tsx`.
+
+
+## Durable description hydration and realtime availability
+
+All Tasks description editors load the authorized saved Yjs document independently
+of the peer channel connection. A realtime outage must not hide an otherwise
+readable saved description. The description stays read-only until both durable
+hydration and the channel connection succeed; the reconnecting indicator remains
+visible. Rejected durable reads do not count as an empty document and do not
+permit initialization writes. Initialization of missing legacy Yjs state remains
+connection-gated and ignores late results after the dialog or resource changes.
+
+Regression coverage: `packages/ui/src/hooks/__tests__/supabase-provider.test.ts`
+and `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/hooks/__tests__/use-task-yjs-sync.test.ts`.
+
+When a production channel request returns an HTML 404, verify the deployed Web
+source SHA and first-class `/api/v1/realtime/channels` route before changing
+channel permissions. A green branch or a production sync receipt alone does not
+prove that the live API deployment contains that route.

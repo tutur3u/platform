@@ -7,6 +7,7 @@ import debug from 'debug';
 import { EventEmitter } from 'eventemitter3';
 import * as awarenessProtocol from 'y-protocols/awareness';
 import * as Y from 'yjs';
+import { DocumentHydration } from './collaboration-document-hydration';
 import { isPageVisible } from './use-page-visibility';
 
 export const SUPABASE_PROVIDER_SYNC_ORIGIN = Symbol.for(
@@ -31,6 +32,9 @@ export interface SupabaseProviderConfig {
 export default class SupabaseProvider extends EventEmitter {
   public awareness: awarenessProtocol.Awareness;
   public connected = false;
+  public hydrated = false;
+  private connectionGeneration = 0;
+  private hydration: DocumentHydration;
   private channel: RealtimeChannel | null = null;
   private realtime = createRealtimeClient();
   private pendingAwarenessClients = new Set<number>();
@@ -78,12 +82,10 @@ export default class SupabaseProvider extends EventEmitter {
     }
 
     if (!this.connected || this.destroyed) {
-      this.logger('skipping broadcast - not connected or destroyed');
       return;
     }
 
     if (!update || update.length === 0) {
-      this.logger('skipping broadcast - empty update');
       return;
     }
 
@@ -125,7 +127,6 @@ export default class SupabaseProvider extends EventEmitter {
 
     this.saveTimeout = setTimeout(() => {
       this.saveTimeout = undefined;
-      this.logger('debounce period elapsed, saving to database');
       void this.save();
     }, this.saveDebounceMs);
   }
@@ -145,7 +146,6 @@ export default class SupabaseProvider extends EventEmitter {
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
       this.saveTimeout = undefined;
-      this.logger('flushing pending save immediately');
       await this.save();
     }
   }
@@ -269,39 +269,20 @@ export default class SupabaseProvider extends EventEmitter {
   }
 
   private async onConnect() {
-    this.logger('connected');
-
     this.reconnectAttempts = 0;
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = undefined;
     }
 
-    const persistedState = this.config.loadState
-      ? await this.config.loadState()
-      : await (async () => {
-          const { data, status } = await this.supabase
-            .from(this.config.tableName as any)
-            .select<string, { [key: string]: number[] }>(
-              `${this.config.columnName}`
-            )
-            .eq(this.config.idName || 'id', this.config.id)
-            .single();
+    const generation = this.connectionGeneration;
+    if (
+      !(await this.hydration.load()) ||
+      this.destroyed ||
+      generation !== this.connectionGeneration
+    )
+      return;
 
-          this.logger('retrieved data from supabase', status);
-          return data?.[this.config.columnName] ?? null;
-        })();
-
-    if (persistedState && persistedState.length > 0) {
-      this.logger('applying update to yjs');
-      try {
-        this.applyUpdate(Uint8Array.from(persistedState), this);
-      } catch (error) {
-        this.logger(error);
-      }
-    }
-
-    this.logger('setting connected flag to true');
     this.isOnline(true);
 
     this.synced = true;
@@ -416,9 +397,33 @@ export default class SupabaseProvider extends EventEmitter {
     this.logger = debug(`y-${doc.clientID}`);
     this.logger.enabled = true;
 
-    this.logger('constructor initializing');
-    this.logger('connecting to Cloudflare realtime', doc.guid);
-    this.logger(`save debounce set to ${this.saveDebounceMs}ms`);
+    this.hydration = new DocumentHydration({
+      load:
+        this.config.loadState ??
+        (async () => {
+          const { data, error } = await this.supabase
+            .from(this.config.tableName as any)
+            .select<string, { [key: string]: number[] }>(this.config.columnName)
+            .eq(this.config.idName || 'id', this.config.id)
+            .single();
+          if (error) throw error;
+          return data?.[this.config.columnName] ?? null;
+        }),
+      apply: (state) => Y.applyUpdate(this.doc, state, this),
+      isActive: () => !this.destroyed,
+      onLoaded: () => {
+        this.hydrated = true;
+        this.emit('hydrated');
+      },
+      onError: () =>
+        this.emit('error', {
+          message: 'Unable to load collaboration document',
+          channel: this.config.channel,
+          status: 'DOCUMENT_ERROR',
+        }),
+    });
+    // Durable reads must not depend on a successful peer transport connection.
+    void this.hydration.load();
 
     if (
       this.config.resyncInterval ||
@@ -438,12 +443,10 @@ export default class SupabaseProvider extends EventEmitter {
         }
 
         if (!isPageVisible()) {
-          this.logger('skipping resync - page not visible');
           return;
         }
 
         if (!this._dirty) {
-          this.logger('skipping resync - no local changes');
           return;
         }
 
@@ -542,7 +545,6 @@ export default class SupabaseProvider extends EventEmitter {
 
   public onConnecting() {
     if (!this.isOnline()) {
-      this.logger('connecting');
       this.emit('status', [{ status: 'connecting' }]);
     }
   }
@@ -551,7 +553,6 @@ export default class SupabaseProvider extends EventEmitter {
     if (this.destroyed || this.reconnectTimeout) return;
 
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      this.logger('max reconnect attempts reached');
       this.emit('reconnect-failed');
       return;
     }
@@ -581,7 +582,6 @@ export default class SupabaseProvider extends EventEmitter {
   public resetAndReconnect() {
     if (this.destroyed || this.connected) return;
 
-    this.logger('resetAndReconnect: resetting backoff and reconnecting');
     this.reconnectAttempts = 0;
 
     if (this.reconnectTimeout) {
@@ -594,11 +594,10 @@ export default class SupabaseProvider extends EventEmitter {
   }
 
   public onDisconnect() {
-    this.logger('disconnected');
+    this.connectionGeneration++;
 
     this.synced = false;
     this.isOnline(false);
-    this.logger('set connected flag to false');
     if (this.isOnline()) {
       this.emit('status', [{ status: 'disconnected' }]);
     }
@@ -633,7 +632,6 @@ export default class SupabaseProvider extends EventEmitter {
     if (!message) {
       this.logger(`Permission denied to channel`);
     }
-    this.logger('processed message (type = MessageAuth)');
   }
 
   public destroy() {
