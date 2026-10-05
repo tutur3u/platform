@@ -171,7 +171,11 @@ A missing kit/session produces an explicit submission-blocked report, not a
 certification pass. Inspect the attached validation reports before submission.
 
 For pre-promotion diagnostics, dispatch this workflow on `main` with
-`diagnostics_only=true`. It runs the same production-channel build, installed-app
+`diagnostics_only=true`. The job uses the separate `desktop-diagnostics` environment,
+restricted to the `main` branch and containing only `DESKTOP_PUBLIC_CONFIG`. Keep
+`desktop-beta` restricted to `production`; do not copy signing secrets into the
+diagnostics environment. A branch-policy rejection happens before runner allocation
+and produces no build or certification logs. It runs the same production-channel build, installed-app
 smoke, and strict certification checks, but uploads only validation evidence.
 It never uploads the submission MSIX, submits to Partner Center, or publishes a
 beta. Main without this explicit input and all other branches are skipped.
