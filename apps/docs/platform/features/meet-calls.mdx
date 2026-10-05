@@ -1150,3 +1150,17 @@ checkpoint behavior, or document broadcasting policy changes.
 
 Regression coverage: `document-status.test.tsx` verifies quiet healthy state,
 accessible reconnection, and distinct backup-warning labels without inline alerts.
+
+## Private My day panel
+
+During a Meet call, My day shows the current authenticated account’s assigned
+Tasks feed and next seven days of its personal workspace Calendar. It is closed
+by default and local to that participant; it is never room state, signaling, or
+shared document content. Team meeting workspaces are never used as a fallback.
+Account identity is verified before and after reads, and queries are scoped by
+account ID. Temporary failures retain same-actor, same-workspace source snapshots
+with an explicit stale-source notice; definitive access denials clear that source. Dedicated Tasks and Calendar links open the full apps separately.
+Parley does not show this Meet-only action.
+
+`personal-tools.test.ts` covers personal scope, actor changes, missing personal
+workspaces, and partial source availability.

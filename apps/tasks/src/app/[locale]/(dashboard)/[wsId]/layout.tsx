@@ -15,7 +15,7 @@ import { TaskDialogWrapper } from '@tuturuuu/tasks-ui/tu-do/shared/task-dialog-w
 import { TasksRouteProvider } from '@tuturuuu/tasks-ui/tu-do/tasks-route-context';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getRequestWorkspace as getWorkspace } from '@tuturuuu/utils/request-workspace';
 import { cookies, headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';

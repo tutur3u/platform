@@ -1271,3 +1271,14 @@ replace server membership or board-access checks.
 Regression evidence: `board-client.test.tsx` covers immediate authorized metadata,
 rejection of mismatched snapshots, and focus revalidation. Production timing must
 be measured after deployment; focused tests do not prove network performance.
+
+## Request-scoped workspace reads
+
+Tasks and Calendar dashboard authorization use `getRequestWorkspace` to coalesce
+identical workspace reads within one server render. The key includes workspace,
+actor ID, actor email, and admin mode. This is React request memoization, not a
+persistent authorization cache: separate requests resolve workspace access again.
+Calendar's layout and page share this reader; shared Meet context retains its
+existing memoization. The wrapper's actor/mode isolation regression tests live in
+`packages/utils/src/__tests__/request-workspace.test.ts`. This reduces repeated
+server reads; it does not replace app build checks or production load measurements.

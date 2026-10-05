@@ -237,3 +237,18 @@ macOS signing failures report only a fixed stage name, such as certificate impor
 artifact signing, notarization, or Gatekeeper assessment. Private command arguments,
 stdout and stderr remain suppressed. Check the named provider stage without
 posting credentials or weakening the signing gates.
+
+## Infrastructure desktop status
+
+The root workspace's Infrastructure **Desktop deployment** page shows public
+production beta workflow jobs and the latest published artifact for each platform.
+A checksum or release entry is metadata, not independent signature verification.
+The explicit provenance step is reported only when that step passed in the shown
+run; artifacts from earlier runs remain separate. Provider configuration stays
+unknown because private signing credentials are never queried or exposed.
+
+Secure management links open the protected GitHub environment, Apple certificates,
+Microsoft signing resources, and the existing Microsoft Store submission. Windows
+Store MSIX drafts use the reserved identity and become Microsoft-signed only after
+certification. They do not make the direct-download EXE signed or available.
+Regression coverage: Infrastructure desktop status parser and navigation tests.
