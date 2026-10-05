@@ -11,6 +11,7 @@ import {
   runLettinFixtureCommand,
 } from './helpers/lettin-fixture-diagnostics';
 import { verifyLettinMarkdownPersistence } from './helpers/lettin-markdown-persistence';
+import { verifyLettinPrivateImport } from './helpers/lettin-private-import';
 import { assertLettinProfileLimits } from './helpers/lettin-profile-limits';
 import { createLettinBrowserContext } from './helpers/lettin-session';
 import {
@@ -335,72 +336,7 @@ test.describe
         origin!,
         token()
       );
-      try {
-        const page = await context.newPage();
-        await page.goto(`${origin}/${workspaceId}/wiki`);
-        await page
-          .getByRole('button', { name: 'Import Exocorpse', exact: true })
-          .click();
-        const dialog = page.getByRole('dialog');
-        await dialog
-          .getByLabel('Title', { exact: true })
-          .fill('Synthetic imported notebook');
-        await dialog.getByLabel('Source', { exact: true }).selectOption('file');
-        await dialog
-          .getByLabel('Canonical JSON export', { exact: true })
-          .setInputFiles({
-            name: 'synthetic-export.json',
-            mimeType: 'application/json',
-            buffer: Buffer.from(
-              JSON.stringify({
-                adapter: 'exocorpse',
-                entries: [
-                  {
-                    entry: {
-                      stableSourceId: 'synthetic-hero',
-                      collectionSlug: 'characters',
-                      title: 'Synthetic imported hero',
-                    },
-                    blocks: [
-                      {
-                        blockType: 'markdown',
-                        content: { markdown: '**Synthetic biography**' },
-                      },
-                    ],
-                  },
-                  {
-                    entry: {
-                      stableSourceId: 'synthetic-blacklist',
-                      collectionSlug: 'commission-blacklist',
-                      title: 'Synthetic private imported account',
-                      summary: 'Synthetic private note',
-                    },
-                  },
-                ],
-              })
-            ),
-          });
-        await dialog
-          .getByRole('button', { name: 'Review import', exact: true })
-          .click();
-        await expect(
-          dialog.getByText('Synthetic imported hero', { exact: true })
-        ).toBeVisible();
-        await dialog
-          .getByRole('button', { name: 'Create private copy', exact: true })
-          .click();
-        await expect(page).toHaveURL(/\/wiki\/[0-9a-f-]+\/overview/);
-        await expect(page.locator('.wiki-studio')).toContainText(
-          'Synthetic imported hero'
-        );
-        const id = new URL(page.url()).pathname.split('/').at(-2);
-        const published = await context.request.get(
-          `${origin}/api/v1/lettin/worlds?worldId=${id}`
-        );
-        expect(await published.json()).toEqual([]);
-      } finally {
-        await context.close();
-      }
+      await verifyLettinPrivateImport(context, origin!, workspaceId);
     });
 
     test('saves canonical identity and a rich About profile with reload persistence', async ({
