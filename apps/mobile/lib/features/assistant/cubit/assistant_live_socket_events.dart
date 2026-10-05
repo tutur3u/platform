@@ -51,13 +51,16 @@ extension _AssistantLiveSocketEvents on AssistantLiveCubit {
       case AssistantLiveSocketTextDelta(:final text):
         _ensureActiveTurn();
         _markAssistantActivity(textOnly: true);
+        final previousText = _currentAssistantText;
         _currentAssistantText = _mergeProgressiveText(
           _currentAssistantText,
           text,
         );
+        _turnParts.appendText(previousText, _currentAssistantText);
         _emitMicrophoneState(
           state.copyWith(
             assistantDraft: _currentAssistantText,
+            assistantParts: _turnParts.parts,
             isInterrupted: false,
           ),
         );
@@ -72,12 +75,21 @@ extension _AssistantLiveSocketEvents on AssistantLiveCubit {
             state.copyWith(userTranscript: _currentUserTranscript),
           );
         } else {
+          final previousTranscript = _currentAssistantTranscript;
           _currentAssistantTranscript = _mergeProgressiveText(
             _currentAssistantTranscript,
             text,
           );
+          _turnParts.appendText(
+            previousTranscript,
+            _currentAssistantTranscript,
+            transcript: true,
+          );
           _emitMicrophoneState(
-            state.copyWith(assistantTranscript: _currentAssistantTranscript),
+            state.copyWith(
+              assistantTranscript: _currentAssistantTranscript,
+              assistantParts: _turnParts.parts,
+            ),
           );
         }
       case AssistantLiveSocketAudioChunk(:final bytes):

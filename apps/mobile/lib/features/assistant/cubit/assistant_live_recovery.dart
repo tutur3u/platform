@@ -2,6 +2,7 @@ part of 'assistant_live_cubit.dart';
 
 extension _AssistantLiveRecovery on AssistantLiveCubit {
   Future<void> _persistSessionHandle(bool resumable, String? newHandle) async {
+    final version = _requestVersion;
     final wsId = state.workspaceId;
     final scopeKey = state.scopeKey;
     if (wsId == null || scopeKey == null) return;
@@ -12,10 +13,10 @@ extension _AssistantLiveRecovery on AssistantLiveCubit {
           scopeKey: scopeKey,
           sessionHandle: newHandle,
         );
-        _emitSessionHandle(newHandle);
+        if (!_isStale(version)) _emitSessionHandle(newHandle);
       } else {
         await _repository.clearSessionHandle(wsId: wsId, scopeKey: scopeKey);
-        _emitSessionHandle(null);
+        if (!_isStale(version)) _emitSessionHandle(null);
       }
     } on Exception {
       // Resume storage is optional; a disk failure must not stop a live call.
@@ -23,11 +24,14 @@ extension _AssistantLiveRecovery on AssistantLiveCubit {
   }
 
   Future<void> _dispatchSocketEvent(AssistantLiveSocketEvent event) async {
-    if (isClosed || _manualDisconnect) return;
+    final requestVersion = _requestVersion;
+    if (_manualDisconnect || _isStale(requestVersion)) return;
     try {
       await _handleSocketEvent(event);
     } on Exception {
+      if (_isStale(requestVersion)) return;
       await _stopInputs();
+      if (_isStale(requestVersion)) return;
       _emitError('live_audio_unavailable', preserveDrafts: true);
     }
   }

@@ -385,3 +385,24 @@ Regression coverage: `assistant_live_mode_view_test.dart` and `assistant_live_ca
 On mobile, Settings → Product settings → Assistant opens the same live-browsing preference used by Mira quick settings. The shared shell supplies the title and back dock; the editor adds no second navbar. The preference defaults to off and remains scoped to the signed-in actor and workspace. Switching either scope invalidates the open editor and prevents late reads or writes from publishing into the replacement scope. An unreadable preference shows retry without an editable guessed value; a failed save retains the last confirmed value. This surface configures the existing live-browsing setting only, not local-model installation or provider credentials.
 
 Regression coverage: `assistant_settings_cubit_test.dart`, `assistant_settings_hub_test.dart`, and `assistant_preferences_test.dart` cover persisted values, shared shell publication, failed reads/writes, and async scope invalidation.
+
+## Mobile tool ordering and session ownership
+
+Mobile Live runs the currently declared workspace tools on the authenticated
+server API; only screen context is resolved locally. Tool batches execute in
+provider receipt order. Finalizing a turn waits for its pending tool results,
+including errors, before saving ordered text/tool parts. Both canonical Chat
+history and legacy Assistant history restore those parts without replaying tools.
+Provider text and output transcription are alternate streams: text takes priority
+when both are present, preventing duplicated replies.
+
+Each batch belongs to the actor, workspace, and connection generation captured
+when received. Disconnecting, replacing the session, or changing actor discards
+late output and prevents remaining calls from executing or reaching a new socket.
+An already dispatched server mutation cannot be undone by client cancellation.
+Starting a new typed turn keeps the completed previous turn's original text and
+attachment metadata; its pending output cannot overwrite the new draft.
+
+Regression evidence lives in `assistant_live_persistence_test.dart` and
+`assistant_live_turn_parts_test.dart`. These are lifecycle and metadata checks;
+provider latency and live device connectivity require separate runtime evidence.

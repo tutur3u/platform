@@ -20,6 +20,7 @@ import 'package:mobile/features/chat/models/chat_models.dart';
 import '../models/assistant_chat_identity.dart';
 import '../models/assistant_models.dart';
 import 'assistant_calendar_insight.dart';
+import 'assistant_history_parts.dart';
 import 'assistant_stream_parser.dart';
 
 part 'assistant_repository_preferences.dart';
@@ -905,9 +906,7 @@ class AssistantRepository {
     return AssistantMessage(
       id: message.id,
       role: role,
-      parts: message.content.isEmpty
-          ? const []
-          : [AssistantMessagePart(type: 'text', text: message.content)],
+      parts: restoreAssistantHistoryParts(message.content, message.metadata),
       createdAt: message.createdAt,
     );
   }
@@ -1010,65 +1009,16 @@ class AssistantRepository {
         .where((message) {
           final metadata = message['metadata'] as Map<String, dynamic>?;
           return message['content'] != null ||
+              metadata?['parts'] != null ||
               metadata?['toolCalls'] != null ||
               metadata?['reasoning'] != null ||
               metadata?['sources'] != null;
         })
         .map((message) {
-          final parts = <AssistantMessagePart>[];
-          final metadata = message['metadata'] as Map<String, dynamic>?;
-          final reasoning = metadata?['reasoning'] as String?;
-          final toolCalls = metadata?['toolCalls'] as List<dynamic>?;
-          final toolResults = metadata?['toolResults'] as List<dynamic>?;
-          final sources = metadata?['sources'] as List<dynamic>?;
-
-          if (reasoning != null && reasoning.isNotEmpty) {
-            parts.add(AssistantMessagePart(type: 'reasoning', text: reasoning));
-          }
-
-          final content = message['content'] as String?;
-          if (content != null && content.isNotEmpty) {
-            parts.add(AssistantMessagePart(type: 'text', text: content));
-          }
-
-          for (final rawToolCall in toolCalls ?? const <dynamic>[]) {
-            if (rawToolCall is! Map<String, dynamic>) continue;
-            final toolCallId = rawToolCall['toolCallId'] as String?;
-            Map<String, dynamic>? toolResult;
-            for (final result
-                in (toolResults ?? const <dynamic>[])
-                    .whereType<Map<String, dynamic>>()) {
-              if (result['toolCallId'] == toolCallId) {
-                toolResult = result;
-                break;
-              }
-            }
-            parts.add(
-              AssistantMessagePart(
-                type: 'dynamic-tool',
-                toolName: rawToolCall['toolName'] as String?,
-                toolCallId: toolCallId,
-                state: 'output-available',
-                input:
-                    rawToolCall['input'] ??
-                    rawToolCall['args'] ??
-                    const <String, dynamic>{},
-                output: toolResult?['output'] ?? toolResult?['result'],
-              ),
-            );
-          }
-
-          for (final rawSource in sources ?? const <dynamic>[]) {
-            if (rawSource is! Map<String, dynamic>) continue;
-            parts.add(
-              AssistantMessagePart(
-                type: 'source-url',
-                sourceId: rawSource['sourceId'] as String?,
-                url: rawSource['url'] as String?,
-                title: rawSource['title'] as String?,
-              ),
-            );
-          }
+          final parts = restoreAssistantHistoryParts(
+            message['content'] as String?,
+            message['metadata'] as Map<String, dynamic>?,
+          );
 
           return AssistantMessage(
             id: message['id'] as String,
