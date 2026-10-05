@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/features/shell/view/dock_action_transition.dart';
 
 const floatingDockHorizontalInset = 12.0;
 const floatingDockBottomGap = 8.0;
@@ -19,53 +20,41 @@ class FloatingDockRail extends StatelessWidget {
     required this.navigation,
     this.primary,
     this.secondary,
-    this.reserveEmptyActions = false,
     super.key,
   });
   final Widget navigation;
   final Widget? primary;
   final Widget? secondary;
-  final bool reserveEmptyActions;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final twoActions = constraints.maxWidth >= 376;
       return Center(
-        child: AnimatedSize(
-          duration: MediaQuery.disableAnimationsOf(context)
-              ? Duration.zero
-              : const Duration(milliseconds: 320),
-          curve: Curves.easeInOutCubic,
-          alignment: Alignment.bottomCenter,
-          child: Row(
-            key: const ValueKey('floating-dock-visible-group'),
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Flexible(
-                key: const ValueKey('floating-dock-navigation-slot'),
-                child: Center(widthFactor: 1, child: navigation),
-              ),
-              if (reserveEmptyActions || primary != null) ...[
-                const SizedBox(width: 8),
-                SizedBox(
-                  key: const ValueKey('floating-dock-primary-slot'),
-                  width: floatingDockActionSize,
-                  height: floatingDockActionSize,
-                  child: primary,
-                ),
-              ],
-              if (twoActions && (reserveEmptyActions || secondary != null)) ...[
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: floatingDockActionSize,
-                  height: floatingDockActionSize,
-                  child: secondary,
-                ),
-              ],
-            ],
-          ),
+        child: Row(
+          key: const ValueKey('floating-dock-visible-group'),
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Flexible(
+              key: const ValueKey('floating-dock-navigation-slot'),
+              child: Center(widthFactor: 1, child: navigation),
+            ),
+            DockActionTransition(
+              key: const ValueKey('floating-dock-primary-transition'),
+              slotKey: const ValueKey('floating-dock-primary-slot'),
+              identity: primary?.key ?? primary?.runtimeType,
+              child: primary,
+            ),
+            DockActionTransition(
+              key: const ValueKey('floating-dock-secondary-transition'),
+              slotKey: const ValueKey('floating-dock-secondary-slot'),
+              identity: secondary?.key ?? secondary?.runtimeType,
+              // A narrower viewport must not retain an unusable second column.
+              immediate: !twoActions,
+              child: twoActions ? secondary : null,
+            ),
+          ],
         ),
       );
     },

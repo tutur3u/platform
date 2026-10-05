@@ -11,6 +11,7 @@ class ReplicaEntityRecord {
     this.userId,
     this.workspaceId,
     this.pendingStatus,
+    this.mergeSources = const [],
   });
 
   factory ReplicaEntityRecord.fromJson(Map<dynamic, dynamic> json) =>
@@ -33,6 +34,10 @@ class ReplicaEntityRecord {
   final String? workspaceId;
   final PendingMutationStatus? pendingStatus;
 
+  /// Original query sources for field precedence; never persisted.
+  /// Rebuilding after removal cannot retain that source's fields.
+  final List<ReplicaEntityRecord> mergeSources;
+
   ReplicaEntityRecord copyWith({
     Map<String, dynamic>? payload,
     PendingMutationStatus? pendingStatus,
@@ -45,6 +50,7 @@ class ReplicaEntityRecord {
     userId: userId,
     workspaceId: workspaceId,
     pendingStatus: pendingStatus ?? this.pendingStatus,
+    mergeSources: mergeSources,
   );
 
   Map<String, dynamic> toJson() => {

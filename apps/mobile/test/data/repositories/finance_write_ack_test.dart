@@ -11,9 +11,9 @@ void main() {
     final repository = FinanceRepository(apiClient: api);
     const path = '/api/workspaces/ws/transactions/tx';
     when(() => api.putJson(path, any())).thenAnswer((_) async => const {});
-    when(() => api.getJson(path)).thenThrow(
-      const ApiException(message: 'Offline after save', statusCode: 0),
-    );
+    when(
+      () => api.getJson(path),
+    ).thenThrow(const ApiException.transport(message: 'Offline after save'));
 
     final transaction = await repository.updateTransaction(
       wsId: 'ws',

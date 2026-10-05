@@ -68,15 +68,23 @@ completion. These widget checks do not establish installed-device or production 
 ### Centered navigation and action group
 
 Root and mini-app destinations center the combined visible navigation island and
-its actions whenever they fit. Empty action columns do not consume space. Actions
+its actions whenever they fit. Empty action columns do not consume space after
+exit. Dynamic actions reserve width first, moving navigation left, then fade and scale into the free space. On
+exit, controls disappear before their width is released and navigation recenters.
+The combined navigation/action group stays centered at every intermediate frame;
+actions do not animate through a size clip. An interrupted transition reverses
+from its current geometry, and a replaced outgoing action cannot accept input or
+accessibility focus. Reduced motion settles both phases immediately. Actions
 keep 52px slots and share the bottom baseline, including when large text makes
-the composer taller; narrow layouts keep secondary actions in the top navbar. The
-navigation and Assistant dock share horizontal and safe-area bottom insets, and
+the composer taller; narrow layouts keep secondary actions in the top navbar.
+When the viewport becomes too narrow, the second dock column is removed
+immediately rather than retaining it while shrinking navigation touch targets. The navigation and Assistant dock share horizontal and safe-area bottom insets, and
 switching root destinations retains one dock while bodies ease between tabs.
 Only the active body receives pointer input or semantics. Visited tabs remain
 mounted, preserving drafts and scroll positions; reduced-motion changes retain
 the same page elements. Navigation and prompt slots never paint two docks.
-Coverage: `persistent_shell_dock_test.dart`, `lazy_indexed_stack_test.dart`, `floating_dock_rail_test.dart`,
+Coverage: `dock_action_choreography_test.dart`, `persistent_shell_dock_test.dart`,
+`lazy_indexed_stack_test.dart`, `floating_dock_rail_test.dart`,
 `apps_search_submit_test.dart`, and `shell_assistant_composer_test.dart`.
 
 Leaving Apps or launching a module clears Apps search so returning starts in

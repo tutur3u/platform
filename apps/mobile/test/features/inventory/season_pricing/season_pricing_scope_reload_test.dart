@@ -152,7 +152,7 @@ void main() {
             send: (_, payload) async {
               sent.add(payload);
               if (response == 'receipt') {
-                throw const ApiException(message: 'Lost', statusCode: 0);
+                throw const ApiException.transport(message: 'Lost');
               }
               return await post.future;
             },
@@ -222,7 +222,7 @@ void main() {
             post.complete('invoice');
           } else {
             post.completeError(
-              const ApiException(message: 'Delayed timeout', statusCode: 0),
+              const ApiException.transport(message: 'Delayed timeout'),
             );
           }
           await tester.pumpAndSettle();

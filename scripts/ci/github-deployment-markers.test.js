@@ -72,6 +72,7 @@ function runMarkerLookup({
 }
 
 function runLastSuccessfulShaLookup({
+  requireExplicitDeployment = false,
   deployments,
   refName,
   statuses,
@@ -110,6 +111,7 @@ function runLastSuccessfulShaLookup({
 
         const { findLastSuccessfulDeploymentSha } = await import('./scripts/ci/github-deployment-markers.ts');
         const sha = await findLastSuccessfulDeploymentSha({
+          requireExplicitDeployment: process.env.TEST_EXPLICIT === 'true',
           refName: process.env.TEST_REF_NAME,
           workflowName: process.env.TEST_WORKFLOW_NAME,
         });
@@ -127,6 +129,7 @@ function runLastSuccessfulShaLookup({
         GITHUB_TOKEN: 'test-token',
         TEST_DEPLOYMENTS: JSON.stringify(deployments),
         TEST_REF_NAME: refName,
+        TEST_EXPLICIT: String(requireExplicitDeployment),
         TEST_STATUSES: JSON.stringify(statuses),
         TEST_WORKFLOW_NAME: workflowName,
       },
@@ -317,4 +320,41 @@ test('Learn build-only history has no deployed baseline', () => {
     }),
     ''
   );
+});
+
+test('explicit recovery marker loses exact-SHA coverage when success is followed by failure', () => {
+  const sha = '1234567890abcdef1234567890abcdef12345678';
+  const workflowName = 'vercel-production-platform.yaml';
+  const input = {
+    requireExplicitDeployment: true,
+    refName: 'production',
+    workflowName,
+    deployments: [
+      {
+        id: 1,
+        sha,
+        payload: {
+          workflowName,
+          markerKind: 'deployment',
+          refName: 'production',
+        },
+        statuses_url: 'https://api.example.test/statuses/1',
+      },
+    ],
+  };
+  assert.equal(
+    runLastSuccessfulShaLookup({
+      ...input,
+      statuses: { 1: [{ state: 'success' }] },
+    }),
+    sha
+  );
+  for (const state of ['failure', 'error', 'pending', 'inactive'])
+    assert.equal(
+      runLastSuccessfulShaLookup({
+        ...input,
+        statuses: { 1: [{ state }, { state: 'success' }] },
+      }),
+      ''
+    );
 });

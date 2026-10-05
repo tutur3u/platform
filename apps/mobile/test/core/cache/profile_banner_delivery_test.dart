@@ -40,10 +40,7 @@ class _BannerApi extends ApiClient {
     }
     if (loseFinalizeResponse) {
       loseFinalizeResponse = false;
-      throw const ApiException(
-        message: 'Synthetic lost response',
-        statusCode: 0,
-      );
+      throw const ApiException.transport(message: 'Synthetic lost response');
     }
     return {'committed': true};
   }

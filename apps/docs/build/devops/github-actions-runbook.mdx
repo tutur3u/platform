@@ -382,13 +382,7 @@ finish. After the allocated run's final cleanup succeeds, retry the full workflo
 when fresh bundle preparation is needed; never cancel allocated runs, repeatedly
 retry blindly, or push over an active allocation to recover a missing bundle.
 
-Lettin fixture phases print fixed names for account creation, D1 migration and
-seeding, browser context/cookie installation, and cleanup. Timed-out owned fixture
-subprocesses receive SIGKILL at the existing 60-second deadline so a child ignoring
-SIGTERM cannot block Playwright's event loop indefinitely. These diagnostics
-identify the last entered phase; an incomplete runner log alone does not prove a
-browser, server, or database root cause. Do not include tokens, SQL, account IDs,
-response bodies, or authenticated URLs in phase logs.
+### E2E runtime budget
 
 The general shard and dedicated invitation runtime commands use GNU `timeout`
 against the job's recorded start, allowing up to 37 minutes minus setup
@@ -399,6 +393,17 @@ failure diagnostics, redaction, artifact upload, and `always()` cleanup still
 run; the reserve is a budget, not proof that runner or Docker failures cannot
 prevent them. Setup exhausting the runtime budget fails before starting tests.
 Validate this policy with `node --test scripts/ci/e2e-runtime-budget.test.js`.
+
+### Lettin E2E fixture and browser diagnostics
+
+Lettin fixture phases print fixed names for account creation, D1 migration and
+seeding, browser context/cookie installation, and cleanup. Timed-out owned fixture
+subprocesses receive SIGKILL at the existing 60-second deadline so a child ignoring
+SIGTERM cannot block Playwright's event loop indefinitely. These diagnostics
+identify the last entered phase; an incomplete runner log alone does not prove a
+browser, server, or database root cause. Do not include tokens, SQL, account IDs,
+response bodies, or authenticated URLs in phase logs.
+
 Lettin workspace GET diagnostics are enabled in CI, or explicitly with
 `LETTIN_READ_DIAGNOSTICS=true` for a bounded investigation. They emit fixed
 `[lettin-read]` stage names and monotonic elapsed milliseconds for actor resolution,
@@ -445,6 +450,8 @@ propagation of a simulated timeout with safe failure diagnostics. This focused
 contract test does not launch a browser or prove a stalled browser operation
 exits within the deadline; exact-commit E2E remains required.
 
+### E2E runtime heartbeat
+
 For bounded CI stall investigations, the Lettin suite worker and the parent E2E
 runner emit a heartbeat every ten seconds with only wall-clock, monotonic-clock,
 and process CPU deltas. It is enabled by `CI=true`, or explicitly by
@@ -453,6 +460,19 @@ parent timer stops when the Playwright command succeeds or fails. Timers are
 unreferenced and do not keep either process alive. No identities, fixtures, URLs,
 request bodies, or raw errors are included. Timeline page creation, navigation,
 and assertions emit fixed operation markers without changing their deadlines.
+
+On Linux, only the parent runner also samples five fixed `/proc` files:
+`meminfo`, `vmstat`, and CPU, memory, and I/O pressure. Logs contain only available
+memory/free swap in KiB, major fault/swap page counters, cumulative PSI stall
+microseconds, and parent RSS bytes. Each asynchronous read allocates at most
+32 KiB plus one byte and checks a shared one-second abort signal before and
+after I/O. Samples never overlap and suppress late publication after command
+cleanup. Unsupported
+or unreadable fields emit only `{ unavailable: 1 }`; raw file data and errors
+are never logged. These counters can distinguish pressure during delayed ticks;
+current readings alone do not prove which process caused it. Regression coverage
+in `e2e-runtime-resources.test.js` checks numeric output, privacy, non-overlap,
+and stopped publication.
 
 CI shards use the public Playwright JSON discovery receipt to partition selected
 tests into sequential cohorts by their declared satellite dependencies. Only a
@@ -666,7 +686,6 @@ speedup, record the exact CI SHA, archive size, matched key, per-task hits, and
 elapsed time; archive download cost and retention can outweigh reuse.
 Regression coverage: `node --test .github/actions/setup-turbo-fallback-cache/action.test.js`.
 
-
 Vercel deploy credentials must stay environment-scoped. Do not put
 `${{ secrets.* }}` values in a Vercel workflow-level `env:` block, and do not
 export production Supabase, encryption, or provider secrets from GitHub
@@ -820,15 +839,39 @@ uses required-file behavior, one-day retention, and compression level 0 because
 through root Turbo first, then calls `npm pack --ignore-scripts` so `prepack`
 cannot bypass the shared cache wrapper.
 
-Biome's automatic push trigger excludes only
-`release-please--branches--**--release-notes` metadata branches. Their creation
-briefly points at the production SHA before the notes commit is pushed; running
-Biome on both pushes leaves cancelled checks on that shared SHA, which GitHub
-also displays on main and production. Keep this exclusion at the trigger level:
-a job-level skip does not prevent the cancelled workflow checks. Actual release
-PR branches still receive lint and format validation, and manual dispatch remains
-available. When verifying a release, inspect all check runs for its SHA in addition
-to branch-filtered workflow runs.
+Test, Coverage, and Biome preserve separate immutable `workflow + ref + SHA`
+concurrency groups for main, production, and all generated Release Please refs.
+A rapid generated branch reset followed by its metadata commit must not cancel
+checks for a SHA also used by main or production. Ordinary feature refs retain
+branch supersession for obsolete source commits; that cancellation is not a
+successful validation or a valid duplicate skip. Resource-owning E2E and database
+workflows retain their own lifecycle policies.
+
+Generated duplicate pushes can cleanly skip these three workflows' validation
+jobs only after `scripts/ci/check-completed-validation.js` proves a completed
+successful main or production push at the exact same SHA. It selects the newest
+run per canonical branch from complete history, including pending and failed
+runs; a newer non-success run vetoes older success. Test and Coverage
+require all four successful shard jobs and their successful aggregate. Biome
+requires both successful format and lint jobs. The helper checks the current run
+attempt again after reading its jobs. Pending, cancelled, skipped, neutral,
+partial, failed, or inaccessible proof never substitutes for validation; checks
+run normally when proof is unavailable. A failed proof job (including checkout or
+Node setup failure) or missing output also runs validation; dependent gates
+bypass the implicit success guard and skip only for a successful proof job with
+explicit `run_checks=false`. Cancellation and shared CI configuration/release
+relevance decisions still apply. Main and production always validate
+independently. This changes future runs only and does not rewrite historical
+cancelled checks attached to a shared SHA.
+
+Biome retains automatic validation on generated release and overflow-notes
+branches plus manual dispatch. The CI switchboard checks committed overflow
+content before expensive work, and completed exact-commit duplicate proof can
+skip validation without creating cancelled checks. Keep generated mutation and
+report guards: skipped or cancelled lint/format jobs must not publish a success
+report or open a format follow-up. When verifying a release, inspect all check
+runs for its SHA as well as branch-filtered workflow runs. Proof queries share a
+45-second overall deadline and fail open to normal validation on timeout.
 
 Release Please can move an oversized generated pull request body into
 `release-notes.md` on a companion
@@ -1043,6 +1086,64 @@ deployment for database migrations. Database paths therefore select the
 platform deployment in the production planner, and `supabase-production.yaml`
 requires both the successful planner run and the `vercel-production-platform`
 deployment marker for the same SHA before it can run production migrations.
+The marker must explicitly name the platform workflow, deployment kind, and
+matching payload SHA, and its latest status must be successful. GitHub
+environment records with an empty payload only describe job completion; they
+are not deployment evidence. In particular, a package-deferred platform job can
+succeed without deploying the API and must never unlock contract-changing
+migrations.
+
+`production-package-resume.yaml` listens to completed package releases and successful planner
+completions. A failed package-workflow tail still requires live completion agreement
+and every exact package version on npm; its conclusion alone proves no publication.
+It resumes the owning planner for the exact current production SHA
+only when the prior platform job explicitly deferred for package publishing and
+all changed package versions are visible on npm. It checks the live completion,
+fully paginates planner runs/jobs, and skips active, failed, promoted, or stale candidates. Planner completion also wakes recovery when the
+last package became visible before the original planner finished. The dispatch
+carries `expected_sha`; the planner skips a recovery if production moves before
+it starts. Recovery uses commit-driven deployment-marker and affected-path
+selection, including the Cron Control and Devbox Control Workers. An exact-SHA successful deployment marker skips its already covered target,
+including Platform, only when its payload explicitly identifies the workflow,
+deployment kind, and production ref. Automatic job environment records, build
+markers, and a bare marker-SHA override cannot establish recovery coverage. An
+older Platform marker still permits package recovery. A known marker
+with no affected Worker paths skips them; a missing marker still fails open.
+Ordinary operator dispatches continue selecting all enabled targets.
+Every snapshotted planner's attempt, status, and conclusion must remain unchanged;
+the latest job evidence and run attempt are checked again before reserving an
+intent. A completed rerun with the same run ID therefore blocks stale recovery.
+Satellite deployments still require the normal verified platform
+promotion marker. Completion events use [`queue: max`](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#example-queueing-multiple-pending-runs) with cancellation disabled,
+so up to 100 completions wait instead of replacing the single pending event;
+GitHub cancels overflow beyond that limit. API and npm calls are bounded to
+15 seconds each with a four-minute recovery deadline, below the five-minute
+job limit. Missing npm visibility and registry read failures retry every two
+seconds within that shared deadline, including the final package completion.
+Exhaustion fails the recovery job explicitly before creating an intent or
+requesting dispatch; it never reports a successful deferred skip. Planner runs
+are rechecked after registry reads and immediately before dispatch. GitHub API
+timeouts, unreadable/incomplete results, and changed candidates never retry
+intent or dispatch writes.
+Before dispatch it reserves a durable exact-SHA intent in the dedicated
+`production-package-resume` deployment environment with `auto_merge=false`,
+empty required contexts, `production_environment=false`, and
+`transient_environment=true`. This is a dispatch lock, not deployment or
+migration evidence: no success status is emitted and the real platform marker
+still uses `vercel-production-platform`. Each dispatch passes the returned reservation ID as `resume_intent`; the planner's
+run-name binds that ID and exact SHA. An existing intent blocks subsequent
+completions until its uniquely bound planner is proven completed successfully,
+package-deferred, and unpromoted. If npm visibility failed again, a later completion
+may reserve a new intent only after all prior intents have that proof, current
+versions are visible, and fresh intent/run/attempt/job/ref snapshots agree.
+Legacy or unbound intents, absent runs, failed, uncertain, or timed-out requests
+remain blocked for operator inspection. Intents are never deleted; the exact-SHA
+recovery concurrency group serializes reservation, and a changed intent set blocks
+the next write. This
+requires `deployments: write` only in the recovery workflow.
+A deferred successful workflow is not deployment evidence.
+Validate this guard with `node --test scripts/ci/resume-production-package-deployment*.test.js`.
+
 The gate queries the planner run because reusable app workflows do not create
 standalone Actions runs.
 
@@ -1221,7 +1322,6 @@ full Xcode before claiming the iOS archive has been verified locally.
 2. Add its key to `tuturuuu.ts` unless you intentionally want it always on by default.
 3. Document the workflow in `apps/docs`.
 4. If it changes a docs-visible page, add that page to `apps/docs/docs.json`.
-
 
 ### Calendar retained generation rollout
 

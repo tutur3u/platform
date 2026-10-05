@@ -6,6 +6,7 @@ const {
   createFixtureRoot,
   initializeGitRepo,
   repoRoot,
+  writeEventPayload,
 } = require('./workflow-config-test-helpers.js');
 
 const testTargets = [
@@ -32,19 +33,46 @@ const testTargets = [
   },
 ];
 
-function resolveFixtureTargets({ baseSha, headSha, rootDir }) {
+function resolveFixtureTargets({
+  baseSha,
+  headSha,
+  rootDir,
+  eventName = 'push',
+  packageResume = false,
+  expectedSha = '',
+  targets = testTargets,
+  eventPath = '',
+  markerPayload = 'explicit',
+}) {
   const output = execFileSync(
     'bun',
     [
       '--eval',
       `
         import { resolveProductionVercelTargets } from './scripts/ci/resolve-production-vercel-targets.ts';
+        globalThis.fetch = async (url) => {
+          const parsed = new URL(url);
+          const workflowName = parsed.searchParams.get('environment') + '.yaml';
+          const marker = ${JSON.stringify(baseSha)};
+          const payloadType = ${JSON.stringify(markerPayload)};
+          const payload = payloadType === 'explicit'
+            ? { workflowName, markerKind: 'deployment', refName: 'production' }
+            : payloadType === 'build'
+              ? { workflowName, markerKind: 'build', refName: 'production' }
+              : {};
+          const rows = parsed.pathname.endsWith('/deployments')
+            ? (marker ? [{ id: 1, sha: marker, payload, statuses_url: 'https://api.example.test/statuses/1' }] : [])
+            : [{ state: 'success' }];
+          return { ok: true, json: async () => rows };
+        };
         const decisions = await resolveProductionVercelTargets({
-          eventName: 'push',
+          eventName: ${JSON.stringify(eventName)},
+          packageResume: ${JSON.stringify(packageResume)},
+          expectedSha: ${JSON.stringify(expectedSha)},
           headSha: ${JSON.stringify(headSha)},
           refName: 'production',
           rootDir: ${JSON.stringify(rootDir)},
-          targets: ${JSON.stringify(testTargets)},
+          targets: ${JSON.stringify(targets)},
         });
         console.log(JSON.stringify(decisions.map(({ shouldRun, workflowName }) => ({ shouldRun, workflowName }))));
       `,
@@ -54,7 +82,9 @@ function resolveFixtureTargets({ baseSha, headSha, rootDir }) {
       encoding: 'utf8',
       env: {
         ...process.env,
-        GITHUB_TOKEN: '',
+        GITHUB_TOKEN: 'fixture-token',
+        GITHUB_REPOSITORY: 'fixture/repo',
+        GITHUB_EVENT_PATH: eventPath,
         VERCEL_DEPLOYMENT_MARKER_SHA: baseSha,
       },
     }
@@ -127,3 +157,177 @@ test('production planner retries Cloudflare when no successful marker exists', (
   assert.equal(decisions[0].workflowName, 'meet-cloudflare.yaml');
   assert.equal(decisions[0].shouldRun, true);
 });
+
+test('exact package recovery retains push subset while normal manual dispatch selects all', () => {
+  const rootDir = createFixtureRoot();
+  const baseSha = initializeGitRepo(rootDir);
+  const headSha = commitFile(
+    rootDir,
+    'apps/storefront/src/app/page.tsx',
+    'export default function Page() { return null; }\n',
+    'storefront change'
+  );
+  const push = resolveFixtureTargets({ baseSha, headSha, rootDir });
+  const recovery = resolveFixtureTargets({
+    baseSha,
+    headSha,
+    rootDir,
+    eventName: 'workflow_dispatch',
+    packageResume: true,
+    expectedSha: headSha,
+  });
+  assert.deepEqual(recovery, push);
+  assert.equal(recovery.filter((decision) => decision.shouldRun).length, 1);
+  const manual = resolveFixtureTargets({
+    baseSha,
+    headSha,
+    rootDir,
+    eventName: 'workflow_dispatch',
+  });
+  assert.equal(manual.filter((decision) => decision.shouldRun).length, 3);
+});
+
+test('recovery mode refuses an unpinned or mismatched SHA', () => {
+  const rootDir = createFixtureRoot();
+  const headSha = initializeGitRepo(rootDir);
+  for (const expectedSha of ['', 'a'.repeat(40)]) {
+    assert.throws(
+      () =>
+        resolveFixtureTargets({
+          baseSha: headSha,
+          headSha,
+          rootDir,
+          eventName: 'workflow_dispatch',
+          packageResume: true,
+          expectedSha,
+        }),
+      /Package recovery requires the exact production dispatch SHA/
+    );
+  }
+});
+
+const controlTargets = [
+  { productionWorkflow: 'cron-control-cloudflare.yaml' },
+  { productionWorkflow: 'devbox-control-cloudflare.yaml' },
+];
+
+for (const [changedPath, expectedSelection] of [
+  ['apps/cron-control/src/worker.ts', [true, false]],
+  ['packages/sdk/src/platform-devbox/client.ts', [false, true]],
+  ['apps/docs/build/devops/notes.mdx', [false, false]],
+]) {
+  test(`package recovery selects control Workers from markers for ${changedPath}`, () => {
+    const rootDir = createFixtureRoot();
+    const baseSha = initializeGitRepo(rootDir);
+    const headSha = commitFile(
+      rootDir,
+      changedPath,
+      'changed\n',
+      'target change'
+    );
+    // Real recovery has dispatch inputs, not a push before/after range.
+    const eventPath = writeEventPayload(rootDir, {
+      inputs: { package_resume: 'true', expected_sha: headSha },
+    });
+    const decisions = resolveFixtureTargets({
+      baseSha,
+      headSha,
+      rootDir,
+      eventName: 'workflow_dispatch',
+      packageResume: true,
+      expectedSha: headSha,
+      targets: controlTargets,
+      eventPath,
+    });
+    assert.deepEqual(
+      decisions.map(({ shouldRun }) => shouldRun),
+      expectedSelection
+    );
+  });
+}
+
+test('control recovery without deployment markers still fails open safely', () => {
+  const rootDir = createFixtureRoot();
+  const headSha = initializeGitRepo(rootDir);
+  const decisions = resolveFixtureTargets({
+    baseSha: '',
+    headSha,
+    rootDir,
+    eventName: 'workflow_dispatch',
+    packageResume: true,
+    expectedSha: headSha,
+    targets: controlTargets,
+    eventPath: writeEventPayload(rootDir, {
+      inputs: { package_resume: 'true' },
+    }),
+  });
+  assert.deepEqual(
+    decisions.map(({ shouldRun }) => shouldRun),
+    [true, true]
+  );
+});
+
+test('recovery skips exact-marker targets while an older platform marker still deploys', () => {
+  const rootDir = createFixtureRoot();
+  const baseSha = initializeGitRepo(rootDir);
+  const headSha = commitFile(
+    rootDir,
+    'packages/ui/src/changed.ts',
+    'export const changed = true;\n',
+    'shared package release'
+  );
+  const eventPath = writeEventPayload(rootDir, {
+    inputs: { package_resume: 'true', expected_sha: headSha },
+  });
+  const recovery = (marker, targets) =>
+    resolveFixtureTargets({
+      baseSha: marker,
+      headSha,
+      rootDir,
+      eventName: 'workflow_dispatch',
+      packageResume: true,
+      expectedSha: headSha,
+      targets,
+      eventPath,
+    });
+  assert.deepEqual(
+    recovery(headSha, [
+      ...controlTargets,
+      { productionWorkflow: 'vercel-production-calendar.yaml' },
+    ]).map(({ shouldRun }) => shouldRun),
+    [false, false, false]
+  );
+  assert.deepEqual(
+    recovery(baseSha, [
+      { productionWorkflow: 'vercel-production-platform.yaml' },
+    ]).map(({ shouldRun }) => shouldRun),
+    [true]
+  );
+  assert.deepEqual(
+    recovery(headSha, [
+      { productionWorkflow: 'vercel-production-platform.yaml' },
+    ]).map(({ shouldRun }) => shouldRun),
+    [false]
+  );
+});
+
+for (const markerPayload of ['automatic', 'build']) {
+  test(`package recovery never accepts ${markerPayload} platform environment as promotion proof`, () => {
+    const rootDir = createFixtureRoot();
+    const headSha = initializeGitRepo(rootDir);
+    const decisions = resolveFixtureTargets({
+      baseSha: headSha,
+      headSha,
+      rootDir,
+      eventName: 'workflow_dispatch',
+      packageResume: true,
+      expectedSha: headSha,
+      targets: [{ productionWorkflow: 'vercel-production-platform.yaml' }],
+      markerPayload,
+    });
+    assert.deepEqual(
+      decisions.map(({ shouldRun }) => shouldRun),
+      [true]
+    );
+  });
+}

@@ -23,6 +23,8 @@ type ResolveProductionTargetsInput = {
   eventName?: string;
   headSha?: string;
   refName?: string;
+  packageResume?: boolean;
+  expectedSha?: string;
   rootDir: string;
   targets?: readonly { productionWorkflow: string }[];
   workspaceManifests?: WorkspaceManifest[];
@@ -73,22 +75,56 @@ export async function resolveProductionVercelTargets({
   eventName = process.env.GITHUB_EVENT_NAME,
   headSha = process.env.GITHUB_SHA,
   refName = process.env.GITHUB_REF_NAME,
+  packageResume = false,
+  expectedSha,
   rootDir,
   targets = [...vercelWorkflowTargets, ...cloudflareProductionTargets],
   workspaceManifests = readWorkspaceManifests(rootDir),
 }: ResolveProductionTargetsInput): Promise<ProductionTargetDecision[]> {
+  // Only exact-production package recovery keeps commit-driven selection.
+  // Ordinary operator dispatch still intentionally selects every enabled app.
+  if (
+    packageResume &&
+    (eventName !== 'workflow_dispatch' ||
+      refName !== 'production' ||
+      !/^[a-f0-9]{40}$/.test(expectedSha ?? '') ||
+      expectedSha !== headSha)
+  ) {
+    throw new Error(
+      'Package recovery requires the exact production dispatch SHA'
+    );
+  }
+  const selectionEvent = packageResume ? 'push' : eventName;
   return Promise.all(
     targets.map(async ({ productionWorkflow }) => {
       const changeResult = await resolveChangedFiles({
-        eventName,
+        requireExplicitDeployment: packageResume,
+        eventName: selectionEvent,
         headSha,
         refName,
         rootDir,
         workflowName: productionWorkflow,
       });
+      // An exact deployment marker is positive coverage evidence, not an
+      // unavailable empty changed-file list. Ordinary dispatch semantics stay intact.
+      if (
+        packageResume &&
+        changeResult.available &&
+        changeResult.source === 'deployment-marker' &&
+        changeResult.baseSha === headSha
+      ) {
+        return {
+          changeResult,
+          matchedPaths: [],
+          reason:
+            'successful deployment marker already covers the recovery SHA',
+          shouldRun: false,
+          workflowName: productionWorkflow,
+        };
+      }
       const decision = getWorkflowDecision({
         changedFiles: changeResult.available ? changeResult.files : null,
-        eventName,
+        eventName: selectionEvent,
         workflowName: productionWorkflow,
         workspaceManifests,
       });
@@ -106,7 +142,12 @@ async function main() {
   const summaryPathIndex = process.argv.indexOf('--step-summary');
   const summaryPath =
     summaryPathIndex >= 0 ? process.argv[summaryPathIndex + 1] : undefined;
+  const resumeIndex = process.argv.indexOf('--package-resume');
+  const expectedShaIndex = process.argv.indexOf('--expected-sha');
   const decisions = await resolveProductionVercelTargets({
+    packageResume: resumeIndex >= 0 && process.argv[resumeIndex + 1] === 'true',
+    expectedSha:
+      expectedShaIndex >= 0 ? process.argv[expectedShaIndex + 1] : undefined,
     rootDir: process.cwd(),
   });
   const workflows = decisions

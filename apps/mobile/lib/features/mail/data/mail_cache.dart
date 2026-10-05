@@ -3,6 +3,7 @@ import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_network.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
 /// Encrypted, account/workspace-scoped mail lists and thread details.
@@ -95,7 +96,7 @@ class MailCache {
           _disabled = true;
           debugPrint('Mail cache cleanup unavailable; cache disabled');
         }
-      } else if (error.statusCode == 0 || error.statusCode >= 500) {
+      } else if (isOfflineTransportFailure(error) || error.statusCode >= 500) {
         // Keep a previously opened inbox or thread usable during a transient
         // network failure. Auth and permanent errors still surface normally.
         final cached = await snapshot(wsId, path);

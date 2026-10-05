@@ -360,7 +360,7 @@ class CalendarRepository {
       if (e.statusCode == 404) {
         return null;
       }
-      if (e.statusCode == 0) {
+      if (isOfflineTransportFailure(e)) {
         final local = overlayPendingCalendarEvents(
           wsId,
           await _localEvents(wsId),

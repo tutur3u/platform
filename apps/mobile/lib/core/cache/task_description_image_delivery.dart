@@ -43,17 +43,11 @@ Future<String> deliverTaskDescriptionImage({
         )
         .timeout(const Duration(seconds: 60));
   } on SocketException catch (_) {
-    throw const ApiException(
-      message: 'Task upload connection lost',
-      statusCode: 0,
-    );
+    throw const ApiException.transport(message: 'Task upload connection lost');
   } on http.ClientException catch (_) {
-    throw const ApiException(
-      message: 'Task upload connection lost',
-      statusCode: 0,
-    );
+    throw const ApiException.transport(message: 'Task upload connection lost');
   } on TimeoutException catch (_) {
-    throw const ApiException(message: 'Task upload timed out', statusCode: 0);
+    throw const ApiException.transport(message: 'Task upload timed out');
   }
   if (response.statusCode < 200 || response.statusCode >= 300) {
     throw ApiException(

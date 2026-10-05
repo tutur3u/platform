@@ -151,6 +151,10 @@ void main() {
       restoration.complete({});
       await tester.pumpAndSettle();
       expect(find.text('Download all'), findsOneWidget);
+      expect(
+        find.byType(Divider),
+        findsNWidgets(OfflinePreparationCoordinator.productIds.length - 1),
+      );
       await tester.ensureVisible(find.text('Download all'));
       await tester.tap(find.text('Download all'));
       await tester.pump();

@@ -188,17 +188,19 @@ export async function hasSuccessfulDeploymentMarker({
 }
 
 export async function findLastSuccessfulDeploymentSha({
+  requireExplicitDeployment = false,
   refName,
   workflowName,
 }: {
   refName?: string;
   workflowName: string;
+  requireExplicitDeployment?: boolean;
 }): Promise<string | null> {
   const markerShaOverride =
     getOptionalEnv('DEPLOYMENT_MARKER_SHA') ??
     process.env.VERCEL_DEPLOYMENT_MARKER_SHA;
 
-  if (markerShaOverride) {
+  if (markerShaOverride && !requireExplicitDeployment) {
     return markerShaOverride;
   }
 
@@ -214,6 +216,15 @@ export async function findLastSuccessfulDeploymentSha({
     const payload = parsePayload(deployment.payload);
     const markerWorkflowName = payload.workflowName;
     const markerRefName = payload.refName;
+
+    if (
+      requireExplicitDeployment &&
+      (markerWorkflowName !== workflowName ||
+        payload.markerKind !== 'deployment' ||
+        markerRefName !== refName)
+    ) {
+      continue;
+    }
 
     if (
       typeof markerWorkflowName === 'string' &&
@@ -242,7 +253,12 @@ export async function findLastSuccessfulDeploymentSha({
       token,
       url: deployment.statuses_url,
     });
-    if (hasSuccessfulStatus(statuses)) {
+    // GitHub lists newest statuses first; a later rejection invalidates recovery coverage.
+    if (
+      requireExplicitDeployment
+        ? isSuccessfulStatus(statuses?.[0])
+        : hasSuccessfulStatus(statuses)
+    ) {
       return deployment.sha;
     }
   }

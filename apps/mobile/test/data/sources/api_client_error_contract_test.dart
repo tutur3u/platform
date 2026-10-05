@@ -6,6 +6,73 @@ import 'package:http/testing.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
 void main() {
+  test(
+    'retains safe 429 guard diagnostics through the HTTP boundary',
+    () async {
+      final api = ApiClient(
+        baseUrl: 'https://example.test',
+        httpClient: MockClient(
+          (_) async => http.Response(
+            '{}',
+            429,
+            headers: {
+              'x-proxy-block-reason': 'route-rate-limit',
+              'x-ratelimit-policy': 'default',
+              'x-ratelimit-caller-class': 'anonymous',
+              'x-ratelimit-window': 'hour',
+              'retry-after': '60',
+            },
+          ),
+        ),
+      );
+      addTearDown(api.dispose);
+      await expectLater(
+        api.getJson('/calendar-settings', requiresAuth: false),
+        throwsA(
+          isA<ApiException>()
+              .having((e) => e.retryAfter, 'retry delay', 60)
+              .having(
+                (e) => e.rateLimitDiagnostics?.safeSummary,
+                'safe diagnostics',
+                'reason=route-rate-limit; policy=default; caller=anonymous; '
+                    'window=hour',
+              ),
+        ),
+      );
+    },
+  );
+
+  test('excludes arbitrary and private 429 header values', () async {
+    final api = ApiClient(
+      baseUrl: 'https://example.test',
+      httpClient: MockClient(
+        (_) async => http.Response(
+          '{}',
+          429,
+          headers: {
+            'x-proxy-block-reason': 'private-token',
+            'x-ratelimit-policy': 'private-workspace',
+            'x-ratelimit-caller-class': 'private-user',
+            'x-ratelimit-window': 'private-address',
+            'authorization': 'Bearer private-token',
+            'set-cookie': 'session=private-token',
+          },
+        ),
+      ),
+    );
+    addTearDown(api.dispose);
+    await expectLater(
+      api.getJson('/calendar-settings', requiresAuth: false),
+      throwsA(
+        isA<ApiException>().having(
+          (e) => e.rateLimitDiagnostics?.safeSummary,
+          'safe diagnostics',
+          'reason=unknown; policy=unknown; caller=unknown; window=unknown',
+        ),
+      ),
+    );
+  });
+
   for (final retry in <Object>[3, '3', -1]) {
     test(
       'body retry cooldown requires a nonnegative integer: $retry',

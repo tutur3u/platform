@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/profile/personal_profile_workspace.dart';
+import 'package:mobile/features/profile/profile_timeline_access.dart';
 import 'package:mobile/features/profile/profile_timeline_repository.dart';
 import 'package:mobile/features/profile/view/profile_timeline_browser.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -96,7 +98,13 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
   Future<void> _load(String workspaceId, String userId) async {
     if (_refreshing) return;
     final request = ++_request;
+    final immediate = _repository.peek(workspaceId, userId);
     setState(() {
+      if (_items == null && immediate != null) {
+        _items = immediate.items;
+        _partial = immediate.partial;
+        _limited = immediate.limited;
+      }
       _refreshing = true;
       _loadingMore = false;
       _pagingPaused = false;
@@ -129,6 +137,19 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
         } else {
           _failureReported = false;
         }
+      }
+    } on ApiException catch (error) {
+      if (mounted && request == _request) {
+        setState(() {
+          _failed = true;
+          if (timelineAccessDenied(error)) {
+            _items = null;
+            _partial = false;
+            _limited = false;
+            _pagingPaused = true;
+          }
+        });
+        _reportFailure(request);
       }
     } on Exception {
       if (mounted && request == _request) {
@@ -163,6 +184,19 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
         }.values.toList();
         _limited = fresh.limited;
       });
+    } on ApiException catch (error) {
+      if (mounted && request == _request) {
+        setState(() {
+          _pagingPaused = true;
+          if (timelineAccessDenied(error)) {
+            _items = null;
+            _failed = true;
+            _partial = false;
+            _limited = false;
+          }
+        });
+        _reportFailure(request);
+      }
     } on Exception {
       if (mounted && request == _request) {
         setState(() => _pagingPaused = true);

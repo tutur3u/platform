@@ -4,6 +4,21 @@ on:
     branches:
       - production
   workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: "Optional exact production SHA for guarded recovery"
+        type: string
+        default: ""
+      package_resume:
+        description: "Identify one automatic package-deferred recovery"
+        type: string
+        default: "false"
+      resume_intent:
+        description: "Durable dispatch reservation ID for automatic recovery"
+        type: string
+        default: ""
+
+run-name: ${{ inputs.package_resume == 'true' && format('Production package resume {0} intent {1}', inputs.expected_sha, inputs.resume_intent) || 'Production Deployment Planner' }}
 
 concurrency:
   group: production-deployment-planner-${{ github.ref }}
@@ -16,7 +31,7 @@ permissions:
 
 jobs:
   plan:
-    if: github.ref == 'refs/heads/production'
+    if: github.ref == 'refs/heads/production' && (inputs.expected_sha == '' || inputs.expected_sha == github.sha)
     runs-on: ubuntu-latest
     outputs:
       workflows_json: ${{ steps.plan.outputs.workflows_json }}
@@ -35,7 +50,9 @@ jobs:
         id: plan
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: node --experimental-strip-types scripts/ci/resolve-production-vercel-targets.ts --step-summary "${GITHUB_STEP_SUMMARY}"
+          PRODUCTION_PACKAGE_RESUME: ${{ inputs.package_resume }}
+          PRODUCTION_EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: node --experimental-strip-types scripts/ci/resolve-production-vercel-targets.ts --package-resume "$PRODUCTION_PACKAGE_RESUME" --expected-sha "$PRODUCTION_EXPECTED_SHA" --step-summary "${GITHUB_STEP_SUMMARY}"
 
   deploy-colab-cloudflare:
     needs: plan

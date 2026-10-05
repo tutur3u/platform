@@ -12,6 +12,9 @@ import 'season_pricing_controller_test.dart' show priceRow;
 class _Cache extends Mock implements CacheStore {}
 
 class _Api extends ApiClient {
+  @override
+  void checkUser(String userId) => expect(userId, 'actor');
+
   String? readPath;
   String? writePath;
   Map<String, dynamic>? body;
@@ -62,7 +65,10 @@ void main() {
     'receipt reads are authenticated, scoped and fail closed on bad identity',
     () async {
       final api = _Api();
-      final repository = InventoryRepository(apiClient: api);
+      final repository = InventoryRepository(
+        apiClient: api,
+        cacheUserId: () => 'actor',
+      );
       api.receipt = {'state': 'not_observed', 'request_id': 'request'};
       expect(await repository.getSaleReceipt('ws', 'request'), isNull);
       expect(api.readAuthenticated, isTrue);
@@ -98,7 +104,10 @@ void main() {
     'uncached quote path escapes both IDs and preserves server as_of',
     () async {
       final api = _Api();
-      final repository = InventoryRepository(apiClient: api);
+      final repository = InventoryRepository(
+        apiClient: api,
+        cacheUserId: () => 'actor',
+      );
       final quote = await repository.getSeasonQuote(
         'workspace space',
         'season space',

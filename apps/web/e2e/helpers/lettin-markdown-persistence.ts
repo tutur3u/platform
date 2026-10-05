@@ -2,6 +2,7 @@ import { type BrowserContext, expect } from '@playwright/test';
 import { runLettinBrowserPhase as phase } from './lettin-browser-phase';
 
 // Fixed phase names only: never log fixture IDs, response bodies, or credentials.
+
 export async function verifyLettinMarkdownPersistence(
   context: BrowserContext,
   origin: string,

@@ -1,7 +1,7 @@
 part of 'cache_store.dart';
 
 const _replicaSchemaKey = '@schema-version';
-const _replicaSchemaVersion = 1;
+const _replicaSchemaVersion = 2;
 const _replicaIdMapPrefix = '@id-map:';
 
 extension CacheStoreReplica on CacheStore {
@@ -213,27 +213,6 @@ extension CacheStoreReplica on CacheStore {
   String _replicaEntityKey(CachedResourceRecord source, String id) =>
       '@entity:${sha256.convert(utf8.encode('${source.key}|$id'))}';
 
-  Iterable<Map<String, dynamic>> _extractReplicaRows(Object? value) sync* {
-    if (value is List) {
-      for (final row in value.take(1000)) {
-        if (row is Map) {
-          final id = row['id'] ?? row['auditRecordId'];
-          if (id is String) yield {...Map<String, dynamic>.from(row), 'id': id};
-        }
-      }
-      return;
-    }
-    if (value is! Map) return;
-    final id = value['id'] ?? value['auditRecordId'];
-    if (id is String) {
-      yield {...Map<String, dynamic>.from(value), 'id': id};
-      return;
-    }
-    for (final nested in value.values) {
-      if (nested is List || nested is Map) yield* _extractReplicaRows(nested);
-    }
-  }
-
   bool _replicaCanIndex(CachedResourceRecord source) =>
       source.userId != null &&
       !CacheStore._nonPersistentResourceNamespaces.contains(source.namespace) &&
@@ -277,6 +256,10 @@ extension CacheStoreReplica on CacheStore {
           growable: false,
         ) ??
         const <String>[];
+    final previousRows = <String, dynamic>{
+      for (final key in previous) key: _entityBox.get(key),
+    };
+    final previousIndex = _entityBox.get(sourceIndexKey);
     final next = <String, Map<String, dynamic>>{};
     final priorBytes = previous.fold<int>(
       0,
@@ -284,7 +267,10 @@ extension CacheStoreReplica on CacheStore {
     );
     if (_replicaCanIndex(source)) {
       try {
-        for (final row in _extractReplicaRows(jsonDecode(source.jsonPayload))) {
+        for (final row in extractReplicaRows(
+          source.namespace,
+          jsonDecode(source.jsonPayload),
+        )) {
           final id = row['id'] as String;
           if (id.isEmpty || id.length > 255) continue;
           final key = _replicaEntityKey(source, id);
@@ -304,8 +290,10 @@ extension CacheStoreReplica on CacheStore {
     }
     try {
       await _entityBox.putAll(next);
+      await persistenceCheckpoint?.call('replica-rows');
       checkCurrent?.call();
       await _entityBox.put(sourceIndexKey, next.keys.toList(growable: false));
+      await persistenceCheckpoint?.call('replica-index');
       checkCurrent?.call();
       for (final key in previous) {
         if (!next.containsKey(key)) {
@@ -319,11 +307,26 @@ extension CacheStoreReplica on CacheStore {
             (total, raw) => total + _replicaPayloadBytes(raw),
           ) -
           priorBytes;
-    } on Object {
-      // The per-source queue excludes newer writers while rollback removes
-      // this attempt's rows. Other resource sources have distinct entity keys.
+    } on Object catch (error) {
+      if (error is CachePersistenceInterruption) rethrow;
+      var valid = true;
+      try {
+        checkCurrent?.call();
+      } on Object {
+        valid = false;
+      }
       await _entityBox.deleteAll({...previous, ...next.keys});
-      await _entityBox.delete(sourceIndexKey);
+      if (valid) {
+        await _entityBox.putAll(previousRows);
+        if (previousIndex != null) {
+          await _entityBox.put(sourceIndexKey, previousIndex);
+        } else {
+          await _entityBox.delete(sourceIndexKey);
+        }
+      } else {
+        // An explicit clear/actor fence always wins over refresh rollback.
+        await _entityBox.delete(sourceIndexKey);
+      }
       _entityBytes = _countReplicaBytes();
       rethrow;
     }
@@ -380,6 +383,12 @@ extension CacheStoreReplica on CacheStore {
   }) async {
     await init();
     await _replicaMigration;
+    await _resourceWrite;
+    if (_isClearing(
+      CacheKey(namespace: namespace, userId: userId, workspaceId: workspaceId),
+    )) {
+      return const [];
+    }
     final byId = <String, ReplicaEntityRecord>{};
     for (final raw in _entityBox.values) {
       if (raw is! Map ||
@@ -387,14 +396,13 @@ extension CacheStoreReplica on CacheStore {
           raw['namespace'] != namespace ||
           raw['userId'] != userId ||
           raw['workspaceId'] != workspaceId ||
+          !_memory.containsKey(raw['sourceKey']) ||
           (sourceKeys != null && !sourceKeys.contains(raw['sourceKey']))) {
         continue;
       }
       final row = ReplicaEntityRecord.fromJson(raw);
       final previous = byId[row.id];
-      if (previous == null || row.fetchedAt.isAfter(previous.fetchedAt)) {
-        byId[row.id] = row;
-      }
+      byId[row.id] = previous == null ? row : mergeReplicaRows(previous, row);
     }
     if (pendingFeature != null && pendingPathContains != null) {
       final pending = await listPendingMutations();

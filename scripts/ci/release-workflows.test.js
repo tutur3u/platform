@@ -581,11 +581,11 @@ test('CI workflows use main instead of retired staging branch filters', () => {
   );
   assert.match(
     supabaseProductionWorkflow,
-    /DEPLOYMENT_MARKER_HAS_SUCCESS=.*select\(\.state == "success"\).*length > 0/
+    /DEPLOYMENT_MARKER_HAS_SUCCESS=.*\.\[0\]\.state == "success"/
   );
   assert.match(
     supabaseProductionWorkflow,
-    /does not include a success status\. Latest state is/
+    /does not have a current success status\. Latest state is/
   );
   assert.doesNotMatch(supabaseProductionWorkflow, /runs\?branch=staging/);
 });
@@ -813,11 +813,11 @@ test('E2E runs only for matching commit changes or explicit dispatch', () => {
   assert.match(header, /\n {2}workflow_dispatch:/);
   assert.match(
     header,
-    /group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.ref \}\}/
+    /group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.ref == 'refs\/heads\/release-please--branches--production--release-notes' && github\.sha \|\| github\.ref \}\}/
   );
   assert.match(
     header,
-    /cancel-in-progress:.*github\.ref != 'refs\/heads\/main' && github\.ref != 'refs\/heads\/production'/
+    /cancel-in-progress:.*github\.ref != 'refs\/heads\/main' && github\.ref != 'refs\/heads\/production' && github\.ref != 'refs\/heads\/release-please--branches--production--release-notes'/
   );
   assert.doesNotMatch(workflow, /^ {2}check-ci:/m);
   assert.doesNotMatch(workflow, /needs\.check-ci/);
@@ -1099,12 +1099,9 @@ test('Supabase production migration requires production platform deploy and succ
     evaluateJob,
     /no production platform deployment marker was found for \$TARGET_SHA/
   );
-  assert.match(
-    evaluateJob,
-    /\(\(\$payload\.markerKind \/\/ "deployment"\) == "deployment"\)/
-  );
+  assert.match(evaluateJob, /\(\$payload\.markerKind == "deployment"\)/);
   assert.match(evaluateJob, /DEPLOYMENT_MARKER_HAS_SUCCESS" != "true"/);
-  assert.match(evaluateJob, /does not include a success status/);
+  assert.match(evaluateJob, /does not have a current success status/);
   assert.match(
     evaluateJob,
     /supabase-staging\.yaml\/runs\?branch=main&head_sha=\$TARGET_SHA&per_page=1/

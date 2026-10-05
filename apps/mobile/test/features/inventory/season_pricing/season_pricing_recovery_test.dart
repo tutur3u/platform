@@ -26,7 +26,7 @@ void main() {
           send:
               send ??
               (_, _) async =>
-                  throw const ApiException(message: 'Timeout', statusCode: 0),
+                  throw const ApiException.transport(message: 'Timeout'),
           lookupReceipt: lookup ?? (_, _) async => null,
           isOnline: () async => true,
           now: () => DateTime.utc(2026, 10),
