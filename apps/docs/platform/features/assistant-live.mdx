@@ -474,6 +474,15 @@ only completed phase timings; obsolete attempts publish none.
 
 `assistant_live_startup_phases_test.dart` verifies independent overlap, the
 settle-all failure barrier, cancelled scope fencing, and immutable measurements.
+The Live information action in the shared shell opens the existing info sheet.
+It shows the most recent attempt’s recorded phase durations in milliseconds,
+including partial failed attempts, in a fixed phase order. Missing phases are
+omitted. Measurements stay in memory on the current device: no account IDs,
+request IDs, credentials, message content, persistence, or automatic uploads.
+History and audio run concurrently, so phase durations do not sum to total time.
+The sheet scrolls on small screens and with enlarged text. Widget regression
+coverage is in `assistant_live_startup_diagnostics_test.dart`.
+
 This removes serial client-side waiting; actual device/provider speed remains a
 runtime measurement rather than a promised fixed latency reduction.
 

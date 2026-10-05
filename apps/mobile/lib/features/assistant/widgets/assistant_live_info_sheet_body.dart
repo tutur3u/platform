@@ -4,6 +4,7 @@ import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_live_config.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/widgets/assistant_live_startup_diagnostics.dart';
 import 'package:mobile/features/assistant/widgets/assistant_status_badge.dart';
 import 'package:mobile/features/workspace/widgets/workspace_tier_badge.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -32,7 +33,7 @@ class AssistantLiveInfoSheetBody extends StatelessWidget {
       child: Material(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 16, 8, 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -131,6 +132,9 @@ class AssistantLiveInfoSheetBody extends StatelessWidget {
                   ),
                 ),
               ),
+              AssistantLiveStartupDiagnostics(
+                timings: liveState.startupTimings,
+              ),
               if (onPrimaryAction != null) ...[
                 const SizedBox(height: 20),
                 FilledButton(
@@ -210,19 +214,34 @@ class _InfoTile extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final text = Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
-            ),
-            const SizedBox(width: 10),
-            DefaultTextStyle.merge(textAlign: TextAlign.end, child: trailing),
-          ],
+            );
+            if (constraints.maxWidth < 340 ||
+                MediaQuery.textScalerOf(context).scale(14) > 20) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [text, const SizedBox(height: 8), trailing],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(child: text),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: DefaultTextStyle.merge(
+                    textAlign: TextAlign.end,
+                    child: trailing,
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

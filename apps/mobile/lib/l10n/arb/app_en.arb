@@ -41,6 +41,13 @@
       }
     }
   },
+  "@assistantLiveStartupDuration": {
+    "placeholders": {
+      "milliseconds": {
+        "type": "int"
+      }
+    }
+  },
   "@assistantLiveWorkspaceTierLabel": {
     "placeholders": {
       "tier": {
@@ -1307,6 +1314,7 @@
   "assistantLiveIdleHeading": "Talk with Mira",
   "assistantLiveInfoAccessHeading": "Current access",
   "assistantLiveInfoDismiss": "Got it",
+  "assistantLiveInfoTitle": "Live information",
   "assistantLiveInsightsTitle": "Live insights",
   "assistantLiveListen": "Open mic",
   "assistantLiveModelBadge": "Gemini 3.8 Live",
@@ -1332,6 +1340,15 @@
   "assistantLiveStageAssistantSpeaking": "Voice response is streaming",
   "assistantLiveStageYouListening": "Your microphone is live",
   "assistantLiveStageYouMuted": "Tap the mic to speak again",
+  "assistantLiveStartupAudio": "Audio initialization",
+  "assistantLiveStartupDuration": "{milliseconds} ms",
+  "assistantLiveStartupHistory": "Conversation history",
+  "assistantLiveStartupNote": "Elapsed phase times stay on this device. History and audio overlap; phase times do not add up to the total. Failed attempts may include only some phases.",
+  "assistantLiveStartupReady": "Provider ready",
+  "assistantLiveStartupSocket": "Provider connection",
+  "assistantLiveStartupTitle": "Last connection attempt",
+  "assistantLiveStartupToken": "Session authorization",
+  "assistantLiveStartupTotal": "Total elapsed time",
   "assistantLiveStatusAvailable": "Available",
   "assistantLiveStatusConnecting": "Connecting",
   "assistantLiveStatusDisconnected": "Not connected",
