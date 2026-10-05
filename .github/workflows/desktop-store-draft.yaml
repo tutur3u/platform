@@ -2,6 +2,12 @@ name: Windows Store Draft Package
 
 on:
   workflow_dispatch:
+    inputs:
+      diagnostics_only:
+        description: "Validate trusted main without uploading a submission MSIX"
+        type: boolean
+        default: false
+        required: false
 
 permissions:
   contents: read
@@ -19,7 +25,7 @@ jobs:
       workflow_name: desktop-store-draft.yaml
   package:
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true' && github.ref == 'refs/heads/production'
+    if: needs.check-ci.outputs.should_run == 'true' && (github.ref == 'refs/heads/production' || (github.ref == 'refs/heads/main' && inputs.diagnostics_only))
     runs-on: windows-latest
     environment: desktop-beta
     timeout-minutes: 60
@@ -76,7 +82,9 @@ jobs:
           path: ${{ runner.temp }}/store-validation/*
           if-no-files-found: warn
           retention-days: 7
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - name: Upload production submission package
+        if: success() && !inputs.diagnostics_only
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: windows-store-draft-${{ github.run_id }}
           path: ${{ runner.temp }}/store-draft/*.msix
