@@ -1,5 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import type { ReactElement, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletCheckpointAdjustmentDialog } from './wallet-checkpoint-adjustment-dialog';
@@ -383,6 +389,94 @@ describe('wallet checkpoint UI', () => {
         })
       );
     });
+  });
+
+  it('submits the category visible at click time despite a subsequent edit', async () => {
+    mocks.defaultReconciliationCategoryId = 'category-reconcile';
+    mocks.listTransactionCategories.mockResolvedValue([
+      { id: 'category-reconcile', name: 'Audit' },
+    ]);
+    renderWithQueryClient(
+      <WalletCheckpointAdjustmentDialog
+        wsId="ws-1"
+        walletId="wallet-1"
+        checkpointId="checkpoint-1"
+        walletName="Cash"
+        checkedAt="2026-06-11T10:00:00.000Z"
+        currency="USD"
+        variance={-12.34}
+        open
+        onOpenChange={vi.fn()}
+        onCreated={vi.fn()}
+      />
+    );
+    const select = screen.getByRole('combobox');
+    await waitFor(() => expect(select).toHaveValue('category-reconcile'));
+    const button = screen.getByRole('button', { name: 'reconcile' });
+    await act(async () => {
+      fireEvent.click(button);
+      fireEvent.change(select, { target: { value: 'none' } });
+    });
+    await waitFor(() =>
+      expect(mocks.createWalletCheckpointReconciliation).toHaveBeenCalledWith(
+        'ws-1',
+        'wallet-1',
+        'checkpoint-1',
+        expect.objectContaining({ category_id: 'category-reconcile' })
+      )
+    );
+  });
+
+  it('keeps a queued reconciliation and completion bound to its original target', async () => {
+    const oldCreated = vi.fn();
+    const newCreated = vi.fn();
+    const oldClose = vi.fn();
+    const newClose = vi.fn();
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const dialog = (
+      wallet: string,
+      checkpoint: string,
+      created: () => void,
+      close: (open: boolean) => void
+    ) => (
+      <QueryClientProvider client={client}>
+        <WalletCheckpointAdjustmentDialog
+          wsId="ws-1"
+          walletId={wallet}
+          checkpointId={checkpoint}
+          walletName="Cash"
+          checkedAt="2026-06-11T10:00:00.000Z"
+          currency="USD"
+          variance={-12.34}
+          open
+          onOpenChange={close}
+          onCreated={created}
+        />
+      </QueryClientProvider>
+    );
+    const view = render(
+      dialog('wallet-1', 'checkpoint-1', oldCreated, oldClose)
+    );
+    const button = screen.getByRole('button', { name: 'reconcile' });
+    await waitFor(() => expect(button).not.toBeDisabled());
+    await act(async () => {
+      fireEvent.click(button);
+      view.rerender(dialog('wallet-2', 'checkpoint-2', newCreated, newClose));
+    });
+    await waitFor(() =>
+      expect(mocks.createWalletCheckpointReconciliation).toHaveBeenCalledWith(
+        'ws-1',
+        'wallet-1',
+        'checkpoint-1',
+        expect.any(Object)
+      )
+    );
+    await waitFor(() => expect(oldCreated).toHaveBeenCalledOnce());
+    expect(newCreated).not.toHaveBeenCalled();
+    expect(oldClose).not.toHaveBeenCalled();
+    expect(newClose).not.toHaveBeenCalled();
   });
 
   it('submits no reconciliation category after clearing the configured default', async () => {
