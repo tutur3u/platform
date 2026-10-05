@@ -78,6 +78,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   StreamSubscription<AssistantLiveSocketEvent>? _socketSubscription;
   Completer<void>? _readyCompleter;
   int _requestVersion = 0;
+  String _toolProtocol = 'legacy';
   bool _manualDisconnect = false;
   bool _reconnectScheduled = false;
   Timer? _assistantSpeakingTimer;
@@ -143,6 +144,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         return;
       }
 
+      _toolProtocol = envelope.toolProtocol;
       final sessionHandle = forceFresh ? null : envelope.sessionHandle;
 
       emit(

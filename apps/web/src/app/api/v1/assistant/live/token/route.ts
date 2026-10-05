@@ -23,6 +23,10 @@ import {
   ASSISTANT_LIVE_TOOL_CONFIG,
   ASSISTANT_LIVE_TOOL_DECLARATIONS,
 } from '@/lib/live/assistant-tools';
+import {
+  CANONICAL_LIVE_TOOL_DECLARATIONS,
+  liveToolProtocolSchema,
+} from '@/lib/live/canonical-tool-bridge';
 import { buildLiveMiraPrompt } from '@/lib/live/mira-prompt';
 import { assistantChatScopeKey } from '@/lib/live/session-scope';
 import { createConstrainedLiveToken } from '@/lib/live/token-builder';
@@ -62,12 +66,30 @@ async function loadStoredSessionHandle({
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
-    const { wsId, chatId, model, forceFresh } = body as {
+    const {
+      wsId,
+      chatId,
+      model,
+      forceFresh,
+      toolProtocol: requestedProtocol,
+    } = body as {
       wsId?: string;
       chatId?: string;
       model?: string;
       forceFresh?: boolean;
+      toolProtocol?: unknown;
     };
+
+    const protocol = liveToolProtocolSchema.safeParse(
+      requestedProtocol ?? 'legacy'
+    );
+    if (!protocol.success) {
+      return Response.json(
+        { error: 'Unsupported Live tool protocol' },
+        { status: 400 }
+      );
+    }
+    const toolProtocol = protocol.data;
 
     if (!wsId) {
       return Response.json(
@@ -172,8 +194,9 @@ export async function POST(request: Request) {
       user,
       wsId: normalizedWsId,
       dashboard: false,
+      toolProtocol,
     });
-    const scopeKey = assistantChatScopeKey(chat.id);
+    const scopeKey = assistantChatScopeKey(chat.id, toolProtocol);
     const sessionHandle = shouldForceFresh
       ? null
       : await loadStoredSessionHandle({
@@ -213,7 +236,9 @@ export async function POST(request: Request) {
         tools: [
           {
             functionDeclarations: [
-              ...ASSISTANT_LIVE_TOOL_DECLARATIONS,
+              ...(toolProtocol === 'canonical-v1'
+                ? CANONICAL_LIVE_TOOL_DECLARATIONS
+                : ASSISTANT_LIVE_TOOL_DECLARATIONS),
               {
                 name: 'get_mobile_screen_context',
                 description:
@@ -242,6 +267,7 @@ export async function POST(request: Request) {
 
     return Response.json({
       token,
+      toolProtocol,
       chatId: chat.id,
       scopeKey,
       model: resolvedModel,

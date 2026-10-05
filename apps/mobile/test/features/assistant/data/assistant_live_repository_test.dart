@@ -1,11 +1,34 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
+import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _Api extends Mock implements ApiClient {}
 
 void main() {
+  test('unknown server protocols fall back to the legacy transport', () {
+    final base = {
+      'token': 'token',
+      'chatId': 'chat',
+      'scopeKey': 'scope',
+      'model': 'model',
+    };
+    expect(
+      AssistantLiveTokenEnvelope.fromJson({
+        ...base,
+        'toolProtocol': 'future-v2',
+      }).toolProtocol,
+      'legacy',
+    );
+    expect(
+      AssistantLiveTokenEnvelope.fromJson({
+        ...base,
+        'toolProtocol': 'canonical-v1',
+      }).toolProtocol,
+      'canonical-v1',
+    );
+  });
   const id = 'dbdee3eb-3b6e-4422-93b4-829b825a8608';
   for (final chatId in [
     null,
@@ -21,6 +44,7 @@ void main() {
       ).thenAnswer((invocation) async {
         final body = invocation.positionalArguments[1] as Map;
         expect(body['wsId'], 'workspace');
+        expect(body['toolProtocol'], 'canonical-v1');
         expect(
           body['chatId'],
           chatId != null && !chatId.startsWith('ai-agent-thread-') ? id : null,
@@ -37,9 +61,38 @@ void main() {
         apiClient: api,
       ).fetchLiveToken(wsId: 'workspace', chatId: chatId);
       expect(session.chatId, id);
+      expect(session.toolProtocol, 'legacy');
       verify(
         () => api.postJson('/api/v1/assistant/live/token', any()),
       ).called(1);
+    });
+  }
+  for (final protocol in ['legacy', 'canonical-v1']) {
+    test('Live executes using the server negotiated $protocol route', () async {
+      final api = _Api();
+      final path = protocol == 'canonical-v1'
+          ? '/api/v1/assistant/live/tools/execute'
+          : '/api/v1/live/tools/execute';
+      when(() => api.postJson(path, any())).thenAnswer((invocation) async {
+        final body = invocation.positionalArguments[1] as Map;
+        expect(
+          body['toolCallId'],
+          protocol == 'canonical-v1' ? 'call-1' : null,
+        );
+        return {
+          'result': {'ok': true},
+        };
+      });
+      final result = await AssistantLiveRepository(apiClient: api)
+          .executeToolCall(
+            wsId: 'workspace',
+            functionName: 'test',
+            args: {},
+            toolProtocol: protocol,
+            toolCallId: 'call-1',
+          );
+      expect(result, {'ok': true});
+      verify(() => api.postJson(path, any())).called(1);
     });
   }
 }

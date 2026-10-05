@@ -4,6 +4,7 @@ export const LIVE_SESSION_SCOPE_KEY_MAX_LENGTH = 80;
 export const LIVE_SESSION_HANDLE_MAX_LENGTH = 8192;
 
 const ASSISTANT_CHAT_SCOPE_PREFIX = 'assistant:';
+const CANONICAL_CHAT_SCOPE_PREFIX = 'assistant-canonical-v1:';
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
@@ -19,8 +20,11 @@ export type LiveSessionScopeValidation =
   | { kind: 'fixed'; scopeKey: string; valid: true }
   | { reason: 'invalid_format' | 'invalid_type' | 'too_long'; valid: false };
 
-export function assistantChatScopeKey(chatId: string) {
-  return `assistant:${chatId}`;
+export function assistantChatScopeKey(
+  chatId: string,
+  protocol: 'legacy' | 'canonical-v1' = 'legacy'
+) {
+  return `${protocol === 'canonical-v1' ? CANONICAL_CHAT_SCOPE_PREFIX : ASSISTANT_CHAT_SCOPE_PREFIX}${chatId}`;
 }
 
 export function validateLiveSessionScopeKey(
@@ -38,11 +42,14 @@ export function validateLiveSessionScopeKey(
     return { kind: 'fixed', scopeKey, valid: true };
   }
 
-  if (!scopeKey.startsWith(ASSISTANT_CHAT_SCOPE_PREFIX)) {
+  const prefix = scopeKey.startsWith(CANONICAL_CHAT_SCOPE_PREFIX)
+    ? CANONICAL_CHAT_SCOPE_PREFIX
+    : ASSISTANT_CHAT_SCOPE_PREFIX;
+  if (!scopeKey.startsWith(prefix)) {
     return { reason: 'invalid_format', valid: false };
   }
 
-  const chatId = scopeKey.slice(ASSISTANT_CHAT_SCOPE_PREFIX.length);
+  const chatId = scopeKey.slice(prefix.length);
   if (!UUID_PATTERN.test(chatId)) {
     return { reason: 'invalid_format', valid: false };
   }

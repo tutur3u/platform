@@ -426,3 +426,32 @@ only completed phase timings; obsolete attempts publish none.
 settle-all failure barrier, cancelled scope fencing, and immutable measurements.
 This removes serial client-side waiting; actual device/provider speed remains a
 runtime measurement rather than a promised fixed latency reduction.
+
+## Canonical mobile Live capabilities
+
+New mobile clients request the `canonical-v1` tool protocol. The token response
+selects the protocol; an absent or unsupported response value keeps the legacy
+execution route. Existing clients keep legacy declarations and execution. A
+canonical session discovers authorized operations through `search_workspace_tools`
+and executes their validated input through `execute_workspace_tool`. Schemas come
+from the same Mira registry used by Chat, so registered capabilities do not need
+a second manually maintained mobile tool declaration list.
+
+Every canonical request authenticates the actor, verifies workspace membership
+and the voice tier, and executes through the canonical permission-aware factory.
+This transport stays in the session workspace; workspace switching, interactive
+rendered UI, and approval-gated tools are unavailable. Screen metadata remains a
+local, opt-in capability. Discovery does not authorize a later request: execution
+rechecks access. A tool error is retained as an error rather than represented as
+a completed action. Provider call identifiers are preserved; this does not claim
+network-wide mutation deduplication or cancellation of dispatched writes.
+
+Resumption handles use protocol-specific, UUID-validated chat scopes so a
+canonical connection cannot restore legacy tool declarations, or vice versa.
+Both scopes still require ownership of the same conversation. The Rust GET
+session port follows the same validation; web remains the production runtime.
+
+`canonical-tool-bridge.test.ts`, the canonical execution route tests,
+`session-scope.test.ts`, and `assistant_live_repository_test.dart` cover schema
+validation, permissions, unavailable tools, scope separation, and compatibility.
+Provider calls and latency still require authenticated runtime verification.

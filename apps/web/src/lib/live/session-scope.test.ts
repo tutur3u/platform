@@ -11,6 +11,19 @@ import {
 const CHAT_ID = '123e4567-e89b-42d3-a456-426614174000';
 
 describe('live session scope validation', () => {
+  it('isolates canonical resumption handles from legacy declarations', () => {
+    const scopeKey = assistantChatScopeKey(CHAT_ID, 'canonical-v1');
+    expect(scopeKey).not.toBe(assistantChatScopeKey(CHAT_ID));
+    expect(validateLiveSessionScopeKey(scopeKey)).toEqual({
+      chatId: CHAT_ID,
+      kind: 'assistant-chat',
+      scopeKey,
+      valid: true,
+    });
+    expect(
+      validateLiveSessionScopeKey('assistant-canonical-v1:not-a-uuid').valid
+    ).toBe(false);
+  });
   it.each(['flash', 'pro'])(
     'accepts the versioned %s dashboard scope',
     (mode) => {
