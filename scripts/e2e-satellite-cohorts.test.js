@@ -464,3 +464,51 @@ test('public config discovery preserves finite configured policies before choosi
     assert.equal(isolationArgs(['--reporter=line,json'], list), null);
   }
 });
+
+test('discovery extracts only the reporter document amid stdout noise and preserves every selected test', () => {
+  const { GRAPH_PREFIX } = require('./e2e-config-reporter');
+  const report = {
+    config: { projects: [] },
+    suites: [
+      {
+        specs: [
+          {
+            file: 'e2e/lettin-wiki.noauth.spec.ts',
+            line: 1,
+            column: 1,
+            title: 'selected',
+            tests: [{ projectName: 'chromium' }],
+          },
+        ],
+      },
+    ],
+  };
+  const graph = `${GRAPH_PREFIX}${JSON.stringify({ projects: [] })}`;
+  const output = `dotenv loaded\n{"noise": "{braces}"}\n${graph}\n${JSON.stringify(report, null, 2)}\nafter reporter {noise}\n`;
+  const parsed = parseDiscoveryOutput(output);
+  assert.deepEqual(JSON.parse(parsed).suites, report.suites);
+  assert.equal(planSatelliteCohorts(parsed).flatMap((c) => c.rows).length, 1);
+});
+
+test('unparseable discovery retains raw satellite selection and disables cohort isolation', () => {
+  const { GRAPH_PREFIX } = require('./e2e-config-reporter');
+  const { isUnparsedDiscoveryOutput } = require('./e2e-satellite-cohorts');
+  const { getRequiredOwnedSatellites } = require('./e2e-owned-satellites');
+  for (const graph of [
+    `${GRAPH_PREFIX}{bad`,
+    `${GRAPH_PREFIX}{"projects":[]}`,
+  ]) {
+    const raw = `noise\n${graph}\n{"config":{},"suites":["lettin-wiki.noauth.spec.ts"`;
+    assert.equal(parseDiscoveryOutput(raw), raw);
+    assert.equal(isUnparsedDiscoveryOutput(raw), true);
+    assert.ok(
+      getRequiredOwnedSatellites([], {}, raw).some(
+        (s) => s.appName === 'lettin'
+      )
+    );
+  }
+  assert.equal(isUnparsedDiscoveryOutput('{"config":{}'), true);
+  const invalidManifest = '{"config":{},"suites":null}';
+  assert.equal(isUnparsedDiscoveryOutput(invalidManifest), false);
+  assert.throws(() => planSatelliteCohorts(invalidManifest), /Unreadable/);
+});

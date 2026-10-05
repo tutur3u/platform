@@ -4,16 +4,67 @@ const path = require('node:path');
 const { getRequiredOwnedSatellites } = require('./e2e-owned-satellites');
 const { shouldStartTasksSatellite } = require('./e2e-tasks-satellite');
 
+// Find complete reporter documents, not arbitrary brace-containing log messages.
 function parseDiscoveryOutput(output) {
   const lines = output.split(/\r?\n/);
   const graphs = lines.filter((line) => line.startsWith(GRAPH_PREFIX));
-  if (graphs.length !== 1) return output;
-  const graph = JSON.parse(graphs[0].slice(GRAPH_PREFIX.length));
-  const report = JSON.parse(
-    lines.filter((line) => !line.startsWith(GRAPH_PREFIX)).join('\n')
-  );
-  report.dependencyGraph = graph;
-  return JSON.stringify(report);
+  const text = lines
+    .filter((line) => !line.startsWith(GRAPH_PREFIX))
+    .join('\n');
+  const reports = [];
+  for (const match of text.matchAll(/^\s*\{/gm)) {
+    const start = match.index + match[0].lastIndexOf('{');
+    let depth = 0;
+    let quoted = false;
+    let escaped = false;
+    for (let index = start; index < text.length; index++) {
+      const char = text[index];
+      if (quoted) {
+        if (escaped) escaped = false;
+        else if (char === '\\') escaped = true;
+        else if (char === '"') quoted = false;
+      } else if (char === '"') quoted = true;
+      else if (char === '{' || char === '[') depth++;
+      else if (char === '}' || char === ']') {
+        if (--depth !== 0) continue;
+        try {
+          const report = JSON.parse(text.slice(start, index + 1));
+          if (
+            Array.isArray(report.suites) &&
+            Array.isArray(report.config?.projects)
+          )
+            reports.push(report);
+        } catch {
+          /* Keep raw discovery on incomplete or invalid JSON. */
+        }
+        break;
+      }
+    }
+  }
+  if (reports.length !== 1 || graphs.length !== 1) return output;
+  try {
+    reports[0].dependencyGraph = JSON.parse(
+      graphs[0].slice(GRAPH_PREFIX.length)
+    );
+    return JSON.stringify(reports[0]);
+  } catch {
+    return output;
+  }
+}
+
+function isUnparsedDiscoveryOutput(list) {
+  if (!list) return false;
+  if (list.includes(GRAPH_PREFIX)) return true;
+  // Ordinary JSON manifests still enter the planner, whose validation fails closed.
+  if (list.trimStart().startsWith('{')) {
+    try {
+      JSON.parse(list);
+      return false;
+    } catch {
+      return true;
+    }
+  }
+  return list.includes('"suites"') || list.includes('"config"');
 }
 
 function dependencyComponents(graph) {
@@ -371,6 +422,7 @@ async function runSatelliteCohorts({
 module.exports = {
   reportRows,
   parseDiscoveryOutput,
+  isUnparsedDiscoveryOutput,
   dependencyComponents,
   planSatelliteCohorts,
   cohortArgs,
