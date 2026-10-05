@@ -3,10 +3,8 @@ import {
   fetchCalendarViewPages,
   type MicrosoftCalendarEvent,
 } from '@tuturuuu/microsoft/calendar';
-import {
-  expandCalendarRecurrence,
-  UnsupportedCalendarRecurrenceError,
-} from '@tuturuuu/utils/calendar-recurrence';
+import { markProviderRecurrenceReadonly } from '@tuturuuu/utils/calendar-provider-readonly';
+import { expandCalendarRecurrence } from '@tuturuuu/utils/calendar-recurrence';
 import { CalendarSeriesError } from '../../service';
 import { verifyGraphLegacySeriesIdentities } from './graph-legacy-identities';
 import { readGraphSeriesSnapshot } from './graph-snapshot';
@@ -15,7 +13,10 @@ import {
   type InboundProviderAccess,
   prepareInboundProviderConnection,
 } from './service';
-import { ProviderSeriesDeletedError } from './snapshot-errors';
+import {
+  ProviderSeriesDeletedError,
+  ProviderSeriesUnsupportedError,
+} from './snapshot-errors';
 
 export async function reconcileGraphConnectionSeries(args: {
   access: InboundProviderAccess;
@@ -63,6 +64,7 @@ export async function reconcileGraphConnectionSeries(args: {
     });
     if (expanded.occurrences.length) masters.add(binding.master_id);
   }
+  for (const masterId of service.readonlyMasters ?? []) masters.add(masterId);
   if (masters.size > 1000)
     throw new RangeError('Provider recurrence master bound exceeded');
   const persistedIdentities = await verifyGraphLegacySeriesIdentities({
@@ -72,6 +74,7 @@ export async function reconcileGraphConnectionSeries(args: {
     authorize: service.authorize,
   });
   const handled = new Set<string>();
+  const readonly = new Map<string, string>();
   for (const masterId of masters) {
     try {
       const snapshot = await readGraphSeriesSnapshot({
@@ -122,9 +125,42 @@ export async function reconcileGraphConnectionSeries(args: {
       });
       for (const event of mutable) handled.add(event.id);
     } catch (error) {
-      const bound = service.bindings.some(
-        (value) => value.master_id === masterId
-      );
+      if (error instanceof ProviderSeriesUnsupportedError) {
+        const represented = events.filter(
+          (event) => event.id === masterId || event.seriesMasterId === masterId
+        );
+        const uids = new Set(
+          represented.flatMap((event) => (event.iCalUId ? [event.iCalUId] : []))
+        );
+        const mutable = args.legacyEvents.filter(
+          (event) => event.iCalUId && uids.has(event.iCalUId)
+        );
+        if (
+          represented.some((event) => !event.iCalUId) ||
+          uids.size !== represented.length ||
+          new Set(mutable.map((event) => event.iCalUId)).size !==
+            mutable.length ||
+          mutable.length !== represented.length
+        )
+          throw new CalendarSeriesError(
+            'Provider mutable identity bridge incomplete',
+            503,
+            'PROVIDER_IDENTITY_UNAVAILABLE'
+          );
+        const status = await service.unsupported(error.snapshot, [
+          ...represented.map((event) => event.id),
+          ...mutable.map((event) => event.id),
+          ...(persistedIdentities.get(masterId) ?? []),
+        ]);
+        for (const event of mutable) {
+          if (status === 'deferred') handled.add(event.id);
+          else readonly.set(event.id, masterId);
+        }
+        continue;
+      }
+      const bound =
+        service.bindings.some((value) => value.master_id === masterId) ||
+        (service.readonlyMasters ?? []).includes(masterId);
       const status = (error as { statusCode?: number })?.statusCode;
       if (
         bound &&
@@ -133,12 +169,6 @@ export async function reconcileGraphConnectionSeries(args: {
         await service.deleted(masterId);
         continue;
       }
-      if (
-        !bound &&
-        (error instanceof RangeError ||
-          error instanceof UnsupportedCalendarRecurrenceError)
-      )
-        continue;
       if (error instanceof CalendarSeriesError) throw error;
       throw new CalendarSeriesError(
         'Provider recurring snapshot unavailable',
@@ -147,5 +177,15 @@ export async function reconcileGraphConnectionSeries(args: {
       );
     }
   }
-  return args.legacyEvents.filter((event) => !handled.has(event.id));
+  return args.legacyEvents
+    .filter((event) => !handled.has(event.id))
+    .map((event) =>
+      readonly.has(event.id)
+        ? markProviderRecurrenceReadonly(
+            event,
+            'microsoft',
+            readonly.get(event.id)!
+          )
+        : event
+    );
 }

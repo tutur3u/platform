@@ -39,6 +39,7 @@ const binding = {
   calendar_id: 'calendar',
   master_id: 'master',
   etag: 'v1',
+  observation_hash: 'h1',
   metadata_journal: null,
   series: {
     id: seriesId,
@@ -105,9 +106,11 @@ beforeEach(() => {
   }));
   mocks.rpc.mockImplementation(async (_name, args) => ({
     data:
-      args.p_action === 'bindings'
-        ? [structuredClone(binding)]
-        : { status: 'applied' },
+      args.p_action === 'readonly-bindings'
+        ? []
+        : args.p_action === 'bindings'
+          ? [structuredClone(binding)]
+          : { status: 'applied' },
     error: null,
   }));
 });
@@ -125,6 +128,7 @@ describe('provider reconciliation publication fence', () => {
     ).toEqual(['2026-10-01T09:00:00', '2026-10-05T09:00:00']);
     expect(snapshotInput()).toMatchObject({
       expectedBindingETag: 'v1',
+      expectedBindingObservationHash: 'h1',
       etag: 'v2',
       representedInstanceIds: ['one'],
       payload: {
@@ -152,13 +156,16 @@ describe('provider reconciliation publication fence', () => {
     const service = await prepareInboundProviderConnection(access);
     mocks.rpc.mockImplementation(async (_name, args) => ({
       data:
-        args.p_action === 'bindings'
-          ? [{ ...binding, etag: 'v3' }]
-          : { status: 'deferred' },
+        args.p_action === 'readonly-bindings'
+          ? []
+          : args.p_action === 'bindings'
+            ? [{ ...binding, etag: 'v3' }]
+            : { status: 'deferred' },
       error: null,
     }));
     expect(await service.publish(publish)).toBe('deferred');
     expect(snapshotInput().expectedBindingETag).toBe('v1');
+    expect(snapshotInput().expectedBindingObservationHash).toBe('h1');
   });
   it('rechecks actor permission after provider reads and never publishes after revocation', async () => {
     const service = await prepareInboundProviderConnection(access);
@@ -190,10 +197,13 @@ describe('provider reconciliation publication fence', () => {
     const service = await prepareInboundProviderConnection(access);
     await service.publish(publish);
     const sealed = snapshotInput().metadataJournal;
-    mocks.rpc.mockResolvedValue({
-      data: [{ ...binding, metadata_journal: sealed }],
+    mocks.rpc.mockImplementation(async (_name, args) => ({
+      data:
+        args.p_action === 'readonly-bindings'
+          ? []
+          : [{ ...binding, metadata_journal: sealed }],
       error: null,
-    });
+    }));
     const reader = await prepareInboundProviderConnection(access);
     expect(await reader.readRetainedMetadata('master')).toEqual({
       master: publish.master,
@@ -205,6 +215,73 @@ describe('provider reconciliation publication fence', () => {
     });
     await expect(otherActor.readRetainedMetadata('master')).rejects.toThrow(
       'Encrypted provider journal unavailable'
+    );
+  });
+  it('seals unsupported raw rules before publishing and binds the original ETag', async () => {
+    const service = await prepareInboundProviderConnection(access);
+    expect(
+      await service.unsupported(
+        {
+          provider: 'microsoft',
+          masterId: 'master',
+          etag: 'v2',
+          master: { recurrence: { unsupported: 'private raw rule' } },
+          exceptions: [],
+        },
+        ['one', 'one']
+      )
+    ).toBe('applied');
+    const input = mocks.rpc.mock.calls.find(
+      ([, args]) => args.p_action === 'unsupported'
+    )?.[1].p_input;
+    expect(input).toMatchObject({
+      expectedBindingETag: 'v1',
+      expectedBindingObservationHash: 'h1',
+      etag: 'v2',
+      representedInstanceIds: ['one'],
+      metadataJournal: { version: 1 },
+    });
+    expect(JSON.stringify(input)).not.toContain('private raw rule');
+  });
+  it('rejects unsupported snapshot from another provider before any encrypted write', async () => {
+    const service = await prepareInboundProviderConnection(access);
+    await expect(
+      service.unsupported(
+        {
+          provider: 'google',
+          masterId: 'master',
+          etag: 'v2',
+          master: {},
+          exceptions: [],
+        },
+        []
+      )
+    ).rejects.toThrow('source changed');
+    expect(
+      mocks.rpc.mock.calls.some(([, args]) => args.p_action === 'unsupported')
+    ).toBe(false);
+  });
+  it('rejects readonly bindings from a foreign source', async () => {
+    mocks.rpc.mockImplementation(async (_name, args) => ({
+      data:
+        args.p_action === 'bindings'
+          ? []
+          : [
+              {
+                ws_id: wsId,
+                connection_id: connectionId,
+                provider: 'google',
+                calendar_id: 'foreign',
+                observation_hash: 'hash',
+                master_id: 'master',
+                etag: 'v1',
+                metadata_journal: { version: 1, ciphertext: 'encrypted' },
+              },
+            ],
+      error: null,
+    }));
+    await expect(prepareInboundProviderConnection(access)).rejects.toThrow(
+      'source changed'
     );
   });
 });

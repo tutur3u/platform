@@ -123,6 +123,8 @@ beforeEach(() => {
     etag: 'v1',
   });
   mocks.rpc.mockImplementation(async (name, args) => {
+    if (name === 'calendar_provider_series_is_readonly')
+      return { data: false, error: null };
     if (name === 'calendar_series_operation')
       return { data: series, error: null };
     if (args.p_action === 'read')

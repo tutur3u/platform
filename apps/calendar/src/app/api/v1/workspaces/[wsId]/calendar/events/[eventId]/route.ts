@@ -27,6 +27,7 @@ import {
   moveProviderEvent,
   updateProviderEvent,
 } from '@/lib/calendar/provider-writes';
+import { providerReadonlyEventResponse } from '@/lib/calendar/recurrence/provider/readonly';
 import {
   type ResolvedCalendarSource,
   resolveCalendarSource,
@@ -107,6 +108,13 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
+    const readonlyResponse = await providerReadonlyEventResponse({
+      sbAdmin,
+      wsId,
+      userId,
+      eventId,
+    });
+    if (readonlyResponse) return readonlyResponse;
     const body = await request.json();
     const validationResult = updateEventSchema.safeParse(body);
 
@@ -554,6 +562,13 @@ export async function DELETE(request: Request, { params }: Params) {
   const { sbAdmin, wsId, userId } = access;
 
   try {
+    const readonlyResponse = await providerReadonlyEventResponse({
+      sbAdmin,
+      wsId,
+      userId,
+      eventId,
+    });
+    if (readonlyResponse) return readonlyResponse;
     const retained = await getCalendarRetainedGeneration(
       request,
       rawWsId,

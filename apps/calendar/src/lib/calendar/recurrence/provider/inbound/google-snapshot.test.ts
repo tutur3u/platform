@@ -109,4 +109,34 @@ describe('complete non-expanded Google recurrence snapshot', () => {
     ]);
     await expect(f.run()).rejects.toThrow('source changed');
   });
+  it('retains an unsupported rule only after a complete revision-verified snapshot', async () => {
+    const rich = {
+      ...master,
+      recurrence: ['RRULE:FREQ=DAILY;COUNT=5;BYHOUR=9,11'],
+    };
+    const f = fixture([{ items: [rich, cancelled] }]);
+    f.get.mockResolvedValue({ data: rich });
+    await expect(f.run()).rejects.toMatchObject({
+      name: 'ProviderSeriesUnsupportedError',
+      snapshot: {
+        provider: 'google',
+        masterId: 'master',
+        etag: 'v1',
+        master: { recurrence: rich.recurrence },
+        exceptions: [cancelled],
+      },
+    });
+    expect(f.get).toHaveBeenCalledTimes(2);
+  });
+  it('never classifies an unstable unsupported rule as a readonly snapshot', async () => {
+    const rich = {
+      ...master,
+      recurrence: ['RRULE:FREQ=DAILY;COUNT=5;BYHOUR=9,11'],
+    };
+    const f = fixture([{ items: [rich] }]);
+    f.get
+      .mockResolvedValueOnce({ data: rich })
+      .mockResolvedValueOnce({ data: { ...rich, etag: 'v2' } });
+    await expect(f.run()).rejects.toThrow('changed during snapshot');
+  });
 });

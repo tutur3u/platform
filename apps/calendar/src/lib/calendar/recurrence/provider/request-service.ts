@@ -24,6 +24,7 @@ import {
   providerSeriesCreatePlan,
   providerSeriesMutationPlan,
 } from './plan';
+import { assertProviderSeriesWritable } from './readonly';
 import {
   ProviderJournalBindingSchema,
   ProviderOperationInputSchema,
@@ -176,6 +177,12 @@ export async function reserveProviderOperation(access: Access, raw: unknown) {
       event: input.event,
     });
   } else {
+    await assertProviderSeriesWritable({
+      sbAdmin: access.sbAdmin,
+      wsId: access.wsId,
+      userId: access.userId,
+      seriesId: input.seriesId,
+    });
     const stored = await readSeries(
       access.sbAdmin,
       access.wsId,

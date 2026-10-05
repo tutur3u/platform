@@ -1548,6 +1548,8 @@
       "monthly": "Hàng tháng",
       "nativeOnly": "Lưu vào Lịch Tuturuuu. Giờ địa phương không tồn tại khi đổi giờ mùa hè sẽ được bỏ qua. Lịch lặp của nhà cung cấp được quản lý riêng.",
       "never": "Không có ngày kết thúc",
+      "provider_readonly": "Sự kiện lặp lại chỉ đọc",
+      "provider_readonly_description": "Không thể chỉnh sửa an toàn quy tắc lặp lại này tại đây. Hãy quản lý chuỗi sự kiện trong lịch gốc.",
       "reload": "Tải lại chuỗi",
       "SA": "T7",
       "save": "Lưu",

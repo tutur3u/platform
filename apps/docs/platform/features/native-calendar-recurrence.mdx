@@ -35,3 +35,27 @@ all-day boundaries, original identities, remaining counts and retry intent IDs;
 `use-native-calendar-occurrences.test.tsx` covers SWR and actor/permission fences;
 `use-calendar-readonly.test.tsx` proves virtual mutations cannot reach ordinary
 write APIs.
+
+## Unsupported provider rules
+
+When the provider recurrence pilot is enabled, a complete, stable Google or
+Outlook snapshot with an unsupported rule becomes **read-only**. The exact raw
+master and exceptions are retained in an actor/source-bound encrypted journal;
+no approximate native rule is created. Calendar and integrated Tasks Calendar
+show a read-only badge and direct the user to the original calendar. Ordinary
+writes and scoped provider writes check authoritative private state, including
+when a delayed import loses its visible metadata marker.
+
+A previously supported canonical series is hidden rather than left visible with
+outdated dates. A subsequent supported snapshot restores the same series identity
+and removes verified legacy duplicates atomically. Publication compares both the captured master ETag and observation hash, so
+separately edited exceptions cannot overwrite a newer observation. Pending
+canonical or ordinary provider operations defer this transition; database admission rejects new legacy
+operations after the read-only state is published. Other calendars and unmatched
+provider identities remain untouched.
+
+The provider mutation pilot remains disabled by default. These checks do not
+establish authenticated Google/Outlook write parity or enable provider editing in
+the native creation dialog. Rollout still requires provider runtime verification.
+Regression evidence: `calendar-provider-readonly.sql`, provider inbound snapshot
+and service tests, `readonly.test.ts`, and `calendar-provider-readonly.test.ts`.

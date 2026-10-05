@@ -3,6 +3,7 @@ import { ColorOperationError } from '@/lib/calendar/google-color-operations/prot
 
 const mocks = vi.hoisted(() => ({
   authorize: vi.fn(),
+  readonlyResponse: vi.fn(),
   retained: vi.fn(),
   recoverablePut: vi.fn(),
   nativePut: vi.fn(),
@@ -60,6 +61,10 @@ vi.mock('@/lib/workspace-encryption', () => ({
   getWorkspaceKey: mocks.getWorkspaceKey,
 }));
 
+vi.mock('@/lib/calendar/recurrence/provider/readonly', () => ({
+  providerReadonlyEventResponse: mocks.readonlyResponse,
+}));
+
 import { DELETE, GET, PUT } from './route';
 
 const WS_ID = '00000000-0000-4000-8000-000000008611';
@@ -90,7 +95,31 @@ function chainResult(result: unknown) {
   return chain;
 }
 
+beforeEach(() => mocks.readonlyResponse.mockResolvedValue(null));
+
 describe('workspace calendar event item authorization', () => {
+  it.each(['PUT', 'DELETE'])(
+    'blocks unsupported provider %s before local/provider mutation',
+    async (method) => {
+      const from = vi.fn();
+      mocks.authorize.mockResolvedValue({
+        sbAdmin: { from },
+        wsId: WS_ID,
+        userId: 'actor',
+      });
+      mocks.readonlyResponse.mockResolvedValue(
+        Response.json({ code: 'PROVIDER_RULE_READ_ONLY' }, { status: 422 })
+      );
+      const response = await (method === 'PUT' ? PUT : DELETE)(
+        request(method, { title: 'Changed' }),
+        params()
+      );
+      expect(response.status).toBe(422);
+      expect(from).not.toHaveBeenCalled();
+      expect(mocks.updateProvider).not.toHaveBeenCalled();
+      expect(mocks.deleteProviderEvent).not.toHaveBeenCalled();
+    }
+  );
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.retained.mockResolvedValue(null);

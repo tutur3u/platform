@@ -4,6 +4,7 @@ import {
   fetchMicrosoftEvents,
 } from '@tuturuuu/microsoft/calendar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { providerReadonlyProjection } from '@tuturuuu/utils/calendar-provider-readonly';
 import { reconcileGraphConnectionSeries } from './recurrence/provider/inbound/graph-connection';
 import { sanitizeWorkspaceCalendarEventFields } from './sync-field-limits';
 import { type CalendarAuthToken, ensureValidToken } from './token-refresh';
@@ -120,6 +121,7 @@ export async function syncMicrosoftInbound(args: {
             source_calendar_id: connection.workspace_calendar_id ?? null,
             google_event_id: null,
             google_calendar_id: null,
+            ...providerReadonlyProjection(event),
             ...(args.settingsAvailable
               ? {
                   external_updated_at: event.lastModifiedDateTime ?? null,

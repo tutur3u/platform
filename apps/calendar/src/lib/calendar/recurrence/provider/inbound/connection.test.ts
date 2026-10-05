@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   view: vi.fn(),
   publish: vi.fn(),
   deleted: vi.fn(),
+  unsupported: vi.fn(),
   authorize: vi.fn(),
   legacyIdentities: vi.fn(async () => new Map()),
 }));
@@ -36,7 +37,10 @@ vi.mock('@tuturuuu/microsoft/calendar', async (importOriginal) => ({
 
 import { reconcileGoogleConnectionSeries } from './google-connection';
 import { reconcileGraphConnectionSeries } from './graph-connection';
-import { ProviderSeriesDeletedError } from './snapshot-errors';
+import {
+  ProviderSeriesDeletedError,
+  ProviderSeriesUnsupportedError,
+} from './snapshot-errors';
 
 const connectionId = '00000000-0000-4000-8000-000000009811';
 const access = {
@@ -104,8 +108,10 @@ beforeEach(() => {
     authorize: mocks.authorize,
     publish: mocks.publish,
     deleted: mocks.deleted,
+    unsupported: mocks.unsupported,
   }));
   mocks.publish.mockResolvedValue('applied');
+  mocks.unsupported.mockResolvedValue('applied');
   mocks.deleted.mockResolvedValue('deleted');
   mocks.view.mockResolvedValue([]);
   mocks.google.mockResolvedValue({
@@ -164,12 +170,12 @@ describe('live connection recurrence reconciliation', () => {
     ).toEqual([]);
     expect(mocks.deleted).toHaveBeenCalledWith('master');
   });
-  it('leaves richer unsupported new Google rules in ordinary read-only provider projection', async () => {
+  it('rejects incomplete new Google snapshots without unsafe legacy fallback', async () => {
     mocks.google.mockRejectedValue(new RangeError('Unsupported'));
     const events = [{ id: 'one', recurringEventId: 'master' }];
-    expect(
-      await reconcileGoogleConnectionSeries({ ...googleArgs, events })
-    ).toEqual(events);
+    await expect(
+      reconcileGoogleConnectionSeries({ ...googleArgs, events })
+    ).rejects.toMatchObject({ status: 503 });
     expect(mocks.publish).not.toHaveBeenCalled();
   });
   it('never leaks raw credential-bearing SDK errors into existing sync logs', async () => {
@@ -213,4 +219,40 @@ describe('live connection recurrence reconciliation', () => {
     );
     expect(mocks.publish).not.toHaveBeenCalled();
   });
+  it.each(['applied', 'deferred'])(
+    'returns read-only Google projection only after %s receipt',
+    async (status) => {
+      mocks.unsupported.mockResolvedValue(status);
+      mocks.google.mockRejectedValue(
+        new ProviderSeriesUnsupportedError({
+          provider: 'google',
+          masterId: 'master',
+          etag: 'v1',
+          master: { recurrence: ['RDATE:20261001T090000Z'] },
+          exceptions: [],
+        })
+      );
+      const events = [{ id: 'one', recurringEventId: 'master' }];
+      const result = await reconcileGoogleConnectionSeries({
+        ...googleArgs,
+        events,
+      });
+      expect(mocks.unsupported).toHaveBeenCalledWith(
+        expect.objectContaining({ masterId: 'master' }),
+        ['one']
+      );
+      if (status === 'deferred') expect(result).toEqual([]);
+      else
+        expect(result).toEqual([
+          expect.objectContaining({
+            id: 'one',
+            __tuturuuuProviderReadonlyRecurrence: {
+              state: 'unsupported',
+              provider: 'google',
+              master_id: 'master',
+            },
+          }),
+        ]);
+    }
+  );
 });

@@ -1,5 +1,6 @@
 import { type calendar_v3, OAuth2Client } from '@tuturuuu/google';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { providerReadonlyProjection } from '@tuturuuu/utils/calendar-provider-readonly';
 import { convertGoogleAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import {
   type GoogleColorContext,
@@ -73,7 +74,9 @@ export const formatEventForDb = (
     end_at,
     location: event.location || '',
     color: googleColorCompatibilityValue(event.colorId),
+    ...providerReadonlyProjection(event),
     scheduling_metadata: {
+      ...providerReadonlyProjection(event).scheduling_metadata,
       google_color: resolveGoogleEventColor(event, {
         ...colorContext,
         calendarId: google_calendar_id || 'primary',
