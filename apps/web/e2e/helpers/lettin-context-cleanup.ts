@@ -3,7 +3,8 @@ import { safeLettinPhaseFailure } from './lettin-phase-diagnostics';
 
 export async function withLettinContextCleanup<T>(
   context: BrowserContext,
-  action: () => Promise<T>
+  action: () => Promise<T>,
+  kind: 'import' | 'Markdown' = 'import'
 ): Promise<T> {
   const outcome = await action().then(
     (value) => ({ ok: true as const, value }),
@@ -11,6 +12,7 @@ export async function withLettinContextCleanup<T>(
   );
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
+    console.info(`[lettin-e2e] close ${kind} context: started`);
     await Promise.race([
       context.close(),
       new Promise<never>((_resolve, reject) => {
@@ -20,9 +22,10 @@ export async function withLettinContextCleanup<T>(
         );
       }),
     ]);
+    console.info(`[lettin-e2e] close ${kind} context: completed`);
   } catch (error) {
     console.warn(
-      '[lettin-e2e] close import context: failed',
+      `[lettin-e2e] close ${kind} context: failed`,
       safeLettinPhaseFailure(error)
     );
     if (outcome.ok) throw error;

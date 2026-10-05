@@ -87,6 +87,7 @@ export function ExocorpseImport({ wsId }: { wsId: string }) {
             <label className="block space-y-2 text-sm">
               {t('importSource')}
               <select
+                aria-label={t('importSource')}
                 className="block w-full rounded border bg-card p-2"
                 value={source}
                 disabled={pending}
