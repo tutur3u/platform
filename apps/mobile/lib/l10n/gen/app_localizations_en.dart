@@ -10205,4 +10205,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notesVoiceProposalNotice => 'Suggestions need your review. Saving does not create tasks or calendar events. Team workspace notes may be visible to workspace members.';
+
+  @override
+  String get cmsSearchHint => 'Search collections and entries';
 }

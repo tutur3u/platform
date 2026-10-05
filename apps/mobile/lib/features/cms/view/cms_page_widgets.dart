@@ -203,8 +203,13 @@ class _CollectionTile extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(onPressed: onEdit, icon: const Icon(Icons.edit_outlined)),
           IconButton(
+            tooltip: context.l10n.commonEdit,
+            onPressed: onEdit,
+            icon: const Icon(Icons.edit_outlined),
+          ),
+          IconButton(
+            tooltip: context.l10n.commonDelete,
             onPressed: onDelete,
             icon: const Icon(Icons.delete_outline_rounded),
           ),
@@ -249,10 +254,12 @@ class _EntryTile extends StatelessWidget {
                 ),
               ),
               IconButton(
+                tooltip: context.l10n.commonEdit,
                 onPressed: onEdit,
                 icon: const Icon(Icons.edit_outlined),
               ),
               IconButton(
+                tooltip: context.l10n.commonDelete,
                 onPressed: onDelete,
                 icon: const Icon(Icons.delete_outline_rounded),
               ),

@@ -4347,5 +4347,6 @@
     "notesVoicePermission": "Cần quyền truy cập micrô để ghi âm ghi chú.",
     "notesVoiceRecordingError": "Không thể thu bản ghi âm. Vui lòng thử lại.",
     "notesVoiceFailed": "Không thể bắt đầu phân tích. Thử lại với bản ghi âm này khi vẫn còn khả dụng.",
-    "notesVoiceProposalNotice": "Các đề xuất cần được bạn xem lại. Lưu ghi chú không tạo công việc hoặc sự kiện lịch. Ghi chú trong không gian nhóm có thể hiển thị với thành viên."
+    "notesVoiceProposalNotice": "Các đề xuất cần được bạn xem lại. Lưu ghi chú không tạo công việc hoặc sự kiện lịch. Ghi chú trong không gian nhóm có thể hiển thị với thành viên.",
+    "cmsSearchHint": "Tìm bộ sưu tập và bài viết"
 }
