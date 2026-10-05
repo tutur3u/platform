@@ -60,7 +60,7 @@ export default async function CalendarPage({
   const workspace = await getWorkspace(wsId, { useAdmin: true, user });
   if (!workspace) notFound();
 
-  const permissions = await getPermissions({ user, wsId });
+  const permissions = await getPermissions({ user, wsId: workspace.id });
   if (!permissions) notFound();
 
   const { withoutPermission } = permissions;
