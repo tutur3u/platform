@@ -124,17 +124,19 @@ class AssistantTranscriptBubble extends StatelessWidget {
                                 .toList(growable: false),
                           ),
                         ],
-                        if (toolParts.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          AssistantToolResultsSection(parts: toolParts),
-                        ],
-                        if (toolNames.isNotEmpty && toolParts.isEmpty) ...[
-                          const SizedBox(height: 8),
-                          _AssistantToolCallsCollapsible(toolNames: toolNames),
-                        ],
                       ],
                     ),
                   ),
+                if (orderedParts.isEmpty || alignEnd) ...[
+                  if (toolParts.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    AssistantToolResultsSection(parts: toolParts),
+                  ],
+                  if (toolNames.isNotEmpty && toolParts.isEmpty) ...[
+                    const SizedBox(height: 8),
+                    _AssistantToolCallsCollapsible(toolNames: toolNames),
+                  ],
+                ],
                 if (timestampLabel != null && !isDraft)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),

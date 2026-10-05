@@ -5,10 +5,14 @@ class AssistantSettingsSheetBody extends StatelessWidget {
   const AssistantSettingsSheetBody({
     required this.keepLiveWhileBrowsing,
     required this.onKeepLiveWhileBrowsingChanged,
+    this.enabled = true,
+    this.showTitle = true,
     super.key,
   });
 
   final bool keepLiveWhileBrowsing;
+  final bool enabled;
+  final bool showTitle;
   final Future<void> Function({required bool value})
   onKeepLiveWhileBrowsingChanged;
 
@@ -23,20 +27,22 @@ class AssistantSettingsSheetBody extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              context.l10n.assistantSettingsTitle,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
+            if (showTitle)
+              Text(
+                context.l10n.assistantSettingsTitle,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
+            if (showTitle) const SizedBox(height: 12),
             SwitchListTile.adaptive(
               value: keepLiveWhileBrowsing,
               title: Text(context.l10n.assistantKeepLiveBrowsingTitle),
               subtitle: Text(context.l10n.assistantKeepLiveBrowsingDescription),
               contentPadding: EdgeInsets.zero,
-              onChanged: (value) =>
-                  onKeepLiveWhileBrowsingChanged(value: value),
+              onChanged: enabled
+                  ? (value) => onKeepLiveWhileBrowsingChanged(value: value)
+                  : null,
             ),
           ],
         ),
