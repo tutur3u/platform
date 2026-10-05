@@ -1478,3 +1478,17 @@ response. Queued manual season refresh is also bound to the generation, preventi
 A-to-B-to-A scope changes from resuming an old continuation. Regression coverage:
 `mail_repository_test.dart`, `workspace_secrets_repository_test.dart`,
 `cache_revalidation_test.dart`, and `season_pricing_controller_test.dart`.
+
+### CMS actor-bound repository reads and edits
+
+CMS repositories created for a signed-in actor bind cached summary, collection,
+and entry reads to that actor. Pending edits are overlaid only for their owner;
+an account change during queue access rejects the old read. CMS writes carry the
+same actor into offline admission, and invalidation targets that actor's workspace
+cache. Unbound legacy callers resolve the current actor for pending overlays and
+never display anonymous or another account's pending edits. This foundation does
+not grant CMS permissions or replace API authorization.
+
+Regression evidence: `cms_actor_scope_test.dart` exercises collection and entry
+overlays, delayed queue completion after account switching, and obsolete reads
+and writes. The native CMS screen and device verification remain separate work.
