@@ -19182,6 +19182,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recording audio'**
   String get voiceRecording;
+
+  /// No description provided for @notesVoiceRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Record voice note'**
+  String get notesVoiceRecord;
+
+  /// No description provided for @notesVoiceAnalyze.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribe and analyze'**
+  String get notesVoiceAnalyze;
+
+  /// No description provided for @notesVoiceCredits.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses your personal AI credits. Review results before saving.'**
+  String get notesVoiceCredits;
+
+  /// No description provided for @notesVoiceProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribing and preparing notes…'**
+  String get notesVoiceProcessing;
+
+  /// No description provided for @notesVoiceReviewRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing needs review. We will not automatically repeat a paid request.'**
+  String get notesVoiceReviewRequired;
+
+  /// No description provided for @notesVoiceUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update voice analysis. Your available result is retained.'**
+  String get notesVoiceUnavailable;
+
+  /// No description provided for @notesVoiceReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review voice note'**
+  String get notesVoiceReview;
+
+  /// No description provided for @notesVoiceSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save note to this workspace'**
+  String get notesVoiceSave;
+
+  /// No description provided for @notesVoiceSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice note saved'**
+  String get notesVoiceSaved;
+
+  /// No description provided for @notesVoiceDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete private voice result'**
+  String get notesVoiceDelete;
+
+  /// No description provided for @notesVoiceNoSpeech.
+  ///
+  /// In en, this message translates to:
+  /// **'No speech was detected. Record again when ready.'**
+  String get notesVoiceNoSpeech;
+
+  /// No description provided for @notesVoiceTranscript.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcript'**
+  String get notesVoiceTranscript;
+
+  /// No description provided for @notesVoiceSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary'**
+  String get notesVoiceSummary;
+
+  /// No description provided for @notesVoiceDecisions.
+  ///
+  /// In en, this message translates to:
+  /// **'Decisions'**
+  String get notesVoiceDecisions;
+
+  /// No description provided for @notesVoiceActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposed action items'**
+  String get notesVoiceActions;
+
+  /// No description provided for @notesVoiceRecommendations.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommendations'**
+  String get notesVoiceRecommendations;
+
+  /// No description provided for @notesVoiceQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Open questions'**
+  String get notesVoiceQuestions;
+
+  /// No description provided for @notesVoiceEvidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcript evidence'**
+  String get notesVoiceEvidence;
+
+  /// No description provided for @notesVoiceNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Record another voice note'**
+  String get notesVoiceNew;
+
+  /// No description provided for @notesVoicePermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone access is needed to record a voice note.'**
+  String get notesVoicePermission;
+
+  /// No description provided for @notesVoiceRecordingError.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording could not be captured. Please try again.'**
+  String get notesVoiceRecordingError;
+
+  /// No description provided for @notesVoiceFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis could not start. Retry with the same recording while it is available.'**
+  String get notesVoiceFailed;
+
+  /// No description provided for @notesVoiceProposalNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestions need your review. Saving does not create tasks or calendar events. Team workspace notes may be visible to workspace members.'**
+  String get notesVoiceProposalNotice;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

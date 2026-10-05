@@ -4,9 +4,32 @@ description: Private, metered voice transcripts and proposals with explicit retr
 ---
 
 The Notes voice API accepts a short native recording and returns an actor-owned
-job. This foundation does not yet expose mobile recording controls; the native
-Notes dock integration follows separately. Existing Notes editing and locking
-remain unchanged.
+job. Native Notes exposes recording from its list, using the existing persistent
+shell dock rather than mounting another navbar. Recording remains local until the
+user pauses and explicitly chooses transcription/analysis, with a personal-credit
+notice. Pause, resume, retake and cancel remain in the same dock; backgrounding
+pauses recording, and account/workspace changes or leaving Notes discard unsent
+recording bytes. Existing Notes editing and locking remain unchanged.
+
+Completed results use a compact review sheet with transcript, summary, decisions,
+proposed actions, recommendations and evidence. A successful transcript can also
+be reviewed/saved if the later analysis has a known failure. **Save note to this
+workspace** is explicit: private results become an ordinary workspace Note, which
+may be visible to team members. Saving creates no task or event. The voice job UUID
+is the stable Note ID, so retrying a save does not duplicate the note or overwrite
+later user edits. Users can edit the saved note through the existing editor.
+
+Only the stable job intent is persisted before dispatch, so navigation can recover
+a submitted job without persisting its audio. The latest authorized job is cached
+under its actor/workspace, shown immediately on return and revalidated even when
+fresh. Transport, 429/5xx and MFA challenges
+retain that scoped result; definitive access loss/not-found removes it. Old async
+responses are fenced across account/workspace away-and-back transitions. Temporary
+status failures offer explicit retry; ongoing successful status requests poll only
+while Notes is active. In-memory recording bytes permit explicit safe preflight
+retries using the same request ID/revision. After navigation discards those bytes,
+users can retain a successful transcript or record again; paid uncertain jobs
+never automatically restart.
 
 Input is mono 16 kHz PCM16 WAV, at most 120 seconds. The server verifies actual
 frames and bounds streamed multipart bytes rather than trusting a claimed duration.
@@ -40,4 +63,8 @@ Clients must not automatically resubmit review-required jobs.
 Regression coverage: `notes-voice/audio.test.ts`, `jobs.test.ts`, `provider.test.ts`,
 `request.test.ts`, the internal API client tests, and `note-voice-jobs.sql` cover
 input limits, metering, actor isolation, revision/retry behavior and RLS. API routes
-are first-class Next handlers tracked as Rust migration backlog.
+are first-class Next handlers tracked as Rust migration backlog. Native cubit,
+repository and widget regressions cover owner transitions, retry intents, retained
+snapshots, denied access, real recording controls, enlarged-text review and explicit
+stable-ID saves. Device microphone/provider execution and production deployment
+remain separate runtime verification gates.
