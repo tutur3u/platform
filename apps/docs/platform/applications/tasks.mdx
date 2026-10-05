@@ -1226,3 +1226,15 @@ export function BoardView({
 - [Database Schema](/reference/database/schema-overview)
 - [Data Fetching](/platform/architecture/data-fetching)
 - [Authorization](/platform/architecture/authorization)
+
+## Returning to a Tasks tab
+
+Board views in Tasks and the platform keep cached cards visible while refreshing
+the loaded pages and board/list metadata on browser focus, visibility restoration,
+back/forward restoration, or reconnect. Paired wake events are coalesced for one
+second; a later tab visit refreshes again instead of waiting five minutes. This is
+scoped to the mounted board and preserves accumulated pagination and local edits.
+My Tasks uses its separate 30-second TanStack Query freshness policy; unrelated
+satellite queries retain their defaults. Regression coverage lives in
+`packages/tasks-ui/src/tu-do/shared/__tests__/board-client.test.tsx` and
+`use-progressive-board-loader-resume.test.tsx`.
