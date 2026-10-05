@@ -5340,7 +5340,8 @@
     "stdin": "Standard input",
     "stop": "Stop environment",
     "test": "Run public tests",
-    "title": "Hosted playgrounds"
+    "title": "Hosted playgrounds",
+    "loadMoreResources": "Load more problems"
   },
   "promotion-data-table": {
     "code": "Code",

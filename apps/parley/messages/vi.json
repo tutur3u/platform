@@ -5340,7 +5340,8 @@
     "stdin": "Đầu vào chuẩn",
     "stop": "Dừng môi trường",
     "test": "Chạy kiểm thử công khai",
-    "title": "Playground được lưu trữ"
+    "title": "Playground được lưu trữ",
+    "loadMoreResources": "Tải thêm bài tập"
   },
   "promotion-data-table": {
     "code": "Mã giảm giá",

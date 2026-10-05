@@ -270,7 +270,8 @@ export async function savePlayground(
 export async function createPlayground(
   actorId: string,
   payload: unknown,
-  meetingId?: string
+  meetingId?: string,
+  options: { empty?: boolean } = {}
 ) {
   const parsed = PlaygroundCreate.safeParse(payload);
   if (!parsed.success) throw new AccountServiceError(400);
@@ -285,7 +286,11 @@ export async function createPlayground(
     await savePlayground(
       actorId,
       id,
-      { revision: 0, files: [{ path, content }], command },
+      {
+        revision: 0,
+        files: [{ path, content: options.empty ? '' : content }],
+        command,
+      },
       undefined,
       meetingId
     );
