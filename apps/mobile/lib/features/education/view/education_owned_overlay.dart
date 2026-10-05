@@ -33,10 +33,20 @@ class _EducationOwnedOverlay extends StatefulWidget {
 }
 
 class _EducationOwnedOverlayState extends State<_EducationOwnedOverlay> {
+  bool _listening = false;
   @override
   void initState() {
     super.initState();
-    widget.alive.addListener(_ownerChanged);
+    if (widget.alive.value) {
+      widget.alive.addListener(_ownerChanged);
+      _listening = true;
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!widget.alive.value) _ownerChanged();
   }
 
   void _ownerChanged() {
@@ -48,11 +58,13 @@ class _EducationOwnedOverlayState extends State<_EducationOwnedOverlay> {
         navigator.removeRoute(route);
       }
     });
+    // A covered route may be settled with no subsequent frame scheduled.
+    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
   @override
   void dispose() {
-    widget.alive.removeListener(_ownerChanged);
+    if (_listening) widget.alive.removeListener(_ownerChanged);
     super.dispose();
   }
 
