@@ -399,6 +399,16 @@ failure diagnostics, redaction, artifact upload, and `always()` cleanup still
 run; the reserve is a budget, not proof that runner or Docker failures cannot
 prevent them. Setup exhausting the runtime budget fails before starting tests.
 Validate this policy with `node --test scripts/ci/e2e-runtime-budget.test.js`.
+Lettin workspace GET diagnostics are enabled in CI, or explicitly with
+`LETTIN_READ_DIAGNOSTICS=true` for a bounded investigation. They emit fixed
+`[lettin-read]` stage names and monotonic elapsed milliseconds for actor resolution,
+Cloudflare bindings, D1 reads and Supabase member/permission reads. A started stage
+without completion identifies an unfinished dependency; a completed duration shows
+where time was spent. Failures preserve the original error while logging only the
+stage and elapsed time, never actor/workspace IDs, request URLs, data or raw errors.
+These measurements diagnose stalls; they do not change authorization, retries or
+request timeouts. Outside CI, leave the flag disabled after collecting evidence.
+
 For wrapped native select controls, Playwright’s exact label matching includes
 nested option text. Give the import Source select an explicit localized accessible
 label so canonical-file selection remains reliable; the focused import component
