@@ -28,7 +28,7 @@
     "page:/:locale/login:apps/lettin/src/app/[locale]/login/page.tsx": {
       "status": "legacy-next",
       "targetOwner": "tanstack-start",
-      "note": "Lettin login redirects resolve authenticated app sessions only after the request-time boundary inside Suspense. Preserve cross-app login return URLs and refresh handling when migrating."
+      "note": "Lettin proxy resolves login with an HTTP 307 and Location header before rendering. Preserve verified shared-session checks, cross-app login return URLs, cookie propagation, and explicit refresh handling when migrating."
     },
     "page:/:locale/:wsId/worlds/:worldId:apps/lettin/src/app/[locale]/[wsId]/worlds/[worldId]/page.tsx": {
       "status": "legacy-next",
