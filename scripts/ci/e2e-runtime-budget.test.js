@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const { spawnSync } = require('node:child_process');
+const { spawn, spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
@@ -66,24 +66,43 @@ test('owned runtime deadline returns a failing status for a stalled command', ()
   assert.ok(Date.now() - started < 2500);
 });
 
-test('owned runtime deadline kills a command that ignores TERM', () => {
+test('owned runtime deadline kills a TERM-ignoring command after readiness', async () => {
   const timeout = process.platform === 'darwin' ? 'gtimeout' : 'timeout';
-  const started = Date.now();
-  const result = spawnSync(
+  const child = spawn(
     timeout,
     [
       '--signal=TERM',
       '--kill-after=0.2s',
-      '0.2s',
+      '10s',
       process.execPath,
       '-e',
-      "process.on('SIGTERM', () => {}); setInterval(() => {}, 1000)",
+      // Deliberately take longer than the old 200ms deadline to become ready.
+      "setTimeout(() => { process.on('SIGTERM', () => process.stdout.write('term\\n')); process.stdout.write('ready\\n'); setInterval(() => {}, 1000); }, 500)",
     ],
-    { encoding: 'utf8', timeout: 3000 }
+    { stdio: ['ignore', 'pipe', 'pipe'] }
   );
-  assert.equal(result.error, undefined);
-  // GNU timeout may itself receive the group KILL: direct spawn reports the
-  // signal, whereas a shell reports its conventional exit status 137.
-  assert.ok(result.status === 137 || result.signal === 'SIGKILL');
-  assert.ok(Date.now() - started < 2500);
+  let output = '';
+  let readyAt;
+  let armTimer;
+  child.stdout.on('data', (chunk) => {
+    output += chunk;
+    if (readyAt === undefined && output.includes('ready\n')) {
+      readyAt = Date.now();
+      // GNU timeout handles SIGALRM as its deadline firing. Arm that deadline
+      // only after the child's TERM handler is installed, not during startup.
+      armTimer = setTimeout(() => child.kill('SIGALRM'), 200);
+    }
+  });
+  const result = await new Promise((resolve, reject) => {
+    child.once('error', reject);
+    child.once('exit', (code, signal) => resolve({ code, signal }));
+  }).finally(() => clearTimeout(armTimer));
+  assert.notEqual(readyAt, undefined, 'owned child must announce readiness');
+  assert.ok(
+    output.includes('term\n'),
+    'installed TERM handler must receive deadline signal'
+  );
+  // Direct spawn reports group KILL as a signal; shell invocation reports 137.
+  assert.ok(result.code === 137 || result.signal === 'SIGKILL');
+  assert.ok(Date.now() - readyAt < 2500);
 });
