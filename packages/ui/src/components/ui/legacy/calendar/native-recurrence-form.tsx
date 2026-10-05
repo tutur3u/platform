@@ -97,11 +97,21 @@ export function NativeRecurrenceForm({
     });
     onDone();
   }, [actor, client, wsId, onDone]);
+  const finishProvider = useCallback(() => {
+    actor.assertActive();
+    // Calendar combines canonical occurrences with retained provider/database views.
+    // Revalidate those views only after provider publication, including a resumed creation.
+    void client.invalidateQueries({
+      queryKey: ['databaseCalendarEvents', wsId],
+    });
+    void client.invalidateQueries({ queryKey: ['googleCalendarEvents', wsId] });
+    finish();
+  }, [actor, client, wsId, finish]);
   const providerOperation = useProviderRecurrenceOperation({
     wsId,
     actor,
     identity: occurrence?.id ?? 'new',
-    onApplied: finish,
+    onApplied: finishProvider,
   });
   const providerBlocked = !!series?.providerSource && !providerAllowed;
   const frozen = readOnly || providerBlocked || providerOperation.pending;

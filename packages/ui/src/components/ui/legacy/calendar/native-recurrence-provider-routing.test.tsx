@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   capabilities: vi.fn(),
   providerSubmit: vi.fn(),
   pending: false,
+  applied: (() => {}) as () => void,
 }));
 vi.mock('@tuturuuu/internal-api/calendar-series', () => ({
   getNativeCalendarSeries: mocks.getSeries,
@@ -34,15 +35,22 @@ vi.mock('../../../../hooks/use-native-calendar-occurrences', () => ({
   nativeOccurrencesKey: (wsId: string) => ['occurrences', wsId],
 }));
 vi.mock('./use-provider-recurrence-operation', () => ({
-  useProviderRecurrenceOperation: () => ({
-    pending: mocks.pending,
-    submission: {
-      mutate: mocks.providerSubmit,
-      isPending: false,
-      isError: false,
-    },
-    retry: vi.fn(),
-  }),
+  useProviderRecurrenceOperation: ({
+    onApplied,
+  }: {
+    onApplied: () => void;
+  }) => {
+    mocks.applied = onApplied;
+    return {
+      pending: mocks.pending,
+      submission: {
+        mutate: mocks.providerSubmit,
+        isPending: false,
+        isError: false,
+      },
+      retry: vi.fn(),
+    };
+  },
 }));
 vi.mock('./native-recurrence-fields', () => ({
   NativeRecurrenceFields: () => <div>fields</div>,
@@ -118,7 +126,7 @@ function mount() {
     defaultOptions: { queries: { retry: false } },
   });
   clients.push(client);
-  return render(
+  const view = render(
     <QueryClientProvider client={client}>
       <NativeRecurrenceDialog
         wsId="workspace"
@@ -128,6 +136,7 @@ function mount() {
       />
     </QueryClientProvider>
   );
+  return { ...view, client };
 }
 beforeEach(() => {
   vi.clearAllMocks();
@@ -193,4 +202,26 @@ describe('imported recurrence mutation routing', () => {
     expect(screen.getByRole('button', { name: 'saving' })).toBeDisabled();
     expect(mocks.nativeMutate).not.toHaveBeenCalled();
   });
+});
+
+it('revalidates all provider projections only after applied and only in the affected workspace', async () => {
+  const h = mount();
+  const ownKeys = [
+    ['databaseCalendarEvents', 'workspace', 'dates'],
+    ['googleCalendarEvents', 'workspace', 'dates'],
+  ];
+  const other = ['googleCalendarEvents', 'other-workspace', 'dates'];
+  for (const key of [...ownKeys, other])
+    h.client.setQueryData(key, [{ id: 'retained' }]);
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: 'save' })).not.toBeDisabled()
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'save' }));
+  await waitFor(() => expect(mocks.providerSubmit).toHaveBeenCalled());
+  for (const key of ownKeys)
+    expect(h.client.getQueryState(key)?.isInvalidated).toBe(false);
+  mocks.applied();
+  for (const key of ownKeys)
+    expect(h.client.getQueryState(key)?.isInvalidated).toBe(true);
+  expect(h.client.getQueryState(other)?.isInvalidated).toBe(false);
 });

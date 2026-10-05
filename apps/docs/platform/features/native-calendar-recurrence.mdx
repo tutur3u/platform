@@ -80,7 +80,9 @@ action. The actor/workspace-scoped query cache retains the original intent; only
 its operation UUID is written to tab-scoped session storage before dispatch.
 No event content, tokens or account details are persisted there. Refreshing or
 reopening the dialog resumes that same UUID, and only an applied receipt closes
-the dialog and invalidates Calendar data. If session storage is unavailable,
+the dialog and invalidates Calendar data. Applied provider receipts also revalidate
+the affected workspace’s database and provider event projections, including
+a creation resumed after a reload; pending receipts leave those views intact. If session storage is unavailable,
 new provider writes fail before dispatch. Cross-device operation history is not
 provided by this editor. Provider write admission still requires authenticated
 Google and Outlook parity evidence before production enablement.
