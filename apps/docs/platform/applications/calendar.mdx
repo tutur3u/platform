@@ -964,3 +964,12 @@ Regression coverage: `load-smart-scheduling-tasks.test.ts` holds list metadata
 unresolved while proving that actor-filtered scheduling settings have already
 started, verifies accessible IDs and deduplicated lists, and covers empty/missing
 responses, settings defaults, and rejected reads.
+
+Calendar's dashboard permission check uses the UUID returned by the verified
+workspace read while retaining the exact satellite actor. This avoids resolving
+`personal` again inside the permission helper. Membership, roles and default
+permissions still use the same helper; denied navigation retains its URL slug.
+The page's scheduling reads begin only after workspace and permission verification.
+Coverage: dashboard `page.test.tsx` exercises aliases/UUIDs, actor preservation,
+verification ordering, permission denial, missing records and rejected reads;
+workspace-helper tests verify that UUID normalization needs no alias lookup.
