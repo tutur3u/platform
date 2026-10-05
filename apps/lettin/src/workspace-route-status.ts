@@ -10,6 +10,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import en from '../messages/en.json';
 import vi from '../messages/vi.json';
+import { isWikiSection } from './components/wiki-model';
 
 // These are the non-workspace pages alongside [wsId], not workspace aliases.
 const standalonePages = new Set([
@@ -68,13 +69,17 @@ export async function getWorkspaceRouteStatus(
     return NextResponse.redirect(new URL('/dashboard', request.url));
   // Invitations render their own layout instead of the requested child page.
   if (status.status === 'pending_invite') return null;
-  if (
-    section !== 'worlds' ||
-    !worldId ||
-    rest.length ||
-    z.guid().safeParse(worldId).success
-  )
-    return null;
+  const invalidWorld =
+    section === 'worlds' &&
+    !!worldId &&
+    rest.length === 0 &&
+    !z.guid().safeParse(worldId).success;
+  const invalidWiki =
+    section === 'wiki' &&
+    !!worldId &&
+    rest.length === 1 &&
+    (!z.guid().safeParse(worldId).success || !isWikiSection(rest[0]!));
+  if (!invalidWorld && !invalidWiki) return null;
 
   // A direct response preserves 404 even when the page's loading shell streams.
   // Only static translations are interpolated; no request data enters the HTML.

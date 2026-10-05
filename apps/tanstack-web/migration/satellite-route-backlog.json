@@ -25,6 +25,24 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "page:/:locale/:wsId/moderation:apps/lettin/src/app/[locale]/[wsId]/moderation/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/:wsId/moderation",
+      "sourceFile": "apps/lettin/src/app/[locale]/[wsId]/moderation/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
+      "id": "page:/:locale/:wsId/profile:apps/lettin/src/app/[locale]/[wsId]/profile/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/:wsId/profile",
+      "sourceFile": "apps/lettin/src/app/[locale]/[wsId]/profile/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "page:/:locale/:wsId/programming/playgrounds:apps/learn/src/app/[locale]/(dashboard)/[wsId]/programming/playgrounds/page.tsx",
       "kind": "page",
       "methods": [],
@@ -39,6 +57,15 @@
       "methods": [],
       "routePath": "/:locale/:wsId/programming/playgrounds/:projectId",
       "sourceFile": "apps/learn/src/app/[locale]/(dashboard)/[wsId]/programming/playgrounds/[projectId]/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
+      "id": "page:/:locale/:wsId/wiki/:worldId/:section:apps/lettin/src/app/[locale]/[wsId]/wiki/[worldId]/[section]/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/:wsId/wiki/:worldId/:section",
+      "sourceFile": "apps/lettin/src/app/[locale]/[wsId]/wiki/[worldId]/[section]/page.tsx",
       "status": "legacy-next",
       "targetOwner": "tanstack-start"
     },

@@ -34,6 +34,21 @@
       "status": "legacy-next",
       "targetOwner": "tanstack-start",
       "note": "Lettin proxy decides workspace membership/invitations and rejects invalid joined-workspace world GUIDs with an HTTP 404 before the loading boundary streams. Preserve private/no-store 404s, invitation exceptions, authenticated workspace checks, and initial entry selection when migrating."
+    },
+    "page:/:locale/:wsId/wiki/:worldId/:section:apps/lettin/src/app/[locale]/[wsId]/wiki/[worldId]/[section]/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Proxy preserves invalid GUID/section HTTP404 after membership; request-time page suspends while retaining initial entry."
+    },
+    "page:/:locale/:wsId/moderation:apps/lettin/src/app/[locale]/[wsId]/moderation/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Suspend request-time moderation page beneath its own loading boundary; keep workspace membership authorization."
+    },
+    "page:/:locale/:wsId/profile:apps/lettin/src/app/[locale]/[wsId]/profile/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Suspend request-time creator profile permissions/publication reads beneath its own loading boundary; preserve actor-scoped editing."
     }
   }
 }
