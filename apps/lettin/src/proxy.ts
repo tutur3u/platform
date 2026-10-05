@@ -30,6 +30,8 @@ import {
   supportedLocales,
 } from './i18n/routing';
 
+import { getLoginRedirect } from './login-redirect';
+
 const intlMiddleware = createIntlMiddleware(routing);
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 const LOCALE_COOKIE_OPTIONS = {
@@ -230,6 +232,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   }
 
   const unlocalizedPath = stripLocale(request.nextUrl.pathname);
+  if (unlocalizedPath === '/login') return getLoginRedirect(request);
 
   if (!isPublicLettinPath(unlocalizedPath)) {
     const appSessionRefresh = await refreshAppSessionForRequest(request, {

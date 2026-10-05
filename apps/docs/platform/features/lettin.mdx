@@ -60,6 +60,18 @@ support; reduced-motion preferences disable animation and decorative hover movem
 Lettin uses the platform's central login and satellite app-session exchange,
 refresh, and logout. Accounts and workspace membership are not duplicated.
 
+Lettin `/login` is resolved by the request proxy before page streaming begins.
+Anonymous, explicit `refresh=1`, denied, or unverified sessions receive HTTP 307
+with a `Location` header to central login, preserving the normalized destination
+through `/verify-token`. A successfully verified Lettin session plus a shared
+browser-session marker redirects to that destination and propagates refreshed
+cookies. A standalone app claim is insufficient. Localized login URLs first use
+the existing canonical locale redirect. The page is an inert fallback: it must
+not perform a session lookup inside streamed Suspense, which would turn HTTP
+redirects into client-only meta redirects. `login-redirect.test.ts` checks delayed
+verification, HTTP status/header/body, destination safety, refresh, and MFA denial;
+`proxy.test.ts` verifies dispatch before locale rendering.
+
 Private world access requires all three conditions:
 
 1. An enabled Lettin creator account, or root-workspace administrator status.
