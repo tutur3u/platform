@@ -113,6 +113,30 @@ describe('EventCard read-only adapter events', () => {
     expect(card.style.opacity).toBe('1');
   });
 
+  it('fades past first-party cards above an opaque fill and restores on hover/focus', () => {
+    calendarMocks.preservePastEventOpacity = false;
+    renderEventCard({
+      id: 'past-native',
+      title: 'Past event',
+      color: 'BLUE',
+      start_at: '2026-06-26T08:30:00Z',
+      end_at: '2026-06-26T09:30:00Z',
+    });
+    const card = screen.getByTestId('calendar-event-past-native');
+    expect(card.style.opacity).toBe('1');
+    expect(card.style.backgroundColor).toBe('rgb(33, 150, 243)');
+    expect(card).toHaveClass(
+      'after:bg-background/50',
+      'hover:after:opacity-0',
+      'focus-visible:after:opacity-0'
+    );
+    fireEvent.mouseEnter(card);
+    expect(card.style.opacity).toBe('1');
+    expect(card).toHaveClass('hover:after:opacity-0');
+    fireEvent.mouseLeave(card);
+    expect(card).toHaveClass('after:bg-background/50');
+  });
+
   it('updates the same mounted card when only provider metadata changes', () => {
     const event: CalendarEvent = {
       id: 'metadata-rerender',
@@ -176,7 +200,7 @@ describe('EventCard read-only adapter events', () => {
     expect(card.style.visibility).toBe('hidden');
     expect(card.style.backgroundColor).toBe('rgb(0, 255, 136)');
     expect(card.className).not.toMatch(/opacity-(?:30|50|60|80)/);
-    expect(card).toHaveClass('line-through');
+    expect(card).not.toHaveClass('line-through');
     rendered.unmount();
     calendarMocks.hoveredBaseEventId = null;
     calendarMocks.hoveredEventColumn = null;

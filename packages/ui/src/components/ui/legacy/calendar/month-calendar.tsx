@@ -34,6 +34,7 @@ import { formatLunarDay, getLunarDate } from '../../../../lib/lunar-calendar';
 import { Button } from '../../button';
 import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
 import { calendarDraftDate } from './calendar-period';
+import { pastEventTreatment } from './past-event-treatment';
 import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(utc);
@@ -61,6 +62,7 @@ function MonthEvent({
   zone?: string;
   onOpen: (id: string) => void;
 }) {
+  const { preservePastEventOpacity } = useCalendar();
   const t = useTranslations('calendar');
   const title = event.title || t('views.untitled_event');
   const allDay = isAllDayEvent(event);
@@ -72,8 +74,9 @@ function MonthEvent({
       title={title}
       style={calendarEventStyle(event)}
       className={cn(
-        'flex w-full min-w-0 items-center gap-1 rounded px-1 py-1 text-left text-[10px] leading-tight transition-colors hover:ring-1 hover:ring-current focus-visible:outline-2 focus-visible:outline-ring sm:px-1.5 sm:text-xs',
-        allDay && 'font-medium'
+        'relative flex w-full min-w-0 items-center gap-1 rounded px-1 py-1 text-left text-[10px] leading-tight transition-colors hover:ring-1 hover:ring-current focus-visible:outline-2 focus-visible:outline-ring sm:px-1.5 sm:text-xs',
+        allDay && 'font-medium',
+        pastEventTreatment(event, preservePastEventOpacity)
       )}
     >
       {continued ? (

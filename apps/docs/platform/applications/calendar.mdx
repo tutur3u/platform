@@ -554,8 +554,10 @@ read-only color policy. Past web events use text decoration rather than transluc
 fills; optimistic/preview status uses outlines. Hovering an overlapped lower card
 hides upper cards instead of blending their fills, and restores them when the
 hover ends. Focus/drag/resize states retain opaque backgrounds. The existing
-`preservePastEventOpacity` option keeps its intent by suppressing past-event
-decoration. Mobile source RGB survives date projections and local cache
+`preservePastEventOpacity` adapter option suppresses this fade. External provider
+events, previews, pending writes and active drag/resize states keep full intensity.
+Regression coverage for the policy and hover treatment lives in
+`past-event-treatment.test.ts` and `event-card.test.tsx`. Mobile source RGB survives date projections and local cache
 serialization. Regression coverage lives in `calendar-event-colors.test.ts`,
 `event-card.test.tsx`, `calendar-views.test.tsx`, `dynamic-island.test.tsx` and
 mobile `event_colors_test.dart`. These checks do not establish full palette

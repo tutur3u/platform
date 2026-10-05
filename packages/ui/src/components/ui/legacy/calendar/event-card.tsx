@@ -37,6 +37,7 @@ import {
 } from '../../context-menu';
 import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
 import { CalendarEventProviderIcon } from './event-provider-display';
+import { pastEventTreatment } from './past-event-treatment';
 import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(timezone);
@@ -67,7 +68,6 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
     title,
     description,
     // start_at,
-    end_at,
     color = 'BLUE',
     locked = false,
     _isMultiDay,
@@ -957,9 +957,6 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
     return d.format(timeFormat === '24h' ? 'HH:mm' : 'h:mm a');
   };
 
-  // Check if the event is in the past
-  const isPastEvent = new Date(end_at) < new Date();
-
   // Check if this event is affected by preview (will be modified/deleted)
   const isAffectedByPreview =
     affectedEventIds?.has(id) || affectedEventIds?.has(event._originalId || '');
@@ -1005,7 +1002,6 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
       });
   };
 
-  // Determine if this event has calendar source info
   const hasCalendarInfo =
     google_calendar_id && google_calendar_id !== 'primary';
   const calendarDisplayName =
@@ -1014,8 +1010,6 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
       ? 'Primary Calendar'
       : google_calendar_id);
 
-  // Calculate stacking position for visual effects
-  // Note: Actual column-based positioning is handled in the useEffect
   const hasOverlaps = overlapCount > 1;
 
   // Check if an event in the same group is being hovered
@@ -1051,10 +1045,6 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
               'transform shadow-md': isDragging || isResizing, // Subtle transform during interaction
               'shadow-sm': hasOverlaps && !isDragging && !isResizing, // Subtle shadow for stacked events
               'hover:shadow-md': hasOverlaps, // Enhanced shadow on hover for stacked events
-              'line-through':
-                isPastEvent &&
-                !isAffectedByPreview &&
-                !preservePastEventOpacity, // Mark past events in the text
               'rounded-l-none border-l-4': showStartIndicator, // Special styling for continuation from previous day
               'rounded-r-none border-r-4': showEndIndicator, // Special styling for continuation to next day
               'border-l-[3px]': hasCalendarInfo, // Thicker border for calendar events
@@ -1068,7 +1058,15 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
                 isOptimisticallyPending && !isOptimisticallyMutating,
             },
             level ? 'border border-l-2' : 'border-l-2',
-            border
+            border,
+            pastEventTreatment(
+              event,
+              preservePastEventOpacity,
+              isDragging ||
+                isResizing ||
+                !!isAffectedByPreview ||
+                updateStatus === 'error'
+            )
           )}
           style={{
             transition:
