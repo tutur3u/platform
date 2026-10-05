@@ -23,6 +23,7 @@ void main() {
   late StreamController<List<ConnectivityResult>> connectivity;
   late StreamController<supa.AuthState> auth;
   late bool online;
+  late String actor;
   late List<PendingMutationRecord> sent;
 
   Future<bool> admit(ApiException error, {bool replaySafe = true}) =>
@@ -58,12 +59,13 @@ void main() {
       directoryResolver: () async => directory,
     );
     online = false;
+    actor = 'synthetic-user';
     sent = [];
     connectivity = StreamController<List<ConnectivityResult>>.broadcast();
     auth = StreamController<supa.AuthState>.broadcast();
     queue = OfflineMutationQueue.forTesting(
       store: store,
-      userId: () => 'synthetic-user',
+      userId: () => actor,
       checkConnectivity: () async => [
         if (online) ConnectivityResult.wifi else ConnectivityResult.none,
       ],
@@ -84,6 +86,57 @@ void main() {
     await Hive.close();
     directory.deleteSync(recursive: true);
   });
+
+  test(
+    'model write cannot enqueue for a departed actor while offline',
+    () async {
+      var pendingCreated = false;
+      await expectLater(
+        queueOrSendValue<String>(
+          feature: 'crm',
+          method: 'CRM_BULK_IMPORT',
+          path: '/api/v1/workspaces/synthetic-ws/users/bulk',
+          workspaceId: 'synthetic-ws',
+          expectedUserId: 'departed-user',
+          queue: queue,
+          send: () async => 'sent',
+          pendingValue: (_) {
+            pendingCreated = true;
+            return 'pending';
+          },
+        ),
+        throwsA(isA<StateError>()),
+      );
+      expect(pendingCreated, isFalse);
+      expect(await queue.listPending(), isEmpty);
+    },
+  );
+
+  test(
+    'model write cannot enqueue failed transport for a departed actor',
+    () async {
+      online = true;
+      await expectLater(
+        queueOrSendValue<String>(
+          feature: 'crm',
+          method: 'PUT',
+          path: '/api/v1/workspaces/synthetic-ws/users/customer',
+          workspaceId: 'synthetic-ws',
+          expectedUserId: 'synthetic-user',
+          queue: queue,
+          send: () async {
+            actor = 'new-user';
+            throw const ApiException.transport(
+              message: 'Synthetic lost connection',
+            );
+          },
+          pendingValue: (_) => 'pending',
+        ),
+        throwsA(isA<StateError>()),
+      );
+      expect(await queue.listPending(), isEmpty);
+    },
+  );
 
   for (final kind in [
     ApiFailureKind.session,

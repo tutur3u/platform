@@ -102,6 +102,7 @@ Future<T> queueOrSendValue<T>({
   bool replaySafe = false,
   OfflineMutationQueue? queue,
   ApiClient? apiClient,
+  String? expectedUserId,
 }) async {
   final mutations = queue ?? OfflineMutationQueue.instance;
   final localId = entityId ?? newLocalMutationId();
@@ -129,6 +130,7 @@ Future<T> queueOrSendValue<T>({
     payload: payload,
     entityId: localId,
     replaySafe: replaySafe,
+    expectedUserId: expectedUserId,
   )) {
     return pendingValue(localId);
   }
@@ -144,6 +146,7 @@ Future<T> queueOrSendValue<T>({
       payload: payload ?? const {},
       entityId: localId,
       replaySafe: replaySafe,
+      expectedUserId: expectedUserId,
     )) {
       return pendingValue(localId);
     }
@@ -163,6 +166,7 @@ Future<T> queueOrSendValue<T>({
       payload: payload ?? const {},
       entityId: localId,
       replaySafe: replaySafe,
+      expectedUserId: expectedUserId,
     )) {
       return pendingValue(localId);
     }

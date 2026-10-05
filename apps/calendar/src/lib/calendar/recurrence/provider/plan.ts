@@ -47,6 +47,7 @@ export type ProviderSeriesStep =
     };
 export type ProviderSeriesPlan = {
   operationId: string;
+  createBeforeTrim?: true;
   binding: ProviderSeriesBinding | null;
   steps: ProviderSeriesStep[];
 };
@@ -146,7 +147,8 @@ export function providerSeriesMutationPlan(input: {
     });
     if (input.action === 'update') {
       validateCalendarRecurrence(snapshot.rule, snapshot.anchor);
-      plan.steps.push({
+      plan.createBeforeTrim = true;
+      plan.steps.unshift({
         kind: 'create',
         key: createKey(input.operationId),
         snapshot,

@@ -8,15 +8,21 @@ import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/cache/pending_collection_overlay.dart';
+import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/crm/crm_models.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/crm/utils/crm_visibility.dart';
 
 class CrmRepository {
-  CrmRepository({ApiClient? apiClient, http.Client? httpClient})
-    : _api = apiClient ?? ApiClient(),
-      _http = httpClient ?? http.Client();
+  CrmRepository({
+    ApiClient? apiClient,
+    http.Client? httpClient,
+    this.expectedUserId,
+  }) : _api = apiClient ?? ApiClient(expectedUserId: expectedUserId),
+       _http = httpClient ?? http.Client();
 
+  final String? expectedUserId;
   final ApiClient _api;
   final http.Client _http;
 
@@ -29,7 +35,18 @@ class CrmRepository {
     namespace: 'crm.$collection',
     workspaceId: wsId,
     path: path,
+    cacheUserId: expectedUserId == null ? null : () => expectedUserId,
   );
+
+  Future<List<PendingMutationRecord>> _pendingForActor() async {
+    final pending = await OfflineMutationQueue.instance.listPending();
+    if (expectedUserId != null) _api.checkUser(expectedUserId!);
+    return pending
+        .where(
+          (record) => expectedUserId == null || record.userId == expectedUserId,
+        )
+        .toList();
+  }
 
   Future<void> _write(
     String wsId,
@@ -40,6 +57,7 @@ class CrmRepository {
   }) async {
     await queueOrSendVoid(
       feature: 'crm',
+      expectedUserId: expectedUserId,
       method: method,
       path: path,
       workspaceId: wsId,
@@ -56,7 +74,11 @@ class CrmRepository {
         }
       },
     );
-    await CacheStore.instance.invalidateTags({'module:crm'}, workspaceId: wsId);
+    await CacheStore.instance.invalidateTags(
+      {'module:crm'},
+      workspaceId: wsId,
+      userId: expectedUserId,
+    );
   }
 
   Future<CrmUsersResult> getUsers(
@@ -97,7 +119,7 @@ class CrmRepository {
       feature: 'crm',
       pathContains: '/users',
       source: source,
-      pending: await OfflineMutationQueue.instance.listPending(),
+      pending: await _pendingForActor(),
       normalizeCreate: (payload) => {...payload, 'ws_id': wsId},
       includeCreates:
           page == 1 &&
@@ -113,9 +135,13 @@ class CrmRepository {
                   (value) => value.toLowerCase().contains(query.toLowerCase()),
                 ),
     );
+    final permissionsJson = response['permissions'];
+    final permissions = permissionsJson is Map<String, dynamic>
+        ? CrmUserPermissions.fromJson(permissionsJson)
+        : null;
     return CrmUsersResult.fromJson({
       ...response,
-      'data': rows,
+      'data': rows.map((row) => crmVisibleRow(row, permissions)).toList(),
       'count': crmAsInt(response['count']) + rows.length - source.length,
     });
   }
@@ -196,7 +222,7 @@ class CrmRepository {
       feature: 'crm',
       pathContains: '/feedbacks',
       source: source,
-      pending: await OfflineMutationQueue.instance.listPending(),
+      pending: await _pendingForActor(),
       normalizeCreate: (payload) => {
         ...payload,
         'user_id': payload['userId'],
@@ -318,6 +344,7 @@ class CrmRepository {
     final payload = {'sourceId': sourceId, 'targetId': targetId};
     final result = await queueOrSendValue<CrmMergeResult>(
       feature: 'crm',
+      expectedUserId: expectedUserId,
       method: 'POST',
       path: path,
       workspaceId: wsId,
@@ -328,7 +355,11 @@ class CrmRepository {
       send: () async =>
           CrmMergeResult.fromJson(await _api.postJson(path, payload)),
     );
-    await CacheStore.instance.invalidateTags({'module:crm'}, workspaceId: wsId);
+    await CacheStore.instance.invalidateTags(
+      {'module:crm'},
+      workspaceId: wsId,
+      userId: expectedUserId,
+    );
     return result;
   }
 
@@ -339,6 +370,7 @@ class CrmRepository {
     final path = CrmEndpoints.bulkImport(wsId);
     final queued = await queueOrSendValue<bool>(
       feature: 'crm',
+      expectedUserId: expectedUserId,
       method: 'CRM_BULK_IMPORT',
       path: path,
       workspaceId: wsId,
@@ -349,7 +381,11 @@ class CrmRepository {
         return false;
       },
     );
-    await CacheStore.instance.invalidateTags({'module:crm'}, workspaceId: wsId);
+    await CacheStore.instance.invalidateTags(
+      {'module:crm'},
+      workspaceId: wsId,
+      userId: expectedUserId,
+    );
     return queued;
   }
 
@@ -361,6 +397,7 @@ class CrmRepository {
   }) {
     return queueOrSendValue<String>(
       feature: 'crm',
+      expectedUserId: expectedUserId,
       method: 'CRM_AVATAR_UPLOAD',
       path: CrmEndpoints.avatar(wsId),
       workspaceId: wsId,
