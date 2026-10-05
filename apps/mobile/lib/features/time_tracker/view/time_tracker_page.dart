@@ -69,9 +69,10 @@ class TimeTrackerPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    final userId = context.read<AuthCubit>().state.user?.id;
+    final userId = context.select<AuthCubit, String?>((c) => c.state.user?.id);
 
     return BlocProvider(
+      key: ValueKey(userId),
       create: (context) {
         final repo = repository ?? TimeTrackerRepository();
         return TimeTrackerCubit(
@@ -220,15 +221,12 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
           listenWhen: (prev, curr) =>
               prev.currentWorkspace?.id != curr.currentWorkspace?.id,
           listener: (context, wsState) async {
+            context.read<TimeTrackerCubit>().prepareForWorkspaceSwitch();
             final wsId = wsState.currentWorkspace?.id;
             final userId = context.read<AuthCubit>().state.user?.id;
             if (wsId != null && userId != null) {
               final capturedWsId = wsId;
               final capturedUserId = userId;
-              if (TimeTrackerCubit.seedStateFor(wsId: wsId, userId: userId) ==
-                  null) {
-                context.read<TimeTrackerCubit>().prepareForWorkspaceSwitch();
-              }
               final calendarSettingsCubit = context
                   .read<CalendarSettingsCubit>();
               await calendarSettingsCubit.loadWorkspacePreference(wsId);
