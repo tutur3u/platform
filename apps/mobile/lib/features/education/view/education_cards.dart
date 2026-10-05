@@ -27,12 +27,14 @@ class _CourseCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: const Color(0xFF2563EB).withValues(alpha: 0.12),
+                color: shad.Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.school_outlined,
-                color: Color(0xFF2563EB),
+                color: shad.Theme.of(context).colorScheme.primary,
               ),
             ),
             const SizedBox(width: 12),
@@ -68,13 +70,13 @@ class _CourseCard extends StatelessWidget {
                       _EducationBadge(
                         icon: Icons.layers_outlined,
                         label: '${course.modulesCount}',
-                        tint: const Color(0xFF2563EB),
+                        tint: shad.Theme.of(context).colorScheme.primary,
                       ),
                       if (course.certTemplate?.isNotEmpty ?? false)
                         _EducationBadge(
                           icon: Icons.verified_outlined,
                           label: course.certTemplate!,
-                          tint: const Color(0xFF2563EB),
+                          tint: shad.Theme.of(context).colorScheme.primary,
                         ),
                     ],
                   ),
@@ -126,12 +128,14 @@ class _QuizSetCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: const Color(0xFF805AD5).withValues(alpha: 0.12),
+                color: shad.Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.layers_outlined,
-                color: Color(0xFF805AD5),
+                color: shad.Theme.of(context).colorScheme.primary,
               ),
             ),
             const SizedBox(width: 12),
@@ -149,7 +153,7 @@ class _QuizSetCard extends StatelessWidget {
                   _EducationBadge(
                     icon: Icons.link_outlined,
                     label: '${quizSet.linkedModulesCount}',
-                    tint: const Color(0xFF805AD5),
+                    tint: shad.Theme.of(context).colorScheme.primary,
                   ),
                 ],
               ),
@@ -234,8 +238,8 @@ class _QuizCard extends StatelessWidget {
                           : Icons.radio_button_unchecked_rounded,
                       label: option.value,
                       tint: option.isCorrect
-                          ? const Color(0xFF2F855A)
-                          : const Color(0xFF64748B),
+                          ? shad.Theme.of(context).colorScheme.primary
+                          : shad.Theme.of(context).colorScheme.primary,
                     ),
                   ),
                 ),
