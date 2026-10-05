@@ -432,7 +432,9 @@ also fails; cleanup failure still fails an otherwise successful test. This
 prevents a disposed-context error from obscuring the first failed operation.
 Regression coverage lives in `lettin-context-cleanup.test.ts`.
 Markdown and canonical-import browser phases also use public `test.step` with a
-60-second whole-phase cap. It covers the complete awaited phase, including tracing
+60-second whole-phase cap. Import preview visibility, post-import navigation/content,
+and the public privacy response (including its body read) each have an explicit
+phase too; they do not sit between capped clicks. It covers the complete awaited phase, including tracing
 instrumentation before or after an action; the inner action/navigation/assertion
 deadlines and tracing remain unchanged. A phase deadline fails the test and keeps
 fixed, safe diagnostics; it never turns the stalled phase into a success or skip.
