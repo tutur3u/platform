@@ -60,7 +60,7 @@ export default async function CalendarPage({
   const workspace = await getWorkspace(wsId, { useAdmin: true, user });
   if (!workspace) notFound();
 
-  const permissions = await getPermissions({ user, wsId });
+  const permissions = await getPermissions({ user, wsId: workspace.id });
   if (!permissions) notFound();
 
   const { withoutPermission } = permissions;
@@ -68,6 +68,23 @@ export default async function CalendarPage({
   if (withoutPermission('manage_calendar')) redirect(`/${wsId}/tasks`);
 
   const sbAdmin = await createAdminClient({ noCookie: true });
+
+  // Start independent reads after permission verification. Capture failures now
+  // so a linked-event lookup error remains authoritative without an unhandled
+  // rejection from the background reads.
+  const calendarDataPromise = Promise.all([
+    fetchUserWorkspaceCalendarGoogleTokenForClient(sbAdmin, {
+      wsId: workspace.id,
+      userId: user.id,
+    }),
+    loadSmartSchedulingTasks({
+      resolvedWsId: workspace.id,
+      userId: user.id,
+    }),
+  ]).then(
+    (data) => ({ data }),
+    (error: unknown) => ({ error })
+  );
 
   let initialDate = navigationDateValue(requestedDate);
   if (!initialDate && eventId) {
@@ -87,16 +104,9 @@ export default async function CalendarPage({
         ? eventStart.toISOString()
         : undefined;
   }
-  const [googleToken, smartSchedulingTasks] = await Promise.all([
-    fetchUserWorkspaceCalendarGoogleTokenForClient(sbAdmin, {
-      wsId: workspace.id,
-      userId: user.id,
-    }),
-    loadSmartSchedulingTasks({
-      resolvedWsId: workspace.id,
-      userId: user.id,
-    }),
-  ]);
+  const calendarData = await calendarDataPromise;
+  if ('error' in calendarData) throw calendarData.error;
+  const [googleToken, smartSchedulingTasks] = calendarData.data;
 
   const enableSmartScheduling = true;
   const isPersonalWorkspace = !!workspace.personal;

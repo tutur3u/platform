@@ -926,3 +926,60 @@ calendar-wide deletion and does not enable provider editing.
 Regression coverage: `graph-legacy-identities.test.ts` verifies source filters,
 old-slot linkage, permission revocation, receipt completeness, foreign-master
 isolation, provider failures, and batch bounds.
+
+### Editable monthly and yearly weekday patterns
+
+The shared web recurrence editor supports first, second, third, fourth, or last
+weekday patterns for monthly and yearly native series. Yearly patterns have an
+explicit month. Selecting multiple weekdays uses the earliest matching date in
+the selected ordinal week, following the canonical Google/Outlook adapter
+semantics ([Graph recurrence patterns](https://learn.microsoft.com/en-us/graph/api/resources/recurrencepattern?view=graph-rest-1.0));
+the initial local date must match the pattern. The form does not
+silently move the first occurrence when the pattern changes.
+
+Absolute month-day rules offer skipping missing dates or using the month's last
+day. Details-only edits preserve imported month-end behavior, yearly month and
+weekly week-start boundaries without adding optional normalization that would
+reset exceptions. This-occurrence edits do not modify the rule; future edits
+retain the remaining occurrence count and immutable original slot. Unsupported
+provider rules stay read-only, and outbound provider admission remains disabled.
+
+Regression coverage: `native-recurrence-pattern-model.test.ts` checks all five
+ordinals against both provider serializers, multi-weekday patterns, inclusive end
+dates, imported week boundaries and month-end behavior, invalid input, and edit
+scopes. `native-recurrence-pattern-fields.test.tsx` covers the interactive monthly,
+yearly, month-end and weekly controls.
+
+### Smart-scheduling startup enrichment
+
+Calendar server startup loads the current actor's accessible tasks first. Once
+those IDs are known, list/workspace metadata and actor-scoped scheduling settings
+are read concurrently. Empty task sets do not trigger broad enrichment reads;
+missing settings and list metadata retain their existing defaults. This removes
+one sequential database stage without changing task visibility or provider
+admission. The actual production latency benefit still requires authenticated
+post-deployment timing; focused tests are not a browser performance measurement.
+
+Regression coverage: `load-smart-scheduling-tasks.test.ts` holds list metadata
+unresolved while proving that actor-filtered scheduling settings have already
+started, verifies accessible IDs and deduplicated lists, and covers empty/missing
+responses, settings defaults, and rejected reads.
+
+Calendar's dashboard permission check uses the UUID returned by the verified
+workspace read while retaining the exact satellite actor. This avoids resolving
+`personal` again inside the permission helper. Membership, roles and default
+permissions still use the same helper; denied navigation retains its URL slug.
+The page's scheduling reads begin only after workspace and permission verification.
+Coverage: dashboard `page.test.tsx` exercises aliases/UUIDs, actor preservation,
+verification ordering, permission denial, missing records and rejected reads;
+workspace-helper tests verify that UUID normalization needs no alias lookup.
+
+For notification/event deep links, the page starts token and scheduling reads
+alongside the scoped event-date lookup after permission verification. A valid
+explicit date skips the lookup as before; invalid or missing dates use a valid
+stored event instant when available. Date-query errors retain their original
+precedence, and concurrent resource failures are handled while that lookup is
+pending. No resource reads begin before authorization. Coverage:
+`page-date-loading.test.tsx` uses an unresolved event response to verify overlap,
+actor/workspace filters, date-only and DST-offset links, fallbacks and both error
+paths. Browser latency improvement still requires post-deployment measurement.

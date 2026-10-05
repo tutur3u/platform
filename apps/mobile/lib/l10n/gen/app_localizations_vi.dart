@@ -12,37 +12,1260 @@ class AppLocalizationsVi extends AppLocalizations {
   AppLocalizationsVi([String locale = 'vi']) : super(locale);
 
   @override
-  String get workspaceHiddenTitle => 'Không gian làm việc đã ẩn';
+  String get adminAccountsActive => 'Đã cho phép truy cập';
 
   @override
-  String get workspaceHideAction => 'Ẩn';
+  String get adminAccountsConfirmEmail => 'Nhập email tài khoản để xác nhận';
 
   @override
-  String get workspaceRestoreAction => 'Hiện lại';
+  String get adminAccountsDescription => 'Quản lý tài khoản Tuturuuu và bảo mật tài khoản.';
 
   @override
-  String get workspaceHiddenDescription => 'Chỉ bạn thấy danh sách này. Ẩn không thay đổi tư cách thành viên hay thông báo.';
+  String get adminAccountsDisableAccess => 'Vô hiệu hóa truy cập';
 
   @override
-  String get workspaceHiddenEmpty => 'Không có không gian làm việc đã ẩn';
+  String get adminAccountsDisabled => 'Đã vô hiệu hóa truy cập';
 
   @override
-  String get workspaceHiddenLoadError => 'Không thể tải tùy chọn hiển thị. Các lựa chọn ẩn đã lưu được giữ lại.';
+  String get adminAccountsDisplayName => 'Tên hiển thị';
 
   @override
-  String get workspaceHiddenUpdateError => 'Không thể lưu thay đổi. Hãy thử lại khi có kết nối.';
+  String get adminAccountsEditProfile => 'Chỉnh sửa hồ sơ';
 
   @override
-  String get workspaceAllHidden => 'Các không gian làm việc của bạn đã bị ẩn. Hiện lại một không gian để tiếp tục.';
+  String get adminAccountsEmpty => 'Không tìm thấy tài khoản';
 
   @override
-  String get workspacePickerClose => 'Đóng danh sách không gian làm việc';
+  String get adminAccountsEnableAccess => 'Cho phép truy cập';
 
   @override
-  String get commonLoading => 'Đang tải';
+  String get adminAccountsFailed => 'Không thể lưu thay đổi. Vui lòng thử lại.';
+
+  @override
+  String get adminAccountsMfaPolicyDescription => 'Bắt buộc xác thực hai bước sẽ yêu cầu xác minh lại. Khi không bắt buộc, các phương thức hiện có vẫn được giữ; hãy đặt lại riêng nếu muốn xóa.';
+
+  @override
+  String get adminAccountsMore => 'Tải thêm';
+
+  @override
+  String get adminAccountsNewPassword => 'Mật khẩu mới (12–72 ký tự)';
+
+  @override
+  String get adminAccountsOptionalMfa => 'Không bắt buộc xác thực hai bước';
+
+  @override
+  String get adminAccountsRequireMfa => 'Bắt buộc xác thực hai bước';
+
+  @override
+  String get adminAccountsResetMfa => 'Đặt lại trình xác thực';
+
+  @override
+  String get adminAccountsResetMfaDescription => 'Xóa tất cả yếu tố MFA và thiết bị xác thực tin cậy. Người dùng cần đăng ký lại trình xác thực.';
+
+  @override
+  String get adminAccountsResetPassword => 'Đặt lại mật khẩu';
+
+  @override
+  String get adminAccountsSave => 'Lưu thay đổi';
+
+  @override
+  String get adminAccountsSearch => 'Tìm tài khoản';
+
+  @override
+  String get adminAccountsTitle => 'Tài khoản nội bộ';
+
+  @override
+  String get adminAccountsUnavailable => 'Không thể tải tài khoản. Kiểm tra quyền quản trị rồi thử lại.';
+
+  @override
+  String get adminAccountsUsername => 'Tên người dùng';
+
+  @override
+  String get appLockDelay1Minute => 'Sau 1 phút';
+
+  @override
+  String get appLockDelay30Seconds => 'Sau 30 giây';
+
+  @override
+  String get appLockDelay5Minutes => 'Sau 5 phút';
+
+  @override
+  String get appLockDelayDescription => 'Chọn thời điểm yêu cầu mở khóa sau khi chuyển khỏi ứng dụng.';
+
+  @override
+  String get appLockDelayImmediately => 'Ngay lập tức';
+
+  @override
+  String get appLockDelayTitle => 'Khóa sau khi rời ứng dụng';
+
+  @override
+  String get appLockDisableReason => 'Xác thực để tắt khóa ứng dụng.';
+
+  @override
+  String get appLockEnableReason => 'Xác thực để bật khóa ứng dụng.';
+
+  @override
+  String get appLockLockedDescription => 'Dùng mã PIN thiết bị, vân tay hoặc Face ID để tiếp tục.';
+
+  @override
+  String get appLockLockedTitle => 'Tuturuuu đang bị khóa';
+
+  @override
+  String get appLockProtectedDevice => 'Được bảo vệ trên thiết bị này';
+
+  @override
+  String get appLockSettingsDescription => 'Yêu cầu Face ID, vân tay hoặc mã PIN thiết bị trước khi dùng ứng dụng.';
+
+  @override
+  String get appLockSettingsDisabled => 'Tắt';
+
+  @override
+  String get appLockSettingsEnabled => 'Bật';
+
+  @override
+  String get appLockSettingsTitle => 'Khóa ứng dụng';
+
+  @override
+  String get appLockUnavailableDescription => 'Xác thực cục bộ không khả dụng hoặc đã bị hủy.';
+
+  @override
+  String get appLockUnlockAction => 'Mở khóa';
+
+  @override
+  String get appLockUnlockReason => 'Mở khóa Tuturuuu.';
+
+  @override
+  String get appLockUnlockingAction => 'Đang mở khóa...';
 
   @override
   String get appTitle => 'Tuturuuu';
+
+  @override
+  String get appUpdateChecking => 'Đang kiểm tra phiên bản ứng dụng...';
+
+  @override
+  String get appUpdateLater => 'Để sau';
+
+  @override
+  String get appUpdateNow => 'Cập nhật ngay';
+
+  @override
+  String get appUpdateRecommendedMessage => 'Đã có phiên bản ứng dụng mới hơn. Hãy cập nhật để nhận các bản sửa lỗi và cải tiến mới nhất.';
+
+  @override
+  String get appUpdateRecommendedTitle => 'Có bản cập nhật mới';
+
+  @override
+  String get appUpdateRequiredMessage => 'Phiên bản ứng dụng này không còn được hỗ trợ. Vui lòng cập nhật để tiếp tục sử dụng.';
+
+  @override
+  String get appUpdateRequiredTitle => 'Bắt buộc cập nhật';
+
+  @override
+  String get appsCustomize => 'Tùy chỉnh ứng dụng';
+
+  @override
+  String get appsHiddenExperimentsSection => 'Thử nghiệm đã ẩn';
+
+  @override
+  String get appsHiddenSection => 'Ứng dụng đã ẩn';
+
+  @override
+  String get appsHide => 'Ẩn ứng dụng';
+
+  @override
+  String get appsHideConfirmDescription => 'Ứng dụng sẽ chuyển xuống dưới các ứng dụng đang hiện. Bạn có thể hiện lại bất cứ lúc nào.';
+
+  @override
+  String get appsHideConfirmTitle => 'Ẩn ứng dụng này?';
+
+  @override
+  String get appsHubAllApps => 'Tất cả ứng dụng';
+
+  @override
+  String get appsHubCalendarDescription => 'Xem lịch làm việc, sự kiện sắp tới và các chế độ xem lịch.';
+
+  @override
+  String get appsHubChatDescription => 'Tập trung trò chuyện nhóm, tin nhắn trực tiếp, tệp và chat AI tại một nơi.';
+
+  @override
+  String get appsHubCmsDescription => 'Quản lý bộ sưu tập CMS, mục nội dung, hàng đợi và xuất bản.';
+
+  @override
+  String get appsHubCrmDescription => 'Quản lý khách hàng, phản hồi, nhập dữ liệu và nhật ký tại một nơi.';
+
+  @override
+  String get appsHubDocumentsDescription => 'Viết, chỉnh sửa và xuất bản ghi chú workspace trên điện thoại.';
+
+  @override
+  String get appsHubDriveDescription => 'Duyệt tệp, thư mục, tải lên và liên kết chia sẻ an toàn của workspace.';
+
+  @override
+  String get appsHubEducationDescription => 'Quản lý khóa học, ngân hàng câu hỏi, flashcard và lượt làm bài.';
+
+  @override
+  String get appsHubEmpty => 'Không tìm thấy ứng dụng';
+
+  @override
+  String get appsHubFeatured => 'Nổi bật';
+
+  @override
+  String get appsHubFinanceDescription => 'Quản lý ví, danh mục, thẻ và lịch sử giao dịch.';
+
+  @override
+  String get appsHubGridView => 'Lưới';
+
+  @override
+  String get appsHubHabitsDescription => 'Theo dõi thói quen chung, chuỗi ngày và tiến độ lặp lại.';
+
+  @override
+  String get appsHubHeroSubtitle => 'Chọn một công cụ để mở.';
+
+  @override
+  String get appsHubHeroTitle => 'Công cụ không gian làm việc';
+
+  @override
+  String get appsHubInventoryDescription => 'Quản lý sản phẩm, tồn kho, bán hàng và vận hành quầy tại một nơi.';
+
+  @override
+  String get appsHubListView => 'Danh sách';
+
+  @override
+  String get appsHubMailDescription => 'Đọc và gửi email, quản lý thư nháp và sắp xếp hộp thư đến.';
+
+  @override
+  String get appsHubMeetDescription => 'Lên lịch họp, xem lịch trình và theo dõi bản ghi.';
+
+  @override
+  String get appsHubMoreTools => 'Công cụ khác';
+
+  @override
+  String get appsHubNotesDescription => 'Ghi lại ý tưởng và liên kết với công việc.';
+
+  @override
+  String get appsHubNotificationsDescription => 'Xem hộp thư thông báo, cảnh báo và các cập nhật đã lưu trữ.';
+
+  @override
+  String get appsHubOpenApp => 'Mở';
+
+  @override
+  String get appsHubQuickAccess => 'Truy cập nhanh';
+
+  @override
+  String get appsHubSearchHint => 'Tìm kiếm ứng dụng';
+
+  @override
+  String get appsHubSearchResults => 'Kết quả tìm kiếm';
+
+  @override
+  String get appsHubSettingsDescription => 'Điều chỉnh cài đặt ứng dụng, không gian làm việc và cá nhân.';
+
+  @override
+  String get appsHubTasksDescription => 'Theo dõi việc được giao, bảng việc, ước lượng và kế hoạch portfolio.';
+
+  @override
+  String get appsHubTimerDescription => 'Theo dõi phiên, xem thống kê và xử lý yêu cầu chấm công.';
+
+  @override
+  String get appsNoMatches => 'Không có ứng dụng phù hợp';
+
+  @override
+  String get appsReorder => 'Kéo để sắp xếp';
+
+  @override
+  String get appsShow => 'Hiện ứng dụng';
+
+  @override
+  String get appsShowBottomTab => 'Hiện Ứng dụng trên thanh điều hướng dưới';
+
+  @override
+  String get appsUnavailableWithCurrentAccess => 'Không khả dụng với quyền truy cập hiện tại';
+
+  @override
+  String get assistantActionsTitle => 'Thao tác';
+
+  @override
+  String get assistantActiveLabel => 'đang hoạt động';
+
+  @override
+  String get assistantAskPlaceholder => 'Hỏi Mira bất cứ điều gì...';
+
+  @override
+  String get assistantAttachCaptureAction => 'Chụp và ghi âm';
+
+  @override
+  String get assistantAttachFilesAction => 'Thêm đính kèm';
+
+  @override
+  String get assistantAttachFilesSource => 'Tệp';
+
+  @override
+  String get assistantAttachGalleryMediaAction => 'Thư viện ảnh và video';
+
+  @override
+  String get assistantAttachmentClearAction => 'Xoá đính kèm';
+
+  @override
+  String get assistantAttachmentFailedShort => 'Tải lên thất bại';
+
+  @override
+  String get assistantAttachmentSheetTitle => 'Đính kèm';
+
+  @override
+  String get assistantAttachmentUploadFailed => 'Không tải được tệp đính kèm. Hãy xóa tệp và thử lại trước khi gửi.';
+
+  @override
+  String get assistantAttachmentUploadPending => 'Hãy đợi tải tệp lên xong rồi gửi.';
+
+  @override
+  String get assistantAudioUnavailable => 'Âm thanh bị gián đoạn. Hãy kết nối lại để tiếp tục cuộc trò chuyện.';
+
+  @override
+  String get assistantCalendarLabel => 'Lịch';
+
+  @override
+  String get assistantCancelAction => 'Huỷ';
+
+  @override
+  String get assistantCaptureAudio => 'Ghi âm';
+
+  @override
+  String get assistantCapturePhoto => 'Chụp ảnh';
+
+  @override
+  String get assistantCaptureVideo => 'Quay video';
+
+  @override
+  String get assistantCloseComposer => 'Đóng ô nhập';
+
+  @override
+  String get assistantCollapseNavigation => 'Ẩn điều hướng';
+
+  @override
+  String get assistantComingSoon => 'Sắp ra mắt';
+
+  @override
+  String get assistantContextUpdatedLabel => 'Đã cập nhật ngữ cảnh không gian làm việc';
+
+  @override
+  String get assistantConversationTitle => 'Cuộc trò chuyện';
+
+  @override
+  String get assistantCopiedMessageAction => 'Đã sao chép';
+
+  @override
+  String get assistantCopyMessageAction => 'Sao chép tin nhắn';
+
+  @override
+  String assistantCreditsSummary(int remaining, String tier) {
+    return 'Còn $remaining • $tier';
+  }
+
+  @override
+  String get assistantCreditsTitle => 'Tín dụng';
+
+  @override
+  String get assistantCreditsUnavailable => 'Chưa thể tải nguồn tín dụng của bạn. Vui lòng thử lại.';
+
+  @override
+  String get assistantDoneTodayLabel => 'hoàn thành hôm nay';
+
+  @override
+  String get assistantEditableLabel => 'Có thể chỉnh sửa';
+
+  @override
+  String get assistantEnterFullscreenAction => 'Vào toàn màn hình';
+
+  @override
+  String get assistantExitFullscreenAction => 'Thoát toàn màn hình';
+
+  @override
+  String get assistantExpandNavigation => 'Hiện điều hướng';
+
+  @override
+  String get assistantExportChat => 'Xuất đoạn chat';
+
+  @override
+  String get assistantExportShareText => 'Xuất đoạn chat Mira';
+
+  @override
+  String get assistantGalleryPickError => 'Không thể mở thư viện ảnh. Vui lòng thử lại.';
+
+  @override
+  String get assistantHideBottomNavLabel => 'Ẩn thanh điều hướng dưới';
+
+  @override
+  String get assistantHistoryEmpty => 'Chưa có đoạn chat nào. Hãy bắt đầu cuộc trò chuyện mới.';
+
+  @override
+  String get assistantHistoryTitle => 'Đoạn chat gần đây';
+
+  @override
+  String get assistantImmersiveLabel => 'Tập trung';
+
+  @override
+  String get assistantInputLabel => 'Đầu vào';
+
+  @override
+  String get assistantKeepLiveBrowsingDescription => 'Mira tiếp tục lắng nghe khi bạn duyệt ứng dụng và có thể biết mục đang mở để tìm tác vụ liên quan. Live kết thúc khi bạn tắt tùy chọn hoặc rời ứng dụng.';
+
+  @override
+  String get assistantKeepLiveBrowsingTitle => 'Giữ Live khi duyệt ứng dụng';
+
+  @override
+  String assistantLiveAccessSummary(String workspace, String source) {
+    return '$workspace • $source';
+  }
+
+  @override
+  String assistantLiveAccessUsingPersonal(String tier) {
+    return 'Đang dùng gói cá nhân $tier';
+  }
+
+  @override
+  String assistantLiveAccessUsingWorkspace(String tier) {
+    return 'Đang dùng gói không gian làm việc $tier';
+  }
+
+  @override
+  String get assistantLiveCameraPreview => 'Camera trực tiếp';
+
+  @override
+  String get assistantLiveConnect => 'Bắt đầu phiên trực tiếp';
+
+  @override
+  String get assistantLiveDescriptionConnecting => 'Đang tạo phiên Gemini Live trực tiếp cho văn bản, âm thanh và camera.';
+
+  @override
+  String get assistantLiveDescriptionError => 'Phiên trực tiếp gặp lỗi. Hãy thử lại hoặc bắt đầu phiên mới.';
+
+  @override
+  String get assistantLiveDescriptionIdle => 'Bắt đầu phiên trực tiếp để nói, gõ hoặc truyền camera vào cùng một cuộc trò chuyện.';
+
+  @override
+  String get assistantLiveDescriptionListening => 'Micro đang hoạt động. Mira sẽ tiếp tục lắng nghe âm thanh mới.';
+
+  @override
+  String get assistantLiveDescriptionPreparing => 'Đang tạo ephemeral token và khôi phục phiên trực tiếp có thể tiếp tục gần nhất.';
+
+  @override
+  String get assistantLiveDescriptionReady => 'Văn bản và âm thanh trực tiếp đã sẵn sàng. Hãy gõ, nói hoặc chia sẻ camera.';
+
+  @override
+  String get assistantLiveDescriptionReconnecting => 'Phiên đang kết nối lại bằng handle mới nhất và lịch sử đã khôi phục.';
+
+  @override
+  String get assistantLiveDisconnect => 'Kết thúc phiên trực tiếp';
+
+  @override
+  String get assistantLiveDraftAssistant => 'Mira đang trả lời';
+
+  @override
+  String get assistantLiveDraftUser => 'Bạn đang nói';
+
+  @override
+  String get assistantLiveHideCamera => 'Ẩn camera';
+
+  @override
+  String get assistantLiveIdleHeading => 'Trò chuyện với Mira';
+
+  @override
+  String get assistantLiveInfoAccessHeading => 'Quyền truy cập hiện tại';
+
+  @override
+  String get assistantLiveInfoDismiss => 'Đã hiểu';
+
+  @override
+  String get assistantLiveInsightsTitle => 'Thông tin nhanh trực tiếp';
+
+  @override
+  String get assistantLiveListen => 'Bật micro';
+
+  @override
+  String get assistantLiveModelBadge => 'Gemini 3.8 Live';
+
+  @override
+  String get assistantLiveMute => 'Tắt micro';
+
+  @override
+  String get assistantLiveNoMessagesBody => 'Dùng giọng nói, văn bản hoặc tệp đính kèm để bắt đầu. Mọi thứ từ phiên trực tiếp sẽ được đồng bộ lại vào luồng chat này.';
+
+  @override
+  String get assistantLiveNoMessagesTitle => 'Trợ lý trực tiếp đã sẵn sàng';
+
+  @override
+  String get assistantLiveOpenMode => 'Mở chế độ trực tiếp';
+
+  @override
+  String get assistantLivePermissionDenied => 'Camera hoặc micro đang bị chặn. Hãy cấp quyền để dùng đầy đủ chế độ trực tiếp.';
+
+  @override
+  String assistantLiveReconnectBanner(String timeLeft) {
+    return 'Phát hiện phiên đang xoay vòng. Đang kết nối lại với khoảng $timeLeft còn lại.';
+  }
+
+  @override
+  String get assistantLiveRetryAction => 'Thử lại phiên trực tiếp';
+
+  @override
+  String get assistantLiveReturnToChat => 'Quay lại chat';
+
+  @override
+  String get assistantLiveScreenActive => 'Bạn đang chia sẻ màn hình với Live';
+
+  @override
+  String get assistantLiveScreenConnectionRequired => 'Kết nối với Live trước khi chia sẻ màn hình.';
+
+  @override
+  String get assistantLiveScreenMicrophoneRequired => 'Bật micrô trước khi chia sẻ màn hình. Live cần phiên thoại để tiếp tục khi bạn chuyển ứng dụng.';
+
+  @override
+  String get assistantLiveScreenPending => 'Đang chờ quyền chia sẻ màn hình';
+
+  @override
+  String get assistantLiveScreenPrivacy => 'Nội dung hiển thị trên màn hình có thể được chia sẻ với Live. Hãy ẩn thông tin riêng tư trước khi tiếp tục.';
+
+  @override
+  String get assistantLiveScreenStopped => 'Đã kết thúc chia sẻ màn hình.';
+
+  @override
+  String get assistantLiveScreenUnavailable => 'Không thể bắt đầu chia sẻ màn hình. Vui lòng thử lại.';
+
+  @override
+  String get assistantLiveSettingSaveError => 'Không thể lưu cài đặt Live. Vui lòng thử lại.';
+
+  @override
+  String get assistantLiveShareScreen => 'Chia sẻ màn hình';
+
+  @override
+  String get assistantLiveShowCamera => 'Hiện camera';
+
+  @override
+  String get assistantLiveStageAssistantReady => 'Đang chờ phản hồi tiếp theo';
+
+  @override
+  String get assistantLiveStageAssistantSpeaking => 'Đang phát phản hồi bằng giọng nói';
+
+  @override
+  String get assistantLiveStageYouListening => 'Micro của bạn đang hoạt động';
+
+  @override
+  String get assistantLiveStageYouMuted => 'Chạm vào micro để nói tiếp';
+
+  @override
+  String get assistantLiveStatusAvailable => 'Sẵn sàng';
+
+  @override
+  String get assistantLiveStatusConnecting => 'Đang kết nối';
+
+  @override
+  String get assistantLiveStatusDisconnected => 'Chưa kết nối';
+
+  @override
+  String get assistantLiveStatusError => 'Cần xử lý';
+
+  @override
+  String get assistantLiveStatusPreparing => 'Đang chuẩn bị';
+
+  @override
+  String get assistantLiveStatusReady => 'Trực tiếp';
+
+  @override
+  String get assistantLiveStatusReconnecting => 'Đang kết nối lại';
+
+  @override
+  String get assistantLiveStatusSyncing => 'Đang đồng bộ';
+
+  @override
+  String get assistantLiveStatusUnavailable => 'Chưa khả dụng';
+
+  @override
+  String get assistantLiveStopScreen => 'Dừng chia sẻ';
+
+  @override
+  String get assistantLiveSubtitle => 'Gemini 3.1 Flash Live với giọng nói, camera, tệp đính kèm và lịch sử chat thống nhất.';
+
+  @override
+  String get assistantLiveTierRequired => 'Giọng nói trực tiếp chỉ có từ gói PLUS trở lên.';
+
+  @override
+  String get assistantLiveTitle => 'Mira Live';
+
+  @override
+  String get assistantLiveTranscriptEmpty => 'Bắt đầu nói hoặc nhập tin nhắn. Cuộc trò chuyện sẽ hiển thị ở đây.';
+
+  @override
+  String get assistantLiveTranscriptTitle => 'Bản ghi trực tiếp';
+
+  @override
+  String get assistantLiveTypeMessage => 'Gõ';
+
+  @override
+  String assistantLiveWorkspaceTierLabel(String tier) {
+    return 'Gói không gian làm việc $tier';
+  }
+
+  @override
+  String get assistantLocalBudget => 'Vượt giới hạn lưu trữ mô hình. Hãy xóa một mô hình trước khi cài mô hình khác.';
+
+  @override
+  String get assistantLocalBudgetDescription => 'Các mô hình dùng chung giới hạn lưu trữ 1 GiB. Khi thay thế, tạm thời cần lưu cả hai tệp.';
+
+  @override
+  String get assistantLocalBusy => 'Một thao tác mô hình khác đang chạy trên thiết bị này.';
+
+  @override
+  String get assistantLocalDownload => 'Tải xuống';
+
+  @override
+  String get assistantLocalDownloadSource => 'Lấy mô hình từ nhà phát hành';
+
+  @override
+  String get assistantLocalEngineError => 'Suy luận trên thiết bị không thành công. Hãy chọn lại mô hình để nạp lại. Lời nhắc của bạn không được gửi từ xa.';
+
+  @override
+  String get assistantLocalHardware => 'Suy luận cục bộ cần thiết bị được hỗ trợ có ít nhất 4 GiB bộ nhớ. Bộ nhớ khả dụng và khả năng nạp mô hình vẫn quyết định việc sử dụng.';
+
+  @override
+  String get assistantLocalHelp => 'Văn bản cục bộ được giữ trên thiết bị. Giọng nói Live, tệp đính kèm và công cụ không gian làm việc dùng chế độ từ xa.';
+
+  @override
+  String get assistantLocalHistoryNotice => 'Mỗi mô hình và không gian làm việc có một hội thoại trên thiết bị. Tối đa 32 tin nhắn được giữ lại, tùy việc dọn bộ nhớ đệm mã hóa.';
+
+  @override
+  String get assistantLocalImport => 'Nhập tệp có giấy phép';
+
+  @override
+  String get assistantLocalInputError => 'Lời nhắc cục bộ được giới hạn ở 6.000 ký tự.';
+
+  @override
+  String get assistantLocalIntegrity => 'Tệp này không khớp với mô hình đã xác minh. Hãy lấy đúng phiên bản được phát hành.';
+
+  @override
+  String get assistantLocalLicense => 'Giấy phép';
+
+  @override
+  String get assistantLocalLoading => 'Đang chuẩn bị mô hình trên thiết bị';
+
+  @override
+  String get assistantLocalMissing => 'Mô hình cục bộ đã chọn không khả dụng. Hãy tải mô hình hoặc chủ động chọn chế độ từ xa.';
+
+  @override
+  String assistantLocalMode(String model) {
+    return 'Trên thiết bị: $model';
+  }
+
+  @override
+  String get assistantLocalModeAction => 'Cài đặt mô hình trên thiết bị';
+
+  @override
+  String get assistantLocalModeSwitch => 'Lịch sử cục bộ và từ xa được giữ riêng. Bản nháp đang nhập được giữ trong ô soạn thảo.';
+
+  @override
+  String get assistantLocalNotDownloaded => 'Chưa tải xuống';
+
+  @override
+  String get assistantLocalRemote => 'Mô hình từ xa';
+
+  @override
+  String get assistantLocalRemoteHint => 'Dùng nhà cung cấp trực tuyến. Hội thoại cục bộ không được tải lên.';
+
+  @override
+  String get assistantLocalRemove => 'Xóa tệp mô hình';
+
+  @override
+  String get assistantLocalSelected => 'Đã chọn cho Mira';
+
+  @override
+  String get assistantLocalSelectionUnknown => 'Mô hình cục bộ đã chọn không còn trong danh mục. Hãy chọn mô hình khác hoặc chủ động chọn chế độ từ xa.';
+
+  @override
+  String assistantLocalSize(int size) {
+    return '$size MiB';
+  }
+
+  @override
+  String get assistantLocalStop => 'Dừng tạo phản hồi cục bộ';
+
+  @override
+  String get assistantLocalStorageError => 'Không thể lưu lịch sử hoặc chế độ cục bộ. Hội thoại của bạn không được tải lên.';
+
+  @override
+  String get assistantLocalTextOnly => 'Chế độ cục bộ chỉ hỗ trợ văn bản';
+
+  @override
+  String get assistantLocalTitle => 'Mô hình trên thiết bị';
+
+  @override
+  String get assistantLocalUnavailable => 'Không thể chuẩn bị mô hình cục bộ. Hãy kiểm tra bộ nhớ lưu trữ và thử lại.';
+
+  @override
+  String get assistantLocalUnsupported => 'Suy luận trên thiết bị không khả dụng cho thiết bị này.';
+
+  @override
+  String get assistantLocalUse => 'Dùng trên thiết bị này';
+
+  @override
+  String get assistantLocalVerified => 'Tệp tải đã xác minh';
+
+  @override
+  String get assistantMediaPreviewError => 'Không mở được nội dung này. Vui lòng thử lại.';
+
+  @override
+  String get assistantMermaidDiagramLabel => 'Sơ đồ';
+
+  @override
+  String get assistantMermaidRenderError => 'Không thể hiển thị sơ đồ Mermaid này.';
+
+  @override
+  String get assistantMermaidZoomHint => 'Chụm hoặc dùng các nút thu phóng để xem kỹ sơ đồ ở chế độ toàn màn hình.';
+
+  @override
+  String get assistantMermaidZoomIn => 'Phóng to';
+
+  @override
+  String get assistantMermaidZoomOut => 'Thu nhỏ';
+
+  @override
+  String get assistantMermaidZoomReset => 'Đặt lại thu phóng';
+
+  @override
+  String get assistantMessageActionsTitle => 'Thao tác tin nhắn';
+
+  @override
+  String get assistantMicrophoneUnavailable => 'Không thể sử dụng micrô. Hãy kiểm tra quyền truy cập hoặc kết nối lại tai nghe rồi thử lại.';
+
+  @override
+  String get assistantModeFast => 'Nhanh';
+
+  @override
+  String get assistantModeThinking => 'Suy nghĩ';
+
+  @override
+  String get assistantModelAll => 'Tất cả';
+
+  @override
+  String get assistantModelEmpty => 'Không có mô hình phù hợp';
+
+  @override
+  String get assistantModelFavorite => 'Thêm vào yêu thích';
+
+  @override
+  String get assistantModelFavorites => 'Yêu thích';
+
+  @override
+  String get assistantModelFavoritesError => 'Không thể đồng bộ yêu thích. Hãy thử lại.';
+
+  @override
+  String get assistantModelHideLocked => 'Ẩn mô hình không khả dụng';
+
+  @override
+  String get assistantModelInputCost => 'Đầu vào';
+
+  @override
+  String get assistantModelLabel => 'Mô hình';
+
+  @override
+  String get assistantModelOutputCost => 'Đầu ra';
+
+  @override
+  String get assistantModelUnfavorite => 'Bỏ khỏi yêu thích';
+
+  @override
+  String get assistantNewConversation => 'Cuộc trò chuyện mới';
+
+  @override
+  String get assistantOutputLabel => 'Đầu ra';
+
+  @override
+  String get assistantPersonalCredits => 'Tín dụng cá nhân';
+
+  @override
+  String get assistantPersonalWorkspace => 'Cá nhân';
+
+  @override
+  String get assistantPhotoAttachment => 'Ảnh';
+
+  @override
+  String get assistantPreferencesUpdatedLabel => 'Đã cập nhật tuỳ chọn trợ lý';
+
+  @override
+  String get assistantQueuedPrefix => 'Đang xếp hàng:';
+
+  @override
+  String get assistantQuickPromptCalendar => 'Tóm tắt lịch hôm nay của tôi';
+
+  @override
+  String get assistantQuickPromptExpense => 'Ghi nhanh một khoản chi cho bữa trưa';
+
+  @override
+  String get assistantQuickPromptFocus => 'Giúp tôi lên kế hoạch cho một khối tập trung tiếp theo';
+
+  @override
+  String get assistantQuickPromptTasks => 'Cho tôi xem các công việc khẩn cấp nhất';
+
+  @override
+  String get assistantReasoningLabel => 'Lý do';
+
+  @override
+  String get assistantRenameAction => 'Đổi tên';
+
+  @override
+  String get assistantRenameTitle => 'Đổi tên Mira';
+
+  @override
+  String get assistantReplyFailed => 'Mira chưa trả lời xong. Tin nhắn của bạn vẫn ở đây. Thử lại';
+
+  @override
+  String get assistantSaveAction => 'Lưu';
+
+  @override
+  String get assistantScrollToBottomAction => 'Cuộn xuống cuối';
+
+  @override
+  String get assistantSearchModels => 'Tìm mô hình';
+
+  @override
+  String get assistantSeeLessLabel => 'Thu gọn';
+
+  @override
+  String get assistantSeeMoreLabel => 'Xem thêm';
+
+  @override
+  String get assistantSelectWorkspace => 'Chọn một không gian làm việc';
+
+  @override
+  String get assistantSendAction => 'Gửi tin nhắn';
+
+  @override
+  String get assistantSettingsTitle => 'Cài đặt Mira';
+
+  @override
+  String get assistantShowBottomNavLabel => 'Hiện thanh điều hướng dưới';
+
+  @override
+  String get assistantSourceLabel => 'Nguồn';
+
+  @override
+  String get assistantSourcePersonal => 'Cá nhân';
+
+  @override
+  String get assistantSourceWorkspace => 'Không gian làm việc';
+
+  @override
+  String get assistantStandardLabel => 'Tiêu chuẩn';
+
+  @override
+  String get assistantStarterBacklog => 'Dọn backlog';
+
+  @override
+  String get assistantStarterCaptionBacklog => 'Tách các việc đang mở thành danh sách bước tiếp theo rõ ràng.';
+
+  @override
+  String get assistantStarterCaptionDraft => 'Soạn sẵn một cập nhật ngắn gọn trước khi gửi.';
+
+  @override
+  String get assistantStarterCaptionFocus => 'Để Mira gợi ý việc đáng làm nhất tiếp theo.';
+
+  @override
+  String get assistantStarterCaptionPlan => 'Cân bằng lịch họp, đầu việc và thời gian tập trung.';
+
+  @override
+  String get assistantStarterDraft => 'Cập nhật cho nhóm';
+
+  @override
+  String get assistantStarterFocus => 'Trọng tâm hôm nay';
+
+  @override
+  String get assistantStarterPlan => 'Kế hoạch hôm nay';
+
+  @override
+  String get assistantStarterSubtitle => 'Chọn một gợi ý nhanh hoặc tự gõ điều bạn cần.';
+
+  @override
+  String get assistantStarterTitle => 'Chưa biết bắt đầu từ đâu?';
+
+  @override
+  String get assistantTasksLabel => 'Công việc';
+
+  @override
+  String get assistantThinkingStatus => 'Đang suy nghĩ...';
+
+  @override
+  String get assistantToolCompleted => 'Hoàn tất';
+
+  @override
+  String get assistantToolGeneratedImage => 'Ảnh đã tạo';
+
+  @override
+  String get assistantToolImageUnavailable => 'Ảnh đã tạo hiện không khả dụng.';
+
+  @override
+  String get assistantToolLabel => 'Công cụ';
+
+  @override
+  String get assistantToolNoActionNeeded => 'Không cần dùng công cụ nào cho phản hồi này.';
+
+  @override
+  String get assistantToolSelectedTools => 'Công cụ đã chọn';
+
+  @override
+  String get assistantToolsLabel => 'Công cụ';
+
+  @override
+  String get assistantUntitledChat => 'Đoạn chat chưa có tiêu đề';
+
+  @override
+  String get assistantUpcomingLabel => 'sắp tới';
+
+  @override
+  String get assistantVideoAttachment => 'Video';
+
+  @override
+  String get assistantViewOnlyLabel => 'Chỉ xem';
+
+  @override
+  String get assistantWorkspaceAwareDescription => 'Mira theo ngữ cảnh không gian làm việc cho việc lên kế hoạch, hỏi đáp và thao tác nhanh.';
+
+  @override
+  String get assistantWorkspaceCredits => 'Tín dụng không gian làm việc';
+
+  @override
+  String get assistantYouLabel => 'Bạn';
+
+  @override
+  String get authAddAccount => 'Thêm tài khoản';
+
+  @override
+  String get authAddAccountDescription => 'Đăng nhập bằng tài khoản khác trên thiết bị này.';
+
+  @override
+  String get authAddAccountFailed => 'Không thể bắt đầu thêm một tài khoản khác.';
+
+  @override
+  String get authAddAccountHint => 'Bạn đang thêm một tài khoản khác vào thiết bị này.';
+
+  @override
+  String get authAddAccountTitle => 'Thêm tài khoản';
+
+  @override
+  String get authAppleBrowserLaunchFailed => 'Không thể mở đăng nhập Apple lúc này.';
+
+  @override
+  String get authAppleSignInFailed => 'Đăng nhập Apple thất bại. Vui lòng thử lại.';
+
+  @override
+  String get authContinueWithApple => 'Tiếp tục với Apple';
+
+  @override
+  String get authContinueWithEmail => 'hoặc tiếp tục với email';
+
+  @override
+  String get authContinueWithGithub => 'Tiếp tục với GitHub';
+
+  @override
+  String get authContinueWithGoogle => 'Tiếp tục với Google';
+
+  @override
+  String get authContinueWithMicrosoft => 'Tiếp tục với Microsoft';
+
+  @override
+  String get authContinueWithQr => 'hoặc';
+
+  @override
+  String get authContinueWithSocial => 'hoặc dùng tài khoản mạng xã hội';
+
+  @override
+  String get authCurrentAccountBadge => 'Đang sử dụng';
+
+  @override
+  String get authCurrentAccountDescription => 'Đây là tài khoản đang được sử dụng trên thiết bị này.';
+
+  @override
+  String get authCurrentAccountTitle => 'Tài khoản hiện tại';
+
+  @override
+  String get authGithubBrowserLaunchFailed => 'Không thể mở đăng nhập GitHub lúc này.';
+
+  @override
+  String get authGoogleBrowserLaunchFailed => 'Không thể mở đăng nhập Google lúc này.';
+
+  @override
+  String get authGoogleSignInFailed => 'Đăng nhập Google thất bại. Vui lòng thử lại.';
+
+  @override
+  String get authLogOut => 'Đăng xuất';
+
+  @override
+  String get authLogOutConfirmDialogBody => 'Nếu có tài khoản đã lưu, ứng dụng sẽ chuyển sang tài khoản đó.';
+
+  @override
+  String get authLogOutConfirmDialogTitle => 'Đăng xuất khỏi thiết bị này?';
+
+  @override
+  String get authLogOutCurrent => 'Đăng xuất tài khoản hiện tại';
+
+  @override
+  String get authLogOutCurrentConfirm => 'Đăng xuất tài khoản này khỏi thiết bị? Nếu có tài khoản khác, ứng dụng sẽ tự động chuyển sang tài khoản đó.';
+
+  @override
+  String get authLogOutCurrentDescription => 'Đăng xuất tài khoản này và tự động chuyển sang tài khoản đã lưu khác nếu có.';
+
+  @override
+  String get authLogOutCurrentFailed => 'Không thể đăng xuất tài khoản này.';
+
+  @override
+  String get authLogOutCurrentSuccess => 'Đã đăng xuất tài khoản hiện tại.';
+
+  @override
+  String get authManageAccounts => 'Quản lý tài khoản';
+
+  @override
+  String get authManageAccountsDescription => 'Thêm, xóa hoặc đăng xuất các tài khoản trên thiết bị này.';
+
+  @override
+  String get authManageAccountsEmpty => 'Không còn tài khoản nào khác được lưu trên thiết bị này.';
+
+  @override
+  String get authMicrosoftBrowserLaunchFailed => 'Không thể mở đăng nhập Microsoft lúc này.';
+
+  @override
+  String get authNoStoredAccounts => 'Chưa có tài khoản nào được lưu.';
+
+  @override
+  String get authRemoveAccount => 'Xóa tài khoản';
+
+  @override
+  String authRemoveAccountConfirm(Object name) {
+    return 'Xóa $name khỏi thiết bị này? Bạn sẽ cần đăng nhập lại.';
+  }
+
+  @override
+  String get authRemoveAccountFailed => 'Không thể xóa tài khoản này.';
+
+  @override
+  String get authRemoveAccountSuccess => 'Đã xóa tài khoản thành công.';
+
+  @override
+  String get authSavedAccountBadge => 'Đã lưu trên thiết bị';
+
+  @override
+  String get authSavedAccountsDescription => 'Quản lý các tài khoản được lưu trên thiết bị này mà không đổi tài khoản hiện tại.';
+
+  @override
+  String get authSavedAccountsTitle => 'Tài khoản đã lưu';
+
+  @override
+  String get authSwitchAccount => 'Chuyển tài khoản';
+
+  @override
+  String get authSwitchAccountDescription => 'Chọn một tài khoản đã lưu để tiếp tục.';
+
+  @override
+  String get authSwitchAccountFailed => 'Không thể chuyển tài khoản.';
+
+  @override
+  String get authSwitchAccountSuccess => 'Đã chuyển tài khoản.';
+
+  @override
+  String get cacheCategoryCalendar => 'Lịch';
+
+  @override
+  String get cacheCategoryFinance => 'Tài chính';
+
+  @override
+  String get cacheCategoryMail => 'Thư';
+
+  @override
+  String get cacheCategoryMailMedia => 'Hình ảnh thư';
+
+  @override
+  String get cacheCategoryMessages => 'Tin nhắn và ghi chú';
+
+  @override
+  String get cacheCategoryOther => 'Dữ liệu khác';
+
+  @override
+  String get cacheCategoryTasks => 'Công việc';
+
+  @override
+  String get cacheStorageClear => 'Xóa dữ liệu đệm';
+
+  @override
+  String get cacheStorageClearDescription => 'Dữ liệu đã tải sẽ được tải lại khi cần. Các thay đổi ngoại tuyến đang chờ vẫn được giữ.';
+
+  @override
+  String get cacheStorageDescription => 'Xem dữ liệu đệm theo loại và chọn dung lượng tối đa.';
+
+  @override
+  String get cacheStorageError => 'Không thể đọc hoặc cập nhật dữ liệu đệm. Hãy thử lại.';
+
+  @override
+  String get cacheStorageEstimateNote => 'Dung lượng dữ liệu đã lưu ước tính. Dữ liệu mã hóa và bộ nhớ đệm hệ thống có thể khác.';
+
+  @override
+  String get cacheStorageLimit => 'Dung lượng dữ liệu đệm tối đa';
+
+  @override
+  String get cacheStorageTitle => 'Bộ nhớ và dữ liệu đệm';
+
+  @override
+  String get calendarAgendaEmpty => 'Không có sự kiện sắp tới';
+
+  @override
+  String get calendarAgendaView => 'Lịch trình';
+
+  @override
+  String get calendarAllDay => 'Cả ngày';
+
+  @override
+  String calendarAllDayProgress(int current, int total) {
+    return 'Ngày $current / $total';
+  }
+
+  @override
+  String get calendarConnectionsAccounts => 'Tài khoản đã kết nối';
+
+  @override
+  String get calendarConnectionsAddAccount => 'Thêm tài khoản';
+
+  @override
+  String get calendarConnectionsDisconnect => 'Ngắt kết nối';
+
+  @override
+  String calendarConnectionsDisconnectConfirm(String account) {
+    return 'Ngắt kết nối $account? Các lịch liên quan sẽ bị vô hiệu hóa.';
+  }
+
+  @override
+  String get calendarConnectionsEmpty => 'Chưa có tài khoản nào được kết nối';
+
+  @override
+  String get calendarConnectionsSubtitle => 'Kết nối tài khoản Google và Microsoft để đồng bộ lịch.';
+
+  @override
+  String get calendarConnectionsTitle => 'Quản lý tài khoản lịch';
+
+  @override
+  String get calendarDayView => 'Ngày';
+
+  @override
+  String get calendarDeleteConfirm => 'Xóa sự kiện này?';
+
+  @override
+  String get calendarDeleteEvent => 'Xóa sự kiện';
+
+  @override
+  String get calendarEditEvent => 'Sửa sự kiện';
+
+  @override
+  String get calendarEmpty => 'Không có sự kiện';
+
+  @override
+  String get calendarEventAllDay => 'Cả ngày';
+
+  @override
+  String get calendarEventCancel => 'Hủy';
+
+  @override
+  String get calendarEventColor => 'Màu sắc';
+
+  @override
+  String get calendarEventCreate => 'Tạo sự kiện';
+
+  @override
+  String get calendarEventCreated => 'Đã tạo sự kiện';
+
+  @override
+  String get calendarEventDelete => 'Xóa';
+
+  @override
+  String get calendarEventDeleted => 'Đã xóa sự kiện';
+
+  @override
+  String get calendarEventDescription => 'Mô tả';
+
+  @override
+  String get calendarEventDescriptionHint => 'Thêm mô tả';
+
+  @override
+  String get calendarEventEndDate => 'Ngày kết thúc';
+
+  @override
+  String get calendarEventEndTime => 'Giờ kết thúc';
+
+  @override
+  String get calendarEventSave => 'Lưu';
+
+  @override
+  String get calendarEventStartDate => 'Ngày bắt đầu';
+
+  @override
+  String get calendarEventStartTime => 'Giờ bắt đầu';
+
+  @override
+  String get calendarEventTitle => 'Tiêu đề';
+
+  @override
+  String get calendarEventTitleHint => 'Thêm tiêu đề';
+
+  @override
+  String get calendarEventUnavailable => 'Sự kiện này không còn khả dụng.';
+
+  @override
+  String get calendarEventUpdate => 'Cập nhật sự kiện';
+
+  @override
+  String get calendarEventUpdated => 'Đã cập nhật sự kiện';
+
+  @override
+  String calendarGoogleColorEvent(String id) {
+    return 'Màu Google $id';
+  }
+
+  @override
+  String get calendarGoogleColorInherit => 'Dùng màu lịch';
+
+  @override
+  String calendarGoogleColorLabel(String id) {
+    return 'Nhãn tùy chỉnh $id';
+  }
+
+  @override
+  String get calendarInvalidLocalTime => 'Chọn thời gian bắt đầu và kết thúc hợp lệ. Một số thời điểm không tồn tại khi đổi giờ mùa hè.';
+
+  @override
+  String get calendarMonthView => 'Tháng';
+
+  @override
+  String get calendarNewEvent => 'Sự kiện mới';
+
+  @override
+  String get calendarNoEvents => 'Không có sự kiện cho ngày này';
+
+  @override
+  String get calendarProviderColorSeparateEdit => 'Lưu các thay đổi khác trước khi đổi màu Google.';
+
+  @override
+  String get calendarThreeDayView => '3 Ngày';
+
+  @override
+  String get calendarTitle => 'Lịch';
+
+  @override
+  String get calendarToday => 'Hôm nay';
+
+  @override
+  String get calendarWeekView => 'Tuần';
+
+  @override
+  String get calendarYearView => 'Năm';
+
+  @override
+  String get camera => 'Camera';
+
+  @override
+  String get captchaError => 'Kiểm tra bảo mật thất bại. Vui lòng thử lại.';
 
   @override
   String get chatAccept => 'Chấp nhận';
@@ -233,1625 +1456,517 @@ class AppLocalizationsVi extends AppLocalizations {
   String get chatWorkspace => 'Workspace';
 
   @override
-  String get counterAppBarTitle => 'Bộ đếm';
+  String get cmsAllCollections => 'Tất cả bộ sưu tập';
 
   @override
-  String get loginTitle => 'Chào mừng trở lại';
+  String get cmsArchivedBacklog => 'Nội dung lưu trữ';
 
   @override
-  String get loginSubtitle => 'Đăng nhập để tiếp tục';
+  String get cmsCollection => 'Bộ sưu tập';
 
   @override
-  String get loginContinueWithEmail => 'Tiếp tục với email';
+  String get cmsCollectionCreated => 'Đã tạo bộ sưu tập.';
 
   @override
-  String get loginOtpInstruction => 'Nhập mã 6 chữ số chúng tôi đã gửi đến email của bạn.';
+  String get cmsCollectionDeleted => 'Đã xóa bộ sưu tập.';
 
   @override
-  String loginOtpRateLimitedInstruction(Object seconds) {
-    return 'Nhập mã bên dưới hoặc dùng mật khẩu thay thế. Thử lại sau $seconds giây.';
-  }
+  String get cmsCollectionEnabled => 'Đang bật';
 
   @override
-  String get loginResendOtp => 'Gửi lại mã';
+  String get cmsCollectionType => 'Loại bộ sưu tập';
 
   @override
-  String loginRetryIn(Object seconds) {
-    return 'Thử lại sau $seconds giây';
-  }
+  String get cmsCollectionUpdated => 'Đã lưu bộ sưu tập.';
 
   @override
-  String loginRetryAfter(Object seconds) {
-    return 'Thử lại sau $seconds giây';
-  }
+  String get cmsCollections => 'Bộ sưu tập';
 
   @override
-  String get loginSignIn => 'Đăng nhập';
+  String get cmsDeleteCollection => 'Xóa bộ sưu tập';
 
   @override
-  String get loginSendOtp => 'Gửi mã';
+  String get cmsDeleteCollectionConfirm => 'Xóa bộ sưu tập này? Các mục trong bộ sưu tập có thể bị ảnh hưởng.';
 
   @override
-  String get loginUseOtpInstead => 'Dùng mã email thay thế';
+  String get cmsDeleteEntry => 'Xóa mục nội dung';
 
   @override
-  String get loginUsePasswordInstead => 'Dùng mật khẩu thay thế';
+  String get cmsDeleteEntryConfirm => 'Xóa mục nội dung này? Thao tác này không thể hoàn tác.';
 
   @override
-  String get loginVerifyOtp => 'Xác minh mã';
+  String get cmsDescription => 'Mô tả';
 
   @override
-  String get authContinueWithApple => 'Tiếp tục với Apple';
+  String get cmsEditCollection => 'Chỉnh sửa bộ sưu tập';
 
   @override
-  String get authContinueWithGithub => 'Tiếp tục với GitHub';
+  String get cmsEditEntry => 'Chỉnh sửa mục nội dung';
 
   @override
-  String get authContinueWithGoogle => 'Tiếp tục với Google';
+  String get cmsEntries => 'Mục nội dung';
 
   @override
-  String get authContinueWithMicrosoft => 'Tiếp tục với Microsoft';
+  String get cmsEntryCreated => 'Đã tạo mục nội dung.';
 
   @override
-  String get authContinueWithEmail => 'hoặc tiếp tục với email';
+  String get cmsEntryDeleted => 'Đã xóa mục nội dung.';
 
   @override
-  String get authContinueWithQr => 'hoặc';
+  String get cmsEntryUpdated => 'Đã lưu mục nội dung.';
 
   @override
-  String get authContinueWithSocial => 'hoặc dùng tài khoản mạng xã hội';
+  String get cmsLibrary => 'Thư viện';
 
   @override
-  String get authAppleSignInFailed => 'Đăng nhập Apple thất bại. Vui lòng thử lại.';
+  String get cmsNeedsAttention => 'Cần xử lý';
 
   @override
-  String get authAppleBrowserLaunchFailed => 'Không thể mở đăng nhập Apple lúc này.';
+  String get cmsNewCollection => 'Bộ sưu tập mới';
 
   @override
-  String get authGithubBrowserLaunchFailed => 'Không thể mở đăng nhập GitHub lúc này.';
+  String get cmsNewEntry => 'Mục nội dung mới';
 
   @override
-  String get authGoogleSignInFailed => 'Đăng nhập Google thất bại. Vui lòng thử lại.';
+  String get cmsNoAccess => 'CMS chưa khả dụng cho workspace này.';
 
   @override
-  String get authGoogleBrowserLaunchFailed => 'Không thể mở đăng nhập Google lúc này.';
+  String get cmsNoCollections => 'Chưa có bộ sưu tập nào.';
 
   @override
-  String get authMicrosoftBrowserLaunchFailed => 'Không thể mở đăng nhập Microsoft lúc này.';
+  String get cmsNoEntries => 'Chưa có mục nội dung nào.';
 
   @override
-  String get authAddAccount => 'Thêm tài khoản';
+  String get cmsOverview => 'Tổng quan';
 
   @override
-  String get authAddAccountDescription => 'Đăng nhập bằng tài khoản khác trên thiết bị này.';
+  String get cmsQueueEmpty => 'Không có gì đang chờ ở đây.';
 
   @override
-  String get authAddAccountFailed => 'Không thể bắt đầu thêm một tài khoản khác.';
+  String get cmsScheduledSoon => 'Sắp xuất bản';
 
   @override
-  String get authAddAccountHint => 'Bạn đang thêm một tài khoản khác vào thiết bị này.';
+  String get cmsSearchHint => 'Tìm bộ sưu tập và bài viết';
 
   @override
-  String get authAddAccountTitle => 'Thêm tài khoản';
+  String get cmsSlug => 'Slug';
 
   @override
-  String get authLogOut => 'Đăng xuất';
+  String get cmsStatus => 'Trạng thái';
 
   @override
-  String get authLogOutCurrent => 'Đăng xuất tài khoản hiện tại';
+  String get cmsStatusArchived => 'Đã lưu trữ';
 
   @override
-  String get authLogOutConfirmDialogTitle => 'Đăng xuất khỏi thiết bị này?';
+  String get cmsStatusDraft => 'Bản nháp';
 
   @override
-  String get authLogOutConfirmDialogBody => 'Nếu có tài khoản đã lưu, ứng dụng sẽ chuyển sang tài khoản đó.';
+  String get cmsStatusPublished => 'Đã xuất bản';
 
   @override
-  String get authLogOutCurrentConfirm => 'Đăng xuất tài khoản này khỏi thiết bị? Nếu có tài khoản khác, ứng dụng sẽ tự động chuyển sang tài khoản đó.';
+  String get cmsStatusScheduled => 'Đã lên lịch';
 
   @override
-  String get authLogOutCurrentDescription => 'Đăng xuất tài khoản này và tự động chuyển sang tài khoản đã lưu khác nếu có.';
+  String get cmsSubtitle => 'Phụ đề';
 
   @override
-  String get authLogOutCurrentFailed => 'Không thể đăng xuất tài khoản này.';
+  String get cmsSubtitleApp => 'Quản lý bộ sưu tập nội dung, mục nội dung và hàng đợi xuất bản.';
 
   @override
-  String get authLogOutCurrentSuccess => 'Đã đăng xuất tài khoản hiện tại.';
+  String get cmsSummary => 'Tóm tắt';
 
   @override
-  String get authNoStoredAccounts => 'Chưa có tài khoản nào được lưu.';
+  String get cmsTitle => 'Tiêu đề';
 
   @override
-  String get authSwitchAccount => 'Chuyển tài khoản';
+  String get cmsTitleApp => 'CMS';
 
   @override
-  String get authSwitchAccountDescription => 'Chọn một tài khoản đã lưu để tiếp tục.';
+  String get commonActive => 'Đang hoạt động';
 
   @override
-  String get authSwitchAccountFailed => 'Không thể chuyển tài khoản.';
+  String get commonAll => 'Tất cả';
 
   @override
-  String get authSwitchAccountSuccess => 'Đã chuyển tài khoản.';
+  String get commonApply => 'Áp dụng';
 
   @override
-  String get authManageAccounts => 'Quản lý tài khoản';
+  String get commonArchived => 'Đã lưu trữ';
 
   @override
-  String get authManageAccountsDescription => 'Thêm, xóa hoặc đăng xuất các tài khoản trên thiết bị này.';
+  String get commonBackfilled => 'Đã backfill';
 
   @override
-  String get authManageAccountsEmpty => 'Không còn tài khoản nào khác được lưu trên thiết bị này.';
-
-  @override
-  String get authCurrentAccountTitle => 'Tài khoản hiện tại';
-
-  @override
-  String get authCurrentAccountDescription => 'Đây là tài khoản đang được sử dụng trên thiết bị này.';
-
-  @override
-  String get authCurrentAccountBadge => 'Đang sử dụng';
-
-  @override
-  String get authSavedAccountsTitle => 'Tài khoản đã lưu';
-
-  @override
-  String get authSavedAccountsDescription => 'Quản lý các tài khoản được lưu trên thiết bị này mà không đổi tài khoản hiện tại.';
-
-  @override
-  String get authSavedAccountBadge => 'Đã lưu trên thiết bị';
-
-  @override
-  String get authRemoveAccount => 'Xóa tài khoản';
-
-  @override
-  String authRemoveAccountConfirm(Object name) {
-    return 'Xóa $name khỏi thiết bị này? Bạn sẽ cần đăng nhập lại.';
-  }
-
-  @override
-  String get authRemoveAccountFailed => 'Không thể xóa tài khoản này.';
-
-  @override
-  String get authRemoveAccountSuccess => 'Đã xóa tài khoản thành công.';
-
-  @override
-  String get appLockDisableReason => 'Xác thực để tắt khóa ứng dụng.';
-
-  @override
-  String get appLockEnableReason => 'Xác thực để bật khóa ứng dụng.';
-
-  @override
-  String get appLockLockedDescription => 'Dùng mã PIN thiết bị, vân tay hoặc Face ID để tiếp tục.';
-
-  @override
-  String get appLockLockedTitle => 'Tuturuuu đang bị khóa';
-
-  @override
-  String get appLockProtectedDevice => 'Được bảo vệ trên thiết bị này';
-
-  @override
-  String get appLockSettingsDescription => 'Yêu cầu Face ID, vân tay hoặc mã PIN thiết bị trước khi dùng ứng dụng.';
-
-  @override
-  String get appLockSettingsDisabled => 'Tắt';
-
-  @override
-  String get appLockSettingsEnabled => 'Bật';
-
-  @override
-  String get appLockSettingsTitle => 'Khóa ứng dụng';
-
-  @override
-  String get appLockDelayTitle => 'Khóa sau khi rời ứng dụng';
-
-  @override
-  String get appLockDelayDescription => 'Chọn thời điểm yêu cầu mở khóa sau khi chuyển khỏi ứng dụng.';
-
-  @override
-  String get appLockDelayImmediately => 'Ngay lập tức';
-
-  @override
-  String get appLockDelay30Seconds => 'Sau 30 giây';
-
-  @override
-  String get appLockDelay1Minute => 'Sau 1 phút';
-
-  @override
-  String get appLockDelay5Minutes => 'Sau 5 phút';
-
-  @override
-  String get appLockUnavailableDescription => 'Xác thực cục bộ không khả dụng hoặc đã bị hủy.';
-
-  @override
-  String get appLockUnlockAction => 'Mở khóa';
-
-  @override
-  String get appLockUnlockingAction => 'Đang mở khóa...';
-
-  @override
-  String get appLockUnlockReason => 'Mở khóa Tuturuuu.';
-
-  @override
-  String get mfaApprovalApproveAction => 'Phê duyệt';
-
-  @override
-  String get mfaApprovalApprovedDescription => 'Trình duyệt có thể tiếp tục mà không cần mã từ ứng dụng xác thực.';
-
-  @override
-  String get mfaApprovalApprovedTitle => 'Đã phê duyệt MFA trên web';
-
-  @override
-  String get mfaApprovalDialogDescription => 'Xác nhận mã ghép đôi khớp với trang MFA trên web trước khi phê duyệt.';
-
-  @override
-  String get mfaApprovalFailed => 'Không thể phê duyệt yêu cầu MFA này.';
-
-  @override
-  String get mfaApprovalPairCodeLabel => 'Mã ghép đôi';
-
-  @override
-  String mfaApprovalPendingDescription(Object pairCode) {
-    return 'Mã ghép đôi $pairCode đang chờ phê duyệt.';
-  }
-
-  @override
-  String get mfaApprovalRequiresMobileMfa => 'Hãy xác minh MFA trong phiên di động này trước khi phê duyệt đăng nhập web.';
-
-  @override
-  String get mfaApprovalSettingsIdle => 'Mở màn hình này khi trang MFA trên web hiển thị mã ghép đôi. Yêu cầu đang chờ sẽ tự làm mới.';
-
-  @override
-  String get mfaApprovalSettingsTitle => 'Phê duyệt MFA web';
-
-  @override
-  String get qrLoginApproveAction => 'Phê duyệt';
-
-  @override
-  String qrLoginApproveDescription(Object origin, Object userEmail) {
-    return 'Phê duyệt đăng nhập QR từ $origin bằng $userEmail.';
-  }
-
-  @override
-  String get qrLoginApproveFailed => 'Không thể phê duyệt lần đăng nhập QR này.';
-
-  @override
-  String get qrLoginApproveTitle => 'Phê duyệt đăng nhập QR';
-
-  @override
-  String get qrLoginApprovedDescription => 'Thiết bị còn lại hiện có thể hoàn tất đăng nhập.';
-
-  @override
-  String get qrLoginApprovedTitle => 'Đã phê duyệt đăng nhập QR';
-
-  @override
-  String get qrLoginCameraUnavailable => 'Máy ảnh không khả dụng.';
-
-  @override
-  String get qrLoginInvalidCode => 'Hướng máy ảnh vào mã QR đăng nhập Tuturuuu.';
-
-  @override
-  String get qrLoginLocalAuthFailed => 'Xác thực cục bộ đã bị hủy hoặc thất bại.';
-
-  @override
-  String get qrLoginLocalAuthReason => 'Phê duyệt đăng nhập QR Tuturuuu.';
-
-  @override
-  String get qrLoginMobileApproved => 'QR đã được phê duyệt. Đang đăng nhập...';
-
-  @override
-  String get qrLoginMobileButton => 'Đăng nhập bằng QR di động';
-
-  @override
-  String get qrLoginMobileDescription => 'Mở Tuturuuu trên điện thoại đã đăng nhập và quét mã này.';
-
-  @override
-  String get qrLoginMobileExpired => 'Mã QR đã hết hạn. Hãy tạo mã mới.';
-
-  @override
-  String get qrLoginMobileLoading => 'Đang tạo mã QR...';
-
-  @override
-  String get qrLoginMobileRetry => 'Tạo mã QR mới';
-
-  @override
-  String get qrLoginMobileTitle => 'Đăng nhập bằng QR di động';
-
-  @override
-  String get qrLoginMobileWaiting => 'Đang chờ phê duyệt...';
-
-  @override
-  String get qrLoginRequiresAppLock => 'Bật khóa ứng dụng trước khi phê duyệt đăng nhập QR.';
-
-  @override
-  String get qrLoginScanAgain => 'Quét lại';
-
-  @override
-  String get qrLoginScannerDescription => 'Quét mã QR hiển thị trên một màn hình đăng nhập Tuturuuu khác.';
-
-  @override
-  String get qrLoginScannerTitle => 'Quét QR đăng nhập';
-
-  @override
-  String get qrLoginSettingsDescription => 'Quét mã QR trên màn hình đăng nhập khác và phê duyệt bằng khóa ứng dụng.';
-
-  @override
-  String get qrLoginSettingsDisabledDescription => 'Bật khóa ứng dụng trước khi quét mã QR đăng nhập.';
-
-  @override
-  String get qrLoginSettingsTitle => 'Quét QR đăng nhập';
-
-  @override
-  String get loginForgotPassword => 'Quên mật khẩu?';
-
-  @override
-  String get loginSignUpPrompt => 'Chưa có tài khoản? Đăng ký';
-
-  @override
-  String get emailLabel => 'Email';
-
-  @override
-  String get passwordLabel => 'Mật khẩu';
-
-  @override
-  String get signUpTitle => 'Tạo tài khoản';
-
-  @override
-  String get signUpButton => 'Tạo tài khoản';
-
-  @override
-  String get signUpSubtitle => 'Chọn một phương thức để tiếp tục.';
-
-  @override
-  String get signUpConfirmPassword => 'Xác nhận mật khẩu';
-
-  @override
-  String get signUpPasswordMinLength => 'Mật khẩu phải có ít nhất 8 ký tự';
-
-  @override
-  String get signUpPasswordUppercase => 'Mật khẩu phải chứa chữ hoa';
-
-  @override
-  String get signUpPasswordLowercase => 'Mật khẩu phải chứa chữ thường';
-
-  @override
-  String get signUpPasswordNumber => 'Mật khẩu phải chứa số';
-
-  @override
-  String get signUpPasswordMismatch => 'Mật khẩu không khớp';
-
-  @override
-  String get signUpSuccessTitle => 'Kiểm tra email';
-
-  @override
-  String get signUpSuccessMessage => 'Chúng tôi đã gửi liên kết xác nhận đến email của bạn. Vui lòng xác minh để tiếp tục.';
-
-  @override
-  String get signUpBackToLogin => 'Quay lại đăng nhập';
-
-  @override
-  String get signUpAlreadyHaveAccountPrompt => 'Đã có tài khoản?';
-
-  @override
-  String get signUpSignIn => 'Đăng nhập';
-
-  @override
-  String get forgotPasswordTitle => 'Hỗ trợ mật khẩu';
-
-  @override
-  String get forgotPasswordDescription => 'Hãy dùng ứng dụng web để cập nhật mật khẩu.';
-
-  @override
-  String get forgotPasswordInstructions => 'Đăng nhập trên web bằng tài khoản mạng xã hội đã liên kết với email của bạn, sau đó đổi mật khẩu trong phần cài đặt tài khoản.';
-
-  @override
-  String get forgotPasswordNote => 'Hiện chưa hỗ trợ đặt lại mật khẩu qua email.';
-
-  @override
-  String get forgotPasswordSendReset => 'Gửi liên kết đặt lại';
-
-  @override
-  String get forgotPasswordSentTitle => 'Đã gửi email';
-
-  @override
-  String get forgotPasswordSentMessage => 'Kiểm tra hộp thư đến để tìm liên kết đặt lại mật khẩu.';
-
-  @override
-  String get forgotPasswordBackToLogin => 'Quay lại đăng nhập';
-
-  @override
-  String get workspaceSelectTitle => 'Chọn không gian làm việc';
-
-  @override
-  String get workspaceSelectEmpty => 'Không tìm thấy không gian làm việc';
-
-  @override
-  String get workspaceSelectError => 'Không thể chuyển không gian làm việc';
-
-  @override
-  String get appUpdateChecking => 'Đang kiểm tra phiên bản ứng dụng...';
-
-  @override
-  String get appUpdateNow => 'Cập nhật ngay';
-
-  @override
-  String get appUpdateLater => 'Để sau';
-
-  @override
-  String get appUpdateRecommendedTitle => 'Có bản cập nhật mới';
-
-  @override
-  String get appUpdateRecommendedMessage => 'Đã có phiên bản ứng dụng mới hơn. Hãy cập nhật để nhận các bản sửa lỗi và cải tiến mới nhất.';
-
-  @override
-  String get appUpdateRequiredTitle => 'Bắt buộc cập nhật';
-
-  @override
-  String get appUpdateRequiredMessage => 'Phiên bản ứng dụng này không còn được hỗ trợ. Vui lòng cập nhật để tiếp tục sử dụng.';
-
-  @override
-  String get navHome => 'Trang chủ';
-
-  @override
-  String get navTasks => 'Công việc';
-
-  @override
-  String get navHabits => 'Thói quen';
-
-  @override
-  String get navCalendar => 'Lịch';
-
-  @override
-  String get navFinance => 'Tài chính';
-
-  @override
-  String get navTimer => 'Bấm giờ';
-
-  @override
-  String get navSettings => 'Cài đặt';
-
-  @override
-  String get navApps => 'Ứng dụng';
-
-  @override
-  String get navAssistant => 'Trợ lý';
-
-  @override
-  String get navBack => 'Quay lại';
+  String get commonCancel => 'Hủy';
 
   @override
   String get commonClear => 'Xóa';
 
   @override
+  String get commonClearSearch => 'Xóa tìm kiếm';
+
+  @override
+  String get commonCopy => 'Sao chép';
+
+  @override
+  String get commonCreate => 'Tạo';
+
+  @override
+  String get commonCreated => 'Đã tạo';
+
+  @override
+  String get commonDelete => 'Xóa';
+
+  @override
+  String get commonDeleted => 'Đã xóa';
+
+  @override
   String get commonDone => 'Xong';
 
   @override
-  String get navMore => 'Thêm';
+  String get commonEdit => 'Chỉnh sửa';
 
   @override
-  String get sort => 'Sắp xếp';
+  String get commonFilters => 'Bộ lọc';
 
   @override
-  String get sortBy => 'Sắp xếp theo';
+  String get commonImport => 'Nhập';
 
   @override
-  String get appsHubSearchHint => 'Tìm kiếm ứng dụng';
+  String get commonLinked => 'Đã liên kết';
 
   @override
-  String get appsHubQuickAccess => 'Truy cập nhanh';
+  String get commonLive => 'Trực tiếp';
 
   @override
-  String get appsHubAllApps => 'Tất cả ứng dụng';
+  String get commonLoadMore => 'Tải thêm';
 
   @override
-  String get appsHubEmpty => 'Không tìm thấy ứng dụng';
+  String get commonLoading => 'Đang tải';
 
   @override
-  String get appsHubHeroTitle => 'Công cụ không gian làm việc';
+  String get commonNext => 'Tiếp';
 
   @override
-  String get appsHubHeroSubtitle => 'Chọn một công cụ để mở.';
+  String get commonNoSearchResults => 'Không có kết quả phù hợp';
 
   @override
-  String get appsHubFeatured => 'Nổi bật';
+  String get commonOff => 'Tắt';
 
   @override
-  String get appsHubMoreTools => 'Công cụ khác';
+  String get commonOn => 'Bật';
 
   @override
-  String get appsHubSearchResults => 'Kết quả tìm kiếm';
+  String get commonOpen => 'Mở';
 
   @override
-  String get appsHubListView => 'Danh sách';
+  String get commonPressBackAgainToExit => 'Nhấn quay lại lần nữa để thoát';
 
   @override
-  String get appsHubGridView => 'Lưới';
+  String get commonPressBackAgainToExitHint => 'Nhấn quay lại lần nữa trong vòng 2 giây để đóng ứng dụng.';
 
   @override
-  String get appsHubOpenApp => 'Mở';
+  String get commonPrevious => 'Trước';
 
   @override
-  String get appsHubTasksDescription => 'Theo dõi việc được giao, bảng việc, ước lượng và kế hoạch portfolio.';
+  String get commonReactivated => 'Kích hoạt lại';
 
   @override
-  String get appsHubHabitsDescription => 'Theo dõi thói quen chung, chuỗi ngày và tiến độ lặp lại.';
+  String get commonRefresh => 'Làm mới';
 
   @override
-  String get appsHubCalendarDescription => 'Xem lịch làm việc, sự kiện sắp tới và các chế độ xem lịch.';
+  String get commonRename => 'Đổi tên';
 
   @override
-  String get appsHubChatDescription => 'Tập trung trò chuyện nhóm, tin nhắn trực tiếp, tệp và chat AI tại một nơi.';
+  String get commonRequired => 'Cần xử lý';
 
   @override
-  String get appsHubCmsDescription => 'Quản lý bộ sưu tập CMS, mục nội dung, hàng đợi và xuất bản.';
+  String get commonRetry => 'Thử lại';
 
   @override
-  String get appsHubCrmDescription => 'Quản lý khách hàng, phản hồi, nhập dữ liệu và nhật ký tại một nơi.';
+  String get commonSave => 'Lưu';
 
   @override
-  String get appsHubDriveDescription => 'Duyệt tệp, thư mục, tải lên và liên kết chia sẻ an toàn của workspace.';
+  String get commonSelectDate => 'Chọn ngày';
 
   @override
-  String get appsHubDocumentsDescription => 'Viết, chỉnh sửa và xuất bản ghi chú workspace trên điện thoại.';
+  String get commonShare => 'Chia sẻ';
 
   @override
-  String get appsHubEducationDescription => 'Quản lý khóa học, ngân hàng câu hỏi, flashcard và lượt làm bài.';
+  String get commonShowLess => 'Thu gọn';
 
   @override
-  String get appsHubFinanceDescription => 'Quản lý ví, danh mục, thẻ và lịch sử giao dịch.';
+  String get commonShowMore => 'Xem thêm';
 
   @override
-  String get appsHubInventoryDescription => 'Quản lý sản phẩm, tồn kho, bán hàng và vận hành quầy tại một nơi.';
+  String get commonSomethingWentWrong => 'Đã xảy ra lỗi';
 
   @override
-  String get appsHubMailDescription => 'Đọc và gửi email, quản lý thư nháp và sắp xếp hộp thư đến.';
+  String get commonUpdated => 'Đã cập nhật';
 
   @override
-  String get appsHubMeetDescription => 'Lên lịch họp, xem lịch trình và theo dõi bản ghi.';
+  String get commonVirtual => 'Ảo';
 
   @override
-  String get appsHubNotificationsDescription => 'Xem hộp thư thông báo, cảnh báo và các cập nhật đã lưu trữ.';
+  String get commonWithGroups => 'Có nhóm';
 
   @override
-  String get appsHubSettingsDescription => 'Điều chỉnh cài đặt ứng dụng, không gian làm việc và cá nhân.';
+  String get commonWithoutGroups => 'Không có nhóm';
 
   @override
-  String get appsHubTimerDescription => 'Theo dõi phiên, xem thống kê và xử lý yêu cầu chấm công.';
+  String get connectedOnboardingEcosystemSubtitle => 'Tuturuuu kết nối lập kế hoạch, cộng tác, vận hành, học tập và sáng tạo trong một không gian thích ứng.';
 
   @override
-  String get habitsTitle => 'Thói quen';
+  String get connectedOnboardingEcosystemTitle => 'Kết nối mọi mục tiêu của bạn';
 
   @override
-  String get habitsOverviewLabel => 'Hôm nay';
+  String get connectedOnboardingFinish => 'Khám phá Tuturuuu';
 
   @override
-  String get habitsTodayLabel => 'Hôm nay';
+  String get connectedOnboardingGoalBuild => 'Xây dựng và sáng tạo';
 
   @override
-  String get habitsActivityLabel => 'Hoạt động';
+  String get connectedOnboardingGoalCollaborate => 'Cộng tác';
 
   @override
-  String get habitsLibraryLabel => 'Thư viện';
+  String get connectedOnboardingGoalFocus => 'Tập trung và lập kế hoạch';
 
   @override
-  String get habitsActivityTitle => 'Hoạt động';
+  String get connectedOnboardingGoalLearn => 'Học và giảng dạy';
 
   @override
-  String get habitsActivitySubtitle => 'Xem các lượt ghi nhận thói quen mới nhất trên mọi bộ theo dõi trong không gian làm việc này.';
+  String get connectedOnboardingGoalOperate => 'Vận hành doanh nghiệp';
 
   @override
-  String get habitsLibraryTitle => 'Thư viện';
+  String get connectedOnboardingGoalSubtitle => 'Chọn một hoặc nhiều lộ trình mục tiêu. Bạn có thể thay đổi bất cứ lúc nào.';
 
   @override
-  String get habitsLibrarySubtitle => 'Bắt đầu với các mẫu mạnh cho tập luyện, hồi phục và kỷ luật hằng ngày.';
+  String get connectedOnboardingGoalTitle => 'Bạn muốn thúc đẩy điều gì?';
 
   @override
-  String get habitsLoadError => 'Không thể tải thói quen lúc này';
+  String get connectedOnboardingMiraSubtitle => 'Bắt đầu trò chuyện, lên kế hoạch hoặc suy nghĩ về bước tiếp theo. Mira đồng hành cùng các công cụ bạn sử dụng mỗi ngày.';
 
   @override
-  String get habitsSummarySubtitle => 'Theo dõi các nghi thức, thói quen và động lực chung trong không gian làm việc.';
+  String get connectedOnboardingMiraTitle => 'Gặp Mira, trợ lý AI của bạn';
 
   @override
-  String get habitsSummaryVolume => 'Khối lượng hiện tại';
+  String get connectedOnboardingMiraToolkit => 'Một nơi để trò chuyện với Mira và truy cập công việc, lịch, tài chính và kho hàng. Chọn những gì phù hợp với bạn.';
 
   @override
-  String get habitsSummaryTargetsMet => 'Đạt mục tiêu';
+  String get connectedOnboardingOptional => 'Nhịp độ của bạn. Không gian của bạn. Luôn tùy chọn.';
 
   @override
-  String get habitsSummaryTopStreak => 'Chuỗi cao nhất';
+  String get connectedOnboardingRoleExecutive => 'Lãnh đạo doanh nghiệp';
 
   @override
-  String get habitsSummaryTrackers => 'Bộ theo dõi';
+  String get connectedOnboardingRoleFounder => 'Nhà sáng lập';
 
   @override
-  String get habitsScopeSelf => 'Cá nhân';
+  String get connectedOnboardingRoleProfessional => 'Chuyên gia';
 
   @override
-  String get habitsScopeTeam => 'Nhóm';
+  String get connectedOnboardingRoleStudent => 'Sinh viên';
 
   @override
-  String get habitsScopeMember => 'Thành viên';
+  String get connectedOnboardingRoleSubtitle => 'Chọn góc nhìn phù hợp nhất với cách bạn làm việc. Lựa chọn này chỉ thay đổi đề xuất.';
 
   @override
-  String get habitsMemberPickerLabel => 'Xem thành viên';
+  String get connectedOnboardingRoleTeamLeader => 'Trưởng nhóm';
 
   @override
-  String get habitsSearchHint => 'Tìm thói quen, nghi thức hoặc chỉ số';
+  String get connectedOnboardingRoleTitle => 'Cá nhân hóa Tuturuuu';
 
   @override
-  String get habitsEmptyTitle => 'Chưa có bộ theo dõi thói quen';
+  String get connectedOnboardingSettingsDescription => 'Xem lại vai trò, lộ trình mục tiêu và hệ sinh thái ứng dụng kết nối mà không thay đổi dữ liệu của bạn.';
 
   @override
-  String get habitsEmptyDescription => 'Tạo bộ theo dõi đầu tiên để biến thói quen lặp lại thành điều cả không gian làm việc có thể cùng theo dõi.';
+  String get connectedOnboardingSettingsTitle => 'Mở lại hướng dẫn Tuturuuu';
 
   @override
-  String get habitsTrackerNoDescription => 'Chưa có mô tả';
+  String get connectedOnboardingSkip => 'Để sau';
 
   @override
-  String get habitsCreateTrackerAction => 'Tạo bộ theo dõi';
-
-  @override
-  String get habitsSaveTrackerAction => 'Lưu bộ theo dõi';
-
-  @override
-  String get habitsCreateTrackerTitle => 'Tạo bộ theo dõi thói quen';
-
-  @override
-  String get habitsEditTrackerTitle => 'Sửa bộ theo dõi thói quen';
-
-  @override
-  String get habitsCreateTrackerDescription => 'Thiết lập mục tiêu, trường nhập liệu và thao tác nhanh cho không gian làm việc.';
-
-  @override
-  String get habitsEditTrackerDescription => 'Cập nhật cấu trúc bộ theo dõi, mục tiêu và hành vi thêm nhanh.';
-
-  @override
-  String get habitsTemplateLabel => 'Bắt đầu từ mẫu';
-
-  @override
-  String get habitsNameLabel => 'Tên';
-
-  @override
-  String get habitsNameRequired => 'Tên bộ theo dõi là bắt buộc';
-
-  @override
-  String get habitsDescriptionLabel => 'Mô tả';
-
-  @override
-  String get habitsTrackingModeLabel => 'Chế độ theo dõi';
-
-  @override
-  String get habitsModeDailySummary => 'Tổng hợp theo ngày';
-
-  @override
-  String get habitsModeEventLog => 'Nhật ký sự kiện';
-
-  @override
-  String get habitsAggregationLabel => 'Tổng hợp';
-
-  @override
-  String get habitsAggregationSum => 'Cộng dồn';
-
-  @override
-  String get habitsAggregationMax => 'Lớn nhất';
-
-  @override
-  String get habitsAggregationCountEntries => 'Đếm lượt nhập';
-
-  @override
-  String get habitsAggregationBooleanAny => 'Chỉ cần hoàn thành';
-
-  @override
-  String get habitsTargetPeriodLabel => 'Chu kỳ mục tiêu';
-
-  @override
-  String get habitsPeriodDaily => 'Hàng ngày';
-
-  @override
-  String get habitsPeriodWeekly => 'Hàng tuần';
-
-  @override
-  String get habitsTargetOperatorLabel => 'Điều kiện mục tiêu';
-
-  @override
-  String get habitsTargetOperatorEq => 'Chính xác';
-
-  @override
-  String get habitsTargetOperatorGte => 'Ít nhất';
-
-  @override
-  String get habitsTargetValueLabel => 'Giá trị mục tiêu';
-
-  @override
-  String get habitsTargetValueRequired => 'Giá trị mục tiêu phải lớn hơn 0';
-
-  @override
-  String get habitsStartDateLabel => 'Ngày bắt đầu';
-
-  @override
-  String get habitsAppearanceLabel => 'Giao diện';
-
-  @override
-  String get habitsIconLabel => 'Biểu tượng';
-
-  @override
-  String get habitsFieldsTitle => 'Trường dữ liệu';
-
-  @override
-  String get habitsFieldsRequired => 'Hãy thêm ít nhất một trường hợp lệ';
-
-  @override
-  String get habitsAddField => 'Thêm trường';
-
-  @override
-  String get habitsPrimaryMetricLabel => 'Chỉ số chính';
-
-  @override
-  String get habitsPrimaryMetricRequired => 'Chọn trường chỉ số chính';
-
-  @override
-  String get habitsQuickAddValuesLabel => 'Giá trị thêm nhanh';
-
-  @override
-  String get habitsQuickAddValuesHint => 'Ví dụ: 1, 2, 3';
-
-  @override
-  String get habitsFreezeAllowanceLabel => 'Số lần đóng băng';
-
-  @override
-  String get habitsRecoveryWindowLabel => 'Cửa sổ phục hồi';
-
-  @override
-  String get habitsActiveLabel => 'Đang hoạt động';
-
-  @override
-  String get habitsFieldKeysUnique => 'Khóa trường phải là duy nhất';
-
-  @override
-  String get habitsSelectOptionsRequired => 'Trường chọn phải có ít nhất một tùy chọn';
-
-  @override
-  String get habitsComposerQuickCheck => 'Đánh dấu nhanh';
-
-  @override
-  String get habitsComposerQuickIncrement => 'Cộng nhanh';
-
-  @override
-  String get habitsComposerMeasurement => 'Đo lường';
-
-  @override
-  String get habitsComposerWorkoutSession => 'Buổi tập';
-
-  @override
-  String get habitsComposerAdvancedCustom => 'Tùy chỉnh';
-
-  @override
-  String habitsFieldCardTitle(int count) {
-    return 'Trường $count';
+  String connectedOnboardingStep(int step, int total) {
+    return 'Bước $step trên $total';
   }
 
   @override
-  String get habitsFieldLabel => 'Nhãn trường';
+  String get connectedOnboardingToolkitSubtitle => 'Công việc, Lịch, Tài chính, Học tập và Mira phối hợp cùng nhau. Mọi hướng dẫn đều ngắn, tùy chọn và có thể mở lại.';
 
   @override
-  String get habitsFieldType => 'Loại trường';
+  String get connectedOnboardingToolkitTitle => 'Bộ công cụ thích ứng với bạn';
 
   @override
-  String get habitsFieldKey => 'Khóa trường';
+  String get counterAppBarTitle => 'Bộ đếm';
 
   @override
-  String get habitsFieldUnit => 'Đơn vị';
+  String get crmAddFeedback => 'Thêm phản hồi';
 
   @override
-  String get habitsFieldOptions => 'Tùy chọn';
+  String get crmAddress => 'Địa chỉ';
 
   @override
-  String get habitsFieldOptionsHint => 'Ví dụ: dễ, trung bình, khó';
+  String get crmArchived => 'Đã lưu trữ';
 
   @override
-  String get habitsFieldRequired => 'Trường bắt buộc';
+  String get crmArchivedUntil => 'Lưu trữ đến';
 
   @override
-  String get habitsFieldTypeBoolean => 'Đúng/Sai';
+  String get crmAuditActor => 'Người thực hiện';
 
   @override
-  String get habitsFieldTypeNumber => 'Số';
+  String get crmAuditAffectedUser => 'Người dùng bị ảnh hưởng';
 
   @override
-  String get habitsFieldTypeDuration => 'Thời lượng';
+  String get crmAuditEvent => 'Sự kiện nhật ký';
 
   @override
-  String get habitsFieldTypeText => 'Văn bản';
+  String get crmAuditRange => 'Khoảng thời gian';
 
   @override
-  String get habitsFieldTypeSelect => 'Chọn';
+  String get crmAuditSource => 'Nguồn';
 
   @override
-  String get habitsOverviewTab => 'Tổng quan';
+  String get crmAuditTab => 'Nhật ký';
 
   @override
-  String get habitsEntriesTab => 'Lượt nhập';
+  String get crmBirthday => 'Ngày sinh';
 
   @override
-  String get habitsLeaderboardTab => 'Bảng xếp hạng';
+  String get crmCreateUser => 'Tạo người dùng';
 
   @override
-  String get habitsLogEntryTitle => 'Ghi nhận lượt nhập';
+  String get crmDeleteUserConfirm => 'Xóa người dùng này?';
 
   @override
-  String get habitsLogEntryDescription => 'Lưu cập nhật thói quen mà không cần rời khu vực thói quen.';
+  String get crmDeleteUserSuccess => 'Đã xóa người dùng.';
 
   @override
-  String get habitsLogEntryAction => 'Ghi nhận';
+  String get crmDetectDuplicates => 'Phát hiện trùng lặp';
 
   @override
-  String get habitsLogMeasurementAction => 'Ghi đo lường';
+  String get crmDisplayName => 'Tên hiển thị';
 
   @override
-  String get habitsLogSessionAction => 'Ghi buổi tập';
-
-  @override
-  String get habitsCompleteNow => 'Hoàn thành ngay';
-
-  @override
-  String get habitsEntryDateLabel => 'Ngày nhập';
-
-  @override
-  String get habitsEntryNoteLabel => 'Ghi chú';
-
-  @override
-  String get habitsEntryTagsLabel => 'Thẻ';
-
-  @override
-  String get habitsEntryTagsHint => 'Các thẻ, ngăn cách bằng dấu phẩy';
-
-  @override
-  String get habitsSaveEntry => 'Lưu lượt nhập';
-
-  @override
-  String get habitsQuickCheckTitle => 'Đánh dấu nhanh';
-
-  @override
-  String get habitsQuickCheckDescription => 'Dùng một chạm khi thói quen này chỉ cần hoàn thành hoặc chưa hoàn thành.';
-
-  @override
-  String get habitsQuickIncrementTitle => 'Tăng nhanh';
-
-  @override
-  String get habitsQuickIncrementDescription => 'Điều chỉnh tổng hiện tại bằng các chip nhanh hoặc nhập số tùy chỉnh.';
-
-  @override
-  String get habitsMeasurementTitle => 'Đo lường';
-
-  @override
-  String get habitsMeasurementDescription => 'Nhập một chỉ số chính và so với lần ghi gần nhất.';
-
-  @override
-  String get habitsAdvancedComposerTitle => 'Lượt nhập tùy chỉnh';
-
-  @override
-  String get habitsAdvancedComposerDescription => 'Dùng ô nhập giá trị đơn giản cho các bộ theo dõi tùy chỉnh.';
-
-  @override
-  String get habitsWorkoutSessionTitle => 'Buổi tập';
-
-  @override
-  String get habitsWorkoutSessionDescription => 'Thêm một hoặc nhiều khối bài tập với số hiệp, số rep và mức tạ tùy chọn.';
-
-  @override
-  String get habitsWorkoutBlocksRequired => 'Hãy thêm ít nhất một khối bài tập';
-
-  @override
-  String get habitsWorkoutBlockTitle => 'Khối bài tập';
-
-  @override
-  String get habitsWorkoutExerciseName => 'Bài tập';
-
-  @override
-  String get habitsWorkoutSets => 'Hiệp';
-
-  @override
-  String get habitsWorkoutReps => 'Rep';
-
-  @override
-  String get habitsWorkoutWeight => 'Mức tạ';
-
-  @override
-  String get habitsWorkoutTotalSets => 'Tổng hiệp';
-
-  @override
-  String get habitsWorkoutTotalReps => 'Tổng rep';
-
-  @override
-  String get habitsWorkoutTotalVolume => 'Tổng khối lượng';
-
-  @override
-  String get habitsAddExerciseBlock => 'Thêm bài tập';
-
-  @override
-  String habitsLatestValueLabel(String value) {
-    return 'Gần nhất: $value';
+  String crmDuplicateResults(int count) {
+    return 'Tìm thấy $count cụm trùng lặp';
   }
 
   @override
-  String get habitsMarkDone => 'Đánh dấu hoàn thành';
+  String get crmEmptyAudit => 'Không có sự kiện nhật ký nào';
 
   @override
-  String get habitsMarkedDone => 'Đã đánh dấu hoàn thành';
+  String get crmEmptyUsers => 'Không tìm thấy người dùng';
 
   @override
-  String get habitsFormRequiredField => 'Vui lòng điền các trường bắt buộc';
+  String get crmExcludedGroups => 'Nhóm bị loại trừ';
 
   @override
-  String get habitsFormInvalidNumber => 'Hãy nhập một số hợp lệ';
+  String get crmExportUsers => 'Xuất người dùng';
 
   @override
-  String get habitsArchiveTrackerTitle => 'Lưu trữ bộ theo dõi?';
+  String get crmFeedback => 'Phản hồi';
 
   @override
-  String get habitsArchiveTrackerMessage => 'Bộ theo dõi này sẽ bị xóa khỏi danh sách thói quen đang hoạt động.';
+  String get crmFeedbackAction => 'Phản hồi';
 
   @override
-  String get habitsArchiveTrackerAction => 'Lưu trữ bộ theo dõi';
-
-  @override
-  String get habitsDeleteEntryTitle => 'Xóa lượt nhập?';
-
-  @override
-  String get habitsDeleteEntryMessage => 'Lượt nhập thói quen này sẽ bị xóa vĩnh viễn.';
-
-  @override
-  String get habitsDeleteEntryAction => 'Xóa lượt nhập';
-
-  @override
-  String get habitsEditTrackerAction => 'Sửa bộ theo dõi';
-
-  @override
-  String get habitsCurrentStreak => 'Chuỗi hiện tại';
-
-  @override
-  String get habitsBestStreak => 'Chuỗi tốt nhất';
-
-  @override
-  String get habitsConsistencyLabel => 'Độ ổn định';
-
-  @override
-  String get habitsRecoveryWindowTitle => 'Cửa sổ phục hồi';
-
-  @override
-  String get habitsRecoveryWindowDescription => 'Dùng sửa chuỗi hoặc đóng băng khi một chu kỳ chuỗi cần được giữ nguyên.';
-
-  @override
-  String get habitsRepairStreakAction => 'Sửa chuỗi';
-
-  @override
-  String get habitsUseFreezeAction => 'Dùng đóng băng';
-
-  @override
-  String get habitsCurrentPeriodMetricsTitle => 'Chỉ số chu kỳ hiện tại';
-
-  @override
-  String habitsEntriesCountLabel(int count) {
-    return '$count lượt nhập';
+  String crmFeedbackFor(String name) {
+    return 'Phản hồi cho $name';
   }
 
   @override
-  String get habitsMemberSummariesTitle => 'Tóm tắt thành viên';
+  String get crmFullName => 'Họ và tên';
 
   @override
-  String get habitsTeamSummaryTitle => 'Tóm tắt nhóm';
+  String get crmGroup => 'Nhóm';
 
   @override
-  String get habitsTopStreakLabel => 'Chuỗi cao nhất';
+  String get crmGroupMembership => 'Tham gia nhóm';
 
   @override
-  String get habitsEntriesLabel => 'Lượt nhập';
+  String get crmGuestUser => 'Người dùng khách';
 
   @override
-  String get habitsNoEntries => 'Chưa có lượt nhập';
+  String get crmImportEmpty => 'Không tìm thấy người dùng hợp lệ trong tệp này.';
 
   @override
-  String get habitsNoLeaderboard => 'Chưa có dữ liệu bảng xếp hạng';
-
-  @override
-  String get habitsActivityEmptyTitle => 'Chưa có nhật ký';
-
-  @override
-  String get habitsActivityEmptyBody => 'Khi ai đó ghi nhận một lượt nhập thói quen, nó sẽ xuất hiện ở đây.';
-
-  @override
-  String get habitsActivityNoTrackers => 'Hãy tạo bộ theo dõi thói quen trước để bắt đầu thu thập hoạt động.';
-
-  @override
-  String get habitsLibraryStrengthTitle => 'Sức mạnh';
-
-  @override
-  String get habitsLibraryStrengthSubtitle => 'Buổi tập nặng, bài lift có cấu trúc và bài bodyweight.';
-
-  @override
-  String get habitsLibraryHealthTitle => 'Sức khỏe';
-
-  @override
-  String get habitsLibraryHealthSubtitle => 'Đo lường và tổng hằng ngày để thấy nền tảng của bạn.';
-
-  @override
-  String get habitsLibraryRecoveryTitle => 'Hồi phục';
-
-  @override
-  String get habitsLibraryRecoverySubtitle => 'Ngủ, sauna, thiền và các nghi thức nạp lại năng lượng.';
-
-  @override
-  String get habitsLibraryDisciplineTitle => 'Kỷ luật';
-
-  @override
-  String get habitsLibraryDisciplineSubtitle => 'Những cam kết có hoặc không mà bạn muốn thấy mỗi ngày.';
-
-  @override
-  String get habitsLibraryCustomizeTitle => 'Tự tùy chỉnh';
-
-  @override
-  String get habitsLibraryCustomizeDescription => 'Bắt đầu với bộ theo dõi trống khi thư viện mẫu vẫn chưa đúng ý.';
-
-  @override
-  String get habitsLibraryCustomizeAction => 'Tùy chỉnh';
-
-  @override
-  String get habitsLibraryGoalChip => 'Mục tiêu';
-
-  @override
-  String get habitsLibraryComposerChip => 'Trình nhập';
-
-  @override
-  String habitsStreakChip(int count) {
-    return '$count chuỗi';
+  String crmImportPreview(int count) {
+    return 'Sẵn sàng nhập $count người dùng';
   }
 
   @override
-  String habitsTargetChip(double count) {
-    return 'Mục tiêu $count';
+  String crmImportSuccess(int count) {
+    return 'Đã nhập $count người dùng.';
   }
 
   @override
-  String get habitsTeamMembers => 'Thành viên nhóm';
+  String get crmImportUsers => 'Nhập người dùng';
 
   @override
-  String get habitsTodayTotalHint => 'Tổng hôm nay';
+  String get crmIncludedGroups => 'Nhóm được bao gồm';
 
   @override
-  String get habitsQuickLogValueRequired => 'Hãy nhập giá trị trước khi lưu';
+  String get crmLinkStatus => 'Trạng thái liên kết';
 
   @override
-  String get habitsMetricMet => 'Đạt';
+  String get crmLinkedUser => 'Người dùng đã liên kết';
 
   @override
-  String get habitsMetricPending => 'Chưa đạt';
+  String get crmMergeTarget => 'Bản ghi đích';
 
   @override
-  String get assistantComingSoon => 'Sắp ra mắt';
+  String get crmMergeUsers => 'Gộp người dùng';
 
   @override
-  String get assistantSelectWorkspace => 'Chọn một không gian làm việc';
+  String get crmNote => 'Ghi chú';
 
   @override
-  String get assistantWorkspaceAwareDescription => 'Mira theo ngữ cảnh không gian làm việc cho việc lên kế hoạch, hỏi đáp và thao tác nhanh.';
+  String get crmPermissionDenied => 'Bạn không có quyền truy cập giao diện CRM này.';
 
   @override
-  String get assistantHistoryTitle => 'Đoạn chat gần đây';
+  String get crmPhone => 'Số điện thoại';
 
   @override
-  String get assistantHistoryEmpty => 'Chưa có đoạn chat nào. Hãy bắt đầu cuộc trò chuyện mới.';
+  String get crmRequireAttention => 'Cần chú ý';
 
   @override
-  String get assistantUntitledChat => 'Đoạn chat chưa có tiêu đề';
+  String get crmSearchAuditHint => 'Tìm người thực hiện hoặc người dùng bị ảnh hưởng';
 
   @override
-  String get assistantPersonalWorkspace => 'Cá nhân';
+  String get crmSearchUsersHint => 'Tìm theo tên, email hoặc số điện thoại';
 
   @override
-  String get assistantSettingsTitle => 'Cài đặt Mira';
+  String get crmStatus => 'Trạng thái';
 
   @override
-  String get assistantSendAction => 'Gửi tin nhắn';
+  String get crmTitle => 'CRM';
 
   @override
-  String get assistantActionsTitle => 'Thao tác';
+  String get crmUploadAvatar => 'Tải ảnh đại diện';
 
   @override
-  String get assistantRenameTitle => 'Đổi tên Mira';
+  String get crmUsersTab => 'Người dùng';
 
   @override
-  String get assistantRenameAction => 'Đổi tên';
+  String get dashboardActiveTasksLabel => 'Công việc đang hoạt động';
 
   @override
-  String get assistantCancelAction => 'Huỷ';
+  String get dashboardAssignedToMe => 'Việc của tôi';
 
   @override
-  String get assistantSaveAction => 'Lưu';
+  String get dashboardEventAllDay => 'Cả ngày';
 
   @override
-  String get assistantCreditsTitle => 'Tín dụng';
-
-  @override
-  String get assistantConversationTitle => 'Cuộc trò chuyện';
-
-  @override
-  String get assistantAttachFilesAction => 'Thêm đính kèm';
-
-  @override
-  String get assistantAttachGalleryMediaAction => 'Thư viện ảnh và video';
-
-  @override
-  String get assistantGalleryPickError => 'Không thể mở thư viện ảnh. Vui lòng thử lại.';
-
-  @override
-  String get assistantEnterFullscreenAction => 'Vào toàn màn hình';
-
-  @override
-  String get assistantExitFullscreenAction => 'Thoát toàn màn hình';
-
-  @override
-  String get assistantPersonalCredits => 'Tín dụng cá nhân';
-
-  @override
-  String get assistantWorkspaceCredits => 'Tín dụng không gian làm việc';
-
-  @override
-  String get assistantTasksLabel => 'Công việc';
-
-  @override
-  String get assistantCalendarLabel => 'Lịch';
-
-  @override
-  String get assistantActiveLabel => 'đang hoạt động';
-
-  @override
-  String get assistantDoneTodayLabel => 'hoàn thành hôm nay';
-
-  @override
-  String get assistantUpcomingLabel => 'sắp tới';
-
-  @override
-  String get assistantYouLabel => 'Bạn';
-
-  @override
-  String get assistantThinkingStatus => 'Đang suy nghĩ...';
-
-  @override
-  String get assistantReasoningLabel => 'Lý do';
-
-  @override
-  String get assistantAskPlaceholder => 'Hỏi Mira bất cứ điều gì...';
-
-  @override
-  String get assistantQueuedPrefix => 'Đang xếp hàng:';
-
-  @override
-  String get assistantQuickPromptCalendar => 'Tóm tắt lịch hôm nay của tôi';
-
-  @override
-  String get assistantQuickPromptTasks => 'Cho tôi xem các công việc khẩn cấp nhất';
-
-  @override
-  String get assistantQuickPromptFocus => 'Giúp tôi lên kế hoạch cho một khối tập trung tiếp theo';
-
-  @override
-  String get assistantQuickPromptExpense => 'Ghi nhanh một khoản chi cho bữa trưa';
-
-  @override
-  String get assistantNewConversation => 'Cuộc trò chuyện mới';
-
-  @override
-  String get assistantExportChat => 'Xuất đoạn chat';
-
-  @override
-  String get assistantModelLabel => 'Mô hình';
-
-  @override
-  String get assistantSearchModels => 'Tìm mô hình';
-
-  @override
-  String get assistantModelAll => 'Tất cả';
-
-  @override
-  String get assistantModelFavorites => 'Yêu thích';
-
-  @override
-  String get assistantModelHideLocked => 'Ẩn mô hình không khả dụng';
-
-  @override
-  String get assistantModelEmpty => 'Không có mô hình phù hợp';
-
-  @override
-  String get assistantModelFavorite => 'Thêm vào yêu thích';
-
-  @override
-  String get assistantModelUnfavorite => 'Bỏ khỏi yêu thích';
-
-  @override
-  String get assistantModelFavoritesError => 'Không thể đồng bộ yêu thích. Hãy thử lại.';
-
-  @override
-  String get assistantModelInputCost => 'Đầu vào';
-
-  @override
-  String get assistantModelOutputCost => 'Đầu ra';
-
-  @override
-  String get assistantModeFast => 'Nhanh';
-
-  @override
-  String get assistantModeThinking => 'Suy nghĩ';
-
-  @override
-  String get assistantImmersiveLabel => 'Tập trung';
-
-  @override
-  String get assistantStandardLabel => 'Tiêu chuẩn';
-
-  @override
-  String get assistantViewOnlyLabel => 'Chỉ xem';
-
-  @override
-  String get assistantEditableLabel => 'Có thể chỉnh sửa';
-
-  @override
-  String get assistantSourceLabel => 'Nguồn';
-
-  @override
-  String get assistantSourcePersonal => 'Cá nhân';
-
-  @override
-  String get assistantSourceWorkspace => 'Không gian làm việc';
-
-  @override
-  String get assistantToolLabel => 'Công cụ';
-
-  @override
-  String get assistantInputLabel => 'Đầu vào';
-
-  @override
-  String get assistantOutputLabel => 'Đầu ra';
-
-  @override
-  String get assistantSeeMoreLabel => 'Xem thêm';
-
-  @override
-  String get assistantSeeLessLabel => 'Thu gọn';
-
-  @override
-  String get assistantExportShareText => 'Xuất đoạn chat Mira';
-
-  @override
-  String get assistantAttachmentClearAction => 'Xoá đính kèm';
-
-  @override
-  String get assistantAttachmentSheetTitle => 'Đính kèm';
-
-  @override
-  String get assistantAttachmentUploadPending => 'Hãy đợi tải tệp lên xong rồi gửi.';
-
-  @override
-  String get assistantAttachmentUploadFailed => 'Không tải được tệp đính kèm. Hãy xóa tệp và thử lại trước khi gửi.';
-
-  @override
-  String get assistantAttachmentFailedShort => 'Tải lên thất bại';
-
-  @override
-  String get assistantPhotoAttachment => 'Ảnh';
-
-  @override
-  String get assistantVideoAttachment => 'Video';
-
-  @override
-  String get assistantMediaPreviewError => 'Không mở được nội dung này. Vui lòng thử lại.';
-
-  @override
-  String get assistantContextUpdatedLabel => 'Đã cập nhật ngữ cảnh không gian làm việc';
-
-  @override
-  String get assistantPreferencesUpdatedLabel => 'Đã cập nhật tuỳ chọn trợ lý';
-
-  @override
-  String get assistantStarterBacklog => 'Dọn backlog';
-
-  @override
-  String get assistantStarterCaptionBacklog => 'Tách các việc đang mở thành danh sách bước tiếp theo rõ ràng.';
-
-  @override
-  String get assistantStarterCaptionDraft => 'Soạn sẵn một cập nhật ngắn gọn trước khi gửi.';
-
-  @override
-  String get assistantStarterCaptionFocus => 'Để Mira gợi ý việc đáng làm nhất tiếp theo.';
-
-  @override
-  String get assistantStarterCaptionPlan => 'Cân bằng lịch họp, đầu việc và thời gian tập trung.';
-
-  @override
-  String get assistantStarterDraft => 'Cập nhật cho nhóm';
-
-  @override
-  String get assistantStarterFocus => 'Trọng tâm hôm nay';
-
-  @override
-  String get assistantStarterPlan => 'Kế hoạch hôm nay';
-
-  @override
-  String get assistantStarterSubtitle => 'Chọn một gợi ý nhanh hoặc tự gõ điều bạn cần.';
-
-  @override
-  String get assistantStarterTitle => 'Chưa biết bắt đầu từ đâu?';
-
-  @override
-  String get assistantShowBottomNavLabel => 'Hiện thanh điều hướng dưới';
-
-  @override
-  String get assistantHideBottomNavLabel => 'Ẩn thanh điều hướng dưới';
-
-  @override
-  String assistantLiveAccessSummary(String workspace, String source) {
-    return '$workspace • $source';
-  }
-
-  @override
-  String assistantLiveAccessUsingPersonal(String tier) {
-    return 'Đang dùng gói cá nhân $tier';
-  }
-
-  @override
-  String assistantLiveAccessUsingWorkspace(String tier) {
-    return 'Đang dùng gói không gian làm việc $tier';
-  }
-
-  @override
-  String get assistantLiveCameraPreview => 'Camera trực tiếp';
-
-  @override
-  String get assistantLiveSettingSaveError => 'Không thể lưu cài đặt Live. Vui lòng thử lại.';
-
-  @override
-  String get assistantKeepLiveBrowsingTitle => 'Giữ Live khi duyệt ứng dụng';
-
-  @override
-  String get assistantKeepLiveBrowsingDescription => 'Mira tiếp tục lắng nghe khi bạn duyệt ứng dụng và có thể biết mục đang mở để tìm tác vụ liên quan. Live kết thúc khi bạn tắt tùy chọn hoặc rời ứng dụng.';
-
-  @override
-  String get assistantLiveIdleHeading => 'Trò chuyện với Mira';
-
-  @override
-  String get assistantLiveConnect => 'Bắt đầu phiên trực tiếp';
-
-  @override
-  String get assistantLiveDescriptionConnecting => 'Đang tạo phiên Gemini Live trực tiếp cho văn bản, âm thanh và camera.';
-
-  @override
-  String get assistantLiveDescriptionError => 'Phiên trực tiếp gặp lỗi. Hãy thử lại hoặc bắt đầu phiên mới.';
-
-  @override
-  String get assistantLiveDescriptionIdle => 'Bắt đầu phiên trực tiếp để nói, gõ hoặc truyền camera vào cùng một cuộc trò chuyện.';
-
-  @override
-  String get assistantLiveDescriptionListening => 'Micro đang hoạt động. Mira sẽ tiếp tục lắng nghe âm thanh mới.';
-
-  @override
-  String get assistantLiveDescriptionPreparing => 'Đang tạo ephemeral token và khôi phục phiên trực tiếp có thể tiếp tục gần nhất.';
-
-  @override
-  String get assistantLiveDescriptionReady => 'Văn bản và âm thanh trực tiếp đã sẵn sàng. Hãy gõ, nói hoặc chia sẻ camera.';
-
-  @override
-  String get assistantLiveDescriptionReconnecting => 'Phiên đang kết nối lại bằng handle mới nhất và lịch sử đã khôi phục.';
-
-  @override
-  String get assistantLiveDisconnect => 'Kết thúc phiên trực tiếp';
-
-  @override
-  String get assistantLiveDraftAssistant => 'Mira đang trả lời';
-
-  @override
-  String get assistantLiveDraftUser => 'Bạn đang nói';
-
-  @override
-  String get assistantLiveHideCamera => 'Ẩn camera';
-
-  @override
-  String get assistantLiveInsightsTitle => 'Thông tin nhanh trực tiếp';
-
-  @override
-  String get assistantLiveListen => 'Bật micro';
-
-  @override
-  String get miraChatTitle => 'Mira Chat';
-
-  @override
-  String get miraLiveTitle => 'Mira Live';
-
-  @override
-  String get assistantLiveModelBadge => 'Gemini 3.8 Live';
-
-  @override
-  String get assistantLiveMute => 'Tắt micro';
-
-  @override
-  String get assistantLiveNoMessagesBody => 'Dùng giọng nói, văn bản hoặc tệp đính kèm để bắt đầu. Mọi thứ từ phiên trực tiếp sẽ được đồng bộ lại vào luồng chat này.';
-
-  @override
-  String get assistantLiveNoMessagesTitle => 'Trợ lý trực tiếp đã sẵn sàng';
-
-  @override
-  String get assistantLiveOpenMode => 'Mở chế độ trực tiếp';
-
-  @override
-  String get assistantLivePermissionDenied => 'Camera hoặc micro đang bị chặn. Hãy cấp quyền để dùng đầy đủ chế độ trực tiếp.';
-
-  @override
-  String assistantLiveReconnectBanner(String timeLeft) {
-    return 'Phát hiện phiên đang xoay vòng. Đang kết nối lại với khoảng $timeLeft còn lại.';
-  }
-
-  @override
-  String get assistantLiveShowCamera => 'Hiện camera';
-
-  @override
-  String get assistantLiveRetryAction => 'Thử lại phiên trực tiếp';
-
-  @override
-  String get assistantLiveReturnToChat => 'Quay lại chat';
-
-  @override
-  String get assistantLiveStageAssistantReady => 'Đang chờ phản hồi tiếp theo';
-
-  @override
-  String get assistantLiveStageAssistantSpeaking => 'Đang phát phản hồi bằng giọng nói';
-
-  @override
-  String get assistantLiveStageYouListening => 'Micro của bạn đang hoạt động';
-
-  @override
-  String get assistantLiveStageYouMuted => 'Chạm vào micro để nói tiếp';
-
-  @override
-  String get assistantLiveStatusAvailable => 'Sẵn sàng';
-
-  @override
-  String get assistantLiveStatusConnecting => 'Đang kết nối';
-
-  @override
-  String get assistantLiveStatusDisconnected => 'Chưa kết nối';
-
-  @override
-  String get assistantLiveStatusError => 'Cần xử lý';
-
-  @override
-  String get assistantLiveStatusPreparing => 'Đang chuẩn bị';
-
-  @override
-  String get assistantLiveStatusReady => 'Trực tiếp';
-
-  @override
-  String get assistantLiveStatusReconnecting => 'Đang kết nối lại';
-
-  @override
-  String get assistantLiveStatusSyncing => 'Đang đồng bộ';
-
-  @override
-  String get assistantLiveStatusUnavailable => 'Chưa khả dụng';
-
-  @override
-  String get assistantLiveSubtitle => 'Gemini 3.1 Flash Live với giọng nói, camera, tệp đính kèm và lịch sử chat thống nhất.';
-
-  @override
-  String get assistantLiveTierRequired => 'Giọng nói trực tiếp chỉ có từ gói PLUS trở lên.';
-
-  @override
-  String get assistantLiveTranscriptEmpty => 'Bắt đầu nói hoặc nhập tin nhắn. Cuộc trò chuyện sẽ hiển thị ở đây.';
-
-  @override
-  String get assistantLiveTranscriptTitle => 'Bản ghi trực tiếp';
-
-  @override
-  String get assistantLiveTitle => 'Mira Live';
-
-  @override
-  String get assistantLiveTypeMessage => 'Gõ';
-
-  @override
-  String get assistantLiveInfoAccessHeading => 'Quyền truy cập hiện tại';
-
-  @override
-  String get assistantLiveInfoDismiss => 'Đã hiểu';
-
-  @override
-  String assistantLiveWorkspaceTierLabel(String tier) {
-    return 'Gói không gian làm việc $tier';
-  }
-
-  @override
-  String get assistantMermaidDiagramLabel => 'Sơ đồ';
-
-  @override
-  String get assistantMermaidRenderError => 'Không thể hiển thị sơ đồ Mermaid này.';
-
-  @override
-  String get assistantMermaidZoomHint => 'Chụm hoặc dùng các nút thu phóng để xem kỹ sơ đồ ở chế độ toàn màn hình.';
-
-  @override
-  String get assistantMermaidZoomIn => 'Phóng to';
-
-  @override
-  String get assistantMermaidZoomOut => 'Thu nhỏ';
-
-  @override
-  String get assistantMermaidZoomReset => 'Đặt lại thu phóng';
-
-  @override
-  String get assistantMessageActionsTitle => 'Thao tác tin nhắn';
-
-  @override
-  String get assistantCopyMessageAction => 'Sao chép tin nhắn';
-
-  @override
-  String get assistantCopiedMessageAction => 'Đã sao chép';
-
-  @override
-  String get assistantScrollToBottomAction => 'Cuộn xuống cuối';
-
-  @override
-  String get assistantToolCompleted => 'Hoàn tất';
-
-  @override
-  String get assistantToolGeneratedImage => 'Ảnh đã tạo';
-
-  @override
-  String get assistantToolImageUnavailable => 'Ảnh đã tạo hiện không khả dụng.';
-
-  @override
-  String get assistantToolNoActionNeeded => 'Không cần dùng công cụ nào cho phản hồi này.';
-
-  @override
-  String get assistantToolSelectedTools => 'Công cụ đã chọn';
-
-  @override
-  String get assistantToolsLabel => 'Công cụ';
-
-  @override
-  String assistantCreditsSummary(int remaining, String tier) {
-    return 'Còn $remaining • $tier';
+  String dashboardEventsMetric(Object count) {
+    return '$count tiếp theo';
   }
 
   @override
   String get dashboardGreeting => 'Chào mừng trở lại!';
 
   @override
-  String get dashboardQuickActions => 'Thao tác nhanh';
-
-  @override
-  String get dashboardTodayTitle => 'Tổng quan hôm nay';
-
-  @override
-  String get dashboardActiveTasksLabel => 'Công việc đang hoạt động';
-
-  @override
-  String get dashboardQuickLaunch => 'Mở nhanh';
-
-  @override
-  String get dashboardAssignedToMe => 'Việc của tôi';
-
-  @override
-  String get dashboardUpcomingEvents => 'Sự kiện sắp tới';
-
-  @override
-  String get dashboardUpcomingMeetings => 'Cuộc họp sắp tới';
-
-  @override
   String get dashboardMailInbox => 'Hộp thư Mail';
-
-  @override
-  String get dashboardNoUpcomingMeetings => 'Chưa có cuộc họp sắp tới';
-
-  @override
-  String get dashboardOpenTasks => 'Mở';
-
-  @override
-  String get dashboardOpenCalendar => 'Mở';
 
   @override
   String get dashboardNoAssignedTasks => 'Không có công việc đang hoạt động nào được giao cho bạn.';
@@ -1866,6 +1981,29 @@ class AppLocalizationsVi extends AppLocalizations {
   String get dashboardNoUpcomingEventsDescription => 'Lịch của bạn hiện khá thoáng.';
 
   @override
+  String get dashboardNoUpcomingMeetings => 'Chưa có cuộc họp sắp tới';
+
+  @override
+  String get dashboardOpenCalendar => 'Mở';
+
+  @override
+  String get dashboardOpenTasks => 'Mở';
+
+  @override
+  String dashboardOverdueMetric(Object count) {
+    return '$count quá hạn';
+  }
+
+  @override
+  String get dashboardQuickActions => 'Thao tác nhanh';
+
+  @override
+  String get dashboardQuickLaunch => 'Mở nhanh';
+
+  @override
+  String get dashboardTaskNoDate => 'Không có hạn';
+
+  @override
   String get dashboardTaskOverdue => 'Quá hạn';
 
   @override
@@ -1878,1614 +2016,1789 @@ class AppLocalizationsVi extends AppLocalizations {
   String get dashboardTaskUpcoming => 'Sắp tới';
 
   @override
-  String get dashboardTaskNoDate => 'Không có hạn';
-
-  @override
-  String get dashboardEventAllDay => 'Cả ngày';
-
-  @override
   String dashboardTasksMetric(Object count) {
     return '$count đang hoạt động';
   }
 
   @override
-  String dashboardOverdueMetric(Object count) {
-    return '$count quá hạn';
+  String get dashboardTodayTitle => 'Tổng quan hôm nay';
+
+  @override
+  String get dashboardUpcomingEvents => 'Sự kiện sắp tới';
+
+  @override
+  String get dashboardUpcomingMeetings => 'Cuộc họp sắp tới';
+
+  @override
+  String get desktopUpdateCancel => 'Hủy lịch cập nhật';
+
+  @override
+  String get desktopUpdateDismiss => 'Ẩn thông báo cập nhật';
+
+  @override
+  String get desktopUpdateFailed => 'Không thể cài đặt bản cập nhật. Bạn vẫn có thể dùng phiên bản hiện tại.';
+
+  @override
+  String get desktopUpdateInstall => 'Cài đặt và khởi động lại';
+
+  @override
+  String get desktopUpdateManual => 'Tải xuống thủ công';
+
+  @override
+  String get desktopUpdateNextLaunch => 'Cài đặt vào lần mở tiếp theo';
+
+  @override
+  String desktopUpdateReady(String version) {
+    return 'Tuturuuu $version đã sẵn sàng để cài đặt.';
   }
 
   @override
-  String dashboardEventsMetric(Object count) {
-    return '$count tiếp theo';
+  String get desktopUpdateScheduled => 'Bản cập nhật sẽ được cài đặt vào lần mở Tuturuuu tiếp theo.';
+
+  @override
+  String get deviceMfaActionFailed => 'Không thể hoàn tất bước này';
+
+  @override
+  String get deviceMfaCancelled => 'Xác minh thiết bị đã bị hủy. Hãy thử lại và xác nhận bằng Face ID, vân tay hoặc mật mã thiết bị.';
+
+  @override
+  String get deviceMfaClose => 'Đóng trình xác thực';
+
+  @override
+  String get deviceMfaCodeHint => 'Nhập mã này trên thiết bị khác. Mã thay đổi mỗi 30 giây.';
+
+  @override
+  String get deviceMfaCurrentDevice => 'Thiết bị này';
+
+  @override
+  String get deviceMfaDefaultName => 'Tuturuuu di động';
+
+  @override
+  String get deviceMfaDeny => 'Từ chối yêu cầu';
+
+  @override
+  String get deviceMfaDescription => 'Dùng thiết bị này để xác minh đăng nhập, xem mã dùng một lần hoặc phê duyệt thiết bị khác.';
+
+  @override
+  String get deviceMfaEnroll => 'Đăng ký thiết bị này';
+
+  @override
+  String get deviceMfaEnrollWarning => 'Giữ một trình xác thực khác để dự phòng. Sau khi đăng ký, bạn có thể cần đăng nhập lại trên các thiết bị khác. Khóa bí mật chỉ được lưu trong bộ nhớ bảo mật của thiết bị này.';
+
+  @override
+  String get deviceMfaError => 'Không thể hoàn tất xác minh. Kiểm tra kết nối và trình xác thực rồi thử lại.';
+
+  @override
+  String get deviceMfaExistingRequired => 'Xác minh bằng trình xác thực hiện có khi đăng nhập tài khoản, rồi quay lại đây để hoàn tất thiết lập.';
+
+  @override
+  String get deviceMfaExpired => 'Yêu cầu đã hết hạn. Hãy bắt đầu lại trên thiết bị khác.';
+
+  @override
+  String get deviceMfaHideCode => 'Ẩn mã';
+
+  @override
+  String get deviceMfaLockHint => 'Chỉ thiết bị đã đăng ký mới có thể phê duyệt đăng nhập. Mở khóa tại đây trước khi đăng ký thiết bị khác.';
+
+  @override
+  String get deviceMfaLockRecoveryHint => 'Hãy đăng ký thêm một thiết bị tin cậy trước khi khóa. Nếu mất tất cả thiết bị tin cậy, bạn không thể mở khóa cài đặt này từ thiết bị mới.';
+
+  @override
+  String get deviceMfaLockTitle => 'Khóa đăng ký mới';
+
+  @override
+  String get deviceMfaLocked => 'Đăng ký mới đã bị khóa. Mở cài đặt này trên một thiết bị tin cậy để mở khóa.';
+
+  @override
+  String get deviceMfaManage => 'Thiết lập xác thực';
+
+  @override
+  String get deviceMfaName => 'Tên thiết bị';
+
+  @override
+  String get deviceMfaNeedBackup => 'Đăng ký thêm một thiết bị tin cậy trước khi khóa đăng ký mới.';
+
+  @override
+  String get deviceMfaNoRequests => 'Không có yêu cầu đăng nhập. Hãy đăng nhập trên thiết bị khác.';
+
+  @override
+  String get deviceMfaNotNow => 'Để sau';
+
+  @override
+  String get deviceMfaNumberHint => 'Nhập số gồm sáu chữ số hiển thị trên thiết bị bạn đang đăng nhập. Chỉ phê duyệt yêu cầu do bạn tạo.';
+
+  @override
+  String get deviceMfaNumberTitle => 'Bạn đang đăng nhập?';
+
+  @override
+  String get deviceMfaOffline => 'Không thể kết nối với Tuturuuu. Kiểm tra kết nối và thử lại.';
+
+  @override
+  String get deviceMfaPending => 'Chưa hoàn tất thiết lập';
+
+  @override
+  String get deviceMfaQrPaste => 'Nhập liên kết đăng nhập';
+
+  @override
+  String get deviceMfaQrPasteHint => 'Dán liên kết QR đăng nhập Tuturuuu từ thiết bị khác.';
+
+  @override
+  String get deviceMfaRateLimited => 'Bạn đã thử quá nhiều lần. Hãy đợi một phút rồi thử lại.';
+
+  @override
+  String get deviceMfaReady => 'Thiết bị này đã được đăng ký';
+
+  @override
+  String get deviceMfaRemove => 'Gỡ trình xác thực này';
+
+  @override
+  String get deviceMfaRemoveDeviceHint => 'Thiết bị này sẽ không thể phê duyệt đăng nhập hoặc tạo mã hợp lệ nữa.';
+
+  @override
+  String get deviceMfaRemoveHint => 'Thiết bị này sẽ ngừng tạo mã hợp lệ. Hãy đảm bảo bạn còn phương thức đăng nhập khác.';
+
+  @override
+  String get deviceMfaRemoveTrusted => 'Xóa thiết bị tin cậy';
+
+  @override
+  String get deviceMfaReview => 'Xem yêu cầu đăng nhập';
+
+  @override
+  String get deviceMfaSessionExpired => 'Không thể xác minh phiên đăng nhập. Hãy đăng nhập lại trước khi thay đổi trình xác thực.';
+
+  @override
+  String get deviceMfaShowCode => 'Hiện mã xác minh';
+
+  @override
+  String get deviceMfaSuggestBody => 'Phê duyệt đăng nhập bằng xác minh thiết bị và tạo mã cho thiết bị khác. Bạn có thể quản lý thiết bị tin cậy trong cài đặt bảo mật.';
+
+  @override
+  String get deviceMfaSuggestTitle => 'Dùng thiết bị này để xác thực?';
+
+  @override
+  String get deviceMfaTitle => 'Trình xác thực trên thiết bị';
+
+  @override
+  String get deviceMfaTrustedTitle => 'Thiết bị xác thực tin cậy';
+
+  @override
+  String get deviceMfaUnavailable => 'Đăng ký trình xác thực tạm thời không khả dụng. Hãy thử lại sau ít phút.';
+
+  @override
+  String get deviceMfaUseDevice => 'Xác minh bằng thiết bị này';
+
+  @override
+  String get deviceMfaVerifyReason => 'Xác minh danh tính để dùng trình xác thực Tuturuuu';
+
+  @override
+  String get deviceMfaWorking => 'Đang kiểm tra bảo mật thiết bị…';
+
+  @override
+  String get documentsContentHint => 'Bắt đầu viết...';
+
+  @override
+  String get documentsCreated => 'Đã tạo tài liệu.';
+
+  @override
+  String get documentsDelete => 'Xóa tài liệu';
+
+  @override
+  String get documentsDeleteConfirm => 'Xóa tài liệu này? Thao tác này không thể hoàn tác.';
+
+  @override
+  String get documentsDeleted => 'Đã xóa tài liệu.';
+
+  @override
+  String get documentsDocumentName => 'Tên tài liệu';
+
+  @override
+  String get documentsEditor => 'Trình soạn thảo';
+
+  @override
+  String get documentsEmptyDescription => 'Chưa có tài liệu nào. Tạo một tài liệu để ghi lại quyết định, ghi chú hoặc kế hoạch.';
+
+  @override
+  String get documentsNewDocument => 'Tài liệu mới';
+
+  @override
+  String get documentsPublic => 'Tài liệu công khai';
+
+  @override
+  String get documentsSearchHint => 'Tìm tài liệu';
+
+  @override
+  String get documentsSubtitle => 'Soạn thảo và duy trì tri thức workspace.';
+
+  @override
+  String get documentsTitle => 'Tài liệu';
+
+  @override
+  String get documentsUpdated => 'Đã lưu tài liệu.';
+
+  @override
+  String get driveCopyPath => 'Sao chép đường dẫn';
+
+  @override
+  String get driveCreateFolder => 'Tạo thư mục';
+
+  @override
+  String driveDeleteManyConfirm(int count) {
+    return 'Xóa $count mục đã chọn?';
   }
 
   @override
-  String get tasksTitle => 'Công việc';
-
-  @override
-  String get tasksEmpty => 'Chưa có công việc';
-
-  @override
-  String get tasksLoadError => 'Không thể tải công việc lúc này';
-
-  @override
-  String get tasksCreate => 'Tạo công việc';
-
-  @override
-  String get tasksAllCaughtUp => 'Đã hoàn thành tất cả!';
-
-  @override
-  String get tasksAllCaughtUpSubtitle => 'Không có công việc cần xử lý';
-
-  @override
-  String get tasksOverdue => 'Quá hạn';
-
-  @override
-  String get tasksDueToday => 'Hôm nay';
-
-  @override
-  String get tasksUpcoming => 'Sắp tới';
-
-  @override
-  String get tasksGoodMorning => 'Chào buổi sáng';
-
-  @override
-  String get tasksGoodAfternoon => 'Chào buổi chiều';
-
-  @override
-  String get tasksGoodEvening => 'Chào buổi tối';
-
-  @override
-  String get tasksGoodNight => 'Chúc ngủ ngon';
-
-  @override
-  String get tasksRequiresAttention => 'Cần xử lý ngay';
-
-  @override
-  String get tasksCompleteByEndOfDay => 'Hoàn thành trước cuối ngày';
-
-  @override
-  String get tasksPlanAhead => 'Lên kế hoạch sớm';
-
-  @override
-  String get tasksCompleted => 'Đã hoàn thành';
-
-  @override
-  String tasksCompletedCount(int count) {
-    return 'Đã hoàn thành $count';
+  String driveDeleteSelected(int count) {
+    return 'Xóa mục đã chọn ($count)';
   }
 
   @override
-  String get tasksPriorityCritical => 'Nghiêm trọng';
+  String get driveDeleteSingleConfirm => 'Xóa mục này?';
 
   @override
-  String get tasksPriorityHigh => 'Cao';
+  String get driveDeleteSuccess => 'Đã xóa mục.';
 
   @override
-  String get tasksPriorityNormal => 'Bình thường';
+  String get driveEmptyState => 'Thư mục này đang trống.';
 
   @override
-  String get tasksPriorityLow => 'Thấp';
+  String get driveExportLinksTitle => 'Liên kết xuất';
 
   @override
-  String get tasksUntitled => 'Công việc chưa có tiêu đề';
+  String get driveFilesLabel => 'Tệp';
 
   @override
-  String get taskBoardsTitle => 'Bảng';
+  String get driveFolderCreated => 'Đã tạo thư mục.';
 
   @override
-  String get taskBoardsCreate => 'Tạo bảng';
+  String get driveFolderLabel => 'Thư mục';
 
   @override
-  String get taskBoardsEdit => 'Sửa bảng';
+  String get driveFolderName => 'Tên thư mục';
 
   @override
-  String get taskBoardsDelete => 'Xóa bảng';
+  String get driveGoUp => 'Lên trên';
 
   @override
-  String get taskBoardsDeleteForever => 'Xóa vĩnh viễn';
+  String get driveGridView => 'Dạng lưới';
 
   @override
-  String get taskBoardsDuplicate => 'Nhân bản bảng';
+  String get driveLimitLabel => 'Giới hạn';
 
   @override
-  String get taskBoardsArchive => 'Lưu trữ bảng';
+  String get driveLinkCopied => 'Đã sao chép liên kết.';
 
   @override
-  String get taskBoardsUnarchive => 'Bỏ lưu trữ bảng';
+  String get driveListView => 'Dạng danh sách';
 
   @override
-  String get taskBoardsRestore => 'Khôi phục bảng';
+  String get drivePathCopied => 'Đã sao chép đường dẫn.';
 
   @override
-  String get taskBoardsCreated => 'Đã tạo bảng.';
+  String get drivePermissionDenied => 'Bạn không có quyền quản lý Drive.';
 
   @override
-  String get taskBoardsUpdated => 'Đã cập nhật bảng.';
+  String get driveRenameHint => 'Tên mới';
 
   @override
-  String get taskBoardsDeleted => 'Đã chuyển bảng vào đã xóa gần đây.';
+  String get driveRenameSuccess => 'Đã đổi tên mục.';
 
   @override
-  String get taskBoardsDeletedForever => 'Đã xóa bảng vĩnh viễn.';
+  String get driveRootLabel => 'Gốc';
 
   @override
-  String get taskBoardsDuplicated => 'Đã nhân bản bảng.';
+  String get driveSearchHint => 'Tìm tệp và thư mục';
 
   @override
-  String get taskBoardsArchived => 'Đã lưu trữ bảng.';
+  String get driveSortNameAsc => 'Tên (A-Z)';
 
   @override
-  String get taskBoardsUnarchived => 'Đã bỏ lưu trữ bảng.';
+  String get driveSortNameDesc => 'Tên (Z-A)';
 
   @override
-  String get taskBoardsRestored => 'Đã khôi phục bảng.';
+  String get driveSortSize => 'Dung lượng lớn nhất';
 
   @override
-  String get taskBoardsLoadError => 'Không thể tải bảng lúc này';
+  String get driveSortUpdated => 'Mới cập nhật';
 
   @override
-  String get taskBoardsNameLabel => 'Tên bảng';
+  String get driveTitle => 'Drive';
 
   @override
-  String get taskBoardsNamePlaceholder => 'Bảng chưa đặt tên';
+  String get driveUploadFiles => 'Tải tệp lên';
 
   @override
-  String get taskBoardsNameRequired => 'Tên bảng là bắt buộc';
+  String get driveUsageLabel => 'Dung lượng';
 
   @override
-  String get taskBoardsIconLabel => 'Biểu tượng bảng';
+  String get driveUsedLabel => 'Đã dùng';
 
   @override
-  String get taskBoardsIconPlaceholder => 'Chọn biểu tượng';
+  String get educationAddOption => 'Thêm đáp án';
 
   @override
-  String get taskBoardsIconPickerTitle => 'Chọn biểu tượng bảng';
+  String get educationAttemptQuizSetLabel => 'Bộ câu hỏi';
 
   @override
-  String get taskBoardsIconPickerSearch => 'Tìm biểu tượng';
+  String get educationAttemptStatusCompleted => 'Hoàn thành';
 
   @override
-  String get taskBoardsIconPickerEmpty => 'Không tìm thấy biểu tượng';
+  String get educationAttemptStatusIncomplete => 'Chưa hoàn thành';
 
   @override
-  String get taskBoardsAccessDeniedTitle => 'Quyền truy cập bị hạn chế';
+  String get educationAttemptStatusLabel => 'Trạng thái';
 
   @override
-  String get taskBoardsAccessDeniedDescription => 'Bạn cần quyền quản lý dự án trong không gian làm việc này để quản lý bảng công việc.';
+  String get educationAttemptsLabel => 'Lượt làm bài';
 
   @override
-  String get taskBoardsFilterAll => 'Tất cả';
+  String get educationAttemptsSubtitle => 'Xem bài nộp, trạng thái hoàn thành và chi tiết câu trả lời của người học.';
 
   @override
-  String get taskBoardsFilterActive => 'Đang hoạt động';
+  String get educationClearFilters => 'Xóa bộ lọc';
 
   @override
-  String get taskBoardsFilterArchived => 'Đã lưu trữ';
+  String get educationCourseDescriptionLabel => 'Mô tả';
 
   @override
-  String get taskBoardsFilterRecentlyDeleted => 'Đã xóa gần đây';
+  String get educationCourseNameLabel => 'Tên khóa học';
 
   @override
-  String get taskBoardsPageSize => 'Kích thước trang';
+  String get educationCoursesLabel => 'Khóa học';
 
   @override
-  String taskBoardsPageSizeOption(int count) {
-    return '$count mục';
+  String get educationCoursesSubtitle => 'Quản lý lộ trình học, mô tả và hồ sơ khóa học sẵn sàng cho module.';
+
+  @override
+  String get educationCreateCourse => 'Tạo khóa học';
+
+  @override
+  String get educationCreateFlashcard => 'Tạo flashcard';
+
+  @override
+  String get educationCreateQuiz => 'Tạo câu hỏi';
+
+  @override
+  String get educationCreateQuizSet => 'Tạo bộ câu hỏi';
+
+  @override
+  String educationDeleteCourseConfirm(String name) {
+    return 'Xóa $name?';
   }
 
   @override
-  String taskBoardsPageInfo(int current, int total) {
-    return 'Trang $current / $total';
+  String get educationDeleteFlashcardConfirm => 'Xóa flashcard này?';
+
+  @override
+  String get educationDeleteQuizConfirm => 'Xóa câu hỏi này?';
+
+  @override
+  String educationDeleteQuizSetConfirm(String name) {
+    return 'Xóa $name?';
   }
 
   @override
-  String taskBoardsListsCount(int count) {
+  String get educationEditCourse => 'Chỉnh sửa khóa học';
+
+  @override
+  String get educationEditFlashcard => 'Chỉnh sửa flashcard';
+
+  @override
+  String get educationEditQuiz => 'Chỉnh sửa câu hỏi';
+
+  @override
+  String get educationEditQuizSet => 'Chỉnh sửa bộ câu hỏi';
+
+  @override
+  String get educationEmptyAttempts => 'Không có lượt làm bài nào phù hợp với bộ lọc hiện tại.';
+
+  @override
+  String get educationEmptyCourses => 'Chưa có khóa học nào.';
+
+  @override
+  String get educationEmptyFlashcards => 'Chưa có flashcard nào.';
+
+  @override
+  String get educationEmptyQuizSets => 'Chưa có bộ câu hỏi nào.';
+
+  @override
+  String get educationEmptyQuizzes => 'Chưa có câu hỏi nào.';
+
+  @override
+  String get educationFlashcardBackLabel => 'Mặt sau';
+
+  @override
+  String get educationFlashcardFrontLabel => 'Mặt trước';
+
+  @override
+  String get educationLibraryFlashcardsLabel => 'Flashcard';
+
+  @override
+  String get educationLibraryFlashcardsSubtitle => 'Tạo thẻ ghi nhớ nhanh với nội dung mặt trước và mặt sau.';
+
+  @override
+  String get educationLibraryLabel => 'Thư viện';
+
+  @override
+  String get educationLibraryQuizSetsLabel => 'Bộ câu hỏi';
+
+  @override
+  String get educationLibraryQuizSetsSubtitle => 'Sắp xếp bài đánh giá thành các bộ có thể tái sử dụng cho module và lượt làm bài.';
+
+  @override
+  String get educationLibraryQuizzesLabel => 'Câu hỏi';
+
+  @override
+  String get educationLibraryQuizzesSubtitle => 'Quản lý ngân hàng câu hỏi, đáp án và quy tắc đúng sai.';
+
+  @override
+  String get educationLibrarySubtitle => 'Quản lý tài nguyên đánh giá dùng chung cho thư viện học tập của workspace.';
+
+  @override
+  String get educationOverviewHighlightsTitle => 'Điểm nổi bật';
+
+  @override
+  String get educationOverviewLabel => 'Tổng quan';
+
+  @override
+  String get educationOverviewRecentAttemptsTitle => 'Lượt làm gần đây';
+
+  @override
+  String get educationOverviewRecentCoursesTitle => 'Khóa học gần đây';
+
+  @override
+  String get educationOverviewSubtitle => 'Theo dõi cấu trúc học tập, tài nguyên luyện tập và tiến độ người học trong một workspace di động.';
+
+  @override
+  String get educationQuizOptionExplanationLabel => 'Giải thích';
+
+  @override
+  String educationQuizOptionLabel(int index) {
+    return 'Đáp án $index';
+  }
+
+  @override
+  String get educationQuizOptionValueLabel => 'Nội dung đáp án';
+
+  @override
+  String get educationQuizQuestionLabel => 'Câu hỏi';
+
+  @override
+  String get educationQuizSetNameLabel => 'Tên bộ câu hỏi';
+
+  @override
+  String get educationSearchCoursesHint => 'Tìm khóa học';
+
+  @override
+  String get educationSearchFlashcardsHint => 'Tìm flashcard';
+
+  @override
+  String get educationSearchQuizSetsHint => 'Tìm bộ câu hỏi';
+
+  @override
+  String get educationSearchQuizzesHint => 'Tìm câu hỏi';
+
+  @override
+  String get educationTitle => 'Education';
+
+  @override
+  String get emailLabel => 'Email';
+
+  @override
+  String get financeActivityClearSearch => 'Xóa tìm kiếm';
+
+  @override
+  String get financeActivityDefaultHint => 'Tìm kiếm và rà soát dòng tiền theo từng ngày.';
+
+  @override
+  String get financeActivityLabel => 'Hoạt động';
+
+  @override
+  String get financeActivitySearchEmptyBody => 'Hãy thử từ khóa khác, tên ví hoặc tên danh mục khác.';
+
+  @override
+  String get financeActivitySearchHint => 'Tìm kiếm đang mở. Lọc theo nơi chi tiêu, ví hoặc danh mục.';
+
+  @override
+  String financeActivitySearchResults(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count danh sách',
-      one: '$count danh sách',
+      other: 'Khớp $count giao dịch',
+      one: 'Khớp 1 giao dịch',
+      zero: 'Chưa có kết quả',
     );
     return '$_temp0';
   }
 
   @override
-  String taskBoardsTasksCount(int count) {
+  String get financeAddAttachments => 'Thêm tệp đính kèm';
+
+  @override
+  String get financeAddFirstTransaction => 'Thêm giao dịch đầu tiên';
+
+  @override
+  String get financeAddTransaction => 'Thêm';
+
+  @override
+  String get financeAmount => 'Số tiền';
+
+  @override
+  String financeAttachmentCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count công việc',
-      one: '$count công việc',
+      other: 'Đã chọn $count tệp',
+      one: 'Đã chọn 1 tệp',
+      zero: 'Chưa chọn tệp nào',
     );
     return '$_temp0';
   }
 
   @override
-  String get taskBoardsCreatedAt => 'Đã tạo';
+  String get financeAttachmentEmpty => 'Chưa chọn tệp đính kèm';
 
   @override
-  String get taskBoardsRecentlyDeleted => 'Đã xóa gần đây';
-
-  @override
-  String get taskBoardsDeleteConfirm => 'Chuyển bảng này vào mục đã xóa gần đây?';
-
-  @override
-  String get taskBoardsDeleteForeverConfirm => 'Xóa vĩnh viễn bảng này? Hành động này không thể hoàn tác.';
-
-  @override
-  String get taskBoardsEmptyTitle => 'Chưa có bảng nào';
-
-  @override
-  String get taskBoardsEmptyDescription => 'Tạo bảng đầu tiên để sắp xếp công việc.';
-
-  @override
-  String get taskBoardsEmptyArchivedTitle => 'Không có bảng đã lưu trữ';
-
-  @override
-  String get taskBoardsEmptyArchivedDescription => 'Các bảng đã lưu trữ sẽ hiển thị tại đây.';
-
-  @override
-  String get taskBoardsEmptyDeletedTitle => 'Không có bảng đã xóa gần đây';
-
-  @override
-  String get taskBoardsEmptyDeletedDescription => 'Các bảng đã xóa sẽ xuất hiện ở đây trước khi bị xóa vĩnh viễn.';
-
-  @override
-  String get taskBoardDetailLoadError => 'Không thể tải chi tiết bảng lúc này';
-
-  @override
-  String get taskBoardDetailUntitledBoard => 'Bảng chưa đặt tên';
-
-  @override
-  String get taskBoardDetailUntitledList => 'Danh sách chưa đặt tên';
-
-  @override
-  String get taskBoardDetailUntitledTask => 'Công việc chưa đặt tên';
-
-  @override
-  String get taskBoardDetailListView => 'Danh sách';
-
-  @override
-  String get taskBoardDetailKanbanView => 'Kanban';
-
-  @override
-  String get taskBoardDetailTimelineView => 'Dòng thời gian';
-
-  @override
-  String get taskBoardDetailSearchTitle => 'Tìm kiếm công việc';
-
-  @override
-  String get taskBoardDetailSearchPlaceholder => 'Tìm kiếm công việc';
-
-  @override
-  String get taskBoardDetailSearchDone => 'Xong';
-
-  @override
-  String get taskBoardDetailNoListsTitle => 'Chưa có danh sách';
-
-  @override
-  String get taskBoardDetailNoListsDescription => 'Tạo danh sách để bắt đầu sắp xếp công việc trong bảng này.';
-
-  @override
-  String get taskBoardDetailNoTasksInList => 'Danh sách này chưa có công việc';
-
-  @override
-  String get taskBoardDetailNoMatchingTasks => 'Không có công việc nào khớp với từ khóa tìm kiếm.';
-
-  @override
-  String get taskBoardDetailTimelineEmptyTitle => 'Chưa có công việc nào được lên lịch';
-
-  @override
-  String get taskBoardDetailTimelineEmptyDescription => 'Thêm ngày bắt đầu và ngày kết thúc cho công việc để hiển thị trên dòng thời gian.';
-
-  @override
-  String get taskBoardDetailTimelineUnscheduledTitle => 'Công việc chưa lên lịch';
-
-  @override
-  String get taskBoardDetailTaskActions => 'Thao tác công việc';
-
-  @override
-  String get taskBoardDetailCollapseList => 'Thu gọn danh sách';
-
-  @override
-  String get taskBoardDetailExpandList => 'Mở rộng danh sách';
-
-  @override
-  String get taskBoardDetailInformation => 'Thông tin';
-
-  @override
-  String get taskBoardDetailMoveTask => 'Di chuyển công việc';
-
-  @override
-  String get taskBoardDetailTaskMoved => 'Đã di chuyển công việc.';
-
-  @override
-  String get taskBoardDetailCreateTask => 'Tạo công việc';
-
-  @override
-  String get taskBoardDetailEditTask => 'Chỉnh sửa công việc';
-
-  @override
-  String get taskBoardDetailTaskTitleLabel => 'Tiêu đề';
-
-  @override
-  String get taskBoardDetailTaskTitleHint => 'Công việc chưa đặt tên';
-
-  @override
-  String get taskBoardDetailTaskTitleRequired => 'Tiêu đề công việc là bắt buộc';
-
-  @override
-  String get taskBoardDetailTaskDescriptionLabel => 'Mô tả';
-
-  @override
-  String get taskBoardDetailTaskEditDescription => 'Chỉnh sửa mô tả';
-
-  @override
-  String get taskBoardDetailTaskDescriptionHint => 'Thêm mô tả';
-
-  @override
-  String get taskBoardDetailTaskNoDescription => 'Chưa có mô tả';
-
-  @override
-  String get taskBoardDetailTaskDescriptionComingSoon => 'Tính năng chỉnh sửa mô tả sẽ sớm có trên mobile.';
-
-  @override
-  String get taskBoardDetailTaskDescriptionDone => 'Xong';
-
-  @override
-  String get taskBoardDetailTaskDescriptionPersonalOnly => 'Tính năng chỉnh sửa mô tả hiện chỉ khả dụng trong không gian làm việc cá nhân.';
-
-  @override
-  String get taskBoardDetailTaskDescriptionImageSourceTitle => 'Thêm hình ảnh';
-
-  @override
-  String get taskBoardDetailTaskDescriptionImageSourceCamera => 'Máy ảnh';
-
-  @override
-  String get taskBoardDetailTaskDescriptionImageSourceGallery => 'Thư viện';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarBlockquote => 'Trích dẫn';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarBold => 'In đậm';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarBulletList => 'Danh sách chấm tròn';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarCodeBlock => 'Khối mã';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarHeading1 => 'Tiêu đề 1';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarHeading2 => 'Tiêu đề 2';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarHeading3 => 'Tiêu đề 3';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarHighlight => 'Tô sáng';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarInlineCode => 'Mã nội tuyến';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarInsertImage => 'Chèn hình ảnh';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarItalic => 'In nghiêng';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarOrderedList => 'Danh sách đánh số';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarStrikethrough => 'Gạch ngang';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarSubscript => 'Chỉ số dưới';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarSuperscript => 'Chỉ số trên';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarTaskList => 'Danh sách công việc';
-
-  @override
-  String get taskBoardDetailTaskDescriptionTableAddColumn => 'Thêm cột';
-
-  @override
-  String get taskBoardDetailTaskDescriptionTableAddRow => 'Thêm hàng';
-
-  @override
-  String get taskBoardDetailTaskDescriptionTableRemoveColumn => 'Xóa cột';
-
-  @override
-  String get taskBoardDetailTaskDescriptionTableRemoveRow => 'Xóa hàng';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarUnderline => 'Gạch dưới';
-
-  @override
-  String get taskBoardDetailTaskListLabel => 'Danh sách';
-
-  @override
-  String get taskBoardDetailTaskListSelect => 'Chọn danh sách';
-
-  @override
-  String get taskBoardDetailPriority => 'Độ ưu tiên';
-
-  @override
-  String get taskBoardDetailTaskDates => 'Ngày';
-
-  @override
-  String get taskBoardDetailTaskStartDate => 'Ngày bắt đầu';
-
-  @override
-  String get taskBoardDetailTaskEndDate => 'Ngày kết thúc';
-
-  @override
-  String get taskBoardDetailTaskEstimation => 'Ước lượng';
-
-  @override
-  String get taskBoardDetailTaskEstimationNone => 'Chưa ước lượng';
-
-  @override
-  String get taskBoardDetailTaskAssignees => 'Người được giao';
-
-  @override
-  String get taskBoardDetailTaskLabels => 'Nhãn';
-
-  @override
-  String get taskBoardDetailTaskProjects => 'Dự án';
-
-  @override
-  String get taskBoardDetailTaskSelectAssignees => 'Chọn người được giao';
-
-  @override
-  String get taskBoardDetailTaskSelectLabels => 'Chọn nhãn';
-
-  @override
-  String get taskBoardDetailTaskSelectProjects => 'Chọn dự án';
-
-  @override
-  String get taskBoardDetailEditorDetailsTab => 'Chi tiết';
-
-  @override
-  String get taskBoardDetailEditorRelationshipsTab => 'Quan hệ';
-
-  @override
-  String get taskBoardDetailParentTask => 'Công việc cha';
-
-  @override
-  String get taskBoardDetailChildTasks => 'Công việc con';
-
-  @override
-  String get taskBoardDetailBlockedBy => 'Bị chặn bởi';
-
-  @override
-  String get taskBoardDetailBlocking => 'Đang chặn';
-
-  @override
-  String get taskBoardDetailRelatedTasks => 'Công việc liên quan';
-
-  @override
-  String get taskBoardDetailAddParentTask => 'Thêm công việc cha';
-
-  @override
-  String get taskBoardDetailAddChildTask => 'Thêm công việc con';
-
-  @override
-  String get taskBoardDetailAddBlockedByTask => 'Thêm công việc chặn';
-
-  @override
-  String get taskBoardDetailAddBlockingTask => 'Thêm công việc bị chặn';
-
-  @override
-  String get taskBoardDetailAddRelatedTask => 'Thêm công việc liên quan';
-
-  @override
-  String get taskBoardDetailOpenRelatedTask => 'Mở công việc liên quan';
-
-  @override
-  String get taskBoardDetailRemoveRelationship => 'Xóa quan hệ';
-
-  @override
-  String get taskBoardDetailUnableToOpenLinkedTask => 'Không thể mở công việc liên kết từ đây.';
-
-  @override
-  String get taskBoardDetailSelectTask => 'Chọn công việc';
-
-  @override
-  String get taskBoardDetailSearchTasks => 'Tìm kiếm công việc';
-
-  @override
-  String get taskBoardDetailNoAvailableRelationshipTasks => 'Không có công việc khả dụng cho quan hệ này.';
-
-  @override
-  String get taskBoardDetailRelationshipAdded => 'Đã thêm quan hệ.';
-
-  @override
-  String get taskBoardDetailRelationshipRemoved => 'Đã xóa quan hệ.';
-
-  @override
-  String get taskBoardDetailNone => 'Không có';
-
-  @override
-  String get taskBoardDetailNoDate => 'Chưa đặt ngày';
-
-  @override
-  String taskBoardDetailDueAt(String date) {
-    return 'Hạn $date';
+  String financeAttachmentHint(int count, String size) {
+    return 'Đính kèm tối đa $count tệp. Mỗi tệp tối đa $size.';
   }
 
   @override
-  String taskBoardDetailStartsAt(String date) {
-    return 'Bắt đầu $date';
-  }
+  String get financeAttachmentLimitReached => 'Đã đạt giới hạn tệp đính kèm';
 
   @override
-  String get taskBoardDetailOverdue => 'Quá hạn';
-
-  @override
-  String get taskBoardDetailToday => 'hôm nay';
-
-  @override
-  String get taskBoardDetailTomorrow => 'ngày mai';
-
-  @override
-  String get taskBoardDetailYesterday => 'hôm qua';
-
-  @override
-  String taskBoardDetailInDays(int count) {
+  String financeAttachmentRejected(int count, String size) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'trong $count ngày',
-      one: 'trong $count ngày',
+      other: '$count tệp quá lớn hoặc vượt giới hạn. Mỗi tệp tối đa $size.',
+      one: '1 tệp quá lớn. Tối đa $size.',
     );
     return '$_temp0';
   }
 
   @override
-  String taskBoardDetailDaysAgo(int count) {
+  String financeAttachmentUploadFailed(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count ngày trước',
-      one: '$count ngày trước',
+      other: '$count tệp đính kèm tải lên thất bại',
+      one: '1 tệp đính kèm tải lên thất bại',
     );
     return '$_temp0';
   }
 
   @override
-  String get taskBoardDetailInvalidDateRange => 'Ngày kết thúc phải cùng hoặc sau ngày bắt đầu';
-
-  @override
-  String get taskBoardDetailTaskSaved => 'Đã cập nhật công việc.';
-
-  @override
-  String get taskBoardDetailTaskCreated => 'Đã tạo công việc.';
-
-  @override
-  String get taskBoardDetailTaskDeleted => 'Đã xóa công việc.';
-
-  @override
-  String get taskBoardDetailTaskDeletedForever => 'Đã xóa vĩnh viễn công việc.';
-
-  @override
-  String get taskBoardDetailTaskRestored => 'Đã khôi phục công việc.';
-
-  @override
-  String get taskBoardDetailBulkActions => 'Thao tác hàng loạt';
-
-  @override
-  String taskBoardDetailBulkAllSuccess(int count) {
-    return 'Đã cập nhật $count công việc.';
+  String financeAttachmentUploadSuccess(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Đã tải lên $count tệp đính kèm',
+      one: 'Đã tải lên 1 tệp đính kèm',
+    );
+    return '$_temp0';
   }
 
   @override
-  String get taskBoardDetailBulkClearAssignees => 'Xóa tất cả người được giao';
+  String get financeAttachmentUploaded => 'Đã tải lên';
 
   @override
-  String get taskBoardDetailBulkClearLabels => 'Xóa tất cả nhãn';
+  String get financeAttachmentUploading => 'Đang tải lên...';
 
   @override
-  String get taskBoardDetailBulkClearProjects => 'Xóa tất cả dự án';
+  String get financeAttachments => 'Tệp đính kèm';
 
   @override
-  String get taskBoardDetailBulkMarkClosed => 'Đánh dấu đã đóng';
+  String get financeBasic => 'Cơ bản';
 
   @override
-  String get taskBoardDetailBulkMarkDone => 'Đánh dấu hoàn thành';
+  String get financeCategories => 'Danh mục';
 
   @override
-  String get taskBoardDetailBulkMoveToBoard => 'Chuyển sang bảng khác';
+  String get financeCategory => 'Danh mục';
 
   @override
-  String taskBoardDetailBulkPartialSuccess(int success, int failed) {
-    return 'Đã cập nhật $success công việc, $failed thất bại.';
+  String get financeCategoryDialogSubtitle => 'Xác định cách danh mục này hiển thị và nó là thu hay chi.';
+
+  @override
+  String get financeCategoryNameRequired => 'Vui lòng nhập tên danh mục';
+
+  @override
+  String get financeCheckpointsActualBalance => 'Số dư thực tế';
+
+  @override
+  String financeCheckpointsActualBalanceWithCurrency(String currency) {
+    return 'Số dư thực tế ($currency)';
   }
 
   @override
-  String get taskBoardDetailEnterBulkSelect => 'Chọn công việc';
+  String get financeCheckpointsActualDelta => 'Chênh lệch thực tế';
 
   @override
-  String get taskBoardDetailExitBulkSelect => 'Bỏ chọn';
+  String get financeCheckpointsAmountRequired => 'Nhập số dư thực tế hợp lệ';
 
   @override
-  String get taskBoardDetailNoTasksSelected => 'Chưa chọn công việc nào';
+  String get financeCheckpointsBatchDescription => 'Nhập số dư thực tế cho từng ví bạn muốn kiểm tra tại cùng một thời điểm.';
 
   @override
-  String get taskBoardDetailNextWeek => 'tuần sau';
+  String get financeCheckpointsBatchRecord => 'Kiểm tra tất cả ví';
 
   @override
-  String get taskBoardDetailQuickActions => 'Thao tác nhanh';
+  String get financeCheckpointsBatchSaved => 'Đã lưu điểm kiểm tra ví';
 
   @override
-  String get taskBoardDetailChangePriority => 'Đổi độ ưu tiên';
+  String get financeCheckpointsCategory => 'Danh mục';
 
   @override
-  String get taskBoardDetailMarkNotStarted => 'Chuyển về Chưa bắt đầu';
+  String get financeCheckpointsCheckedAt => 'Thời điểm kiểm tra';
 
   @override
-  String get taskBoardDetailOpenFullDetails => 'Mở chi tiết đầy đủ';
+  String get financeCheckpointsCheckedAtRequired => 'Nhập thời điểm kiểm tra hợp lệ';
 
   @override
-  String get taskBoardDetailPriorityUpdated => 'Đã cập nhật độ ưu tiên.';
+  String get financeCheckpointsCreateReconciliation => 'Tạo đối chiếu';
 
   @override
-  String get taskBoardDetailProperties => 'Thuộc tính';
+  String get financeCheckpointsCurrentVariance => 'Chênh lệch hiện tại';
 
   @override
-  String get taskBoardDetailMove => 'Di chuyển';
+  String get financeCheckpointsDelete => 'Xóa điểm kiểm tra';
 
   @override
-  String get taskBoardDetailSetDueDate => 'Đặt ngày hết hạn';
+  String get financeCheckpointsDeleteDescription => 'Xóa điểm kiểm tra này và tính lại dòng kiểm tra của ví.';
 
   @override
-  String get taskBoardDetailSetEstimation => 'Đặt điểm ước lượng';
+  String get financeCheckpointsDeleted => 'Đã xóa điểm kiểm tra';
 
   @override
-  String get taskBoardDetailPriorityNone => 'Không ưu tiên';
+  String get financeCheckpointsDescription => 'Ghi số dư thực tế, so sánh biến động sổ cái và xử lý chênh lệch giữa các lần kiểm tra.';
 
   @override
-  String get taskBoardDetailRecycleBin => 'Thùng rác';
+  String get financeCheckpointsDescriptionLabel => 'Mô tả';
 
   @override
-  String get taskBoardDetailRecycleBinDescription => 'Các công việc đã xóa từ bảng này. Chọn công việc để khôi phục hoặc xóa vĩnh viễn.';
+  String get financeCheckpointsEdit => 'Chỉnh sửa điểm kiểm tra';
 
   @override
-  String get taskBoardDetailRecycleBinEmpty => 'Không có công việc đã xóa';
+  String get financeCheckpointsEntriesRequired => 'Nhập ít nhất một số dư ví';
 
   @override
-  String get taskBoardDetailRecycleBinEmptyHint => 'Công việc đã xóa sẽ xuất hiện ở đây.';
+  String get financeCheckpointsLatest => 'Điểm kiểm tra mới nhất';
 
   @override
-  String get taskBoardDetailSelectAllTasks => 'Chọn tất cả công việc';
+  String get financeCheckpointsLedgerBalance => 'Số dư sổ cái';
 
   @override
-  String taskBoardDetailDeletedTasksCount(int count) {
-    return '$count công việc đã xóa';
+  String get financeCheckpointsLedgerDelta => 'Chênh lệch sổ cái';
+
+  @override
+  String get financeCheckpointsNoCategory => 'Không có danh mục';
+
+  @override
+  String get financeCheckpointsNoCheckpoint => 'Chưa có điểm kiểm tra';
+
+  @override
+  String get financeCheckpointsNoCheckpointDetail => 'Ghi một điểm kiểm tra để bắt đầu theo dõi số dư đã kiểm tra.';
+
+  @override
+  String get financeCheckpointsNoCheckpointShort => 'Chưa có điểm kiểm tra';
+
+  @override
+  String get financeCheckpointsNoWallets => 'Không có ví khả dụng';
+
+  @override
+  String get financeCheckpointsNoWalletsDetail => 'Tạo ví trước khi ghi điểm kiểm tra tài chính.';
+
+  @override
+  String get financeCheckpointsNote => 'Ghi chú';
+
+  @override
+  String get financeCheckpointsNotePlaceholder => 'Ngữ cảnh tùy chọn cho điểm kiểm tra này';
+
+  @override
+  String get financeCheckpointsOverviewHint => 'Ghi số dư thực tế và xem các khoảng kiểm tra còn lệch.';
+
+  @override
+  String get financeCheckpointsReconcile => 'Đối chiếu';
+
+  @override
+  String financeCheckpointsReconcileDefaultDescription(String wallet) {
+    return 'Đối chiếu ví $wallet';
   }
 
   @override
-  String taskBoardDetailSelectedCount(int selected, int total) {
-    return 'Đã chọn $selected/$total';
+  String get financeCheckpointsReconcileDescription => 'Tạo giao dịch điều chỉnh không đưa vào báo cáo cho chênh lệch có dấu trong khoảng này.';
+
+  @override
+  String get financeCheckpointsReconciliationClean => 'Điểm kiểm tra đã khớp';
+
+  @override
+  String get financeCheckpointsReconciliationCreated => 'Đã tạo giao dịch đối chiếu';
+
+  @override
+  String get financeCheckpointsRecord => 'Ghi điểm kiểm tra';
+
+  @override
+  String financeCheckpointsRecordDescription(String wallet) {
+    return 'Lưu số dư thực tế đang hiển thị trong $wallet.';
   }
 
   @override
-  String taskBoardDetailRestoreTasks(int count) {
-    return 'Khôi phục ($count)';
+  String get financeCheckpointsSaved => 'Đã lưu điểm kiểm tra';
+
+  @override
+  String get financeCheckpointsSharedNote => 'Ghi chú chung';
+
+  @override
+  String get financeCheckpointsShortLabel => 'Kiểm tra';
+
+  @override
+  String get financeCheckpointsTimeline => 'Dòng thời gian điểm kiểm tra';
+
+  @override
+  String get financeCheckpointsTitle => 'Điểm kiểm tra ví';
+
+  @override
+  String get financeCheckpointsTransactionCountHint => 'Số lượng giao dịch dựa trên hoạt động sổ cái trong từng khoảng.';
+
+  @override
+  String get financeCheckpointsVariance => 'Chênh lệch';
+
+  @override
+  String financeCheckpointsVarianceValue(String value) {
+    return 'Chênh lệch: $value';
   }
 
   @override
-  String taskBoardDetailDeleteTasks(int count) {
-    return 'Xóa ($count)';
+  String get financeCheckpointsWalletsSubtitle => 'Chọn ví để xem điểm kiểm tra mới nhất và các khoảng đối chiếu.';
+
+  @override
+  String get financeCheckpointsWalletsTitle => 'Kiểm tra ví';
+
+  @override
+  String get financeCheckpointsWindows => 'Khoảng đối chiếu';
+
+  @override
+  String get financeCheckpointsWindowsSubtitle => 'Mỗi khoảng so sánh biến động thực tế với biến động sổ cái giữa hai điểm kiểm tra.';
+
+  @override
+  String get financeConfidentialAmount => 'Ẩn số tiền';
+
+  @override
+  String get financeConfidentialCategory => 'Ẩn danh mục';
+
+  @override
+  String get financeConfidentialDescription => 'Ẩn mô tả';
+
+  @override
+  String get financeCreateCategory => 'Tạo danh mục';
+
+  @override
+  String get financeCreateFirstWallet => 'Tạo ví đầu tiên';
+
+  @override
+  String get financeCreateTag => 'Tạo thẻ';
+
+  @override
+  String get financeCreateTransaction => 'Tạo giao dịch';
+
+  @override
+  String get financeCreateWallet => 'Tạo ví';
+
+  @override
+  String get financeCurrencyPickerSubtitle => 'Chọn mã tiền tệ phù hợp nhất với cách ví này được theo dõi.';
+
+  @override
+  String get financeDeleteCategory => 'Xóa danh mục';
+
+  @override
+  String get financeDeleteCategoryConfirm => 'Xóa danh mục này?';
+
+  @override
+  String get financeDeleteTag => 'Xóa thẻ';
+
+  @override
+  String get financeDeleteTagConfirm => 'Xóa thẻ này?';
+
+  @override
+  String get financeDeleteTransaction => 'Xóa giao dịch';
+
+  @override
+  String get financeDeleteTransactionConfirm => 'Xóa giao dịch này?';
+
+  @override
+  String get financeDeleteWallet => 'Xóa ví';
+
+  @override
+  String get financeDeleteWalletConfirm => 'Xóa ví này?';
+
+  @override
+  String get financeDescription => 'Mô tả';
+
+  @override
+  String get financeDestinationAmountAuto => 'Tự động';
+
+  @override
+  String get financeDestinationAmountAutoHint => 'Tự động điền từ tỷ giá thực tế';
+
+  @override
+  String get financeDestinationAmountOptional => 'Số tiền đích';
+
+  @override
+  String get financeDestinationAmountOverride => 'Thủ công';
+
+  @override
+  String get financeDestinationAmountOverrideHint => 'Dùng số tiền tùy chỉnh — nhấn để chuyển sang tự động';
+
+  @override
+  String get financeDestinationWallet => 'Ví đích';
+
+  @override
+  String get financeEditCategory => 'Sửa danh mục';
+
+  @override
+  String get financeEditTag => 'Sửa thẻ';
+
+  @override
+  String get financeEditTransaction => 'Sửa giao dịch';
+
+  @override
+  String get financeEditWallet => 'Sửa ví';
+
+  @override
+  String get financeExchangeRate => 'Tỷ giá';
+
+  @override
+  String get financeExcludedFromReports => 'Đã loại khỏi báo cáo';
+
+  @override
+  String get financeExpense => 'Chi tiêu';
+
+  @override
+  String get financeFrequentlyUsedCategories => 'Dùng nhiều';
+
+  @override
+  String get financeHideAmounts => 'Ẩn số tiền';
+
+  @override
+  String get financeIcon => 'Biểu tượng';
+
+  @override
+  String get financeIncome => 'Thu nhập';
+
+  @override
+  String get financeInvalidAmount => 'Vui lòng nhập số tiền hợp lệ';
+
+  @override
+  String get financeInvalidColor => 'Nhập mã màu hex hợp lệ';
+
+  @override
+  String get financeInvalidDestinationAmount => 'Vui lòng nhập số tiền đích hợp lệ';
+
+  @override
+  String get financeInvertRate => 'Đảo tỷ giá';
+
+  @override
+  String get financeManageCategoriesEmptyBody => 'Tạo danh mục cho các mẫu thu nhập và chi tiêu lặp lại.';
+
+  @override
+  String get financeManageCategoriesSubtitle => 'Nhóm giao dịch vào các nhóm thu và chi rõ ràng.';
+
+  @override
+  String get financeManageCategoriesTitle => 'Danh mục';
+
+  @override
+  String get financeManageLabel => 'Quản lý';
+
+  @override
+  String get financeManageTagsEmptyBody => 'Tạo thẻ cho nhãn linh hoạt như chuyến đi, đăng ký hoặc dự án.';
+
+  @override
+  String get financeManageTagsSubtitle => 'Dùng thẻ cho các nhãn linh hoạt và báo cáo nhanh.';
+
+  @override
+  String get financeManageTagsTitle => 'Thẻ';
+
+  @override
+  String get financeNet => 'Ròng';
+
+  @override
+  String get financeNetBalance => 'Số dư ròng';
+
+  @override
+  String get financeNoCategories => 'Chưa có danh mục';
+
+  @override
+  String get financeNoColor => 'Chưa có màu';
+
+  @override
+  String get financeNoIconsFound => 'Không tìm thấy biểu tượng';
+
+  @override
+  String get financeNoSearchResults => 'Không tìm thấy giao dịch';
+
+  @override
+  String get financeNoTag => 'Không gắn thẻ';
+
+  @override
+  String get financeNoTags => 'Chưa có thẻ';
+
+  @override
+  String get financeNoTransactions => 'Chưa có giao dịch';
+
+  @override
+  String get financeNoWallets => 'Chưa có ví';
+
+  @override
+  String get financeOverviewActionsSubtitle => 'Đi thẳng vào thao tác bạn cần làm tiếp theo.';
+
+  @override
+  String get financeOverviewActivitySubtitle => 'Biến động mới nhất trên tất cả ví của bạn.';
+
+  @override
+  String get financeOverviewActivityTitle => 'Hoạt động';
+
+  @override
+  String get financeOverviewCreateTransactionHint => 'Ghi nhanh thu, chi hoặc chuyển khoản.';
+
+  @override
+  String financeOverviewCrossCurrencyHint(String currency) {
+    return 'Bao gồm số dư đã quy đổi giữa các ví. Tiền tệ gốc: $currency.';
   }
 
   @override
-  String taskBoardDetailFromList(String list) {
-    return 'từ: $list';
+  String get financeOverviewEyebrow => 'Tóm tắt không gian làm việc';
+
+  @override
+  String get financeOverviewLabel => 'Tổng quan';
+
+  @override
+  String get financeOverviewManageHint => 'Quản lý danh mục, thẻ và cấu trúc tài chính.';
+
+  @override
+  String get financeOverviewNoTransactionsBody => 'Các giao dịch sẽ xuất hiện ở đây khi bạn bắt đầu ghi nhận dòng tiền vào ra.';
+
+  @override
+  String get financeOverviewNoWalletsBody => 'Tạo ví đầu tiên để bắt đầu theo dõi số dư, chuyển khoản và danh mục.';
+
+  @override
+  String financeOverviewRecentCount(int count) {
+    return '$count giao dịch gần đây';
   }
 
   @override
-  String taskBoardDetailDeletedAgo(String time) {
-    return 'Đã xóa $time';
+  String financeOverviewSingleCurrencyHint(String currency) {
+    return 'Mọi số dư đều đang được theo dõi bằng $currency.';
   }
 
   @override
-  String get taskBoardDetailPriorityCritical => 'Nghiêm trọng';
-
-  @override
-  String get taskBoardDetailPriorityHigh => 'Cao';
-
-  @override
-  String get taskBoardDetailPriorityNormal => 'Bình thường';
-
-  @override
-  String get taskBoardDetailPriorityLow => 'Thấp';
-
-  @override
-  String taskBoardDetailPoints(int count) {
-    return '$count điểm';
+  String financeOverviewWalletCount(int count) {
+    return '$count ví';
   }
 
   @override
-  String taskBoardDetailNProjects(int count) {
-    return '$count dự án';
-  }
+  String get financeOverviewWalletSectionSubtitle => 'Nhìn nhanh các số dư quan trọng nhất của bạn.';
 
   @override
-  String get taskBoardDetailNoMoveTargets => 'Không có danh sách khác để di chuyển công việc này.';
+  String get financeOverviewWalletSectionTitle => 'Ví';
 
   @override
-  String get taskBoardDetailRemoveDueDate => 'Xóa ngày hết hạn';
+  String get financeOverviewWalletsHint => 'Xem số dư và tinh chỉnh từng ví.';
 
   @override
-  String get taskBoardDetailSelectAllFiltered => 'Chọn hiển thị';
+  String get financePickColor => 'Chọn màu';
 
   @override
-  String get taskBoardDetailSetCustomDate => 'Đặt ngày tùy chỉnh';
+  String get financePickerCategorySubtitle => 'Chọn nhóm phù hợp nhất cho giao dịch này.';
 
   @override
-  String get taskBoardDetailThisWeek => 'tuần này';
+  String get financePickerLoadingOptions => 'Đang tải ví, danh mục và thẻ...';
 
   @override
-  String get taskBoardDetailBoardActions => 'Thao tác bảng';
+  String get financePickerTagSubtitle => 'Chọn nhãn tùy chọn để thêm ngữ cảnh.';
 
   @override
-  String get taskBoardDetailManageBoardLayout => 'Quản lý bố cục bảng';
+  String get financePickerWalletSubtitle => 'Chọn ví mà giao dịch này sẽ tác động.';
 
   @override
-  String get taskBoardDetailManageBoardLayoutDescription => 'Quản lý các cột theo trạng thái và sắp xếp lại danh sách trong từng trạng thái.';
+  String get financePreview => 'Xem trước';
 
   @override
-  String get taskBoardDetailRefresh => 'Làm mới bảng';
+  String get financeQuickActions => 'Thao tác nhanh';
 
   @override
-  String get taskBoardDetailRenameBoard => 'Đổi tên bảng';
+  String get financeRandomizeColor => 'Ngẫu nhiên';
 
   @override
-  String get taskBoardDetailBoardRenamed => 'Đã đổi tên bảng.';
+  String get financeRecentTransactions => 'Giao dịch gần đây';
 
   @override
-  String get taskBoardDetailCreateList => 'Tạo danh sách';
+  String get financeReportOptIn => 'Bao gồm trong báo cáo';
 
   @override
-  String get taskBoardDetailEditList => 'Chỉnh sửa danh sách';
+  String get financeSearchCategories => 'Tìm danh mục';
 
   @override
-  String get taskBoardDetailRenameList => 'Đổi tên danh sách';
+  String get financeSearchIcons => 'Tìm biểu tượng';
 
   @override
-  String get taskBoardDetailListActions => 'Thao tác danh sách';
+  String get financeSearchTransactions => 'Tìm kiếm giao dịch';
 
   @override
-  String get taskBoardDetailListCreated => 'Đã tạo danh sách.';
+  String get financeSearchWallets => 'Tìm ví';
 
   @override
-  String get taskBoardDetailListRenamed => 'Đã đổi tên danh sách.';
+  String get financeSelectDestinationWallet => 'Chọn ví đích';
 
   @override
-  String get taskBoardDetailListUpdated => 'Đã cập nhật danh sách.';
+  String get financeSelectIcon => 'Chọn biểu tượng';
 
   @override
-  String get taskBoardDetailListDeleted => 'Đã xóa danh sách.';
+  String get financeSelectWalletAndCategoryFirst => 'Hãy chọn ví và danh mục trước';
 
   @override
-  String get taskBoardDetailDeleteList => 'Xóa danh sách';
+  String get financeSelectWalletAndDestinationFirst => 'Hãy chọn ví nguồn và ví đích trước';
 
   @override
-  String get taskBoardDetailDeleteListTitle => 'Xóa danh sách?';
+  String get financeShowAmounts => 'Hiện số tiền';
 
   @override
-  String get taskBoardDetailDeleteListDescription => 'Bạn có chắc chắn muốn xóa danh sách này không? Tất cả công việc trong danh sách này cũng sẽ bị xóa. Hành động này không thể hoàn tác.';
+  String get financeSourceWallet => 'Ví nguồn';
 
   @override
-  String get taskBoardDetailDeleteTask => 'Xóa công việc';
+  String get financeStatisticsSummary => 'Tổng quan thống kê';
 
   @override
-  String get taskBoardDetailDeleteTaskForever => 'Xóa vĩnh viễn công việc';
+  String get financeTagDialogSubtitle => 'Đặt tên nhãn và chọn màu để dễ nhận biết.';
 
   @override
-  String get taskBoardDetailDeleteTaskForeverDescription => 'Xóa vĩnh viễn công việc này khỏi thùng rác? Hành động này không thể hoàn tác.';
+  String get financeTagName => 'Tên thẻ';
 
   @override
-  String get taskBoardDetailDeleteForever => 'Xóa vĩnh viễn';
+  String get financeTagNameRequired => 'Vui lòng nhập tên thẻ';
 
   @override
-  String get taskBoardDetailDeleteTaskTitle => 'Xóa công việc?';
+  String get financeTags => 'Thẻ';
 
   @override
-  String get taskBoardDetailDeleteTaskDescription => 'Di chuyển công việc này vào thùng rác?';
-
-  @override
-  String get taskBoardDetailMoveListToStatus => 'Di chuyển danh sách sang trạng thái';
-
-  @override
-  String get taskBoardDetailCannotMoveToClosedStatus => 'Không thể di chuyển danh sách đến hoặc khỏi trạng thái đã đóng';
-
-  @override
-  String get taskBoardDetailCannotCreateMoreClosedLists => 'Mỗi bảng chỉ được phép có một danh sách đã đóng.';
-
-  @override
-  String get taskBoardDetailClosedListCapacityHint => 'Tối đa 1 danh sách đã đóng';
-
-  @override
-  String get taskBoardDetailAddNewList => 'Thêm danh sách mới';
-
-  @override
-  String get taskBoardDetailNoListsInStatus => 'Không có danh sách nào trong trạng thái này';
-
-  @override
-  String get taskBoardDetailListsReordered => 'Đã sắp xếp lại danh sách.';
-
-  @override
-  String get taskBoardDetailMoveListDown => 'Di chuyển danh sách xuống';
-
-  @override
-  String get taskBoardDetailMoveListUp => 'Di chuyển danh sách lên';
-
-  @override
-  String taskBoardDetailMovedToStatus(String status) {
-    return 'Đã chuyển sang $status';
-  }
-
-  @override
-  String get taskBoardDetailNameRequired => 'Tên là bắt buộc';
-
-  @override
-  String get taskBoardDetailListNameLabel => 'Tên danh sách';
-
-  @override
-  String get taskBoardDetailStatusCategoryLabel => 'Nhóm trạng thái';
-
-  @override
-  String get taskBoardDetailColorLabel => 'Màu sắc';
-
-  @override
-  String get taskBoardDetailDefaultHiddenListsTitle => 'Ẩn mặc định';
-
-  @override
-  String get taskBoardDetailDefaultHiddenListsDescription => 'Chế độ danh sách ẩn các danh sách Tài liệu cho đến khi bạn chọn bộ lọc danh sách hoặc trạng thái.';
-
-  @override
-  String get taskBoardDetailDefaultHiddenListsOverrideTitle => 'Danh sách ẩn mặc định đang hiển thị';
-
-  @override
-  String get taskBoardDetailDefaultHiddenListsOverrideDescription => 'Bộ lọc danh sách hoặc trạng thái của bạn đang bỏ qua mặc định ẩn Tài liệu.';
-
-  @override
-  String get taskBoardDetailFilters => 'Bộ lọc';
-
-  @override
-  String get taskBoardDetailFiltersActive => 'Bộ lọc đang bật';
-
-  @override
-  String get taskBoardDetailFilterLists => 'Danh sách';
-
-  @override
-  String get taskBoardDetailFilterStatuses => 'Trạng thái';
-
-  @override
-  String get taskBoardDetailFilterAssignees => 'Người được giao';
-
-  @override
-  String get taskBoardDetailFilterLabels => 'Nhãn';
-
-  @override
-  String get taskBoardDetailFilterProjects => 'Dự án';
-
-  @override
-  String get taskBoardDetailNoFilterOptions => 'Không có tùy chọn';
-
-  @override
-  String get taskBoardDetailStatusNotStarted => 'Chưa bắt đầu';
-
-  @override
-  String get taskBoardDetailStatusActive => 'Đang thực hiện';
-
-  @override
-  String get taskBoardDetailStatusReview => 'Chờ duyệt';
-
-  @override
-  String get taskBoardDetailStatusDone => 'Hoàn thành';
-
-  @override
-  String get taskBoardDetailStatusClosed => 'Đã đóng';
-
-  @override
-  String get taskBoardDetailStatusDocuments => 'Tài liệu';
-
-  @override
-  String get taskBoardDetailColorGray => 'Xám';
-
-  @override
-  String get taskBoardDetailColorRed => 'Đỏ';
-
-  @override
-  String get taskBoardDetailColorBlue => 'Xanh dương';
-
-  @override
-  String get taskBoardDetailColorGreen => 'Xanh lá';
-
-  @override
-  String get taskBoardDetailColorYellow => 'Vàng';
-
-  @override
-  String get taskBoardDetailColorOrange => 'Cam';
-
-  @override
-  String get taskBoardDetailColorPurple => 'Tím';
-
-  @override
-  String get taskBoardDetailColorPink => 'Hồng';
-
-  @override
-  String get taskBoardDetailColorIndigo => 'Chàm';
-
-  @override
-  String get taskBoardDetailColorCyan => 'Lục lam';
-
-  @override
-  String get taskBoardDetailClearFilters => 'Xóa bộ lọc';
-
-  @override
-  String get taskBoardDetailApplyFilters => 'Áp dụng bộ lọc';
-
-  @override
-  String get taskPlanningTitle => 'Lập kế hoạch';
-
-  @override
-  String get taskEstimatesTitle => 'Ước lượng';
-
-  @override
-  String get taskLabelsTab => 'Nhãn';
-
-  @override
-  String get taskLabelsCreate => 'Tạo nhãn';
-
-  @override
-  String get taskLabelsEdit => 'Sửa nhãn';
-
-  @override
-  String get taskLabelsDelete => 'Xóa nhãn';
-
-  @override
-  String get taskLabelsDeleteConfirm => 'Xóa nhãn này?';
-
-  @override
-  String get taskLabelsCreated => 'Đã tạo nhãn.';
-
-  @override
-  String get taskLabelsUpdated => 'Đã cập nhật nhãn.';
-
-  @override
-  String get taskLabelsDeleted => 'Đã xóa nhãn.';
-
-  @override
-  String get taskLabelsName => 'Tên nhãn';
-
-  @override
-  String get taskLabelsNameRequired => 'Tên nhãn là bắt buộc';
-
-  @override
-  String get taskLabelsColorInvalid => 'Nhập mã màu hex hợp lệ';
-
-  @override
-  String get taskLabelsEmptyTitle => 'Chưa có nhãn';
-
-  @override
-  String get taskLabelsEmptyDescription => 'Tạo nhãn để gắn thẻ và sắp xếp công việc.';
-
-  @override
-  String get taskEstimatesDescription => 'Cấu hình phương pháp ước lượng cho các bảng công việc và xem mức độ áp dụng hiện tại.';
-
-  @override
-  String get taskEstimatesAccessDeniedTitle => 'Quyền truy cập bị hạn chế';
-
-  @override
-  String get taskEstimatesAccessDeniedDescription => 'Bạn cần quyền quản lý dự án trong không gian làm việc này để thay đổi cài đặt ước lượng của bảng công việc.';
-
-  @override
-  String get taskEstimatesTotalBoards => 'Tổng số bảng';
-
-  @override
-  String get taskEstimatesConfiguredBoards => 'Đã cấu hình';
-
-  @override
-  String get taskEstimatesExtendedRangeBoards => 'Phạm vi mở rộng';
-
-  @override
-  String get taskEstimatesDistributionTitle => 'Phương pháp ước lượng';
-
-  @override
-  String get taskEstimatesBoardConfigTitle => 'Cấu hình ước lượng của bảng';
-
-  @override
-  String get taskEstimatesNoBoardsTitle => 'Không tìm thấy bảng nào';
-
-  @override
-  String get taskEstimatesNoBoardsDescription => 'Hãy tạo bảng công việc trước, sau đó quay lại đây để cấu hình phương pháp ước lượng.';
-
-  @override
-  String get taskEstimatesExtendedBadge => 'Mở rộng';
-
-  @override
-  String taskEstimatesDialogTitle(String boardName) {
-    return 'Chỉnh sửa $boardName';
-  }
-
-  @override
-  String get taskEstimatesDialogEstimationMethod => 'Phương pháp ước lượng';
-
-  @override
-  String taskEstimatesDialogRangeTitle(String label) {
-    return 'Phạm vi $label';
-  }
-
-  @override
-  String get taskEstimatesDialogEstimationOptions => 'Tùy chọn ước lượng';
-
-  @override
-  String get taskEstimatesDialogSelectedConfiguration => 'Cấu hình đã chọn';
-
-  @override
-  String get taskEstimatesDialogSave => 'Cập nhật ước lượng';
-
-  @override
-  String get taskEstimatesRangeStandard => 'Phạm vi tiêu chuẩn';
-
-  @override
-  String get taskEstimatesRangeExtended => 'Phạm vi mở rộng';
-
-  @override
-  String get taskEstimatesUnnamedBoard => 'Bảng chưa đặt tên';
-
-  @override
-  String get taskEstimatesAllowZeroEstimates => 'Cho phép ước lượng bằng 0';
-
-  @override
-  String get taskEstimatesAllowZeroEstimatesDescription => 'Khi bật, các công việc có thể được ước lượng bằng giá trị 0 và sẽ đóng góp 0 vào tổng ước lượng.';
-
-  @override
-  String get taskEstimatesCountUnestimatedIssues => 'Đếm các công việc chưa ước lượng';
-
-  @override
-  String get taskEstimatesCountUnestimatedIssuesDescription => 'Khi bật, các công việc chưa ước lượng sẽ được tính là 1 đơn vị vào tổng ước lượng. Khi tắt, chúng sẽ được tính là 0.';
-
-  @override
-  String get taskEstimatesUpdateSuccess => 'Đã cập nhật ước lượng thành công.';
-
-  @override
-  String get taskEstimatesTypeNoneLabel => 'Không có';
-
-  @override
-  String get taskEstimatesTypeNoneDescription => 'Không có phương pháp ước lượng nào được cấu hình cho bảng này.';
-
-  @override
-  String get taskEstimatesTypeFibonacciLabel => 'Fibonacci';
-
-  @override
-  String get taskEstimatesTypeFibonacciStandardZeroEnabled => 'Dãy Fibonacci: 0, 1, 2, 3, 5, 8.';
-
-  @override
-  String get taskEstimatesTypeFibonacciStandardZeroDisabled => 'Dãy Fibonacci: 1, 2, 3, 5, 8.';
-
-  @override
-  String get taskEstimatesTypeFibonacciExtendedZeroEnabled => 'Dãy Fibonacci mở rộng: 0, 1, 2, 3, 5, 8, 13, 21.';
-
-  @override
-  String get taskEstimatesTypeFibonacciExtendedZeroDisabled => 'Dãy Fibonacci mở rộng: 1, 2, 3, 5, 8, 13, 21.';
-
-  @override
-  String get taskEstimatesTypeLinearLabel => 'Tuyến tính';
-
-  @override
-  String get taskEstimatesTypeLinearStandardZeroEnabled => 'Dãy tuyến tính: 0, 1, 2, 3, 4, 5.';
-
-  @override
-  String get taskEstimatesTypeLinearStandardZeroDisabled => 'Dãy tuyến tính: 1, 2, 3, 4, 5.';
-
-  @override
-  String get taskEstimatesTypeLinearExtendedZeroEnabled => 'Dãy tuyến tính mở rộng: 0, 1, 2, 3, 4, 5, 6, 7.';
-
-  @override
-  String get taskEstimatesTypeLinearExtendedZeroDisabled => 'Dãy tuyến tính mở rộng: 1, 2, 3, 4, 5, 6, 7.';
-
-  @override
-  String get taskEstimatesTypeExponentialLabel => 'Lũy thừa';
-
-  @override
-  String get taskEstimatesTypeExponentialStandardZeroEnabled => 'Dãy lũy thừa: 0, 1, 2, 4, 8, 16.';
-
-  @override
-  String get taskEstimatesTypeExponentialStandardZeroDisabled => 'Dãy lũy thừa: 1, 2, 4, 8, 16.';
-
-  @override
-  String get taskEstimatesTypeExponentialExtendedZeroEnabled => 'Dãy lũy thừa mở rộng: 0, 1, 2, 4, 8, 16, 32, 64.';
-
-  @override
-  String get taskEstimatesTypeExponentialExtendedZeroDisabled => 'Dãy lũy thừa mở rộng: 1, 2, 4, 8, 16, 32, 64.';
-
-  @override
-  String get taskEstimatesTypeTshirtLabel => 'Áo thun';
-
-  @override
-  String get taskEstimatesTypeTshirtStandard => 'Kích cỡ áo: -, XS, S, M, L, XL.';
-
-  @override
-  String get taskEstimatesTypeTshirtExtended => 'Kích cỡ áo mở rộng: -, XS, S, M, L, XL, XXL, XXXL.';
-
-  @override
-  String get taskPortfolioTitle => 'Danh mục';
-
-  @override
-  String get taskPortfolioProjectsTab => 'Dự án';
-
-  @override
-  String get taskPortfolioInitiativesTab => 'Sáng kiến';
-
-  @override
-  String get taskPortfolioAccessDeniedTitle => 'Quyền truy cập bị hạn chế';
-
-  @override
-  String get taskPortfolioAccessDeniedDescription => 'Bạn cần quyền quản lý dự án trong không gian làm việc này để quản lý dự án và sáng kiến.';
-
-  @override
-  String get taskPortfolioProjectsEmptyTitle => 'Chưa có dự án';
-
-  @override
-  String get taskPortfolioProjectsEmptyDescription => 'Tạo dự án đầu tiên để tổ chức công việc vượt ra ngoài từng tác vụ riêng lẻ.';
-
-  @override
-  String get taskPortfolioInitiativesEmptyTitle => 'Chưa có sáng kiến';
-
-  @override
-  String get taskPortfolioInitiativesEmptyDescription => 'Tạo một sáng kiến để nhóm các dự án liên quan dưới cùng một kết quả chung.';
-
-  @override
-  String get taskPortfolioNoDescription => 'Chưa có mô tả';
-
-  @override
-  String get taskPortfolioProjectTasksLinked => 'tác vụ liên kết';
-
-  @override
-  String get taskPortfolioProjectCompletedTasks => 'đã hoàn thành';
-
-  @override
-  String get taskPortfolioInitiativeProjectsLinked => 'dự án liên kết';
-
-  @override
-  String get taskPortfolioCreateProject => 'Tạo dự án';
-
-  @override
-  String get taskPortfolioEditProject => 'Sửa dự án';
-
-  @override
-  String get taskPortfolioDeleteProject => 'Xóa dự án';
-
-  @override
-  String get taskPortfolioDeleteProjectConfirm => 'Xóa dự án này?';
-
-  @override
-  String get taskPortfolioProjectCreated => 'Đã tạo dự án.';
-
-  @override
-  String get taskPortfolioProjectUpdated => 'Đã cập nhật dự án.';
-
-  @override
-  String get taskPortfolioProjectDeleted => 'Đã xóa dự án.';
-
-  @override
-  String get taskPortfolioProjectName => 'Tên dự án';
-
-  @override
-  String get taskPortfolioProjectNameRequired => 'Tên dự án là bắt buộc';
-
-  @override
-  String get taskPortfolioProjectDescriptionHint => 'Mô tả mục tiêu của dự án';
-
-  @override
-  String get taskPortfolioProjectStatus => 'Trạng thái dự án';
-
-  @override
-  String get taskPortfolioProjectPriority => 'Mức ưu tiên';
-
-  @override
-  String get taskPortfolioProjectHealth => 'Tình trạng tiến độ';
-
-  @override
-  String get taskPortfolioProjectLead => 'Người phụ trách';
-
-  @override
-  String get taskPortfolioProjectNoHealth => 'Chưa có tình trạng';
-
-  @override
-  String get taskPortfolioProjectNoLead => 'Chưa có người phụ trách';
-
-  @override
-  String get taskPortfolioProjectStartDate => 'Ngày bắt đầu';
-
-  @override
-  String get taskPortfolioProjectEndDate => 'Ngày kết thúc';
-
-  @override
-  String get taskPortfolioProjectArchived => 'Đã lưu trữ';
-
-  @override
-  String get taskPortfolioProjectArchivedHint => 'Ẩn dự án này khỏi các chế độ xem lập kế hoạch đang hoạt động.';
-
-  @override
-  String get taskPortfolioPickDate => 'Chọn ngày';
-
-  @override
-  String get taskPortfolioClearSelection => 'Xóa';
-
-  @override
-  String get taskPortfolioProjectStatusActive => 'Đang hoạt động';
-
-  @override
-  String get taskPortfolioProjectStatusBacklog => 'Tồn đọng';
-
-  @override
-  String get taskPortfolioProjectStatusPlanned => 'Đã lên kế hoạch';
-
-  @override
-  String get taskPortfolioProjectStatusInProgress => 'Đang thực hiện';
-
-  @override
-  String get taskPortfolioProjectStatusInReview => 'Đang rà soát';
-
-  @override
-  String get taskPortfolioProjectStatusInTesting => 'Đang kiểm thử';
-
-  @override
-  String get taskPortfolioProjectStatusCompleted => 'Hoàn thành';
-
-  @override
-  String get taskPortfolioProjectStatusCancelled => 'Đã hủy';
-
-  @override
-  String get taskPortfolioProjectStatusOnHold => 'Tạm dừng';
-
-  @override
-  String get taskPortfolioProjectPriorityCritical => 'Nghiêm trọng';
-
-  @override
-  String get taskPortfolioProjectPriorityHigh => 'Cao';
-
-  @override
-  String get taskPortfolioProjectPriorityNormal => 'Bình thường';
-
-  @override
-  String get taskPortfolioProjectPriorityLow => 'Thấp';
-
-  @override
-  String get taskPortfolioCreateInitiative => 'Tạo sáng kiến';
-
-  @override
-  String get taskPortfolioEditInitiative => 'Sửa sáng kiến';
-
-  @override
-  String get taskPortfolioDeleteInitiative => 'Xóa sáng kiến';
-
-  @override
-  String get taskPortfolioDeleteInitiativeConfirm => 'Xóa sáng kiến này?';
-
-  @override
-  String get taskPortfolioInitiativeCreated => 'Đã tạo sáng kiến.';
-
-  @override
-  String get taskPortfolioInitiativeUpdated => 'Đã cập nhật sáng kiến.';
-
-  @override
-  String get taskPortfolioInitiativeDeleted => 'Đã xóa sáng kiến.';
-
-  @override
-  String get taskPortfolioInitiativeName => 'Tên sáng kiến';
-
-  @override
-  String get taskPortfolioInitiativeNameRequired => 'Tên sáng kiến là bắt buộc';
-
-  @override
-  String get taskPortfolioInitiativeDescriptionHint => 'Mô tả kết quả của sáng kiến';
-
-  @override
-  String get taskPortfolioInitiativeStatus => 'Trạng thái sáng kiến';
-
-  @override
-  String get taskPortfolioInitiativeStatusActive => 'Đang hoạt động';
-
-  @override
-  String get taskPortfolioInitiativeStatusCompleted => 'Hoàn thành';
-
-  @override
-  String get taskPortfolioInitiativeStatusOnHold => 'Tạm dừng';
-
-  @override
-  String get taskPortfolioInitiativeStatusCancelled => 'Đã hủy';
-
-  @override
-  String get taskPortfolioManageProjects => 'Quản lý dự án';
-
-  @override
-  String get taskPortfolioLinkedProjects => 'Dự án đã liên kết';
-
-  @override
-  String get taskPortfolioNoLinkedProjects => 'Chưa có dự án nào được liên kết';
-
-  @override
-  String get taskPortfolioProjectHealthOnTrack => 'Đúng tiến độ';
-
-  @override
-  String get taskPortfolioProjectHealthAtRisk => 'Có rủi ro';
-
-  @override
-  String get taskPortfolioProjectHealthOffTrack => 'Chệch tiến độ';
-
-  @override
-  String taskPortfolioProjectTasksProgress(int completed, int total) {
-    return '$completed/$total nhiệm vụ';
-  }
-
-  @override
-  String get taskPortfolioLinkProject => 'Liên kết dự án';
-
-  @override
-  String get taskPortfolioNoAvailableProjects => 'Chọn dự án';
-
-  @override
-  String get taskPortfolioAllProjectsLinked => 'Tất cả dự án trong không gian làm việc đã được liên kết.';
-
-  @override
-  String get taskPortfolioProjectLinked => 'Đã liên kết dự án.';
-
-  @override
-  String get taskPortfolioProjectUnlinked => 'Đã gỡ liên kết dự án.';
-
-  @override
-  String get taskPortfolioProjectDetailsTitle => 'Chi tiết dự án';
-
-  @override
-  String get taskPortfolioProjectNotFoundTitle => 'Không tìm thấy dự án';
-
-  @override
-  String get taskPortfolioProjectNotFoundDescription => 'Dự án này không còn khả dụng trong không gian làm việc hiện tại.';
-
-  @override
-  String get taskPortfolioProjectTimeline => 'Mốc thời gian';
-
-  @override
-  String get taskPortfolioProjectTasks => 'Nhiệm vụ';
-
-  @override
-  String get taskPortfolioLinkedTasks => 'Nhiệm vụ liên kết';
-
-  @override
-  String get taskPortfolioUnlinkTask => 'Gỡ liên kết nhiệm vụ';
-
-  @override
-  String get taskPortfolioProjectStats => 'Thống kê dự án';
-
-  @override
-  String get taskPortfolioNoLinkedTasks => 'Chưa có nhiệm vụ nào được liên kết';
-
-  @override
-  String get taskPortfolioLinkTask => 'Liên kết nhiệm vụ';
-
-  @override
-  String get taskPortfolioSearchTasksHint => 'Tìm kiếm nhiệm vụ';
-
-  @override
-  String get taskPortfolioNoMatchingTasks => 'Không có nhiệm vụ nào khớp với từ khóa tìm kiếm.';
-
-  @override
-  String get taskPortfolioSelectTask => 'Chọn nhiệm vụ';
-
-  @override
-  String get taskPortfolioSelectTaskHint => 'Chọn một nhiệm vụ';
-
-  @override
-  String get taskPortfolioNoAvailableTasks => 'Tất cả nhiệm vụ khả dụng đã được liên kết với dự án này.';
-
-  @override
-  String get taskPortfolioProjectCompletion => 'Tiến độ hoàn thành';
-
-  @override
-  String get taskPortfolioTaskLinked => 'Đã liên kết nhiệm vụ.';
-
-  @override
-  String get taskPortfolioTaskUnlinked => 'Đã gỡ liên kết nhiệm vụ.';
-
-  @override
-  String get taskPortfolioProjectUpdates => 'Cập nhật dự án';
-
-  @override
-  String get taskPortfolioUpdatePlaceholder => 'Chia sẻ tiến độ mới nhất, trở ngại hoặc kết quả nổi bật...';
-
-  @override
-  String get taskPortfolioPostUpdate => 'Đăng cập nhật';
-
-  @override
-  String get taskPortfolioPostingUpdate => 'Đang đăng...';
-
-  @override
-  String get taskPortfolioNoProjectUpdates => 'Chưa có cập nhật nào';
-
-  @override
-  String get taskPortfolioUnknownUser => 'Người dùng không xác định';
-
-  @override
-  String get taskPortfolioUpdateEdited => 'Đã chỉnh sửa';
-
-  @override
-  String get taskPortfolioEditUpdate => 'Sửa cập nhật';
-
-  @override
-  String get taskPortfolioDeleteUpdate => 'Xóa cập nhật';
-
-  @override
-  String get taskPortfolioDeleteUpdateConfirm => 'Xóa cập nhật này?';
-
-  @override
-  String get taskPortfolioUpdateCannotBeEmpty => 'Nội dung cập nhật không được để trống';
-
-  @override
-  String get taskPortfolioUpdatePosted => 'Đã đăng cập nhật.';
-
-  @override
-  String get taskPortfolioUpdateSaved => 'Đã lưu cập nhật.';
-
-  @override
-  String get taskPortfolioUpdateDeleted => 'Đã xóa cập nhật.';
-
-  @override
-  String get taskEstimatesTypeTshirtStandardZeroEnabled => 'Kích cỡ áo: -, XS, S, M, L, XL.';
-
-  @override
-  String get taskEstimatesTypeTshirtStandardZeroDisabled => 'Kích cỡ áo: XS, S, M, L, XL.';
-
-  @override
-  String get taskEstimatesTypeTshirtExtendedZeroEnabled => 'Kích cỡ áo mở rộng: -, XS, S, M, L, XL, XXL, XXXL.';
-
-  @override
-  String get taskEstimatesTypeTshirtExtendedZeroDisabled => 'Kích cỡ áo mở rộng: XS, S, M, L, XL, XXL, XXXL.';
-
-  @override
-  String get calendarTitle => 'Lịch';
-
-  @override
-  String get calendarEmpty => 'Không có sự kiện';
-
-  @override
-  String get calendarToday => 'Hôm nay';
-
-  @override
-  String get calendarDayView => 'Ngày';
-
-  @override
-  String get calendarWeekView => 'Tuần';
-
-  @override
-  String get calendarMonthView => 'Tháng';
-
-  @override
-  String get calendarYearView => 'Năm';
-
-  @override
-  String get calendarAllDay => 'Cả ngày';
-
-  @override
-  String get calendarNoEvents => 'Không có sự kiện cho ngày này';
-
-  @override
-  String get calendarNewEvent => 'Sự kiện mới';
-
-  @override
-  String get calendarEditEvent => 'Sửa sự kiện';
-
-  @override
-  String get calendarDeleteEvent => 'Xóa sự kiện';
-
-  @override
-  String get calendarDeleteConfirm => 'Xóa sự kiện này?';
-
-  @override
-  String get calendarEventTitle => 'Tiêu đề';
-
-  @override
-  String get calendarEventTitleHint => 'Thêm tiêu đề';
-
-  @override
-  String get calendarEventDescription => 'Mô tả';
-
-  @override
-  String get calendarEventDescriptionHint => 'Thêm mô tả';
-
-  @override
-  String get calendarEventStartDate => 'Ngày bắt đầu';
-
-  @override
-  String get calendarEventEndDate => 'Ngày kết thúc';
-
-  @override
-  String get calendarEventStartTime => 'Giờ bắt đầu';
-
-  @override
-  String get calendarEventEndTime => 'Giờ kết thúc';
-
-  @override
-  String get calendarEventAllDay => 'Cả ngày';
-
-  @override
-  String get calendarEventColor => 'Màu sắc';
-
-  @override
-  String get calendarEventSave => 'Lưu';
-
-  @override
-  String get calendarEventCreate => 'Tạo sự kiện';
-
-  @override
-  String get calendarEventUpdate => 'Cập nhật sự kiện';
-
-  @override
-  String get calendarEventDeleted => 'Đã xóa sự kiện';
-
-  @override
-  String get calendarEventCreated => 'Đã tạo sự kiện';
-
-  @override
-  String get calendarEventUpdated => 'Đã cập nhật sự kiện';
-
-  @override
-  String get calendarEventCancel => 'Hủy';
-
-  @override
-  String get calendarEventDelete => 'Xóa';
-
-  @override
-  String get calendarThreeDayView => '3 Ngày';
-
-  @override
-  String get calendarAgendaView => 'Lịch trình';
-
-  @override
-  String get calendarAgendaEmpty => 'Không có sự kiện sắp tới';
-
-  @override
-  String calendarAllDayProgress(int current, int total) {
-    return 'Ngày $current / $total';
-  }
-
-  @override
-  String get calendarConnectionsTitle => 'Quản lý tài khoản lịch';
-
-  @override
-  String get calendarConnectionsSubtitle => 'Kết nối tài khoản Google và Microsoft để đồng bộ lịch.';
-
-  @override
-  String get calendarConnectionsAccounts => 'Tài khoản đã kết nối';
-
-  @override
-  String get calendarConnectionsAddAccount => 'Thêm tài khoản';
-
-  @override
-  String get calendarConnectionsEmpty => 'Chưa có tài khoản nào được kết nối';
-
-  @override
-  String get calendarConnectionsDisconnect => 'Ngắt kết nối';
-
-  @override
-  String calendarConnectionsDisconnectConfirm(String account) {
-    return 'Ngắt kết nối $account? Các lịch liên quan sẽ bị vô hiệu hóa.';
-  }
+  String get financeTakenAt => 'Thời gian ghi nhận';
 
   @override
   String get financeTitle => 'Tài chính';
+
+  @override
+  String get financeToday => 'Hôm nay';
+
+  @override
+  String get financeTotalTransactions => 'Tổng giao dịch';
+
+  @override
+  String get financeTransactionCountShort => 'gd';
+
+  @override
+  String get financeTransactionCreated => 'Đã tạo giao dịch';
+
+  @override
+  String get financeTransactionDeleted => 'Đã xóa giao dịch';
+
+  @override
+  String get financeTransactionDetails => 'Chi tiết giao dịch';
+
+  @override
+  String get financeTransactionDialogSubtitle => 'Ghi lại số tiền, nguồn và thiết lập hiển thị trong một nơi.';
+
+  @override
+  String get financeTransactionUpdated => 'Đã cập nhật giao dịch';
+
+  @override
+  String get financeTransactions => 'Giao dịch';
+
+  @override
+  String get financeTransfer => 'Chuyển khoản';
+
+  @override
+  String get financeTransferMode => 'Chế độ chuyển khoản';
+
+  @override
+  String get financeTransferModeEditHint => 'Chỉ có thể đổi chế độ chuyển khoản khi đang sửa một giao dịch chuyển khoản.';
+
+  @override
+  String get financeType => 'Loại';
+
+  @override
+  String get financeViewAll => 'Xem tất cả';
+
+  @override
+  String get financeWallet => 'Ví';
+
+  @override
+  String get financeWalletBalance => 'Số dư';
+
+  @override
+  String get financeWalletBankTab => 'Ngân hàng';
+
+  @override
+  String get financeWalletClearImage => 'Xóa hình ảnh';
+
+  @override
+  String get financeWalletClearVisual => 'Xóa hình đại diện';
+
+  @override
+  String get financeWalletCreditDetails => 'Thông tin tín dụng';
+
+  @override
+  String get financeWalletCreditLimit => 'Hạn mức tín dụng';
+
+  @override
+  String get financeWalletCreditLimitRequired => 'Hạn mức tín dụng phải lớn hơn 0';
+
+  @override
+  String get financeWalletCurrency => 'Tiền tệ';
+
+  @override
+  String get financeWalletCurrencyRequired => 'Nhập mã tiền tệ 3 ký tự hợp lệ';
+
+  @override
+  String get financeWalletDateRequired => 'Nhập ngày từ 1 đến 31';
+
+  @override
+  String get financeWalletDescriptionTooLong => 'Mô tả tối đa 500 ký tự';
+
+  @override
+  String get financeWalletDialogSubtitle => 'Thiết lập cách ví này hiển thị và hoạt động trong phần tài chính.';
+
+  @override
+  String get financeWalletIconOrImage => 'Biểu tượng hoặc hình ảnh';
+
+  @override
+  String financeWalletImageCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hình khả dụng',
+      one: '1 hình khả dụng',
+      zero: 'Không có hình ảnh',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get financeWalletMetadata => 'Thông tin ví';
+
+  @override
+  String get financeWalletMobileTab => 'Ví điện tử';
+
+  @override
+  String get financeWalletName => 'Tên ví';
+
+  @override
+  String get financeWalletNameRequired => 'Vui lòng nhập tên ví';
+
+  @override
+  String get financeWalletNoVisual => 'Chưa chọn hình đại diện';
+
+  @override
+  String get financeWalletNotFound => 'Không tìm thấy ví';
+
+  @override
+  String get financeWalletPaymentDate => 'Ngày thanh toán';
+
+  @override
+  String get financeWalletPickImage => 'Chọn hình ảnh';
+
+  @override
+  String get financeWalletSearchCurrency => 'Tìm tiền tệ';
+
+  @override
+  String get financeWalletSearchImage => 'Tìm hình ảnh';
+
+  @override
+  String get financeWalletSelectCurrency => 'Chọn tiền tệ';
+
+  @override
+  String get financeWalletStatementDate => 'Ngày sao kê';
+
+  @override
+  String financeWalletSummaryHint(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Đã có $count ví sẵn sàng sử dụng',
+      one: 'Đã có 1 ví sẵn sàng sử dụng',
+      zero: 'Chưa cấu hình ví nào',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get financeWalletTypeCredit => 'Tín dụng';
+
+  @override
+  String get financeWalletTypeStandard => 'Thường';
+
+  @override
+  String get financeWallets => 'Ví';
+
+  @override
+  String get financeWalletsMustBeDifferent => 'Ví nguồn và ví đích phải khác nhau';
+
+  @override
+  String get financeYesterday => 'Hôm qua';
+
+  @override
+  String get financeYourWallets => 'Ví của bạn';
+
+  @override
+  String get forgotPasswordBackToLogin => 'Quay lại đăng nhập';
+
+  @override
+  String get forgotPasswordDescription => 'Hãy dùng ứng dụng web để cập nhật mật khẩu.';
+
+  @override
+  String get forgotPasswordInstructions => 'Đăng nhập trên web bằng tài khoản mạng xã hội đã liên kết với email của bạn, sau đó đổi mật khẩu trong phần cài đặt tài khoản.';
+
+  @override
+  String get forgotPasswordNote => 'Hiện chưa hỗ trợ đặt lại mật khẩu qua email.';
+
+  @override
+  String get forgotPasswordSendReset => 'Gửi liên kết đặt lại';
+
+  @override
+  String get forgotPasswordSentMessage => 'Kiểm tra hộp thư đến để tìm liên kết đặt lại mật khẩu.';
+
+  @override
+  String get forgotPasswordSentTitle => 'Đã gửi email';
+
+  @override
+  String get forgotPasswordTitle => 'Hỗ trợ mật khẩu';
+
+  @override
+  String get gallery => 'Thư viện';
+
+  @override
+  String get habitsActiveLabel => 'Đang hoạt động';
+
+  @override
+  String get habitsActivityEmptyBody => 'Khi ai đó ghi nhận một lượt nhập thói quen, nó sẽ xuất hiện ở đây.';
+
+  @override
+  String get habitsActivityEmptyTitle => 'Chưa có nhật ký';
+
+  @override
+  String get habitsActivityLabel => 'Hoạt động';
+
+  @override
+  String get habitsActivityNoTrackers => 'Hãy tạo bộ theo dõi thói quen trước để bắt đầu thu thập hoạt động.';
+
+  @override
+  String get habitsActivitySubtitle => 'Xem các lượt ghi nhận thói quen mới nhất trên mọi bộ theo dõi trong không gian làm việc này.';
+
+  @override
+  String get habitsActivityTitle => 'Hoạt động';
+
+  @override
+  String get habitsAddExerciseBlock => 'Thêm bài tập';
+
+  @override
+  String get habitsAddField => 'Thêm trường';
+
+  @override
+  String get habitsAdvancedComposerDescription => 'Dùng ô nhập giá trị đơn giản cho các bộ theo dõi tùy chỉnh.';
+
+  @override
+  String get habitsAdvancedComposerTitle => 'Lượt nhập tùy chỉnh';
+
+  @override
+  String get habitsAggregationBooleanAny => 'Chỉ cần hoàn thành';
+
+  @override
+  String get habitsAggregationCountEntries => 'Đếm lượt nhập';
+
+  @override
+  String get habitsAggregationLabel => 'Tổng hợp';
+
+  @override
+  String get habitsAggregationMax => 'Lớn nhất';
+
+  @override
+  String get habitsAggregationSum => 'Cộng dồn';
+
+  @override
+  String get habitsAppearanceLabel => 'Giao diện';
+
+  @override
+  String get habitsArchiveTrackerAction => 'Lưu trữ bộ theo dõi';
+
+  @override
+  String get habitsArchiveTrackerMessage => 'Bộ theo dõi này sẽ bị xóa khỏi danh sách thói quen đang hoạt động.';
+
+  @override
+  String get habitsArchiveTrackerTitle => 'Lưu trữ bộ theo dõi?';
+
+  @override
+  String get habitsBestStreak => 'Chuỗi tốt nhất';
+
+  @override
+  String get habitsCompleteNow => 'Hoàn thành ngay';
+
+  @override
+  String get habitsComposerAdvancedCustom => 'Tùy chỉnh';
+
+  @override
+  String get habitsComposerMeasurement => 'Đo lường';
+
+  @override
+  String get habitsComposerQuickCheck => 'Đánh dấu nhanh';
+
+  @override
+  String get habitsComposerQuickIncrement => 'Cộng nhanh';
+
+  @override
+  String get habitsComposerWorkoutSession => 'Buổi tập';
+
+  @override
+  String get habitsConsistencyLabel => 'Độ ổn định';
+
+  @override
+  String get habitsCreateTrackerAction => 'Tạo bộ theo dõi';
+
+  @override
+  String get habitsCreateTrackerDescription => 'Thiết lập mục tiêu, trường nhập liệu và thao tác nhanh cho không gian làm việc.';
+
+  @override
+  String get habitsCreateTrackerTitle => 'Tạo bộ theo dõi thói quen';
+
+  @override
+  String get habitsCurrentPeriodMetricsTitle => 'Chỉ số chu kỳ hiện tại';
+
+  @override
+  String get habitsCurrentStreak => 'Chuỗi hiện tại';
+
+  @override
+  String get habitsDeleteEntryAction => 'Xóa lượt nhập';
+
+  @override
+  String get habitsDeleteEntryMessage => 'Lượt nhập thói quen này sẽ bị xóa vĩnh viễn.';
+
+  @override
+  String get habitsDeleteEntryTitle => 'Xóa lượt nhập?';
+
+  @override
+  String get habitsDescriptionLabel => 'Mô tả';
+
+  @override
+  String get habitsEditTrackerAction => 'Sửa bộ theo dõi';
+
+  @override
+  String get habitsEditTrackerDescription => 'Cập nhật cấu trúc bộ theo dõi, mục tiêu và hành vi thêm nhanh.';
+
+  @override
+  String get habitsEditTrackerTitle => 'Sửa bộ theo dõi thói quen';
+
+  @override
+  String get habitsEmptyDescription => 'Tạo bộ theo dõi đầu tiên để biến thói quen lặp lại thành điều cả không gian làm việc có thể cùng theo dõi.';
+
+  @override
+  String get habitsEmptyTitle => 'Chưa có bộ theo dõi thói quen';
+
+  @override
+  String habitsEntriesCountLabel(int count) {
+    return '$count lượt nhập';
+  }
+
+  @override
+  String get habitsEntriesLabel => 'Lượt nhập';
+
+  @override
+  String get habitsEntriesTab => 'Lượt nhập';
+
+  @override
+  String get habitsEntryDateLabel => 'Ngày nhập';
+
+  @override
+  String get habitsEntryNoteLabel => 'Ghi chú';
+
+  @override
+  String get habitsEntryTagsHint => 'Các thẻ, ngăn cách bằng dấu phẩy';
+
+  @override
+  String get habitsEntryTagsLabel => 'Thẻ';
+
+  @override
+  String habitsFieldCardTitle(int count) {
+    return 'Trường $count';
+  }
+
+  @override
+  String get habitsFieldKey => 'Khóa trường';
+
+  @override
+  String get habitsFieldKeysUnique => 'Khóa trường phải là duy nhất';
+
+  @override
+  String get habitsFieldLabel => 'Nhãn trường';
+
+  @override
+  String get habitsFieldOptions => 'Tùy chọn';
+
+  @override
+  String get habitsFieldOptionsHint => 'Ví dụ: dễ, trung bình, khó';
+
+  @override
+  String get habitsFieldRequired => 'Trường bắt buộc';
+
+  @override
+  String get habitsFieldType => 'Loại trường';
+
+  @override
+  String get habitsFieldTypeBoolean => 'Đúng/Sai';
+
+  @override
+  String get habitsFieldTypeDuration => 'Thời lượng';
+
+  @override
+  String get habitsFieldTypeNumber => 'Số';
+
+  @override
+  String get habitsFieldTypeSelect => 'Chọn';
+
+  @override
+  String get habitsFieldTypeText => 'Văn bản';
+
+  @override
+  String get habitsFieldUnit => 'Đơn vị';
+
+  @override
+  String get habitsFieldsRequired => 'Hãy thêm ít nhất một trường hợp lệ';
+
+  @override
+  String get habitsFieldsTitle => 'Trường dữ liệu';
+
+  @override
+  String get habitsFormInvalidNumber => 'Hãy nhập một số hợp lệ';
+
+  @override
+  String get habitsFormRequiredField => 'Vui lòng điền các trường bắt buộc';
+
+  @override
+  String get habitsFreezeAllowanceLabel => 'Số lần đóng băng';
+
+  @override
+  String get habitsIconLabel => 'Biểu tượng';
+
+  @override
+  String habitsLatestValueLabel(String value) {
+    return 'Gần nhất: $value';
+  }
+
+  @override
+  String get habitsLeaderboardTab => 'Bảng xếp hạng';
+
+  @override
+  String get habitsLibraryComposerChip => 'Trình nhập';
+
+  @override
+  String get habitsLibraryCustomizeAction => 'Tùy chỉnh';
+
+  @override
+  String get habitsLibraryCustomizeDescription => 'Bắt đầu với bộ theo dõi trống khi thư viện mẫu vẫn chưa đúng ý.';
+
+  @override
+  String get habitsLibraryCustomizeTitle => 'Tự tùy chỉnh';
+
+  @override
+  String get habitsLibraryDisciplineSubtitle => 'Những cam kết có hoặc không mà bạn muốn thấy mỗi ngày.';
+
+  @override
+  String get habitsLibraryDisciplineTitle => 'Kỷ luật';
+
+  @override
+  String get habitsLibraryGoalChip => 'Mục tiêu';
+
+  @override
+  String get habitsLibraryHealthSubtitle => 'Đo lường và tổng hằng ngày để thấy nền tảng của bạn.';
+
+  @override
+  String get habitsLibraryHealthTitle => 'Sức khỏe';
+
+  @override
+  String get habitsLibraryLabel => 'Thư viện';
+
+  @override
+  String get habitsLibraryRecoverySubtitle => 'Ngủ, sauna, thiền và các nghi thức nạp lại năng lượng.';
+
+  @override
+  String get habitsLibraryRecoveryTitle => 'Hồi phục';
+
+  @override
+  String get habitsLibraryStrengthSubtitle => 'Buổi tập nặng, bài lift có cấu trúc và bài bodyweight.';
+
+  @override
+  String get habitsLibraryStrengthTitle => 'Sức mạnh';
+
+  @override
+  String get habitsLibrarySubtitle => 'Bắt đầu với các mẫu mạnh cho tập luyện, hồi phục và kỷ luật hằng ngày.';
+
+  @override
+  String get habitsLibraryTitle => 'Thư viện';
+
+  @override
+  String get habitsLoadError => 'Không thể tải thói quen lúc này';
+
+  @override
+  String get habitsLogEntryAction => 'Ghi nhận';
+
+  @override
+  String get habitsLogEntryDescription => 'Lưu cập nhật thói quen mà không cần rời khu vực thói quen.';
+
+  @override
+  String get habitsLogEntryTitle => 'Ghi nhận lượt nhập';
+
+  @override
+  String get habitsLogMeasurementAction => 'Ghi đo lường';
+
+  @override
+  String get habitsLogSessionAction => 'Ghi buổi tập';
+
+  @override
+  String get habitsMarkDone => 'Đánh dấu hoàn thành';
+
+  @override
+  String get habitsMarkedDone => 'Đã đánh dấu hoàn thành';
+
+  @override
+  String get habitsMeasurementDescription => 'Nhập một chỉ số chính và so với lần ghi gần nhất.';
+
+  @override
+  String get habitsMeasurementTitle => 'Đo lường';
+
+  @override
+  String get habitsMemberPickerLabel => 'Xem thành viên';
+
+  @override
+  String get habitsMemberSummariesTitle => 'Tóm tắt thành viên';
+
+  @override
+  String get habitsMetricMet => 'Đạt';
+
+  @override
+  String get habitsMetricPending => 'Chưa đạt';
+
+  @override
+  String get habitsModeDailySummary => 'Tổng hợp theo ngày';
+
+  @override
+  String get habitsModeEventLog => 'Nhật ký sự kiện';
+
+  @override
+  String get habitsNameLabel => 'Tên';
+
+  @override
+  String get habitsNameRequired => 'Tên bộ theo dõi là bắt buộc';
+
+  @override
+  String get habitsNoEntries => 'Chưa có lượt nhập';
+
+  @override
+  String get habitsNoLeaderboard => 'Chưa có dữ liệu bảng xếp hạng';
+
+  @override
+  String get habitsOverviewLabel => 'Hôm nay';
+
+  @override
+  String get habitsOverviewTab => 'Tổng quan';
+
+  @override
+  String get habitsPeriodDaily => 'Hàng ngày';
+
+  @override
+  String get habitsPeriodWeekly => 'Hàng tuần';
+
+  @override
+  String get habitsPrimaryMetricLabel => 'Chỉ số chính';
+
+  @override
+  String get habitsPrimaryMetricRequired => 'Chọn trường chỉ số chính';
+
+  @override
+  String get habitsQuickAddValuesHint => 'Ví dụ: 1, 2, 3';
+
+  @override
+  String get habitsQuickAddValuesLabel => 'Giá trị thêm nhanh';
+
+  @override
+  String get habitsQuickCheckDescription => 'Dùng một chạm khi thói quen này chỉ cần hoàn thành hoặc chưa hoàn thành.';
+
+  @override
+  String get habitsQuickCheckTitle => 'Đánh dấu nhanh';
+
+  @override
+  String get habitsQuickIncrementDescription => 'Điều chỉnh tổng hiện tại bằng các chip nhanh hoặc nhập số tùy chỉnh.';
+
+  @override
+  String get habitsQuickIncrementTitle => 'Tăng nhanh';
+
+  @override
+  String get habitsQuickLogValueRequired => 'Hãy nhập giá trị trước khi lưu';
+
+  @override
+  String get habitsRecoveryWindowDescription => 'Dùng sửa chuỗi hoặc đóng băng khi một chu kỳ chuỗi cần được giữ nguyên.';
+
+  @override
+  String get habitsRecoveryWindowLabel => 'Cửa sổ phục hồi';
+
+  @override
+  String get habitsRecoveryWindowTitle => 'Cửa sổ phục hồi';
+
+  @override
+  String get habitsRepairStreakAction => 'Sửa chuỗi';
+
+  @override
+  String get habitsSaveEntry => 'Lưu lượt nhập';
+
+  @override
+  String get habitsSaveTrackerAction => 'Lưu bộ theo dõi';
+
+  @override
+  String get habitsScopeMember => 'Thành viên';
+
+  @override
+  String get habitsScopeSelf => 'Cá nhân';
+
+  @override
+  String get habitsScopeTeam => 'Nhóm';
+
+  @override
+  String get habitsSearchHint => 'Tìm thói quen, nghi thức hoặc chỉ số';
+
+  @override
+  String get habitsSelectOptionsRequired => 'Trường chọn phải có ít nhất một tùy chọn';
+
+  @override
+  String get habitsStartDateLabel => 'Ngày bắt đầu';
+
+  @override
+  String habitsStreakChip(int count) {
+    return '$count chuỗi';
+  }
+
+  @override
+  String get habitsSummarySubtitle => 'Theo dõi các nghi thức, thói quen và động lực chung trong không gian làm việc.';
+
+  @override
+  String get habitsSummaryTargetsMet => 'Đạt mục tiêu';
+
+  @override
+  String get habitsSummaryTopStreak => 'Chuỗi cao nhất';
+
+  @override
+  String get habitsSummaryTrackers => 'Bộ theo dõi';
+
+  @override
+  String get habitsSummaryVolume => 'Khối lượng hiện tại';
+
+  @override
+  String habitsTargetChip(double count) {
+    return 'Mục tiêu $count';
+  }
+
+  @override
+  String get habitsTargetOperatorEq => 'Chính xác';
+
+  @override
+  String get habitsTargetOperatorGte => 'Ít nhất';
+
+  @override
+  String get habitsTargetOperatorLabel => 'Điều kiện mục tiêu';
+
+  @override
+  String get habitsTargetPeriodLabel => 'Chu kỳ mục tiêu';
+
+  @override
+  String get habitsTargetValueLabel => 'Giá trị mục tiêu';
+
+  @override
+  String get habitsTargetValueRequired => 'Giá trị mục tiêu phải lớn hơn 0';
+
+  @override
+  String get habitsTeamMembers => 'Thành viên nhóm';
+
+  @override
+  String get habitsTeamSummaryTitle => 'Tóm tắt nhóm';
+
+  @override
+  String get habitsTemplateLabel => 'Bắt đầu từ mẫu';
+
+  @override
+  String get habitsTitle => 'Thói quen';
+
+  @override
+  String get habitsTodayLabel => 'Hôm nay';
+
+  @override
+  String get habitsTodayTotalHint => 'Tổng hôm nay';
+
+  @override
+  String get habitsTopStreakLabel => 'Chuỗi cao nhất';
+
+  @override
+  String get habitsTrackerNoDescription => 'Chưa có mô tả';
+
+  @override
+  String get habitsTrackingModeLabel => 'Chế độ theo dõi';
+
+  @override
+  String get habitsUseFreezeAction => 'Dùng đóng băng';
+
+  @override
+  String get habitsWorkoutBlockTitle => 'Khối bài tập';
+
+  @override
+  String get habitsWorkoutBlocksRequired => 'Hãy thêm ít nhất một khối bài tập';
+
+  @override
+  String get habitsWorkoutExerciseName => 'Bài tập';
+
+  @override
+  String get habitsWorkoutReps => 'Rep';
+
+  @override
+  String get habitsWorkoutSessionDescription => 'Thêm một hoặc nhiều khối bài tập với số hiệp, số rep và mức tạ tùy chọn.';
+
+  @override
+  String get habitsWorkoutSessionTitle => 'Buổi tập';
+
+  @override
+  String get habitsWorkoutSets => 'Hiệp';
+
+  @override
+  String get habitsWorkoutTotalReps => 'Tổng rep';
+
+  @override
+  String get habitsWorkoutTotalSets => 'Tổng hiệp';
+
+  @override
+  String get habitsWorkoutTotalVolume => 'Tổng khối lượng';
+
+  @override
+  String get habitsWorkoutWeight => 'Mức tạ';
+
+  @override
+  String get homeCustomize => 'Tùy chỉnh Trang chủ';
+
+  @override
+  String get homeHiddenWidgets => 'Tiện ích đã ẩn';
+
+  @override
+  String get homeHideWidget => 'Ẩn tiện ích';
+
+  @override
+  String get homePersonalAgenda => 'Lịch trình';
+
+  @override
+  String get homePersonalAgendaUnavailable => 'Lịch cá nhân hiện không khả dụng.';
+
+  @override
+  String get homeShowWidget => 'Hiện tiện ích';
 
   @override
   String get inventoryAddCategory => 'Thêm danh mục';
@@ -3501,6 +3814,23 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventoryAddWarehouse => 'Thêm kho';
+
+  @override
+  String get inventoryAuditActorLabel => 'Người thực hiện';
+
+  @override
+  String get inventoryAuditAfter => 'Sau';
+
+  @override
+  String get inventoryAuditBefore => 'Trước';
+
+  @override
+  String get inventoryAuditChangedFields => 'Trường đã thay đổi';
+
+  @override
+  String inventoryAuditChanges(int count) {
+    return '$count thay đổi';
+  }
 
   @override
   String get inventoryAuditEmpty => 'Nhật ký sẽ xuất hiện ở đây sau khi sản phẩm, tồn kho hoặc giao dịch bán được cập nhật.';
@@ -3527,21 +3857,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryAuditLabel => 'Nhật ký';
 
   @override
-  String get inventoryAuditActorLabel => 'Người thực hiện';
+  String get inventoryAuditNoChanges => 'Không có thay đổi trường';
 
   @override
-  String get inventoryAuditAfter => 'Sau';
-
-  @override
-  String get inventoryAuditBefore => 'Trước';
-
-  @override
-  String get inventoryAuditChangedFields => 'Trường đã thay đổi';
-
-  @override
-  String inventoryAuditChanges(int count) {
-    return '$count thay đổi';
-  }
+  String get inventoryAuditOccurredAt => 'Thời điểm';
 
   @override
   String get inventoryAuditRecentSubtitle => 'Theo dõi thay đổi về sản phẩm, tồn kho, cấu hình và giao dịch bán trong không gian làm việc.';
@@ -3550,16 +3869,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryAuditRecentTitle => 'Hoạt động gần đây';
 
   @override
-  String get inventoryAuditNoChanges => 'Không có thay đổi trường';
-
-  @override
-  String get inventoryAuditOccurredAt => 'Thời điểm';
+  String get inventoryAuditSubject => 'Đối tượng';
 
   @override
   String get inventoryAuditSubtitle => 'Biết ai đã thay đổi sản phẩm, tồn kho, cấu hình và giao dịch bán.';
 
   @override
-  String get inventoryAuditSubject => 'Đối tượng';
+  String get inventoryCheckoutAllCategories => 'Tất cả danh mục';
+
+  @override
+  String get inventoryCheckoutAutoCategory => 'Danh mục tự liên kết';
 
   @override
   String get inventoryCheckoutAvailableProductsSubtitle => 'Điều chỉnh số lượng trực tiếp từ tồn kho khả dụng tại quầy.';
@@ -3568,16 +3887,23 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryCheckoutAvailableProductsTitle => 'Sản phẩm khả dụng';
 
   @override
-  String get inventoryCheckoutAutoCategory => 'Danh mục tự liên kết';
-
-  @override
-  String get inventoryCheckoutAllCategories => 'Tất cả danh mục';
-
-  @override
   String get inventoryCheckoutBrowseTab => 'Chọn hàng';
 
   @override
   String get inventoryCheckoutCartEmpty => 'Thêm sản phẩm từ tab chọn hàng để xem lại và tạo giao dịch bán.';
+
+  @override
+  String get inventoryCheckoutCartReconciled => 'Đã cập nhật giỏ hàng. Kiểm tra tổng tiền trước khi tạo đơn.';
+
+  @override
+  String inventoryCheckoutCartRemoved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Đã loại bỏ $count sản phẩm không còn khả dụng. Kiểm tra giỏ hàng trước khi tạo đơn.',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get inventoryCheckoutCartTab => 'Giỏ hàng';
@@ -3586,16 +3912,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryCheckoutCartTotal => 'Tổng giỏ hàng';
 
   @override
-  String get inventoryCheckoutCheckoutDetailsSubtitle => 'Chọn nơi ghi nhận giao dịch trước khi tạo hóa đơn.';
-
-  @override
-  String get inventoryCheckoutCheckoutDetailsTitle => 'Thông tin thanh toán';
-
-  @override
   String get inventoryCheckoutCategoryOverride => 'Ghi đè danh mục';
 
   @override
   String get inventoryCheckoutCategoryRequired => 'Chọn danh mục thu nhập trước khi tạo giao dịch bán.';
+
+  @override
+  String get inventoryCheckoutCheckoutDetailsSubtitle => 'Chọn nơi ghi nhận giao dịch trước khi tạo hóa đơn.';
+
+  @override
+  String get inventoryCheckoutCheckoutDetailsTitle => 'Thông tin thanh toán';
 
   @override
   String get inventoryCheckoutEmpty => 'Chưa có tồn kho khả dụng để bán.';
@@ -3610,37 +3936,55 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryCheckoutNoWalletSelected => 'Chưa chọn ví';
 
   @override
+  String get inventoryCheckoutOptionsUnavailable => 'Không thể làm mới một số lựa chọn thanh toán. Các giai đoạn hiện có vẫn dùng được; hãy thử lại để khôi phục ví, danh mục, sản phẩm hoặc giai đoạn còn thiếu.';
+
+  @override
+  String get inventoryCheckoutPeriodRulesChanged => 'Một số sản phẩm không phù hợp với kỳ bán hàng này. Đối soát giỏ hàng để tiếp tục.';
+
+  @override
   String get inventoryCheckoutProductsRequired => 'Thêm ít nhất một sản phẩm trước khi tạo giao dịch bán.';
+
+  @override
+  String get inventoryCheckoutReconcileCart => 'Đối soát giỏ hàng';
+
+  @override
+  String get inventoryCheckoutReconcileCartHelp => 'Làm mới giá và loại bỏ sản phẩm không còn phù hợp với kỳ bán hàng này.';
+
+  @override
+  String get inventoryCheckoutScopeChanged => 'Tài khoản hoặc không gian làm việc đã thay đổi. Đóng màn hình này và mở lại đơn bán trong không gian làm việc của đơn.';
 
   @override
   String get inventoryCheckoutSelectedItems => 'Dòng đã chọn';
 
   @override
-  String get inventoryCheckoutSubtitle => 'Tạo nhanh một giao dịch bán tại quầy và ghi nhận qua hóa đơn.';
-
-  @override
   String get inventoryCheckoutSubmit => 'Tạo giao dịch bán';
 
   @override
-  String get inventoryCheckoutTotalItems => 'Tổng món';
+  String get inventoryCheckoutSubtitle => 'Tạo nhanh một giao dịch bán tại quầy và ghi nhận qua hóa đơn.';
 
   @override
   String get inventoryCheckoutTitle => 'Bán hàng';
 
   @override
+  String get inventoryCheckoutTotalItems => 'Tổng món';
+
+  @override
   String get inventoryCheckoutValidationError => 'Hãy chọn ví, xử lý danh mục và thêm ít nhất một sản phẩm.';
 
   @override
-  String get inventoryCheckoutWalletRequired => 'Chọn ví trước khi tạo giao dịch bán.';
+  String get inventoryCheckoutWallet => 'Ví';
 
   @override
-  String get inventoryCheckoutWallet => 'Ví';
+  String get inventoryCheckoutWalletRequired => 'Chọn ví trước khi tạo giao dịch bán.';
 
   @override
   String get inventoryCreateProduct => 'Tạo sản phẩm';
 
   @override
   String get inventoryEditProduct => 'Sửa sản phẩm';
+
+  @override
+  String get inventoryLoadedLowStock => 'Tồn kho thấp trong sản phẩm đã tải';
 
   @override
   String get inventoryManageCategories => 'Danh mục sản phẩm';
@@ -3748,10 +4092,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryProductAmountRequired => 'Nhập số lượng.';
 
   @override
+  String inventoryProductAvailableSummary(String amount, String price) {
+    return 'Còn $amount • $price';
+  }
+
+  @override
   String get inventoryProductCategory => 'Danh mục sản phẩm';
 
   @override
   String get inventoryProductCategoryRequired => 'Chọn danh mục sản phẩm.';
+
+  @override
+  String get inventoryProductDeleteConfirm => 'Xóa sản phẩm này? Nếu giao dịch đã có tham chiếu đến sản phẩm, máy chủ sẽ lưu trữ sản phẩm khi đồng bộ.';
 
   @override
   String get inventoryProductDescription => 'Mô tả';
@@ -3778,9 +4130,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryProductInventorySubtitle => 'Mỗi dòng đại diện cho đơn vị, kho, số lượng, ngưỡng và giá bán.';
 
   @override
-  String get inventoryProductOptionsUnavailable => 'Không thể tải một số tùy chọn sản phẩm. Bạn vẫn có thể chỉnh sửa và thử lại để khôi phục các lựa chọn còn thiếu.';
-
-  @override
   String get inventoryProductManufacturer => 'Nhà sản xuất';
 
   @override
@@ -3799,6 +4148,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryProductNumberInvalid => 'Nhập số hợp lệ.';
 
   @override
+  String get inventoryProductOptionsUnavailable => 'Không thể tải một số tùy chọn sản phẩm. Bạn vẫn có thể chỉnh sửa và thử lại để khôi phục các lựa chọn còn thiếu.';
+
+  @override
   String get inventoryProductOwner => 'Chủ sở hữu';
 
   @override
@@ -3811,21 +4163,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryProductPriceRequired => 'Nhập giá.';
 
   @override
-  String inventoryProductAvailableSummary(String amount, String price) {
-    return 'Còn $amount • $price';
-  }
-
-  @override
   String get inventoryProductSaved => 'Đã lưu sản phẩm.';
-
-  @override
-  String get inventoryProductUntitled => 'Sản phẩm chưa đặt tên';
 
   @override
   String get inventoryProductUnit => 'Đơn vị';
 
   @override
   String get inventoryProductUnitRequired => 'Chọn đơn vị.';
+
+  @override
+  String get inventoryProductUntitled => 'Sản phẩm chưa đặt tên';
 
   @override
   String get inventoryProductUsage => 'Công dụng';
@@ -3861,6 +4208,55 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryRealtimeEnabled => 'Đã bật realtime';
 
   @override
+  String get inventoryRedesignAllEvents => 'Tất cả sự kiện';
+
+  @override
+  String inventoryRedesignDays(int count) {
+    return '$count ngày';
+  }
+
+  @override
+  String get inventoryRedesignLimitedData => 'Dữ liệu hạn chế. Đang hiển thị bản lưu gần nhất.';
+
+  @override
+  String get inventoryRedesignLoadedRevenue => 'Doanh thu từ hóa đơn đã tải';
+
+  @override
+  String get inventoryRedesignLoadedSearch => 'Tìm trong bản ghi có sẵn';
+
+  @override
+  String inventoryRedesignPendingCount(int count) {
+    return '$count thay đổi chưa đồng bộ';
+  }
+
+  @override
+  String get inventoryRedesignPendingDeletion => 'Đang chờ xác nhận xóa';
+
+  @override
+  String get inventoryRedesignReceiptActivity => 'Hoạt động hóa đơn';
+
+  @override
+  String get inventoryRedesignReceiptCoverage => 'Số lượng từ các hóa đơn gần đây có sẵn, không phải tổng đầy đủ của kỳ. Ngày thiếu dữ liệu chưa xác định. Không suy ra tổng tiền hay số lượng sản phẩm.';
+
+  @override
+  String inventoryRedesignRecentSample(int count) {
+    return '$count bản ghi có sẵn · phạm vi hạn chế';
+  }
+
+  @override
+  String get inventoryRedesignSelectedLines => 'Dòng đã chọn';
+
+  @override
+  String inventoryRedesignUnknownCurrencies(int count) {
+    return 'Đã loại $count hóa đơn chưa xác định tiền tệ';
+  }
+
+  @override
+  String inventoryRedesignUnknownDates(int count) {
+    return '$count bản ghi chưa có ngày';
+  }
+
+  @override
   String get inventorySaleCreated => 'Đã tạo giao dịch bán từ tồn kho.';
 
   @override
@@ -3870,7 +4266,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventorySaleUpdated => 'Đã cập nhật giao dịch bán.';
 
   @override
-  String get inventorySalesEmpty => 'Các giao dịch bán tạo từ hóa đơn sẽ xuất hiện ở đây.';
+  String inventorySalesCreatorBadge(String name) {
+    return 'Tạo bởi $name';
+  }
 
   @override
   String get inventorySalesDelete => 'Xóa giao dịch bán';
@@ -3880,6 +4278,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventorySalesEdit => 'Sửa giao dịch bán';
+
+  @override
+  String get inventorySalesEmpty => 'Các giao dịch bán tạo từ hóa đơn sẽ xuất hiện ở đây.';
 
   @override
   String get inventorySalesFallbackTitle => 'Giao dịch bán tồn kho';
@@ -3893,15 +4294,120 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventorySalesLabel => 'Bán hàng';
 
   @override
-  String inventorySalesCreatorBadge(String name) {
-    return 'Tạo bởi $name';
-  }
-
-  @override
   String get inventorySalesLineItems => 'Dòng hàng';
 
   @override
   String get inventorySalesNote => 'Ghi chú';
+
+  @override
+  String get inventorySalesPeriodArchive => 'Lưu trữ giai đoạn';
+
+  @override
+  String get inventorySalesPeriodArchived => 'Đã lưu trữ giai đoạn bán hàng.';
+
+  @override
+  String get inventorySalesPeriodAssignmentHelp => 'Dùng mùa hoặc sự kiện để nhóm giao dịch này trong báo cáo.';
+
+  @override
+  String get inventorySalesPeriodAssignmentLabel => 'Giai đoạn bán hàng';
+
+  @override
+  String get inventorySalesPeriodCreate => 'Giai đoạn mới';
+
+  @override
+  String get inventorySalesPeriodCreateDescription => 'Nhóm doanh số theo mùa, sự kiện, chiến dịch hoặc khoảng vận hành.';
+
+  @override
+  String get inventorySalesPeriodCreateTitle => 'Tạo giai đoạn bán hàng';
+
+  @override
+  String get inventorySalesPeriodDateInvalid => 'Ngày kết thúc phải bằng hoặc sau ngày bắt đầu.';
+
+  @override
+  String get inventorySalesPeriodEdit => 'Chỉnh sửa';
+
+  @override
+  String get inventorySalesPeriodEditDescription => 'Cập nhật tên, ngày và ghi chú nội bộ của giai đoạn.';
+
+  @override
+  String get inventorySalesPeriodEditTitle => 'Chỉnh sửa giai đoạn bán hàng';
+
+  @override
+  String get inventorySalesPeriodEndsAt => 'Ngày kết thúc';
+
+  @override
+  String get inventorySalesPeriodName => 'Tên';
+
+  @override
+  String get inventorySalesPeriodNamePlaceholder => 'Hè 2026 hoặc TuCon 2026';
+
+  @override
+  String get inventorySalesPeriodNameRequired => 'Nhập tên giai đoạn.';
+
+  @override
+  String get inventorySalesPeriodNoDate => 'Không có ngày';
+
+  @override
+  String get inventorySalesPeriodNotes => 'Ghi chú';
+
+  @override
+  String get inventorySalesPeriodNotesPlaceholder => 'Thông tin tùy chọn cho đội ngũ';
+
+  @override
+  String get inventorySalesPeriodOpen => 'Mở giai đoạn bán hàng';
+
+  @override
+  String get inventorySalesPeriodProductRules => 'Điều kiện sản phẩm';
+
+  @override
+  String get inventorySalesPeriodProductRulesDescription => 'Chọn doanh số sản phẩm nào có thể được đưa vào giai đoạn này.';
+
+  @override
+  String get inventorySalesPeriodProductsRequired => 'Chọn ít nhất một sản phẩm cho quy tắc này.';
+
+  @override
+  String inventorySalesPeriodProductsSelected(int count) {
+    return 'Đã chọn $count';
+  }
+
+  @override
+  String get inventorySalesPeriodRestore => 'Khôi phục giai đoạn';
+
+  @override
+  String get inventorySalesPeriodRestored => 'Đã khôi phục giai đoạn bán hàng.';
+
+  @override
+  String get inventorySalesPeriodSave => 'Lưu thay đổi';
+
+  @override
+  String get inventorySalesPeriodScopeAll => 'Tất cả sản phẩm';
+
+  @override
+  String get inventorySalesPeriodScopeAllowlist => 'Chỉ sản phẩm đã chọn';
+
+  @override
+  String get inventorySalesPeriodScopeBlocklist => 'Tất cả trừ sản phẩm đã chọn';
+
+  @override
+  String get inventorySalesPeriodSearchProducts => 'Tìm sản phẩm';
+
+  @override
+  String get inventorySalesPeriodStartsAt => 'Ngày bắt đầu';
+
+  @override
+  String get inventorySalesPeriodUnassigned => 'Chưa có giai đoạn';
+
+  @override
+  String get inventorySalesPeriodUpdated => 'Đã cập nhật giai đoạn bán hàng.';
+
+  @override
+  String get inventorySalesPeriodsAll => 'Tất cả giai đoạn';
+
+  @override
+  String get inventorySalesPeriodsDescription => 'Theo dõi theo mùa, sự kiện và khoảng chiến dịch.';
+
+  @override
+  String get inventorySalesPeriodsTitle => 'Giai đoạn bán hàng';
 
   @override
   String get inventorySalesRecentSubtitle => 'Xem lại các giao dịch bán tồn kho gần nhất đã ghi qua hóa đơn.';
@@ -3919,126 +4425,86 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventorySalesTitle => 'Tiêu đề';
 
   @override
-  String get inventorySalesPeriodsTitle => 'Giai đoạn bán hàng';
-
-  @override
-  String get inventorySalesPeriodsDescription => 'Theo dõi theo mùa, sự kiện và khoảng chiến dịch.';
-
-  @override
-  String get inventorySalesPeriodsAll => 'Tất cả giai đoạn';
-
-  @override
-  String get inventorySalesPeriodArchive => 'Lưu trữ giai đoạn';
-
-  @override
-  String get inventorySalesPeriodRestore => 'Khôi phục giai đoạn';
-
-  @override
-  String get inventorySalesPeriodCreate => 'Giai đoạn mới';
-
-  @override
-  String get inventorySalesPeriodEdit => 'Chỉnh sửa';
-
-  @override
-  String get inventorySalesPeriodOpen => 'Mở giai đoạn bán hàng';
-
-  @override
-  String get inventorySalesPeriodCreateTitle => 'Tạo giai đoạn bán hàng';
-
-  @override
-  String get inventorySalesPeriodCreateDescription => 'Nhóm doanh số theo mùa, sự kiện, chiến dịch hoặc khoảng vận hành.';
-
-  @override
-  String get inventorySalesPeriodEditTitle => 'Chỉnh sửa giai đoạn bán hàng';
-
-  @override
-  String get inventorySalesPeriodEditDescription => 'Cập nhật tên, ngày và ghi chú nội bộ của giai đoạn.';
-
-  @override
-  String get inventorySalesPeriodSave => 'Lưu thay đổi';
-
-  @override
-  String get inventorySalesPeriodUpdated => 'Đã cập nhật giai đoạn bán hàng.';
-
-  @override
-  String get inventorySalesPeriodName => 'Tên';
-
-  @override
-  String get inventorySalesPeriodNamePlaceholder => 'Hè 2026 hoặc TuCon 2026';
-
-  @override
-  String get inventorySalesPeriodStartsAt => 'Ngày bắt đầu';
-
-  @override
-  String get inventorySalesPeriodEndsAt => 'Ngày kết thúc';
-
-  @override
-  String get inventorySalesPeriodNotes => 'Ghi chú';
-
-  @override
-  String get inventorySalesPeriodNotesPlaceholder => 'Thông tin tùy chọn cho đội ngũ';
-
-  @override
-  String get inventorySalesPeriodNameRequired => 'Nhập tên giai đoạn.';
-
-  @override
-  String get inventorySalesPeriodDateInvalid => 'Ngày kết thúc phải bằng hoặc sau ngày bắt đầu.';
-
-  @override
-  String get inventorySalesPeriodProductRules => 'Điều kiện sản phẩm';
-
-  @override
-  String get inventorySalesPeriodProductRulesDescription => 'Chọn doanh số sản phẩm nào có thể được đưa vào giai đoạn này.';
-
-  @override
-  String get inventorySalesPeriodScopeAll => 'Tất cả sản phẩm';
-
-  @override
-  String get inventorySalesPeriodScopeAllowlist => 'Chỉ sản phẩm đã chọn';
-
-  @override
-  String get inventorySalesPeriodScopeBlocklist => 'Tất cả trừ sản phẩm đã chọn';
-
-  @override
-  String get inventorySalesPeriodSearchProducts => 'Tìm sản phẩm';
-
-  @override
-  String get inventorySalesPeriodProductsRequired => 'Chọn ít nhất một sản phẩm cho quy tắc này.';
-
-  @override
-  String inventorySalesPeriodProductsSelected(int count) {
-    return 'Đã chọn $count';
-  }
-
-  @override
-  String get inventorySalesPeriodNoDate => 'Không có ngày';
-
-  @override
-  String get inventorySalesPeriodArchived => 'Đã lưu trữ giai đoạn bán hàng.';
-
-  @override
-  String get inventorySalesPeriodRestored => 'Đã khôi phục giai đoạn bán hàng.';
-
-  @override
-  String get inventorySalesPeriodUnassigned => 'Chưa có giai đoạn';
-
-  @override
-  String get inventorySalesPeriodAssignmentLabel => 'Giai đoạn bán hàng';
-
-  @override
-  String get inventorySalesPeriodAssignmentHelp => 'Dùng mùa hoặc sự kiện để nhóm giao dịch này trong báo cáo.';
-
-  @override
-  String get inventoryCheckoutOptionsUnavailable => 'Không thể làm mới một số lựa chọn thanh toán. Các giai đoạn hiện có vẫn dùng được; hãy thử lại để khôi phục ví, danh mục, sản phẩm hoặc giai đoạn còn thiếu.';
-
-  @override
   String get inventorySaveProduct => 'Lưu sản phẩm';
 
   @override
   String get inventorySearchProducts => 'Tìm sản phẩm';
 
   @override
-  String get inventoryLoadedLowStock => 'Tồn kho thấp trong sản phẩm đã tải';
+  String get inventorySeasonHistoricalReadOnly => 'Lịch sử bán theo mùa chỉ có thể xem tại đây. Giá đã ghi nhận được giữ nguyên.';
+
+  @override
+  String inventorySeasonPriceAsOf(String currency, String asOf, String timeZone) {
+    return 'Giá mùa · $currency · tại $asOf (UTC) · ngày mùa theo $timeZone';
+  }
+
+  @override
+  String get inventorySeasonPriceCached => 'Bản nháp ngoại tuyến sử dụng giá mùa đã lưu. Giá và tình trạng hàng sẽ được kiểm tra khi đồng bộ.';
+
+  @override
+  String get inventorySeasonPriceLoading => 'Đang kiểm tra giá mùa hiện tại…';
+
+  @override
+  String get inventorySeasonPriceUnavailable => 'Giá mùa không khả dụng hoặc đã hết hạn. Kết nối, làm mới và kiểm tra giỏ hàng trước khi bán.';
+
+  @override
+  String get inventorySeasonRecoveryCheck => 'Kiểm tra kết quả bán hàng';
+
+  @override
+  String get inventorySeasonRecoveryTitle => 'Khôi phục đơn bán hàng';
+
+  @override
+  String get inventorySeasonRecoveryUnavailable => 'Không thể truy cập bộ lưu trữ khôi phục. Tạm khóa tạo đơn cho đến khi có thể khôi phục an toàn.';
+
+  @override
+  String get inventorySeasonRetryPending => 'Chưa xác định được kết quả bán hàng. Kiểm tra yêu cầu đã lưu trước khi gửi lại đúng nội dung. Bạn có thể rời màn hình và khôi phục trong tài khoản, không gian làm việc này; không tạo đơn thay thế.';
+
+  @override
+  String get inventorySetupSyncFirst => 'Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa.';
+
+  @override
+  String get inventoryStockHealthActive => 'Sản phẩm đang hoạt động';
+
+  @override
+  String inventoryStockHealthAsOf(String timestamp) {
+    return 'Ảnh chụp từ máy chủ: $timestamp UTC';
+  }
+
+  @override
+  String get inventoryStockHealthDenied => 'Bạn không có quyền xem phân tích tồn kho.';
+
+  @override
+  String get inventoryStockHealthIncomplete => 'Ảnh chụp chưa đầy đủ: một vài số đếm hoặc thời gian máy chủ bị thiếu.';
+
+  @override
+  String get inventoryStockHealthLoading => 'Đang tải tình trạng tồn kho…';
+
+  @override
+  String get inventoryStockHealthLow => 'Dòng tồn kho thấp';
+
+  @override
+  String get inventoryStockHealthOut => 'Dòng hết hàng';
+
+  @override
+  String get inventoryStockHealthOverlap => 'Số dòng thấp/hết hàng có thể trùng nhau. Kiểm tra thấp/hết hàng theo số lượng không tính dòng không giới hạn; các dòng này được đếm riêng. Biểu đồ so sánh số dòng.';
+
+  @override
+  String get inventoryStockHealthScope => 'Sản phẩm đang hoạt động · mọi dòng tồn kho, gồm kho đã lưu trữ';
+
+  @override
+  String get inventoryStockHealthTitle => 'Tình trạng tồn kho';
+
+  @override
+  String get inventoryStockHealthUnavailable => 'Không thể tải tình trạng tồn kho. Kéo để làm mới và thử lại.';
+
+  @override
+  String get inventoryStockHealthUnconfigured => 'Sản phẩm chưa có dòng tồn kho';
+
+  @override
+  String get inventoryStockHealthUnknown => 'Chưa có dữ liệu';
+
+  @override
+  String get inventoryStockHealthUnlimited => 'Dòng tồn kho không giới hạn';
 
   @override
   String get inventoryStockNoRows => 'Chưa cấu hình dòng tồn kho.';
@@ -4053,757 +4519,5358 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryTitle => 'Tồn kho';
 
   @override
-  String get financeOverviewLabel => 'Tổng quan';
+  String get loginContinueWithEmail => 'Tiếp tục với email';
 
   @override
-  String get financeActivityLabel => 'Hoạt động';
+  String get loginForgotPassword => 'Quên mật khẩu?';
 
   @override
-  String get financeManageLabel => 'Quản lý';
+  String get loginOtpInstruction => 'Nhập mã 6 chữ số chúng tôi đã gửi đến email của bạn.';
 
   @override
-  String get financeCheckpointsShortLabel => 'Kiểm tra';
-
-  @override
-  String get financeCheckpointsTitle => 'Điểm kiểm tra ví';
-
-  @override
-  String get financeCheckpointsDescription => 'Ghi số dư thực tế, so sánh biến động sổ cái và xử lý chênh lệch giữa các lần kiểm tra.';
-
-  @override
-  String get financeCheckpointsOverviewHint => 'Ghi số dư thực tế và xem các khoảng kiểm tra còn lệch.';
-
-  @override
-  String get financeCheckpointsWalletsTitle => 'Kiểm tra ví';
-
-  @override
-  String get financeCheckpointsWalletsSubtitle => 'Chọn ví để xem điểm kiểm tra mới nhất và các khoảng đối chiếu.';
-
-  @override
-  String get financeCheckpointsLatest => 'Điểm kiểm tra mới nhất';
-
-  @override
-  String get financeCheckpointsRecord => 'Ghi điểm kiểm tra';
-
-  @override
-  String get financeCheckpointsEdit => 'Chỉnh sửa điểm kiểm tra';
-
-  @override
-  String get financeCheckpointsBatchRecord => 'Kiểm tra tất cả ví';
-
-  @override
-  String get financeCheckpointsBatchDescription => 'Nhập số dư thực tế cho từng ví bạn muốn kiểm tra tại cùng một thời điểm.';
-
-  @override
-  String get financeCheckpointsBatchSaved => 'Đã lưu điểm kiểm tra ví';
-
-  @override
-  String get financeCheckpointsSaved => 'Đã lưu điểm kiểm tra';
-
-  @override
-  String get financeCheckpointsDeleted => 'Đã xóa điểm kiểm tra';
-
-  @override
-  String get financeCheckpointsDelete => 'Xóa điểm kiểm tra';
-
-  @override
-  String get financeCheckpointsDeleteDescription => 'Xóa điểm kiểm tra này và tính lại dòng kiểm tra của ví.';
-
-  @override
-  String financeCheckpointsRecordDescription(String wallet) {
-    return 'Lưu số dư thực tế đang hiển thị trong $wallet.';
+  String loginOtpRateLimitedInstruction(Object seconds) {
+    return 'Nhập mã bên dưới hoặc dùng mật khẩu thay thế. Thử lại sau $seconds giây.';
   }
 
   @override
-  String get financeCheckpointsActualBalance => 'Số dư thực tế';
+  String get loginResendOtp => 'Gửi lại mã';
 
   @override
-  String financeCheckpointsActualBalanceWithCurrency(String currency) {
-    return 'Số dư thực tế ($currency)';
+  String loginRetryAfter(Object seconds) {
+    return 'Thử lại sau $seconds giây';
   }
 
   @override
-  String get financeCheckpointsLedgerBalance => 'Số dư sổ cái';
-
-  @override
-  String get financeCheckpointsCurrentVariance => 'Chênh lệch hiện tại';
-
-  @override
-  String get financeCheckpointsActualDelta => 'Chênh lệch thực tế';
-
-  @override
-  String get financeCheckpointsLedgerDelta => 'Chênh lệch sổ cái';
-
-  @override
-  String get financeCheckpointsVariance => 'Chênh lệch';
-
-  @override
-  String financeCheckpointsVarianceValue(String value) {
-    return 'Chênh lệch: $value';
+  String loginRetryIn(Object seconds) {
+    return 'Thử lại sau $seconds giây';
   }
 
   @override
-  String get financeCheckpointsCheckedAt => 'Thời điểm kiểm tra';
+  String get loginSendOtp => 'Gửi mã';
 
   @override
-  String get financeCheckpointsCheckedAtRequired => 'Nhập thời điểm kiểm tra hợp lệ';
+  String get loginSignIn => 'Đăng nhập';
 
   @override
-  String get financeCheckpointsNote => 'Ghi chú';
+  String get loginSignUpPrompt => 'Chưa có tài khoản? Đăng ký';
 
   @override
-  String get financeCheckpointsSharedNote => 'Ghi chú chung';
+  String get loginSubtitle => 'Đăng nhập để tiếp tục';
 
   @override
-  String get financeCheckpointsNotePlaceholder => 'Ngữ cảnh tùy chọn cho điểm kiểm tra này';
+  String get loginTitle => 'Chào mừng trở lại';
 
   @override
-  String get financeCheckpointsAmountRequired => 'Nhập số dư thực tế hợp lệ';
+  String get loginUseOtpInstead => 'Dùng mã email thay thế';
 
   @override
-  String get financeCheckpointsEntriesRequired => 'Nhập ít nhất một số dư ví';
+  String get loginUsePasswordInstead => 'Dùng mật khẩu thay thế';
 
   @override
-  String get financeCheckpointsWindows => 'Khoảng đối chiếu';
+  String get loginVerifyOtp => 'Xác minh mã';
 
   @override
-  String get financeCheckpointsWindowsSubtitle => 'Mỗi khoảng so sánh biến động thực tế với biến động sổ cái giữa hai điểm kiểm tra.';
+  String get mailAccessRequired => 'Bạn cần tài khoản @tuturuuu.com để dùng Thư.';
 
   @override
-  String get financeCheckpointsTransactionCountHint => 'Số lượng giao dịch dựa trên hoạt động sổ cái trong từng khoảng.';
+  String get mailActionFailed => 'Không thể hoàn tất thao tác. Thư nháp vẫn được giữ lại, vui lòng thử lại.';
 
   @override
-  String get financeCheckpointsTimeline => 'Dòng thời gian điểm kiểm tra';
+  String get mailAdmin => 'Quản trị viên';
 
   @override
-  String get financeCheckpointsReconcile => 'Đối chiếu';
+  String get mailAiDraft => 'Soạn thư với AI';
 
   @override
-  String get financeCheckpointsReconcileDescription => 'Tạo giao dịch điều chỉnh không đưa vào báo cáo cho chênh lệch có dấu trong khoảng này.';
+  String get mailAiInstructions => 'Bạn muốn viết nội dung gì?';
 
   @override
-  String get financeCheckpointsCreateReconciliation => 'Tạo đối chiếu';
+  String get mailAllLabels => 'Tất cả nhãn và thư mục';
 
   @override
-  String get financeCheckpointsReconciliationCreated => 'Đã tạo giao dịch đối chiếu';
+  String get mailAnyone => 'Mọi người';
 
   @override
-  String get financeCheckpointsReconciliationClean => 'Điểm kiểm tra đã khớp';
+  String get mailAppearanceOriginal => 'Nguyên bản';
 
   @override
-  String financeCheckpointsReconcileDefaultDescription(String wallet) {
-    return 'Đối chiếu ví $wallet';
+  String get mailArchive => 'Lưu trữ';
+
+  @override
+  String get mailAttach => 'Đính kèm tệp';
+
+  @override
+  String get mailAutoApply => 'Tự động áp dụng';
+
+  @override
+  String get mailAutoDraft => 'Tự động soạn thư trả lời';
+
+  @override
+  String get mailBcc => 'Bcc';
+
+  @override
+  String get mailBody => 'Nội dung';
+
+  @override
+  String get mailCalendarLinkChanged => 'Lời mời hoặc sự kiện đã thay đổi. Vui lòng xem trước lại.';
+
+  @override
+  String get mailCalendarLinkConfirm => 'Xác nhận liên kết';
+
+  @override
+  String get mailCalendarLinkFailed => 'Không thể cập nhật liên kết. Vui lòng thử lại.';
+
+  @override
+  String get mailCalendarLinkInvalid => 'Dán liên kết Lịch của sự kiện đã chọn.';
+
+  @override
+  String get mailCalendarLinkLinked => 'Đã liên kết sự kiện Lịch';
+
+  @override
+  String get mailCalendarLinkNotice => 'Liên kết giữ cả hai bản ghi. Phản hồi vẫn gửi đến người tổ chức ban đầu.';
+
+  @override
+  String get mailCalendarLinkOpen => 'Mở sự kiện đã liên kết';
+
+  @override
+  String get mailCalendarLinkOriginal => 'Lời mời gốc';
+
+  @override
+  String get mailCalendarLinkPreview => 'Xem trước liên kết';
+
+  @override
+  String get mailCalendarLinkSelected => 'Sự kiện Lịch đã chọn';
+
+  @override
+  String get mailCalendarLinkTitle => 'Liên kết với Lịch';
+
+  @override
+  String get mailCalendarLinkUnavailable => 'Sự kiện này không khả dụng trong tài khoản của bạn.';
+
+  @override
+  String get mailCalendarLinkUnlink => 'Gỡ liên kết';
+
+  @override
+  String get mailCalendarLinkUrl => 'Liên kết sự kiện Lịch';
+
+  @override
+  String get mailCatchAll => 'Hộp thư nhận mọi địa chỉ';
+
+  @override
+  String get mailCc => 'Cc';
+
+  @override
+  String get mailCompose => 'Soạn thư';
+
+  @override
+  String get mailDefaultAction => 'Thao tác email mặc định';
+
+  @override
+  String get mailDeleteConfirm => 'Xóa mục này? Bạn không thể hoàn tác thao tác này.';
+
+  @override
+  String get mailDeleteDraft => 'Xóa bản nháp';
+
+  @override
+  String get mailDeleteDraftConfirmation => 'Xóa vĩnh viễn bản nháp này và các tệp đính kèm?';
+
+  @override
+  String get mailDeliveryProvider => 'Dịch vụ gửi thư';
+
+  @override
+  String get mailDescription => 'Mô tả';
+
+  @override
+  String get mailDiscardSettingsAction => 'Bỏ thay đổi';
+
+  @override
+  String get mailDiscardSettingsDescription => 'Các thay đổi cài đặt Mail của bạn chưa được lưu.';
+
+  @override
+  String get mailDiscardSettingsTitle => 'Bỏ thay đổi?';
+
+  @override
+  String get mailDomainDefault => 'Mặc định của tên miền';
+
+  @override
+  String get mailDownload => 'Tải xuống hoặc chia sẻ tệp';
+
+  @override
+  String get mailDrafts => 'Thư nháp';
+
+  @override
+  String get mailEmail => 'Địa chỉ email';
+
+  @override
+  String get mailEmpty => 'Chưa có thư';
+
+  @override
+  String get mailFolders => 'Thư mục';
+
+  @override
+  String get mailForward => 'Chuyển tiếp';
+
+  @override
+  String get mailForwardTo => 'Chuyển tiếp đến địa chỉ hộp thư';
+
+  @override
+  String get mailForwarding => 'Chuyển tiếp tự động';
+
+  @override
+  String get mailForwardingOff => 'Tắt';
+
+  @override
+  String get mailGenerate => 'Tạo nội dung';
+
+  @override
+  String get mailGroupAttachments => 'Ai được gửi tệp đính kèm';
+
+  @override
+  String get mailGroupPosting => 'Ai được gửi thư đến nhóm';
+
+  @override
+  String get mailGroupSendAs => 'Ai được gửi thư thay mặt nhóm';
+
+  @override
+  String get mailInbox => 'Hộp thư đến';
+
+  @override
+  String get mailInvalidRecipient => 'Vui lòng nhập địa chỉ email người nhận hợp lệ.';
+
+  @override
+  String get mailInvitationAccept => 'Chấp nhận';
+
+  @override
+  String get mailInvitationDecline => 'Từ chối';
+
+  @override
+  String get mailInvitationFailed => 'Chưa xác nhận được phản hồi. Thử lại cùng phản hồi để kiểm tra trạng thái.';
+
+  @override
+  String mailInvitationIdentity(String attendee, String organizer) {
+    return 'Trả lời với tư cách $attendee cho người tổ chức $organizer';
   }
 
   @override
-  String get financeCheckpointsCategory => 'Danh mục';
+  String get mailInvitationJoin => 'Tham gia cuộc họp';
 
   @override
-  String get financeCheckpointsNoCategory => 'Không có danh mục';
+  String get mailInvitationLocation => 'Địa điểm';
 
   @override
-  String get financeCheckpointsDescriptionLabel => 'Mô tả';
+  String get mailInvitationPending => 'Phản hồi đang chờ xử lý. Kiểm tra lại trước khi trả lời.';
 
   @override
-  String get financeCheckpointsNoCheckpoint => 'Chưa có điểm kiểm tra';
+  String get mailInvitationRetry => 'Tải lại thông tin lời mời';
 
   @override
-  String get financeCheckpointsNoCheckpointShort => 'Chưa có điểm kiểm tra';
+  String get mailInvitationSending => 'Đang gửi phản hồi…';
 
   @override
-  String get financeCheckpointsNoCheckpointDetail => 'Ghi một điểm kiểm tra để bắt đầu theo dõi số dư đã kiểm tra.';
-
-  @override
-  String get financeCheckpointsNoWallets => 'Không có ví khả dụng';
-
-  @override
-  String get financeCheckpointsNoWalletsDetail => 'Tạo ví trước khi ghi điểm kiểm tra tài chính.';
-
-  @override
-  String get financeOverviewEyebrow => 'Tóm tắt không gian làm việc';
-
-  @override
-  String financeOverviewCrossCurrencyHint(String currency) {
-    return 'Bao gồm số dư đã quy đổi giữa các ví. Tiền tệ gốc: $currency.';
+  String mailInvitationSent(String response) {
+    return 'Đã gửi phản hồi: $response';
   }
 
   @override
-  String financeOverviewSingleCurrencyHint(String currency) {
-    return 'Mọi số dư đều đang được theo dõi bằng $currency.';
+  String get mailInvitationTentative => 'Có thể tham gia';
+
+  @override
+  String get mailInvitationTitle => 'Lời mời lịch';
+
+  @override
+  String get mailInvitationWhen => 'Thời gian';
+
+  @override
+  String get mailLabels => 'Nhãn';
+
+  @override
+  String get mailLoadImages => 'Hiển thị ảnh từ bên ngoài';
+
+  @override
+  String get mailLoadImagesDescription => 'Mặc định hiển thị ảnh. Người gửi có thể biết khi bạn mở thư.';
+
+  @override
+  String get mailLoadMore => 'Xem thêm';
+
+  @override
+  String get mailMailbox => 'Hộp thư';
+
+  @override
+  String get mailManagers => 'Người quản lý';
+
+  @override
+  String get mailMarkAllRead => 'Đánh dấu tất cả đã đọc';
+
+  @override
+  String get mailMarkUnread => 'Đánh dấu chưa đọc';
+
+  @override
+  String get mailMembers => 'Thành viên';
+
+  @override
+  String get mailMessageAppearance => 'Giao diện thư';
+
+  @override
+  String get mailMessageDetails => 'Thông tin thư';
+
+  @override
+  String get mailMute => 'Tắt thông báo chuỗi thư';
+
+  @override
+  String get mailMuted => 'Đã tắt thông báo';
+
+  @override
+  String get mailName => 'Tên';
+
+  @override
+  String get mailNoSubject => '(Không có tiêu đề)';
+
+  @override
+  String get mailOpenFailed => 'Không thể mở thư này. Vui lòng thử lại.';
+
+  @override
+  String get mailOrganization => 'Thành viên tổ chức';
+
+  @override
+  String get mailOwner => 'Chủ sở hữu';
+
+  @override
+  String get mailRemoveAttachment => 'Xóa tệp đính kèm';
+
+  @override
+  String get mailReply => 'Trả lời';
+
+  @override
+  String get mailReplyAll => 'Trả lời tất cả';
+
+  @override
+  String get mailRestore => 'Chuyển về hộp thư đến';
+
+  @override
+  String get mailSaveDraft => 'Lưu thư nháp';
+
+  @override
+  String get mailSearch => 'Tìm thư';
+
+  @override
+  String get mailSelectAll => 'Chọn tất cả thư đã tải';
+
+  @override
+  String get mailSend => 'Gửi';
+
+  @override
+  String get mailSender => 'Người gửi';
+
+  @override
+  String get mailSenderName => 'Tên người gửi';
+
+  @override
+  String get mailSent => 'Đã gửi';
+
+  @override
+  String get mailSettings => 'Cài đặt thư';
+
+  @override
+  String get mailSignature => 'Chữ ký';
+
+  @override
+  String get mailSmartLabels => 'Nhãn thông minh';
+
+  @override
+  String get mailSnooze => 'Tạm ẩn';
+
+  @override
+  String get mailSnoozeCustom => 'Chọn ngày và giờ';
+
+  @override
+  String get mailSnoozeDay => 'Sau 24 giờ';
+
+  @override
+  String get mailSnoozeFuture => 'Vui lòng chọn thời gian trong tương lai.';
+
+  @override
+  String get mailSnoozeHour => 'Sau một giờ';
+
+  @override
+  String get mailSnoozeWeek => 'Sau một tuần';
+
+  @override
+  String get mailSnoozed => 'Đã tạm ẩn';
+
+  @override
+  String get mailSpam => 'Thư rác';
+
+  @override
+  String get mailStar => 'Gắn sao';
+
+  @override
+  String get mailStarred => 'Đã gắn sao';
+
+  @override
+  String get mailSubject => 'Tiêu đề';
+
+  @override
+  String get mailSwipeActions => 'Thao tác vuốt';
+
+  @override
+  String get mailSwipeLeft => 'Vuốt sang trái';
+
+  @override
+  String get mailSwipeMove => 'Chuyển vào thư mục';
+
+  @override
+  String get mailSwipeNone => 'Không có';
+
+  @override
+  String get mailSwipeRead => 'Đã đọc / chưa đọc';
+
+  @override
+  String get mailSwipeRight => 'Vuốt sang phải';
+
+  @override
+  String get mailSwipeStar => 'Gắn sao / bỏ sao';
+
+  @override
+  String get mailSwipeUndo => 'Hoàn tác';
+
+  @override
+  String get mailTitle => 'Thư';
+
+  @override
+  String get mailTo => 'Đến';
+
+  @override
+  String get mailTrash => 'Thùng rác';
+
+  @override
+  String get mailUnmute => 'Bật lại thông báo';
+
+  @override
+  String get mailUnsnooze => 'Đưa về hộp thư đến ngay';
+
+  @override
+  String get mailUnstar => 'Bỏ gắn sao';
+
+  @override
+  String get mailViewOriginal => 'Xem thư có định dạng';
+
+  @override
+  String get mailViewer => 'Người xem';
+
+  @override
+  String get meetAccessDenied => 'Bạn không thể tham gia cuộc họp này';
+
+  @override
+  String get meetAdmit => 'Cho phép';
+
+  @override
+  String get meetApprovedParticipant => 'Người tham gia đã được phê duyệt';
+
+  @override
+  String get meetAskMira => 'Hỏi riêng Mira';
+
+  @override
+  String get meetCallEnded => 'Cuộc họp đã kết thúc';
+
+  @override
+  String get meetCamera => 'Máy ảnh';
+
+  @override
+  String get meetCameraOff => 'Tắt camera';
+
+  @override
+  String get meetCameraOn => 'Bật camera';
+
+  @override
+  String get meetChat => 'Trò chuyện';
+
+  @override
+  String get meetCollaboration => 'Cộng tác';
+
+  @override
+  String get meetCollaborationUnavailable => 'Cộng tác hiện không khả dụng. Hãy vào lại cuộc họp rồi thử lại.';
+
+  @override
+  String get meetConnecting => 'Đang kết nối cuộc họp…';
+
+  @override
+  String get meetCostsUnavailable => 'Chưa có ước tính chi phí.';
+
+  @override
+  String get meetCreated => 'Đã tạo cuộc họp.';
+
+  @override
+  String get meetDecline => 'Từ chối';
+
+  @override
+  String get meetDelete => 'Xóa cuộc họp';
+
+  @override
+  String get meetDeleteConfirm => 'Xóa cuộc họp này? Thao tác này không thể hoàn tác.';
+
+  @override
+  String get meetDeleted => 'Đã xóa cuộc họp.';
+
+  @override
+  String get meetDeviceAlreadyJoined => 'Bạn đã ở trong cuộc họp này';
+
+  @override
+  String get meetDeviceChoiceHint => 'Chọn cách tham gia từ thiết bị này.';
+
+  @override
+  String get meetDeviceEchoHint => 'Tắt micrô trên một thiết bị để tránh tiếng vọng.';
+
+  @override
+  String get meetDurableRequests => 'Yêu cầu phòng họp';
+
+  @override
+  String get meetDuration => 'Thời lượng';
+
+  @override
+  String get meetEditMeeting => 'Chỉnh sửa cuộc họp';
+
+  @override
+  String get meetEmptyDescription => 'Chưa có cuộc họp nào. Lên lịch một cuộc họp để giữ cả nhóm đồng bộ.';
+
+  @override
+  String get meetEndForEveryone => 'Kết thúc cho mọi người';
+
+  @override
+  String get meetEstimatedCosts => 'Chi phí ước tính';
+
+  @override
+  String get meetEveryone => 'Mọi người';
+
+  @override
+  String get meetFixtureConnected => 'Đã kết nối cuộc họp cục bộ';
+
+  @override
+  String get meetFixtureReconnect => 'Kết nối lại cuộc họp';
+
+  @override
+  String get meetFixtureRevoke => 'Chủ phòng: dừng chia sẻ màn hình';
+
+  @override
+  String get meetForgetApproval => 'Quên phê duyệt';
+
+  @override
+  String get meetFutureStartRequired => 'Chọn thời gian bắt đầu trong tương lai.';
+
+  @override
+  String get meetInstantMeeting => 'Bắt đầu cuộc họp ngay';
+
+  @override
+  String get meetInstantMeetingHint => 'Tạo cuộc họp chưa đặt tên và tham gia ngay';
+
+  @override
+  String get meetInvitePeople => 'Mời mọi người';
+
+  @override
+  String get meetInvitePeopleHint => 'Chia sẻ liên kết đến cuộc họp này';
+
+  @override
+  String get meetJoin => 'Tham gia cuộc gọi';
+
+  @override
+  String get meetJoinAnotherDevice => 'Tham gia trên thiết bị khác';
+
+  @override
+  String get meetLeave => 'Rời cuộc gọi';
+
+  @override
+  String get meetLeaveOrEnd => 'Rời hoặc kết thúc cuộc họp?';
+
+  @override
+  String get meetLiveCost => 'Mira Live';
+
+  @override
+  String get meetLockRoom => 'Khóa phòng họp';
+
+  @override
+  String get meetLowerHand => 'Hạ tay';
+
+  @override
+  String get meetMediaCaptureFailed => 'Không thể bật micro hoặc camera. Hãy kiểm tra quyền của ứng dụng.';
+
+  @override
+  String get meetMediaConnectFailed => 'Kết nối âm thanh và video đã quá thời gian chờ. Hãy thử lại.';
+
+  @override
+  String get meetMediaPublishFailed => 'Không thể kết nối micro hoặc camera của bạn với cuộc gọi.';
+
+  @override
+  String get meetMediaReceiveFailed => 'Không thể kết nối âm thanh hoặc video của người tham gia khác.';
+
+  @override
+  String get meetMediaSendFailed => 'Micro hoặc camera đã kết nối nhưng chưa gửi âm thanh hoặc hình ảnh. Hãy kiểm tra thiết bị rồi thử lại.';
+
+  @override
+  String get meetMediaSessionFailed => 'Không thể bắt đầu phiên âm thanh và video của cuộc gọi.';
+
+  @override
+  String get meetMediaUnavailable => 'Âm thanh hoặc video của cuộc gọi chưa kết nối được.';
+
+  @override
+  String get meetMeetingName => 'Tên cuộc họp';
+
+  @override
+  String get meetMessageHint => 'Nhắn cho mọi người';
+
+  @override
+  String get meetMicrophone => 'Micrô';
+
+  @override
+  String meetMinutes(int count) {
+    return '$count phút';
   }
 
   @override
-  String get financeWallets => 'Ví';
+  String get meetMiraActionFailed => 'Không thể cập nhật mục duyệt của Mira. Vui lòng thử lại.';
 
   @override
-  String financeOverviewWalletCount(int count) {
-    return '$count ví';
+  String get meetMiraApprovalHint => 'Mira sẽ thực hiện các hành động được liệt kê. Hãy kiểm tra từng nội dung trước khi duyệt.';
+
+  @override
+  String get meetMiraApprovalTitle => 'Duyệt hành động trong không gian làm việc?';
+
+  @override
+  String get meetMiraApprove => 'Duyệt hành động';
+
+  @override
+  String get meetMiraAudioMute => 'Tắt âm thanh Mira Live';
+
+  @override
+  String get meetMiraAudioRetry => 'Thử lại âm thanh Mira Live';
+
+  @override
+  String get meetMiraAudioUnmute => 'Bật âm thanh Mira Live';
+
+  @override
+  String get meetMiraCost => 'Mira';
+
+  @override
+  String get meetMiraDeny => 'Từ chối hành động';
+
+  @override
+  String get meetMiraDiscard => 'Bỏ bản nháp';
+
+  @override
+  String get meetMiraReplyFailed => 'Mira không thể trả lời tin nhắn trong phòng.';
+
+  @override
+  String get meetMiraRetry => 'Thử lại với Mira';
+
+  @override
+  String get meetMiraReviewFailed => 'Không thể tải các mục duyệt riêng tư của Mira.';
+
+  @override
+  String get meetMiraReviewRefresh => 'Tải lại mục duyệt';
+
+  @override
+  String get meetMiraReviews => 'Duyệt hành động riêng tư';
+
+  @override
+  String get meetMiraReviewsHint => 'Chỉ bạn thấy các bản nháp và yêu cầu này. Hãy kiểm tra hành động trong không gian làm việc trước khi duyệt.';
+
+  @override
+  String get meetMiraThinking => 'Mira đang chuẩn bị câu trả lời…';
+
+  @override
+  String get meetMute => 'Tắt micrô';
+
+  @override
+  String get meetMuteParticipant => 'Tắt micrô người tham gia';
+
+  @override
+  String get meetNewMeeting => 'Cuộc họp mới';
+
+  @override
+  String get meetNoParticipants => 'Đang chờ người khác tham gia';
+
+  @override
+  String meetNoticeChat(String name) {
+    return '$name đã gửi tin nhắn';
   }
 
   @override
-  String financeOverviewRecentCount(int count) {
-    return '$count giao dịch gần đây';
+  String meetNoticeJoined(String name) {
+    return '$name đã tham gia cuộc họp';
   }
 
   @override
-  String get financeTransactions => 'Giao dịch';
+  String get meetNoticeView => 'Xem';
 
   @override
-  String get financeCategories => 'Danh mục';
+  String meetNoticeWaiting(String name) {
+    return '$name đang yêu cầu tham gia';
+  }
 
   @override
-  String get financeRecentTransactions => 'Giao dịch gần đây';
+  String get meetNotificationSound => 'Âm thanh thông báo';
 
   @override
-  String get financeOverviewActionsSubtitle => 'Đi thẳng vào thao tác bạn cần làm tiếp theo.';
+  String get meetOpenLink => 'Mở liên kết';
 
   @override
-  String get financeOverviewCreateTransactionHint => 'Ghi nhanh thu, chi hoặc chuyển khoản.';
+  String get meetPartialEstimate => 'Ước tính chưa đầy đủ. Một số chi phí nhà cung cấp chưa được tính.';
 
   @override
-  String get financeOverviewWalletsHint => 'Xem số dư và tinh chỉnh từng ví.';
+  String get meetParticipantActions => 'Thao tác với người tham gia';
 
   @override
-  String get financeOverviewManageHint => 'Quản lý danh mục, thẻ và cấu trúc tài chính.';
+  String get meetParticipantRecording => 'Cho phép người tham gia ghi hình';
 
   @override
-  String get financeOverviewWalletSectionTitle => 'Ví';
+  String get meetParticipantRecordingHint => 'Người tham gia có thể bắt đầu ghi khi thiết bị của họ hỗ trợ.';
 
   @override
-  String get financeOverviewWalletSectionSubtitle => 'Nhìn nhanh các số dư quan trọng nhất của bạn.';
+  String get meetParticipants => 'Người tham gia';
 
   @override
-  String get financeOverviewNoWalletsBody => 'Tạo ví đầu tiên để bắt đầu theo dõi số dư, chuyển khoản và danh mục.';
+  String get meetParticipantsAndInvite => 'Người tham gia và lời mời';
 
   @override
-  String get financeOverviewActivityTitle => 'Hoạt động';
+  String get meetPreviewPrivate => 'Chỉ bạn thấy hình ảnh xem trước từ camera cho đến khi tham gia.';
 
   @override
-  String get financeOverviewActivitySubtitle => 'Biến động mới nhất trên tất cả ví của bạn.';
+  String get meetPrivateEmpty => 'Hỏi riêng Mira về cuộc họp này.';
 
   @override
-  String get financeOverviewNoTransactionsBody => 'Các giao dịch sẽ xuất hiện ở đây khi bạn bắt đầu ghi nhận dòng tiền vào ra.';
+  String get meetPrivateHint => 'Chỉ bạn thấy cuộc trò chuyện này. Hãy xem lại câu trả lời trước khi chia sẻ với mọi người.';
 
   @override
-  String get financeNoWallets => 'Chưa có ví';
+  String get meetPrivateMira => 'Trò chuyện riêng với Mira';
 
   @override
-  String get financeCreateWallet => 'Tạo ví';
+  String get meetPrivateRequestFailed => 'Mira chưa thể trả lời. Hãy thử gửi lại tin nhắn.';
 
   @override
-  String get financeEditWallet => 'Sửa ví';
+  String get meetRaiseHand => 'Giơ tay';
 
   @override
-  String get financeDeleteWallet => 'Xóa ví';
+  String get meetReactionCelebrate => 'Chúc mừng';
 
   @override
-  String get financeDeleteWalletConfirm => 'Xóa ví này?';
+  String get meetReactionClap => 'Vỗ tay';
 
   @override
-  String get financeWalletName => 'Tên ví';
+  String get meetReactionHeart => 'Yêu thích';
 
   @override
-  String get financeWalletNameRequired => 'Vui lòng nhập tên ví';
+  String get meetReactionLaugh => 'Cười';
 
   @override
-  String get financeWalletDescriptionTooLong => 'Mô tả tối đa 500 ký tự';
+  String get meetReactionLike => 'Thích';
 
   @override
-  String get financeWalletTypeStandard => 'Thường';
+  String get meetReactionWow => 'Ngạc nhiên';
 
   @override
-  String get financeWalletTypeCredit => 'Tín dụng';
+  String get meetReactions => 'Cảm xúc';
 
   @override
-  String get financeWalletMetadata => 'Thông tin ví';
+  String get meetReadyToJoin => 'Sẵn sàng tham gia?';
 
   @override
-  String get financeWalletBalance => 'Số dư';
+  String get meetReconnecting => 'Đang kết nối lại…';
 
   @override
-  String get financeWalletCurrency => 'Tiền tệ';
+  String get meetRecordingAccess => 'Chia sẻ bản ghi với người tham gia';
 
   @override
-  String get financeWalletSelectCurrency => 'Chọn tiền tệ';
+  String get meetRecordingAccessHint => 'Người tham gia có thể xem các bản ghi cuộc họp đã lưu.';
 
   @override
-  String get financeWalletSearchCurrency => 'Tìm tiền tệ';
-
-  @override
-  String get financeCurrencyPickerSubtitle => 'Chọn mã tiền tệ phù hợp nhất với cách ví này được theo dõi.';
-
-  @override
-  String get financeWalletCurrencyRequired => 'Nhập mã tiền tệ 3 ký tự hợp lệ';
-
-  @override
-  String get financeWalletIconOrImage => 'Biểu tượng hoặc hình ảnh';
-
-  @override
-  String get financeWalletNoVisual => 'Chưa chọn hình đại diện';
-
-  @override
-  String get financeWalletPickImage => 'Chọn hình ảnh';
-
-  @override
-  String get financeWalletClearVisual => 'Xóa hình đại diện';
-
-  @override
-  String get financeWalletDialogSubtitle => 'Thiết lập cách ví này hiển thị và hoạt động trong phần tài chính.';
-
-  @override
-  String get financeWalletCreditDetails => 'Thông tin tín dụng';
-
-  @override
-  String get financeWalletCreditLimit => 'Hạn mức tín dụng';
-
-  @override
-  String get financeWalletCreditLimitRequired => 'Hạn mức tín dụng phải lớn hơn 0';
-
-  @override
-  String get financeWalletStatementDate => 'Ngày sao kê';
-
-  @override
-  String get financeWalletPaymentDate => 'Ngày thanh toán';
-
-  @override
-  String get financeWalletDateRequired => 'Nhập ngày từ 1 đến 31';
-
-  @override
-  String get financeWalletBankTab => 'Ngân hàng';
-
-  @override
-  String get financeWalletMobileTab => 'Ví điện tử';
-
-  @override
-  String get financeWalletSearchImage => 'Tìm hình ảnh';
-
-  @override
-  String financeWalletImageCount(int count) {
+  String meetRecordingSessions(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count hình khả dụng',
-      one: '1 hình khả dụng',
-      zero: 'Không có hình ảnh',
+      other: '$count bản ghi',
+      one: '1 bản ghi',
     );
     return '$_temp0';
   }
 
   @override
-  String get financeWalletClearImage => 'Xóa hình ảnh';
+  String get meetRecordings => 'Bản ghi';
 
   @override
-  String get financeNoTransactions => 'Chưa có giao dịch';
+  String get meetRemoveParticipant => 'Xóa người tham gia';
 
   @override
-  String get financeNoCategories => 'Chưa có danh mục';
+  String get meetReviewCheckFailed => 'Không thể kiểm tra trạng thái cuộc họp. Vui lòng thử lại trước khi bật micrô hoặc camera.';
 
   @override
-  String get financeTags => 'Thẻ';
+  String get meetReviewHint => 'Xem lại bản ghi lời nói và ghi chú của cuộc họp này.';
 
   @override
-  String get financeNoTags => 'Chưa có thẻ';
+  String get meetReviewMicrophone => 'Micrô';
 
   @override
-  String get financeManageCategoriesTitle => 'Danh mục';
+  String get meetReviewNoNotes => 'Chưa có ghi chú.';
 
   @override
-  String get financeManageCategoriesSubtitle => 'Nhóm giao dịch vào các nhóm thu và chi rõ ràng.';
+  String get meetReviewNoTranscript => 'Chưa có bản ghi lời nói.';
 
   @override
-  String get financeManageTagsTitle => 'Thẻ';
+  String get meetReviewNotes => 'Ghi chú cuộc họp';
 
   @override
-  String get financeManageTagsSubtitle => 'Dùng thẻ cho các nhãn linh hoạt và báo cáo nhanh.';
+  String get meetReviewNotesCost => 'Tạo ghi chú';
 
   @override
-  String get financeManageCategoriesEmptyBody => 'Tạo danh mục cho các mẫu thu nhập và chi tiêu lặp lại.';
+  String get meetReviewPrivate => 'Người chủ trì chưa chia sẻ ghi chú cuộc họp.';
 
   @override
-  String get financeManageTagsEmptyBody => 'Tạo thẻ cho nhãn linh hoạt như chuyến đi, đăng ký hoặc dự án.';
+  String get meetReviewSharedAudio => 'Âm thanh chia sẻ';
 
   @override
-  String get financeCreateTag => 'Tạo thẻ';
+  String get meetReviewTotalCost => 'Tổng cộng';
 
   @override
-  String get financeEditTag => 'Sửa thẻ';
+  String get meetReviewTranscript => 'Bản ghi lời nói';
 
   @override
-  String get financeDeleteTag => 'Xóa thẻ';
+  String get meetReviewTranscriptionCost => 'Chuyển giọng nói thành văn bản';
 
   @override
-  String get financeDeleteTagConfirm => 'Xóa thẻ này?';
+  String get meetReviewUnavailable => 'Thông tin cuộc họp tạm thời không khả dụng.';
 
   @override
-  String get financeTagName => 'Tên thẻ';
+  String get meetReviewUnknownSpeaker => 'Người nói chưa xác định';
 
   @override
-  String get financeTagNameRequired => 'Vui lòng nhập tên thẻ';
+  String get meetReviewUnpriced => 'Một số yêu cầu chưa được tính trong ước tính này.';
 
   @override
-  String get financeTagDialogSubtitle => 'Đặt tên nhãn và chọn màu để dễ nhận biết.';
+  String get meetSaveChat => 'Lưu trò chuyện của phòng';
 
   @override
-  String get financeBasic => 'Cơ bản';
+  String get meetScheduleMeeting => 'Lên lịch cuộc họp';
 
   @override
-  String get financeIncome => 'Thu nhập';
+  String get meetScheduleMeetingHint => 'Chọn tên và thời gian cho lịch của bạn';
 
   @override
-  String get financeExpense => 'Chi tiêu';
+  String meetScreenFixtureFrames(int count) {
+    return 'Số khung hình đã giải mã: $count';
+  }
 
   @override
-  String get financeFrequentlyUsedCategories => 'Dùng nhiều';
+  String get meetScreenFixtureHint => 'Tham gia cuộc họp giả lập cục bộ và chia sẻ màn hình. Nội dung chỉ ở trên thiết bị này; theo dõi số khung hình nhận được.';
 
   @override
-  String get financeHideAmounts => 'Ẩn số tiền';
+  String get meetScreenFixtureTitle => 'Kiểm thử chia sẻ màn hình gốc';
 
   @override
-  String get financeViewAll => 'Xem tất cả';
+  String get meetScreenShareFailed => 'Chưa thể chia sẻ màn hình. Kiểm tra quyền ghi màn hình và thử lại.';
 
   @override
-  String get financeSearchTransactions => 'Tìm kiếm giao dịch';
+  String get meetScreenShareHint => 'Màn hình bạn chọn sẽ hiển thị với mọi người trong cuộc họp cho đến khi bạn dừng chia sẻ. Dùng hộp thoại hệ thống để chọn nội dung cần chia sẻ. Âm thanh hệ thống không được chia sẻ.';
 
   @override
-  String get financeSearchCategories => 'Tìm danh mục';
+  String get meetSearchHint => 'Tìm cuộc họp';
 
   @override
-  String get financeSearchWallets => 'Tìm ví';
+  String get meetSend => 'Gửi';
 
   @override
-  String get financeShowAmounts => 'Hiện số tiền';
+  String get meetSettings => 'Cài đặt cuộc họp';
 
   @override
-  String get financeNoSearchResults => 'Không tìm thấy giao dịch';
+  String get meetSfuEgress => 'Truyền âm thanh và video';
 
   @override
-  String get financeActivityDefaultHint => 'Tìm kiếm và rà soát dòng tiền theo từng ngày.';
+  String get meetShareConfirm => 'Đăng vào trò chuyện phòng họp';
 
   @override
-  String get financeActivitySearchHint => 'Tìm kiếm đang mở. Lọc theo nơi chi tiêu, ví hoặc danh mục.';
+  String get meetShareHint => 'Xem lại hoặc chỉnh sửa câu trả lời trước khi đăng vào trò chuyện phòng họp.';
 
   @override
-  String get financeActivitySearchEmptyBody => 'Hãy thử từ khóa khác, tên ví hoặc tên danh mục khác.';
+  String get meetShareNotes => 'Chia sẻ ghi chú cuộc họp';
 
   @override
-  String get financeActivityClearSearch => 'Xóa tìm kiếm';
+  String get meetShareScreen => 'Chia sẻ màn hình';
 
   @override
-  String financeActivitySearchResults(int count) {
+  String get meetShareWithEveryone => 'Chia sẻ với mọi người';
+
+  @override
+  String get meetStopSharing => 'Dừng chia sẻ';
+
+  @override
+  String get meetSubtitle => 'Lên lịch họp và truy cập bản ghi nhanh chóng.';
+
+  @override
+  String get meetSwitchCamera => 'Đổi máy ảnh';
+
+  @override
+  String get meetSwitchDevice => 'Chuyển sang thiết bị này';
+
+  @override
+  String get meetTimeRemaining => 'Thời gian họp còn lại';
+
+  @override
+  String get meetTitle => 'Meet';
+
+  @override
+  String get meetUnmute => 'Bật micrô';
+
+  @override
+  String get meetUntitledMeeting => 'Cuộc họp chưa đặt tên';
+
+  @override
+  String get meetUpdated => 'Đã lưu cuộc họp.';
+
+  @override
+  String get meetWaitingForHost => 'Đang chờ người chủ trì cho phép tham gia';
+
+  @override
+  String get meetYou => 'Bạn';
+
+  @override
+  String get mfaApprovalApproveAction => 'Phê duyệt';
+
+  @override
+  String get mfaApprovalApprovedDescription => 'Trình duyệt có thể tiếp tục mà không cần mã từ ứng dụng xác thực.';
+
+  @override
+  String get mfaApprovalApprovedTitle => 'Đã phê duyệt MFA trên web';
+
+  @override
+  String get mfaApprovalDialogDescription => 'Xác nhận mã ghép đôi khớp với trang MFA trên web trước khi phê duyệt.';
+
+  @override
+  String get mfaApprovalFailed => 'Không thể phê duyệt yêu cầu MFA này.';
+
+  @override
+  String get mfaApprovalPairCodeLabel => 'Mã ghép đôi';
+
+  @override
+  String mfaApprovalPendingDescription(Object pairCode) {
+    return 'Mã ghép đôi $pairCode đang chờ phê duyệt.';
+  }
+
+  @override
+  String get mfaApprovalRequiresMobileMfa => 'Hãy xác minh MFA trong phiên di động này trước khi phê duyệt đăng nhập web.';
+
+  @override
+  String get mfaApprovalSettingsIdle => 'Mở màn hình này khi trang MFA trên web hiển thị mã ghép đôi. Yêu cầu đang chờ sẽ tự làm mới.';
+
+  @override
+  String get mfaApprovalSettingsTitle => 'Phê duyệt MFA web';
+
+  @override
+  String get mfaCodeLabel => 'Mã gồm 6 chữ số';
+
+  @override
+  String get mfaInvalidCode => 'Mã xác thực không hợp lệ. Vui lòng thử lại.';
+
+  @override
+  String get mfaReviewSignIn => 'Xem yêu cầu đăng nhập';
+
+  @override
+  String get mfaSignOut => 'Đăng xuất';
+
+  @override
+  String get mfaSubtitle => 'Nhập mã từ ứng dụng xác thực của bạn';
+
+  @override
+  String get mfaTitle => 'Xác thực hai yếu tố';
+
+  @override
+  String get mfaVerify => 'Xác thực';
+
+  @override
+  String get miraChatTitle => 'Mira Chat';
+
+  @override
+  String get miraLiveTitle => 'Mira Live';
+
+  @override
+  String get navApps => 'Ứng dụng';
+
+  @override
+  String get navAssistant => 'Trợ lý';
+
+  @override
+  String get navBack => 'Quay lại';
+
+  @override
+  String get navCalendar => 'Lịch';
+
+  @override
+  String get navFinance => 'Tài chính';
+
+  @override
+  String get navHabits => 'Thói quen';
+
+  @override
+  String get navHome => 'Trang chủ';
+
+  @override
+  String get navMore => 'Thêm';
+
+  @override
+  String get navSettings => 'Cài đặt';
+
+  @override
+  String get navTasks => 'Công việc';
+
+  @override
+  String get navTimer => 'Bấm giờ';
+
+  @override
+  String get notesArchive => 'Lưu trữ ghi chú';
+
+  @override
+  String get notesArchiveEmpty => 'Ghi chú đã lưu trữ sẽ xuất hiện ở đây.';
+
+  @override
+  String get notesArchiveTab => 'Lưu trữ';
+
+  @override
+  String get notesChecklist => 'Danh sách kiểm tra';
+
+  @override
+  String get notesConfirmPassphrase => 'Xác nhận mật khẩu';
+
+  @override
+  String get notesConfirmPin => 'Xác nhận mã PIN';
+
+  @override
+  String get notesConvertToTask => 'Chuyển thành công việc';
+
+  @override
+  String get notesCreateTask => 'Tạo công việc';
+
+  @override
+  String get notesDelete => 'Xóa ghi chú';
+
+  @override
+  String get notesDeleteDescription => 'Xóa vĩnh viễn ghi chú này? Bạn không thể hoàn tác.';
+
+  @override
+  String get notesDeleteError => 'Không thể xóa ghi chú này. Hãy thử lại.';
+
+  @override
+  String get notesDeviceKeyUnavailable => 'Ghi chú này được khóa trên thiết bị khác. Hãy mở ở đó hoặc dùng passkey hay QR từ điện thoại trên web.';
+
+  @override
+  String get notesDeviceLockDescription => 'Dùng Face ID hoặc Touch ID để mở hằng ngày. Khóa khôi phục được lưu an toàn để mở bằng passkey trên thiết bị khác. Bạn cũng có thể chuyển quyền truy cập bằng QR.';
+
+  @override
+  String get notesDeviceUnlockReason => 'Mở khóa ghi chú riêng tư';
+
+  @override
+  String get notesDone => 'Xong';
+
+  @override
+  String get notesEdit => 'Sửa ghi chú';
+
+  @override
+  String get notesEditLink => 'Liên kết';
+
+  @override
+  String get notesEmpty => 'Chưa có ghi chú. Hãy ghi lại ý tưởng đầu tiên.';
+
+  @override
+  String get notesHighlight => 'Tô sáng';
+
+  @override
+  String get notesInbox => 'Hộp thư đến';
+
+  @override
+  String get notesIncorrectPassphrase => 'Không thể mở ghi chú. Hãy kiểm tra mật khẩu.';
+
+  @override
+  String get notesIncorrectPin => 'Không thể mở ghi chú. Hãy kiểm tra mã PIN hoặc thử lại sau.';
+
+  @override
+  String get notesInsertButton => 'Chèn';
+
+  @override
+  String get notesInsertLink => 'Chèn liên kết';
+
+  @override
+  String get notesInsertTable => 'Chèn bảng';
+
+  @override
+  String get notesLinkEvents => 'Sự kiện';
+
+  @override
+  String get notesLinkFinance => 'Tài chính';
+
+  @override
+  String get notesLinkMeetings => 'Cuộc họp';
+
+  @override
+  String get notesLinkTasks => 'Công việc';
+
+  @override
+  String get notesLinkText => 'Văn bản liên kết';
+
+  @override
+  String get notesLinkUrl => 'Liên kết đến công việc, sự kiện, cuộc họp hoặc trang web';
+
+  @override
+  String get notesLinkWork => 'Liên kết công việc';
+
+  @override
+  String get notesLoadError => 'Không thể tải ghi chú. Kéo xuống để thử lại.';
+
+  @override
+  String get notesLock => 'Khóa ghi chú';
+
+  @override
+  String get notesLockDescription => 'Đặt mật khẩu để mã hóa ghi chú trên các thiết bị. Hãy giữ an toàn vì không thể khôi phục.';
+
+  @override
+  String get notesLocked => 'Ghi chú đã khóa';
+
+  @override
+  String get notesNew => 'Ghi chú mới';
+
+  @override
+  String get notesNoLinkResults => 'Không có mục phù hợp';
+
+  @override
+  String get notesOlder => 'Cũ hơn';
+
+  @override
+  String get notesOpenLink => 'Mở';
+
+  @override
+  String get notesOpenLocked => 'Mở ghi chú đã khóa';
+
+  @override
+  String get notesPasskeyUnlockFailed => 'Không thể mở bằng passkey của tài khoản này. Hãy thử lại hoặc dùng điện thoại ban đầu.';
+
+  @override
+  String get notesPassphrase => 'Mật khẩu';
+
+  @override
+  String get notesPassphraseRequirements => 'Dùng ít nhất 8 ký tự và nhập mật khẩu giống nhau.';
+
+  @override
+  String get notesPin => 'Mã PIN 6 chữ số';
+
+  @override
+  String get notesPinLockDescription => 'Dùng mã PIN 6 chữ số trên thiết bị này. Có thể mở ở nơi khác bằng passkey hoặc chuyển khóa từ điện thoại qua QR.';
+
+  @override
+  String get notesPinRequirements => 'Nhập cùng một mã PIN 6 chữ số hai lần.';
+
+  @override
+  String get notesPinUnlockDescription => 'Nhập mã PIN 6 chữ số của ghi chú.';
+
+  @override
+  String get notesPrevious30Days => '30 ngày trước';
+
+  @override
+  String get notesPrevious7Days => '7 ngày trước';
+
+  @override
+  String get notesRestore => 'Khôi phục ghi chú';
+
+  @override
+  String get notesSaveError => 'Không thể lưu ghi chú. Nội dung bạn sửa vẫn còn ở đây.';
+
+  @override
+  String get notesSaveLink => 'Lưu liên kết';
+
+  @override
+  String get notesSearch => 'Tìm ghi chú';
+
+  @override
+  String get notesSearchWork => 'Tìm mục liên kết';
+
+  @override
+  String get notesSelectChecklistItem => 'Đặt con trỏ trong một mục kiểm tra để chuyển đổi.';
+
+  @override
+  String get notesStartWriting => 'Bắt đầu viết...';
+
+  @override
+  String get notesTaskBoard => 'Bảng';
+
+  @override
+  String get notesTaskCreateError => 'Không thể tạo công việc. Hãy thử lại.';
+
+  @override
+  String get notesTaskList => 'Danh sách';
+
+  @override
+  String get notesTaskLoadError => 'Không thể tải nơi lưu công việc. Hãy thử lại.';
+
+  @override
+  String get notesTaskNoBoards => 'Không có bảng công việc trong không gian này.';
+
+  @override
+  String get notesTaskNoLists => 'Bảng này chưa có danh sách công việc.';
+
+  @override
+  String get notesTitle => 'Ghi chú';
+
+  @override
+  String get notesToday => 'Hôm nay';
+
+  @override
+  String get notesTransferApprove => 'Chia sẻ khóa mở';
+
+  @override
+  String notesTransferConfirmDescription(String host) {
+    return 'Chia sẻ khóa mở ghi chú này với $host?';
+  }
+
+  @override
+  String get notesTransferFailed => 'Không thể chuyển khóa ghi chú. Hãy thử mã QR mới.';
+
+  @override
+  String get notesTransferInvalidCode => 'Mã này không khớp với ghi chú hiện tại.';
+
+  @override
+  String get notesTransferOriginalDeviceOnly => 'Hãy quét mã trên điện thoại đã khóa ghi chú hoặc mở trực tiếp trên web bằng passkey.';
+
+  @override
+  String get notesTransferScanDescription => 'Quét mã QR hiển thị trên ghi chú đã khóa ở web.';
+
+  @override
+  String get notesTransferTitle => 'Mở khóa trên web';
+
+  @override
+  String get notesUnlock => 'Bỏ khóa';
+
+  @override
+  String get notesUnlockDescription => 'Nhập mật khẩu ghi chú để xem nội dung.';
+
+  @override
+  String get notesUntitled => 'Ghi chú chưa đặt tên';
+
+  @override
+  String get notesUseDeviceLock => 'Dùng Face ID hoặc Touch ID';
+
+  @override
+  String get notesUsePassphrase => 'Dùng mật khẩu riêng';
+
+  @override
+  String get notesUsePin => 'Dùng mã PIN 6 chữ số';
+
+  @override
+  String get notesVoiceActions => 'Việc cần làm được đề xuất';
+
+  @override
+  String get notesVoiceAnalyze => 'Chép lời và phân tích';
+
+  @override
+  String get notesVoiceCredits => 'Sử dụng tín dụng AI cá nhân của bạn. Xem lại kết quả trước khi lưu.';
+
+  @override
+  String get notesVoiceDecisions => 'Quyết định';
+
+  @override
+  String get notesVoiceDelete => 'Xóa kết quả ghi âm riêng tư';
+
+  @override
+  String get notesVoiceEvidence => 'Bằng chứng từ bản chép lời';
+
+  @override
+  String get notesVoiceFailed => 'Không thể bắt đầu phân tích. Thử lại với bản ghi âm này khi vẫn còn khả dụng.';
+
+  @override
+  String get notesVoiceNew => 'Ghi âm ghi chú khác';
+
+  @override
+  String get notesVoiceNoSpeech => 'Không phát hiện lời nói. Hãy ghi âm lại khi sẵn sàng.';
+
+  @override
+  String get notesVoicePermission => 'Cần quyền truy cập micrô để ghi âm ghi chú.';
+
+  @override
+  String get notesVoiceProcessing => 'Đang chép lời và tạo ghi chú…';
+
+  @override
+  String get notesVoiceProposalNotice => 'Các đề xuất cần được bạn xem lại. Lưu ghi chú không tạo công việc hoặc sự kiện lịch. Ghi chú trong không gian nhóm có thể hiển thị với thành viên.';
+
+  @override
+  String get notesVoiceQuestions => 'Câu hỏi còn mở';
+
+  @override
+  String get notesVoiceRecommendations => 'Khuyến nghị';
+
+  @override
+  String get notesVoiceRecord => 'Ghi âm ghi chú';
+
+  @override
+  String get notesVoiceRecordingError => 'Không thể thu bản ghi âm. Vui lòng thử lại.';
+
+  @override
+  String get notesVoiceReview => 'Xem lại ghi chú ghi âm';
+
+  @override
+  String get notesVoiceReviewRequired => 'Cần kiểm tra quá trình xử lý. Yêu cầu có phí sẽ không được tự động lặp lại.';
+
+  @override
+  String get notesVoiceSave => 'Lưu ghi chú vào không gian này';
+
+  @override
+  String get notesVoiceSaved => 'Đã lưu ghi chú ghi âm';
+
+  @override
+  String get notesVoiceSummary => 'Tóm tắt';
+
+  @override
+  String get notesVoiceTranscript => 'Bản chép lời';
+
+  @override
+  String get notesVoiceUnavailable => 'Không thể cập nhật phân tích ghi âm. Kết quả hiện có vẫn được giữ lại.';
+
+  @override
+  String get notesYesterday => 'Hôm qua';
+
+  @override
+  String get notificationSecurityAppLabel => 'Bảo mật';
+
+  @override
+  String get notificationTaskAppLabel => 'Công việc';
+
+  @override
+  String get notificationWorkspaceAppLabel => 'Không gian làm việc';
+
+  @override
+  String get notificationsAcceptInvite => 'Chấp nhận';
+
+  @override
+  String get notificationsArchive => 'Lưu trữ';
+
+  @override
+  String get notificationsArchiveAll => 'Lưu trữ tất cả';
+
+  @override
+  String get notificationsArchiveAllError => 'Không thể lưu trữ thông báo lúc này';
+
+  @override
+  String get notificationsArchiveEmptyMessage => 'Thông báo đã đọc sẽ chuyển vào đây sau khi bạn xử lý xong.';
+
+  @override
+  String get notificationsArchiveEmptyTitle => 'Không có thông báo đã lưu trữ';
+
+  @override
+  String notificationsDaysAgo(int count) {
+    return '$count ngày trước';
+  }
+
+  @override
+  String get notificationsDeclineInvite => 'Từ chối';
+
+  @override
+  String notificationsHoursAgo(int count) {
+    return '$count giờ trước';
+  }
+
+  @override
+  String get notificationsInbox => 'Hộp thư';
+
+  @override
+  String get notificationsInboxEmptyMessage => 'Hoạt động mới, nhắc đến và lời mời sẽ xuất hiện ở đây.';
+
+  @override
+  String get notificationsInboxEmptyTitle => 'Không có thông báo chưa đọc';
+
+  @override
+  String get notificationsInviteAccepted => 'Đã chấp nhận lời mời';
+
+  @override
+  String get notificationsInviteActionError => 'Không thể cập nhật lời mời lúc này';
+
+  @override
+  String get notificationsInviteDeclined => 'Đã từ chối lời mời';
+
+  @override
+  String get notificationsJustNow => 'Vừa xong';
+
+  @override
+  String get notificationsLoadErrorMessage => 'Vui lòng thử lại sau ít phút.';
+
+  @override
+  String get notificationsLoadErrorTitle => 'Không thể tải thông báo';
+
+  @override
+  String get notificationsLoadingMore => 'Đang tải thêm...';
+
+  @override
+  String get notificationsMarkRead => 'Đánh dấu đã đọc';
+
+  @override
+  String get notificationsMarkUnread => 'Đánh dấu chưa đọc';
+
+  @override
+  String notificationsMinutesAgo(int count) {
+    return '$count phút trước';
+  }
+
+  @override
+  String get notificationsOpenRequestAction => 'Mở yêu cầu';
+
+  @override
+  String get notificationsOpenTaskAction => 'Mở công việc';
+
+  @override
+  String get notificationsOpenUnsupported => 'Thông báo này chưa thể mở trên mobile';
+
+  @override
+  String notificationsSubtitle(int count) {
+    return '$count chưa đọc';
+  }
+
+  @override
+  String get notificationsTitle => 'Thông báo';
+
+  @override
+  String offlineAvailableItems(int items, int snapshots) {
+    return '$items mục đã lập chỉ mục riêng biệt trong $snapshots bản chụp đã lưu';
+  }
+
+  @override
+  String get offlineBrowseStoredItems => 'Xem các mục đã lưu';
+
+  @override
+  String get offlineBytesExplanation => 'Kích thước là số byte nội dung đã lưu, gồm bản chụp và bản sao. Chi phí lưu trữ trên đĩa, kích thước tải dự kiến và số byte truyền qua mạng chưa rõ.';
+
+  @override
+  String get offlineChangesDiscard => 'Bỏ thay đổi trên máy';
+
+  @override
+  String get offlineChangesDiscardConfirm => 'Thao tác này xóa thay đổi đang chờ trên thiết bị. Nó không hoàn tác dữ liệu mà máy chủ có thể đã nhận.';
+
+  @override
+  String get offlineChangesEmpty => 'Mọi thay đổi đã được đồng bộ';
+
+  @override
+  String get offlineChangesRetry => 'Thử lại';
+
+  @override
+  String get offlineChangesReview => 'Hãy kiểm tra thao tác này trên thiết bị khác trước khi thử lại. Có thể máy chủ đã nhận được thao tác.';
+
+  @override
+  String get offlineChangesTitle => 'Thay đổi ngoại tuyến';
+
+  @override
+  String get offlineClearScopeDescription => 'Chỉ xóa dữ liệu đệm của tài khoản và không gian làm việc này. Các thao tác ghi đang chờ vẫn được giữ. Giới hạn lưu trữ áp dụng cho toàn bộ thiết bị.';
+
+  @override
+  String get offlineCoverageUnknown => 'Lần tải thông thường có thể chỉ chứa một phần bộ sưu tập. Tổng số mục chỉ hiển thị khi các trang đã lưu nhất quán. Tải xuống chỉ bao phủ các bộ sưu tập được hỗ trợ, không phải mọi tài nguyên của ứng dụng.';
+
+  @override
+  String get offlineDependencyAmbiguous => 'Nhiều thao tác tạo đang chờ dùng cùng một mục cục bộ. Hãy kiểm tra thay đổi này.';
+
+  @override
+  String get offlineDependencyContract => 'Đang chờ máy chủ hỗ trợ. Thay đổi đã được lưu và sẽ tự động thử lại.';
+
+  @override
+  String get offlineDependencyCycle => 'Các thay đổi liên quan phụ thuộc lẫn nhau. Hãy kiểm tra các mục tham chiếu.';
+
+  @override
+  String get offlineDependencyInvalid => 'Thay đổi đã lưu có dữ liệu không hợp lệ. Hãy kiểm tra trước khi đồng bộ.';
+
+  @override
+  String get offlineDependencyMissing => 'Một mục cục bộ liên quan đã bị hủy hoặc xóa. Hãy kiểm tra thay đổi này.';
+
+  @override
+  String get offlineDependencyWaiting => 'Đang chờ các thay đổi liên quan. Đồng bộ sẽ tự động tiếp tục.';
+
+  @override
+  String get offlineDownloadRetryHint => 'Thử tải lại để làm mới dữ liệu đã lưu.';
+
+  @override
+  String get offlineEditConflict => 'Cần xem lại trước khi đồng bộ';
+
+  @override
+  String get offlineEditFailed => 'Đồng bộ thất bại';
+
+  @override
+  String get offlineEditQueued => 'Đang chờ đồng bộ';
+
+  @override
+  String get offlineEditSyncing => 'Đang đồng bộ…';
+
+  @override
+  String get offlineEvictDescription => 'Chỉ xóa bản chụp của mô-đun này trong tài khoản và không gian làm việc đã chọn. Các thao tác ghi đang chờ vẫn được giữ. Tải lại để khôi phục dữ liệu ngoại tuyến.';
+
+  @override
+  String get offlineEvictTitle => 'Xóa dữ liệu đã lưu của mô-đun';
+
+  @override
+  String offlineExpectedTotal(int count) {
+    return 'Tổng số mục truy vấn máy chủ báo cáo: $count. Con số này không xác nhận dữ liệu đã được tải đầy đủ.';
+  }
+
+  @override
+  String get offlineExpectedTotalUnknown => 'Tổng số mục truy vấn máy chủ báo cáo: chưa rõ.';
+
+  @override
+  String offlineFreshness(int stale, int expired) {
+    return '$stale bản chụp cũ · $expired bản chụp hết hạn còn được lưu để dùng ngoại tuyến';
+  }
+
+  @override
+  String get offlineInventoryError => 'Không thể kiểm tra hoặc cập nhật dữ liệu đã lưu. Hãy thử lại.';
+
+  @override
+  String offlineLastFetch(String time) {
+    return 'Lần tải gần nhất: $time';
+  }
+
+  @override
+  String offlineLogicalBytes(String bytes) {
+    return '$bytes byte nội dung';
+  }
+
+  @override
+  String get offlineModuleDetails => 'Dữ liệu đã lưu và cài đặt';
+
+  @override
+  String get offlineNoMatchingItems => 'Không có mục đã lưu phù hợp.';
+
+  @override
+  String get offlineNoStoredItems => 'Không có bộ sưu tập đã lưu phù hợp.';
+
+  @override
+  String get offlinePauseDownloads => 'Tạm dừng tải xuống';
+
+  @override
+  String offlinePendingCoverage(int count) {
+    return '$count thay đổi đang chờ. Chúng được lưu riêng và không được tính là mục đã tải.';
+  }
+
+  @override
+  String get offlinePreferencesTitle => 'Tùy chọn ngoại tuyến';
+
+  @override
+  String get offlinePreparationCacheAll => 'Tải tất cả';
+
+  @override
+  String get offlinePreparationDescription => 'Tải dữ liệu không gian làm việc để dùng ngoại tuyến. Bộ nhớ đệm chịu giới hạn lưu trữ; tệp và dịch vụ trực tuyến vẫn có thể cần kết nối.';
+
+  @override
+  String get offlinePreparationDownloading => 'Đang tải';
+
+  @override
+  String get offlinePreparationFailed => 'Tải thất bại';
+
+  @override
+  String offlinePreparationLastSuccess(String time) {
+    return 'Lần tải gần nhất: $time';
+  }
+
+  @override
+  String get offlinePreparationNeedsRefresh => 'Cần làm mới';
+
+  @override
+  String offlinePreparationProgress(int completed, int total) {
+    return 'Đã tải $completed/$total mô-đun';
+  }
+
+  @override
+  String get offlinePreparationQueued => 'Chưa tải';
+
+  @override
+  String get offlinePreparationReady => 'Đã tải';
+
+  @override
+  String get offlinePreparationTitle => 'Dữ liệu ngoại tuyến';
+
+  @override
+  String get offlinePreparationUnavailable => 'Không khả dụng';
+
+  @override
+  String get offlinePreparationWaiting => 'Đang chờ';
+
+  @override
+  String get offlineRefreshModule => 'Tải xuống / làm mới';
+
+  @override
+  String get offlineResumeDownloads => 'Tiếp tục các lượt tải chưa hoàn tất';
+
+  @override
+  String get offlineSearchItems => 'Tìm các mục đã lưu theo tên hoặc ID';
+
+  @override
+  String get offlineSearchStored => 'Tìm bộ sưu tập đã lưu';
+
+  @override
+  String get offlineSectionDescription => 'Tải xuống, dữ liệu đã lưu và thay đổi chưa đồng bộ của tài khoản và không gian làm việc hiện tại.';
+
+  @override
+  String get offlineSectionTitle => 'Ngoại tuyến';
+
+  @override
+  String get offlineStorageNeedsWorkspace => 'Chọn không gian làm việc để xem hoặc xóa dữ liệu đã lưu. Giới hạn lưu trữ áp dụng cho thiết bị này.';
+
+  @override
+  String get offlineStorageScope => 'Giới hạn lưu trữ áp dụng cho thiết bị này. Xóa bộ nhớ đệm giữ lại các thay đổi đang chờ.';
+
+  @override
+  String offlineStoredItemId(String id) {
+    return 'ID mục: $id';
+  }
+
+  @override
+  String get onboardingGetStarted => 'Bắt đầu ngay';
+
+  @override
+  String get onboardingSlide1Subtitle => 'Người bạn đồng hành AI cho công việc và cuộc sống. Mira kết nối công việc, lịch và tài chính của bạn.';
+
+  @override
+  String get onboardingSlide1Title => 'Gặp gỡ Mira';
+
+  @override
+  String get onboardingSlide2Subtitle => 'Công việc, Lịch và Theo dõi - tất cả đều được thống nhất. Không còn phải chuyển đổi giữa các ứng dụng.';
+
+  @override
+  String get onboardingSlide2Title => 'Tất cả trong một ứng dụng';
+
+  @override
+  String get onboardingSlide3Subtitle => 'Mira ghi nhớ sở thích của bạn và trở nên thông minh hơn khi bạn sử dụng nhiều hơn.';
+
+  @override
+  String get onboardingSlide3Title => 'Trí tuệ phát triển cùng bạn';
+
+  @override
+  String get passwordLabel => 'Mật khẩu';
+
+  @override
+  String get profileAccountStatus => 'Trạng thái tài khoản';
+
+  @override
+  String get profileAccountStatusDescription => 'Chi tiết thành viên và xác minh của tài khoản này.';
+
+  @override
+  String get profileActive => 'Hoạt động';
+
+  @override
+  String get profileAddBanner => 'Thêm ảnh bìa';
+
+  @override
+  String get profileAvatar => 'Ảnh đại diện';
+
+  @override
+  String get profileAvatarActionDescription => 'Chọn ảnh mới hoặc làm mới ảnh hiện đang gắn với tài khoản.';
+
+  @override
+  String get profileAvatarDescription => 'Tải lên ảnh đại diện của bạn';
+
+  @override
+  String get profileAvatarPickerDescription => 'Chọn nơi lấy ảnh đại diện mới của bạn.';
+
+  @override
+  String get profileAvatarRemoveError => 'Không thể xóa ảnh đại diện';
+
+  @override
+  String get profileAvatarRemoveSuccess => 'Đã xóa ảnh đại diện';
+
+  @override
+  String get profileAvatarSectionTitle => 'Ảnh đại diện';
+
+  @override
+  String get profileAvatarSet => 'Đã gắn ảnh';
+
+  @override
+  String get profileAvatarUpdateError => 'Không thể cập nhật ảnh đại diện';
+
+  @override
+  String get profileAvatarUpdateSuccess => 'Cập nhật ảnh đại diện thành công';
+
+  @override
+  String get profileBanner => 'Ảnh bìa hồ sơ';
+
+  @override
+  String get profileBannerDescription => 'Thêm ảnh ngang để cá nhân hóa hồ sơ của bạn.';
+
+  @override
+  String get profileCancel => 'Hủy';
+
+  @override
+  String get profileChangeAvatar => 'Thay đổi ảnh đại diện';
+
+  @override
+  String get profileChangeBanner => 'Đổi ảnh bìa';
+
+  @override
+  String get profileCurrentEmail => 'Email hiện tại';
+
+  @override
+  String get profileDangerAction => 'Nguy hiểm';
+
+  @override
+  String get profileDisplayName => 'Tên hiển thị';
+
+  @override
+  String get profileDisplayNameDescription => 'Tên này xuất hiện ở các bề mặt cộng tác trong ứng dụng.';
+
+  @override
+  String get profileDisplayNameHint => 'Tên hiển thị của bạn';
+
+  @override
+  String get profileDisplayNameRequired => 'Tên hiển thị không được để trống';
+
+  @override
+  String get profileEmail => 'Email';
+
+  @override
+  String get profileEmailDescription => 'Khi cập nhật email, thư xác nhận sẽ được gửi đến cả địa chỉ cũ và mới.';
+
+  @override
+  String get profileEmailHint => 'example@tuturuuu.com';
+
+  @override
+  String profileEmailPendingChange(String email) {
+    return 'Đang chờ đổi sang $email';
+  }
+
+  @override
+  String get profileEmailUpdateNote => 'Email xác nhận sẽ được gửi đến cả hai địa chỉ';
+
+  @override
+  String get profileFullName => 'Tên đầy đủ';
+
+  @override
+  String get profileFullNameDescription => 'Dùng tên pháp lý hoặc tên đầy đủ bạn muốn lưu trong hồ sơ tài khoản.';
+
+  @override
+  String get profileFullNameHint => 'Tên đầy đủ của bạn';
+
+  @override
+  String get profileFullNameRequired => 'Tên đầy đủ không được để trống';
+
+  @override
+  String get profileIdentitySectionDescription => 'Giữ các thông tin cốt lõi mà mọi người thấy về tài khoản của bạn luôn cập nhật.';
+
+  @override
+  String get profileIdentitySectionTitle => 'Danh tính';
+
+  @override
+  String get profileInvalidEmail => 'Vui lòng nhập địa chỉ email hợp lệ';
+
+  @override
+  String get profileLoading => 'Đang tải hồ sơ...';
+
+  @override
+  String get profileMemberSince => 'Thành viên từ';
+
+  @override
+  String get profileMissingValue => 'Chưa đặt';
+
+  @override
+  String get profileMoreActivity => 'Xem thêm';
+
+  @override
+  String get profileNewEmail => 'Email mới';
+
+  @override
+  String get profileNoSharedActivity => 'Chưa có ai chia sẻ hoạt động tại đây.';
+
+  @override
+  String get profileOverviewTab => 'Tổng quan';
+
+  @override
+  String get profilePrivateActivity => 'Hoạt động riêng tư của bạn';
+
+  @override
+  String get profilePrivateByDefault => 'Chỉ bạn mới xem được hoạt động của mình.';
+
+  @override
+  String get profileRecentActivity => '12 tuần gần đây';
+
+  @override
+  String get profileRemoveAvatar => 'Xóa ảnh đại diện';
+
+  @override
+  String get profileRemoveAvatarDescription => 'Xóa ảnh hiện tại khỏi hồ sơ tài khoản của bạn.';
+
+  @override
+  String get profileRemoveBanner => 'Gỡ ảnh bìa';
+
+  @override
+  String get profileRemoveConfirm => 'Xóa ảnh đại diện?';
+
+  @override
+  String get profileSave => 'Lưu';
+
+  @override
+  String profileShareActivityConsent(String workspace) {
+    return 'Chia sẻ tổng thời gian và hoạt động hằng ngày tại $workspace với các thành viên. Hoạt động cá nhân và tại không gian khác vẫn riêng tư. Bạn có thể ngừng chia sẻ bất cứ lúc nào.';
+  }
+
+  @override
+  String get profileShareActivityTitle => 'Chia sẻ hoạt động';
+
+  @override
+  String get profileSharedActivityUnavailable => 'Hoạt động này không còn khả dụng.';
+
+  @override
+  String profileSharedWithWorkspace(String workspace) {
+    return 'Đang chia sẻ với $workspace';
+  }
+
+  @override
+  String get profileStatus => 'Trạng thái';
+
+  @override
+  String get profileStatusUnknown => 'Không rõ';
+
+  @override
+  String get profileTimelineAgenda => 'Những ngày có hoạt động';
+
+  @override
+  String get profileTimelineDayEmpty => 'Không có hoạt động nào được trả về cho ngày này.';
+
+  @override
+  String get profileTimelineDescription => 'Hoạt động tạo trong không gian làm việc này trong 30 ngày qua. Sự kiện lịch là hoạt động của không gian làm việc.';
+
+  @override
+  String get profileTimelineEmpty => 'Không có hoạt động gần đây trong không gian này';
+
+  @override
+  String get profileTimelineHasActivity => 'Có hoạt động trong dữ liệu đã tải';
+
+  @override
+  String get profileTimelineHideDates => 'Đóng thanh ngày và xem dòng hoạt động';
+
+  @override
+  String get profileTimelineLimited => 'Chỉ hiển thị hoạt động gần đây. Một số nguồn đã đạt giới hạn hiển thị.';
+
+  @override
+  String get profileTimelineLoadedEnd => 'Đã hiển thị toàn bộ hoạt động đã tải';
+
+  @override
+  String get profileTimelineMoreDays => 'Hiện thêm ngày đã tải';
+
+  @override
+  String profileTimelineNotes(int count) {
+    return 'Đã thêm $count ghi chú';
+  }
+
+  @override
+  String get profileTimelinePartial => 'Một số hoạt động chưa hiển thị.';
+
+  @override
+  String get profileTimelineShowDates => 'Hiện thanh chọn ngày';
+
+  @override
+  String get profileTimelineTab => 'Dòng thời gian';
+
+  @override
+  String profileTimelineTasks(int count) {
+    return 'Đã tạo $count công việc';
+  }
+
+  @override
+  String get profileTimelineTitle => 'Dòng thời gian';
+
+  @override
+  String get profileTimelineToday => 'Hôm nay';
+
+  @override
+  String profileTimelineTransactions(int count) {
+    return 'Đã tạo $count giao dịch';
+  }
+
+  @override
+  String get profileTimelineUnavailable => 'Không thể làm mới hoạt động.';
+
+  @override
+  String profileTimelineWorkspaceEvents(int count) {
+    return 'Đã thêm $count sự kiện vào không gian';
+  }
+
+  @override
+  String get profileTimelineYesterday => 'Hôm qua';
+
+  @override
+  String get profileTitle => 'Hồ sơ';
+
+  @override
+  String profileTrackedMinutes(int minutes) {
+    return 'Đã theo dõi $minutes phút';
+  }
+
+  @override
+  String get profileUpdateError => 'Không thể cập nhật hồ sơ';
+
+  @override
+  String get profileUpdateSuccess => 'Cập nhật hồ sơ thành công';
+
+  @override
+  String get profileUploadAvatar => 'Tải lên ảnh đại diện';
+
+  @override
+  String get profileVerification => 'Xác minh';
+
+  @override
+  String get profileVerified => 'Đã xác thực';
+
+  @override
+  String get profileWorkspaceActivity => 'Hoạt động trong không gian làm việc';
+
+  @override
+  String get qrLoginApproveAction => 'Phê duyệt';
+
+  @override
+  String qrLoginApproveDescription(Object origin, Object userEmail) {
+    return 'Phê duyệt đăng nhập QR từ $origin bằng $userEmail.';
+  }
+
+  @override
+  String get qrLoginApproveFailed => 'Không thể phê duyệt lần đăng nhập QR này.';
+
+  @override
+  String get qrLoginApproveTitle => 'Phê duyệt đăng nhập QR';
+
+  @override
+  String get qrLoginApprovedDescription => 'Thiết bị còn lại hiện có thể hoàn tất đăng nhập.';
+
+  @override
+  String get qrLoginApprovedTitle => 'Đã phê duyệt đăng nhập QR';
+
+  @override
+  String get qrLoginCameraUnavailable => 'Máy ảnh không khả dụng.';
+
+  @override
+  String get qrLoginInvalidCode => 'Hướng máy ảnh vào mã QR đăng nhập Tuturuuu.';
+
+  @override
+  String get qrLoginLocalAuthFailed => 'Xác thực cục bộ đã bị hủy hoặc thất bại.';
+
+  @override
+  String get qrLoginLocalAuthReason => 'Phê duyệt đăng nhập QR Tuturuuu.';
+
+  @override
+  String get qrLoginMobileApproved => 'QR đã được phê duyệt. Đang đăng nhập...';
+
+  @override
+  String get qrLoginMobileButton => 'Đăng nhập bằng QR di động';
+
+  @override
+  String get qrLoginMobileDescription => 'Mở Tuturuuu trên điện thoại đã đăng nhập và quét mã này.';
+
+  @override
+  String get qrLoginMobileExpired => 'Mã QR đã hết hạn. Hãy tạo mã mới.';
+
+  @override
+  String get qrLoginMobileLoading => 'Đang tạo mã QR...';
+
+  @override
+  String get qrLoginMobileRetry => 'Tạo mã QR mới';
+
+  @override
+  String get qrLoginMobileTitle => 'Đăng nhập bằng QR di động';
+
+  @override
+  String get qrLoginMobileWaiting => 'Đang chờ phê duyệt...';
+
+  @override
+  String get qrLoginRequiresAppLock => 'Bật khóa ứng dụng trước khi phê duyệt đăng nhập QR.';
+
+  @override
+  String get qrLoginScanAgain => 'Quét lại';
+
+  @override
+  String get qrLoginScannerDescription => 'Quét mã QR hiển thị trên một màn hình đăng nhập Tuturuuu khác.';
+
+  @override
+  String get qrLoginScannerTitle => 'Quét QR đăng nhập';
+
+  @override
+  String get qrLoginSettingsDescription => 'Quét mã QR trên màn hình đăng nhập khác và phê duyệt bằng khóa ứng dụng.';
+
+  @override
+  String get qrLoginSettingsDisabledDescription => 'Bật khóa ứng dụng trước khi quét mã QR đăng nhập.';
+
+  @override
+  String get qrLoginSettingsTitle => 'Quét QR đăng nhập';
+
+  @override
+  String get reminders12h => 'Trước 12 giờ';
+
+  @override
+  String get reminders1d => 'Trước 1 ngày';
+
+  @override
+  String get reminders1h => 'Trước 1 giờ';
+
+  @override
+  String get reminders3d => 'Trước 3 ngày';
+
+  @override
+  String get reminders3h => 'Trước 3 giờ';
+
+  @override
+  String remindersAllDayEvent(String title) {
+    return 'Sự kiện cả ngày: $title';
+  }
+
+  @override
+  String remindersCalendarTiming(String when) {
+    return 'Lịch: $when';
+  }
+
+  @override
+  String get remindersDescription => 'Hạn công việc và sự kiện lịch được chuẩn bị trên thiết bị này.';
+
+  @override
+  String get remindersEnableNotifications => 'Bật thông báo';
+
+  @override
+  String get remindersEventTitle => 'Sự kiện lịch';
+
+  @override
+  String get remindersIn12h => 'Còn 12 giờ';
+
+  @override
+  String get remindersIn1d => 'Ngày mai';
+
+  @override
+  String get remindersIn1h => 'Còn 1 giờ';
+
+  @override
+  String get remindersIn3d => 'Còn 3 ngày';
+
+  @override
+  String get remindersIn3h => 'Còn 3 giờ';
+
+  @override
+  String remindersLastChecked(String time) {
+    return 'Kiểm tra lần cuối: $time';
+  }
+
+  @override
+  String get remindersNeverChecked => 'Đang chờ cập nhật lần đầu';
+
+  @override
+  String remindersNext(String time) {
+    return 'Lời nhắc tiếp theo: $time';
+  }
+
+  @override
+  String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone) {
+    return '$leadTime · $occurrence ($timezone)';
+  }
+
+  @override
+  String get remindersPermissionOff => 'Đã tắt thông báo trên thiết bị';
+
+  @override
+  String get remindersPermissionOn => 'Đã bật thông báo trên thiết bị';
+
+  @override
+  String get remindersRefresh => 'Cập nhật ngay';
+
+  @override
+  String get remindersRefreshFailed => 'Không thể cập nhật lời nhắc. Các lời nhắc đã lên lịch vẫn được giữ.';
+
+  @override
+  String get remindersRefreshing => 'Đang kiểm tra công việc và sự kiện…';
+
+  @override
+  String remindersScheduledCount(int count) {
+    return 'Đã lên lịch $count lời nhắc';
+  }
+
+  @override
+  String get remindersStatusTitle => 'Trạng thái nhắc nhở';
+
+  @override
+  String get remindersSystemNote => 'Thông báo đã lên lịch có thể xuất hiện khi ứng dụng đóng. Mục mới hoặc thay đổi được kiểm tra khi mở hay quay lại ứng dụng; thời điểm cập nhật nền tùy thuộc thiết bị.';
+
+  @override
+  String get remindersTaskTitle => 'Hạn công việc';
+
+  @override
+  String get remindersTiming => 'Nhắc tôi';
+
+  @override
+  String get remindersTitle => 'Nhắc nhở';
+
+  @override
+  String remindersUpcomingEvent(String when, String title) {
+    return '$when: $title';
+  }
+
+  @override
+  String get requiredMfaEnrollDescription => 'Quản trị viên yêu cầu xác minh hai bước. Thêm tài khoản này vào ứng dụng xác thực để tiếp tục.';
+
+  @override
+  String get requiredMfaEnrollTitle => 'Bảo vệ tài khoản của bạn';
+
+  @override
+  String get requiredMfaError => 'Không thể hoàn tất xác minh. Vui lòng thử lại.';
+
+  @override
+  String get requiredMfaRecoveryDescription => 'Quản trị viên đã đặt lại bảo mật tài khoản. Hãy đăng nhập lại trước khi thiết lập hoặc xác minh ứng dụng xác thực.';
+
+  @override
+  String get requiredMfaRecoveryTitle => 'Đăng nhập lại để bảo vệ tài khoản';
+
+  @override
+  String get requiredMfaSecretLabel => 'Nhập khóa thiết lập này vào ứng dụng xác thực. Không chia sẻ khóa này.';
+
+  @override
+  String get requiredMfaSignInAgain => 'Đăng nhập lại';
+
+  @override
+  String get requiredMfaStart => 'Thiết lập ứng dụng xác thực';
+
+  @override
+  String get requiredMfaVerify => 'Xác minh và tiếp tục';
+
+  @override
+  String get securityCheckTitle => 'Kiểm tra bảo mật';
+
+  @override
+  String get securityConnect => 'Kết nối';
+
+  @override
+  String get securityConnectionsDescription => 'Chọn cách đăng nhập. Giữ ít nhất một tài khoản đã kết nối.';
+
+  @override
+  String get securityConnectionsTitle => 'Tài khoản đã kết nối';
+
+  @override
+  String get securityCurrentSession => 'Phiên hiện tại';
+
+  @override
+  String get securityDisconnect => 'Ngắt kết nối';
+
+  @override
+  String get securityDisconnectDescription => 'Bạn sẽ không thể đăng nhập bằng tài khoản đã kết nối này nữa.';
+
+  @override
+  String get securityRevokeDescription => 'Các thiết bị được chọn sẽ cần đăng nhập lại.';
+
+  @override
+  String get securityRevokeOthers => 'Đăng xuất các phiên khác';
+
+  @override
+  String get securityRevokeSession => 'Đăng xuất phiên này';
+
+  @override
+  String get securitySessionsDescription => 'Xem các thiết bị đang đăng nhập. Đăng xuất phiên khác không làm đăng xuất thiết bị này.';
+
+  @override
+  String get securitySessionsTitle => 'Phiên đăng nhập và kết nối';
+
+  @override
+  String get securityUnknownDevice => 'Thiết bị không xác định';
+
+  @override
+  String get selectImageSource => 'Chọn nguồn ảnh';
+
+  @override
+  String get settingsAboutSectionDescription => 'Thông tin bản phát hành và sản phẩm của bản dựng này.';
+
+  @override
+  String get settingsAboutSectionTitle => 'Giới thiệu ứng dụng';
+
+  @override
+  String get settingsAboutSummary => 'Tuturuuu mobile giữ các công cụ không gian làm việc, trợ lý và luồng làm việc hằng ngày luôn trong tầm tay.';
+
+  @override
+  String get settingsAboutTab => 'Giới thiệu';
+
+  @override
+  String get settingsAccountSectionDescription => 'Truy cập hồ sơ và điều khiển phiên đăng nhập.';
+
+  @override
+  String get settingsAccountSectionTitle => 'Tài khoản';
+
+  @override
+  String get settingsAccountTab => 'Tài khoản';
+
+  @override
+  String get settingsAppPreferences => 'Tùy chọn ứng dụng';
+
+  @override
+  String get settingsAppVersion => 'Phiên bản ứng dụng';
+
+  @override
+  String get settingsAppearanceLanguage => 'Giao diện và ngôn ngữ';
+
+  @override
+  String get settingsBuildLabel => 'Bản dựng';
+
+  @override
+  String get settingsCalendar => 'Lịch';
+
+  @override
+  String get settingsCalendarTimezone => 'Lịch và múi giờ';
+
+  @override
+  String get settingsCurrentWorkspace => 'Không gian làm việc hiện tại';
+
+  @override
+  String get settingsCurrentWorkspaceDescription => 'Chọn không gian làm việc bạn đang dùng lúc này.';
+
+  @override
+  String get settingsDangerSectionDescription => 'Đăng xuất và kết thúc quyền truy cập trên thiết bị này.';
+
+  @override
+  String get settingsDangerSectionTitle => 'Phiên đăng nhập';
+
+  @override
+  String get settingsDataStatusCached => 'Đã lưu';
+
+  @override
+  String get settingsDataStatusLabel => 'Dữ liệu';
+
+  @override
+  String get settingsDataStatusLive => 'Trực tiếp';
+
+  @override
+  String get settingsDataStatusRefreshing => 'Đang làm mới';
+
+  @override
+  String get settingsDefaultTaskBoardNavigation => 'Mở bảng Tasks theo mặc định';
+
+  @override
+  String get settingsDefaultTaskBoardNavigationBoardPicker => 'Bộ chọn bảng';
+
+  @override
+  String get settingsDefaultTaskBoardNavigationDefaultBoard => 'Bảng Tasks';
+
+  @override
+  String get settingsDefaultTaskBoardNavigationDescription => 'Mở thẳng bảng Tasks cá nhân từ Bảng. Công việc luôn mở chế độ danh sách của bảng.';
+
+  @override
+  String get settingsDefaultWorkspace => 'Không gian mặc định';
+
+  @override
+  String get settingsDefaultWorkspaceDescription => 'Ứng dụng sẽ mở vào đây mặc định mỗi lần khởi động.';
+
+  @override
+  String get settingsExperimentalAppsDisabled => 'Đã tắt';
+
+  @override
+  String get settingsExperimentalAppsEnabled => 'Đã bật';
+
+  @override
+  String get settingsExperimentalAppsSectionDescription => 'Bật các ứng dụng không cốt lõi trong Trung tâm ứng dụng. Tasks, Calendar và Finance luôn có sẵn theo mặc định.';
+
+  @override
+  String get settingsExperimentalAppsSectionTitle => 'Thử nghiệm';
+
+  @override
+  String settingsExperimentalAppsTileDescription(String appName) {
+    return 'Hiển thị $appName trong Trung tâm ứng dụng.';
+  }
+
+  @override
+  String get settingsFinanceAmounts => 'Số tiền tài chính';
+
+  @override
+  String get settingsFinanceAmountsDescription => 'Hiện hoặc ẩn số dư và số tiền giao dịch trên toàn bộ màn hình tài chính.';
+
+  @override
+  String get settingsFirstDayAuto => 'Tự động';
+
+  @override
+  String get settingsFirstDayAutoDescription => 'Dùng mặc định của không gian làm việc hoặc ngôn ngữ khi có thể.';
+
+  @override
+  String get settingsFirstDayMonday => 'Thứ hai';
+
+  @override
+  String get settingsFirstDayOfWeek => 'Ngày đầu tuần';
+
+  @override
+  String get settingsFirstDayOfWeekDescription => 'Kiểm soát cách lịch và tổng kết tuần bắt đầu.';
+
+  @override
+  String get settingsFirstDaySaturday => 'Thứ bảy';
+
+  @override
+  String get settingsFirstDaySunday => 'Chủ nhật';
+
+  @override
+  String get settingsGeneralGroup => 'Cá nhân hóa';
+
+  @override
+  String get settingsHaptics => 'Phản hồi rung';
+
+  @override
+  String get settingsHeroDescription => 'Thiết lập cá nhân, ngữ cảnh không gian làm việc và thông tin bản phát hành trong một nơi.';
+
+  @override
+  String get settingsInfrastructureSectionDescription => 'Các điều khiển toàn nền tảng chỉ có trong không gian làm việc nội bộ.';
+
+  @override
+  String get settingsInfrastructureSectionTitle => 'Hạ tầng';
+
+  @override
+  String get settingsLanguage => 'Ngôn ngữ';
+
+  @override
+  String get settingsLanguageDescription => 'Chọn ngôn ngữ sử dụng trong toàn bộ ứng dụng.';
+
+  @override
+  String get settingsLanguageEnglish => 'Tiếng Anh';
+
+  @override
+  String get settingsLanguageSystem => 'Mặc định hệ thống';
+
+  @override
+  String get settingsLanguageSystemDescription => 'Tự động theo ngôn ngữ của thiết bị.';
+
+  @override
+  String get settingsLanguageVietnamese => 'Tiếng Việt';
+
+  @override
+  String get settingsLicenseVersionDescription => 'Đối chiếu phiên bản đã cài khi xem thông báo.';
+
+  @override
+  String get settingsLicenseViewerDescription => 'Duyệt các giấy phép Flutter, plugin và package có trong bản dựng này.';
+
+  @override
+  String get settingsLicenseViewerTitle => 'Mở trình xem giấy phép';
+
+  @override
+  String get settingsLicensesSectionDescription => 'Xem các thông báo phần mềm bên thứ ba được đóng gói trong ứng dụng.';
+
+  @override
+  String get settingsLicensesSectionTitle => 'Giấy phép mã nguồn mở';
+
+  @override
+  String get settingsLicensesTab => 'Giấy phép';
+
+  @override
+  String get settingsMinutesUnit => 'phút';
+
+  @override
+  String get settingsMobileVersions => 'Phiên bản di động';
+
+  @override
+  String get settingsMobileVersionsAccessDeniedDescription => 'Bạn cần quyền quản lý vai trò trong không gian làm việc nội bộ để quản lý chính sách phiên bản di động.';
+
+  @override
+  String get settingsMobileVersionsAccessDeniedTitle => 'Cần quyền truy cập';
+
+  @override
+  String get settingsMobileVersionsAndroidDescription => 'Đặt ngưỡng Play Store và lời nhắc cập nhật cho người dùng Android.';
+
+  @override
+  String get settingsMobileVersionsAndroidOtpDescription => 'Cho phép đăng nhập ứng dụng Android bằng mã xác thực email.';
+
+  @override
+  String get settingsMobileVersionsAndroidTitle => 'Android';
+
+  @override
+  String get settingsMobileVersionsEffectiveVersion => 'Phiên bản hiệu lực';
+
+  @override
+  String get settingsMobileVersionsEffectiveVersionDescription => 'Các phiên bản thấp hơn ngưỡng này sẽ thấy lời nhắc cập nhật.';
+
+  @override
+  String get settingsMobileVersionsIosDescription => 'Đặt ngưỡng App Store và lời nhắc cập nhật cho người dùng iPhone và iPad.';
+
+  @override
+  String get settingsMobileVersionsIosOtpDescription => 'Cho phép đăng nhập ứng dụng iOS bằng mã xác thực email.';
+
+  @override
+  String get settingsMobileVersionsIosTitle => 'iOS';
+
+  @override
+  String get settingsMobileVersionsLoadError => 'Không thể tải chính sách phiên bản di động.';
+
+  @override
+  String get settingsMobileVersionsMinimumVersion => 'Phiên bản tối thiểu';
+
+  @override
+  String get settingsMobileVersionsMinimumVersionDescription => 'Các phiên bản thấp hơn ngưỡng này buộc phải cập nhật mới được tiếp tục.';
+
+  @override
+  String get settingsMobileVersionsOtpEnabled => 'Bật đăng nhập OTP';
+
+  @override
+  String get settingsMobileVersionsPageDescription => 'Quản lý phiên bản hiệu lực và tối thiểu mà ứng dụng di động sẽ áp dụng trước khi người dùng có thể tiếp tục, cùng với cờ triển khai OTP cho di động và web.';
+
+  @override
+  String get settingsMobileVersionsSave => 'Lưu thay đổi';
+
+  @override
+  String get settingsMobileVersionsSaveError => 'Không thể lưu chính sách phiên bản di động.';
+
+  @override
+  String get settingsMobileVersionsSaveSuccess => 'Đã lưu chính sách phiên bản di động.';
+
+  @override
+  String get settingsMobileVersionsSaving => 'Đang lưu...';
+
+  @override
+  String get settingsMobileVersionsStoreUrl => 'URL cửa hàng';
+
+  @override
+  String get settingsMobileVersionsStoreUrlDescription => 'Bắt buộc khi đặt một trong hai ngưỡng phiên bản.';
+
+  @override
+  String get settingsMobileVersionsStoreUrlPlaceholder => 'https://apps.apple.com/app/id123456789';
+
+  @override
+  String get settingsMobileVersionsTileDescription => 'Quản lý phiên bản hiệu lực, tối thiểu và cờ triển khai OTP cho ứng dụng di động.';
+
+  @override
+  String get settingsMobileVersionsTitle => 'Phiên bản di động';
+
+  @override
+  String get settingsMobileVersionsValidationEffectiveAtLeastMinimum => 'Phiên bản hiệu lực phải lớn hơn hoặc bằng phiên bản tối thiểu.';
+
+  @override
+  String get settingsMobileVersionsValidationStoreUrlRequired => 'URL cửa hàng là bắt buộc khi có đặt phiên bản.';
+
+  @override
+  String get settingsMobileVersionsValidationVersionFormat => 'Dùng định dạng phiên bản x.y.z.';
+
+  @override
+  String get settingsMobileVersionsVersionPlaceholder => '1.2.3';
+
+  @override
+  String get settingsMobileVersionsWebOtpDescription => 'Cho phép trang đăng nhập web marketing dùng đăng nhập bằng mã xác thực email.';
+
+  @override
+  String get settingsMobileVersionsWebOtpTitle => 'OTP Web';
+
+  @override
+  String get settingsMobileVersionsWorkspaceRequiredDescription => 'Chuyển sang không gian làm việc nội bộ để quản lý chính sách phiên bản di động của nền tảng.';
+
+  @override
+  String get settingsMobileVersionsWorkspaceRequiredTitle => 'Cần không gian nội bộ';
+
+  @override
+  String get settingsNavApp => 'Ứng dụng';
+
+  @override
+  String get settingsNavWorkspace => 'Không gian làm việc';
+
+  @override
+  String get settingsNavYou => 'Bạn';
+
+  @override
+  String get settingsNoEmail => 'Không có email';
+
+  @override
+  String get settingsNoWorkspaceSelected => 'Chưa chọn không gian làm việc';
+
+  @override
+  String get settingsNotificationsInteraction => 'Thông báo và tương tác';
+
+  @override
+  String get settingsPackageLabel => 'Gói';
+
+  @override
+  String get settingsPreferencesSectionDescription => 'Ngôn ngữ, giao diện và mặc định lịch.';
+
+  @override
+  String get settingsPreferencesSectionTitle => 'Tùy chọn';
+
+  @override
+  String get settingsPreferencesTab => 'Tùy chọn';
+
+  @override
+  String get settingsProductSettings => 'Cài đặt ứng dụng';
+
+  @override
+  String get settingsProfile => 'Hồ sơ';
+
+  @override
+  String get settingsProfileDescription => 'Quản lý thông tin cá nhân và ảnh đại diện của bạn.';
+
+  @override
+  String get settingsPullToRefreshAction => 'Làm mới ngay';
+
+  @override
+  String get settingsQuickDefaultWorkspace => 'Không gian mặc định';
+
+  @override
+  String get settingsQuickOpenProfile => 'Mở hồ sơ';
+
+  @override
+  String get settingsQuickSwitchWorkspace => 'Đổi hiện tại';
+
+  @override
+  String get settingsReleaseHistoryDescription => 'Xem những thay đổi của từng phiên bản, kể cả khi không có mạng.';
+
+  @override
+  String get settingsReleaseHistoryUnavailable => 'Hiện không thể xem lịch sử phát hành.';
+
+  @override
+  String get settingsReleaseNoDetails => 'Phiên bản này không có ghi chú thay đổi chi tiết.';
+
+  @override
+  String get settingsSignOut => 'Đăng xuất';
+
+  @override
+  String get settingsSignOutConfirm => 'Bạn có chắc muốn đăng xuất không?';
+
+  @override
+  String get settingsSignOutDescription => 'Kết thúc phiên đăng nhập trên thiết bị này.';
+
+  @override
+  String get settingsSignedInAs => 'Đăng nhập bằng';
+
+  @override
+  String get settingsSupportGroup => 'Trợ giúp và tài khoản';
+
+  @override
+  String get settingsSwitchWorkspace => 'Chuyển không gian làm việc';
+
+  @override
+  String get settingsSwitchWorkspaceDescription => 'Di chuyển giữa ngữ cảnh cá nhân và nhóm.';
+
+  @override
+  String get settingsTheme => 'Giao diện';
+
+  @override
+  String get settingsThemeDark => 'Tối';
+
+  @override
+  String get settingsThemeDescription => 'Điều chỉnh giao diện ứng dụng theo thiết bị và sở thích của bạn.';
+
+  @override
+  String get settingsThemeLight => 'Sáng';
+
+  @override
+  String get settingsThemeSystem => 'Hệ thống';
+
+  @override
+  String get settingsThemeSystemDescription => 'Tự động theo giao diện của thiết bị.';
+
+  @override
+  String get settingsTimezone => 'Múi giờ cá nhân';
+
+  @override
+  String get settingsTimezoneAccountPending => 'Đang chờ tài khoản của bạn.';
+
+  @override
+  String get settingsTimezoneAuto => 'Tự động';
+
+  @override
+  String get settingsTimezoneDescription => 'Múi giờ cá nhân ưu tiên hơn múi giờ không gian làm việc. Tự động dùng mặc định không gian làm việc, sau đó thiết bị.';
+
+  @override
+  String settingsTimezoneEffective(String timezone) {
+    return 'Múi giờ áp dụng: $timezone';
+  }
+
+  @override
+  String get settingsTimezoneError => 'Không thể tải hoặc lưu múi giờ. Hãy thử lại hoặc sửa tùy chọn đã tải.';
+
+  @override
+  String get settingsTimezoneLoading => 'Đang xác định múi giờ…';
+
+  @override
+  String get settingsTimezoneRateLimited => 'Quá nhiều yêu cầu. Vui lòng chờ trước khi thử lại.';
+
+  @override
+  String get settingsTimezoneRetry => 'Thử lại múi giờ';
+
+  @override
+  String get settingsTimezoneSearch => 'Tìm múi giờ';
+
+  @override
+  String get settingsTimezoneUnknown => 'Chưa xác định';
+
+  @override
+  String get settingsTitle => 'Cài đặt';
+
+  @override
+  String get settingsVersionLabel => 'Phiên bản';
+
+  @override
+  String get settingsVersionTileDescription => 'Bản phát hành hiện được cài trên thiết bị này.';
+
+  @override
+  String get settingsWhatsNew => 'Có gì mới';
+
+  @override
+  String get settingsWhatsNewDescription => 'Các thay đổi trong từng phiên bản đã phát hành.';
+
+  @override
+  String get settingsWorkspaceAccessTitle => 'Quyền truy cập';
+
+  @override
+  String get settingsWorkspaceActive => 'Đang hoạt động';
+
+  @override
+  String get settingsWorkspaceAvatar => 'Ảnh đại diện không gian làm việc';
+
+  @override
+  String get settingsWorkspaceAvatarDescription => 'Tải ảnh mới lên hoặc xóa ảnh hiện tại.';
+
+  @override
+  String get settingsWorkspaceAvatarRemovePending => 'Ảnh hiện tại sẽ bị xóa khi bạn lưu.';
+
+  @override
+  String get settingsWorkspaceDefaultCurrencyDescription => 'Dùng một loại tiền tệ mặc định cho các luồng tài chính và hóa đơn trong không gian làm việc này.';
+
+  @override
+  String get settingsWorkspaceDefaultCurrencyField => 'Tiền tệ';
+
+  @override
+  String get settingsWorkspaceDefaultCurrencyTitle => 'Tiền tệ mặc định';
+
+  @override
+  String get settingsWorkspaceMembersAccessDenied => 'Bạn cần quyền quản lý thành viên để dùng mục này.';
+
+  @override
+  String settingsWorkspaceMembersActiveSection(int count) {
+    return 'Thành viên ($count)';
+  }
+
+  @override
+  String get settingsWorkspaceMembersCreatorChip => 'Chủ sở hữu';
+
+  @override
+  String get settingsWorkspaceMembersEmailField => 'Email';
+
+  @override
+  String get settingsWorkspaceMembersEmailInvalid => 'Hãy nhập email hợp lệ.';
+
+  @override
+  String get settingsWorkspaceMembersEmailPlaceholder => 'name@example.com';
+
+  @override
+  String get settingsWorkspaceMembersEmpty => 'Chưa có thành viên.';
+
+  @override
+  String get settingsWorkspaceMembersInviteAction => 'Mời';
+
+  @override
+  String get settingsWorkspaceMembersInviteSent => 'Đã gửi lời mời.';
+
+  @override
+  String get settingsWorkspaceMembersLinkAction => 'Tạo link';
+
+  @override
+  String get settingsWorkspaceMembersLinkActive => 'Đang hoạt động';
+
+  @override
+  String get settingsWorkspaceMembersLinkCopied => 'Đã sao chép liên kết mời.';
+
+  @override
+  String get settingsWorkspaceMembersLinkCopy => 'Sao chép';
+
+  @override
+  String get settingsWorkspaceMembersLinkCreated => 'Đã tạo liên kết mời.';
+
+  @override
+  String get settingsWorkspaceMembersLinkDeleteMessage => 'Xóa liên kết mời này?';
+
+  @override
+  String get settingsWorkspaceMembersLinkDeleteTitle => 'Xóa link';
+
+  @override
+  String get settingsWorkspaceMembersLinkExpired => 'Hết hạn';
+
+  @override
+  String get settingsWorkspaceMembersLinkFull => 'Đầy';
+
+  @override
+  String get settingsWorkspaceMembersLinkLimitField => 'Số lượt dùng tối đa';
+
+  @override
+  String get settingsWorkspaceMembersLinkLimitInvalid => 'Hãy nhập số nguyên dương.';
+
+  @override
+  String get settingsWorkspaceMembersLinkLimitPlaceholder => 'Để trống nếu không giới hạn';
+
+  @override
+  String get settingsWorkspaceMembersLinkNever => 'Không hết hạn';
+
+  @override
+  String get settingsWorkspaceMembersLinksEmpty => 'Chưa có liên kết mời.';
+
+  @override
+  String get settingsWorkspaceMembersLinksSection => 'Liên kết mời';
+
+  @override
+  String get settingsWorkspaceMembersPendingChip => 'Đang chờ';
+
+  @override
+  String get settingsWorkspaceMembersPendingEmpty => 'Không có lời mời nào đang chờ.';
+
+  @override
+  String settingsWorkspaceMembersPendingSection(int count) {
+    return 'Đang chờ ($count)';
+  }
+
+  @override
+  String settingsWorkspaceMembersRemoveMessage(String name) {
+    return 'Xóa $name khỏi không gian làm việc này?';
+  }
+
+  @override
+  String get settingsWorkspaceMembersRemoveTitle => 'Xóa';
+
+  @override
+  String get settingsWorkspaceMembersSubtitle => 'Mời người mới, xem quyền truy cập và quản lý liên kết mời.';
+
+  @override
+  String get settingsWorkspaceMembersTitle => 'Thành viên';
+
+  @override
+  String get settingsWorkspaceNameHint => 'Tên không gian làm việc';
+
+  @override
+  String get settingsWorkspacePropertiesDescription => 'Cập nhật tên và ảnh đại diện của không gian làm việc.';
+
+  @override
+  String get settingsWorkspacePropertiesNameRequired => 'Tên không gian làm việc không được để trống';
+
+  @override
+  String get settingsWorkspacePropertiesNoAccess => 'Bạn cần quyền quản lý cài đặt không gian làm việc để chỉnh sửa.';
+
+  @override
+  String get settingsWorkspacePropertiesPermissionLoading => 'Đang kiểm tra quyền trong không gian làm việc...';
+
+  @override
+  String get settingsWorkspacePropertiesTitle => 'Thông tin không gian làm việc';
+
+  @override
+  String get settingsWorkspacePropertiesUpdated => 'Đã cập nhật thông tin không gian làm việc.';
+
+  @override
+  String get settingsWorkspaceRolesAccessDenied => 'Bạn cần quyền quản lý vai trò để dùng mục này.';
+
+  @override
+  String get settingsWorkspaceRolesCreate => 'Tạo vai trò';
+
+  @override
+  String get settingsWorkspaceRolesDefaultTitle => 'Quyền mặc định';
+
+  @override
+  String settingsWorkspaceRolesDeleteMessage(String name) {
+    return 'Xóa $name?';
+  }
+
+  @override
+  String get settingsWorkspaceRolesDeleteTitle => 'Xóa vai trò';
+
+  @override
+  String get settingsWorkspaceRolesEdit => 'Sửa vai trò';
+
+  @override
+  String get settingsWorkspaceRolesEmpty => 'Chưa có vai trò tùy chỉnh.';
+
+  @override
+  String get settingsWorkspaceRolesListTitle => 'Vai trò';
+
+  @override
+  String get settingsWorkspaceRolesMembersEmpty => 'Không có thành viên đang hoạt động.';
+
+  @override
+  String get settingsWorkspaceRolesMembersSection => 'Thành viên được gán';
+
+  @override
+  String get settingsWorkspaceRolesNameField => 'Tên';
+
+  @override
+  String get settingsWorkspaceRolesNamePlaceholder => 'Tên vai trò';
+
+  @override
+  String get settingsWorkspaceRolesNameRequired => 'Hãy nhập tên vai trò.';
+
+  @override
+  String settingsWorkspaceRolesPermissionCount(int count) {
+    return 'Đã bật $count quyền';
+  }
+
+  @override
+  String get settingsWorkspaceRolesPermissionsSection => 'Quyền';
+
+  @override
+  String get settingsWorkspaceRolesSave => 'Lưu';
+
+  @override
+  String get settingsWorkspaceRolesSaved => 'Đã lưu vai trò.';
+
+  @override
+  String get settingsWorkspaceRolesSubtitle => 'Quản lý quyền mặc định và các vai trò trong không gian làm việc.';
+
+  @override
+  String get settingsWorkspaceRolesTitle => 'Vai trò';
+
+  @override
+  String get settingsWorkspaceSecretsAccessDeniedDescription => 'Bạn cần quyền quản lý bí mật không gian làm việc trong không gian nội bộ để mở trang này.';
+
+  @override
+  String get settingsWorkspaceSecretsAccessDeniedTitle => 'Cần quyền truy cập';
+
+  @override
+  String get settingsWorkspaceSecretsActiveBackend => 'Backend đang dùng';
+
+  @override
+  String get settingsWorkspaceSecretsAdd => 'Thêm';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractBlocked => 'Thiếu bí mật proxy';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractDescription => 'Theo dõi việc tự động giải nén ZIP đã bật chưa và bí mật proxy đã sẵn sàng hay chưa.';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractProxyToken => 'Token dùng chung';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractProxyUrl => 'URL proxy';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractSwitch => 'Công tắc';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractTitle => 'Tự động giải nén';
+
+  @override
+  String get settingsWorkspaceSecretsConfigured => 'Đã cấu hình';
+
+  @override
+  String settingsWorkspaceSecretsCopyInto(String provider) {
+    return 'Sao chép vào $provider';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsCreate => 'Tạo bí mật';
+
+  @override
+  String settingsWorkspaceSecretsDeleteMessage(String name) {
+    return 'Xóa $name?';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsDeleteSuccess => 'Đã xóa bí mật.';
+
+  @override
+  String get settingsWorkspaceSecretsDeleteTitle => 'Xóa';
+
+  @override
+  String get settingsWorkspaceSecretsDriveAutoExtractProxyTokenDescription => 'Bearer token dùng chung để xác thực yêu cầu tới proxy giải nén ZIP.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveAutoExtractProxyUrlDescription => 'URL HTTPS của proxy giải nén ZIP tự lưu trữ. Chỉ dùng khi bật tự động giải nén.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveAutoExtractZipDescription => 'Bật tự động giải nén ZIP sau khi tải lên. Mặc định là tắt.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2AccessKeyIdDescription => 'Access key ID của token Cloudflare R2 dùng bởi adapter Drive phía máy chủ.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2BucketDescription => 'Tên bucket Cloudflare R2 dùng cho các đối tượng Drive khi nhà cung cấp là \"r2\".';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2EndpointDescription => 'Endpoint R2 tương thích S3, ví dụ https://<account-id>.r2.cloudflarestorage.com.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2SecretAccessKeyDescription => 'Secret access key của token Cloudflare R2 dùng bởi adapter Drive phía máy chủ.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveStorageProviderDescription => 'Chọn backend Drive cho không gian làm việc này. Dùng \"supabase\" cho đường dẫn hiện tại hoặc \"r2\" để chuyển Drive sang Cloudflare R2.';
+
+  @override
+  String get settingsWorkspaceSecretsEdit => 'Sửa';
+
+  @override
+  String get settingsWorkspaceSecretsEditorDescription => 'Cập nhật tên và giá trị bí mật được dùng trong không gian làm việc này.';
+
+  @override
+  String get settingsWorkspaceSecretsEmptyDescription => 'Tạo một bí mật mới hoặc thay đổi từ khóa tìm kiếm để xem mục phù hợp.';
+
+  @override
+  String get settingsWorkspaceSecretsEmptyTitle => 'Không tìm thấy bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsInventory => 'Dung lượng';
+
+  @override
+  String get settingsWorkspaceSecretsListDescription => 'Tìm kiếm, sửa và xóa bí mật của không gian làm việc. Giá trị boolean có thể bật tắt trực tiếp.';
+
+  @override
+  String get settingsWorkspaceSecretsListTitle => 'Danh sách bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsLoadError => 'Không thể tải bí mật của không gian làm việc.';
+
+  @override
+  String get settingsWorkspaceSecretsMigrating => 'Đang di chuyển...';
+
+  @override
+  String get settingsWorkspaceSecretsMigrationError => 'Không thể di chuyển lưu trữ của không gian làm việc.';
+
+  @override
+  String settingsWorkspaceSecretsMigrationSuccess(int filesCopied, String provider) {
+    return 'Đã sao chép $filesCopied tệp vào $provider.';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsMissing => 'Thiếu';
+
+  @override
+  String get settingsWorkspaceSecretsMissingMessage => 'Hãy thêm các bí mật cần thiết trước khi chuyển luồng Drive sang đây.';
+
+  @override
+  String get settingsWorkspaceSecretsNameField => 'Tên';
+
+  @override
+  String get settingsWorkspaceSecretsNamePlaceholder => 'SECRET_NAME';
+
+  @override
+  String get settingsWorkspaceSecretsNameRequired => 'Hãy nhập tên bí mật.';
+
+  @override
+  String get settingsWorkspaceSecretsNoValue => 'Chưa có giá trị';
+
+  @override
+  String get settingsWorkspaceSecretsObjects => 'Đối tượng';
+
+  @override
+  String get settingsWorkspaceSecretsOptional => 'Tùy chọn';
+
+  @override
+  String settingsWorkspaceSecretsPageDescription(String workspaceName) {
+    return 'Quản lý bí mật và lộ trình lưu trữ cho $workspaceName.';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsProviderR2Description => 'Backend tương thích S3 cho lưu trữ Drive bên ngoài.';
+
+  @override
+  String get settingsWorkspaceSecretsProviderR2Title => 'Cloudflare R2';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSecrets => 'Bí mật nhà cung cấp';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSecretsDescription => 'Chỉnh sửa các bí mật xác định nhà cung cấp lưu trữ Drive của không gian làm việc này.';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSecretsTitle => 'Bí mật nhà cung cấp';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSupabaseDescription => 'Backend lưu trữ Drive tích hợp sẵn hiện tại.';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSupabaseTitle => 'Supabase';
+
+  @override
+  String get settingsWorkspaceSecretsProxySecretsDescription => 'Cấu hình các bí mật tùy chọn dùng cho proxy giải nén ZIP.';
+
+  @override
+  String get settingsWorkspaceSecretsProxySecretsTitle => 'Bí mật proxy ZIP';
+
+  @override
+  String get settingsWorkspaceSecretsReadyMessage => 'Backend này đã sẵn sàng nhận tệp Drive.';
+
+  @override
+  String get settingsWorkspaceSecretsRecommended => 'Khuyến nghị';
+
+  @override
+  String get settingsWorkspaceSecretsRequired => 'Bắt buộc';
+
+  @override
+  String get settingsWorkspaceSecretsRolloutDescription => 'Kiểm tra backend Drive hiện tại, xác nhận các bí mật nhà cung cấp cần thiết và di chuyển tệp giữa các backend khi cần.';
+
+  @override
+  String get settingsWorkspaceSecretsRolloutTitle => 'Lộ trình lưu trữ';
+
+  @override
+  String get settingsWorkspaceSecretsSave => 'Lưu bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsSaveError => 'Không thể lưu bí mật.';
+
+  @override
+  String get settingsWorkspaceSecretsSaveSuccess => 'Đã lưu bí mật.';
+
+  @override
+  String get settingsWorkspaceSecretsSaving => 'Đang lưu...';
+
+  @override
+  String get settingsWorkspaceSecretsSearchPlaceholder => 'Tìm bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsSelected => 'Đang chọn';
+
+  @override
+  String get settingsWorkspaceSecretsStateDisabled => 'Đã tắt';
+
+  @override
+  String get settingsWorkspaceSecretsStateEnabled => 'Đã bật';
+
+  @override
+  String get settingsWorkspaceSecretsStateMissing => 'Thiếu';
+
+  @override
+  String get settingsWorkspaceSecretsStatePresent => 'Đã có';
+
+  @override
+  String get settingsWorkspaceSecretsSubtitle => 'Quản lý bí mật của không gian làm việc và lộ trình lưu trữ.';
+
+  @override
+  String get settingsWorkspaceSecretsTitle => 'Bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsTotalSecrets => 'Tất cả bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsUnavailable => 'Không khả dụng';
+
+  @override
+  String get settingsWorkspaceSecretsValueField => 'Giá trị';
+
+  @override
+  String get settingsWorkspaceSecretsValuePlaceholder => 'Giá trị bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsValueRequired => 'Hãy nhập giá trị bí mật.';
+
+  @override
+  String get settingsWorkspaceSecretsVisibleSecrets => 'Đang hiển thị';
+
+  @override
+  String get settingsWorkspaceSecretsWorkspaceRequiredDescription => 'Hãy chọn một không gian làm việc trước khi mở trang quản lý bí mật.';
+
+  @override
+  String get settingsWorkspaceSecretsWorkspaceRequiredTitle => 'Cần chọn không gian làm việc';
+
+  @override
+  String get settingsWorkspaceSecretsZipAutomation => 'Tự động giải nén ZIP';
+
+  @override
+  String get settingsWorkspaceSectionDescription => 'Xem ngữ cảnh hiện tại và chuyển khi cần.';
+
+  @override
+  String get settingsWorkspaceSectionManageTitle => 'Thiết lập không gian làm việc';
+
+  @override
+  String get settingsWorkspaceSectionTitle => 'Không gian làm việc';
+
+  @override
+  String get settingsWorkspaceTimezone => 'Múi giờ không gian làm việc';
+
+  @override
+  String get signUpAlreadyHaveAccountPrompt => 'Đã có tài khoản?';
+
+  @override
+  String get signUpBackToLogin => 'Quay lại đăng nhập';
+
+  @override
+  String get signUpButton => 'Tạo tài khoản';
+
+  @override
+  String get signUpConfirmPassword => 'Xác nhận mật khẩu';
+
+  @override
+  String get signUpPasswordLowercase => 'Mật khẩu phải chứa chữ thường';
+
+  @override
+  String get signUpPasswordMinLength => 'Mật khẩu phải có ít nhất 8 ký tự';
+
+  @override
+  String get signUpPasswordMismatch => 'Mật khẩu không khớp';
+
+  @override
+  String get signUpPasswordNumber => 'Mật khẩu phải chứa số';
+
+  @override
+  String get signUpPasswordUppercase => 'Mật khẩu phải chứa chữ hoa';
+
+  @override
+  String get signUpSignIn => 'Đăng nhập';
+
+  @override
+  String get signUpSubtitle => 'Chọn một phương thức để tiếp tục.';
+
+  @override
+  String get signUpSuccessMessage => 'Chúng tôi đã gửi liên kết xác nhận đến email của bạn. Vui lòng xác minh để tiếp tục.';
+
+  @override
+  String get signUpSuccessTitle => 'Kiểm tra email';
+
+  @override
+  String get signUpTitle => 'Tạo tài khoản';
+
+  @override
+  String get sort => 'Sắp xếp';
+
+  @override
+  String get sortBy => 'Sắp xếp theo';
+
+  @override
+  String get storefrontAnalytics => 'Bật phân tích cửa hàng';
+
+  @override
+  String get storefrontCheckoutMode => 'Thanh toán';
+
+  @override
+  String get storefrontCompareAtPrice => 'Giá so sánh';
+
+  @override
+  String get storefrontCorners => 'Kiểu bo góc';
+
+  @override
+  String get storefrontCreate => 'Cửa hàng mới';
+
+  @override
+  String get storefrontCurrency => 'Tiền tệ';
+
+  @override
+  String get storefrontDelete => 'Xóa cửa hàng';
+
+  @override
+  String get storefrontDeleteConfirm => 'Xóa cửa hàng này cùng toàn bộ sản phẩm đăng bán? Thao tác này không thể hoàn tác.';
+
+  @override
+  String get storefrontDeleted => 'Đã xóa cửa hàng.';
+
+  @override
+  String get storefrontDescription => 'Mô tả';
+
+  @override
+  String get storefrontEdit => 'Sửa cửa hàng';
+
+  @override
+  String get storefrontEditorSubtitle => 'Thiết lập nhận diện, thanh toán, quyền xem và giao diện của cửa hàng.';
+
+  @override
+  String get storefrontEmptyBody => 'Biến tồn kho thành danh mục thân thiện với di động và đăng khi bạn sẵn sàng.';
+
+  @override
+  String get storefrontEmptyTitle => 'Tạo cửa hàng đầu tiên';
+
+  @override
+  String get storefrontInventoryBadges => 'Hiện tình trạng tồn kho';
+
+  @override
+  String get storefrontLayout => 'Bố cục sản phẩm';
+
+  @override
+  String storefrontListingCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Khớp $count giao dịch',
-      one: 'Khớp 1 giao dịch',
-      zero: 'Chưa có kết quả',
+      other: '$count sản phẩm',
+      one: '1 sản phẩm',
     );
     return '$_temp0';
   }
 
   @override
-  String get financeAddAttachments => 'Thêm tệp đính kèm';
+  String get storefrontListingCreate => 'Thêm sản phẩm';
 
   @override
-  String financeAttachmentCount(int count) {
+  String get storefrontListingDelete => 'Xóa sản phẩm';
+
+  @override
+  String get storefrontListingDeleteConfirm => 'Gỡ sản phẩm này khỏi cửa hàng? Sản phẩm trong Tồn kho sẽ không bị xóa.';
+
+  @override
+  String get storefrontListingDeleted => 'Đã xóa sản phẩm đăng bán.';
+
+  @override
+  String get storefrontListingEdit => 'Sửa sản phẩm';
+
+  @override
+  String get storefrontListingEditorSubtitle => 'Chọn sản phẩm còn hàng và thiết lập cách hiển thị trong cửa hàng.';
+
+  @override
+  String get storefrontListingSaved => 'Đã lưu sản phẩm đăng bán.';
+
+  @override
+  String get storefrontListingTitle => 'Tên sản phẩm đăng bán';
+
+  @override
+  String get storefrontListingValidationError => 'Hãy chọn sản phẩm còn hàng và nhập tên, giá cùng giới hạn đơn hàng hợp lệ.';
+
+  @override
+  String get storefrontListings => 'Sản phẩm đăng bán';
+
+  @override
+  String get storefrontListingsEmptyBody => 'Thêm sản phẩm từ Tồn kho để cửa hàng sẵn sàng phục vụ khách hàng.';
+
+  @override
+  String get storefrontListingsEmptyTitle => 'Chưa có sản phẩm đăng bán';
+
+  @override
+  String get storefrontMaxPerOrder => 'Tối đa mỗi đơn';
+
+  @override
+  String get storefrontName => 'Tên cửa hàng';
+
+  @override
+  String get storefrontPreview => 'Xem trước';
+
+  @override
+  String get storefrontPrice => 'Giá';
+
+  @override
+  String get storefrontProduct => 'Sản phẩm';
+
+  @override
+  String get storefrontProductsRequired => 'Hãy tạo sản phẩm có tồn kho trước khi thêm sản phẩm vào cửa hàng.';
+
+  @override
+  String get storefrontPublished => 'Đã đăng';
+
+  @override
+  String get storefrontSaved => 'Đã lưu cửa hàng.';
+
+  @override
+  String get storefrontSearch => 'Tìm cửa hàng';
+
+  @override
+  String get storefrontSlug => 'Địa chỉ công khai';
+
+  @override
+  String get storefrontStatus => 'Trạng thái';
+
+  @override
+  String get storefrontStatusAll => 'Tất cả';
+
+  @override
+  String get storefrontStatusArchived => 'Đã lưu trữ';
+
+  @override
+  String get storefrontStatusDraft => 'Bản nháp';
+
+  @override
+  String get storefrontStatusPaused => 'Tạm dừng';
+
+  @override
+  String get storefrontStatusPublished => 'Đã đăng';
+
+  @override
+  String get storefrontStockRow => 'Kho và đơn vị';
+
+  @override
+  String get storefrontStores => 'Cửa hàng';
+
+  @override
+  String get storefrontSubtitle => 'Đăng sản phẩm, kiểm soát tồn kho và quản lý mọi cửa hàng dành cho khách hàng.';
+
+  @override
+  String get storefrontSurface => 'Kiểu bề mặt';
+
+  @override
+  String get storefrontTheme => 'Chủ đề';
+
+  @override
+  String get storefrontTitle => 'Cửa hàng';
+
+  @override
+  String get storefrontValidationError => 'Hãy nhập tên cửa hàng, địa chỉ công khai hợp lệ và mã tiền tệ ba chữ cái.';
+
+  @override
+  String get storefrontVisibility => 'Quyền xem';
+
+  @override
+  String get storefrontVisibilityPrivate => 'Riêng tư';
+
+  @override
+  String get storefrontVisibilityPublic => 'Công khai';
+
+  @override
+  String get taskBoardDetailAddBlockedByTask => 'Thêm công việc chặn';
+
+  @override
+  String get taskBoardDetailAddBlockingTask => 'Thêm công việc bị chặn';
+
+  @override
+  String get taskBoardDetailAddChildTask => 'Thêm công việc con';
+
+  @override
+  String get taskBoardDetailAddNewList => 'Thêm danh sách mới';
+
+  @override
+  String get taskBoardDetailAddParentTask => 'Thêm công việc cha';
+
+  @override
+  String get taskBoardDetailAddRelatedTask => 'Thêm công việc liên quan';
+
+  @override
+  String get taskBoardDetailApplyFilters => 'Áp dụng bộ lọc';
+
+  @override
+  String get taskBoardDetailBlockedBy => 'Bị chặn bởi';
+
+  @override
+  String get taskBoardDetailBlocking => 'Đang chặn';
+
+  @override
+  String get taskBoardDetailBoardActions => 'Thao tác bảng';
+
+  @override
+  String get taskBoardDetailBoardRenamed => 'Đã đổi tên bảng.';
+
+  @override
+  String get taskBoardDetailBulkActions => 'Thao tác hàng loạt';
+
+  @override
+  String taskBoardDetailBulkAllSuccess(int count) {
+    return 'Đã cập nhật $count công việc.';
+  }
+
+  @override
+  String get taskBoardDetailBulkClearAssignees => 'Xóa tất cả người được giao';
+
+  @override
+  String get taskBoardDetailBulkClearLabels => 'Xóa tất cả nhãn';
+
+  @override
+  String get taskBoardDetailBulkClearProjects => 'Xóa tất cả dự án';
+
+  @override
+  String get taskBoardDetailBulkMarkClosed => 'Đánh dấu đã đóng';
+
+  @override
+  String get taskBoardDetailBulkMarkDone => 'Đánh dấu hoàn thành';
+
+  @override
+  String get taskBoardDetailBulkMoveToBoard => 'Chuyển sang bảng khác';
+
+  @override
+  String taskBoardDetailBulkPartialSuccess(int success, int failed) {
+    return 'Đã cập nhật $success công việc, $failed thất bại.';
+  }
+
+  @override
+  String get taskBoardDetailCannotCreateMoreClosedLists => 'Mỗi bảng chỉ được phép có một danh sách đã đóng.';
+
+  @override
+  String get taskBoardDetailCannotMoveToClosedStatus => 'Không thể di chuyển danh sách đến hoặc khỏi trạng thái đã đóng';
+
+  @override
+  String get taskBoardDetailChangePriority => 'Đổi độ ưu tiên';
+
+  @override
+  String get taskBoardDetailChildTasks => 'Công việc con';
+
+  @override
+  String get taskBoardDetailClearFilters => 'Xóa bộ lọc';
+
+  @override
+  String get taskBoardDetailClosedListCapacityHint => 'Tối đa 1 danh sách đã đóng';
+
+  @override
+  String get taskBoardDetailCollapseList => 'Thu gọn danh sách';
+
+  @override
+  String get taskBoardDetailColorBlue => 'Xanh dương';
+
+  @override
+  String get taskBoardDetailColorCyan => 'Lục lam';
+
+  @override
+  String get taskBoardDetailColorGray => 'Xám';
+
+  @override
+  String get taskBoardDetailColorGreen => 'Xanh lá';
+
+  @override
+  String get taskBoardDetailColorIndigo => 'Chàm';
+
+  @override
+  String get taskBoardDetailColorLabel => 'Màu sắc';
+
+  @override
+  String get taskBoardDetailColorOrange => 'Cam';
+
+  @override
+  String get taskBoardDetailColorPink => 'Hồng';
+
+  @override
+  String get taskBoardDetailColorPurple => 'Tím';
+
+  @override
+  String get taskBoardDetailColorRed => 'Đỏ';
+
+  @override
+  String get taskBoardDetailColorYellow => 'Vàng';
+
+  @override
+  String get taskBoardDetailCreateList => 'Tạo danh sách';
+
+  @override
+  String get taskBoardDetailCreateTask => 'Tạo công việc';
+
+  @override
+  String taskBoardDetailDaysAgo(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Đã chọn $count tệp',
-      one: 'Đã chọn 1 tệp',
-      zero: 'Chưa chọn tệp nào',
+      other: '$count ngày trước',
+      one: '$count ngày trước',
     );
     return '$_temp0';
   }
 
   @override
-  String get financeAttachmentEmpty => 'Chưa chọn tệp đính kèm';
+  String get taskBoardDetailDefaultHiddenListsDescription => 'Chế độ danh sách ẩn các danh sách Tài liệu cho đến khi bạn chọn bộ lọc danh sách hoặc trạng thái.';
 
   @override
-  String financeAttachmentHint(int count, String size) {
-    return 'Đính kèm tối đa $count tệp. Mỗi tệp tối đa $size.';
+  String get taskBoardDetailDefaultHiddenListsOverrideDescription => 'Bộ lọc danh sách hoặc trạng thái của bạn đang bỏ qua mặc định ẩn Tài liệu.';
+
+  @override
+  String get taskBoardDetailDefaultHiddenListsOverrideTitle => 'Danh sách ẩn mặc định đang hiển thị';
+
+  @override
+  String get taskBoardDetailDefaultHiddenListsTitle => 'Ẩn mặc định';
+
+  @override
+  String get taskBoardDetailDeleteForever => 'Xóa vĩnh viễn';
+
+  @override
+  String get taskBoardDetailDeleteList => 'Xóa danh sách';
+
+  @override
+  String get taskBoardDetailDeleteListDescription => 'Bạn có chắc chắn muốn xóa danh sách này không? Tất cả công việc trong danh sách này cũng sẽ bị xóa. Hành động này không thể hoàn tác.';
+
+  @override
+  String get taskBoardDetailDeleteListTitle => 'Xóa danh sách?';
+
+  @override
+  String get taskBoardDetailDeleteTask => 'Xóa công việc';
+
+  @override
+  String get taskBoardDetailDeleteTaskDescription => 'Di chuyển công việc này vào thùng rác?';
+
+  @override
+  String get taskBoardDetailDeleteTaskForever => 'Xóa vĩnh viễn công việc';
+
+  @override
+  String get taskBoardDetailDeleteTaskForeverDescription => 'Xóa vĩnh viễn công việc này khỏi thùng rác? Hành động này không thể hoàn tác.';
+
+  @override
+  String get taskBoardDetailDeleteTaskTitle => 'Xóa công việc?';
+
+  @override
+  String taskBoardDetailDeleteTasks(int count) {
+    return 'Xóa ($count)';
   }
 
   @override
-  String get financeAttachmentLimitReached => 'Đã đạt giới hạn tệp đính kèm';
+  String taskBoardDetailDeletedAgo(String time) {
+    return 'Đã xóa $time';
+  }
 
   @override
-  String financeAttachmentRejected(int count, String size) {
+  String taskBoardDetailDeletedTasksCount(int count) {
+    return '$count công việc đã xóa';
+  }
+
+  @override
+  String taskBoardDetailDueAt(String date) {
+    return 'Hạn $date';
+  }
+
+  @override
+  String get taskBoardDetailEditList => 'Chỉnh sửa danh sách';
+
+  @override
+  String get taskBoardDetailEditTask => 'Chỉnh sửa công việc';
+
+  @override
+  String get taskBoardDetailEditorDetailsTab => 'Chi tiết';
+
+  @override
+  String get taskBoardDetailEditorRelationshipsTab => 'Quan hệ';
+
+  @override
+  String get taskBoardDetailEnterBulkSelect => 'Chọn công việc';
+
+  @override
+  String get taskBoardDetailExitBulkSelect => 'Bỏ chọn';
+
+  @override
+  String get taskBoardDetailExpandList => 'Mở rộng danh sách';
+
+  @override
+  String get taskBoardDetailFilterAssignees => 'Người được giao';
+
+  @override
+  String get taskBoardDetailFilterLabels => 'Nhãn';
+
+  @override
+  String get taskBoardDetailFilterLists => 'Danh sách';
+
+  @override
+  String get taskBoardDetailFilterProjects => 'Dự án';
+
+  @override
+  String get taskBoardDetailFilterStatuses => 'Trạng thái';
+
+  @override
+  String get taskBoardDetailFilters => 'Bộ lọc';
+
+  @override
+  String get taskBoardDetailFiltersActive => 'Bộ lọc đang bật';
+
+  @override
+  String taskBoardDetailFromList(String list) {
+    return 'từ: $list';
+  }
+
+  @override
+  String taskBoardDetailInDays(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count tệp quá lớn hoặc vượt giới hạn. Mỗi tệp tối đa $size.',
-      one: '1 tệp quá lớn. Tối đa $size.',
+      other: 'trong $count ngày',
+      one: 'trong $count ngày',
     );
     return '$_temp0';
   }
 
   @override
-  String financeAttachmentUploadFailed(int count) {
+  String get taskBoardDetailInformation => 'Thông tin';
+
+  @override
+  String get taskBoardDetailInvalidDateRange => 'Ngày kết thúc phải cùng hoặc sau ngày bắt đầu';
+
+  @override
+  String get taskBoardDetailKanbanView => 'Kanban';
+
+  @override
+  String get taskBoardDetailListActions => 'Thao tác danh sách';
+
+  @override
+  String get taskBoardDetailListCreated => 'Đã tạo danh sách.';
+
+  @override
+  String get taskBoardDetailListDeleted => 'Đã xóa danh sách.';
+
+  @override
+  String get taskBoardDetailListNameLabel => 'Tên danh sách';
+
+  @override
+  String get taskBoardDetailListRenamed => 'Đã đổi tên danh sách.';
+
+  @override
+  String get taskBoardDetailListUpdated => 'Đã cập nhật danh sách.';
+
+  @override
+  String get taskBoardDetailListView => 'Danh sách';
+
+  @override
+  String get taskBoardDetailListsReordered => 'Đã sắp xếp lại danh sách.';
+
+  @override
+  String get taskBoardDetailLoadError => 'Không thể tải chi tiết bảng lúc này';
+
+  @override
+  String get taskBoardDetailManageBoardLayout => 'Quản lý bố cục bảng';
+
+  @override
+  String get taskBoardDetailManageBoardLayoutDescription => 'Quản lý các cột theo trạng thái và sắp xếp lại danh sách trong từng trạng thái.';
+
+  @override
+  String get taskBoardDetailMarkNotStarted => 'Chuyển về Chưa bắt đầu';
+
+  @override
+  String get taskBoardDetailMove => 'Di chuyển';
+
+  @override
+  String get taskBoardDetailMoveListDown => 'Di chuyển danh sách xuống';
+
+  @override
+  String get taskBoardDetailMoveListToStatus => 'Di chuyển danh sách sang trạng thái';
+
+  @override
+  String get taskBoardDetailMoveListUp => 'Di chuyển danh sách lên';
+
+  @override
+  String get taskBoardDetailMoveTask => 'Di chuyển công việc';
+
+  @override
+  String taskBoardDetailMovedToStatus(String status) {
+    return 'Đã chuyển sang $status';
+  }
+
+  @override
+  String taskBoardDetailNProjects(int count) {
+    return '$count dự án';
+  }
+
+  @override
+  String get taskBoardDetailNameRequired => 'Tên là bắt buộc';
+
+  @override
+  String get taskBoardDetailNextWeek => 'tuần sau';
+
+  @override
+  String get taskBoardDetailNoAvailableRelationshipTasks => 'Không có công việc khả dụng cho quan hệ này.';
+
+  @override
+  String get taskBoardDetailNoDate => 'Chưa đặt ngày';
+
+  @override
+  String get taskBoardDetailNoFilterOptions => 'Không có tùy chọn';
+
+  @override
+  String get taskBoardDetailNoListsDescription => 'Tạo danh sách để bắt đầu sắp xếp công việc trong bảng này.';
+
+  @override
+  String get taskBoardDetailNoListsInStatus => 'Không có danh sách nào trong trạng thái này';
+
+  @override
+  String get taskBoardDetailNoListsTitle => 'Chưa có danh sách';
+
+  @override
+  String get taskBoardDetailNoMatchingTasks => 'Không có công việc nào khớp với từ khóa tìm kiếm.';
+
+  @override
+  String get taskBoardDetailNoMoveTargets => 'Không có danh sách khác để di chuyển công việc này.';
+
+  @override
+  String get taskBoardDetailNoTasksInList => 'Danh sách này chưa có công việc';
+
+  @override
+  String get taskBoardDetailNoTasksSelected => 'Chưa chọn công việc nào';
+
+  @override
+  String get taskBoardDetailNone => 'Không có';
+
+  @override
+  String get taskBoardDetailOpenFullDetails => 'Mở chi tiết đầy đủ';
+
+  @override
+  String get taskBoardDetailOpenRelatedTask => 'Mở công việc liên quan';
+
+  @override
+  String get taskBoardDetailOverdue => 'Quá hạn';
+
+  @override
+  String get taskBoardDetailParentTask => 'Công việc cha';
+
+  @override
+  String taskBoardDetailPoints(int count) {
+    return '$count điểm';
+  }
+
+  @override
+  String get taskBoardDetailPriority => 'Độ ưu tiên';
+
+  @override
+  String get taskBoardDetailPriorityCritical => 'Nghiêm trọng';
+
+  @override
+  String get taskBoardDetailPriorityHigh => 'Cao';
+
+  @override
+  String get taskBoardDetailPriorityLow => 'Thấp';
+
+  @override
+  String get taskBoardDetailPriorityNone => 'Không ưu tiên';
+
+  @override
+  String get taskBoardDetailPriorityNormal => 'Bình thường';
+
+  @override
+  String get taskBoardDetailPriorityUpdated => 'Đã cập nhật độ ưu tiên.';
+
+  @override
+  String get taskBoardDetailProperties => 'Thuộc tính';
+
+  @override
+  String get taskBoardDetailQuickActions => 'Thao tác nhanh';
+
+  @override
+  String get taskBoardDetailRecycleBin => 'Thùng rác';
+
+  @override
+  String get taskBoardDetailRecycleBinDescription => 'Các công việc đã xóa từ bảng này. Chọn công việc để khôi phục hoặc xóa vĩnh viễn.';
+
+  @override
+  String get taskBoardDetailRecycleBinEmpty => 'Không có công việc đã xóa';
+
+  @override
+  String get taskBoardDetailRecycleBinEmptyHint => 'Công việc đã xóa sẽ xuất hiện ở đây.';
+
+  @override
+  String get taskBoardDetailRefresh => 'Làm mới bảng';
+
+  @override
+  String get taskBoardDetailRelatedTasks => 'Công việc liên quan';
+
+  @override
+  String get taskBoardDetailRelationshipAdded => 'Đã thêm quan hệ.';
+
+  @override
+  String get taskBoardDetailRelationshipRemoved => 'Đã xóa quan hệ.';
+
+  @override
+  String get taskBoardDetailRemoveDueDate => 'Xóa ngày hết hạn';
+
+  @override
+  String get taskBoardDetailRemoveRelationship => 'Xóa quan hệ';
+
+  @override
+  String get taskBoardDetailRenameBoard => 'Đổi tên bảng';
+
+  @override
+  String get taskBoardDetailRenameList => 'Đổi tên danh sách';
+
+  @override
+  String taskBoardDetailRestoreTasks(int count) {
+    return 'Khôi phục ($count)';
+  }
+
+  @override
+  String get taskBoardDetailSearchDone => 'Xong';
+
+  @override
+  String get taskBoardDetailSearchPlaceholder => 'Tìm kiếm công việc';
+
+  @override
+  String get taskBoardDetailSearchTasks => 'Tìm kiếm công việc';
+
+  @override
+  String get taskBoardDetailSearchTitle => 'Tìm kiếm công việc';
+
+  @override
+  String get taskBoardDetailSelectAllFiltered => 'Chọn hiển thị';
+
+  @override
+  String get taskBoardDetailSelectAllTasks => 'Chọn tất cả công việc';
+
+  @override
+  String get taskBoardDetailSelectTask => 'Chọn công việc';
+
+  @override
+  String taskBoardDetailSelectedCount(int selected, int total) {
+    return 'Đã chọn $selected/$total';
+  }
+
+  @override
+  String get taskBoardDetailSetCustomDate => 'Đặt ngày tùy chỉnh';
+
+  @override
+  String get taskBoardDetailSetDueDate => 'Đặt ngày hết hạn';
+
+  @override
+  String get taskBoardDetailSetEstimation => 'Đặt điểm ước lượng';
+
+  @override
+  String taskBoardDetailStartsAt(String date) {
+    return 'Bắt đầu $date';
+  }
+
+  @override
+  String get taskBoardDetailStatusActive => 'Đang thực hiện';
+
+  @override
+  String get taskBoardDetailStatusCategoryLabel => 'Nhóm trạng thái';
+
+  @override
+  String get taskBoardDetailStatusClosed => 'Đã đóng';
+
+  @override
+  String get taskBoardDetailStatusDocuments => 'Tài liệu';
+
+  @override
+  String get taskBoardDetailStatusDone => 'Hoàn thành';
+
+  @override
+  String get taskBoardDetailStatusNotStarted => 'Chưa bắt đầu';
+
+  @override
+  String get taskBoardDetailStatusReview => 'Chờ duyệt';
+
+  @override
+  String get taskBoardDetailTaskActions => 'Thao tác công việc';
+
+  @override
+  String taskBoardDetailTaskAssigneeCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count tệp đính kèm tải lên thất bại',
-      one: '1 tệp đính kèm tải lên thất bại',
+      other: '$count người được giao',
+      one: '$count người được giao',
     );
     return '$_temp0';
   }
 
   @override
-  String financeAttachmentUploadSuccess(int count) {
+  String get taskBoardDetailTaskAssignees => 'Người được giao';
+
+  @override
+  String get taskBoardDetailTaskCreated => 'Đã tạo công việc.';
+
+  @override
+  String get taskBoardDetailTaskDates => 'Ngày';
+
+  @override
+  String get taskBoardDetailTaskDeleted => 'Đã xóa công việc.';
+
+  @override
+  String get taskBoardDetailTaskDeletedForever => 'Đã xóa vĩnh viễn công việc.';
+
+  @override
+  String get taskBoardDetailTaskDescriptionComingSoon => 'Tính năng chỉnh sửa mô tả sẽ sớm có trên mobile.';
+
+  @override
+  String get taskBoardDetailTaskDescriptionDone => 'Xong';
+
+  @override
+  String get taskBoardDetailTaskDescriptionHint => 'Thêm mô tả';
+
+  @override
+  String get taskBoardDetailTaskDescriptionImageSourceCamera => 'Máy ảnh';
+
+  @override
+  String get taskBoardDetailTaskDescriptionImageSourceGallery => 'Thư viện';
+
+  @override
+  String get taskBoardDetailTaskDescriptionImageSourceTitle => 'Thêm hình ảnh';
+
+  @override
+  String get taskBoardDetailTaskDescriptionLabel => 'Mô tả';
+
+  @override
+  String get taskBoardDetailTaskDescriptionPersonalOnly => 'Tính năng chỉnh sửa mô tả hiện chỉ khả dụng trong không gian làm việc cá nhân.';
+
+  @override
+  String get taskBoardDetailTaskDescriptionTableAddColumn => 'Thêm cột';
+
+  @override
+  String get taskBoardDetailTaskDescriptionTableAddRow => 'Thêm hàng';
+
+  @override
+  String get taskBoardDetailTaskDescriptionTableRemoveColumn => 'Xóa cột';
+
+  @override
+  String get taskBoardDetailTaskDescriptionTableRemoveRow => 'Xóa hàng';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarBlockquote => 'Trích dẫn';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarBold => 'In đậm';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarBulletList => 'Danh sách chấm tròn';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarCodeBlock => 'Khối mã';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarHeading1 => 'Tiêu đề 1';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarHeading2 => 'Tiêu đề 2';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarHeading3 => 'Tiêu đề 3';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarHighlight => 'Tô sáng';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarInlineCode => 'Mã nội tuyến';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarInsertImage => 'Chèn hình ảnh';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarItalic => 'In nghiêng';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarOrderedList => 'Danh sách đánh số';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarStrikethrough => 'Gạch ngang';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarSubscript => 'Chỉ số dưới';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarSuperscript => 'Chỉ số trên';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarTaskList => 'Danh sách công việc';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarUnderline => 'Gạch dưới';
+
+  @override
+  String get taskBoardDetailTaskEditDescription => 'Chỉnh sửa mô tả';
+
+  @override
+  String get taskBoardDetailTaskEndDate => 'Ngày kết thúc';
+
+  @override
+  String get taskBoardDetailTaskEstimation => 'Ước lượng';
+
+  @override
+  String get taskBoardDetailTaskEstimationNone => 'Chưa ước lượng';
+
+  @override
+  String get taskBoardDetailTaskLabels => 'Nhãn';
+
+  @override
+  String get taskBoardDetailTaskListLabel => 'Danh sách';
+
+  @override
+  String get taskBoardDetailTaskListSelect => 'Chọn danh sách';
+
+  @override
+  String get taskBoardDetailTaskMoved => 'Đã di chuyển công việc.';
+
+  @override
+  String get taskBoardDetailTaskNoDescription => 'Chưa có mô tả';
+
+  @override
+  String get taskBoardDetailTaskProjects => 'Dự án';
+
+  @override
+  String get taskBoardDetailTaskRestored => 'Đã khôi phục công việc.';
+
+  @override
+  String get taskBoardDetailTaskSaved => 'Đã cập nhật công việc.';
+
+  @override
+  String get taskBoardDetailTaskSelectAssignees => 'Chọn người được giao';
+
+  @override
+  String get taskBoardDetailTaskSelectLabels => 'Chọn nhãn';
+
+  @override
+  String get taskBoardDetailTaskSelectProjects => 'Chọn dự án';
+
+  @override
+  String get taskBoardDetailTaskStartDate => 'Ngày bắt đầu';
+
+  @override
+  String get taskBoardDetailTaskTitleHint => 'Công việc chưa đặt tên';
+
+  @override
+  String get taskBoardDetailTaskTitleLabel => 'Tiêu đề';
+
+  @override
+  String get taskBoardDetailTaskTitleRequired => 'Tiêu đề công việc là bắt buộc';
+
+  @override
+  String get taskBoardDetailThisWeek => 'tuần này';
+
+  @override
+  String get taskBoardDetailTimelineEmptyDescription => 'Thêm ngày bắt đầu và ngày kết thúc cho công việc để hiển thị trên dòng thời gian.';
+
+  @override
+  String get taskBoardDetailTimelineEmptyTitle => 'Chưa có công việc nào được lên lịch';
+
+  @override
+  String get taskBoardDetailTimelineUnscheduledTitle => 'Công việc chưa lên lịch';
+
+  @override
+  String get taskBoardDetailTimelineView => 'Dòng thời gian';
+
+  @override
+  String get taskBoardDetailToday => 'hôm nay';
+
+  @override
+  String get taskBoardDetailTomorrow => 'ngày mai';
+
+  @override
+  String get taskBoardDetailUnableToOpenLinkedTask => 'Không thể mở công việc liên kết từ đây.';
+
+  @override
+  String get taskBoardDetailUntitledBoard => 'Bảng chưa đặt tên';
+
+  @override
+  String get taskBoardDetailUntitledList => 'Danh sách chưa đặt tên';
+
+  @override
+  String get taskBoardDetailUntitledTask => 'Công việc chưa đặt tên';
+
+  @override
+  String get taskBoardDetailYesterday => 'hôm qua';
+
+  @override
+  String get taskBoardsAccessDeniedDescription => 'Bạn cần quyền quản lý dự án trong không gian làm việc này để quản lý bảng công việc.';
+
+  @override
+  String get taskBoardsAccessDeniedTitle => 'Quyền truy cập bị hạn chế';
+
+  @override
+  String get taskBoardsArchive => 'Lưu trữ bảng';
+
+  @override
+  String get taskBoardsArchived => 'Đã lưu trữ bảng.';
+
+  @override
+  String get taskBoardsCreate => 'Tạo bảng';
+
+  @override
+  String get taskBoardsCreated => 'Đã tạo bảng.';
+
+  @override
+  String get taskBoardsCreatedAt => 'Đã tạo';
+
+  @override
+  String get taskBoardsDelete => 'Xóa bảng';
+
+  @override
+  String get taskBoardsDeleteConfirm => 'Chuyển bảng này vào mục đã xóa gần đây?';
+
+  @override
+  String get taskBoardsDeleteForever => 'Xóa vĩnh viễn';
+
+  @override
+  String get taskBoardsDeleteForeverConfirm => 'Xóa vĩnh viễn bảng này? Hành động này không thể hoàn tác.';
+
+  @override
+  String get taskBoardsDeleted => 'Đã chuyển bảng vào đã xóa gần đây.';
+
+  @override
+  String get taskBoardsDeletedForever => 'Đã xóa bảng vĩnh viễn.';
+
+  @override
+  String get taskBoardsDuplicate => 'Nhân bản bảng';
+
+  @override
+  String get taskBoardsDuplicated => 'Đã nhân bản bảng.';
+
+  @override
+  String get taskBoardsEdit => 'Sửa bảng';
+
+  @override
+  String get taskBoardsEmptyArchivedDescription => 'Các bảng đã lưu trữ sẽ hiển thị tại đây.';
+
+  @override
+  String get taskBoardsEmptyArchivedTitle => 'Không có bảng đã lưu trữ';
+
+  @override
+  String get taskBoardsEmptyDeletedDescription => 'Các bảng đã xóa sẽ xuất hiện ở đây trước khi bị xóa vĩnh viễn.';
+
+  @override
+  String get taskBoardsEmptyDeletedTitle => 'Không có bảng đã xóa gần đây';
+
+  @override
+  String get taskBoardsEmptyDescription => 'Tạo bảng đầu tiên để sắp xếp công việc.';
+
+  @override
+  String get taskBoardsEmptyTitle => 'Chưa có bảng nào';
+
+  @override
+  String get taskBoardsFilterActive => 'Đang hoạt động';
+
+  @override
+  String get taskBoardsFilterAll => 'Tất cả';
+
+  @override
+  String get taskBoardsFilterArchived => 'Đã lưu trữ';
+
+  @override
+  String get taskBoardsFilterRecentlyDeleted => 'Đã xóa gần đây';
+
+  @override
+  String get taskBoardsIconLabel => 'Biểu tượng bảng';
+
+  @override
+  String get taskBoardsIconPickerEmpty => 'Không tìm thấy biểu tượng';
+
+  @override
+  String get taskBoardsIconPickerSearch => 'Tìm biểu tượng';
+
+  @override
+  String get taskBoardsIconPickerTitle => 'Chọn biểu tượng bảng';
+
+  @override
+  String get taskBoardsIconPlaceholder => 'Chọn biểu tượng';
+
+  @override
+  String taskBoardsListsCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Đã tải lên $count tệp đính kèm',
-      one: 'Đã tải lên 1 tệp đính kèm',
+      other: '$count danh sách',
+      one: '$count danh sách',
     );
     return '$_temp0';
   }
 
   @override
-  String get financeAttachmentUploaded => 'Đã tải lên';
+  String get taskBoardsLoadError => 'Không thể tải bảng lúc này';
 
   @override
-  String get financeAttachmentUploading => 'Đang tải lên...';
+  String get taskBoardsNameLabel => 'Tên bảng';
 
   @override
-  String get financeAttachments => 'Tệp đính kèm';
+  String get taskBoardsNamePlaceholder => 'Bảng chưa đặt tên';
 
   @override
-  String get financeTransactionDetails => 'Chi tiết giao dịch';
+  String get taskBoardsNameRequired => 'Tên bảng là bắt buộc';
 
   @override
-  String get financeCreateTransaction => 'Tạo giao dịch';
+  String taskBoardsPageInfo(int current, int total) {
+    return 'Trang $current / $total';
+  }
 
   @override
-  String get financeEditTransaction => 'Sửa giao dịch';
+  String get taskBoardsPageSize => 'Kích thước trang';
 
   @override
-  String get financeTransactionDialogSubtitle => 'Ghi lại số tiền, nguồn và thiết lập hiển thị trong một nơi.';
+  String taskBoardsPageSizeOption(int count) {
+    return '$count mục';
+  }
 
   @override
-  String get financeDeleteTransaction => 'Xóa giao dịch';
+  String get taskBoardsRecentlyDeleted => 'Đã xóa gần đây';
 
   @override
-  String get financeDeleteTransactionConfirm => 'Xóa giao dịch này?';
+  String get taskBoardsRestore => 'Khôi phục bảng';
 
   @override
-  String get financeTransactionCreated => 'Đã tạo giao dịch';
+  String get taskBoardsRestored => 'Đã khôi phục bảng.';
 
   @override
-  String get financeTransactionUpdated => 'Đã cập nhật giao dịch';
-
-  @override
-  String get financeTransactionDeleted => 'Đã xóa giao dịch';
-
-  @override
-  String get financeAmount => 'Số tiền';
-
-  @override
-  String get financeDescription => 'Mô tả';
-
-  @override
-  String get financeTakenAt => 'Thời gian ghi nhận';
-
-  @override
-  String get financeCategory => 'Danh mục';
-
-  @override
-  String get financeWallet => 'Ví';
-
-  @override
-  String get financePickerWalletSubtitle => 'Chọn ví mà giao dịch này sẽ tác động.';
-
-  @override
-  String get financePickerCategorySubtitle => 'Chọn nhóm phù hợp nhất cho giao dịch này.';
-
-  @override
-  String get financePickerTagSubtitle => 'Chọn nhãn tùy chọn để thêm ngữ cảnh.';
-
-  @override
-  String get financePickerLoadingOptions => 'Đang tải ví, danh mục và thẻ...';
-
-  @override
-  String get financeNoTag => 'Không gắn thẻ';
-
-  @override
-  String get financeDestinationWallet => 'Ví đích';
-
-  @override
-  String get financeSourceWallet => 'Ví nguồn';
-
-  @override
-  String get financeSelectDestinationWallet => 'Chọn ví đích';
-
-  @override
-  String get financeTransferMode => 'Chế độ chuyển khoản';
-
-  @override
-  String get financeTransferModeEditHint => 'Chỉ có thể đổi chế độ chuyển khoản khi đang sửa một giao dịch chuyển khoản.';
-
-  @override
-  String get financeDestinationAmountOptional => 'Số tiền đích';
-
-  @override
-  String get financeSelectWalletAndCategoryFirst => 'Hãy chọn ví và danh mục trước';
-
-  @override
-  String get financeSelectWalletAndDestinationFirst => 'Hãy chọn ví nguồn và ví đích trước';
-
-  @override
-  String get financeWalletsMustBeDifferent => 'Ví nguồn và ví đích phải khác nhau';
-
-  @override
-  String get financeInvalidAmount => 'Vui lòng nhập số tiền hợp lệ';
-
-  @override
-  String get financeInvalidDestinationAmount => 'Vui lòng nhập số tiền đích hợp lệ';
-
-  @override
-  String get financeExcludedFromReports => 'Đã loại khỏi báo cáo';
-
-  @override
-  String get financeReportOptIn => 'Bao gồm trong báo cáo';
-
-  @override
-  String get financeConfidentialAmount => 'Ẩn số tiền';
-
-  @override
-  String get financeConfidentialDescription => 'Ẩn mô tả';
-
-  @override
-  String get financeConfidentialCategory => 'Ẩn danh mục';
-
-  @override
-  String get financeStatisticsSummary => 'Tổng quan thống kê';
-
-  @override
-  String get financeTotalTransactions => 'Tổng giao dịch';
-
-  @override
-  String get financeWalletNotFound => 'Không tìm thấy ví';
-
-  @override
-  String get financeCreateCategory => 'Tạo danh mục';
-
-  @override
-  String get financeEditCategory => 'Sửa danh mục';
-
-  @override
-  String get financeDeleteCategory => 'Xóa danh mục';
-
-  @override
-  String get financeDeleteCategoryConfirm => 'Xóa danh mục này?';
-
-  @override
-  String get financeCategoryNameRequired => 'Vui lòng nhập tên danh mục';
-
-  @override
-  String get financeCategoryDialogSubtitle => 'Xác định cách danh mục này hiển thị và nó là thu hay chi.';
-
-  @override
-  String get financeType => 'Loại';
-
-  @override
-  String get financeIcon => 'Biểu tượng';
-
-  @override
-  String get financeSelectIcon => 'Chọn biểu tượng';
-
-  @override
-  String get financeSearchIcons => 'Tìm biểu tượng';
-
-  @override
-  String get financeNoIconsFound => 'Không tìm thấy biểu tượng';
-
-  @override
-  String get financePreview => 'Xem trước';
-
-  @override
-  String get financeNoColor => 'Chưa có màu';
-
-  @override
-  String get financePickColor => 'Chọn màu';
-
-  @override
-  String get financeInvalidColor => 'Nhập mã màu hex hợp lệ';
-
-  @override
-  String get financeRandomizeColor => 'Ngẫu nhiên';
-
-  @override
-  String get financeToday => 'Hôm nay';
-
-  @override
-  String get financeYesterday => 'Hôm qua';
-
-  @override
-  String get financeNet => 'Ròng';
-
-  @override
-  String get financeNetBalance => 'Số dư ròng';
-
-  @override
-  String get financeYourWallets => 'Ví của bạn';
-
-  @override
-  String get financeQuickActions => 'Thao tác nhanh';
-
-  @override
-  String financeWalletSummaryHint(int count) {
+  String taskBoardsTasksCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Đã có $count ví sẵn sàng sử dụng',
-      one: 'Đã có 1 ví sẵn sàng sử dụng',
-      zero: 'Chưa cấu hình ví nào',
+      other: '$count công việc',
+      one: '$count công việc',
     );
     return '$_temp0';
   }
 
   @override
-  String get financeAddTransaction => 'Thêm';
+  String get taskBoardsTitle => 'Bảng';
 
   @override
-  String get financeAddFirstTransaction => 'Thêm giao dịch đầu tiên';
+  String get taskBoardsUnarchive => 'Bỏ lưu trữ bảng';
 
   @override
-  String get financeCreateFirstWallet => 'Tạo ví đầu tiên';
+  String get taskBoardsUnarchived => 'Đã bỏ lưu trữ bảng.';
 
   @override
-  String get financeTransfer => 'Chuyển khoản';
+  String get taskBoardsUpdated => 'Đã cập nhật bảng.';
 
   @override
-  String get financeTransactionCountShort => 'gd';
+  String get taskEstimatesAccessDeniedDescription => 'Bạn cần quyền quản lý dự án trong không gian làm việc này để thay đổi cài đặt ước lượng của bảng công việc.';
 
   @override
-  String get financeExchangeRate => 'Tỷ giá';
+  String get taskEstimatesAccessDeniedTitle => 'Quyền truy cập bị hạn chế';
 
   @override
-  String get financeDestinationAmountAuto => 'Tự động';
+  String get taskEstimatesAllowZeroEstimates => 'Cho phép ước lượng bằng 0';
 
   @override
-  String get financeDestinationAmountOverride => 'Thủ công';
+  String get taskEstimatesAllowZeroEstimatesDescription => 'Khi bật, các công việc có thể được ước lượng bằng giá trị 0 và sẽ đóng góp 0 vào tổng ước lượng.';
 
   @override
-  String get financeDestinationAmountAutoHint => 'Tự động điền từ tỷ giá thực tế';
+  String get taskEstimatesBoardConfigTitle => 'Cấu hình ước lượng của bảng';
 
   @override
-  String get financeDestinationAmountOverrideHint => 'Dùng số tiền tùy chỉnh — nhấn để chuyển sang tự động';
+  String get taskEstimatesConfiguredBoards => 'Đã cấu hình';
 
   @override
-  String get financeInvertRate => 'Đảo tỷ giá';
+  String get taskEstimatesCountUnestimatedIssues => 'Đếm các công việc chưa ước lượng';
 
   @override
-  String get timerTitle => 'Bấm giờ';
+  String get taskEstimatesCountUnestimatedIssuesDescription => 'Khi bật, các công việc chưa ước lượng sẽ được tính là 1 đơn vị vào tổng ước lượng. Khi tắt, chúng sẽ được tính là 0.';
 
   @override
-  String get timerStart => 'Bắt đầu';
+  String get taskEstimatesDescription => 'Cấu hình phương pháp ước lượng cho các bảng công việc và xem mức độ áp dụng hiện tại.';
 
   @override
-  String get timerStop => 'Dừng';
+  String get taskEstimatesDialogEstimationMethod => 'Phương pháp ước lượng';
+
+  @override
+  String get taskEstimatesDialogEstimationOptions => 'Tùy chọn ước lượng';
+
+  @override
+  String taskEstimatesDialogRangeTitle(String label) {
+    return 'Phạm vi $label';
+  }
+
+  @override
+  String get taskEstimatesDialogSave => 'Cập nhật ước lượng';
+
+  @override
+  String get taskEstimatesDialogSelectedConfiguration => 'Cấu hình đã chọn';
+
+  @override
+  String taskEstimatesDialogTitle(String boardName) {
+    return 'Chỉnh sửa $boardName';
+  }
+
+  @override
+  String get taskEstimatesDistributionTitle => 'Phương pháp ước lượng';
+
+  @override
+  String get taskEstimatesExtendedBadge => 'Mở rộng';
+
+  @override
+  String get taskEstimatesExtendedRangeBoards => 'Phạm vi mở rộng';
+
+  @override
+  String get taskEstimatesNoBoardsDescription => 'Hãy tạo bảng công việc trước, sau đó quay lại đây để cấu hình phương pháp ước lượng.';
+
+  @override
+  String get taskEstimatesNoBoardsTitle => 'Không tìm thấy bảng nào';
+
+  @override
+  String get taskEstimatesRangeExtended => 'Phạm vi mở rộng';
+
+  @override
+  String get taskEstimatesRangeStandard => 'Phạm vi tiêu chuẩn';
+
+  @override
+  String get taskEstimatesTitle => 'Ước lượng';
+
+  @override
+  String get taskEstimatesTotalBoards => 'Tổng số bảng';
+
+  @override
+  String get taskEstimatesTypeExponentialExtendedZeroDisabled => 'Dãy lũy thừa mở rộng: 1, 2, 4, 8, 16, 32, 64.';
+
+  @override
+  String get taskEstimatesTypeExponentialExtendedZeroEnabled => 'Dãy lũy thừa mở rộng: 0, 1, 2, 4, 8, 16, 32, 64.';
+
+  @override
+  String get taskEstimatesTypeExponentialLabel => 'Lũy thừa';
+
+  @override
+  String get taskEstimatesTypeExponentialStandardZeroDisabled => 'Dãy lũy thừa: 1, 2, 4, 8, 16.';
+
+  @override
+  String get taskEstimatesTypeExponentialStandardZeroEnabled => 'Dãy lũy thừa: 0, 1, 2, 4, 8, 16.';
+
+  @override
+  String get taskEstimatesTypeFibonacciExtendedZeroDisabled => 'Dãy Fibonacci mở rộng: 1, 2, 3, 5, 8, 13, 21.';
+
+  @override
+  String get taskEstimatesTypeFibonacciExtendedZeroEnabled => 'Dãy Fibonacci mở rộng: 0, 1, 2, 3, 5, 8, 13, 21.';
+
+  @override
+  String get taskEstimatesTypeFibonacciLabel => 'Fibonacci';
+
+  @override
+  String get taskEstimatesTypeFibonacciStandardZeroDisabled => 'Dãy Fibonacci: 1, 2, 3, 5, 8.';
+
+  @override
+  String get taskEstimatesTypeFibonacciStandardZeroEnabled => 'Dãy Fibonacci: 0, 1, 2, 3, 5, 8.';
+
+  @override
+  String get taskEstimatesTypeLinearExtendedZeroDisabled => 'Dãy tuyến tính mở rộng: 1, 2, 3, 4, 5, 6, 7.';
+
+  @override
+  String get taskEstimatesTypeLinearExtendedZeroEnabled => 'Dãy tuyến tính mở rộng: 0, 1, 2, 3, 4, 5, 6, 7.';
+
+  @override
+  String get taskEstimatesTypeLinearLabel => 'Tuyến tính';
+
+  @override
+  String get taskEstimatesTypeLinearStandardZeroDisabled => 'Dãy tuyến tính: 1, 2, 3, 4, 5.';
+
+  @override
+  String get taskEstimatesTypeLinearStandardZeroEnabled => 'Dãy tuyến tính: 0, 1, 2, 3, 4, 5.';
+
+  @override
+  String get taskEstimatesTypeNoneDescription => 'Không có phương pháp ước lượng nào được cấu hình cho bảng này.';
+
+  @override
+  String get taskEstimatesTypeNoneLabel => 'Không có';
+
+  @override
+  String get taskEstimatesTypeTshirtExtended => 'Kích cỡ áo mở rộng: -, XS, S, M, L, XL, XXL, XXXL.';
+
+  @override
+  String get taskEstimatesTypeTshirtExtendedZeroDisabled => 'Kích cỡ áo mở rộng: XS, S, M, L, XL, XXL, XXXL.';
+
+  @override
+  String get taskEstimatesTypeTshirtExtendedZeroEnabled => 'Kích cỡ áo mở rộng: -, XS, S, M, L, XL, XXL, XXXL.';
+
+  @override
+  String get taskEstimatesTypeTshirtLabel => 'Áo thun';
+
+  @override
+  String get taskEstimatesTypeTshirtStandard => 'Kích cỡ áo: -, XS, S, M, L, XL.';
+
+  @override
+  String get taskEstimatesTypeTshirtStandardZeroDisabled => 'Kích cỡ áo: XS, S, M, L, XL.';
+
+  @override
+  String get taskEstimatesTypeTshirtStandardZeroEnabled => 'Kích cỡ áo: -, XS, S, M, L, XL.';
+
+  @override
+  String get taskEstimatesUnnamedBoard => 'Bảng chưa đặt tên';
+
+  @override
+  String get taskEstimatesUpdateSuccess => 'Đã cập nhật ước lượng thành công.';
+
+  @override
+  String get taskLabelsColorInvalid => 'Nhập mã màu hex hợp lệ';
+
+  @override
+  String get taskLabelsCreate => 'Tạo nhãn';
+
+  @override
+  String get taskLabelsCreated => 'Đã tạo nhãn.';
+
+  @override
+  String get taskLabelsDelete => 'Xóa nhãn';
+
+  @override
+  String get taskLabelsDeleteConfirm => 'Xóa nhãn này?';
+
+  @override
+  String get taskLabelsDeleted => 'Đã xóa nhãn.';
+
+  @override
+  String get taskLabelsEdit => 'Sửa nhãn';
+
+  @override
+  String get taskLabelsEmptyDescription => 'Tạo nhãn để gắn thẻ và sắp xếp công việc.';
+
+  @override
+  String get taskLabelsEmptyTitle => 'Chưa có nhãn';
+
+  @override
+  String get taskLabelsName => 'Tên nhãn';
+
+  @override
+  String get taskLabelsNameRequired => 'Tên nhãn là bắt buộc';
+
+  @override
+  String get taskLabelsTab => 'Nhãn';
+
+  @override
+  String get taskLabelsUpdated => 'Đã cập nhật nhãn.';
+
+  @override
+  String get taskPlanningTitle => 'Lập kế hoạch';
+
+  @override
+  String get taskPortfolioAccessDeniedDescription => 'Bạn cần quyền quản lý dự án trong không gian làm việc này để quản lý dự án và sáng kiến.';
+
+  @override
+  String get taskPortfolioAccessDeniedTitle => 'Quyền truy cập bị hạn chế';
+
+  @override
+  String get taskPortfolioAllProjectsLinked => 'Tất cả dự án trong không gian làm việc đã được liên kết.';
+
+  @override
+  String get taskPortfolioClearSelection => 'Xóa';
+
+  @override
+  String get taskPortfolioCreateInitiative => 'Tạo sáng kiến';
+
+  @override
+  String get taskPortfolioCreateProject => 'Tạo dự án';
+
+  @override
+  String get taskPortfolioDeleteInitiative => 'Xóa sáng kiến';
+
+  @override
+  String get taskPortfolioDeleteInitiativeConfirm => 'Xóa sáng kiến này?';
+
+  @override
+  String get taskPortfolioDeleteProject => 'Xóa dự án';
+
+  @override
+  String get taskPortfolioDeleteProjectConfirm => 'Xóa dự án này?';
+
+  @override
+  String get taskPortfolioDeleteUpdate => 'Xóa cập nhật';
+
+  @override
+  String get taskPortfolioDeleteUpdateConfirm => 'Xóa cập nhật này?';
+
+  @override
+  String get taskPortfolioEditInitiative => 'Sửa sáng kiến';
+
+  @override
+  String get taskPortfolioEditProject => 'Sửa dự án';
+
+  @override
+  String get taskPortfolioEditUpdate => 'Sửa cập nhật';
+
+  @override
+  String get taskPortfolioInitiativeCreated => 'Đã tạo sáng kiến.';
+
+  @override
+  String get taskPortfolioInitiativeDeleted => 'Đã xóa sáng kiến.';
+
+  @override
+  String get taskPortfolioInitiativeDescriptionHint => 'Mô tả kết quả của sáng kiến';
+
+  @override
+  String get taskPortfolioInitiativeName => 'Tên sáng kiến';
+
+  @override
+  String get taskPortfolioInitiativeNameRequired => 'Tên sáng kiến là bắt buộc';
+
+  @override
+  String get taskPortfolioInitiativeProjectsLinked => 'dự án liên kết';
+
+  @override
+  String get taskPortfolioInitiativeStatus => 'Trạng thái sáng kiến';
+
+  @override
+  String get taskPortfolioInitiativeStatusActive => 'Đang hoạt động';
+
+  @override
+  String get taskPortfolioInitiativeStatusCancelled => 'Đã hủy';
+
+  @override
+  String get taskPortfolioInitiativeStatusCompleted => 'Hoàn thành';
+
+  @override
+  String get taskPortfolioInitiativeStatusOnHold => 'Tạm dừng';
+
+  @override
+  String get taskPortfolioInitiativeUpdated => 'Đã cập nhật sáng kiến.';
+
+  @override
+  String get taskPortfolioInitiativesEmptyDescription => 'Tạo một sáng kiến để nhóm các dự án liên quan dưới cùng một kết quả chung.';
+
+  @override
+  String get taskPortfolioInitiativesEmptyTitle => 'Chưa có sáng kiến';
+
+  @override
+  String get taskPortfolioInitiativesTab => 'Sáng kiến';
+
+  @override
+  String get taskPortfolioLinkProject => 'Liên kết dự án';
+
+  @override
+  String get taskPortfolioLinkTask => 'Liên kết nhiệm vụ';
+
+  @override
+  String get taskPortfolioLinkedProjects => 'Dự án đã liên kết';
+
+  @override
+  String get taskPortfolioLinkedTasks => 'Nhiệm vụ liên kết';
+
+  @override
+  String get taskPortfolioManageProjects => 'Quản lý dự án';
+
+  @override
+  String get taskPortfolioNoAvailableProjects => 'Chọn dự án';
+
+  @override
+  String get taskPortfolioNoAvailableTasks => 'Tất cả nhiệm vụ khả dụng đã được liên kết với dự án này.';
+
+  @override
+  String get taskPortfolioNoDescription => 'Chưa có mô tả';
+
+  @override
+  String get taskPortfolioNoLinkedProjects => 'Chưa có dự án nào được liên kết';
+
+  @override
+  String get taskPortfolioNoLinkedTasks => 'Chưa có nhiệm vụ nào được liên kết';
+
+  @override
+  String get taskPortfolioNoMatchingTasks => 'Không có nhiệm vụ nào khớp với từ khóa tìm kiếm.';
+
+  @override
+  String get taskPortfolioNoProjectUpdates => 'Chưa có cập nhật nào';
+
+  @override
+  String get taskPortfolioPickDate => 'Chọn ngày';
+
+  @override
+  String get taskPortfolioPostUpdate => 'Đăng cập nhật';
+
+  @override
+  String get taskPortfolioPostingUpdate => 'Đang đăng...';
+
+  @override
+  String get taskPortfolioProjectArchived => 'Đã lưu trữ';
+
+  @override
+  String get taskPortfolioProjectArchivedHint => 'Ẩn dự án này khỏi các chế độ xem lập kế hoạch đang hoạt động.';
+
+  @override
+  String get taskPortfolioProjectCompletedTasks => 'đã hoàn thành';
+
+  @override
+  String get taskPortfolioProjectCompletion => 'Tiến độ hoàn thành';
+
+  @override
+  String get taskPortfolioProjectCreated => 'Đã tạo dự án.';
+
+  @override
+  String get taskPortfolioProjectDeleted => 'Đã xóa dự án.';
+
+  @override
+  String get taskPortfolioProjectDescriptionHint => 'Mô tả mục tiêu của dự án';
+
+  @override
+  String get taskPortfolioProjectDetailsTitle => 'Chi tiết dự án';
+
+  @override
+  String get taskPortfolioProjectEndDate => 'Ngày kết thúc';
+
+  @override
+  String get taskPortfolioProjectHealth => 'Tình trạng tiến độ';
+
+  @override
+  String get taskPortfolioProjectHealthAtRisk => 'Có rủi ro';
+
+  @override
+  String get taskPortfolioProjectHealthOffTrack => 'Chệch tiến độ';
+
+  @override
+  String get taskPortfolioProjectHealthOnTrack => 'Đúng tiến độ';
+
+  @override
+  String get taskPortfolioProjectLead => 'Người phụ trách';
+
+  @override
+  String get taskPortfolioProjectLinked => 'Đã liên kết dự án.';
+
+  @override
+  String get taskPortfolioProjectName => 'Tên dự án';
+
+  @override
+  String get taskPortfolioProjectNameRequired => 'Tên dự án là bắt buộc';
+
+  @override
+  String get taskPortfolioProjectNoHealth => 'Chưa có tình trạng';
+
+  @override
+  String get taskPortfolioProjectNoLead => 'Chưa có người phụ trách';
+
+  @override
+  String get taskPortfolioProjectNotFoundDescription => 'Dự án này không còn khả dụng trong không gian làm việc hiện tại.';
+
+  @override
+  String get taskPortfolioProjectNotFoundTitle => 'Không tìm thấy dự án';
+
+  @override
+  String get taskPortfolioProjectPriority => 'Mức ưu tiên';
+
+  @override
+  String get taskPortfolioProjectPriorityCritical => 'Nghiêm trọng';
+
+  @override
+  String get taskPortfolioProjectPriorityHigh => 'Cao';
+
+  @override
+  String get taskPortfolioProjectPriorityLow => 'Thấp';
+
+  @override
+  String get taskPortfolioProjectPriorityNormal => 'Bình thường';
+
+  @override
+  String get taskPortfolioProjectStartDate => 'Ngày bắt đầu';
+
+  @override
+  String get taskPortfolioProjectStats => 'Thống kê dự án';
+
+  @override
+  String get taskPortfolioProjectStatus => 'Trạng thái dự án';
+
+  @override
+  String get taskPortfolioProjectStatusActive => 'Đang hoạt động';
+
+  @override
+  String get taskPortfolioProjectStatusBacklog => 'Tồn đọng';
+
+  @override
+  String get taskPortfolioProjectStatusCancelled => 'Đã hủy';
+
+  @override
+  String get taskPortfolioProjectStatusCompleted => 'Hoàn thành';
+
+  @override
+  String get taskPortfolioProjectStatusInProgress => 'Đang thực hiện';
+
+  @override
+  String get taskPortfolioProjectStatusInReview => 'Đang rà soát';
+
+  @override
+  String get taskPortfolioProjectStatusInTesting => 'Đang kiểm thử';
+
+  @override
+  String get taskPortfolioProjectStatusOnHold => 'Tạm dừng';
+
+  @override
+  String get taskPortfolioProjectStatusPlanned => 'Đã lên kế hoạch';
+
+  @override
+  String get taskPortfolioProjectTasks => 'Nhiệm vụ';
+
+  @override
+  String get taskPortfolioProjectTasksLinked => 'tác vụ liên kết';
+
+  @override
+  String taskPortfolioProjectTasksProgress(int completed, int total) {
+    return '$completed/$total nhiệm vụ';
+  }
+
+  @override
+  String get taskPortfolioProjectTimeline => 'Mốc thời gian';
+
+  @override
+  String get taskPortfolioProjectUnlinked => 'Đã gỡ liên kết dự án.';
+
+  @override
+  String get taskPortfolioProjectUpdated => 'Đã cập nhật dự án.';
+
+  @override
+  String get taskPortfolioProjectUpdates => 'Cập nhật dự án';
+
+  @override
+  String get taskPortfolioProjectsEmptyDescription => 'Tạo dự án đầu tiên để tổ chức công việc vượt ra ngoài từng tác vụ riêng lẻ.';
+
+  @override
+  String get taskPortfolioProjectsEmptyTitle => 'Chưa có dự án';
+
+  @override
+  String get taskPortfolioProjectsTab => 'Dự án';
+
+  @override
+  String get taskPortfolioSearchTasksHint => 'Tìm kiếm nhiệm vụ';
+
+  @override
+  String get taskPortfolioSelectTask => 'Chọn nhiệm vụ';
+
+  @override
+  String get taskPortfolioSelectTaskHint => 'Chọn một nhiệm vụ';
+
+  @override
+  String get taskPortfolioTaskLinked => 'Đã liên kết nhiệm vụ.';
+
+  @override
+  String get taskPortfolioTaskUnlinked => 'Đã gỡ liên kết nhiệm vụ.';
+
+  @override
+  String get taskPortfolioTitle => 'Danh mục';
+
+  @override
+  String get taskPortfolioUnknownUser => 'Người dùng không xác định';
+
+  @override
+  String get taskPortfolioUnlinkTask => 'Gỡ liên kết nhiệm vụ';
+
+  @override
+  String get taskPortfolioUpdateCannotBeEmpty => 'Nội dung cập nhật không được để trống';
+
+  @override
+  String get taskPortfolioUpdateDeleted => 'Đã xóa cập nhật.';
+
+  @override
+  String get taskPortfolioUpdateEdited => 'Đã chỉnh sửa';
+
+  @override
+  String get taskPortfolioUpdatePlaceholder => 'Chia sẻ tiến độ mới nhất, trở ngại hoặc kết quả nổi bật...';
+
+  @override
+  String get taskPortfolioUpdatePosted => 'Đã đăng cập nhật.';
+
+  @override
+  String get taskPortfolioUpdateSaved => 'Đã lưu cập nhật.';
+
+  @override
+  String get tasksAllCaughtUp => 'Đã hoàn thành tất cả!';
+
+  @override
+  String get tasksAllCaughtUpSubtitle => 'Không có công việc cần xử lý';
+
+  @override
+  String get tasksCompleteByEndOfDay => 'Hoàn thành trước cuối ngày';
+
+  @override
+  String get tasksCompleted => 'Đã hoàn thành';
+
+  @override
+  String tasksCompletedCount(int count) {
+    return 'Đã hoàn thành $count';
+  }
+
+  @override
+  String get tasksCreate => 'Tạo công việc';
+
+  @override
+  String get tasksDueToday => 'Hôm nay';
+
+  @override
+  String get tasksEmpty => 'Chưa có công việc';
+
+  @override
+  String get tasksGoodAfternoon => 'Chào buổi chiều';
+
+  @override
+  String get tasksGoodEvening => 'Chào buổi tối';
+
+  @override
+  String get tasksGoodMorning => 'Chào buổi sáng';
+
+  @override
+  String get tasksGoodNight => 'Chúc ngủ ngon';
+
+  @override
+  String get tasksLoadError => 'Không thể tải công việc lúc này';
+
+  @override
+  String get tasksOverdue => 'Quá hạn';
+
+  @override
+  String get tasksPlanAhead => 'Lên kế hoạch sớm';
+
+  @override
+  String get tasksPriorityCritical => 'Nghiêm trọng';
+
+  @override
+  String get tasksPriorityHigh => 'Cao';
+
+  @override
+  String get tasksPriorityLow => 'Thấp';
+
+  @override
+  String get tasksPriorityNormal => 'Bình thường';
+
+  @override
+  String get tasksRequiresAttention => 'Cần xử lý ngay';
+
+  @override
+  String get tasksTitle => 'Công việc';
+
+  @override
+  String get tasksUntitled => 'Công việc chưa có tiêu đề';
+
+  @override
+  String get tasksUpcoming => 'Sắp tới';
+
+  @override
+  String get timerActiveUsers => 'Người dùng hoạt động';
+
+  @override
+  String get timerActivityHeatmap => 'Hoạt động';
+
+  @override
+  String get timerAddCategory => 'Thêm danh mục';
+
+  @override
+  String get timerAddMissedEntry => 'Thêm mục bị thiếu';
+
+  @override
+  String get timerAdvanced => 'Nâng cao';
+
+  @override
+  String timerAllEditsRequireApproval(String date) {
+    return 'Tất cả các chỉnh sửa thời gian phải được gửi dưới dạng yêu cầu phê duyệt. Phiên này từ $date.';
+  }
+
+  @override
+  String get timerApprove => 'Duyệt';
+
+  @override
+  String timerAttachmentCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tệp đính kèm',
+      one: '1 tệp đính kèm',
+      zero: 'Không có tệp đính kèm',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timerAutoStartBreaks => 'Tự động bắt đầu nghỉ';
+
+  @override
+  String get timerAutoStartFocus => 'Tự động bắt đầu tập trung';
+
+  @override
+  String get timerCategory => 'Danh mục';
+
+  @override
+  String get timerCategoryColor => 'Màu sắc';
+
+  @override
+  String get timerCategoryColorLime => 'Xanh chanh';
+
+  @override
+  String get timerCategoryColorNone => 'Không';
+
+  @override
+  String get timerCategoryColorRose => 'Hồng hoa hồng';
+
+  @override
+  String get timerCategoryColorSky => 'Xanh da trời';
+
+  @override
+  String get timerCategoryColorTeal => 'Xanh mòng két';
+
+  @override
+  String get timerCategoryCreateInProgress => 'Đang tạo danh mục...';
+
+  @override
+  String get timerCategoryCreateSuccess => 'Đã tạo danh mục';
+
+  @override
+  String get timerCategoryDescription => 'Mô tả';
+
+  @override
+  String get timerCategoryName => 'Tên danh mục';
+
+  @override
+  String get timerCreateCategory => 'Tạo danh mục';
+
+  @override
+  String timerDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ngày',
+      one: '$count ngày',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timerDeleteConfirm => 'Xóa phiên này?';
+
+  @override
+  String get timerDeleteSession => 'Xóa phiên';
+
+  @override
+  String get timerDescription => 'Mô tả';
+
+  @override
+  String get timerDiscardSession => 'Hủy phiên';
+
+  @override
+  String get timerDuration => 'Thời lượng';
+
+  @override
+  String get timerEditSession => 'Sửa phiên';
+
+  @override
+  String get timerEndTime => 'Thời gian kết thúc';
+
+  @override
+  String get timerFocusTime => 'Thời gian tập trung';
+
+  @override
+  String get timerGoalsActive => 'Hoạt động';
+
+  @override
+  String timerGoalsActiveCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '# mục tiêu hoạt động',
+      one: '# mục tiêu hoạt động',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timerGoalsActiveLabel => 'Mục tiêu đang hoạt động';
+
+  @override
+  String get timerGoalsAdd => 'Thêm mục tiêu';
+
+  @override
+  String get timerGoalsCategory => 'Danh mục';
+
+  @override
+  String get timerGoalsCreate => 'Tạo mục tiêu';
+
+  @override
+  String get timerGoalsCreateSuccess => 'Đã tạo mục tiêu';
+
+  @override
+  String get timerGoalsCreateTitle => 'Tạo mục tiêu';
+
+  @override
+  String get timerGoalsDailyMinutes => 'Mục tiêu mỗi ngày (phút)';
+
+  @override
+  String get timerGoalsDailyProgress => 'Tiến độ ngày';
+
+  @override
+  String get timerGoalsDailyTarget => 'Mục tiêu ngày';
+
+  @override
+  String get timerGoalsDailyValidation => 'Mục tiêu mỗi ngày phải lớn hơn 0.';
+
+  @override
+  String get timerGoalsDelete => 'Xóa';
+
+  @override
+  String get timerGoalsDeleteDescription => 'Hành động này không thể hoàn tác.';
+
+  @override
+  String get timerGoalsDeleteSuccess => 'Đã xóa mục tiêu';
+
+  @override
+  String get timerGoalsDeleteTitle => 'Xóa mục tiêu?';
+
+  @override
+  String get timerGoalsEdit => 'Sửa';
+
+  @override
+  String get timerGoalsEditTitle => 'Sửa mục tiêu';
+
+  @override
+  String get timerGoalsEmptyDescription => 'Tạo mục tiêu đầu tiên để theo dõi tiến độ theo ngày và tuần.';
+
+  @override
+  String get timerGoalsEmptyTitle => 'Chưa có mục tiêu';
+
+  @override
+  String get timerGoalsGeneral => 'Tổng quát';
+
+  @override
+  String get timerGoalsInactive => 'Không hoạt động';
+
+  @override
+  String get timerGoalsOperationFailed => 'Không thể lưu thay đổi mục tiêu.';
+
+  @override
+  String get timerGoalsSave => 'Lưu mục tiêu';
+
+  @override
+  String get timerGoalsSubtitle => 'Theo dõi mục tiêu tập trung theo ngày và tuần';
+
+  @override
+  String get timerGoalsTitle => 'Mục tiêu';
+
+  @override
+  String get timerGoalsUpdateSuccess => 'Đã cập nhật mục tiêu';
+
+  @override
+  String get timerGoalsWeeklyMinutesOptional => 'Mục tiêu mỗi tuần (phút, không bắt buộc)';
+
+  @override
+  String get timerGoalsWeeklyProgress => 'Tiến độ tuần';
+
+  @override
+  String get timerGoalsWeeklyTarget => 'Mục tiêu tuần';
+
+  @override
+  String get timerGoalsWeeklyValidation => 'Mục tiêu mỗi tuần phải lớn hơn 0.';
+
+  @override
+  String timerHeatmapActiveDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ngày hoạt động',
+      one: '$count ngày hoạt động',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timerHeatmapActiveDaysLabel => 'Ngày hoạt động';
+
+  @override
+  String get timerHeatmapFri => 'T6';
+
+  @override
+  String get timerHeatmapLegendLess => 'Ít';
+
+  @override
+  String get timerHeatmapLegendMore => 'Nhiều';
+
+  @override
+  String get timerHeatmapLessThanMinute => '<1p';
+
+  @override
+  String get timerHeatmapMon => 'T2';
+
+  @override
+  String timerHeatmapMonthCompact(int month) {
+    return 'Thg $month';
+  }
+
+  @override
+  String timerHeatmapMonthNarrowColumn(int month) {
+    return '$month';
+  }
+
+  @override
+  String get timerHeatmapNoActivityYet => 'Chưa có hoạt động';
+
+  @override
+  String get timerHeatmapSat => 'T7';
+
+  @override
+  String timerHeatmapSessions(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count phiên',
+      one: '$count phiên',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timerHeatmapSessionsLabel => 'Phiên';
+
+  @override
+  String get timerHeatmapStartTracking => 'Bắt đầu theo dõi để xây dựng nhịp hoạt động của bạn';
+
+  @override
+  String get timerHeatmapSun => 'CN';
+
+  @override
+  String get timerHeatmapThu => 'T5';
+
+  @override
+  String get timerHeatmapTotal => 'Tổng';
+
+  @override
+  String timerHeatmapTrackedThisYear(String duration) {
+    return 'Đã theo dõi $duration trong năm nay';
+  }
+
+  @override
+  String get timerHeatmapTue => 'T3';
+
+  @override
+  String get timerHeatmapViewCalendarOnly => 'Lịch';
+
+  @override
+  String get timerHeatmapViewCompactCards => 'Thẻ';
+
+  @override
+  String get timerHeatmapViewHybrid => 'Kết hợp';
+
+  @override
+  String get timerHeatmapViewOriginal => 'Gốc';
+
+  @override
+  String get timerHeatmapWed => 'T4';
+
+  @override
+  String get timerHeatmapYearPattern => 'Mẫu hoạt động';
 
   @override
   String get timerHistory => 'Lịch sử';
+
+  @override
+  String get timerHistoryEndOfList => 'Bạn đã xem hết danh sách';
+
+  @override
+  String get timerHistoryLoadMore => 'Tải thêm';
+
+  @override
+  String get timerHistoryNoSessionsForPeriod => 'Không có phiên nào trong khoảng thời gian này';
+
+  @override
+  String get timerHistoryOverview => 'Tổng quan theo kỳ';
+
+  @override
+  String get timerHistoryPickerCurrent => 'Hiện tại';
+
+  @override
+  String get timerHistoryPickerYearTitle => 'Năm';
+
+  @override
+  String get timerHistoryTotalTime => 'Tổng thời gian';
+
+  @override
+  String get timerHourUnitShort => 'h';
+
+  @override
+  String get timerInfoRequired => 'Thông tin (bắt buộc)';
+
+  @override
+  String get timerInvalidDuration => 'Thời lượng không hợp lệ';
+
+  @override
+  String get timerLinkTask => 'Nhiệm vụ';
+
+  @override
+  String get timerLongBreak => 'Nghỉ dài';
+
+  @override
+  String get timerManagementTitle => 'Quản lý';
+
+  @override
+  String get timerMinuteUnitShort => 'p';
+
+  @override
+  String get timerMissedEntrySavedContent => 'Mục thời gian bỏ lỡ của bạn đã được thêm thành công.';
+
+  @override
+  String get timerMissedEntrySavedTitle => 'Đã lưu mục';
+
+  @override
+  String get timerNoCategory => 'Không có danh mục';
+
+  @override
+  String get timerNoSessions => 'Chưa có phiên nào';
+
+  @override
+  String get timerPause => 'Tạm dừng';
+
+  @override
+  String get timerPaused => 'Tạm dừng';
+
+  @override
+  String get timerPomodoro => 'Pomodoro';
+
+  @override
+  String get timerPomodoroSettings => 'Cài đặt Pomodoro';
+
+  @override
+  String get timerPomodoroSettingsDescription => 'Điều chỉnh thời gian tập trung, thời gian nghỉ và tự động chuyển giữa các phiên.';
+
+  @override
+  String get timerProofOfWorkRequired => 'Cần ít nhất một ảnh minh chứng.';
+
+  @override
+  String get timerReasonOptional => 'Lý do (không bắt buộc)';
+
+  @override
+  String get timerRecentSessions => 'Phiên gần đây';
+
+  @override
+  String get timerReject => 'Từ chối';
+
+  @override
+  String get timerRequestActivity => 'Hoạt động';
+
+  @override
+  String get timerRequestActivityActionCommentAdded => 'đã thêm bình luận';
+
+  @override
+  String get timerRequestActivityActionCommentDeleted => 'đã xóa bình luận';
+
+  @override
+  String get timerRequestActivityActionCommentUpdated => 'đã cập nhật bình luận';
+
+  @override
+  String get timerRequestActivityActionContentUpdated => 'đã cập nhật nội dung';
+
+  @override
+  String get timerRequestActivityActionCreated => 'đã tạo';
+
+  @override
+  String get timerRequestActivityActionStatusChanged => 'đã thay đổi trạng thái';
+
+  @override
+  String get timerRequestActivityCommentAdded => 'đã thêm bình luận';
+
+  @override
+  String get timerRequestActivityCommentDeleted => 'đã xóa bình luận';
+
+  @override
+  String get timerRequestActivityCommentUpdated => 'đã cập nhật bình luận';
+
+  @override
+  String get timerRequestActivityContentUpdated => 'đã cập nhật nội dung yêu cầu';
+
+  @override
+  String get timerRequestActivityCreated => 'đã tạo yêu cầu này';
+
+  @override
+  String get timerRequestActivityFeedbackLabel => 'Phản hồi';
+
+  @override
+  String get timerRequestActivityFieldDescription => 'Mô tả';
+
+  @override
+  String get timerRequestActivityFieldEndTime => 'Thời gian kết thúc';
+
+  @override
+  String get timerRequestActivityFieldStartTime => 'Thời gian bắt đầu';
+
+  @override
+  String get timerRequestActivityFieldTitle => 'Tiêu đề';
+
+  @override
+  String get timerRequestActivityItemsPerPage => 'Mục mỗi trang';
+
+  @override
+  String timerRequestActivityPageInfo(int current, int total) {
+    return 'Trang $current / $total';
+  }
+
+  @override
+  String get timerRequestActivityStatusChanged => 'đã thay đổi trạng thái yêu cầu';
+
+  @override
+  String get timerRequestActivityTitleLabel => 'Tiêu đề';
+
+  @override
+  String get timerRequestActivityUnknownUser => 'Người dùng không xác định';
+
+  @override
+  String get timerRequestActivityUpdated => 'đã cập nhật yêu cầu này';
+
+  @override
+  String get timerRequestAddComment => 'Thêm bình luận...';
+
+  @override
+  String get timerRequestAddImage => 'Thêm ảnh';
+
+  @override
+  String get timerRequestApproved => 'Đã duyệt';
+
+  @override
+  String timerRequestApprovedByAt(String name, String date) {
+    return 'Đã duyệt bởi $name vào $date';
+  }
+
+  @override
+  String get timerRequestCancelEditComment => 'Hủy';
+
+  @override
+  String get timerRequestComments => 'Bình luận';
+
+  @override
+  String get timerRequestDeleteComment => 'Xóa bình luận';
+
+  @override
+  String get timerRequestDeleteCommentConfirm => 'Xóa bình luận này?';
+
+  @override
+  String get timerRequestDescription => 'Mô tả';
+
+  @override
+  String get timerRequestDescriptionOptional => 'Mô tả (không bắt buộc)';
+
+  @override
+  String get timerRequestEdit => 'Chỉnh sửa';
+
+  @override
+  String get timerRequestEditRequest => 'Chỉnh sửa yêu cầu';
+
+  @override
+  String get timerRequestInfo => 'Yêu cầu thông tin';
+
+  @override
+  String timerRequestInfoRequestedBy(String name) {
+    return 'Đã yêu cầu thông tin bởi $name';
+  }
+
+  @override
+  String get timerRequestLastModifiedBy => 'Chỉnh sửa gần nhất bởi';
+
+  @override
+  String get timerRequestNeedsInfo => 'Cần thêm thông tin';
+
+  @override
+  String get timerRequestNeedsInfoReason => 'Lý do cần thêm thông tin';
+
+  @override
+  String get timerRequestNoActivity => 'Chưa có hoạt động';
+
+  @override
+  String get timerRequestNoComments => 'Chưa có bình luận';
+
+  @override
+  String get timerRequestPending => 'Đang chờ';
+
+  @override
+  String get timerRequestPostComment => 'Đăng';
+
+  @override
+  String timerRequestProofImagesCount(int current, int max) {
+    return 'Ảnh: $current/$max';
+  }
+
+  @override
+  String get timerRequestRejected => 'Bị từ chối';
+
+  @override
+  String timerRequestRejectedByAt(String name, String date) {
+    return 'Đã từ chối bởi $name vào $date';
+  }
+
+  @override
+  String get timerRequestRejectionReason => 'Lý do từ chối';
+
+  @override
+  String get timerRequestResubmit => 'Gửi lại yêu cầu';
+
+  @override
+  String get timerRequestRevertToApproved => 'Hoàn tác về Đã duyệt';
+
+  @override
+  String get timerRequestRevertToRejected => 'Hoàn tác về Đã từ chối';
+
+  @override
+  String get timerRequestSubmittedContent => 'Mục thời gian của bạn đã được gửi để duyệt.';
+
+  @override
+  String get timerRequestSubmittedTitle => 'Đã gửi yêu cầu';
+
+  @override
+  String get timerRequestUpdated => 'Đã cập nhật yêu cầu';
+
+  @override
+  String get timerRequestsFilterAllStatuses => 'Tất cả';
+
+  @override
+  String get timerRequestsFilterAllUsers => 'Tất cả người dùng';
+
+  @override
+  String get timerRequestsFilterApply => 'Áp dụng bộ lọc';
+
+  @override
+  String get timerRequestsFilterClear => 'Xóa bộ lọc';
+
+  @override
+  String get timerRequestsFilterStatusLabel => 'Trạng thái';
+
+  @override
+  String get timerRequestsFilterTitle => 'Lọc yêu cầu';
+
+  @override
+  String get timerRequestsFilterUserLabel => 'Người dùng';
+
+  @override
+  String get timerRequestsOpenFailed => 'Không thể mở yêu cầu này lúc này.';
+
+  @override
+  String get timerRequestsStatusChangeGracePeriodHelp => 'Đặt số phút cho phép người duyệt hoàn tác trạng thái giữa Đã duyệt và Đã từ chối theo cả hai chiều. Đặt 0 để tắt cả hai thao tác.';
+
+  @override
+  String get timerRequestsStatusChangeGracePeriodInvalid => 'Nhập số nguyên lớn hơn hoặc bằng 0 cho thời gian gia hạn hoàn tác trạng thái.';
+
+  @override
+  String get timerRequestsStatusChangeGracePeriodLabel => 'Thời gian gia hạn cho phép đổi giữa Đã duyệt và Đã từ chối (phút)';
+
+  @override
+  String get timerRequestsThresholdDescription => 'Chọn thời điểm mục bị thiếu cần gửi yêu cầu duyệt.';
+
+  @override
+  String get timerRequestsThresholdHelp => 'Các mục cũ hơn số ngày này phải gửi yêu cầu để được duyệt.';
+
+  @override
+  String get timerRequestsThresholdInvalid => 'Nhập số nguyên lớn hơn hoặc bằng 0.';
+
+  @override
+  String get timerRequestsThresholdLabel => 'Ngưỡng (ngày)';
+
+  @override
+  String get timerRequestsThresholdNoApproval => 'Không cần duyệt';
+
+  @override
+  String get timerRequestsThresholdNoApprovalHint => 'Có thể thêm mục bị thiếu trực tiếp mà không cần gửi yêu cầu.';
+
+  @override
+  String get timerRequestsThresholdTitle => 'Cài đặt ngưỡng yêu cầu';
+
+  @override
+  String get timerRequestsThresholdUpdated => 'Đã cập nhật ngưỡng yêu cầu.';
+
+  @override
+  String get timerRequestsTitle => 'Yêu cầu';
+
+  @override
+  String get timerResume => 'Tiếp tục';
 
   @override
   String get timerRunning => 'Đang chạy';
@@ -4815,10 +9882,28 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerRunningSessionNoTitle => 'Phiên không có tiêu đề';
 
   @override
-  String get timerPaused => 'Tạm dừng';
+  String get timerSave => 'Lưu';
 
   @override
-  String get timerStopped => 'Đã dừng';
+  String get timerSearchSessions => 'Tìm kiếm phiên...';
+
+  @override
+  String get timerSeeAll => 'Xem tất cả';
+
+  @override
+  String get timerSelectCategory => 'Chọn danh mục';
+
+  @override
+  String get timerSessionDeleted => 'Đã xóa phiên';
+
+  @override
+  String get timerSessionDescription => 'Mô tả';
+
+  @override
+  String get timerSessionExceeded => 'Phiên vượt ngưỡng';
+
+  @override
+  String get timerSessionExceededDescription => 'Phiên này đã vượt quá ngưỡng thời gian của không gian làm việc. Bạn có thể hủy phiên hoặc gửi yêu cầu để được duyệt.';
 
   @override
   String get timerSessionPauseSuccess => 'Đã tạm dừng phiên thành công.';
@@ -4830,67 +9915,52 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerSessionStopSuccess => 'Đã dừng phiên thành công.';
 
   @override
-  String get timerPause => 'Tạm dừng';
-
-  @override
-  String get timerResume => 'Tiếp tục';
-
-  @override
   String get timerSessionTitle => 'Tiêu đề phiên';
 
   @override
-  String get timerCategory => 'Danh mục';
+  String get timerSessionUpdated => 'Đã cập nhật phiên';
 
   @override
-  String get timerNoCategory => 'Không có danh mục';
+  String get timerSessionsUntilLong => 'Phiên trước khi nghỉ dài';
 
   @override
-  String get timerAddCategory => 'Thêm danh mục';
+  String get timerShortBreak => 'Nghỉ ngắn';
 
   @override
-  String get timerCategoryName => 'Tên danh mục';
+  String get timerStart => 'Bắt đầu';
 
   @override
-  String get timerCategoryColor => 'Màu sắc';
+  String get timerStartTime => 'Thời gian bắt đầu';
 
   @override
-  String get timerCategoryColorLime => 'Xanh chanh';
+  String get timerStatsPersonal => 'Cá nhân';
 
   @override
-  String get timerCategoryColorTeal => 'Xanh mòng két';
+  String get timerStatsTitle => 'Thống kê';
 
   @override
-  String get timerCategoryColorSky => 'Xanh da trời';
+  String get timerStatsWorkspace => 'Không gian làm việc';
 
   @override
-  String get timerCategoryColorRose => 'Hồng hoa hồng';
+  String get timerStop => 'Dừng';
 
   @override
-  String get timerCategoryDescription => 'Mô tả';
+  String get timerStopped => 'Đã dừng';
 
   @override
-  String get timerCategoryColorNone => 'Không';
+  String get timerStreak => 'Chuỗi ngày';
 
   @override
-  String get timerCreateCategory => 'Tạo danh mục';
+  String get timerSubmitAsRequest => 'Gửi yêu cầu';
 
   @override
-  String get timerCategoryCreateInProgress => 'Đang tạo danh mục...';
+  String get timerSubmitForApproval => 'Gửi duyệt';
 
   @override
-  String get timerCategoryCreateSuccess => 'Đã tạo danh mục';
+  String get timerSubmitInfo => 'Gửi thông tin';
 
   @override
-  String get timerSelectCategory => 'Chọn danh mục';
-
-  @override
-  String get timerAdvanced => 'Nâng cao';
-
-  @override
-  String get timerSessionDescription => 'Mô tả';
-
-  @override
-  String get timerLinkTask => 'Nhiệm vụ';
+  String get timerTaskIdPlaceholder => 'Chọn nhiệm vụ';
 
   @override
   String get timerTaskPickerAllTasks => 'Tất cả nhiệm vụ';
@@ -4932,477 +10002,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerTaskPickerSearch => 'Tìm kiếm nhiệm vụ';
 
   @override
-  String get timerTaskIdPlaceholder => 'Chọn nhiệm vụ';
-
-  @override
-  String timerAttachmentCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count tệp đính kèm',
-      one: '1 tệp đính kèm',
-      zero: 'Không có tệp đính kèm',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get timerRecentSessions => 'Phiên gần đây';
-
-  @override
-  String get timerSeeAll => 'Xem tất cả';
-
-  @override
-  String get timerNoSessions => 'Chưa có phiên nào';
-
-  @override
-  String get timerHistoryNoSessionsForPeriod => 'Không có phiên nào trong khoảng thời gian này';
-
-  @override
-  String get timerHistoryOverview => 'Tổng quan theo kỳ';
-
-  @override
-  String get timerHistoryTotalTime => 'Tổng thời gian';
-
-  @override
-  String get timerHistoryLoadMore => 'Tải thêm';
-
-  @override
-  String get timerHistoryEndOfList => 'Bạn đã xem hết danh sách';
-
-  @override
-  String get timerHistoryPickerYearTitle => 'Năm';
-
-  @override
-  String get timerHistoryPickerCurrent => 'Hiện tại';
-
-  @override
-  String get timerToday => 'Hôm nay';
-
-  @override
-  String get timerThisWeek => 'Tuần này';
-
-  @override
   String get timerThisMonth => 'Tháng này';
 
   @override
-  String get timerStreak => 'Chuỗi ngày';
-
-  @override
-  String get timerStatsTitle => 'Thống kê';
-
-  @override
-  String get timerStatsPersonal => 'Cá nhân';
-
-  @override
-  String get timerStatsWorkspace => 'Không gian làm việc';
-
-  @override
-  String get timerActivityHeatmap => 'Hoạt động';
-
-  @override
-  String timerHeatmapTrackedThisYear(String duration) {
-    return 'Đã theo dõi $duration trong năm nay';
-  }
-
-  @override
-  String get timerHeatmapStartTracking => 'Bắt đầu theo dõi để xây dựng nhịp hoạt động của bạn';
-
-  @override
-  String get timerHeatmapViewOriginal => 'Gốc';
-
-  @override
-  String get timerHeatmapViewHybrid => 'Kết hợp';
-
-  @override
-  String get timerHeatmapViewCalendarOnly => 'Lịch';
-
-  @override
-  String get timerHeatmapViewCompactCards => 'Thẻ';
-
-  @override
-  String get timerHeatmapLegendLess => 'Ít';
-
-  @override
-  String get timerHeatmapLegendMore => 'Nhiều';
-
-  @override
-  String timerHeatmapMonthCompact(int month) {
-    return 'Thg $month';
-  }
-
-  @override
-  String timerHeatmapMonthNarrowColumn(int month) {
-    return '$month';
-  }
-
-  @override
-  String get timerHeatmapYearPattern => 'Mẫu hoạt động';
-
-  @override
-  String timerHeatmapActiveDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count ngày hoạt động',
-      one: '$count ngày hoạt động',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get timerHeatmapMon => 'T2';
-
-  @override
-  String get timerHeatmapTue => 'T3';
-
-  @override
-  String get timerHeatmapWed => 'T4';
-
-  @override
-  String get timerHeatmapThu => 'T5';
-
-  @override
-  String get timerHeatmapFri => 'T6';
-
-  @override
-  String get timerHeatmapSat => 'T7';
-
-  @override
-  String get timerHeatmapSun => 'CN';
-
-  @override
-  String timerHeatmapSessions(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count phiên',
-      one: '$count phiên',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get timerHeatmapTotal => 'Tổng';
-
-  @override
-  String get timerHeatmapSessionsLabel => 'Phiên';
-
-  @override
-  String get timerHeatmapActiveDaysLabel => 'Ngày hoạt động';
-
-  @override
-  String get timerHeatmapLessThanMinute => '<1p';
-
-  @override
-  String get timerHeatmapNoActivityYet => 'Chưa có hoạt động';
-
-  @override
-  String get timerViewSessionDetails => 'Chi tiết phiên';
-
-  @override
-  String get timerEditSession => 'Sửa phiên';
-
-  @override
-  String get timerSessionUpdated => 'Đã cập nhật phiên';
-
-  @override
-  String get timerSessionDeleted => 'Đã xóa phiên';
-
-  @override
-  String get timerDeleteSession => 'Xóa phiên';
-
-  @override
-  String get timerDeleteConfirm => 'Xóa phiên này?';
-
-  @override
-  String get timerAddMissedEntry => 'Thêm mục bị thiếu';
-
-  @override
-  String get timerStartTime => 'Thời gian bắt đầu';
-
-  @override
-  String get timerEndTime => 'Thời gian kết thúc';
-
-  @override
-  String get timerDuration => 'Thời lượng';
-
-  @override
-  String get timerInvalidDuration => 'Thời lượng không hợp lệ';
-
-  @override
-  String get timerUnknownDate => 'Ngày không xác định';
-
-  @override
-  String get timerSave => 'Lưu';
-
-  @override
-  String get timerPomodoro => 'Pomodoro';
-
-  @override
-  String get timerPomodoroSettings => 'Cài đặt Pomodoro';
-
-  @override
-  String get timerPomodoroSettingsDescription => 'Điều chỉnh thời gian tập trung, thời gian nghỉ và tự động chuyển giữa các phiên.';
-
-  @override
-  String get timerFocusTime => 'Thời gian tập trung';
-
-  @override
-  String get timerShortBreak => 'Nghỉ ngắn';
-
-  @override
-  String get timerLongBreak => 'Nghỉ dài';
-
-  @override
-  String get timerSessionsUntilLong => 'Phiên trước khi nghỉ dài';
-
-  @override
-  String get timerRequestsTitle => 'Yêu cầu';
-
-  @override
-  String get timerRequestsFilterAllStatuses => 'Tất cả';
-
-  @override
-  String get timerRequestsFilterTitle => 'Lọc yêu cầu';
-
-  @override
-  String get timerRequestsFilterStatusLabel => 'Trạng thái';
-
-  @override
-  String get timerRequestsFilterUserLabel => 'Người dùng';
-
-  @override
-  String get timerRequestsFilterAllUsers => 'Tất cả người dùng';
-
-  @override
-  String get timerRequestsFilterClear => 'Xóa bộ lọc';
-
-  @override
-  String get timerRequestsFilterApply => 'Áp dụng bộ lọc';
-
-  @override
-  String get timerRequestPending => 'Đang chờ';
-
-  @override
-  String get timerRequestApproved => 'Đã duyệt';
-
-  @override
-  String get timerRequestRejected => 'Bị từ chối';
-
-  @override
-  String get timerRequestNeedsInfo => 'Cần thêm thông tin';
-
-  @override
-  String timerRequestInfoRequestedBy(String name) {
-    return 'Đã yêu cầu thông tin bởi $name';
-  }
-
-  @override
-  String get timerApprove => 'Duyệt';
-
-  @override
-  String get timerReject => 'Từ chối';
-
-  @override
-  String get timerRequestInfo => 'Yêu cầu thông tin';
-
-  @override
-  String get timerRequestResubmit => 'Gửi lại yêu cầu';
-
-  @override
-  String get timerRequestEdit => 'Chỉnh sửa';
-
-  @override
-  String get timerRequestEditRequest => 'Chỉnh sửa yêu cầu';
-
-  @override
-  String get timerRequestDescription => 'Mô tả';
-
-  @override
-  String get timerRequestDescriptionOptional => 'Mô tả (không bắt buộc)';
-
-  @override
-  String get timerRequestComments => 'Bình luận';
-
-  @override
-  String get timerRequestNoComments => 'Chưa có bình luận';
-
-  @override
-  String get timerRequestAddComment => 'Thêm bình luận...';
-
-  @override
-  String get timerRequestPostComment => 'Đăng';
-
-  @override
-  String get timerRequestCancelEditComment => 'Hủy';
-
-  @override
-  String get timerRequestDeleteComment => 'Xóa bình luận';
-
-  @override
-  String get timerRequestDeleteCommentConfirm => 'Xóa bình luận này?';
-
-  @override
-  String get timerRequestActivity => 'Hoạt động';
-
-  @override
-  String get timerRequestNoActivity => 'Chưa có hoạt động';
-
-  @override
-  String get timerRequestActivityCreated => 'đã tạo yêu cầu này';
-
-  @override
-  String get timerRequestActivityContentUpdated => 'đã cập nhật nội dung yêu cầu';
-
-  @override
-  String get timerRequestActivityStatusChanged => 'đã thay đổi trạng thái yêu cầu';
-
-  @override
-  String get timerRequestActivityCommentAdded => 'đã thêm bình luận';
-
-  @override
-  String get timerRequestActivityCommentUpdated => 'đã cập nhật bình luận';
-
-  @override
-  String get timerRequestActivityCommentDeleted => 'đã xóa bình luận';
-
-  @override
-  String get timerRequestActivityUpdated => 'đã cập nhật yêu cầu này';
-
-  @override
-  String taskBoardDetailTaskAssigneeCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count người được giao',
-      one: '$count người được giao',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get timerRequestActivityFeedbackLabel => 'Phản hồi';
-
-  @override
-  String get timerRequestActivityTitleLabel => 'Tiêu đề';
-
-  @override
-  String get timerRequestActivityUnknownUser => 'Người dùng không xác định';
-
-  @override
-  String get timerRequestActivityItemsPerPage => 'Mục mỗi trang';
-
-  @override
-  String timerRequestActivityPageInfo(int current, int total) {
-    return 'Trang $current / $total';
-  }
-
-  @override
-  String get timerRequestActivityActionCreated => 'đã tạo';
-
-  @override
-  String get timerRequestActivityActionStatusChanged => 'đã thay đổi trạng thái';
-
-  @override
-  String get timerRequestActivityActionContentUpdated => 'đã cập nhật nội dung';
-
-  @override
-  String get timerRequestActivityActionCommentAdded => 'đã thêm bình luận';
-
-  @override
-  String get timerRequestActivityActionCommentUpdated => 'đã cập nhật bình luận';
-
-  @override
-  String get timerRequestActivityActionCommentDeleted => 'đã xóa bình luận';
-
-  @override
-  String get timerRequestActivityFieldStartTime => 'Thời gian bắt đầu';
-
-  @override
-  String get timerRequestActivityFieldEndTime => 'Thời gian kết thúc';
-
-  @override
-  String get timerRequestActivityFieldTitle => 'Tiêu đề';
-
-  @override
-  String get timerRequestActivityFieldDescription => 'Mô tả';
-
-  @override
-  String get timerRequestAddImage => 'Thêm ảnh';
-
-  @override
-  String timerRequestProofImagesCount(int current, int max) {
-    return 'Ảnh: $current/$max';
-  }
-
-  @override
-  String get timerReasonOptional => 'Lý do (không bắt buộc)';
-
-  @override
-  String get timerInfoRequired => 'Thông tin (bắt buộc)';
-
-  @override
-  String get timerSubmitInfo => 'Gửi thông tin';
-
-  @override
-  String get timerRequestUpdated => 'Đã cập nhật yêu cầu';
-
-  @override
-  String get timerManagementTitle => 'Quản lý';
-
-  @override
-  String get timerSearchSessions => 'Tìm kiếm phiên...';
-
-  @override
-  String get timerDescription => 'Mô tả';
-
-  @override
-  String get timerWorkSession => 'Phiên làm việc';
-
-  @override
-  String get timerSubmitForApproval => 'Gửi duyệt';
-
-  @override
-  String get timerRequestSubmittedTitle => 'Đã gửi yêu cầu';
-
-  @override
-  String get timerRequestSubmittedContent => 'Mục thời gian của bạn đã được gửi để duyệt.';
-
-  @override
-  String get timerRequestRejectionReason => 'Lý do từ chối';
-
-  @override
-  String get timerRequestNeedsInfoReason => 'Lý do cần thêm thông tin';
-
-  @override
-  String get timerMissedEntrySavedTitle => 'Đã lưu mục';
-
-  @override
-  String get timerMissedEntrySavedContent => 'Mục thời gian bỏ lỡ của bạn đã được thêm thành công.';
-
-  @override
-  String get timerSessionExceeded => 'Phiên vượt ngưỡng';
-
-  @override
-  String get timerSessionExceededDescription => 'Phiên này đã vượt quá ngưỡng thời gian của không gian làm việc. Bạn có thể hủy phiên hoặc gửi yêu cầu để được duyệt.';
-
-  @override
-  String get timerTimeEditingRestricted => 'Chỉnh Sửa Thời Gian Bị Hạn Chế';
-
-  @override
-  String timerAllEditsRequireApproval(String date) {
-    return 'Tất cả các chỉnh sửa thời gian phải được gửi dưới dạng yêu cầu phê duyệt. Phiên này từ $date.';
-  }
-
-  @override
-  String get timerDiscardSession => 'Hủy phiên';
-
-  @override
-  String get timerSubmitAsRequest => 'Gửi yêu cầu';
-
-  @override
-  String get timerThresholdWarningAll => 'Mọi mục bổ sung trong không gian làm việc này đều cần được duyệt. Vui lòng thêm ít nhất một ảnh minh chứng trước khi gửi.';
+  String get timerThisWeek => 'Tuần này';
 
   @override
   String timerThresholdWarning(int days) {
@@ -5410,787 +10013,114 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get timerProofOfWorkRequired => 'Cần ít nhất một ảnh minh chứng.';
+  String get timerThresholdWarningAll => 'Mọi mục bổ sung trong không gian làm việc này đều cần được duyệt. Vui lòng thêm ít nhất một ảnh minh chứng trước khi gửi.';
 
   @override
-  String get timerRequestsThresholdTitle => 'Cài đặt ngưỡng yêu cầu';
+  String get timerTimeEditingRestricted => 'Chỉnh Sửa Thời Gian Bị Hạn Chế';
 
   @override
-  String get timerRequestsThresholdDescription => 'Chọn thời điểm mục bị thiếu cần gửi yêu cầu duyệt.';
+  String get timerTitle => 'Bấm giờ';
 
   @override
-  String get timerRequestsThresholdNoApproval => 'Không cần duyệt';
-
-  @override
-  String get timerRequestsThresholdNoApprovalHint => 'Có thể thêm mục bị thiếu trực tiếp mà không cần gửi yêu cầu.';
-
-  @override
-  String get timerRequestsThresholdLabel => 'Ngưỡng (ngày)';
-
-  @override
-  String get timerRequestsThresholdHelp => 'Các mục cũ hơn số ngày này phải gửi yêu cầu để được duyệt.';
-
-  @override
-  String get timerRequestsThresholdInvalid => 'Nhập số nguyên lớn hơn hoặc bằng 0.';
-
-  @override
-  String get timerRequestsStatusChangeGracePeriodLabel => 'Thời gian gia hạn cho phép đổi giữa Đã duyệt và Đã từ chối (phút)';
-
-  @override
-  String get timerRequestsStatusChangeGracePeriodHelp => 'Đặt số phút cho phép người duyệt hoàn tác trạng thái giữa Đã duyệt và Đã từ chối theo cả hai chiều. Đặt 0 để tắt cả hai thao tác.';
-
-  @override
-  String get timerRequestsStatusChangeGracePeriodInvalid => 'Nhập số nguyên lớn hơn hoặc bằng 0 cho thời gian gia hạn hoàn tác trạng thái.';
-
-  @override
-  String get timerRequestsThresholdUpdated => 'Đã cập nhật ngưỡng yêu cầu.';
-
-  @override
-  String get timerRequestsOpenFailed => 'Không thể mở yêu cầu này lúc này.';
-
-  @override
-  String get timerRequestRevertToApproved => 'Hoàn tác về Đã duyệt';
-
-  @override
-  String get timerRequestRevertToRejected => 'Hoàn tác về Đã từ chối';
-
-  @override
-  String get timerRequestLastModifiedBy => 'Chỉnh sửa gần nhất bởi';
-
-  @override
-  String timerRequestApprovedByAt(String name, String date) {
-    return 'Đã duyệt bởi $name vào $date';
-  }
-
-  @override
-  String timerRequestRejectedByAt(String name, String date) {
-    return 'Đã từ chối bởi $name vào $date';
-  }
-
-  @override
-  String get timerAutoStartBreaks => 'Tự động bắt đầu nghỉ';
-
-  @override
-  String get timerAutoStartFocus => 'Tự động bắt đầu tập trung';
-
-  @override
-  String get commonCancel => 'Hủy';
-
-  @override
-  String get commonClearSearch => 'Xóa tìm kiếm';
-
-  @override
-  String get commonNoSearchResults => 'Không có kết quả phù hợp';
+  String get timerToday => 'Hôm nay';
 
   @override
   String get timerTotalSessions => 'Tổng số phiên';
 
   @override
-  String get timerActiveUsers => 'Người dùng hoạt động';
+  String get timerUnknownDate => 'Ngày không xác định';
 
   @override
-  String get timerGoalsTitle => 'Mục tiêu';
+  String get timerViewSessionDetails => 'Chi tiết phiên';
 
   @override
-  String get timerGoalsSubtitle => 'Theo dõi mục tiêu tập trung theo ngày và tuần';
+  String get timerWorkSession => 'Phiên làm việc';
 
   @override
-  String get timerGoalsAdd => 'Thêm mục tiêu';
+  String get voiceAttach => 'Đính kèm bản ghi';
 
   @override
-  String get timerGoalsCreate => 'Tạo mục tiêu';
+  String get voiceMessage => 'Tin nhắn thoại';
 
   @override
-  String get timerGoalsCreateTitle => 'Tạo mục tiêu';
+  String get voicePause => 'Tạm dừng ghi âm';
 
   @override
-  String get timerGoalsCreateSuccess => 'Đã tạo mục tiêu';
+  String get voicePaused => 'Đã tạm dừng ghi âm';
 
   @override
-  String get timerGoalsEdit => 'Sửa';
+  String get voicePermission => 'Cho phép truy cập micrô để ghi âm.';
 
   @override
-  String get timerGoalsEditTitle => 'Sửa mục tiêu';
+  String get voicePreview => 'Nghe lại';
 
   @override
-  String get timerGoalsSave => 'Lưu mục tiêu';
+  String get voiceRecord => 'Ghi âm';
 
   @override
-  String get timerGoalsUpdateSuccess => 'Đã cập nhật mục tiêu';
+  String get voiceRecording => 'Đang ghi âm';
 
   @override
-  String get timerGoalsDelete => 'Xóa';
+  String get voiceRecordingError => 'Không thể ghi âm. Vui lòng thử lại.';
 
   @override
-  String get timerGoalsDeleteTitle => 'Xóa mục tiêu?';
+  String get voiceResume => 'Tiếp tục ghi âm';
 
   @override
-  String get timerGoalsDeleteDescription => 'Hành động này không thể hoàn tác.';
+  String get voiceRetake => 'Ghi âm lại';
 
   @override
-  String get timerGoalsDeleteSuccess => 'Đã xóa mục tiêu';
+  String get voiceSendNow => 'Gửi ngay';
 
   @override
-  String get timerGoalsOperationFailed => 'Không thể lưu thay đổi mục tiêu.';
+  String get voiceStop => 'Dừng';
 
   @override
-  String get timerGoalsEmptyTitle => 'Chưa có mục tiêu';
-
-  @override
-  String get timerGoalsEmptyDescription => 'Tạo mục tiêu đầu tiên để theo dõi tiến độ theo ngày và tuần.';
-
-  @override
-  String get timerGoalsCategory => 'Danh mục';
-
-  @override
-  String get timerGoalsGeneral => 'Tổng quát';
-
-  @override
-  String get timerGoalsDailyMinutes => 'Mục tiêu mỗi ngày (phút)';
-
-  @override
-  String get timerGoalsWeeklyMinutesOptional => 'Mục tiêu mỗi tuần (phút, không bắt buộc)';
-
-  @override
-  String get timerGoalsDailyValidation => 'Mục tiêu mỗi ngày phải lớn hơn 0.';
-
-  @override
-  String get timerGoalsWeeklyValidation => 'Mục tiêu mỗi tuần phải lớn hơn 0.';
-
-  @override
-  String get timerGoalsActive => 'Hoạt động';
-
-  @override
-  String get timerGoalsInactive => 'Không hoạt động';
-
-  @override
-  String get timerGoalsActiveLabel => 'Mục tiêu đang hoạt động';
-
-  @override
-  String get timerGoalsDailyProgress => 'Tiến độ ngày';
-
-  @override
-  String get timerGoalsWeeklyProgress => 'Tiến độ tuần';
-
-  @override
-  String get timerGoalsDailyTarget => 'Mục tiêu ngày';
-
-  @override
-  String get timerGoalsWeeklyTarget => 'Mục tiêu tuần';
-
-  @override
-  String timerGoalsActiveCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '# mục tiêu hoạt động',
-      one: '# mục tiêu hoạt động',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get timerHourUnitShort => 'h';
-
-  @override
-  String get timerMinuteUnitShort => 'p';
-
-  @override
-  String timerDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count ngày',
-      one: '$count ngày',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get settingsTitle => 'Cài đặt';
-
-  @override
-  String get settingsNavApp => 'Ứng dụng';
-
-  @override
-  String get settingsNavWorkspace => 'Không gian làm việc';
-
-  @override
-  String get settingsNavYou => 'Bạn';
-
-  @override
-  String get settingsAccountTab => 'Tài khoản';
-
-  @override
-  String get settingsPreferencesTab => 'Tùy chọn';
-
-  @override
-  String get settingsAboutTab => 'Giới thiệu';
-
-  @override
-  String get settingsLicensesTab => 'Giấy phép';
-
-  @override
-  String get settingsProfile => 'Hồ sơ';
-
-  @override
-  String get settingsProfileDescription => 'Quản lý thông tin cá nhân và ảnh đại diện của bạn.';
-
-  @override
-  String get settingsLanguage => 'Ngôn ngữ';
-
-  @override
-  String get settingsLanguageDescription => 'Chọn ngôn ngữ sử dụng trong toàn bộ ứng dụng.';
-
-  @override
-  String get settingsAppVersion => 'Phiên bản ứng dụng';
-
-  @override
-  String get settingsLanguageSystem => 'Mặc định hệ thống';
-
-  @override
-  String get settingsLanguageSystemDescription => 'Tự động theo ngôn ngữ của thiết bị.';
-
-  @override
-  String get settingsLanguageEnglish => 'Tiếng Anh';
-
-  @override
-  String get settingsLanguageVietnamese => 'Tiếng Việt';
-
-  @override
-  String get settingsTheme => 'Giao diện';
-
-  @override
-  String get settingsThemeDescription => 'Điều chỉnh giao diện ứng dụng theo thiết bị và sở thích của bạn.';
-
-  @override
-  String get settingsThemeLight => 'Sáng';
-
-  @override
-  String get settingsThemeDark => 'Tối';
-
-  @override
-  String get settingsThemeSystem => 'Hệ thống';
-
-  @override
-  String get settingsThemeSystemDescription => 'Tự động theo giao diện của thiết bị.';
-
-  @override
-  String get settingsFinanceAmounts => 'Số tiền tài chính';
-
-  @override
-  String get settingsHaptics => 'Phản hồi rung';
-
-  @override
-  String get settingsFinanceAmountsDescription => 'Hiện hoặc ẩn số dư và số tiền giao dịch trên toàn bộ màn hình tài chính.';
-
-  @override
-  String get settingsSwitchWorkspace => 'Chuyển không gian làm việc';
-
-  @override
-  String get settingsSwitchWorkspaceDescription => 'Di chuyển giữa ngữ cảnh cá nhân và nhóm.';
-
-  @override
-  String get settingsCalendar => 'Lịch';
-
-  @override
-  String get settingsFirstDayOfWeek => 'Ngày đầu tuần';
-
-  @override
-  String get settingsFirstDayOfWeekDescription => 'Kiểm soát cách lịch và tổng kết tuần bắt đầu.';
-
-  @override
-  String get settingsFirstDayAuto => 'Tự động';
-
-  @override
-  String get settingsFirstDayAutoDescription => 'Dùng mặc định của không gian làm việc hoặc ngôn ngữ khi có thể.';
-
-  @override
-  String get settingsFirstDaySunday => 'Chủ nhật';
-
-  @override
-  String get settingsFirstDayMonday => 'Thứ hai';
-
-  @override
-  String get settingsFirstDaySaturday => 'Thứ bảy';
-
-  @override
-  String get settingsHeroDescription => 'Thiết lập cá nhân, ngữ cảnh không gian làm việc và thông tin bản phát hành trong một nơi.';
-
-  @override
-  String get settingsSignedInAs => 'Đăng nhập bằng';
-
-  @override
-  String get settingsCurrentWorkspace => 'Không gian làm việc hiện tại';
-
-  @override
-  String get settingsCurrentWorkspaceDescription => 'Chọn không gian làm việc bạn đang dùng lúc này.';
-
-  @override
-  String get settingsDefaultTaskBoardNavigation => 'Mở bảng Tasks theo mặc định';
-
-  @override
-  String get settingsDefaultTaskBoardNavigationBoardPicker => 'Bộ chọn bảng';
-
-  @override
-  String get settingsDefaultTaskBoardNavigationDefaultBoard => 'Bảng Tasks';
-
-  @override
-  String get settingsDefaultTaskBoardNavigationDescription => 'Mở thẳng bảng Tasks cá nhân từ Bảng. Công việc luôn mở chế độ danh sách của bảng.';
-
-  @override
-  String get settingsExperimentalAppsDisabled => 'Đã tắt';
-
-  @override
-  String get settingsExperimentalAppsEnabled => 'Đã bật';
-
-  @override
-  String get settingsExperimentalAppsSectionDescription => 'Bật các ứng dụng không cốt lõi trong Trung tâm ứng dụng. Tasks, Calendar và Finance luôn có sẵn theo mặc định.';
-
-  @override
-  String get settingsExperimentalAppsSectionTitle => 'Thử nghiệm';
-
-  @override
-  String settingsExperimentalAppsTileDescription(String appName) {
-    return 'Hiển thị $appName trong Trung tâm ứng dụng.';
-  }
-
-  @override
-  String get settingsDefaultWorkspace => 'Không gian mặc định';
-
-  @override
-  String get settingsDefaultWorkspaceDescription => 'Ứng dụng sẽ mở vào đây mặc định mỗi lần khởi động.';
-
-  @override
-  String get settingsWorkspacePropertiesTitle => 'Thông tin không gian làm việc';
-
-  @override
-  String get settingsWorkspacePropertiesDescription => 'Cập nhật tên và ảnh đại diện của không gian làm việc.';
-
-  @override
-  String get settingsWorkspacePropertiesNoAccess => 'Bạn cần quyền quản lý cài đặt không gian làm việc để chỉnh sửa.';
-
-  @override
-  String get settingsWorkspacePropertiesPermissionLoading => 'Đang kiểm tra quyền trong không gian làm việc...';
-
-  @override
-  String get settingsWorkspacePropertiesUpdated => 'Đã cập nhật thông tin không gian làm việc.';
-
-  @override
-  String get settingsWorkspacePropertiesNameRequired => 'Tên không gian làm việc không được để trống';
-
-  @override
-  String get settingsWorkspaceAvatar => 'Ảnh đại diện không gian làm việc';
-
-  @override
-  String get settingsWorkspaceAvatarDescription => 'Tải ảnh mới lên hoặc xóa ảnh hiện tại.';
-
-  @override
-  String get settingsWorkspaceAvatarRemovePending => 'Ảnh hiện tại sẽ bị xóa khi bạn lưu.';
-
-  @override
-  String get settingsWorkspaceNameHint => 'Tên không gian làm việc';
-
-  @override
-  String get settingsNoEmail => 'Không có email';
-
-  @override
-  String get settingsNoWorkspaceSelected => 'Chưa chọn không gian làm việc';
-
-  @override
-  String get settingsWorkspaceActive => 'Đang hoạt động';
-
-  @override
-  String get settingsAccountSectionTitle => 'Tài khoản';
-
-  @override
-  String get settingsAccountSectionDescription => 'Truy cập hồ sơ và điều khiển phiên đăng nhập.';
-
-  @override
-  String get settingsWorkspaceSectionTitle => 'Không gian làm việc';
-
-  @override
-  String get settingsWorkspaceSectionDescription => 'Xem ngữ cảnh hiện tại và chuyển khi cần.';
-
-  @override
-  String get settingsWorkspaceSectionManageTitle => 'Thiết lập không gian làm việc';
-
-  @override
-  String get settingsWorkspaceAccessTitle => 'Quyền truy cập';
-
-  @override
-  String get settingsWorkspaceDefaultCurrencyTitle => 'Tiền tệ mặc định';
-
-  @override
-  String get settingsWorkspaceDefaultCurrencyDescription => 'Dùng một loại tiền tệ mặc định cho các luồng tài chính và hóa đơn trong không gian làm việc này.';
-
-  @override
-  String get settingsWorkspaceDefaultCurrencyField => 'Tiền tệ';
-
-  @override
-  String get settingsPreferencesSectionTitle => 'Tùy chọn';
-
-  @override
-  String get settingsPreferencesSectionDescription => 'Ngôn ngữ, giao diện và mặc định lịch.';
-
-  @override
-  String get settingsDangerSectionTitle => 'Phiên đăng nhập';
-
-  @override
-  String get settingsDangerSectionDescription => 'Đăng xuất và kết thúc quyền truy cập trên thiết bị này.';
-
-  @override
-  String get settingsQuickOpenProfile => 'Mở hồ sơ';
-
-  @override
-  String get settingsQuickSwitchWorkspace => 'Đổi hiện tại';
-
-  @override
-  String get settingsQuickDefaultWorkspace => 'Không gian mặc định';
-
-  @override
-  String get settingsDataStatusLabel => 'Dữ liệu';
-
-  @override
-  String get settingsDataStatusLive => 'Trực tiếp';
-
-  @override
-  String get settingsDataStatusCached => 'Đã lưu';
-
-  @override
-  String get settingsDataStatusRefreshing => 'Đang làm mới';
-
-  @override
-  String get settingsPullToRefreshAction => 'Làm mới ngay';
-
-  @override
-  String get settingsSignOut => 'Đăng xuất';
-
-  @override
-  String get settingsSignOutDescription => 'Kết thúc phiên đăng nhập trên thiết bị này.';
-
-  @override
-  String get settingsSignOutConfirm => 'Bạn có chắc muốn đăng xuất không?';
-
-  @override
-  String get settingsAboutSummary => 'Tuturuuu mobile giữ các công cụ không gian làm việc, trợ lý và luồng làm việc hằng ngày luôn trong tầm tay.';
-
-  @override
-  String get settingsAboutSectionTitle => 'Giới thiệu ứng dụng';
-
-  @override
-  String get settingsAboutSectionDescription => 'Thông tin bản phát hành và sản phẩm của bản dựng này.';
-
-  @override
-  String get settingsWhatsNew => 'Có gì mới';
-
-  @override
-  String get settingsWhatsNewDescription => 'Các thay đổi trong từng phiên bản đã phát hành.';
-
-  @override
-  String get settingsReleaseHistoryDescription => 'Xem những thay đổi của từng phiên bản, kể cả khi không có mạng.';
-
-  @override
-  String get settingsReleaseHistoryUnavailable => 'Hiện không thể xem lịch sử phát hành.';
-
-  @override
-  String get settingsReleaseNoDetails => 'Phiên bản này không có ghi chú thay đổi chi tiết.';
-
-  @override
-  String get settingsVersionLabel => 'Phiên bản';
-
-  @override
-  String get settingsBuildLabel => 'Bản dựng';
-
-  @override
-  String get settingsPackageLabel => 'Gói';
-
-  @override
-  String get settingsVersionTileDescription => 'Bản phát hành hiện được cài trên thiết bị này.';
-
-  @override
-  String get settingsInfrastructureSectionTitle => 'Hạ tầng';
-
-  @override
-  String get settingsInfrastructureSectionDescription => 'Các điều khiển toàn nền tảng chỉ có trong không gian làm việc nội bộ.';
-
-  @override
-  String get settingsMobileVersions => 'Phiên bản di động';
-
-  @override
-  String get settingsMobileVersionsTileDescription => 'Quản lý phiên bản hiệu lực, tối thiểu và cờ triển khai OTP cho ứng dụng di động.';
-
-  @override
-  String get settingsMobileVersionsTitle => 'Phiên bản di động';
-
-  @override
-  String get settingsMobileVersionsPageDescription => 'Quản lý phiên bản hiệu lực và tối thiểu mà ứng dụng di động sẽ áp dụng trước khi người dùng có thể tiếp tục, cùng với cờ triển khai OTP cho di động và web.';
-
-  @override
-  String get settingsMobileVersionsIosTitle => 'iOS';
-
-  @override
-  String get settingsMobileVersionsIosDescription => 'Đặt ngưỡng App Store và lời nhắc cập nhật cho người dùng iPhone và iPad.';
-
-  @override
-  String get settingsMobileVersionsAndroidTitle => 'Android';
-
-  @override
-  String get settingsMobileVersionsAndroidDescription => 'Đặt ngưỡng Play Store và lời nhắc cập nhật cho người dùng Android.';
-
-  @override
-  String get settingsMobileVersionsOtpEnabled => 'Bật đăng nhập OTP';
-
-  @override
-  String get settingsMobileVersionsIosOtpDescription => 'Cho phép đăng nhập ứng dụng iOS bằng mã xác thực email.';
-
-  @override
-  String get settingsMobileVersionsAndroidOtpDescription => 'Cho phép đăng nhập ứng dụng Android bằng mã xác thực email.';
-
-  @override
-  String get settingsMobileVersionsWebOtpTitle => 'OTP Web';
-
-  @override
-  String get settingsMobileVersionsWebOtpDescription => 'Cho phép trang đăng nhập web marketing dùng đăng nhập bằng mã xác thực email.';
-
-  @override
-  String get settingsMobileVersionsEffectiveVersion => 'Phiên bản hiệu lực';
-
-  @override
-  String get settingsMobileVersionsEffectiveVersionDescription => 'Các phiên bản thấp hơn ngưỡng này sẽ thấy lời nhắc cập nhật.';
-
-  @override
-  String get settingsMobileVersionsMinimumVersion => 'Phiên bản tối thiểu';
-
-  @override
-  String get settingsMobileVersionsMinimumVersionDescription => 'Các phiên bản thấp hơn ngưỡng này buộc phải cập nhật mới được tiếp tục.';
-
-  @override
-  String get settingsMobileVersionsStoreUrl => 'URL cửa hàng';
-
-  @override
-  String get settingsMobileVersionsStoreUrlDescription => 'Bắt buộc khi đặt một trong hai ngưỡng phiên bản.';
-
-  @override
-  String get settingsMobileVersionsVersionPlaceholder => '1.2.3';
-
-  @override
-  String get settingsMobileVersionsStoreUrlPlaceholder => 'https://apps.apple.com/app/id123456789';
-
-  @override
-  String get settingsMobileVersionsSave => 'Lưu thay đổi';
-
-  @override
-  String get settingsMobileVersionsSaving => 'Đang lưu...';
-
-  @override
-  String get settingsMobileVersionsSaveSuccess => 'Đã lưu chính sách phiên bản di động.';
-
-  @override
-  String get settingsMobileVersionsSaveError => 'Không thể lưu chính sách phiên bản di động.';
-
-  @override
-  String get settingsMobileVersionsLoadError => 'Không thể tải chính sách phiên bản di động.';
-
-  @override
-  String get settingsMobileVersionsWorkspaceRequiredTitle => 'Cần không gian nội bộ';
-
-  @override
-  String get settingsMobileVersionsWorkspaceRequiredDescription => 'Chuyển sang không gian làm việc nội bộ để quản lý chính sách phiên bản di động của nền tảng.';
-
-  @override
-  String get settingsMobileVersionsAccessDeniedTitle => 'Cần quyền truy cập';
-
-  @override
-  String get settingsMobileVersionsAccessDeniedDescription => 'Bạn cần quyền quản lý vai trò trong không gian làm việc nội bộ để quản lý chính sách phiên bản di động.';
-
-  @override
-  String get settingsMobileVersionsValidationVersionFormat => 'Dùng định dạng phiên bản x.y.z.';
-
-  @override
-  String get settingsMobileVersionsValidationStoreUrlRequired => 'URL cửa hàng là bắt buộc khi có đặt phiên bản.';
-
-  @override
-  String get settingsMobileVersionsValidationEffectiveAtLeastMinimum => 'Phiên bản hiệu lực phải lớn hơn hoặc bằng phiên bản tối thiểu.';
-
-  @override
-  String get settingsLicensesSectionTitle => 'Giấy phép mã nguồn mở';
-
-  @override
-  String get settingsLicensesSectionDescription => 'Xem các thông báo phần mềm bên thứ ba được đóng gói trong ứng dụng.';
-
-  @override
-  String get settingsLicenseViewerTitle => 'Mở trình xem giấy phép';
-
-  @override
-  String get settingsLicenseViewerDescription => 'Duyệt các giấy phép Flutter, plugin và package có trong bản dựng này.';
-
-  @override
-  String get settingsLicenseVersionDescription => 'Đối chiếu phiên bản đã cài khi xem thông báo.';
-
-  @override
-  String get settingsMinutesUnit => 'phút';
-
-  @override
-  String get profileTitle => 'Hồ sơ';
-
-  @override
-  String get profileIdentitySectionTitle => 'Danh tính';
-
-  @override
-  String get profileIdentitySectionDescription => 'Giữ các thông tin cốt lõi mà mọi người thấy về tài khoản của bạn luôn cập nhật.';
-
-  @override
-  String get profileAvatar => 'Ảnh đại diện';
-
-  @override
-  String get profileAvatarSet => 'Đã gắn ảnh';
-
-  @override
-  String get profileAvatarDescription => 'Tải lên ảnh đại diện của bạn';
-
-  @override
-  String get profileAvatarSectionTitle => 'Ảnh đại diện';
-
-  @override
-  String get profileAvatarActionDescription => 'Chọn ảnh mới hoặc làm mới ảnh hiện đang gắn với tài khoản.';
-
-  @override
-  String get profileAvatarPickerDescription => 'Chọn nơi lấy ảnh đại diện mới của bạn.';
+  String get workspaceAllHidden => 'Các không gian làm việc của bạn đã bị ẩn. Hiện lại một không gian để tiếp tục.';
 
   @override
   String get workspaceAvatarPickerDescription => 'Chọn nơi lấy ảnh đại diện mới cho không gian làm việc.';
 
   @override
-  String get profileUploadAvatar => 'Tải lên ảnh đại diện';
+  String get workspaceCreateCancel => 'Hủy';
 
   @override
-  String get profileChangeAvatar => 'Thay đổi ảnh đại diện';
+  String get workspaceCreateDescription => 'Tạo một không gian mới cho dự án, thói quen, tài chính và nhiều hơn nữa.';
 
   @override
-  String get profileRemoveAvatar => 'Xóa ảnh đại diện';
+  String get workspaceCreateError => 'Không thể tạo không gian làm việc';
 
   @override
-  String get profileRemoveAvatarDescription => 'Xóa ảnh hiện tại khỏi hồ sơ tài khoản của bạn.';
-
-  @override
-  String get profileRemoveConfirm => 'Xóa ảnh đại diện?';
-
-  @override
-  String get profileAccountStatus => 'Trạng thái tài khoản';
-
-  @override
-  String get profileAccountStatusDescription => 'Chi tiết thành viên và xác minh của tài khoản này.';
-
-  @override
-  String get profileStatus => 'Trạng thái';
-
-  @override
-  String get profileStatusUnknown => 'Không rõ';
-
-  @override
-  String get profileVerification => 'Xác minh';
-
-  @override
-  String get profileActive => 'Hoạt động';
-
-  @override
-  String get profileVerified => 'Đã xác thực';
-
-  @override
-  String get profileMemberSince => 'Thành viên từ';
-
-  @override
-  String get profileDisplayName => 'Tên hiển thị';
-
-  @override
-  String get profileDisplayNameHint => 'Tên hiển thị của bạn';
-
-  @override
-  String get profileDisplayNameDescription => 'Tên này xuất hiện ở các bề mặt cộng tác trong ứng dụng.';
-
-  @override
-  String get profileDisplayNameRequired => 'Tên hiển thị không được để trống';
-
-  @override
-  String get profileFullName => 'Tên đầy đủ';
-
-  @override
-  String get profileFullNameHint => 'Tên đầy đủ của bạn';
-
-  @override
-  String get profileFullNameDescription => 'Dùng tên pháp lý hoặc tên đầy đủ bạn muốn lưu trong hồ sơ tài khoản.';
-
-  @override
-  String get profileFullNameRequired => 'Tên đầy đủ không được để trống';
-
-  @override
-  String get profileEmail => 'Email';
-
-  @override
-  String get profileEmailHint => 'example@tuturuuu.com';
-
-  @override
-  String get profileEmailDescription => 'Khi cập nhật email, thư xác nhận sẽ được gửi đến cả địa chỉ cũ và mới.';
-
-  @override
-  String get profileInvalidEmail => 'Vui lòng nhập địa chỉ email hợp lệ';
-
-  @override
-  String get profileCurrentEmail => 'Email hiện tại';
-
-  @override
-  String get profileNewEmail => 'Email mới';
-
-  @override
-  String get profileMissingValue => 'Chưa đặt';
-
-  @override
-  String get profileDangerAction => 'Nguy hiểm';
-
-  @override
-  String profileEmailPendingChange(String email) {
-    return 'Đang chờ đổi sang $email';
+  String workspaceCreateLimitInfo(int current, int limit) {
+    return '$current / $limit không gian làm việc đã dùng';
   }
 
   @override
-  String get profileEmailUpdateNote => 'Email xác nhận sẽ được gửi đến cả hai địa chỉ';
+  String get workspaceCreateLimitReached => 'Bạn đã đạt giới hạn không gian làm việc';
 
   @override
-  String get profileUpdateSuccess => 'Cập nhật hồ sơ thành công';
+  String get workspaceCreateNameHint => 'Tên không gian làm việc';
 
   @override
-  String get profileUpdateError => 'Không thể cập nhật hồ sơ';
+  String get workspaceCreateNameRequired => 'Vui lòng nhập tên không gian làm việc';
 
   @override
-  String get profileAvatarUpdateSuccess => 'Cập nhật ảnh đại diện thành công';
+  String get workspaceCreateNew => 'Tạo mới';
 
   @override
-  String get profileAvatarUpdateError => 'Không thể cập nhật ảnh đại diện';
+  String get workspaceCreatePrompt => 'Tạo không gian làm việc đầu tiên để bắt đầu';
 
   @override
-  String get profileAvatarRemoveSuccess => 'Đã xóa ảnh đại diện';
+  String get workspaceCreateSubmit => 'Tạo không gian làm việc';
 
   @override
-  String get profileAvatarRemoveError => 'Không thể xóa ảnh đại diện';
+  String get workspaceCreateSuccess => 'Đã tạo không gian làm việc.';
 
   @override
-  String get profileLoading => 'Đang tải hồ sơ...';
+  String get workspaceCreateSuccessAvatarWarning => 'Đã tạo không gian làm việc, nhưng ảnh đại diện không tải lên được.';
 
   @override
-  String get profileSave => 'Lưu';
-
-  @override
-  String get profileCancel => 'Hủy';
-
-  @override
-  String get workspacePickerTitle => 'Không gian làm việc';
-
-  @override
-  String get workspacePickerSearchHint => 'Tìm không gian làm việc';
-
-  @override
-  String get workspaceDefaultPickerTitle => 'Không gian mặc định';
+  String get workspaceCreateTitle => 'Tạo không gian làm việc';
 
   @override
   String get workspaceCurrentBadge => 'Hiện tại';
@@ -6199,10 +10129,52 @@ class AppLocalizationsVi extends AppLocalizations {
   String get workspaceDefaultBadge => 'Mặc định';
 
   @override
+  String get workspaceDefaultPickerTitle => 'Không gian mặc định';
+
+  @override
+  String get workspaceHiddenDescription => 'Chỉ bạn thấy danh sách này. Ẩn không thay đổi tư cách thành viên hay thông báo.';
+
+  @override
+  String get workspaceHiddenEmpty => 'Không có không gian làm việc đã ẩn';
+
+  @override
+  String get workspaceHiddenLoadError => 'Không thể tải tùy chọn hiển thị. Các lựa chọn ẩn đã lưu được giữ lại.';
+
+  @override
+  String get workspaceHiddenTitle => 'Không gian làm việc đã ẩn';
+
+  @override
+  String get workspaceHiddenUpdateError => 'Không thể lưu thay đổi. Hãy thử lại khi có kết nối.';
+
+  @override
+  String get workspaceHideAction => 'Ẩn';
+
+  @override
   String get workspacePersonalBadge => 'Cá nhân';
 
   @override
   String get workspacePersonalSection => 'Cá nhân';
+
+  @override
+  String get workspacePickerClose => 'Đóng danh sách không gian làm việc';
+
+  @override
+  String get workspacePickerSearchHint => 'Tìm không gian làm việc';
+
+  @override
+  String get workspacePickerTitle => 'Không gian làm việc';
+
+  @override
+  String get workspaceRestoreAction => 'Hiện lại';
+
+  @override
+  String get workspaceSelectEmpty => 'Không tìm thấy không gian làm việc';
+
+  @override
+  String get workspaceSelectError => 'Không thể chuyển không gian làm việc';
+
+  @override
+  String get workspaceSelectTitle => 'Chọn không gian làm việc';
 
   @override
   String get workspaceSystemBadge => 'Hệ thống';
@@ -6212,3973 +10184,4 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get workspaceTeamSection => 'Nhóm làm việc';
-
-  @override
-  String get workspaceCreateTitle => 'Tạo không gian làm việc';
-
-  @override
-  String get workspaceCreateDescription => 'Tạo một không gian mới cho dự án, thói quen, tài chính và nhiều hơn nữa.';
-
-  @override
-  String get workspaceCreateSuccess => 'Đã tạo không gian làm việc.';
-
-  @override
-  String get workspaceCreateSuccessAvatarWarning => 'Đã tạo không gian làm việc, nhưng ảnh đại diện không tải lên được.';
-
-  @override
-  String get workspaceCreateError => 'Không thể tạo không gian làm việc';
-
-  @override
-  String get workspaceCreateNew => 'Tạo mới';
-
-  @override
-  String get workspaceCreateNameHint => 'Tên không gian làm việc';
-
-  @override
-  String get workspaceCreateNameRequired => 'Vui lòng nhập tên không gian làm việc';
-
-  @override
-  String get workspaceCreateSubmit => 'Tạo không gian làm việc';
-
-  @override
-  String get workspaceCreateCancel => 'Hủy';
-
-  @override
-  String get workspaceCreatePrompt => 'Tạo không gian làm việc đầu tiên để bắt đầu';
-
-  @override
-  String get workspaceCreateLimitReached => 'Bạn đã đạt giới hạn không gian làm việc';
-
-  @override
-  String workspaceCreateLimitInfo(int current, int limit) {
-    return '$current / $limit không gian làm việc đã dùng';
-  }
-
-  @override
-  String get notificationsTitle => 'Thông báo';
-
-  @override
-  String notificationsSubtitle(int count) {
-    return '$count chưa đọc';
-  }
-
-  @override
-  String get notificationsInbox => 'Hộp thư';
-
-  @override
-  String get notificationsArchive => 'Lưu trữ';
-
-  @override
-  String get notificationsArchiveAll => 'Lưu trữ tất cả';
-
-  @override
-  String get notificationsArchiveAllError => 'Không thể lưu trữ thông báo lúc này';
-
-  @override
-  String get notificationsMarkRead => 'Đánh dấu đã đọc';
-
-  @override
-  String get notificationsMarkUnread => 'Đánh dấu chưa đọc';
-
-  @override
-  String get notificationsLoadingMore => 'Đang tải thêm...';
-
-  @override
-  String get notificationsInboxEmptyTitle => 'Không có thông báo chưa đọc';
-
-  @override
-  String get notificationsInboxEmptyMessage => 'Hoạt động mới, nhắc đến và lời mời sẽ xuất hiện ở đây.';
-
-  @override
-  String get notificationsArchiveEmptyTitle => 'Không có thông báo đã lưu trữ';
-
-  @override
-  String get notificationsArchiveEmptyMessage => 'Thông báo đã đọc sẽ chuyển vào đây sau khi bạn xử lý xong.';
-
-  @override
-  String get notificationsLoadErrorTitle => 'Không thể tải thông báo';
-
-  @override
-  String get notificationsLoadErrorMessage => 'Vui lòng thử lại sau ít phút.';
-
-  @override
-  String get notificationsAcceptInvite => 'Chấp nhận';
-
-  @override
-  String get notificationsDeclineInvite => 'Từ chối';
-
-  @override
-  String get notificationsInviteAccepted => 'Đã chấp nhận lời mời';
-
-  @override
-  String get notificationsInviteDeclined => 'Đã từ chối lời mời';
-
-  @override
-  String get notificationsInviteActionError => 'Không thể cập nhật lời mời lúc này';
-
-  @override
-  String get notificationsOpenTaskAction => 'Mở công việc';
-
-  @override
-  String get notificationsOpenRequestAction => 'Mở yêu cầu';
-
-  @override
-  String get notificationsOpenUnsupported => 'Thông báo này chưa thể mở trên mobile';
-
-  @override
-  String get notificationsJustNow => 'Vừa xong';
-
-  @override
-  String notificationsMinutesAgo(int count) {
-    return '$count phút trước';
-  }
-
-  @override
-  String notificationsHoursAgo(int count) {
-    return '$count giờ trước';
-  }
-
-  @override
-  String notificationsDaysAgo(int count) {
-    return '$count ngày trước';
-  }
-
-  @override
-  String get mfaTitle => 'Xác thực hai yếu tố';
-
-  @override
-  String get mfaSubtitle => 'Nhập mã từ ứng dụng xác thực của bạn';
-
-  @override
-  String get mfaCodeLabel => 'Mã gồm 6 chữ số';
-
-  @override
-  String get mfaVerify => 'Xác thực';
-
-  @override
-  String get mfaInvalidCode => 'Mã xác thực không hợp lệ. Vui lòng thử lại.';
-
-  @override
-  String get mfaSignOut => 'Đăng xuất';
-
-  @override
-  String get captchaError => 'Kiểm tra bảo mật thất bại. Vui lòng thử lại.';
-
-  @override
-  String get commonOff => 'Tắt';
-
-  @override
-  String get commonOn => 'Bật';
-
-  @override
-  String get commonSomethingWentWrong => 'Đã xảy ra lỗi';
-
-  @override
-  String get selectImageSource => 'Chọn nguồn ảnh';
-
-  @override
-  String get camera => 'Camera';
-
-  @override
-  String get gallery => 'Thư viện';
-
-  @override
-  String get commonRetry => 'Thử lại';
-
-  @override
-  String get commonShowLess => 'Thu gọn';
-
-  @override
-  String get commonShowMore => 'Xem thêm';
-
-  @override
-  String get commonPressBackAgainToExit => 'Nhấn quay lại lần nữa để thoát';
-
-  @override
-  String get commonPressBackAgainToExitHint => 'Nhấn quay lại lần nữa trong vòng 2 giây để đóng ứng dụng.';
-
-  @override
-  String get commonPrevious => 'Trước';
-
-  @override
-  String get commonNext => 'Tiếp';
-
-  @override
-  String get onboardingSlide1Title => 'Gặp gỡ Mira';
-
-  @override
-  String get onboardingSlide1Subtitle => 'Người bạn đồng hành AI cho công việc và cuộc sống. Mira kết nối công việc, lịch và tài chính của bạn.';
-
-  @override
-  String get onboardingSlide2Title => 'Tất cả trong một ứng dụng';
-
-  @override
-  String get onboardingSlide2Subtitle => 'Công việc, Lịch và Theo dõi - tất cả đều được thống nhất. Không còn phải chuyển đổi giữa các ứng dụng.';
-
-  @override
-  String get onboardingSlide3Title => 'Trí tuệ phát triển cùng bạn';
-
-  @override
-  String get onboardingSlide3Subtitle => 'Mira ghi nhớ sở thích của bạn và trở nên thông minh hơn khi bạn sử dụng nhiều hơn.';
-
-  @override
-  String get onboardingGetStarted => 'Bắt đầu ngay';
-
-  @override
-  String get settingsWorkspaceMembersTitle => 'Thành viên';
-
-  @override
-  String get settingsWorkspaceMembersSubtitle => 'Mời người mới, xem quyền truy cập và quản lý liên kết mời.';
-
-  @override
-  String get settingsWorkspaceMembersAccessDenied => 'Bạn cần quyền quản lý thành viên để dùng mục này.';
-
-  @override
-  String settingsWorkspaceMembersActiveSection(int count) {
-    return 'Thành viên ($count)';
-  }
-
-  @override
-  String get settingsWorkspaceMembersEmpty => 'Chưa có thành viên.';
-
-  @override
-  String settingsWorkspaceMembersPendingSection(int count) {
-    return 'Đang chờ ($count)';
-  }
-
-  @override
-  String get settingsWorkspaceMembersPendingEmpty => 'Không có lời mời nào đang chờ.';
-
-  @override
-  String get settingsWorkspaceMembersLinksSection => 'Liên kết mời';
-
-  @override
-  String get settingsWorkspaceMembersLinksEmpty => 'Chưa có liên kết mời.';
-
-  @override
-  String get settingsWorkspaceMembersInviteAction => 'Mời';
-
-  @override
-  String get settingsWorkspaceMembersLinkAction => 'Tạo link';
-
-  @override
-  String get settingsWorkspaceMembersLinkCopied => 'Đã sao chép liên kết mời.';
-
-  @override
-  String get settingsWorkspaceMembersRemoveTitle => 'Xóa';
-
-  @override
-  String settingsWorkspaceMembersRemoveMessage(String name) {
-    return 'Xóa $name khỏi không gian làm việc này?';
-  }
-
-  @override
-  String get settingsWorkspaceMembersLinkDeleteTitle => 'Xóa link';
-
-  @override
-  String get settingsWorkspaceMembersLinkDeleteMessage => 'Xóa liên kết mời này?';
-
-  @override
-  String get settingsWorkspaceMembersEmailField => 'Email';
-
-  @override
-  String get settingsWorkspaceMembersEmailPlaceholder => 'name@example.com';
-
-  @override
-  String get settingsWorkspaceMembersEmailInvalid => 'Hãy nhập email hợp lệ.';
-
-  @override
-  String get settingsWorkspaceMembersInviteSent => 'Đã gửi lời mời.';
-
-  @override
-  String get settingsWorkspaceMembersLinkLimitField => 'Số lượt dùng tối đa';
-
-  @override
-  String get settingsWorkspaceMembersLinkLimitPlaceholder => 'Để trống nếu không giới hạn';
-
-  @override
-  String get settingsWorkspaceMembersLinkLimitInvalid => 'Hãy nhập số nguyên dương.';
-
-  @override
-  String get settingsWorkspaceMembersLinkCreated => 'Đã tạo liên kết mời.';
-
-  @override
-  String get settingsWorkspaceMembersCreatorChip => 'Chủ sở hữu';
-
-  @override
-  String get settingsWorkspaceMembersPendingChip => 'Đang chờ';
-
-  @override
-  String get settingsWorkspaceMembersLinkNever => 'Không hết hạn';
-
-  @override
-  String get settingsWorkspaceMembersLinkExpired => 'Hết hạn';
-
-  @override
-  String get settingsWorkspaceMembersLinkFull => 'Đầy';
-
-  @override
-  String get settingsWorkspaceMembersLinkActive => 'Đang hoạt động';
-
-  @override
-  String get settingsWorkspaceMembersLinkCopy => 'Sao chép';
-
-  @override
-  String get settingsWorkspaceRolesTitle => 'Vai trò';
-
-  @override
-  String get settingsWorkspaceRolesSubtitle => 'Quản lý quyền mặc định và các vai trò trong không gian làm việc.';
-
-  @override
-  String get settingsWorkspaceRolesAccessDenied => 'Bạn cần quyền quản lý vai trò để dùng mục này.';
-
-  @override
-  String get settingsWorkspaceRolesCreate => 'Tạo vai trò';
-
-  @override
-  String get settingsWorkspaceRolesDefaultTitle => 'Quyền mặc định';
-
-  @override
-  String get settingsWorkspaceRolesListTitle => 'Vai trò';
-
-  @override
-  String get settingsWorkspaceRolesEmpty => 'Chưa có vai trò tùy chỉnh.';
-
-  @override
-  String get settingsWorkspaceRolesDeleteTitle => 'Xóa vai trò';
-
-  @override
-  String settingsWorkspaceRolesDeleteMessage(String name) {
-    return 'Xóa $name?';
-  }
-
-  @override
-  String settingsWorkspaceRolesPermissionCount(int count) {
-    return 'Đã bật $count quyền';
-  }
-
-  @override
-  String get settingsWorkspaceRolesEdit => 'Sửa vai trò';
-
-  @override
-  String get settingsWorkspaceRolesSave => 'Lưu';
-
-  @override
-  String get settingsWorkspaceRolesNameField => 'Tên';
-
-  @override
-  String get settingsWorkspaceRolesNamePlaceholder => 'Tên vai trò';
-
-  @override
-  String get settingsWorkspaceRolesNameRequired => 'Hãy nhập tên vai trò.';
-
-  @override
-  String get settingsWorkspaceRolesPermissionsSection => 'Quyền';
-
-  @override
-  String get settingsWorkspaceRolesMembersSection => 'Thành viên được gán';
-
-  @override
-  String get settingsWorkspaceRolesMembersEmpty => 'Không có thành viên đang hoạt động.';
-
-  @override
-  String get settingsWorkspaceRolesSaved => 'Đã lưu vai trò.';
-
-  @override
-  String get settingsWorkspaceSecretsTitle => 'Bí mật';
-
-  @override
-  String get settingsWorkspaceSecretsSubtitle => 'Quản lý bí mật của không gian làm việc và lộ trình lưu trữ.';
-
-  @override
-  String get settingsWorkspaceSecretsAccessDeniedTitle => 'Cần quyền truy cập';
-
-  @override
-  String get settingsWorkspaceSecretsAccessDeniedDescription => 'Bạn cần quyền quản lý bí mật không gian làm việc trong không gian nội bộ để mở trang này.';
-
-  @override
-  String get settingsWorkspaceSecretsWorkspaceRequiredTitle => 'Cần chọn không gian làm việc';
-
-  @override
-  String get settingsWorkspaceSecretsWorkspaceRequiredDescription => 'Hãy chọn một không gian làm việc trước khi mở trang quản lý bí mật.';
-
-  @override
-  String settingsWorkspaceSecretsPageDescription(String workspaceName) {
-    return 'Quản lý bí mật và lộ trình lưu trữ cho $workspaceName.';
-  }
-
-  @override
-  String get settingsWorkspaceSecretsTotalSecrets => 'Tất cả bí mật';
-
-  @override
-  String get settingsWorkspaceSecretsVisibleSecrets => 'Đang hiển thị';
-
-  @override
-  String get settingsWorkspaceSecretsActiveBackend => 'Backend đang dùng';
-
-  @override
-  String get settingsWorkspaceSecretsCreate => 'Tạo bí mật';
-
-  @override
-  String get settingsWorkspaceSecretsRolloutTitle => 'Lộ trình lưu trữ';
-
-  @override
-  String get settingsWorkspaceSecretsRolloutDescription => 'Kiểm tra backend Drive hiện tại, xác nhận các bí mật nhà cung cấp cần thiết và di chuyển tệp giữa các backend khi cần.';
-
-  @override
-  String get settingsWorkspaceSecretsProviderSecrets => 'Bí mật nhà cung cấp';
-
-  @override
-  String get settingsWorkspaceSecretsZipAutomation => 'Tự động giải nén ZIP';
-
-  @override
-  String get settingsWorkspaceSecretsStateEnabled => 'Đã bật';
-
-  @override
-  String get settingsWorkspaceSecretsAutoExtractBlocked => 'Thiếu bí mật proxy';
-
-  @override
-  String get settingsWorkspaceSecretsStateDisabled => 'Đã tắt';
-
-  @override
-  String get settingsWorkspaceSecretsSelected => 'Đang chọn';
-
-  @override
-  String get settingsWorkspaceSecretsRecommended => 'Khuyến nghị';
-
-  @override
-  String get settingsWorkspaceSecretsObjects => 'Đối tượng';
-
-  @override
-  String get settingsWorkspaceSecretsInventory => 'Dung lượng';
-
-  @override
-  String get settingsWorkspaceSecretsUnavailable => 'Không khả dụng';
-
-  @override
-  String get settingsWorkspaceSecretsReadyMessage => 'Backend này đã sẵn sàng nhận tệp Drive.';
-
-  @override
-  String get settingsWorkspaceSecretsMissingMessage => 'Hãy thêm các bí mật cần thiết trước khi chuyển luồng Drive sang đây.';
-
-  @override
-  String get settingsWorkspaceSecretsMigrating => 'Đang di chuyển...';
-
-  @override
-  String settingsWorkspaceSecretsCopyInto(String provider) {
-    return 'Sao chép vào $provider';
-  }
-
-  @override
-  String get settingsWorkspaceSecretsAutoExtractTitle => 'Tự động giải nén';
-
-  @override
-  String get settingsWorkspaceSecretsAutoExtractDescription => 'Theo dõi việc tự động giải nén ZIP đã bật chưa và bí mật proxy đã sẵn sàng hay chưa.';
-
-  @override
-  String get settingsWorkspaceSecretsAutoExtractSwitch => 'Công tắc';
-
-  @override
-  String get settingsWorkspaceSecretsAutoExtractProxyUrl => 'URL proxy';
-
-  @override
-  String get settingsWorkspaceSecretsAutoExtractProxyToken => 'Token dùng chung';
-
-  @override
-  String get settingsWorkspaceSecretsStatePresent => 'Đã có';
-
-  @override
-  String get settingsWorkspaceSecretsStateMissing => 'Thiếu';
-
-  @override
-  String get settingsWorkspaceSecretsProviderSecretsTitle => 'Bí mật nhà cung cấp';
-
-  @override
-  String get settingsWorkspaceSecretsProviderSecretsDescription => 'Chỉnh sửa các bí mật xác định nhà cung cấp lưu trữ Drive của không gian làm việc này.';
-
-  @override
-  String get settingsWorkspaceSecretsProxySecretsTitle => 'Bí mật proxy ZIP';
-
-  @override
-  String get settingsWorkspaceSecretsProxySecretsDescription => 'Cấu hình các bí mật tùy chọn dùng cho proxy giải nén ZIP.';
-
-  @override
-  String get settingsWorkspaceSecretsDriveStorageProviderDescription => 'Chọn backend Drive cho không gian làm việc này. Dùng \"supabase\" cho đường dẫn hiện tại hoặc \"r2\" để chuyển Drive sang Cloudflare R2.';
-
-  @override
-  String get settingsWorkspaceSecretsDriveR2BucketDescription => 'Tên bucket Cloudflare R2 dùng cho các đối tượng Drive khi nhà cung cấp là \"r2\".';
-
-  @override
-  String get settingsWorkspaceSecretsDriveR2EndpointDescription => 'Endpoint R2 tương thích S3, ví dụ https://<account-id>.r2.cloudflarestorage.com.';
-
-  @override
-  String get settingsWorkspaceSecretsDriveR2AccessKeyIdDescription => 'Access key ID của token Cloudflare R2 dùng bởi adapter Drive phía máy chủ.';
-
-  @override
-  String get settingsWorkspaceSecretsDriveR2SecretAccessKeyDescription => 'Secret access key của token Cloudflare R2 dùng bởi adapter Drive phía máy chủ.';
-
-  @override
-  String get settingsWorkspaceSecretsDriveAutoExtractZipDescription => 'Bật tự động giải nén ZIP sau khi tải lên. Mặc định là tắt.';
-
-  @override
-  String get settingsWorkspaceSecretsDriveAutoExtractProxyUrlDescription => 'URL HTTPS của proxy giải nén ZIP tự lưu trữ. Chỉ dùng khi bật tự động giải nén.';
-
-  @override
-  String get settingsWorkspaceSecretsDriveAutoExtractProxyTokenDescription => 'Bearer token dùng chung để xác thực yêu cầu tới proxy giải nén ZIP.';
-
-  @override
-  String get settingsWorkspaceSecretsNoValue => 'Chưa có giá trị';
-
-  @override
-  String get settingsWorkspaceSecretsConfigured => 'Đã cấu hình';
-
-  @override
-  String get settingsWorkspaceSecretsMissing => 'Thiếu';
-
-  @override
-  String get settingsWorkspaceSecretsRequired => 'Bắt buộc';
-
-  @override
-  String get settingsWorkspaceSecretsOptional => 'Tùy chọn';
-
-  @override
-  String get settingsWorkspaceSecretsAdd => 'Thêm';
-
-  @override
-  String get settingsWorkspaceSecretsListTitle => 'Danh sách bí mật';
-
-  @override
-  String get settingsWorkspaceSecretsListDescription => 'Tìm kiếm, sửa và xóa bí mật của không gian làm việc. Giá trị boolean có thể bật tắt trực tiếp.';
-
-  @override
-  String get settingsWorkspaceSecretsSearchPlaceholder => 'Tìm bí mật';
-
-  @override
-  String get settingsWorkspaceSecretsEmptyTitle => 'Không tìm thấy bí mật';
-
-  @override
-  String get settingsWorkspaceSecretsEmptyDescription => 'Tạo một bí mật mới hoặc thay đổi từ khóa tìm kiếm để xem mục phù hợp.';
-
-  @override
-  String get settingsWorkspaceSecretsEdit => 'Sửa';
-
-  @override
-  String get settingsWorkspaceSecretsDeleteTitle => 'Xóa';
-
-  @override
-  String settingsWorkspaceSecretsDeleteMessage(String name) {
-    return 'Xóa $name?';
-  }
-
-  @override
-  String get settingsWorkspaceSecretsDeleteSuccess => 'Đã xóa bí mật.';
-
-  @override
-  String get settingsWorkspaceSecretsNameField => 'Tên';
-
-  @override
-  String get settingsWorkspaceSecretsNamePlaceholder => 'SECRET_NAME';
-
-  @override
-  String get settingsWorkspaceSecretsValueField => 'Giá trị';
-
-  @override
-  String get settingsWorkspaceSecretsValuePlaceholder => 'Giá trị bí mật';
-
-  @override
-  String get settingsWorkspaceSecretsEditorDescription => 'Cập nhật tên và giá trị bí mật được dùng trong không gian làm việc này.';
-
-  @override
-  String get settingsWorkspaceSecretsSaving => 'Đang lưu...';
-
-  @override
-  String get settingsWorkspaceSecretsSave => 'Lưu bí mật';
-
-  @override
-  String get settingsWorkspaceSecretsNameRequired => 'Hãy nhập tên bí mật.';
-
-  @override
-  String get settingsWorkspaceSecretsValueRequired => 'Hãy nhập giá trị bí mật.';
-
-  @override
-  String get settingsWorkspaceSecretsSaveSuccess => 'Đã lưu bí mật.';
-
-  @override
-  String get settingsWorkspaceSecretsSaveError => 'Không thể lưu bí mật.';
-
-  @override
-  String get settingsWorkspaceSecretsLoadError => 'Không thể tải bí mật của không gian làm việc.';
-
-  @override
-  String settingsWorkspaceSecretsMigrationSuccess(int filesCopied, String provider) {
-    return 'Đã sao chép $filesCopied tệp vào $provider.';
-  }
-
-  @override
-  String get settingsWorkspaceSecretsMigrationError => 'Không thể di chuyển lưu trữ của không gian làm việc.';
-
-  @override
-  String get settingsWorkspaceSecretsProviderSupabaseTitle => 'Supabase';
-
-  @override
-  String get settingsWorkspaceSecretsProviderSupabaseDescription => 'Backend lưu trữ Drive tích hợp sẵn hiện tại.';
-
-  @override
-  String get settingsWorkspaceSecretsProviderR2Title => 'Cloudflare R2';
-
-  @override
-  String get settingsWorkspaceSecretsProviderR2Description => 'Backend tương thích S3 cho lưu trữ Drive bên ngoài.';
-
-  @override
-  String get commonActive => 'Đang hoạt động';
-
-  @override
-  String get commonAll => 'Tất cả';
-
-  @override
-  String get commonApply => 'Áp dụng';
-
-  @override
-  String get commonArchived => 'Đã lưu trữ';
-
-  @override
-  String get commonBackfilled => 'Đã backfill';
-
-  @override
-  String get commonCopy => 'Sao chép';
-
-  @override
-  String get commonCreate => 'Tạo';
-
-  @override
-  String get commonCreated => 'Đã tạo';
-
-  @override
-  String get commonDelete => 'Xóa';
-
-  @override
-  String get commonDeleted => 'Đã xóa';
-
-  @override
-  String get commonEdit => 'Chỉnh sửa';
-
-  @override
-  String get commonFilters => 'Bộ lọc';
-
-  @override
-  String get commonImport => 'Nhập';
-
-  @override
-  String get commonLinked => 'Đã liên kết';
-
-  @override
-  String get commonLive => 'Trực tiếp';
-
-  @override
-  String get commonLoadMore => 'Tải thêm';
-
-  @override
-  String get commonOpen => 'Mở';
-
-  @override
-  String get commonRefresh => 'Làm mới';
-
-  @override
-  String get commonReactivated => 'Kích hoạt lại';
-
-  @override
-  String get commonRename => 'Đổi tên';
-
-  @override
-  String get commonRequired => 'Cần xử lý';
-
-  @override
-  String get commonSave => 'Lưu';
-
-  @override
-  String get commonSelectDate => 'Chọn ngày';
-
-  @override
-  String get commonShare => 'Chia sẻ';
-
-  @override
-  String get commonUpdated => 'Đã cập nhật';
-
-  @override
-  String get commonVirtual => 'Ảo';
-
-  @override
-  String get commonWithGroups => 'Có nhóm';
-
-  @override
-  String get commonWithoutGroups => 'Không có nhóm';
-
-  @override
-  String get crmAddFeedback => 'Thêm phản hồi';
-
-  @override
-  String get crmAddress => 'Địa chỉ';
-
-  @override
-  String get crmArchived => 'Đã lưu trữ';
-
-  @override
-  String get crmArchivedUntil => 'Lưu trữ đến';
-
-  @override
-  String get crmAuditActor => 'Người thực hiện';
-
-  @override
-  String get crmAuditAffectedUser => 'Người dùng bị ảnh hưởng';
-
-  @override
-  String get crmAuditEvent => 'Sự kiện nhật ký';
-
-  @override
-  String get crmAuditRange => 'Khoảng thời gian';
-
-  @override
-  String get crmAuditSource => 'Nguồn';
-
-  @override
-  String get crmAuditTab => 'Nhật ký';
-
-  @override
-  String get crmBirthday => 'Ngày sinh';
-
-  @override
-  String get crmCreateUser => 'Tạo người dùng';
-
-  @override
-  String get crmDeleteUserConfirm => 'Xóa người dùng này?';
-
-  @override
-  String get crmDeleteUserSuccess => 'Đã xóa người dùng.';
-
-  @override
-  String get crmDetectDuplicates => 'Phát hiện trùng lặp';
-
-  @override
-  String get crmDisplayName => 'Tên hiển thị';
-
-  @override
-  String crmDuplicateResults(int count) {
-    return 'Tìm thấy $count cụm trùng lặp';
-  }
-
-  @override
-  String get crmEmptyAudit => 'Không có sự kiện nhật ký nào';
-
-  @override
-  String get crmEmptyUsers => 'Không tìm thấy người dùng';
-
-  @override
-  String get crmExcludedGroups => 'Nhóm bị loại trừ';
-
-  @override
-  String get crmFeedback => 'Phản hồi';
-
-  @override
-  String get crmFeedbackAction => 'Phản hồi';
-
-  @override
-  String crmFeedbackFor(String name) {
-    return 'Phản hồi cho $name';
-  }
-
-  @override
-  String get crmFullName => 'Họ và tên';
-
-  @override
-  String get crmGroup => 'Nhóm';
-
-  @override
-  String get crmGroupMembership => 'Tham gia nhóm';
-
-  @override
-  String get crmGuestUser => 'Người dùng khách';
-
-  @override
-  String get crmImportEmpty => 'Không tìm thấy người dùng hợp lệ trong tệp này.';
-
-  @override
-  String crmImportPreview(int count) {
-    return 'Sẵn sàng nhập $count người dùng';
-  }
-
-  @override
-  String crmImportSuccess(int count) {
-    return 'Đã nhập $count người dùng.';
-  }
-
-  @override
-  String get crmImportUsers => 'Nhập người dùng';
-
-  @override
-  String get crmIncludedGroups => 'Nhóm được bao gồm';
-
-  @override
-  String get crmLinkStatus => 'Trạng thái liên kết';
-
-  @override
-  String get crmLinkedUser => 'Người dùng đã liên kết';
-
-  @override
-  String get crmMergeTarget => 'Bản ghi đích';
-
-  @override
-  String get crmMergeUsers => 'Gộp người dùng';
-
-  @override
-  String get crmNote => 'Ghi chú';
-
-  @override
-  String get crmPermissionDenied => 'Bạn không có quyền truy cập giao diện CRM này.';
-
-  @override
-  String get crmPhone => 'Số điện thoại';
-
-  @override
-  String get crmExportUsers => 'Xuất người dùng';
-
-  @override
-  String get crmRequireAttention => 'Cần chú ý';
-
-  @override
-  String get crmSearchAuditHint => 'Tìm người thực hiện hoặc người dùng bị ảnh hưởng';
-
-  @override
-  String get crmSearchUsersHint => 'Tìm theo tên, email hoặc số điện thoại';
-
-  @override
-  String get crmStatus => 'Trạng thái';
-
-  @override
-  String get crmTitle => 'CRM';
-
-  @override
-  String get crmUploadAvatar => 'Tải ảnh đại diện';
-
-  @override
-  String get crmUsersTab => 'Người dùng';
-
-  @override
-  String get educationAddOption => 'Thêm đáp án';
-
-  @override
-  String get educationAttemptQuizSetLabel => 'Bộ câu hỏi';
-
-  @override
-  String get educationAttemptStatusCompleted => 'Hoàn thành';
-
-  @override
-  String get educationAttemptStatusIncomplete => 'Chưa hoàn thành';
-
-  @override
-  String get educationAttemptStatusLabel => 'Trạng thái';
-
-  @override
-  String get educationAttemptsLabel => 'Lượt làm bài';
-
-  @override
-  String get educationAttemptsSubtitle => 'Xem bài nộp, trạng thái hoàn thành và chi tiết câu trả lời của người học.';
-
-  @override
-  String get educationClearFilters => 'Xóa bộ lọc';
-
-  @override
-  String get educationCourseDescriptionLabel => 'Mô tả';
-
-  @override
-  String get educationCourseNameLabel => 'Tên khóa học';
-
-  @override
-  String get educationCoursesLabel => 'Khóa học';
-
-  @override
-  String get educationCoursesSubtitle => 'Quản lý lộ trình học, mô tả và hồ sơ khóa học sẵn sàng cho module.';
-
-  @override
-  String get educationCreateCourse => 'Tạo khóa học';
-
-  @override
-  String get educationCreateFlashcard => 'Tạo flashcard';
-
-  @override
-  String get educationCreateQuiz => 'Tạo câu hỏi';
-
-  @override
-  String get educationCreateQuizSet => 'Tạo bộ câu hỏi';
-
-  @override
-  String educationDeleteCourseConfirm(String name) {
-    return 'Xóa $name?';
-  }
-
-  @override
-  String get educationDeleteFlashcardConfirm => 'Xóa flashcard này?';
-
-  @override
-  String get educationDeleteQuizConfirm => 'Xóa câu hỏi này?';
-
-  @override
-  String educationDeleteQuizSetConfirm(String name) {
-    return 'Xóa $name?';
-  }
-
-  @override
-  String get educationEditCourse => 'Chỉnh sửa khóa học';
-
-  @override
-  String get educationEditFlashcard => 'Chỉnh sửa flashcard';
-
-  @override
-  String get educationEditQuiz => 'Chỉnh sửa câu hỏi';
-
-  @override
-  String get educationEditQuizSet => 'Chỉnh sửa bộ câu hỏi';
-
-  @override
-  String get educationEmptyAttempts => 'Không có lượt làm bài nào phù hợp với bộ lọc hiện tại.';
-
-  @override
-  String get educationEmptyCourses => 'Chưa có khóa học nào.';
-
-  @override
-  String get educationEmptyFlashcards => 'Chưa có flashcard nào.';
-
-  @override
-  String get educationEmptyQuizzes => 'Chưa có câu hỏi nào.';
-
-  @override
-  String get educationEmptyQuizSets => 'Chưa có bộ câu hỏi nào.';
-
-  @override
-  String get educationFlashcardBackLabel => 'Mặt sau';
-
-  @override
-  String get educationFlashcardFrontLabel => 'Mặt trước';
-
-  @override
-  String get educationLibraryFlashcardsLabel => 'Flashcard';
-
-  @override
-  String get educationLibraryFlashcardsSubtitle => 'Tạo thẻ ghi nhớ nhanh với nội dung mặt trước và mặt sau.';
-
-  @override
-  String get educationLibraryLabel => 'Thư viện';
-
-  @override
-  String get educationLibraryQuizSetsLabel => 'Bộ câu hỏi';
-
-  @override
-  String get educationLibraryQuizSetsSubtitle => 'Sắp xếp bài đánh giá thành các bộ có thể tái sử dụng cho module và lượt làm bài.';
-
-  @override
-  String get educationLibraryQuizzesLabel => 'Câu hỏi';
-
-  @override
-  String get educationLibraryQuizzesSubtitle => 'Quản lý ngân hàng câu hỏi, đáp án và quy tắc đúng sai.';
-
-  @override
-  String get educationLibrarySubtitle => 'Quản lý tài nguyên đánh giá dùng chung cho thư viện học tập của workspace.';
-
-  @override
-  String get educationOverviewHighlightsTitle => 'Điểm nổi bật';
-
-  @override
-  String get educationOverviewLabel => 'Tổng quan';
-
-  @override
-  String get educationOverviewRecentAttemptsTitle => 'Lượt làm gần đây';
-
-  @override
-  String get educationOverviewRecentCoursesTitle => 'Khóa học gần đây';
-
-  @override
-  String get educationOverviewSubtitle => 'Theo dõi cấu trúc học tập, tài nguyên luyện tập và tiến độ người học trong một workspace di động.';
-
-  @override
-  String get educationQuizOptionExplanationLabel => 'Giải thích';
-
-  @override
-  String educationQuizOptionLabel(int index) {
-    return 'Đáp án $index';
-  }
-
-  @override
-  String get educationQuizOptionValueLabel => 'Nội dung đáp án';
-
-  @override
-  String get educationQuizQuestionLabel => 'Câu hỏi';
-
-  @override
-  String get educationQuizSetNameLabel => 'Tên bộ câu hỏi';
-
-  @override
-  String get educationSearchCoursesHint => 'Tìm khóa học';
-
-  @override
-  String get educationSearchFlashcardsHint => 'Tìm flashcard';
-
-  @override
-  String get educationSearchQuizzesHint => 'Tìm câu hỏi';
-
-  @override
-  String get educationSearchQuizSetsHint => 'Tìm bộ câu hỏi';
-
-  @override
-  String get educationTitle => 'Education';
-
-  @override
-  String get driveCopyPath => 'Sao chép đường dẫn';
-
-  @override
-  String get driveCreateFolder => 'Tạo thư mục';
-
-  @override
-  String driveDeleteManyConfirm(int count) {
-    return 'Xóa $count mục đã chọn?';
-  }
-
-  @override
-  String driveDeleteSelected(int count) {
-    return 'Xóa mục đã chọn ($count)';
-  }
-
-  @override
-  String get driveDeleteSingleConfirm => 'Xóa mục này?';
-
-  @override
-  String get driveDeleteSuccess => 'Đã xóa mục.';
-
-  @override
-  String get driveEmptyState => 'Thư mục này đang trống.';
-
-  @override
-  String get driveExportLinksTitle => 'Liên kết xuất';
-
-  @override
-  String get driveFilesLabel => 'Tệp';
-
-  @override
-  String get driveFolderCreated => 'Đã tạo thư mục.';
-
-  @override
-  String get driveFolderLabel => 'Thư mục';
-
-  @override
-  String get driveFolderName => 'Tên thư mục';
-
-  @override
-  String get driveGoUp => 'Lên trên';
-
-  @override
-  String get driveGridView => 'Dạng lưới';
-
-  @override
-  String get driveLimitLabel => 'Giới hạn';
-
-  @override
-  String get driveLinkCopied => 'Đã sao chép liên kết.';
-
-  @override
-  String get driveListView => 'Dạng danh sách';
-
-  @override
-  String get drivePathCopied => 'Đã sao chép đường dẫn.';
-
-  @override
-  String get drivePermissionDenied => 'Bạn không có quyền quản lý Drive.';
-
-  @override
-  String get driveRenameHint => 'Tên mới';
-
-  @override
-  String get driveRenameSuccess => 'Đã đổi tên mục.';
-
-  @override
-  String get driveRootLabel => 'Gốc';
-
-  @override
-  String get driveSearchHint => 'Tìm tệp và thư mục';
-
-  @override
-  String get driveSortNameAsc => 'Tên (A-Z)';
-
-  @override
-  String get driveSortNameDesc => 'Tên (Z-A)';
-
-  @override
-  String get driveSortSize => 'Dung lượng lớn nhất';
-
-  @override
-  String get driveSortUpdated => 'Mới cập nhật';
-
-  @override
-  String get driveTitle => 'Drive';
-
-  @override
-  String get driveUploadFiles => 'Tải tệp lên';
-
-  @override
-  String get driveUsageLabel => 'Dung lượng';
-
-  @override
-  String get driveUsedLabel => 'Đã dùng';
-
-  @override
-  String get documentsContentHint => 'Bắt đầu viết...';
-
-  @override
-  String get documentsCreated => 'Đã tạo tài liệu.';
-
-  @override
-  String get documentsDeleted => 'Đã xóa tài liệu.';
-
-  @override
-  String get documentsDelete => 'Xóa tài liệu';
-
-  @override
-  String get documentsDeleteConfirm => 'Xóa tài liệu này? Thao tác này không thể hoàn tác.';
-
-  @override
-  String get documentsDocumentName => 'Tên tài liệu';
-
-  @override
-  String get documentsEditor => 'Trình soạn thảo';
-
-  @override
-  String get documentsEmptyDescription => 'Chưa có tài liệu nào. Tạo một tài liệu để ghi lại quyết định, ghi chú hoặc kế hoạch.';
-
-  @override
-  String get documentsNewDocument => 'Tài liệu mới';
-
-  @override
-  String get documentsPublic => 'Tài liệu công khai';
-
-  @override
-  String get documentsSearchHint => 'Tìm tài liệu';
-
-  @override
-  String get documentsSubtitle => 'Soạn thảo và duy trì tri thức workspace.';
-
-  @override
-  String get documentsTitle => 'Tài liệu';
-
-  @override
-  String get documentsUpdated => 'Đã lưu tài liệu.';
-
-  @override
-  String get cmsAllCollections => 'Tất cả bộ sưu tập';
-
-  @override
-  String get cmsArchivedBacklog => 'Nội dung lưu trữ';
-
-  @override
-  String get cmsCollection => 'Bộ sưu tập';
-
-  @override
-  String get cmsCollectionCreated => 'Đã tạo bộ sưu tập.';
-
-  @override
-  String get cmsCollectionDeleted => 'Đã xóa bộ sưu tập.';
-
-  @override
-  String get cmsCollectionEnabled => 'Đang bật';
-
-  @override
-  String get cmsCollectionType => 'Loại bộ sưu tập';
-
-  @override
-  String get cmsCollectionUpdated => 'Đã lưu bộ sưu tập.';
-
-  @override
-  String get cmsCollections => 'Bộ sưu tập';
-
-  @override
-  String get cmsDeleteCollection => 'Xóa bộ sưu tập';
-
-  @override
-  String get cmsDeleteCollectionConfirm => 'Xóa bộ sưu tập này? Các mục trong bộ sưu tập có thể bị ảnh hưởng.';
-
-  @override
-  String get cmsDeleteEntry => 'Xóa mục nội dung';
-
-  @override
-  String get cmsDeleteEntryConfirm => 'Xóa mục nội dung này? Thao tác này không thể hoàn tác.';
-
-  @override
-  String get cmsDescription => 'Mô tả';
-
-  @override
-  String get cmsEditCollection => 'Chỉnh sửa bộ sưu tập';
-
-  @override
-  String get cmsEditEntry => 'Chỉnh sửa mục nội dung';
-
-  @override
-  String get cmsEntries => 'Mục nội dung';
-
-  @override
-  String get cmsEntryCreated => 'Đã tạo mục nội dung.';
-
-  @override
-  String get cmsEntryDeleted => 'Đã xóa mục nội dung.';
-
-  @override
-  String get cmsEntryUpdated => 'Đã lưu mục nội dung.';
-
-  @override
-  String get cmsLibrary => 'Thư viện';
-
-  @override
-  String get cmsNeedsAttention => 'Cần xử lý';
-
-  @override
-  String get cmsNewCollection => 'Bộ sưu tập mới';
-
-  @override
-  String get cmsNewEntry => 'Mục nội dung mới';
-
-  @override
-  String get cmsNoAccess => 'CMS chưa khả dụng cho workspace này.';
-
-  @override
-  String get cmsNoCollections => 'Chưa có bộ sưu tập nào.';
-
-  @override
-  String get cmsNoEntries => 'Chưa có mục nội dung nào.';
-
-  @override
-  String get cmsOverview => 'Tổng quan';
-
-  @override
-  String get cmsQueueEmpty => 'Không có gì đang chờ ở đây.';
-
-  @override
-  String get cmsScheduledSoon => 'Sắp xuất bản';
-
-  @override
-  String get cmsSlug => 'Slug';
-
-  @override
-  String get cmsStatus => 'Trạng thái';
-
-  @override
-  String get cmsStatusArchived => 'Đã lưu trữ';
-
-  @override
-  String get cmsStatusDraft => 'Bản nháp';
-
-  @override
-  String get cmsStatusPublished => 'Đã xuất bản';
-
-  @override
-  String get cmsStatusScheduled => 'Đã lên lịch';
-
-  @override
-  String get cmsSubtitle => 'Phụ đề';
-
-  @override
-  String get cmsSubtitleApp => 'Quản lý bộ sưu tập nội dung, mục nội dung và hàng đợi xuất bản.';
-
-  @override
-  String get cmsSummary => 'Tóm tắt';
-
-  @override
-  String get cmsTitle => 'Tiêu đề';
-
-  @override
-  String get cmsTitleApp => 'CMS';
-
-  @override
-  String get storefrontTitle => 'Cửa hàng';
-
-  @override
-  String get storefrontSubtitle => 'Đăng sản phẩm, kiểm soát tồn kho và quản lý mọi cửa hàng dành cho khách hàng.';
-
-  @override
-  String get storefrontStores => 'Cửa hàng';
-
-  @override
-  String get storefrontPublished => 'Đã đăng';
-
-  @override
-  String get storefrontListings => 'Sản phẩm đăng bán';
-
-  @override
-  String get storefrontCreate => 'Cửa hàng mới';
-
-  @override
-  String get storefrontEdit => 'Sửa cửa hàng';
-
-  @override
-  String get storefrontEditorSubtitle => 'Thiết lập nhận diện, thanh toán, quyền xem và giao diện của cửa hàng.';
-
-  @override
-  String get storefrontName => 'Tên cửa hàng';
-
-  @override
-  String get storefrontSlug => 'Địa chỉ công khai';
-
-  @override
-  String get storefrontDescription => 'Mô tả';
-
-  @override
-  String get storefrontCurrency => 'Tiền tệ';
-
-  @override
-  String get storefrontStatus => 'Trạng thái';
-
-  @override
-  String get storefrontVisibility => 'Quyền xem';
-
-  @override
-  String get storefrontCheckoutMode => 'Thanh toán';
-
-  @override
-  String get storefrontTheme => 'Chủ đề';
-
-  @override
-  String get storefrontLayout => 'Bố cục sản phẩm';
-
-  @override
-  String get storefrontSurface => 'Kiểu bề mặt';
-
-  @override
-  String get storefrontCorners => 'Kiểu bo góc';
-
-  @override
-  String get storefrontInventoryBadges => 'Hiện tình trạng tồn kho';
-
-  @override
-  String get storefrontAnalytics => 'Bật phân tích cửa hàng';
-
-  @override
-  String get storefrontValidationError => 'Hãy nhập tên cửa hàng, địa chỉ công khai hợp lệ và mã tiền tệ ba chữ cái.';
-
-  @override
-  String get storefrontSaved => 'Đã lưu cửa hàng.';
-
-  @override
-  String get storefrontSearch => 'Tìm cửa hàng';
-
-  @override
-  String get storefrontEmptyTitle => 'Tạo cửa hàng đầu tiên';
-
-  @override
-  String get storefrontEmptyBody => 'Biến tồn kho thành danh mục thân thiện với di động và đăng khi bạn sẵn sàng.';
-
-  @override
-  String storefrontListingCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count sản phẩm',
-      one: '1 sản phẩm',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get storefrontListingCreate => 'Thêm sản phẩm';
-
-  @override
-  String get storefrontListingEdit => 'Sửa sản phẩm';
-
-  @override
-  String get storefrontListingEditorSubtitle => 'Chọn sản phẩm còn hàng và thiết lập cách hiển thị trong cửa hàng.';
-
-  @override
-  String get storefrontProduct => 'Sản phẩm';
-
-  @override
-  String get storefrontStockRow => 'Kho và đơn vị';
-
-  @override
-  String get storefrontListingTitle => 'Tên sản phẩm đăng bán';
-
-  @override
-  String get storefrontPrice => 'Giá';
-
-  @override
-  String get storefrontCompareAtPrice => 'Giá so sánh';
-
-  @override
-  String get storefrontMaxPerOrder => 'Tối đa mỗi đơn';
-
-  @override
-  String get storefrontListingValidationError => 'Hãy chọn sản phẩm còn hàng và nhập tên, giá cùng giới hạn đơn hàng hợp lệ.';
-
-  @override
-  String get storefrontPreview => 'Xem trước';
-
-  @override
-  String get storefrontDelete => 'Xóa cửa hàng';
-
-  @override
-  String get storefrontDeleteConfirm => 'Xóa cửa hàng này cùng toàn bộ sản phẩm đăng bán? Thao tác này không thể hoàn tác.';
-
-  @override
-  String get storefrontDeleted => 'Đã xóa cửa hàng.';
-
-  @override
-  String get storefrontListingsEmptyTitle => 'Chưa có sản phẩm đăng bán';
-
-  @override
-  String get storefrontListingsEmptyBody => 'Thêm sản phẩm từ Tồn kho để cửa hàng sẵn sàng phục vụ khách hàng.';
-
-  @override
-  String get storefrontProductsRequired => 'Hãy tạo sản phẩm có tồn kho trước khi thêm sản phẩm vào cửa hàng.';
-
-  @override
-  String get storefrontListingSaved => 'Đã lưu sản phẩm đăng bán.';
-
-  @override
-  String get storefrontListingDelete => 'Xóa sản phẩm';
-
-  @override
-  String get storefrontListingDeleteConfirm => 'Gỡ sản phẩm này khỏi cửa hàng? Sản phẩm trong Tồn kho sẽ không bị xóa.';
-
-  @override
-  String get storefrontListingDeleted => 'Đã xóa sản phẩm đăng bán.';
-
-  @override
-  String get storefrontStatusAll => 'Tất cả';
-
-  @override
-  String get storefrontStatusDraft => 'Bản nháp';
-
-  @override
-  String get storefrontStatusPublished => 'Đã đăng';
-
-  @override
-  String get storefrontStatusPaused => 'Tạm dừng';
-
-  @override
-  String get storefrontStatusArchived => 'Đã lưu trữ';
-
-  @override
-  String get storefrontVisibilityPrivate => 'Riêng tư';
-
-  @override
-  String get storefrontVisibilityPublic => 'Công khai';
-
-  @override
-  String get meetCreated => 'Đã tạo cuộc họp.';
-
-  @override
-  String get meetDeleted => 'Đã xóa cuộc họp.';
-
-  @override
-  String get meetDelete => 'Xóa cuộc họp';
-
-  @override
-  String get meetDeleteConfirm => 'Xóa cuộc họp này? Thao tác này không thể hoàn tác.';
-
-  @override
-  String get meetEditMeeting => 'Chỉnh sửa cuộc họp';
-
-  @override
-  String get meetEmptyDescription => 'Chưa có cuộc họp nào. Lên lịch một cuộc họp để giữ cả nhóm đồng bộ.';
-
-  @override
-  String get meetMeetingName => 'Tên cuộc họp';
-
-  @override
-  String get meetNewMeeting => 'Cuộc họp mới';
-
-  @override
-  String get meetInstantMeeting => 'Bắt đầu cuộc họp ngay';
-
-  @override
-  String get meetInstantMeetingHint => 'Tạo cuộc họp chưa đặt tên và tham gia ngay';
-
-  @override
-  String get meetScheduleMeeting => 'Lên lịch cuộc họp';
-
-  @override
-  String get meetScheduleMeetingHint => 'Chọn tên và thời gian cho lịch của bạn';
-
-  @override
-  String get meetFutureStartRequired => 'Chọn thời gian bắt đầu trong tương lai.';
-
-  @override
-  String get meetUntitledMeeting => 'Cuộc họp chưa đặt tên';
-
-  @override
-  String get meetDuration => 'Thời lượng';
-
-  @override
-  String meetMinutes(int count) {
-    return '$count phút';
-  }
-
-  @override
-  String meetRecordingSessions(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count bản ghi',
-      one: '1 bản ghi',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get meetSearchHint => 'Tìm cuộc họp';
-
-  @override
-  String get meetSubtitle => 'Lên lịch họp và truy cập bản ghi nhanh chóng.';
-
-  @override
-  String get meetTitle => 'Meet';
-
-  @override
-  String get meetUpdated => 'Đã lưu cuộc họp.';
-
-  @override
-  String get meetJoin => 'Tham gia cuộc gọi';
-
-  @override
-  String get meetReadyToJoin => 'Sẵn sàng tham gia?';
-
-  @override
-  String get meetPreviewPrivate => 'Chỉ bạn thấy hình ảnh xem trước từ camera cho đến khi tham gia.';
-
-  @override
-  String get meetMute => 'Tắt micrô';
-
-  @override
-  String get meetUnmute => 'Bật micrô';
-
-  @override
-  String get meetCameraOn => 'Bật camera';
-
-  @override
-  String get meetCameraOff => 'Tắt camera';
-
-  @override
-  String get meetDeviceAlreadyJoined => 'Bạn đã ở trong cuộc họp này';
-
-  @override
-  String get meetDeviceChoiceHint => 'Chọn cách tham gia từ thiết bị này.';
-
-  @override
-  String get meetSwitchDevice => 'Chuyển sang thiết bị này';
-
-  @override
-  String get meetJoinAnotherDevice => 'Tham gia trên thiết bị khác';
-
-  @override
-  String get meetDeviceEchoHint => 'Tắt micrô trên một thiết bị để tránh tiếng vọng.';
-
-  @override
-  String get meetTimeRemaining => 'Thời gian họp còn lại';
-
-  @override
-  String get meetRaiseHand => 'Giơ tay';
-
-  @override
-  String get meetLowerHand => 'Hạ tay';
-
-  @override
-  String get meetReactions => 'Cảm xúc';
-
-  @override
-  String get meetReactionLike => 'Thích';
-
-  @override
-  String get meetReactionHeart => 'Yêu thích';
-
-  @override
-  String get meetReactionClap => 'Vỗ tay';
-
-  @override
-  String get meetReactionLaugh => 'Cười';
-
-  @override
-  String get meetReactionWow => 'Ngạc nhiên';
-
-  @override
-  String get meetReactionCelebrate => 'Chúc mừng';
-
-  @override
-  String get meetParticipantActions => 'Thao tác với người tham gia';
-
-  @override
-  String get meetMuteParticipant => 'Tắt micrô người tham gia';
-
-  @override
-  String get meetRemoveParticipant => 'Xóa người tham gia';
-
-  @override
-  String get meetShareNotes => 'Chia sẻ ghi chú cuộc họp';
-
-  @override
-  String get meetApprovedParticipant => 'Người tham gia đã được phê duyệt';
-
-  @override
-  String get meetForgetApproval => 'Quên phê duyệt';
-
-  @override
-  String get meetEstimatedCosts => 'Chi phí ước tính';
-
-  @override
-  String get meetCostsUnavailable => 'Chưa có ước tính chi phí.';
-
-  @override
-  String get meetPartialEstimate => 'Ước tính chưa đầy đủ. Một số chi phí nhà cung cấp chưa được tính.';
-
-  @override
-  String get meetSfuEgress => 'Truyền âm thanh và video';
-
-  @override
-  String get meetDurableRequests => 'Yêu cầu phòng họp';
-
-  @override
-  String get meetMiraCost => 'Mira';
-
-  @override
-  String get meetLiveCost => 'Mira Live';
-
-  @override
-  String get meetLockRoom => 'Khóa phòng họp';
-
-  @override
-  String get meetSaveChat => 'Lưu trò chuyện của phòng';
-
-  @override
-  String get meetSettings => 'Cài đặt cuộc họp';
-
-  @override
-  String get meetRecordings => 'Bản ghi';
-
-  @override
-  String get meetRecordingAccess => 'Chia sẻ bản ghi với người tham gia';
-
-  @override
-  String get meetRecordingAccessHint => 'Người tham gia có thể xem các bản ghi cuộc họp đã lưu.';
-
-  @override
-  String get meetParticipantRecording => 'Cho phép người tham gia ghi hình';
-
-  @override
-  String get meetParticipantRecordingHint => 'Người tham gia có thể bắt đầu ghi khi thiết bị của họ hỗ trợ.';
-
-  @override
-  String get meetLeave => 'Rời cuộc gọi';
-
-  @override
-  String get meetLeaveOrEnd => 'Rời hoặc kết thúc cuộc họp?';
-
-  @override
-  String get meetEndForEveryone => 'Kết thúc cho mọi người';
-
-  @override
-  String get meetMicrophone => 'Micrô';
-
-  @override
-  String get meetMediaUnavailable => 'Âm thanh hoặc video của cuộc gọi chưa kết nối được.';
-
-  @override
-  String get meetMediaCaptureFailed => 'Không thể bật micro hoặc camera. Hãy kiểm tra quyền của ứng dụng.';
-
-  @override
-  String get meetMediaSendFailed => 'Micro hoặc camera đã kết nối nhưng chưa gửi âm thanh hoặc hình ảnh. Hãy kiểm tra thiết bị rồi thử lại.';
-
-  @override
-  String get meetMediaSessionFailed => 'Không thể bắt đầu phiên âm thanh và video của cuộc gọi.';
-
-  @override
-  String get meetMediaPublishFailed => 'Không thể kết nối micro hoặc camera của bạn với cuộc gọi.';
-
-  @override
-  String get meetMediaReceiveFailed => 'Không thể kết nối âm thanh hoặc video của người tham gia khác.';
-
-  @override
-  String get meetMediaConnectFailed => 'Kết nối âm thanh và video đã quá thời gian chờ. Hãy thử lại.';
-
-  @override
-  String get meetCamera => 'Máy ảnh';
-
-  @override
-  String get meetSwitchCamera => 'Đổi máy ảnh';
-
-  @override
-  String get meetChat => 'Trò chuyện';
-
-  @override
-  String get meetEveryone => 'Mọi người';
-
-  @override
-  String get meetPrivateMira => 'Trò chuyện riêng với Mira';
-
-  @override
-  String get meetPrivateHint => 'Chỉ bạn thấy cuộc trò chuyện này. Hãy xem lại câu trả lời trước khi chia sẻ với mọi người.';
-
-  @override
-  String get meetPrivateEmpty => 'Hỏi riêng Mira về cuộc họp này.';
-
-  @override
-  String get meetAskMira => 'Hỏi riêng Mira';
-
-  @override
-  String get meetPrivateRequestFailed => 'Mira chưa thể trả lời. Hãy thử gửi lại tin nhắn.';
-
-  @override
-  String get meetShareWithEveryone => 'Chia sẻ với mọi người';
-
-  @override
-  String get meetShareHint => 'Xem lại hoặc chỉnh sửa câu trả lời trước khi đăng vào trò chuyện phòng họp.';
-
-  @override
-  String get meetShareConfirm => 'Đăng vào trò chuyện phòng họp';
-
-  @override
-  String get meetMiraThinking => 'Mira đang chuẩn bị câu trả lời…';
-
-  @override
-  String get meetMiraReplyFailed => 'Mira không thể trả lời tin nhắn trong phòng.';
-
-  @override
-  String get meetMiraRetry => 'Thử lại với Mira';
-
-  @override
-  String get meetMiraReviews => 'Duyệt hành động riêng tư';
-
-  @override
-  String get meetMiraReviewsHint => 'Chỉ bạn thấy các bản nháp và yêu cầu này. Hãy kiểm tra hành động trong không gian làm việc trước khi duyệt.';
-
-  @override
-  String get meetMiraAudioMute => 'Tắt âm thanh Mira Live';
-
-  @override
-  String get meetMiraAudioUnmute => 'Bật âm thanh Mira Live';
-
-  @override
-  String get meetMiraAudioRetry => 'Thử lại âm thanh Mira Live';
-
-  @override
-  String get meetMiraReviewFailed => 'Không thể tải các mục duyệt riêng tư của Mira.';
-
-  @override
-  String get meetMiraReviewRefresh => 'Tải lại mục duyệt';
-
-  @override
-  String get meetMiraApprove => 'Duyệt hành động';
-
-  @override
-  String get meetMiraDeny => 'Từ chối hành động';
-
-  @override
-  String get meetMiraDiscard => 'Bỏ bản nháp';
-
-  @override
-  String get meetMiraApprovalTitle => 'Duyệt hành động trong không gian làm việc?';
-
-  @override
-  String get meetMiraApprovalHint => 'Mira sẽ thực hiện các hành động được liệt kê. Hãy kiểm tra từng nội dung trước khi duyệt.';
-
-  @override
-  String get meetMiraActionFailed => 'Không thể cập nhật mục duyệt của Mira. Vui lòng thử lại.';
-
-  @override
-  String get meetOpenLink => 'Mở liên kết';
-
-  @override
-  String get meetMessageHint => 'Nhắn cho mọi người';
-
-  @override
-  String get meetSend => 'Gửi';
-
-  @override
-  String get meetWaitingForHost => 'Đang chờ người chủ trì cho phép tham gia';
-
-  @override
-  String get meetConnecting => 'Đang kết nối cuộc họp…';
-
-  @override
-  String get meetReconnecting => 'Đang kết nối lại…';
-
-  @override
-  String get meetCallEnded => 'Cuộc họp đã kết thúc';
-
-  @override
-  String get meetReviewCheckFailed => 'Không thể kiểm tra trạng thái cuộc họp. Vui lòng thử lại trước khi bật micrô hoặc camera.';
-
-  @override
-  String get meetReviewUnavailable => 'Thông tin cuộc họp tạm thời không khả dụng.';
-
-  @override
-  String get meetReviewHint => 'Xem lại bản ghi lời nói và ghi chú của cuộc họp này.';
-
-  @override
-  String get meetReviewPrivate => 'Người chủ trì chưa chia sẻ ghi chú cuộc họp.';
-
-  @override
-  String get meetReviewNotes => 'Ghi chú cuộc họp';
-
-  @override
-  String get meetReviewNoNotes => 'Chưa có ghi chú.';
-
-  @override
-  String get meetReviewTranscript => 'Bản ghi lời nói';
-
-  @override
-  String get meetReviewNoTranscript => 'Chưa có bản ghi lời nói.';
-
-  @override
-  String get meetReviewUnknownSpeaker => 'Người nói chưa xác định';
-
-  @override
-  String get meetReviewMicrophone => 'Micrô';
-
-  @override
-  String get meetReviewSharedAudio => 'Âm thanh chia sẻ';
-
-  @override
-  String get meetReviewTranscriptionCost => 'Chuyển giọng nói thành văn bản';
-
-  @override
-  String get meetReviewNotesCost => 'Tạo ghi chú';
-
-  @override
-  String get meetReviewTotalCost => 'Tổng cộng';
-
-  @override
-  String get meetReviewUnpriced => 'Một số yêu cầu chưa được tính trong ước tính này.';
-
-  @override
-  String get meetAccessDenied => 'Bạn không thể tham gia cuộc họp này';
-
-  @override
-  String get meetNoParticipants => 'Đang chờ người khác tham gia';
-
-  @override
-  String get meetAdmit => 'Cho phép';
-
-  @override
-  String get meetDecline => 'Từ chối';
-
-  @override
-  String get meetParticipants => 'Người tham gia';
-
-  @override
-  String get meetParticipantsAndInvite => 'Người tham gia và lời mời';
-
-  @override
-  String get meetInvitePeople => 'Mời mọi người';
-
-  @override
-  String get meetInvitePeopleHint => 'Chia sẻ liên kết đến cuộc họp này';
-
-  @override
-  String get meetYou => 'Bạn';
-
-  @override
-  String get connectedOnboardingEcosystemTitle => 'Kết nối mọi mục tiêu của bạn';
-
-  @override
-  String get connectedOnboardingEcosystemSubtitle => 'Tuturuuu kết nối lập kế hoạch, cộng tác, vận hành, học tập và sáng tạo trong một không gian thích ứng.';
-
-  @override
-  String get connectedOnboardingRoleTitle => 'Cá nhân hóa Tuturuuu';
-
-  @override
-  String get connectedOnboardingRoleSubtitle => 'Chọn góc nhìn phù hợp nhất với cách bạn làm việc. Lựa chọn này chỉ thay đổi đề xuất.';
-
-  @override
-  String get connectedOnboardingRoleProfessional => 'Chuyên gia';
-
-  @override
-  String get connectedOnboardingRoleStudent => 'Sinh viên';
-
-  @override
-  String get connectedOnboardingRoleFounder => 'Nhà sáng lập';
-
-  @override
-  String get connectedOnboardingRoleExecutive => 'Lãnh đạo doanh nghiệp';
-
-  @override
-  String get connectedOnboardingRoleTeamLeader => 'Trưởng nhóm';
-
-  @override
-  String get connectedOnboardingGoalTitle => 'Bạn muốn thúc đẩy điều gì?';
-
-  @override
-  String get connectedOnboardingGoalSubtitle => 'Chọn một hoặc nhiều lộ trình mục tiêu. Bạn có thể thay đổi bất cứ lúc nào.';
-
-  @override
-  String get connectedOnboardingGoalFocus => 'Tập trung và lập kế hoạch';
-
-  @override
-  String get connectedOnboardingGoalCollaborate => 'Cộng tác';
-
-  @override
-  String get connectedOnboardingGoalOperate => 'Vận hành doanh nghiệp';
-
-  @override
-  String get connectedOnboardingGoalLearn => 'Học và giảng dạy';
-
-  @override
-  String get connectedOnboardingGoalBuild => 'Xây dựng và sáng tạo';
-
-  @override
-  String get connectedOnboardingToolkitTitle => 'Bộ công cụ thích ứng với bạn';
-
-  @override
-  String get connectedOnboardingToolkitSubtitle => 'Công việc, Lịch, Tài chính, Học tập và Mira phối hợp cùng nhau. Mọi hướng dẫn đều ngắn, tùy chọn và có thể mở lại.';
-
-  @override
-  String get connectedOnboardingFinish => 'Khám phá Tuturuuu';
-
-  @override
-  String get connectedOnboardingSkip => 'Để sau';
-
-  @override
-  String get connectedOnboardingSettingsTitle => 'Mở lại hướng dẫn Tuturuuu';
-
-  @override
-  String get connectedOnboardingSettingsDescription => 'Xem lại vai trò, lộ trình mục tiêu và hệ sinh thái ứng dụng kết nối mà không thay đổi dữ liệu của bạn.';
-
-  @override
-  String get mailTitle => 'Thư';
-
-  @override
-  String get mailAccessRequired => 'Bạn cần tài khoản @tuturuuu.com để dùng Thư.';
-
-  @override
-  String get mailInbox => 'Hộp thư đến';
-
-  @override
-  String get mailSent => 'Đã gửi';
-
-  @override
-  String get mailDrafts => 'Thư nháp';
-
-  @override
-  String get mailStarred => 'Đã gắn sao';
-
-  @override
-  String get mailArchive => 'Lưu trữ';
-
-  @override
-  String get mailSpam => 'Thư rác';
-
-  @override
-  String get mailTrash => 'Thùng rác';
-
-  @override
-  String get mailCompose => 'Soạn thư';
-
-  @override
-  String get mailMailbox => 'Hộp thư';
-
-  @override
-  String get mailSearch => 'Tìm thư';
-
-  @override
-  String get mailEmpty => 'Chưa có thư';
-
-  @override
-  String get mailNoSubject => '(Không có tiêu đề)';
-
-  @override
-  String get mailLoadMore => 'Xem thêm';
-
-  @override
-  String get mailTo => 'Đến';
-
-  @override
-  String get mailCc => 'Cc';
-
-  @override
-  String get mailBcc => 'Bcc';
-
-  @override
-  String get mailSubject => 'Tiêu đề';
-
-  @override
-  String get mailBody => 'Nội dung';
-
-  @override
-  String get mailSaveDraft => 'Lưu thư nháp';
-
-  @override
-  String get mailSend => 'Gửi';
-
-  @override
-  String get mailAttach => 'Đính kèm tệp';
-
-  @override
-  String get mailRemoveAttachment => 'Xóa tệp đính kèm';
-
-  @override
-  String get mailActionFailed => 'Không thể hoàn tất thao tác. Thư nháp vẫn được giữ lại, vui lòng thử lại.';
-
-  @override
-  String get mailOpenFailed => 'Không thể mở thư này. Vui lòng thử lại.';
-
-  @override
-  String get mailInvalidRecipient => 'Vui lòng nhập địa chỉ email người nhận hợp lệ.';
-
-  @override
-  String get mailMarkUnread => 'Đánh dấu chưa đọc';
-
-  @override
-  String get mailRestore => 'Chuyển về hộp thư đến';
-
-  @override
-  String get mailStar => 'Gắn sao';
-
-  @override
-  String get mailUnstar => 'Bỏ gắn sao';
-
-  @override
-  String get mailReply => 'Trả lời';
-
-  @override
-  String get mailReplyAll => 'Trả lời tất cả';
-
-  @override
-  String get mailForward => 'Chuyển tiếp';
-
-  @override
-  String get mailAiDraft => 'Soạn thư với AI';
-
-  @override
-  String get mailAiInstructions => 'Bạn muốn viết nội dung gì?';
-
-  @override
-  String get mailGenerate => 'Tạo nội dung';
-
-  @override
-  String get mailViewOriginal => 'Xem thư có định dạng';
-
-  @override
-  String get mailMessageAppearance => 'Giao diện thư';
-
-  @override
-  String get mailAppearanceOriginal => 'Nguyên bản';
-
-  @override
-  String get mailDownload => 'Tải xuống hoặc chia sẻ tệp';
-
-  @override
-  String get mailLoadImages => 'Hiển thị ảnh từ bên ngoài';
-
-  @override
-  String get mailLoadImagesDescription => 'Mặc định hiển thị ảnh. Người gửi có thể biết khi bạn mở thư.';
-
-  @override
-  String get mailSettings => 'Cài đặt thư';
-
-  @override
-  String get mailDefaultAction => 'Thao tác email mặc định';
-
-  @override
-  String get mailSenderName => 'Tên người gửi';
-
-  @override
-  String get mailSignature => 'Chữ ký';
-
-  @override
-  String get mailAutoDraft => 'Tự động soạn thư trả lời';
-
-  @override
-  String get mailDeliveryProvider => 'Dịch vụ gửi thư';
-
-  @override
-  String get mailDomainDefault => 'Mặc định của tên miền';
-
-  @override
-  String get mailSmartLabels => 'Nhãn thông minh';
-
-  @override
-  String get mailForwarding => 'Chuyển tiếp tự động';
-
-  @override
-  String get mailForwardingOff => 'Tắt';
-
-  @override
-  String get mailCatchAll => 'Hộp thư nhận mọi địa chỉ';
-
-  @override
-  String get mailForwardTo => 'Chuyển tiếp đến địa chỉ hộp thư';
-
-  @override
-  String get mailGroupPosting => 'Ai được gửi thư đến nhóm';
-
-  @override
-  String get mailGroupAttachments => 'Ai được gửi tệp đính kèm';
-
-  @override
-  String get mailGroupSendAs => 'Ai được gửi thư thay mặt nhóm';
-
-  @override
-  String get mailAnyone => 'Mọi người';
-
-  @override
-  String get mailOrganization => 'Thành viên tổ chức';
-
-  @override
-  String get mailMembers => 'Thành viên';
-
-  @override
-  String get mailManagers => 'Người quản lý';
-
-  @override
-  String get mailLabels => 'Nhãn';
-
-  @override
-  String get mailFolders => 'Thư mục';
-
-  @override
-  String get mailEmail => 'Địa chỉ email';
-
-  @override
-  String get mailName => 'Tên';
-
-  @override
-  String get mailViewer => 'Người xem';
-
-  @override
-  String get mailSender => 'Người gửi';
-
-  @override
-  String get mailAdmin => 'Quản trị viên';
-
-  @override
-  String get mailOwner => 'Chủ sở hữu';
-
-  @override
-  String get mailDescription => 'Mô tả';
-
-  @override
-  String get mailAutoApply => 'Tự động áp dụng';
-
-  @override
-  String get mailDeleteConfirm => 'Xóa mục này? Bạn không thể hoàn tác thao tác này.';
-
-  @override
-  String get mailMarkAllRead => 'Đánh dấu tất cả đã đọc';
-
-  @override
-  String get mailAllLabels => 'Tất cả nhãn và thư mục';
-
-  @override
-  String get mailSelectAll => 'Chọn tất cả thư đã tải';
-
-  @override
-  String get mailDeleteDraft => 'Xóa bản nháp';
-
-  @override
-  String get mailDeleteDraftConfirmation => 'Xóa vĩnh viễn bản nháp này và các tệp đính kèm?';
-
-  @override
-  String get deviceMfaTitle => 'Trình xác thực trên thiết bị';
-
-  @override
-  String get deviceMfaDescription => 'Dùng thiết bị này để xác minh đăng nhập, xem mã dùng một lần hoặc phê duyệt thiết bị khác.';
-
-  @override
-  String get deviceMfaEnroll => 'Đăng ký thiết bị này';
-
-  @override
-  String get deviceMfaEnrollWarning => 'Giữ một trình xác thực khác để dự phòng. Sau khi đăng ký, bạn có thể cần đăng nhập lại trên các thiết bị khác. Khóa bí mật chỉ được lưu trong bộ nhớ bảo mật của thiết bị này.';
-
-  @override
-  String get deviceMfaName => 'Tên thiết bị';
-
-  @override
-  String get deviceMfaDefaultName => 'Tuturuuu di động';
-
-  @override
-  String get deviceMfaReady => 'Thiết bị này đã được đăng ký';
-
-  @override
-  String get deviceMfaShowCode => 'Hiện mã xác minh';
-
-  @override
-  String get deviceMfaCodeHint => 'Nhập mã này trên thiết bị khác. Mã thay đổi mỗi 30 giây.';
-
-  @override
-  String get deviceMfaVerifyReason => 'Xác minh danh tính để dùng trình xác thực Tuturuuu';
-
-  @override
-  String get deviceMfaRemove => 'Gỡ trình xác thực này';
-
-  @override
-  String get deviceMfaRemoveHint => 'Thiết bị này sẽ ngừng tạo mã hợp lệ. Hãy đảm bảo bạn còn phương thức đăng nhập khác.';
-
-  @override
-  String get deviceMfaError => 'Không thể hoàn tất xác minh. Kiểm tra kết nối và trình xác thực rồi thử lại.';
-
-  @override
-  String get deviceMfaUseDevice => 'Xác minh bằng thiết bị này';
-
-  @override
-  String get deviceMfaNumberTitle => 'Bạn đang đăng nhập?';
-
-  @override
-  String get deviceMfaNumberHint => 'Nhập số gồm sáu chữ số hiển thị trên thiết bị bạn đang đăng nhập. Chỉ phê duyệt yêu cầu do bạn tạo.';
-
-  @override
-  String get deviceMfaDeny => 'Từ chối yêu cầu';
-
-  @override
-  String get deviceMfaExpired => 'Yêu cầu đã hết hạn. Hãy bắt đầu lại trên thiết bị khác.';
-
-  @override
-  String get deviceMfaReview => 'Xem yêu cầu đăng nhập';
-
-  @override
-  String get deviceMfaNoRequests => 'Không có yêu cầu đăng nhập. Hãy đăng nhập trên thiết bị khác.';
-
-  @override
-  String get deviceMfaHideCode => 'Ẩn mã';
-
-  @override
-  String get deviceMfaQrPaste => 'Nhập liên kết đăng nhập';
-
-  @override
-  String get deviceMfaQrPasteHint => 'Dán liên kết QR đăng nhập Tuturuuu từ thiết bị khác.';
-
-  @override
-  String get appsShowBottomTab => 'Hiện Ứng dụng trên thanh điều hướng dưới';
-
-  @override
-  String get appsNoMatches => 'Không có ứng dụng phù hợp';
-
-  @override
-  String get securitySessionsTitle => 'Phiên đăng nhập và kết nối';
-
-  @override
-  String get securitySessionsDescription => 'Xem các thiết bị đang đăng nhập. Đăng xuất phiên khác không làm đăng xuất thiết bị này.';
-
-  @override
-  String get securityUnknownDevice => 'Thiết bị không xác định';
-
-  @override
-  String get securityCurrentSession => 'Phiên hiện tại';
-
-  @override
-  String get securityRevokeSession => 'Đăng xuất phiên này';
-
-  @override
-  String get securityRevokeOthers => 'Đăng xuất các phiên khác';
-
-  @override
-  String get securityRevokeDescription => 'Các thiết bị được chọn sẽ cần đăng nhập lại.';
-
-  @override
-  String get securityConnectionsTitle => 'Tài khoản đã kết nối';
-
-  @override
-  String get securityConnectionsDescription => 'Chọn cách đăng nhập. Giữ ít nhất một tài khoản đã kết nối.';
-
-  @override
-  String get securityDisconnect => 'Ngắt kết nối';
-
-  @override
-  String get securityDisconnectDescription => 'Bạn sẽ không thể đăng nhập bằng tài khoản đã kết nối này nữa.';
-
-  @override
-  String get securityConnect => 'Kết nối';
-
-  @override
-  String get deviceMfaTrustedTitle => 'Thiết bị xác thực tin cậy';
-
-  @override
-  String get deviceMfaLockTitle => 'Khóa đăng ký mới';
-
-  @override
-  String get deviceMfaLockHint => 'Chỉ thiết bị đã đăng ký mới có thể phê duyệt đăng nhập. Mở khóa tại đây trước khi đăng ký thiết bị khác.';
-
-  @override
-  String get deviceMfaLocked => 'Đăng ký mới đã bị khóa. Mở cài đặt này trên một thiết bị tin cậy để mở khóa.';
-
-  @override
-  String get deviceMfaLockRecoveryHint => 'Hãy đăng ký thêm một thiết bị tin cậy trước khi khóa. Nếu mất tất cả thiết bị tin cậy, bạn không thể mở khóa cài đặt này từ thiết bị mới.';
-
-  @override
-  String get deviceMfaCurrentDevice => 'Thiết bị này';
-
-  @override
-  String get deviceMfaPending => 'Chưa hoàn tất thiết lập';
-
-  @override
-  String get deviceMfaRemoveTrusted => 'Xóa thiết bị tin cậy';
-
-  @override
-  String get deviceMfaSuggestTitle => 'Dùng thiết bị này để xác thực?';
-
-  @override
-  String get deviceMfaSuggestBody => 'Phê duyệt đăng nhập bằng xác minh thiết bị và tạo mã cho thiết bị khác. Bạn có thể quản lý thiết bị tin cậy trong cài đặt bảo mật.';
-
-  @override
-  String get deviceMfaNotNow => 'Để sau';
-
-  @override
-  String get deviceMfaManage => 'Thiết lập xác thực';
-
-  @override
-  String get deviceMfaRemoveDeviceHint => 'Thiết bị này sẽ không thể phê duyệt đăng nhập hoặc tạo mã hợp lệ nữa.';
-
-  @override
-  String get deviceMfaNeedBackup => 'Đăng ký thêm một thiết bị tin cậy trước khi khóa đăng ký mới.';
-
-  @override
-  String get mfaReviewSignIn => 'Xem yêu cầu đăng nhập';
-
-  @override
-  String get deviceMfaClose => 'Đóng trình xác thực';
-
-  @override
-  String get deviceMfaWorking => 'Đang kiểm tra bảo mật thiết bị…';
-
-  @override
-  String get deviceMfaActionFailed => 'Không thể hoàn tất bước này';
-
-  @override
-  String get deviceMfaCancelled => 'Xác minh thiết bị đã bị hủy. Hãy thử lại và xác nhận bằng Face ID, vân tay hoặc mật mã thiết bị.';
-
-  @override
-  String get deviceMfaExistingRequired => 'Xác minh bằng trình xác thực hiện có khi đăng nhập tài khoản, rồi quay lại đây để hoàn tất thiết lập.';
-
-  @override
-  String get deviceMfaSessionExpired => 'Không thể xác minh phiên đăng nhập. Hãy đăng nhập lại trước khi thay đổi trình xác thực.';
-
-  @override
-  String get deviceMfaRateLimited => 'Bạn đã thử quá nhiều lần. Hãy đợi một phút rồi thử lại.';
-
-  @override
-  String get deviceMfaUnavailable => 'Đăng ký trình xác thực tạm thời không khả dụng. Hãy thử lại sau ít phút.';
-
-  @override
-  String get deviceMfaOffline => 'Không thể kết nối với Tuturuuu. Kiểm tra kết nối và thử lại.';
-
-  @override
-  String get securityCheckTitle => 'Kiểm tra bảo mật';
-
-  @override
-  String get appsCustomize => 'Tùy chỉnh ứng dụng';
-
-  @override
-  String get appsHide => 'Ẩn ứng dụng';
-
-  @override
-  String get appsShow => 'Hiện ứng dụng';
-
-  @override
-  String get appsHiddenSection => 'Ứng dụng đã ẩn';
-
-  @override
-  String get appsHiddenExperimentsSection => 'Thử nghiệm đã ẩn';
-
-  @override
-  String get appsUnavailableWithCurrentAccess => 'Không khả dụng với quyền truy cập hiện tại';
-
-  @override
-  String get appsHideConfirmTitle => 'Ẩn ứng dụng này?';
-
-  @override
-  String get appsHideConfirmDescription => 'Ứng dụng sẽ chuyển xuống dưới các ứng dụng đang hiện. Bạn có thể hiện lại bất cứ lúc nào.';
-
-  @override
-  String get appsReorder => 'Kéo để sắp xếp';
-
-  @override
-  String get homeCustomize => 'Tùy chỉnh Trang chủ';
-
-  @override
-  String get homeHideWidget => 'Ẩn tiện ích';
-
-  @override
-  String get homeShowWidget => 'Hiện tiện ích';
-
-  @override
-  String get homeHiddenWidgets => 'Tiện ích đã ẩn';
-
-  @override
-  String get voiceMessage => 'Tin nhắn thoại';
-
-  @override
-  String get voiceRecord => 'Ghi âm';
-
-  @override
-  String get voiceStop => 'Dừng';
-
-  @override
-  String get voicePreview => 'Nghe lại';
-
-  @override
-  String get voiceAttach => 'Đính kèm bản ghi';
-
-  @override
-  String get voiceRetake => 'Ghi âm lại';
-
-  @override
-  String get voiceSendNow => 'Gửi ngay';
-
-  @override
-  String get voicePermission => 'Cho phép truy cập micrô để ghi âm.';
-
-  @override
-  String get voiceRecordingError => 'Không thể ghi âm. Vui lòng thử lại.';
-
-  @override
-  String get remindersTitle => 'Nhắc nhở';
-
-  @override
-  String get remindersDescription => 'Hạn công việc và sự kiện lịch được chuẩn bị trên thiết bị này.';
-
-  @override
-  String get notificationTaskAppLabel => 'Công việc';
-
-  @override
-  String get notificationWorkspaceAppLabel => 'Không gian làm việc';
-
-  @override
-  String get notificationSecurityAppLabel => 'Bảo mật';
-
-  @override
-  String get remindersTaskTitle => 'Hạn công việc';
-
-  @override
-  String get remindersEventTitle => 'Sự kiện lịch';
-
-  @override
-  String remindersCalendarTiming(String when) {
-    return 'Lịch: $when';
-  }
-
-  @override
-  String get calendarEventUnavailable => 'Sự kiện này không còn khả dụng.';
-
-  @override
-  String remindersAllDayEvent(String title) {
-    return 'Sự kiện cả ngày: $title';
-  }
-
-  @override
-  String remindersUpcomingEvent(String when, String title) {
-    return '$when: $title';
-  }
-
-  @override
-  String get remindersIn3d => 'Còn 3 ngày';
-
-  @override
-  String get remindersIn1d => 'Ngày mai';
-
-  @override
-  String get remindersIn12h => 'Còn 12 giờ';
-
-  @override
-  String get remindersIn3h => 'Còn 3 giờ';
-
-  @override
-  String get remindersIn1h => 'Còn 1 giờ';
-
-  @override
-  String get remindersTiming => 'Nhắc tôi';
-
-  @override
-  String get reminders3d => 'Trước 3 ngày';
-
-  @override
-  String get reminders1d => 'Trước 1 ngày';
-
-  @override
-  String get reminders12h => 'Trước 12 giờ';
-
-  @override
-  String get reminders3h => 'Trước 3 giờ';
-
-  @override
-  String get reminders1h => 'Trước 1 giờ';
-
-  @override
-  String get remindersStatusTitle => 'Trạng thái nhắc nhở';
-
-  @override
-  String get remindersPermissionOn => 'Đã bật thông báo trên thiết bị';
-
-  @override
-  String get remindersPermissionOff => 'Đã tắt thông báo trên thiết bị';
-
-  @override
-  String remindersScheduledCount(int count) {
-    return 'Đã lên lịch $count lời nhắc';
-  }
-
-  @override
-  String remindersLastChecked(String time) {
-    return 'Kiểm tra lần cuối: $time';
-  }
-
-  @override
-  String remindersNext(String time) {
-    return 'Lời nhắc tiếp theo: $time';
-  }
-
-  @override
-  String get remindersNeverChecked => 'Đang chờ cập nhật lần đầu';
-
-  @override
-  String get remindersRefresh => 'Cập nhật ngay';
-
-  @override
-  String get remindersEnableNotifications => 'Bật thông báo';
-
-  @override
-  String get remindersRefreshing => 'Đang kiểm tra công việc và sự kiện…';
-
-  @override
-  String get remindersRefreshFailed => 'Không thể cập nhật lời nhắc. Các lời nhắc đã lên lịch vẫn được giữ.';
-
-  @override
-  String get remindersSystemNote => 'Thông báo đã lên lịch có thể xuất hiện khi ứng dụng đóng. Mục mới hoặc thay đổi được kiểm tra khi mở hay quay lại ứng dụng; thời điểm cập nhật nền tùy thuộc thiết bị.';
-
-  @override
-  String get settingsGeneralGroup => 'Cá nhân hóa';
-
-  @override
-  String get settingsSupportGroup => 'Trợ giúp và tài khoản';
-
-  @override
-  String get profilePrivateActivity => 'Hoạt động riêng tư của bạn';
-
-  @override
-  String get profileTimelineDescription => 'Hoạt động tạo trong không gian làm việc này trong 30 ngày qua. Sự kiện lịch là hoạt động của không gian làm việc.';
-
-  @override
-  String get profileTimelineLimited => 'Chỉ hiển thị hoạt động gần đây. Một số nguồn đã đạt giới hạn hiển thị.';
-
-  @override
-  String get profileTimelineUnavailable => 'Không thể làm mới hoạt động.';
-
-  @override
-  String get profileTimelineTitle => 'Dòng thời gian';
-
-  @override
-  String get profileTimelineToday => 'Hôm nay';
-
-  @override
-  String get profileTimelineYesterday => 'Hôm qua';
-
-  @override
-  String get profileTimelineEmpty => 'Không có hoạt động gần đây trong không gian này';
-
-  @override
-  String get profileTimelinePartial => 'Một số hoạt động chưa hiển thị.';
-
-  @override
-  String profileTimelineTasks(int count) {
-    return 'Đã tạo $count công việc';
-  }
-
-  @override
-  String profileTimelineTransactions(int count) {
-    return 'Đã tạo $count giao dịch';
-  }
-
-  @override
-  String profileTimelineNotes(int count) {
-    return 'Đã thêm $count ghi chú';
-  }
-
-  @override
-  String profileTimelineWorkspaceEvents(int count) {
-    return 'Đã thêm $count sự kiện vào không gian';
-  }
-
-  @override
-  String profileTrackedMinutes(int minutes) {
-    return 'Đã theo dõi $minutes phút';
-  }
-
-  @override
-  String get profileShareActivityTitle => 'Chia sẻ hoạt động';
-
-  @override
-  String profileShareActivityConsent(String workspace) {
-    return 'Chia sẻ tổng thời gian và hoạt động hằng ngày tại $workspace với các thành viên. Hoạt động cá nhân và tại không gian khác vẫn riêng tư. Bạn có thể ngừng chia sẻ bất cứ lúc nào.';
-  }
-
-  @override
-  String profileSharedWithWorkspace(String workspace) {
-    return 'Đang chia sẻ với $workspace';
-  }
-
-  @override
-  String get profilePrivateByDefault => 'Chỉ bạn mới xem được hoạt động của mình.';
-
-  @override
-  String get profileWorkspaceActivity => 'Hoạt động trong không gian làm việc';
-
-  @override
-  String get profileNoSharedActivity => 'Chưa có ai chia sẻ hoạt động tại đây.';
-
-  @override
-  String get profileMoreActivity => 'Xem thêm';
-
-  @override
-  String get profileSharedActivityUnavailable => 'Hoạt động này không còn khả dụng.';
-
-  @override
-  String get profileRecentActivity => '12 tuần gần đây';
-
-  @override
-  String get assistantReplyFailed => 'Mira chưa trả lời xong. Tin nhắn của bạn vẫn ở đây. Thử lại';
-
-  @override
-  String get assistantCreditsUnavailable => 'Chưa thể tải nguồn tín dụng của bạn. Vui lòng thử lại.';
-
-  @override
-  String get assistantMicrophoneUnavailable => 'Không thể sử dụng micrô. Hãy kiểm tra quyền truy cập hoặc kết nối lại tai nghe rồi thử lại.';
-
-  @override
-  String get assistantAudioUnavailable => 'Âm thanh bị gián đoạn. Hãy kết nối lại để tiếp tục cuộc trò chuyện.';
-
-  @override
-  String get mailSwipeActions => 'Thao tác vuốt';
-
-  @override
-  String get mailSwipeLeft => 'Vuốt sang trái';
-
-  @override
-  String get mailSwipeRight => 'Vuốt sang phải';
-
-  @override
-  String get mailSwipeRead => 'Đã đọc / chưa đọc';
-
-  @override
-  String get mailSwipeStar => 'Gắn sao / bỏ sao';
-
-  @override
-  String get mailSwipeMove => 'Chuyển vào thư mục';
-
-  @override
-  String get mailSwipeNone => 'Không có';
-
-  @override
-  String get mailSwipeUndo => 'Hoàn tác';
-
-  @override
-  String get adminAccountsTitle => 'Tài khoản nội bộ';
-
-  @override
-  String get adminAccountsDescription => 'Quản lý tài khoản Tuturuuu và bảo mật tài khoản.';
-
-  @override
-  String get adminAccountsSearch => 'Tìm tài khoản';
-
-  @override
-  String get adminAccountsUnavailable => 'Không thể tải tài khoản. Kiểm tra quyền quản trị rồi thử lại.';
-
-  @override
-  String get adminAccountsEmpty => 'Không tìm thấy tài khoản';
-
-  @override
-  String get adminAccountsMore => 'Tải thêm';
-
-  @override
-  String get adminAccountsDisabled => 'Đã vô hiệu hóa truy cập';
-
-  @override
-  String get adminAccountsActive => 'Đã cho phép truy cập';
-
-  @override
-  String get adminAccountsResetPassword => 'Đặt lại mật khẩu';
-
-  @override
-  String get adminAccountsEnableAccess => 'Cho phép truy cập';
-
-  @override
-  String get adminAccountsDisableAccess => 'Vô hiệu hóa truy cập';
-
-  @override
-  String get adminAccountsConfirmEmail => 'Nhập email tài khoản để xác nhận';
-
-  @override
-  String get adminAccountsNewPassword => 'Mật khẩu mới (12–72 ký tự)';
-
-  @override
-  String get adminAccountsSave => 'Lưu thay đổi';
-
-  @override
-  String get adminAccountsFailed => 'Không thể lưu thay đổi. Vui lòng thử lại.';
-
-  @override
-  String get adminAccountsEditProfile => 'Chỉnh sửa hồ sơ';
-
-  @override
-  String get adminAccountsDisplayName => 'Tên hiển thị';
-
-  @override
-  String get adminAccountsUsername => 'Tên người dùng';
-
-  @override
-  String get adminAccountsResetMfa => 'Đặt lại trình xác thực';
-
-  @override
-  String get adminAccountsResetMfaDescription => 'Xóa tất cả yếu tố MFA và thiết bị xác thực tin cậy. Người dùng cần đăng ký lại trình xác thực.';
-
-  @override
-  String get assistantLiveShareScreen => 'Chia sẻ màn hình';
-
-  @override
-  String get assistantLiveStopScreen => 'Dừng chia sẻ';
-
-  @override
-  String get assistantLiveScreenActive => 'Bạn đang chia sẻ màn hình với Live';
-
-  @override
-  String get assistantLiveScreenPending => 'Đang chờ quyền chia sẻ màn hình';
-
-  @override
-  String get assistantLiveScreenStopped => 'Đã kết thúc chia sẻ màn hình.';
-
-  @override
-  String get assistantLiveScreenUnavailable => 'Không thể bắt đầu chia sẻ màn hình. Vui lòng thử lại.';
-
-  @override
-  String get assistantLiveScreenMicrophoneRequired => 'Bật micrô trước khi chia sẻ màn hình. Live cần phiên thoại để tiếp tục khi bạn chuyển ứng dụng.';
-
-  @override
-  String get assistantLiveScreenConnectionRequired => 'Kết nối với Live trước khi chia sẻ màn hình.';
-
-  @override
-  String get assistantLiveScreenPrivacy => 'Nội dung hiển thị trên màn hình có thể được chia sẻ với Live. Hãy ẩn thông tin riêng tư trước khi tiếp tục.';
-
-  @override
-  String desktopUpdateReady(String version) {
-    return 'Tuturuuu $version đã sẵn sàng để cài đặt.';
-  }
-
-  @override
-  String get desktopUpdateFailed => 'Không thể cài đặt bản cập nhật. Bạn vẫn có thể dùng phiên bản hiện tại.';
-
-  @override
-  String get desktopUpdateScheduled => 'Bản cập nhật sẽ được cài đặt vào lần mở Tuturuuu tiếp theo.';
-
-  @override
-  String get desktopUpdateInstall => 'Cài đặt và khởi động lại';
-
-  @override
-  String get desktopUpdateCancel => 'Hủy lịch cập nhật';
-
-  @override
-  String get desktopUpdateNextLaunch => 'Cài đặt vào lần mở tiếp theo';
-
-  @override
-  String get desktopUpdateDismiss => 'Ẩn thông báo cập nhật';
-
-  @override
-  String get desktopUpdateManual => 'Tải xuống thủ công';
-
-  @override
-  String get mailSnooze => 'Tạm ẩn';
-
-  @override
-  String get mailUnsnooze => 'Đưa về hộp thư đến ngay';
-
-  @override
-  String get mailMute => 'Tắt thông báo chuỗi thư';
-
-  @override
-  String get mailUnmute => 'Bật lại thông báo';
-
-  @override
-  String get mailSnoozed => 'Đã tạm ẩn';
-
-  @override
-  String get mailMuted => 'Đã tắt thông báo';
-
-  @override
-  String get mailSnoozeHour => 'Sau một giờ';
-
-  @override
-  String get mailSnoozeDay => 'Sau 24 giờ';
-
-  @override
-  String get mailSnoozeWeek => 'Sau một tuần';
-
-  @override
-  String get mailSnoozeCustom => 'Chọn ngày và giờ';
-
-  @override
-  String get mailSnoozeFuture => 'Vui lòng chọn thời gian trong tương lai.';
-
-  @override
-  String get requiredMfaEnrollTitle => 'Bảo vệ tài khoản của bạn';
-
-  @override
-  String get requiredMfaEnrollDescription => 'Quản trị viên yêu cầu xác minh hai bước. Thêm tài khoản này vào ứng dụng xác thực để tiếp tục.';
-
-  @override
-  String get requiredMfaSecretLabel => 'Nhập khóa thiết lập này vào ứng dụng xác thực. Không chia sẻ khóa này.';
-
-  @override
-  String get requiredMfaError => 'Không thể hoàn tất xác minh. Vui lòng thử lại.';
-
-  @override
-  String get requiredMfaVerify => 'Xác minh và tiếp tục';
-
-  @override
-  String get requiredMfaStart => 'Thiết lập ứng dụng xác thực';
-
-  @override
-  String get adminAccountsRequireMfa => 'Bắt buộc xác thực hai bước';
-
-  @override
-  String get adminAccountsOptionalMfa => 'Không bắt buộc xác thực hai bước';
-
-  @override
-  String get adminAccountsMfaPolicyDescription => 'Bắt buộc xác thực hai bước sẽ yêu cầu xác minh lại. Khi không bắt buộc, các phương thức hiện có vẫn được giữ; hãy đặt lại riêng nếu muốn xóa.';
-
-  @override
-  String get requiredMfaRecoveryTitle => 'Đăng nhập lại để bảo vệ tài khoản';
-
-  @override
-  String get requiredMfaRecoveryDescription => 'Quản trị viên đã đặt lại bảo mật tài khoản. Hãy đăng nhập lại trước khi thiết lập hoặc xác minh ứng dụng xác thực.';
-
-  @override
-  String get requiredMfaSignInAgain => 'Đăng nhập lại';
-
-  @override
-  String get appsHubNotesDescription => 'Ghi lại ý tưởng và liên kết với công việc.';
-
-  @override
-  String get notesTitle => 'Ghi chú';
-
-  @override
-  String get notesToday => 'Hôm nay';
-
-  @override
-  String get notesYesterday => 'Hôm qua';
-
-  @override
-  String get notesPrevious7Days => '7 ngày trước';
-
-  @override
-  String get notesPrevious30Days => '30 ngày trước';
-
-  @override
-  String get notesOlder => 'Cũ hơn';
-
-  @override
-  String get notesLocked => 'Ghi chú đã khóa';
-
-  @override
-  String get notesLock => 'Khóa ghi chú';
-
-  @override
-  String get notesUnlock => 'Bỏ khóa';
-
-  @override
-  String get notesOpenLocked => 'Mở ghi chú đã khóa';
-
-  @override
-  String get notesLockDescription => 'Đặt mật khẩu để mã hóa ghi chú trên các thiết bị. Hãy giữ an toàn vì không thể khôi phục.';
-
-  @override
-  String get notesDeviceLockDescription => 'Dùng Face ID hoặc Touch ID để mở hằng ngày. Khóa khôi phục được lưu an toàn để mở bằng passkey trên thiết bị khác. Bạn cũng có thể chuyển quyền truy cập bằng QR.';
-
-  @override
-  String get notesPinLockDescription => 'Dùng mã PIN 6 chữ số trên thiết bị này. Có thể mở ở nơi khác bằng passkey hoặc chuyển khóa từ điện thoại qua QR.';
-
-  @override
-  String get notesPinUnlockDescription => 'Nhập mã PIN 6 chữ số của ghi chú.';
-
-  @override
-  String get notesUseDeviceLock => 'Dùng Face ID hoặc Touch ID';
-
-  @override
-  String get notesUsePin => 'Dùng mã PIN 6 chữ số';
-
-  @override
-  String get notesUsePassphrase => 'Dùng mật khẩu riêng';
-
-  @override
-  String get notesPin => 'Mã PIN 6 chữ số';
-
-  @override
-  String get notesConfirmPin => 'Xác nhận mã PIN';
-
-  @override
-  String get notesPinRequirements => 'Nhập cùng một mã PIN 6 chữ số hai lần.';
-
-  @override
-  String get notesIncorrectPin => 'Không thể mở ghi chú. Hãy kiểm tra mã PIN hoặc thử lại sau.';
-
-  @override
-  String get notesDeviceUnlockReason => 'Mở khóa ghi chú riêng tư';
-
-  @override
-  String get notesDeviceKeyUnavailable => 'Ghi chú này được khóa trên thiết bị khác. Hãy mở ở đó hoặc dùng passkey hay QR từ điện thoại trên web.';
-
-  @override
-  String get notesPasskeyUnlockFailed => 'Không thể mở bằng passkey của tài khoản này. Hãy thử lại hoặc dùng điện thoại ban đầu.';
-
-  @override
-  String get notesTransferTitle => 'Mở khóa trên web';
-
-  @override
-  String get notesTransferScanDescription => 'Quét mã QR hiển thị trên ghi chú đã khóa ở web.';
-
-  @override
-  String notesTransferConfirmDescription(String host) {
-    return 'Chia sẻ khóa mở ghi chú này với $host?';
-  }
-
-  @override
-  String get notesTransferInvalidCode => 'Mã này không khớp với ghi chú hiện tại.';
-
-  @override
-  String get notesTransferApprove => 'Chia sẻ khóa mở';
-
-  @override
-  String get notesTransferFailed => 'Không thể chuyển khóa ghi chú. Hãy thử mã QR mới.';
-
-  @override
-  String get notesTransferOriginalDeviceOnly => 'Hãy quét mã trên điện thoại đã khóa ghi chú hoặc mở trực tiếp trên web bằng passkey.';
-
-  @override
-  String get notesUnlockDescription => 'Nhập mật khẩu ghi chú để xem nội dung.';
-
-  @override
-  String get notesPassphrase => 'Mật khẩu';
-
-  @override
-  String get notesConfirmPassphrase => 'Xác nhận mật khẩu';
-
-  @override
-  String get notesPassphraseRequirements => 'Dùng ít nhất 8 ký tự và nhập mật khẩu giống nhau.';
-
-  @override
-  String get notesIncorrectPassphrase => 'Không thể mở ghi chú. Hãy kiểm tra mật khẩu.';
-
-  @override
-  String get notesNew => 'Ghi chú mới';
-
-  @override
-  String get notesInbox => 'Hộp thư đến';
-
-  @override
-  String get notesArchiveTab => 'Lưu trữ';
-
-  @override
-  String get notesArchive => 'Lưu trữ ghi chú';
-
-  @override
-  String get notesRestore => 'Khôi phục ghi chú';
-
-  @override
-  String get notesEdit => 'Sửa ghi chú';
-
-  @override
-  String get notesDone => 'Xong';
-
-  @override
-  String get notesDelete => 'Xóa ghi chú';
-
-  @override
-  String get notesDeleteDescription => 'Xóa vĩnh viễn ghi chú này? Bạn không thể hoàn tác.';
-
-  @override
-  String get notesDeleteError => 'Không thể xóa ghi chú này. Hãy thử lại.';
-
-  @override
-  String get notesSearch => 'Tìm ghi chú';
-
-  @override
-  String get notesEmpty => 'Chưa có ghi chú. Hãy ghi lại ý tưởng đầu tiên.';
-
-  @override
-  String get notesArchiveEmpty => 'Ghi chú đã lưu trữ sẽ xuất hiện ở đây.';
-
-  @override
-  String get notesUntitled => 'Ghi chú chưa đặt tên';
-
-  @override
-  String get notesStartWriting => 'Bắt đầu viết...';
-
-  @override
-  String get notesHighlight => 'Tô sáng';
-
-  @override
-  String get notesChecklist => 'Danh sách kiểm tra';
-
-  @override
-  String get notesConvertToTask => 'Chuyển thành công việc';
-
-  @override
-  String get notesSelectChecklistItem => 'Đặt con trỏ trong một mục kiểm tra để chuyển đổi.';
-
-  @override
-  String get notesTaskBoard => 'Bảng';
-
-  @override
-  String get notesTaskList => 'Danh sách';
-
-  @override
-  String get notesTaskNoBoards => 'Không có bảng công việc trong không gian này.';
-
-  @override
-  String get notesTaskNoLists => 'Bảng này chưa có danh sách công việc.';
-
-  @override
-  String get notesTaskLoadError => 'Không thể tải nơi lưu công việc. Hãy thử lại.';
-
-  @override
-  String get notesTaskCreateError => 'Không thể tạo công việc. Hãy thử lại.';
-
-  @override
-  String get notesCreateTask => 'Tạo công việc';
-
-  @override
-  String get notesInsertTable => 'Chèn bảng';
-
-  @override
-  String get notesInsertLink => 'Chèn liên kết';
-
-  @override
-  String get notesOpenLink => 'Mở';
-
-  @override
-  String get notesEditLink => 'Liên kết';
-
-  @override
-  String get notesSaveLink => 'Lưu liên kết';
-
-  @override
-  String get notesLinkEvents => 'Sự kiện';
-
-  @override
-  String get notesLinkFinance => 'Tài chính';
-
-  @override
-  String get notesLinkMeetings => 'Cuộc họp';
-
-  @override
-  String get notesLinkTasks => 'Công việc';
-
-  @override
-  String get notesLinkWork => 'Liên kết công việc';
-
-  @override
-  String get notesLinkText => 'Văn bản liên kết';
-
-  @override
-  String get notesLinkUrl => 'Liên kết đến công việc, sự kiện, cuộc họp hoặc trang web';
-
-  @override
-  String get notesInsertButton => 'Chèn';
-
-  @override
-  String get notesNoLinkResults => 'Không có mục phù hợp';
-
-  @override
-  String get notesSearchWork => 'Tìm mục liên kết';
-
-  @override
-  String get notesLoadError => 'Không thể tải ghi chú. Kéo xuống để thử lại.';
-
-  @override
-  String get notesSaveError => 'Không thể lưu ghi chú. Nội dung bạn sửa vẫn còn ở đây.';
-
-  @override
-  String get cacheStorageTitle => 'Bộ nhớ và dữ liệu đệm';
-
-  @override
-  String get cacheStorageDescription => 'Xem dữ liệu đệm theo loại và chọn dung lượng tối đa.';
-
-  @override
-  String get cacheStorageLimit => 'Dung lượng dữ liệu đệm tối đa';
-
-  @override
-  String get cacheStorageClear => 'Xóa dữ liệu đệm';
-
-  @override
-  String get cacheStorageClearDescription => 'Dữ liệu đã tải sẽ được tải lại khi cần. Các thay đổi ngoại tuyến đang chờ vẫn được giữ.';
-
-  @override
-  String get cacheStorageError => 'Không thể đọc hoặc cập nhật dữ liệu đệm. Hãy thử lại.';
-
-  @override
-  String get cacheStorageEstimateNote => 'Dung lượng dữ liệu đã lưu ước tính. Dữ liệu mã hóa và bộ nhớ đệm hệ thống có thể khác.';
-
-  @override
-  String get cacheCategoryMailMedia => 'Hình ảnh thư';
-
-  @override
-  String get cacheCategoryMail => 'Thư';
-
-  @override
-  String get cacheCategoryMessages => 'Tin nhắn và ghi chú';
-
-  @override
-  String get cacheCategoryTasks => 'Công việc';
-
-  @override
-  String get cacheCategoryCalendar => 'Lịch';
-
-  @override
-  String get cacheCategoryFinance => 'Tài chính';
-
-  @override
-  String get cacheCategoryOther => 'Dữ liệu khác';
-
-  @override
-  String get offlineDependencyWaiting => 'Đang chờ các thay đổi liên quan. Đồng bộ sẽ tự động tiếp tục.';
-
-  @override
-  String get offlineDependencyMissing => 'Một mục cục bộ liên quan đã bị hủy hoặc xóa. Hãy kiểm tra thay đổi này.';
-
-  @override
-  String get offlineDependencyCycle => 'Các thay đổi liên quan phụ thuộc lẫn nhau. Hãy kiểm tra các mục tham chiếu.';
-
-  @override
-  String get offlineDependencyAmbiguous => 'Nhiều thao tác tạo đang chờ dùng cùng một mục cục bộ. Hãy kiểm tra thay đổi này.';
-
-  @override
-  String get offlineDependencyInvalid => 'Thay đổi đã lưu có dữ liệu không hợp lệ. Hãy kiểm tra trước khi đồng bộ.';
-
-  @override
-  String get offlineDependencyContract => 'Đang chờ máy chủ hỗ trợ. Thay đổi đã được lưu và sẽ tự động thử lại.';
-
-  @override
-  String get offlineEditSyncing => 'Đang đồng bộ…';
-
-  @override
-  String get offlineEditQueued => 'Đang chờ đồng bộ';
-
-  @override
-  String get offlineEditConflict => 'Cần xem lại trước khi đồng bộ';
-
-  @override
-  String get offlineEditFailed => 'Đồng bộ thất bại';
-
-  @override
-  String get offlineChangesTitle => 'Thay đổi ngoại tuyến';
-
-  @override
-  String get offlineChangesEmpty => 'Mọi thay đổi đã được đồng bộ';
-
-  @override
-  String get offlineChangesReview => 'Hãy kiểm tra thao tác này trên thiết bị khác trước khi thử lại. Có thể máy chủ đã nhận được thao tác.';
-
-  @override
-  String get offlineChangesRetry => 'Thử lại';
-
-  @override
-  String get offlineChangesDiscard => 'Bỏ thay đổi trên máy';
-
-  @override
-  String get offlineChangesDiscardConfirm => 'Thao tác này xóa thay đổi đang chờ trên thiết bị. Nó không hoàn tác dữ liệu mà máy chủ có thể đã nhận.';
-
-  @override
-  String get mailMessageDetails => 'Thông tin thư';
-
-  @override
-  String get mailInvitationTitle => 'Lời mời lịch';
-
-  @override
-  String get mailInvitationAccept => 'Chấp nhận';
-
-  @override
-  String get mailInvitationDecline => 'Từ chối';
-
-  @override
-  String get mailInvitationTentative => 'Có thể tham gia';
-
-  @override
-  String mailInvitationIdentity(String attendee, String organizer) {
-    return 'Trả lời với tư cách $attendee cho người tổ chức $organizer';
-  }
-
-  @override
-  String get mailInvitationLocation => 'Địa điểm';
-
-  @override
-  String get mailInvitationWhen => 'Thời gian';
-
-  @override
-  String get mailInvitationJoin => 'Tham gia cuộc họp';
-
-  @override
-  String get mailInvitationRetry => 'Tải lại thông tin lời mời';
-
-  @override
-  String get mailInvitationSending => 'Đang gửi phản hồi…';
-
-  @override
-  String mailInvitationSent(String response) {
-    return 'Đã gửi phản hồi: $response';
-  }
-
-  @override
-  String get mailInvitationPending => 'Phản hồi đang chờ xử lý. Kiểm tra lại trước khi trả lời.';
-
-  @override
-  String get mailInvitationFailed => 'Chưa xác nhận được phản hồi. Thử lại cùng phản hồi để kiểm tra trạng thái.';
-
-  @override
-  String get mailCalendarLinkTitle => 'Liên kết với Lịch';
-
-  @override
-  String get mailCalendarLinkUrl => 'Liên kết sự kiện Lịch';
-
-  @override
-  String get mailCalendarLinkPreview => 'Xem trước liên kết';
-
-  @override
-  String get mailCalendarLinkConfirm => 'Xác nhận liên kết';
-
-  @override
-  String get mailCalendarLinkOriginal => 'Lời mời gốc';
-
-  @override
-  String get mailCalendarLinkSelected => 'Sự kiện Lịch đã chọn';
-
-  @override
-  String get mailCalendarLinkNotice => 'Liên kết giữ cả hai bản ghi. Phản hồi vẫn gửi đến người tổ chức ban đầu.';
-
-  @override
-  String get mailCalendarLinkChanged => 'Lời mời hoặc sự kiện đã thay đổi. Vui lòng xem trước lại.';
-
-  @override
-  String get mailCalendarLinkUnavailable => 'Sự kiện này không khả dụng trong tài khoản của bạn.';
-
-  @override
-  String get mailCalendarLinkFailed => 'Không thể cập nhật liên kết. Vui lòng thử lại.';
-
-  @override
-  String get mailCalendarLinkInvalid => 'Dán liên kết Lịch của sự kiện đã chọn.';
-
-  @override
-  String get mailCalendarLinkLinked => 'Đã liên kết sự kiện Lịch';
-
-  @override
-  String get mailCalendarLinkUnlink => 'Gỡ liên kết';
-
-  @override
-  String get mailCalendarLinkOpen => 'Mở sự kiện đã liên kết';
-
-  @override
-  String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone) {
-    return '$leadTime · $occurrence ($timezone)';
-  }
-
-  @override
-  String get settingsTimezone => 'Múi giờ cá nhân';
-
-  @override
-  String get settingsWorkspaceTimezone => 'Múi giờ không gian làm việc';
-
-  @override
-  String get settingsTimezoneDescription => 'Múi giờ cá nhân ưu tiên hơn múi giờ không gian làm việc. Tự động dùng mặc định không gian làm việc, sau đó thiết bị.';
-
-  @override
-  String get settingsTimezoneAuto => 'Tự động';
-
-  @override
-  String get settingsTimezoneSearch => 'Tìm múi giờ';
-
-  @override
-  String get settingsTimezoneLoading => 'Đang xác định múi giờ…';
-
-  @override
-  String get settingsTimezoneAccountPending => 'Đang chờ tài khoản của bạn.';
-
-  @override
-  String get settingsTimezoneUnknown => 'Chưa xác định';
-
-  @override
-  String settingsTimezoneEffective(String timezone) {
-    return 'Múi giờ áp dụng: $timezone';
-  }
-
-  @override
-  String get settingsTimezoneRateLimited => 'Quá nhiều yêu cầu. Vui lòng chờ trước khi thử lại.';
-
-  @override
-  String get settingsTimezoneRetry => 'Thử lại múi giờ';
-
-  @override
-  String get settingsTimezoneError => 'Không thể tải hoặc lưu múi giờ. Hãy thử lại hoặc sửa tùy chọn đã tải.';
-
-  @override
-  String get calendarInvalidLocalTime => 'Chọn thời gian bắt đầu và kết thúc hợp lệ. Một số thời điểm không tồn tại khi đổi giờ mùa hè.';
-
-  @override
-  String get profileOverviewTab => 'Tổng quan';
-
-  @override
-  String get profileTimelineTab => 'Dòng thời gian';
-
-  @override
-  String get profileTimelineShowDates => 'Hiện thanh chọn ngày';
-
-  @override
-  String get profileTimelineHideDates => 'Đóng thanh ngày và xem dòng hoạt động';
-
-  @override
-  String get profileTimelineAgenda => 'Những ngày có hoạt động';
-
-  @override
-  String get profileTimelineDayEmpty => 'Không có hoạt động nào được trả về cho ngày này.';
-
-  @override
-  String get profileTimelineHasActivity => 'Có hoạt động trong dữ liệu đã tải';
-
-  @override
-  String get profileTimelineLoadedEnd => 'Đã hiển thị toàn bộ hoạt động đã tải';
-
-  @override
-  String get profileTimelineMoreDays => 'Hiện thêm ngày đã tải';
-
-  @override
-  String meetNoticeJoined(String name) {
-    return '$name đã tham gia cuộc họp';
-  }
-
-  @override
-  String meetNoticeWaiting(String name) {
-    return '$name đang yêu cầu tham gia';
-  }
-
-  @override
-  String meetNoticeChat(String name) {
-    return '$name đã gửi tin nhắn';
-  }
-
-  @override
-  String get meetNoticeView => 'Xem';
-
-  @override
-  String get meetNotificationSound => 'Âm thanh thông báo';
-
-  @override
-  String get meetShareScreen => 'Chia sẻ màn hình';
-
-  @override
-  String get meetStopSharing => 'Dừng chia sẻ';
-
-  @override
-  String get meetScreenShareHint => 'Màn hình bạn chọn sẽ hiển thị với mọi người trong cuộc họp cho đến khi bạn dừng chia sẻ. Dùng hộp thoại hệ thống để chọn nội dung cần chia sẻ. Âm thanh hệ thống không được chia sẻ.';
-
-  @override
-  String get meetScreenShareFailed => 'Chưa thể chia sẻ màn hình. Kiểm tra quyền ghi màn hình và thử lại.';
-
-  @override
-  String get inventoryStockHealthTitle => 'Tình trạng tồn kho';
-
-  @override
-  String get inventoryStockHealthScope => 'Sản phẩm đang hoạt động · mọi dòng tồn kho, gồm kho đã lưu trữ';
-
-  @override
-  String inventoryStockHealthAsOf(String timestamp) {
-    return 'Ảnh chụp từ máy chủ: $timestamp UTC';
-  }
-
-  @override
-  String get inventoryStockHealthIncomplete => 'Ảnh chụp chưa đầy đủ: một vài số đếm hoặc thời gian máy chủ bị thiếu.';
-
-  @override
-  String get inventoryStockHealthUnavailable => 'Không thể tải tình trạng tồn kho. Kéo để làm mới và thử lại.';
-
-  @override
-  String get inventoryStockHealthDenied => 'Bạn không có quyền xem phân tích tồn kho.';
-
-  @override
-  String get inventoryStockHealthLoading => 'Đang tải tình trạng tồn kho…';
-
-  @override
-  String get inventoryStockHealthActive => 'Sản phẩm đang hoạt động';
-
-  @override
-  String get inventoryStockHealthUnconfigured => 'Sản phẩm chưa có dòng tồn kho';
-
-  @override
-  String get inventoryStockHealthLow => 'Dòng tồn kho thấp';
-
-  @override
-  String get inventoryStockHealthOut => 'Dòng hết hàng';
-
-  @override
-  String get inventoryStockHealthUnlimited => 'Dòng tồn kho không giới hạn';
-
-  @override
-  String get inventoryStockHealthOverlap => 'Số dòng thấp/hết hàng có thể trùng nhau. Kiểm tra thấp/hết hàng theo số lượng không tính dòng không giới hạn; các dòng này được đếm riêng. Biểu đồ so sánh số dòng.';
-
-  @override
-  String get inventoryStockHealthUnknown => 'Chưa có dữ liệu';
-
-  @override
-  String get inventoryProductDeleteConfirm => 'Xóa sản phẩm này? Nếu giao dịch đã có tham chiếu đến sản phẩm, máy chủ sẽ lưu trữ sản phẩm khi đồng bộ.';
-
-  @override
-  String get inventorySeasonPriceCached => 'Bản nháp ngoại tuyến sử dụng giá mùa đã lưu. Giá và tình trạng hàng sẽ được kiểm tra khi đồng bộ.';
-
-  @override
-  String get inventorySeasonPriceLoading => 'Đang kiểm tra giá mùa hiện tại…';
-
-  @override
-  String get inventorySeasonPriceUnavailable => 'Giá mùa không khả dụng hoặc đã hết hạn. Kết nối, làm mới và kiểm tra giỏ hàng trước khi bán.';
-
-  @override
-  String inventorySeasonPriceAsOf(String currency, String asOf, String timeZone) {
-    return 'Giá mùa · $currency · tại $asOf (UTC) · ngày mùa theo $timeZone';
-  }
-
-  @override
-  String get inventorySeasonRecoveryTitle => 'Khôi phục đơn bán hàng';
-
-  @override
-  String get inventorySeasonRecoveryCheck => 'Kiểm tra kết quả bán hàng';
-
-  @override
-  String get inventorySeasonRecoveryUnavailable => 'Không thể truy cập bộ lưu trữ khôi phục. Tạm khóa tạo đơn cho đến khi có thể khôi phục an toàn.';
-
-  @override
-  String get inventorySeasonRetryPending => 'Chưa xác định được kết quả bán hàng. Kiểm tra yêu cầu đã lưu trước khi gửi lại đúng nội dung. Bạn có thể rời màn hình và khôi phục trong tài khoản, không gian làm việc này; không tạo đơn thay thế.';
-
-  @override
-  String get inventoryCheckoutScopeChanged => 'Tài khoản hoặc không gian làm việc đã thay đổi. Đóng màn hình này và mở lại đơn bán trong không gian làm việc của đơn.';
-
-  @override
-  String get inventorySeasonHistoricalReadOnly => 'Lịch sử bán theo mùa chỉ có thể xem tại đây. Giá đã ghi nhận được giữ nguyên.';
-
-  @override
-  String get offlinePreparationTitle => 'Dữ liệu ngoại tuyến';
-
-  @override
-  String get offlinePreparationCacheAll => 'Tải tất cả';
-
-  @override
-  String get offlinePreparationDescription => 'Tải dữ liệu không gian làm việc để dùng ngoại tuyến. Bộ nhớ đệm chịu giới hạn lưu trữ; tệp và dịch vụ trực tuyến vẫn có thể cần kết nối.';
-
-  @override
-  String get offlinePreparationQueued => 'Chưa tải';
-
-  @override
-  String get offlinePreparationWaiting => 'Đang chờ';
-
-  @override
-  String get offlinePreparationDownloading => 'Đang tải';
-
-  @override
-  String get offlinePreparationReady => 'Đã tải';
-
-  @override
-  String get offlinePreparationFailed => 'Tải thất bại';
-
-  @override
-  String get offlinePreparationUnavailable => 'Không khả dụng';
-
-  @override
-  String offlinePreparationLastSuccess(String time) {
-    return 'Lần tải gần nhất: $time';
-  }
-
-  @override
-  String offlinePreparationProgress(int completed, int total) {
-    return 'Đã tải $completed/$total mô-đun';
-  }
-
-  @override
-  String get offlinePreparationNeedsRefresh => 'Cần làm mới';
-
-  @override
-  String get inventoryCheckoutReconcileCart => 'Đối soát giỏ hàng';
-
-  @override
-  String get inventoryCheckoutReconcileCartHelp => 'Làm mới giá và loại bỏ sản phẩm không còn phù hợp với kỳ bán hàng này.';
-
-  @override
-  String get inventoryCheckoutCartReconciled => 'Đã cập nhật giỏ hàng. Kiểm tra tổng tiền trước khi tạo đơn.';
-
-  @override
-  String inventoryCheckoutCartRemoved(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Đã loại bỏ $count sản phẩm không còn khả dụng. Kiểm tra giỏ hàng trước khi tạo đơn.',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get inventoryCheckoutPeriodRulesChanged => 'Một số sản phẩm không phù hợp với kỳ bán hàng này. Đối soát giỏ hàng để tiếp tục.';
-
-  @override
-  String get offlineSectionTitle => 'Ngoại tuyến';
-
-  @override
-  String get offlineSectionDescription => 'Tải xuống, dữ liệu đã lưu và thay đổi chưa đồng bộ của tài khoản và không gian làm việc hiện tại.';
-
-  @override
-  String get offlinePreferencesTitle => 'Tùy chọn ngoại tuyến';
-
-  @override
-  String get offlineStorageScope => 'Giới hạn lưu trữ áp dụng cho thiết bị này. Xóa bộ nhớ đệm giữ lại các thay đổi đang chờ.';
-
-  @override
-  String get offlineRefreshModule => 'Tải xuống / làm mới';
-
-  @override
-  String get offlineModuleDetails => 'Dữ liệu đã lưu và cài đặt';
-
-  @override
-  String get offlineDownloadRetryHint => 'Thử tải lại để làm mới dữ liệu đã lưu.';
-
-  @override
-  String get offlineCoverageUnknown => 'Lần tải thông thường có thể chỉ chứa một phần bộ sưu tập. Tổng số mục chỉ hiển thị khi các trang đã lưu nhất quán. Tải xuống chỉ bao phủ các bộ sưu tập được hỗ trợ, không phải mọi tài nguyên của ứng dụng.';
-
-  @override
-  String get offlineBytesExplanation => 'Kích thước là số byte nội dung đã lưu, gồm bản chụp và bản sao. Chi phí lưu trữ trên đĩa, kích thước tải dự kiến và số byte truyền qua mạng chưa rõ.';
-
-  @override
-  String offlineLogicalBytes(String bytes) {
-    return '$bytes byte nội dung';
-  }
-
-  @override
-  String offlinePendingCoverage(int count) {
-    return '$count thay đổi đang chờ. Chúng được lưu riêng và không được tính là mục đã tải.';
-  }
-
-  @override
-  String get offlineSearchStored => 'Tìm bộ sưu tập đã lưu';
-
-  @override
-  String get offlineNoStoredItems => 'Không có bộ sưu tập đã lưu phù hợp.';
-
-  @override
-  String offlineAvailableItems(int items, int snapshots) {
-    return '$items mục đã lập chỉ mục riêng biệt trong $snapshots bản chụp đã lưu';
-  }
-
-  @override
-  String offlineFreshness(int stale, int expired) {
-    return '$stale bản chụp cũ · $expired bản chụp hết hạn còn được lưu để dùng ngoại tuyến';
-  }
-
-  @override
-  String offlineLastFetch(String time) {
-    return 'Lần tải gần nhất: $time';
-  }
-
-  @override
-  String get offlineEvictTitle => 'Xóa dữ liệu đã lưu của mô-đun';
-
-  @override
-  String get offlineEvictDescription => 'Chỉ xóa bản chụp của mô-đun này trong tài khoản và không gian làm việc đã chọn. Các thao tác ghi đang chờ vẫn được giữ. Tải lại để khôi phục dữ liệu ngoại tuyến.';
-
-  @override
-  String get offlineInventoryError => 'Không thể kiểm tra hoặc cập nhật dữ liệu đã lưu. Hãy thử lại.';
-
-  @override
-  String get settingsAppearanceLanguage => 'Giao diện và ngôn ngữ';
-
-  @override
-  String get settingsCalendarTimezone => 'Lịch và múi giờ';
-
-  @override
-  String get settingsNotificationsInteraction => 'Thông báo và tương tác';
-
-  @override
-  String get settingsAppPreferences => 'Tùy chọn ứng dụng';
-
-  @override
-  String get offlinePauseDownloads => 'Tạm dừng tải xuống';
-
-  @override
-  String get offlineResumeDownloads => 'Tiếp tục các lượt tải chưa hoàn tất';
-
-  @override
-  String get offlineClearScopeDescription => 'Chỉ xóa dữ liệu đệm của tài khoản và không gian làm việc này. Các thao tác ghi đang chờ vẫn được giữ. Giới hạn lưu trữ áp dụng cho toàn bộ thiết bị.';
-
-  @override
-  String offlineExpectedTotal(int count) {
-    return 'Tổng số mục truy vấn máy chủ báo cáo: $count. Con số này không xác nhận dữ liệu đã được tải đầy đủ.';
-  }
-
-  @override
-  String get offlineExpectedTotalUnknown => 'Tổng số mục truy vấn máy chủ báo cáo: chưa rõ.';
-
-  @override
-  String get offlineStorageNeedsWorkspace => 'Chọn không gian làm việc để xem hoặc xóa dữ liệu đã lưu. Giới hạn lưu trữ áp dụng cho thiết bị này.';
-
-  @override
-  String get offlineBrowseStoredItems => 'Xem các mục đã lưu';
-
-  @override
-  String get offlineSearchItems => 'Tìm các mục đã lưu theo tên hoặc ID';
-
-  @override
-  String get offlineNoMatchingItems => 'Không có mục đã lưu phù hợp.';
-
-  @override
-  String offlineStoredItemId(String id) {
-    return 'ID mục: $id';
-  }
-
-  @override
-  String get homePersonalAgenda => 'Lịch trình';
-
-  @override
-  String get homePersonalAgendaUnavailable => 'Lịch cá nhân hiện không khả dụng.';
-
-  @override
-  String get assistantExpandNavigation => 'Hiện điều hướng';
-
-  @override
-  String get assistantCollapseNavigation => 'Ẩn điều hướng';
-
-  @override
-  String get assistantCloseComposer => 'Đóng ô nhập';
-
-  @override
-  String get inventoryRedesignLimitedData => 'Dữ liệu hạn chế. Đang hiển thị bản lưu gần nhất.';
-
-  @override
-  String get inventoryRedesignReceiptActivity => 'Hoạt động hóa đơn';
-
-  @override
-  String get inventoryRedesignReceiptCoverage => 'Số lượng từ các hóa đơn gần đây có sẵn, không phải tổng đầy đủ của kỳ. Ngày thiếu dữ liệu chưa xác định. Không suy ra tổng tiền hay số lượng sản phẩm.';
-
-  @override
-  String inventoryRedesignDays(int count) {
-    return '$count ngày';
-  }
-
-  @override
-  String inventoryRedesignRecentSample(int count) {
-    return '$count bản ghi có sẵn · phạm vi hạn chế';
-  }
-
-  @override
-  String inventoryRedesignUnknownDates(int count) {
-    return '$count bản ghi chưa có ngày';
-  }
-
-  @override
-  String get inventoryRedesignLoadedRevenue => 'Doanh thu từ hóa đơn đã tải';
-
-  @override
-  String inventoryRedesignUnknownCurrencies(int count) {
-    return 'Đã loại $count hóa đơn chưa xác định tiền tệ';
-  }
-
-  @override
-  String get inventoryRedesignPendingDeletion => 'Đang chờ xác nhận xóa';
-
-  @override
-  String inventoryRedesignPendingCount(int count) {
-    return '$count thay đổi chưa đồng bộ';
-  }
-
-  @override
-  String get inventoryRedesignLoadedSearch => 'Tìm trong bản ghi có sẵn';
-
-  @override
-  String get inventoryRedesignAllEvents => 'Tất cả sự kiện';
-
-  @override
-  String get inventoryRedesignSelectedLines => 'Dòng đã chọn';
-
-  @override
-  String get calendarGoogleColorInherit => 'Dùng màu lịch';
-
-  @override
-  String calendarGoogleColorLabel(String id) {
-    return 'Nhãn tùy chỉnh $id';
-  }
-
-  @override
-  String calendarGoogleColorEvent(String id) {
-    return 'Màu Google $id';
-  }
-
-  @override
-  String get calendarProviderColorSeparateEdit => 'Lưu các thay đổi khác trước khi đổi màu Google.';
-
-  @override
-  String get inventorySetupSyncFirst => 'Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa.';
-
-  @override
-  String get meetCollaboration => 'Cộng tác';
-
-  @override
-  String get meetCollaborationUnavailable => 'Cộng tác hiện không khả dụng. Hãy vào lại cuộc họp rồi thử lại.';
-
-  @override
-  String get meetScreenFixtureTitle => 'Kiểm thử chia sẻ màn hình gốc';
-
-  @override
-  String get meetScreenFixtureHint => 'Tham gia cuộc họp giả lập cục bộ và chia sẻ màn hình. Nội dung chỉ ở trên thiết bị này; theo dõi số khung hình nhận được.';
-
-  @override
-  String meetScreenFixtureFrames(int count) {
-    return 'Số khung hình đã giải mã: $count';
-  }
-
-  @override
-  String get meetFixtureConnected => 'Đã kết nối cuộc họp cục bộ';
-
-  @override
-  String get meetFixtureRevoke => 'Chủ phòng: dừng chia sẻ màn hình';
-
-  @override
-  String get meetFixtureReconnect => 'Kết nối lại cuộc họp';
-
-  @override
-  String get connectedOnboardingMiraTitle => 'Gặp Mira, trợ lý AI của bạn';
-
-  @override
-  String get connectedOnboardingMiraSubtitle => 'Bắt đầu trò chuyện, lên kế hoạch hoặc suy nghĩ về bước tiếp theo. Mira đồng hành cùng các công cụ bạn sử dụng mỗi ngày.';
-
-  @override
-  String get connectedOnboardingMiraToolkit => 'Một nơi để trò chuyện với Mira và truy cập công việc, lịch, tài chính và kho hàng. Chọn những gì phù hợp với bạn.';
-
-  @override
-  String get connectedOnboardingOptional => 'Nhịp độ của bạn. Không gian của bạn. Luôn tùy chọn.';
-
-  @override
-  String connectedOnboardingStep(int step, int total) {
-    return 'Bước $step trên $total';
-  }
-
-  @override
-  String get assistantAttachCaptureAction => 'Chụp và ghi âm';
-
-  @override
-  String get assistantAttachFilesSource => 'Tệp';
-
-  @override
-  String get assistantCaptureAudio => 'Ghi âm';
-
-  @override
-  String get assistantCapturePhoto => 'Chụp ảnh';
-
-  @override
-  String get assistantCaptureVideo => 'Quay video';
-
-  @override
-  String get settingsProductSettings => 'Cài đặt ứng dụng';
-
-  @override
-  String get mailDiscardSettingsTitle => 'Bỏ thay đổi?';
-
-  @override
-  String get mailDiscardSettingsDescription => 'Các thay đổi cài đặt Mail của bạn chưa được lưu.';
-
-  @override
-  String get mailDiscardSettingsAction => 'Bỏ thay đổi';
-
-  @override
-  String get profileBanner => 'Ảnh bìa hồ sơ';
-
-  @override
-  String get profileBannerDescription => 'Thêm ảnh ngang để cá nhân hóa hồ sơ của bạn.';
-
-  @override
-  String get profileChangeBanner => 'Đổi ảnh bìa';
-
-  @override
-  String get profileAddBanner => 'Thêm ảnh bìa';
-
-  @override
-  String get profileRemoveBanner => 'Gỡ ảnh bìa';
-
-  @override
-  String get voicePause => 'Tạm dừng ghi âm';
-
-  @override
-  String get voiceResume => 'Tiếp tục ghi âm';
-
-  @override
-  String get voicePaused => 'Đã tạm dừng ghi âm';
-
-  @override
-  String get voiceRecording => 'Đang ghi âm';
-
-  @override
-  String get notesVoiceRecord => 'Ghi âm ghi chú';
-
-  @override
-  String get notesVoiceAnalyze => 'Chép lời và phân tích';
-
-  @override
-  String get notesVoiceCredits => 'Sử dụng tín dụng AI cá nhân của bạn. Xem lại kết quả trước khi lưu.';
-
-  @override
-  String get notesVoiceProcessing => 'Đang chép lời và tạo ghi chú…';
-
-  @override
-  String get notesVoiceReviewRequired => 'Cần kiểm tra quá trình xử lý. Yêu cầu có phí sẽ không được tự động lặp lại.';
-
-  @override
-  String get notesVoiceUnavailable => 'Không thể cập nhật phân tích ghi âm. Kết quả hiện có vẫn được giữ lại.';
-
-  @override
-  String get notesVoiceReview => 'Xem lại ghi chú ghi âm';
-
-  @override
-  String get notesVoiceSave => 'Lưu ghi chú vào không gian này';
-
-  @override
-  String get notesVoiceSaved => 'Đã lưu ghi chú ghi âm';
-
-  @override
-  String get notesVoiceDelete => 'Xóa kết quả ghi âm riêng tư';
-
-  @override
-  String get notesVoiceNoSpeech => 'Không phát hiện lời nói. Hãy ghi âm lại khi sẵn sàng.';
-
-  @override
-  String get notesVoiceTranscript => 'Bản chép lời';
-
-  @override
-  String get notesVoiceSummary => 'Tóm tắt';
-
-  @override
-  String get notesVoiceDecisions => 'Quyết định';
-
-  @override
-  String get notesVoiceActions => 'Việc cần làm được đề xuất';
-
-  @override
-  String get notesVoiceRecommendations => 'Khuyến nghị';
-
-  @override
-  String get notesVoiceQuestions => 'Câu hỏi còn mở';
-
-  @override
-  String get notesVoiceEvidence => 'Bằng chứng từ bản chép lời';
-
-  @override
-  String get notesVoiceNew => 'Ghi âm ghi chú khác';
-
-  @override
-  String get notesVoicePermission => 'Cần quyền truy cập micrô để ghi âm ghi chú.';
-
-  @override
-  String get notesVoiceRecordingError => 'Không thể thu bản ghi âm. Vui lòng thử lại.';
-
-  @override
-  String get notesVoiceFailed => 'Không thể bắt đầu phân tích. Thử lại với bản ghi âm này khi vẫn còn khả dụng.';
-
-  @override
-  String get notesVoiceProposalNotice => 'Các đề xuất cần được bạn xem lại. Lưu ghi chú không tạo công việc hoặc sự kiện lịch. Ghi chú trong không gian nhóm có thể hiển thị với thành viên.';
-
-  @override
-  String get assistantLocalTitle => 'Mô hình trên thiết bị';
-
-  @override
-  String get assistantLocalHelp => 'Văn bản cục bộ được giữ trên thiết bị. Giọng nói Live, tệp đính kèm và công cụ không gian làm việc dùng chế độ từ xa.';
-
-  @override
-  String get assistantLocalHardware => 'Suy luận cục bộ cần thiết bị được hỗ trợ có ít nhất 4 GiB bộ nhớ. Bộ nhớ khả dụng và khả năng nạp mô hình vẫn quyết định việc sử dụng.';
-
-  @override
-  String get assistantLocalRemote => 'Mô hình từ xa';
-
-  @override
-  String get assistantLocalRemoteHint => 'Dùng nhà cung cấp trực tuyến. Hội thoại cục bộ không được tải lên.';
-
-  @override
-  String get assistantLocalVerified => 'Tệp tải đã xác minh';
-
-  @override
-  String get assistantLocalSelected => 'Đã chọn cho Mira';
-
-  @override
-  String get assistantLocalNotDownloaded => 'Chưa tải xuống';
-
-  @override
-  String get assistantLocalDownload => 'Tải xuống';
-
-  @override
-  String get assistantLocalImport => 'Nhập tệp có giấy phép';
-
-  @override
-  String get assistantLocalLicense => 'Giấy phép';
-
-  @override
-  String get assistantLocalDownloadSource => 'Lấy mô hình từ nhà phát hành';
-
-  @override
-  String get assistantLocalUse => 'Dùng trên thiết bị này';
-
-  @override
-  String get assistantLocalRemove => 'Xóa tệp mô hình';
-
-  @override
-  String get assistantLocalBudget => 'Vượt giới hạn lưu trữ mô hình. Hãy xóa một mô hình trước khi cài mô hình khác.';
-
-  @override
-  String get assistantLocalBudgetDescription => 'Các mô hình dùng chung giới hạn lưu trữ 1 GiB. Khi thay thế, tạm thời cần lưu cả hai tệp.';
-
-  @override
-  String get assistantLocalIntegrity => 'Tệp này không khớp với mô hình đã xác minh. Hãy lấy đúng phiên bản được phát hành.';
-
-  @override
-  String get assistantLocalUnavailable => 'Không thể chuẩn bị mô hình cục bộ. Hãy kiểm tra bộ nhớ lưu trữ và thử lại.';
-
-  @override
-  String get assistantLocalBusy => 'Một thao tác mô hình khác đang chạy trên thiết bị này.';
-
-  @override
-  String get assistantLocalLoading => 'Đang chuẩn bị mô hình trên thiết bị';
-
-  @override
-  String get assistantLocalMissing => 'Mô hình cục bộ đã chọn không khả dụng. Hãy tải mô hình hoặc chủ động chọn chế độ từ xa.';
-
-  @override
-  String get assistantLocalTextOnly => 'Chế độ cục bộ chỉ hỗ trợ văn bản';
-
-  @override
-  String get assistantLocalEngineError => 'Suy luận trên thiết bị không thành công. Hãy chọn lại mô hình để nạp lại. Lời nhắc của bạn không được gửi từ xa.';
-
-  @override
-  String get assistantLocalStorageError => 'Không thể lưu lịch sử hoặc chế độ cục bộ. Hội thoại của bạn không được tải lên.';
-
-  @override
-  String get assistantLocalInputError => 'Lời nhắc cục bộ được giới hạn ở 6.000 ký tự.';
-
-  @override
-  String get assistantLocalModeAction => 'Cài đặt mô hình trên thiết bị';
-
-  @override
-  String get assistantLocalStop => 'Dừng tạo phản hồi cục bộ';
-
-  @override
-  String get assistantLocalHistoryNotice => 'Mỗi mô hình và không gian làm việc có một hội thoại trên thiết bị. Tối đa 32 tin nhắn được giữ lại, tùy việc dọn bộ nhớ đệm mã hóa.';
-
-  @override
-  String get assistantLocalModeSwitch => 'Lịch sử cục bộ và từ xa được giữ riêng. Bản nháp đang nhập được giữ trong ô soạn thảo.';
-
-  @override
-  String get assistantLocalUnsupported => 'Suy luận trên thiết bị không khả dụng cho thiết bị này.';
-
-  @override
-  String get assistantLocalSelectionUnknown => 'Mô hình cục bộ đã chọn không còn trong danh mục. Hãy chọn mô hình khác hoặc chủ động chọn chế độ từ xa.';
-
-  @override
-  String assistantLocalMode(String model) {
-    return 'Trên thiết bị: $model';
-  }
-
-  @override
-  String assistantLocalSize(int size) {
-    return '$size MiB';
-  }
 }

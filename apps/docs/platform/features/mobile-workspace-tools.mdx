@@ -378,7 +378,12 @@ replay requests a fresh signed URL, uploads the bytes, and finalizes the file.
 An uncertain upload remains in manual review to avoid overwriting a file twice.
 Habit trackers, entries, and streak actions also queue edits, with pending
 cards and activity rows. Create responses that omit a server ID still need
-dedicated replay support.
+dedicated replay support. Habits repository reads capture the original account
+before API/cache and pending-edit awaits; only that account's queued records are
+overlaid. A member detail includes queued entries only for the selected target
+member. Writes require authentication before queue admission and invalidate the
+owning account/workspace. `habit_tracker_actor_scope_test.dart` verifies owner
+filtering, delayed reads, anonymous transitions, and member-target isolation.
 Meet meeting create, edit, and delete also queue offline with a pending list
 treatment. Assistant model favorites and name changes now queue offline and
 overlay pending values on their scoped cached reads. Live room access,
@@ -1534,3 +1539,20 @@ not grant CMS permissions or replace API authorization.
 Regression evidence: `cms_actor_scope_test.dart` exercises collection and entry
 overlays, delayed queue completion after account switching, and obsolete reads
 and writes. The native CMS screen and device verification remain separate work.
+
+### CMS native library and editing
+
+The mobile CMS surface owns one signed-in actor and workspace. Its library uses
+lazy rows, collection/status filters, and local search published into the single
+shell dock. Search covers the loaded CMS collection/entry response; it does not
+claim server pagination or full-text search beyond that response. Re-entry
+publishes stored scoped content and awaits background revalidation; explicit
+refresh waits for the current cycle. Same-actor temporary failures and MFA
+challenges retain content, while definitive denial clears it. Switching actor or
+workspace discards the previous surface and closes its owned editing routes.
+Editors keep drafts and inline errors until a save succeeds, permitting explicit
+retry without silently replaying an uncertain write.
+
+Regression coverage: `cms_workspace_test.dart` exercises lazy 500-row rendering,
+shared dock search, stale-scope responses, denied versus challenged refreshes,
+retained failed-save drafts, and actor-owned editor dismissal.
