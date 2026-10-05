@@ -167,3 +167,14 @@ single-occurrence and whole-series edits also omit it. The existing transaction 
 exceptions. This notice changes no provider admission or write behavior.
 Regression coverage: `native-recurrence-dialog.test.tsx` checks notice visibility
 and preserves the original scope/revision/boundary submission assertions.
+
+### Single Calendar settings host
+
+One dashboard-owned host mounts Calendar settings with the verified workspace ID.
+Responsive account menus forward their query intent without mounting their own
+settings providers. This prevents stacked inaccessible dialogs and duplicate
+connection checks while preserving settings from collapsed, expanded and mobile
+layouts. Settings content mounts only while the dialog is open. Provider accounts,
+synchronization and mutation admission are unchanged. Coverage:
+`settings-dialog-host.test.tsx` checks query intent, shortcut, close cleanup and
+workspace scoping; existing `settings-dialog.test.tsx` retains alias resolution.
