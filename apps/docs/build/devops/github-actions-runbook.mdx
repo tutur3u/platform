@@ -399,6 +399,11 @@ failure diagnostics, redaction, artifact upload, and `always()` cleanup still
 run; the reserve is a budget, not proof that runner or Docker failures cannot
 prevent them. Setup exhausting the runtime budget fails before starting tests.
 Validate this policy with `node --test scripts/ci/e2e-runtime-budget.test.js`.
+For wrapped native select controls, Playwright’s exact label matching includes
+nested option text. Give the import Source select an explicit localized accessible
+label so canonical-file selection remains reliable; the focused import component
+test uses the installed Playwright label implementation as a regression check.
+
 The Markdown persistence helper bounds actions at 15 seconds and navigation/reload
 at 60 seconds, identifies opening the project dialog separately from navigation,
 and uses the same 10-second context-close boundary as canonical imports. Cleanup
