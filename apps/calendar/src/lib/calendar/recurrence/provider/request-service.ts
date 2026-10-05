@@ -4,7 +4,10 @@ import { calendarProviderDateTimeLocal } from '@tuturuuu/utils/calendar-recurren
 import { z } from 'zod';
 import { encryptEventForStorage } from '../../../workspace-encryption';
 import { createSealedJournalCodec } from '../../google-color-operations/sealed-journal';
-import { resolveCalendarSource } from '../../source-resolver';
+import {
+  isCalendarPreviewSourceEnabled,
+  resolveCalendarSource,
+} from '../../source-resolver';
 import { type CalendarAuthToken, ensureValidToken } from '../../token-refresh';
 import { seriesResult } from '../http';
 import { CreateSeriesSchema, MutateSeriesSchema } from '../schema';
@@ -81,6 +84,30 @@ async function resolveSource(
       'Provider calendar source changed',
       409,
       'SOURCE_CHANGED'
+    );
+  if (
+    !source.accessRole ||
+    !['owner', 'writer', 'write', 'editor'].includes(
+      source.accessRole.toLowerCase()
+    )
+  )
+    throw new CalendarSeriesError(
+      'Calendar source is read only',
+      403,
+      'SOURCE_READ_ONLY'
+    );
+  if (
+    !source.workspaceCalendarId ||
+    !(await isCalendarPreviewSourceEnabled({
+      sbAdmin: access.sbAdmin,
+      wsId: access.wsId,
+      workspaceCalendarId: source.workspaceCalendarId,
+    }))
+  )
+    throw new CalendarSeriesError(
+      'Calendar source is disabled',
+      403,
+      'SOURCE_READ_ONLY'
     );
   const { data: connection, error } = await access.sbAdmin
     .from('calendar_connections')

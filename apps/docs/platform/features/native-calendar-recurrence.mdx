@@ -59,3 +59,34 @@ establish authenticated Google/Outlook write parity or enable provider editing i
 the native creation dialog. Rollout still requires provider runtime verification.
 Regression evidence: `calendar-provider-readonly.sql`, provider inbound snapshot
 and service tests, `readonly.test.ts`, and `calendar-provider-readonly.test.ts`.
+
+## Recoverable connected-calendar editor
+
+The shared Calendar recurrence editor checks actor-scoped provider capabilities
+before offering Google or Outlook calendars. Admission remains disabled by
+production default. An offered connection must belong to the current actor,
+have active credentials and outbound sync, an explicit writable provider role,
+and an enabled linked workspace calendar. These configuration capabilities do
+not prove provider access; each mutation still rechecks credentials and the
+fresh provider master.
+
+Imported provider series always use the provider operation API, including
+this-occurrence, entire-series and future changes. They never fall back to native
+series writes. Disabled admission, missing ownership or uncertain capabilities
+makes the imported series read-only. Native Tuturuuu series retain the native API.
+
+Pending provider changes keep fields frozen and expose a continue-synchronization
+action. The actor/workspace-scoped query cache retains the original intent; only
+its operation UUID is written to tab-scoped session storage before dispatch.
+No event content, tokens or account details are persisted there. Refreshing or
+reopening the dialog resumes that same UUID, and only an applied receipt closes
+the dialog and invalidates Calendar data. If session storage is unavailable,
+new provider writes fail before dispatch. Cross-device operation history is not
+provided by this editor. Provider write admission still requires authenticated
+Google and Outlook parity evidence before production enablement.
+
+Regression coverage: provider `capabilities.test.ts`, operation-route tests,
+`native-recurrence-provider-routing.test.tsx` and
+`use-provider-recurrence-operation.test.tsx` cover source permissions, native
+fallback exclusion, ambiguous responses, dialog dismissal, tab reload recovery
+and actor separation.

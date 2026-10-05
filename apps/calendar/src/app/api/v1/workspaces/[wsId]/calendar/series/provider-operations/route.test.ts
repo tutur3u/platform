@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   authorize: vi.fn(),
   reserve: vi.fn(),
   execute: vi.fn(),
+  capabilities: vi.fn(),
 }));
 vi.mock('next/server', () => ({
   connection: vi.fn(),
@@ -26,7 +27,11 @@ vi.mock('@/lib/calendar/recurrence/http', () => ({
   readJson: (request: Request) => request.json(),
 }));
 
-import { POST } from './route';
+vi.mock('@/lib/calendar/recurrence/provider/capabilities', () => ({
+  providerSeriesCapabilities: mocks.capabilities,
+}));
+
+import { GET, POST } from './route';
 
 const invoke = () =>
   POST(
@@ -73,5 +78,29 @@ describe('provider recurrence admission', () => {
       expect.objectContaining({ userId: 'actor', wsId: 'workspace' }),
       'operation'
     );
+  });
+});
+
+describe('provider capability visibility', () => {
+  it('requires calendar management before exposing connection configuration', async () => {
+    mocks.authorize.mockResolvedValue({
+      error: Response.json({}, { status: 403 }),
+    });
+    expect(
+      (
+        await GET(new Request('https://calendar.invalid/api'), {
+          params: Promise.resolve({ wsId: 'workspace' }),
+        })
+      ).status
+    ).toBe(403);
+    expect(mocks.capabilities).not.toHaveBeenCalled();
+  });
+  it('marks capabilities private and never cacheable across actors', async () => {
+    mocks.capabilities.mockResolvedValue({ enabled: false, sources: [] });
+    const response = await GET(new Request('https://calendar.invalid/api'), {
+      params: Promise.resolve({ wsId: 'workspace' }),
+    });
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+    expect(await response.json()).toEqual({ enabled: false, sources: [] });
   });
 });

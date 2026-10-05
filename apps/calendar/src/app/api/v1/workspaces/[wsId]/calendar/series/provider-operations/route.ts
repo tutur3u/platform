@@ -1,5 +1,6 @@
 import { connection, NextResponse } from 'next/server';
 import { readJson } from '@/lib/calendar/recurrence/http';
+import { providerSeriesCapabilities } from '@/lib/calendar/recurrence/provider/capabilities';
 import { providerOperationFailure } from '@/lib/calendar/recurrence/provider/http';
 import {
   executeRequestProviderOperation,
@@ -34,6 +35,25 @@ export async function POST(
     const result = await executeRequestProviderOperation(access, operation.id);
     return NextResponse.json(result, {
       status: result.status === 'applied' ? 200 : 202,
+    });
+  } catch (error) {
+    return providerOperationFailure(error);
+  }
+}
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ wsId: string }> }
+) {
+  await connection();
+  const access = await authorizeCalendarEventManagement(
+    request,
+    (await params).wsId
+  );
+  if ('error' in access) return access.error;
+  try {
+    return NextResponse.json(await providerSeriesCapabilities(access), {
+      headers: { 'Cache-Control': 'private, no-store' },
     });
   } catch (error) {
     return providerOperationFailure(error);

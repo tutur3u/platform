@@ -5,7 +5,10 @@ vi.mock('../http', () => ({ seriesResult: mocks.result }));
 vi.mock('../../../workspace-encryption', () => ({
   encryptEventForStorage: vi.fn(),
 }));
-vi.mock('../../source-resolver', () => ({ resolveCalendarSource: vi.fn() }));
+vi.mock('../../source-resolver', () => ({
+  resolveCalendarSource: vi.fn(),
+  isCalendarPreviewSourceEnabled: vi.fn(),
+}));
 vi.mock('../../token-refresh', () => ({ ensureValidToken: vi.fn() }));
 vi.mock('../../provider-writes', () => ({ createGoogleAuthClient: vi.fn() }));
 

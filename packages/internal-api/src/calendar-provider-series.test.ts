@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  getCalendarProviderSeriesCapabilities,
   getCalendarProviderSeriesOperation,
   reserveCalendarProviderSeriesOperation,
   retryCalendarProviderSeriesOperation,
@@ -73,4 +74,17 @@ describe('central provider series operation API', () => {
     );
     expect(fetch.mock.calls[0]?.[1]?.body).toBeUndefined();
   });
+});
+
+it('loads actor-scoped provider capability configuration without caching and with cancellation', async () => {
+  const { fetch, options } = fixture();
+  const signal = new AbortController().signal;
+  await getCalendarProviderSeriesCapabilities('workspace/1', {
+    ...options,
+    signal,
+  });
+  expect(fetch).toHaveBeenCalledWith(
+    'https://internal.example.com/api/v1/workspaces/workspace%2F1/calendar/series/provider-operations',
+    expect.objectContaining({ cache: 'no-store', signal })
+  );
 });

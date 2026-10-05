@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
   source: vi.fn(),
+  sourceEnabled: vi.fn(),
   master: vi.fn(),
   refresh: vi.fn(),
   seal: vi.fn(),
@@ -16,6 +17,7 @@ vi.mock('@/lib/workspace-encryption', () => ({
 }));
 vi.mock('../../source-resolver', () => ({
   resolveCalendarSource: mocks.source,
+  isCalendarPreviewSourceEnabled: mocks.sourceEnabled,
 }));
 vi.mock('../../token-refresh', () => ({ ensureValidToken: mocks.refresh }));
 vi.mock('./inspect', () => ({
@@ -98,11 +100,13 @@ function reserved() {
 beforeEach(() => {
   vi.clearAllMocks();
   provider = 'google';
+  mocks.sourceEnabled.mockResolvedValue(true);
   mocks.source.mockImplementation(async () => ({
     provider,
     connectionId,
     externalCalendarId: 'calendar',
-    workspaceCalendarId: null,
+    workspaceCalendarId: '11111111-1111-4111-8111-111111111111',
+    accessRole: 'owner',
     accessToken: 'fixture-not-a-credential',
   }));
   mocks.refresh.mockResolvedValue({ accessToken: 'fixture-not-a-credential' });
@@ -239,4 +243,30 @@ describe('future split admission before remote effects', () => {
     );
     expect(reserved()).toBeUndefined();
   });
+});
+
+describe('explicit provider write access', () => {
+  it('rejects unknown provider roles before refresh or reservation', async () => {
+    mocks.source.mockResolvedValue({
+      provider: 'google',
+      connectionId,
+      externalCalendarId: 'calendar',
+      workspaceCalendarId: '11111111-1111-4111-8111-111111111111',
+      accessRole: null,
+    });
+    await expect(
+      reserveProviderOperation(access, intent())
+    ).rejects.toMatchObject({ code: 'SOURCE_READ_ONLY', status: 403 });
+    expect(mocks.refresh).not.toHaveBeenCalled();
+    expect(reserved()).toBeUndefined();
+  });
+});
+
+it('rechecks linked calendar enablement before token refresh or remote preparation', async () => {
+  mocks.sourceEnabled.mockResolvedValue(false);
+  await expect(
+    reserveProviderOperation(access, intent())
+  ).rejects.toMatchObject({ status: 403, code: 'SOURCE_READ_ONLY' });
+  expect(mocks.refresh).not.toHaveBeenCalled();
+  expect(reserved()).toBeUndefined();
 });

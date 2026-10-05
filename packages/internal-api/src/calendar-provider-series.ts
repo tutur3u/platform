@@ -73,3 +73,20 @@ export function retryCalendarProviderSeriesOperation(
     signal,
   });
 }
+
+export type CalendarProviderSeriesCapabilities = {
+  enabled: boolean;
+  sources: (CalendarProviderSeriesSource & { label: string })[];
+};
+export function getCalendarProviderSeriesCapabilities(
+  wsId: string,
+  options: Options = {}
+) {
+  const { signal, ...clientOptions } = options;
+  return getInternalApiClient(
+    clientOptions
+  ).json<CalendarProviderSeriesCapabilities>(path(wsId), {
+    cache: 'no-store',
+    signal,
+  });
+}
