@@ -1,0 +1,28 @@
+---
+title: Native mobile Timer
+description: Session controls, task links, and tracking history in the shared mobile shell.
+---
+
+Mobile Timer keeps Start, Pause, Resume, and Stop in the existing shell-owned
+floating action surface. The page does not mount another floating bar. Available
+controls follow the current session; while a control is awaiting completion,
+other session controls are disabled to prevent repeated taps.
+
+The missed-entry action uses the same shell action registration on Timer,
+History, and Statistics, instead of a separate floating button. It remains
+available only with an authenticated workspace context. On narrow screens,
+secondary actions can move to the shared header overflow rather than clipping.
+Existing threshold approval, category selection, task links, and tracked-session
+history keep their established behavior.
+
+The clock scales down to fit narrow layouts and enlarged text. Pomodoro phase
+and running/paused/stopped labels use the app locale. Scroll content includes
+the shell-provided bottom inset so session details remain reachable above the
+dock. This presentation does not change billing, offline replay, or server
+tracking semantics.
+
+Regression coverage: `timer_native_controls_test.dart` checks state-dependent
+shell registrations, disabled in-flight controls, route disposal, a long-running
+clock under enlarged text, and Vietnamese Pomodoro labels. Actual native
+session timing and dock transition smoothness require device verification;
+widget tests do not establish either.

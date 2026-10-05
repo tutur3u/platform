@@ -25,6 +25,7 @@ import 'package:mobile/features/notes/note_passphrase_sheet.dart';
 import 'package:mobile/features/notes/note_repository.dart';
 import 'package:mobile/features/notes/note_task_conversion_sheet.dart';
 import 'package:mobile/features/notes/note_transfer_sheet.dart';
+import 'package:mobile/features/notes/voice/notes_voice_host.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
@@ -431,242 +432,256 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
           ),
         )
         .toList();
-    return BlocListener<WorkspaceCubit, WorkspaceState>(
-      listenWhen: (a, b) => a.currentWorkspace?.id != b.currentWorkspace?.id,
-      listener: (context, state) async {
-        final nextWsId = state.currentWorkspace?.id;
-        _requestVersion++;
-        _selectionVersion++;
-        if (!(await _save()) || !mounted || _wsId != nextWsId) return;
-        setState(() {
-          _selected = null;
-          _selectedPassphrase = null;
-          _selectedWsId = null;
-          _dirty = false;
-          _editing = false;
-          _searching = false;
-          _search.clear();
-          _notes = const [];
-        });
-        unawaited(_load());
-      },
-      child: shad.Scaffold(
-        child: Stack(
-          children: [
-            ShellTitleOverride(
-              ownerId: 'notes-title',
-              locations: const {Routes.notes},
-              title: _searching && _selected == null
-                  ? context.l10n.notesSearch
-                  : _selected == null
-                  ? context.l10n.notesTitle
-                  : _title.text.trim().isEmpty
-                  ? context.l10n.notesUntitled
-                  : _title.text.trim(),
-              showLeadingBrand: _selected == null && !_searching,
-              onTitleSubmitted: _selected == null
-                  ? null
-                  : (title) async {
-                      if (title.trim() == _title.text.trim()) return;
-                      _title.text = title.trim();
-                      if (!(await _save())) {
-                        throw StateError('Could not save note title');
-                      }
-                    },
-            ),
-            ShellMiniNav(
-              ownerId: 'notes-nav',
-              locations: const {Routes.notes},
-              deepLinkBackRoute: Routes.apps,
-              items: [
-                ShellMiniNavItemSpec(
-                  id: 'notes-back',
-                  icon: Icons.chevron_left,
-                  label: context.l10n.navBack,
-                  callbackToken: 'back',
-                  onPressed: _goBack,
-                ),
-                ShellMiniNavItemSpec(
-                  id: 'notes-home',
-                  icon: Icons.note_alt_outlined,
-                  label: context.l10n.notesTitle,
-                  callbackToken: true,
-                  selected: true,
-                  onPressed: () {},
-                ),
-              ],
-            ),
-            ShellChromeActions(
-              ownerId: 'notes-actions',
-              locations: const {Routes.notes},
-              actions: [
-                if (_selected == null) ...[
-                  ShellActionSpec(
-                    id: 'notes-search',
-                    icon: _searching
-                        ? Icons.search_off_rounded
-                        : Icons.search_rounded,
-                    tooltip: context.l10n.notesSearch,
-                    inDock: true,
-                    callbackToken: _searching,
-                    searchController: _searching ? _search : null,
-                    searchHint: context.l10n.notesSearch,
-                    onSearchChanged: (_) => setState(() {}),
-                    onCloseSearch: () => setState(() {
-                      _searching = false;
-                      _search.clear();
-                    }),
-                    onPressed: () => setState(() {
-                      _searching = !_searching;
-                      if (!_searching) _search.clear();
-                    }),
+    return NotesVoiceHost(
+      enabled: _selected == null && !_searching,
+      onSaved: _refresh,
+      child: BlocListener<WorkspaceCubit, WorkspaceState>(
+        listenWhen: (a, b) => a.currentWorkspace?.id != b.currentWorkspace?.id,
+        listener: (context, state) async {
+          final nextWsId = state.currentWorkspace?.id;
+          _requestVersion++;
+          _selectionVersion++;
+          if (!(await _save()) || !mounted || _wsId != nextWsId) return;
+          setState(() {
+            _selected = null;
+            _selectedPassphrase = null;
+            _selectedWsId = null;
+            _dirty = false;
+            _editing = false;
+            _searching = false;
+            _search.clear();
+            _notes = const [];
+          });
+          unawaited(_load());
+        },
+        child: shad.Scaffold(
+          child: Stack(
+            children: [
+              ShellTitleOverride(
+                ownerId: 'notes-title',
+                locations: const {Routes.notes},
+                title: _searching && _selected == null
+                    ? context.l10n.notesSearch
+                    : _selected == null
+                    ? context.l10n.notesTitle
+                    : _title.text.trim().isEmpty
+                    ? context.l10n.notesUntitled
+                    : _title.text.trim(),
+                showLeadingBrand: _selected == null && !_searching,
+                onTitleSubmitted: _selected == null
+                    ? null
+                    : (title) async {
+                        if (title.trim() == _title.text.trim()) return;
+                        _title.text = title.trim();
+                        if (!(await _save())) {
+                          throw StateError('Could not save note title');
+                        }
+                      },
+              ),
+              ShellMiniNav(
+                ownerId: 'notes-nav',
+                locations: const {Routes.notes},
+                deepLinkBackRoute: Routes.apps,
+                items: [
+                  ShellMiniNavItemSpec(
+                    id: 'notes-back',
+                    icon: Icons.chevron_left,
+                    label: context.l10n.navBack,
+                    callbackToken: 'back',
+                    onPressed: _goBack,
                   ),
-                  ShellActionSpec(
-                    id: 'notes-new',
-                    icon: Icons.add_rounded,
-                    tooltip: context.l10n.notesNew,
-                    inDock: true,
-                    callbackToken: wsId,
-                    enabled: wsId != null,
-                    onPressed: () => unawaited(_create()),
-                  ),
-                ] else ...[
-                  ShellActionSpec(
-                    id: 'notes-edit',
-                    icon: _editing ? Icons.check_rounded : Icons.edit_outlined,
-                    tooltip: _editing
-                        ? context.l10n.notesDone
-                        : context.l10n.notesEdit,
-                    inDock: true,
-                    callbackToken: '${_selected?.id}-$_editing',
-                    onPressed: () async {
-                      if (_editing && !(await _save())) {
-                        return;
-                      }
-                      if (!mounted) return;
-                      setState(() {
-                        _editing = !_editing;
-                        _editor.readOnly = !_editing;
-                      });
-                    },
-                  ),
-                  ShellActionSpec(
-                    id: 'notes-more',
-                    icon: Icons.more_horiz_rounded,
-                    tooltip: MaterialLocalizations.of(context).showMenuTooltip,
-                    inDock: true,
-                    callbackToken: _selected?.id,
-                    onPressed: () => unawaited(_showNoteActions()),
+                  ShellMiniNavItemSpec(
+                    id: 'notes-home',
+                    icon: Icons.note_alt_outlined,
+                    label: context.l10n.notesTitle,
+                    callbackToken: true,
+                    selected: true,
+                    onPressed: () {},
                   ),
                 ],
-                if (_selected == null)
-                  for (final tab in NotesTab.values)
+              ),
+              ShellChromeActions(
+                ownerId: 'notes-actions',
+                locations: const {Routes.notes},
+                actions: [
+                  if (_selected == null) ...[
                     ShellActionSpec(
-                      id: 'notes-tab-${tab.name}',
-                      segmentGroup: 'notes-tabs',
-                      icon: tab == NotesTab.inbox
-                          ? Icons.inbox_outlined
-                          : Icons.archive_outlined,
-                      tooltip: tab == NotesTab.inbox
-                          ? context.l10n.notesInbox
-                          : context.l10n.notesArchiveTab,
-                      highlighted: _tab == tab,
-                      callbackToken: _tab,
-                      onPressed: () => unawaited(_switchTab(tab)),
+                      id: 'notes-search',
+                      icon: _searching
+                          ? Icons.search_off_rounded
+                          : Icons.search_rounded,
+                      tooltip: context.l10n.notesSearch,
+                      inDock: true,
+                      callbackToken: _searching,
+                      searchController: _searching ? _search : null,
+                      searchHint: context.l10n.notesSearch,
+                      onSearchChanged: (_) => setState(() {}),
+                      onCloseSearch: () => setState(() {
+                        _searching = false;
+                        _search.clear();
+                      }),
+                      onPressed: () => setState(() {
+                        _searching = !_searching;
+                        if (!_searching) _search.clear();
+                      }),
                     ),
-              ],
-            ),
-            ResponsiveWrapper(
-              maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  16,
-                  8,
-                  16,
-                  32 + MediaQuery.paddingOf(context).bottom,
-                ),
-                child: Column(
-                  children: [
-                    if (_error != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          _error!,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                        ),
-                      ),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          if (!compact || _selected == null)
-                            Expanded(
-                              flex: compact ? 1 : 2,
-                              child: Column(
-                                children: [
-                                  Expanded(
-                                    child: _loading && _notes.isEmpty
-                                        ? const Center(
-                                            child: NovaLoadingIndicator(),
-                                          )
-                                        : RefreshIndicator(
-                                            onRefresh: _refresh,
-                                            child: NoteList(
-                                              notes: visible,
-                                              workspaceId: _wsId ?? '',
-                                              archived:
-                                                  _tab == NotesTab.archive,
-                                              selectedId: _selected?.id,
-                                              onSelect: (note) async {
-                                                if (!(await _save())) {
-                                                  return;
-                                                }
-                                                if (mounted) {
-                                                  final current = _notes
-                                                      .where(
-                                                        (item) =>
-                                                            item.id == note.id,
-                                                      )
-                                                      .firstOrNull;
-                                                  await _select(
-                                                    current ?? note,
-                                                  );
-                                                }
-                                              },
-                                            ),
-                                          ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          if (!compact) const VerticalDivider(width: 24),
-                          if (!compact || _selected != null)
-                            Expanded(
-                              flex: compact ? 1 : 5,
-                              child: _selected == null
-                                  ? Center(child: Text(context.l10n.notesEmpty))
-                                  : NoteEditor(
-                                      editor: _editor,
-                                      editing: _editing,
-                                      saving: _saving,
-                                      onInsertLink: _insertLink,
-                                      onOpenLink: (href) =>
-                                          unawaited(_openLink(href)),
-                                      onOpenMention: (target) =>
-                                          unawaited(_openMention(target)),
-                                      onConvertToTask: () =>
-                                          unawaited(_convertChecklistToTask()),
-                                    ),
-                            ),
-                        ],
-                      ),
+                    ShellActionSpec(
+                      id: 'notes-new',
+                      icon: Icons.add_rounded,
+                      tooltip: context.l10n.notesNew,
+                      inDock: true,
+                      callbackToken: wsId,
+                      enabled: wsId != null,
+                      onPressed: () => unawaited(_create()),
+                    ),
+                  ] else ...[
+                    ShellActionSpec(
+                      id: 'notes-edit',
+                      icon: _editing
+                          ? Icons.check_rounded
+                          : Icons.edit_outlined,
+                      tooltip: _editing
+                          ? context.l10n.notesDone
+                          : context.l10n.notesEdit,
+                      inDock: true,
+                      callbackToken: '${_selected?.id}-$_editing',
+                      onPressed: () async {
+                        if (_editing && !(await _save())) {
+                          return;
+                        }
+                        if (!mounted) return;
+                        setState(() {
+                          _editing = !_editing;
+                          _editor.readOnly = !_editing;
+                        });
+                      },
+                    ),
+                    ShellActionSpec(
+                      id: 'notes-more',
+                      icon: Icons.more_horiz_rounded,
+                      tooltip: MaterialLocalizations.of(
+                        context,
+                      ).showMenuTooltip,
+                      inDock: true,
+                      callbackToken: _selected?.id,
+                      onPressed: () => unawaited(_showNoteActions()),
                     ),
                   ],
+                  if (_selected == null)
+                    for (final tab in NotesTab.values)
+                      ShellActionSpec(
+                        id: 'notes-tab-${tab.name}',
+                        segmentGroup: 'notes-tabs',
+                        icon: tab == NotesTab.inbox
+                            ? Icons.inbox_outlined
+                            : Icons.archive_outlined,
+                        tooltip: tab == NotesTab.inbox
+                            ? context.l10n.notesInbox
+                            : context.l10n.notesArchiveTab,
+                        highlighted: _tab == tab,
+                        callbackToken: _tab,
+                        onPressed: () => unawaited(_switchTab(tab)),
+                      ),
+                ],
+              ),
+              ResponsiveWrapper(
+                maxWidth: ResponsivePadding.maxContentWidth(
+                  context.deviceClass,
+                ),
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    8,
+                    16,
+                    32 + MediaQuery.paddingOf(context).bottom,
+                  ),
+                  child: Column(
+                    children: [
+                      if (_error != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            _error!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            if (!compact || _selected == null)
+                              Expanded(
+                                flex: compact ? 1 : 2,
+                                child: Column(
+                                  children: [
+                                    Expanded(
+                                      child: _loading && _notes.isEmpty
+                                          ? const Center(
+                                              child: NovaLoadingIndicator(),
+                                            )
+                                          : RefreshIndicator(
+                                              onRefresh: _refresh,
+                                              child: NoteList(
+                                                notes: visible,
+                                                workspaceId: _wsId ?? '',
+                                                archived:
+                                                    _tab == NotesTab.archive,
+                                                selectedId: _selected?.id,
+                                                onSelect: (note) async {
+                                                  if (!(await _save())) {
+                                                    return;
+                                                  }
+                                                  if (mounted) {
+                                                    final current = _notes
+                                                        .where(
+                                                          (item) =>
+                                                              item.id ==
+                                                              note.id,
+                                                        )
+                                                        .firstOrNull;
+                                                    await _select(
+                                                      current ?? note,
+                                                    );
+                                                  }
+                                                },
+                                              ),
+                                            ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (!compact) const VerticalDivider(width: 24),
+                            if (!compact || _selected != null)
+                              Expanded(
+                                flex: compact ? 1 : 5,
+                                child: _selected == null
+                                    ? Center(
+                                        child: Text(context.l10n.notesEmpty),
+                                      )
+                                    : NoteEditor(
+                                        editor: _editor,
+                                        editing: _editing,
+                                        saving: _saving,
+                                        onInsertLink: _insertLink,
+                                        onOpenLink: (href) =>
+                                            unawaited(_openLink(href)),
+                                        onOpenMention: (target) =>
+                                            unawaited(_openMention(target)),
+                                        onConvertToTask: () => unawaited(
+                                          _convertChecklistToTask(),
+                                        ),
+                                      ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

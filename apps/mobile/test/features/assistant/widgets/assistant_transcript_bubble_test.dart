@@ -3,6 +3,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/widgets/assistant_tool_results_section.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_bubble.dart';
 
 import '../../../helpers/helpers.dart';
@@ -57,6 +58,44 @@ void main() {
     );
     expect(textParents, findsNothing);
     expect(toolParents, findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('legacy tool results are outside the message content box', (
+    tester,
+  ) async {
+    await tester.pumpApp(
+      const Scaffold(
+        body: AssistantTranscriptBubble(
+          label: 'Assistant',
+          alignEnd: false,
+          text: 'Legacy answer',
+          transcript: '',
+          attachments: [],
+          timestamp: null,
+          toolNames: [],
+          toolParts: [
+            AssistantMessagePart(
+              type: 'dynamic-tool',
+              toolName: 'read_tasks',
+              toolCallId: 'legacy-call',
+              state: 'output-available',
+              output: {'count': 1},
+            ),
+          ],
+        ),
+      ),
+    );
+    final tools = find.byType(AssistantToolResultsSection);
+    expect(tools, findsOneWidget);
+    expect(
+      find.ancestor(of: tools, matching: find.byType(Container)),
+      findsNothing,
+    );
+    expect(
+      tester.getTopLeft(find.text('Legacy answer')).dy,
+      lessThan(tester.getTopLeft(tools).dy),
+    );
     expect(tester.takeException(), isNull);
   });
 

@@ -1,3 +1,5 @@
+export { microsoftCalendarTimeZone } from './time-zone';
+
 /**
  * Microsoft Calendar API utilities
  *
@@ -8,9 +10,15 @@
 import type { Client } from '@microsoft/microsoft-graph-client';
 import { fetchCalendarViewPages } from './pagination';
 
+export { fetchCalendarViewPages } from './pagination';
+
 // Microsoft Event type (simplified from Graph API)
 export interface MicrosoftCalendarEvent {
   id: string;
+  type?: 'singleInstance' | 'occurrence' | 'exception' | 'seriesMaster';
+  seriesMasterId?: string;
+  originalStart?: string;
+  iCalUId?: string;
   subject: string;
   body?: {
     contentType: 'text' | 'html';

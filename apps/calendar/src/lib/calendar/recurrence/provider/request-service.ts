@@ -15,6 +15,7 @@ import {
   mutateSeries,
   readSeries,
 } from '../service';
+import { providerFutureCreateMetadata } from './create-metadata';
 import { executeProviderSeriesOperation } from './executor';
 import { createSeriesProviderInspector } from './inspect';
 import { googleSeriesPayload, graphSeriesPayload } from './payload';
@@ -256,6 +257,19 @@ export async function reserveProviderOperation(access: Access, raw: unknown) {
         etag: master.etag,
       },
     });
+    const futureCreate = plan.steps.find((step) => step.kind === 'create');
+    if (futureCreate?.kind === 'create') {
+      // Validate and retain all cloneable fields before reserving any trim.
+      futureCreate.metadata = providerFutureCreateMetadata(
+        binding.provider,
+        master.event
+      );
+      if (
+        futureCreate.metadata.provider === 'microsoft' &&
+        input.event?.description !== undefined
+      )
+        delete futureCreate.metadata.fields.body;
+    }
     const first = plan.steps[0]!;
     if (
       (first.kind === 'update' || first.kind === 'delete') &&

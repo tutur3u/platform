@@ -2635,6 +2635,8 @@ export type Database = {
           connection_id: string;
           etag: string | null;
           master_id: string;
+          metadata_journal: Json | null;
+          observation_hash: string | null;
           provider: string;
           series_id: string;
           updated_at: string;
@@ -2645,6 +2647,8 @@ export type Database = {
           connection_id: string;
           etag?: string | null;
           master_id: string;
+          metadata_journal?: Json | null;
+          observation_hash?: string | null;
           provider: string;
           series_id: string;
           updated_at?: string;
@@ -2655,6 +2659,8 @@ export type Database = {
           connection_id?: string;
           etag?: string | null;
           master_id?: string;
+          metadata_journal?: Json | null;
+          observation_hash?: string | null;
           provider?: string;
           series_id?: string;
           updated_at?: string;
@@ -12580,6 +12586,54 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      note_voice_jobs: {
+        Row: {
+          artifact: Json | null;
+          attempt: number;
+          created_at: string;
+          error_code: string | null;
+          id: string;
+          input_hash: string;
+          revision: number;
+          status: string;
+          timezone: string;
+          transcript: string | null;
+          updated_at: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          artifact?: Json | null;
+          attempt?: number;
+          created_at?: string;
+          error_code?: string | null;
+          id: string;
+          input_hash: string;
+          revision?: number;
+          status?: string;
+          timezone: string;
+          transcript?: string | null;
+          updated_at?: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          artifact?: Json | null;
+          attempt?: number;
+          created_at?: string;
+          error_code?: string | null;
+          id?: string;
+          input_hash?: string;
+          revision?: number;
+          status?: string;
+          timezone?: string;
+          transcript?: string | null;
+          updated_at?: string;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
       };
       notification_batches: {
         Row: {
@@ -44012,6 +44066,16 @@ export type Database = {
           p_action: string;
           p_actor_id: string;
           p_input: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      calendar_provider_series_reconcile: {
+        Args: {
+          p_action: string;
+          p_actor_id: string;
+          p_connection_id: string;
+          p_input?: Json;
           p_ws_id: string;
         };
         Returns: Json;

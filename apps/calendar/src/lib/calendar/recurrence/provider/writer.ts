@@ -117,7 +117,12 @@ export function createSeriesProviderWriter(args: {
         throw new Error('Provider series binding changed');
       if (step.kind === 'create') {
         if (calendar) {
-          const payload = googleSeriesPayload(step.snapshot);
+          if (step.metadata && step.metadata.provider !== 'google')
+            throw new Error('Provider create metadata source changed');
+          const payload = {
+            ...step.metadata?.fields,
+            ...googleSeriesPayload(step.snapshot),
+          };
           const hash = requestHash(payload);
           let event: calendar_v3.Schema$Event;
           try {
@@ -125,11 +130,16 @@ export function createSeriesProviderWriter(args: {
               await calendar.events.insert({
                 calendarId: external.externalCalendarId,
                 sendUpdates: 'all',
+                supportsAttachments: true,
                 requestBody: {
                   ...payload,
                   id: step.key,
                   extendedProperties: {
-                    private: { tuturuuu_series_intent: hash },
+                    ...payload.extendedProperties,
+                    private: {
+                      ...payload.extendedProperties?.private,
+                      tuturuuu_series_intent: hash,
+                    },
                   },
                 },
               })
@@ -152,7 +162,18 @@ export function createSeriesProviderWriter(args: {
             throw new Error('Provider create receipt unavailable');
           return { eventId: event.id, etag: event.etag };
         }
-        const payload = graphSeriesPayload(step.snapshot);
+        if (step.metadata && step.metadata.provider !== 'microsoft')
+          throw new Error('Provider create metadata source changed');
+        const base = graphSeriesPayload(step.snapshot);
+        const payload = {
+          ...step.metadata?.fields,
+          ...base,
+          body: {
+            ...base.body,
+            contentType:
+              step.metadata?.fields.body?.contentType ?? base.body.contentType,
+          },
+        };
         const propertyId =
           'String {ea5bd17d-3bea-4f01-8a68-9876dc3970fb} Name tuturuuu_series_operation';
         const fingerprint = requestHash({

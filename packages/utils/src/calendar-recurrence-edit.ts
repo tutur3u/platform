@@ -122,8 +122,27 @@ export function calendarProviderDateTimeLocal(
           disambiguation: 'compatible',
         })
         .toInstant();
+  if (instant.epochNanoseconds % 1_000_000_000n !== 0n)
+    throw new RangeError(
+      'Provider occurrence has unsupported fractional precision'
+    );
   return instant
     .toZonedDateTimeISO(timeZone)
     .toPlainDateTime()
     .toString({ smallestUnit: 'second' });
+}
+
+/** Original slot interval, before moves/cancellations, for coverage fencing. */
+export function calendarRecurrenceSlotBounds(input: {
+  rule: CalendarRecurrenceRule;
+  anchor: CalendarRecurrenceAnchor;
+  originalStartLocal: string;
+}) {
+  const start = calendarRecurrenceSlotInstant(input);
+  const slot = calendarAnchorAtSlot(input.anchor, input.originalStartLocal);
+  const end = Temporal.PlainDateTime.from(slot.endLocal)
+    .toZonedDateTime(input.rule.timeZone, { disambiguation: 'compatible' })
+    .toInstant()
+    .toString();
+  return { start, end };
 }
