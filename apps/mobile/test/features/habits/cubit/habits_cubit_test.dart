@@ -142,6 +142,7 @@ void main() {
           'ws-1',
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
+          requireFresh: any(named: 'requireFresh'),
         ),
       ).thenAnswer((_) async => _listResponse(trackerId: 'tracker-1'));
       when(
@@ -150,6 +151,7 @@ void main() {
           'tracker-1',
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
+          requireFresh: any(named: 'requireFresh'),
         ),
       ).thenAnswer((_) async => _detailResponse('tracker-1'));
 
@@ -170,6 +172,7 @@ void main() {
           'ws-1',
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
+          requireFresh: any(named: 'requireFresh'),
         ),
       ).thenAnswer((_) async => _listResponse(trackerId: 'tracker-1'));
       when(
@@ -178,10 +181,15 @@ void main() {
           'tracker-1',
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
+          requireFresh: any(named: 'requireFresh'),
         ),
       ).thenAnswer((_) async => _detailResponse('tracker-1'));
       when(
-        () => repository.listTrackers('ws-1', scope: HabitTrackerScope.member),
+        () => repository.listTrackers(
+          'ws-1',
+          scope: HabitTrackerScope.member,
+          requireFresh: true,
+        ),
       ).thenAnswer(
         (_) async => _listResponse(trackerId: 'tracker-1', members: members),
       );
@@ -190,6 +198,7 @@ void main() {
           'ws-1',
           scope: HabitTrackerScope.member,
           userId: 'user-2',
+          requireFresh: true,
         ),
       ).thenAnswer(
         (_) async => _listResponse(trackerId: 'tracker-1', members: members),
@@ -200,6 +209,7 @@ void main() {
           'tracker-1',
           scope: HabitTrackerScope.member,
           userId: 'user-2',
+          requireFresh: true,
         ),
       ).thenAnswer((_) async => _detailResponse('tracker-1'));
 
@@ -214,6 +224,7 @@ void main() {
           'tracker-1',
           scope: HabitTrackerScope.member,
           userId: 'user-2',
+          requireFresh: true,
         ),
       ).called(1);
     });
@@ -227,6 +238,7 @@ void main() {
           'ws-1',
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
+          requireFresh: any(named: 'requireFresh'),
         ),
       ).thenAnswer((_) => ws1Completer.future);
       when(
@@ -234,6 +246,7 @@ void main() {
           'ws-2',
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
+          requireFresh: any(named: 'requireFresh'),
         ),
       ).thenAnswer((_) => ws2Completer.future);
       when(
@@ -242,6 +255,7 @@ void main() {
           any(),
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
+          requireFresh: any(named: 'requireFresh'),
         ),
       ).thenAnswer((invocation) async {
         final trackerId = invocation.positionalArguments[1] as String;
@@ -267,6 +281,7 @@ void main() {
           'ws-404',
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
+          requireFresh: any(named: 'requireFresh'),
         ),
       ).thenThrow(const ApiException(message: 'Not found', statusCode: 404));
 
@@ -283,6 +298,7 @@ void main() {
             'ws-1',
             scope: any(named: 'scope'),
             userId: any(named: 'userId'),
+            requireFresh: any(named: 'requireFresh'),
           ),
         ).thenAnswer((_) async => _listResponse(trackerId: 'tracker-1'));
         when(
@@ -291,6 +307,7 @@ void main() {
             'tracker-1',
             scope: any(named: 'scope'),
             userId: any(named: 'userId'),
+            requireFresh: any(named: 'requireFresh'),
           ),
         ).thenAnswer((_) async => _detailResponse('tracker-1'));
         when(
@@ -331,6 +348,7 @@ void main() {
           'ws-1',
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
+          requireFresh: any(named: 'requireFresh'),
         ),
       ).thenAnswer(
         (_) async => HabitTrackerListResponse(
@@ -352,6 +370,7 @@ void main() {
           'tracker-1',
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
+          requireFresh: any(named: 'requireFresh'),
         ),
       ).thenAnswer((_) async => _detailResponse('tracker-1'));
       when(
@@ -360,6 +379,7 @@ void main() {
           'tracker-2',
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
+          requireFresh: any(named: 'requireFresh'),
         ),
       ).thenAnswer((_) async => _detailResponse('tracker-2'));
 
@@ -378,6 +398,7 @@ void main() {
           'ws-1',
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
+          requireFresh: any(named: 'requireFresh'),
         ),
       ).thenAnswer((_) async => _listResponse(trackerId: 'tracker-1'));
       when(
@@ -386,6 +407,7 @@ void main() {
           'tracker-1',
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
+          requireFresh: any(named: 'requireFresh'),
         ),
       ).thenAnswer((_) async => _detailResponse('tracker-1'));
 
@@ -409,6 +431,7 @@ void main() {
           'ws-1',
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
+          requireFresh: any(named: 'requireFresh'),
         ),
       ).called(2);
       verify(
@@ -417,6 +440,7 @@ void main() {
           'tracker-1',
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
+          requireFresh: any(named: 'requireFresh'),
         ),
       ).called(4);
     });

@@ -104,6 +104,7 @@ class _FakeHabitTrackerRepository implements IHabitTrackerRepository {
     String trackerId, {
     HabitTrackerScope scope = HabitTrackerScope.self,
     String? userId,
+    bool requireFresh = false,
   }) async {
     return HabitTrackerDetailResponse(
       tracker: tracker,
@@ -141,6 +142,7 @@ class _FakeHabitTrackerRepository implements IHabitTrackerRepository {
     String wsId, {
     HabitTrackerScope scope = HabitTrackerScope.self,
     String? userId,
+    bool requireFresh = false,
   }) async {
     return HabitTrackerListResponse(
       trackers: [

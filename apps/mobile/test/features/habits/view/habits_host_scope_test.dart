@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
@@ -29,6 +30,7 @@ class _Repository extends Mock implements IHabitTrackerRepository {}
 void main() {
   setUpAll(() => registerFallbackValue(HabitTrackerScope.self));
   setUp(() async {
+    FlutterSecureStorage.setMockInitialValues({});
     HabitsCubit.clearCache();
     await CacheStore.instance.clearScope();
   });
@@ -75,6 +77,7 @@ void main() {
           'ws',
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
+          requireFresh: any(named: 'requireFresh'),
         ),
       ).thenAnswer(
         (_) => current.user!.id == 'owner-a'
@@ -87,6 +90,7 @@ void main() {
           any(),
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
+          requireFresh: any(named: 'requireFresh'),
         ),
       ).thenAnswer(
         (call) async => HabitTrackerDetailResponse.fromJson({

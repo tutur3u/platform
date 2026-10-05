@@ -11,6 +11,7 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
 import 'package:mobile/features/habits/cubit/habits_cubit.dart';
+import 'package:mobile/features/habits/cubit/habits_snapshot_access.dart';
 import 'package:mobile/features/habits/cubit/habits_state.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -55,6 +56,9 @@ void main() {
       secrets[call.namedArguments[#key] as String] =
           call.namedArguments[#value] as String;
     });
+    when(() => storage.delete(key: any(named: 'key'))).thenAnswer((call) async {
+      secrets.remove(call.namedArguments[#key]);
+    });
     checkpoint = null;
     store = CacheStore.forTesting(
       secureStorage: storage,
@@ -68,6 +72,7 @@ void main() {
       actorId: 'owner',
       currentUserId: () => actor,
       cacheStore: store,
+      snapshotAccess: HabitsSnapshotAccess(store, storage: storage),
     );
   });
   tearDown(() async {
@@ -96,6 +101,7 @@ void main() {
           any(),
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
+          requireFresh: any(named: 'requireFresh'),
         ),
       ).thenAnswer((_) async => empty);
       await cubit.loadWorkspace('old');
@@ -132,6 +138,7 @@ void main() {
           'ws',
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
+          requireFresh: any(named: 'requireFresh'),
         ),
       ).thenAnswer((_) {
         entered.complete();

@@ -1,6 +1,36 @@
 part of 'habits_cubit.dart';
 
 extension _HabitsLoading on HabitsCubit {
+  Future<void> _revokeWorkspaceAccess(String wsId, ApiException error) async {
+    final epoch = _workspaceEpoch;
+    try {
+      await _snapshotAccess.revoke(
+        HabitsCubit._storeKey(
+          wsId,
+          state.selectedScope,
+          HabitsCubit._scopeUserIdFor(state.selectedScope, state),
+          actorId: _ownerId,
+        ),
+        error,
+        _checkScope,
+      );
+    } on ApiException catch (failure, stackTrace) {
+      if (failure.code != 'HABITS_CACHE_REVOCATION_FAILED') rethrow;
+      developer.log(
+        'Failed to durably erase revoked Habits snapshots.',
+        name: 'HabitsCubit',
+        stackTrace: stackTrace,
+      );
+      // The synchronous denial listener already cleared and blocked this scope.
+      // Use the translated load-error fallback, without restoring private rows.
+      if (_scopeActive &&
+          epoch == _workspaceEpoch &&
+          _requestedWorkspaceId == wsId) {
+        _publish(state.copyWith(error: null));
+      }
+    }
+  }
+
   Future<void> _loadWorkspace(
     String wsId, {
     bool refresh = false,
@@ -23,8 +53,16 @@ extension _HabitsLoading on HabitsCubit {
       requestedMemberId,
       actorId: _ownerId,
     );
-    final cached = HabitsCubit._cache[cacheKey];
-    final diskCached = cached == null
+    final snapshotKey = HabitsCubit._storeKey(
+      wsId,
+      effectiveScope,
+      requestedMemberId,
+      actorId: _ownerId,
+    );
+    final accessAllowed = await _snapshotAccess.canRead(snapshotKey);
+    if (!_scopeActive || requestToken != _listRequestToken) return;
+    final cached = accessAllowed ? HabitsCubit._cache[cacheKey] : null;
+    final diskCached = accessAllowed && cached == null
         ? await _store.read<HabitsState>(
             key: HabitsCubit._storeKey(
               wsId,
@@ -38,6 +76,7 @@ extension _HabitsLoading on HabitsCubit {
         : null;
     if (!_scopeActive || requestToken != _listRequestToken) return;
     var hasVisibleData =
+        accessAllowed &&
         isSameWorkspace &&
         state.listResponse != null &&
         effectiveScope == state.selectedScope &&
@@ -83,6 +122,9 @@ extension _HabitsLoading on HabitsCubit {
       _publish(
         state.copyWith(
           status: HabitsStatus.loading,
+          listResponse: null,
+          detail: null,
+          selectedTrackerId: null,
           isSubmittingTracker: isSameWorkspace && state.isSubmittingTracker,
           isArchivingTracker: isSameWorkspace && state.isArchivingTracker,
           isSubmittingEntry: isSameWorkspace && state.isSubmittingEntry,
@@ -116,6 +158,7 @@ extension _HabitsLoading on HabitsCubit {
         wsId,
         scope: effectiveScope,
         userId: requestedMemberId,
+        requireFresh: true,
       );
 
       if (_isStaleListRequest(wsId, requestToken)) {
@@ -146,7 +189,7 @@ extension _HabitsLoading on HabitsCubit {
         error: null,
       );
       _publish(nextState);
-      _storeCache(nextState);
+      _storeCache(nextState, authorizedList: true);
 
       if (effectiveScope == HabitTrackerScope.member &&
           nextMemberId != previousMemberId &&
@@ -179,6 +222,13 @@ extension _HabitsLoading on HabitsCubit {
       }
     } on Exception catch (error) {
       if (_isStaleListRequest(wsId, requestToken)) {
+        return;
+      }
+
+      if (habitsAccessDenied(error) &&
+          _scopeActive &&
+          _requestedWorkspaceId == wsId) {
+        await _revokeWorkspaceAccess(wsId, error as ApiException);
         return;
       }
 
@@ -218,7 +268,17 @@ extension _HabitsLoading on HabitsCubit {
       HabitsCubit._scopeUserIdFor(state.selectedScope, state),
       actorId: _ownerId,
     );
-    final cached = HabitsCubit._cache[cacheKey];
+    final cached =
+        _snapshotAccess.canPeek(
+          HabitsCubit._storeKey(
+            wsId,
+            state.selectedScope,
+            HabitsCubit._scopeUserIdFor(state.selectedScope, state),
+            actorId: _ownerId,
+          ),
+        )
+        ? HabitsCubit._cache[cacheKey]
+        : null;
     var hasVisibleEntries =
         state.activityEntries.isNotEmpty ||
         state.activityStatus == HabitsStatus.loaded;
@@ -277,6 +337,7 @@ extension _HabitsLoading on HabitsCubit {
             summary.tracker.id,
             scope: activityScope,
             userId: activityUserId,
+            requireFresh: true,
           ),
         ),
       );
@@ -323,6 +384,13 @@ extension _HabitsLoading on HabitsCubit {
         return;
       }
 
+      if (habitsAccessDenied(error) &&
+          _scopeActive &&
+          _requestedWorkspaceId == wsId) {
+        await _revokeWorkspaceAccess(wsId, error as ApiException);
+        return;
+      }
+
       _publish(
         state.copyWith(
           activityStatus: hasVisibleEntries
@@ -355,7 +423,17 @@ extension _HabitsLoading on HabitsCubit {
       detailScopeUserId,
       actorId: _ownerId,
     );
-    final cached = HabitsCubit._cache[cacheKey];
+    final cached =
+        _snapshotAccess.canPeek(
+          HabitsCubit._storeKey(
+            wsId,
+            state.selectedScope,
+            HabitsCubit._scopeUserIdFor(state.selectedScope, state),
+            actorId: _ownerId,
+          ),
+        )
+        ? HabitsCubit._cache[cacheKey]
+        : null;
     var hasVisibleDetail =
         state.detail?.tracker.id == trackerId &&
         state.detailScope == detailScope &&
@@ -392,6 +470,7 @@ extension _HabitsLoading on HabitsCubit {
         trackerId,
         scope: detailScope,
         userId: detailScopeUserId,
+        requireFresh: true,
       );
 
       if (epoch != _workspaceEpoch ||
@@ -416,6 +495,13 @@ extension _HabitsLoading on HabitsCubit {
           _isStaleDetailRequest(wsId, trackerId, requestToken)) {
         return;
       }
+      if (habitsAccessDenied(error) &&
+          _scopeActive &&
+          _requestedWorkspaceId == wsId) {
+        await _revokeWorkspaceAccess(wsId, error as ApiException);
+        return;
+      }
+
       _publish(
         state.copyWith(
           detailStatus: hasVisibleDetail
