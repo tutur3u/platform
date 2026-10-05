@@ -333,6 +333,7 @@
               "build/development-tools/ci-cd-optimization",
               "build/development-tools/cleaning-clone",
               "build/development-tools/documenting",
+              "build/development-tools/mobile-state-regressions",
               "build/development-tools/public-seo",
               {
                 "group": "Skills",
