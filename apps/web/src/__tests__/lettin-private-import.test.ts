@@ -2,6 +2,9 @@ import type { BrowserContext } from '@playwright/test';
 import { afterEach, expect, test, vi } from 'vitest';
 import { verifyLettinPrivateImport } from '../../e2e/helpers/lettin-private-import';
 
+vi.mock('@playwright/test', () => ({
+  test: { step: (_name: string, action: () => Promise<unknown>) => action() },
+}));
 afterEach(() => vi.restoreAllMocks());
 
 test('import dialog action is bounded and preserves its failure through cleanup', async () => {

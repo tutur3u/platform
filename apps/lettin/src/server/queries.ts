@@ -11,7 +11,7 @@ import {
   type StoredRecord,
   worldRole,
 } from './context';
-
+import { traceLettinRead } from './read-diagnostics';
 import { isTuturuuuStaffEmail } from './staff-access';
 import { publishedReferences } from './wiki-references';
 
@@ -20,37 +20,52 @@ export async function readWorld(
   actor: Actor,
   worldId: string
 ): Promise<LettinWorld> {
-  const role = await worldRole(db, actor, worldId);
-  const world = await db
-    .prepare('SELECT * FROM worlds WHERE id = ? AND ws_id = ?')
-    .bind(worldId, actor.wsId)
-    .first<StoredRecord>();
+  const role = await traceLettinRead('D1 world access', () =>
+    worldRole(db, actor, worldId)
+  );
+  const world = await traceLettinRead('D1 world record', async () =>
+    db
+      .prepare('SELECT * FROM worlds WHERE id = ? AND ws_id = ?')
+      .bind(worldId, actor.wsId)
+      .first<StoredRecord>()
+  );
   if (!world) throw new Error('World disappeared');
-  const entries = await db
-    .prepare(
-      'SELECT * FROM entries WHERE world_id = ? AND ws_id = ? ORDER BY updated_at DESC'
-    )
-    .bind(worldId, actor.wsId)
-    .all<StoredRecord>();
-  const names = role === 'owner' ? await actor.memberNames() : [];
+  const entries = await traceLettinRead('D1 entries', async () =>
+    db
+      .prepare(
+        'SELECT * FROM entries WHERE world_id = ? AND ws_id = ? ORDER BY updated_at DESC'
+      )
+      .bind(worldId, actor.wsId)
+      .all<StoredRecord>()
+  );
+  const names =
+    role === 'owner'
+      ? await traceLettinRead('Supabase member names', () =>
+          actor.memberNames()
+        )
+      : [];
   const collaborators =
     role === 'owner'
       ? (
-          await db
-            .prepare(
-              'SELECT user_id, role FROM collaborators WHERE world_id = ? AND ws_id = ?'
-            )
-            .bind(worldId, actor.wsId)
-            .all<{ user_id: string; role: 'editor' | 'publisher' }>()
+          await traceLettinRead('D1 collaborators', async () =>
+            db
+              .prepare(
+                'SELECT user_id, role FROM collaborators WHERE world_id = ? AND ws_id = ?'
+              )
+              .bind(worldId, actor.wsId)
+              .all<{ user_id: string; role: 'editor' | 'publisher' }>()
+          )
         ).results
       : [];
   const eligibleMembers: LettinWorld['eligibleMembers'] = [];
   if (role === 'owner') {
     const creators = new Set(
       (
-        await db
-          .prepare('SELECT user_id FROM creators WHERE enabled = 1')
-          .all<{ user_id: string }>()
+        await traceLettinRead('D1 creators', async () =>
+          db
+            .prepare('SELECT user_id FROM creators WHERE enabled = 1')
+            .all<{ user_id: string }>()
+        )
       ).results.map((c) => c.user_id)
     );
     const candidates = names.filter(
@@ -59,8 +74,8 @@ export async function readWorld(
     );
     for (let offset = 0; offset < candidates.length; offset += 5) {
       const batch = candidates.slice(offset, offset + 5);
-      const eligible = await Promise.all(
-        batch.map((member) => actor.eligibleMember(member.user_id))
+      const eligible = await traceLettinRead('Supabase eligible members', () =>
+        Promise.all(batch.map((member) => actor.eligibleMember(member.user_id)))
       );
       eligibleMembers.push(...batch.filter((_, index) => eligible[index]));
     }

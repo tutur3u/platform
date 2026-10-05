@@ -399,10 +399,22 @@ failure diagnostics, redaction, artifact upload, and `always()` cleanup still
 run; the reserve is a budget, not proof that runner or Docker failures cannot
 prevent them. Setup exhausting the runtime budget fails before starting tests.
 Validate this policy with `node --test scripts/ci/e2e-runtime-budget.test.js`.
+Lettin workspace GET diagnostics are enabled in CI, or explicitly with
+`LETTIN_READ_DIAGNOSTICS=true` for a bounded investigation. They emit fixed
+`[lettin-read]` stage names and monotonic elapsed milliseconds for actor resolution,
+Cloudflare bindings, D1 reads and Supabase member/permission reads. A started stage
+without completion identifies an unfinished dependency; a completed duration shows
+where time was spent. Failures preserve the original error while logging only the
+stage and elapsed time, never actor/workspace IDs, request URLs, data or raw errors.
+These measurements diagnose stalls; they do not change authorization, retries or
+request timeouts. Outside CI, leave the flag disabled after collecting evidence.
+
 For wrapped native select controls, Playwright’s exact label matching includes
 nested option text. Give the import Source select an explicit localized accessible
 label so canonical-file selection remains reliable; the focused import component
-test uses the installed Playwright label implementation as a regression check.
+test checks the explicit accessible label and associated native labels without
+relying on private browser bundles. Maintained authenticated import E2E uses
+Playwright’s public `getByLabel('Source', { exact: true })` locator for browser coverage.
 
 The Markdown persistence helper bounds actions at 15 seconds and navigation/reload
 at 60 seconds, identifies opening the project dialog separately from navigation,
@@ -419,6 +431,17 @@ has a ten-second bound and retains the original assertion failure if cleanup
 also fails; cleanup failure still fails an otherwise successful test. This
 prevents a disposed-context error from obscuring the first failed operation.
 Regression coverage lives in `lettin-context-cleanup.test.ts`.
+Markdown and canonical-import browser phases also use public `test.step` with a
+60-second whole-phase cap. It covers the complete awaited phase, including tracing
+instrumentation before or after an action; the inner action/navigation/assertion
+deadlines and tracing remain unchanged. A phase deadline fails the test and keeps
+fixed, safe diagnostics; it never turns the stalled phase into a success or skip.
+This contains a possible instrumentation wait and does not prove the cause of a
+slow application request or runner shutdown. Regression coverage in
+`lettin-browser-phase.test.ts` verifies the public step timeout option and
+propagation of a simulated timeout with safe failure diagnostics. This focused
+contract test does not launch a browser or prove a stalled browser operation
+exits within the deadline; exact-commit E2E remains required.
 
 ### Meet, Lettin, and Parley Cloudflare validation
 

@@ -1,12 +1,4 @@
 // @vitest-environment jsdom
-import { readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
-import path from 'node:path';
-import {
-  getByLabelText,
-  getByRole,
-  queryByLabelText,
-} from '@testing-library/dom';
 import { act, type ComponentProps } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, it, vi } from 'vitest';
@@ -62,42 +54,6 @@ vi.mock('@tuturuuu/ui/dialog', () => {
   );
 });
 
-// Use the installed Playwright label implementation: Testing Library excludes
-// nested controls from label text, whereas getByLabel includes option text.
-function playwrightLabels(element: Element): { normalized: string }[] {
-  const require = createRequire(import.meta.url);
-  const playwrightRequire = createRequire(require.resolve('playwright'));
-  const bundle = readFileSync(
-    path.join(
-      path.dirname(playwrightRequire.resolve('playwright-core')),
-      'lib/coreBundle.js'
-    ),
-    'utf8'
-  );
-  const start = bundle.indexOf('function shouldSkipForTextMatching');
-  const end = bundle.indexOf(
-    '// packages/injected/src/roleSelectorEngine.ts',
-    start
-  );
-  expect(start).toBeGreaterThan(0);
-  expect(end).toBeGreaterThan(start);
-  const upstream = bundle.slice(start, end).replaceAll('\\n', '\n');
-  return new Function(
-    'Node',
-    'HTMLInputElement',
-    'getAriaLabelledByElements',
-    'normalizeWhiteSpace',
-    'element',
-    `${upstream}\nreturn getElementLabels(new Map(), element);`
-  )(
-    Node,
-    HTMLInputElement,
-    () => null,
-    (text: string) => text.replace(/\s+/g, ' ').trim(),
-    element
-  );
-}
-
 it('finds the source by its exact label and exposes the canonical file input', async () => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   const container = document.createElement('div');
@@ -107,32 +63,26 @@ it('finds the source by its exact label and exposes the canonical file input', a
     await act(async () =>
       root.render(<ExocorpseImport wsId="synthetic-workspace" />)
     );
-    const source = getByLabelText(container, 'Source', {
-      exact: true,
-      selector: 'select',
-    }) as HTMLSelectElement;
-    expect(getByRole(container, 'combobox', { name: 'Source' })).toBe(source);
-    expect(
-      playwrightLabels(source).some((label) => label.normalized === 'Source')
-    ).toBe(true);
+    const source = container.querySelector('select');
+    expect(source).not.toBeNull();
+    if (!source) throw new Error('Import source select is missing');
+    expect(source.getAttribute('aria-label')).toBe('Source');
+    const sourceLabel = source.labels?.[0];
+    expect(sourceLabel).toBe(source.closest('label'));
+    expect(sourceLabel?.textContent).toContain('Source');
     expect(source.value).toBe('cms');
-    expect(
-      queryByLabelText(container, 'Canonical JSON export', {
-        exact: true,
-        selector: 'input',
-      })
-    ).toBeNull();
+    expect(container.querySelector('input[type="file"]')).toBeNull();
     await act(async () => {
       source.value = 'file';
       source.dispatchEvent(new Event('change', { bubbles: true }));
     });
-    expect(
-      getByLabelText(container, 'Source', { exact: true, selector: 'select' })
-    ).toBe(source);
-    const file = getByLabelText(container, 'Canonical JSON export', {
-      exact: true,
-      selector: 'input',
-    }) as HTMLInputElement;
+    expect(container.querySelector('select')).toBe(source);
+    const file =
+      container.querySelector<HTMLInputElement>('input[type="file"]');
+    expect(file).not.toBeNull();
+    if (!file) throw new Error('Canonical file input is missing');
+    expect(file.labels).toHaveLength(1);
+    expect(file.labels?.[0]?.textContent?.trim()).toBe('Canonical JSON export');
     expect(file.type).toBe('file');
     expect(file.disabled).toBe(false);
   } finally {
