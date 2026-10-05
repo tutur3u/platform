@@ -4,6 +4,7 @@ import {
 } from '@tuturuuu/utils/calendar-recurrence';
 import { z } from 'zod';
 import { CreateSeriesSchema, MutateSeriesSchema } from '../schema';
+import { ProviderCreateMetadataSchema } from './create-metadata';
 import type { ProviderSeriesPlan } from './plan';
 
 const SourceSchema = z
@@ -73,6 +74,7 @@ export const ProviderPlanSchema: z.ZodType<ProviderSeriesPlan> = z
           z
             .object({
               kind: z.literal('create'),
+              metadata: ProviderCreateMetadataSchema.optional(),
               key: z.string().min(1),
               snapshot: SnapshotSchema,
             })
