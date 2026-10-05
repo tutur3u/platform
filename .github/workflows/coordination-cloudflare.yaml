@@ -23,6 +23,7 @@ permissions:
 concurrency:
   group: coordination-cloudflare-${{ github.ref }}
   cancel-in-progress: false
+  queue: max
 jobs:
   check-ci:
     uses: ./.github/workflows/ci-check.yml

@@ -11,6 +11,7 @@ on:
 concurrency:
   group: release-please-production
   cancel-in-progress: false
+  queue: max
 
 jobs:
   reject-non-production-ref:

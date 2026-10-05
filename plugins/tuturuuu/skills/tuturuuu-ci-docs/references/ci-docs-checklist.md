@@ -45,9 +45,11 @@ does not authorize promotion.
 - Document and test a unique static concurrency prefix for every reusable
   production app workflow; caller-derived shared keys can cancel sibling jobs
   instead of leaving unselected jobs cleanly skipped.
-- Restrict production deployment `cancel-in-progress` to push events on
-  `refs/heads/production`. Protected `main` commits and manual recovery
-  dispatches must not cancel an active production deployment.
+- Keep serialized deployment/publication groups on `cancel-in-progress: false`
+  with `queue: max`; disabling active cancellation alone still replaces the
+  default single pending run. Protected validation groups include SHA, event,
+  and run identity; duplicate-proof jobs decide valid skips. Never combine
+  `queue: max` with cancellation enabled.
 - Keep preview concurrency keyed by workflow and `preview_ref` with
   `cancel-in-progress: true`; repeated requests for one target should replace
   stale runs without canceling a distinct preview ref.

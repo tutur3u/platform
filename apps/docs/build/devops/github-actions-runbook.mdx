@@ -247,9 +247,9 @@ These workflows:
   production workflow
 - treat `vercel-preview-platform.yaml` as platform build validation only;
   self-hosted machines own their own Docker `apps/web` runtime deployment
-- cancel superseded production runs through per-workflow, per-branch
-  concurrency only for newer `production` pushes, so `main` commits and manual
-  recovery dispatches cannot interrupt the active deployment
+- serialize production runs through their existing per-workflow, per-branch
+  concurrency groups with cancellation disabled and `queue: max`; later pushes
+  and recovery dispatches wait rather than interrupting active deployments
 - record non-blocking GitHub Deployment markers after successful Vercel preview
   builds and production deploys so the next production push can evaluate every
   change since the last successful run
@@ -1415,3 +1415,26 @@ failure as the primary cause and attach the merge failure as diagnostics. A
 standalone report-merge failure remains a failure. Test these lifecycle boundaries
 with real owned child processes and synthetic failures; helper-only source checks
 are not proof that a stalled browser process exits.
+
+## Preserving protected-branch pending runs
+
+Disabling `cancel-in-progress` protects the active run, but GitHub's default
+concurrency queue still replaces its single pending run. Validation on `main`,
+`production`, and generated Release Please refs therefore includes the source SHA,
+event name, and run ID in the workflow concurrency group. Existing duplicate-proof
+jobs decide whether validated work can be skipped; concurrency cancellation is not
+validation evidence. Ordinary PR and feature refs retain latest-run supersession.
+
+Mutating production planners, Vercel and Cloudflare deploys, database migrations,
+package publication, Release Please, and store deployments retain their shared
+serialization groups with `cancel-in-progress: false` and `queue: max`. The
+[GitHub concurrency reference](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#example-queueing-multiple-pending-runs)
+allows up to 100 pending runs. Queue overflow can still cancel excess runs; inspect
+that condition explicitly instead of interpreting a cancellation as a valid skip.
+Queue order follows when each run began waiting, not commit chronology; existing
+SHA relevance and deployment-marker guards remain responsible for target validity.
+`queue: max` must never be combined with cancellation enabled.
+
+Regression coverage: `scripts/ci/protected-workflow-concurrency.test.js` reads the
+actual workflow concurrency blocks, checks protected SHA/run separation and PR
+supersession, and enforces serialization with expanded queues.

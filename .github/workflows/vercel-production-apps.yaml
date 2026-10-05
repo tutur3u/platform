@@ -5,7 +5,8 @@ on:
 
 concurrency:
   group: vercel-production-apps-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'push' && github.ref == 'refs/heads/production' }}
+  cancel-in-progress: false
+  queue: max
 
 permissions:
   contents: read

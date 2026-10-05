@@ -11,6 +11,7 @@ on:
 concurrency:
   group: release-please-transient-retry-${{ github.event.workflow_run.id }}
   cancel-in-progress: false
+  queue: max
 
 jobs:
   retry-transient-github-disconnect:

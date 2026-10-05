@@ -12,6 +12,7 @@ on:
 concurrency:
   group: supabase-staging-migration
   cancel-in-progress: false
+  queue: max
 
 permissions:
   contents: read

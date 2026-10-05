@@ -15,6 +15,7 @@ on:
 concurrency:
   group: ${{ ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production') || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && ((github.event.workflow_run.name == 'Production Deployment Planner' && github.event.workflow_run.head_branch == 'production') || (github.event.workflow_run.name == 'Supabase Staging Migration' && github.event.workflow_run.head_branch == 'main')))) && 'supabase-production-migration' || format('supabase-production-migration-ignored-{0}', github.run_id) }}
   cancel-in-progress: false
+  queue: max
 
 jobs:
   evaluate-prerequisites:

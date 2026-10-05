@@ -22,7 +22,8 @@ run-name: ${{ inputs.package_resume == 'true' && format('Production package resu
 
 concurrency:
   group: production-deployment-planner-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'push' && github.ref == 'refs/heads/production' }}
+  cancel-in-progress: false
+  queue: max
 
 permissions:
   actions: write
