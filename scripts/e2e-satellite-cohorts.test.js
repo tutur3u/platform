@@ -133,6 +133,7 @@ test('test failures still run remaining cohorts, cleanup occurs before next star
 test('partial startup and cleanup failures stop safely without starting another group', async (t) => {
   const webDir = root(t);
   const runtimeFailure = new Error('cleanup failed');
+  const primaryFailure = new Error('startup failed');
   let starts = 0;
   let stops = 0;
   await assert.rejects(
@@ -144,7 +145,7 @@ test('partial startup and cleanup failures stop safely without starting another 
       start: async (_c, _e, runtime) => {
         starts++;
         runtime.owned.push('partial');
-        throw new Error('startup failed');
+        throw primaryFailure;
       },
       run: async () => assert.fail('must not run'),
       diagnose: async () => {},
@@ -154,7 +155,7 @@ test('partial startup and cleanup failures stop safely without starting another 
         throw runtimeFailure;
       },
     }),
-    (error) => error === runtimeFailure
+    (error) => error === primaryFailure
   );
   assert.equal(starts, 1);
   assert.equal(stops, 1);

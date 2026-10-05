@@ -253,7 +253,12 @@ export async function findLastSuccessfulDeploymentSha({
       token,
       url: deployment.statuses_url,
     });
-    if (hasSuccessfulStatus(statuses)) {
+    // GitHub lists newest statuses first; a later rejection invalidates recovery coverage.
+    if (
+      requireExplicitDeployment
+        ? isSuccessfulStatus(statuses?.[0])
+        : hasSuccessfulStatus(statuses)
+    ) {
       return deployment.sha;
     }
   }
