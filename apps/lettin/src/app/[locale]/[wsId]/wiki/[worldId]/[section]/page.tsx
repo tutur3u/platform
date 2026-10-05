@@ -1,15 +1,25 @@
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
+import { Suspense } from 'react';
 import { z } from 'zod';
 import { isWikiSection } from '@/components/wiki-model';
 import { WorldStudio } from '@/components/world-studio';
-export default async function Page({
-  params,
-  searchParams,
-}: {
+import Loading from '../../loading';
+
+type PageProps = {
   params: Promise<{ wsId: string; worldId: string; section: string }>;
   searchParams: Promise<{ entry?: string }>;
-}) {
+};
+
+export default function Page(props: PageProps) {
+  return (
+    <Suspense fallback={<Loading />}>
+      <WikiSectionPage {...props} />
+    </Suspense>
+  );
+}
+
+async function WikiSectionPage({ params, searchParams }: PageProps) {
   await connection();
   const { wsId, worldId, section } = await params;
   if (!z.guid().safeParse(worldId).success || !isWikiSection(section))
