@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
-import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+
+export 'package:mobile/features/assistant/local/assistant_remote_chat_actions.dart'
+    show retryAssistantChat;
 
 class AssistantChatFeedback extends StatelessWidget {
   const AssistantChatFeedback({required this.state, this.onRetry, super.key});
@@ -70,25 +71,4 @@ class AssistantChatFeedback extends StatelessWidget {
     }
     return const SizedBox.shrink();
   }
-}
-
-Future<void> retryAssistantChat(
-  AssistantChatCubit chat,
-  AssistantShellState shell,
-) async {
-  final wsId = shell.workspace?.id;
-  if (wsId == null || chat.state.workspaceId != wsId) return;
-  final timezone = await getCurrentTimezoneIdentifier();
-  if (chat.isClosed || chat.state.workspaceId != wsId) return;
-  await chat.retryLast(
-    wsId: wsId,
-    modelId: shell.selectedModel.value,
-    thinkingMode: shell.thinkingMode,
-    creditSource: shell.creditSource,
-    workspaceContextId: shell.workspaceContextId,
-    timezone: timezone,
-    creditWsId: shell.creditSource == AssistantCreditSource.personal
-        ? shell.personalWorkspaceId
-        : wsId,
-  );
 }

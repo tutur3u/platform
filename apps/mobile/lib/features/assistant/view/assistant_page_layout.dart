@@ -6,6 +6,7 @@ extension _AssistantPageLayout on _AssistantPageState {
       providers: [
         BlocProvider.value(value: _shellCubit),
         BlocProvider.value(value: _chatCubit),
+        BlocProvider.value(value: _localCubit),
         BlocProvider.value(value: _liveCubit),
       ],
       child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
@@ -31,9 +32,10 @@ extension _AssistantPageLayout on _AssistantPageState {
             listeners: [
               BlocListener<AuthCubit, AuthState>(
                 listenWhen: (previous, current) =>
-                    previous.user?.id != current.user?.id,
+                    previous.user?.id != current.user?.id ||
+                    previous.status != current.status,
                 listener: (_, _) {
-                  ++_voiceActorScopeEpoch;
+                  _resetLocalActor();
                   unawaited(_voiceCapture.cancel());
                 },
               ),
@@ -59,6 +61,11 @@ extension _AssistantPageLayout on _AssistantPageState {
                 listenWhen: (previous, current) =>
                     previous.composerVisible && !current.composerVisible,
                 listener: (_, _) => _collapseComposerToFab(),
+              ),
+              BlocListener<AssistantLocalChatCubit, AssistantLocalChatState>(
+                listenWhen: (previous, current) =>
+                    previous.chat.messages != current.chat.messages,
+                listener: (_, _) => _scheduleScrollToBottom(),
               ),
               BlocListener<AssistantChatCubit, AssistantChatState>(
                 listenWhen: (previous, current) =>
@@ -117,14 +124,24 @@ extension _AssistantPageLayout on _AssistantPageState {
             child: BlocBuilder<AssistantShellCubit, AssistantShellState>(
               builder: (context, shellState) {
                 return BlocBuilder<AssistantChatCubit, AssistantChatState>(
-                  builder: (context, chatState) {
+                  builder: (context, remoteChatState) {
+                    final local = context
+                        .watch<AssistantLocalChatCubit>()
+                        .state;
+                    final localLane = local.local || local.blocked;
+                    final chatState = localLane ? local.chat : remoteChatState;
                     return BlocBuilder<AssistantLiveCubit, AssistantLiveState>(
-                      builder: (context, liveState) {
+                      builder: (context, remoteLiveState) {
+                        final liveState = localLane
+                            ? const AssistantLiveState()
+                            : remoteLiveState;
                         final chrome = context
                             .watch<AssistantChromeCubit>()
                             .state;
                         final isFullscreen = chrome.isFullscreen;
-                        final isLiveMode = chrome.isLiveMode;
+                        // Pending preferences block sends and retained content.
+                        // Preserve the requested dock presentation.
+                        final isLiveMode = chrome.isLiveMode && !local.local;
                         final liveCameraController =
                             _liveCubit.cameraController;
                         final isVisibleLiveSession = _isVisibleLiveSession(
@@ -137,7 +154,8 @@ extension _AssistantPageLayout on _AssistantPageState {
                         );
                         final keyboardVisible =
                             MediaQuery.viewInsetsOf(context).bottom > 0;
-                        final hasLiveAccess = _hasLiveAccess(shellState);
+                        final hasLiveAccess =
+                            !localLane && _hasLiveAccess(shellState);
                         final isPersonalWorkspace = currentWorkspace.personal;
                         const scrollDismissBehavior =
                             ScrollViewKeyboardDismissBehavior.onDrag;
@@ -231,6 +249,8 @@ extension _AssistantPageLayout on _AssistantPageState {
                                                         height: 12,
                                                       ),
                                                     ],
+                                                    if (localLane)
+                                                      _localStatus(local),
                                                     if (hasTranscript)
                                                       _buildTranscriptSection(
                                                         chatState,
@@ -287,7 +307,26 @@ extension _AssistantPageLayout on _AssistantPageState {
                                               )
                                             : AssistantComposerDock(
                                                 embedded: true,
-                                                voiceCapture: _voiceCapture,
+                                                localOnly: localLane,
+                                                localBlocked:
+                                                    localLane &&
+                                                    (!local.ready ||
+                                                        local.phase !=
+                                                            LocalChatPhase
+                                                                .idle),
+                                                localGenerating:
+                                                    local.phase ==
+                                                    LocalChatPhase.generating,
+                                                localModelLabel:
+                                                    _localModelLabel(
+                                                      local.selectedModelId,
+                                                    ),
+                                                onOpenLocalModels:
+                                                    _showLiveSettings,
+                                                onStopLocal: _localCubit.stop,
+                                                voiceCapture: localLane
+                                                    ? null
+                                                    : _voiceCapture,
                                                 onAttachVoice: () =>
                                                     _finishVoiceRecording(
                                                       sendNow: false,
@@ -306,8 +345,8 @@ extension _AssistantPageLayout on _AssistantPageState {
                                                 bottomInset: 0,
                                                 isPersonalWorkspace:
                                                     isPersonalWorkspace,
-                                                onModelSelected: _shellCubit
-                                                    .setSelectedModel,
+                                                onModelSelected:
+                                                    _selectRemoteModel,
                                                 onOpenCreditSourceSheet: () =>
                                                     _showCreditSourceSheet(
                                                       context,
@@ -401,7 +440,11 @@ extension _AssistantPageLayout on _AssistantPageState {
       chatState: chatState,
       liveState: liveState,
       assistantName: shellState.soul.name,
-      onRetry: () => retryAssistantChat(_chatCubit, shellState),
+      onRetry: () => _localCubit.state.local || _localCubit.state.blocked
+          ? _localCubit.state.selectedModelId == null
+                ? _showLiveSettings()
+                : _localCubit.select(_localCubit.state.selectedModelId)
+          : _retryRemote(shellState),
     );
   }
 }

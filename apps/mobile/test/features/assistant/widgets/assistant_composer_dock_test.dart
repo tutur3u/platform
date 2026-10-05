@@ -30,6 +30,11 @@ Widget _app({
   double scale = 1,
   double keyboard = 0,
   bool reducedMotion = false,
+  bool localOnly = false,
+  bool localBlocked = false,
+  bool localGenerating = false,
+  Future<void> Function()? onStopLocal,
+  Future<void> Function()? onLocalModels,
   VoidCallback? onNavigation,
   VoidCallback? onClose,
   Future<void> Function()? onSend,
@@ -60,6 +65,12 @@ Widget _app({
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: AssistantComposerDock(
+            localOnly: localOnly,
+            localBlocked: localBlocked,
+            localGenerating: localGenerating,
+            localModelLabel: localOnly ? 'Gemma 3 270M' : null,
+            onStopLocal: onStopLocal,
+            onOpenLocalModels: onLocalModels,
             voiceCapture: capture,
             onAttachVoice: onAttachVoice,
             onSendVoice: onSendVoice,
@@ -129,6 +140,92 @@ class _Capture extends AssistantVoiceCaptureCubit {
 }
 
 void main() {
+  testWidgets(
+    'local mode keeps dock identity, disables audio and uses native stop',
+    (tester) async {
+      final controller = TextEditingController(text: 'Private draft');
+      final focus = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focus.dispose);
+      var sent = 0;
+      var stopped = 0;
+      await tester.pumpWidget(
+        _app(
+          controller: controller,
+          focus: focus,
+          onSend: () async {
+            sent++;
+          },
+        ),
+      );
+      final dock = tester.element(find.byType(AssistantComposerDock));
+      await tester.pumpWidget(
+        _app(
+          controller: controller,
+          focus: focus,
+          localOnly: true,
+          localBlocked: true,
+          localGenerating: true,
+          onStopLocal: () async {
+            stopped++;
+          },
+          onSend: () async {
+            sent++;
+          },
+        ),
+      );
+      expect(tester.element(find.byType(AssistantComposerDock)), same(dock));
+      expect(controller.text, 'Private draft');
+      await tester.tap(find.byIcon(Icons.stop_rounded));
+      expect(stopped, 1);
+      expect(sent, 0);
+      controller.clear();
+      await tester.pumpWidget(
+        _app(controller: controller, focus: focus, localOnly: true),
+      );
+      expect(
+        tester
+            .widget<IconButton>(
+              find.widgetWithIcon(IconButton, Icons.mic_none_rounded),
+            )
+            .onPressed,
+        isNull,
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets(
+    'local composer exposes management while excluding attachments and credits',
+    (tester) async {
+      final controller = TextEditingController();
+      final focus = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focus.dispose);
+      var opened = 0;
+      await tester.pumpWidget(
+        _app(
+          controller: controller,
+          focus: focus,
+          localOnly: true,
+          onLocalModels: () async {
+            opened++;
+          },
+        ),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('assistant-composer-options')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.attach_file), findsNothing);
+      expect(find.byIcon(Icons.toll_rounded), findsNothing);
+      await tester.tap(find.byIcon(Icons.memory_rounded));
+      await tester.pumpAndSettle();
+      expect(opened, 1);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
   testWidgets(
     'inline recording keeps same dock and paused actions at narrow width',
     (tester) async {

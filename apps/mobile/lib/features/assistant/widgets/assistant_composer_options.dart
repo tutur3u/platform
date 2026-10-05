@@ -12,7 +12,7 @@ import 'package:mobile/features/assistant/widgets/assistant_composer_menu_surfac
 import 'package:mobile/features/assistant/widgets/assistant_model_picker_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-enum _ComposerOption { attach, model, source, close }
+enum _ComposerOption { attach, model, local, source, close }
 
 /// Secondary controls stay in one anchored menu, leaving room for the prompt.
 class AssistantComposerOptions extends StatelessWidget {
@@ -27,8 +27,14 @@ class AssistantComposerOptions extends StatelessWidget {
     required this.onCloseComposer,
     this.repository,
     this.onDismissKeyboard,
+    this.localOnly = false,
+    this.localModelLabel,
+    this.onOpenLocalModels,
     super.key,
   });
+  final bool localOnly;
+  final String? localModelLabel;
+  final Future<void> Function()? onOpenLocalModels;
   final VoidCallback onCloseComposer;
   final VoidCallback? onDismissKeyboard;
   final AssistantChatState chatState;
@@ -42,12 +48,14 @@ class AssistantComposerOptions extends StatelessWidget {
 
   Future<void> _select(BuildContext context, _ComposerOption option) async {
     switch (option) {
+      case _ComposerOption.local:
+        await onOpenLocalModels?.call();
       case _ComposerOption.close:
         onCloseComposer();
       case _ComposerOption.attach:
-        await onOpenAttachments();
+        if (!localOnly) await onOpenAttachments();
       case _ComposerOption.source:
-        await onOpenCreditSourceSheet();
+        if (!localOnly) await onOpenCreditSourceSheet();
       case _ComposerOption.model:
         final choice = await showAdaptiveSheet<AssistantGatewayModel>(
           context: context,
@@ -74,7 +82,7 @@ class AssistantComposerOptions extends StatelessWidget {
         : l10n.assistantSourceWorkspace;
     final modelLabel =
         '${l10n.assistantModelLabel}: '
-        '${shellState.selectedModel.label}';
+        '${localModelLabel ?? shellState.selectedModel.label}';
     return PopupMenuButton<_ComposerOption>(
       key: const ValueKey('assistant-composer-options'),
       tooltip: context.l10n.assistantSettingsTitle,
@@ -88,27 +96,36 @@ class AssistantComposerOptions extends StatelessWidget {
       itemBuilder: (context) => [
         AssistantComposerMenuSurface(
           entries: [
-            for (final attachment in chatState.composerAttachments)
-              AssistantComposerAttachmentMenuEntry<_ComposerOption>(
-                attachment: attachment,
-                onRemove: onRemoveAttachment,
+            if (!localOnly) ...[
+              for (final attachment in chatState.composerAttachments)
+                AssistantComposerAttachmentMenuEntry<_ComposerOption>(
+                  attachment: attachment,
+                  onRemove: onRemoveAttachment,
+                ),
+              _item(
+                _ComposerOption.attach,
+                Icons.attach_file,
+                context.l10n.assistantAttachFilesAction,
               ),
-            _item(
-              _ComposerOption.attach,
-              Icons.attach_file,
-              context.l10n.assistantAttachFilesAction,
-            ),
+            ],
             _item(
               _ComposerOption.model,
               Icons.auto_awesome_outlined,
               modelLabel,
               enabled: shellState.availableModels.isNotEmpty,
             ),
-            _item(
-              _ComposerOption.source,
-              Icons.toll_rounded,
-              '${l10n.assistantSourceLabel}: $source',
-            ),
+            if (onOpenLocalModels != null)
+              _item(
+                _ComposerOption.local,
+                Icons.memory_rounded,
+                l10n.assistantLocalModeAction,
+              ),
+            if (!localOnly)
+              _item(
+                _ComposerOption.source,
+                Icons.toll_rounded,
+                '${l10n.assistantSourceLabel}: $source',
+              ),
             const PopupMenuDivider(),
             _item(
               _ComposerOption.close,

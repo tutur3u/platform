@@ -2,12 +2,13 @@ part of 'assistant_page.dart';
 
 extension _AssistantAttachments on _AssistantPageState {
   Future<void> _recordVoiceMessage(String wsId) async {
-    if (_voiceCapture.state.visible) return;
+    if (!_remoteGuard(wsId).current || _voiceCapture.state.visible) return;
     final actorId = context.read<AuthCubit?>()?.state.user?.id;
     if (actorId == null || _chatCubit.state.workspaceId != wsId) return;
     _voiceWorkspaceId = wsId;
     _voiceActorId = actorId;
     _voiceScopeVersion = _chatCubit.attachmentScopeVersion;
+    _voiceLocalVersion = _localCubit.scopeVersion;
     _inputFocusNode.unfocus();
     await _voiceCapture.start();
   }
@@ -20,6 +21,9 @@ extension _AssistantAttachments on _AssistantPageState {
     final actorScopeEpoch = _voiceActorScopeEpoch;
     bool isCurrent() =>
         mounted &&
+        !_localCubit.state.local &&
+        !_localCubit.state.blocked &&
+        _voiceLocalVersion == _localCubit.scopeVersion &&
         wsId != null &&
         scopeVersion != null &&
         _voiceActorScopeEpoch == actorScopeEpoch &&
@@ -58,9 +62,13 @@ extension _AssistantAttachments on _AssistantPageState {
   }
 
   Future<void> _pickFiles(String wsId) async {
+    final guard = _remoteGuard(wsId);
+    if (!guard.current) return;
     final scopeVersion = _chatCubit.attachmentScopeVersion;
     final result = await FilePicker.pickFiles();
-    if (result.isEmpty || !mounted || _chatCubit.state.workspaceId != wsId) {
+    if (result.isEmpty ||
+        !guard.current ||
+        _chatCubit.state.workspaceId != wsId) {
       return;
     }
 
@@ -70,14 +78,19 @@ extension _AssistantAttachments on _AssistantPageState {
       modelId: _shellCubit.state.selectedModel.value,
       timezone: await getCurrentTimezoneIdentifier(),
       expectedWorkspaceVersion: scopeVersion,
+      isCurrentActor: () => guard.current,
     );
   }
 
   Future<void> _pickGalleryMedia(String wsId) async {
+    final guard = _remoteGuard(wsId);
+    if (!guard.current) return;
     final scopeVersion = _chatCubit.attachmentScopeVersion;
     try {
       final media = await ImagePicker().pickMultipleMedia();
-      if (media.isEmpty || !mounted || _chatCubit.state.workspaceId != wsId) {
+      if (media.isEmpty ||
+          !guard.current ||
+          _chatCubit.state.workspaceId != wsId) {
         return;
       }
       final files = media.map(GalleryPlatformFile.new).toList();
@@ -88,6 +101,7 @@ extension _AssistantAttachments on _AssistantPageState {
         modelId: _shellCubit.state.selectedModel.value,
         timezone: await getCurrentTimezoneIdentifier(),
         expectedWorkspaceVersion: scopeVersion,
+        isCurrentActor: () => guard.current,
       );
     } on Exception {
       if (mounted) _showInlineNotice(context.l10n.assistantGalleryPickError);
@@ -95,28 +109,47 @@ extension _AssistantAttachments on _AssistantPageState {
   }
 
   Future<void> _showAttachmentSheet(BuildContext context, String wsId) async {
+    final guard = _remoteGuard(wsId);
+    if (!guard.current) return;
     await showAdaptiveSheet<void>(
       context: context,
       builder: (sheetContext) => AssistantAttachmentSheetBody(
         hasAttachments: _chatCubit.state.composerAttachments.isNotEmpty,
         onPickFiles: () async {
-          await Navigator.of(sheetContext).maybePop();
+          if (!await guard.run(() async {
+            await Navigator.of(sheetContext).maybePop();
+          })) {
+            return;
+          }
           if (mounted) await _pickFiles(wsId);
         },
         onPickGalleryMedia: () async {
-          await Navigator.of(sheetContext).maybePop();
+          if (!await guard.run(() async {
+            await Navigator.of(sheetContext).maybePop();
+          })) {
+            return;
+          }
           if (mounted) await _pickGalleryMedia(wsId);
         },
         onCapture: () async {
-          await Navigator.of(sheetContext).maybePop();
+          if (!await guard.run(() async {
+            await Navigator.of(sheetContext).maybePop();
+          })) {
+            return;
+          }
           if (mounted) await _showCaptureSheet(wsId);
         },
         onClearAttachments: () async {
           final attachments = _chatCubit.state.composerAttachments
               .map((attachment) => attachment.id)
               .toList(growable: false);
-          await Navigator.of(sheetContext).maybePop();
+          if (!await guard.run(() async {
+            await Navigator.of(sheetContext).maybePop();
+          })) {
+            return;
+          }
           for (final attachmentId in attachments) {
+            if (!guard.current) return;
             await _chatCubit.removeComposerAttachment(
               wsId: wsId,
               attachmentId: attachmentId,
@@ -128,6 +161,8 @@ extension _AssistantAttachments on _AssistantPageState {
   }
 
   Future<void> _showCaptureSheet(String wsId) async {
+    final guard = _remoteGuard(wsId);
+    if (!guard.current) return;
     final cameraSupported =
         !kIsWeb &&
         (defaultTargetPlatform == TargetPlatform.iOS ||
@@ -137,15 +172,27 @@ extension _AssistantAttachments on _AssistantPageState {
       builder: (sheetContext) => AssistantCaptureSheet(
         cameraSupported: cameraSupported,
         onPhoto: () async {
-          await Navigator.of(sheetContext).maybePop();
+          if (!await guard.run(() async {
+            await Navigator.of(sheetContext).maybePop();
+          })) {
+            return;
+          }
           if (mounted) await _captureMedia(wsId, video: false);
         },
         onVideo: () async {
-          await Navigator.of(sheetContext).maybePop();
+          if (!await guard.run(() async {
+            await Navigator.of(sheetContext).maybePop();
+          })) {
+            return;
+          }
           if (mounted) await _captureMedia(wsId, video: true);
         },
         onAudio: () async {
-          await Navigator.of(sheetContext).maybePop();
+          if (!await guard.run(() async {
+            await Navigator.of(sheetContext).maybePop();
+          })) {
+            return;
+          }
           if (mounted) await _recordVoiceMessage(wsId);
         },
       ),
@@ -153,13 +200,17 @@ extension _AssistantAttachments on _AssistantPageState {
   }
 
   Future<void> _captureMedia(String wsId, {required bool video}) async {
+    final guard = _remoteGuard(wsId);
+    if (!guard.current) return;
     final scopeVersion = _chatCubit.attachmentScopeVersion;
     try {
       final picker = ImagePicker();
       final media = video
           ? await picker.pickVideo(source: ImageSource.camera)
           : await picker.pickImage(source: ImageSource.camera);
-      if (!mounted || media == null || _chatCubit.state.workspaceId != wsId) {
+      if (!guard.current ||
+          media == null ||
+          _chatCubit.state.workspaceId != wsId) {
         return;
       }
       await _chatCubit.addComposerAttachments(
@@ -168,6 +219,7 @@ extension _AssistantAttachments on _AssistantPageState {
         modelId: _shellCubit.state.selectedModel.value,
         timezone: await getCurrentTimezoneIdentifier(),
         expectedWorkspaceVersion: scopeVersion,
+        isCurrentActor: () => guard.current,
       );
     } on Exception {
       if (mounted) _showInlineNotice(context.l10n.assistantGalleryPickError);

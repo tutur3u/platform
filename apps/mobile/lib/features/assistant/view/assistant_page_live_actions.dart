@@ -2,8 +2,12 @@ part of 'assistant_page.dart';
 
 extension _AssistantPageLiveActions on _AssistantPageState {
   Future<void> _handleMicrophoneTap(String wsId) async {
-    await _workspaceDisconnect;
-    if (!mounted || _loadedWorkspaceId != wsId) return;
+    if (_localCubit.state.local || _localCubit.state.blocked) {
+      _showInlineNotice(context.l10n.assistantLocalTextOnly);
+      return;
+    }
+    final guard = _remoteGuard(wsId);
+    if (!await guard.run(() => _workspaceDisconnect) || !mounted) return;
     final shellState = _shellCubit.state;
     if (shellState.workspace?.id != wsId) return;
     final chatState = _chatCubit.state;
@@ -47,11 +51,15 @@ extension _AssistantPageLiveActions on _AssistantPageState {
     String wsId,
     AssistantChatState chatState,
   ) async {
-    if (_liveStartPending) return;
+    if (_liveStartPending ||
+        _localCubit.state.local ||
+        _localCubit.state.blocked) {
+      return;
+    }
+    final guard = _remoteGuard(wsId);
     _liveStartPending = true;
     try {
-      await _workspaceDisconnect;
-      if (!mounted || !_appIsForeground || _loadedWorkspaceId != wsId) return;
+      if (!await guard.run(() => _workspaceDisconnect) || !mounted) return;
       await _liveCubit.prepareSession(
         wsId: wsId,
         chatId: chatState.chat?.id ?? chatState.storedChatId,
@@ -82,11 +90,15 @@ extension _AssistantPageLiveActions on _AssistantPageState {
     required String? activeChatId,
     required bool autoStartMicrophone,
   }) async {
-    if (_liveStartPending) return;
+    if (_liveStartPending ||
+        _localCubit.state.local ||
+        _localCubit.state.blocked) {
+      return;
+    }
+    final guard = _remoteGuard(wsId);
     _liveStartPending = true;
     try {
-      await _workspaceDisconnect;
-      if (!mounted || !_appIsForeground || _loadedWorkspaceId != wsId) return;
+      if (!await guard.run(() => _workspaceDisconnect) || !mounted) return;
       _dismissKeyboard();
       context.read<AssistantChromeCubit>().enterLiveMode();
       if (!autoStartMicrophone) return;
@@ -109,8 +121,8 @@ extension _AssistantPageLiveActions on _AssistantPageState {
         }
       }
 
-      if (!mounted ||
-          !_appIsForeground ||
+      if (!guard.current ||
+          !mounted ||
           !context.read<AssistantChromeCubit>().state.isLiveMode ||
           _liveCubit.state.status == AssistantLiveConnectionStatus.error ||
           _loadedWorkspaceId != wsId) {
@@ -141,30 +153,25 @@ extension _AssistantPageLiveActions on _AssistantPageState {
   Future<void> _showLiveSettings() async {
     final wsId = _loadedWorkspaceId;
     if (wsId == null) return;
-    await showAdaptiveSheet<void>(
-      context: context,
-      builder: (sheetContext) => AssistantSettingsSheetBody(
-        keepLiveWhileBrowsing: _keepLiveWhileBrowsing,
-        onKeepLiveWhileBrowsingChanged: ({required value}) async {
-          try {
-            await _preferences.saveKeepLiveWhileBrowsing(wsId, value: value);
-          } on Exception {
-            if (sheetContext.mounted) Navigator.of(sheetContext).pop();
-            if (mounted) {
-              _showInlineNotice(context.l10n.assistantLiveSettingSaveError);
-            }
-            return;
-          }
-          if (!mounted || _loadedWorkspaceId != wsId) return;
-          _setKeepLiveWhileBrowsing(value);
-          if (!value &&
-              !context.read<AssistantChromeCubit>().state.isLiveMode) {
-            await _liveCubit.disconnect();
-          }
-          if (sheetContext.mounted) Navigator.of(sheetContext).pop();
-        },
+    final scope = _localScope();
+    await _chatCubit.stopStreaming(discardQueued: true);
+    if (!mounted || scope != _localScope()) return;
+    await _voiceCapture.cancel();
+    await _liveCubit.disconnect();
+    await _localCubit.invalidate();
+    if (!mounted || scope != _localScope()) return;
+    final location = GoRouterState.of(context).matchedLocation;
+    await pushScopedSettingsPage(
+      context,
+      builder: (_, isCurrent) => AssistantSettingsHub(
+        workspaceId: wsId,
+        locations: {location},
+        isScopeCurrent: isCurrent,
       ),
     );
+    if (!mounted || scope != _localScope()) return;
+    await _loadLiveBrowsingPreference(wsId);
+    _resumeLocal();
   }
 
   Future<void> _openChatComposerFromLiveMode() async {

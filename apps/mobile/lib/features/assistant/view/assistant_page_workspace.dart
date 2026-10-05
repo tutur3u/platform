@@ -9,6 +9,12 @@ extension _AssistantPageWorkspace on _AssistantPageState {
     ++_voiceActorScopeEpoch;
     unawaited(_voiceCapture.cancel());
     _loadedWorkspaceId = workspace.id;
+    final actor = currentCacheUserId();
+    if (actor != null) {
+      unawaited(_syncLocal(actor, workspace.id));
+    } else {
+      unawaited(_localCubit.invalidate());
+    }
     _keepLiveWhileBrowsing = false;
     _liveBrowsingPreferenceLoad = _loadLiveBrowsingPreference(workspace.id);
     _lastEmptyStateResetKey = null;
