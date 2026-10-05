@@ -40,6 +40,7 @@ class AssistantTranscriptSection extends StatelessWidget {
                   chatState.attachmentsByMessageId[message.id] ?? const [],
               timestamp: message.createdAt,
               toolParts: toolParts,
+              orderedParts: message.role == 'user' ? const [] : message.parts,
               toolNames: toolParts.isEmpty
                   ? message.parts
                         .where((part) => part.type == 'dynamic-tool')
