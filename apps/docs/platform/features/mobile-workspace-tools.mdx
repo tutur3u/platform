@@ -852,7 +852,13 @@ The Education screen in `apps/mobile` supports:
 
 Education's native session is keyed to the current account and workspace. Its
 repository binds API reads, cache keys, pending-edit overlays, mutation admission,
-and tag invalidation to that actor. Changing either scope removes the old list,
+and tag invalidation to that actor. Legacy callers without an explicitly bound
+account capture the active actor before each request and retain that identity
+through cache reads, pending-edit overlays, and write admission. Anonymous reads
+cannot publish after sign-in; writes require an account before queue admission.
+`education_actor_scope_test.dart` covers delayed
+responses/queue reads and exact actor filtering across all four collections.
+Changing either scope removes the old list,
 search, and owned modal routes immediately; late responses cannot repopulate it.
 
 Course/library search uses the persistent shell dock and resets when the section

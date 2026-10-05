@@ -1,35 +1,64 @@
+import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/cache/pending_collection_overlay.dart';
+import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/education/education_models.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
 class EducationRepository {
-  EducationRepository({ApiClient? apiClient, this.expectedUserId})
-    : _api = apiClient ?? ApiClient(expectedUserId: expectedUserId);
+  EducationRepository({
+    ApiClient? apiClient,
+    CacheStore? cacheStore,
+    OfflineMutationQueue? mutationQueue,
+    String? Function()? currentUserId,
+    this.expectedUserId,
+  }) : _api = apiClient ?? ApiClient(expectedUserId: expectedUserId),
+       _store = cacheStore ?? CacheStore.instance,
+       _queue = mutationQueue ?? OfflineMutationQueue.instance,
+       _currentUserId = currentUserId ?? currentCacheUserId;
   final String? expectedUserId;
 
   final ApiClient _api;
+  final CacheStore _store;
+  final OfflineMutationQueue _queue;
+  final String? Function() _currentUserId;
+  String? get _actor => expectedUserId ?? _currentUserId();
+
+  void _checkActor(String? actor) {
+    if (actor != null) _api.checkUser(actor);
+    if (_actor != actor) {
+      throw const ApiException(message: 'Account changed', statusCode: 401);
+    }
+  }
 
   Future<Map<String, dynamic>> _read(
     String wsId,
     String collection,
     String path,
-  ) => readThroughJson(
-    api: _api,
-    namespace: 'education.$collection',
-    workspaceId: wsId,
-    path: path,
-    cacheUserId: expectedUserId == null ? null : () => expectedUserId,
-  );
+    String? actor,
+  ) async {
+    _checkActor(actor);
+    final response = await readThroughJson(
+      api: _api,
+      namespace: 'education.$collection',
+      workspaceId: wsId,
+      path: path,
+      cacheStore: _store,
+      cacheUserId: () => actor,
+    );
+    _checkActor(actor);
+    return response;
+  }
 
   Future<List<Map<String, dynamic>>> _rows(
     String wsId,
     String segment,
     Map<String, dynamic> response, {
+    required String? actor,
     String query = '',
     int page = 1,
     String? textField,
@@ -38,13 +67,13 @@ class EducationRepository {
     final source = (response['data'] as List<dynamic>? ?? const <dynamic>[])
         .whereType<Map<String, dynamic>>()
         .toList(growable: false);
-    final allPending = await OfflineMutationQueue.instance.listPending();
-    if (expectedUserId != null) _api.checkUser(expectedUserId!);
+    _checkActor(actor);
+    final allPending = actor == null
+        ? const <PendingMutationRecord>[]
+        : await _queue.listPending();
+    _checkActor(actor);
     final pending = allPending
-        .where(
-          (mutation) =>
-              expectedUserId == null || mutation.userId == expectedUserId,
-        )
+        .where((mutation) => mutation.userId == actor)
         .toList(growable: false);
     return overlayPendingCollection(
       workspaceId: wsId,
@@ -69,15 +98,25 @@ class EducationRepository {
     Map<String, dynamic>? payload,
     String? entityId,
   }) async {
+    final actor = _actor;
+    _checkActor(actor);
+    if (actor == null) {
+      throw const ApiException(
+        message: 'Authentication required',
+        statusCode: 401,
+      );
+    }
     await queueOrSendVoid(
+      queue: _queue,
       feature: 'education',
-      expectedUserId: expectedUserId,
+      expectedUserId: actor,
       method: method,
       path: path,
       workspaceId: wsId,
       payload: payload,
       entityId: entityId,
       send: () async {
+        _checkActor(actor);
         switch (method) {
           case 'POST':
             await _api.postJson(path, payload);
@@ -88,10 +127,11 @@ class EducationRepository {
         }
       },
     );
-    await CacheStore.instance.invalidateTags(
+    _checkActor(actor);
+    await _store.invalidateTags(
       {'module:education'},
       workspaceId: wsId,
-      userId: expectedUserId,
+      userId: actor,
     );
   }
 
@@ -101,6 +141,7 @@ class EducationRepository {
     int page = 1,
     int pageSize = 20,
   }) async {
+    final actor = _actor;
     final response = await _read(
       wsId,
       'courses',
@@ -110,11 +151,13 @@ class EducationRepository {
         page: page,
         pageSize: pageSize,
       ),
+      actor,
     );
     final rows = await _rows(
       wsId,
       'courses',
       response,
+      actor: actor,
       query: query,
       page: page,
       textField: 'name',
@@ -171,6 +214,7 @@ class EducationRepository {
     int page = 1,
     int pageSize = 20,
   }) async {
+    final actor = _actor;
     final response = await _read(
       wsId,
       'quizSets',
@@ -180,11 +224,13 @@ class EducationRepository {
         page: page,
         pageSize: pageSize,
       ),
+      actor,
     );
     final rows = await _rows(
       wsId,
       'quiz-sets',
       response,
+      actor: actor,
       query: query,
       page: page,
       textField: 'name',
@@ -236,6 +282,7 @@ class EducationRepository {
     int page = 1,
     int pageSize = 20,
   }) async {
+    final actor = _actor;
     final response = await _read(
       wsId,
       'quizzes',
@@ -245,11 +292,13 @@ class EducationRepository {
         page: page,
         pageSize: pageSize,
       ),
+      actor,
     );
     final rows = await _rows(
       wsId,
       'quizzes',
       response,
+      actor: actor,
       query: query,
       page: page,
       textField: 'question',
@@ -312,6 +361,7 @@ class EducationRepository {
     int page = 1,
     int pageSize = 20,
   }) async {
+    final actor = _actor;
     final response = await _read(
       wsId,
       'flashcards',
@@ -321,11 +371,13 @@ class EducationRepository {
         page: page,
         pageSize: pageSize,
       ),
+      actor,
     );
     final rows = await _rows(
       wsId,
       'flashcards',
       response,
+      actor: actor,
       query: query,
       page: page,
       textField: 'front',
@@ -385,6 +437,7 @@ class EducationRepository {
     String sortBy = 'newest',
     String sortDirection = 'desc',
   }) async {
+    final actor = _actor;
     final response = await _read(
       wsId,
       'attempts',
@@ -397,6 +450,7 @@ class EducationRepository {
         sortBy: sortBy,
         sortDirection: sortDirection,
       ),
+      actor,
     );
     return EducationAttemptListResult.fromJson(response);
   }
@@ -405,10 +459,12 @@ class EducationRepository {
     String wsId,
     String attemptId,
   ) async {
+    final actor = _actor;
     final response = await _read(
       wsId,
       'attempt',
       EducationEndpoints.attempt(wsId, attemptId),
+      actor,
     );
     return EducationAttemptDetail.fromJson(response);
   }
