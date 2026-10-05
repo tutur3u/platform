@@ -106,7 +106,13 @@ class ChatCubit extends Cubit<ChatState> {
     final wsId = state.wsId;
     if (wsId == null) return;
     final token = ++_loadToken;
-    emit(state.copyWith(status: ChatStatus.loading, clearError: true));
+    emit(
+      state.copyWith(
+        status: ChatStatus.loading,
+        isLoadingMore: false,
+        clearError: true,
+      ),
+    );
 
     try {
       final page = await _repository.listConversations(
@@ -142,14 +148,21 @@ class ChatCubit extends Cubit<ChatState> {
     final nextOffset = state.nextOffset;
     if (wsId == null || nextOffset == null || state.isLoadingMore) return;
 
+    final token = _loadToken;
+    final archived = state.archivedFilter;
     emit(state.copyWith(isLoadingMore: true));
     try {
       final page = await _repository.listConversations(
         wsId,
-        archived: state.archivedFilter,
+        archived: archived,
         offset: nextOffset,
       );
-      if (isClosed) return;
+      if (isClosed ||
+          token != _loadToken ||
+          state.wsId != wsId ||
+          state.archivedFilter != archived) {
+        return;
+      }
       emit(
         state.copyWith(
           conversations: _sortConversations([
@@ -161,7 +174,10 @@ class ChatCubit extends Cubit<ChatState> {
         ),
       );
     } on ApiException catch (error) {
-      if (!isClosed) {
+      if (!isClosed &&
+          token == _loadToken &&
+          state.wsId == wsId &&
+          state.archivedFilter == archived) {
         emit(state.copyWith(isLoadingMore: false, error: error.message));
       }
     }
