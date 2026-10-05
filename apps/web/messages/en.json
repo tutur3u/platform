@@ -10290,6 +10290,25 @@
     }
   },
   "meet": {
+    "call": {
+      "private_tools": {
+        "calendar": "Calendar",
+        "close": "Close my day",
+        "empty_calendar": "Your next seven days are clear.",
+        "empty_tasks": "No active tasks. Enjoy the space.",
+        "event": "Untitled event",
+        "loading": "Loading your day…",
+        "open_calendar": "Open Calendar",
+        "open_tasks": "Open Tasks",
+        "private": "Only visible to you",
+        "protected_event": "Encrypted event",
+        "stale_calendar": "Showing your last loaded calendar. Refresh is currently unavailable.",
+        "stale_tasks": "Showing your last loaded tasks. Refresh is currently unavailable.",
+        "tasks": "Tasks",
+        "title": "My day",
+        "unavailable": "Your personal tools are unavailable right now."
+      }
+    },
     "collaboration": {
       "checkpoint_conflict": "The workspace document changed elsewhere. Live edits remain in this room; its workspace backup has a conflict.",
       "checkpoint_deferred": "Workspace backup is delayed. Live edits remain in this room while saving is retried.",
