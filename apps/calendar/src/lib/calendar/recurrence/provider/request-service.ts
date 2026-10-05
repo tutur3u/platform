@@ -18,6 +18,7 @@ import {
   mutateSeries,
   readSeries,
 } from '../service';
+import { assertNoCopiedConferenceLink } from './conference';
 import { providerFutureCreateMetadata } from './create-metadata';
 import { executeProviderSeriesOperation } from './executor';
 import { createSeriesProviderInspector } from './inspect';
@@ -296,8 +297,11 @@ export async function reserveProviderOperation(access: Access, raw: unknown) {
       // Validate and retain all cloneable fields before reserving any trim.
       futureCreate.metadata = providerFutureCreateMetadata(
         binding.provider,
-        master.event
+        master.event,
+        input.requestId
       );
+      if (futureCreate.metadata.excludedConferenceHash)
+        assertNoCopiedConferenceLink(master.event, futureCreate.snapshot.event);
       if (
         futureCreate.metadata.provider === 'microsoft' &&
         input.event?.description !== undefined
@@ -392,6 +396,7 @@ export async function reserveProviderOperation(access: Access, raw: unknown) {
     authorize: async () => {},
     workspace: (value) => value.wsId,
   });
+  if (plan.createBeforeTrim) nativeInput.providerCreateFirst = true;
   const journal = await codec.seal(binding, plan);
   return ProviderOperationSchema.parse(
     await providerSeriesRpc(rpcArgs(access), 'reserve', {

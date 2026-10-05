@@ -111,13 +111,13 @@ describe('provider series payload and scope parity', () => {
       key: expect.stringMatching(/^[0-9a-v]{5,1024}$/),
     });
   });
-  it('splits future COUNT into trimmed old series and remaining tail, in that order', () => {
+  it('creates the remaining future tail before trimming the old series', () => {
     const plan = mutate('future');
-    expect(plan.steps.map((step) => step.kind)).toEqual(['trim', 'create']);
-    expect(plan.steps[0]).toMatchObject({
+    expect(plan.steps.map((step) => step.kind)).toEqual(['create', 'trim']);
+    expect(plan.steps[1]).toMatchObject({
       rule: { end: { type: 'until', date: '2026-03-07' } },
     });
-    expect(plan.steps[1]).toMatchObject({
+    expect(plan.steps[0]).toMatchObject({
       snapshot: {
         rule: { end: { type: 'count', count: 3 } },
         anchor: { startLocal: '2026-03-08T09:00:00' },
@@ -182,6 +182,7 @@ describe('durable provider series execution', () => {
     const plan = mutate('future');
     const checkpoints = Array.from({ length: completed }, (_, step) => ({
       step,
+      kind: step === 0 ? ('create' as const) : ('trim' as const),
       result: { eventId: 'master', etag: 'v2' },
     }));
     const store: ProviderSeriesOperationStore = {
@@ -206,11 +207,11 @@ describe('durable provider series execution', () => {
       vi.mocked(store.finalize).mock.invocationCallOrder[0]
     ).toBeGreaterThan(vi.mocked(store.checkpoint).mock.invocationCallOrder[1]!);
   });
-  it('resumes after trimming without repeating the durable completed effect', async () => {
+  it('resumes after creating without repeating the durable completed effect', async () => {
     const { store, provider } = fixture(1);
     await executeProviderSeriesOperation(store, provider);
     expect(provider.apply).toHaveBeenCalledTimes(1);
-    expect(provider.apply.mock.calls[0]?.[1]).toMatchObject({ kind: 'create' });
+    expect(provider.apply.mock.calls[0]?.[1]).toMatchObject({ kind: 'trim' });
   });
   it('does not apply remote effects after all checkpoints are durable', async () => {
     const { store, provider } = fixture(2);
@@ -258,6 +259,36 @@ describe('durable provider series execution', () => {
     await expect(
       executeProviderSeriesOperation(store, provider)
     ).rejects.toThrow('sequence');
+    expect(provider.apply).not.toHaveBeenCalled();
+  });
+  it('recovers old trim-first journals without reordering remote effects', async () => {
+    const { store, provider } = fixture();
+    const legacy = mutate('future');
+    delete legacy.createBeforeTrim;
+    legacy.steps.reverse();
+    vi.mocked(store.claim).mockResolvedValue({
+      plan: legacy,
+      checkpoints: [{ step: 0, result: { eventId: 'master', etag: 'v2' } }],
+      lease: 'lease',
+    });
+    await executeProviderSeriesOperation(store, provider);
+    expect(provider.apply.mock.calls[0]?.[1]).toMatchObject({ kind: 'create' });
+    expect(vi.mocked(store.checkpoint).mock.calls[0]?.[1]).not.toHaveProperty(
+      'kind'
+    );
+  });
+  it('rejects mismatched roles in a new plan before a destructive trim', async () => {
+    const { store, provider } = fixture();
+    vi.mocked(store.claim).mockResolvedValue({
+      plan: mutate('future'),
+      checkpoints: [
+        { step: 0, kind: 'trim', result: { eventId: 'master', etag: 'v2' } },
+      ],
+      lease: 'lease',
+    });
+    await expect(
+      executeProviderSeriesOperation(store, provider)
+    ).rejects.toThrow('roles');
     expect(provider.apply).not.toHaveBeenCalled();
   });
 });

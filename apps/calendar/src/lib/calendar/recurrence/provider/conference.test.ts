@@ -1,0 +1,215 @@
+import { describe, expect, it } from 'vitest';
+import {
+  assertNoCopiedConferenceLink,
+  freshProviderConference,
+  verifyFreshProviderConference,
+} from './conference';
+
+const google = {
+  conferenceData: {
+    conferenceId: 'old-id',
+    conferenceSolution: { key: { type: 'hangoutsMeet' } },
+  },
+  hangoutLink: 'https://meet.google.com/old-fixture',
+};
+const outlook = {
+  isOnlineMeeting: true,
+  onlineMeetingProvider: 'teamsForBusiness',
+  onlineMeeting: { joinUrl: 'https://teams.microsoft.com/old-fixture' },
+};
+describe('fresh recurrence conference boundaries', () => {
+  it.each([
+    { description: google.hangoutLink },
+    { description: encodeURIComponent(google.hangoutLink) },
+    { description: 'Original room old-id' },
+  ])('rejects embedded original Google meeting credentials', (fields) => {
+    expect(() => assertNoCopiedConferenceLink(google, fields)).toThrow();
+  });
+  it('rejects embedded Outlook meeting HTML before reservation', () => {
+    expect(() =>
+      assertNoCopiedConferenceLink(outlook, {
+        body: {
+          content: `<a href="${outlook.onlineMeeting.joinUrl}">Join</a>`,
+        },
+      })
+    ).toThrow();
+    expect(() =>
+      assertNoCopiedConferenceLink(outlook, { body: { content: 'Agenda' } })
+    ).not.toThrow();
+  });
+  it('creates stable Google requests without copying join credentials or signatures', () => {
+    const first = freshProviderConference(
+      'google',
+      {
+        ...google,
+        conferenceData: {
+          ...google.conferenceData,
+          signature: 'private-fixture',
+        },
+      },
+      'operation'
+    );
+    expect(first).toEqual(
+      freshProviderConference('google', google, 'operation')
+    );
+    expect(JSON.stringify(first)).not.toContain('old-fixture');
+    expect(JSON.stringify(first)).not.toContain('private-fixture');
+    expect(first?.fields).toMatchObject({
+      conferenceData: {
+        createRequest: { conferenceSolutionKey: { type: 'hangoutsMeet' } },
+      },
+    });
+    expect(first).not.toEqual(
+      freshProviderConference('google', google, 'other-operation')
+    );
+  });
+  it('requests a new Outlook meeting without carrying the original joining URL', () => {
+    const result = freshProviderConference('microsoft', outlook, 'operation');
+    expect(result?.fields).toEqual({
+      isOnlineMeeting: true,
+      onlineMeetingProvider: 'teamsForBusiness',
+    });
+    expect(JSON.stringify(result)).not.toContain('old-fixture');
+  });
+  it.each(['skypeForBusiness', 'skypeForConsumer', 'teamsForBusiness'])(
+    'retains only supported Outlook meeting provider %s',
+    (onlineMeetingProvider) => {
+      expect(
+        freshProviderConference(
+          'microsoft',
+          { ...outlook, onlineMeetingProvider },
+          'operation'
+        )?.fields
+      ).toMatchObject({ onlineMeetingProvider });
+    }
+  );
+  it.each([
+    { ...google, conferenceData: undefined },
+    {
+      ...google,
+      conferenceData: {
+        conferenceId: 'old',
+        conferenceSolution: { key: { type: 'addOn' } },
+      },
+    },
+    { ...google, hangoutLink: 'http://meet.google.com/fixture' },
+    {
+      ...google,
+      hangoutLink: 'https://meet.google.com.attacker.invalid/fixture',
+    },
+  ])(
+    'rejects unsupported Google conference state before reservation',
+    (master) => {
+      expect(() =>
+        freshProviderConference('google', master, 'operation')
+      ).toThrow();
+    }
+  );
+  it.each([
+    { ...outlook, isOnlineMeeting: false },
+    { ...outlook, onlineMeetingProvider: 'unknown' },
+    {
+      ...outlook,
+      onlineMeeting: {
+        joinUrl: 'https://user:password@teams.microsoft.com/fixture',
+      },
+    },
+  ])('rejects incomplete Outlook conference state', (master) => {
+    expect(() =>
+      freshProviderConference('microsoft', master, 'operation')
+    ).toThrow();
+  });
+  it('holds Google pending/failed and reused identities until a new conference is successful', () => {
+    const excluded = freshProviderConference(
+      'google',
+      google,
+      'operation'
+    )!.excludedConferenceHash;
+    const ready = {
+      conferenceData: {
+        conferenceId: 'new-id',
+        conferenceSolution: { key: { type: 'hangoutsMeet' } },
+        createRequest: { status: { statusCode: 'success' } },
+      },
+      hangoutLink: 'https://meet.google.com/new-fixture',
+    };
+    expect(() =>
+      verifyFreshProviderConference('google', ready, excluded)
+    ).not.toThrow();
+    for (const statusCode of ['pending', 'failure'])
+      expect(() =>
+        verifyFreshProviderConference(
+          'google',
+          {
+            ...ready,
+            conferenceData: {
+              ...ready.conferenceData,
+              createRequest: { status: { statusCode } },
+            },
+          },
+          excluded
+        )
+      ).toThrow();
+    expect(() =>
+      verifyFreshProviderConference(
+        'google',
+        {
+          ...ready,
+          conferenceData: { ...ready.conferenceData, conferenceId: 'old-id' },
+        },
+        excluded
+      )
+    ).toThrow('identity');
+    expect(() =>
+      verifyFreshProviderConference(
+        'google',
+        { ...ready, hangoutLink: google.hangoutLink },
+        excluded,
+        freshProviderConference('google', google, 'operation')!.excludedJoinHash
+      )
+    ).toThrow();
+  });
+  it('holds Outlook until a fresh valid provider meeting is available', () => {
+    const excluded = freshProviderConference(
+      'microsoft',
+      outlook,
+      'operation'
+    )!.excludedConferenceHash;
+    expect(() =>
+      verifyFreshProviderConference('microsoft', outlook, excluded)
+    ).toThrow();
+    expect(() =>
+      verifyFreshProviderConference(
+        'microsoft',
+        {
+          ...outlook,
+          onlineMeeting: {
+            joinUrl: `${outlook.onlineMeeting.joinUrl}?context=changed`,
+          },
+        },
+        excluded
+      )
+    ).toThrow();
+    expect(() =>
+      verifyFreshProviderConference(
+        'microsoft',
+        {
+          ...outlook,
+          onlineMeeting: { joinUrl: 'https://teams.microsoft.com/new-fixture' },
+        },
+        excluded
+      )
+    ).not.toThrow();
+    expect(() =>
+      verifyFreshProviderConference(
+        'microsoft',
+        {
+          ...outlook,
+          onlineMeetingProvider: 'unknown',
+          onlineMeeting: { joinUrl: 'https://teams.microsoft.com/new-fixture' },
+        },
+        excluded
+      )
+    ).toThrow();
+  });
+});

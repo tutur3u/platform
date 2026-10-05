@@ -92,3 +92,31 @@ Regression coverage: provider `capabilities.test.ts`, operation-route tests,
 `use-provider-recurrence-operation.test.tsx` cover source permissions, native
 fallback exclusion, ambiguous responses, dialog dismissal, tab reload recovery
 and actor separation.
+
+### Fresh conferences on future splits
+
+New Google/Outlook future-update plans create the replacement series before
+trimming the original. Provider creation is checkpointed only after a fresh
+conference identity is available. Original join links and Google conference
+signatures are never cloned into the replacement: Google Meet uses a stable
+operation-derived `createRequest`; Outlook selects the original supported meeting
+provider only when the destination calendar explicitly permits it. Pending or
+failed conference generation preserves the untrimmed original and remains in the
+recoverable operation flow. Google regeneration uses at most two additional
+request identities on the same replacement event; an exhausted budget remains
+blocked for support, with no original-series trim.
+
+The database binds checkpoint roles atomically: the created replacement receipt
+belongs to the new canonical series, and the trim receipt advances the original
+binding. Older persisted trim-first plans retain their original order and receipt
+selection. New unsupported provider metadata, including Outlook attachments or
+hidden guests, remains rejected before reservation. A copied body or description
+that embeds the original meeting link is also rejected; generated meeting HTML
+blobs are not stripped or copied with stale credentials. Production provider mutation
+admission stays disabled until authenticated provider and deployment evidence is
+complete; these tests do not constitute that evidence.
+
+Coverage: `conference.test.ts`, `writer.test.ts`, `plan.test.ts`, and
+`apps/database/supabase/tests/calendar-provider-series.sql`. Provider contracts:
+[Google conference creation](https://developers.google.com/workspace/calendar/api/guides/create-events)
+and [Outlook calendar online meetings](https://learn.microsoft.com/en-us/graph/outlook-calendar-online-meetings).

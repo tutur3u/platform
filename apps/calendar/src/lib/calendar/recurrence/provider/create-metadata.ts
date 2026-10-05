@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import {
+  assertNoCopiedConferenceLink,
+  freshProviderConference,
+  GoogleConferenceCreateSchema,
+  GraphMeetingProviderSchema,
+} from './conference';
 
 const email = z.string().email().max(320);
 const nonempty = z.string().min(1).max(2048);
@@ -15,6 +21,7 @@ const googleAttendee = z
   .strict();
 const googleFields = z
   .object({
+    conferenceData: GoogleConferenceCreateSchema.optional(),
     attendees: z.array(googleAttendee).max(1000).optional(),
     attachments: z
       .array(
@@ -62,6 +69,8 @@ const googleFields = z
   .strict();
 const graphFields = z
   .object({
+    isOnlineMeeting: z.literal(true).optional(),
+    onlineMeetingProvider: GraphMeetingProviderSchema.optional(),
     body: z
       .object({
         contentType: z.enum(['text', 'html']),
@@ -94,10 +103,51 @@ const graphFields = z
     categories: z.array(z.string().max(256)).max(100).optional(),
   })
   .strict();
-export const ProviderCreateMetadataSchema = z.discriminatedUnion('provider', [
-  z.object({ provider: z.literal('google'), fields: googleFields }).strict(),
-  z.object({ provider: z.literal('microsoft'), fields: graphFields }).strict(),
-]);
+export const ProviderCreateMetadataSchema = z
+  .discriminatedUnion('provider', [
+    z
+      .object({
+        provider: z.literal('google'),
+        fields: googleFields,
+        excludedJoinHash: z
+          .string()
+          .regex(/^[a-f0-9]{64}$/)
+          .optional(),
+        excludedConferenceHash: z
+          .string()
+          .regex(/^[a-f0-9]{64}$/)
+          .optional(),
+      })
+      .strict(),
+    z
+      .object({
+        provider: z.literal('microsoft'),
+        fields: graphFields,
+        excludedJoinHash: z
+          .string()
+          .regex(/^[a-f0-9]{64}$/)
+          .optional(),
+        excludedConferenceHash: z
+          .string()
+          .regex(/^[a-f0-9]{64}$/)
+          .optional(),
+      })
+      .strict(),
+  ])
+  .superRefine((value, context) => {
+    const hasMeeting =
+      value.provider === 'google'
+        ? Boolean(value.fields.conferenceData)
+        : Boolean(value.fields.isOnlineMeeting);
+    if (
+      hasMeeting !== Boolean(value.excludedConferenceHash) ||
+      hasMeeting !== Boolean(value.excludedJoinHash)
+    )
+      context.addIssue({
+        code: 'custom',
+        message: 'Fresh meeting metadata requires prior identity fences',
+      });
+  });
 export type ProviderCreateMetadata = z.infer<
   typeof ProviderCreateMetadataSchema
 >;
@@ -114,14 +164,11 @@ function pick(value: Record<string, unknown>, names: string[]) {
  * a new future series. Unsupported state is rejected BEFORE the original trim. */
 export function providerFutureCreateMetadata(
   provider: 'google' | 'microsoft',
-  master: Record<string, unknown>
+  master: Record<string, unknown>,
+  operationId?: string
 ): ProviderCreateMetadata {
   if (provider === 'google') {
-    if (
-      (master.eventType !== undefined && master.eventType !== 'default') ||
-      master.conferenceData ||
-      master.hangoutLink
-    )
+    if (master.eventType !== undefined && master.eventType !== 'default')
       throw new RangeError(
         'Future split does not yet support provider meetings or special events'
       );
@@ -185,17 +232,22 @@ export function providerFutureCreateMetadata(
           : {}),
       };
     }
-    return ProviderCreateMetadataSchema.parse({ provider, fields: value });
+    const conference = freshProviderConference(provider, master, operationId);
+    if (conference) assertNoCopiedConferenceLink(master, value);
+    return ProviderCreateMetadataSchema.parse({
+      provider,
+      fields: { ...value, ...conference?.fields },
+      ...(conference
+        ? {
+            excludedConferenceHash: conference.excludedConferenceHash,
+            excludedJoinHash: conference.excludedJoinHash,
+          }
+        : {}),
+    });
   }
   if (master.isOrganizer !== true)
     throw new RangeError('Future split requires the meeting organizer');
-  if (
-    master.hasAttachments === true ||
-    master.isOnlineMeeting === true ||
-    master.onlineMeeting ||
-    master.onlineMeetingUrl ||
-    master.hideAttendees === true
-  )
+  if (master.hasAttachments === true || master.hideAttendees === true)
     throw new RangeError(
       'Future split does not yet support Outlook meetings, attachments or hidden guests'
     );
@@ -222,5 +274,16 @@ export function providerFutureCreateMetadata(
       };
     });
   }
-  return ProviderCreateMetadataSchema.parse({ provider, fields: value });
+  const conference = freshProviderConference(provider, master, operationId);
+  if (conference) assertNoCopiedConferenceLink(master, value);
+  return ProviderCreateMetadataSchema.parse({
+    provider,
+    fields: { ...value, ...conference?.fields },
+    ...(conference
+      ? {
+          excludedConferenceHash: conference.excludedConferenceHash,
+          excludedJoinHash: conference.excludedJoinHash,
+        }
+      : {}),
+  });
 }

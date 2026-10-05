@@ -19,6 +19,7 @@ export const ProviderOperationSchema = z.object({
   checkpoints: z.array(
     z.object({
       step: z.number().int().nonnegative(),
+      kind: z.enum(['create', 'trim']).optional(),
       result: z.object({
         eventId: z.string().min(1),
         etag: z.string().nullable(),
@@ -89,7 +90,9 @@ export function createProviderSeriesStore(args: {
       const plan = await args.open(operation);
       if (
         plan.operationId !== operation.id ||
-        plan.steps.length !== operation.step_count
+        plan.steps.length !== operation.step_count ||
+        Boolean(plan.createBeforeTrim) !==
+          (operation.native_input.providerCreateFirst === true)
       )
         throw new Error('Provider journal identity changed');
       return {

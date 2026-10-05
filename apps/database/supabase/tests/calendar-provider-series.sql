@@ -60,6 +60,32 @@ select is((select count(*)::integer from private.calendar_event_series),2,'final
 select is((select etag from private.calendar_provider_series_bindings where master_id='master'),'v2','trimmed master retains new provider revision');
 select is((select data->'result'->'series'->'providerSource'->>'externalEventId' from tail_operation),'tail','tail canonical result retains replacement master identity');
 select is(public.fixture_provider_tail('finalize'),(select data from tail_operation),'future publication retry does not duplicate tail');
+
+-- New plans create first; finalize binds the fresh replacement receipt and keeps
+-- the trimmed original's revision. Existing trim-first assertions above remain.
+create function public.fixture_provider_fresh(action text,input jsonb default '{}') returns jsonb language sql as $$
+ select public.calendar_provider_series_operation('00000000-0000-4000-8000-000000009911','00000000-0000-4000-8000-000000009901',action,input||jsonb_build_object('id','00000000-0000-4000-8000-000000009941'));
+$$;
+create temp table fresh_operation as select public.fixture_provider_fresh('reserve',jsonb_build_object(
+ 'connectionId','00000000-0000-4000-8000-000000009913','seriesId',(select series_id from private.calendar_provider_series_bindings where master_id='tail'),
+ 'nativeAction','update','intentHash','fresh-intent','stepCount',2,'journal','{"version":1,"ciphertext":"fixture-fresh-journal"}'::jsonb,
+ 'nativeInput',(public.fixture_provider_reserve()->'nativeInput')||jsonb_build_object(
+ 'requestId','00000000-0000-4000-8000-000000009941','seriesId',(select series_id from private.calendar_provider_series_bindings where master_id='tail'),'expectedRevision',1,'scope','future','providerCreateFirst',true,'originalStartLocal','2026-10-07T09:00:00',
+ 'previousRule',(public.fixture_provider_reserve()->'nativeInput'->'rule')||'{"end":{"type":"until","date":"2026-10-06"}}'::jsonb,
+ 'rule',(public.fixture_provider_reserve()->'nativeInput'->'rule')||'{"end":{"type":"count","count":1}}'::jsonb,
+ 'anchor','{"startLocal":"2026-10-07T09:00:00","endLocal":"2026-10-07T10:00:00","allDay":false}'::jsonb))) data;
+update fresh_operation set data=public.fixture_provider_fresh('claim');
+update fresh_operation set data=public.fixture_provider_fresh('checkpoint',jsonb_build_object('lease',data->>'lease','checkpoint','{"step":0,"kind":"create","result":{"eventId":"fresh-tail","etag":"fresh-v1"}}'::jsonb));
+select is((select count(*)::integer from private.calendar_event_series),2,'fresh remote creation does not publish native split before original trim');
+select throws_ok($$select public.fixture_provider_fresh('finalize',jsonb_build_object('lease',(select data->>'lease' from fresh_operation)))$$,'40001',null,'fresh replacement alone cannot finalize incomplete split');
+update fresh_operation set data=public.fixture_provider_fresh('checkpoint',jsonb_build_object('lease',data->>'lease','checkpoint','{"step":1,"kind":"create","result":{"eventId":"tail","etag":"trimmed-tail-v2"}}'::jsonb));
+select throws_ok($$select public.fixture_provider_fresh('finalize',jsonb_build_object('lease',(select data->>'lease' from fresh_operation)))$$,'22023','Invalid provider checkpoint roles','wrong checkpoint roles cannot bind replacement');
+select is((select count(*)::integer from private.calendar_event_series),2,'rejected receipt roles roll back native publication atomically');
+update private.calendar_provider_series_operations set checkpoints=jsonb_set(checkpoints,'{1,kind}','"trim"') where id='00000000-0000-4000-8000-000000009941';
+update fresh_operation set data=public.fixture_provider_fresh('finalize',jsonb_build_object('lease',data->>'lease'));
+select is((select data->'result'->'series'->'providerSource'->>'externalEventId' from fresh_operation),'fresh-tail','create-first replacement binds first receipt identity');
+select is((select etag from private.calendar_provider_series_bindings where master_id='tail'),'trimmed-tail-v2','original binding takes trim receipt revision');
+select is(public.fixture_provider_fresh('finalize'),(select data from fresh_operation),'create-first finalization recovery remains idempotent');
 update public.calendar_auth_tokens set is_active=false where id='00000000-0000-4000-8000-000000009912';
 select throws_ok($$select public.fixture_provider_op('read')$$,'42501',null,'revoked provider credentials deny recovery');
 select ok(not has_table_privilege('authenticated','private.calendar_provider_series_operations','SELECT'),'encrypted operation journals are not directly readable');

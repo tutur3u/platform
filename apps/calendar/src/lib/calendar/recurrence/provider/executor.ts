@@ -2,6 +2,7 @@ import type { ProviderSeriesPlan, ProviderSeriesStep } from './plan';
 
 export type ProviderSeriesCheckpoint = {
   step: number;
+  kind?: 'create' | 'trim';
   result: { eventId: string; etag: string | null; deleted?: boolean };
 };
 export interface ProviderSeriesOperationStore {
@@ -38,10 +39,23 @@ export async function executeProviderSeriesOperation(
   ) {
     throw new Error('Invalid provider series checkpoint sequence');
   }
+  if (
+    plan.createBeforeTrim &&
+    (plan.steps[0]?.kind !== 'create' ||
+      plan.steps[1]?.kind !== 'trim' ||
+      checkpoints.some((value) => value.kind !== plan.steps[value.step]?.kind))
+  )
+    throw new Error('Invalid create-before-trim checkpoint roles');
   for (let index = checkpoints.length; index < plan.steps.length; index++) {
     await provider.assertAuthorized();
     const result = await provider.apply(plan, plan.steps[index]!, checkpoints);
-    const checkpoint = { step: index, result };
+    const checkpoint: ProviderSeriesCheckpoint = {
+      step: index,
+      result,
+      ...(plan.createBeforeTrim
+        ? { kind: plan.steps[index]!.kind as 'create' | 'trim' }
+        : {}),
+    };
     await store.checkpoint(lease, checkpoint);
     checkpoints.push(checkpoint);
   }
