@@ -21,6 +21,14 @@ import {
 } from 'react';
 import { toast } from '../components/ui/sonner';
 import { calendarQueryRange } from '../lib/calendar-day';
+import type {
+  CalendarConnection,
+  CalendarOptimisticStatus,
+  OptimisticCalendarPatchOptions,
+  OptimisticCalendarState,
+  OptimisticCalendarSyncEvent,
+  CalendarSyncStatus as SyncStatus,
+} from './calendar-connection-types';
 import { runCalendarProviderSync } from './calendar-provider-sync';
 import {
   type CacheUpdate,
@@ -32,22 +40,10 @@ import {
   calendarRangeCacheKey,
   calendarRangeIncludesToday,
 } from './calendar-sync-range';
-
-// Type for calendar connection
-type CalendarConnection = {
-  id: string;
-  ws_id: string;
-  calendar_id: string;
-  calendar_name: string;
-  is_enabled: boolean;
-  color: string | null;
-  provider?: 'google' | 'microsoft' | string;
-  auth_token_id?: string | null;
-  workspace_calendar_id?: string | null;
-  access_role?: string | null;
-  created_at: string;
-  updated_at: string;
-};
+import {
+  nativeOccurrencesKey,
+  useNativeCalendarOccurrences,
+} from './use-native-calendar-occurrences';
 
 // Extended CalendarEvent type with habit flags
 export type CalendarEventWithHabitInfo = CalendarEvent & {
@@ -56,40 +52,7 @@ export type CalendarEventWithHabitInfo = CalendarEvent & {
   _optimisticStatus?: CalendarOptimisticStatus;
 };
 
-// Sync status type
-type SyncStatus = {
-  state: 'idle' | 'syncing' | 'success' | 'error';
-  message?: string;
-  lastSyncTime?: Date;
-  direction?: 'google-to-tuturuuu' | 'tuturuuu-to-google' | 'both';
-};
-
-export type CalendarOptimisticStatus =
-  | 'creating'
-  | 'updating'
-  | 'deleting'
-  | 'error';
-
-type OptimisticCalendarSyncEvent = Partial<
-  Omit<CalendarEvent, 'color' | 'description' | 'location'>
-> &
-  Pick<CalendarEvent, 'id'> & {
-    color?: CalendarEvent['color'] | string | null;
-    description?: string | null;
-    location?: string | null;
-    _optimisticStatus?: CalendarOptimisticStatus;
-  };
-
-type OptimisticCalendarPatchOptions = {
-  removeIds?: string[];
-  clearIds?: string[];
-  status?: CalendarOptimisticStatus;
-};
-
-type OptimisticCalendarState = {
-  events: Record<string, OptimisticCalendarSyncEvent>;
-  removedIds: string[];
-};
+export type { CalendarOptimisticStatus } from './calendar-connection-types';
 
 const CalendarSyncContext = createContext<{
   data: WorkspaceCalendarEvent[] | null;
@@ -222,6 +185,12 @@ export const CalendarSyncProvider = ({
   const isForcedRef = useRef<boolean>(false);
   const lastSyncTimeRef = useRef<number>(0);
   const queryClient = useQueryClient();
+  const nativeOccurrences = useNativeCalendarOccurrences(
+    wsId,
+    dates,
+    timezone,
+    hasExternalEvents
+  );
 
   // Calendar connections state
   const [calendarConnections, setCalendarConnectionsState] = useState<
@@ -514,6 +483,7 @@ export const CalendarSyncProvider = ({
     if (!activeCacheKey) return null;
 
     isForcedRef.current = true;
+    queryClient.invalidateQueries({ queryKey: nativeOccurrencesKey(wsId) });
 
     queryClient.invalidateQueries({
       queryKey: ['databaseCalendarEvents', wsId, activeCacheKey],
@@ -641,8 +611,17 @@ export const CalendarSyncProvider = ({
     () =>
       hasExternalEvents
         ? ((externalEvents ?? []) as WorkspaceCalendarEvent[])
-        : (fetchedData ?? activeCachedDatabaseEvents ?? []),
-    [activeCachedDatabaseEvents, externalEvents, fetchedData, hasExternalEvents]
+        : [
+            ...(fetchedData ?? activeCachedDatabaseEvents ?? []),
+            ...nativeOccurrences.data,
+          ],
+    [
+      activeCachedDatabaseEvents,
+      externalEvents,
+      fetchedData,
+      hasExternalEvents,
+      nativeOccurrences.data,
+    ]
   );
 
   const visibleEventsWithOptimisticState = useMemo(() => {
@@ -798,7 +777,7 @@ export const CalendarSyncProvider = ({
       ? ((externalEvents ?? []) as WorkspaceCalendarEvent[])
       : (fetchedData ?? activeCachedDatabaseEvents ?? null),
     googleData,
-    error,
+    error: error ?? nativeOccurrences.error,
     dates,
     setDates,
     timezone,
@@ -828,7 +807,11 @@ export const CalendarSyncProvider = ({
     syncStatus,
 
     // Loading states
-    isLoading: externalEventsLoading || isDatabaseLoading || isGoogleLoading,
+    isLoading:
+      externalEventsLoading ||
+      isDatabaseLoading ||
+      isGoogleLoading ||
+      (!hasExternalEvents && dates.length > 0 && nativeOccurrences.isLoading),
     isSyncing,
   };
 

@@ -39,6 +39,7 @@
                   "platform/features/forms-embedding-and-seo",
                   "platform/features/forms-studio-layouts",
                   "platform/features/meet-calls",
+                  "platform/features/native-calendar-recurrence",
                   "platform/features/programming-playgrounds",
                   "platform/features/account-benefits",
                   "platform/features/meet-followups",

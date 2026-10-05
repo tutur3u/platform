@@ -1,0 +1,37 @@
+---
+title: Native recurring Calendar events
+description: Create and edit canonical recurring events with explicit scopes.
+---
+
+Calendar and the integrated Tasks Calendar offer **Recurring event** in Create.
+It saves to canonical Tuturuuu Calendar. Daily, weekly, absolute monthly and yearly
+rules support an interval and no end, an occurrence count, or an inclusive end
+date. Choose a named time zone: local wall-clock times remain stable across DST.
+Nonexistent spring-forward slots are skipped; repeated fall-back times use the
+earlier instant. All-day end dates are exclusive midnight boundaries.
+
+Generated occurrences open a dedicated editor. **Only this occurrence**,
+**Entire series**, and **This and following occurrences** are explicit choices,
+defaulting to this occurrence. Requests preserve its immutable original slot and
+use the loaded series revision. Concurrent changes require an explicit reload.
+Whole-series editing uses the original anchor; future count rules retain remaining
+slots. Advanced relative-weekday patterns are preserved while editing details.
+
+Virtual occurrences never use ordinary event CRUD or drag mutation APIs. Dragging
+and resizing are disabled; use the scoped editor to move an occurrence. Native
+ranges revalidate in the background, retaining same-actor data through transport,
+throttling and temporary failures. Definitive access denial clears retained data.
+Reads and writes use verified actor lifetimes and separate workspace cache keys.
+Unchanged failed write intents reuse idempotency keys. Reopening or changing the
+workspace/account resets form state.
+
+Provider recurrence creation and scoped editing remain outside this native UI
+until provider APIs support them. External calendar adapters retain their existing
+behavior; the native Create dialog does not select a provider source.
+
+Regression evidence: `native-recurrence-model.test.ts` covers DST, validation,
+all-day boundaries, original identities, remaining counts and retry intent IDs;
+`native-recurrence-dialog.test.tsx` covers forms, permission and reset behavior;
+`use-native-calendar-occurrences.test.tsx` covers SWR and actor/permission fences;
+`use-calendar-readonly.test.tsx` proves virtual mutations cannot reach ordinary
+write APIs.
