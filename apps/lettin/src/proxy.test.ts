@@ -18,6 +18,7 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   hasWebAppSessionTokenFromRequest: mocks.webSession,
 }));
 vi.mock('@tuturuuu/auth/proxy', async () => ({
+  ...(await vi.importActual('../../../packages/auth/src/proxy/redirect-path')),
   // Exercise the real failure response without loading the unused Supabase refresh stack.
   ...(await vi.importActual('../../../packages/auth/src/proxy/mfa-failure')),
   refreshAppSessionForRequest: mocks.refresh,
@@ -122,5 +123,32 @@ it.each([false, true])(
         targetApp: 'lettin',
       })
     );
+  }
+);
+
+it('resolves exact login requests as HTTP redirects before locale rendering', async () => {
+  mocks.refresh.mockResolvedValue({ ok: false, error: 'Missing app session' });
+  const response = await proxy(
+    new NextRequest('https://lettin.tuturuuu.com/login')
+  );
+  expect(response.status).toBe(307);
+  expect(new URL(response.headers.get('location')!).pathname).toBe('/login');
+  expect(await response.text()).toBe('');
+});
+
+it.each(['en', 'vi'])(
+  'keeps the canonical %s login redirect before auth resolution',
+  async (locale) => {
+    const response = await proxy(
+      new NextRequest(
+        `https://lettin.tuturuuu.com/${locale}/login?next=/workspace/wiki&refresh=1`
+      )
+    );
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://lettin.tuturuuu.com/login?next=/workspace/wiki&refresh=1'
+    );
+    expect(response.cookies.get('NEXT_LOCALE')?.value).toBe(locale);
+    expect(mocks.refresh).not.toHaveBeenCalled();
   }
 );
