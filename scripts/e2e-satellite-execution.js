@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const {
   planSatelliteCohorts,
+  isUnparsedDiscoveryOutput,
   isolationArgs,
   runSatelliteCohorts,
 } = require('./e2e-satellite-cohorts');
@@ -93,10 +94,14 @@ async function runE2ESatelliteFixtures({
     for (const fixture of runtime.owned) printOwnedSatelliteLog(fixture);
   };
   const cohorts =
-    env.CI === 'true' && (satellites.length || tasksRequired)
+    env.CI === 'true' &&
+    !isUnparsedDiscoveryOutput(list) &&
+    (satellites.length || tasksRequired)
       ? planSatelliteCohorts(list, env)
       : [];
-  const isolatedArgs = isolationArgs(args, list || null);
+  const isolatedArgs = isUnparsedDiscoveryOutput(list)
+    ? null
+    : isolationArgs(args, list || null);
   if (cohorts.length < 2 || !isolatedArgs) {
     const runtime = { owned: [], tasks: null };
     await runFixtureLifecycle({
@@ -135,11 +140,21 @@ async function runE2ESatelliteFixtures({
   for (const file of fs.readdirSync(result.blobs)) {
     fs.copyFileSync(path.join(result.blobs, file), path.join(combined, file));
   }
-  await runCommand(
-    'bunx',
-    ['playwright', 'merge-reports', '--reporter=json', result.blobs],
-    { cwd: webDir, env }
-  );
-  if (result.firstFailure) throw result.firstFailure;
+  await mergeCohortReports(result, runCommand, { cwd: webDir, env });
 }
 module.exports = { runE2ESatelliteFixtures, runFixtureLifecycle };
+
+async function mergeCohortReports(result, runCommand, options) {
+  try {
+    await runCommand(
+      'bunx',
+      ['playwright', 'merge-reports', '--reporter=json', result.blobs],
+      options
+    );
+  } catch (error) {
+    if (!result.firstFailure) throw error;
+    console.error(error);
+  }
+  if (result.firstFailure) throw result.firstFailure;
+}
+module.exports.mergeCohortReports = mergeCohortReports;

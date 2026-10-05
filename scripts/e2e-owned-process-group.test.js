@@ -85,3 +85,43 @@ test('owned exit wait clears its timer and reports non-exiting children', async 
     false
   );
 });
+
+for (const [signal, exitCode] of [
+  ['SIGTERM', 143],
+  ['SIGINT', 130],
+])
+  test(`runner ${signal} kills only registered detached groups and exits ${exitCode}`, {
+    skip: process.platform === 'win32',
+    timeout: 6000,
+  }, async (t) => {
+    const { spawn } = require('node:child_process');
+    const { once } = require('node:events');
+    const helper = require.resolve('./e2e-owned-process-group');
+    const descendantCode =
+      "process.stdout.write('ready\\n');setInterval(()=>{},1000)";
+    const launcherCode = `const {spawn}=require('node:child_process');spawn(process.execPath,['-e',${JSON.stringify(descendantCode)}],{stdio:['ignore','inherit','inherit']});setInterval(()=>{},1000)`;
+    const runnerCode = `const {spawn}=require('node:child_process');const {registerOwnedRuntime}=require(${JSON.stringify(helper)});const child=spawn(process.execPath,['-e',${JSON.stringify(launcherCode)}],{detached:true,stdio:['ignore','inherit','inherit']});registerOwnedRuntime({child,processGroup:true});setInterval(()=>{},1000)`;
+    const runner = spawn(process.execPath, ['-e', runnerCode], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    t.after(() => runner.kill('SIGKILL'));
+    const closed = once(runner.stdout, 'close');
+    const exited = once(runner, 'exit');
+    await once(runner.stdout, 'data');
+    runner.kill(signal);
+    assert.deepEqual(await exited, [exitCode, null]);
+    await closed; // Descendant inherited pipe closes only after the group is gone.
+  });
+
+test('completed runtime release restores default signal listeners without stale group IDs', () => {
+  const {
+    registerOwnedRuntime,
+    releaseOwnedRuntime,
+  } = require('./e2e-owned-process-group');
+  const before = process.listenerCount('SIGTERM');
+  const runtime = { child: { pid: 123 }, processGroup: true };
+  registerOwnedRuntime(runtime);
+  assert.equal(process.listenerCount('SIGTERM'), before + 1);
+  releaseOwnedRuntime(runtime);
+  assert.equal(process.listenerCount('SIGTERM'), before);
+});

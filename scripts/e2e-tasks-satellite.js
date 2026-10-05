@@ -1,6 +1,8 @@
 const { spawn } = require('node:child_process');
 const {
   signalOwnedProcess,
+  registerOwnedRuntime,
+  releaseOwnedRuntime,
   waitForOwnedExit,
 } = require('./e2e-owned-process-group');
 const fs = require('node:fs');
@@ -143,13 +145,13 @@ function startTasksSatellite(options = {}) {
     child.once('exit', (code, signal) => resolve({ code, signal }));
   });
 
-  return {
+  return registerOwnedRuntime({
     child,
     processGroup: process.platform !== 'win32',
     exitPromise,
     logPath,
     url: getTasksSatelliteUrl(env),
-  };
+  });
 }
 
 async function waitForTasksSatellite(runtime, waitForUrl) {
@@ -171,6 +173,7 @@ async function stopTasksSatellite(runtime, options = {}) {
   if (runtime.child.exitCode != null) {
     if (runtime.processGroup)
       signalOwnedProcess(runtime, 'SIGKILL', options.kill);
+    releaseOwnedRuntime(runtime);
     return;
   }
 
@@ -183,6 +186,7 @@ async function stopTasksSatellite(runtime, options = {}) {
     if (!stopped && !(await waitForOwnedExit(runtime, timeoutMs)))
       throw new Error('Owned E2E fixture did not exit after termination');
   }
+  releaseOwnedRuntime(runtime);
 }
 
 function printTasksSatelliteLog(runtime, output = process.stderr) {

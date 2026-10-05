@@ -49,3 +49,46 @@ test('successful execution reports cleanup failure as its causal error', async (
     (error) => error === cleanup
   );
 });
+
+for (const failed of [true, false]) {
+  test(`report merge error preserves ${failed ? 'primary test failure' : 'merge failure on success'}`, async (t) => {
+    const { mergeCohortReports } = require('./e2e-satellite-execution');
+    const primary = new Error('selected test failed');
+    const merge = new Error('report merge failed');
+    const logged = [];
+    t.mock.method(console, 'error', (error) => logged.push(error));
+    await assert.rejects(
+      mergeCohortReports(
+        { blobs: 'reports', firstFailure: failed ? primary : undefined },
+        async () => {
+          throw merge;
+        },
+        {}
+      ),
+      (error) => error === (failed ? primary : merge)
+    );
+    assert.deepEqual(logged, failed ? [merge] : []);
+  });
+}
+
+test('unparseable discovery executes the unchanged selection once instead of parsing isolation JSON', async () => {
+  const { runE2ESatelliteFixtures } = require('./e2e-satellite-execution');
+  const args = ['--shard=2/4', '--project=chromium', '--grep=selected'];
+  const calls = [];
+  await runE2ESatelliteFixtures({
+    args,
+    list: 'noise\nE2E_CONFIG_GRAPH:{bad\n{"config":{},"suites":',
+    env: { CI: 'true' },
+    webDir: process.cwd(),
+    satellites: [],
+    tasksRequired: false,
+    ensurePortlessRoute: async () => {},
+    waitForUrl: async () => {},
+    runCommand: async (command, selected) => calls.push({ command, selected }),
+  });
+  assert.equal(calls.length, 1);
+  assert.deepEqual(calls[0], {
+    command: 'bunx',
+    selected: ['playwright', 'test', ...args],
+  });
+});
