@@ -51,6 +51,7 @@
     "cookies-next": "^6.1.1",
     "date-fns": "^4.4.0",
     "dayjs": "^1.11.23",
+    "entities": "^8.1.0",
     "framer-motion": "^13.2.0",
     "nanoid": "^6.0.1",
     "negotiator": "^1.1.0",
