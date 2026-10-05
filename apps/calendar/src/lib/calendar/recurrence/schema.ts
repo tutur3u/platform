@@ -76,6 +76,15 @@ export const StoredSeriesSchema = z
     ws_id: z.uuid(),
     revision: z.number().int().positive(),
     workspace_calendar_id: z.uuid().nullable(),
+    providerSource: z
+      .object({
+        provider: z.enum(['google', 'microsoft']),
+        connectionId: z.uuid(),
+        externalCalendarId: z.string(),
+        externalEventId: z.string(),
+      })
+      .nullable()
+      .optional(),
     rule: CalendarRecurrenceRuleSchema,
     anchor: CalendarRecurrenceAnchorSchema,
     payload: z

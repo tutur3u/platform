@@ -64,6 +64,16 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Authorized batched per-user scheduling summary owned by Tasks; preserve source and calendar membership checks when porting."
+    },
+    "api:/api/v1/workspaces/:wsId/calendar/series/provider-operations:apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/series/provider-operations/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Calendar recoverable provider recurrence operations. Preserve verified actor/source permissions, encrypted journal, durable provider checkpoints, leased worker fencing, native revision locks and immutable original occurrence identities; never expose the raw encrypted operation or credentials."
+    },
+    "api:/api/v1/workspaces/:wsId/calendar/series/provider-operations/:operationId:apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/series/provider-operations/[operationId]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Calendar recoverable provider recurrence operations. Preserve verified actor/source permissions, encrypted journal, durable provider checkpoints, leased worker fencing, native revision locks and immutable original occurrence identities; never expose the raw encrypted operation or credentials."
     }
   }
 }

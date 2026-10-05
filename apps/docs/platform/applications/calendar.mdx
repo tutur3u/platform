@@ -786,3 +786,38 @@ on the same Microsoft Graph calendar collection. This applies to existing Outloo
 single events, recurring occurrences and moved exceptions; it does not enable
 canonical series writes by itself. Regression coverage:
 `packages/microsoft/src/calendar/pagination.test.ts`.
+
+### Recoverable provider series admission
+
+The provider operation endpoints reserve an encrypted, actor-bound intent before
+remote effects and publish the canonical native result only after every provider
+step has a durable checkpoint. They preserve Google event IDs and Outlook
+immutable IDs, use revision preconditions, and keep original occurrence slots
+separate from moved start times. A partial “this and future” operation resumes from
+its completed trim instead of blindly repeating both provider writes.
+
+`POST /api/v1/workspaces/{wsId}/calendar/series/provider-operations` accepts
+`requestId`, `source` (`provider` and `connectionId`), `action`, and the native
+series creation or mutation fields. An update/delete also supplies `seriesId`.
+`GET .../provider-operations/{operationId}` returns actor-scoped status;
+`POST` to that detail endpoint retries the retained intent. A pending operation
+returns HTTP 202 with its `operationId`, not a false success. An applied operation
+returns the hydrated result. Journals, OAuth credentials and raw SDK errors never
+appear in those responses. Workspace membership, `manage_calendar`, current
+connection ownership and outbound-sync permission are checked again during
+recovery. Native mutation routes cannot bypass provider-bound series or a pending
+provider operation.
+
+New admission defaults to disabled unless
+`CALENDAR_PROVIDER_SERIES_OPERATIONS_ENABLED=true`. Keep it disabled until the
+canonical inbound reconciliation and provider UI integration have shipped and
+been verified together; the operation protocol alone is not full provider parity.
+Retained operations remain readable/retryable when new admission is disabled.
+Unsupported provider patterns are rejected rather than converted lossily; mailbox
+timezone support remains authoritative. Provider delivery and organizer receipts
+still require authenticated Google/Outlook verification.
+
+Regression evidence: `calendar-provider-series.sql`, provider `plan.test.ts` and
+`writer.test.ts`, plus `calendar-provider-series.test.ts` in Internal API cover
+permission revocation, leases, publication ordering, idempotent create recovery,
+revision conflicts, immutable identities, scope splitting and pending status.

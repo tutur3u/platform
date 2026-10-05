@@ -76,6 +76,47 @@ beforeEach(() => {
   }));
 });
 describe('native recurrence persistence orchestration', () => {
+  it('prepares encrypted creation without publishing a native event', async () => {
+    const result = await createSeries(
+      client,
+      wsId,
+      CreateSeriesSchema.parse({
+        requestId,
+        rule,
+        anchor,
+        event: { title: 'Fixture' },
+      }),
+      undefined,
+      { prepareOnly: true }
+    );
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      requestId,
+      payload: { is_encrypted: true },
+    });
+  });
+  it('prepares a provider mutation after reading without writing a native projection', async () => {
+    const result = await mutateSeries(
+      client,
+      wsId,
+      id,
+      MutateSeriesSchema.parse({
+        requestId,
+        expectedRevision: 1,
+        scope: 'all',
+        event: { title: 'Prepared' },
+      }),
+      'update',
+      undefined,
+      { prepareOnly: true }
+    );
+    expect(mocks.rpc).toHaveBeenCalledTimes(1);
+    expect(mocks.rpc.mock.calls[0]![1].p_action).toBe('read');
+    expect(result).toMatchObject({
+      requestId,
+      payload: { title: 'Prepared', is_encrypted: true },
+    });
+  });
   it('binds idempotency to plaintext intent before randomized encryption', async () => {
     const input = CreateSeriesSchema.parse({
       requestId,
