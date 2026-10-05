@@ -170,3 +170,41 @@ it('never retries a competing or uncertain send claim', async () => {
   expect(mocks.draft).not.toHaveBeenCalled();
   expect(mocks.send).not.toHaveBeenCalled();
 });
+
+it('accepts authorized duplicate calendar parts but refuses conflicting requests', async () => {
+  mocks.get.mockResolvedValue({
+    ...message,
+    attachments: [
+      ...message.attachments,
+      {
+        ...message.attachments[0],
+        id: 'alternative',
+        filename: 'attachment-1',
+      },
+    ],
+  });
+  mocks.read
+    .mockResolvedValueOnce(new TextEncoder().encode(source))
+    .mockResolvedValueOnce(
+      new TextEncoder().encode(source.replaceAll('\r\n', '\n'))
+    );
+  expect(await getMailInvitation(ctx, 'box', 'message')).not.toBeNull();
+  expect(mocks.file).toHaveBeenCalledTimes(2);
+  mocks.read
+    .mockResolvedValueOnce(new TextEncoder().encode(source))
+    .mockResolvedValueOnce(
+      new TextEncoder().encode(source.replace('SEQUENCE:3', 'SEQUENCE:4'))
+    );
+  expect(await getMailInvitation(ctx, 'box', 'message')).toBeNull();
+});
+it('refuses oversized competing calendar files rather than ignoring them', async () => {
+  mocks.get.mockResolvedValue({
+    ...message,
+    attachments: [
+      ...message.attachments,
+      { ...message.attachments[0], id: 'oversized', sizeBytes: 300000 },
+    ],
+  });
+  expect(await getMailInvitation(ctx, 'box', 'message')).toBeNull();
+  expect(mocks.read).not.toHaveBeenCalled();
+});
