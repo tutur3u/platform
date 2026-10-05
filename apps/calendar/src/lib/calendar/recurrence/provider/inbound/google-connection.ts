@@ -1,10 +1,13 @@
 import type { calendar_v3 } from '@tuturuuu/google';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { UnsupportedCalendarRecurrenceError } from '@tuturuuu/utils/calendar-recurrence';
+import { markProviderRecurrenceReadonly } from '@tuturuuu/utils/calendar-provider-readonly';
 import { CalendarSeriesError } from '../../service';
 import { readGoogleSeriesSnapshot } from './google-snapshot';
 import { prepareInboundProviderConnection } from './service';
-import { ProviderSeriesDeletedError } from './snapshot-errors';
+import {
+  ProviderSeriesDeletedError,
+  ProviderSeriesUnsupportedError,
+} from './snapshot-errors';
 
 /** Canonical reconciliation precedes ordinary expanded-instance persistence.
  * A deferred bound master remains fenced rather than being duplicated. */
@@ -55,9 +58,11 @@ export async function reconcileGoogleConnectionSeries(args: {
           : []
     )
   );
+  for (const masterId of service.readonlyMasters ?? []) masters.add(masterId);
   if (masters.size > 1000)
     throw new RangeError('Provider recurrence master bound exceeded');
   const handled = new Set<string>();
+  const readonly = new Set<string>();
   for (const masterId of masters) {
     try {
       const snapshot = await readGoogleSeriesSnapshot({
@@ -85,9 +90,21 @@ export async function reconcileGoogleConnectionSeries(args: {
       });
       handled.add(masterId);
     } catch (error) {
-      const bound = service.bindings.some(
-        (value) => value.master_id === masterId
-      );
+      if (error instanceof ProviderSeriesUnsupportedError) {
+        const aliases = args.events
+          .filter(
+            (event) =>
+              event.id === masterId || event.recurringEventId === masterId
+          )
+          .flatMap((event) => (event.id ? [event.id] : []));
+        const status = await service.unsupported(error.snapshot, aliases);
+        if (status === 'deferred') handled.add(masterId);
+        else readonly.add(masterId);
+        continue;
+      }
+      const bound =
+        service.bindings.some((value) => value.master_id === masterId) ||
+        (service.readonlyMasters ?? []).includes(masterId);
       const status =
         (error as { code?: number; response?: { status?: number } })?.code ??
         (error as { response?: { status?: number } })?.response?.status;
@@ -101,12 +118,6 @@ export async function reconcileGoogleConnectionSeries(args: {
         handled.add(masterId);
         continue;
       }
-      if (
-        !bound &&
-        (error instanceof UnsupportedCalendarRecurrenceError ||
-          error instanceof RangeError)
-      )
-        continue;
       // Provider SDK errors can carry credential/request objects. Keep the raw
       // failure out of existing sync logs and reject this publication attempt.
       if (error instanceof CalendarSeriesError) throw error;
@@ -117,7 +128,12 @@ export async function reconcileGoogleConnectionSeries(args: {
       );
     }
   }
-  return args.events.filter(
-    (event) => !handled.has(event.recurringEventId ?? event.id ?? '')
-  );
+  return args.events
+    .filter((event) => !handled.has(event.recurringEventId ?? event.id ?? ''))
+    .map((event) => {
+      const masterId = event.recurringEventId ?? event.id ?? '';
+      return readonly.has(masterId)
+        ? markProviderRecurrenceReadonly(event, 'google', masterId)
+        : event;
+    });
 }

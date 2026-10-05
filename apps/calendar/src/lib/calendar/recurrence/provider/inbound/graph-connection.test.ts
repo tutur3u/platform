@@ -105,9 +105,9 @@ describe('Outlook legacy identity publication integration', () => {
     expect(mocks.snapshot).not.toHaveBeenCalled();
   });
   it('still rejects an incomplete current mutable identity bridge', async () => {
-    expect(
-      await reconcileGraphConnectionSeries({ ...args, legacyEvents: [] })
-    ).toEqual([]);
+    await expect(
+      reconcileGraphConnectionSeries({ ...args, legacyEvents: [] })
+    ).rejects.toMatchObject({ status: 503 });
     expect(mocks.publish).not.toHaveBeenCalled();
   });
   it('keeps default-off legacy behavior without any new source or provider reads', async () => {

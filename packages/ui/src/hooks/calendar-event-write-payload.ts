@@ -1,5 +1,6 @@
 import type { WorkspaceCalendarEventUpdatePayload } from '@tuturuuu/internal-api';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { isProviderRecurrenceReadonly } from '@tuturuuu/utils/calendar-provider-readonly';
 
 export function calendarEventUpdatePayload(
   input: Partial<CalendarEvent>
@@ -47,6 +48,8 @@ export function assertOrdinaryCalendarEvent(
   events: CalendarEvent[],
   id: string
 ) {
+  if (isProviderRecurrenceReadonly(calendarEventByIdentity(events, id)))
+    throw new Error('Unsupported provider recurrence is read only');
   if (calendarEventByIdentity(events, id)?.seriesId)
     throw new Error(
       'Recurring occurrences require an explicit series edit scope'

@@ -119,4 +119,25 @@ describe('complete stable Outlook series reads', () => {
     await expect(f.run()).rejects.toThrow('Denied');
     expect(f.calls).toHaveLength(1);
   });
+  it('retains unsupported Graph rules only after complete view and expanded exceptions agree', async () => {
+    const rich = {
+      ...master,
+      recurrence: {
+        ...master.recurrence,
+        pattern: { type: 'futureUnsupportedPattern', interval: 1 },
+      },
+    };
+    const f = fixture(undefined, [rich, rich]);
+    await expect(f.run()).rejects.toMatchObject({
+      name: 'ProviderSeriesUnsupportedError',
+      snapshot: {
+        provider: 'microsoft',
+        masterId: 'master',
+        etag: 'v1',
+        master: rich,
+        exceptions: [],
+      },
+    });
+    expect(f.calls).toHaveLength(4);
+  });
 });

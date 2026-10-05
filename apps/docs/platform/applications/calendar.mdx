@@ -849,9 +849,9 @@ view replace that covered range; known cancellations outside it survive if their
 original slots still belong to the current rule. Deleted bound masters are
 rechecked even when the Outlook view contains no remaining occurrences.
 
-New unsupported masters remain in the existing provider projection rather than
-being converted lossily. A malformed or changing snapshot of an already-bound
-master retains the prior canonical projection and rejects that refresh. Keep
+Unsupported masters retain encrypted raw snapshots and visibly read-only projections;
+a previous canonical rule is hidden until safely supported again. Incomplete reads
+reject the refresh; see [read-only rules](/platform/features/native-calendar-recurrence#unsupported-provider-rules). Keep
 admission disabled until metadata-preserving future splits, full legacy identity
 suppression across ranges, provider UI, and authenticated Google/Outlook
 verification are completed together.

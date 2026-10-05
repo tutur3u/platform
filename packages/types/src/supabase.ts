@@ -2602,6 +2602,56 @@ export type Database = {
         };
         Relationships: [];
       };
+      calendar_provider_readonly_series: {
+        Row: {
+          calendar_id: string;
+          connection_id: string;
+          etag: string;
+          instance_aliases: Json;
+          master_id: string;
+          metadata_journal: Json;
+          observation_hash: string;
+          provider: string;
+          series_id: string | null;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          calendar_id: string;
+          connection_id: string;
+          etag: string;
+          instance_aliases?: Json;
+          master_id: string;
+          metadata_journal: Json;
+          observation_hash: string;
+          provider: string;
+          series_id?: string | null;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          calendar_id?: string;
+          connection_id?: string;
+          etag?: string;
+          instance_aliases?: Json;
+          master_id?: string;
+          metadata_journal?: Json;
+          observation_hash?: string;
+          provider?: string;
+          series_id?: string | null;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_provider_readonly_series_series_id_fkey';
+            columns: ['series_id'];
+            isOneToOne: false;
+            referencedRelation: 'calendar_event_series';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       calendar_provider_saga_scopes: {
         Row: {
           auth_token_id: string;
@@ -2637,6 +2687,7 @@ export type Database = {
           master_id: string;
           metadata_journal: Json | null;
           observation_hash: string | null;
+          projection_state: string;
           provider: string;
           series_id: string;
           updated_at: string;
@@ -2649,6 +2700,7 @@ export type Database = {
           master_id: string;
           metadata_journal?: Json | null;
           observation_hash?: string | null;
+          projection_state?: string;
           provider: string;
           series_id: string;
           updated_at?: string;
@@ -2661,6 +2713,7 @@ export type Database = {
           master_id?: string;
           metadata_journal?: Json | null;
           observation_hash?: string | null;
+          projection_state?: string;
           provider?: string;
           series_id?: string;
           updated_at?: string;
@@ -17756,6 +17809,16 @@ export type Database = {
       calendar_provider_saga_json: {
         Args: {
           op: Database['private']['Tables']['calendar_google_color_operations']['Row'];
+        };
+        Returns: Json;
+      };
+      calendar_provider_series_reconcile_canonical: {
+        Args: {
+          p_action: string;
+          p_actor_id: string;
+          p_connection_id: string;
+          p_input?: Json;
+          p_ws_id: string;
         };
         Returns: Json;
       };
@@ -44060,6 +44123,15 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: Json;
+      };
+      calendar_provider_series_is_readonly: {
+        Args: {
+          p_actor_id: string;
+          p_event_id?: string;
+          p_series_id?: string;
+          p_ws_id: string;
+        };
+        Returns: boolean;
       };
       calendar_provider_series_operation: {
         Args: {

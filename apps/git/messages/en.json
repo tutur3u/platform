@@ -42,6 +42,8 @@
       "monthly": "Monthly",
       "nativeOnly": "Saved to Tuturuuu Calendar. Missing local times during daylight saving are skipped. Provider recurrence is managed separately.",
       "never": "No end date",
+      "provider_readonly": "Read-only recurring event",
+      "provider_readonly_description": "This provider recurrence rule cannot be safely edited here. Manage the series in its original calendar.",
       "reload": "Reload series",
       "SA": "Sat",
       "save": "Save",

@@ -11,6 +11,7 @@ import {
 import { SeriesEventSchema, StoredSeriesSchema } from '../../schema';
 import { CalendarSeriesError, hydrateSeries } from '../../service';
 import type { ProviderSeriesObservation } from './observation';
+import type { ProviderSeriesUnsupportedError } from './snapshot-errors';
 
 const BindingSchema = z.object({
   series_id: z.uuid(),
@@ -20,8 +21,10 @@ const BindingSchema = z.object({
   calendar_id: z.string(),
   master_id: z.string(),
   etag: z.string().nullable(),
+  observation_hash: z.string().nullable().default(null),
   metadata_journal: SealedJournalSchema.nullable(),
   series: StoredSeriesSchema,
+  projection_state: z.enum(['canonical', 'unsupported']).default('canonical'),
 });
 const MetadataBindingSchema = z
   .object({
@@ -101,6 +104,34 @@ export async function prepareInboundProviderConnection(
     return bindings;
   };
   const bindings = await readBindings();
+  const readonlyBindings = z
+    .array(
+      z.object({
+        ws_id: z.uuid(),
+        connection_id: z.uuid(),
+        provider: z.enum(['google', 'microsoft']),
+        calendar_id: z.string(),
+        master_id: z.string(),
+        etag: z.string(),
+        observation_hash: z.string(),
+        metadata_journal: SealedJournalSchema,
+      })
+    )
+    .max(1000)
+    .parse(await reconcileRpc(access, 'readonly-bindings', {}));
+  if (
+    readonlyBindings.some(
+      (value) =>
+        value.ws_id !== access.wsId ||
+        value.connection_id !== access.connectionId ||
+        value.provider !== access.provider ||
+        value.calendar_id !== access.calendarId
+    )
+  )
+    throw new RangeError('Provider readonly binding source changed');
+  const readonlyByMaster = new Map(
+    readonlyBindings.map((value) => [value.master_id, value])
+  );
   const byMaster = new Map(bindings.map((value) => [value.master_id, value]));
   const authorize = async () => {
     await readBindings();
@@ -122,6 +153,7 @@ export async function prepareInboundProviderConnection(
   });
   return {
     bindings,
+    readonlyMasters: readonlyBindings.map((value) => value.master_id),
     authorize,
     async publish(args: {
       observation: ProviderSeriesObservation;
@@ -200,7 +232,14 @@ export async function prepareInboundProviderConnection(
         .parse(
           await reconcileRpc(access, 'snapshot', {
             masterId: observed.masterId,
-            expectedBindingETag: binding?.etag ?? null,
+            expectedBindingETag:
+              binding?.etag ??
+              readonlyByMaster.get(observed.masterId)?.etag ??
+              null,
+            expectedBindingObservationHash:
+              binding?.observation_hash ??
+              readonlyByMaster.get(observed.masterId)?.observation_hash ??
+              null,
             etag: observed.etag,
             observationHash: createHash('sha256')
               .update(JSON.stringify(semantic))
@@ -215,15 +254,56 @@ export async function prepareInboundProviderConnection(
         );
       return result.status;
     },
+    async unsupported(
+      snapshot: ProviderSeriesUnsupportedError['snapshot'],
+      representedInstanceIds: string[]
+    ) {
+      if (snapshot.provider !== access.provider)
+        throw new RangeError('Provider readonly snapshot source changed');
+      const metadataJournal = await codec.seal(
+        metadataBinding(snapshot.masterId),
+        { master: snapshot.master, exceptions: snapshot.exceptions }
+      );
+      await authorize();
+      return z.object({ status: z.enum(['applied', 'deferred']) }).parse(
+        await reconcileRpc(access, 'unsupported', {
+          masterId: snapshot.masterId,
+          expectedBindingETag:
+            byMaster.get(snapshot.masterId)?.etag ??
+            readonlyByMaster.get(snapshot.masterId)?.etag ??
+            null,
+          expectedBindingObservationHash:
+            byMaster.get(snapshot.masterId)?.observation_hash ??
+            readonlyByMaster.get(snapshot.masterId)?.observation_hash ??
+            null,
+          etag: snapshot.etag,
+          observationHash: createHash('sha256')
+            .update(
+              JSON.stringify({
+                master: snapshot.master,
+                exceptions: snapshot.exceptions,
+              })
+            )
+            .digest('hex'),
+          metadataJournal,
+          representedInstanceIds: [...new Set(representedInstanceIds)],
+        })
+      ).status;
+    },
     async deleted(masterId: string) {
       const binding = byMaster.get(masterId);
-      if (!binding) return 'absent' as const;
+      const readonlyBinding = readonlyByMaster.get(masterId);
+      if (!binding && !readonlyBinding) return 'absent' as const;
       return z
         .object({ status: z.enum(['deferred', 'deleted', 'absent']) })
         .parse(
           await reconcileRpc(access, 'deleted', {
             masterId,
-            expectedBindingETag: binding.etag,
+            expectedBindingETag: binding?.etag ?? readonlyBinding?.etag,
+            expectedBindingObservationHash:
+              binding?.observation_hash ??
+              readonlyBinding?.observation_hash ??
+              null,
           })
         ).status;
     },

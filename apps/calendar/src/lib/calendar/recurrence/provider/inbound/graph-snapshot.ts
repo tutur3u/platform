@@ -4,13 +4,17 @@ import {
   calendarProviderDateTimeLocal,
   expandCalendarRecurrence,
   inspectCalendarRecurrenceSlot,
+  UnsupportedCalendarRecurrenceError,
 } from '@tuturuuu/utils/calendar-recurrence';
 import {
   type GraphSeriesEvent,
   observeGraphSeries,
   type ProviderSeriesObservation,
 } from './observation';
-import { ProviderSeriesDeletedError } from './snapshot-errors';
+import {
+  ProviderSeriesDeletedError,
+  ProviderSeriesUnsupportedError,
+} from './snapshot-errors';
 import { providerSnapshotRevision } from './snapshot-revision';
 
 /** Infer only cancellations covered by a complete bounded provider view.
@@ -143,12 +147,13 @@ export async function readGraphSeriesSnapshot(args: {
     throw new ProviderSeriesDeletedError();
   if (
     master.id !== args.masterId ||
+    typeof master['@odata.etag'] !== 'string' ||
+    !master['@odata.etag'] ||
     !Array.isArray(master.exceptionOccurrences) ||
     master.exceptionOccurrences.length > 1000 ||
     master['exceptionOccurrences@odata.nextLink']
   )
     throw new RangeError('Incomplete provider master exception snapshot');
-  const observation = observeGraphSeries(master, master.exceptionOccurrences);
   await args.authorize();
   if (
     args.completeView &&
@@ -198,6 +203,23 @@ export async function readGraphSeriesSnapshot(args: {
       providerSnapshotRevision(verified.exceptionOccurrences)
   )
     throw new RangeError('Provider series changed during snapshot');
+  let observation: ProviderSeriesObservation;
+  try {
+    observation = observeGraphSeries(master, master.exceptionOccurrences!);
+  } catch (error) {
+    if (error instanceof UnsupportedCalendarRecurrenceError)
+      throw new ProviderSeriesUnsupportedError({
+        provider: 'microsoft',
+        masterId: args.masterId,
+        etag: String(master['@odata.etag']),
+        master: master as unknown as Record<string, unknown>,
+        exceptions: master.exceptionOccurrences as unknown as Record<
+          string,
+          unknown
+        >[],
+      });
+    throw error;
+  }
   return {
     observation: {
       ...observation,

@@ -1,6 +1,10 @@
 import type { calendar_v3 } from '@tuturuuu/google';
+import { UnsupportedCalendarRecurrenceError } from '@tuturuuu/utils/calendar-recurrence';
 import { observeGoogleSeries } from './observation';
-import { ProviderSeriesDeletedError } from './snapshot-errors';
+import {
+  ProviderSeriesDeletedError,
+  ProviderSeriesUnsupportedError,
+} from './snapshot-errors';
 import { providerSnapshotRevision } from './snapshot-revision';
 
 /** Read finite non-expanded exceptions, including cancelled/moved instances.
@@ -28,6 +32,7 @@ export async function readGoogleSeriesSnapshot(args: {
     throw new RangeError('Active authoritative recurring master required');
   let calendarTimeZone = master.start?.timeZone ?? undefined;
   if (!calendarTimeZone) {
+    await args.authorize();
     const { data: calendar } = await args.api.calendars.get({
       calendarId: args.calendarId,
     });
@@ -92,9 +97,21 @@ export async function readGoogleSeriesSnapshot(args: {
     verified.status === 'cancelled'
   )
     throw new RangeError('Provider series changed during snapshot');
-  return {
-    observation: observeGoogleSeries(master, exceptions, calendarTimeZone),
-    master,
-    exceptions,
-  };
+  try {
+    return {
+      observation: observeGoogleSeries(master, exceptions, calendarTimeZone),
+      master,
+      exceptions,
+    };
+  } catch (error) {
+    if (error instanceof UnsupportedCalendarRecurrenceError)
+      throw new ProviderSeriesUnsupportedError({
+        provider: 'google',
+        masterId: args.masterId,
+        etag: master.etag,
+        master: master as Record<string, unknown>,
+        exceptions: exceptions as Record<string, unknown>[],
+      });
+    throw error;
+  }
 }
