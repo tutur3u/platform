@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   calendarAnchorAtSlot,
   calendarProviderDateTimeLocal,
+  calendarRecurrenceSlotBounds,
   calendarRecurrenceSlotInstant,
   inspectCalendarRecurrenceSlot,
 } from '../calendar-recurrence-edit';
@@ -115,5 +116,25 @@ describe('provider occurrence timezone identity', () => {
         'UTC'
       )
     ).toThrow();
+  });
+});
+
+describe('provider original interval coverage', () => {
+  it('keeps wall-clock end boundaries across DST for multi-day slots', () => {
+    expect(
+      calendarRecurrenceSlotBounds({
+        rule,
+        anchor: { ...anchor, endLocal: '2026-03-09T03:30:00' },
+        originalStartLocal: '2026-03-07T02:30:00',
+      })
+    ).toEqual({ start: '2026-03-07T07:30:00Z', end: '2026-03-09T07:30:00Z' });
+  });
+  it('refuses to truncate nonzero provider fractional seconds into another immutable identity', () => {
+    expect(() =>
+      calendarProviderDateTimeLocal(
+        { dateTime: '2026-03-09T06:30:00.0000001Z' },
+        'America/New_York'
+      )
+    ).toThrow('fractional');
   });
 });

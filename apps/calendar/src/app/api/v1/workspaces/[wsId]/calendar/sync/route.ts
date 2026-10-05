@@ -1,8 +1,3 @@
-import { createGraphClient } from '@tuturuuu/microsoft';
-import {
-  convertMicrosoftEventToWorkspaceFormat,
-  fetchMicrosoftEvents,
-} from '@tuturuuu/microsoft/calendar';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -14,17 +9,13 @@ import {
   assertLegacyCalendarWriteAllowed,
   LegacyCalendarWriteError,
 } from '@/lib/calendar/legacy-provider-generation-guard';
+import { syncMicrosoftInbound } from '@/lib/calendar/microsoft-inbound-sync';
 import { createProviderEvent } from '@/lib/calendar/provider-writes';
 import { classifyCalendarSyncError } from '@/lib/calendar/sync-errors';
-import { sanitizeWorkspaceCalendarEventFields } from '@/lib/calendar/sync-field-limits';
 import {
   getCalendarSyncPreferences,
   resolveOutboundSyncSource,
 } from '@/lib/calendar/sync-preferences';
-import {
-  type CalendarAuthToken,
-  ensureValidToken,
-} from '@/lib/calendar/token-refresh';
 import { decryptEventsFromStorage } from '@/lib/workspace-encryption';
 
 interface RouteParams {
@@ -36,19 +27,6 @@ type DashboardRunRow = {
   status: string | null;
   start_time: string | null;
   cooldown_remaining_seconds?: number | null;
-};
-type CalendarConnectionRow = {
-  calendar_id: string;
-  color?: string | null;
-  auth_token_id?: string | null;
-  workspace_calendar_id?: string | null;
-  access_role?: string | null;
-  sync_delete_enabled?: boolean | null;
-  sync_inbound_enabled?: boolean | null;
-};
-type ExistingExternalEventRow = {
-  id: string;
-  external_event_id: string | null;
 };
 type LocalEventRow = {
   id: string;
@@ -183,160 +161,6 @@ async function resolveSyncTriggerUserId(args: {
   }
 
   return workspaceRow?.creator_id ?? null;
-}
-
-async function syncMicrosoftInbound(args: {
-  sbAdmin: any;
-  wsId: string;
-  rangeStart: string;
-  rangeEnd: string;
-  settingsAvailable: boolean;
-}) {
-  const { data: tokenRows, error: tokenError } = await args.sbAdmin
-    .from('calendar_auth_tokens')
-    .select('*')
-    .eq('ws_id', args.wsId)
-    .eq('provider', 'microsoft')
-    .eq('is_active', true);
-
-  if (tokenError) {
-    throw tokenError;
-  }
-
-  const tokens = (tokenRows ?? []) as CalendarAuthToken[];
-  let inserted = 0;
-  let updated = 0;
-  let deleted = 0;
-
-  for (const token of tokens) {
-    const { data: connections, error: connectionError } = await args.sbAdmin
-      .from('calendar_connections')
-      .select(
-        args.settingsAvailable
-          ? 'calendar_id, color, workspace_calendar_id, access_role, sync_delete_enabled, sync_inbound_enabled'
-          : 'calendar_id, color, workspace_calendar_id, access_role'
-      )
-      .eq('ws_id', args.wsId)
-      .eq('auth_token_id', token.id)
-      .eq('is_enabled', true);
-
-    if (connectionError) {
-      throw connectionError;
-    }
-
-    const refreshed = await ensureValidToken(args.sbAdmin, token);
-    if (refreshed.error) {
-      throw new Error('Microsoft calendar credential refresh failed');
-    }
-    const graphClient = createGraphClient(refreshed.accessToken);
-    const enabledConnections = (
-      (connections ?? []) as CalendarConnectionRow[]
-    ).filter((connection) => connection.sync_inbound_enabled !== false);
-
-    for (const connection of enabledConnections) {
-      const events = await fetchMicrosoftEvents(
-        graphClient,
-        connection.calendar_id,
-        args.rangeStart,
-        args.rangeEnd
-      );
-
-      const eventIds = new Set(
-        events.filter((event) => !event.isCancelled).map((event) => event.id)
-      );
-      const payload = events
-        .filter((event) => !event.isCancelled)
-        .map((event) => {
-          const converted = convertMicrosoftEventToWorkspaceFormat(
-            event,
-            args.wsId,
-            connection.calendar_id,
-            connection.color ?? undefined
-          );
-
-          return sanitizeWorkspaceCalendarEventFields({
-            ws_id: args.wsId,
-            title: converted.title,
-            description: converted.description ?? '',
-            start_at: converted.start_at,
-            end_at: converted.end_at,
-            color: converted.color,
-            location: converted.location,
-            provider: 'microsoft' as const,
-            external_event_id: event.id,
-            external_calendar_id: connection.calendar_id,
-            source_calendar_id: connection.workspace_calendar_id ?? null,
-            google_event_id: null,
-            google_calendar_id: null,
-            ...(args.settingsAvailable
-              ? {
-                  external_updated_at: event.lastModifiedDateTime ?? null,
-                  last_synced_at: new Date().toISOString(),
-                  sync_error: null,
-                  sync_status: 'synced',
-                }
-              : {}),
-          });
-        });
-
-      if (payload.length > 0) {
-        const { data: upserted, error: upsertError } = await (
-          args.sbAdmin as any
-        )
-          .from('workspace_calendar_events')
-          .upsert(payload, {
-            onConflict: 'ws_id,provider,external_calendar_id,external_event_id',
-          })
-          .select('id');
-
-        if (upsertError) {
-          throw upsertError;
-        }
-
-        updated += (upserted as Array<{ id: string }> | null)?.length ?? 0;
-      }
-
-      if (connection.sync_delete_enabled !== false) {
-        const { data: existingRows, error: existingError } = await args.sbAdmin
-          .from('workspace_calendar_events')
-          .select('id, external_event_id')
-          .eq('ws_id', args.wsId)
-          .eq('provider', 'microsoft')
-          .eq('external_calendar_id', connection.calendar_id)
-          .gte('start_at', args.rangeStart)
-          .lte('start_at', args.rangeEnd);
-
-        if (existingError) {
-          throw existingError;
-        }
-
-        const idsToDelete =
-          ((existingRows ?? []) as ExistingExternalEventRow[])
-            ?.filter(
-              (row) =>
-                row.external_event_id && !eventIds.has(row.external_event_id)
-            )
-            .map((row) => row.id) ?? [];
-
-        if (idsToDelete.length > 0) {
-          const { error: deleteError } = await args.sbAdmin
-            .from('workspace_calendar_events')
-            .delete()
-            .in('id', idsToDelete);
-
-          if (deleteError) {
-            throw deleteError;
-          }
-
-          deleted += idsToDelete.length;
-        }
-      }
-
-      inserted += payload.length;
-    }
-  }
-
-  return { inserted, updated, deleted, processedAccounts: tokens.length };
 }
 
 async function syncTuturuuuOutbound(args: {
