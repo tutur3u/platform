@@ -12472,6 +12472,54 @@ export type Database = {
           },
         ];
       };
+      note_voice_jobs: {
+        Row: {
+          artifact: Json | null;
+          attempt: number;
+          created_at: string;
+          error_code: string | null;
+          id: string;
+          input_hash: string;
+          revision: number;
+          status: string;
+          timezone: string;
+          transcript: string | null;
+          updated_at: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          artifact?: Json | null;
+          attempt?: number;
+          created_at?: string;
+          error_code?: string | null;
+          id: string;
+          input_hash: string;
+          revision?: number;
+          status?: string;
+          timezone: string;
+          transcript?: string | null;
+          updated_at?: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          artifact?: Json | null;
+          attempt?: number;
+          created_at?: string;
+          error_code?: string | null;
+          id?: string;
+          input_hash?: string;
+          revision?: number;
+          status?: string;
+          timezone?: string;
+          transcript?: string | null;
+          updated_at?: string;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       notification_batches: {
         Row: {
           channel: string;

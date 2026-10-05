@@ -1204,6 +1204,7 @@ export {
   type UpdateMindBoardPayload,
   updateMindBoard,
 } from './mind';
+export * from './notes-voice';
 export {
   type AccountNotificationChannel,
   type AccountNotificationEventType,
