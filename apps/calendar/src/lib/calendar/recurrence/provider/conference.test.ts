@@ -37,6 +37,61 @@ describe('fresh recurrence conference boundaries', () => {
       assertNoCopiedConferenceLink(outlook, { body: { content: 'Agenda' } })
     ).not.toThrow();
   });
+  it.each([
+    'https&colon;&sol;&sol;teams.microsoft.com&sol;old-fixture',
+    'https&#58;&#47;&#47;teams.microsoft.com&#47;old-fixture',
+    'https&#x3a;&#x2f;&#x2f;teams.microsoft.com&#x2f;old-fixture',
+    'https://teams.microsoft.com/%6fld-fixture',
+    'https://teams.micro&#10;soft.com/old-fixture',
+    'https://teams.micro\nsoft.com/old-fixture',
+    'https:/teams.microsoft.com/old-fixture',
+    String.raw`https:\\teams.microsoft.com\old-fixture`,
+    '//teams.microsoft.com/old-fixture',
+    'https://teams.microsoft.com/discard/../old-fixture',
+  ])('rejects encoded original Outlook href %s', (url) => {
+    expect(() =>
+      assertNoCopiedConferenceLink(outlook, {
+        body: {
+          contentType: 'html',
+          content: `<a href="${url}">Join</a> Agenda 50%`,
+        },
+      })
+    ).toThrow('original meeting link');
+  });
+  it('rejects a valid encoded path even beside malformed UTF-8 escapes', () => {
+    expect(() =>
+      assertNoCopiedConferenceLink(outlook, {
+        body: {
+          content: 'Invalid %FF; https://teams.microsoft.com/%6fld-fixture',
+        },
+      })
+    ).toThrow('original meeting link');
+  });
+  it('retains original joining links embedded in redirect query parameters', () => {
+    expect(() =>
+      assertNoCopiedConferenceLink(outlook, {
+        description: `https://redirect.example.invalid/?join=${outlook.onlineMeeting.joinUrl}`,
+      })
+    ).toThrow('original meeting link');
+  });
+  it('retains original conference IDs in unrelated URL query parameters', () => {
+    expect(() =>
+      assertNoCopiedConferenceLink(google, {
+        description: `https://redirect.example.invalid/?room=${google.conferenceData.conferenceId}`,
+      })
+    ).toThrow('original meeting link');
+  });
+  it('checks raw content alongside decoded variants without mutating benign metadata', () => {
+    const fields = {
+      body: {
+        contentType: 'html',
+        content: '<p>Agenda &amp; notes &#37; %FF</p>',
+      },
+    };
+    const before = structuredClone(fields);
+    expect(() => assertNoCopiedConferenceLink(outlook, fields)).not.toThrow();
+    expect(fields).toEqual(before);
+  });
   it('creates stable Google requests without copying join credentials or signatures', () => {
     const first = freshProviderConference(
       'google',

@@ -230,6 +230,36 @@ describe('future split admission before remote effects', () => {
     expect(reserved()).toBeUndefined();
     expect(mocks.seal).not.toHaveBeenCalled();
   });
+  it.each([
+    'https&colon;&sol;&sol;teams.microsoft.com&sol;old-fixture',
+    'https&#58;&#47;&#47;teams.microsoft.com&#47;old-fixture',
+    'https://teams.microsoft.com/%6fld-fixture',
+    'https://teams.micro&#10;soft.com/old-fixture',
+    String.raw`https:\\teams.microsoft.com\old-fixture`,
+  ])(
+    'rejects encoded Outlook join credentials before reserving %s',
+    async (encoded) => {
+      provider = 'microsoft';
+      mocks.master.mockResolvedValue({
+        etag: 'v1',
+        event: {
+          isOrganizer: true,
+          isOnlineMeeting: true,
+          onlineMeetingProvider: 'teamsForBusiness',
+          onlineMeeting: { joinUrl: 'https://teams.microsoft.com/old-fixture' },
+          body: {
+            contentType: 'html',
+            content: `<a href="${encoded}">Join</a> Agenda 50%`,
+          },
+        },
+      });
+      await expect(reserveProviderOperation(access, intent())).rejects.toThrow(
+        'original meeting link'
+      );
+      expect(reserved()).toBeUndefined();
+      expect(mocks.seal).not.toHaveBeenCalled();
+    }
+  );
   it('preserves Outlook HTML body format when description is unchanged', async () => {
     provider = 'microsoft';
     mocks.master.mockResolvedValue({

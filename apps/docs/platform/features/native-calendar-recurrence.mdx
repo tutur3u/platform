@@ -119,7 +119,16 @@ belongs to the new canonical series, and the trim receipt advances the original
 binding. Older persisted trim-first plans retain their original order and receipt
 selection. New unsupported provider metadata, including Outlook attachments, remains rejected before reservation. A copied body or description
 that embeds the original meeting link is also rejected; generated meeting HTML
-blobs are not stripped or copied with stale credentials. Production provider mutation
+blobs are not stripped or copied with stale credentials. Preflight detects raw,
+HTML character-reference and percent-encoded prior join identities; unrelated
+malformed percent escapes cannot suppress detection. Raw string values and parsed
+URL comparison also cover browser-normalized control characters, backslashes,
+protocol-relative links and dot segments. This follows the
+[URL parsing contract](https://url.spec.whatwg.org/#concept-basic-url-parser). The original body remains
+unchanged, including benign encoded content; detection rejects the operation
+rather than sanitizing it. `conference.test.ts` and `future-admission.test.ts`
+cover encoded-link rejection before any plan reservation. Character references
+follow the [HTML syntax contract](https://html.spec.whatwg.org/multipage/syntax.html#character-references). Production provider mutation
 admission stays disabled until authenticated provider and deployment evidence is
 complete; these tests do not constitute that evidence.
 

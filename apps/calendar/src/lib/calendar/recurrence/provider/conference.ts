@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { decodeHTML } from 'entities';
 import { z } from 'zod';
 
 const hash = (value: string) =>
@@ -150,21 +151,66 @@ export function assertNoCopiedConferenceLink(
     | { conferenceId?: unknown }
     | undefined;
   const links = [master.hangoutLink, online?.joinUrl, master.onlineMeetingUrl];
-  let serialized = JSON.stringify(fields).replace(/&amp;/gi, '&');
-  try {
-    serialized = decodeURIComponent(serialized);
-  } catch {
-    // Literal malformed percent sequences do not make raw links safe.
-  }
+  const strings: string[] = [];
+  const serialized = JSON.stringify(fields, (_key, value: unknown) => {
+    if (typeof value === 'string') strings.push(value);
+    return value;
+  });
+  const variants = [serialized, ...strings].flatMap((value) => {
+    const html = decodeHTML(value);
+    const percent = decodePercentRuns(value);
+    return [
+      value,
+      html,
+      percent,
+      decodePercentRuns(html),
+      decodeHTML(percent),
+    ].flatMap((text) => [text, comparisonUrlText(text)]);
+  });
+  const conferenceId = conference?.conferenceId;
   if (
     links.some(
       (value) =>
         typeof value === 'string' &&
-        serialized.toLowerCase().includes(joinIdentity(value))
+        variants.some((content) =>
+          content.toLowerCase().includes(joinIdentity(value))
+        )
     ) ||
-    (typeof conference?.conferenceId === 'string' &&
-      conference.conferenceId.length > 0 &&
-      serialized.includes(conference.conferenceId))
+    (typeof conferenceId === 'string' &&
+      conferenceId.length > 0 &&
+      variants.some((content) => content.includes(conferenceId)))
   )
     throw new RangeError('Future split body embeds the original meeting link');
+}
+
+/** Decode valid URI runs independently: an unrelated malformed escape must not
+ * suppress credential detection elsewhere. Invalid UTF-8 retains its bytes,
+ * while recoverable ASCII escapes in that run still participate in matching. */
+function decodePercentRuns(value: string) {
+  return value.replace(/(?:%[a-f\d]{2})+/gi, (encoded) => {
+    try {
+      return decodeURIComponent(encoded);
+    } catch {
+      return encoded.replace(/%([0-7][a-f\d])/gi, (_, byte: string) =>
+        String.fromCharCode(Number.parseInt(byte, 16))
+      );
+    }
+  });
+}
+
+/** Mirror browser URL normalization only in the comparison copy. Captured raw
+ * string values keep literal controls/backslashes out of JSON escape syntax. */
+function comparisonUrlText(value: string) {
+  return value
+    .replace(/[\t\n\r]/g, '')
+    .replace(/(?:https?:|[/\\]{2})[^\s"'<>]+/gi, (candidate) => {
+      try {
+        const absolute = /^https?:/i.test(candidate)
+          ? candidate
+          : `https:${candidate.replaceAll('\\', '/')}`;
+        return joinIdentity(absolute);
+      } catch {
+        return candidate;
+      }
+    });
 }
