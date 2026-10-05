@@ -4,6 +4,7 @@ import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/cache/pending_collection_overlay.dart';
+import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -48,10 +49,64 @@ abstract class IHabitTrackerRepository {
 }
 
 class HabitTrackerRepository implements IHabitTrackerRepository {
-  HabitTrackerRepository({ApiClient? apiClient})
-    : _apiClient = apiClient ?? ApiClient(baseUrl: ApiConfig.tasksBaseUrl);
+  HabitTrackerRepository({
+    ApiClient? apiClient,
+    CacheStore? cacheStore,
+    OfflineMutationQueue? mutationQueue,
+    String? Function()? currentUserId,
+    this.expectedUserId,
+  }) : _apiClient =
+           apiClient ??
+           ApiClient(
+             baseUrl: ApiConfig.tasksBaseUrl,
+             expectedUserId: expectedUserId,
+           ),
+       _store = cacheStore ?? CacheStore.instance,
+       _queue = mutationQueue ?? OfflineMutationQueue.instance,
+       _currentUserId = currentUserId ?? currentCacheUserId;
 
   final ApiClient _apiClient;
+  final CacheStore _store;
+  final OfflineMutationQueue _queue;
+  final String? Function() _currentUserId;
+  final String? expectedUserId;
+  String? get _actor => expectedUserId ?? _currentUserId();
+
+  void _checkActor(String? actor) {
+    if (actor != null) _apiClient.checkUser(actor);
+    if (_actor != actor) {
+      throw const ApiException(message: 'Account changed', statusCode: 401);
+    }
+  }
+
+  String _writeActor() {
+    final actor = _actor;
+    _checkActor(actor);
+    if (actor == null) {
+      throw const ApiException(
+        message: 'Authentication required',
+        statusCode: 401,
+      );
+    }
+    return actor;
+  }
+
+  Future<List<PendingMutationRecord>> _pending(String? actor) async {
+    _checkActor(actor);
+    if (actor == null) return const [];
+    final records = await _queue.listPending();
+    _checkActor(actor);
+    return records.where((record) => record.userId == actor).toList();
+  }
+
+  Future<void> _invalidate(String wsId, String actor) async {
+    _checkActor(actor);
+    await _store.invalidateTags(
+      {'module:habits'},
+      workspaceId: wsId,
+      userId: actor,
+    );
+  }
 
   String _withQuery(String path, Map<String, String?> query) {
     final values = query.entries
@@ -79,8 +134,12 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
     HabitTrackerScope scope = HabitTrackerScope.self,
     String? userId,
   }) async {
+    final actor = _actor;
+    _checkActor(actor);
     final response = await readThroughJson(
       api: _apiClient,
+      cacheStore: _store,
+      cacheUserId: () => actor,
       namespace: 'habits.trackers',
       workspaceId: wsId,
       path: _withQuery('/api/v1/workspaces/$wsId/habit-trackers', {
@@ -88,6 +147,7 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
         if (scope == HabitTrackerScope.member) 'userId': userId,
       }),
     );
+    _checkActor(actor);
     final base = '/api/v1/workspaces/$wsId/habit-trackers';
     final cards = (response['trackers'] as List<dynamic>? ?? const <dynamic>[])
         .whereType<Map<String, dynamic>>()
@@ -101,7 +161,7 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
       feature: 'habits',
       pathContains: base,
       source: source,
-      pending: (await OfflineMutationQueue.instance.listPending())
+      pending: (await _pending(actor))
           .where(
             (record) =>
                 record.path == base ||
@@ -131,8 +191,12 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
     HabitTrackerScope scope = HabitTrackerScope.self,
     String? userId,
   }) async {
+    final actor = _actor;
+    _checkActor(actor);
     final response = await readThroughJson(
       api: _apiClient,
+      cacheStore: _store,
+      cacheUserId: () => actor,
       namespace: 'habits.detail',
       workspaceId: wsId,
       path: _withQuery('/api/v1/workspaces/$wsId/habit-trackers/$trackerId', {
@@ -140,6 +204,7 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
         if (scope == HabitTrackerScope.member) 'userId': userId,
       }),
     );
+    _checkActor(actor);
     final entries = (response['entries'] as List<dynamic>? ?? const <dynamic>[])
         .whereType<Map<String, dynamic>>()
         .toList(growable: false);
@@ -148,12 +213,19 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
       feature: 'habits',
       pathContains: '/habit-trackers/$trackerId/entries',
       source: entries,
-      pending: await OfflineMutationQueue.instance.listPending(),
+      pending: (await _pending(actor))
+          .where(
+            (record) =>
+                scope != HabitTrackerScope.member ||
+                record.method != 'POST' ||
+                (record.payload?['user_id'] ?? actor) == userId,
+          )
+          .toList(),
       normalizeCreate: (payload) => {
         ...payload,
         'ws_id': wsId,
         'tracker_id': trackerId,
-        'user_id': payload['user_id'] ?? currentCacheUserId(),
+        'user_id': payload['user_id'] ?? actor,
       },
     );
     return HabitTrackerDetailResponse.fromJson({...response, 'entries': rows});
@@ -164,9 +236,12 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
     String wsId,
     HabitTrackerInput input,
   ) async {
+    final actor = _writeActor();
     final path = '/api/v1/workspaces/$wsId/habit-trackers';
     final payload = input.toJson();
     final result = await queueOrSendValue<HabitTracker>(
+      queue: _queue,
+      expectedUserId: actor,
       feature: 'habits',
       method: 'POST',
       path: path,
@@ -175,6 +250,7 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
       pendingValue: (id) =>
           HabitTracker.fromJson({...payload, 'id': id, 'ws_id': wsId}),
       send: () async {
+        _checkActor(actor);
         final response = await _apiClient.postJson(path, payload);
         return HabitTracker.fromJson(
           Map<String, dynamic>.from(
@@ -183,9 +259,7 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
         );
       },
     );
-    await CacheStore.instance.invalidateTags({
-      'module:habits',
-    }, workspaceId: wsId);
+    await _invalidate(wsId, actor);
     return result;
   }
 
@@ -195,9 +269,12 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
     String trackerId,
     HabitTrackerInput input,
   ) async {
+    final actor = _writeActor();
     final path = '/api/v1/workspaces/$wsId/habit-trackers/$trackerId';
     final payload = input.toJson();
     final result = await queueOrSendValue<HabitTracker>(
+      queue: _queue,
+      expectedUserId: actor,
       feature: 'habits',
       method: 'PATCH',
       path: path,
@@ -207,6 +284,7 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
       pendingValue: (id) =>
           HabitTracker.fromJson({...payload, 'id': id, 'ws_id': wsId}),
       send: () async {
+        _checkActor(actor);
         final response = await _apiClient.patchJson(path, payload);
         return HabitTracker.fromJson(
           Map<String, dynamic>.from(
@@ -215,28 +293,28 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
         );
       },
     );
-    await CacheStore.instance.invalidateTags({
-      'module:habits',
-    }, workspaceId: wsId);
+    await _invalidate(wsId, actor);
     return result;
   }
 
   @override
   Future<void> archiveTracker(String wsId, String trackerId) async {
+    final actor = _writeActor();
     final path = '/api/v1/workspaces/$wsId/habit-trackers/$trackerId';
     await queueOrSendVoid(
+      queue: _queue,
+      expectedUserId: actor,
       feature: 'habits',
       method: 'DELETE',
       path: path,
       workspaceId: wsId,
       entityId: trackerId,
       send: () async {
+        _checkActor(actor);
         await _apiClient.deleteJson(path);
       },
     );
-    await CacheStore.instance.invalidateTags({
-      'module:habits',
-    }, workspaceId: wsId);
+    await _invalidate(wsId, actor);
   }
 
   @override
@@ -245,9 +323,12 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
     String trackerId,
     HabitTrackerEntryInput input,
   ) async {
+    final actor = _writeActor();
     final path = '/api/v1/workspaces/$wsId/habit-trackers/$trackerId/entries';
     final payload = input.toJson();
     final result = await queueOrSendValue<HabitTrackerEntry>(
+      queue: _queue,
+      expectedUserId: actor,
       feature: 'habits',
       method: 'POST',
       path: path,
@@ -258,9 +339,10 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
         'id': id,
         'ws_id': wsId,
         'tracker_id': trackerId,
-        'user_id': payload['user_id'] ?? currentCacheUserId() ?? '',
+        'user_id': payload['user_id'] ?? actor,
       }),
       send: () async {
+        _checkActor(actor);
         final response = await _apiClient.postJson(path, payload);
         return HabitTrackerEntry.fromJson(
           Map<String, dynamic>.from(
@@ -269,9 +351,7 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
         );
       },
     );
-    await CacheStore.instance.invalidateTags({
-      'module:habits',
-    }, workspaceId: wsId);
+    await _invalidate(wsId, actor);
     return result;
   }
 
@@ -281,21 +361,23 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
     String trackerId,
     String entryId,
   ) async {
+    final actor = _writeActor();
     final path =
         '/api/v1/workspaces/$wsId/habit-trackers/$trackerId/entries/$entryId';
     await queueOrSendVoid(
+      queue: _queue,
+      expectedUserId: actor,
       feature: 'habits',
       method: 'DELETE',
       path: path,
       workspaceId: wsId,
       entityId: entryId,
       send: () async {
+        _checkActor(actor);
         await _apiClient.deleteJson(path);
       },
     );
-    await CacheStore.instance.invalidateTags({
-      'module:habits',
-    }, workspaceId: wsId);
+    await _invalidate(wsId, actor);
   }
 
   @override
@@ -304,9 +386,12 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
     String trackerId,
     HabitTrackerStreakActionInput input,
   ) async {
+    final actor = _writeActor();
     final path =
         '/api/v1/workspaces/$wsId/habit-trackers/$trackerId/streak-actions';
     await queueOrSendVoid(
+      queue: _queue,
+      expectedUserId: actor,
       feature: 'habits',
       method: 'POST',
       path: path,
@@ -314,11 +399,10 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
       entityId: trackerId,
       payload: input.toJson(),
       send: () async {
+        _checkActor(actor);
         await _apiClient.postJson(path, input.toJson());
       },
     );
-    await CacheStore.instance.invalidateTags({
-      'module:habits',
-    }, workspaceId: wsId);
+    await _invalidate(wsId, actor);
   }
 }
