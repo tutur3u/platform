@@ -239,6 +239,43 @@ void main() {
     expect(find.text('New actor folder'), findsOneWidget);
     expect(find.text('Prior actor private folder'), findsNothing);
   });
+  for (final challenge in [
+    const ApiException(
+      message: 'Synthetic verification required',
+      statusCode: 403,
+      code: 'MFA_REQUIRED',
+    ),
+    const ApiException(
+      message: 'Synthetic verification required',
+      statusCode: 403,
+      isVerificationRequired: true,
+    ),
+  ]) {
+    testWidgets(
+      'refresh retains scoped files for ${challenge.code ?? 'typed'} MFA',
+      (tester) async {
+        await mount(tester);
+        repository.load = (ws, offset, query) async => throw challenge;
+        search().onPressed!();
+        await pump(tester);
+        search().onCloseSearch!();
+        await pump(tester);
+        expect(find.text('Synthetic folder'), findsOneWidget);
+        expect(find.text('Synthetic verification required'), findsOneWidget);
+
+        repository.load = (ws, offset, query) async => throw const ApiException(
+          message: 'Synthetic denied after challenge',
+          statusCode: 403,
+        );
+        search().onPressed!();
+        await pump(tester);
+        search().onCloseSearch!();
+        await pump(tester);
+        expect(find.text('Synthetic folder'), findsNothing);
+        expect(find.text('Synthetic denied after challenge'), findsOneWidget);
+      },
+    );
+  }
   testWidgets('refresh retains files but a definitive denial erases them', (
     tester,
   ) async {
