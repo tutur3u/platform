@@ -113,7 +113,25 @@ it.each([
 ])('keeps unaffected route %s', async (path) => {
   expect(await resolve(path)).toBeNull();
 });
-it('does not mask transport or server failures as membership denial', async () => {
-  mocks.status.mockRejectedValue(new InternalApiError('Unavailable', 503));
-  await expect(resolve('/workspace/wiki')).rejects.toThrow('Unavailable');
+it.each([
+  new TypeError('fetch failed'),
+  new InternalApiError('Unavailable', 500),
+  new InternalApiError('Unavailable', 502),
+  new InternalApiError('Unavailable', 503),
+])(
+  'defers unavailable membership probes to the guarded layout (%s)',
+  async (error) => {
+    mocks.status.mockRejectedValue(error);
+    expect(await resolve('/workspace/wiki')).toBeNull();
+    expect(await resolve('/workspace/worlds/invalid')).toBeNull();
+  }
+);
+it.each([
+  new InternalApiError('Rate limited', 429),
+  new InternalApiError('Invalid request', 400),
+  new InternalApiError('Unknown failure', 0),
+  new Error('Unexpected failure'),
+])('propagates non-availability failures (%s)', async (error) => {
+  mocks.status.mockRejectedValue(error);
+  await expect(resolve('/workspace/wiki')).rejects.toBe(error);
 });
