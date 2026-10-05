@@ -366,6 +366,11 @@
       "types": "./dist/playgrounds.d.ts",
       "import": "./dist/playgrounds.js",
       "require": "./dist/playgrounds.js"
+    },
+    "./notes-voice": {
+      "types": "./dist/notes-voice.d.ts",
+      "import": "./dist/notes-voice.js",
+      "require": "./dist/notes-voice.js"
     }
   },
   "devDependencies": {

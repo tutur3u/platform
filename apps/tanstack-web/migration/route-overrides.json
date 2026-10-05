@@ -2832,6 +2832,16 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "First-class authenticated personal banner finalize/remove/cleanup uses service-only row-locked durable operation receipts and immutable actor-owned retirement tombstones; Storage token leases bound scrub/deferred deletion. Rust endpoint parity pending; generic profile PATCH lifecycle is mirrored."
+    },
+    "api:/api/v1/workspaces/:wsId/notes/voice-jobs:apps/web/src/app/api/v1/workspaces/[wsId]/notes/voice-jobs/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class bearer/app-session actor-owned Notes voice jobs with bounded WAV input, explicit paid idempotency/retry and private artifacts. Rust port backlog; web remains live source."
+    },
+    "api:/api/v1/workspaces/:wsId/notes/voice-jobs/:jobId:apps/web/src/app/api/v1/workspaces/[wsId]/notes/voice-jobs/[jobId]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class bearer/app-session actor-owned Notes voice jobs with bounded WAV input, explicit paid idempotency/retry and private artifacts. Rust port backlog; web remains live source."
     }
   }
 }
