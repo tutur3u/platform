@@ -129,6 +129,16 @@ UUID-only Calendar APIs. This applies to the standalone Calendar settings shell.
 Regression coverage: `apps/calendar/src/components/settings/settings-dialog.test.tsx`.
 
 
+### Truthful storage hints
+
+The shared recurrence editor shows its native-storage hint only for canonical
+native events and native creation. Connected Google/Outlook editing or selected
+provider creation suppresses that hint, including when provider capabilities are
+unavailable. This display decision does not change source permissions, admission
+or the prohibition on native write fallback for provider events. Coverage:
+`native-recurrence-provider-routing.test.tsx` renders the actual recurrence fields
+for native, Google, Outlook and disabled-provider cases.
+
 ### Outlook attendee privacy on future tails
 
 For a verified organizing source, future splits retain the source's explicit
