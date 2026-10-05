@@ -115,39 +115,39 @@ export async function createSeries(
   supabase: TypedSupabaseClient,
   wsId: string,
   input: z.infer<typeof CreateSeriesSchema>,
-  actorId?: string
+  actorId?: string,
+  options?: { prepareOnly: true }
 ) {
   validateCalendarRecurrence(input.rule, input.anchor);
   // Native-only contract. Provider series use retained operation recovery, not best-effort duplicate writes.
   const intentHash = createHash('sha256')
     .update(JSON.stringify({ action: 'create', input }))
     .digest('hex');
-  const receipt = await callSeries(
-    supabase,
-    wsId,
-    'receipt',
-    {
-      requestId: input.requestId,
-      intentHash,
-    },
-    actorId
-  );
+  const receipt = options?.prepareOnly
+    ? null
+    : await callSeries(
+        supabase,
+        wsId,
+        'receipt',
+        {
+          requestId: input.requestId,
+          intentHash,
+        },
+        actorId
+      );
   if (receipt) return receipt;
   const payload = await encryptEventForStorage(wsId, input.event);
-  return callSeries(
-    supabase,
-    wsId,
-    'create',
-    {
-      requestId: input.requestId,
-      intentHash,
-      workspaceCalendarId: input.workspaceCalendarId ?? null,
-      rule: input.rule,
-      anchor: input.anchor,
-      payload,
-    },
-    actorId
-  );
+  const request = {
+    requestId: input.requestId,
+    intentHash,
+    workspaceCalendarId: input.workspaceCalendarId ?? null,
+    rule: input.rule,
+    anchor: input.anchor,
+    payload,
+  };
+  return options?.prepareOnly
+    ? request
+    : callSeries(supabase, wsId, 'create', request, actorId);
 }
 export async function mutateSeries(
   supabase: TypedSupabaseClient,
@@ -155,21 +155,24 @@ export async function mutateSeries(
   seriesId: string,
   input: z.infer<typeof MutateSeriesSchema>,
   action: 'update' | 'delete',
-  actorId?: string
+  actorId?: string,
+  options?: { prepareOnly: true }
 ) {
   const intentHash = createHash('sha256')
     .update(JSON.stringify({ action, seriesId, input }))
     .digest('hex');
-  const receipt = await callSeries(
-    supabase,
-    wsId,
-    'receipt',
-    {
-      requestId: input.requestId,
-      intentHash,
-    },
-    actorId
-  );
+  const receipt = options?.prepareOnly
+    ? null
+    : await callSeries(
+        supabase,
+        wsId,
+        'receipt',
+        {
+          requestId: input.requestId,
+          intentHash,
+        },
+        actorId
+      );
   if (receipt) return receipt;
   const stored = await readSeries(supabase, wsId, seriesId, actorId);
   if (stored.revision !== input.expectedRevision)
@@ -248,7 +251,9 @@ export async function mutateSeries(
       CalendarRecurrenceRuleSchema.parse(request.rule),
       CalendarRecurrenceAnchorSchema.parse(request.anchor)
     );
-  return callSeries(supabase, wsId, action, request, actorId);
+  return options?.prepareOnly
+    ? request
+    : callSeries(supabase, wsId, action, request, actorId);
 }
 function seriesEndAtSlot(series: StoredSeries, slot: string) {
   // Local wall-clock duration is preserved across DST; helper returns a validated slot anchor.
@@ -289,7 +294,8 @@ export async function expandSeriesList(
         ...occurrence,
         id: uuidv5(occurrence.originalStartLocal, series.id),
         ws_id: series.ws_id,
-        provider: 'tuturuuu' as const,
+        provider: series.providerSource?.provider ?? ('tuturuuu' as const),
+        providerSource: series.providerSource ?? undefined,
         source_calendar_id: series.workspace_calendar_id,
         seriesId: series.id,
         seriesRevision: series.revision,
