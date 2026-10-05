@@ -72,57 +72,42 @@ export async function loadSmartSchedulingTasks({
     new Set(tasksBase.map((task) => task.list_id).filter(Boolean))
   ) as string[];
 
+  const taskIds = tasksBase.map((task) => task.id).filter(Boolean);
+  // Both enrichment reads depend on the accessible-task response, not each other.
+  // Keep the actor/task filters at this boundary before starting them together.
+  const [{ data: lists }, { data: schedulingRows }] = await Promise.all([
+    listIds.length > 0
+      ? supabase
+          .from('task_lists')
+          .select('id, workspace_boards!inner (ws_id)')
+          .in('id', listIds)
+      : Promise.resolve({ data: [] }),
+    taskIds.length > 0
+      ? supabase
+          .from('task_user_scheduling_settings')
+          .select(
+            'task_id, total_duration, is_splittable, min_split_duration_minutes, max_split_duration_minutes, calendar_hours, auto_schedule'
+          )
+          .eq('user_id', userId)
+          .in('task_id', taskIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+
   const wsIdByListId = new Map<string, string>();
-  if (listIds.length > 0) {
-    const { data: lists } = await supabase
-      .from('task_lists')
-      .select(
-        `
-        id,
-        workspace_boards!inner (
-          ws_id
-        )
-      `
-      )
-      .in('id', listIds);
-
-    (lists as TaskListWorkspaceRow[] | null)?.forEach((list) => {
-      const taskWsId = list.workspace_boards?.ws_id;
-      if (list.id && taskWsId) wsIdByListId.set(list.id, taskWsId);
-    });
-  }
-
+  (lists as TaskListWorkspaceRow[] | null)?.forEach((list) => {
+    const taskWsId = list.workspace_boards?.ws_id;
+    if (list.id && taskWsId) wsIdByListId.set(list.id, taskWsId);
+  });
   const tasks = tasksBase.map((task) => ({
     ...task,
     ws_id:
       (task.list_id ? wsIdByListId.get(task.list_id) : undefined) ??
       resolvedWsId,
   })) as ExtendedWorkspaceTask[];
-
-  const taskIds = tasks.map((task) => task.id).filter(Boolean);
   const settingsByTaskId = new Map<string, TaskSchedulingRow>();
-
-  if (taskIds.length > 0) {
-    const { data: schedulingRows } = await supabase
-      .from('task_user_scheduling_settings')
-      .select(
-        `
-        task_id,
-        total_duration,
-        is_splittable,
-        min_split_duration_minutes,
-        max_split_duration_minutes,
-        calendar_hours,
-        auto_schedule
-      `
-      )
-      .eq('user_id', userId)
-      .in('task_id', taskIds);
-
-    (schedulingRows as TaskSchedulingRow[] | null)?.forEach((row) => {
-      if (row.task_id) settingsByTaskId.set(row.task_id, row);
-    });
-  }
+  (schedulingRows as TaskSchedulingRow[] | null)?.forEach((row) => {
+    if (row.task_id) settingsByTaskId.set(row.task_id, row);
+  });
 
   return tasks.map((task) => {
     const settings = settingsByTaskId.get(task.id);
