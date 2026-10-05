@@ -87,6 +87,7 @@ class CalendarCubit extends Cubit<CalendarState> {
   static final Map<String, _CalendarCacheEntry> _cache = {};
   static int _cacheEpoch = 0;
   String? _wsId;
+  String? _userId;
   int _loadGeneration = 0;
   static final Map<String, int> _mutationVersions = {};
   static final Map<String, int> _refreshVersions = {};
@@ -203,7 +204,8 @@ class CalendarCubit extends Cubit<CalendarState> {
         userId == currentCacheUserId() &&
         _wsId == wsId;
     final memoryCacheKey = _memoryCacheKey(wsId);
-    final hasVisibleData = _wsId == wsId && state.hasLoadedOnce;
+    final sameActor = _userId == userId;
+    final hasVisibleData = sameActor && _wsId == wsId && state.hasLoadedOnce;
     final cached =
         _cache[memoryCacheKey] ??
         (hasVisibleData && state.events.isNotEmpty
@@ -212,10 +214,11 @@ class CalendarCubit extends Cubit<CalendarState> {
                 fetchedAt: state.lastUpdatedAt ?? DateTime.now(),
               )
             : null);
-    if (_wsId != null && _wsId != wsId) {
+    if (!sameActor || (_wsId != null && _wsId != wsId)) {
       emit(CalendarState(viewMode: _defaultViewMode, timezone: state.timezone));
     }
     _wsId = wsId;
+    _userId = userId;
     final cacheKey = _cacheKey(wsId);
     final shouldReadDiskCache = cached == null && !hasVisibleData;
 
@@ -294,10 +297,12 @@ class CalendarCubit extends Cubit<CalendarState> {
       final end = targetRange.end;
 
       final events = deduplicateCalendarEvents(
-        await _repo.getEvents(
-          wsId,
-          start: calendarWallToUtc(start, state.timezone),
-          end: calendarWallToUtc(end, state.timezone),
+        await CacheStore.awaitRevalidation(
+          () => _repo.getEvents(
+            wsId,
+            start: calendarWallToUtc(start, state.timezone),
+            end: calendarWallToUtc(end, state.timezone),
+          ),
         ),
       );
 
@@ -318,13 +323,18 @@ class CalendarCubit extends Cubit<CalendarState> {
       _storeCache(nextState);
       await CacheStore.instance.write(
         key: cacheKey,
+        checkScope: () {
+          if (!isCurrent()) throw StateError('Calendar scope changed.');
+        },
         policy: _cachePolicy,
         payload: _stateToCacheJson(nextState),
         tags: [_cacheTag, 'workspace:$wsId', 'module:calendar'],
       );
     } on Exception catch (e) {
       if (!isCurrent()) return;
-      if (e is ApiException && (e.statusCode == 401 || e.statusCode == 403)) {
+      if (e is ApiException &&
+          (e.statusCode == 401 ||
+              (e.statusCode == 403 && !e.isVerificationRequired))) {
         _cache.remove(memoryCacheKey);
         emit(
           CalendarState(
@@ -390,24 +400,46 @@ class CalendarCubit extends Cubit<CalendarState> {
     final newEnd = calendarDate(newStart.year, newStart.month + 2);
 
     try {
-      final moreEvents = await _repo.getEvents(
-        wsId,
-        start: calendarWallToUtc(newStart, state.timezone),
-        end: calendarWallToUtc(newEnd, state.timezone),
+      final moreEvents = await CacheStore.awaitRevalidation(
+        () => _repo.getEvents(
+          wsId,
+          start: calendarWallToUtc(newStart, state.timezone),
+          end: calendarWallToUtc(newEnd, state.timezone),
+        ),
       );
 
       if (!isCurrent()) return;
-      emit(
-        _storeAndReturn(
-          state.copyWith(
-            events: deduplicateCalendarEvents([...state.events, ...moreEvents]),
-            fetchedRange: DateTimeRange(start: range.start, end: newEnd),
-            isLoadingMore: false,
-          ),
-        ),
+      final next = state.copyWith(
+        events: deduplicateCalendarEvents([...state.events, ...moreEvents]),
+        fetchedRange: DateTimeRange(start: range.start, end: newEnd),
+        isLoadingMore: false,
+      );
+      emit(_storeAndReturn(next));
+      await CacheStore.instance.write(
+        key: _cacheKey(wsId),
+        checkScope: () {
+          if (!isCurrent()) throw StateError('Calendar scope changed.');
+        },
+        policy: _cachePolicy,
+        payload: _stateToCacheJson(next),
+        tags: [_cacheTag, 'workspace:$wsId', 'module:calendar'],
       );
     } on Exception catch (e) {
       if (!isCurrent()) return;
+      if (e is ApiException &&
+          (e.statusCode == 401 ||
+              (e.statusCode == 403 && !e.isVerificationRequired))) {
+        _cache.remove(_memoryCacheKey(wsId));
+        emit(
+          CalendarState(
+            selectedDate: state.selectedDate,
+            timezone: state.timezone,
+            status: CalendarStatus.error,
+            error: e.toString(),
+          ),
+        );
+        return;
+      }
       emit(state.copyWith(error: e.toString(), isLoadingMore: false));
     }
   }

@@ -14,6 +14,7 @@ import 'package:mobile/features/calendar/widgets/current_time_indicator.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 part 'multi_day_schedule_components.dart';
+part 'multi_day_schedule_scroll.dart';
 
 class MultiDayScheduleView extends StatefulWidget {
   const MultiDayScheduleView({
@@ -52,6 +53,13 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
   bool _didAutoScroll = false;
   bool _syncingHorizontalScroll = false;
   bool _allDayExpanded = false;
+  late DateTime _windowStart;
+  DateTime? _scrollSelection;
+  double _dayWidth = 0;
+  bool _positionPending = false;
+
+  int get _bufferDays => math.max(7, widget.visibleDayCount * 2);
+  int get _windowDays => _bufferDays * 2 + widget.visibleDayCount;
 
   List<ScrollController> get _horizontalControllers => [
     _headerController,
@@ -71,6 +79,7 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
   @override
   void initState() {
     super.initState();
+    _resetDateWindow();
     for (final controller in _horizontalControllers) {
       controller.addListener(() => _syncHorizontalScroll(controller));
     }
@@ -80,8 +89,27 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
   @override
   void didUpdateWidget(covariant MultiDayScheduleView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.selectedDate != widget.selectedDate ||
-        oldWidget.visibleDayCount != widget.visibleDayCount ||
+    if (oldWidget.selectedDate != widget.selectedDate) {
+      final fromScroll = widget.selectedDate == _scrollSelection;
+      _scrollSelection = null;
+      if (!fromScroll) {
+        _resetDateWindow();
+        _scheduleDatePosition();
+      }
+    }
+    if (oldWidget.events != widget.events) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _gridController.hasClients) {
+          _positionDates(_gridController.offset);
+        }
+      });
+    }
+    if (oldWidget.visibleDayCount != widget.visibleDayCount ||
+        oldWidget.firstDayOfWeek != widget.firstDayOfWeek) {
+      _resetDateWindow();
+      _scheduleDatePosition();
+    }
+    if (oldWidget.visibleDayCount != widget.visibleDayCount ||
         oldWidget.alignToWeekStart != widget.alignToWeekStart ||
         (oldWidget.events.isEmpty && widget.events.isNotEmpty)) {
       _didAutoScroll = false;
@@ -145,18 +173,9 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
   }
 
   List<DateTime> get _visibleDates {
-    final anchor = calendarDate(
-      widget.selectedDate.year,
-      widget.selectedDate.month,
-      widget.selectedDate.day,
-    );
-    final startDate = widget.alignToWeekStart
-        ? _weekStart(anchor, widget.firstDayOfWeek)
-        : anchor;
-
     return List<DateTime>.generate(
-      widget.visibleDayCount,
-      (index) => startDate.add(Duration(days: index)),
+      _windowDays,
+      (index) => _windowStart.add(Duration(days: index)),
       growable: false,
     );
   }
@@ -220,21 +239,19 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final viewportWidth = constraints.maxWidth;
-        final dayAreaWidth = math.max(
+        final viewportDayWidth = math.max(
           viewportWidth - gutterWidth,
           _minDayColumnWidth(context) * widget.visibleDayCount,
         );
-        final dayColumnWidth = dayAreaWidth / widget.visibleDayCount;
+        final dayColumnWidth = viewportDayWidth / widget.visibleDayCount;
+        final dayAreaWidth = dayColumnWidth * _windowDays;
+        if (_dayWidth != dayColumnWidth) {
+          _dayWidth = dayColumnWidth;
+          _scheduleDatePosition();
+        }
 
-        return GestureDetector(
-          onHorizontalDragEnd: (details) {
-            final velocity = details.primaryVelocity ?? 0;
-            if (velocity > 350) {
-              widget.onSwipe(-widget.visibleDayCount);
-            } else if (velocity < -350) {
-              widget.onSwipe(widget.visibleDayCount);
-            }
-          },
+        return NotificationListener<ScrollEndNotification>(
+          onNotification: _settleDateScroll,
           child: Column(
             children: [
               Container(
@@ -247,28 +264,41 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                     ),
                   ),
                 ),
-                child: SingleChildScrollView(
-                  controller: _headerController,
-                  scrollDirection: Axis.horizontal,
-                  physics: const ClampingScrollPhysics(),
-                  child: SizedBox(
-                    width: gutterWidth + dayAreaWidth,
-                    child: Row(
-                      children: [
-                        SizedBox(width: gutterWidth),
-                        for (final date in visibleDates)
-                          SizedBox(
-                            width: dayColumnWidth,
-                            child: _MultiDayHeaderCell(
-                              date: date,
-                              selectedDate: widget.selectedDate,
-                              isToday: _isToday(date),
-                              onTap: () => widget.onDaySelected(date),
-                            ),
-                          ),
-                      ],
+                child: Stack(
+                  children: [
+                    SingleChildScrollView(
+                      controller: _headerController,
+                      scrollDirection: Axis.horizontal,
+                      physics: const ClampingScrollPhysics(),
+                      child: SizedBox(
+                        width: gutterWidth + dayAreaWidth,
+                        child: Row(
+                          children: [
+                            SizedBox(width: gutterWidth),
+                            for (final date in visibleDates)
+                              SizedBox(
+                                width: dayColumnWidth,
+                                child: _MultiDayHeaderCell(
+                                  date: date,
+                                  selectedDate: widget.selectedDate,
+                                  isToday: _isToday(date),
+                                  onTap: () => widget.onDaySelected(date),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                    Positioned(
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: gutterWidth,
+                        color: colorScheme.surface,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               if (allDayLayout.spans.isNotEmpty)
@@ -285,20 +315,33 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SingleChildScrollView(
-                        controller: _allDayController,
-                        scrollDirection: Axis.horizontal,
-                        physics: const ClampingScrollPhysics(),
-                        child: SizedBox(
-                          width: gutterWidth + dayAreaWidth,
-                          child: _MultiDayAllDayRow(
-                            layout: allDayLayout,
-                            timeGutterWidth: gutterWidth,
-                            dayColumnWidth: dayColumnWidth,
-                            maxVisibleRows: _allDayExpanded ? null : 2,
-                            onEventTap: widget.onEventTap,
+                      Stack(
+                        children: [
+                          SingleChildScrollView(
+                            controller: _allDayController,
+                            scrollDirection: Axis.horizontal,
+                            physics: const ClampingScrollPhysics(),
+                            child: SizedBox(
+                              width: gutterWidth + dayAreaWidth,
+                              child: _MultiDayAllDayRow(
+                                layout: allDayLayout,
+                                timeGutterWidth: gutterWidth,
+                                dayColumnWidth: dayColumnWidth,
+                                maxVisibleRows: _allDayExpanded ? null : 2,
+                                onEventTap: widget.onEventTap,
+                              ),
+                            ),
                           ),
-                        ),
+                          Positioned(
+                            left: 0,
+                            top: 0,
+                            bottom: 0,
+                            child: Container(
+                              width: gutterWidth,
+                              color: colorScheme.surfaceContainerLow,
+                            ),
+                          ),
+                        ],
                       ),
                       if (hasCollapsedAllDayRows)
                         TextButton.icon(
@@ -324,55 +367,66 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                 child: SingleChildScrollView(
                   controller: _verticalController,
                   physics: const AlwaysScrollableScrollPhysics(),
-                  child: SingleChildScrollView(
-                    controller: _gridController,
-                    scrollDirection: Axis.horizontal,
-                    physics: const ClampingScrollPhysics(),
-                    child: SizedBox(
-                      width: gutterWidth + dayAreaWidth,
-                      child: SizedBox(
-                        height: 24 * hourHeight,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(
-                              width: gutterWidth,
-                              child: Stack(
-                                children: List.generate(24, (hour) {
-                                  return Positioned(
-                                    top: hour * hourHeight - 7,
-                                    left: 0,
-                                    right: 8,
-                                    child: Text(
-                                      _formatHour(hour),
-                                      textAlign: TextAlign.right,
-                                      style: theme.textTheme.labelSmall
-                                          ?.copyWith(
-                                            color: colorScheme.onSurfaceVariant,
-                                            fontSize: 10,
-                                          ),
+                  child: Stack(
+                    children: [
+                      SingleChildScrollView(
+                        controller: _gridController,
+                        scrollDirection: Axis.horizontal,
+                        physics: const ClampingScrollPhysics(),
+                        child: SizedBox(
+                          width: gutterWidth + dayAreaWidth,
+                          child: SizedBox(
+                            height: 24 * hourHeight,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(width: gutterWidth),
+                                for (final date in visibleDates)
+                                  SizedBox(
+                                    width: dayColumnWidth,
+                                    child: _MultiDayTimelineColumn(
+                                      date: date,
+                                      selectedDate: widget.selectedDate,
+                                      hourHeight: hourHeight,
+                                      events: _timedEventsForDay(date),
+                                      isToday: _isToday(date),
+                                      onEventTap: widget.onEventTap,
+                                      onCreateAtTime: widget.onCreateAtTime,
                                     ),
-                                  );
-                                }),
-                              ),
+                                  ),
+                              ],
                             ),
-                            for (final date in visibleDates)
-                              SizedBox(
-                                width: dayColumnWidth,
-                                child: _MultiDayTimelineColumn(
-                                  date: date,
-                                  selectedDate: widget.selectedDate,
-                                  hourHeight: hourHeight,
-                                  events: _timedEventsForDay(date),
-                                  isToday: _isToday(date),
-                                  onEventTap: widget.onEventTap,
-                                  onCreateAtTime: widget.onCreateAtTime,
-                                ),
-                              ),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: gutterWidth,
+                          color: colorScheme.surface,
+                          child: Stack(
+                            children: List.generate(
+                              24,
+                              (hour) => Positioned(
+                                top: hour * hourHeight - 7,
+                                left: 0,
+                                right: 8,
+                                child: Text(
+                                  _formatHour(hour),
+                                  textAlign: TextAlign.right,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -381,6 +435,12 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
         );
       },
     );
+  }
+
+  void _shiftDateWindow(int shift) {
+    setState(() {
+      _windowStart = _windowStart.add(Duration(days: shift));
+    });
   }
 
   String _formatHour(int hour) {
