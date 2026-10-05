@@ -772,3 +772,17 @@ Regression evidence: `calendar-native-recurrence.sql` tests authorization,
 idempotency, revision conflicts and atomic splitting. `recurrence/service.test.ts`
 and `calendar-recurrence-edit.test.ts` cover encrypted retries, immutable identity,
 DST slot counts, cancellation, exception edits and truthful bounded reads.
+
+### Outlook snapshot completeness
+
+Outlook calendar synchronization follows every `calendarView` continuation before
+reconciling removed events. Reads request UTC on every page and preserve the
+provider's opaque continuation query. Duplicate event identities across pages
+collapse to the latest returned version. A failed, malformed, looping or oversized
+snapshot fails the sync; a partial snapshot must never authorize deletion.
+
+Reads are bounded to 50 pages and 25,000 distinct events. Continuations must remain
+on the same Microsoft Graph calendar collection. This applies to existing Outlook
+single events, recurring occurrences and moved exceptions; it does not enable
+canonical series writes by itself. Regression coverage:
+`packages/microsoft/src/calendar/pagination.test.ts`.
