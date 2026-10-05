@@ -973,3 +973,13 @@ The page's scheduling reads begin only after workspace and permission verificati
 Coverage: dashboard `page.test.tsx` exercises aliases/UUIDs, actor preservation,
 verification ordering, permission denial, missing records and rejected reads;
 workspace-helper tests verify that UUID normalization needs no alias lookup.
+
+For notification/event deep links, the page starts token and scheduling reads
+alongside the scoped event-date lookup after permission verification. A valid
+explicit date skips the lookup as before; invalid or missing dates use a valid
+stored event instant when available. Date-query errors retain their original
+precedence, and concurrent resource failures are handled while that lookup is
+pending. No resource reads begin before authorization. Coverage:
+`page-date-loading.test.tsx` uses an unresolved event response to verify overlap,
+actor/workspace filters, date-only and DST-offset links, fallbacks and both error
+paths. Browser latency improvement still requires post-deployment measurement.
