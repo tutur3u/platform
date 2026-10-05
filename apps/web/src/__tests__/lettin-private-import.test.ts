@@ -93,11 +93,12 @@ for (const stalledPhase of [
       }
       return Promise.resolve();
     };
-    browserExpect.mockImplementation(() => ({
+    browserExpect.mockImplementation((value) => ({
       toBeVisible: operation,
       toHaveURL: operation,
       toContainText: operation,
       toEqual: vi.fn(),
+      toBe: (expected: unknown) => expect(value).toBe(expected),
     }));
     const click = vi.fn().mockResolvedValue(undefined);
     const control = {
@@ -119,7 +120,7 @@ for (const stalledPhase of [
     };
     const close = vi.fn().mockResolvedValue(undefined);
     const json = vi.fn(operation);
-    const get = vi.fn().mockResolvedValue({ json });
+    const get = vi.fn().mockResolvedValue({ json, status: () => 200 });
     const context = {
       setDefaultTimeout: vi.fn(),
       newPage: async () => page,
@@ -149,3 +150,58 @@ for (const stalledPhase of [
     }
   });
 }
+
+test.each([200, 401, 403, 500])(
+  'import privacy requires a successful response before parsing status %s',
+  async (status) => {
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    step.mockImplementation((_name, action) => action());
+    browserExpect.mockImplementation((value) => ({
+      toBeVisible: async () => {},
+      toHaveURL: async () => {},
+      toContainText: async () => {},
+      toBe: (expected: unknown) => expect(value).toBe(expected),
+      toEqual: (expected: unknown) => expect(value).toEqual(expected),
+    }));
+    const control = {
+      fill: async () => {},
+      selectOption: async () => {},
+      setInputFiles: async () => {},
+      click: async () => {},
+    };
+    const dialog = {
+      getByRole: () => control,
+      getByLabel: () => control,
+      getByText: () => control,
+    };
+    const page = {
+      goto: async () => {},
+      getByRole: (role: string) => (role === 'dialog' ? dialog : control),
+      locator: () => control,
+      url: () => 'https://synthetic.test/wiki/synthetic-world/overview',
+    };
+    // Even an empty error body must not look like a passing privacy assertion.
+    const json = vi.fn().mockResolvedValue([]);
+    const close = vi.fn().mockResolvedValue(undefined);
+    const context = {
+      setDefaultTimeout: vi.fn(),
+      newPage: async () => page,
+      close,
+      request: { get: async () => ({ status: () => status, json }) },
+    } as unknown as BrowserContext;
+    const result = verifyLettinPrivateImport(
+      context,
+      'https://synthetic.test',
+      'synthetic-workspace'
+    );
+    if (status === 200) {
+      await expect(result).resolves.toBeUndefined();
+      expect(json).toHaveBeenCalledOnce();
+    } else {
+      await expect(result).rejects.toThrow();
+      expect(json).not.toHaveBeenCalled();
+    }
+    expect(close).toHaveBeenCalledOnce();
+  }
+);

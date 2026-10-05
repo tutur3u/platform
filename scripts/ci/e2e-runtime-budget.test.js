@@ -95,7 +95,8 @@ test('owned runtime deadline kills a TERM-ignoring command after readiness', asy
   });
   const result = await new Promise((resolve, reject) => {
     child.once('error', reject);
-    child.once('exit', (code, signal) => resolve({ code, signal }));
+    // Wait for pipe EOF too: exit can precede the final stdout data event.
+    child.once('close', (code, signal) => resolve({ code, signal }));
   }).finally(() => clearTimeout(armTimer));
   assert.notEqual(readyAt, undefined, 'owned child must announce readiness');
   assert.ok(
