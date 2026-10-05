@@ -16,20 +16,28 @@ import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
-import type { ReactNode } from 'react';
+import { type ReactNode, Suspense } from 'react';
 import { AppUserNav } from '@/components/app-user-nav';
 import { Brand } from '@/components/brand';
 import { WorkspaceInvitation } from '@/components/workspace-invitation';
 import { getNavigationLinks } from './navigation';
 import { Structure } from './structure';
+import Loading from './wiki/loading';
 export const metadata = { robots: { index: false, follow: false } };
-export default async function Layout({
-  children,
-  params,
-}: {
+type LayoutProps = {
   children: ReactNode;
   params: Promise<{ wsId: string }>;
-}) {
+};
+
+export default function Layout(props: LayoutProps) {
+  return (
+    <Suspense fallback={<Loading />}>
+      <WorkspaceLayout {...props} />
+    </Suspense>
+  );
+}
+
+async function WorkspaceLayout({ children, params }: LayoutProps) {
   await connection();
   const { wsId } = await params;
   const user = await getSatelliteAppSessionUser('lettin');

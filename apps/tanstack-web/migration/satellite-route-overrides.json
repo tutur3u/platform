@@ -24,6 +24,16 @@
       "status": "legacy-next",
       "targetOwner": "tanstack-start",
       "note": "Satellite hosted programming, benefits or native collaboration surface. Reuse shared Internal API data contracts when migrating this page to TanStack Start."
+    },
+    "page:/:locale/login:apps/lettin/src/app/[locale]/login/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Lettin login redirects resolve authenticated app sessions only after the request-time boundary inside Suspense. Preserve cross-app login return URLs and refresh handling when migrating."
+    },
+    "page:/:locale/:wsId/worlds/:worldId:apps/lettin/src/app/[locale]/[wsId]/worlds/[worldId]/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Lettin authenticated world studio streams a loading fallback while request-time route parameters and selected entry resolve. Preserve GUID validation, workspace authentication, and initial entry selection when migrating."
     }
   }
 }
