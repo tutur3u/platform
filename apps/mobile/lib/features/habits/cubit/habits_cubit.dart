@@ -9,6 +9,7 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/habits/cubit/habits_snapshot_access.dart';
 import 'package:mobile/features/habits/cubit/habits_state.dart';
 
 part 'habits_cache_json.dart';
@@ -23,6 +24,7 @@ class HabitsCubit extends Cubit<HabitsState> {
     String? actorId,
     String? Function()? currentUserId,
     CacheStore? cacheStore,
+    HabitsSnapshotAccess? snapshotAccess,
   }) : _repository = repository,
        _ownerId = actorId ?? (currentUserId ?? currentCacheUserId)(),
        _currentUserId = currentUserId ?? currentCacheUserId,
@@ -30,6 +32,8 @@ class HabitsCubit extends Cubit<HabitsState> {
        _requestedWorkspaceId = initialState?.activeWorkspaceId,
        super(initialState ?? const HabitsState()) {
     _ownerCacheRevision = _store.resourceRevisionFor(_actorFenceKey);
+    _snapshotAccess = snapshotAccess ?? HabitsSnapshotAccess.shared(_store);
+    _snapshotAccess.denial.addListener(_onSnapshotDenied);
   }
 
   final IHabitTrackerRepository _repository;
@@ -37,6 +41,7 @@ class HabitsCubit extends Cubit<HabitsState> {
   final String? Function() _currentUserId;
   final CacheStore _store;
   late final int _ownerCacheRevision;
+  late final HabitsSnapshotAccess _snapshotAccess;
   CacheKey get _actorFenceKey =>
       CacheKey(namespace: 'habits.actor', userId: _ownerId);
   bool get _scopeActive =>
@@ -68,6 +73,12 @@ class HabitsCubit extends Cubit<HabitsState> {
   }
 
   static HabitsState? cachedStateForWorkspace(String wsId, {String? actorId}) {
+    final owner = actorId ?? currentCacheUserId();
+    if (!HabitsSnapshotAccess.shared(
+      CacheStore.instance,
+    ).canPeek(_storeKey(wsId, HabitTrackerScope.self, null, actorId: owner))) {
+      return null;
+    }
     final key =
         _latestCacheKeyByWorkspace[userScopedCacheKey(wsId, userId: actorId)];
     if (key == null) {
@@ -101,6 +112,11 @@ class HabitsCubit extends Cubit<HabitsState> {
     String? actorId,
   }) {
     final owner = actorId ?? currentCacheUserId();
+    if (!HabitsSnapshotAccess.shared(
+      CacheStore.instance,
+    ).canPeek(_storeKey(wsId, initialScope, userId, actorId: owner))) {
+      return null;
+    }
     final cached = CacheStore.instance.peek<HabitsState>(
       key: _storeKey(wsId, initialScope, userId, actorId: owner),
       decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
@@ -134,7 +150,11 @@ class HabitsCubit extends Cubit<HabitsState> {
     final actorId = currentCacheUserId();
     final fence = CacheKey(namespace: 'habits.actor', userId: actorId);
     final ownerRevision = CacheStore.instance.resourceRevisionFor(fence);
+    final snapshotAccess = HabitsSnapshotAccess.shared(CacheStore.instance);
+    final snapshotKey = _storeKey(wsId, scope, userId, actorId: actorId);
+    final accessRevision = snapshotAccess.revision(snapshotKey);
     void checkScope() {
+      snapshotAccess.checkRevision(snapshotKey, accessRevision);
       if (currentCacheUserId() != actorId ||
           CacheStore.instance.resourceRevisionFor(fence) != ownerRevision) {
         throw const ApiException(message: 'Account changed', statusCode: 401);
@@ -143,6 +163,8 @@ class HabitsCubit extends Cubit<HabitsState> {
 
     final scopeUserId = scope == HabitTrackerScope.member ? userId : null;
     try {
+      if (!await snapshotAccess.canRead(snapshotKey)) return;
+      checkScope();
       await CacheStore.instance.prefetch<HabitsState>(
         key: _storeKey(wsId, scope, scopeUserId, actorId: actorId),
         policy: _cachePolicy,
@@ -156,6 +178,7 @@ class HabitsCubit extends Cubit<HabitsState> {
             wsId,
             scope: scope,
             userId: scopeUserId,
+            requireFresh: true,
           );
           checkScope();
           final selectedTrackerId = response.trackers.isEmpty
@@ -173,6 +196,7 @@ class HabitsCubit extends Cubit<HabitsState> {
                   summary.tracker.id,
                   scope: scope,
                   userId: scopeUserId,
+                  requireFresh: true,
                 ),
               ),
             );
@@ -221,6 +245,11 @@ class HabitsCubit extends Cubit<HabitsState> {
         },
       );
     } on ApiException catch (error) {
+      if (habitsAccessDenied(error)) {
+        _dropWorkspaceCache(snapshotKey);
+        await snapshotAccess.revoke(snapshotKey, error, checkScope);
+        return;
+      }
       if (error.statusCode == 404) {
         developer.log(
           'Skipping habits prewarm for workspace $wsId because the '
@@ -374,7 +403,7 @@ class HabitsCubit extends Cubit<HabitsState> {
     return '$partition::$wsId::${scope.apiValue}::${userId ?? ''}';
   }
 
-  void _storeCache(HabitsState nextState) {
+  void _storeCache(HabitsState nextState, {bool authorizedList = false}) {
     if (!_scopeActive) return;
     final wsId = nextState.activeWorkspaceId;
     final listResponse = nextState.listResponse;
@@ -400,32 +429,80 @@ class HabitsCubit extends Cubit<HabitsState> {
       _scopeUserIdFor(nextState.selectedScope, nextState),
       actorId: _ownerId,
     );
-    _cache[cacheKey] = _HabitsCacheEntry(
-      state: nextState,
-      fetchedAt: DateTime.now(),
+    final snapshotKey = _storeKey(
+      wsId,
+      nextState.selectedScope,
+      _scopeUserIdFor(nextState.selectedScope, nextState),
+      actorId: _ownerId,
     );
-    _latestCacheKeyByWorkspace['${_ownerId ?? 'anonymous'}::$wsId'] = cacheKey;
+    final accessRevision = _snapshotAccess.revision(snapshotKey);
+    void remember() {
+      checkPublication();
+      _snapshotAccess.checkRevision(snapshotKey, accessRevision);
+      if (!_snapshotAccess.canPeek(snapshotKey)) return;
+      _cache[cacheKey] = _HabitsCacheEntry(
+        state: nextState,
+        fetchedAt: DateTime.now(),
+      );
+      _latestCacheKeyByWorkspace['${_ownerId ?? 'anonymous'}::$wsId'] =
+          cacheKey;
+    }
+
+    remember();
     unawaited(
-      _store
-          .write(
-            key: _storeKey(
-              wsId,
-              nextState.selectedScope,
-              _scopeUserIdFor(nextState.selectedScope, nextState),
-              actorId: _ownerId,
-            ),
+      _snapshotAccess
+          .publish(
+            key: snapshotKey,
             checkScope: checkPublication,
+            expectedRevision: accessRevision,
+            authorizedList: authorizedList,
             policy: _cachePolicy,
             payload: _stateToCacheJson(nextState),
             tags: [_cacheTag, 'workspace:$wsId', 'module:habits'],
           )
+          .then((_) => remember())
           .catchError((Object error, StackTrace stackTrace) {
             developer.log(
-              'Failed to cache habits state for workspace $wsId: $error',
+              'Failed to persist Habits snapshot.',
               stackTrace: stackTrace,
             );
           }),
     );
+  }
+
+  void _onSnapshotDenied() {
+    final denied = _snapshotAccess.denial.value;
+    if (denied == null) return;
+    _dropWorkspaceCache(denied.key);
+    if (!_scopeActive ||
+        denied.key.userId != _ownerId ||
+        denied.key.workspaceId != _requestedWorkspaceId) {
+      return;
+    }
+    final wsId = denied.key.workspaceId!;
+    _listRequestToken++;
+    _detailRequestToken++;
+    _activityRequestToken++;
+    _publish(
+      HabitsState(
+        status: HabitsStatus.error,
+        activeWorkspaceId: wsId,
+        selectedScope: state.selectedScope,
+        error: denied.error.toString(),
+      ),
+    );
+  }
+
+  static void _dropWorkspaceCache(CacheKey key) {
+    final partition = '${key.userId ?? 'anonymous'}::${key.workspaceId}';
+    _cache.removeWhere((key, _) => key.startsWith('$partition::'));
+    _latestCacheKeyByWorkspace.remove(partition);
+  }
+
+  @override
+  Future<void> close() {
+    _snapshotAccess.denial.removeListener(_onSnapshotDenied);
+    return super.close();
   }
 
   HabitsState _decorateCachedState(

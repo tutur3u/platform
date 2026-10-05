@@ -46,6 +46,7 @@ void main() {
         'ws',
         scope: any(named: 'scope'),
         userId: any(named: 'userId'),
+        requireFresh: any(named: 'requireFresh'),
       ),
     ).thenAnswer((_) {
       entered.complete();
@@ -69,6 +70,7 @@ void main() {
         'ws',
         scope: any(named: 'scope'),
         userId: any(named: 'userId'),
+        requireFresh: any(named: 'requireFresh'),
       ),
     ).thenAnswer((_) {
       entered.complete();
@@ -90,6 +92,7 @@ void main() {
         'old',
         scope: any(named: 'scope'),
         userId: any(named: 'userId'),
+        requireFresh: any(named: 'requireFresh'),
       ),
     ).thenAnswer((_) {
       entered.complete();
@@ -100,6 +103,7 @@ void main() {
         'new',
         scope: any(named: 'scope'),
         userId: any(named: 'userId'),
+        requireFresh: any(named: 'requireFresh'),
       ),
     ).thenAnswer((_) async => empty);
     final loading = cubit.loadWorkspace('old');
@@ -141,6 +145,7 @@ void main() {
         'new',
         scope: any(named: 'scope'),
         userId: any(named: 'userId'),
+        requireFresh: any(named: 'requireFresh'),
       ),
     ).thenAnswer((_) async => empty);
     final writing = cubit.archiveTracker('tracker');
@@ -152,6 +157,7 @@ void main() {
         'new',
         scope: any(named: 'scope'),
         userId: any(named: 'userId'),
+        requireFresh: any(named: 'requireFresh'),
       ),
     ).called(1);
     expect(cubit.state.activeWorkspaceId, 'new');
@@ -184,6 +190,7 @@ void main() {
           any(),
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
+          requireFresh: any(named: 'requireFresh'),
         ),
       ).thenAnswer((_) async => empty);
       final oldWrite = cubit.archiveTracker('first');
@@ -198,6 +205,7 @@ void main() {
           'old',
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
+          requireFresh: any(named: 'requireFresh'),
         ),
       ).called(1);
       second.complete();

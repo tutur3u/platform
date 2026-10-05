@@ -14,6 +14,7 @@ abstract class IHabitTrackerRepository {
     String wsId, {
     HabitTrackerScope scope = HabitTrackerScope.self,
     String? userId,
+    bool requireFresh = false,
   });
 
   Future<HabitTrackerDetailResponse> getTrackerDetail(
@@ -21,6 +22,7 @@ abstract class IHabitTrackerRepository {
     String trackerId, {
     HabitTrackerScope scope = HabitTrackerScope.self,
     String? userId,
+    bool requireFresh = false,
   });
 
   Future<HabitTracker> createTracker(String wsId, HabitTrackerInput input);
@@ -133,6 +135,7 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
     String wsId, {
     HabitTrackerScope scope = HabitTrackerScope.self,
     String? userId,
+    bool requireFresh = false,
   }) async {
     final actor = _actor;
     _checkActor(actor);
@@ -141,6 +144,8 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
       cacheStore: _store,
       cacheUserId: () => actor,
       namespace: 'habits.trackers',
+      forceRefresh: requireFresh,
+      allowAwaitedTransportFallback: !requireFresh,
       workspaceId: wsId,
       path: _withQuery('/api/v1/workspaces/$wsId/habit-trackers', {
         'scope': scope.apiValue,
@@ -190,6 +195,7 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
     String trackerId, {
     HabitTrackerScope scope = HabitTrackerScope.self,
     String? userId,
+    bool requireFresh = false,
   }) async {
     final actor = _actor;
     _checkActor(actor);
@@ -198,6 +204,8 @@ class HabitTrackerRepository implements IHabitTrackerRepository {
       cacheStore: _store,
       cacheUserId: () => actor,
       namespace: 'habits.detail',
+      forceRefresh: requireFresh,
+      allowAwaitedTransportFallback: !requireFresh,
       workspaceId: wsId,
       path: _withQuery('/api/v1/workspaces/$wsId/habit-trackers/$trackerId', {
         'scope': scope.apiValue,

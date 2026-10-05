@@ -393,9 +393,19 @@ signs out and back in. Forms and details remove only their owned route on scope
 departure, including a route covered by another modal. These rules are covered by
 `habits_actor_lifetime_test.dart`, real encrypted storage in
 `habits_cache_lifetime_test.dart`, `habits_host_scope_test.dart`, and
-`habits_owned_overlay_test.dart`. Durable denial fencing for the separate
-`habits.workspace` snapshot is a subsequent cache policy packet; this host change
-does not claim that existing denial-retention behavior has been corrected.
+`habits_owned_overlay_test.dart`. A definitive 401/403 from a native Habits
+list, detail, or activity request clears visible rows and blocks every secondary
+snapshot query variant for that account/workspace. A separate durable denial
+marker prevents reopening private history when snapshot deletion fails. Purges
+and subsequent publication are serialized; only a fresh authorized list saved
+successfully can remove the marker. Draft edits and queued mutations cannot
+reauthorize it. MFA/verification challenges and temporary transport failures keep
+the last authorized screen snapshot. The native cubit requests fresh repository
+responses while supplying its own stale snapshot, so a lower-level cached response
+cannot masquerade as renewed authorization. Other repository callers retain the
+default read-through contract. `habits_snapshot_access_test.dart` covers durable
+revocation, storage failures, fresh-read provenance, ordered recovery, private
+member removal, and actor/workspace isolation.
 Meet meeting create, edit, and delete also queue offline with a pending list
 treatment. Assistant model favorites and name changes now queue offline and
 overlay pending values on their scoped cached reads. Live room access,
