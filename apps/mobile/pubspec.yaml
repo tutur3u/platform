@@ -29,6 +29,8 @@ dependencies:
     sdk: flutter
   flutter_bloc: ^9.1.1
   flutter_colorpicker: ^1.1.0
+  flutter_edge_ai: 2.0.0
+  flutter_edge_ai_litertlm: 1.8.7
   flutter_inappwebview: ^6.1.5
   flutter_local_notifications: ^22.0.0
   flutter_localizations:
