@@ -6,6 +6,8 @@ import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
+import { Suspense } from 'react';
 import { BASE_URL, WEB_APP_URL } from '@/constants/common';
 
 function normalizeNextPath(value: string | string[] | undefined) {
@@ -13,11 +15,20 @@ function normalizeNextPath(value: string | string[] | undefined) {
   return normalizeAuthRedirectPath(rawValue, BASE_URL, '/');
 }
 
-export default async function LoginPage({
-  searchParams,
-}: {
+type LoginProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
+};
+
+export default function LoginPage(props: LoginProps) {
+  return (
+    <Suspense fallback={null}>
+      <LoginRedirect {...props} />
+    </Suspense>
+  );
+}
+
+async function LoginRedirect({ searchParams }: LoginProps) {
+  await connection();
   const params = await searchParams;
   const nextPath = normalizeNextPath(params.next);
   const shouldRefreshCrossAppSession = params.refresh === '1';
