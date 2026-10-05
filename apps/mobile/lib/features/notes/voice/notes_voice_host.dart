@@ -110,7 +110,7 @@ class _NotesVoiceHostState extends State<NotesVoiceHost>
 
   Future<void> _review() async {
     final job = _voice.state.job;
-    if (job == null || !job.canSave || _reviewContext != null) return;
+    if (job == null || !job.canReview || _reviewContext != null) return;
     final identity = _identity;
     final reviewToken = ++_reviewToken;
     try {
@@ -244,7 +244,7 @@ class _NotesVoiceHostState extends State<NotesVoiceHost>
                             enabled: _identity != null,
                             onPressed: () => unawaited(_voice.start()),
                           ),
-                          if (job?.canSave == true)
+                          if (job?.canReview == true)
                             ShellActionSpec(
                               id: 'notes-voice-review',
                               icon: Icons.auto_awesome_outlined,

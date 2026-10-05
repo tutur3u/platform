@@ -31,7 +31,9 @@ Workspace or account changes clear search, selection, and the previous directory
 Late responses and signed-file actions cannot restore or open content from the
 previous account, workspace, or request generation. Definitive authorization
 failures clear displayed files; verification challenges and temporary failures
-retain the current view.
+retain the current view. This includes `MFA_REQUIRED` responses identified by
+the API error code even when the typed verification flag is absent; the challenge
+message remains visible, and a subsequent definitive denial still clears entries.
 
 Regression coverage: `apps/mobile/test/features/drive/drive_page_test.dart`.
 

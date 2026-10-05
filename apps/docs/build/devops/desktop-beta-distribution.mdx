@@ -282,6 +282,31 @@ Do not remove Flutter license notices or required plugin functionality merely to
 hide an informational test. [Microsoft documents optional Desktop Bridge tests](https://learn.microsoft.com/en-us/windows/uwp/debug-test-perf/windows-desktop-bridge-app-tests)
 as informational, but a required DPI warning still needs investigation.
 
+### Infrastructure desktop signing contract
+
+The separate Infrastructure desktop contract admits only the direct
+`desktop-beta.yaml` workflow on `production`, in the protected `desktop-beta`
+environment, with audience `tuturuuu-desktop-deployment`. Signature, issuer,
+subject, source SHA, numeric run/attempt, event and GitHub-hosted runner claims
+are checked before credentials can be considered. Mobile store jobs, main-based
+diagnostics, pull requests and unexpected reusable workflows are excluded.
+
+Windows admits an Authenticode PFX and its password. macOS admits a **Developer
+ID Application** P12, its password and signing identity, Apple team, and a separate
+notarization P8 with App Store Connect key/issuer identifiers. Profile validation
+rejects missing, duplicate, extra or other-platform resources. Public Flutter
+configuration is a separate contract and never belongs in a signing bundle.
+Linux and Store MSIX do not consume this signing bundle.
+
+This executable contract is preparatory: encrypted desktop storage, operator UI,
+bundle delivery and protected workflow hydration are separate implementation
+layers. The existing mobile vault is unchanged, and desktop publication remains
+opt-in. `desktopVaultEnabled` requires an explicit `true`; implementing a validator
+does not establish provisioning, certificate validity or signed runtime success.
+`desktop-deployment/contract.test.ts` and `desktop-deployment/oidc.test.ts` cover
+platform isolation and locally signed JWT rejection. Actual protected-workflow
+OIDC, certificate identity, installation, WACK and update proof remain required.
+
 ### Private desktop vault storage
 
 Desktop signing storage is additive and separate from the mobile vault. Windows

@@ -140,3 +140,33 @@ width and text scale, avoid nested bordered panels, and keep timeline copy compa
 while retaining privacy and partial-result status. Dock reselect scrolls to top,
 then returns to the default section; an already-top view skips the scroll step.
 See the linked feature page for regression tests and intentional exceptions.
+
+
+## State retention and host regressions
+
+For the source-linked diagnosis guide, read
+`apps/docs/build/development-tools/mobile-state-regressions.mdx`.
+
+- A covered editor must remove its captured owned route, not pop whichever route
+  is currently on top. A post-frame callback on a settled UI needs
+  `WidgetsBinding.instance.ensureVisualUpdate()` to schedule cleanup. Test that
+  the old actor's editor disappears while an unrelated covering modal survives.
+- Test a dock action through its real host and publisher when reachability matters.
+  A manually mounted destination widget does not prove host admission. Separate
+  review eligibility from mutation eligibility; Notes silence can be reviewed
+  while Save remains disabled and no paid analysis is replayed.
+- A successful read-through cached return is display data, not fresh permission
+  proof for a second cache. Use the repository's explicit `requireFresh` path
+  with awaited transport fallback disabled for authorization-sensitive publication,
+  retaining actor/workspace/request and denial-revision fences.
+- For endpoints with MFA challenges, recognize both the typed verification flag
+  and `code == 'MFA_REQUIRED'`. Preserve the scoped snapshot and visible challenge,
+  while definitive denials still clear it. Retention does not bypass mutation
+  authorization.
+- Attach handlers to independent startup futures together before awaiting either.
+  Default settle-all `Future.wait` handles a sibling failure while another task
+  remains pending; connect only after all prerequisites succeed and scope is
+  still current. Test pending and failing tasks with controlled completers.
+
+Keep runtime claims separate: source and injected-host tests do not establish
+provider/device operation or production delivery.

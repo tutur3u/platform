@@ -61,6 +61,7 @@ class NotesVoiceJob {
       {'pending', 'transcribing', 'summarizing'}.contains(status);
   bool get complete => status == 'completed';
   bool get retryable => status == 'failed';
+  bool get canReview => complete || canSave;
   bool get canSave =>
       (complete || retryable) && (transcript?.trim().isNotEmpty ?? false);
   Map<String, dynamic> toJson() => {

@@ -22,14 +22,34 @@ import 'package:mobile/features/time_tracker/utils/history_anchor.dart';
 import 'package:mobile/features/time_tracker/utils/threshold.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+part 'time_tracker_load_scope.dart';
+
 class TimeTrackerCubit extends Cubit<TimeTrackerState> {
   TimeTrackerCubit({
     required ITimeTrackerRepository repository,
     TimeTrackerState? initialState,
+    CacheStore? cacheStore,
+    String? Function()? currentUserId,
   }) : _repo = repository,
-       super(initialState ?? const TimeTrackerState());
+       _store = cacheStore ?? CacheStore.instance,
+       _currentUserId = currentUserId ?? currentCacheUserId,
+       _ownerId = (currentUserId ?? currentCacheUserId)(),
+       super(initialState ?? const TimeTrackerState()) {
+    _ownerRevision = _store.resourceRevisionFor(_actorFence);
+  }
 
   final ITimeTrackerRepository _repo;
+  final CacheStore _store;
+  final String? Function() _currentUserId;
+  final String? _ownerId;
+  late final int _ownerRevision;
+  CacheKey get _actorFence =>
+      CacheKey(namespace: 'time_tracker.actor', userId: _ownerId);
+  bool get _ownerActive =>
+      !isClosed &&
+      _currentUserId() == _ownerId &&
+      _store.resourceRevisionFor(_actorFence) == _ownerRevision;
+  void _publish(TimeTrackerState next) => emit(next);
   static const CachePolicy _cachePolicy = CachePolicies.moduleData;
   static const _cacheTag = 'time-tracker:root';
   Timer? _ticker;
@@ -43,10 +63,10 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
   String? _activeUserId;
   final Map<String, int> _goalsRequestVersionByWs = <String, int>{};
 
-  static CacheKey _cacheKey(String wsId, String userId) {
+  static CacheKey _cacheKey(String wsId, String userId, {String? actorId}) {
     return CacheKey(
       namespace: 'time_tracker.root',
-      userId: currentCacheUserId(),
+      userId: actorId ?? currentCacheUserId(),
       workspaceId: wsId,
       locale: currentCacheLocaleTag(),
       params: {'scopeUserId': userId},
@@ -148,11 +168,14 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
   static TimeTrackerState? seedStateFor({
     required String wsId,
     required String userId,
+    CacheStore? cacheStore,
+    String? actorId,
   }) {
-    final cached = CacheStore.instance.peek<Map<String, dynamic>>(
-      key: _cacheKey(wsId, userId),
-      decode: _decodeCacheJson,
-    );
+    final cached = (cacheStore ?? CacheStore.instance)
+        .peek<Map<String, dynamic>>(
+          key: _cacheKey(wsId, userId, actorId: actorId),
+          decode: _decodeCacheJson,
+        );
     final json = cached.data;
     if (!cached.hasValue || json == null) {
       return null;
@@ -318,7 +341,12 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     required String wsId,
     required String userId,
   }) {
-    final cachedState = seedStateFor(wsId: wsId, userId: userId);
+    final cachedState = seedStateFor(
+      wsId: wsId,
+      userId: userId,
+      cacheStore: _store,
+      actorId: _ownerId,
+    );
     if (cachedState == null) {
       return null;
     }
@@ -338,21 +366,21 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
   }
 
   Future<void> _persistCurrentStateToCache() async {
-    final wsId = _activeWorkspaceId;
-    final userId = _activeUserId;
-    if (wsId == null || userId == null || wsId.isEmpty || userId.isEmpty) {
-      return;
-    }
-
-    await CacheStore.instance.write(
-      key: _cacheKey(wsId, userId),
+    final scope = _captureLoadScope();
+    if (scope == null || !scope.active) return;
+    await _store.write(
+      key: scope.key,
       policy: _cachePolicy,
       payload: _stateToCachePayload(state),
-      tags: [_cacheTag, 'workspace:$wsId', 'module:timer'],
+      tags: [_cacheTag, 'workspace:${scope.wsId}', 'module:timer'],
+      checkScope: scope.check,
     );
   }
 
   void prepareForWorkspaceSwitch() {
+    ++_loadDataRequestToken;
+    _activeWorkspaceId = null;
+    _activeUserId = null;
     _stopTick();
     emit(
       state.copyWith(
@@ -389,210 +417,13 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     int? firstDayOfWeek,
     bool forceRefresh = false,
     bool throwOnError = false,
-  }) async {
-    final effectiveFirstDayOfWeek = firstDayOfWeek ?? _historyFirstDayOfWeek;
-    _historyFirstDayOfWeek = effectiveFirstDayOfWeek;
-    _activeWorkspaceId = wsId;
-    _activeUserId = userId;
-    final loadDataRequestToken = ++_loadDataRequestToken;
-    _goalsWorkspaceRequestToken++;
-    _goalsRequestVersionByWs.clear();
-    final requestedHistoryViewMode = state.historyViewMode;
-    final requestedHistoryAnchorDate = state.historyAnchorDate == null
-        ? null
-        : DateTime(
-            state.historyAnchorDate!.year,
-            state.historyAnchorDate!.month,
-            state.historyAnchorDate!.day,
-          );
-    final cached = _cachedStateFor(wsId: wsId, userId: userId);
-    final cachedRead = await CacheStore.instance.read<Map<String, dynamic>>(
-      key: _cacheKey(wsId, userId),
-      decode: _decodeCacheJson,
-    );
-
-    if (cached != null) {
-      final effectiveHistoryAnchorDate =
-          requestedHistoryAnchorDate ?? cached.historyAnchorDate;
-      final shouldRefreshForHistoryContext =
-          requestedHistoryViewMode != cached.historyViewMode ||
-          !_isSameCalendarDay(
-            requestedHistoryAnchorDate,
-            cached.historyAnchorDate,
-          );
-      emit(
-        cached.copyWith(
-          historyViewMode: requestedHistoryViewMode,
-          historyAnchorDate: effectiveHistoryAnchorDate,
-          historySessions: shouldRefreshForHistoryContext
-              ? const []
-              : cached.historySessions,
-          historyHasMore:
-              !shouldRefreshForHistoryContext && cached.historyHasMore,
-          clearHistoryNextCursor: shouldRefreshForHistoryContext,
-          clearHistoryPeriodStats: shouldRefreshForHistoryContext,
-          isHistoryLoading: shouldRefreshForHistoryContext,
-          isHistoryLoadingMore: false,
-          status: TimeTrackerStatus.loaded,
-          isFromCache: true,
-          isRefreshing: true,
-          lastUpdatedAt: cachedRead.fetchedAt,
-          clearError: true,
-        ),
-      );
-      if (cached.runningSession != null && !cached.isPaused) {
-        _startTick();
-      }
-    } else {
-      emit(
-        state.copyWith(
-          status: TimeTrackerStatus.loading,
-          isFromCache: false,
-          isRefreshing: false,
-          lastUpdatedAt: null,
-          clearError: true,
-        ),
-      );
-    }
-
-    try {
-      await _ensureHistoryPreferencesLoaded();
-      final anchorDate = _currentHistoryAnchorDate();
-      final timezone = await getCurrentTimezoneIdentifier();
-      final periodRange = _historyPeriodRange(
-        state.historyViewMode,
-        anchorDate,
-        firstDayOfWeek: effectiveFirstDayOfWeek,
-      );
-      final normalizedUserId = _normalizeUserId(userId);
-      final runningSessionFuture = _repo.getRunningSession(wsId);
-      final categoriesFuture = _repo.getCategories(wsId);
-      final recentSessionsFuture = _repo.getSessions(wsId, limit: 5);
-      final statsFuture = _repo.getStats(wsId, userId, timezone: timezone);
-      final historyPageFuture = _repo.getHistorySessions(
-        wsId,
-        dateFrom: periodRange.start,
-        dateTo: periodRange.end,
-        userId: normalizedUserId,
-      );
-      final historyPeriodStatsFuture = _repo.getPeriodStats(
-        wsId,
-        dateFrom: periodRange.start,
-        dateTo: periodRange.end,
-        userId: normalizedUserId,
-        timezone: timezone,
-      );
-      final pomodoroSettingsFuture = _repo.loadPomodoroSettings();
-      final workspaceSettingsFuture = _safeGetWorkspaceSettings(wsId);
-
-      final runningSession = await runningSessionFuture;
-      final categories = await categoriesFuture;
-      final recentSessions = await recentSessionsFuture;
-      final stats = await statsFuture;
-      final historyPage = await historyPageFuture;
-      final historyPeriodStats = await historyPeriodStatsFuture;
-      final pomodoroSettings = await pomodoroSettingsFuture;
-      final workspaceSettings = await workspaceSettingsFuture;
-
-      TimeTrackingBreak? activeBreak;
-      if (runningSession != null) {
-        activeBreak = await _repo.getActiveBreak(wsId, runningSession.id);
-      }
-
-      final isPaused =
-          runningSession != null &&
-          !runningSession.isRunning &&
-          activeBreak != null;
-      final runningStartTime = runningSession?.startTime;
-      final elapsed = runningStartTime != null && !isPaused
-          ? DateTime.now().difference(runningStartTime)
-          : Duration.zero;
-
-      // Fetch task display info separately if the running session has a task.
-      TaskLinkOption? runningTaskOption;
-      final taskId = runningSession?.taskId;
-      if (taskId != null && taskId.isNotEmpty) {
-        try {
-          runningTaskOption = await _repo.getTaskLinkOptionById(wsId, taskId);
-          final isStaleTaskRequest =
-              loadDataRequestToken != _loadDataRequestToken ||
-              _activeWorkspaceId != wsId;
-          if (isStaleTaskRequest) {
-            runningTaskOption = null;
-          }
-        } on Exception catch (e) {
-          developer.log(
-            'Failed to load running session task info',
-            name: 'TimeTrackerCubit',
-            error: e,
-          );
-        }
-      }
-
-      emit(
-        state.copyWith(
-          status: TimeTrackerStatus.loaded,
-          isFromCache: false,
-          isRefreshing: false,
-          lastUpdatedAt: DateTime.now(),
-          runningSession: runningSession,
-          activeBreak: activeBreak,
-          elapsed: elapsed,
-          recentSessions: recentSessions,
-          historyAnchorDate: anchorDate,
-          historySessions: historyPage.sessions,
-          historyPeriodStats: historyPeriodStats,
-          historyHasMore: historyPage.hasMore,
-          historyNextCursor: historyPage.nextCursor,
-          isHistoryLoading: false,
-          isHistoryLoadingMore: false,
-          categories: categories,
-          clearGoals: true,
-          clearGoalsLoaded: true,
-          goalsWorkspaceId: null,
-          goalsLoadingByWs: const {},
-          goalsLoadedByWs: const {},
-          stats: stats,
-          pomodoroSettings: pomodoroSettings,
-          thresholdDays: workspaceSettings?.missedEntryDateThreshold,
-          isPaused: isPaused,
-          clearRunningSession: runningSession == null,
-          clearActiveBreak: activeBreak == null,
-          runningSessionTaskName: runningTaskOption?.name,
-          runningSessionTaskTicketLabel: runningTaskOption?.ticketLabel,
-          clearRunningSessionTask: runningTaskOption == null,
-          clearError: true,
-        ),
-      );
-      await _persistCurrentStateToCache();
-
-      if (runningSession != null && !isPaused) {
-        _startTick();
-      }
-    } on Exception catch (e) {
-      if (cached != null) {
-        emit(
-          state.copyWith(
-            status: TimeTrackerStatus.loaded,
-            isRefreshing: false,
-            isHistoryLoading: false,
-            isHistoryLoadingMore: false,
-            error: e.toString(),
-          ),
-        );
-        if (throwOnError) {
-          rethrow;
-        }
-        return;
-      }
-      emit(
-        state.copyWith(status: TimeTrackerStatus.error, error: e.toString()),
-      );
-      if (throwOnError) {
-        rethrow;
-      }
-    }
-  }
+  }) => _loadScopedData(
+    wsId,
+    userId,
+    firstDayOfWeek: firstDayOfWeek,
+    forceRefresh: forceRefresh,
+    throwOnError: throwOnError,
+  );
 
   Future<void> startSession(String wsId) async {
     try {

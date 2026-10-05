@@ -11,6 +11,10 @@ notice. Pause, resume, retake and cancel remain in the same dock; backgrounding
 pauses recording, and account/workspace changes or leaving Notes discard unsent
 recording bytes. Existing Notes editing and locking remain unchanged.
 
+Completed results, including recordings with no detected speech, can open the
+review sheet. A silent result explains that no speech was detected and offers no
+saveable Note; Save remains disabled and no analysis is replayed automatically.
+
 Completed results use a compact review sheet with transcript, summary, decisions,
 proposed actions, recommendations and evidence. A successful transcript can also
 be reviewed/saved if the later analysis has a known failure. **Save note to this
@@ -69,7 +73,9 @@ input limits, metering, actor isolation, revision/retry behavior and RLS. API ro
 are first-class Next handlers tracked as Rust migration backlog. Native cubit,
 repository and widget regressions cover owner transitions, retry intents, retained
 snapshots, denied access, real recording controls, enlarged-text review and explicit
-stable-ID saves. `cache_store_scoped_removal_test.dart` covers obsolete deletions
+stable-ID saves. `notes_voice_host_review_test.dart` verifies that a silent
+completed result reaches review through the actual host action while Save remains
+disabled, and that uncertain jobs cannot enter review. `cache_store_scoped_removal_test.dart` covers obsolete deletions
 waiting for initialization/admission and durable denied-history erasure. Device
 microphone/provider execution and production deployment
 remain separate runtime verification gates.
