@@ -273,6 +273,7 @@ export function NativeRecurrenceForm({
           setDraft(value);
           setInvalid(false);
         }}
+        nativeStorageHint={!series?.providerSource && sourceId === 'native'}
         occurrenceOnly={!!series && scope === 'this'}
         disabled={frozen || submission.isPending}
       />

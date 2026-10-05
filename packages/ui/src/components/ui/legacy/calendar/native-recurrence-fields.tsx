@@ -19,11 +19,13 @@ export function NativeRecurrenceFields({
   setDraft,
   occurrenceOnly,
   disabled,
+  nativeStorageHint = true,
 }: {
   draft: RecurrenceDraft;
   setDraft: (draft: RecurrenceDraft) => void;
   occurrenceOnly: boolean;
   disabled: boolean;
+  nativeStorageHint?: boolean;
 }) {
   const t = useTranslations('calendar.recurrence');
   const field = (key: keyof RecurrenceDraft, value: unknown) =>
@@ -196,7 +198,9 @@ export function NativeRecurrenceFields({
           onChange={(e) => field('location', e.target.value)}
         />
       </div>
-      <p className="text-muted-foreground text-xs">{t('nativeOnly')}</p>
+      {nativeStorageHint && (
+        <p className="text-muted-foreground text-xs">{t('nativeOnly')}</p>
+      )}
     </fieldset>
   );
 }

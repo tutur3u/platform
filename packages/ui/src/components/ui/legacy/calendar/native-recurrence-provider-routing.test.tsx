@@ -52,9 +52,6 @@ vi.mock('./use-provider-recurrence-operation', () => ({
     };
   },
 }));
-vi.mock('./native-recurrence-fields', () => ({
-  NativeRecurrenceFields: () => <div>fields</div>,
-}));
 vi.mock('../../dialog', () =>
   Object.fromEntries(
     [
@@ -140,6 +137,14 @@ function mount() {
 }
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    }
+  );
   mocks.pending = false;
   mocks.getSeries.mockResolvedValue(series);
   mocks.capabilities.mockResolvedValue({
@@ -155,6 +160,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
   for (const client of clients.splice(0)) client.clear();
 });
 describe('imported recurrence mutation routing', () => {
@@ -175,6 +181,7 @@ describe('imported recurrence mutation routing', () => {
     );
     expect(mocks.nativeMutate).not.toHaveBeenCalled();
     expect(mocks.nativeCreate).not.toHaveBeenCalled();
+    expect(screen.queryByText('nativeOnly')).not.toBeInTheDocument();
   });
   it.each([
     { enabled: false, sources: [] },
@@ -187,6 +194,7 @@ describe('imported recurrence mutation routing', () => {
       await waitFor(() =>
         expect(screen.getByText('provider_disabled')).toBeInTheDocument()
       );
+      expect(screen.queryByText('nativeOnly')).not.toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'save' })).toBeDisabled();
       expect(screen.getByRole('button', { name: 'delete' })).toBeDisabled();
       expect(mocks.providerSubmit).not.toHaveBeenCalled();
@@ -224,4 +232,24 @@ it('revalidates all provider projections only after applied and only in the affe
   for (const key of ownKeys)
     expect(h.client.getQueryState(key)?.isInvalidated).toBe(true);
   expect(h.client.getQueryState(other)?.isInvalidated).toBe(false);
+});
+
+it.each(['google', 'microsoft'])(
+  'does not claim native storage for an imported %s series',
+  async (provider) => {
+    mocks.getSeries.mockResolvedValue({
+      ...series,
+      providerSource: { provider, connectionId: 'connection' },
+    });
+    mocks.capabilities.mockResolvedValue({ enabled: false, sources: [] });
+    mount();
+    await screen.findByText('provider_disabled');
+    expect(screen.queryByText('nativeOnly')).not.toBeInTheDocument();
+  }
+);
+it('retains the native storage hint for canonical native events', async () => {
+  const { providerSource: _provider, ...nativeSeries } = series;
+  mocks.getSeries.mockResolvedValue(nativeSeries);
+  mount();
+  expect(await screen.findByText('nativeOnly')).toBeInTheDocument();
 });
