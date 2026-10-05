@@ -1,4 +1,8 @@
 const { spawn } = require('node:child_process');
+const {
+  signalOwnedProcess,
+  waitForOwnedExit,
+} = require('./e2e-owned-process-group');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -221,14 +225,15 @@ function startOwnedSatellite(satellite, options = {}) {
   const logFd = fsImpl.openSync(logPath, 'w');
   let child;
   try {
-    // The owned satellites are long-lived shared fixtures for a Playwright
-    // shard. Use webpack here because a Turbopack task-cache panic terminates
+    // The owned satellites are shared fixtures for their selected test
+    // cohort. Use webpack here because a Turbopack task-cache panic terminates
     // the whole fixture and turns later authorization assertions into 502s.
     // Production builds still use each app's normal Turbopack build command.
     child = spawnImpl(
       'bunx',
       ['next', 'dev', '-p', satellite.port, '--webpack'],
       {
+        detached: process.platform !== 'win32',
         cwd: path.join(rootDir, 'apps', satellite.appName),
         env: createOwnedSatelliteEnv(satellite, env),
         stdio: ['ignore', logFd, logFd],
@@ -245,6 +250,7 @@ function startOwnedSatellite(satellite, options = {}) {
 
   return {
     child,
+    processGroup: process.platform !== 'win32',
     exitPromise,
     logPath,
     readinessUrl: getOwnedSatelliteReadinessUrl(satellite),
@@ -301,18 +307,21 @@ async function waitForOwnedSatellite(runtime, waitForUrl) {
 }
 
 async function stopOwnedSatellite(runtime, options = {}) {
-  if (!runtime || runtime.child.exitCode != null) return;
+  if (!runtime) return;
+  if (runtime.child.exitCode != null) {
+    if (runtime.processGroup)
+      signalOwnedProcess(runtime, 'SIGKILL', options.kill);
+    return;
+  }
 
-  runtime.child.kill('SIGTERM');
+  signalOwnedProcess(runtime, 'SIGTERM', options.kill);
   const timeoutMs = options.timeoutMs ?? 10_000;
-  const stopped = await Promise.race([
-    runtime.exitPromise.then(() => true),
-    new Promise((resolve) => setTimeout(() => resolve(false), timeoutMs)),
-  ]);
+  const stopped = await waitForOwnedExit(runtime, timeoutMs);
 
-  if (!stopped && runtime.child.exitCode == null) {
-    runtime.child.kill('SIGKILL');
-    await runtime.exitPromise;
+  if (runtime.processGroup || (!stopped && runtime.child.exitCode == null)) {
+    signalOwnedProcess(runtime, 'SIGKILL', options.kill);
+    if (!stopped && !(await waitForOwnedExit(runtime, timeoutMs)))
+      throw new Error('Owned E2E fixture did not exit after termination');
   }
 }
 
