@@ -191,6 +191,35 @@ describe('personal Drive playground checkpoints', () => {
     await expect(getPlayground(actor, projectId)).rejects.toThrow();
     expect(mocks.download).not.toHaveBeenCalled();
   });
+  it.each([true, false])(
+    'initializes an empty=%s project without changing standalone templates',
+    async (empty) => {
+      mocks.rpc.mockImplementation(async (name: string) => {
+        if (name === 'create_learn_playground') return projectId;
+        if (name === 'read_learn_playgrounds')
+          return {
+            personalWorkspaceId,
+            allowed: true,
+            projects: [{ ...project([]), revision: 0, drive_path: null }],
+          };
+        return 1;
+      });
+      await createPlayground(
+        actor,
+        { name: 'Fixture', language: 'python' },
+        undefined,
+        { empty }
+      );
+      const bytes = mocks.upload.mock.calls[0]?.[2] as Uint8Array;
+      expect(Buffer.from(bytes).toString()).toEqual(
+        empty ? '' : 'print("Hello, playground!")\n'
+      );
+      expect(mocks.rpc).not.toHaveBeenCalledWith(
+        'discard_uninitialized_playground',
+        expect.anything()
+      );
+    }
+  );
   it('discards only the new uninitialized project when its template cannot be saved', async () => {
     mocks.rpc.mockImplementation(async (name: string) => {
       if (name === 'create_learn_playground') return projectId;

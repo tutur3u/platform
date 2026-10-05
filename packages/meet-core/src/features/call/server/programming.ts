@@ -18,6 +18,7 @@ import {
 import { programmingRoomTicket } from '@tuturuuu/storage-core/programming-collaboration';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { accountPrivateRpc } from '@tuturuuu/utils/account-benefits-server';
+import { PlaygroundCreate } from '@tuturuuu/utils/playground-schema';
 import { playgroundTemplates } from '@tuturuuu/utils/playground-templates';
 import { z } from 'zod';
 import { MeetCallAccessError } from '../lib/call-access';
@@ -241,10 +242,14 @@ export async function createMeetingPlayground(
   if (!access.isHost)
     throw new MeetCallAccessError(403, 'Host access required');
   await selected(access);
+  const parsed = PlaygroundCreate.extend({
+    empty: z.boolean().optional(),
+  }).parse(payload);
   return createPlayground(
     access.user.id,
-    payload,
-    (await elevated(access)) ? access.meeting.id : undefined
+    { name: parsed.name, language: parsed.language },
+    (await elevated(access)) ? access.meeting.id : undefined,
+    { empty: parsed.empty }
   );
 }
 export async function executeMeetingPlayground(
