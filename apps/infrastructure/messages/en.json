@@ -516,6 +516,25 @@
     "switch_failed_description": "This account has been removed. Please add it again to continue using it.",
     "unknown_user": "Unknown User"
   },
+  "accountBenefits": {
+    "active": "Active",
+    "amount": "Credit amount",
+    "benefit": "Benefit type",
+    "credits": "Bonus AI credits",
+    "description": "Grant features, early access and bonus AI credits with an audited reason.",
+    "earlyAccess": "Early access",
+    "expired": "Expired",
+    "expiry": "Expires at (optional)",
+    "failed": "Benefit request failed. Try again.",
+    "feature": "Feature access",
+    "grant": "Grant benefit",
+    "key": "Benefit key",
+    "reason": "Reason",
+    "revoke": "Revoke",
+    "revoked": "Revoked",
+    "title": "Account benefits",
+    "userId": "Account ID"
+  },
   "admin-holidays": {
     "actions": "Actions",
     "add": "Add",
@@ -6059,6 +6078,54 @@
     "vs": "vs.",
     "yesterday": "Yesterday"
   },
+  "desktop-deployment": {
+    "artifactMetadataOnly": "Release metadata and its checksum are available. This is not independent signature verification.",
+    "configurationUnknown": "Provider configuration is not verified by this page. Credentials remain in the provider and GitHub environment.",
+    "description": "Production beta distribution, verification evidence, and secure signing management.",
+    "digest": "Artifact SHA-256",
+    "management": "Signing and distribution management",
+    "managementDescription": "Open the existing provider or protected environment to configure signing. This page never reads or exports private keys or credentials.",
+    "managementLinks": {
+      "apple": "Apple certificates",
+      "github": "GitHub protected environments",
+      "microsoft": "Microsoft signing resources",
+      "store": "Existing Microsoft Store submission",
+      "storeWorkflow": "Windows Store packaging workflow"
+    },
+    "metadataUnavailable": "Public metadata is unavailable. Check the workflow directly.",
+    "noArtifact": "No published beta artifact is available for this platform.",
+    "platforms": {
+      "linux": "Linux",
+      "macos": "macOS",
+      "windows": "Windows"
+    },
+    "provenancePassed": "The signed provenance verification step passed for this workflow run.",
+    "release": "Published beta: {tag}",
+    "run": "Run {id}",
+    "setup": "Distribution and signing runbook",
+    "states": {
+      "action_required": "Action required",
+      "cancelled": "Cancelled",
+      "completed": "Completed",
+      "failure": "Failed",
+      "in_progress": "In progress",
+      "neutral": "Neutral",
+      "queued": "Queued",
+      "skipped": "Skipped",
+      "stale": "Stale",
+      "startup_failure": "Startup failed",
+      "success": "Succeeded",
+      "timed_out": "Timed out"
+    },
+    "title": "Desktop deployment",
+    "trust": {
+      "linux": "Linux beta packages use signed GitHub artifact provenance. This is distinct from an embedded Debian package signature.",
+      "macos": "The beta pipeline requires Developer ID signing, Apple notarization, and stapled ticket verification.",
+      "windows": "Direct installers require Authenticode signing. Microsoft Store MSIX packages are signed by Microsoft after certification; a draft package is not a published app."
+    },
+    "workflow": "Latest production beta workflow",
+    "workflowScope": "Workflow status describes this run. A published artifact may come from an earlier run; configuration and signatures require separate verification."
+  },
   "devbox-control": {
     "actions": {
       "disable": "Disable",
@@ -6211,6 +6278,11 @@
       "title": "Why a setup machine may be missing"
     },
     "title": "Devbox Control"
+  },
+  "devboxes": {
+    "features": {
+      "playground": "Hosted playgrounds"
+    }
   },
   "documents": {
     "back-to-documents": "Back to documents",
@@ -8445,6 +8517,7 @@
   "infrastructure-tabs": {
     "abuse_events": "Abuse Events",
     "abuse_intelligence": "Abuse Intelligence",
+    "account_benefits": "Account benefits",
     "ai_agents": "AI Agents",
     "ai_credits": "AI Credits",
     "ai_credits_allocations": "Credit Allocations",
@@ -8457,6 +8530,7 @@
     "backups": "Backups",
     "blocked_ips": "Blocked IPs",
     "changelog": "Changelog",
+    "desktop_deployment": "Desktop deployment",
     "devboxes": "Devboxes",
     "email_audit": "Email Audit",
     "email_blacklist": "Email Blacklist",
@@ -8497,8 +8571,7 @@
     "timezones": "Timezones",
     "translations": "Translations",
     "users": "Users",
-    "workspaces": "Workspaces",
-    "account_benefits": "Account benefits"
+    "workspaces": "Workspaces"
   },
   "integrations-page": {
     "sepay-connected-description": "SePay connected successfully. Bank-account sync and webhook provisioning are ready to verify from this workspace.",
@@ -11066,6 +11139,9 @@
     "description": "The {feature} feature requires a {tier} plan or higher.",
     "rollout_notice": "Please note that paid subscriptions are slowly rolling out and are currently unavailable. We appreciate your patience as we work to make this available to everyone.",
     "title": "{tier} Plan Required"
+  },
+  "navigation": {
+    "account-benefits": "Account benefits"
   },
   "notifications": {
     "accept": "Accept",
@@ -23239,32 +23315,5 @@
     "unnamed_wallet": "Unnamed Wallet",
     "wallet": "Payment Method",
     "wallet_deleted": "Wallet deleted successfully"
-  },
-  "accountBenefits": {
-    "title": "Account benefits",
-    "description": "Grant features, early access and bonus AI credits with an audited reason.",
-    "userId": "Account ID",
-    "benefit": "Benefit type",
-    "feature": "Feature access",
-    "earlyAccess": "Early access",
-    "credits": "Bonus AI credits",
-    "key": "Benefit key",
-    "amount": "Credit amount",
-    "expiry": "Expires at (optional)",
-    "reason": "Reason",
-    "grant": "Grant benefit",
-    "failed": "Benefit request failed. Try again.",
-    "revoked": "Revoked",
-    "expired": "Expired",
-    "active": "Active",
-    "revoke": "Revoke"
-  },
-  "navigation": {
-    "account-benefits": "Account benefits"
-  },
-  "devboxes": {
-    "features": {
-      "playground": "Hosted playgrounds"
-    }
   }
 }

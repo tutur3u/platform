@@ -18,6 +18,7 @@ import {
   Lock,
   Mail,
   MessageSquare,
+  Monitor,
   Rocket,
   Server,
   Settings,
@@ -328,6 +329,11 @@ function getTopLevelNavigation({
           href: href(wsId, '/external-chat-lab'),
           icon: icon(MessageSquare),
           title: t('external-chat-lab.navigation'),
+        },
+        {
+          href: href(wsId, '/desktop-deployment'),
+          icon: icon(Monitor),
+          title: t('infrastructure-tabs.desktop_deployment'),
         },
         {
           href: href(wsId, '/mobile-deployment'),

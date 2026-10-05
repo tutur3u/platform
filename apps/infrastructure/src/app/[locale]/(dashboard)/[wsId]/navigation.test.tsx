@@ -65,6 +65,7 @@ describe('Infrastructure navigation', () => {
         '/internal/workspaces',
         '/internal/external-apps',
         '/internal/mobile-deployment',
+        '/internal/desktop-deployment',
         '/internal/app-coordination',
         '/internal/calendar-sync',
       ])
