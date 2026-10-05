@@ -2,6 +2,7 @@ import {
   getLaunchableAppByTitle,
   type LaunchableAppSlug,
 } from '@tuturuuu/utils/launchable-apps';
+import { connection } from 'next/server';
 import { NextIntlClientProvider } from 'next-intl';
 import { ThemeProvider } from 'next-themes';
 import { type ReactNode, Suspense } from 'react';
@@ -67,6 +68,10 @@ async function VerifiedClientProviders({
   children: ReactNode;
   currentApp?: LaunchableAppSlug;
 }) {
+  // Session verification reads the current clock even when cookies/headers
+  // were resolved by an ancestor. Suspense permits suspension but does not
+  // itself exclude that clock read from Cache Components prerendering.
+  await connection();
   const user = currentApp ? await getSatelliteAppSessionUser(currentApp) : null;
   return (
     <ClientProviders actorId={user?.id} currentApp={currentApp}>
