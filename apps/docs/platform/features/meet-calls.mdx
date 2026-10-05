@@ -1137,3 +1137,16 @@ Regression coverage includes the real local Cloudflare document/channel probes,
 shared caret/range tests, mobile channel tests and meeting admission/entitlement
 checks. Native WebView bridge, private-preview and MediaProjection/ReplayKit
 acceptance additionally require configured exact-commit mobile CI artifacts.
+
+## In-call document workspace
+
+Meet and Parley render the shared document editor as a seamless workspace rather
+than nested bordered cards. Healthy live synchronization stays quiet. Reconnecting
+is announced as a status; delayed or conflicted backups use a keyboard-focusable
+warning icon with an explanatory tooltip, without pushing the editor downward.
+Document and programming controls use the same icon-button tooltips as media
+controls, and meeting action triggers expose consistent tooltips. No room access,
+checkpoint behavior, or document broadcasting policy changes.
+
+Regression coverage: `document-status.test.tsx` verifies quiet healthy state,
+accessible reconnection, and distinct backup-warning labels without inline alerts.

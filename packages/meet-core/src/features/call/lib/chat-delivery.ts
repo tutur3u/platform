@@ -6,7 +6,7 @@ export async function sendRecoverableChat(
   body: string,
   attachmentIds?: string[],
   wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)),
-  clientMessageId = crypto.randomUUID()
+  clientMessageId: string = crypto.randomUUID()
 ) {
   const message = {
     type: 'chat.message' as const,

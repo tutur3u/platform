@@ -22,6 +22,7 @@ import { ChatSettings } from './chat-settings';
 import { CloudflareCosts } from './cloudflare-costs';
 import { ConnectionPanel } from './connection-panel';
 import { DeviceSettings } from './device-settings';
+import { MeetingActionHint } from './meeting-action-hint';
 import { MeetingPublicSettings } from './meeting-public-settings';
 import { RecordingSettings } from './recording-settings';
 
@@ -53,16 +54,18 @@ export function CallSettings({
     : undefined;
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        <Button
-          size="icon"
-          variant="ghost"
-          className="size-8 rounded-full"
-          aria-label={t('settings_title')}
-        >
-          <Settings2 className="size-4" />
-        </Button>
-      </DialogTrigger>
+      <MeetingActionHint label={t('settings_title')}>
+        <DialogTrigger asChild>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="size-8 rounded-full"
+            aria-label={t('settings_title')}
+          >
+            <Settings2 className="size-4" />
+          </Button>
+        </DialogTrigger>
+      </MeetingActionHint>
       <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{t('settings_title')}</DialogTitle>

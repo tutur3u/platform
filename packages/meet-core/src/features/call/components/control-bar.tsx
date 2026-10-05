@@ -22,7 +22,7 @@ import type { ComponentType, ReactNode } from 'react';
 
 export type CallPanel = 'chat' | 'participants' | null;
 
-function ControlButton({
+export function ControlButton({
   active,
   danger,
   attention,

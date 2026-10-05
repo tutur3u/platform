@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { CameraFilter, CameraLook } from '../lib/camera-effects';
 import type { CallLayout } from './call-stage';
+import { MeetingActionHint } from './meeting-action-hint';
 export const REACTION_GLYPHS: Record<MeetReaction, string> = {
   like: '👍',
   heart: '❤️',
@@ -34,17 +35,19 @@ export function CallExtras({
   return (
     <>
       <Popover open={reactionsOpen} onOpenChange={setReactionsOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-11 rounded-full"
-            aria-label={t('reactions')}
-            title={t('reactions')}
-          >
-            <Smile className="size-5" />
-          </Button>
-        </PopoverTrigger>
+        <MeetingActionHint label={t('reactions')}>
+          <PopoverTrigger asChild>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-11 rounded-full"
+              aria-label={t('reactions')}
+              title={t('reactions')}
+            >
+              <Smile className="size-5" />
+            </Button>
+          </PopoverTrigger>
+        </MeetingActionHint>
         <PopoverContent className="flex w-auto gap-1" side="top">
           {(Object.keys(REACTION_GLYPHS) as MeetReaction[]).map((reaction) => (
             <Button
@@ -64,17 +67,19 @@ export function CallExtras({
         </PopoverContent>
       </Popover>
       <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-11 rounded-full"
-            aria-label={t('layout')}
-            title={t('layout')}
-          >
-            <LayoutGrid className="size-5" />
-          </Button>
-        </PopoverTrigger>
+        <MeetingActionHint label={t('layout')}>
+          <PopoverTrigger asChild>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-11 rounded-full"
+              aria-label={t('layout')}
+              title={t('layout')}
+            >
+              <LayoutGrid className="size-5" />
+            </Button>
+          </PopoverTrigger>
+        </MeetingActionHint>
         <PopoverContent className="w-64 space-y-3" side="top">
           <p className="font-medium text-sm">{t('layout')}</p>
           <div className="grid grid-cols-2 gap-2">
@@ -94,17 +99,19 @@ export function CallExtras({
         </PopoverContent>
       </Popover>
       <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-11 rounded-full"
-            aria-label={t('camera_effects')}
-            title={t('camera_effects')}
-          >
-            <Sparkles className="size-5" />
-          </Button>
-        </PopoverTrigger>
+        <MeetingActionHint label={t('camera_effects')}>
+          <PopoverTrigger asChild>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-11 rounded-full"
+              aria-label={t('camera_effects')}
+              title={t('camera_effects')}
+            >
+              <Sparkles className="size-5" />
+            </Button>
+          </PopoverTrigger>
+        </MeetingActionHint>
         <PopoverContent className="w-72 space-y-4" side="top">
           <div>
             <p className="font-medium text-sm">{t('camera_effects')}</p>
