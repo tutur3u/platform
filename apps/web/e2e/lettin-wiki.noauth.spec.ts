@@ -16,6 +16,7 @@ import { verifyLettinMarkdownPersistence } from './helpers/lettin-markdown-persi
 import { verifyLettinPrivateImport } from './helpers/lettin-private-import';
 import { assertLettinProfileLimits } from './helpers/lettin-profile-limits';
 import { createLettinBrowserContext } from './helpers/lettin-session';
+import { syntheticProfileImage } from './helpers/profile-media-fixture';
 import {
   deleteRestRows,
   postRestRow,
@@ -387,10 +388,7 @@ test.describe
         await page.getByLabel('Banner image', { exact: true }).setInputFiles({
           name: 'synthetic-banner.png',
           mimeType: 'image/png',
-          buffer: Buffer.from(
-            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jB1sAAAAASUVORK5CYII=',
-            'base64'
-          ),
+          buffer: syntheticProfileImage(),
         });
         const signedBannerResponse = await bannerTicketResponse;
         expect(
