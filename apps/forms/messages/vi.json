@@ -695,6 +695,7 @@
       "FR": "T6",
       "frequency": "Lặp lại",
       "future": "Lần này và các lần sau",
+      "futureExceptionsReset": "Các chỉnh sửa và lần hủy cho lần này và các lần tiếp theo sẽ được đặt lại khi bạn lưu.",
       "interval": "Mỗi",
       "invalid": "Kiểm tra tiêu đề, ngày, múi giờ và cài đặt lặp lại.",
       "loading": "Đang tải sự kiện lặp lại…",
