@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  routeStatus: vi.fn(),
   refresh: vi.fn(),
   stale: vi.fn(),
   webSession: vi.fn(),
@@ -35,10 +36,15 @@ vi.mock('next-intl/middleware', () => ({
   default: () => () => NextResponse.next(),
 }));
 
+vi.mock('./workspace-route-status', () => ({
+  getWorkspaceRouteStatus: mocks.routeStatus,
+}));
+
 import { proxy } from './proxy';
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.routeStatus.mockResolvedValue(null);
   mocks.stale.mockReturnValue({ sub: 'stale-user' });
   mocks.webSession.mockReturnValue(true);
   mocks.supabaseSession.mockReturnValue(true);
@@ -152,3 +158,24 @@ it.each(['en', 'vi'])(
     expect(mocks.refresh).not.toHaveBeenCalled();
   }
 );
+
+it('preserves pre-stream workspace status and refreshed auth headers', async () => {
+  const headers = new Headers({ cookie: 'verified=1' });
+  mocks.refresh.mockResolvedValue({
+    ok: true,
+    claims: { sub: 'verified' },
+    requestHeaders: headers,
+    response: NextResponse.next(),
+  });
+  mocks.routeStatus.mockResolvedValue(
+    NextResponse.redirect('https://lettin.tuturuuu.com/dashboard')
+  );
+  const request = new NextRequest('https://lettin.tuturuuu.com/unjoined/wiki');
+  expect((await proxy(request)).status).toBe(307);
+  expect(mocks.routeStatus).toHaveBeenCalledWith(
+    request,
+    '/unjoined/wiki',
+    headers,
+    'en'
+  );
+});

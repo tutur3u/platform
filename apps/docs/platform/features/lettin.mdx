@@ -192,6 +192,19 @@ layout and cannot cover those transitions. The mounted `rich-editor.test.tsx`
 exercises the actual shared TipTap editor and Markdown parser. The authenticated
 wiki E2E retains creation, save, and reload assertions, with named, bounded editor
 actions so a pending control is reported before the overall test deadline.
+Before streaming private workspace pages, the proxy checks the same shared
+workspace invitation-status contract used by the invitation screen, forwarding
+only the refreshed request authentication. Missing or unjoined workspaces receive
+an HTTP 307 to the dashboard; anonymous or MFA-required requests return through
+login. Pending invitations keep their existing invitation screen, including when
+the requested child world ID is invalid. Joined workspace world routes reject
+non-GUID IDs with a localized, private, non-cacheable HTTP 404 before any loading
+fallback renders. Public worlds, creator pages, dashboard, and wiki routes retain
+their existing behavior. The render-time permission checks remain authoritative;
+this preflight never grants access. Regression coverage is in
+`workspace-route-status.test.ts` and `proxy.test.ts`; mocked membership results
+and real `NextResponse` checks do not replace the exact-commit CI app build.
+
 The storage tests use disposable Miniflare D1 and R2 resources and cover creator
 access, invitation delegation, conflicting writes, published snapshots, private
 relationships, and artwork publication/revocation.
