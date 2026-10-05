@@ -3,6 +3,16 @@ part of 'inventory_repository.dart';
 const _inventoryModuleTag = 'module:inventory';
 
 extension InventoryCacheSnapshot on InventoryRepository {
+  InventorySaleDetail? _peekSaleDetail(String wsId, String saleId) =>
+      _peekInventory(
+        'sale-detail',
+        wsId,
+        (json) => InventorySaleDetail.fromJson(
+          Map<String, dynamic>.from(json['data'] as Map),
+        ),
+        params: {'saleId': saleId},
+      );
+
   InventoryOverview? peekOverview(String wsId) =>
       _peekInventory('overview', wsId, InventoryOverview.fromJson);
 
@@ -112,6 +122,13 @@ extension _InventoryRepositoryCache on InventoryRepository {
     bool forceRefresh = false,
   }) async {
     final key = _inventoryCacheKey(namespace, wsId, params: params);
+    void checkActor() {
+      if (key.userId == null || key.userId != _cacheUserId()) {
+        throw const ApiException(message: 'Account changed', statusCode: 401);
+      }
+    }
+
+    checkActor();
     T decodePayload(Object? json) {
       if (json is! Map) {
         throw const FormatException('Invalid inventory cache payload.');
@@ -125,8 +142,11 @@ extension _InventoryRepositoryCache on InventoryRepository {
         key: key,
         policy: policy,
         decode: decodePayload,
+        checkScope: checkActor,
         fetch: () async {
           try {
+            checkActor();
+            _api.checkUser(key.userId!);
             return await fetch();
           } on ApiException catch (error) {
             if (error.statusCode == 401 ||
@@ -141,10 +161,15 @@ extension _InventoryRepositoryCache on InventoryRepository {
       );
       data = result.data;
     } on Object catch (error) {
-      if (!isOfflineTransportFailure(error)) rethrow;
+      if (forceRefresh ||
+          CacheStore.awaitingRevalidation ||
+          !isOfflineTransportFailure(error)) {
+        rethrow;
+      }
       data = (await _cacheStore.read<T>(key: key, decode: decodePayload)).data;
       if (data == null) rethrow;
     }
+    checkActor();
     if (data == null) {
       throw StateError('Inventory cache returned no data for $namespace.');
     }
@@ -162,6 +187,13 @@ extension _InventoryRepositoryCache on InventoryRepository {
     bool forceRefresh = false,
   }) async {
     final key = _inventoryCacheKey(namespace, wsId, params: params);
+    void checkActor() {
+      if (key.userId == null || key.userId != _cacheUserId()) {
+        throw const ApiException(message: 'Account changed', statusCode: 401);
+      }
+    }
+
+    checkActor();
     T decodePayload(Object? json) {
       if (json is! List) {
         throw const FormatException('Invalid inventory cache payload.');
@@ -175,8 +207,11 @@ extension _InventoryRepositoryCache on InventoryRepository {
         key: key,
         policy: policy,
         decode: decodePayload,
+        checkScope: checkActor,
         fetch: () async {
           try {
+            checkActor();
+            _api.checkUser(key.userId!);
             return await fetch();
           } on ApiException catch (error) {
             if (error.statusCode == 401 ||
@@ -191,10 +226,15 @@ extension _InventoryRepositoryCache on InventoryRepository {
       );
       data = result.data;
     } on Object catch (error) {
-      if (!isOfflineTransportFailure(error)) rethrow;
+      if (forceRefresh ||
+          CacheStore.awaitingRevalidation ||
+          !isOfflineTransportFailure(error)) {
+        rethrow;
+      }
       data = (await _cacheStore.read<T>(key: key, decode: decodePayload)).data;
       if (data == null) rethrow;
     }
+    checkActor();
     if (data == null) {
       throw StateError('Inventory cache returned no data for $namespace.');
     }

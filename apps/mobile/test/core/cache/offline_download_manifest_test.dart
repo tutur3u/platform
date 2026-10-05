@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_resource_removal.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_download_manifest.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
@@ -181,4 +182,203 @@ void main() {
     );
     expect(await ids(), ['previous']);
   });
+  test(
+    'removal events affect retained keys only in their owner scope',
+    () async {
+      final manifest = OfflineDownloadManifest(store, 'user', () => userId);
+      final retained = key('retained');
+      await manifest.save(retained, [
+        {'id': 'kept'},
+      ]);
+      manifest.retain('inventory', 'ws');
+      Set<String> affected(CacheKey source) =>
+          OfflineDownloadManifest.affectedProducts(
+            userId: source.userId!,
+            workspaceId: source.workspaceId!,
+            key: CacheResourceRemoval.identityForKey(source.value),
+            namespace: source.namespace,
+          );
+      expect(affected(retained), {'inventory'});
+      expect(affected(key('unrelated')), isEmpty);
+      expect(affected(key('retained', user: 'other')), {'inventory'});
+      // The App consumer rejects other actors/workspaces before this fallback.
+      expect(
+        OfflineDownloadManifest.affectedProducts(
+          userId: 'user',
+          workspaceId: 'ws',
+          key: 'unknown',
+          namespace: 'mail.messages',
+        ),
+        isEmpty,
+      );
+    },
+  );
+  test('opaque private-query removal matches only retained source', () async {
+    final manifest = OfflineDownloadManifest(store, 'user', () => userId);
+    const retained = CacheKey(
+      namespace: namespace,
+      userId: 'user',
+      workspaceId: 'opaque-removal',
+      params: {'query': 'private-query-fixture'},
+    );
+    await manifest.save(retained, []);
+    manifest.retain('inventory', 'opaque-removal');
+    const unrelated = CacheKey(
+      namespace: namespace,
+      userId: 'user',
+      workspaceId: 'opaque-removal',
+      params: {'query': 'different-query-fixture'},
+    );
+    await seed(unrelated, 'unrelated');
+    Set<String> affectedRemoval() {
+      final removal = store.removedResource.value!;
+      return OfflineDownloadManifest.affectedProducts(
+        userId: removal.userId!,
+        workspaceId: removal.workspaceId!,
+        key: removal.key,
+        namespace: removal.namespace,
+      );
+    }
+
+    await store.remove(unrelated);
+    expect(affectedRemoval(), isEmpty);
+    await store.remove(retained);
+    expect(affectedRemoval(), {'inventory'});
+    expect(store.removedResource.value!.key, isNot(contains('private-query')));
+  });
+  test('shared exchange-rate dependency invalidates finance only', () async {
+    final rates = OfflineDownloadManifest(store, 'user', () => userId);
+    const source = CacheKey(
+      namespace: 'finance.exchangeRates',
+      userId: 'user',
+      workspaceId: 'global',
+    );
+    await rates.save(source, {'rates': <String, dynamic>{}});
+    rates.retain('finance-rates', 'rates-workspace');
+    expect(
+      OfflineDownloadManifest.affectedProducts(
+        userId: 'user',
+        workspaceId: 'rates-workspace',
+        key: CacheResourceRemoval.identityForKey(source.value),
+        namespace: source.namespace,
+      ),
+      {'finance'},
+    );
+  });
+  test(
+    'untracked restored product invalidates beside a tracked product',
+    () async {
+      final inventory = OfflineDownloadManifest(store, 'user', () => userId);
+      await inventory.save(key('only-inventory', ws: 'partial-manifests'), []);
+      inventory.retain('inventory', 'partial-manifests');
+      expect(
+        OfflineDownloadManifest.affectedProducts(
+          userId: 'user',
+          workspaceId: 'partial-manifests',
+          key: 'restored-finance-key',
+          namespace: 'finance.wallets',
+        ),
+        {'finance'},
+      );
+      expect(
+        OfflineDownloadManifest.affectedProducts(
+          userId: 'user',
+          workspaceId: 'partial-manifests',
+          key: 'unrelated-inventory-key',
+          namespace: 'inventory.products',
+        ),
+        isEmpty,
+      );
+      expect(
+        OfflineDownloadManifest.affectedProducts(
+          userId: 'user',
+          workspaceId: 'partial-manifests',
+          key: 'shared-permission-key',
+          namespace: 'workspace.permissions',
+        ),
+        {'finance', 'inventory', 'tasks', 'calendar'},
+      );
+    },
+  );
+  test(
+    'product verification requires its own manifest and dependencies',
+    () async {
+      final inventory = OfflineDownloadManifest(store, 'user', () => userId);
+      await inventory.save(key('verified', ws: 'verify-products'), []);
+      inventory.retain('inventory', 'verify-products');
+      final permissions = OfflineDownloadManifest(store, 'user', () => userId);
+      await permissions.save(
+        const CacheKey(
+          namespace: 'workspace.permissions',
+          userId: 'user',
+          workspaceId: 'verify-products',
+        ),
+        {'read_inventory': true},
+      );
+      permissions.retain('permissions', 'verify-products');
+      await OfflineDownloadManifest.verifyProduct(
+        'user',
+        'verify-products',
+        'inventory',
+      );
+      await expectLater(
+        OfflineDownloadManifest.verifyProduct(
+          'user',
+          'verify-products',
+          'finance',
+        ),
+        throwsStateError,
+      );
+      await store.remove(key('verified', ws: 'verify-products'));
+      await expectLater(
+        OfflineDownloadManifest.verifyProduct(
+          'user',
+          'verify-products',
+          'inventory',
+        ),
+        throwsStateError,
+      );
+    },
+  );
+  for (final product in ['finance', 'inventory', 'tasks', 'calendar']) {
+    test('$product readiness rejects missing or evicted permissions', () async {
+      final workspace = 'permissions-$product';
+      final manifest = OfflineDownloadManifest(store, 'user', () => userId);
+      await manifest.save(
+        CacheKey(
+          namespace: '$product.catalog',
+          userId: 'user',
+          workspaceId: workspace,
+        ),
+        [],
+      );
+      manifest.retain(product, workspace);
+      if (product == 'finance') {
+        final rates = OfflineDownloadManifest(store, 'user', () => userId);
+        await rates.save(
+          const CacheKey(
+            namespace: 'finance.exchangeRates',
+            userId: 'user',
+            workspaceId: 'global',
+          ),
+          {'rates': <String, dynamic>{}},
+        );
+        rates.retain('finance-rates', workspace);
+      }
+      Future<void> verify() =>
+          OfflineDownloadManifest.verifyProduct('user', workspace, product);
+      await expectLater(verify(), throwsStateError);
+      final permissions = OfflineDownloadManifest(store, 'user', () => userId);
+      final permissionKey = CacheKey(
+        namespace: 'workspace.permissions',
+        userId: 'user',
+        workspaceId: workspace,
+      );
+      await permissions.save(permissionKey, {'read_$product': true});
+      permissions.retain('permissions', workspace);
+      await verify();
+      await store.remove(permissionKey);
+      await expectLater(verify(), throwsStateError);
+    });
+  }
 }

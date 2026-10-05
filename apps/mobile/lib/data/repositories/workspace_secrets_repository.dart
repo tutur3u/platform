@@ -4,6 +4,7 @@ import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/cached_resource_record.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_network.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/workspace_secret.dart';
@@ -121,7 +122,7 @@ class WorkspaceSecretsRepository {
       );
       confirmed = cached.data ?? const [];
     } on ApiException catch (error) {
-      if (error.statusCode != 0) rethrow;
+      if (!isOfflineTransportFailure(error)) rethrow;
       confirmed = const [];
     }
 

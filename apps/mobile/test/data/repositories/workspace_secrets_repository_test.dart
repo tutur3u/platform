@@ -51,10 +51,45 @@ void main() {
       },
     );
 
+    for (final kind in [
+      ApiFailureKind.response,
+      ApiFailureKind.session,
+      ApiFailureKind.unknown,
+    ]) {
+      test('pending secrets reject nontransport status zero: $kind', () async {
+        when(() => apiClient.getJsonList(any())).thenThrow(
+          ApiException(message: 'Synthetic', statusCode: 0, failureKind: kind),
+        );
+        OfflineMutationQueue.instance.pending.value = [
+          PendingMutationRecord(
+            id: 'secret-edit',
+            feature: 'settings',
+            method: 'WORKSPACE_SECRET_CREATE',
+            path: WorkspaceSettingsEndpoints.secrets('typed-ws'),
+            userId: 'actor',
+            workspaceId: 'typed-ws',
+            createdAt: DateTime.utc(2026),
+            payload: const {'name': 'KEY', 'value': 'synthetic'},
+            optimisticPatch: const {'entityId': 'local-secret'},
+          ),
+        ];
+        try {
+          await expectLater(
+            repository.getSecrets('typed-ws', forceRefresh: true),
+            throwsA(
+              isA<ApiException>().having((e) => e.failureKind, 'kind', kind),
+            ),
+          );
+        } finally {
+          OfflineMutationQueue.instance.pending.value = [];
+        }
+      });
+    }
+
     test('shows a queued secret only in its workspace', () async {
       when(
         () => apiClient.getJsonList(any()),
-      ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));
+      ).thenThrow(const ApiException.transport(message: 'Offline'));
       OfflineMutationQueue.instance.pending.value = [
         PendingMutationRecord(
           id: 'secret-edit',

@@ -125,6 +125,7 @@ extension _InventoryLocalReads on InventoryRepository {
     String saleId, {
     bool forceRefresh = false,
   }) async {
+    final actor = _cacheUserId();
     final edits = (await _mutationQueue.listPending())
         .where(
           (edit) =>
@@ -151,8 +152,18 @@ extension _InventoryLocalReads on InventoryRepository {
         )
         .firstOrNull;
     if (create != null) {
-      return await _pendingSaleDetail(wsId, saleId, create.payload!, edits);
+      final detail = await _pendingSaleDetail(
+        wsId,
+        saleId,
+        create.payload!,
+        edits,
+      );
+      return await _applyPendingSalePeriod(wsId, detail, edits, actor);
     }
+    InventorySaleDetail decode(Map<String, dynamic> response) =>
+        InventorySaleDetail.fromJson(
+          Map<String, dynamic>.from(response['data'] as Map),
+        );
     final confirmed = await _cachedInventoryMap<InventorySaleDetail>(
       namespace: 'sale-detail',
       wsId: wsId,
@@ -160,10 +171,13 @@ extension _InventoryLocalReads on InventoryRepository {
       policy: CachePolicies.detail,
       tags: const ['inventory:sale-detail'],
       params: {'saleId': saleId},
-      fetch: () => _api.getJson(InventoryEndpoints.sale(wsId, saleId)),
-      decode: (response) => InventorySaleDetail.fromJson(
-        Map<String, dynamic>.from(response['data'] as Map),
-      ),
+      fetch: () async {
+        if (!await _networkAvailable()) {
+          throw const ApiException.transport(message: 'Network unavailable');
+        }
+        return await _api.getJson(InventoryEndpoints.sale(wsId, saleId));
+      },
+      decode: decode,
     );
     final update = edits
         .where(
@@ -172,13 +186,85 @@ extension _InventoryLocalReads on InventoryRepository {
               edit.path == InventoryEndpoints.sale(wsId, saleId),
         )
         .lastOrNull;
-    if (update == null) return confirmed;
-    return await _pendingSaleDetail(
-      wsId,
-      saleId,
-      update.payload!,
-      edits,
-      previous: confirmed,
+    final detail = update == null
+        ? confirmed
+        : await _pendingSaleDetail(
+            wsId,
+            saleId,
+            update.payload!,
+            edits,
+            previous: confirmed,
+          );
+    return await _applyPendingSalePeriod(wsId, detail, edits, actor);
+  }
+
+  Future<InventorySaleDetail> _applyPendingSalePeriod(
+    String wsId,
+    InventorySaleDetail detail,
+    List<PendingMutationRecord> edits,
+    String? actor,
+  ) async {
+    void checkActor() {
+      if (actor != _cacheUserId()) {
+        throw const ApiException(message: 'Account changed', statusCode: 401);
+      }
+    }
+
+    checkActor();
+    final assignment = edits
+        .where(
+          (edit) =>
+              edit.method == 'PUT' &&
+              edit.path == InventoryEndpoints.salePeriod(wsId, detail.id),
+        )
+        .lastOrNull;
+    if (assignment == null) return detail;
+    final periodId = assignment.payload?['period_id'] as String?;
+    InventorySalesPeriod? period;
+    if (periodId != null) {
+      final rows = await queryLocalRows(
+        store: _cacheStore,
+        userId: actor,
+        workspaceId: wsId,
+        namespaces: const ['inventory.sales-periods'],
+      );
+      final periods = _overlayPendingSalesPeriods(
+        wsId,
+        rows.map(InventorySalesPeriod.fromJson).toList(),
+        includeArchived: true,
+        pending: await _mutationQueue.listPending(),
+      );
+      period =
+          periods.where((row) => row.id == periodId).firstOrNull ??
+          (detail.period?.id == periodId ? detail.period : null) ??
+          InventorySalesPeriod(
+            id: periodId,
+            name: periodId,
+            status: 'unknown',
+            saleCount: 0,
+          );
+    }
+    checkActor();
+    return InventorySaleDetail(
+      id: detail.id,
+      notice: detail.notice,
+      note: detail.note,
+      paidAmount: detail.paidAmount,
+      itemsCount: detail.itemsCount,
+      totalQuantity: detail.totalQuantity,
+      owners: detail.owners,
+      lines: detail.lines,
+      source: detail.source,
+      createdAt: detail.createdAt,
+      completedAt: detail.completedAt,
+      walletId: detail.walletId,
+      walletName: detail.walletName,
+      categoryId: detail.categoryId,
+      categoryName: detail.categoryName,
+      customerId: detail.customerId,
+      customerName: detail.customerName,
+      creatorName: detail.creatorName,
+      period: period,
     );
   }
 
@@ -452,13 +538,17 @@ extension _InventoryLocalReads on InventoryRepository {
     required int pageSize,
     String? query,
   }) async {
+    final search = query?.trim() ?? '';
+    final matcher = search.isEmpty ? null : compileLocalIlike(search);
     final products =
         (await _localCatalog(wsId))
             .where(
               (product) =>
                   (status == 'all' ||
                       product.archived == (status == 'archived')) &&
-                  inventoryProductMatchesQuery(product, query),
+                  (matcher == null ||
+                      (product.name != null &&
+                          matcher.hasMatch(product.name!))),
             )
             .toList(growable: false)
           ..sort((a, b) {

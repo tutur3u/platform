@@ -57,17 +57,15 @@ Future<void> deliverProfileAvatar({
         )
         .timeout(const Duration(seconds: 60));
   } on SocketException {
-    throw const ApiException(
+    throw const ApiException.transport(
       message: 'Avatar upload connection lost',
-      statusCode: 0,
     );
   } on http.ClientException {
-    throw const ApiException(
+    throw const ApiException.transport(
       message: 'Avatar upload connection lost',
-      statusCode: 0,
     );
   } on TimeoutException {
-    throw const ApiException(message: 'Avatar upload timed out', statusCode: 0);
+    throw const ApiException.transport(message: 'Avatar upload timed out');
   }
   if (uploaded.statusCode < 200 || uploaded.statusCode >= 300) {
     throw ApiException(

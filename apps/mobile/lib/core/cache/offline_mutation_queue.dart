@@ -16,6 +16,7 @@ import 'package:mobile/core/cache/offline_id_reconciliation.dart';
 import 'package:mobile/core/cache/offline_inventory_create.dart';
 import 'package:mobile/core/cache/offline_inventory_mutation.dart';
 import 'package:mobile/core/cache/offline_inventory_persistence.dart';
+import 'package:mobile/core/cache/offline_network.dart';
 import 'package:mobile/core/cache/offline_resource_reference.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/cache/profile_avatar_delivery.dart';
@@ -197,15 +198,19 @@ class OfflineMutationQueue with WidgetsBindingObserver {
           _now().isBefore(_serverCooldownUntil!)) {
         continue;
       }
-      await ApiClient.offlinePreparation(
-        () => _store.refreshCachedResources(
-          currentUserId: _userId,
-          onResume: onResume,
-        ),
-        allowChallenge: false,
-        markBulk: false,
-      );
-      syncRevision.value++;
+      await CacheStore.awaitRevalidation(() async {
+        await ApiClient.offlinePreparation(
+          () => _store.refreshCachedResources(
+            currentUserId: _userId,
+            onResume: onResume,
+          ),
+          allowChallenge: false,
+          markBulk: false,
+        );
+        // Visible projections inherit the same cycle and reuse its completed
+        // requests, including when an earlier resource refresh has settled.
+        syncRevision.value++;
+      });
     } while (_syncRequested);
   }
 
@@ -278,7 +283,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
     required bool replaySafe,
     String? expectedUserId,
   }) async {
-    if (error.statusCode != 0 &&
+    if (!isOfflineTransportFailure(error) &&
         !(replaySafe && error.code == 'OFFLINE_CONTRACT_UNAVAILABLE')) {
       return false;
     }
@@ -533,17 +538,12 @@ class OfflineMutationQueue with WidgetsBindingObserver {
   }
 
   bool _isRetryable(Object error) {
+    if (isOfflineTransportFailure(error)) return true;
     if (error is ApiException) {
       if (error.code == 'OFFLINE_CONTRACT_RESPONSE_MISMATCH') return false;
-      return error.statusCode == 0 ||
-          error.statusCode == 429 ||
-          error.statusCode >= 500;
+      return error.statusCode == 429 || error.statusCode >= 500;
     }
-    final normalized = error.toString().toLowerCase();
-    return normalized.contains('socket') ||
-        normalized.contains('network') ||
-        normalized.contains('connection') ||
-        normalized.contains('timeout');
+    return false;
   }
 
   Future<void> dispose() async {

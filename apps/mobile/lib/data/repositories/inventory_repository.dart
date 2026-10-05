@@ -1,10 +1,10 @@
 import 'dart:async';
-
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/local_replica_query.dart';
+import 'package:mobile/core/cache/local_search.dart';
 import 'package:mobile/core/cache/offline_download_manifest.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_network.dart';
@@ -56,6 +56,8 @@ class InventoryRepository {
   final InventoryProductImageCache _productImageCache;
   Future<void>? _catalogBackfill;
   DateTime? _catalogBackfillAt;
+  InventorySaleDetail? peekSaleDetail(String wsId, String saleId) =>
+      _peekSaleDetail(wsId, saleId);
 
   Map<String, dynamic> _buildProductPayload({
     required String name,
@@ -228,7 +230,7 @@ class InventoryRepository {
         decode: InventoryProduct.fromJson,
       );
     } on ApiException catch (error) {
-      if (error.statusCode != 0) rethrow;
+      if (!isOfflineTransportFailure(error)) rethrow;
       offlineError = error;
     }
     final rows = overlayPendingProducts(wsId, [
@@ -251,6 +253,7 @@ class InventoryRepository {
     bool forceRefresh = false,
   }) async {
     final owners = await _setupRows(
+      forceRefresh,
       _cachedInventoryMap<List<InventoryOwner>>(
         namespace: 'owners',
         wsId: wsId,
@@ -291,6 +294,7 @@ class InventoryRepository {
     bool forceRefresh = false,
   }) async {
     final rows = await _setupRows(
+      forceRefresh,
       _cachedInventoryMap<List<InventoryLookupItem>>(
         namespace: 'manufacturers',
         wsId: wsId,
@@ -324,6 +328,7 @@ class InventoryRepository {
     bool forceRefresh = false,
   }) async {
     final rows = await _setupRows(
+      forceRefresh,
       _cachedInventoryList<List<InventoryLookupItem>>(
         namespace: 'product-categories',
         wsId: wsId,
@@ -360,6 +365,7 @@ class InventoryRepository {
     bool forceRefresh = false,
   }) async {
     final rows = await _setupRows(
+      forceRefresh,
       _cachedInventoryList<List<InventoryLookupItem>>(
         namespace: 'product-units',
         wsId: wsId,
@@ -392,6 +398,7 @@ class InventoryRepository {
     bool forceRefresh = false,
   }) async {
     final rows = await _setupRows(
+      forceRefresh,
       _cachedInventoryList<List<InventoryLookupItem>>(
         namespace: 'product-warehouses',
         wsId: wsId,
@@ -493,6 +500,7 @@ class InventoryRepository {
     bool forceRefresh = false,
   }) async {
     final periods = await _setupRows(
+      forceRefresh,
       _cachedInventoryMap<List<InventorySalesPeriod>>(
         namespace: 'sales-periods',
         wsId: wsId,

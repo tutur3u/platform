@@ -160,6 +160,42 @@ void main() {
     expect(fallback['threads'], [1]);
   });
 
+  for (final kind in [
+    ApiFailureKind.response,
+    ApiFailureKind.session,
+    ApiFailureKind.unknown,
+    ApiFailureKind.transport,
+  ]) {
+    test('cached inbox fallback respects typed failure $kind', () async {
+      final store = await createStore();
+      final mail = MailCache(store: store, currentUserId: () => 'a');
+      await mail.read(
+        'ws',
+        'inbox',
+        () async => {
+          'threads': [1],
+        },
+      );
+      final failure = ApiException(
+        message: 'Synthetic failure',
+        statusCode: 0,
+        failureKind: kind,
+      );
+      final read = mail.read(
+        'ws',
+        'inbox',
+        () async => throw failure,
+        forceRefresh: true,
+      );
+      if (kind == ApiFailureKind.transport) {
+        expect((await read)['threads'], [1]);
+      } else {
+        await expectLater(read, throwsA(same(failure)));
+        expect((await mail.snapshot('ws', 'inbox'))?['threads'], [1]);
+      }
+    });
+  }
+
   test(
     'inline media is encrypted by scope and removed with its thread',
     () async {

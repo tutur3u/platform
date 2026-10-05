@@ -84,6 +84,7 @@ class OfflinePreparationCoordinator {
   int _generation = 0;
   bool _busy = false;
   int? _activeGeneration;
+  final Set<String> _removedDuringRun = {};
 
   bool canContinue(String userId, String workspaceId) =>
       _busy &&
@@ -91,6 +92,8 @@ class OfflinePreparationCoordinator {
       state.value.userId == userId &&
       state.value.workspaceId == workspaceId;
   Future<void> Function(String userId, String workspaceId)? verifyRetention;
+  Future<void> Function(String userId, String workspaceId, String product)?
+  verifyProductRetention;
 
   void register(String productId, OfflinePreparationTask task) {
     _tasks[productId] = task;
@@ -109,6 +112,7 @@ class OfflinePreparationCoordinator {
       return;
     }
     final generation = ++_generation;
+    _removedDuringRun.clear();
     state.value = OfflinePreparationState(
       userId: userId,
       workspaceId: workspaceId,
@@ -162,6 +166,7 @@ class OfflinePreparationCoordinator {
     final generation = ++_generation;
     _busy = true;
     _activeGeneration = generation;
+    _removedDuringRun.clear();
     final ids = productId != null
         ? [productId]
         : resume
@@ -175,6 +180,19 @@ class OfflinePreparationCoordinator {
         : productIds;
     final products = {...state.value.products};
     void publish({required bool running}) {
+      // Retention reads yield; a verified earlier product can be evicted while
+      // a later product is checked. Never overwrite those removal events.
+      for (final id in _removedDuringRun) {
+        final product = products[id];
+        if (product?.status == OfflinePreparationStatus.ready) {
+          products[id] = OfflineProductPreparation(
+            status: _tasks.containsKey(id)
+                ? OfflinePreparationStatus.queued
+                : OfflinePreparationStatus.unavailable,
+            lastSuccess: product!.lastSuccess,
+          );
+        }
+      }
       state.value = OfflinePreparationState(
         userId: userId,
         workspaceId: workspaceId,
@@ -215,6 +233,9 @@ class OfflinePreparationCoordinator {
             id: timestamp,
           });
           if (!_current(generation, userId, workspaceId)) return;
+          // Its successful download supersedes prior/own reconciliation.
+          // Final retention checks still detect eviction or later removals.
+          _removedDuringRun.remove(id);
           products[id] = OfflineProductPreparation(
             status: OfflinePreparationStatus.ready,
             lastSuccess: timestamp,
@@ -241,6 +262,21 @@ class OfflinePreparationCoordinator {
         publish(running: true);
       }
       if (_current(generation, userId, workspaceId) &&
+          verifyProductRetention != null) {
+        for (final id in productIds) {
+          if (!_current(generation, userId, workspaceId)) return;
+          final product = products[id];
+          if (product?.status != OfflinePreparationStatus.ready) continue;
+          try {
+            await verifyProductRetention!(userId, workspaceId, id);
+          } on Object {
+            products[id] = OfflineProductPreparation(
+              status: OfflinePreparationStatus.failed,
+              lastSuccess: product!.lastSuccess,
+            );
+          }
+        }
+      } else if (_current(generation, userId, workspaceId) &&
           verifyRetention != null) {
         try {
           await verifyRetention!(userId, workspaceId);
@@ -288,8 +324,13 @@ class OfflinePreparationCoordinator {
   }
 
   /// Cache clear or budget reduction removes any claim of current readiness.
-  void invalidateRetainedData() {
-    cancel();
+  void invalidateRetainedData({Set<String>? productIds}) {
+    if (productIds?.isEmpty ?? false) return;
+    if (state.value.running) {
+      _removedDuringRun.addAll(
+        productIds ?? OfflinePreparationCoordinator.productIds,
+      );
+    }
     final latest = state.value;
     state.value = OfflinePreparationState(
       userId: latest.userId,
@@ -297,12 +338,14 @@ class OfflinePreparationCoordinator {
       running: _busy,
       products: {
         for (final entry in latest.products.entries)
-          entry.key: OfflineProductPreparation(
-            status: _tasks.containsKey(entry.key)
-                ? OfflinePreparationStatus.queued
-                : OfflinePreparationStatus.unavailable,
-            lastSuccess: entry.value.lastSuccess,
-          ),
+          entry.key: productIds != null && !productIds.contains(entry.key)
+              ? entry.value
+              : OfflineProductPreparation(
+                  status: _tasks.containsKey(entry.key)
+                      ? OfflinePreparationStatus.queued
+                      : OfflinePreparationStatus.unavailable,
+                  lastSuccess: entry.value.lastSuccess,
+                ),
       },
     );
   }

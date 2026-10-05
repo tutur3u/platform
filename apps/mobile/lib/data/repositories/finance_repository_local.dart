@@ -108,6 +108,7 @@ extension _FinanceLocalReads on FinanceRepository {
       walletId: walletId,
     );
     final query = search ?? '';
+    final matcher = query.isEmpty ? null : compileLocalIlike(query);
     return transactions
         .where(
           (row) =>
@@ -116,7 +117,8 @@ extension _FinanceLocalReads on FinanceRepository {
                   row.walletId == walletId) &&
               (query.isEmpty ||
                   (row.description != '[CONFIDENTIAL]' &&
-                      localIlike(row.description, query))),
+                      row.description != null &&
+                      matcher!.hasMatch(row.description!))),
         )
         .toList(growable: false);
   }

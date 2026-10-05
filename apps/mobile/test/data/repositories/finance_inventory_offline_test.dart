@@ -16,6 +16,8 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
+import 'finance_permission_restoration_cases.dart';
+
 class _SecureStorage extends Mock implements FlutterSecureStorage {}
 
 class _Api extends Mock implements ApiClient {}
@@ -101,7 +103,7 @@ void main() {
     api = _Api();
     when(
       () => api.getJson(any()),
-    ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));
+    ).thenThrow(const ApiException.transport(message: 'Offline'));
     finance = FinanceRepository(
       apiClient: api,
       cacheStore: store,
@@ -140,7 +142,6 @@ void main() {
     policy: CachePolicies.offlineCatalog,
     payload: payload,
   );
-
   test(
     'offline product queries preserve whole query, accents and wildcards',
     () async {
@@ -158,6 +159,8 @@ void main() {
             query: text,
           )).data.map((row) => row.id).toList();
       expect(await query('Cà phê'), ['coffee']);
+      expect(await query('  Cà phê  '), ['coffee']);
+      expect(await query('  '), ['coffee', 'latte', 'percent']);
       expect(await query('phê Cà'), isEmpty);
       expect(await query('Ca phe'), isEmpty);
       expect(await query('Mocha'), isEmpty);
@@ -187,7 +190,12 @@ void main() {
       verifyNever(() => api.getJson(any()));
     },
   );
-
+  registerFinancePermissionRestorationTests(
+    writeSnapshot: snapshot,
+    repository: () => finance,
+    transaction: _transaction,
+    verifyNoRequests: () => verifyNever(() => api.getJson(any())),
+  );
   test(
     'finance search uses descriptions and excludes redacted and other scopes',
     () async {
@@ -665,7 +673,7 @@ void main() {
     await finance.prepareOffline('ws');
     when(
       () => api.getJson(any()),
-    ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));
+    ).thenThrow(const ApiException.transport(message: 'Offline'));
     final summary = await CacheStore.awaitRevalidation(
       () => finance.getWalletCheckpointSummary(wsId: 'ws'),
     );

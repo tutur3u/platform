@@ -236,6 +236,7 @@ void main() {
       );
       expect(snapshot.hasValue, isFalse);
       verify(() => api.getJson(path)).called(2);
+      verify(() => api.checkUser('stock-health-actor')).called(2);
       verifyNoMoreInteractions(api);
     },
   );

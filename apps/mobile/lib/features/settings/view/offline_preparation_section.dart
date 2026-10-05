@@ -187,10 +187,8 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
                 ),
               ),
             ],
-            for (final id
-                in widget.productId == null
-                    ? OfflinePreparationCoordinator.productIds
-                    : [widget.productId!])
+            for (final (index, id) in ids.indexed) ...[
+              if (index > 0) const Divider(height: 24),
               _OfflineProductRow(
                 id: id,
                 product:
@@ -217,6 +215,7 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
                     ? () => _download(productId: id)
                     : null,
               ),
+            ],
           ],
         );
       },
