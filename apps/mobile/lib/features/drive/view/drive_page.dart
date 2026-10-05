@@ -168,7 +168,7 @@ class _DrivePageState extends State<DrivePage> {
       if (!_isCurrentRequest(requestToken, wsId, actorId)) return;
       setState(() {
         if ((error.statusCode == 401 || error.statusCode == 403) &&
-            !error.isVerificationRequired) {
+            !(error.isVerificationRequired || error.code == 'MFA_REQUIRED')) {
           _entries = const [];
           _selectedNames.clear();
           _canManageDrive = false;
@@ -863,9 +863,9 @@ class _DrivePageState extends State<DrivePage> {
                             selectedCount: _selectedNames.length,
                           ),
                           const SizedBox(height: 16),
-                          if (_error != null && _entries.isEmpty)
-                            _DriveMessageCard(message: _error!)
-                          else if (_entries.isEmpty)
+                          if (_error != null)
+                            _DriveMessageCard(message: _error!),
+                          if (_entries.isEmpty && _error == null)
                             _DriveMessageCard(
                               message: context.l10n.driveEmptyState,
                             )
