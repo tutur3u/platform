@@ -54,6 +54,8 @@ test('creation wait is bounded and failure reports only its fixed phase', async 
     false
   );
   expect(info.mock.calls).toEqual([
+    ['[lettin-e2e] create Markdown page: started'],
+    ['[lettin-e2e] create Markdown page: completed'],
     ['[lettin-e2e] open wiki: started'],
     ['[lettin-e2e] open wiki: completed'],
     ['[lettin-e2e] create project: started'],
@@ -130,3 +132,32 @@ test.each(['navigation', 'click'] as const)(
     ).not.toContain('do-not-log');
   }
 );
+
+test('page creation rejection reports its phase without exposing the browser error', async () => {
+  const failure = new Error(
+    'https://private.example.test/session?token=do-not-log'
+  );
+  const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const newPage = vi.fn().mockRejectedValue(failure);
+  await expect(
+    verifyLettinMarkdownPersistence(
+      { newPage } as unknown as BrowserContext,
+      'https://synthetic.example.test',
+      'synthetic-workspace'
+    )
+  ).rejects.toBe(failure);
+  expect(newPage).toHaveBeenCalledOnce();
+  expect(info.mock.calls).toEqual([
+    ['[lettin-e2e] create Markdown page: started'],
+  ]);
+  expect(warn.mock.calls).toEqual([
+    [
+      '[lettin-e2e] create Markdown page: failed',
+      { name: 'Error', message: 'operation failed' },
+    ],
+  ]);
+  expect(
+    JSON.stringify([...info.mock.calls, ...warn.mock.calls])
+  ).not.toContain('do-not-log');
+});
