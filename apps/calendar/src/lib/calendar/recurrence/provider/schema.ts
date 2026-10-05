@@ -58,6 +58,7 @@ const target = {
 export const ProviderPlanSchema: z.ZodType<ProviderSeriesPlan> = z
   .object({
     operationId: z.uuid(),
+    createBeforeTrim: z.literal(true).optional(),
     binding: z
       .object({
         provider: z.enum(['google', 'microsoft']),
@@ -99,4 +100,18 @@ export const ProviderPlanSchema: z.ZodType<ProviderSeriesPlan> = z
       .min(1)
       .max(2),
   })
-  .strict();
+
+  .strict()
+  .superRefine((plan, context) => {
+    if (
+      plan.createBeforeTrim &&
+      (!plan.binding ||
+        plan.steps.length !== 2 ||
+        plan.steps[0]?.kind !== 'create' ||
+        plan.steps[1]?.kind !== 'trim')
+    )
+      context.addIssue({
+        code: 'custom',
+        message: 'Invalid create-before-trim plan',
+      });
+  });

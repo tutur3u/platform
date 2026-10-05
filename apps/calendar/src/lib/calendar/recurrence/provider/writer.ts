@@ -10,7 +10,9 @@ import {
 } from '@tuturuuu/utils/calendar-recurrence';
 import { createGoogleAuthClient } from '../../provider-writes';
 import type { ResolvedCalendarSource } from '../../source-resolver';
+import { verifyFreshProviderConference } from './conference';
 import type { ProviderSeriesWriter } from './executor';
+import { recoverFailedGoogleConference } from './google-conference-recovery';
 import { googleSeriesPayload, graphSeriesPayload } from './payload';
 import type { ProviderSeriesPlan, ProviderSeriesStep } from './plan';
 
@@ -131,6 +133,9 @@ export function createSeriesProviderWriter(args: {
                 calendarId: external.externalCalendarId,
                 sendUpdates: 'all',
                 supportsAttachments: true,
+                ...(step.metadata?.excludedConferenceHash
+                  ? { conferenceDataVersion: 1 }
+                  : {}),
                 requestBody: {
                   ...payload,
                   id: step.key,
@@ -160,6 +165,21 @@ export function createSeriesProviderWriter(args: {
           }
           if (event.id !== step.key || !event.etag)
             throw new Error('Provider create receipt unavailable');
+          event = await recoverFailedGoogleConference({
+            calendar,
+            calendarId: external.externalCalendarId,
+            event,
+            metadata: step.metadata,
+            authorize: args.authorize,
+          });
+          if (event.id !== step.key || !event.etag)
+            throw new Error('Provider create receipt unavailable');
+          verifyFreshProviderConference(
+            'google',
+            event as Record<string, unknown>,
+            step.metadata?.excludedConferenceHash,
+            step.metadata?.excludedJoinHash
+          );
           return { eventId: event.id, etag: event.etag };
         }
         if (step.metadata && step.metadata.provider !== 'microsoft')
@@ -206,6 +226,15 @@ export function createSeriesProviderWriter(args: {
             typeof event['@odata.etag'] !== 'string'
           )
             throw new Error('Provider create receipt unavailable');
+          verifyFreshProviderConference(
+            'microsoft',
+            event,
+            step.metadata?.excludedConferenceHash,
+            step.metadata?.excludedJoinHash,
+            step.metadata?.provider === 'microsoft'
+              ? step.metadata.fields.onlineMeetingProvider
+              : undefined
+          );
           return { eventId: event.id, etag: event['@odata.etag'] };
         }
         // The mailbox's configured zones are authoritative; do not fall back to UTC.
@@ -222,6 +251,23 @@ export function createSeriesProviderWriter(args: {
           throw new Error(
             'Outlook mailbox does not support the selected timezone'
           );
+        if (step.metadata?.fields.isOnlineMeeting) {
+          const parent = await graph!
+            .api(
+              `/me/calendars/${encodeURIComponent(external.externalCalendarId)}`
+            )
+            .select('allowedOnlineMeetingProviders')
+            .get();
+          if (
+            !Array.isArray(parent?.allowedOnlineMeetingProviders) ||
+            !parent.allowedOnlineMeetingProviders.includes(
+              step.metadata.fields.onlineMeetingProvider
+            )
+          )
+            throw new Error(
+              'Outlook calendar does not support the meeting provider'
+            );
+        }
         const event = await graph!
           .api(collection)
           .header('Prefer', 'IdType="ImmutableId"')
@@ -237,6 +283,13 @@ export function createSeriesProviderWriter(args: {
           typeof event?.['@odata.etag'] !== 'string'
         )
           throw new Error('Provider create receipt unavailable');
+        verifyFreshProviderConference(
+          'microsoft',
+          event,
+          step.metadata?.excludedConferenceHash,
+          step.metadata?.excludedJoinHash,
+          step.metadata?.fields.onlineMeetingProvider
+        );
         return { eventId: event.id, etag: event['@odata.etag'] };
       }
       const target = resolveTarget(plan, step);

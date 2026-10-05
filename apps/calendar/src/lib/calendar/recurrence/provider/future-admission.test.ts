@@ -175,8 +175,10 @@ describe('future split admission before remote effects', () => {
     await reserveProviderOperation(access, intent());
     const plan = mocks.seal.mock.calls[0]?.[1];
     expect(plan.steps).toHaveLength(2);
-    expect(plan.steps[0].kind).toBe('trim');
-    expect(plan.steps[1].metadata).toEqual({
+    expect(plan.createBeforeTrim).toBe(true);
+    expect(plan.steps[0].kind).toBe('create');
+    expect(plan.steps[1].kind).toBe('trim');
+    expect(plan.steps[0].metadata).toEqual({
       provider: 'google',
       fields: {
         attendees: [{ email: 'guest@example.invalid' }],
@@ -184,6 +186,7 @@ describe('future split admission before remote effects', () => {
       },
     });
     expect(reserved()).toBeDefined();
+    expect(reserved()?.[1].p_input.nativeInput.providerCreateFirst).toBe(true);
     expect(JSON.stringify(reserved())).not.toContain('guest@example.invalid');
   });
   it.each([
@@ -205,6 +208,28 @@ describe('future split admission before remote effects', () => {
       expect(mocks.seal).not.toHaveBeenCalled();
     }
   );
+  it('rejects original meeting links in edited canonical content before reservation', async () => {
+    const joinUrl = 'https://meet.google.com/fixture-old';
+    mocks.master.mockResolvedValue({
+      etag: 'v1',
+      event: {
+        organizer: { self: true },
+        conferenceData: {
+          conferenceId: 'fixture-old',
+          conferenceSolution: { key: { type: 'hangoutsMeet' } },
+        },
+        hangoutLink: joinUrl,
+      },
+    });
+    await expect(
+      reserveProviderOperation(access, {
+        ...intent(),
+        event: { title: 'Changed', description: `Join ${joinUrl}` },
+      })
+    ).rejects.toThrow('original meeting link');
+    expect(reserved()).toBeUndefined();
+    expect(mocks.seal).not.toHaveBeenCalled();
+  });
   it('preserves Outlook HTML body format when description is unchanged', async () => {
     provider = 'microsoft';
     mocks.master.mockResolvedValue({
@@ -216,7 +241,7 @@ describe('future split admission before remote effects', () => {
     });
     await reserveProviderOperation(access, intent());
     expect(
-      mocks.seal.mock.calls[0]?.[1].steps[1].metadata.fields.body.contentType
+      mocks.seal.mock.calls[0]?.[1].steps[0].metadata.fields.body.contentType
     ).toBe('html');
   });
   it('uses explicit text for an intentionally changed Outlook description', async () => {
@@ -233,7 +258,7 @@ describe('future split admission before remote effects', () => {
       event: { title: 'Changed', description: 'New text' },
     });
     expect(
-      mocks.seal.mock.calls[0]?.[1].steps[1].metadata.fields.body
+      mocks.seal.mock.calls[0]?.[1].steps[0].metadata.fields.body
     ).toBeUndefined();
   });
   it('rejects changed authoritative master revision before retaining any split plan', async () => {

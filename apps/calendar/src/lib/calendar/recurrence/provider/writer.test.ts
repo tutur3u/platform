@@ -3,6 +3,11 @@ import type { calendar_v3 } from '@tuturuuu/google';
 import type { createGraphClient } from '@tuturuuu/microsoft';
 import { describe, expect, it, vi } from 'vitest';
 import type { ResolvedCalendarSource } from '../../source-resolver';
+import { providerFutureCreateMetadata } from './create-metadata';
+import {
+  executeProviderSeriesOperation,
+  type ProviderSeriesCheckpoint,
+} from './executor';
 import { googleSeriesPayload, type ProviderSeriesSnapshot } from './payload';
 import {
   type ProviderSeriesPlan,
@@ -55,7 +60,7 @@ const plan = (
 ) =>
   providerSeriesMutationPlan({
     operationId: 'operation',
-    binding,
+    binding: { ...binding },
     current: snapshot,
     action,
     scope,
@@ -98,6 +103,9 @@ function graphWriter(responses: unknown[]) {
           call.headers[name] = value;
           return request;
         },
+        select(_select: string) {
+          return request;
+        },
         query(_query: unknown) {
           return request;
         },
@@ -122,7 +130,7 @@ describe('future series metadata preservation', () => {
   it('keeps safe Google metadata while replacing only the private operation marker', async () => {
     const f = googleWriter();
     const value = plan('update', 'future');
-    const step = value.steps[1]!;
+    const step = value.steps.find((step) => step.kind === 'create')!;
     if (step.kind !== 'create') throw new Error('Missing create');
     step.metadata = {
       provider: 'google',
@@ -203,7 +211,7 @@ describe('future series metadata preservation', () => {
   it('refuses cross-provider create metadata before sending any remote write', async () => {
     const f = googleWriter();
     const value = plan('update', 'future');
-    const step = value.steps[1]!;
+    const step = value.steps.find((step) => step.kind === 'create')!;
     if (step.kind !== 'create') throw new Error('Missing create');
     step.metadata = {
       provider: 'microsoft',
@@ -423,5 +431,163 @@ describe('Outlook recurrence provider writer', () => {
       method: 'DELETE',
       headers: { 'If-Match': 'v1' },
     });
+  });
+});
+
+describe('fresh conference split execution', () => {
+  const googleMaster = {
+    organizer: { self: true },
+    conferenceData: {
+      conferenceId: 'old-conference',
+      conferenceSolution: { key: { type: 'hangoutsMeet' } },
+    },
+    hangoutLink: 'https://meet.google.com/old-fixture',
+  };
+  const graphMaster = {
+    isOrganizer: true,
+    isOnlineMeeting: true,
+    onlineMeetingProvider: 'teamsForBusiness',
+    onlineMeeting: { joinUrl: 'https://teams.microsoft.com/old-fixture' },
+  };
+  it('retains the old series while Google generation is pending, then recovers the same replacement before trim', async () => {
+    const { events, writer } = googleWriter();
+    const operation = plan('update', 'future');
+    const step = operation.steps[0]!;
+    if (step.kind !== 'create') throw new Error('expected create');
+    step.metadata = providerFutureCreateMetadata(
+      'google',
+      googleMaster,
+      operation.operationId
+    );
+    const checkpoints: ProviderSeriesCheckpoint[] = [];
+    const store = {
+      claim: async () => ({ plan: operation, checkpoints, lease: 'lease' }),
+      checkpoint: vi.fn(
+        async (_lease: string, value: ProviderSeriesCheckpoint) => {
+          checkpoints.push(value);
+        }
+      ),
+      finalize: vi.fn(async () => ({ applied: true })),
+    };
+    events.insert.mockResolvedValueOnce({
+      data: {
+        id: step.key,
+        etag: 'new-v1',
+        conferenceData: {
+          createRequest: { status: { statusCode: 'pending' } },
+        },
+      },
+    });
+    await expect(executeProviderSeriesOperation(store, writer)).rejects.toThrow(
+      'not ready'
+    );
+    expect(checkpoints).toHaveLength(0);
+    expect(events.patch).not.toHaveBeenCalled();
+    expect(store.finalize).not.toHaveBeenCalled();
+    const inserted = events.insert.mock.calls[0]![0];
+    expect(inserted.conferenceDataVersion).toBe(1);
+    expect(JSON.stringify(inserted.requestBody)).not.toContain('old-fixture');
+    events.insert.mockRejectedValueOnce(conflict);
+    events.get.mockImplementation(async ({ eventId }: { eventId: string }) => ({
+      data:
+        eventId === step.key
+          ? {
+              ...inserted.requestBody,
+              id: step.key,
+              etag: 'new-v2',
+              conferenceData: {
+                conferenceId: 'new-conference',
+                conferenceSolution: { key: { type: 'hangoutsMeet' } },
+                createRequest: { status: { statusCode: 'success' } },
+              },
+              hangoutLink: 'https://meet.google.com/new-fixture',
+            }
+          : { id: 'master', etag: 'v1' },
+    }));
+    events.patch.mockResolvedValue({ data: { id: 'master', etag: 'old-v2' } });
+    await expect(
+      executeProviderSeriesOperation(store, writer)
+    ).resolves.toEqual({ applied: true });
+    expect(checkpoints.map((value) => value.kind)).toEqual(['create', 'trim']);
+    expect(checkpoints[0]?.result.eventId).toBe(step.key);
+    expect(checkpoints[1]?.result.eventId).toBe('master');
+    expect(store.finalize).toHaveBeenCalledTimes(1);
+  });
+  it('checks Outlook parent capabilities before creating a fresh meeting', async () => {
+    const { writer, calls } = graphWriter([
+      { value: [] },
+      { value: [{ alias: 'America/New_York' }] },
+      { allowedOnlineMeetingProviders: [] },
+    ]);
+    const operation = providerSeriesCreatePlan('operation', snapshot);
+    const step = operation.steps[0]!;
+    if (step.kind !== 'create') throw new Error('expected create');
+    step.metadata = providerFutureCreateMetadata(
+      'microsoft',
+      graphMaster,
+      'operation'
+    );
+    await expect(writer.apply(operation, step, [])).rejects.toThrow(
+      'does not support'
+    );
+    expect(
+      calls.some((call) => call.method === 'POST' || call.method === 'PATCH')
+    ).toBe(false);
+  });
+  it('does not checkpoint an Outlook meeting without a fresh join identity', async () => {
+    const { writer, calls } = graphWriter([
+      { value: [] },
+      { value: [{ alias: 'America/New_York' }] },
+      { allowedOnlineMeetingProviders: ['teamsForBusiness'] },
+      {
+        id: 'new',
+        '@odata.etag': 'v2',
+        isOnlineMeeting: true,
+        onlineMeetingProvider: 'teamsForBusiness',
+      },
+    ]);
+    const operation = providerSeriesCreatePlan('operation', snapshot);
+    const step = operation.steps[0]!;
+    if (step.kind !== 'create') throw new Error('expected create');
+    step.metadata = providerFutureCreateMetadata(
+      'microsoft',
+      graphMaster,
+      'operation'
+    );
+    await expect(writer.apply(operation, step, [])).rejects.toThrow(
+      'not ready'
+    );
+    const created = calls.find((call) => call.method === 'POST');
+    expect(created?.body).toMatchObject({
+      isOnlineMeeting: true,
+      onlineMeetingProvider: 'teamsForBusiness',
+      transactionId: 'operation',
+    });
+    expect(JSON.stringify(created?.body)).not.toContain('old-fixture');
+  });
+  it('recovers a retained Outlook replacement without creating another conference', async () => {
+    const { writer, calls } = graphWriter([
+      { value: [{ id: 'new' }] },
+      {
+        id: 'new',
+        '@odata.etag': 'v2',
+        isOnlineMeeting: true,
+        onlineMeetingProvider: 'teamsForBusiness',
+        onlineMeeting: { joinUrl: 'https://teams.microsoft.com/new-fixture' },
+      },
+    ]);
+    const operation = providerSeriesCreatePlan('operation', snapshot);
+    const step = operation.steps[0]!;
+    if (step.kind !== 'create') throw new Error('expected create');
+    step.metadata = providerFutureCreateMetadata(
+      'microsoft',
+      graphMaster,
+      'operation'
+    );
+    await expect(writer.apply(operation, step, [])).resolves.toEqual({
+      eventId: 'new',
+      etag: 'v2',
+    });
+    expect(calls.some((call) => call.method === 'POST')).toBe(false);
   });
 });
