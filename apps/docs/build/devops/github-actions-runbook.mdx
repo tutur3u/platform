@@ -445,6 +445,36 @@ propagation of a simulated timeout with safe failure diagnostics. This focused
 contract test does not launch a browser or prove a stalled browser operation
 exits within the deadline; exact-commit E2E remains required.
 
+For bounded CI stall investigations, the Lettin suite worker and the parent E2E
+runner emit a heartbeat every ten seconds with only wall-clock, monotonic-clock,
+and process CPU deltas. It is enabled by `CI=true`, or explicitly by
+`E2E_RUNTIME_DIAGNOSTICS=true` locally. Worker timers stop after each test; the
+parent timer stops when the Playwright command succeeds or fails. Timers are
+unreferenced and do not keep either process alive. No identities, fixtures, URLs,
+request bodies, or raw errors are included. Timeline page creation, navigation,
+and assertions emit fixed operation markers without changing their deadlines.
+
+On Linux, only the parent runner also samples five fixed `/proc` files:
+`meminfo`, `vmstat`, and CPU, memory, and I/O pressure. Logs contain only available
+memory/free swap in KiB, major fault/swap page counters, cumulative PSI stall
+microseconds, and parent RSS bytes. Each asynchronous read allocates at most
+32 KiB plus one byte and checks a shared one-second abort signal before and
+after I/O. Samples never overlap and suppress late publication after command
+cleanup. Unsupported
+or unreadable fields emit only `{ unavailable: 1 }`; raw file data and errors
+are never logged. These counters can distinguish pressure during delayed ticks;
+current readings alone do not prove which process caused it. Regression coverage
+in `e2e-runtime-resources.test.js` checks numeric output, privacy, non-overlap,
+and stopped publication.
+
+A runner heartbeat continuing while worker ticks stop narrows the problem to the
+worker or its output path. Both stopping can also mean host suspension or delayed
+log delivery; numeric deltas after recovery help compare those possibilities,
+but do not alone establish a root cause. A heartbeat cannot interrupt blocked
+JavaScript or guarantee cleanup. Regression coverage in
+`e2e-runtime-heartbeat.test.js` verifies numeric-only logs, preserved command and
+failure outcomes, and timer cleanup. Exact-commit E2E remains runtime evidence.
+
 ### Meet, Lettin, and Parley Cloudflare validation
 
 The standalone Meet and Lettin Cloudflare validation jobs build
