@@ -1151,6 +1151,23 @@ checkpoint behavior, or document broadcasting policy changes.
 Regression coverage: `document-status.test.tsx` verifies quiet healthy state,
 accessible reconnection, and distinct backup-warning labels without inline alerts.
 
+### Programming preparation and resource discovery
+
+Meet web hosts open Programming into a blank Python project when the room has no
+selected resource. Opening an existing selection reuses it; participants only join
+the host's selection and never create a project automatically. The existing
+authorized collaboration ticket, hosted runtime, Run, and problem Test controls
+remain responsible for connecting and executing code. Creating a meeting project
+keeps its runnable entry file empty; standalone playground template defaults are
+unchanged.
+
+Hosts choose existing personal projects or authorized workspace problems through
+shared UI dropdowns. Problem discovery supports cursor pagination, while project
+discovery checks the response actor against the signed-in account. The native
+collaboration bridge retains its existing explicit resource-ID selection until
+that bridge provides authenticated discovery metadata. Regression coverage lives
+in `prepare-programming.test.ts` and `playground-service.test.ts`.
+
 ## Private My day panel
 
 During a Meet call, My day shows the current authenticated account’s assigned
@@ -1164,3 +1181,19 @@ Parley does not show this Meet-only action.
 
 `personal-tools.test.ts` covers personal scope, actor changes, missing personal
 workspaces, and partial source availability.
+
+## Meeting-list startup and hosting eligibility
+
+The signed-in Meet workspace heading renders after session and workspace membership
+are verified. Hosting eligibility is resolved inside the content Suspense boundary,
+so a slow verified-identity or account-tier lookup does not block the heading.
+Creation controls remain unavailable until that lookup confirms eligibility; lookup
+errors retain the unavailable notice and never grant creation. Session and workspace
+redirects stay outside streaming boundaries. This applies to the workspace Meetings
+list, not room admission or meeting creation authorization. Regression evidence:
+`authorized-meetings-content.test.tsx` exercises deferred identity reads, workspace
+denial, eligible accounts, restriction notices, and failed eligibility reads.
+
+Measure signed-in server response and meaningful-content times separately. A fast
+public homepage is not evidence that an authenticated app is fast, and a Suspense
+skeleton is not a loaded meeting list. Re-measure the deployed source after rollout.

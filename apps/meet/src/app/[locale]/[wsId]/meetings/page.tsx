@@ -1,12 +1,10 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
-import { canVerifiedAccountHostMeeting } from '@tuturuuu/utils/meet-hosting';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { getMeetWorkspaceContext } from '../workspace-context';
-import { MeetingsContent } from './meetings-content';
+import { AuthorizedMeetingsContent } from './authorized-meetings-content';
 
 export const metadata: Metadata = {
   title: 'Meetings',
@@ -34,16 +32,6 @@ export default async function MeetingsPage({
   const { wsId: id } = await params;
   const { wsId, user } = await getMeetWorkspaceContext(id);
 
-  const admin = await createAdminClient({ noCookie: true });
-  const { data: identity, error: identityError } =
-    await admin.auth.admin.getUserById(user.id);
-  let hostingUnavailable = Boolean(identityError);
-  const canCreate =
-    !identityError &&
-    (await canVerifiedAccountHostMeeting(user.id, identity.user).catch(() => {
-      hostingUnavailable = true;
-      return false;
-    }));
   const t = await getTranslations('meet.call');
 
   const resolvedSearchParams = await searchParams;
@@ -64,16 +52,6 @@ export default async function MeetingsPage({
         </div>
       </div>
 
-      {!canCreate && (
-        <p
-          className="mb-6 rounded-xl border bg-muted/30 p-4 text-muted-foreground text-sm"
-          role={hostingUnavailable ? 'alert' : undefined}
-        >
-          {t(
-            hostingUnavailable ? 'hosting_unavailable' : 'creation_restricted'
-          )}
-        </p>
-      )}
       <Suspense
         fallback={
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -92,9 +70,8 @@ export default async function MeetingsPage({
           </div>
         }
       >
-        <MeetingsContent
+        <AuthorizedMeetingsContent
           accountId={user.id}
-          canCreate={canCreate}
           wsId={wsId}
           page={page}
           pageSize={pageSize}

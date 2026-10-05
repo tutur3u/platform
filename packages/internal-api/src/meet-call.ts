@@ -297,6 +297,7 @@ export function createMeetPlayground(
   id: string,
   payload: {
     name: string;
+    empty?: boolean;
     language: import('@tuturuuu/types/primitives/playgrounds').PlaygroundLanguage;
   }
 ) {
