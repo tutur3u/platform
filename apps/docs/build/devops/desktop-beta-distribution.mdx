@@ -167,8 +167,13 @@ temporary copy with a runner-local certificate, installs it, verifies the packag
 identity and visible first frame, and exercises a harmless browser callback. The
 unsigned submission artifact is unchanged; the test package and certificate are
 removed afterward. WACK runs when the kit and an interactive session are present.
-A missing kit/session produces an explicit submission-blocked report, not a
-certification pass. Inspect the attached validation reports before submission.
+A missing kit/session writes an explicit submission-blocked report and fails the
+submission job, preventing MSIX upload. Only an explicit diagnostic-only run may
+finish with blocked evidence; it never uploads a submission MSIX. When WACK runs,
+a failed, missing, or non-passing report fails either mode. Inspect the attached
+validation reports before submission. The prerequisite policy is covered by
+`store-certification-gate.test.mjs`; actual PowerShell execution and WACK remain
+Windows CI gates, not evidence established by source-policy tests on another OS.
 
 For pre-promotion diagnostics, dispatch this workflow on `main` with
 `diagnostics_only=true`. The job uses the separate `desktop-diagnostics` environment,
