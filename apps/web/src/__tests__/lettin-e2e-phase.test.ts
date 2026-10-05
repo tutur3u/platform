@@ -25,7 +25,10 @@ test('creation wait is bounded and failure reports only its fixed phase', async 
     waitForResponse,
     getByRole: () => ({ click, getByLabel: () => ({ fill }) }),
   };
-  const context = { newPage: async () => page } as unknown as BrowserContext;
+  const context = {
+    setDefaultTimeout: vi.fn(),
+    newPage: async () => page,
+  } as unknown as BrowserContext;
   await expect(
     verifyLettinMarkdownPersistence(
       context,
@@ -54,8 +57,12 @@ test('creation wait is bounded and failure reports only its fixed phase', async 
     false
   );
   expect(info.mock.calls).toEqual([
+    ['[lettin-e2e] create Markdown page: started'],
+    ['[lettin-e2e] create Markdown page: completed'],
     ['[lettin-e2e] open wiki: started'],
     ['[lettin-e2e] open wiki: completed'],
+    ['[lettin-e2e] open project dialog: started'],
+    ['[lettin-e2e] open project dialog: completed'],
     ['[lettin-e2e] create project: started'],
   ]);
   expect(warn.mock.calls).toEqual([
@@ -102,7 +109,10 @@ test.each(['navigation', 'click'] as const)(
     };
     await expect(
       verifyLettinMarkdownPersistence(
-        { newPage: async () => page } as unknown as BrowserContext,
+        {
+          setDefaultTimeout: vi.fn(),
+          newPage: async () => page,
+        } as unknown as BrowserContext,
         'https://synthetic.example.test',
         'synthetic-workspace'
       )
@@ -128,5 +138,78 @@ test.each(['navigation', 'click'] as const)(
     expect(
       JSON.stringify([...warn.mock.calls, ...info.mock.calls])
     ).not.toContain('do-not-log');
+  }
+);
+
+test('page creation rejection reports its phase without exposing the browser error', async () => {
+  const failure = new Error(
+    'https://private.example.test/session?token=do-not-log'
+  );
+  const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const newPage = vi.fn().mockRejectedValue(failure);
+  await expect(
+    verifyLettinMarkdownPersistence(
+      { setDefaultTimeout: vi.fn(), newPage } as unknown as BrowserContext,
+      'https://synthetic.example.test',
+      'synthetic-workspace'
+    )
+  ).rejects.toBe(failure);
+  expect(newPage).toHaveBeenCalledOnce();
+  expect(info.mock.calls).toEqual([
+    ['[lettin-e2e] create Markdown page: started'],
+  ]);
+  expect(warn.mock.calls).toEqual([
+    [
+      '[lettin-e2e] create Markdown page: failed',
+      { name: 'Error', message: 'operation failed' },
+    ],
+  ]);
+  expect(
+    JSON.stringify([...info.mock.calls, ...warn.mock.calls])
+  ).not.toContain('do-not-log');
+});
+
+test.each(['open wiki', 'open project dialog'] as const)(
+  '%s rejection stops creation with finite action and navigation deadlines',
+  async (failureAt) => {
+    const failure = new Error('private page or dialog error');
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const goto = vi.fn().mockImplementation(async () => {
+      if (failureAt === 'open wiki') throw failure;
+    });
+    const click = vi.fn().mockRejectedValue(failure);
+    const waitForResponse = vi.fn();
+    const setDefaultTimeout = vi.fn();
+    const page = {
+      on: vi.fn(),
+      goto,
+      waitForResponse,
+      getByRole: () => ({ click }),
+    };
+    await expect(
+      verifyLettinMarkdownPersistence(
+        {
+          setDefaultTimeout,
+          newPage: async () => page,
+        } as unknown as BrowserContext,
+        'https://synthetic.example.test',
+        'synthetic-workspace'
+      )
+    ).rejects.toBe(failure);
+    expect(setDefaultTimeout).toHaveBeenCalledWith(15_000);
+    expect(goto).toHaveBeenCalledWith(
+      'https://synthetic.example.test/synthetic-workspace/wiki',
+      { timeout: 60_000 }
+    );
+    expect(waitForResponse).not.toHaveBeenCalled();
+    expect(click).toHaveBeenCalledTimes(failureAt === 'open wiki' ? 0 : 1);
+    expect(warn.mock.calls).toEqual([
+      [
+        `[lettin-e2e] ${failureAt}: failed`,
+        { name: 'Error', message: 'operation failed' },
+      ],
+    ]);
   }
 );

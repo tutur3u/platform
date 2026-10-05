@@ -30,6 +30,9 @@ import {
   supportedLocales,
 } from './i18n/routing';
 
+import { getLoginRedirect } from './login-redirect';
+import { getWorkspaceRouteStatus } from './workspace-route-status';
+
 const intlMiddleware = createIntlMiddleware(routing);
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 const LOCALE_COOKIE_OPTIONS = {
@@ -230,6 +233,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   }
 
   const unlocalizedPath = stripLocale(request.nextUrl.pathname);
+  if (unlocalizedPath === '/login') return getLoginRedirect(request);
 
   if (!isPublicLettinPath(unlocalizedPath)) {
     const appSessionRefresh = await refreshAppSessionForRequest(request, {
@@ -268,7 +272,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       return clearSupabaseAuthCookies(request, NextResponse.redirect(url));
     }
 
-    const response = intlMiddleware(request);
+    const routeStatus = await getWorkspaceRouteStatus(
+      request,
+      unlocalizedPath,
+      requestWithRefresh.headers,
+      getPreferredLocale(request)
+    );
+    const response = routeStatus ?? intlMiddleware(request);
     setLocaleCookie(response, request, getPreferredLocale(request));
     if (appSessionRefresh.ok) {
       propagateAuthCookies(appSessionRefresh.response, response);

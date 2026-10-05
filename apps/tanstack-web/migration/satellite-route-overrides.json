@@ -24,6 +24,31 @@
       "status": "legacy-next",
       "targetOwner": "tanstack-start",
       "note": "Satellite hosted programming, benefits or native collaboration surface. Reuse shared Internal API data contracts when migrating this page to TanStack Start."
+    },
+    "page:/:locale/login:apps/lettin/src/app/[locale]/login/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Lettin proxy resolves login with an HTTP 307 and Location header before rendering. Preserve verified shared-session checks, cross-app login return URLs, cookie propagation, and explicit refresh handling when migrating."
+    },
+    "page:/:locale/:wsId/worlds/:worldId:apps/lettin/src/app/[locale]/[wsId]/worlds/[worldId]/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Lettin proxy decides workspace membership/invitations and rejects invalid joined-workspace world GUIDs with an HTTP 404 before the loading boundary streams. Preserve private/no-store 404s, invitation exceptions, authenticated workspace checks, and initial entry selection when migrating."
+    },
+    "page:/:locale/:wsId/wiki/:worldId/:section:apps/lettin/src/app/[locale]/[wsId]/wiki/[worldId]/[section]/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Proxy preserves invalid GUID/section HTTP404 after membership; request-time page suspends while retaining initial entry."
+    },
+    "page:/:locale/:wsId/moderation:apps/lettin/src/app/[locale]/[wsId]/moderation/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Suspend request-time moderation page beneath its own loading boundary; keep workspace membership authorization."
+    },
+    "page:/:locale/:wsId/profile:apps/lettin/src/app/[locale]/[wsId]/profile/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Suspend request-time creator profile permissions/publication reads beneath its own loading boundary; preserve actor-scoped editing."
     }
   }
 }

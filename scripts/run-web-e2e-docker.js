@@ -5,6 +5,8 @@ const fs = require('node:fs');
 const https = require('node:https');
 const os = require('node:os');
 const path = require('node:path');
+const { parseDiscoveryOutput } = require('./e2e-satellite-cohorts');
+const { runE2ESatelliteFixtures } = require('./e2e-satellite-execution');
 
 const {
   parseArgs: parseDockerWebArgs,
@@ -22,24 +24,14 @@ const {
 const { SKIP_WATCH_HISTORY_ENV } = require('./watch-blue-green/history.js');
 const { WATCHER_CONTAINER_ENV } = require('./watch-blue-green-deploy.js');
 const {
-  getTasksSatellitePortlessEnv,
-  getTasksSatellitePlaywrightEnv,
   getTasksSatelliteDependencyBuildArgs,
-  printTasksSatelliteLog,
   shouldDiscoverTasksSatelliteFromTestList,
   shouldStartTasksSatellite,
-  startTasksSatellite,
-  stopTasksSatellite,
-  waitForTasksSatellite,
 } = require('./e2e-tasks-satellite.js');
 const {
   getOwnedSatelliteDependencyBuildArgs,
-  getOwnedSatellitesPlaywrightEnv,
   getRequiredOwnedSatellites,
-  printOwnedSatelliteLog,
   shouldDiscoverOwnedSatellitesFromTestList,
-  startOwnedSatelliteFixtures,
-  stopOwnedSatellite,
 } = require('./e2e-owned-satellites.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
@@ -2036,10 +2028,6 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
 
   let stackTouched = false;
   let runError = null;
-  let tasksSatellite = null;
-  const ownedSatelliteRuntimes = [];
-
-  let playwrightEnv = env;
 
   try {
     const discoverTasksSatellite = shouldDiscoverTasksSatelliteFromTestList(
@@ -2051,16 +2039,31 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
       env
     );
     let playwrightTestList = '';
-    if (discoverTasksSatellite || discoverOwnedSatellites) {
+    if (
+      env.CI === 'true' ||
+      discoverTasksSatellite ||
+      discoverOwnedSatellites
+    ) {
       const listedTests = await runCommandForOutput(
         'bunx',
-        ['playwright', 'test', '--list', ...frontendArgs.playwrightArgs],
+        [
+          'playwright',
+          'test',
+          ...frontendArgs.playwrightArgs,
+          '--list',
+          `--reporter=json,${path.join(ROOT_DIR, 'scripts/e2e-config-reporter.js')}`,
+        ],
         {
           cwd: WEB_DIR,
-          env,
+          env: {
+            ...env,
+            PLAYWRIGHT_JSON_OUTPUT_FILE: '',
+            PLAYWRIGHT_JSON_OUTPUT_DIR: '',
+            PLAYWRIGHT_JSON_OUTPUT_NAME: '',
+          },
         }
       );
-      playwrightTestList = `${listedTests.stdout}\n${listedTests.stderr}`;
+      playwrightTestList = parseDiscoveryOutput(listedTests.stdout);
     }
 
     const tasksSatelliteRequired = shouldStartTasksSatellite(
@@ -2101,72 +2104,21 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
       acceptedStatusCodes: DEFAULT_PORTLESS_READY_STATUS_CODES,
       timeoutMs: DEFAULT_PORTLESS_READY_TIMEOUT_MS,
     });
-    await startOwnedSatelliteFixtures(ownedSatellites, ownedSatelliteRuntimes, {
+    await runE2ESatelliteFixtures({
+      args: frontendArgs.playwrightArgs,
+      list: playwrightTestList,
       env,
+      webDir: WEB_DIR,
+      runCommand,
       ensurePortlessRoute,
       waitForUrl: (url) =>
         waitForUrl(url, { timeoutMs: DEFAULT_PORTLESS_READY_TIMEOUT_MS }),
+      satellites: ownedSatellites,
+      tasksRequired: tasksSatelliteRequired,
     });
-    playwrightEnv = getOwnedSatellitesPlaywrightEnv(ownedSatellites, env);
-    if (tasksSatelliteRequired) {
-      tasksSatellite = startTasksSatellite({ env });
-      await ensurePortlessRoute({
-        env: getTasksSatellitePortlessEnv(env),
-      });
-      await waitForTasksSatellite(tasksSatellite, (url) =>
-        waitForUrl(url, {
-          timeoutMs: DEFAULT_PORTLESS_READY_TIMEOUT_MS,
-        })
-      );
-      playwrightEnv = getTasksSatellitePlaywrightEnv(playwrightEnv);
-    }
-    await runCommand(
-      'bunx',
-      ['playwright', 'test', ...frontendArgs.playwrightArgs],
-      {
-        cwd: WEB_DIR,
-        env: playwrightEnv,
-      }
-    );
   } catch (error) {
     runError = error;
     await printE2EFailureDiagnostics({ env, error });
-    printTasksSatelliteLog(tasksSatellite);
-    for (const runtime of ownedSatelliteRuntimes) {
-      printOwnedSatelliteLog(runtime);
-    }
-  }
-
-  if (tasksSatellite) {
-    try {
-      await stopTasksSatellite(tasksSatellite);
-    } catch (tasksCleanupError) {
-      if (!runError) {
-        runError = tasksCleanupError;
-      } else {
-        console.error(
-          tasksCleanupError instanceof Error
-            ? tasksCleanupError.message
-            : tasksCleanupError
-        );
-      }
-    }
-  }
-
-  for (const runtime of ownedSatelliteRuntimes.reverse()) {
-    try {
-      await stopOwnedSatellite(runtime);
-    } catch (satelliteCleanupError) {
-      if (!runError) {
-        runError = satelliteCleanupError;
-      } else {
-        console.error(
-          satelliteCleanupError instanceof Error
-            ? satelliteCleanupError.message
-            : satelliteCleanupError
-        );
-      }
-    }
   }
 
   if (stackTouched && !shouldKeepStack(env)) {

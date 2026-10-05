@@ -17,6 +17,25 @@ const SECOND_USER = {
 } as const;
 const LOGIN_PATH = `/${DEFAULT_LOCALE}/login`;
 
+async function readMultiSessionStore(page: Page) {
+  try {
+    return await page.evaluate(() =>
+      window.localStorage.getItem('tuturuuu_multi_session_store')
+    );
+  } catch (error) {
+    // Account handoff can replace the document after the profile API is ready.
+    // Retry only this navigation race; never interpret a failed read as null.
+    if (
+      error instanceof Error &&
+      error.message ===
+        'page.evaluate: Execution context was destroyed, most likely because of a navigation'
+    ) {
+      return { navigationPending: true };
+    }
+    throw error;
+  }
+}
+
 function getSupabaseAuthStorageKey(url: string) {
   return `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
 }
@@ -346,13 +365,7 @@ test.describe('Multi-account server vault', () => {
         .poll(async () => (await currentProfile(page)).id)
         .toBe(SECOND_USER.id);
 
-      await expect
-        .poll(() =>
-          page.evaluate(() =>
-            window.localStorage.getItem('tuturuuu_multi_session_store')
-          )
-        )
-        .toBe(null);
+      await expect.poll(() => readMultiSessionStore(page)).toBe(null);
 
       await switchAccount(page, TEST_USER.id);
       await expect

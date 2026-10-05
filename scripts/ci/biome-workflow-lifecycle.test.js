@@ -29,10 +29,11 @@ test('overflow notes cannot attach cancelled Biome checks to a release SHA', () 
   assert.ok(Object.hasOwn(triggers, 'workflow_dispatch'));
 });
 
-test('Biome preserves overflow validation and supersedes ordinary obsolete commits', () => {
+test('Biome preserves canonical and generated commits without branch collisions', () => {
+  assert.match(workflow, /group:.*github\.workflow.*github\.ref.*github\.sha/);
   assert.match(
     workflow,
-    /concurrency:\s+group: biome-[^\n]+\s+cancel-in-progress: \$\{\{ github.ref != 'refs\/heads\/release-please--branches--production--release-notes' \}\}/
+    /cancel-in-progress:.*github\.ref != 'refs\/heads\/main'.*github\.ref != 'refs\/heads\/production'.*!startsWith/
   );
 });
 

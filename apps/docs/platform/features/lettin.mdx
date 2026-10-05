@@ -60,6 +60,18 @@ support; reduced-motion preferences disable animation and decorative hover movem
 Lettin uses the platform's central login and satellite app-session exchange,
 refresh, and logout. Accounts and workspace membership are not duplicated.
 
+Lettin `/login` is resolved by the request proxy before page streaming begins.
+Anonymous, explicit `refresh=1`, denied, or unverified sessions receive HTTP 307
+with a `Location` header to central login, preserving the normalized destination
+through `/verify-token`. A successfully verified Lettin session plus a shared
+browser-session marker redirects to that destination and propagates refreshed
+cookies. A standalone app claim is insufficient. Localized login URLs first use
+the existing canonical locale redirect. The page is an inert fallback: it must
+not perform a session lookup inside streamed Suspense, which would turn HTTP
+redirects into client-only meta redirects. `login-redirect.test.ts` checks delayed
+verification, HTTP status/header/body, destination safety, refresh, and MFA denial;
+`proxy.test.ts` verifies dispatch before locale rendering.
+
 Private world access requires all three conditions:
 
 1. An enabled Lettin creator account, or root-workspace administrator status.
@@ -180,6 +192,23 @@ layout and cannot cover those transitions. The mounted `rich-editor.test.tsx`
 exercises the actual shared TipTap editor and Markdown parser. The authenticated
 wiki E2E retains creation, save, and reload assertions, with named, bounded editor
 actions so a pending control is reported before the overall test deadline.
+Before streaming private workspace pages, the proxy checks the same shared
+workspace invitation-status contract used by the invitation screen, forwarding
+only the refreshed request authentication. Missing or unjoined workspaces receive
+an HTTP 307 to the dashboard; anonymous or MFA-required requests return through
+login. Pending invitations keep their existing invitation screen, including when
+the requested child world ID is invalid. Joined workspace world and wiki-section
+routes reject non-GUID IDs, and wiki routes reject unknown sections, with a
+localized, private, non-cacheable HTTP 404 before any loading fallback renders.
+The wiki-section, moderation, and creator-profile pages each have their own
+localized loading boundary around request-time work. This preserves initial wiki
+entry selection and actor-scoped profile editing; public worlds, creator pages,
+and dashboard retain their existing behavior. Deferred request-boundary coverage
+is in `remaining-request-boundaries.test.tsx`. The render-time permission checks remain authoritative;
+this preflight never grants access. Regression coverage is in
+`workspace-route-status.test.ts` and `proxy.test.ts`; mocked membership results
+and real `NextResponse` checks do not replace the exact-commit CI app build.
+
 The storage tests use disposable Miniflare D1 and R2 resources and cover creator
 access, invitation delegation, conflicting writes, published snapshots, private
 relationships, and artwork publication/revocation.
