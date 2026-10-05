@@ -15,10 +15,13 @@ import 'package:mobile/data/models/drive/drive_models.dart';
 import 'package:mobile/data/repositories/drive_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
+import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -30,9 +33,13 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 part 'drive_grid.dart';
+part 'drive_page_widgets.dart';
 
 class DrivePage extends StatefulWidget {
-  const DrivePage({super.key});
+  const DrivePage({super.key, this.repository, this.permissionsRepository});
+
+  final DriveRepository? repository;
+  final WorkspacePermissionsRepository? permissionsRepository;
 
   @override
   State<DrivePage> createState() => _DrivePageState();
@@ -43,6 +50,7 @@ class _DrivePageState extends State<DrivePage> {
 
   late final DriveRepository _repository;
   late final WorkspacePermissionsRepository _permissionsRepository;
+  late final ScrollController _scrollController;
   final TextEditingController _searchController = TextEditingController();
   Timer? _searchDebounce;
 
@@ -52,6 +60,7 @@ class _DrivePageState extends State<DrivePage> {
   bool _isLoadingMore = false;
   bool _canManageDrive = false;
   bool _showGrid = false;
+  bool _searching = false;
   String _sortBy = 'name';
   String _sortOrder = 'asc';
   String _path = '';
@@ -63,13 +72,25 @@ class _DrivePageState extends State<DrivePage> {
   String? get _wsId =>
       context.read<WorkspaceCubit>().state.currentWorkspace?.id;
 
-  bool get _hasMore => _entries.length < _total;
+  String? get _actorId => context.read<AuthCubit>().state.user?.id;
+
+  bool _isCurrentRequest(int token, String wsId, String? actorId) =>
+      mounted && token == _requestToken && _wsId == wsId && _actorId == actorId;
+
+  bool get _hasMore => _offset + _pageSize < _total;
 
   @override
   void initState() {
     super.initState();
-    _repository = DriveRepository();
-    _permissionsRepository = WorkspacePermissionsRepository();
+    _scrollController = ScrollController(
+      onAttach: (_) => WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _maybeLoadMore();
+      }),
+    );
+    _scrollController.addListener(_maybeLoadMore);
+    _repository = widget.repository ?? DriveRepository();
+    _permissionsRepository =
+        widget.permissionsRepository ?? WorkspacePermissionsRepository();
     unawaited(Future<void>.delayed(Duration.zero, _reload));
   }
 
@@ -77,7 +98,8 @@ class _DrivePageState extends State<DrivePage> {
   void dispose() {
     _searchDebounce?.cancel();
     _searchController.dispose();
-    _repository.dispose();
+    _scrollController.dispose();
+    if (widget.repository == null) _repository.dispose();
     super.dispose();
   }
 
@@ -85,6 +107,7 @@ class _DrivePageState extends State<DrivePage> {
     final wsId = _wsId;
     if (wsId == null || wsId.isEmpty) return;
 
+    final actorId = _actorId;
     final requestToken = ++_requestToken;
     final nextOffset = append ? _offset + _pageSize : 0;
     final previouslySelected = Set<String>.from(_selectedNames);
@@ -117,7 +140,7 @@ class _DrivePageState extends State<DrivePage> {
         listFuture,
       ]);
 
-      if (!mounted || requestToken != _requestToken) return;
+      if (!_isCurrentRequest(requestToken, wsId, actorId)) return;
 
       final permissions = results[0] as WorkspacePermissions;
       final listResult = results[1] as DriveListResult;
@@ -125,7 +148,10 @@ class _DrivePageState extends State<DrivePage> {
       setState(() {
         _canManageDrive = permissions.containsPermission('manage_drive');
         _entries = append
-            ? <DriveEntry>[..._entries, ...listResult.entries]
+            ? <String, DriveEntry>{
+                for (final entry in _entries) entry.name: entry,
+                for (final entry in listResult.entries) entry.name: entry,
+              }.values.toList(growable: false)
             : listResult.entries;
         _offset = listResult.offset;
         _total = listResult.total;
@@ -139,23 +165,71 @@ class _DrivePageState extends State<DrivePage> {
           );
       });
     } on ApiException catch (error) {
-      if (!mounted || requestToken != _requestToken) return;
+      if (!_isCurrentRequest(requestToken, wsId, actorId)) return;
       setState(() {
+        if ((error.statusCode == 401 || error.statusCode == 403) &&
+            !error.isVerificationRequired) {
+          _entries = const [];
+          _selectedNames.clear();
+          _canManageDrive = false;
+          _total = 0;
+        }
         _error = error.message;
       });
     } on Object catch (_) {
-      if (!mounted || requestToken != _requestToken) return;
+      if (!_isCurrentRequest(requestToken, wsId, actorId)) return;
       setState(() {
         _error = context.l10n.commonSomethingWentWrong;
       });
     } finally {
-      if (mounted && requestToken == _requestToken) {
+      if (_isCurrentRequest(requestToken, wsId, actorId)) {
         setState(() {
           _isLoading = false;
           _isLoadingMore = false;
         });
+        if (_error == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _maybeLoadMore();
+          });
+        }
       }
     }
+  }
+
+  void _maybeLoadMore() {
+    if (!_scrollController.hasClients ||
+        !_scrollController.position.hasContentDimensions) {
+      return;
+    }
+    if (_scrollController.position.extentAfter < 400) unawaited(_loadMore());
+  }
+
+  void _resetScope() {
+    _searchDebounce?.cancel();
+    _requestToken++;
+    setState(() {
+      _path = '';
+      _entries = const [];
+      _selectedNames.clear();
+      _searchController.clear();
+      _searching = false;
+      _canManageDrive = false;
+      _offset = 0;
+      _total = 0;
+      _error = null;
+      _isLoading = false;
+      _isLoadingMore = false;
+    });
+    unawaited(_reload());
+  }
+
+  void _closeSearch() {
+    _searchDebounce?.cancel();
+    setState(() {
+      _searching = false;
+      _searchController.clear();
+    });
+    unawaited(_reload());
   }
 
   Future<void> _loadMore() async {
@@ -452,6 +526,10 @@ class _DrivePageState extends State<DrivePage> {
   }
 
   Future<void> _openEntry(DriveEntry entry) async {
+    final wsId = _wsId;
+    final actorId = _actorId;
+    final token = _requestToken;
+    if (wsId == null) return;
     if (entry.isFolder) {
       setState(() {
         _path = _path.isEmpty ? entry.name : '$_path/${entry.name}';
@@ -463,10 +541,10 @@ class _DrivePageState extends State<DrivePage> {
 
     try {
       final signedUrl = await _repository.createSignedUrl(
-        _wsId!,
+        wsId,
         path: _path.isEmpty ? entry.name : '$_path/${entry.name}',
       );
-      if (!mounted) return;
+      if (!mounted || !_isCurrentRequest(token, wsId, actorId)) return;
       await Navigator.of(context).push<void>(
         MaterialPageRoute(
           builder: (_) =>
@@ -474,20 +552,25 @@ class _DrivePageState extends State<DrivePage> {
         ),
       );
     } on ApiException catch (error) {
-      if (!mounted) return;
+      if (!mounted || !_isCurrentRequest(token, wsId, actorId)) return;
       _toast(error.message, destructive: true);
     }
   }
 
   Future<void> _shareEntry(DriveEntry entry) async {
+    final wsId = _wsId;
+    final actorId = _actorId;
+    final token = _requestToken;
+    if (wsId == null) return;
     try {
       final signedUrl = await _repository.createSignedUrl(
-        _wsId!,
+        wsId,
         path: _path.isEmpty ? entry.name : '$_path/${entry.name}',
       );
+      if (!mounted || !_isCurrentRequest(token, wsId, actorId)) return;
       await SharePlus.instance.share(ShareParams(text: signedUrl));
     } on ApiException catch (error) {
-      if (!mounted) return;
+      if (!mounted || !_isCurrentRequest(token, wsId, actorId)) return;
       _toast(error.message, destructive: true);
     }
   }
@@ -500,26 +583,35 @@ class _DrivePageState extends State<DrivePage> {
   }
 
   Future<void> _openExternal(DriveEntry entry) async {
+    final wsId = _wsId;
+    final actorId = _actorId;
+    final token = _requestToken;
+    if (wsId == null) return;
     try {
       final signedUrl = await _repository.createSignedUrl(
-        _wsId!,
+        wsId,
         path: _path.isEmpty ? entry.name : '$_path/${entry.name}',
       );
+      if (!mounted || !_isCurrentRequest(token, wsId, actorId)) return;
       await launchUrl(
         Uri.parse(signedUrl),
         mode: LaunchMode.externalApplication,
       );
     } on ApiException catch (error) {
-      if (!mounted) return;
+      if (!mounted || !_isCurrentRequest(token, wsId, actorId)) return;
       _toast(error.message, destructive: true);
     }
   }
 
   Future<void> _showExportLinks(DriveEntry entry) async {
+    final wsId = _wsId;
+    final actorId = _actorId;
+    final token = _requestToken;
+    if (wsId == null) return;
     final folderPath = _path.isEmpty ? entry.name : '$_path/${entry.name}';
     try {
-      final data = await _repository.exportLinks(_wsId!, path: folderPath);
-      if (!mounted) return;
+      final data = await _repository.exportLinks(wsId, path: folderPath);
+      if (!mounted || !_isCurrentRequest(token, wsId, actorId)) return;
       await showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
@@ -593,7 +685,7 @@ class _DrivePageState extends State<DrivePage> {
         ),
       );
     } on ApiException catch (error) {
-      if (!mounted) return;
+      if (!mounted || !_isCurrentRequest(token, wsId, actorId)) return;
       _toast(error.message, destructive: true);
     }
   }
@@ -620,20 +712,28 @@ class _DrivePageState extends State<DrivePage> {
     final hasWorkspace = _wsId != null && _wsId!.isNotEmpty;
     final currentFolderLabel = _path.isEmpty ? null : _path.split('/').last;
 
-    return BlocListener<WorkspaceCubit, WorkspaceState>(
-      listenWhen: (previous, current) =>
-          previous.currentWorkspace?.id != current.currentWorkspace?.id,
-      listener: (context, state) {
-        setState(() {
-          _path = '';
-          _entries = const <DriveEntry>[];
-          _selectedNames.clear();
-        });
-        unawaited(_reload());
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<AuthCubit, AuthState>(
+          listenWhen: (previous, current) =>
+              previous.user?.id != current.user?.id,
+          listener: (context, state) => _resetScope(),
+        ),
+        BlocListener<WorkspaceCubit, WorkspaceState>(
+          listenWhen: (previous, current) =>
+              previous.currentWorkspace?.id != current.currentWorkspace?.id,
+          listener: (context, state) => _resetScope(),
+        ),
+      ],
       child: shad.Scaffold(
         child: Stack(
           children: [
+            ShellTitleOverride(
+              ownerId: 'drive-title',
+              locations: const {Routes.drive},
+              title: currentFolderLabel ?? context.l10n.driveTitle,
+              showLeadingBrand: _path.isEmpty && !_searching,
+            ),
             ShellMiniNav(
               ownerId: 'drive-root-nav',
               locations: const {Routes.drive},
@@ -672,7 +772,28 @@ class _DrivePageState extends State<DrivePage> {
               locations: const {Routes.drive},
               actions: [
                 ShellActionSpec(
+                  id: 'drive-search',
+                  icon: _searching
+                      ? Icons.search_off_rounded
+                      : Icons.search_rounded,
+                  tooltip: context.l10n.driveSearchHint,
+                  callbackToken: _searching,
+                  enabled: hasWorkspace,
+                  searchController: _searching ? _searchController : null,
+                  searchHint: context.l10n.driveSearchHint,
+                  onSearchChanged: _onSearchChanged,
+                  onCloseSearch: _closeSearch,
+                  onPressed: () {
+                    if (_searching) {
+                      _closeSearch();
+                    } else {
+                      setState(() => _searching = true);
+                    }
+                  },
+                ),
+                ShellActionSpec(
                   id: 'drive-view',
+                  inDock: true,
                   icon: _showGrid ? Icons.view_list : Icons.grid_view_rounded,
                   tooltip: _showGrid
                       ? context.l10n.driveListView
@@ -686,6 +807,7 @@ class _DrivePageState extends State<DrivePage> {
                 ),
                 ShellActionSpec(
                   id: 'drive-sort',
+                  inDock: true,
                   icon: Icons.sort_rounded,
                   tooltip: context.l10n.sortBy,
                   callbackToken: '$_sortBy:$_sortOrder',
@@ -726,6 +848,8 @@ class _DrivePageState extends State<DrivePage> {
                   : NovaRefreshIndicator(
                       onRefresh: _reload,
                       child: ListView(
+                        controller: _scrollController,
+                        physics: const AlwaysScrollableScrollPhysics(),
                         padding: EdgeInsets.fromLTRB(
                           16,
                           8,
@@ -733,21 +857,13 @@ class _DrivePageState extends State<DrivePage> {
                           40 + MediaQuery.paddingOf(context).bottom,
                         ),
                         children: [
-                          FinanceSectionHeader(
-                            title:
-                                currentFolderLabel ?? context.l10n.driveTitle,
-                            subtitle: _path.isEmpty ? null : _path,
-                          ),
-                          const SizedBox(height: 12),
                           _DriveToolbar(
                             path: _path,
-                            searchController: _searchController,
-                            onSearchChanged: _onSearchChanged,
                             onGoUp: _path.isEmpty ? null : _goUp,
                             selectedCount: _selectedNames.length,
                           ),
                           const SizedBox(height: 16),
-                          if (_error != null)
+                          if (_error != null && _entries.isEmpty)
                             _DriveMessageCard(message: _error!)
                           else if (_entries.isEmpty)
                             _DriveMessageCard(
@@ -842,318 +958,4 @@ class _DrivePageState extends State<DrivePage> {
       ),
     );
   }
-}
-
-class _DriveToolbar extends StatelessWidget {
-  const _DriveToolbar({
-    required this.path,
-    required this.searchController,
-    required this.onSearchChanged,
-    required this.onGoUp,
-    required this.selectedCount,
-  });
-
-  final String path;
-  final TextEditingController searchController;
-  final ValueChanged<String> onSearchChanged;
-  final VoidCallback? onGoUp;
-  final int selectedCount;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    const accent = Color(0xFF3FA36A);
-
-    return FinancePanel(
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextField(
-            controller: searchController,
-            onChanged: onSearchChanged,
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search),
-              hintText: l10n.driveSearchHint,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _MetricChip(
-                label: l10n.driveRootLabel,
-                value: path.isEmpty ? l10n.driveRootLabel : path,
-                icon: Icons.folder_outlined,
-                tint: accent,
-              ),
-              if (selectedCount > 0)
-                _MetricChip(
-                  label: l10n.driveDeleteSelected(selectedCount),
-                  value: '$selectedCount',
-                  icon: Icons.check_circle_outline_rounded,
-                  tint: accent,
-                ),
-              if (onGoUp != null)
-                OutlinedButton.icon(
-                  onPressed: onGoUp,
-                  icon: const Icon(Icons.arrow_upward),
-                  label: Text(l10n.driveGoUp),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DriveListTile extends StatelessWidget {
-  const _DriveListTile({
-    required this.entry,
-    required this.selected,
-    required this.onTap,
-    required this.onLongPress,
-    this.onRename,
-    this.onDelete,
-    this.onShare,
-    this.onCopyPath,
-    this.onOpenExternal,
-    this.onExportLinks,
-  });
-
-  final DriveEntry entry;
-  final bool selected;
-  final VoidCallback onTap;
-  final VoidCallback onLongPress;
-  final VoidCallback? onRename;
-  final VoidCallback? onDelete;
-  final VoidCallback? onShare;
-  final VoidCallback? onCopyPath;
-  final VoidCallback? onOpenExternal;
-  final VoidCallback? onExportLinks;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    const accent = Color(0xFF3FA36A);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: GestureDetector(
-        onLongPress: onLongPress,
-        child: FinancePanel(
-          onTap: onTap,
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  entry.isFolder
-                      ? Icons.folder_outlined
-                      : Icons.insert_drive_file_outlined,
-                  color: accent,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      entry.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.large.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      entry.isFolder
-                          ? context.l10n.driveFolderLabel
-                          : '${_formatBytes(entry.size)}'
-                                ' • '
-                                '${_formatDate(entry.updatedAt)}',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.textSmall.copyWith(
-                        color: theme.colorScheme.mutedForeground,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                children: [
-                  Checkbox(value: selected, onChanged: (_) => onLongPress()),
-                  PopupMenuButton<String>(
-                    onSelected: (value) {
-                      if (value == 'rename') {
-                        onRename?.call();
-                      } else if (value == 'delete') {
-                        onDelete?.call();
-                      } else if (value == 'share') {
-                        onShare?.call();
-                      } else if (value == 'copy') {
-                        onCopyPath?.call();
-                      } else if (value == 'open') {
-                        onOpenExternal?.call();
-                      } else if (value == 'export') {
-                        onExportLinks?.call();
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      if (onRename != null)
-                        PopupMenuItem(
-                          value: 'rename',
-                          child: Text(context.l10n.commonRename),
-                        ),
-                      if (onCopyPath != null)
-                        PopupMenuItem(
-                          value: 'copy',
-                          child: Text(context.l10n.driveCopyPath),
-                        ),
-                      if (onShare != null)
-                        PopupMenuItem(
-                          value: 'share',
-                          child: Text(context.l10n.commonShare),
-                        ),
-                      if (onOpenExternal != null)
-                        PopupMenuItem(
-                          value: 'open',
-                          child: Text(context.l10n.commonOpen),
-                        ),
-                      if (onExportLinks != null)
-                        PopupMenuItem(
-                          value: 'export',
-                          child: Text(context.l10n.driveExportLinksTitle),
-                        ),
-                      if (onDelete != null)
-                        PopupMenuItem(
-                          value: 'delete',
-                          child: Text(context.l10n.commonDelete),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DriveMessageCard extends StatelessWidget {
-  const _DriveMessageCard({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return FinanceEmptyState(
-      icon: Icons.folder_copy_outlined,
-      title: context.l10n.driveTitle,
-      body: message,
-    );
-  }
-}
-
-class _DrivePreviewPage extends StatelessWidget {
-  const _DrivePreviewPage({required this.title, required this.signedUrl});
-
-  final String title;
-  final String signedUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: InAppWebView(initialUrlRequest: URLRequest(url: WebUri(signedUrl))),
-    );
-  }
-}
-
-class _MetricChip extends StatelessWidget {
-  const _MetricChip({
-    required this.label,
-    required this.value,
-    this.icon,
-    this.tint,
-  });
-
-  final String label;
-  final String value;
-  final IconData? icon;
-  final Color? tint;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final effectiveTint = tint ?? theme.colorScheme.primary;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: effectiveTint.withValues(alpha: 0.10),
-        border: Border.all(color: effectiveTint.withValues(alpha: 0.22)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 15, color: effectiveTint),
-            const SizedBox(width: 8),
-          ],
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: theme.typography.small.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Text(
-                label,
-                style: theme.typography.xSmall.copyWith(
-                  color: theme.colorScheme.mutedForeground,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-String _formatBytes(int bytes) {
-  if (bytes <= 0) return '0 B';
-  const suffixes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  var value = bytes.toDouble();
-  var index = 0;
-  while (value >= 1024 && index < suffixes.length - 1) {
-    value /= 1024;
-    index += 1;
-  }
-  return '${value.toStringAsFixed(index == 0 ? 0 : 1)} ${suffixes[index]}';
-}
-
-String _formatDate(String? value) {
-  if (value == null) return '';
-  final parsed = DateTime.tryParse(value);
-  if (parsed == null) return '';
-  return DateFormat.yMMMd().add_Hm().format(parsed.toLocal());
 }
