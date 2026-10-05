@@ -132,7 +132,7 @@ describe('future series writable metadata', () => {
     { onlineMeeting: { joinUrl: 'https://teams.microsoft.com/fixture' } },
     { onlineMeetingUrl: 'https://teams.microsoft.com/fixture' },
     { hasAttachments: true },
-    { hideAttendees: true },
+    { hideAttendees: true, attendees: undefined },
     { isOrganizer: false },
     { isOrganizer: undefined },
   ])(
@@ -167,12 +167,22 @@ describe('future series writable metadata', () => {
       ).toThrow();
     }
   );
+  it.each([true, false])(
+    'preserves verified organizer attendee privacy %s',
+    (hideAttendees) => {
+      expect(
+        providerFutureCreateMetadata('microsoft', { ...graph, hideAttendees })
+          .fields
+      ).toMatchObject({ hideAttendees });
+    }
+  );
   it.each([
     { attendees: [{ type: 'optional', emailAddress: { address: 'invalid' } }] },
     { body: { contentType: 'unknown', content: 'fixture' } },
     { sensitivity: 'unknown' },
     { reminderMinutesBeforeStart: -1 },
     { categories: 'fixture' },
+    { hideAttendees: 'true' },
   ])(
     'rejects malformed Outlook metadata without defaulting visibility or reminders: %j',
     (extra) => {
