@@ -1,10 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockApiClient extends Mock implements ApiClient {}
+
+class _Queue extends Mock implements OfflineMutationQueue {}
 
 HabitTrackerFieldSchema _numberField(String key, String label) {
   return HabitTrackerFieldSchema(
@@ -106,7 +110,27 @@ void main() {
 
     setUp(() {
       apiClient = _MockApiClient();
-      repository = HabitTrackerRepository(apiClient: apiClient);
+      final queue = _Queue();
+      when(
+        queue.listPending,
+      ).thenAnswer((_) async => <PendingMutationRecord>[]);
+      when(
+        () => queue.enqueueIfOffline(
+          feature: any(named: 'feature'),
+          method: any(named: 'method'),
+          path: any(named: 'path'),
+          workspaceId: any(named: 'workspaceId'),
+          payload: any(named: 'payload'),
+          entityId: any(named: 'entityId'),
+          replaySafe: any(named: 'replaySafe'),
+          expectedUserId: any(named: 'expectedUserId'),
+        ),
+      ).thenAnswer((_) async => false);
+      repository = HabitTrackerRepository(
+        apiClient: apiClient,
+        mutationQueue: queue,
+        currentUserId: () => 'viewer-1',
+      );
     });
 
     test('listTrackers includes member scope query parameters', () async {
