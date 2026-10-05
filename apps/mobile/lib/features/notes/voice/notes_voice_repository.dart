@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/scoped_cache_access.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/notes/voice/notes_voice_access.dart';
 import 'package:mobile/features/notes/voice/notes_voice_document.dart';
@@ -15,12 +18,19 @@ class NotesVoiceRepository {
     ApiClient? api,
     CacheStore? cache,
     String? Function()? actor,
+    FlutterSecureStorage? secureStorage,
   }) : _api = api ?? ApiClient(),
        _cache = cache ?? CacheStore.instance,
-       _actor = actor ?? currentCacheUserId;
+       _actor = actor ?? currentCacheUserId,
+       _access = ScopedCacheAccess(
+         secureStorage ?? const FlutterSecureStorage(),
+         markerPrefix: 'notes-voice-denied-v1',
+       );
   final ApiClient _api;
   final CacheStore _cache;
   final String? Function() _actor;
+  final ScopedCacheAccess _access;
+  Future<void> _writes = Future<void>.value();
   int _scopeRevision = 0;
   void invalidateScope() => _scopeRevision++;
   void _guardScope(String actor, int scope) {
@@ -52,6 +62,9 @@ class NotesVoiceRepository {
   Future<NotesVoiceJob?> cached(String actor, String ws) async {
     final scope = _scopeRevision;
     _guardScope(actor, scope);
+    final allowed = await _access.canRead(_key(actor, ws));
+    _guardScope(actor, scope);
+    if (!allowed) return null;
     final read = await _cache.read<NotesVoiceJob>(
       key: _key(actor, ws),
       decode: (value) =>
@@ -65,8 +78,9 @@ class NotesVoiceRepository {
     String actor,
     String ws,
     Map<String, dynamic> json,
-    int scope,
-  ) async {
+    int scope, {
+    bool authorizedResponse = true,
+  }) async {
     _guardScope(actor, scope);
     final job = NotesVoiceJob.fromJson(json);
     if (job.workspaceId != ws) {
@@ -76,15 +90,71 @@ class NotesVoiceRepository {
         failureKind: ApiFailureKind.response,
       );
     }
-    await _cache.write(
-      key: _key(actor, ws),
-      policy: CachePolicies.detail,
-      checkScope: () => _guardScope(actor, scope),
-      payload: job.toJson(),
-      tags: ['module:notes', 'workspace:$ws'],
-    );
+    await _serialize(() async {
+      _guardScope(actor, scope);
+      await _cache.write(
+        key: _key(actor, ws),
+        policy: CachePolicies.detail,
+        checkScope: () => _guardScope(actor, scope),
+        payload: job.toJson(),
+        requirePublication: authorizedResponse,
+        tags: ['module:notes', 'workspace:$ws'],
+      );
+      _guardScope(actor, scope);
+      if (authorizedResponse) {
+        await _access.allow(_key(actor, ws), () => _guardScope(actor, scope));
+      }
+    });
     _guardScope(actor, scope);
     return job;
+  }
+
+  Future<T> _serialize<T>(Future<T> Function() operation) async {
+    final predecessor = _writes;
+    final done = Completer<void>();
+    _writes = done.future;
+    await predecessor;
+    try {
+      return await operation();
+    } finally {
+      done.complete();
+    }
+  }
+
+  Future<void> _revoke(
+    String actor,
+    String ws,
+    int scope,
+    ApiException denial,
+  ) async {
+    _guardScope(actor, scope);
+    final key = _key(actor, ws);
+    _access.block(key);
+    final deniedScope = ++_scopeRevision;
+    await _serialize(() async {
+      Object? markerFailure;
+      try {
+        await _access.persistDenial(key);
+      } on Object catch (error) {
+        markerFailure = error;
+      }
+      try {
+        await _cache.remove(
+          key,
+          checkScope: () => _guardScope(actor, deniedScope),
+        );
+      } on Object {
+        if (markerFailure != null) {
+          throw ApiException(
+            message:
+                'Voice access was revoked but storage could not record it.',
+            statusCode: denial.statusCode,
+            code: 'NOTES_VOICE_CACHE_REVOCATION_FAILED',
+          );
+        }
+        // A durable marker prevents reopening the retained private snapshot.
+      }
+    });
   }
 
   Future<NotesVoiceJob> submit(
@@ -109,6 +179,7 @@ class NotesVoiceRepository {
           revision: 1,
         ).toJson(),
         scope,
+        authorizedResponse: false,
       );
     }
     _guardScope(actor, scope);
@@ -138,10 +209,7 @@ class NotesVoiceRepository {
     } on ApiException catch (error) {
       _guardScope(actor, scope);
       if (notesVoiceAccessDenied(error, includeNotFound: false)) {
-        await _cache.remove(
-          _key(actor, ws),
-          checkScope: () => _guardScope(actor, scope),
-        );
+        await _revoke(actor, ws, scope, error);
       }
       rethrow;
     }
@@ -174,10 +242,7 @@ class NotesVoiceRepository {
     } on ApiException catch (error) {
       _guardScope(actor, scope);
       if (notesVoiceAccessDenied(error)) {
-        await _cache.remove(
-          _key(actor, ws),
-          checkScope: () => _guardScope(actor, scope),
-        );
+        await _revoke(actor, ws, scope, error);
       }
       rethrow;
     }
@@ -191,10 +256,7 @@ class NotesVoiceRepository {
     } on ApiException catch (error) {
       _guardScope(actor, scope);
       if (notesVoiceAccessDenied(error)) {
-        await _cache.remove(
-          _key(actor, ws),
-          checkScope: () => _guardScope(actor, scope),
-        );
+        await _revoke(actor, ws, scope, error);
       }
       rethrow;
     }
@@ -216,19 +278,27 @@ class NotesVoiceRepository {
     if (!job.canSave) {
       throw StateError('Voice result is not ready');
     }
-    await ApiClient.runForUser(
-      actor,
-      () =>
-          _api.postJson('/api/v1/workspaces/${Uri.encodeComponent(ws)}/notes', {
-            'id': job.id,
-            'title':
-                job.artifact?['title'] is String &&
-                    (job.artifact!['title'] as String).trim().isNotEmpty
-                ? job.artifact!['title']
-                : untitled,
-            'content': notesVoiceDocument(job),
-          }),
-    );
+    try {
+      await ApiClient.runForUser(
+        actor,
+        () => _api
+            .postJson('/api/v1/workspaces/${Uri.encodeComponent(ws)}/notes', {
+              'id': job.id,
+              'title':
+                  job.artifact?['title'] is String &&
+                      (job.artifact!['title'] as String).trim().isNotEmpty
+                  ? job.artifact!['title']
+                  : untitled,
+              'content': notesVoiceDocument(job),
+            }),
+      );
+    } on ApiException catch (error) {
+      _guardScope(actor, scope);
+      if (notesVoiceAccessDenied(error)) {
+        await _revoke(actor, ws, scope, error);
+      }
+      rethrow;
+    }
     _guardScope(actor, scope);
     await _cache.invalidateTags(
       ['module:notes'],

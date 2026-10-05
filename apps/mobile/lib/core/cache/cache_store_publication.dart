@@ -42,10 +42,14 @@ extension CacheStorePublication on CacheStore {
     String? etag,
     List<String> tags = const [],
     void Function()? checkScope,
+    bool requirePublication = false,
   }) async {
     if (_resourceJournalCount > 0) await _recoverResourceJournals();
     checkScope?.call();
-    if (_isClearing(key) || expectedRevision != _revisionFor(key)) return;
+    if (_isClearing(key) || expectedRevision != _revisionFor(key)) {
+      if (requirePublication) throw StateError('Cache write was invalidated.');
+      return;
+    }
     void checkCurrent() {
       checkScope?.call();
       if (_isClearing(key) || expectedRevision != _revisionFor(key)) {
@@ -54,6 +58,9 @@ extension CacheStorePublication on CacheStore {
     }
 
     if (CacheStore._nonPersistentResourceNamespaces.contains(key.namespace)) {
+      if (requirePublication) {
+        throw StateError('Cache namespace cannot persist snapshots.');
+      }
       _dropRecord(key.value);
       await _resourceBox.delete(key.value);
       await _removeReplicaSource(key.value);

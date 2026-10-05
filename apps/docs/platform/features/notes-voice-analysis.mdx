@@ -73,3 +73,14 @@ stable-ID saves. `cache_store_scoped_removal_test.dart` covers obsolete deletion
 waiting for initialization/admission and durable denied-history erasure. Device
 microphone/provider execution and production deployment
 remain separate runtime verification gates.
+
+Definitive Notes voice access denials write a separate secure-storage revocation
+marker before attempting encrypted-cache deletion. An unreadable or denied marker
+blocks cached reads after restart even when the snapshot could not be erased.
+Only a validated server response whose snapshot and replica index were durably
+published can clear this marker; a local pending intent cannot authorize access.
+MFA challenges retain the last authorized snapshot. If both independent storage
+paths fail, the current process remains blocked and reports the original denial,
+but durable revocation cannot be guaranteed while all persistence is unavailable.
+Regression coverage: `notes_voice_revocation_test.dart` exercises real encrypted
+cache failures/restart, failed publication, scoped ordering, and MFA retention.
