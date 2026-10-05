@@ -9,27 +9,31 @@ afterEach(() => {
 const context = (close: () => Promise<void>) =>
   ({ close }) as unknown as BrowserContext;
 
-test('cleanup failure cannot replace the original assertion and its logs are safe', async () => {
-  const original = new Error('original assertion');
-  const closeError = new Error('private-token https://private.test');
-  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-  await expect(
-    withLettinContextCleanup(
-      context(async () => {
-        throw closeError;
-      }),
-      async () => {
-        throw original;
-      }
-    )
-  ).rejects.toBe(original);
-  expect(warn.mock.calls).toEqual([
-    [
-      '[lettin-e2e] close import context: failed',
-      { name: 'Error', message: 'operation failed' },
-    ],
-  ]);
-});
+test.each(['import', 'Markdown'] as const)(
+  '%s cleanup failure preserves the original assertion and safe logs',
+  async (kind) => {
+    const original = new Error('original assertion');
+    const closeError = new Error('private-token https://private.test');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await expect(
+      withLettinContextCleanup(
+        context(async () => {
+          throw closeError;
+        }),
+        async () => {
+          throw original;
+        },
+        kind
+      )
+    ).rejects.toBe(original);
+    expect(warn.mock.calls).toEqual([
+      [
+        `[lettin-e2e] close ${kind} context: failed`,
+        { name: 'Error', message: 'operation failed' },
+      ],
+    ]);
+  }
+);
 
 test('a successful assertion still fails when owned context cleanup fails', async () => {
   vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -44,19 +48,23 @@ test('a successful assertion still fails when owned context cleanup fails', asyn
   ).rejects.toBe(failure);
 });
 
-test('hung cleanup is bounded and retains the primary error', async () => {
-  vi.useFakeTimers();
-  vi.spyOn(console, 'warn').mockImplementation(() => {});
-  const original = new Error('assertion');
-  const result = expect(
-    withLettinContextCleanup(
-      context(() => new Promise(() => {})),
-      async () => {
-        throw original;
-      }
-    )
-  ).rejects.toBe(original);
-  await vi.advanceTimersByTimeAsync(10_000);
-  await result;
-  expect(vi.getTimerCount()).toBe(0);
-});
+test.each(['import', 'Markdown'] as const)(
+  '%s hung cleanup is bounded and retains the primary error',
+  async (kind) => {
+    vi.useFakeTimers();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const original = new Error('assertion');
+    const result = expect(
+      withLettinContextCleanup(
+        context(() => new Promise(() => {})),
+        async () => {
+          throw original;
+        },
+        kind
+      )
+    ).rejects.toBe(original);
+    await vi.advanceTimersByTimeAsync(10_000);
+    await result;
+    expect(vi.getTimerCount()).toBe(0);
+  }
+);
