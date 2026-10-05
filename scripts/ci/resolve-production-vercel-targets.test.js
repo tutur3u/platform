@@ -6,6 +6,7 @@ const {
   createFixtureRoot,
   initializeGitRepo,
   repoRoot,
+  writeEventPayload,
 } = require('./workflow-config-test-helpers.js');
 
 const testTargets = [
@@ -39,6 +40,8 @@ function resolveFixtureTargets({
   eventName = 'push',
   packageResume = false,
   expectedSha = '',
+  targets = testTargets,
+  eventPath = '',
 }) {
   const output = execFileSync(
     'bun',
@@ -53,7 +56,7 @@ function resolveFixtureTargets({
           headSha: ${JSON.stringify(headSha)},
           refName: 'production',
           rootDir: ${JSON.stringify(rootDir)},
-          targets: ${JSON.stringify(testTargets)},
+          targets: ${JSON.stringify(targets)},
         });
         console.log(JSON.stringify(decisions.map(({ shouldRun, workflowName }) => ({ shouldRun, workflowName }))));
       `,
@@ -64,6 +67,7 @@ function resolveFixtureTargets({
       env: {
         ...process.env,
         GITHUB_TOKEN: '',
+        GITHUB_EVENT_PATH: eventPath,
         VERCEL_DEPLOYMENT_MARKER_SHA: baseSha,
       },
     }
@@ -183,4 +187,65 @@ test('recovery mode refuses an unpinned or mismatched SHA', () => {
       /Package recovery requires the exact production dispatch SHA/
     );
   }
+});
+
+const controlTargets = [
+  { productionWorkflow: 'cron-control-cloudflare.yaml' },
+  { productionWorkflow: 'devbox-control-cloudflare.yaml' },
+];
+
+for (const [changedPath, expectedSelection] of [
+  ['apps/cron-control/src/worker.ts', [true, false]],
+  ['packages/sdk/src/platform-devbox/client.ts', [false, true]],
+  ['apps/docs/build/devops/notes.mdx', [false, false]],
+]) {
+  test(`package recovery selects control Workers from markers for ${changedPath}`, () => {
+    const rootDir = createFixtureRoot();
+    const baseSha = initializeGitRepo(rootDir);
+    const headSha = commitFile(
+      rootDir,
+      changedPath,
+      'changed\n',
+      'target change'
+    );
+    // Real recovery has dispatch inputs, not a push before/after range.
+    const eventPath = writeEventPayload(rootDir, {
+      inputs: { package_resume: 'true', expected_sha: headSha },
+    });
+    const decisions = resolveFixtureTargets({
+      baseSha,
+      headSha,
+      rootDir,
+      eventName: 'workflow_dispatch',
+      packageResume: true,
+      expectedSha: headSha,
+      targets: controlTargets,
+      eventPath,
+    });
+    assert.deepEqual(
+      decisions.map(({ shouldRun }) => shouldRun),
+      expectedSelection
+    );
+  });
+}
+
+test('control recovery without deployment markers still fails open safely', () => {
+  const rootDir = createFixtureRoot();
+  const headSha = initializeGitRepo(rootDir);
+  const decisions = resolveFixtureTargets({
+    baseSha: '',
+    headSha,
+    rootDir,
+    eventName: 'workflow_dispatch',
+    packageResume: true,
+    expectedSha: headSha,
+    targets: controlTargets,
+    eventPath: writeEventPayload(rootDir, {
+      inputs: { package_resume: 'true' },
+    }),
+  });
+  assert.deepEqual(
+    decisions.map(({ shouldRun }) => shouldRun),
+    [true, true]
+  );
 });

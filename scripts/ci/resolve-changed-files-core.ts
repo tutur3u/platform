@@ -264,7 +264,7 @@ function isVercelWorkflow(workflowName?: string): workflowName is string {
 function isCloudflareProductionWorkflow(
   workflowName?: string
 ): workflowName is string {
-  return /^(colab|coordination|lettin|meet|parley)-cloudflare\.yaml$/.test(
+  return /^(colab|coordination|cron-control|devbox-control|lettin|meet|parley)-cloudflare\.yaml$/.test(
     workflowName ?? ''
   );
 }

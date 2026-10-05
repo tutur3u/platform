@@ -975,7 +975,9 @@ promoted, or stale candidates. Planner completion also wakes recovery when the
 last package became visible before the original planner finished. The dispatch
 carries `expected_sha`; the planner skips a recovery if production moves before
 it starts. Recovery uses commit-driven deployment-marker and affected-path
-selection; ordinary operator dispatches continue selecting all enabled targets.
+selection, including the Cron Control and Devbox Control Workers. A known marker
+with no affected Worker paths skips them; a missing marker still fails open.
+Ordinary operator dispatches continue selecting all enabled targets.
 Every snapshotted planner's attempt, status, and conclusion must remain unchanged;
 the latest job evidence and run attempt are checked again before reserving an
 intent. A completed rerun with the same run ID therefore blocks stale recovery.
