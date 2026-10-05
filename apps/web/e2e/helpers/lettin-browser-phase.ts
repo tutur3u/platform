@@ -19,7 +19,10 @@ type BrowserPhase =
   | 'configure import file'
   | 'upload canonical export'
   | 'review canonical export'
-  | 'apply private import';
+  | 'confirm canonical preview'
+  | 'apply private import'
+  | 'confirm imported navigation'
+  | 'confirm imported privacy';
 
 // Bound the complete public step, including browser instrumentation awaits.
 // An action timeout alone does not bound every before/after tracing callback.

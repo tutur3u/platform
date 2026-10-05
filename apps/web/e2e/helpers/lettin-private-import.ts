@@ -66,23 +66,29 @@ export async function verifyLettinPrivateImport(
     await importPhase('review canonical export', () =>
       dialog.getByRole('button', { name: 'Review import', exact: true }).click()
     );
-    await expect(
-      dialog.getByText('Synthetic imported hero', { exact: true })
-    ).toBeVisible();
+    await importPhase('confirm canonical preview', async () => {
+      await expect(
+        dialog.getByText('Synthetic imported hero', { exact: true })
+      ).toBeVisible();
+    });
     await importPhase('apply private import', () =>
       dialog
         .getByRole('button', { name: 'Create private copy', exact: true })
         .click()
     );
-    await expect(page).toHaveURL(/\/wiki\/[0-9a-f-]+\/overview/);
-    await expect(page.locator('.wiki-studio')).toContainText(
-      'Synthetic imported hero'
-    );
-    const id = new URL(page.url()).pathname.split('/').at(-2);
-    const published = await context.request.get(
-      `${origin}/api/v1/lettin/worlds?worldId=${id}`,
-      { timeout: 30_000 }
-    );
-    expect(await published.json()).toEqual([]);
+    await importPhase('confirm imported navigation', async () => {
+      await expect(page).toHaveURL(/\/wiki\/[0-9a-f-]+\/overview/);
+      await expect(page.locator('.wiki-studio')).toContainText(
+        'Synthetic imported hero'
+      );
+    });
+    await importPhase('confirm imported privacy', async () => {
+      const id = new URL(page.url()).pathname.split('/').at(-2);
+      const published = await context.request.get(
+        `${origin}/api/v1/lettin/worlds?worldId=${id}`,
+        { timeout: 30_000 }
+      );
+      expect(await published.json()).toEqual([]);
+    });
   });
 }
