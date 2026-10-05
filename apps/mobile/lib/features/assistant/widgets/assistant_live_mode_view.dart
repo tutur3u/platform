@@ -42,7 +42,6 @@ class AssistantLiveModeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final safeArea = MediaQuery.paddingOf(context);
     final shortViewport = MediaQuery.sizeOf(context).height < 500;
     final userBlobCaption = liveState.isMicrophoneActive
         ? context.l10n.assistantLiveStageYouListening
@@ -83,14 +82,15 @@ class AssistantLiveModeView extends StatelessWidget {
               : LayoutBuilder(
                   builder: (context, constraints) {
                     final wide = constraints.maxWidth >= 840;
-                    final stage = _LiveStageCard(
+                    final stage = _LiveCallStage(
                       liveState: liveState,
+                      liveUiState: liveUiState,
                       assistantName: assistantName,
                       userBlobCaption: userBlobCaption,
                       assistantBlobCaption: assistantBlobCaption,
                       cameraController: cameraController,
                     );
-                    final transcript = _LiveTranscriptCard(
+                    final transcript = _LiveTranscript(
                       chatState: chatState,
                       liveState: liveState,
                       assistantName: assistantName,
@@ -104,10 +104,7 @@ class AssistantLiveModeView extends StatelessWidget {
                               children: [
                                 Expanded(
                                   flex: 4,
-                                  child: Align(
-                                    alignment: Alignment.topCenter,
-                                    child: stage,
-                                  ),
+                                  child: SingleChildScrollView(child: stage),
                                 ),
                                 if (hasTranscript) ...[
                                   const SizedBox(width: 16),
@@ -116,6 +113,10 @@ class AssistantLiveModeView extends StatelessWidget {
                               ],
                             )
                           : ListView(
+                              padding: EdgeInsets.only(
+                                bottom:
+                                    MediaQuery.paddingOf(context).bottom + 16,
+                              ),
                               children: [
                                 stage,
                                 const SizedBox(height: 12),
@@ -149,24 +150,6 @@ class AssistantLiveModeView extends StatelessWidget {
                 ),
         ),
         if (!isIdle) AssistantLiveScreenControl(state: liveState),
-        if (!isIdle)
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              16,
-              shortViewport ? 4 : 12,
-              16,
-              safeArea.bottom + (shortViewport ? 80 : 92),
-            ),
-            child: Center(
-              child: _LiveControlRail(
-                liveState: liveState,
-                onToggleMicrophone: onToggleMicrophone,
-                onToggleCamera: onToggleCamera,
-                onOpenTextEntry: onOpenTextEntry,
-                onDisconnect: onDisconnect,
-              ),
-            ),
-          ),
       ],
     );
   }
