@@ -949,3 +949,18 @@ ordinals against both provider serializers, multi-weekday patterns, inclusive en
 dates, imported week boundaries and month-end behavior, invalid input, and edit
 scopes. `native-recurrence-pattern-fields.test.tsx` covers the interactive monthly,
 yearly, month-end and weekly controls.
+
+### Smart-scheduling startup enrichment
+
+Calendar server startup loads the current actor's accessible tasks first. Once
+those IDs are known, list/workspace metadata and actor-scoped scheduling settings
+are read concurrently. Empty task sets do not trigger broad enrichment reads;
+missing settings and list metadata retain their existing defaults. This removes
+one sequential database stage without changing task visibility or provider
+admission. The actual production latency benefit still requires authenticated
+post-deployment timing; focused tests are not a browser performance measurement.
+
+Regression coverage: `load-smart-scheduling-tasks.test.ts` holds list metadata
+unresolved while proving that actor-filtered scheduling settings have already
+started, verifies accessible IDs and deduplicated lists, and covers empty/missing
+responses, settings defaults, and rejected reads.
