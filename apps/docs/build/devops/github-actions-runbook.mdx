@@ -461,6 +461,37 @@ unreferenced and do not keep either process alive. No identities, fixtures, URLs
 request bodies, or raw errors are included. Timeline page creation, navigation,
 and assertions emit fixed operation markers without changing their deadlines.
 
+CI shards use the public Playwright JSON discovery receipt to partition selected
+tests into sequential cohorts by their declared satellite dependencies. Only a
+cohort's owned Next.js dev servers remain live during its tests; launcher process
+groups, including descendants, stop before the next cohort starts. Multi-app
+invitation cohorts keep their services together. A public Reporter `onBegin`
+receipt supplies project dependency metadata omitted by the JSON reporter.
+Dependency-connected projects share one invocation so Playwright retains setup
+failure and dependent-project skip semantics; independent groups still run.
+Selection, including sharding, project filters, and dependencies, happens once;
+public `--test-list` manifests execute that selection without repeating setup.
+Retries and
+assertion deadlines stay unchanged, as does the outer CI runtime budget.
+
+Each successful cohort must report the selected case count and identities; its blob report
+is retained for the standard artifact upload and merged JSON acceptance receipt.
+Failures remain failures; cleanup failure stops further service startup. Finite
+invocation-wide max-failure/global-timeout policies (including configuration),
+project repeat runs, explicit no-dependency execution, last-failed/only-changed or unknown selection modes,
+unsupported or missing dependency graphs, teardown projects, commands without
+an explicit JSON reporter, and single-cohort selections retain the original
+single invocation. Malformed discovery receipts fail closed rather than guessing
+which services to start. Dependency-connected projects can retain several
+satellites until that whole group completes. The default CI shard uses isolation; local runs keep their
+existing lifecycle. This trades additional Playwright/global-setup startup and
+occasional satellite restarts for releasing accumulated dev-server heaps earlier.
+`e2e-satellite-cohorts.test.js` verifies shard/filter/setup coverage through public
+Playwright commands, multi-service ownership, merged receipts, and failure cleanup;
+`e2e-owned-process-group.test.js` verifies surviving descendant termination. These
+focused tests do not establish an exact-commit E2E pass or attribute memory growth
+to a particular satellite.
+
 A runner heartbeat continuing while worker ticks stop narrows the problem to the
 worker or its output path. Both stopping can also mean host suspension or delayed
 log delivery; numeric deltas after recovery help compare those possibilities,
