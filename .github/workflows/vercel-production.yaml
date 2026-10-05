@@ -13,8 +13,12 @@ on:
         description: "Identify one automatic package-deferred recovery"
         type: string
         default: "false"
+      resume_intent:
+        description: "Durable dispatch reservation ID for automatic recovery"
+        type: string
+        default: ""
 
-run-name: ${{ inputs.package_resume == 'true' && format('Production package resume {0}', inputs.expected_sha) || 'Production Deployment Planner' }}
+run-name: ${{ inputs.package_resume == 'true' && format('Production package resume {0} intent {1}', inputs.expected_sha, inputs.resume_intent) || 'Production Deployment Planner' }}
 
 concurrency:
   group: production-deployment-planner-${{ github.ref }}

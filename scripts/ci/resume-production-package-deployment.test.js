@@ -1,102 +1,13 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const {
-  resumeProductionDeployment,
-  listPages,
-} = require('./resume-production-package-deployment.js');
+const { listPages } = require('./resume-production-package-deployment.js');
 
-const sha = 'a'.repeat(40);
-const env = { GITHUB_REPOSITORY: 'owner/repo' };
-function fixture() {
-  const trigger = {
-    id: 4,
-    name: 'Release @tuturuuu/ui package',
-    head_sha: sha,
-    head_branch: 'production',
-    head_repository: { full_name: env.GITHUB_REPOSITORY },
-    conclusion: 'success',
-    event: 'workflow_dispatch',
-    run_attempt: 1,
-  };
-  const f = {
-    event: { workflow_run: trigger },
-    live: { ...trigger, status: 'completed' },
-    production: sha,
-    runs: [
-      {
-        id: 1,
-        run_attempt: 1,
-        head_sha: sha,
-        head_branch: 'production',
-        status: 'completed',
-        conclusion: 'success',
-      },
-    ],
-    jobs: [
-      {
-        name: 'deploy-platform / Deploy-Production',
-        conclusion: 'success',
-        steps: [
-          {
-            name: 'Skip build while package releases publish',
-            conclusion: 'success',
-          },
-          {
-            name: 'Promote verified production deployment',
-            conclusion: 'skipped',
-          },
-        ],
-      },
-    ],
-    visible: true,
-    posts: [],
-    intents: [],
-    intentPosts: [],
-    refs: 0,
-  };
-  f.api = async (route, options) => {
-    if (route.startsWith('deployments?')) return f.intents;
-    if (route === 'deployments' && options?.method === 'POST') {
-      const body = JSON.parse(options.body);
-      f.intentPosts.push(body);
-      const intent = {
-        id: 9,
-        sha: body.ref,
-        environment: body.environment,
-        payload: body.payload,
-      };
-      f.intents.push(intent);
-      return intent;
-    }
-    if (options?.method === 'POST') {
-      f.posts.push(JSON.parse(options.body));
-      return null;
-    }
-    if (route === 'actions/runs/4') return f.live;
-    if (route === 'actions/runs/1') return f.runs[0];
-    if (route === 'git/ref/heads/production') {
-      f.refs++;
-      return { object: { sha: f.production } };
-    }
-    if (route.startsWith('actions/workflows/vercel-production.yaml/runs?'))
-      return { workflow_runs: f.runs };
-    if (route.startsWith('actions/runs/1/jobs?')) return { jobs: f.jobs };
-    throw Error(`Unexpected route ${route}`);
-  };
-  f.run = () =>
-    resumeProductionDeployment({
-      event: f.event,
-      env,
-      api: f.api,
-      changedPackages: [
-        { packageJson: { name: '@tuturuuu/ui' }, version: '1.0.0' },
-      ],
-      versionExists: () => f.visible,
-      logger: { log() {} },
-    });
-  return f;
-}
+const {
+  fixture,
+  sha,
+  env,
+} = require('./resume-production-package-deployment-test-fixture.js');
 
 test('published dependency resumes owning deferred planner with exact SHA', async () => {
   const f = fixture();
@@ -104,10 +15,10 @@ test('published dependency resumes owning deferred planner with exact SHA', asyn
   assert.deepEqual(f.posts, [
     {
       ref: 'production',
-      inputs: { expected_sha: sha, package_resume: 'true' },
+      inputs: { expected_sha: sha, package_resume: 'true', resume_intent: '9' },
     },
   ]);
-  assert.equal(f.refs, 2);
+  assert.equal(f.refs, 3);
 });
 
 test('planner completion also resumes when packages finished first', async () => {
@@ -496,4 +407,45 @@ test('rerun between fresh jobs and final attempt check prevents intent', async (
   );
   assert.deepEqual(f.intentPosts, []);
   assert.deepEqual(f.posts, []);
+});
+
+for (const conclusion of ['failure', 'timed_out', 'cancelled']) {
+  test(`completed package ${conclusion} tail rechecks exact registry versions`, async () => {
+    const f = fixture();
+    f.event.workflow_run.conclusion = f.live.conclusion = conclusion;
+    assert.equal((await f.run()).dispatched, true);
+    assert.deepEqual(
+      f.versionReads.map(({ packageName, packageVersion }) => ({
+        packageName,
+        packageVersion,
+      })),
+      [{ packageName: '@tuturuuu/ui', packageVersion: '1.0.0' }]
+    );
+    const missing = fixture();
+    missing.event.workflow_run.conclusion = missing.live.conclusion =
+      conclusion;
+    missing.visible = false;
+    assert.equal((await missing.run()).reason, 'package versions missing');
+    assert.deepEqual(missing.posts, []);
+    assert.deepEqual(missing.intentPosts, []);
+  });
+  test(`planner ${conclusion} completion cannot reserve or dispatch`, async () => {
+    const f = fixture();
+    f.event.workflow_run.name = f.live.name = 'Production Deployment Planner';
+    f.event.workflow_run.conclusion = f.live.conclusion = conclusion;
+    assert.equal((await f.run()).dispatched, false);
+    assert.deepEqual(f.posts, []);
+    assert.deepEqual(f.intentPosts, []);
+  });
+}
+
+test('workflow permits failed package tails but keeps planner success gating', () => {
+  const workflow = fs.readFileSync(
+    '.github/workflows/production-package-resume.yaml',
+    'utf8'
+  );
+  assert.match(
+    workflow,
+    /workflow_run.name != 'Production Deployment Planner' \|\| github.event.workflow_run.conclusion == 'success'/
+  );
 });

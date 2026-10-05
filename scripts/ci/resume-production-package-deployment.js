@@ -98,6 +98,76 @@ async function listPages(api, route, key) {
   throw new Error(`Incomplete ${key} pagination; no deployment dispatched`);
 }
 
+function wasPackageDeferred(jobs) {
+  const platform = jobs.find(
+    (job) => job.name === 'deploy-platform / Deploy-Production'
+  );
+  return (
+    platform?.conclusion === 'success' &&
+    platform.steps?.some(
+      (step) =>
+        step.name === 'Skip build while package releases publish' &&
+        step.conclusion === 'success'
+    ) &&
+    !platform.steps?.some(
+      (step) =>
+        step.name === 'Promote verified production deployment' &&
+        step.conclusion === 'success'
+    )
+  );
+}
+
+async function completedIntentRuns({ api, intents, runs, sha, repository }) {
+  for (const intent of intents) {
+    if (
+      !Number.isSafeInteger(intent.id) ||
+      intent.id <= 0 ||
+      intent.payload?.purpose !== 'production-package-resume' ||
+      intent.payload?.sha !== sha
+    )
+      return false;
+    const title = `${RESUME_TITLE}${sha} intent ${intent.id}`;
+    const matches = runs.filter((run) => run.display_title === title);
+    if (matches.length !== 1) return false;
+    const run = matches[0];
+    if (
+      run.status !== 'completed' ||
+      run.conclusion !== 'success' ||
+      !Number.isSafeInteger(run.run_attempt) ||
+      run.run_attempt < 1
+    )
+      return false;
+    const live = await api(`actions/runs/${run.id}`);
+    if (
+      live.head_sha !== sha ||
+      live.head_branch !== 'production' ||
+      live.head_repository?.full_name !== repository ||
+      live.name !== 'Production Deployment Planner' ||
+      live.event !== 'workflow_dispatch' ||
+      live.display_title !== title ||
+      live.status !== 'completed' ||
+      live.conclusion !== 'success' ||
+      live.run_attempt !== run.run_attempt
+    )
+      return false;
+    const jobs = await listPages(
+      api,
+      `actions/runs/${run.id}/jobs?filter=latest`,
+      'jobs'
+    );
+    if (!wasPackageDeferred(jobs)) return false;
+  }
+  // Legacy, unbound, or extra resumed runs cannot establish dispatch ownership.
+  return runs.every(
+    (run) =>
+      !run.display_title?.startsWith(RESUME_TITLE) ||
+      intents.some(
+        (intent) =>
+          run.display_title === `${RESUME_TITLE}${sha} intent ${intent.id}`
+      )
+  );
+}
+
 async function resumeProductionDeployment({
   event,
   env = process.env,
@@ -120,7 +190,9 @@ async function resumeProductionDeployment({
     !/^[a-f0-9]{40}$/u.test(sha || '') ||
     trigger?.head_branch !== 'production' ||
     trigger?.head_repository?.full_name !== env.GITHUB_REPOSITORY ||
-    trigger?.conclusion !== 'success' ||
+    typeof trigger?.conclusion !== 'string' ||
+    (trigger.name === 'Production Deployment Planner' &&
+      trigger.conclusion !== 'success') ||
     !['push', 'workflow_dispatch'].includes(trigger?.event)
   ) {
     return skip('untrusted completion');
@@ -128,7 +200,7 @@ async function resumeProductionDeployment({
   const live = await api(`actions/runs/${trigger.id}`);
   if (
     live.status !== 'completed' ||
-    live.conclusion !== 'success' ||
+    live.conclusion !== trigger.conclusion ||
     live.head_sha !== sha ||
     live.run_attempt !== trigger.run_attempt ||
     live.head_branch !== 'production' ||
@@ -149,14 +221,9 @@ async function resumeProductionDeployment({
     `deployments?sha=${sha}&environment=${INTENT_ENVIRONMENT}`,
     null
   );
-  if (
-    intents.some(
-      (intent) =>
-        intent.sha === sha && intent.environment === INTENT_ENVIRONMENT
-    )
-  ) {
-    return skip('durable dispatch intent already exists');
-  }
+  const exactIntents = intents.filter(
+    (intent) => intent.sha === sha && intent.environment === INTENT_ENVIRONMENT
+  );
   const runs = await listPages(
     api,
     `actions/workflows/${PLANNER}/runs?head_sha=${sha}&branch=production`,
@@ -167,8 +234,20 @@ async function resumeProductionDeployment({
   );
   if (exact.some((run) => run.status !== 'completed'))
     return skip('planner active');
-  if (exact.some((run) => run.display_title === `${RESUME_TITLE}${sha}`)) {
-    return skip('resume already requested');
+  if (
+    !(await completedIntentRuns({
+      api,
+      intents: exactIntents,
+      runs: exact,
+      sha,
+      repository: env.GITHUB_REPOSITORY,
+    }))
+  ) {
+    return skip(
+      exactIntents.length
+        ? 'durable dispatch intent already exists'
+        : 'resume already requested'
+    );
   }
   if (
     exact.some(
@@ -232,11 +311,7 @@ async function resumeProductionDeployment({
     (run) => run.head_sha === sha && run.head_branch === 'production'
   );
   if (
-    freshExact.some(
-      (run) =>
-        run.status !== 'completed' ||
-        run.display_title === `${RESUME_TITLE}${sha}`
-    ) ||
+    freshExact.some((run) => run.status !== 'completed') ||
     freshExact.length !== exact.length ||
     freshExact.some((run) => {
       const before = exact.find((previous) => previous.id === run.id);
@@ -244,7 +319,8 @@ async function resumeProductionDeployment({
         !before ||
         before.run_attempt !== run.run_attempt ||
         before.status !== run.status ||
-        before.conclusion !== run.conclusion
+        before.conclusion !== run.conclusion ||
+        before.display_title !== run.display_title
       );
     })
   ) {
@@ -276,15 +352,51 @@ async function resumeProductionDeployment({
   const finalRun = await api(`actions/runs/${latest.id}`);
   if (
     finalRun.head_sha !== sha ||
+    finalRun.head_branch !== 'production' ||
+    finalRun.head_repository?.full_name !== env.GITHUB_REPOSITORY ||
+    finalRun.name !== 'Production Deployment Planner' ||
+    finalRun.event !== latest.event ||
+    finalRun.display_title !== latest.display_title ||
     finalRun.run_attempt !== latest.run_attempt ||
     finalRun.status !== latest.status ||
     finalRun.conclusion !== latest.conclusion
   ) {
     return skip('planner attempt changed before dispatch');
   }
+  const freshIntents = (
+    await listPages(
+      api,
+      `deployments?sha=${sha}&environment=${INTENT_ENVIRONMENT}`,
+      null
+    )
+  ).filter(
+    (intent) => intent.sha === sha && intent.environment === INTENT_ENVIRONMENT
+  );
+  if (
+    freshIntents.length !== exactIntents.length ||
+    freshIntents.some((intent) => {
+      const before = exactIntents.find((previous) => previous.id === intent.id);
+      return (
+        !before ||
+        JSON.stringify(before.payload) !== JSON.stringify(intent.payload)
+      );
+    }) ||
+    !(await completedIntentRuns({
+      api,
+      intents: freshIntents,
+      runs: freshExact,
+      sha,
+      repository: env.GITHUB_REPOSITORY,
+    }))
+  ) {
+    return skip('dispatch intent changed before reservation');
+  }
+  if ((await api('git/ref/heads/production')).object?.sha !== sha)
+    return skip('production moved before reservation');
   if (now() >= deadline) throw new Error('Production resume deadline exceeded');
   // Reserve before POST, even though the planner run may not yet be listed.
-  // Never delete this intent or retry an uncertain/failed dispatch automatically.
+  // Never delete an intent. Retry only a bound completed deferred planner;
+  // uncertain, failed, and legacy dispatches remain blocked.
   const intent = await api('deployments', {
     method: 'POST',
     body: JSON.stringify({
@@ -317,7 +429,11 @@ async function resumeProductionDeployment({
     method: 'POST',
     body: JSON.stringify({
       ref: 'production',
-      inputs: { expected_sha: sha, package_resume: 'true' },
+      inputs: {
+        expected_sha: sha,
+        package_resume: 'true',
+        resume_intent: String(intent.id),
+      },
     }),
   });
   logger.log(`Requested one production planner resume for ${sha}.`);

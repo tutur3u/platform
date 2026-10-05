@@ -249,3 +249,47 @@ test('control recovery without deployment markers still fails open safely', () =
     [true, true]
   );
 });
+
+test('recovery skips exact-marker targets while an older platform marker still deploys', () => {
+  const rootDir = createFixtureRoot();
+  const baseSha = initializeGitRepo(rootDir);
+  const headSha = commitFile(
+    rootDir,
+    'packages/ui/src/changed.ts',
+    'export const changed = true;\n',
+    'shared package release'
+  );
+  const eventPath = writeEventPayload(rootDir, {
+    inputs: { package_resume: 'true', expected_sha: headSha },
+  });
+  const recovery = (marker, targets) =>
+    resolveFixtureTargets({
+      baseSha: marker,
+      headSha,
+      rootDir,
+      eventName: 'workflow_dispatch',
+      packageResume: true,
+      expectedSha: headSha,
+      targets,
+      eventPath,
+    });
+  assert.deepEqual(
+    recovery(headSha, [
+      ...controlTargets,
+      { productionWorkflow: 'vercel-production-calendar.yaml' },
+    ]).map(({ shouldRun }) => shouldRun),
+    [false, false, false]
+  );
+  assert.deepEqual(
+    recovery(baseSha, [
+      { productionWorkflow: 'vercel-production-platform.yaml' },
+    ]).map(({ shouldRun }) => shouldRun),
+    [true]
+  );
+  assert.deepEqual(
+    recovery(headSha, [
+      { productionWorkflow: 'vercel-production-platform.yaml' },
+    ]).map(({ shouldRun }) => shouldRun),
+    [false]
+  );
+});

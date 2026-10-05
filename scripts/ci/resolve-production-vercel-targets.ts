@@ -104,6 +104,23 @@ export async function resolveProductionVercelTargets({
         rootDir,
         workflowName: productionWorkflow,
       });
+      // An exact deployment marker is positive coverage evidence, not an
+      // unavailable empty changed-file list. Ordinary dispatch semantics stay intact.
+      if (
+        packageResume &&
+        changeResult.available &&
+        changeResult.source === 'deployment-marker' &&
+        changeResult.baseSha === headSha
+      ) {
+        return {
+          changeResult,
+          matchedPaths: [],
+          reason:
+            'successful deployment marker already covers the recovery SHA',
+          shouldRun: false,
+          workflowName: productionWorkflow,
+        };
+      }
       const decision = getWorkflowDecision({
         changedFiles: changeResult.available ? changeResult.files : null,
         eventName: selectionEvent,
