@@ -906,3 +906,23 @@ Regression coverage: `create-metadata.test.ts`, `future-admission.test.ts`, and
 `writer.test.ts` verify reference validation, preflight ordering, and create
 request options. See the [Google event resource](https://developers.google.com/workspace/calendar/api/v3/reference/events)
 for attachment limits and conference reuse restrictions.
+
+### Outlook legacy recurring-instance identity verification
+
+When provider-series admission is explicitly enabled, inbound reconciliation
+verifies older stored Outlook IDs outside the current viewport against their
+exact connected calendar. The bounded read-only pass selects IDs only, reads up
+to 1,000 source rows in batches of 20 with at most three batches in flight, and
+uses an explicit regular-to-immutable ID translation before requesting event and
+master identities. The translation requires the already requested `User.Read`
+Microsoft scope. Current source authorization is
+checked before each batch. Only explicitly verified IDs join the existing atomic
+canonical publication and legacy cleanup; single events, other masters, and
+missing remote resources are not attributed to the series. An incomplete batch,
+permission failure, throttling, or source overflow fails closed without
+publishing a partially verified series. This performs no provider mutation or
+calendar-wide deletion and does not enable provider editing.
+
+Regression coverage: `graph-legacy-identities.test.ts` verifies source filters,
+old-slot linkage, permission revocation, receipt completeness, foreign-master
+isolation, provider failures, and batch bounds.

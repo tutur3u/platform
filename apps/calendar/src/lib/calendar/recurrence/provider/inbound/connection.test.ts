@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   publish: vi.fn(),
   deleted: vi.fn(),
   authorize: vi.fn(),
+  legacyIdentities: vi.fn(async () => new Map()),
 }));
 vi.mock('@/lib/workspace-encryption', () => ({
   encryptEventForStorage: vi.fn(),
@@ -23,6 +24,9 @@ vi.mock('./service', () => ({
 }));
 vi.mock('./google-snapshot', () => ({
   readGoogleSeriesSnapshot: mocks.google,
+}));
+vi.mock('./graph-legacy-identities', () => ({
+  verifyGraphLegacySeriesIdentities: mocks.legacyIdentities,
 }));
 vi.mock('./graph-snapshot', () => ({ readGraphSeriesSnapshot: mocks.graph }));
 vi.mock('@tuturuuu/microsoft/calendar', async (importOriginal) => ({
