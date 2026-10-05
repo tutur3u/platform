@@ -6,7 +6,10 @@ import { join } from 'node:path';
 
 // Commands handling private inputs never inherit stdout/stderr. The caller gets
 // only a fixed error; the keychain, P12 and API key always leave with the runner.
-export async function withMacosSigning(callback) {
+export async function withMacosSigning(
+  callback,
+  { execute = execFileSync, inspect = spawnSync } = {}
+) {
   const names = [
     'MACOS_CERTIFICATE_P12_B64',
     'MACOS_CERTIFICATE_PASSWORD',
@@ -31,11 +34,34 @@ export async function withMacosSigning(callback) {
   const key = join(temp, 'desktop-notary.p8');
   const password = randomBytes(32).toString('hex');
   const identity = process.env.MACOS_SIGNING_IDENTITY;
-  const exec = (command, args) =>
-    execFileSync(command, args, {
+  let stage = 'private-input-preparation';
+  const exec = (command, args) => {
+    stage =
+      command === 'security'
+        ? ({
+            'create-keychain': 'keychain-create',
+            'set-keychain-settings': 'keychain-settings',
+            'unlock-keychain': 'keychain-unlock',
+            import: 'certificate-import',
+            'set-key-partition-list': 'keychain-partition',
+            'delete-keychain': 'keychain-cleanup',
+          }[args[0]] ?? 'keychain-command')
+        : command === 'codesign'
+          ? args.includes('--verify')
+            ? 'signature-verification'
+            : 'artifact-signing'
+          : command === 'xcrun'
+            ? args[0] === 'notarytool'
+              ? 'notarization'
+              : 'ticket-stapling'
+            : command === 'spctl'
+              ? 'gatekeeper-assessment'
+              : 'signing-command';
+    return execute(command, args, {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     });
+  };
   try {
     await writeFile(
       certificate,
@@ -108,7 +134,8 @@ export async function withMacosSigning(callback) {
         await visit(app);
         sign(app, 'apps/mobile/macos/Runner/Release.entitlements');
         exec('codesign', ['--verify', '--deep', '--strict', app]);
-        const details = spawnSync('codesign', ['-d', '--verbose=4', app], {
+        stage = 'signing-team-verification';
+        const details = inspect('codesign', ['-d', '--verbose=4', app], {
           encoding: 'utf8',
         });
         if (
@@ -155,7 +182,7 @@ export async function withMacosSigning(callback) {
     });
   } catch {
     throw new Error(
-      'macOS signing or notarization failed; no public release was created'
+      `macOS signing failed at ${stage}; no public release was created`
     );
   } finally {
     try {
