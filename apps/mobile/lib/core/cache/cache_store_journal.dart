@@ -40,29 +40,55 @@ extension CacheStoreJournal on CacheStore {
     return journalKey;
   }
 
+  Future<String> _beginResourceDeletion(Iterable<CacheKey> keys) async {
+    final journalKey = '@deletion:${++_journalSequence}';
+    await _entityBox.put(journalKey, {
+      'kind': 'resource-deletion',
+      'entries': [
+        for (final key in keys)
+          {
+            'sourceKey': key.value,
+            'userId': key.userId,
+            'workspaceId': key.workspaceId,
+            'namespace': key.namespace,
+          },
+      ],
+    });
+    _resourceJournalCount++;
+    await _entityBox.flush();
+    return journalKey;
+  }
+
   Future<void> _restoreResourceJournal(
     String journalKey, {
     required bool Function(Map<dynamic, dynamic>) restore,
   }) async {
     final journal = _entityBox.get(journalKey);
     if (journal is! Map || journal['entries'] is! List) return;
+    final rowsBySource = <String, Set<String>>{};
+    for (final key in _entityBox.keys.whereType<String>()) {
+      final row = _entityBox.get(key);
+      if (row is Map && row['sourceKey'] is String) {
+        (rowsBySource[row['sourceKey'] as String] ??= {}).add(key);
+      }
+    }
+    final deleting = journal['kind'] == 'resource-deletion';
     for (final entry
         in (journal['entries'] as List).whereType<Map<dynamic, dynamic>>()) {
       final sourceKey = entry['sourceKey'] as String;
       final indexKey = _replicaSourceKey(sourceKey);
       final current = _entityBox.get(indexKey);
-      final oldRows = Map<String, dynamic>.from(entry['previousRows'] as Map);
+      final oldRows = Map<String, dynamic>.from(
+        entry['previousRows'] as Map? ?? const {},
+      );
       // Include attempt rows left before the source index was published.
-      final attemptKeys = _entityBox.keys.whereType<String>().where((key) {
-        final raw = _entityBox.get(key);
-        return raw is Map && raw['sourceKey'] == sourceKey;
-      }).toList();
+      final attemptKeys = rowsBySource[sourceKey] ?? const <String>{};
       await _entityBox.deleteAll({
         ...attemptKeys,
         ...oldRows.keys,
         ...(current as List?)?.whereType<String>() ?? <String>[],
       });
-      if (restore(entry)) {
+      if (!deleting && restore(entry)) {
         final resource = entry['previousResource'];
         if (resource is Map) {
           await _resourceBox.put(sourceKey, resource);
@@ -87,12 +113,17 @@ extension CacheStoreJournal on CacheStore {
     await _finishResourceJournal(journalKey);
   }
 
-  Future<void> _finishResourceJournal(String key) async {
+  Future<void> _finishResourceJournal(
+    String key, {
+    bool mutationsChanged = false,
+  }) async {
     final exists = _entityBox.containsKey(key);
     // Durable state precedes durable removal of the recovery marker.
     await _resourceBox.flush();
-    await _mutationBox.flush();
-    await _entityBox.flush();
+    if (mutationsChanged) await _mutationBox.flush();
+    // Entity operations are ordered in one box log: its prior row/index writes
+    // precede this marker deletion. Flush that ordered batch once, after the
+    // other affected boxes are durable; never flush the marker ahead of them.
     await _entityBox.delete(key);
     await _entityBox.flush();
     if (exists && _resourceJournalCount > 0) _resourceJournalCount--;
@@ -144,7 +175,10 @@ extension CacheStoreJournal on CacheStore {
       final raw = _entityBox.get(key);
       if (raw is! Map) continue;
       if (raw['kind'] == 'resource-clear') intents[key] = raw;
-      if (raw['kind'] == 'resource-publication') journals.add(key);
+      if (raw['kind'] == 'resource-publication' ||
+          raw['kind'] == 'resource-deletion') {
+        journals.add(key);
+      }
     }
     _resourceJournalCount = journals.length + intents.length;
     if (_resourceJournalCount == 0) return;
@@ -157,7 +191,12 @@ extension CacheStoreJournal on CacheStore {
     }
     for (final entry in intents.entries) {
       await _applyClearIntent(entry.value);
-      await _finishResourceJournal(entry.key);
+      await _finishResourceJournal(
+        entry.key,
+        mutationsChanged:
+            entry.value['namespace'] == null &&
+            entry.value['resourceOnly'] != true,
+      );
     }
     _entityBytes = _countReplicaBytes();
   }

@@ -112,27 +112,18 @@ extension CacheStoreStorage on CacheStore {
     final keys = {
       for (final record in selected) record.key: _keyForRecord(record),
     };
-    final journal = await _beginResourceJournal(keys.values);
-    final revisions = <String, int>{};
+    final journal = await _beginResourceDeletion(keys.values);
     try {
       for (final record in selected) {
         _advanceKey(record.key);
-        revisions[record.key] = _revisionFor(keys[record.key]!);
+        _dropRecord(record.key);
         await _resourceBox.delete(record.key);
         await _removeReplicaSource(record.key);
         await persistenceCheckpoint?.call('pruning');
       }
     } on Object catch (error) {
       if (error is CachePersistenceInterruption) rethrow;
-      await _restoreResourceJournal(
-        journal,
-        restore: (entry) {
-          final key = keys[entry['sourceKey']]!;
-          return !_isClearing(key) &&
-              (revisions[key.value] == null ||
-                  revisions[key.value] == _revisionFor(key));
-        },
-      );
+      await _restoreResourceJournal(journal, restore: (_) => false);
       rethrow;
     }
     await _finishResourceJournal(journal);

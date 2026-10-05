@@ -178,9 +178,20 @@ class InventorySeasonPricingController extends ChangeNotifier {
     return ready && allowsProduct(productId) ? price : null;
   }
 
+  bool _quoteRefreshAutomatic = false;
   Future<void> refresh({bool automatic = false}) {
     final pending = _quoteRefresh;
-    if (pending != null) return pending;
+    if (pending != null) {
+      if (automatic || !_quoteRefreshAutomatic) return pending;
+      final owner = (_actor, _workspace, period, currency);
+      return pending.then<void>((_) async {
+        if (_disposed || owner != (_actor, _workspace, period, currency)) {
+          return;
+        }
+        await refresh();
+      });
+    }
+    _quoteRefreshAutomatic = automatic;
     late final Future<void> request;
     request = _refreshQuote(automatic: automatic).whenComplete(() {
       if (identical(_quoteRefresh, request)) _quoteRefresh = null;

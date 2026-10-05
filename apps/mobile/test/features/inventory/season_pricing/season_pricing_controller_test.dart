@@ -516,4 +516,70 @@ void main() {
       controller.dispose();
     },
   );
+  test(
+    'manual refresh following throttled automatic refresh fetches fresh',
+    () async {
+      controller.dispose();
+      var reads = 0;
+      controller =
+          InventorySeasonPricingController(
+            journal: MemorySaleStore().journal,
+            lookupReceipt: (_, _) async => null,
+            fetch: (_, _) async {
+              reads++;
+              return quote();
+            },
+            send: (_, _) async => 'unused',
+            isOnline: () async => true,
+            now: () => now,
+          )..configure(
+            actorId: 'actor',
+            workspaceId: 'ws',
+            selectedPeriod: period(),
+            currency: 'USD',
+          );
+      await controller.refresh(automatic: true);
+      expect(reads, 1);
+      final automatic = controller.refresh(automatic: true);
+      final manual = controller.refresh();
+      final secondManual = controller.refresh();
+      await Future.wait([automatic, manual, secondManual]);
+      expect(reads, 2);
+      expect(controller.quote, isNotNull);
+    },
+  );
+  test('queued manual refresh cannot cross changed actor scope', () async {
+    controller.dispose();
+    final response = Completer<InventorySeasonQuote>();
+    var reads = 0;
+    controller =
+        InventorySeasonPricingController(
+          journal: MemorySaleStore().journal,
+          lookupReceipt: (_, _) async => null,
+          fetch: (_, _) {
+            reads++;
+            return response.future;
+          },
+          send: (_, _) async => 'unused',
+          isOnline: () async => true,
+        )..configure(
+          actorId: 'actor',
+          workspaceId: 'ws',
+          selectedPeriod: period(),
+          currency: 'USD',
+        );
+    final automatic = controller.refresh(automatic: true);
+    await Future<void>.delayed(Duration.zero);
+    final manual = controller.refresh();
+    controller.configure(
+      actorId: 'replacement',
+      workspaceId: 'other',
+      selectedPeriod: period(),
+      currency: 'USD',
+    );
+    response.complete(quote());
+    await Future.wait([automatic, manual]);
+    expect(reads, 1);
+    expect(controller.quote, isNull);
+  });
 }

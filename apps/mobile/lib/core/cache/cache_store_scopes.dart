@@ -46,7 +46,10 @@ extension CacheStoreNamespaceScopes on CacheStore {
             if (_matchesClear(record.toJson(), intent)) _dropRecord(record.key);
           }
           _entityBytes = _countReplicaBytes();
-          await _finishResourceJournal(intentKey);
+          await _finishResourceJournal(
+            intentKey,
+            mutationsChanged: namespace == null && !resourceOnly,
+          );
         });
       });
     } finally {

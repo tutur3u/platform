@@ -35,16 +35,15 @@ extension CacheStoreCompletedDownload on CacheStore {
             params: record.params,
           ),
       };
-      final journal = await _beginResourceJournal(keys.values);
-      final revisions = <String, int>{};
+      final journal = await _beginResourceDeletion(keys.values);
       try {
         for (final record in stale) {
           checkScope();
           final key = keys[record.key]!;
           if (_isClearing(key)) continue;
           _advanceKey(record.key);
-          revisions[record.key] = _revisionFor(key);
           _refreshTasks.remove(record.key);
+          _dropRecord(record.key);
           await _resourceBox.delete(record.key);
           await _removeReplicaSource(record.key);
           await persistenceCheckpoint?.call('reconciliation');
@@ -52,26 +51,10 @@ extension CacheStoreCompletedDownload on CacheStore {
         checkScope();
       } on Object catch (error) {
         if (error is CachePersistenceInterruption) rethrow;
-        await _restoreResourceJournal(
-          journal,
-          restore: (entry) {
-            final key = keys[entry['sourceKey']]!;
-            try {
-              checkScope();
-            } on Object {
-              return false;
-            }
-            return !_isClearing(key) &&
-                (revisions[key.value] == null ||
-                    revisions[key.value] == _revisionFor(key));
-          },
-        );
+        await _restoreResourceJournal(journal, restore: (_) => false);
         rethrow;
       }
       await _finishResourceJournal(journal);
-      for (final record in stale) {
-        if (revisions.containsKey(record.key)) _dropRecord(record.key);
-      }
     });
   }
 }

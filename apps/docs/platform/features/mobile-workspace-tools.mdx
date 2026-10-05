@@ -1317,8 +1317,9 @@ supported collection download; it does not promise byte-level continuation.
 Across launches, retained timestamps are historical evidence and never alone
 establish readiness. Cache removals during a download or its final retention
 checks are retained until completion: affected products return to queued status,
-while unrelated products can finish. The next explicit retry must verify the
-removed dependencies again. Cache removal notifications retain only scoped
+while unrelated products can finish. Successful product downloads supersede their own reconciliation removals;
+final retention checks and later removals still revoke readiness. The next
+explicit retry must verify removed dependencies again. Cache removal notifications retain only scoped
 identity with an event-only opaque key digest, never the removed response payload
 or literal query/search parameters. Persisted cache keys remain unchanged. A corrupt stored response is treated
 as missing and still attempts network revalidation; account switches and explicit
@@ -1394,3 +1395,19 @@ the consolidated shell and does not add a nested shell navbar.
 
 Regression evidence: `apps/mobile/test/features/onboarding/onboarding_page_test.dart`
 covers progression, preferences, skip, replay, and compact enlarged-text layouts.
+
+
+### Cache recovery and explicit quote refresh
+
+Mobile cache publication journals retain prior snapshots for stale-while-revalidate
+rollback. Eviction and authoritative completed-download reconciliation instead
+persist a scoped deletion intent without copying removed payloads or replica rows.
+After interruption, recovery completes those deletions and preserves unrelated
+scopes and pending writes; it does not restore evicted or obsolete data. Journal
+completion batches the entity-log flush after affected snapshot/outbox flushes.
+Regression evidence: `cache_store_publication_test.dart`.
+
+Inventory manual season-quote refresh waits for an automatic refresh, then performs
+an unthrottled fresh request in the same actor/workspace/period scope. Other
+concurrent callers still coalesce; a scope change cancels the queued refresh.
+Regression evidence: `season_pricing_controller_test.dart`.

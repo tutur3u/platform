@@ -233,6 +233,9 @@ class OfflinePreparationCoordinator {
             id: timestamp,
           });
           if (!_current(generation, userId, workspaceId)) return;
+          // Its successful download supersedes prior/own reconciliation.
+          // Final retention checks still detect eviction or later removals.
+          _removedDuringRun.remove(id);
           products[id] = OfflineProductPreparation(
             status: OfflinePreparationStatus.ready,
             lastSuccess: timestamp,

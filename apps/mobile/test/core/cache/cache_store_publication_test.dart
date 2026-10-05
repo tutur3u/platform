@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -7,6 +8,8 @@ import 'package:hive/hive.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_download_manifest.dart';
+import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -261,7 +264,7 @@ void main() {
     );
   }
   test(
-    'interrupted reconciliation restores all sources after reopening',
+    'interrupted reconciliation completes obsolete deletion after reopening',
     () async {
       await write(key, 'Previous');
       const second = CacheKey(
@@ -295,7 +298,11 @@ void main() {
       checkpoint = null;
       await store.closeForTesting();
       store = open();
-      expect(await names(), unorderedEquals(['Previous', 'Second']));
+      expect(await names(), isEmpty);
+      expect(
+        store.peek<Object?>(key: second, decode: (json) => json).hasValue,
+        isFalse,
+      );
     },
   );
   test(
@@ -376,44 +383,63 @@ void main() {
     );
   });
 
+  test('failed reconciliation completes obsolete deletion', () async {
+    await write(key, 'Previous');
+    checkpoint = (stage) {
+      if (stage == 'reconciliation') {
+        final cached = store.peek<List<dynamic>>(
+          key: key,
+          decode: (json) => json! as List<dynamic>,
+        );
+        expect(cached.hasValue, isFalse);
+        final journal = Hive.box<dynamic>('offline_entities_v1').values
+            .whereType<Map<dynamic, dynamic>>()
+            .singleWhere((row) => row['kind'] == 'resource-deletion');
+        expect(jsonEncode(journal), isNot(contains('Previous')));
+        expect(
+          (journal['entries'] as List).single,
+          isNot(contains('previousResource')),
+        );
+        throw StateError('Cleanup failed');
+      }
+    };
+    await expectLater(
+      store.reconcileCompletedNamespaces(
+        userId: 'a',
+        workspaceId: 'one',
+        namespaces: {key.namespace},
+        retainedKeys: {},
+        checkScope: () {},
+      ),
+      throwsStateError,
+    );
+    checkpoint = null;
+    expect(await names(), isEmpty);
+  });
   test(
-    'failed reconciliation retains SWR snapshot throughout rollback',
-    () async {
-      await write(key, 'Previous');
-      checkpoint = (stage) {
-        if (stage == 'reconciliation') {
-          final cached = store.peek<List<dynamic>>(
-            key: key,
-            decode: (json) => json! as List<dynamic>,
-          );
-          expect((cached.data!.single as Map)['name'], 'Previous');
-          throw StateError('Cleanup failed');
-        }
-      };
-      await expectLater(
-        store.reconcileCompletedNamespaces(
-          userId: 'a',
-          workspaceId: 'one',
-          namespaces: {key.namespace},
-          retainedKeys: {},
-          checkScope: () {},
-        ),
-        throwsStateError,
-      );
-      checkpoint = null;
-      expect(await names(), ['Previous']);
-    },
-  );
-  test(
-    'interrupted eviction reopens with previous snapshot and source index',
+    'interrupted eviction never copies or restores private evicted data',
     () async {
       await write(key, 'Previous');
       checkpoint = (stage) {
         if (stage == 'pruning') {
           expect(
             store.peek<Object?>(key: key, decode: (json) => json).hasValue,
-            isTrue,
+            isFalse,
           );
+          final journal = Hive.box<dynamic>('offline_entities_v1').values
+              .whereType<Map<dynamic, dynamic>>()
+              .singleWhere((row) => row['kind'] == 'resource-deletion');
+          final entry = (journal['entries'] as List).single as Map;
+          expect(
+            entry.keys,
+            unorderedEquals([
+              'sourceKey',
+              'userId',
+              'workspaceId',
+              'namespace',
+            ]),
+          );
+          expect(jsonEncode(journal), isNot(contains('Previous')));
           throw const CachePersistenceInterruption();
         }
       };
@@ -424,7 +450,60 @@ void main() {
       checkpoint = null;
       await store.closeForTesting();
       store = open();
-      expect(await names(), ['Previous']);
+      expect(await names(), isEmpty);
     },
   );
+  test('own completed download reconciliation still finishes ready', () async {
+    await write(key, 'Obsolete');
+    final coordinator = OfflinePreparationCoordinator.forTesting(
+      load: (_, _) async => {},
+      write: (_, _, _) async {},
+    );
+    final manifest = OfflineDownloadManifest(store, 'a', () => 'a');
+    void removed() {
+      final event = store.removedResource.value!;
+      coordinator.invalidateRetainedData(
+        productIds: OfflineDownloadManifest.affectedProducts(
+          userId: 'a',
+          workspaceId: 'one',
+          key: event.key,
+          namespace: event.namespace,
+        ),
+      );
+    }
+
+    store.removedResource.addListener(removed);
+    coordinator
+      ..register('inventory', (_) async {
+        const fresh = CacheKey(
+          namespace: 'inventory.products',
+          userId: 'a',
+          workspaceId: 'one',
+          params: {'page': 'new'},
+        );
+        await manifest.save(fresh, [
+          {'id': 'fresh', 'name': 'Fresh'},
+        ]);
+        await manifest.reconcile(
+          workspaceId: 'one',
+          namespaces: {key.namespace},
+        );
+        manifest.retain('inventory', 'one');
+      })
+      ..verifyProductRetention = (_, _, _) => manifest.verify();
+    try {
+      await coordinator.run(
+        userId: 'a',
+        workspaceId: 'one',
+        productId: 'inventory',
+      );
+      expect(
+        coordinator.state.value.products['inventory']!.status,
+        OfflinePreparationStatus.ready,
+      );
+      expect(await names(), ['Fresh']);
+    } finally {
+      store.removedResource.removeListener(removed);
+    }
+  });
 }

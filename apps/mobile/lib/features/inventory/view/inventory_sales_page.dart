@@ -208,9 +208,7 @@ class _InventorySalesPageState extends State<InventorySalesPage>
       try {
         return await future;
       } on Object catch (error, stackTrace) {
-        if (error is ApiException &&
-            (error.statusCode == 401 ||
-                error.statusCode == 403 && !error.isVerificationRequired)) {
+        if (error is ApiException && _definitiveDenial(error)) {
           rethrow;
         }
         _limitedData = true;
@@ -273,8 +271,7 @@ class _InventorySalesPageState extends State<InventorySalesPage>
         return;
       }
       setState(() {
-        if (error.statusCode == 401 ||
-            error.statusCode == 403 && !error.isVerificationRequired) {
+        if (_definitiveDenial(error)) {
           _clearDeniedRead(requestToken);
         }
         _error = error.message.isNotEmpty
