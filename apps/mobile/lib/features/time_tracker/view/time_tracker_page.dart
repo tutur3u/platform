@@ -20,7 +20,6 @@ import 'package:mobile/features/time_tracker/utils/missed_entry_flow.dart';
 import 'package:mobile/features/time_tracker/widgets/history_tab.dart';
 import 'package:mobile/features/time_tracker/widgets/pomodoro_settings_dialog.dart';
 import 'package:mobile/features/time_tracker/widgets/stats_tab.dart';
-import 'package:mobile/features/time_tracker/widgets/time_tracker_add_entry_fab.dart';
 import 'package:mobile/features/time_tracker/widgets/timer_tab.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -112,6 +111,7 @@ class _TimeTrackerView extends StatefulWidget {
 class _TimeTrackerViewState extends State<_TimeTrackerView> {
   late int _index;
   var _hasAppliedInitialHistoryContext = false;
+  bool _addingEntry = false;
 
   @override
   void initState() {
@@ -196,6 +196,15 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
         Routes.timerManagement,
       },
       actions: [
+        ShellActionSpec(
+          id: 'time-tracker-add-entry',
+          icon: Icons.add_rounded,
+          tooltip: context.l10n.timerAddMissedEntry,
+          inDock: _index != 0,
+          enabled: _canOpenAddEntryFab(context) && !_addingEntry,
+          isLoading: _addingEntry,
+          onPressed: () => unawaited(_openMissedEntryDialog(context)),
+        ),
         ShellActionSpec(
           id: 'time-tracker-settings',
           icon: Icons.settings_outlined,
@@ -319,10 +328,6 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
                     child: _buildActiveSection(),
                   ),
                 ),
-                TimeTrackerAddEntryFab(
-                  enabled: _canOpenAddEntryFab(context),
-                  onPressed: () => _openMissedEntryDialog(context),
-                ),
               ],
             );
           },
@@ -352,12 +357,18 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
       return;
     }
 
-    await showMissedEntryDialogForTimeTrackerCubit(
-      context,
-      cubit: cubit,
-      wsId: wsId,
-      userId: userId,
-    );
+    if (_addingEntry) return;
+    setState(() => _addingEntry = true);
+    try {
+      await showMissedEntryDialogForTimeTrackerCubit(
+        context,
+        cubit: cubit,
+        wsId: wsId,
+        userId: userId,
+      );
+    } finally {
+      if (mounted) setState(() => _addingEntry = false);
+    }
   }
 
   bool _canOpenAddEntryFab(BuildContext context) {
