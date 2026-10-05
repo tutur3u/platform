@@ -159,6 +159,30 @@ void main() {
       verify(() => zones.loadWorkspace('shared')).called(1);
       expect(workspaces.state.currentWorkspace!.id, 'shared');
 
+      // Loaded UI precedes the durable cache commit. Agenda deliberately waits
+      // for that commit before changing its wall-clock query; wait on the store
+      // write barrier instead of assuming a fixed delay includes disk flushes.
+      var writesComplete = false;
+      unawaited(
+        CacheStore.instance
+            .queryReplica(
+              namespace: 'calendar.events.utc.v2',
+              userId: user.id,
+              workspaceId: 'personal',
+            )
+            .then((_) => writesComplete = true),
+      );
+      // Disk callbacks must run in the real zone while cache continuations
+      // still receive fake-zone pumps. Awaiting the whole barrier in runAsync
+      // deadlocks those continuations instead of advancing them.
+      for (var i = 0; i < 100 && !writesComplete; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+        await tester.pump();
+      }
+      expect(writesComplete, isTrue);
+
       final inFlight = Completer<List<CalendarEvent>>();
       blockedRead = inFlight;
       personalZone = 'Asia/Ho_Chi_Minh';

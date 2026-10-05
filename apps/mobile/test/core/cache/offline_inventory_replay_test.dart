@@ -195,7 +195,7 @@ void main() {
       final id = body['operation_id'] as String;
       received.putIfAbsent(id, () => '11111111-1111-4111-8111-111111111111');
       if (++calls == 1) {
-        throw const ApiException(message: 'Lost response', statusCode: 0);
+        throw const ApiException.transport(message: 'Lost response');
       }
       return {
         'contract': 'inventory-offline-create-v1',

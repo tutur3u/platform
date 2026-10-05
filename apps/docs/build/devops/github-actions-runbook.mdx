@@ -382,13 +382,7 @@ finish. After the allocated run's final cleanup succeeds, retry the full workflo
 when fresh bundle preparation is needed; never cancel allocated runs, repeatedly
 retry blindly, or push over an active allocation to recover a missing bundle.
 
-Lettin fixture phases print fixed names for account creation, D1 migration and
-seeding, browser context/cookie installation, and cleanup. Timed-out owned fixture
-subprocesses receive SIGKILL at the existing 60-second deadline so a child ignoring
-SIGTERM cannot block Playwright's event loop indefinitely. These diagnostics
-identify the last entered phase; an incomplete runner log alone does not prove a
-browser, server, or database root cause. Do not include tokens, SQL, account IDs,
-response bodies, or authenticated URLs in phase logs.
+### E2E runtime budget
 
 The general shard and dedicated invitation runtime commands use GNU `timeout`
 against the job's recorded start, allowing up to 37 minutes minus setup
@@ -399,6 +393,17 @@ failure diagnostics, redaction, artifact upload, and `always()` cleanup still
 run; the reserve is a budget, not proof that runner or Docker failures cannot
 prevent them. Setup exhausting the runtime budget fails before starting tests.
 Validate this policy with `node --test scripts/ci/e2e-runtime-budget.test.js`.
+
+### Lettin E2E fixture and browser diagnostics
+
+Lettin fixture phases print fixed names for account creation, D1 migration and
+seeding, browser context/cookie installation, and cleanup. Timed-out owned fixture
+subprocesses receive SIGKILL at the existing 60-second deadline so a child ignoring
+SIGTERM cannot block Playwright's event loop indefinitely. These diagnostics
+identify the last entered phase; an incomplete runner log alone does not prove a
+browser, server, or database root cause. Do not include tokens, SQL, account IDs,
+response bodies, or authenticated URLs in phase logs.
+
 Lettin workspace GET diagnostics are enabled in CI, or explicitly with
 `LETTIN_READ_DIAGNOSTICS=true` for a bounded investigation. They emit fixed
 `[lettin-read]` stage names and monotonic elapsed milliseconds for actor resolution,
@@ -444,6 +449,8 @@ slow application request or runner shutdown. Regression coverage in
 propagation of a simulated timeout with safe failure diagnostics. This focused
 contract test does not launch a browser or prove a stalled browser operation
 exits within the deadline; exact-commit E2E remains required.
+
+### E2E runtime heartbeat
 
 For bounded CI stall investigations, the Lettin suite worker and the parent E2E
 runner emit a heartbeat every ten seconds with only wall-clock, monotonic-clock,
@@ -679,7 +686,6 @@ speedup, record the exact CI SHA, archive size, matched key, per-task hits, and
 elapsed time; archive download cost and retention can outweigh reuse.
 Regression coverage: `node --test .github/actions/setup-turbo-fallback-cache/action.test.js`.
 
-
 Vercel deploy credentials must stay environment-scoped. Do not put
 `${{ secrets.* }}` values in a Vercel workflow-level `env:` block, and do not
 export production Supabase, encryption, or provider secrets from GitHub
@@ -833,15 +839,39 @@ uses required-file behavior, one-day retention, and compression level 0 because
 through root Turbo first, then calls `npm pack --ignore-scripts` so `prepack`
 cannot bypass the shared cache wrapper.
 
-Biome's automatic push trigger excludes only
-`release-please--branches--**--release-notes` metadata branches. Their creation
-briefly points at the production SHA before the notes commit is pushed; running
-Biome on both pushes leaves cancelled checks on that shared SHA, which GitHub
-also displays on main and production. Keep this exclusion at the trigger level:
-a job-level skip does not prevent the cancelled workflow checks. Actual release
-PR branches still receive lint and format validation, and manual dispatch remains
-available. When verifying a release, inspect all check runs for its SHA in addition
-to branch-filtered workflow runs.
+Test, Coverage, and Biome preserve separate immutable `workflow + ref + SHA`
+concurrency groups for main, production, and all generated Release Please refs.
+A rapid generated branch reset followed by its metadata commit must not cancel
+checks for a SHA also used by main or production. Ordinary feature refs retain
+branch supersession for obsolete source commits; that cancellation is not a
+successful validation or a valid duplicate skip. Resource-owning E2E and database
+workflows retain their own lifecycle policies.
+
+Generated duplicate pushes can cleanly skip these three workflows' validation
+jobs only after `scripts/ci/check-completed-validation.js` proves a completed
+successful main or production push at the exact same SHA. It selects the newest
+run per canonical branch from complete history, including pending and failed
+runs; a newer non-success run vetoes older success. Test and Coverage
+require all four successful shard jobs and their successful aggregate. Biome
+requires both successful format and lint jobs. The helper checks the current run
+attempt again after reading its jobs. Pending, cancelled, skipped, neutral,
+partial, failed, or inaccessible proof never substitutes for validation; checks
+run normally when proof is unavailable. A failed proof job (including checkout or
+Node setup failure) or missing output also runs validation; dependent gates
+bypass the implicit success guard and skip only for a successful proof job with
+explicit `run_checks=false`. Cancellation and shared CI configuration/release
+relevance decisions still apply. Main and production always validate
+independently. This changes future runs only and does not rewrite historical
+cancelled checks attached to a shared SHA.
+
+Biome retains automatic validation on generated release and overflow-notes
+branches plus manual dispatch. The CI switchboard checks committed overflow
+content before expensive work, and completed exact-commit duplicate proof can
+skip validation without creating cancelled checks. Keep generated mutation and
+report guards: skipped or cancelled lint/format jobs must not publish a success
+report or open a format follow-up. When verifying a release, inspect all check
+runs for its SHA as well as branch-filtered workflow runs. Proof queries share a
+45-second overall deadline and fail open to normal validation on timeout.
 
 Release Please can move an oversized generated pull request body into
 `release-notes.md` on a companion
@@ -1292,7 +1322,6 @@ full Xcode before claiming the iOS archive has been verified locally.
 2. Add its key to `tuturuuu.ts` unless you intentionally want it always on by default.
 3. Document the workflow in `apps/docs`.
 4. If it changes a docs-visible page, add that page to `apps/docs/docs.json`.
-
 
 ### Calendar retained generation rollout
 

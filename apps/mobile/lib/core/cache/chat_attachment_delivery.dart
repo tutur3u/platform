@@ -50,11 +50,11 @@ Future<Map<String, dynamic>> deliverChatAttachment({
       );
     }
   } on SocketException catch (_) {
-    throw const ApiException(message: 'Upload connection lost', statusCode: 0);
+    throw const ApiException.transport(message: 'Upload connection lost');
   } on http.ClientException catch (_) {
-    throw const ApiException(message: 'Upload connection lost', statusCode: 0);
+    throw const ApiException.transport(message: 'Upload connection lost');
   } on TimeoutException catch (_) {
-    throw const ApiException(message: 'Upload timed out', statusCode: 0);
+    throw const ApiException.transport(message: 'Upload timed out');
   }
   if (result.statusCode < 200 || result.statusCode >= 300) {
     throw ApiException(

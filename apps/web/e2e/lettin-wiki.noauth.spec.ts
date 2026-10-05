@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
 import { createAppSessionToken } from '@tuturuuu/auth/app-session';
+import { startRuntimeHeartbeat } from '../../../scripts/ci/e2e-runtime-heartbeat';
 import {
   assertSafeE2EEnvironment,
   LOCAL_E2E_APP_COORDINATION_SECRET,
@@ -72,6 +73,13 @@ function localSql(sql: string) {
 
 test.describe
   .serial('Tulletin authenticated wiki and guest publishing', () => {
+    let stopHeartbeat = () => {};
+    test.beforeEach(() => {
+      stopHeartbeat = startRuntimeHeartbeat('worker');
+    });
+    test.afterEach(() => {
+      stopHeartbeat();
+    });
     test.beforeAll(async ({ request }) => {
       assertSafeE2EEnvironment();
       expect(
@@ -238,19 +246,29 @@ test.describe
         headers.authorization.slice(7)
       );
       try {
-        const page = await context.newPage();
-        await page.goto(`${origin}/${workspaceId}/wiki/${world.id}/timeline`);
-        await expect(page.locator('.wiki-studio')).toContainText(
-          'Before the first age'
+        const page = await lettinFixturePhase('create timeline page', () =>
+          context.newPage()
         );
-        await page.goto(
-          `${origin}/${workspaceId}/wiki/${world.id}/relationships`
+        await lettinFixturePhase('open timeline', () =>
+          page.goto(`${origin}/${workspaceId}/wiki/${world.id}/timeline`)
         );
-        await expect(page.locator('.wiki-connections')).toContainText(
-          'Unpublished secret character'
+        await lettinFixturePhase('confirm timeline', async () => {
+          await expect(page.locator('.wiki-studio')).toContainText(
+            'Before the first age'
+          );
+        });
+        await lettinFixturePhase('open relationships', () =>
+          page.goto(`${origin}/${workspaceId}/wiki/${world.id}/relationships`)
         );
+        await lettinFixturePhase('confirm relationships', async () => {
+          await expect(page.locator('.wiki-connections')).toContainText(
+            'Unpublished secret character'
+          );
+        });
       } finally {
-        await context.close();
+        await lettinFixturePhase('close timeline context', () =>
+          context.close()
+        );
       }
       const publicResponse = await request.get(
         `${origin}/api/v1/lettin/worlds?worldId=${world.id}`

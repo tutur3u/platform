@@ -17,7 +17,7 @@ Future<bool> hasNetworkConnection() async {
 }
 
 bool isOfflineTransportFailure(Object error) =>
-    error is ApiException && error.statusCode == 0 ||
+    error is ApiException && error.failureKind == ApiFailureKind.transport ||
     error is SocketException ||
     error is TimeoutException ||
     error is http.ClientException;

@@ -4,6 +4,7 @@ extension _AppOfflinePreparation on _AppState {
   void _registerOfflinePreparation() {
     OfflinePreparationCoordinator.instance
       ..verifyRetention = OfflineDownloadManifest.verifyScope
+      ..verifyProductRetention = OfflineDownloadManifest.verifyProduct
       ..register(
         'finance',
         (wsId) =>
@@ -27,7 +28,7 @@ extension _AppOfflinePreparation on _AppState {
           _inventoryRepository.prepareOffline,
         );
       });
-    CacheStore.instance.resourceRemovalRevision.addListener(
+    CacheStore.instance.removedResource.addListener(
       _invalidateOfflineReadiness,
     );
     _syncOfflinePreparationScope();
@@ -43,9 +44,27 @@ extension _AppOfflinePreparation on _AppState {
 
   void _invalidateOfflineReadiness() {
     final coordinator = OfflinePreparationCoordinator.instance;
-    if (!coordinator.state.value.running &&
-        coordinator.state.value.completed > 0) {
-      coordinator.invalidateRetainedData();
+    final removed = CacheStore.instance.removedResource.value;
+    final scope = coordinator.state.value;
+    final sharedRates =
+        removed?.workspaceId == 'global' &&
+        removed?.namespace == 'finance.exchangeRates';
+    if (removed == null ||
+        removed.userId == null ||
+        scope.workspaceId == null ||
+        removed.userId != scope.userId ||
+        (!sharedRates && removed.workspaceId != scope.workspaceId)) {
+      return;
+    }
+    if (scope.running || scope.completed > 0) {
+      coordinator.invalidateRetainedData(
+        productIds: OfflineDownloadManifest.affectedProducts(
+          userId: removed.userId!,
+          workspaceId: scope.workspaceId!,
+          key: removed.key,
+          namespace: removed.namespace,
+        ),
+      );
     }
   }
 
@@ -61,12 +80,14 @@ extension _AppOfflinePreparation on _AppState {
   }
 
   void _unregisterOfflinePreparation() {
-    CacheStore.instance.resourceRemovalRevision.removeListener(
+    CacheStore.instance.removedResource.removeListener(
       _invalidateOfflineReadiness,
     );
     final coordinator = OfflinePreparationCoordinator.instance;
     OfflinePreparationCoordinator.productIds.forEach(coordinator.unregister);
-    coordinator.verifyRetention = null;
+    coordinator
+      ..verifyRetention = null
+      ..verifyProductRetention = null;
     unawaited(coordinator.setScope());
   }
 

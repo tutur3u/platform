@@ -137,7 +137,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Device authenticator'), findsOneWidget);
       enrollment.completeError(
-        const ApiException(message: 'offline', statusCode: 0),
+        const ApiException.transport(message: 'offline'),
       );
       await tester.pumpAndSettle();
       expect(
@@ -198,7 +198,7 @@ void main() {
     var reads = 0;
     when(service.status).thenAnswer((_) async {
       if (++reads == 2) {
-        throw const ApiException(message: 'offline', statusCode: 0);
+        throw const ApiException.transport(message: 'offline');
       }
       return (
         registry: const DeviceMfaRegistry(locked: false, devices: []),

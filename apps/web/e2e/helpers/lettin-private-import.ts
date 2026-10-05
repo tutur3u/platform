@@ -88,6 +88,7 @@ export async function verifyLettinPrivateImport(
         `${origin}/api/v1/lettin/worlds?worldId=${id}`,
         { timeout: 30_000 }
       );
+      expect(published.status()).toBe(200);
       expect(await published.json()).toEqual([]);
     });
   });

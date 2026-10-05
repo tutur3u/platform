@@ -97,7 +97,7 @@ void main() {
     queue.registerDispatcher('notes', (_) async {
       if (!entered.isCompleted) entered.complete();
       await release.future;
-      throw const ApiException(message: 'Offline', statusCode: 0);
+      throw const ApiException.transport(message: 'Offline');
     });
     await queue.enqueue(edit('sending'));
     online = true;
@@ -230,7 +230,7 @@ void main() {
       queue
         ..registerDispatcher('notes', (record) async {
           sent.add(record.id);
-          throw const ApiException(message: 'Connection lost', statusCode: 0);
+          throw const ApiException.transport(message: 'Connection lost');
         })
         ..registerDispatcher('calendar', (record) async {
           sent.add(record.id);

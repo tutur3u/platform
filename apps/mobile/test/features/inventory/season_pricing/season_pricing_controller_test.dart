@@ -343,7 +343,7 @@ void main() {
               sent.add(payload);
               attempts++;
               if (attempts == 1) {
-                throw const ApiException(message: 'timeout', statusCode: 0);
+                throw const ApiException.transport(message: 'timeout');
               }
               return 'same-invoice';
             },
@@ -479,6 +479,148 @@ void main() {
     expect(reads, 2);
     await controller.refresh();
     expect(reads, 3);
+    expect(controller.quote, isNull);
+  });
+  test(
+    'overlapping manual and automatic quotes share one scope request',
+    () async {
+      final response = Completer<InventorySeasonQuote>();
+      var reads = 0;
+      final controller =
+          InventorySeasonPricingController(
+            journal: MemorySaleStore().journal,
+            lookupReceipt: (_, _) async => null,
+            fetch: (_, _) {
+              reads++;
+              return response.future;
+            },
+            send: (_, _) async => 'unused',
+            isOnline: () async => true,
+          )..configure(
+            actorId: 'actor',
+            workspaceId: 'ws',
+            selectedPeriod: period(),
+            currency: 'USD',
+          );
+      final first = controller.refresh();
+      final second = controller.refresh(automatic: true);
+      final third = controller.refresh();
+      expect(identical(first, second), isTrue);
+      expect(identical(first, third), isTrue);
+      await Future<void>.delayed(Duration.zero);
+      expect(reads, 1);
+      response.complete(quote());
+      await Future.wait([first, second, third]);
+      expect(controller.loading, isFalse);
+      expect(controller.quote, isNotNull);
+      controller.dispose();
+    },
+  );
+  test(
+    'manual refresh following throttled automatic refresh fetches fresh',
+    () async {
+      controller.dispose();
+      var reads = 0;
+      controller =
+          InventorySeasonPricingController(
+            journal: MemorySaleStore().journal,
+            lookupReceipt: (_, _) async => null,
+            fetch: (_, _) async {
+              reads++;
+              return quote();
+            },
+            send: (_, _) async => 'unused',
+            isOnline: () async => true,
+            now: () => now,
+          )..configure(
+            actorId: 'actor',
+            workspaceId: 'ws',
+            selectedPeriod: period(),
+            currency: 'USD',
+          );
+      await controller.refresh(automatic: true);
+      expect(reads, 1);
+      final automatic = controller.refresh(automatic: true);
+      final manual = controller.refresh();
+      final secondManual = controller.refresh();
+      await Future.wait([automatic, manual, secondManual]);
+      expect(reads, 2);
+      expect(controller.quote, isNotNull);
+    },
+  );
+  test('queued manual refresh cannot cross changed actor scope', () async {
+    controller.dispose();
+    final response = Completer<InventorySeasonQuote>();
+    var reads = 0;
+    controller =
+        InventorySeasonPricingController(
+          journal: MemorySaleStore().journal,
+          lookupReceipt: (_, _) async => null,
+          fetch: (_, _) {
+            reads++;
+            return response.future;
+          },
+          send: (_, _) async => 'unused',
+          isOnline: () async => true,
+        )..configure(
+          actorId: 'actor',
+          workspaceId: 'ws',
+          selectedPeriod: period(),
+          currency: 'USD',
+        );
+    final automatic = controller.refresh(automatic: true);
+    await Future<void>.delayed(Duration.zero);
+    final manual = controller.refresh();
+    controller.configure(
+      actorId: 'replacement',
+      workspaceId: 'other',
+      selectedPeriod: period(),
+      currency: 'USD',
+    );
+    response.complete(quote());
+    await Future.wait([automatic, manual]);
+    expect(reads, 1);
+    expect(controller.quote, isNull);
+  });
+  test('queued manual refresh cannot cross ABA scope generation', () async {
+    controller.dispose();
+    final response = Completer<InventorySeasonQuote>();
+    var reads = 0;
+    controller =
+        InventorySeasonPricingController(
+          journal: MemorySaleStore().journal,
+          lookupReceipt: (_, _) async => null,
+          fetch: (_, _) {
+            reads++;
+            return response.future;
+          },
+          send: (_, _) async => 'unused',
+          isOnline: () async => true,
+        )..configure(
+          actorId: 'actor',
+          workspaceId: 'ws',
+          selectedPeriod: period(),
+          currency: 'USD',
+        );
+    final automatic = controller.refresh(automatic: true);
+    await Future<void>.delayed(Duration.zero);
+    final manual = controller.refresh();
+    controller
+      ..configure(
+        actorId: 'replacement',
+        workspaceId: 'other',
+        selectedPeriod: period(),
+        currency: 'USD',
+      )
+      ..configure(
+        actorId: 'actor',
+        workspaceId: 'ws',
+        selectedPeriod: period(),
+        currency: 'USD',
+      );
+    response.complete(quote());
+    await Future.wait([automatic, manual]);
+    expect(reads, 1);
     expect(controller.quote, isNull);
   });
 }

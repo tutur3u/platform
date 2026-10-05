@@ -470,4 +470,125 @@ void main() {
     expect(snapshots, isEmpty);
     verify(() => api.getJsonList(path)).called(1);
   });
+  test('completed first-phase request is reused in the fresh phase', () async {
+    when(() => api.getJsonList(path)).thenAnswer(
+      (_) async => [
+        {'id': 'fresh'},
+      ],
+    );
+    final snapshots = <List<dynamic>>[];
+    final result = await CacheStore.readWithRevalidation(() async {
+      final value = await read();
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      return value;
+    }, onSnapshot: snapshots.add);
+    expect(_firstId(snapshots.single), 'old');
+    expect(_firstId(result), 'fresh');
+    verify(() => api.getJsonList(path)).called(1);
+  });
+
+  test(
+    'reconnect projection reuses completed refresh but next cycle refetches',
+    () async {
+      when(() => api.getJsonList(path)).thenAnswer(
+        (_) async => [
+          {'id': 'fresh'},
+        ],
+      );
+      await CacheStore.awaitRevalidation(read);
+      clearInteractions(api);
+      await CacheStore.awaitRevalidation(() async {
+        await store.refreshCachedResources(currentUserId: () => 'user');
+        expect(
+          _firstId(
+            await CacheStore.readWithRevalidation(
+              read,
+              onSnapshot: (_) =>
+                  fail('Fresh cycle must not publish stale phase'),
+            ),
+          ),
+          'fresh',
+        );
+        expect(_firstId(await read()), 'fresh');
+      });
+      verify(() => api.getJsonList(path)).called(1);
+      clearInteractions(api);
+      await CacheStore.awaitRevalidation(read);
+      verify(() => api.getJsonList(path)).called(1);
+    },
+  );
+
+  test('tag invalidation rejects completed refresh-cycle response', () async {
+    var reads = 0;
+    when(() => api.getJsonList(path)).thenAnswer(
+      (_) async => [
+        {'id': 'fresh-${++reads}'},
+      ],
+    );
+    await CacheStore.awaitRevalidation(() async {
+      expect(_firstId(await read()), 'fresh-1');
+      await store.invalidateTags(
+        const ['module:finance'],
+        userId: 'user',
+        workspaceId: 'ws',
+      );
+      final retained = await store.read<List<dynamic>>(
+        key: key,
+        decode: (v) => v! as List<dynamic>,
+      );
+      expect(_firstId(retained.data!), 'fresh-1');
+      expect(retained.state.name, 'stale');
+      expect(_firstId(await read()), 'fresh-2');
+    });
+    expect(reads, 2);
+  });
+
+  test('invalidating during a refresh cycle forces a new request', () async {
+    when(() => api.getJsonList(path)).thenAnswer(
+      (_) async => [
+        {'id': 'fresh'},
+      ],
+    );
+    await CacheStore.awaitRevalidation(() async {
+      await read();
+      await store.remove(key);
+      await read();
+    });
+    verify(() => api.getJsonList(path)).called(2);
+  });
+  test(
+    'invalid domain payload cannot replace retained authorized snapshot',
+    () async {
+      await expectLater(
+        store.prefetch<List<dynamic>>(
+          key: key,
+          policy: CachePolicies.moduleData,
+          forceRefresh: true,
+          decode: (raw) {
+            if (raw is! List) throw const FormatException('Invalid list');
+            return raw;
+          },
+          fetch: () async => {'wrong': 'shape'},
+        ),
+        throwsFormatException,
+      );
+      expect(
+        _firstId(
+          (await store.read<List<dynamic>>(
+            key: key,
+            decode: (raw) => raw! as List<dynamic>,
+          )).data!,
+        ),
+        'old',
+      );
+      expect(
+        (await store.queryReplica(
+          namespace: key.namespace,
+          userId: 'user',
+          workspaceId: 'ws',
+        )).single.id,
+        'old',
+      );
+    },
+  );
 }

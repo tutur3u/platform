@@ -813,11 +813,11 @@ test('E2E runs only for matching commit changes or explicit dispatch', () => {
   assert.match(header, /\n {2}workflow_dispatch:/);
   assert.match(
     header,
-    /group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.ref \}\}/
+    /group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.ref == 'refs\/heads\/release-please--branches--production--release-notes' && github\.sha \|\| github\.ref \}\}/
   );
   assert.match(
     header,
-    /cancel-in-progress:.*github\.ref != 'refs\/heads\/main' && github\.ref != 'refs\/heads\/production'/
+    /cancel-in-progress:.*github\.ref != 'refs\/heads\/main' && github\.ref != 'refs\/heads\/production' && github\.ref != 'refs\/heads\/release-please--branches--production--release-notes'/
   );
   assert.doesNotMatch(workflow, /^ {2}check-ci:/m);
   assert.doesNotMatch(workflow, /needs\.check-ci/);
