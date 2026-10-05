@@ -1412,6 +1412,21 @@ an unthrottled fresh request in the same actor/workspace/period scope. Other
 concurrent callers still coalesce; a scope change cancels the queued refresh.
 Regression evidence: `season_pricing_controller_test.dart`.
 
+### Challenges and shared cached reads
+
+Shared mobile JSON object/list reads retain the last encrypted authorized snapshot
+when revalidation requires `MFA_REQUIRED` or a typed verification challenge.
+The request still rejects with the challenge, allowing the owning screen to request
+verification; retained cache does not authorize a write or bypass server checks.
+Rate limits and server availability failures likewise leave the stored snapshot
+intact. Definitive same-account 401/403 responses erase the snapshot and replica
+projection durably. Purge admission rechecks the request actor, so a departed
+account's delayed denial cannot erase a newer authorized publication.
+
+Regression evidence: `offline_read_through_access_test.dart` verifies both payload
+shapes, reopening encrypted storage after retention/denial, and a delayed denial
+across an account change.
+
 ### Snapshot invalidation and private search
 
 A concurrent tag invalidation rejects the new response but retains the previous

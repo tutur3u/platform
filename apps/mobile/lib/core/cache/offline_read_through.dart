@@ -66,8 +66,10 @@ Future<Map<String, dynamic>> readThroughJson({
         } on Object catch (error) {
           if (error is ApiException &&
               (error.statusCode == 401 ||
-                  (error.statusCode == 403 && !error.isVerificationRequired))) {
-            await store.remove(key);
+                  (error.statusCode == 403 &&
+                      error.code != 'MFA_REQUIRED' &&
+                      !error.isVerificationRequired))) {
+            await store.remove(key, checkScope: checkScope);
           }
           rethrow;
         }
@@ -139,8 +141,10 @@ Future<List<dynamic>> readThroughJsonList({
         } on Object catch (error) {
           if (error is ApiException &&
               (error.statusCode == 401 ||
-                  (error.statusCode == 403 && !error.isVerificationRequired))) {
-            await store.remove(key);
+                  (error.statusCode == 403 &&
+                      error.code != 'MFA_REQUIRED' &&
+                      !error.isVerificationRequired))) {
+            await store.remove(key, checkScope: checkScope);
           }
           rethrow;
         }
