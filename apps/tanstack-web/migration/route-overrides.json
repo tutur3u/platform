@@ -2842,6 +2842,11 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "First-class bearer/app-session actor-owned Notes voice jobs with bounded WAV input, explicit paid idempotency/retry and private artifacts. Rust port backlog; web remains live source."
+    },
+    "api:/api/v1/assistant/live/tools/execute:apps/web/src/app/api/v1/assistant/live/tools/execute/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Canonical Live tool bridge authenticates session/temporary principals, verifies workspace membership and voice tier, validates canonical schemas through permission-aware Mira factory; workspace switching and approval-gated tools unavailable. Legacy Live execution remains compatible."
     }
   }
 }

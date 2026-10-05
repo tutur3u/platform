@@ -8,6 +8,7 @@ extension _AssistantLiveTools on AssistantLiveCubit {
     }
     _ensureActiveTurn();
     final requestVersion = _requestVersion;
+    final toolProtocol = _toolProtocol;
     final actorId = _sessionUserId;
     final turnParts = _turnParts;
     // Register at receipt time so streamed text keeps its position while the
@@ -35,6 +36,8 @@ extension _AssistantLiveTools on AssistantLiveCubit {
                     wsId: wsId,
                     functionName: call.name,
                     args: call.args,
+                    toolProtocol: toolProtocol,
+                    toolCallId: toolProtocol == 'canonical-v1' ? call.id : null,
                   );
             result = actorId == null
                 ? await execute()

@@ -55,10 +55,14 @@ class AssistantLiveTokenEnvelope extends Equatable {
     required this.model,
     required this.sessionHandle,
     required this.seedHistory,
+    this.toolProtocol = 'legacy',
   });
 
   factory AssistantLiveTokenEnvelope.fromJson(Map<String, dynamic> json) =>
       AssistantLiveTokenEnvelope(
+        toolProtocol: json['toolProtocol'] == 'canonical-v1'
+            ? 'canonical-v1'
+            : 'legacy',
         token: json['token'] as String,
         chatId: json['chatId'] as String,
         scopeKey: json['scopeKey'] as String,
@@ -70,6 +74,7 @@ class AssistantLiveTokenEnvelope extends Equatable {
             .toList(),
       );
 
+  final String toolProtocol;
   final String token;
   final String chatId;
   final String scopeKey;
@@ -79,6 +84,7 @@ class AssistantLiveTokenEnvelope extends Equatable {
 
   @override
   List<Object?> get props => [
+    toolProtocol,
     token,
     chatId,
     scopeKey,

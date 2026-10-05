@@ -120,3 +120,11 @@ Coverage: `conference.test.ts`, `writer.test.ts`, `plan.test.ts`, and
 `apps/database/supabase/tests/calendar-provider-series.sql`. Provider contracts:
 [Google conference creation](https://developers.google.com/workspace/calendar/api/guides/create-events)
 and [Outlook calendar online meetings](https://learn.microsoft.com/en-us/graph/outlook-calendar-online-meetings).
+
+### Calendar settings workspace identity
+
+Calendar settings resolves route aliases such as `personal` before mounting
+integration sync or hours/timezone consumers. These consumers and their caches use
+the resolved workspace ID; resolution failures do not dispatch alias requests to
+UUID-only Calendar APIs. This applies to the standalone Calendar settings shell.
+Regression coverage: `apps/calendar/src/components/settings/settings-dialog.test.tsx`.
