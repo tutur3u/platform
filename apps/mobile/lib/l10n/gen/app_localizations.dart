@@ -1009,6 +1009,12 @@ abstract class AppLocalizations {
   /// **'Got it'**
   String get assistantLiveInfoDismiss;
 
+  /// No description provided for @assistantLiveInfoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live information'**
+  String get assistantLiveInfoTitle;
+
   /// No description provided for @assistantLiveInsightsTitle.
   ///
   /// In en, this message translates to:
@@ -1158,6 +1164,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap the mic to speak again'**
   String get assistantLiveStageYouMuted;
+
+  /// No description provided for @assistantLiveStartupAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio initialization'**
+  String get assistantLiveStartupAudio;
+
+  /// No description provided for @assistantLiveStartupDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'{milliseconds} ms'**
+  String assistantLiveStartupDuration(int milliseconds);
+
+  /// No description provided for @assistantLiveStartupHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation history'**
+  String get assistantLiveStartupHistory;
+
+  /// No description provided for @assistantLiveStartupNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Elapsed phase times stay on this device. History and audio overlap; phase times do not add up to the total. Failed attempts may include only some phases.'**
+  String get assistantLiveStartupNote;
+
+  /// No description provided for @assistantLiveStartupReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider ready'**
+  String get assistantLiveStartupReady;
+
+  /// No description provided for @assistantLiveStartupSocket.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider connection'**
+  String get assistantLiveStartupSocket;
+
+  /// No description provided for @assistantLiveStartupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Last connection attempt'**
+  String get assistantLiveStartupTitle;
+
+  /// No description provided for @assistantLiveStartupToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Session authorization'**
+  String get assistantLiveStartupToken;
+
+  /// No description provided for @assistantLiveStartupTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total elapsed time'**
+  String get assistantLiveStartupTotal;
 
   /// No description provided for @assistantLiveStatusAvailable.
   ///

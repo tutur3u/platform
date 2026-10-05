@@ -25,6 +25,26 @@ extension _AssistantPageChrome on _AssistantPageState {
         tooltip: context.l10n.assistantHistoryTitle,
         onPressed: () => unawaited(_showHistorySheet(context, wsId)),
       ),
+    if (isLiveMode)
+      ShellActionSpec(
+        id: 'assistant-live-info',
+        icon: Icons.info_outline_rounded,
+        tooltip: context.l10n.assistantLiveInfoTitle,
+        callbackToken: '$wsId:${liveState.status}:${liveState.startupTimings}',
+        onPressed: () => unawaited(
+          _showLiveInfoSheet(
+            context,
+            liveUiState: deriveAssistantLiveUiState(
+              shellState: shellState,
+              liveState: liveState,
+              isEligible: _hasLiveAccess(shellState),
+              showBlockedReason: false,
+              isVisibleLiveSession: _isVisibleLiveSession(chatState, liveState),
+            ),
+            liveState: liveState,
+          ),
+        ),
+      ),
     ShellActionSpec(
       id: 'assistant-settings',
       icon: Icons.tune_rounded,

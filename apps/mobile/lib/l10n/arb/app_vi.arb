@@ -41,6 +41,13 @@
       }
     }
   },
+  "@assistantLiveStartupDuration": {
+    "placeholders": {
+      "milliseconds": {
+        "type": "int"
+      }
+    }
+  },
   "@assistantLiveWorkspaceTierLabel": {
     "placeholders": {
       "tier": {
@@ -1310,6 +1317,7 @@
   "assistantLiveIdleHeading": "Trò chuyện với Mira",
   "assistantLiveInfoAccessHeading": "Quyền truy cập hiện tại",
   "assistantLiveInfoDismiss": "Đã hiểu",
+  "assistantLiveInfoTitle": "Thông tin Live",
   "assistantLiveInsightsTitle": "Thông tin nhanh trực tiếp",
   "assistantLiveListen": "Bật micro",
   "assistantLiveModelBadge": "Gemini 3.8 Live",
@@ -1335,6 +1343,15 @@
   "assistantLiveStageAssistantSpeaking": "Đang phát phản hồi bằng giọng nói",
   "assistantLiveStageYouListening": "Micro của bạn đang hoạt động",
   "assistantLiveStageYouMuted": "Chạm vào micro để nói tiếp",
+  "assistantLiveStartupAudio": "Khởi tạo âm thanh",
+  "assistantLiveStartupDuration": "{milliseconds} ms",
+  "assistantLiveStartupHistory": "Lịch sử hội thoại",
+  "assistantLiveStartupNote": "Thời gian từng bước chỉ ở trên thiết bị này. Lịch sử và âm thanh chạy đồng thời; tổng các bước không bằng tổng thời gian. Lần kết nối thất bại có thể chỉ ghi một số bước.",
+  "assistantLiveStartupReady": "Nhà cung cấp sẵn sàng",
+  "assistantLiveStartupSocket": "Kết nối nhà cung cấp",
+  "assistantLiveStartupTitle": "Lần kết nối gần nhất",
+  "assistantLiveStartupToken": "Xác thực phiên",
+  "assistantLiveStartupTotal": "Tổng thời gian",
   "assistantLiveStatusAvailable": "Sẵn sàng",
   "assistantLiveStatusConnecting": "Đang kết nối",
   "assistantLiveStatusDisconnected": "Chưa kết nối",

@@ -476,6 +476,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveInfoDismiss => 'Đã hiểu';
 
   @override
+  String get assistantLiveInfoTitle => 'Thông tin Live';
+
+  @override
   String get assistantLiveInsightsTitle => 'Thông tin nhanh trực tiếp';
 
   @override
@@ -551,6 +554,35 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantLiveStageYouMuted => 'Chạm vào micro để nói tiếp';
+
+  @override
+  String get assistantLiveStartupAudio => 'Khởi tạo âm thanh';
+
+  @override
+  String assistantLiveStartupDuration(int milliseconds) {
+    return '$milliseconds ms';
+  }
+
+  @override
+  String get assistantLiveStartupHistory => 'Lịch sử hội thoại';
+
+  @override
+  String get assistantLiveStartupNote => 'Thời gian từng bước chỉ ở trên thiết bị này. Lịch sử và âm thanh chạy đồng thời; tổng các bước không bằng tổng thời gian. Lần kết nối thất bại có thể chỉ ghi một số bước.';
+
+  @override
+  String get assistantLiveStartupReady => 'Nhà cung cấp sẵn sàng';
+
+  @override
+  String get assistantLiveStartupSocket => 'Kết nối nhà cung cấp';
+
+  @override
+  String get assistantLiveStartupTitle => 'Lần kết nối gần nhất';
+
+  @override
+  String get assistantLiveStartupToken => 'Xác thực phiên';
+
+  @override
+  String get assistantLiveStartupTotal => 'Tổng thời gian';
 
   @override
   String get assistantLiveStatusAvailable => 'Sẵn sàng';

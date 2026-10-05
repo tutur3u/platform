@@ -476,6 +476,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveInfoDismiss => 'Got it';
 
   @override
+  String get assistantLiveInfoTitle => 'Live information';
+
+  @override
   String get assistantLiveInsightsTitle => 'Live insights';
 
   @override
@@ -551,6 +554,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantLiveStageYouMuted => 'Tap the mic to speak again';
+
+  @override
+  String get assistantLiveStartupAudio => 'Audio initialization';
+
+  @override
+  String assistantLiveStartupDuration(int milliseconds) {
+    return '$milliseconds ms';
+  }
+
+  @override
+  String get assistantLiveStartupHistory => 'Conversation history';
+
+  @override
+  String get assistantLiveStartupNote => 'Elapsed phase times stay on this device. History and audio overlap; phase times do not add up to the total. Failed attempts may include only some phases.';
+
+  @override
+  String get assistantLiveStartupReady => 'Provider ready';
+
+  @override
+  String get assistantLiveStartupSocket => 'Provider connection';
+
+  @override
+  String get assistantLiveStartupTitle => 'Last connection attempt';
+
+  @override
+  String get assistantLiveStartupToken => 'Session authorization';
+
+  @override
+  String get assistantLiveStartupTotal => 'Total elapsed time';
 
   @override
   String get assistantLiveStatusAvailable => 'Available';
