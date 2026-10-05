@@ -2,7 +2,6 @@ import { createHash } from 'node:crypto';
 import {
   type CalendarResponse,
   calendarReply,
-  decodeCalendarSource,
   parseCalendarInvitation,
 } from '../calendar-invitation';
 import { readMailStoredObject } from '../storage';
@@ -11,6 +10,7 @@ import { getAuthorizedAttachment, uploadDraftAttachment } from './attachments';
 import { requireMailboxAccess } from './bootstrap';
 import { claimCalendarReply } from './calendar-claim';
 import { readLegacyCalendarSource } from './calendar-source';
+import { coalesceCalendarSources } from './calendar-sources';
 import { createMailDraft } from './drafts';
 import { getMailMessage } from './messages';
 import { sendMailMessage } from './send';
@@ -59,28 +59,39 @@ export async function getMailInvitation(
   }
   const candidates = message.attachments.filter(
     (file) =>
-      (file.contentType.split(';')[0]?.trim().toLowerCase() ===
-        'text/calendar' ||
-        /\.ics$/iu.test(file.filename)) &&
-      file.sizeBytes > 0 &&
-      file.sizeBytes <= 256 * 1024
+      file.contentType.split(';')[0]?.trim().toLowerCase() ===
+        'text/calendar' || /\.ics$/iu.test(file.filename)
   );
-  // Do not choose silently between competing invitation attachments.
-  if (candidates.length > 1) return null;
-  const attachment = candidates[0]
-    ? await getAuthorizedAttachment({
-        ctx,
-        mailboxId,
-        messageId,
-        attachmentId: candidates[0].id,
-      })
-    : null;
-  let source: string | null;
-  if (attachment) {
+  // Google can include the same request as an alternative body and an ICS file.
+  // Authorize every copy; never select one of conflicting or oversized sources.
+  if (
+    candidates.length > 8 ||
+    candidates.some(
+      (file) => file.sizeBytes <= 0 || file.sizeBytes > 256 * 1024
+    ) ||
+    candidates.reduce((sum, file) => sum + file.sizeBytes, 0) > 512 * 1024
+  )
+    return null;
+  const sources: Uint8Array[] = [];
+  for (const candidate of candidates) {
+    const attachment = await getAuthorizedAttachment({
+      ctx,
+      mailboxId,
+      messageId,
+      attachmentId: candidate.id,
+    });
+    if (!attachment) return null;
     const bytes = await readMailStoredObject(attachment.location);
-    if (bytes.byteLength > 256 * 1024) return null;
-    source = decodeCalendarSource(bytes);
-  } else source = await readLegacyCalendarSource(ctx, mailboxId, messageId);
+    sources.push(bytes);
+    if (
+      bytes.byteLength > 256 * 1024 ||
+      sources.reduce((sum, source) => sum + source.byteLength, 0) > 512 * 1024
+    )
+      return null;
+  }
+  const source = sources.length
+    ? coalesceCalendarSources(sources)
+    : await readLegacyCalendarSource(ctx, mailboxId, messageId);
   const invitation =
     source && parseCalendarInvitation(source, access.mailbox.address);
   if (!invitation) return null;

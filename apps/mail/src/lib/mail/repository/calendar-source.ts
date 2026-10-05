@@ -2,6 +2,7 @@ import PostalMime from 'postal-mime';
 import { readMailStoredObject } from '../storage';
 import type { MailRouteContext } from '../types';
 import { requireMailboxAccess } from './bootstrap';
+import { coalesceCalendarSources } from './calendar-sources';
 import { mailMessageTable, privateTable } from './shared';
 
 /** Legacy SES inboxes stored raw MIME but not decoded calendar attachment bytes. */
@@ -63,8 +64,7 @@ export async function calendarSourceFromMime(bytes: Uint8Array) {
     (file) =>
       file.mimeType === 'text/calendar' || /\.ics$/iu.test(file.filename ?? '')
   );
-  if (calendars.length !== 1) return null;
-  const content = new Uint8Array(calendars[0]!.content as ArrayBuffer);
-  if (content.byteLength > 256 * 1024) return null;
-  return new TextDecoder('utf-8', { fatal: true }).decode(content);
+  return coalesceCalendarSources(
+    calendars.map((file) => new Uint8Array(file.content as ArrayBuffer))
+  );
 }
