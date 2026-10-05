@@ -69,6 +69,7 @@ const googleFields = z
   .strict();
 const graphFields = z
   .object({
+    hideAttendees: z.boolean().optional(),
     isOnlineMeeting: z.literal(true).optional(),
     onlineMeetingProvider: GraphMeetingProviderSchema.optional(),
     body: z
@@ -247,11 +248,14 @@ export function providerFutureCreateMetadata(
   }
   if (master.isOrganizer !== true)
     throw new RangeError('Future split requires the meeting organizer');
-  if (master.hasAttachments === true || master.hideAttendees === true)
+  if (master.hideAttendees === true && !Array.isArray(master.attendees))
+    throw new RangeError('Hidden Outlook attendees unavailable');
+  if (master.hasAttachments === true)
     throw new RangeError(
-      'Future split does not yet support Outlook meetings, attachments or hidden guests'
+      'Future split does not yet support Outlook attachments'
     );
   const value = pick(master, [
+    'hideAttendees',
     'body',
     'responseRequested',
     'isReminderOn',

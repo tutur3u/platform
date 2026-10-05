@@ -13,6 +13,7 @@ import type { ResolvedCalendarSource } from '../../source-resolver';
 import { verifyFreshProviderConference } from './conference';
 import type { ProviderSeriesWriter } from './executor';
 import { recoverFailedGoogleConference } from './google-conference-recovery';
+import { verifyGraphAttendeePrivacy } from './graph-privacy';
 import { googleSeriesPayload, graphSeriesPayload } from './payload';
 import type { ProviderSeriesPlan, ProviderSeriesStep } from './plan';
 
@@ -226,6 +227,7 @@ export function createSeriesProviderWriter(args: {
             typeof event['@odata.etag'] !== 'string'
           )
             throw new Error('Provider create receipt unavailable');
+          verifyGraphAttendeePrivacy(event, step.metadata);
           verifyFreshProviderConference(
             'microsoft',
             event,
@@ -283,6 +285,7 @@ export function createSeriesProviderWriter(args: {
           typeof event?.['@odata.etag'] !== 'string'
         )
           throw new Error('Provider create receipt unavailable');
+        verifyGraphAttendeePrivacy(event, step.metadata);
         verifyFreshProviderConference(
           'microsoft',
           event,

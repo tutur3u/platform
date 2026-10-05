@@ -25,9 +25,9 @@ Reads and writes use verified actor lifetimes and separate workspace cache keys.
 Unchanged failed write intents reuse idempotency keys. Reopening or changing the
 workspace/account resets form state.
 
-Provider recurrence creation and scoped editing remain outside this native UI
-until provider APIs support them. External calendar adapters retain their existing
-behavior; the native Create dialog does not select a provider source.
+Native Create defaults to canonical Tuturuuu Calendar. The connected-calendar
+editor below remains gated by provider admission and verified source capabilities;
+production admission is disabled until authenticated provider parity is proven.
 
 Regression evidence: `native-recurrence-model.test.ts` covers DST, validation,
 all-day boundaries, original identities, remaining counts and retry intent IDs;
@@ -109,8 +109,7 @@ blocked for support, with no original-series trim.
 The database binds checkpoint roles atomically: the created replacement receipt
 belongs to the new canonical series, and the trim receipt advances the original
 binding. Older persisted trim-first plans retain their original order and receipt
-selection. New unsupported provider metadata, including Outlook attachments or
-hidden guests, remains rejected before reservation. A copied body or description
+selection. New unsupported provider metadata, including Outlook attachments, remains rejected before reservation. A copied body or description
 that embeds the original meeting link is also rejected; generated meeting HTML
 blobs are not stripped or copied with stale credentials. Production provider mutation
 admission stays disabled until authenticated provider and deployment evidence is
@@ -139,3 +138,21 @@ unavailable. This display decision does not change source permissions, admission
 or the prohibition on native write fallback for provider events. Coverage:
 `native-recurrence-provider-routing.test.tsx` renders the actual recurrence fields
 for native, Google, Outlook and disabled-provider cases.
+
+### Outlook attendee privacy on future tails
+
+For a verified organizing source, future splits retain the source's explicit
+`hideAttendees` setting only when the fresh master supplies its attendee list.
+The encrypted plan carries this field without attendee
+response statuses. Creation and retained-event recovery both require an
+authoritative matching privacy receipt before trimming the original series.
+Non-organizers, malformed privacy settings and unsupported attachments remain
+blocked. This is source parity, with production admission still disabled; it does
+not prove invitation delivery or authenticated Outlook behavior.
+
+Graph v1 reference attachments expose read/delete metadata without a documented
+reference-creation/source-URL contract. Tuturuuu therefore does not copy attachment
+bytes or invent attachment references when splitting an Outlook series.
+Regression coverage: provider `create-metadata.test.ts` and `writer.test.ts`.
+Contract: [Graph event attendee privacy](https://learn.microsoft.com/en-us/graph/api/resources/event?view=graph-rest-1.0)
+and [Graph reference attachments](https://learn.microsoft.com/en-us/graph/api/resources/referenceattachment?view=graph-rest-1.0).
