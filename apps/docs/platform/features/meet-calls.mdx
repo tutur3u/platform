@@ -1181,3 +1181,19 @@ Parley does not show this Meet-only action.
 
 `personal-tools.test.ts` covers personal scope, actor changes, missing personal
 workspaces, and partial source availability.
+
+## Meeting-list startup and hosting eligibility
+
+The signed-in Meet workspace heading renders after session and workspace membership
+are verified. Hosting eligibility is resolved inside the content Suspense boundary,
+so a slow verified-identity or account-tier lookup does not block the heading.
+Creation controls remain unavailable until that lookup confirms eligibility; lookup
+errors retain the unavailable notice and never grant creation. Session and workspace
+redirects stay outside streaming boundaries. This applies to the workspace Meetings
+list, not room admission or meeting creation authorization. Regression evidence:
+`authorized-meetings-content.test.tsx` exercises deferred identity reads, workspace
+denial, eligible accounts, restriction notices, and failed eligibility reads.
+
+Measure signed-in server response and meaningful-content times separately. A fast
+public homepage is not evidence that an authenticated app is fast, and a Suspense
+skeleton is not a loaded meeting list. Re-measure the deployed source after rollout.
