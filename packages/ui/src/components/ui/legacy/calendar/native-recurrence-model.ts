@@ -34,6 +34,11 @@ export interface RecurrenceDraft {
   weekdays: CalendarWeekday[];
   retainedRule?: CalendarRecurrenceRule;
   monthDay: string;
+  monthPattern: 'day' | 'weekday';
+  weekIndex: string;
+  month: string;
+  weekStartsOn?: CalendarWeekday;
+  monthDayOverflow?: CalendarRecurrenceRule['monthDayOverflow'];
   endType: CalendarRecurrenceRule['end']['type'];
   endValue: string;
 }
@@ -55,6 +60,12 @@ export function newRecurrenceDraft(
     interval: '1',
     weekdays: [weekdays[start.dayOfWeek - 1]!],
     monthDay: String(start.day),
+    monthPattern: 'day',
+    weekIndex: String(
+      Math.ceil(start.day / 7) > 4 ? -1 : Math.ceil(start.day / 7)
+    ),
+    month: '',
+    monthDayOverflow: 'skip',
     endType: 'never',
     endValue: '',
   };
@@ -86,7 +97,16 @@ export function recurrenceEditDraft(
         };
   const payload = scope === 'all' ? series.payload : event;
   return {
-    retainedRule: rule.weekIndex ? rule : undefined,
+    monthPattern: rule.weekIndex ? 'weekday' : 'day',
+    weekIndex: String(
+      rule.weekIndex ??
+        (Math.ceil(recurrenceLocalParts(anchor.startLocal).day / 7) > 4
+          ? -1
+          : Math.ceil(recurrenceLocalParts(anchor.startLocal).day / 7))
+    ),
+    month: rule.month === undefined ? '' : String(rule.month),
+    weekStartsOn: rule.weekStartsOn,
+    monthDayOverflow: rule.monthDayOverflow,
     title: payload.title ?? '',
     description: payload.description ?? '',
     location: payload.location ?? '',
@@ -96,7 +116,9 @@ export function recurrenceEditDraft(
     allDay: anchor.allDay,
     frequency: rule.frequency,
     interval: String(rule.interval),
-    weekdays: rule.weekdays ?? [],
+    weekdays: rule.weekdays ?? [
+      weekdays[recurrenceLocalParts(anchor.startLocal).dayOfWeek - 1]!,
+    ],
     monthDay: String(
       rule.monthDay ?? recurrenceLocalParts(anchor.startLocal).day
     ),
@@ -128,12 +150,25 @@ export function recurrenceDraftPayload(
           ? { type: 'until', date: draft.endValue }
           : { type: 'never' },
   };
-  if (rule.frequency === 'weekly') rule.weekdays = draft.weekdays;
-  if (rule.frequency === 'monthly' || rule.frequency === 'yearly') {
-    rule.monthDay = Number(draft.monthDay);
-    rule.monthDayOverflow = 'skip';
+  if (rule.frequency === 'weekly') {
+    rule.weekdays = draft.weekdays;
+    if (draft.weekStartsOn !== undefined)
+      rule.weekStartsOn = draft.weekStartsOn;
   }
-  if (rule.frequency === 'yearly') rule.month = start.month;
+  if (rule.frequency === 'monthly' || rule.frequency === 'yearly') {
+    if (draft.monthPattern === 'weekday') {
+      rule.weekdays = draft.weekdays;
+      rule.weekIndex = Number(
+        draft.weekIndex
+      ) as CalendarRecurrenceRule['weekIndex'];
+    } else {
+      rule.monthDay = Number(draft.monthDay);
+      if (draft.monthDayOverflow !== undefined)
+        rule.monthDayOverflow = draft.monthDayOverflow;
+    }
+  }
+  if (rule.frequency === 'yearly')
+    rule.month = draft.month ? Number(draft.month) : start.month;
   const anchor = recurrenceLocalAnchor(
     draft.startLocal,
     draft.endLocal,

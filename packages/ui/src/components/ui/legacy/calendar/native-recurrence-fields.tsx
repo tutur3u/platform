@@ -14,6 +14,7 @@ import {
   type RecurrenceDraft,
   recurrenceAllDay,
 } from './native-recurrence-model';
+import { NativeRecurrencePatternFields } from './native-recurrence-pattern-fields';
 export function NativeRecurrenceFields({
   draft,
   setDraft,
@@ -83,77 +84,7 @@ export function NativeRecurrenceFields({
       )}
       {!occurrenceOnly && !draft.retainedRule && (
         <>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>{t('frequency')}</Label>
-              <Select
-                value={draft.frequency}
-                onValueChange={(value) => field('frequency', value)}
-              >
-                <SelectTrigger aria-label={t('frequency')}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(['daily', 'weekly', 'monthly', 'yearly'] as const).map(
-                    (value) => (
-                      <SelectItem key={value} value={value}>
-                        {t(value)}
-                      </SelectItem>
-                    )
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="series-interval">{t('interval')}</Label>
-              <Input
-                id="series-interval"
-                type="number"
-                min={1}
-                max={1000}
-                value={draft.interval}
-                onChange={(e) => field('interval', e.target.value)}
-              />
-            </div>
-          </div>
-          {draft.frequency === 'weekly' && (
-            <fieldset
-              aria-label={t('weekdays')}
-              className="flex flex-wrap gap-2"
-            >
-              {(['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as const).map(
-                (day) => (
-                  <label key={day} className="flex items-center gap-1">
-                    <Checkbox
-                      checked={draft.weekdays.includes(day)}
-                      onCheckedChange={(checked) =>
-                        field(
-                          'weekdays',
-                          checked
-                            ? [...draft.weekdays, day]
-                            : draft.weekdays.filter((d) => d !== day)
-                        )
-                      }
-                    />
-                    {t(day)}
-                  </label>
-                )
-              )}
-            </fieldset>
-          )}
-          {(draft.frequency === 'monthly' || draft.frequency === 'yearly') && (
-            <div>
-              <Label htmlFor="series-monthday">{t('monthDay')}</Label>
-              <Input
-                id="series-monthday"
-                type="number"
-                min={1}
-                max={31}
-                value={draft.monthDay}
-                onChange={(e) => field('monthDay', e.target.value)}
-              />
-            </div>
-          )}
+          <NativeRecurrencePatternFields draft={draft} setDraft={setDraft} />
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>{t('ending')}</Label>

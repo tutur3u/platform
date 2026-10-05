@@ -926,3 +926,26 @@ calendar-wide deletion and does not enable provider editing.
 Regression coverage: `graph-legacy-identities.test.ts` verifies source filters,
 old-slot linkage, permission revocation, receipt completeness, foreign-master
 isolation, provider failures, and batch bounds.
+
+### Editable monthly and yearly weekday patterns
+
+The shared web recurrence editor supports first, second, third, fourth, or last
+weekday patterns for monthly and yearly native series. Yearly patterns have an
+explicit month. Selecting multiple weekdays uses the earliest matching date in
+the selected ordinal week, following the canonical Google/Outlook adapter
+semantics ([Graph recurrence patterns](https://learn.microsoft.com/en-us/graph/api/resources/recurrencepattern?view=graph-rest-1.0));
+the initial local date must match the pattern. The form does not
+silently move the first occurrence when the pattern changes.
+
+Absolute month-day rules offer skipping missing dates or using the month's last
+day. Details-only edits preserve imported month-end behavior, yearly month and
+weekly week-start boundaries without adding optional normalization that would
+reset exceptions. This-occurrence edits do not modify the rule; future edits
+retain the remaining occurrence count and immutable original slot. Unsupported
+provider rules stay read-only, and outbound provider admission remains disabled.
+
+Regression coverage: `native-recurrence-pattern-model.test.ts` checks all five
+ordinals against both provider serializers, multi-weekday patterns, inclusive end
+dates, imported week boundaries and month-end behavior, invalid input, and edit
+scopes. `native-recurrence-pattern-fields.test.tsx` covers the interactive monthly,
+yearly, month-end and weekly controls.
