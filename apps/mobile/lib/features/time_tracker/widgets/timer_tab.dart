@@ -5,7 +5,7 @@ import 'package:flutter/material.dart'
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
-import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/utils/missed_entry_flow.dart';
@@ -13,8 +13,8 @@ import 'package:mobile/features/time_tracker/widgets/category_sheet.dart';
 import 'package:mobile/features/time_tracker/widgets/running_session_info_card.dart';
 import 'package:mobile/features/time_tracker/widgets/task_link_picker_sheet.dart';
 import 'package:mobile/features/time_tracker/widgets/timer_advanced_section.dart';
-import 'package:mobile/features/time_tracker/widgets/timer_controls.dart';
 import 'package:mobile/features/time_tracker/widgets/timer_display.dart';
+import 'package:mobile/features/time_tracker/widgets/timer_dock_actions.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -51,10 +51,12 @@ class _TimerTabState extends State<TimerTab> {
 
         final wsId =
             context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
-        final userId = supabase.auth.currentUser?.id ?? '';
+        final userId = context.watch<AuthCubit>().state.user?.id ?? '';
 
         return ListView(
-          padding: const EdgeInsets.only(bottom: 96),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.paddingOf(context).bottom + 24,
+          ),
           children: [
             const shad.Gap(32),
             // Timer display
@@ -67,22 +69,22 @@ class _TimerTabState extends State<TimerTab> {
               ),
             ),
             const shad.Gap(24),
-            // Timer controls
-            TimerControls(
+            TimerDockActions(
               isRunning: state.isRunning,
               isPaused: state.isPaused,
-              onStart: () => unawaited(cubit.startSession(wsId)),
+              enabled:
+                  wsId.isNotEmpty && userId.isNotEmpty && !_isActionInProgress,
+              primaryLoading:
+                  _pendingAction != null &&
+                  _pendingAction != _TimerControlAction.stop,
+              stopLoading: _isActionLoading(_TimerControlAction.stop),
+              onStart: () => unawaited(_handleStart(context, cubit, wsId)),
               onStop: () =>
                   unawaited(_handleStop(context, cubit, wsId, userId)),
               onPause: () =>
                   unawaited(_handlePause(context, cubit, wsId, userId)),
               onResume: () => unawaited(_handleResume(context, cubit)),
-              areActionButtonsDisabled: _isActionInProgress,
-              isPauseLoading: _isActionLoading(_TimerControlAction.pause),
-              isStopLoading: _isActionLoading(_TimerControlAction.stop),
-              isResumeLoading: _isActionLoading(_TimerControlAction.resume),
             ),
-            const shad.Gap(24),
             // Running session info card (read-only summary while running/paused)
             if (state.isRunning || state.isPaused) ...[
               RunningSessionInfoCard(
@@ -154,6 +156,25 @@ class _TimerTabState extends State<TimerTab> {
         );
       },
     );
+  }
+
+  Future<void> _handleStart(
+    BuildContext context,
+    TimeTrackerCubit cubit,
+    String wsId,
+  ) async {
+    if (_isActionInProgress) return;
+    _setPendingAction(_TimerControlAction.start);
+    try {
+      await cubit.startSession(wsId);
+      if (context.mounted &&
+          context.read<WorkspaceCubit>().state.currentWorkspace?.id == wsId &&
+          cubit.state.error != null) {
+        _showActionError(context, cubit.state.error!);
+      }
+    } finally {
+      _setPendingAction(null);
+    }
   }
 
   Future<void> _handleStop(
@@ -385,4 +406,4 @@ class _TimerTabState extends State<TimerTab> {
 
 enum _ExceededSessionAction { discard, submitRequest }
 
-enum _TimerControlAction { pause, stop, resume }
+enum _TimerControlAction { start, pause, stop, resume }
