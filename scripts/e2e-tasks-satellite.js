@@ -1,4 +1,8 @@
 const { spawn } = require('node:child_process');
+const {
+  signalOwnedProcess,
+  waitForOwnedExit,
+} = require('./e2e-owned-process-group');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -126,6 +130,7 @@ function startTasksSatellite(options = {}) {
   let child;
   try {
     child = spawnImpl('bun', ['run', 'dev:app'], {
+      detached: process.platform !== 'win32',
       cwd: tasksDir,
       env: createTasksSatelliteEnv(env),
       stdio: ['ignore', logFd, logFd],
@@ -140,6 +145,7 @@ function startTasksSatellite(options = {}) {
 
   return {
     child,
+    processGroup: process.platform !== 'win32',
     exitPromise,
     logPath,
     url: getTasksSatelliteUrl(env),
@@ -161,18 +167,21 @@ async function waitForTasksSatellite(runtime, waitForUrl) {
 }
 
 async function stopTasksSatellite(runtime, options = {}) {
-  if (!runtime || runtime.child.exitCode != null) return;
+  if (!runtime) return;
+  if (runtime.child.exitCode != null) {
+    if (runtime.processGroup)
+      signalOwnedProcess(runtime, 'SIGKILL', options.kill);
+    return;
+  }
 
-  runtime.child.kill('SIGTERM');
+  signalOwnedProcess(runtime, 'SIGTERM', options.kill);
   const timeoutMs = options.timeoutMs ?? 10_000;
-  const stopped = await Promise.race([
-    runtime.exitPromise.then(() => true),
-    new Promise((resolve) => setTimeout(() => resolve(false), timeoutMs)),
-  ]);
+  const stopped = await waitForOwnedExit(runtime, timeoutMs);
 
-  if (!stopped && runtime.child.exitCode == null) {
-    runtime.child.kill('SIGKILL');
-    await runtime.exitPromise;
+  if (runtime.processGroup || (!stopped && runtime.child.exitCode == null)) {
+    signalOwnedProcess(runtime, 'SIGKILL', options.kill);
+    if (!stopped && !(await waitForOwnedExit(runtime, timeoutMs)))
+      throw new Error('Owned E2E fixture did not exit after termination');
   }
 }
 
