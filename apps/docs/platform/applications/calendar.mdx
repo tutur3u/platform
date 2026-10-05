@@ -709,3 +709,25 @@ settles a persisted `target-removed` checkpoint as a superseded tombstone under 
 current generation. Linked habits and cascading links are skipped. Retained generation
 and retired identities prevent a stale import from recreating the event. Regression:
 `calendar-provider-saga.sql` and provider saga projection tests.
+
+## Mobile continuous dates and offline refresh
+
+Mobile Day, Three days, and Week timelines scroll through adjoining dates with
+one continuous horizontal offset. Date headers, all-day rows, and time columns
+move together; the time gutter stays fixed. A bounded backing window recenters
+only after scrolling settles, preserving the visible dates and pixel position.
+Date picking and Today still move to the requested date. Month and Year retain
+their calendar-grid navigation.
+
+The mobile Calendar displays its actor/workspace-scoped encrypted snapshot first,
+then awaits a fresh repository read even when that snapshot is still fresh.
+Transport failures retain authorized events and pending edits. Pagination stores
+its extended range for offline revisits. Account/workspace changes fence pending
+responses and cache writes; definitive access denial clears Calendar snapshots,
+while MFA verification challenges preserve the last authorized snapshot.
+
+Regression coverage: `continuous_date_scroll_test.dart` and
+`calendar_cubit_test.dart` cover intermediate drag offsets, synchronized columns,
+fresh revalidation, workspace races, revoked access, and MFA retention. Exact
+commit mobile CI and authenticated device verification remain required for
+release evidence.

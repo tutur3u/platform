@@ -16,11 +16,11 @@ import 'package:mobile/features/calendar/view/calendar_timezone_listener.dart';
 import 'package:mobile/features/calendar/widgets/agenda_view.dart';
 import 'package:mobile/features/calendar/widgets/calendar_connections_sheet.dart';
 import 'package:mobile/features/calendar/widgets/calendar_minute_clock.dart';
-import 'package:mobile/features/calendar/widgets/day_schedule_view.dart';
 import 'package:mobile/features/calendar/widgets/event_detail_sheet.dart';
 import 'package:mobile/features/calendar/widgets/event_form_sheet.dart';
 import 'package:mobile/features/calendar/widgets/month_strip.dart';
 import 'package:mobile/features/calendar/widgets/month_view.dart';
+import 'package:mobile/features/calendar/widgets/multi_day_schedule_view.dart';
 import 'package:mobile/features/calendar/widgets/three_day_view.dart';
 import 'package:mobile/features/calendar/widgets/week_view.dart';
 import 'package:mobile/features/calendar/widgets/year_view.dart';
@@ -393,10 +393,12 @@ class _CalendarViewState extends State<_CalendarView> {
   ) {
     switch (state.viewMode) {
       case CalendarViewMode.day:
-        return DayScheduleView(
+        return MultiDayScheduleView(
+          visibleDayCount: 1,
           selectedDate: state.effectiveSelectedDate,
-          allDayEvents: state.allDayEvents,
-          timedEvents: state.timedEvents,
+          events: state.displayEvents,
+          onDaySelected: (date) =>
+              context.read<CalendarCubit>().selectDate(date),
           onEventTap: (event) => _showEventDetail(context, event),
           onCreateAtTime: (time) => _createEvent(context, startTime: time),
           onSwipe: (delta) => _navigateDays(context, delta),

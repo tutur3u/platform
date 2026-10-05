@@ -241,11 +241,34 @@ class CalendarRepository {
       checkOwner();
       events = cached.data ?? const [];
     } on Object catch (error) {
+      checkOwner();
+      if (error is ApiException &&
+          (error.statusCode == 401 ||
+              (error.statusCode == 403 && !error.isVerificationRequired))) {
+        try {
+          await CacheStore.instance.clearNamespacePrefix(
+            prefix: 'calendar.',
+            workspaceId: wsId,
+            userId: userId,
+          );
+        } on Exception {
+          // Keep the authorization failure visible if storage is unavailable.
+        }
+        rethrow;
+      }
       if (!isOfflineTransportFailure(error)) {
         rethrow;
       }
-      events = await _localEvents(wsId);
-      if (events.isEmpty &&
+      final retained = await CacheStore.instance.read<List<CalendarEvent>>(
+        key: key,
+        decode: _decodeEvents,
+      );
+      checkOwner();
+      events = retained.hasValue
+          ? retained.data ?? const []
+          : await _localEvents(wsId);
+      if (!retained.hasValue &&
+          events.isEmpty &&
           overlayPendingCalendarEvents(
             wsId,
             const [],

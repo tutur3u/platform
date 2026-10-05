@@ -185,6 +185,62 @@ void main() {
       expect(CalendarCubit.cachedStateForWorkspace('ws-1'), isNull);
     });
 
+    test(
+      'refresh awaits fresh repository reads, including a fresh snapshot',
+      () async {
+        var reads = 0;
+        when(
+          () => repository.getEvents(
+            'ws',
+            start: any(named: 'start'),
+            end: any(named: 'end'),
+          ),
+        ).thenAnswer((_) async {
+          expect(CacheStore.awaitingRevalidation, isTrue);
+          reads++;
+          return [_event(id: '$reads', startAt: DateTime(2026, 3, 25))];
+        });
+        await cubit.loadEvents('ws');
+        await cubit.loadEvents('ws');
+        expect(cubit.state.events.single.id, '2');
+      },
+    );
+
+    test(
+      'MFA challenge retains the last authorized calendar snapshot',
+      () async {
+        when(
+          () => repository.getEvents(
+            'ws',
+            start: any(named: 'start'),
+            end: any(named: 'end'),
+          ),
+        ).thenAnswer(
+          (_) async => [_event(id: 'kept', startAt: DateTime(2026, 3, 25))],
+        );
+        await cubit.loadEvents('ws');
+        when(
+          () => repository.getEvents(
+            'ws',
+            start: any(named: 'start'),
+            end: any(named: 'end'),
+          ),
+        ).thenThrow(
+          const ApiException(
+            statusCode: 403,
+            message: 'Verify',
+            isVerificationRequired: true,
+          ),
+        );
+        await cubit.loadEvents('ws');
+        expect(cubit.state.events.single.id, 'kept');
+        expect(
+          CalendarCubit.cachedStateForWorkspace('ws')!.events.single.id,
+          'kept',
+        );
+      },
+    );
+
     test('defaults to agenda view', () {
       expect(cubit.state.viewMode, CalendarViewMode.agenda);
     });
