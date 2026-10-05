@@ -1507,3 +1507,20 @@ not grant CMS permissions or replace API authorization.
 Regression evidence: `cms_actor_scope_test.dart` exercises collection and entry
 overlays, delayed queue completion after account switching, and obsolete reads
 and writes. The native CMS screen and device verification remain separate work.
+
+### CMS native library and editing
+
+The mobile CMS surface owns one signed-in actor and workspace. Its library uses
+lazy rows, collection/status filters, and local search published into the single
+shell dock. Search covers the loaded CMS collection/entry response; it does not
+claim server pagination or full-text search beyond that response. Re-entry
+publishes stored scoped content and awaits background revalidation; explicit
+refresh waits for the current cycle. Same-actor temporary failures and MFA
+challenges retain content, while definitive denial clears it. Switching actor or
+workspace discards the previous surface and closes its owned editing routes.
+Editors keep drafts and inline errors until a save succeeds, permitting explicit
+retry without silently replaying an uncertain write.
+
+Regression coverage: `cms_workspace_test.dart` exercises lazy 500-row rendering,
+shared dock search, stale-scope responses, denied versus challenged refreshes,
+retained failed-save drafts, and actor-owned editor dismissal.

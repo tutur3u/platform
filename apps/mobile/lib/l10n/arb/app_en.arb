@@ -4344,5 +4344,6 @@
     "notesVoicePermission": "Microphone access is needed to record a voice note.",
     "notesVoiceRecordingError": "Recording could not be captured. Please try again.",
     "notesVoiceFailed": "Analysis could not start. Retry with the same recording while it is available.",
-    "notesVoiceProposalNotice": "Suggestions need your review. Saving does not create tasks or calendar events. Team workspace notes may be visible to workspace members."
+    "notesVoiceProposalNotice": "Suggestions need your review. Saving does not create tasks or calendar events. Team workspace notes may be visible to workspace members.",
+    "cmsSearchHint": "Search collections and entries"
 }

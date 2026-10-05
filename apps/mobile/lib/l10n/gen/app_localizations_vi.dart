@@ -10078,4 +10078,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get notesVoiceProposalNotice => 'Các đề xuất cần được bạn xem lại. Lưu ghi chú không tạo công việc hoặc sự kiện lịch. Ghi chú trong không gian nhóm có thể hiển thị với thành viên.';
+
+  @override
+  String get cmsSearchHint => 'Tìm bộ sưu tập và bài viết';
 }
