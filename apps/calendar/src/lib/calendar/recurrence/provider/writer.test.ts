@@ -128,6 +128,12 @@ describe('future series metadata preservation', () => {
       provider: 'google',
       fields: {
         attendees: [{ email: 'guest@example.invalid', optional: true }],
+        attachments: [
+          {
+            fileUrl: 'https://drive.google.com/file/d/fixture',
+            title: 'Fixture document',
+          },
+        ],
         visibility: 'private',
         reminders: {
           useDefault: false,
@@ -143,8 +149,10 @@ describe('future series metadata preservation', () => {
       data: { id: step.key, etag: 'created' },
     });
     await f.writer.apply(value, step, []);
+    expect(f.events.insert.mock.calls[0]?.[0].supportsAttachments).toBe(true);
     expect(f.events.insert.mock.calls[0]?.[0].requestBody).toMatchObject({
       attendees: step.metadata.fields.attendees,
+      attachments: step.metadata.fields.attachments,
       visibility: 'private',
       reminders: step.metadata.fields.reminders,
       extendedProperties: {

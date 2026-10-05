@@ -116,7 +116,6 @@ describe('future series writable metadata', () => {
   it.each([
     { conferenceData: { conferenceId: 'fixture' } },
     { hangoutLink: 'https://meet.google.com/fixture' },
-    { attachments: [{ fileUrl: 'https://drive.google.com/fixture' }] },
     { eventType: 'focusTime' },
     { attendeesOmitted: true },
     { organizer: { self: false } },
@@ -179,6 +178,40 @@ describe('future series writable metadata', () => {
     (extra) => {
       expect(() =>
         providerFutureCreateMetadata('microsoft', { ...graph, ...extra })
+      ).toThrow();
+    }
+  );
+  it('preserves attachment references without copying read-only file IDs or changing Drive permissions', () => {
+    const metadata = providerFutureCreateMetadata('google', {
+      ...google,
+      attachments: [
+        {
+          fileUrl: 'https://drive.google.com/file/d/fixture',
+          title: 'Fixture document',
+          mimeType: 'application/pdf',
+          fileId: 'read-only-id',
+        },
+      ],
+    });
+    expect(metadata.fields).toMatchObject({
+      attachments: [
+        {
+          fileUrl: 'https://drive.google.com/file/d/fixture',
+          title: 'Fixture document',
+          mimeType: 'application/pdf',
+        },
+      ],
+    });
+    expect(JSON.stringify(metadata)).not.toContain('read-only-id');
+  });
+  it.each([{}, { fileUrl: 'invalid' }, { fileUrl: 42 }])(
+    'rejects incomplete attachment references: %j',
+    (attachment) => {
+      expect(() =>
+        providerFutureCreateMetadata('google', {
+          ...google,
+          attachments: [attachment],
+        })
       ).toThrow();
     }
   );

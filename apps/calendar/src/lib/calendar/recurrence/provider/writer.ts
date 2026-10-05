@@ -130,6 +130,7 @@ export function createSeriesProviderWriter(args: {
               await calendar.events.insert({
                 calendarId: external.externalCalendarId,
                 sendUpdates: 'all',
+                supportsAttachments: true,
                 requestBody: {
                   ...payload,
                   id: step.key,
