@@ -300,9 +300,21 @@ void main() {
         .onPressed!();
     await tester.pumpAndSettle();
     expect(find.byType(TextField), findsNWidgets(2));
+    final navigator = Navigator.of(
+      tester.element(find.byType(TextField).first),
+    );
+    final covered = showDialog<void>(
+      context: tester.element(find.byType(TextField).first),
+      builder: (_) => const AlertDialog(content: Text('Unrelated modal')),
+    );
+    await tester.pumpAndSettle();
     actor.value = 'next';
     await tester.pumpAndSettle();
-    expect(find.byType(TextField), findsNothing);
+    expect(find.byType(TextField, skipOffstage: false), findsNothing);
+    expect(find.text('Unrelated modal'), findsOneWidget);
+    navigator.pop();
+    await tester.pumpAndSettle();
+    await covered;
     actor.dispose();
   });
   testWidgets('dock search resets when switching sections', (tester) async {
