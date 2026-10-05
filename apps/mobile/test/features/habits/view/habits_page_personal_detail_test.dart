@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,6 +10,7 @@ import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
 import 'package:mobile/features/habits/cubit/habits_cubit.dart';
 import 'package:mobile/features/habits/view/habits_page.dart';
+import 'package:mobile/features/habits/widgets/habit_tracker_detail_sheet.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -22,6 +25,9 @@ class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
 
 class _FakeHabitTrackerRepository implements IHabitTrackerRepository {
   _FakeHabitTrackerRepository();
+
+  Completer<void>? detailGate;
+  int detailReads = 0;
 
   final HabitTracker tracker = HabitTracker(
     id: 'tracker-1',
@@ -106,6 +112,8 @@ class _FakeHabitTrackerRepository implements IHabitTrackerRepository {
     String? userId,
     bool requireFresh = false,
   }) async {
+    detailReads++;
+    await detailGate?.future;
     return HabitTrackerDetailResponse(
       tracker: tracker,
       entries: const [],
@@ -245,9 +253,10 @@ void main() {
     when(() => workspaceCubit.stream).thenAnswer((_) => const Stream.empty());
   });
 
-  testWidgets('hides leaderboard tab in a personal workspace detail view', (
+  testWidgets('personal detail opens immediately and hides the leaderboard', (
     tester,
   ) async {
+    repository.detailGate = Completer<void>();
     await tester.pumpApp(
       buildSurface(
         workspaceCubit: workspaceCubit,
@@ -256,8 +265,13 @@ void main() {
     );
     await pumpUi(tester);
 
+    expect(repository.detailReads, 1);
     await tester.tap(find.text('Water').first);
     await pumpUi(tester, frames: 12);
+    expect(find.byType(HabitTrackerDetailSheet), findsOneWidget);
+    expect(repository.detailReads, 1);
+    repository.detailGate!.complete();
+    await pumpUi(tester);
 
     expect(find.widgetWithText(Tab, 'Overview'), findsOneWidget);
     expect(find.widgetWithText(Tab, 'Entries'), findsOneWidget);
@@ -265,5 +279,37 @@ void main() {
 
     await tester.binding.handlePopRoute();
     await pumpUi(tester, frames: 12);
+
+    repository.detailGate = Completer<void>();
+    await tester.tap(find.text('Water').first);
+    await pumpUi(tester, frames: 12);
+    expect(repository.detailReads, 2);
+    expect(find.byType(HabitTrackerDetailSheet), findsOneWidget);
+    expect(find.widgetWithText(Tab, 'Entries'), findsOneWidget);
+    expect(
+      tester
+          .widget<HabitTrackerDetailSheet>(find.byType(HabitTrackerDetailSheet))
+          .isDetailRefreshing,
+      isTrue,
+    );
+
+    await tester.binding.handlePopRoute();
+    await pumpUi(tester, frames: 12);
+    await tester.tap(find.text('Water').first);
+    await pumpUi(tester, frames: 12);
+    expect(repository.detailReads, 2);
+    expect(find.byType(HabitTrackerDetailSheet), findsOneWidget);
+    repository.detailGate!.complete();
+    await pumpUi(tester);
+    expect(
+      tester
+          .widget<HabitTrackerDetailSheet>(find.byType(HabitTrackerDetailSheet))
+          .isDetailRefreshing,
+      isFalse,
+    );
+    expect(find.widgetWithText(Tab, 'Leaderboard'), findsNothing);
+    await tester.binding.handlePopRoute();
+    await pumpUi(tester, frames: 12);
+    expect(tester.takeException(), isNull);
   });
 }
