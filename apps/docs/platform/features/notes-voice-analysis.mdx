@@ -24,8 +24,9 @@ a submitted job without persisting its audio. The latest authorized job is cache
 under its actor/workspace, shown immediately on return and revalidated even when
 fresh. Transport, 429/5xx and MFA challenges
 retain that scoped result; definitive access loss/not-found removes it. Old async
-responses are fenced across account/workspace away-and-back transitions. Cached
-result deletion rechecks ownership after initialization and queue admission; once
+responses are fenced across account/workspace away-and-back transitions. Deleting a job disables new capture until the request completes. Definitive
+DELETE access loss/not-found clears the scoped result; MFA and temporary failures
+retain it. Cached result deletion rechecks ownership after initialization and queue admission; once
 admitted, the serialized snapshot and index purge completes before new publication. Temporary
 status failures offer explicit retry; ongoing successful status requests poll only
 while Notes is active. In-memory recording bytes permit explicit safe preflight

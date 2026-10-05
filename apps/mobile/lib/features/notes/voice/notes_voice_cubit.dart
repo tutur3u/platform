@@ -6,6 +6,7 @@ import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/features/assistant/cubit/assistant_voice_capture_cubit.dart';
+import 'package:mobile/features/notes/voice/notes_voice_access.dart';
 import 'package:mobile/features/notes/voice/notes_voice_job.dart';
 import 'package:mobile/features/notes/voice/notes_voice_repository.dart';
 
@@ -139,9 +140,7 @@ class NotesVoiceCubit extends Cubit<NotesVoiceState> {
       if (job.complete || job.status == 'review_required') _audio = null;
     } on ApiException catch (error) {
       if (!_current(generation)) return;
-      final denied =
-          {401, 403}.contains(error.statusCode) &&
-          !error.isVerificationRequired;
+      final denied = notesVoiceAccessDenied(error, includeNotFound: false);
       if (denied) {
         _audio = null;
         _intent = null;
@@ -200,9 +199,7 @@ class NotesVoiceCubit extends Cubit<NotesVoiceState> {
       }
     } on ApiException catch (error) {
       if (!_current(generation)) return;
-      final denied =
-          {401, 403, 404}.contains(error.statusCode) &&
-          !error.isVerificationRequired;
+      final denied = notesVoiceAccessDenied(error);
       if (denied) {
         _audio = null;
         _intent = null;
@@ -247,11 +244,7 @@ class NotesVoiceCubit extends Cubit<NotesVoiceState> {
       if (_current(generation)) {
         emit(
           NotesVoiceState(
-            job:
-                {401, 403, 404}.contains(error.statusCode) &&
-                    !error.isVerificationRequired
-                ? null
-                : job,
+            job: notesVoiceAccessDenied(error) ? null : job,
             unavailable: true,
           ),
         );
@@ -266,14 +259,31 @@ class NotesVoiceCubit extends Cubit<NotesVoiceState> {
   }
 
   Future<void> discard() async {
-    final generation = _generation;
     final actor = _actor;
     final workspace = _workspace;
     final job = state.job;
     if (state.busy || job?.processing == true) return;
+    final generation = ++_generation;
+    _repository.invalidateScope();
+    _poll?.cancel();
+    _fetching = false;
+    emit(NotesVoiceState(job: job, busy: true));
     if (actor != null && workspace != null && job != null) {
       try {
         await _repository.delete(actor, workspace, job.id);
+      } on ApiException catch (error) {
+        if (!_current(generation)) return;
+        final denied = notesVoiceAccessDenied(error);
+        if (denied) {
+          _audio = null;
+          _intent = null;
+          _zone = null;
+          await capture.cancel();
+        }
+        if (_current(generation)) {
+          emit(NotesVoiceState(job: denied ? null : job, unavailable: true));
+        }
+        return;
       } on Object {
         if (_current(generation)) {
           emit(NotesVoiceState(job: job, unavailable: true));
