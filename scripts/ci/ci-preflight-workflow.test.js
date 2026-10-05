@@ -83,9 +83,10 @@ for (const [name, aggregate, checkName, shardName] of [
     });
     const job = workflow.jobs[aggregate];
     assert.equal(job.name, checkName);
-    const condition =
-      "needs.duplicate-validation.outputs.run_checks == 'true' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'";
-    assert.equal(job.if, shardName ? `always() && ${condition}` : condition);
+    const condition = expression(
+      "!cancelled() && needs.check-ci.result == 'success' && (needs.duplicate-validation.result != 'success' || needs.duplicate-validation.outputs.run_checks != 'false') && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'"
+    );
+    assert.equal(job.if, condition);
     assert.deepEqual(
       job.needs,
       shardName
@@ -199,3 +200,86 @@ test('real release detector defaults to run for missing and invalid comparisons'
     assert.equal(run.stdout.trim(), 'true');
   }
 });
+
+// Execute each committed gate with GitHub's implicit success dependency rule:
+// a status function must override it so a failed proof cannot skip validation.
+function evaluateValidationGate(job, needs, isCancelled = false) {
+  const body = job.if.replace(/^\$\{\{\s*|\s*\}\}$/g, '');
+  if (!/\b(?:always|cancelled|failure|success)\(\)/.test(body)) {
+    if (
+      Object.values(needs).some((dependency) => dependency.result !== 'success')
+    )
+      return false;
+  }
+  const source = body.replace(/needs\.([a-z-]+)/g, (_, id) => `needs['${id}']`);
+  return Function(
+    'needs',
+    'cancelled',
+    `return (${source});`
+  )(needs, () => isCancelled);
+}
+
+for (const [workflowName, jobs] of [
+  ['codecov.yaml', ['test-shards', 'test']],
+  ['turbo-unit-tests.yaml', ['test-shards', 'build']],
+  ['biome-check.yaml', ['format', 'lint']],
+]) {
+  const workflow = readWorkflow(workflowName);
+  for (const id of jobs) {
+    test(`${workflowName}/${id} runs without a successful explicit duplicate proof`, () => {
+      const needs = {
+        'check-ci': {
+          result: 'success',
+          outputs: { should_run: 'true', run_checks: 'true' },
+        },
+        'test-shards': { result: 'success' },
+      };
+      for (const [result, output, expected] of [
+        ['failure', undefined, true],
+        ['failure', 'false', true],
+        ['cancelled', undefined, true],
+        ['skipped', undefined, true],
+        ['success', undefined, true],
+        ['success', '', true],
+        ['success', 'invalid', true],
+        ['success', 'true', true],
+        ['success', 'false', false],
+      ]) {
+        needs['duplicate-validation'] = {
+          result,
+          outputs: { run_checks: output ?? '' },
+        };
+        assert.equal(
+          evaluateValidationGate(workflow.jobs[id], needs),
+          expected,
+          `${result}/${output ?? 'absent'}`
+        );
+      }
+      needs['duplicate-validation'] = { result: 'failure', outputs: {} };
+      assert.equal(
+        evaluateValidationGate(workflow.jobs[id], needs, true),
+        false
+      );
+      needs['check-ci'].outputs.should_run = 'false';
+      assert.equal(evaluateValidationGate(workflow.jobs[id], needs), false);
+      needs['check-ci'].outputs.should_run = 'true';
+      needs['check-ci'].result = 'failure';
+      assert.equal(evaluateValidationGate(workflow.jobs[id], needs), false);
+      needs['check-ci'].result = 'success';
+      needs['check-ci'].outputs.run_checks = 'false';
+      assert.equal(
+        evaluateValidationGate(workflow.jobs[id], needs),
+        workflowName === 'biome-check.yaml'
+      );
+      if (id === 'test' || id === 'build') {
+        needs['check-ci'].outputs.run_checks = 'true';
+        needs['test-shards'].result = 'failure';
+        assert.equal(evaluateValidationGate(workflow.jobs[id], needs), true);
+        assert.equal(
+          workflow.jobs[id].steps[0].run,
+          'test "$TEST_RESULT" = success'
+        );
+      }
+    });
+  }
+}

@@ -382,13 +382,7 @@ finish. After the allocated run's final cleanup succeeds, retry the full workflo
 when fresh bundle preparation is needed; never cancel allocated runs, repeatedly
 retry blindly, or push over an active allocation to recover a missing bundle.
 
-Lettin fixture phases print fixed names for account creation, D1 migration and
-seeding, browser context/cookie installation, and cleanup. Timed-out owned fixture
-subprocesses receive SIGKILL at the existing 60-second deadline so a child ignoring
-SIGTERM cannot block Playwright's event loop indefinitely. These diagnostics
-identify the last entered phase; an incomplete runner log alone does not prove a
-browser, server, or database root cause. Do not include tokens, SQL, account IDs,
-response bodies, or authenticated URLs in phase logs.
+### E2E runtime budget
 
 The general shard and dedicated invitation runtime commands use GNU `timeout`
 against the job's recorded start, allowing up to 37 minutes minus setup
@@ -399,6 +393,17 @@ failure diagnostics, redaction, artifact upload, and `always()` cleanup still
 run; the reserve is a budget, not proof that runner or Docker failures cannot
 prevent them. Setup exhausting the runtime budget fails before starting tests.
 Validate this policy with `node --test scripts/ci/e2e-runtime-budget.test.js`.
+
+### Lettin E2E fixture and browser diagnostics
+
+Lettin fixture phases print fixed names for account creation, D1 migration and
+seeding, browser context/cookie installation, and cleanup. Timed-out owned fixture
+subprocesses receive SIGKILL at the existing 60-second deadline so a child ignoring
+SIGTERM cannot block Playwright's event loop indefinitely. These diagnostics
+identify the last entered phase; an incomplete runner log alone does not prove a
+browser, server, or database root cause. Do not include tokens, SQL, account IDs,
+response bodies, or authenticated URLs in phase logs.
+
 Lettin workspace GET diagnostics are enabled in CI, or explicitly with
 `LETTIN_READ_DIAGNOSTICS=true` for a bounded investigation. They emit fixed
 `[lettin-read]` stage names and monotonic elapsed milliseconds for actor resolution,
@@ -444,6 +449,8 @@ slow application request or runner shutdown. Regression coverage in
 propagation of a simulated timeout with safe failure diagnostics. This focused
 contract test does not launch a browser or prove a stalled browser operation
 exits within the deadline; exact-commit E2E remains required.
+
+### E2E runtime heartbeat
 
 For bounded CI stall investigations, the Lettin suite worker and the parent E2E
 runner emit a heartbeat every ten seconds with only wall-clock, monotonic-clock,
@@ -805,7 +812,11 @@ require all four successful shard jobs and their successful aggregate. Biome
 requires both successful format and lint jobs. The helper checks the current run
 attempt again after reading its jobs. Pending, cancelled, skipped, neutral,
 partial, failed, or inaccessible proof never substitutes for validation; checks
-run normally when proof is unavailable. Main and production always validate
+run normally when proof is unavailable. A failed proof job (including checkout or
+Node setup failure) or missing output also runs validation; dependent gates
+bypass the implicit success guard and skip only for a successful proof job with
+explicit `run_checks=false`. Cancellation and shared CI configuration/release
+relevance decisions still apply. Main and production always validate
 independently. This changes future runs only and does not rewrite historical
 cancelled checks attached to a shared SHA.
 

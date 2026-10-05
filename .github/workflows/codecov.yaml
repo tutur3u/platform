@@ -53,7 +53,7 @@ jobs:
   test-shards:
     name: Coverage shard (${{ matrix.shard }})
     needs: [check-ci, duplicate-validation]
-    if: needs.duplicate-validation.outputs.run_checks == 'true' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'
+    if: ${{ !cancelled() && needs.check-ci.result == 'success' && (needs.duplicate-validation.result != 'success' || needs.duplicate-validation.outputs.run_checks != 'false') && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -115,7 +115,7 @@ jobs:
   test:
     name: Run tests and collect coverage
     needs: [check-ci, duplicate-validation, test-shards]
-    if: always() && needs.duplicate-validation.outputs.run_checks == 'true' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'
+    if: ${{ !cancelled() && needs.check-ci.result == 'success' && (needs.duplicate-validation.result != 'success' || needs.duplicate-validation.outputs.run_checks != 'false') && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Require all coverage shards

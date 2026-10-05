@@ -278,7 +278,7 @@ for (const workflow of [
     assert.match(text, /actions: read/);
     assert.match(
       text,
-      /needs\.duplicate-validation\.outputs\.run_checks == 'true'/
+      /needs\.duplicate-validation\.result != 'success' \|\| needs\.duplicate-validation\.outputs\.run_checks != 'false'/
     );
     assert.doesNotMatch(text, /actions: write|\/cancel/);
   });

@@ -54,7 +54,7 @@ jobs:
   test-shards:
     name: Unit test shard (${{ matrix.shard }})
     needs: [check-ci, duplicate-validation]
-    if: needs.duplicate-validation.outputs.run_checks == 'true' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'
+    if: ${{ !cancelled() && needs.check-ci.result == 'success' && (needs.duplicate-validation.result != 'success' || needs.duplicate-validation.outputs.run_checks != 'false') && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' }}
     timeout-minutes: 20
     runs-on: ubuntu-latest
     strategy:
@@ -117,7 +117,7 @@ jobs:
   build:
     name: Unit Tests (24)
     needs: [check-ci, duplicate-validation, test-shards]
-    if: always() && needs.duplicate-validation.outputs.run_checks == 'true' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'
+    if: ${{ !cancelled() && needs.check-ci.result == 'success' && (needs.duplicate-validation.result != 'success' || needs.duplicate-validation.outputs.run_checks != 'false') && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Require every unit-test shard
