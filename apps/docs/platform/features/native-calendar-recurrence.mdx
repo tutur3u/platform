@@ -4,9 +4,12 @@ description: Create and edit canonical recurring events with explicit scopes.
 ---
 
 Calendar and the integrated Tasks Calendar offer **Recurring event** in Create.
-It saves to canonical Tuturuuu Calendar. Daily, weekly, absolute monthly and yearly
-rules support an interval and no end, an occurrence count, or an inclusive end
-date. Choose a named time zone: local wall-clock times remain stable across DST.
+It saves to canonical Tuturuuu Calendar. Daily, weekly, monthly and yearly rules
+support an interval and no end, an occurrence count, or an inclusive end date.
+Monthly and yearly rules offer an absolute day or the first, second, third, fourth
+or last selected weekdays; yearly rules also select a month. Absolute month days
+can skip missing dates or use the month's last day. Choose a named time zone: local
+wall-clock times remain stable across DST.
 Nonexistent spring-forward slots are skipped; repeated fall-back times use the
 earlier instant. All-day end dates are exclusive midnight boundaries.
 
@@ -15,7 +18,9 @@ Generated occurrences open a dedicated editor. **Only this occurrence**,
 defaulting to this occurrence. Requests preserve its immutable original slot and
 use the loaded series revision. Concurrent changes require an explicit reload.
 Whole-series editing uses the original anchor; future count rules retain remaining
-slots. Advanced relative-weekday patterns are preserved while editing details.
+slots. Relative-weekday patterns can be edited, while details-only edits preserve
+imported week boundaries and month-end behavior. The anchor must remain an actual
+first occurrence; invalid changes are rejected rather than silently shifting it.
 
 Virtual occurrences never use ordinary event CRUD or drag mutation APIs. Dragging
 and resizing are disabled; use the scoped editor to move an occurrence. Native
@@ -32,6 +37,9 @@ production admission is disabled until authenticated provider parity is proven.
 Regression evidence: `native-recurrence-model.test.ts` covers DST, validation,
 all-day boundaries, original identities, remaining counts and retry intent IDs;
 `native-recurrence-dialog.test.tsx` covers forms, permission and reset behavior;
+`native-recurrence-pattern-model.test.ts` and
+`native-recurrence-pattern-fields.test.tsx` cover relative weekday, yearly month,
+month-end and imported-rule preservation against Google and Outlook serializers;
 `use-native-calendar-occurrences.test.tsx` covers SWR and actor/permission fences;
 `use-calendar-readonly.test.tsx` proves virtual mutations cannot reach ordinary
 write APIs.
@@ -178,3 +186,34 @@ layouts. Settings content mounts only while the dialog is open. Provider account
 synchronization and mutation admission are unchanged. Coverage:
 `settings-dialog-host.test.tsx` checks query intent, shortcut, close cleanup and
 workspace scoping; existing `settings-dialog.test.tsx` retains alias resolution.
+
+## Provider admission evidence
+
+Production provider editing remains disabled by default. Source capabilities and
+mocked provider receipts are configuration and regression evidence, not proof that
+Google or Outlook accepted an operation or delivered invitations. Before admission,
+record the exact deployed source and migration results, then verify each provider
+with an authorized account and a dedicated test calendar:
+
+- Create and reload a series through Tuturuuu and the provider; inspect provider
+  master identity, timezone, all-day boundaries and the recurring dates.
+- Edit and delete this occurrence, the whole series, and future occurrences;
+  verify moved/cancelled original-slot identities, remaining counts, earlier
+  exceptions, and the visible tail-reset warning.
+- Change the provider series externally and reconcile it back without duplicates;
+  verify a richer unsupported rule stays read-only rather than being approximated.
+- Interrupt and resume an operation with the same persisted UUID; verify one
+  provider result, correct source-bound receipt, and refreshed Calendar projections.
+- For supported conference splits, verify a fresh meeting identity and preserved
+  attendee/privacy metadata before the original tail is trimmed. Check organizer
+  and recipient behavior separately; a mutation response does not prove delivery.
+- Verify expired credentials, read-only calendars, revoked access and actor or
+  workspace changes fail closed, with no native-write fallback or cross-actor data.
+
+These checks have not been established by the focused source tests. Admission
+must not imply unrestricted provider parity: Outlook attachment-bearing future
+splits and bodies containing the prior conference's join credentials remain
+unsupported and rejected before reservation. Tuturuuu neither clones attachment
+bytes nor strips generated meeting HTML to bypass these limits. Special Google
+event types and incomplete attendee snapshots also retain their explicit
+preflight restrictions. Native Tuturuuu recurrence remains independently usable.
