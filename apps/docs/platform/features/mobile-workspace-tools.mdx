@@ -1434,3 +1434,9 @@ replica rows rather than an older raw detail snapshot, even during awaited
 revalidation. Authentication/MFA errors still propagate. Other read-through
 callers retain their existing awaited transport fallback default. Covered by
 `finance_review_regressions_test.dart`.
+
+Transaction detail fallback reads merged replicas after the failed request or
+offline connectivity decision, rather than returning rows captured before it.
+A redaction arriving while a request waits therefore takes effect immediately;
+the captured actor is checked after the fallback read. Concurrency regressions
+live in `finance_review_regressions_test.dart`.

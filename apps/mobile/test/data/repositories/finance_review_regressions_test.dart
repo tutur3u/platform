@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -18,6 +19,8 @@ import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 class _Secure extends Mock implements FlutterSecureStorage {}
 
 class _Api extends Mock implements ApiClient {}
+
+class _Queue extends Mock implements OfflineMutationQueue {}
 
 Map<String, dynamic> _transaction(String id, int day) => {
   'id': id,
@@ -198,6 +201,96 @@ void main() {
         )).data,
         isEmpty,
       );
+    },
+  );
+
+  test(
+    'detail transport fallback sees redaction published during HTTP',
+    () async {
+      final path = FinanceEndpoints.transaction('ws', 'race');
+      await snapshot('transactionDetail', path, {
+        ..._transaction('race', 1),
+        'description': 'Synthetic prior private note',
+      });
+      online = true;
+      final started = Completer<void>();
+      final response = Completer<Map<String, dynamic>>();
+      when(() => api.getJson(path)).thenAnswer((_) {
+        started.complete();
+        return response.future;
+      });
+      final detail = CacheStore.awaitRevalidation(
+        () => repo.getTransactionById(wsId: 'ws', transactionId: 'race'),
+      );
+      await started.future;
+      await snapshot('infiniteTransactions', 'new-list', {
+        'data': [
+          {..._transaction('race', 1), 'description': '[CONFIDENTIAL]'},
+        ],
+      });
+      response.completeError(const ApiException.transport(message: 'Offline'));
+      final result = await detail;
+      expect(result?.description, '[CONFIDENTIAL]');
+      expect(jsonEncode(result?.toJson()), isNot(contains('prior private')));
+    },
+  );
+
+  test(
+    'offline detail sees redaction published during connectivity hint',
+    () async {
+      final path = FinanceEndpoints.transaction('ws', 'race');
+      await snapshot('transactionDetail', path, _transaction('race', 1));
+      final started = Completer<void>();
+      final connectivity = Completer<bool>();
+      final checking = FinanceRepository(
+        apiClient: api,
+        cacheStore: store,
+        mutationQueue: queue,
+        cacheUserId: () => user,
+        networkAvailable: () {
+          started.complete();
+          return connectivity.future;
+        },
+      );
+      final detail = checking.getTransactionById(
+        wsId: 'ws',
+        transactionId: 'race',
+      );
+      await started.future;
+      await snapshot('infiniteTransactions', 'new-list', {
+        'data': [
+          {..._transaction('race', 1), 'description': '[CONFIDENTIAL]'},
+        ],
+      });
+      connectivity.complete(false);
+      expect((await detail)?.description, '[CONFIDENTIAL]');
+      verifyNever(() => api.getJson(any()));
+    },
+  );
+
+  test(
+    'actor switch during merged fallback blocks prior actor detail',
+    () async {
+      final path = FinanceEndpoints.transaction('ws', 'owned');
+      await snapshot('transactionDetail', path, _transaction('owned', 1));
+      final controlledQueue = _Queue();
+      var calls = 0;
+      when(controlledQueue.listPending).thenAnswer((_) async {
+        if (++calls == 2) user = 'other';
+        return [];
+      });
+      final checking = FinanceRepository(
+        apiClient: api,
+        cacheStore: store,
+        mutationQueue: controlledQueue,
+        cacheUserId: () => user,
+        networkAvailable: () async => true,
+      );
+      await expectLater(
+        checking.getTransactionById(wsId: 'ws', transactionId: 'owned'),
+        throwsA(isA<ApiException>().having((e) => e.statusCode, 'status', 401)),
+      );
+      expect(calls, 2);
     },
   );
 
