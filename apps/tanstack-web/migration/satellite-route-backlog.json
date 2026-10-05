@@ -16,6 +16,31 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/workspaces/:wsId/calendar/series:apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/series/route.ts",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "routePath": "/api/v1/workspaces/:wsId/calendar/series",
+      "sourceFile": "apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/series/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/calendar/series/:seriesId:apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/series/[seriesId]/route.ts",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "PUT",
+        "DELETE"
+      ],
+      "routePath": "/api/v1/workspaces/:wsId/calendar/series/:seriesId",
+      "sourceFile": "apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/series/[seriesId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "page:/:locale/:wsId/account-benefits:apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/account-benefits/page.tsx",
       "kind": "page",
       "methods": [],

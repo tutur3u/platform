@@ -2337,6 +2337,112 @@ export type Database = {
           },
         ];
       };
+      calendar_event_series: {
+        Row: {
+          anchor: Json;
+          created_at: string;
+          creator_id: string | null;
+          deleted_at: string | null;
+          id: string;
+          payload: Json;
+          revision: number;
+          rule: Json;
+          updated_at: string;
+          workspace_calendar_id: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          anchor: Json;
+          created_at?: string;
+          creator_id?: string | null;
+          deleted_at?: string | null;
+          id?: string;
+          payload: Json;
+          revision?: number;
+          rule: Json;
+          updated_at?: string;
+          workspace_calendar_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          anchor?: Json;
+          created_at?: string;
+          creator_id?: string | null;
+          deleted_at?: string | null;
+          id?: string;
+          payload?: Json;
+          revision?: number;
+          rule?: Json;
+          updated_at?: string;
+          workspace_calendar_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_event_series_workspace_calendar_id_fkey';
+            columns: ['workspace_calendar_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_calendars';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      calendar_event_series_exceptions: {
+        Row: {
+          exception: Json;
+          original_start_local: string;
+          payload: Json | null;
+          series_id: string;
+        };
+        Insert: {
+          exception: Json;
+          original_start_local: string;
+          payload?: Json | null;
+          series_id: string;
+        };
+        Update: {
+          exception?: Json;
+          original_start_local?: string;
+          payload?: Json | null;
+          series_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_event_series_exceptions_series_id_fkey';
+            columns: ['series_id'];
+            isOneToOne: false;
+            referencedRelation: 'calendar_event_series';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      calendar_event_series_receipts: {
+        Row: {
+          actor_id: string;
+          created_at: string;
+          input: Json;
+          request_id: string;
+          result: Json;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          created_at?: string;
+          input: Json;
+          request_id: string;
+          result: Json;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          created_at?: string;
+          input?: Json;
+          request_id?: string;
+          result?: Json;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       calendar_event_virtual_participants: {
         Row: {
           created_at: string | null;
@@ -13549,6 +13655,99 @@ export type Database = {
           },
         ];
       };
+      profile_banner_operations: {
+        Row: {
+          created_at: string;
+          expected_url: string | null;
+          file_path: string | null;
+          operation_id: string;
+          public_url: string | null;
+          state: string;
+          ticket_until: string | null;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          expected_url?: string | null;
+          file_path?: string | null;
+          operation_id: string;
+          public_url?: string | null;
+          state?: string;
+          ticket_until?: string | null;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          expected_url?: string | null;
+          file_path?: string | null;
+          operation_id?: string;
+          public_url?: string | null;
+          state?: string;
+          ticket_until?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'profile_banner_operations_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'profile_banner_operations_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      profile_banner_retirements: {
+        Row: {
+          created_at: string;
+          deleted_at: string | null;
+          file_path: string;
+          not_before: string;
+          public_url: string;
+          scrubbed_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          deleted_at?: string | null;
+          file_path: string;
+          not_before?: string;
+          public_url: string;
+          scrubbed_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          deleted_at?: string | null;
+          file_path?: string;
+          not_before?: string;
+          public_url?: string;
+          scrubbed_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'profile_banner_retirements_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'profile_banner_retirements_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       rate_limit_counters: {
         Row: {
           bucket: string;
@@ -17236,6 +17435,7 @@ export type Database = {
         Args: { p_ws_id?: string };
         Returns: number;
       };
+      banner_url_key: { Args: { p_url: string }; Returns: string };
       begin_ai_live_session: {
         Args: {
           p_access_ws_id: string;
@@ -17400,6 +17600,13 @@ export type Database = {
         Args: { actor: string; endpoint: Json; ws: string };
         Returns: boolean;
       };
+      calendar_series_json: {
+        Args: {
+          s: Database['private']['Tables']['calendar_event_series']['Row'];
+        };
+        Returns: Json;
+      };
+      calendar_series_valid: { Args: { a: Json; r: Json }; Returns: boolean };
       can_deliver_mail_notification: {
         Args: { p_notification_id: string };
         Returns: boolean;
@@ -20306,6 +20513,10 @@ export type Database = {
         Returns: string;
       };
       restore_cascaded_user_group_attendance: { Args: never; Returns: number };
+      retire_owned_banner: {
+        Args: { p_origin: string; p_url: string; p_user_id: string };
+        Returns: undefined;
+      };
       revoke_account_benefit: {
         Args: { p_actor_id: string; p_id: string };
         Returns: boolean;
@@ -43274,6 +43485,14 @@ export type Database = {
         Args: { p_target_table: string };
         Returns: undefined;
       };
+      abandon_profile_banner_operation: {
+        Args: {
+          p_operation_id: string;
+          p_storage_origin: string;
+          p_user_id: string;
+        };
+        Returns: undefined;
+      };
       account_mfa_verified_factor: {
         Args: {
           p_primary_verified_at?: number;
@@ -43674,6 +43893,15 @@ export type Database = {
         Args: { p_actor_id: string; p_event_id: string; p_ws_id: string };
         Returns: Json;
       };
+      calendar_series_operation: {
+        Args: {
+          p_action: string;
+          p_actor_id?: string;
+          p_input?: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       can_access_task_plan: {
         Args: {
           p_plan_id: string;
@@ -43741,6 +43969,15 @@ export type Database = {
       check_ws_creator:
         | { Args: { ws_id: string }; Returns: boolean }
         | { Args: { user_id: string; ws_id: string }; Returns: boolean };
+      claim_profile_banner_upload: {
+        Args: {
+          p_file_path: string;
+          p_operation_id: string;
+          p_public_url: string;
+          p_user_id: string;
+        };
+        Returns: Json;
+      };
       cleanup_expired_cross_app_tokens: { Args: never; Returns: undefined };
       cleanup_expired_live_sessions: { Args: never; Returns: undefined };
       cleanup_expired_notifications: { Args: never; Returns: number };
@@ -43765,6 +44002,15 @@ export type Database = {
           remaining_credits: number;
           success: boolean;
         }[];
+      };
+      commit_profile_banner_operation: {
+        Args: {
+          p_operation_id: string;
+          p_remove?: boolean;
+          p_storage_origin: string;
+          p_user_id: string;
+        };
+        Returns: Json;
       };
       complete_inventory_checkout_session: {
         Args: {
@@ -43814,6 +44060,10 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      complete_profile_banner_retirement: {
+        Args: { p_deleted?: boolean; p_public_url: string; p_user_id: string };
+        Returns: undefined;
       };
       compute_ai_cost_usd: {
         Args: {
@@ -44064,6 +44314,10 @@ export type Database = {
       ensure_workspace_user_link: {
         Args: { target_user_id: string; target_ws_id: string };
         Returns: string;
+      };
+      expire_profile_banner_operations: {
+        Args: { p_storage_origin: string; p_user_id: string };
+        Returns: undefined;
       };
       extract_domain: { Args: { url: string }; Returns: string };
       extract_referrer_domain: { Args: { url: string }; Returns: string };
@@ -45831,6 +46085,7 @@ export type Database = {
       get_wallet_transactions_with_permissions: {
         Args: {
           p_category_ids?: string[];
+          p_created_at_until?: string;
           p_creator_ids?: string[];
           p_cursor_created_at?: string;
           p_cursor_taken_at?: string;
@@ -46391,6 +46646,10 @@ export type Database = {
         Args: { p_user_id: string; p_ws_id: string };
         Returns: boolean;
       };
+      issue_profile_banner_upload: {
+        Args: { p_operation_id: string; p_user_id: string };
+        Returns: undefined;
+      };
       link_task_project_with_actor: {
         Args: {
           p_actor_user_id?: string;
@@ -46684,6 +46943,15 @@ export type Database = {
             };
             Returns: Json;
           };
+      pending_profile_banner_retirements: {
+        Args: { p_user_id: string };
+        Returns: {
+          delete_ready: boolean;
+          file_path: string;
+          public_url: string;
+          scrubbed_at: string;
+        }[];
+      };
       process_notification_batches: { Args: never; Returns: undefined };
       process_recurring_transactions: {
         Args: never;
@@ -46692,6 +46960,10 @@ export type Database = {
           recurring_id: string;
           transaction_id: string;
         }[];
+      };
+      profile_banner_operation_status: {
+        Args: { p_operation_id: string; p_user_id: string };
+        Returns: Json;
       };
       reattach_platform_entity_creation_limit_trigger: {
         Args: { p_target_table: string };
@@ -46761,6 +47033,10 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      record_profile_banner_ticket: {
+        Args: { p_operation_id: string; p_user_id: string };
+        Returns: boolean;
       };
       record_task_reminder_sent: {
         Args: {
@@ -47231,6 +47507,10 @@ export type Database = {
       };
       update_public_user_profile: {
         Args: { p_patch: Json; p_user_id: string };
+        Returns: undefined;
+      };
+      update_public_user_profile_with_banner_lifecycle: {
+        Args: { p_patch: Json; p_storage_origin: string; p_user_id: string };
         Returns: undefined;
       };
       update_task_fields_with_actor: {

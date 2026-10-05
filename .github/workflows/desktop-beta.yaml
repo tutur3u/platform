@@ -160,7 +160,7 @@ jobs:
     needs: [build, release-status]
     env:
       DESKTOP_BETA_PLATFORMS: ${{ needs.release-status.outputs.platforms }}
-    if: github.ref == 'refs/heads/production'
+    if: always() && !cancelled() && needs.release-status.outputs.enabled == 'true' && github.ref == 'refs/heads/production' && (needs.build.result == 'success' || needs.build.result == 'failure')
     environment: desktop-beta
     runs-on: macos-latest
     timeout-minutes: 45
@@ -178,6 +178,8 @@ jobs:
           pattern: desktop-beta-*
           merge-multiple: true
           path: ${{ runner.temp }}/desktop-artifacts
+      - name: Select successful verified platforms
+        run: node scripts/desktop-deployment/select-publication.mjs
       - name: Verify publication prerequisites
         run: node scripts/desktop-deployment/verify-publication.mjs
       - name: Attest beta packages

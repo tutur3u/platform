@@ -71,3 +71,4 @@ export {
   type WorkspaceCalendarsResponse,
   type WorkspaceCalendarUpdatePayload,
 } from './calendar';
+export * from './calendar-series';

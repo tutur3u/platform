@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import {
+  CalendarDays,
   Circle,
   Code2,
   FileText,
@@ -49,6 +50,7 @@ import { LeaveDialog } from './leave-dialog';
 import { Lobby } from './lobby';
 import { MeetingActionHint } from './meeting-action-hint';
 import { MeetingTitle } from './meeting-title';
+import { PersonalToolsPanel } from './personal-tools-panel';
 import {
   PlaybackVolumeControl,
   PlaybackVolumeProvider,
@@ -108,6 +110,8 @@ function CallShellContent({
   const [showDocument, setShowDocument] = useState(false);
   const collaborationT = useTranslations('meet.collaboration');
   const [showAi, setShowAi] = useState(false);
+  const [showPersonalTools, setShowPersonalTools] = useState(false);
+  const privateT = useTranslations('meet.call.private_tools');
   const [outputDeviceId, setOutputDeviceId] = useState('');
   const [mentionRequest, setMentionRequest] = useState(0);
   const onMentionHandled = useCallback(() => setMentionRequest(0), []);
@@ -132,6 +136,7 @@ function CallShellContent({
   const sharedAudio = useSharedRoomAudio(room, joined && !left);
   const openNoticePanel = useCallback((next: 'chat' | 'participants') => {
     setPanel(next);
+    setShowPersonalTools(false);
     setShowAi(false);
   }, []);
   const notifications = useCallNotifications(
@@ -357,6 +362,7 @@ function CallShellContent({
               aria-expanded={showAi}
               onClick={() => {
                 setShowAi(!showAi);
+                setShowPersonalTools(false);
                 setPanel(null);
               }}
             >
@@ -484,6 +490,12 @@ function CallShellContent({
           </div>
           <ReactionOverlay state={state} />
         </main>
+        {showPersonalTools && MEETING_APP === 'meet' && (
+          <PersonalToolsPanel
+            accountId={accountId}
+            onClose={() => setShowPersonalTools(false)}
+          />
+        )}
         {showAi && canReadNotes && (
           <ResizableCallPanel label={aiT('title')}>
             <div className="min-h-0 overflow-y-auto p-3">
@@ -560,6 +572,7 @@ function CallShellContent({
         }
         onTogglePanel={(next) => {
           setPanel(next);
+          setShowPersonalTools(false);
           setShowAi(false);
         }}
         onToggleRecording={
@@ -572,6 +585,18 @@ function CallShellContent({
         }
         extraControls={
           <>
+            {MEETING_APP === 'meet' && (
+              <ControlButton
+                active={showPersonalTools}
+                icon={CalendarDays}
+                label={privateT('title')}
+                onClick={() => {
+                  setShowPersonalTools((value) => !value);
+                  setPanel(null);
+                  setShowAi(false);
+                }}
+              />
+            )}
             {MEETING_APP === 'meet' && (
               <ControlButton
                 active={showProgramming}

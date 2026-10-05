@@ -516,6 +516,25 @@
     "switch_failed_description": "Tài khoản này đã bị xóa. Vui lòng thêm lại để tiếp tục sử dụng.",
     "unknown_user": "Người dùng không xác định"
   },
+  "accountBenefits": {
+    "active": "Đang có hiệu lực",
+    "amount": "Số tín dụng",
+    "benefit": "Loại quyền lợi",
+    "credits": "Tín dụng AI bổ sung",
+    "description": "Cấp tính năng, quyền truy cập sớm và tín dụng AI bổ sung kèm lý do được ghi nhận.",
+    "earlyAccess": "Truy cập sớm",
+    "expired": "Đã hết hạn",
+    "expiry": "Hết hạn lúc (tùy chọn)",
+    "failed": "Yêu cầu quyền lợi thất bại. Hãy thử lại.",
+    "feature": "Quyền tính năng",
+    "grant": "Cấp quyền lợi",
+    "key": "Mã quyền lợi",
+    "reason": "Lý do",
+    "revoke": "Thu hồi",
+    "revoked": "Đã thu hồi",
+    "title": "Quyền lợi tài khoản",
+    "userId": "ID tài khoản"
+  },
   "admin-holidays": {
     "actions": "Thao tác",
     "add": "Thêm",
@@ -6059,6 +6078,54 @@
     "vs": "so với",
     "yesterday": "Hôm qua"
   },
+  "desktop-deployment": {
+    "artifactMetadataOnly": "Có siêu dữ liệu phát hành và mã kiểm tra. Đây không phải xác minh chữ ký độc lập.",
+    "configurationUnknown": "Trang này chưa xác minh cấu hình nhà cung cấp. Thông tin xác thực được giữ tại nhà cung cấp và môi trường GitHub.",
+    "description": "Phân phối beta production, bằng chứng xác minh và quản lý ký an toàn.",
+    "digest": "SHA-256 của tệp",
+    "management": "Quản lý ký và phân phối",
+    "managementDescription": "Mở nhà cung cấp hiện có hoặc môi trường được bảo vệ để cấu hình ký. Trang này không đọc hoặc xuất khóa riêng hay thông tin xác thực.",
+    "managementLinks": {
+      "apple": "Chứng chỉ Apple",
+      "github": "Môi trường GitHub được bảo vệ",
+      "microsoft": "Tài nguyên ký Microsoft",
+      "store": "Hồ sơ Microsoft Store hiện có",
+      "storeWorkflow": "Quy trình đóng gói Windows Store"
+    },
+    "metadataUnavailable": "Không có siêu dữ liệu công khai. Hãy kiểm tra trực tiếp quy trình.",
+    "noArtifact": "Chưa có tệp beta đã phát hành cho nền tảng này.",
+    "platforms": {
+      "linux": "Linux",
+      "macos": "macOS",
+      "windows": "Windows"
+    },
+    "provenancePassed": "Bước xác minh nguồn gốc có chữ ký đã thành công cho lần chạy này.",
+    "release": "Beta đã phát hành: {tag}",
+    "run": "Lần chạy {id}",
+    "setup": "Hướng dẫn phân phối và ký",
+    "states": {
+      "action_required": "Cần thao tác",
+      "cancelled": "Đã hủy",
+      "completed": "Hoàn tất",
+      "failure": "Thất bại",
+      "in_progress": "Đang chạy",
+      "neutral": "Trung lập",
+      "queued": "Đang chờ",
+      "skipped": "Đã bỏ qua",
+      "stale": "Lỗi thời",
+      "startup_failure": "Khởi động thất bại",
+      "success": "Thành công",
+      "timed_out": "Hết thời gian"
+    },
+    "title": "Triển khai máy tính",
+    "trust": {
+      "linux": "Gói beta Linux dùng nguồn gốc tệp GitHub có chữ ký. Điều này khác với chữ ký nhúng trong gói Debian.",
+      "macos": "Quy trình beta yêu cầu ký Developer ID, công chứng Apple và xác minh vé được đính kèm.",
+      "windows": "Trình cài đặt trực tiếp cần chữ ký Authenticode. Gói MSIX trên Microsoft Store được Microsoft ký sau chứng nhận; gói nháp chưa phải ứng dụng đã phát hành."
+    },
+    "workflow": "Quy trình beta production mới nhất",
+    "workflowScope": "Trạng thái quy trình mô tả lần chạy này. Tệp đã phát hành có thể thuộc lần chạy trước; cấu hình và chữ ký cần được xác minh riêng."
+  },
   "devbox-control": {
     "actions": {
       "disable": "Tắt",
@@ -6211,6 +6278,11 @@
       "title": "Vì sao máy đã setup có thể chưa hiện"
     },
     "title": "Điều khiển Devbox"
+  },
+  "devboxes": {
+    "features": {
+      "playground": "Playground được lưu trữ"
+    }
   },
   "documents": {
     "back-to-documents": "Quay lại tài liệu",
@@ -8445,6 +8517,7 @@
   "infrastructure-tabs": {
     "abuse_events": "Sự kiện lạm dụng",
     "abuse_intelligence": "Tình báo lạm dụng",
+    "account_benefits": "Quyền lợi tài khoản",
     "ai_agents": "AI Agents",
     "ai_credits": "Tín dụng AI",
     "ai_credits_allocations": "Phân bổ tín dụng",
@@ -8457,6 +8530,7 @@
     "backups": "Sao lưu",
     "blocked_ips": "IP bị chặn",
     "changelog": "Nhật ký thay đổi",
+    "desktop_deployment": "Triển khai máy tính",
     "devboxes": "Devbox",
     "email_audit": "Nhật ký email",
     "email_blacklist": "Danh sách đen email",
@@ -8497,8 +8571,7 @@
     "timezones": "Múi giờ",
     "translations": "Bản dịch",
     "users": "Người dùng",
-    "workspaces": "Không gian làm việc",
-    "account_benefits": "Quyền lợi tài khoản"
+    "workspaces": "Không gian làm việc"
   },
   "integrations-page": {
     "sepay-connected-description": "SePay đã được kết nối thành công. Việc đồng bộ tài khoản ngân hàng và cấu hình webhook đã sẵn sàng để kiểm tra trong không gian làm việc này.",
@@ -11066,6 +11139,9 @@
     "description": "Tính năng {feature} yêu cầu gói {tier} hoặc cao hơn.",
     "rollout_notice": "Xin lưu ý rằng các gói đăng ký trả phí đang được triển khai dần dần và hiện tại chưa khả dụng. Chúng tôi đánh giá cao sự kiên nhẫn của bạn khi chúng tôi làm việc để cung cấp tính năng này cho tất cả mọi người.",
     "title": "Yêu cầu Gói {tier}"
+  },
+  "navigation": {
+    "account-benefits": "Quyền lợi tài khoản"
   },
   "notifications": {
     "accept": "Chấp nhận",
@@ -23239,32 +23315,5 @@
     "unnamed_wallet": "Ví không tên",
     "wallet": "Phương thức thanh toán",
     "wallet_deleted": "Đã xóa ví thành công"
-  },
-  "accountBenefits": {
-    "title": "Quyền lợi tài khoản",
-    "description": "Cấp tính năng, quyền truy cập sớm và tín dụng AI bổ sung kèm lý do được ghi nhận.",
-    "userId": "ID tài khoản",
-    "benefit": "Loại quyền lợi",
-    "feature": "Quyền tính năng",
-    "earlyAccess": "Truy cập sớm",
-    "credits": "Tín dụng AI bổ sung",
-    "key": "Mã quyền lợi",
-    "amount": "Số tín dụng",
-    "expiry": "Hết hạn lúc (tùy chọn)",
-    "reason": "Lý do",
-    "grant": "Cấp quyền lợi",
-    "failed": "Yêu cầu quyền lợi thất bại. Hãy thử lại.",
-    "revoked": "Đã thu hồi",
-    "expired": "Đã hết hạn",
-    "active": "Đang có hiệu lực",
-    "revoke": "Thu hồi"
-  },
-  "navigation": {
-    "account-benefits": "Quyền lợi tài khoản"
-  },
-  "devboxes": {
-    "features": {
-      "playground": "Playground được lưu trữ"
-    }
   }
 }

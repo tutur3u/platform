@@ -814,6 +814,13 @@ ICS exports (`PUBLISH`), cancellation notices and calendar replies are files, no
 RSVP requests. The responding address must exactly match an invited mailbox;
 viewers and group delivery identities cannot send replies. Unsupported delegated
 identities and multiple competing event attachments do not expose controls.
+Google's duplicate alternative-body and ICS attachment copies are treated as one
+request only when their decoded contents match after newline normalization. Every
+copy must independently pass mailbox authorization; differing sequence, attendee,
+UID or other content remains ambiguous and hides RSVP controls. Reads are bounded
+to eight copies, 256 KiB per copy and 512 KiB combined. This applies to modern
+stored attachments and legacy SES raw MIME; regression coverage is in
+`calendar.test.ts` and `calendar-sources.test.ts`.
 
 The invitation card preserves the organizer, UID, sequence and occurrence when
 sending an iTIP `REPLY`. It displays the original location and time-zone label;

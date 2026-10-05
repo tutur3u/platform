@@ -223,3 +223,32 @@ Azure subscription, completed identity validation, and a certificate profile,
 plus a narrowly scoped CI workload identity. Its non-exportable signing key is
 not a PFX to retrieve from an account. Keep Windows unavailable until a supported
 signing provider is configured and CI verifies the actual installer signature.
+
+## Failed platform builds
+
+Platform builds run independently. If one fails, the publication job may still
+publish the successful platforms after exact run/source/hash receipts and signed
+provenance verification. A present but incomplete or invalid package blocks
+publication; missing failed platforms remain unavailable. Cancelled workflows do
+not publish. The workflow itself remains failed so the platform problem stays
+visible.
+
+macOS signing failures report only a fixed stage name, such as certificate import,
+artifact signing, notarization, or Gatekeeper assessment. Private command arguments,
+stdout and stderr remain suppressed. Check the named provider stage without
+posting credentials or weakening the signing gates.
+
+## Infrastructure desktop status
+
+The root workspace's Infrastructure **Desktop deployment** page shows public
+production beta workflow jobs and the latest published artifact for each platform.
+A checksum or release entry is metadata, not independent signature verification.
+The explicit provenance step is reported only when that step passed in the shown
+run; artifacts from earlier runs remain separate. Provider configuration stays
+unknown because private signing credentials are never queried or exposed.
+
+Secure management links open the protected GitHub environment, Apple certificates,
+Microsoft signing resources, and the existing Microsoft Store submission. Windows
+Store MSIX drafts use the reserved identity and become Microsoft-signed only after
+certification. They do not make the direct-download EXE signed or available.
+Regression coverage: Infrastructure desktop status parser and navigation tests.

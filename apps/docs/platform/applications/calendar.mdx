@@ -733,3 +733,42 @@ Regression coverage: `continuous_date_scroll_test.dart` and
 fresh revalidation, workspace races, revoked access, and MFA retention. Exact
 commit mobile CI and authenticated device verification remain required for
 release evidence.
+
+## Native recurring series
+
+The Calendar API stores native Tuturuuu recurring events as one canonical series
+and a bounded set of exceptions. It expands instances for the requested viewport;
+it does not pre-create duplicate event rows or stop at a materialization horizon.
+Daily, weekly, monthly and yearly rules use a named timezone and preserve local
+wall-clock dates across daylight-saving changes. All-day ends are exclusive.
+Counts include cancelled occurrences, but exclude nonexistent DST times.
+
+`/api/v1/workspaces/{wsId}/calendar/series` creates and lists native series.
+A viewport read supplies `from`, `to` and optional `limit` (maximum 1,000).
+Reads reject oversized results instead of returning a silently incomplete list.
+The detail endpoint adds `/{seriesId}`. All routes require workspace membership
+and `manage_calendar`, including after a permission or membership change.
+
+A mutation supplies a unique `requestId`, the last `expectedRevision`, and
+`scope` (`this`, `all`, or `future`). Instance scopes additionally supply the
+immutable `originalStartLocal`, even if that instance has moved. Revision
+conflicts return 409; repeating the same completed request returns its receipt
+without another write. Encryption is applied to titles, descriptions and locations.
+Missing encryption keys fail closed instead of exposing encrypted strings.
+
+An edit to `this` changes only the exception at its original slot. An edit to
+`all` changes the master; changing the generating rule or anchor resets its
+exceptions. A `future` edit splits the series transactionally, preserves remaining
+COUNT, and resets exceptions at and after the split, returning their discarded
+count. A first-occurrence `future` edit behaves as `all`. Deletes use the same
+scope and concurrency contract.
+
+This API stage accepts native series only. Google and Outlook imports and writes
+retain their existing behavior until their recoverable series integration ships;
+unsupported provider rules must remain preserved and read-only. The canonical
+Google RRULE and Microsoft Graph adapters explicitly reject lossy conversions.
+
+Regression evidence: `calendar-native-recurrence.sql` tests authorization,
+idempotency, revision conflicts and atomic splitting. `recurrence/service.test.ts`
+and `calendar-recurrence-edit.test.ts` cover encrypted retries, immutable identity,
+DST slot counts, cancellation, exception edits and truthful bounded reads.

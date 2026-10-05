@@ -15,7 +15,7 @@ import { WorkspacePresenceProvider } from '@tuturuuu/tasks-ui/tu-do/providers/wo
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getRequestWorkspace as getWorkspace } from '@tuturuuu/utils/request-workspace';
 import { cookies, headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
