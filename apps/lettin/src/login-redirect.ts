@@ -42,6 +42,9 @@ export async function getLoginRedirect(request: NextRequest) {
   const response = NextResponse.redirect(
     session?.ok && hasSharedSession ? new URL(nextPath, BASE_URL) : loginUrl
   );
-  if (session?.response) propagateAuthCookies(session.response, response);
+  if (session?.ok) propagateAuthCookies(session.response, response);
+  else
+    for (const cookie of session?.response?.headers.getSetCookie() ?? [])
+      response.headers.append('set-cookie', cookie);
   return clearSupabaseAuthCookies(request, response);
 }
