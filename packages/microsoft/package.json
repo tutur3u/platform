@@ -10,7 +10,8 @@
     "./calendar": "./src/calendar/index.ts"
   },
   "scripts": {
-    "type-check": "tsc --project tsconfig.typecheck.json"
+    "type-check": "tsc --project tsconfig.typecheck.json",
+    "test": "vitest run"
   },
   "dependencies": {
     "@azure/msal-node": "^6.0.0",
@@ -20,7 +21,8 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^26.5.1",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vitest": "^5.0.0"
   },
   "packageManager": "bun@1.4.1"
 }

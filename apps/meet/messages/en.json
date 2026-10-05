@@ -5252,6 +5252,7 @@
     "files": "Project files",
     "invite": "Allow editing",
     "language": "Language",
+    "loadMoreResources": "Load more problems",
     "name": "Project name",
     "newFile": "New file path",
     "noRunners": "No managed language environments are ready.",

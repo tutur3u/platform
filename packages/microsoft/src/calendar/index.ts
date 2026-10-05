@@ -6,6 +6,7 @@
  */
 
 import type { Client } from '@microsoft/microsoft-graph-client';
+import { fetchCalendarViewPages } from './pagination';
 
 // Microsoft Event type (simplified from Graph API)
 export interface MicrosoftCalendarEvent {
@@ -114,17 +115,12 @@ export async function fetchMicrosoftEvents(
   startDateTime: string,
   endDateTime: string
 ): Promise<MicrosoftCalendarEvent[]> {
-  const response = await client
-    .api(`/me/calendars/${calendarId}/calendarView`)
-    .query({
-      startDateTime,
-      endDateTime,
-      $top: 500,
-      $orderby: 'start/dateTime',
-    })
-    .get();
-
-  return response.value || [];
+  return fetchCalendarViewPages<MicrosoftCalendarEvent>(
+    client,
+    calendarId,
+    startDateTime,
+    endDateTime
+  );
 }
 
 // Convert Microsoft event to workspace calendar event format

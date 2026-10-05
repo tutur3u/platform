@@ -26,6 +26,7 @@ import type { ComponentProps } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCallNotifications } from '../hooks/use-call-notifications';
 import { useMeetRoom } from '../hooks/use-meet-room';
+import { useProgrammingOpener } from '../hooks/use-programming-opener';
 import { useRoomRecording } from '../hooks/use-room-recording';
 import { useRoomUsage } from '../hooks/use-room-usage';
 import { useSharedRoomAudio } from '../hooks/use-shared-room-audio';
@@ -101,6 +102,11 @@ function CallShellContent({
   const [ending, setEnding] = useState(false);
   const programmingT = useTranslations('programmingPlayground');
   const [showProgramming, setShowProgramming] = useState(false);
+  const programming = useProgrammingOpener(
+    meetingId,
+    programmingT('playground'),
+    accountId
+  );
   const [showDocument, setShowDocument] = useState(false);
   const collaborationT = useTranslations('meet.collaboration');
   const [showAi, setShowAi] = useState(false);
@@ -459,6 +465,9 @@ function CallShellContent({
           {showProgramming && (
             <ProgrammingPanel
               meetingId={meetingId}
+              wsId={wsId}
+              accountId={accountId}
+              preparing={programming.isPending}
               canManage={canManage}
               selection={state.settings.programming ?? null}
             />
@@ -596,6 +605,10 @@ function CallShellContent({
                 onClick={() => {
                   setShowDocument(false);
                   setShowProgramming((value) => !value);
+                  if (!showProgramming && canManage)
+                    void programming
+                      .prepare()
+                      .catch(() => toast.error(programmingT('accessError')));
                 }}
               />
             )}

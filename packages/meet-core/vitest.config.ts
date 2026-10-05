@@ -4,6 +4,10 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: /^@tuturuuu\/types\/(.+)$/,
+        replacement: path.resolve(import.meta.dirname, '../types/src/$1.ts'),
+      },
+      {
         find: /^@tuturuuu\/internal-api$/,
         replacement: path.resolve(
           import.meta.dirname,

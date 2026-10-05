@@ -16,6 +16,25 @@ Drive explorer inside `apps/web`.
   `manage_drive`, preserves the query string, and redirects to the Drive app.
 - Drive uses local port `7817` and Portless host `drive.tuturuuu.localhost`.
 
+## Native mobile directory behavior
+
+The mobile Drive screen uses the shared floating dock for search, view, sort,
+and permission-gated actions. Search temporarily occupies the shared search
+surface rather than adding a second search field to the directory body. Closing
+search clears its query and reloads the current directory.
+
+Directories retain their visible entries during refresh. Additional pages load
+when the viewport is within 400 logical pixels of the end, including directories
+that initially do not fill the viewport; the explicit load-more action remains
+available. Appended entries are deduplicated by name within the current directory.
+Workspace or account changes clear search, selection, and the previous directory.
+Late responses and signed-file actions cannot restore or open content from the
+previous account, workspace, or request generation. Definitive authorization
+failures clear displayed files; verification challenges and temporary failures
+retain the current view.
+
+Regression coverage: `apps/mobile/test/features/drive/drive_page_test.dart`.
+
 ## API Ownership
 
 Protected storage APIs remain centralized in `apps/web`:
@@ -59,5 +78,6 @@ Use these focused checks when changing Drive deployment wiring:
 node --test scripts/ci/check-workflow-config.test.js scripts/ci/release-workflows.test.js
 ```
 
-Because Drive CI changes touch root TypeScript workflow config, finish with
-`bun check` when the shared worktree state allows it.
+Run focused checks locally without app builds. Require the applicable lint,
+type-check, test, and real app-build workflows to pass in CI for the exact
+commit; do not run `bun check` or app builds on the shared machine.
