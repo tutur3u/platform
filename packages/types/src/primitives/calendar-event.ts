@@ -1,8 +1,14 @@
+import type { CalendarRecurrenceRule } from './calendar-recurrence';
 import type { GoogleProviderColorChoice } from './google-calendar-color';
 import type { SupportedColor } from './SupportedColors';
 
 export interface CalendarEvent {
   requestId?: string;
+  seriesId?: string;
+  seriesRevision?: number;
+  originalStartLocal?: string;
+  recurrence?: CalendarRecurrenceRule;
+  is_all_day?: boolean;
   providerColor?: GoogleProviderColorChoice;
   id: string;
   title?: string;

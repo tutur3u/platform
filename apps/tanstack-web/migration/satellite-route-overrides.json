@@ -49,6 +49,16 @@
       "status": "legacy-next",
       "targetOwner": "tanstack-start",
       "note": "Suspend request-time creator profile permissions/publication reads beneath its own loading boundary; preserve actor-scoped editing."
+    },
+    "api:/api/v1/workspaces/:wsId/calendar/series:apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/series/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Calendar native recurrence series API. Preserve authenticated Calendar membership/manage_calendar permissions, encrypted event payloads, bounded virtual occurrence expansion, immutable original slots, revision fencing and transactional idempotent this/all/future writes. Provider series integration is explicitly separate; live production remains on Calendar Next.js."
+    },
+    "api:/api/v1/workspaces/:wsId/calendar/series/:seriesId:apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/series/[seriesId]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Calendar native recurrence series API. Preserve authenticated Calendar membership/manage_calendar permissions, encrypted event payloads, bounded virtual occurrence expansion, immutable original slots, revision fencing and transactional idempotent this/all/future writes. Provider series integration is explicitly separate; live production remains on Calendar Next.js."
     }
   }
 }
