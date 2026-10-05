@@ -65,7 +65,9 @@ or mismatched receipts.
 
 Actions artifacts expire after seven days and are intended for CI inspection.
 Public downloads use persistent GitHub Release assets, which do not require a
-repository token in the browser. The workflow attests the packages, uploads a
+repository token in the browser. The workflow attests the packages and verifies
+each signed attestation against the exact source SHA, protected `production` ref,
+desktop workflow identity, and GitHub-hosted runner policy before it uploads a
 draft `desktop-v<version>-<run-id>` prerelease, then makes the complete selected-platform prerelease
 visible. It never marks the desktop beta as the repository's latest stable
 release or overwrites an existing release tag. A failed draft needs inspection
@@ -190,3 +192,34 @@ root-owned packaged helper copies the selected archive into a private root-owned
 staging directory, rechecks its digest and package identity there, and installs it
 with apt so dependencies are resolved. It never installs the user-writable cache
 path directly. macOS and Windows additionally require OS publisher signatures.
+
+### Verify downloaded desktop packages
+
+Every platform package has cryptographically signed GitHub provenance. Verify a
+package before installing it using GitHub CLI and the exact source SHA recorded
+in that release's notes:
+
+```sh
+gh attestation verify ./Tuturuuu-linux-x64.deb \
+  --repo tutur3u/platform \
+  --signer-workflow tutur3u/platform/.github/workflows/desktop-beta.yaml \
+  --source-ref refs/heads/production \
+  --source-digest <release-source-sha> \
+  --deny-self-hosted-runners
+```
+
+Use the downloaded `.dmg` or `.exe` path to verify those platforms. The workflow
+runs the same verification before publication and blocks the whole selected
+release if any signature, artifact digest, or workflow identity fails.
+Linux's signed provenance covers the exact Debian archive; it is not an embedded
+Debian publisher signature and the current Linux updater does not independently
+verify provenance. Windows and macOS additionally enforce native publisher trust.
+Do not describe receipt hashes alone as cryptographic signature verification.
+
+Windows direct distribution requires a trusted Authenticode certificate. A
+Microsoft account or Store registration alone is insufficient. Microsoft Artifact
+Signing is an alternative managed signing provider: it requires an accessible
+Azure subscription, completed identity validation, and a certificate profile,
+plus a narrowly scoped CI workload identity. Its non-exportable signing key is
+not a PFX to retrieve from an account. Keep Windows unavailable until a supported
+signing provider is configured and CI verifies the actual installer signature.
