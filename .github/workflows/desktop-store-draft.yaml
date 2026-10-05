@@ -27,7 +27,7 @@ jobs:
     needs: check-ci
     if: needs.check-ci.outputs.should_run == 'true' && (github.ref == 'refs/heads/production' || (github.ref == 'refs/heads/main' && inputs.diagnostics_only))
     runs-on: windows-latest
-    environment: desktop-beta
+    environment: ${{ github.ref == 'refs/heads/main' && inputs.diagnostics_only && 'desktop-diagnostics' || 'desktop-beta' }}
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0

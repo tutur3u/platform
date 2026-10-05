@@ -83,3 +83,22 @@ test('diagnostics retain strict certification and failure evidence without publi
     ['workflow_dispatch', 'check-ci', 'package']
   );
 });
+
+test('diagnostics use a separate environment without broadening release access', () => {
+  const expression = packageSection.match(
+    /^ {4}environment: \$\{\{ (.+) \}\}$/m
+  )[1];
+  for (const ref of ['refs/heads/main', 'refs/heads/production']) {
+    for (const diagnosticsOnly of [true, false]) {
+      assert.equal(
+        runInNewContext(expression, {
+          github: { ref },
+          inputs: { diagnostics_only: diagnosticsOnly },
+        }),
+        ref === 'refs/heads/main' && diagnosticsOnly
+          ? 'desktop-diagnostics'
+          : 'desktop-beta'
+      );
+    }
+  }
+});
