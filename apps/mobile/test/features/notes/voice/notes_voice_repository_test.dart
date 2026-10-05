@@ -25,7 +25,9 @@ void main() {
   setUp(() {
     api = Api();
     cache = Cache();
-    when(() => cache.remove(any())).thenAnswer((_) async {});
+    when(
+      () => cache.remove(any(), checkScope: any(named: 'checkScope')),
+    ).thenAnswer((_) async {});
     when(
       () => cache.invalidateTags(
         any(),
@@ -123,7 +125,13 @@ void main() {
       throwsA(isA<ApiException>()),
     );
     final key =
-        verify(() => cache.remove(captureAny())).captured.single as CacheKey;
+        verify(
+              () => cache.remove(
+                captureAny(),
+                checkScope: any(named: 'checkScope'),
+              ),
+            ).captured.single
+            as CacheKey;
     expect(key.userId, 'actor');
     expect(key.workspaceId, 'ws');
     clearInteractions(cache);
@@ -138,7 +146,9 @@ void main() {
       repository.refresh('actor', 'ws', 'job'),
       throwsA(isA<ApiException>()),
     );
-    verifyNever(() => cache.remove(any()));
+    verifyNever(
+      () => cache.remove(any(), checkScope: any(named: 'checkScope')),
+    );
     when(
       () => api.getJson(any()),
     ).thenThrow(const ApiException.transport(message: 'offline'));
@@ -146,7 +156,9 @@ void main() {
       repository.refresh('actor', 'ws', 'job'),
       throwsA(isA<ApiException>()),
     );
-    verifyNever(() => cache.remove(any()));
+    verifyNever(
+      () => cache.remove(any(), checkScope: any(named: 'checkScope')),
+    );
   });
   test(
     'away-and-back scope fences old response before cache publication',

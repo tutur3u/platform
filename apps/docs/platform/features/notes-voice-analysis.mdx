@@ -24,7 +24,9 @@ a submitted job without persisting its audio. The latest authorized job is cache
 under its actor/workspace, shown immediately on return and revalidated even when
 fresh. Transport, 429/5xx and MFA challenges
 retain that scoped result; definitive access loss/not-found removes it. Old async
-responses are fenced across account/workspace away-and-back transitions. Temporary
+responses are fenced across account/workspace away-and-back transitions. Cached
+result deletion rechecks ownership after initialization and queue admission; once
+admitted, the serialized snapshot and index purge completes before new publication. Temporary
 status failures offer explicit retry; ongoing successful status requests poll only
 while Notes is active. In-memory recording bytes permit explicit safe preflight
 retries using the same request ID/revision. After navigation discards those bytes,
@@ -66,5 +68,7 @@ input limits, metering, actor isolation, revision/retry behavior and RLS. API ro
 are first-class Next handlers tracked as Rust migration backlog. Native cubit,
 repository and widget regressions cover owner transitions, retry intents, retained
 snapshots, denied access, real recording controls, enlarged-text review and explicit
-stable-ID saves. Device microphone/provider execution and production deployment
+stable-ID saves. `cache_store_scoped_removal_test.dart` covers obsolete deletions
+waiting for initialization/admission and durable denied-history erasure. Device
+microphone/provider execution and production deployment
 remain separate runtime verification gates.

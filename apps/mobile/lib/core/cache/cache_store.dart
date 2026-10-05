@@ -483,14 +483,19 @@ class CacheStore {
     );
   }
 
-  Future<void> remove(CacheKey key) async {
+  Future<void> remove(CacheKey key, {void Function()? checkScope}) async {
+    checkScope?.call();
     _advanceKey(key.value);
     await init();
     await _replicaMigration;
     await _serializeResources(() async {
+      // Recheck after async init/admission; an obsolete actor cannot erase
+      // the current scope. Once admitted, finish the serialized durable purge.
+      checkScope?.call();
       _refreshTasks.remove(key.value);
       _dropRecord(key.value);
       await _resourceBox.delete(key.value);
+      await persistenceCheckpoint?.call('remove-snapshot');
       await _removeReplicaSource(key.value);
     });
   }

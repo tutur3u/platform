@@ -138,7 +138,10 @@ class NotesVoiceRepository {
       _guardScope(actor, scope);
       if ({401, 403}.contains(error.statusCode) &&
           !error.isVerificationRequired) {
-        await _cache.remove(_key(actor, ws));
+        await _cache.remove(
+          _key(actor, ws),
+          checkScope: () => _guardScope(actor, scope),
+        );
       }
       rethrow;
     }
@@ -172,7 +175,10 @@ class NotesVoiceRepository {
       _guardScope(actor, scope);
       if ({401, 403, 404}.contains(error.statusCode) &&
           !error.isVerificationRequired) {
-        await _cache.remove(_key(actor, ws));
+        await _cache.remove(
+          _key(actor, ws),
+          checkScope: () => _guardScope(actor, scope),
+        );
       }
       rethrow;
     }
@@ -183,7 +189,10 @@ class NotesVoiceRepository {
     _guardScope(actor, scope);
     await ApiClient.runForUser(actor, () => _api.deleteJson(_path(ws, id)));
     _guardScope(actor, scope);
-    await _cache.remove(_key(actor, ws));
+    await _cache.remove(
+      _key(actor, ws),
+      checkScope: () => _guardScope(actor, scope),
+    );
   }
 
   Future<void> saveReviewed(
