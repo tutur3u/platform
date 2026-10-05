@@ -309,19 +309,17 @@ extension _ShellPageLayout on _ShellPageState {
         ) ??
         false;
     final workspace = context.watch<WorkspaceCubit>().state;
-    final textAssistant =
+    final assistantDock =
         widget.matchedLocation == Routes.assistant &&
-        !assistantChrome.isLiveMode &&
         (workspace.currentWorkspace ?? workspace.personalWorkspaceOrCurrent) !=
             null;
     final composerVisible =
         widget.matchedLocation == Routes.assistant &&
-        assistantChrome.isComposing &&
-        !assistantChrome.isLiveMode;
-    // Text immersive mode still needs its only composer/exit control surface.
-    // Live fullscreen and other immersive pages retain their existing policy.
+        (assistantChrome.isComposing || assistantChrome.isLiveMode);
+    // Chat input and Live call controls share the only dock/exit surface,
+    // including immersive mode. Other pages retain their existing policy.
     final showBottomNav =
-        textAssistant ||
+        assistantDock ||
         ((!widget.matchedLocation.startsWith(Routes.assistant) ||
                 !assistantChrome.isFullscreen) &&
             !immersive);
@@ -371,7 +369,6 @@ extension _ShellPageLayout on _ShellPageState {
             : const SizedBox.shrink(),
         bodyBottomInset: floatingNavInset,
         composerVisible: composerVisible,
-        allowDockSlot: !assistantChrome.isLiveMode,
         navigationWidth:
             (isMiniAppRoute ? miniItems.length : globalItems.length) * 52.0 + 4,
       ),

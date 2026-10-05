@@ -10,7 +10,7 @@ class AssistantChromeCubit extends Cubit<AssistantChromeState> {
   }
 
   void toggleComposerNavigation() {
-    if (state.composerVisible) {
+    if (state.composerVisible || state.isLiveMode) {
       emit(state.copyWith(navigationExpanded: !state.navigationExpanded));
     }
   }
