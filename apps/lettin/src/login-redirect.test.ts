@@ -150,3 +150,22 @@ it.each([
     new URL(location.searchParams.get('returnUrl')!).searchParams.get('nextUrl')
   ).toBe('/');
 });
+
+it('preserves failure response cookie headers without assuming NextResponse', async () => {
+  const failed = new Response(null, {
+    headers: { 'set-cookie': 'synthetic-recovery=ready; Path=/; HttpOnly' },
+  });
+  mocks.refresh.mockResolvedValue({
+    ok: false,
+    error: 'MFA required',
+    response: failed,
+  });
+  const response = await getLoginRedirect(
+    new NextRequest('https://lettin.synthetic.test/login')
+  );
+  expect(response.status).toBe(307);
+  expect(response.headers.getSetCookie()).toContain(
+    'synthetic-recovery=ready; Path=/; HttpOnly'
+  );
+  expect(mocks.propagate).not.toHaveBeenCalled();
+});
