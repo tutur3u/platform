@@ -2,27 +2,52 @@ part of 'assistant_page.dart';
 
 extension _AssistantAttachments on _AssistantPageState {
   Future<void> _recordVoiceMessage(String wsId) async {
-    final scopeVersion = _chatCubit.attachmentScopeVersion;
-    final recording = await showAdaptiveSheet<AssistantVoiceMessageResult>(
-      context: context,
-      useRootNavigator: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      builder: (_) => const AssistantVoiceMessageSheet(),
-    );
-    if (!mounted || recording == null || _chatCubit.state.workspaceId != wsId) {
+    if (_voiceCapture.state.visible) return;
+    final actorId = context.read<AuthCubit?>()?.state.user?.id;
+    if (actorId == null || _chatCubit.state.workspaceId != wsId) return;
+    _voiceWorkspaceId = wsId;
+    _voiceActorId = actorId;
+    _voiceScopeVersion = _chatCubit.attachmentScopeVersion;
+    _inputFocusNode.unfocus();
+    await _voiceCapture.start();
+  }
+
+  Future<void> _finishVoiceRecording({required bool sendNow}) async {
+    final wsId = _voiceWorkspaceId;
+    final scopeVersion = _voiceScopeVersion;
+    final actorId = _voiceActorId;
+    final captureToken = _voiceCapture.sessionToken;
+    final actorScopeEpoch = _voiceActorScopeEpoch;
+    bool isCurrent() =>
+        mounted &&
+        wsId != null &&
+        scopeVersion != null &&
+        _voiceActorScopeEpoch == actorScopeEpoch &&
+        _loadedWorkspaceId == wsId &&
+        context.read<AuthCubit?>()?.state.user?.id == actorId &&
+        _chatCubit.state.workspaceId == wsId &&
+        _chatCubit.attachmentScopeVersion == scopeVersion;
+    if (!isCurrent()) {
+      await _voiceCapture.cancel();
       return;
     }
+    final file = await _voiceCapture.takeRecording();
+    if (file == null ||
+        !isCurrent() ||
+        _voiceCapture.sessionToken != captureToken) {
+      return;
+    }
+    final timezone = await getCurrentTimezoneIdentifier();
+    if (!isCurrent() || _voiceCapture.sessionToken != captureToken) return;
     await _chatCubit.addComposerAttachments(
-      wsId: wsId,
-      files: [recording.file],
+      wsId: wsId!,
+      files: [file],
       modelId: _shellCubit.state.selectedModel.value,
-      timezone: await getCurrentTimezoneIdentifier(),
+      timezone: timezone,
       expectedWorkspaceVersion: scopeVersion,
+      isCurrentActor: isCurrent,
     );
-    if (mounted &&
-        recording.sendNow &&
-        _chatCubit.state.workspaceId == wsId &&
-        _chatCubit.attachmentScopeVersion == scopeVersion) {
+    if (sendNow && isCurrent()) {
       await _handleSend(
         wsId,
         _shellCubit.state,

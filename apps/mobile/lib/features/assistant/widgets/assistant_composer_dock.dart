@@ -1,15 +1,17 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
+import 'package:mobile/features/assistant/cubit/assistant_voice_capture_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_options.dart';
 import 'package:mobile/features/assistant/widgets/assistant_dock_surface.dart';
+import 'package:mobile/features/assistant/widgets/assistant_inline_voice_controls.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
@@ -36,10 +38,16 @@ class AssistantComposerDock extends StatelessWidget {
     required this.onSend,
     required this.onRemoveAttachment,
     this.repository,
+    this.voiceCapture,
+    this.onAttachVoice,
+    this.onSendVoice,
     this.embedded = false,
     super.key,
   });
 
+  final AssistantVoiceCaptureCubit? voiceCapture;
+  final Future<void> Function()? onAttachVoice;
+  final Future<void> Function()? onSendVoice;
   final AssistantChatState chatState;
   final AssistantLiveState liveState;
   final AssistantLiveUiState liveUiState;
@@ -129,11 +137,42 @@ class AssistantComposerDock extends StatelessWidget {
         ),
       ],
     );
-    if (embedded) return content;
+    final capture = voiceCapture;
+    final composer = capture == null
+        ? content
+        : BlocBuilder<AssistantVoiceCaptureCubit, AssistantVoiceCaptureState>(
+            bloc: capture,
+            builder: (context, state) => AnimatedSwitcher(
+              duration: MediaQuery.disableAnimationsOf(context)
+                  ? Duration.zero
+                  : const Duration(milliseconds: 180),
+              layoutBuilder: (current, previous) => Stack(
+                alignment: Alignment.center,
+                children: [
+                  for (final outgoing in previous)
+                    ExcludeSemantics(child: IgnorePointer(child: outgoing)),
+                  if (current != null) current,
+                ],
+              ),
+              child: state.visible
+                  ? AssistantInlineVoiceControls(
+                      key: const ValueKey('inline-voice-controls'),
+                      capture: capture,
+                      state: state,
+                      onAttach: onAttachVoice ?? () async {},
+                      onSend: onSendVoice ?? () async {},
+                    )
+                  : KeyedSubtree(
+                      key: const ValueKey('text-composer'),
+                      child: content,
+                    ),
+            ),
+          );
+    if (embedded) return composer;
     return SizedBox(
       height: assistantComposerHeight(context) + bottomInset,
       child: FloatingDockRail(
-        navigation: AssistantDockSurface(child: content),
+        navigation: AssistantDockSurface(child: composer),
         primary: navigationToggle(context),
       ),
     );

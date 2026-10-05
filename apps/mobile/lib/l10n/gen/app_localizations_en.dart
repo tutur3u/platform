@@ -10124,4 +10124,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileRemoveBanner => 'Remove banner';
+
+  @override
+  String get voicePause => 'Pause recording';
+
+  @override
+  String get voiceResume => 'Resume recording';
+
+  @override
+  String get voicePaused => 'Recording paused';
+
+  @override
+  String get voiceRecording => 'Recording audio';
 }

@@ -9,12 +9,14 @@ extension AssistantChatAttachments on AssistantChatCubit {
     required String modelId,
     required String timezone,
     int? expectedWorkspaceVersion,
+    bool Function()? isCurrentActor,
   }) async {
     final workspaceVersion = expectedWorkspaceVersion ?? _workspaceVersion;
     bool isCurrentScope() =>
         !isClosed &&
         state.workspaceId == wsId &&
-        _workspaceVersion == workspaceVersion;
+        _workspaceVersion == workspaceVersion &&
+        (isCurrentActor?.call() ?? true);
     if (!isCurrentScope()) return;
     for (final file in files) {
       if (!isCurrentScope()) return;

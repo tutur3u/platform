@@ -4317,5 +4317,9 @@
     "profileBannerDescription": "Add a wide photo to personalize your profile.",
     "profileChangeBanner": "Change banner",
     "profileAddBanner": "Add banner",
-    "profileRemoveBanner": "Remove banner"
+    "profileRemoveBanner": "Remove banner",
+    "voicePause": "Pause recording",
+    "voiceResume": "Resume recording",
+    "voicePaused": "Recording paused",
+    "voiceRecording": "Recording audio"
 }

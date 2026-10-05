@@ -19158,6 +19158,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove banner'**
   String get profileRemoveBanner;
+
+  /// No description provided for @voicePause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause recording'**
+  String get voicePause;
+
+  /// No description provided for @voiceResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume recording'**
+  String get voiceResume;
+
+  /// No description provided for @voicePaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording paused'**
+  String get voicePaused;
+
+  /// No description provided for @voiceRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording audio'**
+  String get voiceRecording;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
