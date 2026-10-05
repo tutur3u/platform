@@ -1197,3 +1197,18 @@ denial, eligible accounts, restriction notices, and failed eligibility reads.
 Measure signed-in server response and meaningful-content times separately. A fast
 public homepage is not evidence that an authenticated app is fast, and a Suspense
 skeleton is not a loaded meeting list. Re-measure the deployed source after rollout.
+
+## Meeting-detail policy and permission reads
+
+After the signed-in actor, joined workspace, and workspace-scoped meeting are
+verified, Meet details starts the read-only room-policy lookup and workspace
+permission lookup together. The policy still decides the ended-room shortcut
+before any Calendar event access; Calendar links continue to require the existing
+`manage_calendar` permission. Permission failures are captured immediately, ignored
+for ended rooms as before, and propagated only after a successful active-room
+policy lookup. Policy failures retain precedence. No reads start before the
+workspace and meeting gates, and this changes neither room admission nor creation.
+`page-loading.test.tsx` covers deferred overlap, scoped identity, ended-room bypass,
+and rejection precedence; `meeting-calendar-event.test.ts` retains denied-access
+coverage. This source change still requires deployed meaningful-content timing to
+establish a customer-visible latency improvement.
