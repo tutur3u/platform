@@ -115,3 +115,46 @@ export async function updateCurrentUserTaskSchedulingSettings(
     }
   );
 }
+
+export type TaskScheduleBatchSettings = Pick<
+  Task,
+  | 'total_duration'
+  | 'is_splittable'
+  | 'min_split_duration_minutes'
+  | 'max_split_duration_minutes'
+  | 'calendar_hours'
+  | 'auto_schedule'
+>;
+export interface TaskScheduleBatchResponse {
+  minutesByTaskId: Record<string, number>;
+  settingsByTaskId: Record<string, TaskScheduleBatchSettings | null>;
+}
+/** Bounded sequential chunks avoid replacing one startup fan-out with another. */
+export async function getTaskScheduleBatch(
+  wsId: string,
+  taskIds: string[],
+  personal: boolean,
+  signal?: AbortSignal,
+  options?: InternalApiClientOptions
+): Promise<TaskScheduleBatchResponse> {
+  const result: TaskScheduleBatchResponse = {
+    minutesByTaskId: {},
+    settingsByTaskId: {},
+  };
+  const ids = [...new Set(taskIds)].sort();
+  const client = getTaskApiClient(options);
+  for (let offset = 0; offset < ids.length; offset += 100) {
+    const chunk = await client.json<TaskScheduleBatchResponse>(
+      `/api/v1/workspaces/${encodePathSegment(wsId)}/tasks/schedule-batch`,
+      {
+        method: 'GET',
+        cache: 'no-store',
+        signal,
+        query: { taskIds: ids.slice(offset, offset + 100).join(','), personal },
+      }
+    );
+    Object.assign(result.minutesByTaskId, chunk.minutesByTaskId);
+    Object.assign(result.settingsByTaskId, chunk.settingsByTaskId);
+  }
+  return result;
+}
