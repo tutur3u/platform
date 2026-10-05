@@ -83,8 +83,9 @@ function fixture() {
     if (route.startsWith('actions/runs/1/jobs?')) return { jobs: f.jobs };
     throw Error(`Unexpected route ${route}`);
   };
-  f.run = () =>
-    resumeProductionDeployment({
+  f.run = (options = {}) => {
+    let elapsed = 0;
+    return resumeProductionDeployment({
       event: f.event,
       env,
       api: f.api,
@@ -96,7 +97,14 @@ function fixture() {
         return f.visible;
       },
       logger: { log() {} },
+      now: () => elapsed,
+      totalTimeoutMs: 100,
+      sleep: async (ms) => {
+        elapsed += ms;
+      },
+      ...options,
     });
+  };
   return f;
 }
 

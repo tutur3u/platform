@@ -6,6 +6,10 @@ const {
   getLatestCommitChangedFiles,
 } = require('./package-release-readiness.js');
 
+const {
+  waitForPackageVisibility,
+} = require('./wait-production-package-visibility');
+
 const PLANNER = 'vercel-production.yaml';
 const RESUME_TITLE = 'Production package resume ';
 const INTENT_ENVIRONMENT = 'production-package-resume';
@@ -177,6 +181,7 @@ async function resumeProductionDeployment({
   versionExists = boundedVersionExists,
   now = Date.now,
   totalTimeoutMs = DEADLINE_MS,
+  sleep,
   logger = console,
 }) {
   const deadline = now() + totalTimeoutMs;
@@ -286,17 +291,13 @@ async function resumeProductionDeployment({
       repoRoot,
     });
   if (packages.length === 0) return skip('no changed package versions');
-  if (
-    packages.some(
-      (pkg) =>
-        !versionExists({
-          deadline,
-          packageName: pkg.packageJson.name,
-          packageVersion: pkg.version,
-        })
-    )
-  )
-    return skip('package versions missing');
+  await waitForPackageVisibility({
+    packages,
+    versionExists,
+    deadline,
+    now,
+    sleep,
+  });
   // Recheck after registry/API reads. The planner checks this pinned SHA too,
   // so a branch movement between this read and dispatch cannot deploy old work.
   if ((await api('git/ref/heads/production')).object?.sha !== sha) {

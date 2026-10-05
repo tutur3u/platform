@@ -115,12 +115,6 @@ for (const [name, change] of [
       f.jobs[0].steps[1].conclusion = 'success';
     },
   ],
-  [
-    'package still missing',
-    (f) => {
-      f.visible = false;
-    },
-  ],
 ]) {
   test(`${name} never dispatches`, async () => {
     const f = fixture();
@@ -425,7 +419,10 @@ for (const conclusion of ['failure', 'timed_out', 'cancelled']) {
     missing.event.workflow_run.conclusion = missing.live.conclusion =
       conclusion;
     missing.visible = false;
-    assert.equal((await missing.run()).reason, 'package versions missing');
+    await assert.rejects(
+      missing.run(),
+      /Package registry visibility deadline exceeded/
+    );
     assert.deepEqual(missing.posts, []);
     assert.deepEqual(missing.intentPosts, []);
   });
@@ -448,4 +445,38 @@ test('workflow permits failed package tails but keeps planner success gating', (
     workflow,
     /workflow_run.name != 'Production Deployment Planner' \|\| github.event.workflow_run.conclusion == 'success'/
   );
+});
+
+test('last package completion retries missing visibility and transport reads before dispatch', async () => {
+  const f = fixture();
+  f.event.workflow_run.conclusion = f.live.conclusion = 'failure';
+  let attempts = 0;
+  let elapsed = 0;
+  const result = await f.run({
+    now: () => elapsed,
+    totalTimeoutMs: 10_000,
+    sleep: async (ms) => {
+      elapsed += ms;
+    },
+    versionExists: () => {
+      attempts++;
+      if (attempts === 1) throw new Error('private registry transport failure');
+      return attempts >= 3;
+    },
+  });
+  assert.equal(result.dispatched, true);
+  assert.equal(attempts, 3);
+  assert.equal(f.intentPosts.length, 1);
+  assert.equal(f.posts.length, 1);
+});
+
+test('exhausted visibility fails the completion instead of silently deferring', async () => {
+  const f = fixture();
+  f.visible = false;
+  await assert.rejects(
+    f.run(),
+    /Package registry visibility deadline exceeded/
+  );
+  assert.deepEqual(f.intentPosts, []);
+  assert.deepEqual(f.posts, []);
 });

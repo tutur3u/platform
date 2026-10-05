@@ -12,6 +12,7 @@ export type ChangedFilesResult = {
 };
 
 export type ResolveChangedFilesInput = {
+  requireExplicitDeployment?: boolean;
   eventName?: string;
   eventPath?: string;
   headSha?: string;
@@ -276,6 +277,7 @@ function isSupabaseMigrationWorkflow(
 }
 
 export async function resolveChangedFiles({
+  requireExplicitDeployment = false,
   eventName = process.env.GITHUB_EVENT_NAME,
   eventPath,
   headSha = process.env.GITHUB_SHA,
@@ -300,6 +302,7 @@ export async function resolveChangedFiles({
 
   if (usesDeploymentMarkerRange) {
     const markerSha = await findLastSuccessfulDeploymentSha({
+      requireExplicitDeployment,
       refName,
       workflowName,
     });

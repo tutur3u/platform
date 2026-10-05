@@ -42,6 +42,7 @@ function resolveFixtureTargets({
   expectedSha = '',
   targets = testTargets,
   eventPath = '',
+  markerPayload = 'explicit',
 }) {
   const output = execFileSync(
     'bun',
@@ -49,6 +50,21 @@ function resolveFixtureTargets({
       '--eval',
       `
         import { resolveProductionVercelTargets } from './scripts/ci/resolve-production-vercel-targets.ts';
+        globalThis.fetch = async (url) => {
+          const parsed = new URL(url);
+          const workflowName = parsed.searchParams.get('environment') + '.yaml';
+          const marker = ${JSON.stringify(baseSha)};
+          const payloadType = ${JSON.stringify(markerPayload)};
+          const payload = payloadType === 'explicit'
+            ? { workflowName, markerKind: 'deployment', refName: 'production' }
+            : payloadType === 'build'
+              ? { workflowName, markerKind: 'build', refName: 'production' }
+              : {};
+          const rows = parsed.pathname.endsWith('/deployments')
+            ? (marker ? [{ id: 1, sha: marker, payload, statuses_url: 'https://api.example.test/statuses/1' }] : [])
+            : [{ state: 'success' }];
+          return { ok: true, json: async () => rows };
+        };
         const decisions = await resolveProductionVercelTargets({
           eventName: ${JSON.stringify(eventName)},
           packageResume: ${JSON.stringify(packageResume)},
@@ -66,7 +82,8 @@ function resolveFixtureTargets({
       encoding: 'utf8',
       env: {
         ...process.env,
-        GITHUB_TOKEN: '',
+        GITHUB_TOKEN: 'fixture-token',
+        GITHUB_REPOSITORY: 'fixture/repo',
         GITHUB_EVENT_PATH: eventPath,
         VERCEL_DEPLOYMENT_MARKER_SHA: baseSha,
       },
@@ -293,3 +310,24 @@ test('recovery skips exact-marker targets while an older platform marker still d
     [false]
   );
 });
+
+for (const markerPayload of ['automatic', 'build']) {
+  test(`package recovery never accepts ${markerPayload} platform environment as promotion proof`, () => {
+    const rootDir = createFixtureRoot();
+    const headSha = initializeGitRepo(rootDir);
+    const decisions = resolveFixtureTargets({
+      baseSha: headSha,
+      headSha,
+      rootDir,
+      eventName: 'workflow_dispatch',
+      packageResume: true,
+      expectedSha: headSha,
+      targets: [{ productionWorkflow: 'vercel-production-platform.yaml' }],
+      markerPayload,
+    });
+    assert.deepEqual(
+      decisions.map(({ shouldRun }) => shouldRun),
+      [true]
+    );
+  });
+}

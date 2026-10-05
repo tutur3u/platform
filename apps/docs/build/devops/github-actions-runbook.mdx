@@ -1043,7 +1043,10 @@ last package became visible before the original planner finished. The dispatch
 carries `expected_sha`; the planner skips a recovery if production moves before
 it starts. Recovery uses commit-driven deployment-marker and affected-path
 selection, including the Cron Control and Devbox Control Workers. An exact-SHA successful deployment marker skips its already covered target,
-including Platform; an older Platform marker still permits package recovery. A known marker
+including Platform, only when its payload explicitly identifies the workflow,
+deployment kind, and production ref. Automatic job environment records, build
+markers, and a bare marker-SHA override cannot establish recovery coverage. An
+older Platform marker still permits package recovery. A known marker
 with no affected Worker paths skips them; a missing marker still fails open.
 Ordinary operator dispatches continue selecting all enabled targets.
 Every snapshotted planner's attempt, status, and conclusion must remain unchanged;
@@ -1054,8 +1057,13 @@ promotion marker. Completion events use [`queue: max`](https://docs.github.com/e
 so up to 100 completions wait instead of replacing the single pending event;
 GitHub cancels overflow beyond that limit. API and npm calls are bounded to
 15 seconds each with a four-minute recovery deadline, below the five-minute
-job limit. Planner runs are rechecked immediately before dispatch. Timeouts,
-unreadable/incomplete results, and changed candidates never request a retry.
+job limit. Missing npm visibility and registry read failures retry every two
+seconds within that shared deadline, including the final package completion.
+Exhaustion fails the recovery job explicitly before creating an intent or
+requesting dispatch; it never reports a successful deferred skip. Planner runs
+are rechecked after registry reads and immediately before dispatch. GitHub API
+timeouts, unreadable/incomplete results, and changed candidates never retry
+intent or dispatch writes.
 Before dispatch it reserves a durable exact-SHA intent in the dedicated
 `production-package-resume` deployment environment with `auto_merge=false`,
 empty required contexts, `production_environment=false`, and

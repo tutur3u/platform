@@ -98,6 +98,7 @@ export async function resolveProductionVercelTargets({
   return Promise.all(
     targets.map(async ({ productionWorkflow }) => {
       const changeResult = await resolveChangedFiles({
+        requireExplicitDeployment: packageResume,
         eventName: selectionEvent,
         headSha,
         refName,

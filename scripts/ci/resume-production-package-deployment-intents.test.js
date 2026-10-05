@@ -35,7 +35,10 @@ function completedBoundRecovery() {
 test('bound completed recovery deferred again can reserve exactly one new intent', async () => {
   const f = completedBoundRecovery();
   f.visible = false;
-  assert.equal((await f.run()).reason, 'package versions missing');
+  await assert.rejects(
+    f.run(),
+    /Package registry visibility deadline exceeded/
+  );
   assert.deepEqual(f.intentPosts, []);
   f.visible = true;
   assert.equal((await f.run()).dispatched, true);
