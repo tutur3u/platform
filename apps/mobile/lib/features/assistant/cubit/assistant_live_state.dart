@@ -29,6 +29,7 @@ class AssistantLiveState extends Equatable {
     this.userTranscript = '',
     this.assistantDraft = '',
     this.assistantTranscript = '',
+    this.assistantParts = const [],
     this.insightCards = const [],
     this.goAwayTimeLeft,
     this.error,
@@ -57,6 +58,7 @@ class AssistantLiveState extends Equatable {
   final String userTranscript;
   final String assistantDraft;
   final String assistantTranscript;
+  final List<AssistantMessagePart> assistantParts;
   final List<AssistantLiveInsightCard> insightCards;
   final String? goAwayTimeLeft;
   final String? error;
@@ -70,7 +72,8 @@ class AssistantLiveState extends Equatable {
       userDraft.isNotEmpty ||
       userTranscript.isNotEmpty ||
       assistantDraft.isNotEmpty ||
-      assistantTranscript.isNotEmpty;
+      assistantTranscript.isNotEmpty ||
+      assistantParts.isNotEmpty;
 
   AssistantLiveState copyWith({
     Object? workspaceId = _assistantLiveSentinel,
@@ -96,6 +99,7 @@ class AssistantLiveState extends Equatable {
     String? userTranscript,
     String? assistantDraft,
     String? assistantTranscript,
+    List<AssistantMessagePart>? assistantParts,
     List<AssistantLiveInsightCard>? insightCards,
     Object? goAwayTimeLeft = _assistantLiveSentinel,
     Object? error = _assistantLiveSentinel,
@@ -138,6 +142,7 @@ class AssistantLiveState extends Equatable {
       userTranscript: userTranscript ?? this.userTranscript,
       assistantDraft: assistantDraft ?? this.assistantDraft,
       assistantTranscript: assistantTranscript ?? this.assistantTranscript,
+      assistantParts: assistantParts ?? this.assistantParts,
       insightCards: insightCards ?? this.insightCards,
       goAwayTimeLeft: goAwayTimeLeft == _assistantLiveSentinel
           ? this.goAwayTimeLeft
@@ -175,6 +180,7 @@ class AssistantLiveState extends Equatable {
     userTranscript,
     assistantDraft,
     assistantTranscript,
+    assistantParts,
     insightCards,
     goAwayTimeLeft,
     error,

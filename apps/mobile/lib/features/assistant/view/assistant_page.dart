@@ -119,6 +119,7 @@ class _AssistantPageState extends State<AssistantPage>
     },
   );
   late final AssistantLiveCubit _liveCubit = AssistantLiveCubit(
+    currentScopeToken: () => _voiceActorScopeEpoch,
     repository: _liveRepository,
     socket: AssistantLiveSocketClient(),
     audioPlayer: AssistantLiveAudioPlayer(),
@@ -631,19 +632,6 @@ class _AssistantPageState extends State<AssistantPage>
 
   String _activeConversationKey(AssistantChatState state) {
     return state.chat?.id ?? state.storedChatId ?? 'new';
-  }
-
-  Widget _buildTranscriptSection(
-    AssistantChatState chatState,
-    AssistantLiveState liveState,
-    AssistantShellState shellState,
-  ) {
-    return AssistantTranscriptSection(
-      chatState: chatState,
-      liveState: liveState,
-      assistantName: shellState.soul.name,
-      onRetry: () => retryAssistantChat(_chatCubit, shellState),
-    );
   }
 
   Widget _buildLiveModeView(

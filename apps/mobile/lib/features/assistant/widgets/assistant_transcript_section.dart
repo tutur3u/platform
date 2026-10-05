@@ -70,10 +70,12 @@ class AssistantTranscriptSection extends StatelessWidget {
             ),
           ),
         if (liveState.assistantDraft.isNotEmpty ||
-            liveState.assistantTranscript.isNotEmpty)
+            liveState.assistantTranscript.isNotEmpty ||
+            liveState.assistantParts.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 14),
             child: AssistantTranscriptBubble(
+              orderedParts: liveState.assistantParts,
               label: context.l10n.assistantLiveDraftAssistant,
               alignEnd: false,
               text: liveState.assistantDraft,

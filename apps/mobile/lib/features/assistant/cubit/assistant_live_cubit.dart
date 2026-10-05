@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:bloc/bloc.dart';
 import 'package:camera/camera.dart';
 import 'package:equatable/equatable.dart';
 import 'package:image/image.dart' as img;
+import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/data/assistant_audio_buffer.dart';
 import 'package:mobile/features/assistant/data/assistant_live_audio_player.dart';
@@ -16,6 +16,7 @@ import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_live_screen_service.dart';
 import 'package:mobile/features/assistant/data/assistant_live_socket.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
+import 'package:mobile/features/assistant/models/assistant_live_turn_parts.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 
 part 'assistant_live_camera.dart';
@@ -24,6 +25,7 @@ part 'assistant_live_recovery.dart';
 part 'assistant_live_screen.dart';
 part 'assistant_live_socket_events.dart';
 part 'assistant_live_state.dart';
+part 'assistant_live_tools.dart';
 
 class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   AssistantLiveCubit({
@@ -35,8 +37,12 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     required Future<void> Function(String wsId, String chatId) onChatBound,
     required Future<void> Function(String wsId, String chatId) onHistoryUpdated,
     this.screenContextProvider,
+    String? Function()? currentUserId,
+    int Function()? currentScopeToken,
     AssistantLiveScreenService? screenService,
-  }) : _repository = repository,
+  }) : _currentScopeToken = currentScopeToken ?? (() => 0),
+       _currentUserId = currentUserId ?? currentCacheUserId,
+       _repository = repository,
        _socket = socket,
        _audioPlayer = audioPlayer,
        _recorder = recorder,
@@ -50,6 +56,10 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     );
   }
 
+  final int Function() _currentScopeToken;
+  int _sessionScopeToken = 0;
+  final String? Function() _currentUserId;
+  String? _sessionUserId;
   final AssistantLiveRepository _repository;
   final AssistantLiveSocketClient _socket;
   final AssistantLiveAudioPlayer _audioPlayer;
@@ -80,8 +90,8 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   String _currentAssistantText = '';
   String _currentAssistantTranscript = '';
   List<AssistantAttachment> _currentTurnAttachments = const [];
-  final List<Map<String, dynamic>> _currentToolCalls = [];
-  final List<Map<String, dynamic>> _currentToolResults = [];
+  AssistantLiveTurnParts _turnParts = AssistantLiveTurnParts();
+  Future<void> _pendingTools = Future<void>.value();
 
   void _emitMicrophoneState(AssistantLiveState next) => emit(next);
 
@@ -98,6 +108,9 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
       await stopScreenSharing();
     }
     final requestVersion = ++_requestVersion;
+    _sessionUserId = _currentUserId();
+    _sessionScopeToken = _currentScopeToken();
+    _pendingTools = Future<void>.value();
     _manualDisconnect = false;
     _readyCompleter = Completer<void>();
 
@@ -144,6 +157,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
       }
 
       await _audioPlayer.initialize();
+      if (_isStale(requestVersion)) return;
       await _socket.connect(
         token: envelope.token,
         model: envelope.model,
@@ -169,10 +183,13 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         ),
       );
     } on ApiException catch (error) {
+      if (_isStale(requestVersion)) return;
       _emitError(error.message);
     } on TimeoutException {
+      if (_isStale(requestVersion)) return;
       _emitError('Timed out while connecting to live session.');
     } on Exception catch (error) {
+      if (_isStale(requestVersion)) return;
       _emitError(error.toString());
     }
   }
@@ -202,8 +219,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     _currentAssistantText = '';
     _currentAssistantTranscript = '';
     _currentTurnAttachments = uploadedAttachments;
-    _currentToolCalls.clear();
-    _currentToolResults.clear();
+    _turnParts = AssistantLiveTurnParts();
 
     emit(
       state.copyWith(
@@ -211,6 +227,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         userTranscript: '',
         assistantDraft: '',
         assistantTranscript: '',
+        assistantParts: const [],
         isInterrupted: false,
       ),
     );
@@ -297,70 +314,6 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     if (!isClosed) emit(state.copyWith(sessionHandle: handle));
   }
 
-  Future<void> _executeToolCalls(List<AssistantLiveFunctionCall> calls) async {
-    final wsId = state.workspaceId;
-    if (wsId == null || calls.isEmpty) {
-      return;
-    }
-
-    final functionResponses = <Map<String, dynamic>>[];
-    final nextCards = [...state.insightCards];
-
-    for (final call in calls) {
-      _ensureActiveTurn();
-      _currentToolCalls.add({
-        'toolName': call.name,
-        'toolCallId': call.id,
-        'args': call.args,
-      });
-
-      try {
-        final result = call.name == 'get_mobile_screen_context'
-            ? screenContextProvider?.call() ?? {'screen': 'unavailable'}
-            : await _repository.executeToolCall(
-                wsId: wsId,
-                functionName: call.name,
-                args: call.args,
-              );
-        _currentToolResults.add({
-          'toolCallId': call.id,
-          'toolName': call.name,
-          'result': result,
-        });
-        functionResponses.add({
-          'id': call.id,
-          'name': call.name,
-          'response': {'result': result},
-        });
-        final card = _buildInsightCard(call, result);
-        if (card != null) {
-          nextCards.insert(0, card);
-        }
-      } on ApiException catch (error) {
-        functionResponses.add({
-          'id': call.id,
-          'name': call.name,
-          'response': {
-            'result': {'error': error.message},
-          },
-        });
-      } on Exception catch (error) {
-        functionResponses.add({
-          'id': call.id,
-          'name': call.name,
-          'response': {
-            'result': {'error': error.toString()},
-          },
-        });
-      }
-    }
-
-    emit(
-      state.copyWith(insightCards: nextCards.take(4).toList(growable: false)),
-    );
-    _socket.sendToolResponses(functionResponses);
-  }
-
   Future<void> _finalizeTurn() async {
     final wsId = state.workspaceId;
     final chatId = state.chatId;
@@ -370,14 +323,23 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
       return;
     }
 
+    final requestVersion = _requestVersion;
+    final turnParts = _turnParts;
+    final pendingTools = _pendingTools;
+    final actorId = _sessionUserId;
+    final typedInput = _currentTypedInput;
+    final userTranscript = _currentUserTranscript;
+    final assistantTranscript = _currentAssistantTranscript;
+    final attachments = _currentTurnAttachments
+        .map(_serializeAttachment)
+        .toList(growable: false);
     final userContent = _resolvedUserContent();
     final assistantContent = _resolvedAssistantContent();
     final hasAssistantMetadata =
-        _currentAssistantTranscript.isNotEmpty ||
-        _currentToolCalls.isNotEmpty ||
-        _currentToolResults.isNotEmpty;
-    final hasUserMetadata =
-        _currentUserTranscript.isNotEmpty || _currentTurnAttachments.isNotEmpty;
+        assistantTranscript.isNotEmpty ||
+        _turnParts.toolCalls.isNotEmpty ||
+        _turnParts.toolResults.isNotEmpty;
+    final hasUserMetadata = userTranscript.isNotEmpty || attachments.isNotEmpty;
 
     if (userContent.isEmpty &&
         assistantContent.isEmpty &&
@@ -388,6 +350,8 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     }
 
     final turnId = _currentTurnId ?? _newTurnId();
+    await pendingTools;
+    if (_isStale(requestVersion)) return;
     final messages = <Map<String, dynamic>>[];
     if (userContent.isNotEmpty || hasUserMetadata) {
       messages.add({
@@ -395,13 +359,9 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         'content': userContent,
         'metadata': {
           'source': 'live',
-          if (_currentTypedInput.isNotEmpty) 'inputText': _currentTypedInput,
-          if (_currentUserTranscript.isNotEmpty)
-            'inputTranscript': _currentUserTranscript,
-          if (_currentTurnAttachments.isNotEmpty)
-            'attachments': _currentTurnAttachments
-                .map(_serializeAttachment)
-                .toList(growable: false),
+          if (typedInput.isNotEmpty) 'inputText': typedInput,
+          if (userTranscript.isNotEmpty) 'inputTranscript': userTranscript,
+          if (attachments.isNotEmpty) 'attachments': attachments,
         },
       });
     }
@@ -412,30 +372,40 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         'content': assistantContent,
         'metadata': {
           'source': 'live',
-          if (_currentAssistantTranscript.isNotEmpty)
-            'outputTranscript': _currentAssistantTranscript,
-          if (_currentToolCalls.isNotEmpty) 'toolCalls': _currentToolCalls,
-          if (_currentToolResults.isNotEmpty)
-            'toolResults': _currentToolResults,
+          if (assistantTranscript.isNotEmpty)
+            'outputTranscript': assistantTranscript,
+          if (turnParts.toolCalls.isNotEmpty) 'toolCalls': turnParts.toolCalls,
+          if (turnParts.toolResults.isNotEmpty)
+            'toolResults': turnParts.toolResults,
+          'parts': turnParts.toJson(),
         },
       });
     }
 
     emit(state.copyWith(isPersisting: true));
     try {
-      await _repository.persistLiveTurn(
+      Future<void> persist() => _repository.persistLiveTurn(
         wsId: wsId,
         chatId: chatId,
         turnId: turnId,
         model: model,
         messages: messages,
       );
+      if (actorId == null) {
+        await persist();
+      } else {
+        await ApiClient.runForUser(actorId, persist);
+      }
+      if (_isStale(requestVersion)) return;
       await _onHistoryUpdated(wsId, chatId);
+      if (_isStale(requestVersion)) return;
       emit(state.copyWith(isPersisting: false, clearError: true));
     } on ApiException catch (error) {
+      if (_isStale(requestVersion)) return;
       _emitError(error.message, preserveDrafts: true);
       return;
     } on Exception catch (error) {
+      if (_isStale(requestVersion)) return;
       _emitError(error.toString(), preserveDrafts: true);
       return;
     }
@@ -449,6 +419,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     }
 
     _reconnectScheduled = true;
+    final requestVersion = _requestVersion;
     final wsId = state.workspaceId!;
     final chatId = state.chatId;
     final model = state.model;
@@ -456,6 +427,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     unawaited(
       Future<void>.delayed(const Duration(milliseconds: 800), () async {
         try {
+          if (_manualDisconnect || _isStale(requestVersion)) return;
           await prepareSession(
             wsId: wsId,
             chatId: chatId,
@@ -495,7 +467,10 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   }
 
   bool _isStale(int requestVersion) =>
-      isClosed || requestVersion != _requestVersion;
+      isClosed ||
+      requestVersion != _requestVersion ||
+      _currentUserId() != _sessionUserId ||
+      _currentScopeToken() != _sessionScopeToken;
 
   void _ensureActiveTurn() {
     _currentTurnId ??= _newTurnId();
@@ -583,8 +558,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     _currentAssistantText = '';
     _currentAssistantTranscript = '';
     _currentTurnAttachments = const [];
-    _currentToolCalls.clear();
-    _currentToolResults.clear();
+    _turnParts = AssistantLiveTurnParts();
 
     if (isClosed) {
       return;
@@ -596,6 +570,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         userTranscript: '',
         assistantDraft: '',
         assistantTranscript: '',
+        assistantParts: const [],
         isInterrupted: false,
         isPersisting: false,
         assistantAudioLevel: 0,

@@ -391,4 +391,17 @@ extension _AssistantPageLayout on _AssistantPageState {
       ),
     );
   }
+
+  Widget _buildTranscriptSection(
+    AssistantChatState chatState,
+    AssistantLiveState liveState,
+    AssistantShellState shellState,
+  ) {
+    return AssistantTranscriptSection(
+      chatState: chatState,
+      liveState: liveState,
+      assistantName: shellState.soul.name,
+      onRetry: () => retryAssistantChat(_chatCubit, shellState),
+    );
+  }
 }
