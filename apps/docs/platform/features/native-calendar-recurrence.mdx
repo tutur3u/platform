@@ -156,3 +156,25 @@ bytes or invent attachment references when splitting an Outlook series.
 Regression coverage: provider `create-metadata.test.ts` and `writer.test.ts`.
 Contract: [Graph event attendee privacy](https://learn.microsoft.com/en-us/graph/api/resources/event?view=graph-rest-1.0)
 and [Graph reference attachments](https://learn.microsoft.com/en-us/graph/api/resources/referenceattachment?view=graph-rest-1.0).
+
+### Future edit resets
+
+Editing this and following occurrences starts a replacement tail and resets its
+previous moved, edited and cancelled exceptions. Native and connected-calendar
+editors show this consequence before Save. Selecting the first occurrence
+normalizes to a whole-series edit and does not show the tail-reset notice;
+single-occurrence and whole-series edits also omit it. The existing transaction preserves earlier
+exceptions. This notice changes no provider admission or write behavior.
+Regression coverage: `native-recurrence-dialog.test.tsx` checks notice visibility
+and preserves the original scope/revision/boundary submission assertions.
+
+### Single Calendar settings host
+
+One dashboard-owned host mounts Calendar settings with the verified workspace ID.
+Responsive account menus forward their query intent without mounting their own
+settings providers. This prevents stacked inaccessible dialogs and duplicate
+connection checks while preserving settings from collapsed, expanded and mobile
+layouts. Settings content mounts only while the dialog is open. Provider accounts,
+synchronization and mutation admission are unchanged. Coverage:
+`settings-dialog-host.test.tsx` checks query intent, shortcut, close cleanup and
+workspace scoping; existing `settings-dialog.test.tsx` retains alias resolution.

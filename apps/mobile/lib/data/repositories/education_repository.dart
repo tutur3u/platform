@@ -8,7 +8,9 @@ import 'package:mobile/data/models/education/education_models.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
 class EducationRepository {
-  EducationRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
+  EducationRepository({ApiClient? apiClient, this.expectedUserId})
+    : _api = apiClient ?? ApiClient(expectedUserId: expectedUserId);
+  final String? expectedUserId;
 
   final ApiClient _api;
 
@@ -21,6 +23,7 @@ class EducationRepository {
     namespace: 'education.$collection',
     workspaceId: wsId,
     path: path,
+    cacheUserId: expectedUserId == null ? null : () => expectedUserId,
   );
 
   Future<List<Map<String, dynamic>>> _rows(
@@ -35,7 +38,14 @@ class EducationRepository {
     final source = (response['data'] as List<dynamic>? ?? const <dynamic>[])
         .whereType<Map<String, dynamic>>()
         .toList(growable: false);
-    final pending = await OfflineMutationQueue.instance.listPending();
+    final allPending = await OfflineMutationQueue.instance.listPending();
+    if (expectedUserId != null) _api.checkUser(expectedUserId!);
+    final pending = allPending
+        .where(
+          (mutation) =>
+              expectedUserId == null || mutation.userId == expectedUserId,
+        )
+        .toList(growable: false);
     return overlayPendingCollection(
       workspaceId: wsId,
       feature: 'education',
@@ -61,6 +71,7 @@ class EducationRepository {
   }) async {
     await queueOrSendVoid(
       feature: 'education',
+      expectedUserId: expectedUserId,
       method: method,
       path: path,
       workspaceId: wsId,
@@ -77,9 +88,11 @@ class EducationRepository {
         }
       },
     );
-    await CacheStore.instance.invalidateTags({
-      'module:education',
-    }, workspaceId: wsId);
+    await CacheStore.instance.invalidateTags(
+      {'module:education'},
+      workspaceId: wsId,
+      userId: expectedUserId,
+    );
   }
 
   Future<EducationPagedResult<EducationCourse>> getCourses(

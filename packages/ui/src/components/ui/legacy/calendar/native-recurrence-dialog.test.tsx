@@ -175,7 +175,17 @@ describe('native recurrence form interactions', () => {
       fireEvent.keyDown(screen.getByRole('combobox', { name: 'scope' }), {
         key: 'ArrowDown',
       });
+      expect(
+        screen.queryByText('futureExceptionsReset')
+      ).not.toBeInTheDocument();
       fireEvent.click(await screen.findByRole('option', { name: scope }));
+      if (scope === 'future') {
+        expect(screen.getByText('futureExceptionsReset')).toBeVisible();
+      } else {
+        expect(
+          screen.queryByText('futureExceptionsReset')
+        ).not.toBeInTheDocument();
+      }
       fireEvent.click(screen.getByRole('button', { name: 'save' }));
       await waitFor(() => expect(mock.mutate).toHaveBeenCalledTimes(1));
       expect(mock.mutate.mock.calls[0]?.[2]).toMatchObject({
@@ -192,6 +202,20 @@ describe('native recurrence form interactions', () => {
       });
     }
   );
+  it('omits the tail-reset notice when the first occurrence becomes a whole-series edit', async () => {
+    setup({
+      occurrence: {
+        ...occurrence,
+        originalStartLocal: series.anchor.startLocal,
+      },
+    });
+    await screen.findByLabelText('title');
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'scope' }), {
+      key: 'ArrowDown',
+    });
+    fireEvent.click(await screen.findByRole('option', { name: 'future' }));
+    expect(screen.queryByText('futureExceptionsReset')).not.toBeInTheDocument();
+  });
   it('keeps permission failures visible without closing or pretending a save succeeded', async () => {
     mock.mutate.mockRejectedValue(new InternalApiError('denied', 403));
     const { close } = setup({ occurrence });
