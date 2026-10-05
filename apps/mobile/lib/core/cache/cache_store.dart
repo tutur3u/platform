@@ -525,6 +525,9 @@ class CacheStore {
       }
 
       for (final entry in recordsToInvalidate.entries) {
+        // Completed refresh-cycle futures also carry this revision. Mutations
+        // must reject those responses even after their in-flight entry is gone.
+        _advanceKey(entry.key);
         final invalidatedRecord = _markRecordStale(entry.value, now: now);
         await _resourceBox.put(entry.key, invalidatedRecord.toJson());
         _putRecord(invalidatedRecord);

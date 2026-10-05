@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_network.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/mail/data/mail_cache.dart';
 import 'package:mobile/features/mail/data/mail_media_cache.dart';
@@ -101,7 +102,7 @@ class MailRepository extends MailInvitationRepository {
         forceRefresh: forceRefresh,
       );
     } on ApiException catch (error) {
-      if (error.statusCode != 0 ||
+      if (!isOfflineTransportFailure(error) ||
           !OfflineMutationQueue.instance.pending.value.any(
             (item) => item.feature == 'mail' && item.workspaceId == wsId,
           )) {

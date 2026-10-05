@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mocktail/mocktail.dart';
@@ -12,6 +14,52 @@ void main() {
     api = MockApiClient();
     repository = MailRepository(apiClient: api);
   });
+
+  for (final kind in [
+    ApiFailureKind.response,
+    ApiFailureKind.session,
+    ApiFailureKind.unknown,
+    ApiFailureKind.transport,
+  ]) {
+    test('pending mail fallback accepts transport only: $kind', () async {
+      OfflineMutationQueue.instance.pending.value = [
+        PendingMutationRecord(
+          id: 'pending-mail',
+          feature: 'mail',
+          method: 'POST',
+          path: '${MailRepository.mailboxPath('typed-ws', 'box')}/drafts',
+          userId: 'actor',
+          workspaceId: 'typed-ws',
+          createdAt: DateTime.utc(2026),
+          payload: const {'subject': 'Pending'},
+          optimisticPatch: const {'entityId': 'draft'},
+        ),
+      ];
+      when(() => api.getJson(any())).thenThrow(
+        ApiException(message: 'Synthetic', statusCode: 0, failureKind: kind),
+      );
+      try {
+        final read = repository.list(
+          'typed-ws',
+          'box',
+          folder: 'drafts',
+          forceRefresh: true,
+        );
+        if (kind == ApiFailureKind.transport) {
+          expect(await read, isA<Map<String, dynamic>>());
+        } else {
+          await expectLater(
+            read,
+            throwsA(
+              isA<ApiException>().having((e) => e.failureKind, 'kind', kind),
+            ),
+          );
+        }
+      } finally {
+        OfflineMutationQueue.instance.pending.value = [];
+      }
+    });
+  }
 
   test(
     'snooze sends the deadline in UTC with thread-scoped bulk action',

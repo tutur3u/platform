@@ -518,6 +518,31 @@ void main() {
     },
   );
 
+  test('tag invalidation rejects completed refresh-cycle response', () async {
+    var reads = 0;
+    when(() => api.getJsonList(path)).thenAnswer(
+      (_) async => [
+        {'id': 'fresh-${++reads}'},
+      ],
+    );
+    await CacheStore.awaitRevalidation(() async {
+      expect(_firstId(await read()), 'fresh-1');
+      await store.invalidateTags(
+        const ['module:finance'],
+        userId: 'user',
+        workspaceId: 'ws',
+      );
+      final retained = await store.read<List<dynamic>>(
+        key: key,
+        decode: (v) => v! as List<dynamic>,
+      );
+      expect(_firstId(retained.data!), 'fresh-1');
+      expect(retained.state.name, 'stale');
+      expect(_firstId(await read()), 'fresh-2');
+    });
+    expect(reads, 2);
+  });
+
   test('invalidating during a refresh cycle forces a new request', () async {
     when(() => api.getJsonList(path)).thenAnswer(
       (_) async => [

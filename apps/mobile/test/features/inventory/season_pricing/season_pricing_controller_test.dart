@@ -582,4 +582,45 @@ void main() {
     expect(reads, 1);
     expect(controller.quote, isNull);
   });
+  test('queued manual refresh cannot cross ABA scope generation', () async {
+    controller.dispose();
+    final response = Completer<InventorySeasonQuote>();
+    var reads = 0;
+    controller =
+        InventorySeasonPricingController(
+          journal: MemorySaleStore().journal,
+          lookupReceipt: (_, _) async => null,
+          fetch: (_, _) {
+            reads++;
+            return response.future;
+          },
+          send: (_, _) async => 'unused',
+          isOnline: () async => true,
+        )..configure(
+          actorId: 'actor',
+          workspaceId: 'ws',
+          selectedPeriod: period(),
+          currency: 'USD',
+        );
+    final automatic = controller.refresh(automatic: true);
+    await Future<void>.delayed(Duration.zero);
+    final manual = controller.refresh();
+    controller
+      ..configure(
+        actorId: 'replacement',
+        workspaceId: 'other',
+        selectedPeriod: period(),
+        currency: 'USD',
+      )
+      ..configure(
+        actorId: 'actor',
+        workspaceId: 'ws',
+        selectedPeriod: period(),
+        currency: 'USD',
+      );
+    response.complete(quote());
+    await Future.wait([automatic, manual]);
+    expect(reads, 1);
+    expect(controller.quote, isNull);
+  });
 }

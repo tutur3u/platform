@@ -183,9 +183,12 @@ class InventorySeasonPricingController extends ChangeNotifier {
     final pending = _quoteRefresh;
     if (pending != null) {
       if (automatic || !_quoteRefreshAutomatic) return pending;
+      final generation = _generation;
       final owner = (_actor, _workspace, period, currency);
       return pending.then<void>((_) async {
-        if (_disposed || owner != (_actor, _workspace, period, currency)) {
+        if (_disposed ||
+            generation != _generation ||
+            owner != (_actor, _workspace, period, currency)) {
           return;
         }
         await refresh();

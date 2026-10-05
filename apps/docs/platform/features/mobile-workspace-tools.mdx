@@ -1440,3 +1440,12 @@ offline connectivity decision, rather than returning rows captured before it.
 A redaction arriving while a request waits therefore takes effect immediately;
 the captured actor is checked after the fallback read. Concurrency regressions
 live in `finance_review_regressions_test.dart`.
+
+Pending Mail and workspace-secret reads fall back only for typed transport
+failures; local response/session errors remain visible even with queued edits.
+Tag invalidation advances stored resource revisions as well as active flights,
+so completed futures in the same refresh cycle cannot replay a pre-mutation
+response. Queued manual season refresh is also bound to the generation, preventing
+A-to-B-to-A scope changes from resuming an old continuation. Regression coverage:
+`mail_repository_test.dart`, `workspace_secrets_repository_test.dart`,
+`cache_revalidation_test.dart`, and `season_pricing_controller_test.dart`.
