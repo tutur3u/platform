@@ -42,6 +42,42 @@ class _Zones extends Mock implements TimezoneSettingsRepository {
   }) => loadWorkspace(id);
 }
 
+// Advance real disk callbacks and fake-zone continuations until the actual
+// operation finishes. The bound is only a deadlock guard, not a settling delay.
+Future<void> _pumpCompletion(
+  WidgetTester tester,
+  Future<void> operation,
+) async {
+  var complete = false;
+  Object? failure;
+  StackTrace? failureStack;
+  unawaited(
+    operation.then<void>(
+      (_) {
+        complete = true;
+      },
+      onError: (Object error, StackTrace stack) {
+        failure = error;
+        failureStack = stack;
+        complete = true;
+      },
+    ),
+  );
+  final elapsed = Stopwatch()..start();
+  while (!complete && elapsed.elapsed < const Duration(seconds: 5)) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await tester.pump();
+  }
+  expect(
+    complete,
+    isTrue,
+    reason: 'The observed cache/query operation must finish',
+  );
+  if (failure != null) Error.throwWithStackTrace(failure!, failureStack!);
+}
+
 void main() {
   setUpAll(() => registerFallbackValue(DateTime.utc(2026)));
 
@@ -99,6 +135,8 @@ void main() {
       final now = DateTime.now().toUtc();
       final midnight = DateTime.utc(now.year, now.month, now.day, 0, 30);
       Completer<List<CalendarEvent>>? blockedRead;
+      final finalQuery = Completer<void>();
+      var observeFinalQuery = false;
       final fixtureEvents = [
         CalendarEvent(
           id: 'synthetic-event',
@@ -116,6 +154,7 @@ void main() {
       ).thenAnswer((_) async {
         final pending = blockedRead;
         blockedRead = null;
+        if (observeFinalQuery && !finalQuery.isCompleted) finalQuery.complete();
         return pending == null ? fixtureEvents : await pending.future;
       });
       await tester.pumpApp(
@@ -162,26 +201,16 @@ void main() {
       // Loaded UI precedes the durable cache commit. Agenda deliberately waits
       // for that commit before changing its wall-clock query; wait on the store
       // write barrier instead of assuming a fixed delay includes disk flushes.
-      var writesComplete = false;
-      unawaited(
+      await _pumpCompletion(
+        tester,
         CacheStore.instance
             .queryReplica(
               namespace: 'calendar.events.utc.v2',
               userId: user.id,
               workspaceId: 'personal',
             )
-            .then((_) => writesComplete = true),
+            .then((_) {}),
       );
-      // Disk callbacks must run in the real zone while cache continuations
-      // still receive fake-zone pumps. Awaiting the whole barrier in runAsync
-      // deadlocks those continuations instead of advancing them.
-      for (var i = 0; i < 100 && !writesComplete; i++) {
-        await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 10)),
-        );
-        await tester.pump();
-      }
-      expect(writesComplete, isTrue);
 
       final inFlight = Completer<List<CalendarEvent>>();
       blockedRead = inFlight;
@@ -212,8 +241,22 @@ void main() {
           end: any(named: 'end'),
         ),
       );
+      observeFinalQuery = true;
       inFlight.complete(fixtureEvents);
-      await settle();
+      // The loaded state precedes durable publication. Waiting for the final
+      // repository query proves that the queued timezone transition ran after
+      // the previous cache write; ten fixed pumps cannot establish that.
+      await _pumpCompletion(tester, finalQuery.future);
+      await _pumpCompletion(
+        tester,
+        CacheStore.instance
+            .queryReplica(
+              namespace: 'calendar.events.utc.v2',
+              userId: user.id,
+              workspaceId: 'personal',
+            )
+            .then((_) {}),
+      );
       expect(calendar.state.timezone, 'Europe/London');
       verify(
         () => events.getEvents(

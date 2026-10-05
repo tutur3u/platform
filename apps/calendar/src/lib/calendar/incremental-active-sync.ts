@@ -16,6 +16,7 @@ import { NextResponse } from 'next/server';
 import { encryptGoogleSyncEvents } from '@/lib/workspace-encryption';
 import { refreshGoogleColorContext } from './google-color-context';
 import { incrementalActiveSync } from './google-guarded-sync-writes';
+import { reconcileGoogleConnectionSeries } from './recurrence/provider/inbound/google-connection';
 import { sanitizeWorkspaceCalendarEventFields } from './sync-field-limits';
 
 type IncrementalSyncOptions = {
@@ -97,7 +98,7 @@ export async function performIncrementalActiveSync(
   console.debug('🔍 [DEBUG] Querying calendar_auth_tokens table...');
   let tokenQuery = supabase
     .from('calendar_auth_tokens')
-    .select('id, access_token, refresh_token')
+    .select('id, user_id, access_token, refresh_token')
     .eq('ws_id', wsId)
     .eq('provider', 'google')
     .eq('is_active', true);
@@ -182,11 +183,7 @@ export async function performIncrementalActiveSync(
     hasRefreshToken: !!googleTokens?.refresh_token,
   });
 
-  // Type assertion for the tokens
-  const tokens = googleTokens as {
-    access_token: string;
-    refresh_token: string;
-  } | null;
+  const tokens = googleTokens;
 
   if (!tokens?.access_token) {
     console.error('❌ [DEBUG] No Google access token found for user:', {
@@ -379,6 +376,16 @@ export async function performIncrementalActiveSync(
       totalEvents: allEvents.length,
       hasNextSyncToken: !!nextSyncToken,
       useDateRangeFallback,
+    });
+
+    allEvents = await reconcileGoogleConnectionSeries({
+      supabase,
+      wsId,
+      authTokenId: tokens.id,
+      actorId: tokens.user_id,
+      calendarId,
+      api: calendar,
+      events: allEvents,
     });
 
     if (allEvents.length > 0) {

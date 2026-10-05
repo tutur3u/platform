@@ -8,6 +8,7 @@ import {
   inspectCalendarRecurrenceSlot,
   validateCalendarRecurrence,
 } from '@tuturuuu/utils/calendar-recurrence';
+import type { ProviderCreateMetadata } from './create-metadata';
 import type { ProviderSeriesContent, ProviderSeriesSnapshot } from './payload';
 
 export type ProviderSeriesBinding = {
@@ -18,7 +19,12 @@ export type ProviderSeriesBinding = {
   etag: string;
 };
 export type ProviderSeriesStep =
-  | { kind: 'create'; key: string; snapshot: ProviderSeriesSnapshot }
+  | {
+      kind: 'create';
+      key: string;
+      snapshot: ProviderSeriesSnapshot;
+      metadata?: ProviderCreateMetadata;
+    }
   | {
       kind: 'update';
       target: 'master' | 'occurrence';

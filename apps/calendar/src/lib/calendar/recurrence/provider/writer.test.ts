@@ -118,6 +118,96 @@ function graphWriter(responses: unknown[]) {
 }
 const conflict = Object.assign(new Error('conflict'), { code: 409 });
 
+describe('future series metadata preservation', () => {
+  it('keeps safe Google metadata while replacing only the private operation marker', async () => {
+    const f = googleWriter();
+    const value = plan('update', 'future');
+    const step = value.steps[1]!;
+    if (step.kind !== 'create') throw new Error('Missing create');
+    step.metadata = {
+      provider: 'google',
+      fields: {
+        attendees: [{ email: 'guest@example.invalid', optional: true }],
+        visibility: 'private',
+        reminders: {
+          useDefault: false,
+          overrides: [{ method: 'popup', minutes: 5 }],
+        },
+        extendedProperties: {
+          private: { custom: 'retained' },
+          shared: { code: 'fixture' },
+        },
+      },
+    };
+    f.events.insert.mockResolvedValue({
+      data: { id: step.key, etag: 'created' },
+    });
+    await f.writer.apply(value, step, []);
+    expect(f.events.insert.mock.calls[0]?.[0].requestBody).toMatchObject({
+      attendees: step.metadata.fields.attendees,
+      visibility: 'private',
+      reminders: step.metadata.fields.reminders,
+      extendedProperties: {
+        private: {
+          custom: 'retained',
+          tuturuuu_series_intent: expect.any(String),
+        },
+        shared: { code: 'fixture' },
+      },
+    });
+  });
+  it('preserves Outlook HTML body and safe guest/reminder fields on create', async () => {
+    const f = graphWriter([
+      { value: [] },
+      { value: [{ alias: 'America/New_York' }] },
+      { id: 'new', '@odata.etag': 'v1' },
+    ]);
+    const value = providerSeriesCreatePlan('operation', {
+      ...snapshot,
+      event: { title: 'Fixture', description: '<p>Fixture</p>' },
+    });
+    const step = value.steps[0]!;
+    if (step.kind !== 'create') throw new Error('Missing create');
+    step.metadata = {
+      provider: 'microsoft',
+      fields: {
+        body: { contentType: 'html', content: '<p>Fixture</p>' },
+        attendees: [
+          {
+            type: 'required',
+            emailAddress: { address: 'guest@example.invalid' },
+          },
+        ],
+        sensitivity: 'private',
+        isReminderOn: true,
+        reminderMinutesBeforeStart: 15,
+      },
+    };
+    await f.writer.apply(value, step, []);
+    expect(f.calls[2]?.body).toMatchObject({
+      body: { contentType: 'html', content: '<p>Fixture</p>' },
+      attendees: step.metadata.fields.attendees,
+      sensitivity: 'private',
+      isReminderOn: true,
+      reminderMinutesBeforeStart: 15,
+    });
+  });
+  it('refuses cross-provider create metadata before sending any remote write', async () => {
+    const f = googleWriter();
+    const value = plan('update', 'future');
+    const step = value.steps[1]!;
+    if (step.kind !== 'create') throw new Error('Missing create');
+    step.metadata = {
+      provider: 'microsoft',
+      fields: { sensitivity: 'private' },
+    };
+    await expect(f.writer.apply(value, step, [])).rejects.toThrow(
+      'metadata source changed'
+    );
+    expect(f.events.insert).not.toHaveBeenCalled();
+  });
+});
+
 describe('Google recurrence provider writer', () => {
   it('creates a master with deterministic identity and attendee notifications enabled', async () => {
     const { writer, events } = googleWriter();
