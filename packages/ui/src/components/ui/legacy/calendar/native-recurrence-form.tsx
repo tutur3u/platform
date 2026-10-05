@@ -11,8 +11,9 @@ import {
 } from '@tuturuuu/internal-api/calendar-series';
 import { InternalApiError } from '@tuturuuu/internal-api/client';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { inspectCalendarRecurrenceSlot } from '@tuturuuu/utils/calendar-recurrence';
 import { useTranslations } from 'next-intl';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { nativeOccurrencesKey } from '../../../../hooks/use-native-calendar-occurrences';
 import type { useWorkspaceActor } from '../../../../hooks/use-workspace-visibility';
 import { Button } from '../../button';
@@ -59,6 +60,21 @@ export function NativeRecurrenceForm({
   const t = useTranslations('calendar.recurrence');
   const client = useQueryClient();
   const [scope, setScope] = useState<RecurrenceScope>('this');
+  const createsFutureTail = useMemo(() => {
+    if (scope !== 'future' || !series || !occurrence?.originalStartLocal)
+      return false;
+    try {
+      return (
+        inspectCalendarRecurrenceSlot({
+          rule: series.rule,
+          anchor: series.anchor,
+          originalStartLocal: occurrence.originalStartLocal,
+        }).precedingCount > 0
+      );
+    } catch {
+      return false;
+    }
+  }, [scope, series, occurrence?.originalStartLocal]);
   const [draft, setDraft] = useState(() =>
     series && occurrence
       ? recurrenceEditDraft(series, occurrence, 'this')
@@ -265,6 +281,11 @@ export function NativeRecurrenceForm({
               ))}
             </SelectContent>
           </Select>
+          {createsFutureTail && (
+            <p className="text-muted-foreground text-xs">
+              {t('futureExceptionsReset')}
+            </p>
+          )}
         </div>
       )}
       <NativeRecurrenceFields

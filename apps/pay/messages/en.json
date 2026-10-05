@@ -297,6 +297,7 @@
       "FR": "Fri",
       "frequency": "Repeat",
       "future": "This and following occurrences",
+      "futureExceptionsReset": "Edits and cancellations for this and following occurrences will be reset when you save.",
       "interval": "Every",
       "invalid": "Check the title, dates, time zone and recurrence settings.",
       "loading": "Loading recurring event…",
