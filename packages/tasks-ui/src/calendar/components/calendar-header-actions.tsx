@@ -9,6 +9,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { NativeRecurrenceDialog } from '@tuturuuu/ui/legacy/calendar/native-recurrence-dialog';
+import { useCalendarSettings } from '@tuturuuu/ui/legacy/calendar/settings/settings-context';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import HabitFormDialog from '../../tu-do/habits/habit-form-dialog';
@@ -19,6 +22,9 @@ export function CalendarHeaderActions({
   workspaceId,
 }: CalendarHeaderActionsProps) {
   const t = useTranslations('calendar');
+  const { readOnly } = useCalendar();
+  const { settings } = useCalendarSettings();
+  const [recurrenceOpen, setRecurrenceOpen] = useState(false);
   const [quickTaskOpen, setQuickTaskOpen] = useState(false);
   const [habitFormOpen, setHabitFormOpen] = useState(false);
 
@@ -33,6 +39,13 @@ export function CalendarHeaderActions({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            disabled={readOnly}
+            onClick={() => setRecurrenceOpen(true)}
+          >
+            <Repeat className="h-4 w-4" />
+            {t('recurrence.create')}
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setQuickTaskOpen(true)}>
             <CheckSquare className="h-4 w-4" />
             {t('new-task')}
@@ -46,6 +59,13 @@ export function CalendarHeaderActions({
 
       <SmartScheduleButton wsId={workspaceId} />
 
+      <NativeRecurrenceDialog
+        wsId={workspaceId}
+        open={recurrenceOpen}
+        onOpenChange={setRecurrenceOpen}
+        readOnly={readOnly}
+        timezone={settings.timezone.timezone}
+      />
       <QuickTaskDialog
         wsId={workspaceId}
         open={quickTaskOpen}

@@ -141,8 +141,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   // Stable drag event handlers using refs
   const handleDragStart = useCallback(
     (e: React.MouseEvent, eventSpan: EventSpan) => {
-      // Don't allow dragging if there are no visible dates or only one date
-      if (visibleDates.length <= 1) return;
+      // Recurring occurrences require the scoped series editor.
+      if (visibleDates.length <= 1 || eventSpan.event.seriesId) return;
 
       e.preventDefault();
       e.stopPropagation();
@@ -662,7 +662,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
   // Enhanced mouse and touch handlers
   const handleEventMouseDown = (e: React.MouseEvent, eventSpan: EventSpan) => {
-    if (visibleDates.length <= 1) return;
+    if (visibleDates.length <= 1 || eventSpan.event.seriesId) return;
     e.preventDefault();
     e.stopPropagation();
     dragStartPos.current = { x: e.clientX, y: e.clientY };
@@ -696,7 +696,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   };
 
   const handleEventTouchStart = (e: React.TouchEvent, eventSpan: EventSpan) => {
-    if (visibleDates.length <= 1) return;
+    if (visibleDates.length <= 1 || eventSpan.event.seriesId) return;
     if (e.touches.length !== 1) return;
     const touch = e.touches[0];
     if (!touch) return;
