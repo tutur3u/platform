@@ -54,3 +54,14 @@ by changed files. A static routing review is not proof of model behavior. For
 complex changes, use an authorized isolated behavioral evaluation with realistic
 requests and no live mutations, and report exactly which evidence was collected.
 Keep demonstrated improvements; do not add prose quotas or tests matching wording.
+
+
+## End-of-session findings
+
+After sustained work, update the existing docs page and narrow source reference
+with observed reusable causes, safe recovery and regression evidence. Promote only
+cross-cutting rules into AGENTS.md. Keep transient SHAs, active ownership and
+pending delivery gates in an unstaged handoff. Do not rewrite installer-owned
+skill caches or copy incident chronology/private evidence into durable guidance.
+Latest explicit user timing overrides a default review itinerary; document the
+exception's scope and keep merge, promotion and runtime evidence distinct.

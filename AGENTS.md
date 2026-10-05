@@ -238,6 +238,16 @@ merge, or production evidence only when that delivery is authorized.
 
 ## 4. Focused References And Maintenance
 
+After a long implementation, investigation, or coordination session, publish the
+reusable findings before finishing: update the narrowest existing `apps/docs`
+page and relevant skill reference, and update AGENTS.md only for a demonstrated
+cross-cutting rule. Record causes, safe procedures, meaningful regression coverage,
+and remaining delivery evidence. Consolidate overlapping guidance; omit session
+chronology, private data, speculation and temporary ownership state. Keep exact
+SHAs, pending gates and ownership in an unstaged coordination handoff instead.
+This maintenance is part of the authorized task; follow its commit/push scope.
+See [session learning maintenance](apps/docs/build/development-tools/documenting.mdx#long-session-learning-maintenance).
+
 Use only the topic relevant to the change under `plugins/tuturuuu/skills/`:
 
 - Web/API/UI: `tuturuuu-platform/references/platform-patterns.md`.

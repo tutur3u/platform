@@ -1,7 +1,7 @@
 ---
 title: 'Documenting'
 description: 'Learn how to contribute to our documentation.'
-updatedAt: '2026-09-30'
+updatedAt: '2026-10-05'
 ---
 
 <Info>
@@ -86,6 +86,37 @@ date serialization, cache provenance before membership-based cancellation, and
 route-to-provider payload propagation. A helper-only mock can pass while those
 contracts remain broken. Use synthetic fixtures; keep private calendars, mail,
 credentials and live notifications out of shared test evidence.
+
+### Long-session learning maintenance
+
+Finish sustained agent work by updating reusable guidance, not by copying the
+conversation into documentation. Use the existing feature page for customer
+behavior, the operational runbook for debugging/delivery, and the source skill
+reference for a fragile agent procedure. Keep AGENTS.md for rules that apply
+across tasks; managed plugin caches are not editable source.
+
+Record the observed cause, the evidence that distinguishes it from alternatives,
+the safe repair procedure, relevant regression tests and outstanding runtime
+proof. Separate source implementation, focused local validation, exact-commit CI,
+deployment markers, production migrations and authenticated runtime behavior.
+A merge alone proves none of the later stages. Avoid promoting an unverified
+inference or a one-off workaround into a permanent rule.
+
+For parallel work, assign one owner per overlapping path and Git publication lane.
+A child agent being listed is not proof that it is active: check its current state
+and request a concrete path/check/commit handoff. If a PR branch has another
+agent's dirty packet, integrate main in a fresh isolated worktree rather than
+staging or overwriting that packet. After the parent merges, transplant the owned
+follow-up patch onto current main; do not replay the whole old branch.
+
+Keep temporary receipts, exact SHAs, pending gates and scheduler IDs in an
+unstaged coordination note. Register every worked-on PR with T3 Code, including
+follow-ups. Use native PR watches for PR news; use an explicitly authorized
+scheduled task for broader delivery follow-through. Record its cadence and next
+run, and disable it when delivery is complete. Recheck live refs after each wake.
+The latest explicit user instruction determines merge/review timing; a speed
+exception for merging does not silently authorize production promotion or expand
+the release range.
 
 ### Code Examples
 

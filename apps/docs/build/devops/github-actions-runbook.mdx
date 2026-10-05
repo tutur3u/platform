@@ -1352,3 +1352,66 @@ existing comments, reject superseded heads, and preserve newer run/attempt repor
 A branch can still advance after the final API head check; the embedded source
 identity makes that evidence boundary visible. Existing cancelled job conclusions
 are unchanged. Regression coverage: `node --test scripts/ci/i18n-report.test.js`.
+
+
+## Pending concurrency, skips and exact-head receipts
+
+`cancel-in-progress: false` protects a running workflow; it does not preserve the
+default single pending slot. A new run in the same group replaces the previous
+pending run. GitHub now supports `queue: max` for up to 100 pending runs when
+cancellation is disabled. See the [official concurrency syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency).
+This is an available mechanism, not proof that every repository workflow uses it.
+
+Choose the group from the workload: validation can use workflow/event/commit
+identity; deployments that mutate the same environment still need serialization.
+Do not make deployment groups unique merely to remove cancellation badges. A
+valid duplicate should reach the repository's proof-based skip decision. Failure,
+missing outputs or unavailable proof must run validation rather than silently
+skip it. Queue saturation can still cancel new runs; inspect the recorded reason.
+
+For an integration receipt, query the full exact SHA directly:
+
+```bash
+gh api "repos/tutur3u/platform/actions/runs?head_sha=$CANDIDATE_SHA&per_page=100"
+gh api "repos/tutur3u/platform/commits/$CANDIDATE_SHA/check-runs?per_page=100"
+```
+
+Follow pagination. A branch listing, old green notification or PR summary can
+refer to an earlier head. Verify every returned `head_sha`, include late fan-out
+and separately inspect deployment/migration markers. A queued, cancelled or
+missing required workflow is not a successful delivery receipt.
+
+### Diagnose image uploads before widening browser deadlines
+
+A small PNG that has a valid signature and dimensions can still contain a bad
+chunk checksum. Client-side optimization may fail during pixel decoding before
+an upload-ticket request is sent. Trace the last entered browser operation and
+whether the ticket endpoint was requested, then decode the exact synthetic
+fixture with the same image-processing boundary. Do not infer a server upload
+failure from an absent request or simply widen the browser assertion timeout.
+
+The shared fixture in `apps/web/e2e/helpers/profile-media-fixture.ts` is exercised
+by `scripts/ci/profile-media-fixture.test.js`: pixel decoding and bounded WebP
+optimization succeed, while a corrupt checksum fails. These checks establish the
+fixture contract, not browser or provider upload success. Confirm the real
+request -> upload -> save -> reload path separately.
+
+### Preserve causal E2E failures and owned process lifecycle
+
+Public Playwright discovery receipts must preserve project dependencies and the
+original test selection. Diagnostic stdout may surround JSON; parse a validated
+report shape, and retain a safe original-selection fallback when discovery is
+unavailable. Never evaluate private Playwright bundles to reconstruct behavior.
+
+Detached satellite process groups require explicit cleanup on timeout and runner
+signals. Track only groups the current invocation created, remove them only after
+cleanup is confirmed, and preserve the runner's signal exit semantics. Child
+`exit` alone does not establish that descendants or stdout have closed. Wait for
+`close` when checking terminal output and wait for a fixture's readiness receipt
+before testing its TERM handler under concurrent load.
+
+When report merging also fails after a failed cohort, preserve the original test
+failure as the primary cause and attach the merge failure as diagnostics. A
+standalone report-merge failure remains a failure. Test these lifecycle boundaries
+with real owned child processes and synthetic failures; helper-only source checks
+are not proof that a stalled browser process exits.
