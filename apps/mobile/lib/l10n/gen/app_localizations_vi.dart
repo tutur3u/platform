@@ -10009,4 +10009,73 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get voiceRecording => 'Đang ghi âm';
+
+  @override
+  String get notesVoiceRecord => 'Ghi âm ghi chú';
+
+  @override
+  String get notesVoiceAnalyze => 'Chép lời và phân tích';
+
+  @override
+  String get notesVoiceCredits => 'Sử dụng tín dụng AI cá nhân của bạn. Xem lại kết quả trước khi lưu.';
+
+  @override
+  String get notesVoiceProcessing => 'Đang chép lời và tạo ghi chú…';
+
+  @override
+  String get notesVoiceReviewRequired => 'Cần kiểm tra quá trình xử lý. Yêu cầu có phí sẽ không được tự động lặp lại.';
+
+  @override
+  String get notesVoiceUnavailable => 'Không thể cập nhật phân tích ghi âm. Kết quả hiện có vẫn được giữ lại.';
+
+  @override
+  String get notesVoiceReview => 'Xem lại ghi chú ghi âm';
+
+  @override
+  String get notesVoiceSave => 'Lưu ghi chú vào không gian này';
+
+  @override
+  String get notesVoiceSaved => 'Đã lưu ghi chú ghi âm';
+
+  @override
+  String get notesVoiceDelete => 'Xóa kết quả ghi âm riêng tư';
+
+  @override
+  String get notesVoiceNoSpeech => 'Không phát hiện lời nói. Hãy ghi âm lại khi sẵn sàng.';
+
+  @override
+  String get notesVoiceTranscript => 'Bản chép lời';
+
+  @override
+  String get notesVoiceSummary => 'Tóm tắt';
+
+  @override
+  String get notesVoiceDecisions => 'Quyết định';
+
+  @override
+  String get notesVoiceActions => 'Việc cần làm được đề xuất';
+
+  @override
+  String get notesVoiceRecommendations => 'Khuyến nghị';
+
+  @override
+  String get notesVoiceQuestions => 'Câu hỏi còn mở';
+
+  @override
+  String get notesVoiceEvidence => 'Bằng chứng từ bản chép lời';
+
+  @override
+  String get notesVoiceNew => 'Ghi âm ghi chú khác';
+
+  @override
+  String get notesVoicePermission => 'Cần quyền truy cập micrô để ghi âm ghi chú.';
+
+  @override
+  String get notesVoiceRecordingError => 'Không thể thu bản ghi âm. Vui lòng thử lại.';
+
+  @override
+  String get notesVoiceFailed => 'Không thể bắt đầu phân tích. Thử lại với bản ghi âm này khi vẫn còn khả dụng.';
+
+  @override
+  String get notesVoiceProposalNotice => 'Các đề xuất cần được bạn xem lại. Lưu ghi chú không tạo công việc hoặc sự kiện lịch. Ghi chú trong không gian nhóm có thể hiển thị với thành viên.';
 }

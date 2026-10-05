@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/utils/gallery_platform_file.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
@@ -67,7 +68,7 @@ class _ChatComposerState extends State<ChatComposer> {
   }
 
   Future<void> _showAttachmentOptions() async {
-    await showModalBottomSheet<void>(
+    await showAdaptiveSheet<void>(
       context: context,
       builder: (sheetContext) => SafeArea(
         child: Column(
@@ -96,6 +97,7 @@ class _ChatComposerState extends State<ChatComposer> {
   }
 
   void _send() {
+    if (widget.isSending || widget.isUploadingAttachment) return;
     final text = _controller.text.trim();
     if (text.isEmpty && widget.pendingAttachments.isEmpty) return;
     widget.onSend(text);
@@ -153,14 +155,19 @@ class _ChatComposerState extends State<ChatComposer> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                shad.PrimaryButton(
-                  onPressed: widget.isSending ? null : _send,
-                  child: widget.isSending
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: NovaLoadingIndicator(size: 20),
-                        )
-                      : const Icon(shad.LucideIcons.send, size: 18),
+                Tooltip(
+                  message: context.l10n.assistantSendAction,
+                  child: shad.PrimaryButton(
+                    onPressed: widget.isSending || widget.isUploadingAttachment
+                        ? null
+                        : _send,
+                    child: widget.isSending
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: NovaLoadingIndicator(size: 20),
+                          )
+                        : const Icon(shad.LucideIcons.send, size: 18),
+                  ),
                 ),
               ],
             ),

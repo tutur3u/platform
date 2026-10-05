@@ -10136,4 +10136,73 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get voiceRecording => 'Recording audio';
+
+  @override
+  String get notesVoiceRecord => 'Record voice note';
+
+  @override
+  String get notesVoiceAnalyze => 'Transcribe and analyze';
+
+  @override
+  String get notesVoiceCredits => 'Uses your personal AI credits. Review results before saving.';
+
+  @override
+  String get notesVoiceProcessing => 'Transcribing and preparing notes…';
+
+  @override
+  String get notesVoiceReviewRequired => 'Processing needs review. We will not automatically repeat a paid request.';
+
+  @override
+  String get notesVoiceUnavailable => 'Could not update voice analysis. Your available result is retained.';
+
+  @override
+  String get notesVoiceReview => 'Review voice note';
+
+  @override
+  String get notesVoiceSave => 'Save note to this workspace';
+
+  @override
+  String get notesVoiceSaved => 'Voice note saved';
+
+  @override
+  String get notesVoiceDelete => 'Delete private voice result';
+
+  @override
+  String get notesVoiceNoSpeech => 'No speech was detected. Record again when ready.';
+
+  @override
+  String get notesVoiceTranscript => 'Transcript';
+
+  @override
+  String get notesVoiceSummary => 'Summary';
+
+  @override
+  String get notesVoiceDecisions => 'Decisions';
+
+  @override
+  String get notesVoiceActions => 'Proposed action items';
+
+  @override
+  String get notesVoiceRecommendations => 'Recommendations';
+
+  @override
+  String get notesVoiceQuestions => 'Open questions';
+
+  @override
+  String get notesVoiceEvidence => 'Transcript evidence';
+
+  @override
+  String get notesVoiceNew => 'Record another voice note';
+
+  @override
+  String get notesVoicePermission => 'Microphone access is needed to record a voice note.';
+
+  @override
+  String get notesVoiceRecordingError => 'Recording could not be captured. Please try again.';
+
+  @override
+  String get notesVoiceFailed => 'Analysis could not start. Retry with the same recording while it is available.';
+
+  @override
+  String get notesVoiceProposalNotice => 'Suggestions need your review. Saving does not create tasks or calendar events. Team workspace notes may be visible to workspace members.';
 }
