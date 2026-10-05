@@ -39,6 +39,19 @@ void main() {
       );
     });
 
+    test('scoped route invalidation rejects a Live preference write', () async {
+      await preferences.saveKeepLiveWhileBrowsing('ws-a', value: true);
+      var current = true;
+      final write = preferences.saveKeepLiveWhileBrowsing(
+        'ws-a',
+        value: false,
+        shouldWrite: () => current,
+      );
+      current = false;
+      await write;
+      expect(await preferences.loadKeepLiveWhileBrowsing('ws-a'), isTrue);
+    });
+
     test('Live browsing is opt-in and scoped to the workspace', () async {
       expect(await preferences.loadKeepLiveWhileBrowsing('ws-a'), isFalse);
       await preferences.saveKeepLiveWhileBrowsing('ws-a', value: true);
