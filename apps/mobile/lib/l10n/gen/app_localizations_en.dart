@@ -12,37 +12,1260 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get workspaceHiddenTitle => 'Hidden workspaces';
+  String get adminAccountsActive => 'Access enabled';
 
   @override
-  String get workspaceHideAction => 'Hide';
+  String get adminAccountsConfirmEmail => 'Type the account email to confirm';
 
   @override
-  String get workspaceRestoreAction => 'Restore';
+  String get adminAccountsDescription => 'Manage Tuturuuu accounts and account security.';
 
   @override
-  String get workspaceHiddenDescription => 'Only you can see this list. Hiding does not change membership or notifications.';
+  String get adminAccountsDisableAccess => 'Disable access';
 
   @override
-  String get workspaceHiddenEmpty => 'No Hidden workspaces';
+  String get adminAccountsDisabled => 'Access disabled';
 
   @override
-  String get workspaceHiddenLoadError => 'Workspace visibility preferences are unavailable. Saved hidden choices are kept.';
+  String get adminAccountsDisplayName => 'Display name';
 
   @override
-  String get workspaceHiddenUpdateError => 'Unable to save this change. Try again when connected.';
+  String get adminAccountsEditProfile => 'Edit profile';
 
   @override
-  String get workspaceAllHidden => 'Your workspaces are hidden. Restore one to continue.';
+  String get adminAccountsEmpty => 'No accounts found';
 
   @override
-  String get workspacePickerClose => 'Close workspace picker';
+  String get adminAccountsEnableAccess => 'Enable access';
 
   @override
-  String get commonLoading => 'Loading';
+  String get adminAccountsFailed => 'The change could not be saved. Try again.';
+
+  @override
+  String get adminAccountsMfaPolicyDescription => 'Requiring MFA invalidates previous verification. Making MFA optional keeps existing authenticators; reset them separately to remove them.';
+
+  @override
+  String get adminAccountsMore => 'Load more';
+
+  @override
+  String get adminAccountsNewPassword => 'New password (12–72 characters)';
+
+  @override
+  String get adminAccountsOptionalMfa => 'Make MFA optional';
+
+  @override
+  String get adminAccountsRequireMfa => 'Require MFA';
+
+  @override
+  String get adminAccountsResetMfa => 'Reset authenticators';
+
+  @override
+  String get adminAccountsResetMfaDescription => 'Remove all MFA factors and trusted device registrations. The user will need to register their authenticators again.';
+
+  @override
+  String get adminAccountsResetPassword => 'Reset password';
+
+  @override
+  String get adminAccountsSave => 'Save changes';
+
+  @override
+  String get adminAccountsSearch => 'Search accounts';
+
+  @override
+  String get adminAccountsTitle => 'Internal accounts';
+
+  @override
+  String get adminAccountsUnavailable => 'Unable to load accounts. Check your administrator access and try again.';
+
+  @override
+  String get adminAccountsUsername => 'Username';
+
+  @override
+  String get appLockDelay1Minute => 'After 1 minute';
+
+  @override
+  String get appLockDelay30Seconds => 'After 30 seconds';
+
+  @override
+  String get appLockDelay5Minutes => 'After 5 minutes';
+
+  @override
+  String get appLockDelayDescription => 'Choose when the app asks to unlock after you switch away.';
+
+  @override
+  String get appLockDelayImmediately => 'Immediately';
+
+  @override
+  String get appLockDelayTitle => 'Lock after leaving';
+
+  @override
+  String get appLockDisableReason => 'Authenticate to turn off app lock.';
+
+  @override
+  String get appLockEnableReason => 'Authenticate to turn on app lock.';
+
+  @override
+  String get appLockLockedDescription => 'Use your device PIN, fingerprint, or Face ID to continue.';
+
+  @override
+  String get appLockLockedTitle => 'Tuturuuu is locked';
+
+  @override
+  String get appLockProtectedDevice => 'Protected on this device';
+
+  @override
+  String get appLockSettingsDescription => 'Require Face ID, fingerprint, or device PIN before using the app.';
+
+  @override
+  String get appLockSettingsDisabled => 'Off';
+
+  @override
+  String get appLockSettingsEnabled => 'On';
+
+  @override
+  String get appLockSettingsTitle => 'App lock';
+
+  @override
+  String get appLockUnavailableDescription => 'Local authentication is unavailable or was cancelled.';
+
+  @override
+  String get appLockUnlockAction => 'Unlock';
+
+  @override
+  String get appLockUnlockReason => 'Unlock Tuturuuu.';
+
+  @override
+  String get appLockUnlockingAction => 'Unlocking...';
 
   @override
   String get appTitle => 'Tuturuuu';
+
+  @override
+  String get appUpdateChecking => 'Checking app version...';
+
+  @override
+  String get appUpdateLater => 'Later';
+
+  @override
+  String get appUpdateNow => 'Update now';
+
+  @override
+  String get appUpdateRecommendedMessage => 'A newer version of the app is available. Update now for the latest fixes and improvements.';
+
+  @override
+  String get appUpdateRecommendedTitle => 'Update available';
+
+  @override
+  String get appUpdateRequiredMessage => 'This app version is no longer supported. Update to continue using the app.';
+
+  @override
+  String get appUpdateRequiredTitle => 'Update required';
+
+  @override
+  String get appsCustomize => 'Customize apps';
+
+  @override
+  String get appsHiddenExperimentsSection => 'Hidden experiments';
+
+  @override
+  String get appsHiddenSection => 'Hidden apps';
+
+  @override
+  String get appsHide => 'Hide app';
+
+  @override
+  String get appsHideConfirmDescription => 'It will move below your shown apps. You can show it again at any time.';
+
+  @override
+  String get appsHideConfirmTitle => 'Hide this app?';
+
+  @override
+  String get appsHubAllApps => 'All apps';
+
+  @override
+  String get appsHubCalendarDescription => 'See your agenda, upcoming events, and calendar views.';
+
+  @override
+  String get appsHubChatDescription => 'Keep team conversations, direct messages, files, and AI chats together.';
+
+  @override
+  String get appsHubCmsDescription => 'Manage CMS collections, entries, queues, and publishing.';
+
+  @override
+  String get appsHubCrmDescription => 'Manage people, feedback, imports, and audit activity in one place.';
+
+  @override
+  String get appsHubDocumentsDescription => 'Write, edit, and publish workspace notes from your phone.';
+
+  @override
+  String get appsHubDriveDescription => 'Browse workspace files, folders, uploads, and secure share links.';
+
+  @override
+  String get appsHubEducationDescription => 'Manage courses, question banks, flashcards, and learner attempts.';
+
+  @override
+  String get appsHubEmpty => 'No apps found';
+
+  @override
+  String get appsHubFeatured => 'Featured';
+
+  @override
+  String get appsHubFinanceDescription => 'Manage wallets, categories, tags, and transaction history.';
+
+  @override
+  String get appsHubGridView => 'Grid';
+
+  @override
+  String get appsHubHabitsDescription => 'Track shared routines, streaks, and recurring progress.';
+
+  @override
+  String get appsHubHeroSubtitle => 'Choose a tool to open.';
+
+  @override
+  String get appsHubHeroTitle => 'Workspace tools';
+
+  @override
+  String get appsHubInventoryDescription => 'Run products, stock, sales, and booth operations in one place.';
+
+  @override
+  String get appsHubListView => 'List';
+
+  @override
+  String get appsHubMailDescription => 'Read and send email, manage drafts, and organize your inbox.';
+
+  @override
+  String get appsHubMeetDescription => 'Plan meetings, review schedules, and keep recordings visible.';
+
+  @override
+  String get appsHubMoreTools => 'More tools';
+
+  @override
+  String get appsHubNotesDescription => 'Capture ideas and connect them to your work.';
+
+  @override
+  String get appsHubNotificationsDescription => 'Review inbox activity, alerts, and archived updates.';
+
+  @override
+  String get appsHubOpenApp => 'Open';
+
+  @override
+  String get appsHubQuickAccess => 'Quick access';
+
+  @override
+  String get appsHubSearchHint => 'Search apps';
+
+  @override
+  String get appsHubSearchResults => 'Search results';
+
+  @override
+  String get appsHubSettingsDescription => 'Adjust app, workspace, and personal preferences.';
+
+  @override
+  String get appsHubTasksDescription => 'Assignments, boards, estimates, and portfolio planning.';
+
+  @override
+  String get appsHubTimerDescription => 'Track sessions, review stats, and handle time requests.';
+
+  @override
+  String get appsNoMatches => 'No matching apps';
+
+  @override
+  String get appsReorder => 'Drag to reorder';
+
+  @override
+  String get appsShow => 'Show app';
+
+  @override
+  String get appsShowBottomTab => 'Show Apps in bottom navigation';
+
+  @override
+  String get appsUnavailableWithCurrentAccess => 'Unavailable with current access';
+
+  @override
+  String get assistantActionsTitle => 'Action';
+
+  @override
+  String get assistantActiveLabel => 'active';
+
+  @override
+  String get assistantAskPlaceholder => 'Ask anything...';
+
+  @override
+  String get assistantAttachCaptureAction => 'Capture & Record';
+
+  @override
+  String get assistantAttachFilesAction => 'Add attachments';
+
+  @override
+  String get assistantAttachFilesSource => 'Files';
+
+  @override
+  String get assistantAttachGalleryMediaAction => 'Photos & Videos Library';
+
+  @override
+  String get assistantAttachmentClearAction => 'Clear attachments';
+
+  @override
+  String get assistantAttachmentFailedShort => 'Upload failed';
+
+  @override
+  String get assistantAttachmentSheetTitle => 'Attachments';
+
+  @override
+  String get assistantAttachmentUploadFailed => 'An attachment failed to upload. Remove it and try again before sending.';
+
+  @override
+  String get assistantAttachmentUploadPending => 'Wait for attachment uploads to finish before sending.';
+
+  @override
+  String get assistantAudioUnavailable => 'Audio was interrupted. Reconnect to continue this conversation.';
+
+  @override
+  String get assistantCalendarLabel => 'Calendar';
+
+  @override
+  String get assistantCancelAction => 'Cancel';
+
+  @override
+  String get assistantCaptureAudio => 'Record audio';
+
+  @override
+  String get assistantCapturePhoto => 'Take photo';
+
+  @override
+  String get assistantCaptureVideo => 'Record video';
+
+  @override
+  String get assistantCloseComposer => 'Close prompt';
+
+  @override
+  String get assistantCollapseNavigation => 'Hide navigation';
+
+  @override
+  String get assistantComingSoon => 'Coming Soon';
+
+  @override
+  String get assistantContextUpdatedLabel => 'Workspace context updated';
+
+  @override
+  String get assistantConversationTitle => 'Conversation';
+
+  @override
+  String get assistantCopiedMessageAction => 'Copied';
+
+  @override
+  String get assistantCopyMessageAction => 'Copy message';
+
+  @override
+  String assistantCreditsSummary(int remaining, String tier) {
+    return '$remaining remaining • $tier';
+  }
+
+  @override
+  String get assistantCreditsTitle => 'Credits';
+
+  @override
+  String get assistantCreditsUnavailable => 'Could not load your credit sources. Please try again.';
+
+  @override
+  String get assistantDoneTodayLabel => 'done today';
+
+  @override
+  String get assistantEditableLabel => 'Editable';
+
+  @override
+  String get assistantEnterFullscreenAction => 'Enter fullscreen';
+
+  @override
+  String get assistantExitFullscreenAction => 'Exit fullscreen';
+
+  @override
+  String get assistantExpandNavigation => 'Show navigation';
+
+  @override
+  String get assistantExportChat => 'Export chat';
+
+  @override
+  String get assistantExportShareText => 'Chat export';
+
+  @override
+  String get assistantGalleryPickError => 'Could not open your photo library. Try again.';
+
+  @override
+  String get assistantHideBottomNavLabel => 'Hide bottom nav';
+
+  @override
+  String get assistantHistoryEmpty => 'No chats yet. Start a new conversation to create one.';
+
+  @override
+  String get assistantHistoryTitle => 'Recent chats';
+
+  @override
+  String get assistantImmersiveLabel => 'Immersive';
+
+  @override
+  String get assistantInputLabel => 'Input';
+
+  @override
+  String get assistantKeepLiveBrowsingDescription => 'Mira keeps listening as you browse and can read the current app section to find relevant tasks. Live ends when you turn this off or leave the app.';
+
+  @override
+  String get assistantKeepLiveBrowsingTitle => 'Keep Live while browsing';
+
+  @override
+  String assistantLiveAccessSummary(String workspace, String source) {
+    return '$workspace • $source';
+  }
+
+  @override
+  String assistantLiveAccessUsingPersonal(String tier) {
+    return 'Using personal $tier';
+  }
+
+  @override
+  String assistantLiveAccessUsingWorkspace(String tier) {
+    return 'Using workspace $tier';
+  }
+
+  @override
+  String get assistantLiveCameraPreview => 'Live camera';
+
+  @override
+  String get assistantLiveConnect => 'Start live session';
+
+  @override
+  String get assistantLiveDescriptionConnecting => 'Creating a direct Gemini Live session for text, audio, and camera input.';
+
+  @override
+  String get assistantLiveDescriptionError => 'The live session hit an error. Retry or start a fresh session.';
+
+  @override
+  String get assistantLiveDescriptionIdle => 'Start a live session to talk, type, or stream camera context into the same assistant chat.';
+
+  @override
+  String get assistantLiveDescriptionListening => 'Microphone streaming is active. Mira will keep listening for new audio input.';
+
+  @override
+  String get assistantLiveDescriptionPreparing => 'Minting an ephemeral token and restoring the last resumable live session.';
+
+  @override
+  String get assistantLiveDescriptionReady => 'Live text and audio are ready. Type a turn, talk, or share your camera feed.';
+
+  @override
+  String get assistantLiveDescriptionReconnecting => 'The session is reconnecting with the latest resumable handle and restored history.';
+
+  @override
+  String get assistantLiveDisconnect => 'End live session';
+
+  @override
+  String get assistantLiveDraftAssistant => 'Mira is replying';
+
+  @override
+  String get assistantLiveDraftUser => 'You are speaking';
+
+  @override
+  String get assistantLiveHideCamera => 'Hide camera';
+
+  @override
+  String get assistantLiveIdleHeading => 'Talk with Mira';
+
+  @override
+  String get assistantLiveInfoAccessHeading => 'Current access';
+
+  @override
+  String get assistantLiveInfoDismiss => 'Got it';
+
+  @override
+  String get assistantLiveInsightsTitle => 'Live insights';
+
+  @override
+  String get assistantLiveListen => 'Open mic';
+
+  @override
+  String get assistantLiveModelBadge => 'Gemini 3.8 Live';
+
+  @override
+  String get assistantLiveMute => 'Mute mic';
+
+  @override
+  String get assistantLiveNoMessagesBody => 'Use voice, text, or attachments to start a chat. Everything from the live session will sync back into this thread.';
+
+  @override
+  String get assistantLiveNoMessagesTitle => 'Your live assistant is ready';
+
+  @override
+  String get assistantLiveOpenMode => 'Open live mode';
+
+  @override
+  String get assistantLivePermissionDenied => 'Camera or microphone access is blocked. Enable permissions to use the full live mode.';
+
+  @override
+  String assistantLiveReconnectBanner(String timeLeft) {
+    return 'Session rotation detected. Reconnecting with about $timeLeft remaining.';
+  }
+
+  @override
+  String get assistantLiveRetryAction => 'Retry live session';
+
+  @override
+  String get assistantLiveReturnToChat => 'Return to chat';
+
+  @override
+  String get assistantLiveScreenActive => 'Your screen is shared with Live';
+
+  @override
+  String get assistantLiveScreenConnectionRequired => 'Connect to Live before sharing your screen.';
+
+  @override
+  String get assistantLiveScreenMicrophoneRequired => 'Turn on the microphone before sharing your screen. Live needs the voice session to continue while you switch apps.';
+
+  @override
+  String get assistantLiveScreenPending => 'Waiting for screen-sharing permission';
+
+  @override
+  String get assistantLiveScreenPrivacy => 'Anything visible on your screen may be shared with Live. Hide private information before continuing.';
+
+  @override
+  String get assistantLiveScreenStopped => 'Screen sharing ended.';
+
+  @override
+  String get assistantLiveScreenUnavailable => 'Screen sharing could not start. Please try again.';
+
+  @override
+  String get assistantLiveSettingSaveError => 'Couldn\'t save Live settings. Try again.';
+
+  @override
+  String get assistantLiveShareScreen => 'Share screen';
+
+  @override
+  String get assistantLiveShowCamera => 'Show camera';
+
+  @override
+  String get assistantLiveStageAssistantReady => 'Waiting for the next reply';
+
+  @override
+  String get assistantLiveStageAssistantSpeaking => 'Voice response is streaming';
+
+  @override
+  String get assistantLiveStageYouListening => 'Your microphone is live';
+
+  @override
+  String get assistantLiveStageYouMuted => 'Tap the mic to speak again';
+
+  @override
+  String get assistantLiveStatusAvailable => 'Available';
+
+  @override
+  String get assistantLiveStatusConnecting => 'Connecting';
+
+  @override
+  String get assistantLiveStatusDisconnected => 'Not connected';
+
+  @override
+  String get assistantLiveStatusError => 'Needs attention';
+
+  @override
+  String get assistantLiveStatusPreparing => 'Preparing';
+
+  @override
+  String get assistantLiveStatusReady => 'Live';
+
+  @override
+  String get assistantLiveStatusReconnecting => 'Reconnecting';
+
+  @override
+  String get assistantLiveStatusSyncing => 'Syncing';
+
+  @override
+  String get assistantLiveStatusUnavailable => 'Unavailable';
+
+  @override
+  String get assistantLiveStopScreen => 'Stop sharing';
+
+  @override
+  String get assistantLiveSubtitle => 'Gemini 3.1 Flash Live with voice, camera, attachments, and unified chat history.';
+
+  @override
+  String get assistantLiveTierRequired => 'Live voice is available on PLUS and above.';
+
+  @override
+  String get assistantLiveTitle => 'Mira Live';
+
+  @override
+  String get assistantLiveTranscriptEmpty => 'Start talking or type a message. Your conversation appears here.';
+
+  @override
+  String get assistantLiveTranscriptTitle => 'Live transcript';
+
+  @override
+  String get assistantLiveTypeMessage => 'Type';
+
+  @override
+  String assistantLiveWorkspaceTierLabel(String tier) {
+    return 'Workspace $tier';
+  }
+
+  @override
+  String get assistantLocalBudget => 'Model storage budget exceeded. Remove a model before installing another.';
+
+  @override
+  String get assistantLocalBudgetDescription => 'Models share a 1 GiB device storage budget. Replacement temporarily needs both files.';
+
+  @override
+  String get assistantLocalBusy => 'Another model operation is running on this device.';
+
+  @override
+  String get assistantLocalDownload => 'Download';
+
+  @override
+  String get assistantLocalDownloadSource => 'Get model from publisher';
+
+  @override
+  String get assistantLocalEngineError => 'On-device inference failed. Choose the model again to reload it. Your prompt was not sent remotely.';
+
+  @override
+  String get assistantLocalHardware => 'Local inference requires a supported device with at least 4 GiB of installed memory. Available memory and native loading still determine readiness.';
+
+  @override
+  String get assistantLocalHelp => 'Local text stays on this device. Live voice, attachments and workspace tools use remote mode.';
+
+  @override
+  String get assistantLocalHistoryNotice => 'One device-only conversation per model and workspace. Up to 32 messages are retained, subject to encrypted cache eviction.';
+
+  @override
+  String get assistantLocalImport => 'Import licensed file';
+
+  @override
+  String get assistantLocalInputError => 'Local prompts are limited to 6,000 characters.';
+
+  @override
+  String get assistantLocalIntegrity => 'This file does not match the verified model. Obtain the exact published version.';
+
+  @override
+  String get assistantLocalLicense => 'License';
+
+  @override
+  String get assistantLocalLoading => 'Preparing on-device model';
+
+  @override
+  String get assistantLocalMissing => 'The selected local model is unavailable. Download it or explicitly choose remote mode.';
+
+  @override
+  String assistantLocalMode(String model) {
+    return 'On device: $model';
+  }
+
+  @override
+  String get assistantLocalModeAction => 'On-device model settings';
+
+  @override
+  String get assistantLocalModeSwitch => 'Local and remote histories stay separate. Your typed draft stays in the composer.';
+
+  @override
+  String get assistantLocalNotDownloaded => 'Not downloaded';
+
+  @override
+  String get assistantLocalRemote => 'Remote models';
+
+  @override
+  String get assistantLocalRemoteHint => 'Use online providers. Local conversations are never uploaded.';
+
+  @override
+  String get assistantLocalRemove => 'Remove weights';
+
+  @override
+  String get assistantLocalSelected => 'Selected for Mira';
+
+  @override
+  String get assistantLocalSelectionUnknown => 'A previously selected local model is no longer in the catalogue. Choose a model or explicitly choose remote mode.';
+
+  @override
+  String assistantLocalSize(int size) {
+    return '$size MiB';
+  }
+
+  @override
+  String get assistantLocalStop => 'Stop local generation';
+
+  @override
+  String get assistantLocalStorageError => 'Could not save local history or mode. Your conversation has not been uploaded.';
+
+  @override
+  String get assistantLocalTextOnly => 'Local mode supports text only';
+
+  @override
+  String get assistantLocalTitle => 'On-device models';
+
+  @override
+  String get assistantLocalUnavailable => 'The local model could not be prepared. Check storage and try again.';
+
+  @override
+  String get assistantLocalUnsupported => 'On-device inference is unavailable for this device.';
+
+  @override
+  String get assistantLocalUse => 'Use on this device';
+
+  @override
+  String get assistantLocalVerified => 'Verified download';
+
+  @override
+  String get assistantMediaPreviewError => 'Could not open this media. Try again.';
+
+  @override
+  String get assistantMermaidDiagramLabel => 'Diagram';
+
+  @override
+  String get assistantMermaidRenderError => 'Couldn\'t render this Mermaid diagram.';
+
+  @override
+  String get assistantMermaidZoomHint => 'Pinch or use the zoom controls to inspect the diagram in fullscreen.';
+
+  @override
+  String get assistantMermaidZoomIn => 'Zoom in';
+
+  @override
+  String get assistantMermaidZoomOut => 'Zoom out';
+
+  @override
+  String get assistantMermaidZoomReset => 'Reset zoom';
+
+  @override
+  String get assistantMessageActionsTitle => 'Message actions';
+
+  @override
+  String get assistantMicrophoneUnavailable => 'Microphone unavailable. Check microphone access or reconnect your headset, then try again.';
+
+  @override
+  String get assistantModeFast => 'Fast';
+
+  @override
+  String get assistantModeThinking => 'Thinking';
+
+  @override
+  String get assistantModelAll => 'All';
+
+  @override
+  String get assistantModelEmpty => 'No models match these filters';
+
+  @override
+  String get assistantModelFavorite => 'Add to favorites';
+
+  @override
+  String get assistantModelFavorites => 'Favorites';
+
+  @override
+  String get assistantModelFavoritesError => 'Could not sync favorites. Try again.';
+
+  @override
+  String get assistantModelHideLocked => 'Hide unavailable models';
+
+  @override
+  String get assistantModelInputCost => 'Input';
+
+  @override
+  String get assistantModelLabel => 'Model';
+
+  @override
+  String get assistantModelOutputCost => 'Output';
+
+  @override
+  String get assistantModelUnfavorite => 'Remove from favorites';
+
+  @override
+  String get assistantNewConversation => 'New conversation';
+
+  @override
+  String get assistantOutputLabel => 'Output';
+
+  @override
+  String get assistantPersonalCredits => 'Personal credits';
+
+  @override
+  String get assistantPersonalWorkspace => 'Personal';
+
+  @override
+  String get assistantPhotoAttachment => 'Photo';
+
+  @override
+  String get assistantPreferencesUpdatedLabel => 'Assistant preferences updated';
+
+  @override
+  String get assistantQueuedPrefix => 'Queued:';
+
+  @override
+  String get assistantQuickPromptCalendar => 'Summarize my calendar for today';
+
+  @override
+  String get assistantQuickPromptExpense => 'Log a quick expense for lunch';
+
+  @override
+  String get assistantQuickPromptFocus => 'Help me plan my next focus block';
+
+  @override
+  String get assistantQuickPromptTasks => 'Show my most urgent tasks';
+
+  @override
+  String get assistantReasoningLabel => 'Reasoning';
+
+  @override
+  String get assistantRenameAction => 'Rename';
+
+  @override
+  String get assistantRenameTitle => 'Rename Assistant';
+
+  @override
+  String get assistantReplyFailed => 'Mira\'s reply stopped. Your message is still here. Retry';
+
+  @override
+  String get assistantSaveAction => 'Save';
+
+  @override
+  String get assistantScrollToBottomAction => 'Scroll to bottom';
+
+  @override
+  String get assistantSearchModels => 'Search models';
+
+  @override
+  String get assistantSeeLessLabel => 'See less';
+
+  @override
+  String get assistantSeeMoreLabel => 'See more';
+
+  @override
+  String get assistantSelectWorkspace => 'Select a workspace';
+
+  @override
+  String get assistantSendAction => 'Send message';
+
+  @override
+  String get assistantSettingsTitle => 'Assistant settings';
+
+  @override
+  String get assistantShowBottomNavLabel => 'Show bottom nav';
+
+  @override
+  String get assistantSourceLabel => 'Source';
+
+  @override
+  String get assistantSourcePersonal => 'Personal';
+
+  @override
+  String get assistantSourceWorkspace => 'Workspace';
+
+  @override
+  String get assistantStandardLabel => 'Standard';
+
+  @override
+  String get assistantStarterBacklog => 'Backlog cleanup';
+
+  @override
+  String get assistantStarterCaptionBacklog => 'Break open tasks into a clean next-step list.';
+
+  @override
+  String get assistantStarterCaptionDraft => 'Shape a concise update before you send it.';
+
+  @override
+  String get assistantStarterCaptionFocus => 'Let Mira surface the best next move.';
+
+  @override
+  String get assistantStarterCaptionPlan => 'Balance meetings, tasks, and real focus time.';
+
+  @override
+  String get assistantStarterDraft => 'Team update';
+
+  @override
+  String get assistantStarterFocus => 'Today\'s focus';
+
+  @override
+  String get assistantStarterPlan => 'Day plan';
+
+  @override
+  String get assistantStarterSubtitle => 'Pick a quick starter or type your own.';
+
+  @override
+  String get assistantStarterTitle => 'Need a place to start?';
+
+  @override
+  String get assistantTasksLabel => 'Tasks';
+
+  @override
+  String get assistantThinkingStatus => 'Thinking...';
+
+  @override
+  String get assistantToolCompleted => 'Completed';
+
+  @override
+  String get assistantToolGeneratedImage => 'Generated image';
+
+  @override
+  String get assistantToolImageUnavailable => 'The generated image is unavailable right now.';
+
+  @override
+  String get assistantToolLabel => 'Tool';
+
+  @override
+  String get assistantToolNoActionNeeded => 'No tools were needed for this reply.';
+
+  @override
+  String get assistantToolSelectedTools => 'Selected tools';
+
+  @override
+  String get assistantToolsLabel => 'Tools';
+
+  @override
+  String get assistantUntitledChat => 'Untitled chat';
+
+  @override
+  String get assistantUpcomingLabel => 'upcoming';
+
+  @override
+  String get assistantVideoAttachment => 'Video';
+
+  @override
+  String get assistantViewOnlyLabel => 'View only';
+
+  @override
+  String get assistantWorkspaceAwareDescription => 'Your AI assistant for planning, questions, and quick actions.';
+
+  @override
+  String get assistantWorkspaceCredits => 'Workspace credits';
+
+  @override
+  String get assistantYouLabel => 'You';
+
+  @override
+  String get authAddAccount => 'Add account';
+
+  @override
+  String get authAddAccountDescription => 'Sign in with another account on this device.';
+
+  @override
+  String get authAddAccountFailed => 'Couldn\'t start adding another account.';
+
+  @override
+  String get authAddAccountHint => 'You\'re adding another account to this device.';
+
+  @override
+  String get authAddAccountTitle => 'Add account';
+
+  @override
+  String get authAppleBrowserLaunchFailed => 'Unable to open Apple sign-in right now.';
+
+  @override
+  String get authAppleSignInFailed => 'Apple sign-in failed. Please try again.';
+
+  @override
+  String get authContinueWithApple => 'Continue with Apple';
+
+  @override
+  String get authContinueWithEmail => 'or continue with email';
+
+  @override
+  String get authContinueWithGithub => 'Continue with GitHub';
+
+  @override
+  String get authContinueWithGoogle => 'Continue with Google';
+
+  @override
+  String get authContinueWithMicrosoft => 'Continue with Microsoft';
+
+  @override
+  String get authContinueWithQr => 'or';
+
+  @override
+  String get authContinueWithSocial => 'or use a social account';
+
+  @override
+  String get authCurrentAccountBadge => 'In use now';
+
+  @override
+  String get authCurrentAccountDescription => 'This is the account currently active on this device.';
+
+  @override
+  String get authCurrentAccountTitle => 'Current account';
+
+  @override
+  String get authGithubBrowserLaunchFailed => 'Unable to open GitHub sign-in right now.';
+
+  @override
+  String get authGoogleBrowserLaunchFailed => 'Unable to open Google sign-in right now.';
+
+  @override
+  String get authGoogleSignInFailed => 'Google sign-in failed. Please try again.';
+
+  @override
+  String get authLogOut => 'Log out';
+
+  @override
+  String get authLogOutConfirmDialogBody => 'We\'ll switch to another saved account if one is available.';
+
+  @override
+  String get authLogOutConfirmDialogTitle => 'Log out from this device?';
+
+  @override
+  String get authLogOutCurrent => 'Log out current account';
+
+  @override
+  String get authLogOutCurrentConfirm => 'Log out this account from this device? If another account exists, we will switch to it automatically.';
+
+  @override
+  String get authLogOutCurrentDescription => 'Sign out this account and switch to another saved account if available.';
+
+  @override
+  String get authLogOutCurrentFailed => 'Couldn\'t log out this account.';
+
+  @override
+  String get authLogOutCurrentSuccess => 'Logged out current account.';
+
+  @override
+  String get authManageAccounts => 'Manage accounts';
+
+  @override
+  String get authManageAccountsDescription => 'Add, remove, or log out accounts on this device.';
+
+  @override
+  String get authManageAccountsEmpty => 'No other saved accounts on this device.';
+
+  @override
+  String get authMicrosoftBrowserLaunchFailed => 'Unable to open Microsoft sign-in right now.';
+
+  @override
+  String get authNoStoredAccounts => 'No saved accounts yet.';
+
+  @override
+  String get authRemoveAccount => 'Remove account';
+
+  @override
+  String authRemoveAccountConfirm(Object name) {
+    return 'Remove $name from this device? You\'ll need to sign in again.';
+  }
+
+  @override
+  String get authRemoveAccountFailed => 'Couldn\'t remove this account.';
+
+  @override
+  String get authRemoveAccountSuccess => 'Account removed successfully.';
+
+  @override
+  String get authSavedAccountBadge => 'Saved on device';
+
+  @override
+  String get authSavedAccountsDescription => 'Manage accounts stored on this device without changing the current one.';
+
+  @override
+  String get authSavedAccountsTitle => 'Saved accounts';
+
+  @override
+  String get authSwitchAccount => 'Switch account';
+
+  @override
+  String get authSwitchAccountDescription => 'Choose a saved account to continue.';
+
+  @override
+  String get authSwitchAccountFailed => 'Couldn\'t switch account.';
+
+  @override
+  String get authSwitchAccountSuccess => 'Switched account.';
+
+  @override
+  String get cacheCategoryCalendar => 'Calendar';
+
+  @override
+  String get cacheCategoryFinance => 'Finance';
+
+  @override
+  String get cacheCategoryMail => 'Mail';
+
+  @override
+  String get cacheCategoryMailMedia => 'Mail images';
+
+  @override
+  String get cacheCategoryMessages => 'Messages and notes';
+
+  @override
+  String get cacheCategoryOther => 'Other data';
+
+  @override
+  String get cacheCategoryTasks => 'Tasks';
+
+  @override
+  String get cacheStorageClear => 'Clear cached data';
+
+  @override
+  String get cacheStorageClearDescription => 'Downloaded data will be fetched again when needed. Pending offline changes are kept.';
+
+  @override
+  String get cacheStorageDescription => 'See cached data by category and choose how much space it can use.';
+
+  @override
+  String get cacheStorageError => 'Could not read or update cached data. Try again.';
+
+  @override
+  String get cacheStorageEstimateNote => 'Estimated saved data. Encrypted file overhead and system caches may differ.';
+
+  @override
+  String get cacheStorageLimit => 'Maximum cached data';
+
+  @override
+  String get cacheStorageTitle => 'Storage and cache';
+
+  @override
+  String get calendarAgendaEmpty => 'No upcoming events';
+
+  @override
+  String get calendarAgendaView => 'Agenda';
+
+  @override
+  String get calendarAllDay => 'All day';
+
+  @override
+  String calendarAllDayProgress(int current, int total) {
+    return 'Day $current of $total';
+  }
+
+  @override
+  String get calendarConnectionsAccounts => 'Connected accounts';
+
+  @override
+  String get calendarConnectionsAddAccount => 'Add account';
+
+  @override
+  String get calendarConnectionsDisconnect => 'Disconnect';
+
+  @override
+  String calendarConnectionsDisconnectConfirm(String account) {
+    return 'Disconnect $account? Associated calendars will be disabled.';
+  }
+
+  @override
+  String get calendarConnectionsEmpty => 'No accounts connected';
+
+  @override
+  String get calendarConnectionsSubtitle => 'Connect Google and Microsoft accounts to sync calendars.';
+
+  @override
+  String get calendarConnectionsTitle => 'Manage Calendar Accounts';
+
+  @override
+  String get calendarDayView => 'Day';
+
+  @override
+  String get calendarDeleteConfirm => 'Delete this event?';
+
+  @override
+  String get calendarDeleteEvent => 'Delete event';
+
+  @override
+  String get calendarEditEvent => 'Edit event';
+
+  @override
+  String get calendarEmpty => 'No events';
+
+  @override
+  String get calendarEventAllDay => 'All day';
+
+  @override
+  String get calendarEventCancel => 'Cancel';
+
+  @override
+  String get calendarEventColor => 'Color';
+
+  @override
+  String get calendarEventCreate => 'Create event';
+
+  @override
+  String get calendarEventCreated => 'Event created';
+
+  @override
+  String get calendarEventDelete => 'Delete';
+
+  @override
+  String get calendarEventDeleted => 'Event deleted';
+
+  @override
+  String get calendarEventDescription => 'Description';
+
+  @override
+  String get calendarEventDescriptionHint => 'Add description';
+
+  @override
+  String get calendarEventEndDate => 'End date';
+
+  @override
+  String get calendarEventEndTime => 'End time';
+
+  @override
+  String get calendarEventSave => 'Save';
+
+  @override
+  String get calendarEventStartDate => 'Start date';
+
+  @override
+  String get calendarEventStartTime => 'Start time';
+
+  @override
+  String get calendarEventTitle => 'Title';
+
+  @override
+  String get calendarEventTitleHint => 'Add title';
+
+  @override
+  String get calendarEventUnavailable => 'This event is no longer available.';
+
+  @override
+  String get calendarEventUpdate => 'Update event';
+
+  @override
+  String get calendarEventUpdated => 'Event updated';
+
+  @override
+  String calendarGoogleColorEvent(String id) {
+    return 'Google color $id';
+  }
+
+  @override
+  String get calendarGoogleColorInherit => 'Use calendar color';
+
+  @override
+  String calendarGoogleColorLabel(String id) {
+    return 'Custom label $id';
+  }
+
+  @override
+  String get calendarInvalidLocalTime => 'Choose a valid start and end time. Some times do not exist when daylight saving time changes.';
+
+  @override
+  String get calendarMonthView => 'Month';
+
+  @override
+  String get calendarNewEvent => 'New event';
+
+  @override
+  String get calendarNoEvents => 'No events for this day';
+
+  @override
+  String get calendarProviderColorSeparateEdit => 'Save other changes before changing the Google color.';
+
+  @override
+  String get calendarThreeDayView => '3 Days';
+
+  @override
+  String get calendarTitle => 'Calendar';
+
+  @override
+  String get calendarToday => 'Today';
+
+  @override
+  String get calendarWeekView => 'Week';
+
+  @override
+  String get calendarYearView => 'Year';
+
+  @override
+  String get camera => 'Camera';
+
+  @override
+  String get captchaError => 'Security check failed. Please try again.';
 
   @override
   String get chatAccept => 'Accept';
@@ -233,1625 +1456,517 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatWorkspace => 'Workspace';
 
   @override
-  String get counterAppBarTitle => 'Counter';
+  String get cmsAllCollections => 'All collections';
 
   @override
-  String get loginTitle => 'Welcome back';
+  String get cmsArchivedBacklog => 'Archived backlog';
 
   @override
-  String get loginSubtitle => 'Sign in to continue';
+  String get cmsCollection => 'Collection';
 
   @override
-  String get loginContinueWithEmail => 'Continue with email';
+  String get cmsCollectionCreated => 'Collection created.';
 
   @override
-  String get loginOtpInstruction => 'Enter the 6-digit code we sent to your email.';
+  String get cmsCollectionDeleted => 'Collection deleted.';
 
   @override
-  String loginOtpRateLimitedInstruction(Object seconds) {
-    return 'Enter your code below, or use password instead. Retry in ${seconds}s.';
-  }
+  String get cmsCollectionEnabled => 'Enabled';
 
   @override
-  String get loginResendOtp => 'Resend code';
+  String get cmsCollectionType => 'Collection type';
 
   @override
-  String loginRetryIn(Object seconds) {
-    return 'Retry in ${seconds}s';
-  }
+  String get cmsCollectionUpdated => 'Collection saved.';
 
   @override
-  String loginRetryAfter(Object seconds) {
-    return 'Try again in ${seconds}s';
-  }
+  String get cmsCollections => 'Collections';
 
   @override
-  String get loginSignIn => 'Sign in';
+  String get cmsDeleteCollection => 'Delete collection';
 
   @override
-  String get loginSendOtp => 'Send code';
+  String get cmsDeleteCollectionConfirm => 'Delete this collection? Entries in the collection may also be affected.';
 
   @override
-  String get loginUseOtpInstead => 'Use email code instead';
+  String get cmsDeleteEntry => 'Delete entry';
 
   @override
-  String get loginUsePasswordInstead => 'Use password instead';
+  String get cmsDeleteEntryConfirm => 'Delete this entry? This cannot be undone.';
 
   @override
-  String get loginVerifyOtp => 'Verify code';
+  String get cmsDescription => 'Description';
 
   @override
-  String get authContinueWithApple => 'Continue with Apple';
+  String get cmsEditCollection => 'Edit collection';
 
   @override
-  String get authContinueWithGithub => 'Continue with GitHub';
+  String get cmsEditEntry => 'Edit entry';
 
   @override
-  String get authContinueWithGoogle => 'Continue with Google';
+  String get cmsEntries => 'Entries';
 
   @override
-  String get authContinueWithMicrosoft => 'Continue with Microsoft';
+  String get cmsEntryCreated => 'Entry created.';
 
   @override
-  String get authContinueWithEmail => 'or continue with email';
+  String get cmsEntryDeleted => 'Entry deleted.';
 
   @override
-  String get authContinueWithQr => 'or';
+  String get cmsEntryUpdated => 'Entry saved.';
 
   @override
-  String get authContinueWithSocial => 'or use a social account';
+  String get cmsLibrary => 'Library';
 
   @override
-  String get authAppleSignInFailed => 'Apple sign-in failed. Please try again.';
+  String get cmsNeedsAttention => 'Needs attention';
 
   @override
-  String get authAppleBrowserLaunchFailed => 'Unable to open Apple sign-in right now.';
+  String get cmsNewCollection => 'New collection';
 
   @override
-  String get authGithubBrowserLaunchFailed => 'Unable to open GitHub sign-in right now.';
+  String get cmsNewEntry => 'New entry';
 
   @override
-  String get authGoogleSignInFailed => 'Google sign-in failed. Please try again.';
+  String get cmsNoAccess => 'CMS is not available for this workspace.';
 
   @override
-  String get authGoogleBrowserLaunchFailed => 'Unable to open Google sign-in right now.';
+  String get cmsNoCollections => 'No collections yet.';
 
   @override
-  String get authMicrosoftBrowserLaunchFailed => 'Unable to open Microsoft sign-in right now.';
+  String get cmsNoEntries => 'No entries yet.';
 
   @override
-  String get authAddAccount => 'Add account';
+  String get cmsOverview => 'Overview';
 
   @override
-  String get authAddAccountDescription => 'Sign in with another account on this device.';
+  String get cmsQueueEmpty => 'Nothing waiting here.';
 
   @override
-  String get authAddAccountFailed => 'Couldn\'t start adding another account.';
+  String get cmsScheduledSoon => 'Scheduled soon';
 
   @override
-  String get authAddAccountHint => 'You\'re adding another account to this device.';
+  String get cmsSearchHint => 'Search collections and entries';
 
   @override
-  String get authAddAccountTitle => 'Add account';
+  String get cmsSlug => 'Slug';
 
   @override
-  String get authLogOut => 'Log out';
+  String get cmsStatus => 'Status';
 
   @override
-  String get authLogOutCurrent => 'Log out current account';
+  String get cmsStatusArchived => 'Archived';
 
   @override
-  String get authLogOutConfirmDialogTitle => 'Log out from this device?';
+  String get cmsStatusDraft => 'Draft';
 
   @override
-  String get authLogOutConfirmDialogBody => 'We\'ll switch to another saved account if one is available.';
+  String get cmsStatusPublished => 'Published';
 
   @override
-  String get authLogOutCurrentConfirm => 'Log out this account from this device? If another account exists, we will switch to it automatically.';
+  String get cmsStatusScheduled => 'Scheduled';
 
   @override
-  String get authLogOutCurrentDescription => 'Sign out this account and switch to another saved account if available.';
+  String get cmsSubtitle => 'Subtitle';
 
   @override
-  String get authLogOutCurrentFailed => 'Couldn\'t log out this account.';
+  String get cmsSubtitleApp => 'Manage content collections, entries, and publish queues.';
 
   @override
-  String get authLogOutCurrentSuccess => 'Logged out current account.';
+  String get cmsSummary => 'Summary';
 
   @override
-  String get authNoStoredAccounts => 'No saved accounts yet.';
+  String get cmsTitle => 'Title';
 
   @override
-  String get authSwitchAccount => 'Switch account';
+  String get cmsTitleApp => 'CMS';
 
   @override
-  String get authSwitchAccountDescription => 'Choose a saved account to continue.';
+  String get commonActive => 'Active';
 
   @override
-  String get authSwitchAccountFailed => 'Couldn\'t switch account.';
+  String get commonAll => 'All';
 
   @override
-  String get authSwitchAccountSuccess => 'Switched account.';
+  String get commonApply => 'Apply';
 
   @override
-  String get authManageAccounts => 'Manage accounts';
+  String get commonArchived => 'Archived';
 
   @override
-  String get authManageAccountsDescription => 'Add, remove, or log out accounts on this device.';
+  String get commonBackfilled => 'Backfilled';
 
   @override
-  String get authManageAccountsEmpty => 'No other saved accounts on this device.';
-
-  @override
-  String get authCurrentAccountTitle => 'Current account';
-
-  @override
-  String get authCurrentAccountDescription => 'This is the account currently active on this device.';
-
-  @override
-  String get authCurrentAccountBadge => 'In use now';
-
-  @override
-  String get authSavedAccountsTitle => 'Saved accounts';
-
-  @override
-  String get authSavedAccountsDescription => 'Manage accounts stored on this device without changing the current one.';
-
-  @override
-  String get authSavedAccountBadge => 'Saved on device';
-
-  @override
-  String get authRemoveAccount => 'Remove account';
-
-  @override
-  String authRemoveAccountConfirm(Object name) {
-    return 'Remove $name from this device? You\'ll need to sign in again.';
-  }
-
-  @override
-  String get authRemoveAccountFailed => 'Couldn\'t remove this account.';
-
-  @override
-  String get authRemoveAccountSuccess => 'Account removed successfully.';
-
-  @override
-  String get appLockDisableReason => 'Authenticate to turn off app lock.';
-
-  @override
-  String get appLockEnableReason => 'Authenticate to turn on app lock.';
-
-  @override
-  String get appLockLockedDescription => 'Use your device PIN, fingerprint, or Face ID to continue.';
-
-  @override
-  String get appLockLockedTitle => 'Tuturuuu is locked';
-
-  @override
-  String get appLockProtectedDevice => 'Protected on this device';
-
-  @override
-  String get appLockSettingsDescription => 'Require Face ID, fingerprint, or device PIN before using the app.';
-
-  @override
-  String get appLockSettingsDisabled => 'Off';
-
-  @override
-  String get appLockSettingsEnabled => 'On';
-
-  @override
-  String get appLockSettingsTitle => 'App lock';
-
-  @override
-  String get appLockDelayTitle => 'Lock after leaving';
-
-  @override
-  String get appLockDelayDescription => 'Choose when the app asks to unlock after you switch away.';
-
-  @override
-  String get appLockDelayImmediately => 'Immediately';
-
-  @override
-  String get appLockDelay30Seconds => 'After 30 seconds';
-
-  @override
-  String get appLockDelay1Minute => 'After 1 minute';
-
-  @override
-  String get appLockDelay5Minutes => 'After 5 minutes';
-
-  @override
-  String get appLockUnavailableDescription => 'Local authentication is unavailable or was cancelled.';
-
-  @override
-  String get appLockUnlockAction => 'Unlock';
-
-  @override
-  String get appLockUnlockingAction => 'Unlocking...';
-
-  @override
-  String get appLockUnlockReason => 'Unlock Tuturuuu.';
-
-  @override
-  String get mfaApprovalApproveAction => 'Approve';
-
-  @override
-  String get mfaApprovalApprovedDescription => 'The browser can now continue without an authenticator code.';
-
-  @override
-  String get mfaApprovalApprovedTitle => 'Web MFA approved';
-
-  @override
-  String get mfaApprovalDialogDescription => 'Confirm that the pair code matches the web MFA page before approving.';
-
-  @override
-  String get mfaApprovalFailed => 'Couldn\'t approve this MFA request.';
-
-  @override
-  String get mfaApprovalPairCodeLabel => 'Pair code';
-
-  @override
-  String mfaApprovalPendingDescription(Object pairCode) {
-    return 'Pair code $pairCode is waiting for approval.';
-  }
-
-  @override
-  String get mfaApprovalRequiresMobileMfa => 'Verify MFA on this mobile session before approving web sign-ins.';
-
-  @override
-  String get mfaApprovalSettingsIdle => 'Open this screen when the web MFA page shows a pair code. Pending requests refresh automatically.';
-
-  @override
-  String get mfaApprovalSettingsTitle => 'Approve web MFA';
-
-  @override
-  String get qrLoginApproveAction => 'Approve';
-
-  @override
-  String qrLoginApproveDescription(Object origin, Object userEmail) {
-    return 'Approve QR sign-in from $origin using $userEmail.';
-  }
-
-  @override
-  String get qrLoginApproveFailed => 'Couldn\'t approve this QR login.';
-
-  @override
-  String get qrLoginApproveTitle => 'Approve QR sign-in';
-
-  @override
-  String get qrLoginApprovedDescription => 'The other device can now finish signing in.';
-
-  @override
-  String get qrLoginApprovedTitle => 'QR sign-in approved';
-
-  @override
-  String get qrLoginCameraUnavailable => 'Camera is unavailable.';
-
-  @override
-  String get qrLoginInvalidCode => 'Point the camera at a Tuturuuu login QR code.';
-
-  @override
-  String get qrLoginLocalAuthFailed => 'Local authentication was cancelled or failed.';
-
-  @override
-  String get qrLoginLocalAuthReason => 'Approve Tuturuuu QR sign-in.';
-
-  @override
-  String get qrLoginMobileApproved => 'QR approved. Signing you in...';
-
-  @override
-  String get qrLoginMobileButton => 'Sign in with mobile QR';
-
-  @override
-  String get qrLoginMobileDescription => 'Open Tuturuuu on a signed-in phone and scan this code.';
-
-  @override
-  String get qrLoginMobileExpired => 'QR code expired. Generate a new code.';
-
-  @override
-  String get qrLoginMobileLoading => 'Generating QR code...';
-
-  @override
-  String get qrLoginMobileRetry => 'Generate new QR code';
-
-  @override
-  String get qrLoginMobileTitle => 'Sign in with mobile QR';
-
-  @override
-  String get qrLoginMobileWaiting => 'Waiting for approval...';
-
-  @override
-  String get qrLoginRequiresAppLock => 'Turn on app lock before approving QR sign-ins.';
-
-  @override
-  String get qrLoginScanAgain => 'Scan again';
-
-  @override
-  String get qrLoginScannerDescription => 'Scan a QR code shown on another Tuturuuu sign-in screen.';
-
-  @override
-  String get qrLoginScannerTitle => 'Scan login QR';
-
-  @override
-  String get qrLoginSettingsDescription => 'Scan a QR code on another sign-in screen and approve it with app lock.';
-
-  @override
-  String get qrLoginSettingsDisabledDescription => 'Turn on app lock before scanning QR login codes.';
-
-  @override
-  String get qrLoginSettingsTitle => 'Scan login QR';
-
-  @override
-  String get loginForgotPassword => 'Forgot password?';
-
-  @override
-  String get loginSignUpPrompt => 'Don\'t have an account? Sign up';
-
-  @override
-  String get emailLabel => 'Email';
-
-  @override
-  String get passwordLabel => 'Password';
-
-  @override
-  String get signUpTitle => 'Create account';
-
-  @override
-  String get signUpButton => 'Create account';
-
-  @override
-  String get signUpSubtitle => 'Choose a provider to continue.';
-
-  @override
-  String get signUpConfirmPassword => 'Confirm password';
-
-  @override
-  String get signUpPasswordMinLength => 'Password must be at least 8 characters';
-
-  @override
-  String get signUpPasswordUppercase => 'Password must contain an uppercase letter';
-
-  @override
-  String get signUpPasswordLowercase => 'Password must contain a lowercase letter';
-
-  @override
-  String get signUpPasswordNumber => 'Password must contain a number';
-
-  @override
-  String get signUpPasswordMismatch => 'Passwords do not match';
-
-  @override
-  String get signUpSuccessTitle => 'Check your email';
-
-  @override
-  String get signUpSuccessMessage => 'We sent a confirmation link to your email. Please verify to continue.';
-
-  @override
-  String get signUpBackToLogin => 'Back to login';
-
-  @override
-  String get signUpAlreadyHaveAccountPrompt => 'Already have an account?';
-
-  @override
-  String get signUpSignIn => 'Sign in';
-
-  @override
-  String get forgotPasswordTitle => 'Password help';
-
-  @override
-  String get forgotPasswordDescription => 'Use the web app to update your password.';
-
-  @override
-  String get forgotPasswordInstructions => 'Sign in on the web with a social account already linked to your email, then change your password from account settings.';
-
-  @override
-  String get forgotPasswordNote => 'Email-based password reset is not supported at this time.';
-
-  @override
-  String get forgotPasswordSendReset => 'Send reset link';
-
-  @override
-  String get forgotPasswordSentTitle => 'Email sent';
-
-  @override
-  String get forgotPasswordSentMessage => 'Check your inbox for the password reset link.';
-
-  @override
-  String get forgotPasswordBackToLogin => 'Back to login';
-
-  @override
-  String get workspaceSelectTitle => 'Select workspace';
-
-  @override
-  String get workspaceSelectEmpty => 'No workspaces found';
-
-  @override
-  String get workspaceSelectError => 'Failed to switch workspace';
-
-  @override
-  String get appUpdateChecking => 'Checking app version...';
-
-  @override
-  String get appUpdateNow => 'Update now';
-
-  @override
-  String get appUpdateLater => 'Later';
-
-  @override
-  String get appUpdateRecommendedTitle => 'Update available';
-
-  @override
-  String get appUpdateRecommendedMessage => 'A newer version of the app is available. Update now for the latest fixes and improvements.';
-
-  @override
-  String get appUpdateRequiredTitle => 'Update required';
-
-  @override
-  String get appUpdateRequiredMessage => 'This app version is no longer supported. Update to continue using the app.';
-
-  @override
-  String get navHome => 'Home';
-
-  @override
-  String get navTasks => 'Tasks';
-
-  @override
-  String get navHabits => 'Habits';
-
-  @override
-  String get navCalendar => 'Calendar';
-
-  @override
-  String get navFinance => 'Finance';
-
-  @override
-  String get navTimer => 'Timer';
-
-  @override
-  String get navSettings => 'Settings';
-
-  @override
-  String get navApps => 'Apps';
-
-  @override
-  String get navAssistant => 'Assistant';
-
-  @override
-  String get navBack => 'Back';
+  String get commonCancel => 'Cancel';
 
   @override
   String get commonClear => 'Clear';
 
   @override
+  String get commonClearSearch => 'Clear search';
+
+  @override
+  String get commonCopy => 'Copy';
+
+  @override
+  String get commonCreate => 'Create';
+
+  @override
+  String get commonCreated => 'Created';
+
+  @override
+  String get commonDelete => 'Delete';
+
+  @override
+  String get commonDeleted => 'Deleted';
+
+  @override
   String get commonDone => 'Done';
 
   @override
-  String get navMore => 'More';
+  String get commonEdit => 'Edit';
 
   @override
-  String get sort => 'Sort';
+  String get commonFilters => 'Filters';
 
   @override
-  String get sortBy => 'Sort by';
+  String get commonImport => 'Import';
 
   @override
-  String get appsHubSearchHint => 'Search apps';
+  String get commonLinked => 'Linked';
 
   @override
-  String get appsHubQuickAccess => 'Quick access';
+  String get commonLive => 'Live';
 
   @override
-  String get appsHubAllApps => 'All apps';
+  String get commonLoadMore => 'Load more';
 
   @override
-  String get appsHubEmpty => 'No apps found';
+  String get commonLoading => 'Loading';
 
   @override
-  String get appsHubHeroTitle => 'Workspace tools';
+  String get commonNext => 'Next';
 
   @override
-  String get appsHubHeroSubtitle => 'Choose a tool to open.';
+  String get commonNoSearchResults => 'No matching results';
 
   @override
-  String get appsHubFeatured => 'Featured';
+  String get commonOff => 'Off';
 
   @override
-  String get appsHubMoreTools => 'More tools';
+  String get commonOn => 'On';
 
   @override
-  String get appsHubSearchResults => 'Search results';
+  String get commonOpen => 'Open';
 
   @override
-  String get appsHubListView => 'List';
+  String get commonPressBackAgainToExit => 'Press back again to exit';
 
   @override
-  String get appsHubGridView => 'Grid';
+  String get commonPressBackAgainToExitHint => 'Press back again within 2 seconds to close the app.';
 
   @override
-  String get appsHubOpenApp => 'Open';
+  String get commonPrevious => 'Previous';
 
   @override
-  String get appsHubTasksDescription => 'Assignments, boards, estimates, and portfolio planning.';
+  String get commonReactivated => 'Reactivated';
 
   @override
-  String get appsHubHabitsDescription => 'Track shared routines, streaks, and recurring progress.';
+  String get commonRefresh => 'Refresh';
 
   @override
-  String get appsHubCalendarDescription => 'See your agenda, upcoming events, and calendar views.';
+  String get commonRename => 'Rename';
 
   @override
-  String get appsHubChatDescription => 'Keep team conversations, direct messages, files, and AI chats together.';
+  String get commonRequired => 'Required';
 
   @override
-  String get appsHubCmsDescription => 'Manage CMS collections, entries, queues, and publishing.';
+  String get commonRetry => 'Retry';
 
   @override
-  String get appsHubCrmDescription => 'Manage people, feedback, imports, and audit activity in one place.';
+  String get commonSave => 'Save';
 
   @override
-  String get appsHubDriveDescription => 'Browse workspace files, folders, uploads, and secure share links.';
+  String get commonSelectDate => 'Select a date';
 
   @override
-  String get appsHubDocumentsDescription => 'Write, edit, and publish workspace notes from your phone.';
+  String get commonShare => 'Share';
 
   @override
-  String get appsHubEducationDescription => 'Manage courses, question banks, flashcards, and learner attempts.';
+  String get commonShowLess => 'Show less';
 
   @override
-  String get appsHubFinanceDescription => 'Manage wallets, categories, tags, and transaction history.';
+  String get commonShowMore => 'Show more';
 
   @override
-  String get appsHubInventoryDescription => 'Run products, stock, sales, and booth operations in one place.';
+  String get commonSomethingWentWrong => 'Something went wrong';
 
   @override
-  String get appsHubMailDescription => 'Read and send email, manage drafts, and organize your inbox.';
+  String get commonUpdated => 'Updated';
 
   @override
-  String get appsHubMeetDescription => 'Plan meetings, review schedules, and keep recordings visible.';
+  String get commonVirtual => 'Virtual';
 
   @override
-  String get appsHubNotificationsDescription => 'Review inbox activity, alerts, and archived updates.';
+  String get commonWithGroups => 'With groups';
 
   @override
-  String get appsHubSettingsDescription => 'Adjust app, workspace, and personal preferences.';
+  String get commonWithoutGroups => 'Without groups';
 
   @override
-  String get appsHubTimerDescription => 'Track sessions, review stats, and handle time requests.';
+  String get connectedOnboardingEcosystemSubtitle => 'Tuturuuu brings planning, collaboration, operations, learning, and creation into one adaptive workspace.';
 
   @override
-  String get habitsTitle => 'Habits';
+  String get connectedOnboardingEcosystemTitle => 'Your goals, connected';
 
   @override
-  String get habitsOverviewLabel => 'Today';
+  String get connectedOnboardingFinish => 'Explore Tuturuuu';
 
   @override
-  String get habitsTodayLabel => 'Today';
+  String get connectedOnboardingGoalBuild => 'Build and create';
 
   @override
-  String get habitsActivityLabel => 'Activity';
+  String get connectedOnboardingGoalCollaborate => 'Collaborate';
 
   @override
-  String get habitsLibraryLabel => 'Library';
+  String get connectedOnboardingGoalFocus => 'Focus and plan';
 
   @override
-  String get habitsActivityTitle => 'Activity';
+  String get connectedOnboardingGoalLearn => 'Learn and teach';
 
   @override
-  String get habitsActivitySubtitle => 'Review the latest habit logs across every tracker in this workspace.';
+  String get connectedOnboardingGoalOperate => 'Operate a business';
 
   @override
-  String get habitsLibraryTitle => 'Library';
+  String get connectedOnboardingGoalSubtitle => 'Pick one or more goal pathways. You can change them whenever you want.';
 
   @override
-  String get habitsLibrarySubtitle => 'Start from strong defaults for fitness, recovery, and disciplined daily routines.';
+  String get connectedOnboardingGoalTitle => 'What do you want to move forward?';
 
   @override
-  String get habitsLoadError => 'Couldn\'t load habits right now';
+  String get connectedOnboardingMiraSubtitle => 'Start a conversation, shape a plan, or think through your next step. Mira lives alongside the tools you use every day.';
 
   @override
-  String get habitsSummarySubtitle => 'Track rituals, routines, and shared momentum across your workspace.';
+  String get connectedOnboardingMiraTitle => 'Meet Mira, your AI companion';
 
   @override
-  String get habitsSummaryVolume => 'Current volume';
+  String get connectedOnboardingMiraToolkit => 'One place to chat with Mira and reach your tasks, calendar, finances, and inventory. Choose what works for you.';
 
   @override
-  String get habitsSummaryTargetsMet => 'Targets met';
+  String get connectedOnboardingOptional => 'Your pace. Your workspace. Always optional.';
 
   @override
-  String get habitsSummaryTopStreak => 'Top streak';
+  String get connectedOnboardingRoleExecutive => 'Executive';
 
   @override
-  String get habitsSummaryTrackers => 'Trackers';
+  String get connectedOnboardingRoleFounder => 'Founder';
 
   @override
-  String get habitsScopeSelf => 'Self';
+  String get connectedOnboardingRoleProfessional => 'Professional';
 
   @override
-  String get habitsScopeTeam => 'Team';
+  String get connectedOnboardingRoleStudent => 'Student';
 
   @override
-  String get habitsScopeMember => 'Member';
+  String get connectedOnboardingRoleSubtitle => 'Choose the perspective that best matches how you work. This only changes recommendations.';
 
   @override
-  String get habitsMemberPickerLabel => 'View member';
+  String get connectedOnboardingRoleTeamLeader => 'Team leader';
 
   @override
-  String get habitsSearchHint => 'Search habits, rituals, or metrics';
+  String get connectedOnboardingRoleTitle => 'Make Tuturuuu yours';
 
   @override
-  String get habitsEmptyTitle => 'No habit trackers yet';
+  String get connectedOnboardingSettingsDescription => 'Revisit roles, goal pathways, and the connected app ecosystem without changing your data.';
 
   @override
-  String get habitsEmptyDescription => 'Create your first tracker to turn recurring habits into something the whole workspace can follow.';
+  String get connectedOnboardingSettingsTitle => 'Replay Tuturuuu guide';
 
   @override
-  String get habitsTrackerNoDescription => 'No description yet';
+  String get connectedOnboardingSkip => 'Skip for now';
 
   @override
-  String get habitsCreateTrackerAction => 'Create tracker';
-
-  @override
-  String get habitsSaveTrackerAction => 'Save tracker';
-
-  @override
-  String get habitsCreateTrackerTitle => 'Create habit tracker';
-
-  @override
-  String get habitsEditTrackerTitle => 'Edit habit tracker';
-
-  @override
-  String get habitsCreateTrackerDescription => 'Define the goal, logging fields, and quick actions your workspace will use.';
-
-  @override
-  String get habitsEditTrackerDescription => 'Update the tracker structure, goal, and quick-add behavior.';
-
-  @override
-  String get habitsTemplateLabel => 'Start from a template';
-
-  @override
-  String get habitsNameLabel => 'Name';
-
-  @override
-  String get habitsNameRequired => 'Tracker name is required';
-
-  @override
-  String get habitsDescriptionLabel => 'Description';
-
-  @override
-  String get habitsTrackingModeLabel => 'Tracking mode';
-
-  @override
-  String get habitsModeDailySummary => 'Daily summary';
-
-  @override
-  String get habitsModeEventLog => 'Event log';
-
-  @override
-  String get habitsAggregationLabel => 'Aggregation';
-
-  @override
-  String get habitsAggregationSum => 'Sum';
-
-  @override
-  String get habitsAggregationMax => 'Max';
-
-  @override
-  String get habitsAggregationCountEntries => 'Count entries';
-
-  @override
-  String get habitsAggregationBooleanAny => 'Any complete';
-
-  @override
-  String get habitsTargetPeriodLabel => 'Target period';
-
-  @override
-  String get habitsPeriodDaily => 'Daily';
-
-  @override
-  String get habitsPeriodWeekly => 'Weekly';
-
-  @override
-  String get habitsTargetOperatorLabel => 'Target operator';
-
-  @override
-  String get habitsTargetOperatorEq => 'Exactly';
-
-  @override
-  String get habitsTargetOperatorGte => 'At least';
-
-  @override
-  String get habitsTargetValueLabel => 'Target value';
-
-  @override
-  String get habitsTargetValueRequired => 'Target value must be greater than zero';
-
-  @override
-  String get habitsStartDateLabel => 'Start date';
-
-  @override
-  String get habitsAppearanceLabel => 'Appearance';
-
-  @override
-  String get habitsIconLabel => 'Icon';
-
-  @override
-  String get habitsFieldsTitle => 'Fields';
-
-  @override
-  String get habitsFieldsRequired => 'Add at least one valid field';
-
-  @override
-  String get habitsAddField => 'Add field';
-
-  @override
-  String get habitsPrimaryMetricLabel => 'Primary metric';
-
-  @override
-  String get habitsPrimaryMetricRequired => 'Choose a primary metric field';
-
-  @override
-  String get habitsQuickAddValuesLabel => 'Quick-add values';
-
-  @override
-  String get habitsQuickAddValuesHint => 'Example: 1, 2, 3';
-
-  @override
-  String get habitsFreezeAllowanceLabel => 'Freeze allowance';
-
-  @override
-  String get habitsRecoveryWindowLabel => 'Recovery windows';
-
-  @override
-  String get habitsActiveLabel => 'Active';
-
-  @override
-  String get habitsFieldKeysUnique => 'Field keys must be unique';
-
-  @override
-  String get habitsSelectOptionsRequired => 'Select fields need at least one option';
-
-  @override
-  String get habitsComposerQuickCheck => 'Quick check';
-
-  @override
-  String get habitsComposerQuickIncrement => 'Quick increment';
-
-  @override
-  String get habitsComposerMeasurement => 'Measurement';
-
-  @override
-  String get habitsComposerWorkoutSession => 'Workout';
-
-  @override
-  String get habitsComposerAdvancedCustom => 'Custom';
-
-  @override
-  String habitsFieldCardTitle(int count) {
-    return 'Field $count';
+  String connectedOnboardingStep(int step, int total) {
+    return 'Step $step of $total';
   }
 
   @override
-  String get habitsFieldLabel => 'Field label';
+  String get connectedOnboardingToolkitSubtitle => 'Tasks, Calendar, Finance, Learn, and Mira work together. Every guide is short, optional, and replayable.';
 
   @override
-  String get habitsFieldType => 'Field type';
+  String get connectedOnboardingToolkitTitle => 'A toolkit that adapts to you';
 
   @override
-  String get habitsFieldKey => 'Field key';
+  String get counterAppBarTitle => 'Counter';
 
   @override
-  String get habitsFieldUnit => 'Unit';
+  String get crmAddFeedback => 'Add feedback';
 
   @override
-  String get habitsFieldOptions => 'Options';
+  String get crmAddress => 'Address';
 
   @override
-  String get habitsFieldOptionsHint => 'Example: easy, medium, hard';
+  String get crmArchived => 'Archived';
 
   @override
-  String get habitsFieldRequired => 'Required field';
+  String get crmArchivedUntil => 'Archived until';
 
   @override
-  String get habitsFieldTypeBoolean => 'Boolean';
+  String get crmAuditActor => 'Actor';
 
   @override
-  String get habitsFieldTypeNumber => 'Number';
+  String get crmAuditAffectedUser => 'Affected user';
 
   @override
-  String get habitsFieldTypeDuration => 'Duration';
+  String get crmAuditEvent => 'Audit event';
 
   @override
-  String get habitsFieldTypeText => 'Text';
+  String get crmAuditRange => 'Date range';
 
   @override
-  String get habitsFieldTypeSelect => 'Select';
+  String get crmAuditSource => 'Source';
 
   @override
-  String get habitsOverviewTab => 'Overview';
+  String get crmAuditTab => 'Audit log';
 
   @override
-  String get habitsEntriesTab => 'Entries';
+  String get crmBirthday => 'Birthday';
 
   @override
-  String get habitsLeaderboardTab => 'Leaderboard';
+  String get crmCreateUser => 'Create user';
 
   @override
-  String get habitsLogEntryTitle => 'Log entry';
+  String get crmDeleteUserConfirm => 'Delete this user?';
 
   @override
-  String get habitsLogEntryDescription => 'Capture a habit update without leaving the habits area.';
+  String get crmDeleteUserSuccess => 'User deleted.';
 
   @override
-  String get habitsLogEntryAction => 'Log entry';
+  String get crmDetectDuplicates => 'Detect duplicates';
 
   @override
-  String get habitsLogMeasurementAction => 'Log measurement';
+  String get crmDisplayName => 'Display name';
 
   @override
-  String get habitsLogSessionAction => 'Log session';
-
-  @override
-  String get habitsCompleteNow => 'Complete now';
-
-  @override
-  String get habitsEntryDateLabel => 'Entry date';
-
-  @override
-  String get habitsEntryNoteLabel => 'Note';
-
-  @override
-  String get habitsEntryTagsLabel => 'Tags';
-
-  @override
-  String get habitsEntryTagsHint => 'Comma-separated tags';
-
-  @override
-  String get habitsSaveEntry => 'Save entry';
-
-  @override
-  String get habitsQuickCheckTitle => 'Quick check-in';
-
-  @override
-  String get habitsQuickCheckDescription => 'Use one tap when this habit is simply done or not done.';
-
-  @override
-  String get habitsQuickIncrementTitle => 'Quick increments';
-
-  @override
-  String get habitsQuickIncrementDescription => 'Adjust the running total with fast chips or enter a custom amount.';
-
-  @override
-  String get habitsMeasurementTitle => 'Measurement';
-
-  @override
-  String get habitsMeasurementDescription => 'Enter one focused measurement and compare it to the latest check-in.';
-
-  @override
-  String get habitsAdvancedComposerTitle => 'Custom entry';
-
-  @override
-  String get habitsAdvancedComposerDescription => 'Use a simple value entry for fully custom trackers.';
-
-  @override
-  String get habitsWorkoutSessionTitle => 'Workout session';
-
-  @override
-  String get habitsWorkoutSessionDescription => 'Add one or more exercise blocks with sets, reps, and optional load.';
-
-  @override
-  String get habitsWorkoutBlocksRequired => 'Add at least one exercise block';
-
-  @override
-  String get habitsWorkoutBlockTitle => 'Exercise block';
-
-  @override
-  String get habitsWorkoutExerciseName => 'Exercise';
-
-  @override
-  String get habitsWorkoutSets => 'Sets';
-
-  @override
-  String get habitsWorkoutReps => 'Reps';
-
-  @override
-  String get habitsWorkoutWeight => 'Weight';
-
-  @override
-  String get habitsWorkoutTotalSets => 'Total sets';
-
-  @override
-  String get habitsWorkoutTotalReps => 'Total reps';
-
-  @override
-  String get habitsWorkoutTotalVolume => 'Total volume';
-
-  @override
-  String get habitsAddExerciseBlock => 'Add exercise';
-
-  @override
-  String habitsLatestValueLabel(String value) {
-    return 'Latest: $value';
+  String crmDuplicateResults(int count) {
+    return '$count duplicate clusters found';
   }
 
   @override
-  String get habitsMarkDone => 'Mark done';
+  String get crmEmptyAudit => 'No audit events found';
 
   @override
-  String get habitsMarkedDone => 'Marked done';
+  String get crmEmptyUsers => 'No users found';
 
   @override
-  String get habitsFormRequiredField => 'Please complete the required fields';
+  String get crmExcludedGroups => 'Excluded groups';
 
   @override
-  String get habitsFormInvalidNumber => 'Enter a valid number';
+  String get crmExportUsers => 'Export users';
 
   @override
-  String get habitsArchiveTrackerTitle => 'Archive habit tracker?';
+  String get crmFeedback => 'Feedback';
 
   @override
-  String get habitsArchiveTrackerMessage => 'This tracker will be removed from the active habits view.';
+  String get crmFeedbackAction => 'Feedback';
 
   @override
-  String get habitsArchiveTrackerAction => 'Archive tracker';
-
-  @override
-  String get habitsDeleteEntryTitle => 'Delete entry?';
-
-  @override
-  String get habitsDeleteEntryMessage => 'This habit entry will be permanently removed.';
-
-  @override
-  String get habitsDeleteEntryAction => 'Delete entry';
-
-  @override
-  String get habitsEditTrackerAction => 'Edit tracker';
-
-  @override
-  String get habitsCurrentStreak => 'Current streak';
-
-  @override
-  String get habitsBestStreak => 'Best streak';
-
-  @override
-  String get habitsConsistencyLabel => 'Consistency';
-
-  @override
-  String get habitsRecoveryWindowTitle => 'Recovery window';
-
-  @override
-  String get habitsRecoveryWindowDescription => 'Use a repair or freeze when a streak period needs help staying intact.';
-
-  @override
-  String get habitsRepairStreakAction => 'Repair streak';
-
-  @override
-  String get habitsUseFreezeAction => 'Use freeze';
-
-  @override
-  String get habitsCurrentPeriodMetricsTitle => 'Current period metrics';
-
-  @override
-  String habitsEntriesCountLabel(int count) {
-    return '$count entries';
+  String crmFeedbackFor(String name) {
+    return 'Feedback for $name';
   }
 
   @override
-  String get habitsMemberSummariesTitle => 'Member summaries';
+  String get crmFullName => 'Full name';
 
   @override
-  String get habitsTeamSummaryTitle => 'Team summary';
+  String get crmGroup => 'Group';
 
   @override
-  String get habitsTopStreakLabel => 'Top streak';
+  String get crmGroupMembership => 'Group membership';
 
   @override
-  String get habitsEntriesLabel => 'Entries';
+  String get crmGuestUser => 'Guest user';
 
   @override
-  String get habitsNoEntries => 'No entries yet';
+  String get crmImportEmpty => 'No valid users were found in that file.';
 
   @override
-  String get habitsNoLeaderboard => 'No leaderboard data yet';
-
-  @override
-  String get habitsActivityEmptyTitle => 'No logs yet';
-
-  @override
-  String get habitsActivityEmptyBody => 'When someone logs a habit entry, it will appear here.';
-
-  @override
-  String get habitsActivityNoTrackers => 'Create a habit tracker first to start collecting activity.';
-
-  @override
-  String get habitsLibraryStrengthTitle => 'Strength';
-
-  @override
-  String get habitsLibraryStrengthSubtitle => 'Heavy sessions, structured lifts, and bodyweight output.';
-
-  @override
-  String get habitsLibraryHealthTitle => 'Health';
-
-  @override
-  String get habitsLibraryHealthSubtitle => 'Measurements and daily totals that keep your baseline visible.';
-
-  @override
-  String get habitsLibraryRecoveryTitle => 'Recovery';
-
-  @override
-  String get habitsLibraryRecoverySubtitle => 'Sleep, sauna, meditation, and reset rituals.';
-
-  @override
-  String get habitsLibraryDisciplineTitle => 'Discipline';
-
-  @override
-  String get habitsLibraryDisciplineSubtitle => 'Simple yes-or-no commitments you want to see every day.';
-
-  @override
-  String get habitsLibraryCustomizeTitle => 'Customize your own';
-
-  @override
-  String get habitsLibraryCustomizeDescription => 'Start from a blank tracker when the preset library is close but not exact.';
-
-  @override
-  String get habitsLibraryCustomizeAction => 'Customize';
-
-  @override
-  String get habitsLibraryGoalChip => 'Goal';
-
-  @override
-  String get habitsLibraryComposerChip => 'Composer';
-
-  @override
-  String habitsStreakChip(int count) {
-    return '$count streak';
+  String crmImportPreview(int count) {
+    return 'Ready to import $count users';
   }
 
   @override
-  String habitsTargetChip(double count) {
-    return '$count target';
+  String crmImportSuccess(int count) {
+    return 'Imported $count users.';
   }
 
   @override
-  String get habitsTeamMembers => 'Team members';
+  String get crmImportUsers => 'Import users';
 
   @override
-  String get habitsTodayTotalHint => 'Today\'s total';
+  String get crmIncludedGroups => 'Included groups';
 
   @override
-  String get habitsQuickLogValueRequired => 'Enter a value before saving';
+  String get crmLinkStatus => 'Link status';
 
   @override
-  String get habitsMetricMet => 'Met';
+  String get crmLinkedUser => 'Linked user';
 
   @override
-  String get habitsMetricPending => 'Pending';
+  String get crmMergeTarget => 'Merge target';
 
   @override
-  String get assistantComingSoon => 'Coming Soon';
+  String get crmMergeUsers => 'Merge users';
 
   @override
-  String get assistantSelectWorkspace => 'Select a workspace';
+  String get crmNote => 'Note';
 
   @override
-  String get assistantWorkspaceAwareDescription => 'Your AI assistant for planning, questions, and quick actions.';
+  String get crmPermissionDenied => 'You do not have permission to access this CRM view.';
 
   @override
-  String get assistantHistoryTitle => 'Recent chats';
+  String get crmPhone => 'Phone';
 
   @override
-  String get assistantHistoryEmpty => 'No chats yet. Start a new conversation to create one.';
+  String get crmRequireAttention => 'Require attention';
 
   @override
-  String get assistantUntitledChat => 'Untitled chat';
+  String get crmSearchAuditHint => 'Search audit actor or affected user';
 
   @override
-  String get assistantPersonalWorkspace => 'Personal';
+  String get crmSearchUsersHint => 'Search users by name, email, or phone';
 
   @override
-  String get assistantSettingsTitle => 'Assistant settings';
+  String get crmStatus => 'Status';
 
   @override
-  String get assistantSendAction => 'Send message';
+  String get crmTitle => 'CRM';
 
   @override
-  String get assistantActionsTitle => 'Action';
+  String get crmUploadAvatar => 'Upload avatar';
 
   @override
-  String get assistantRenameTitle => 'Rename Assistant';
+  String get crmUsersTab => 'Users';
 
   @override
-  String get assistantRenameAction => 'Rename';
+  String get dashboardActiveTasksLabel => 'Active tasks';
 
   @override
-  String get assistantCancelAction => 'Cancel';
+  String get dashboardAssignedToMe => 'My tasks';
 
   @override
-  String get assistantSaveAction => 'Save';
+  String get dashboardEventAllDay => 'All day';
 
   @override
-  String get assistantCreditsTitle => 'Credits';
-
-  @override
-  String get assistantConversationTitle => 'Conversation';
-
-  @override
-  String get assistantAttachFilesAction => 'Add attachments';
-
-  @override
-  String get assistantAttachGalleryMediaAction => 'Photos & Videos Library';
-
-  @override
-  String get assistantGalleryPickError => 'Could not open your photo library. Try again.';
-
-  @override
-  String get assistantEnterFullscreenAction => 'Enter fullscreen';
-
-  @override
-  String get assistantExitFullscreenAction => 'Exit fullscreen';
-
-  @override
-  String get assistantPersonalCredits => 'Personal credits';
-
-  @override
-  String get assistantWorkspaceCredits => 'Workspace credits';
-
-  @override
-  String get assistantTasksLabel => 'Tasks';
-
-  @override
-  String get assistantCalendarLabel => 'Calendar';
-
-  @override
-  String get assistantActiveLabel => 'active';
-
-  @override
-  String get assistantDoneTodayLabel => 'done today';
-
-  @override
-  String get assistantUpcomingLabel => 'upcoming';
-
-  @override
-  String get assistantYouLabel => 'You';
-
-  @override
-  String get assistantThinkingStatus => 'Thinking...';
-
-  @override
-  String get assistantReasoningLabel => 'Reasoning';
-
-  @override
-  String get assistantAskPlaceholder => 'Ask anything...';
-
-  @override
-  String get assistantQueuedPrefix => 'Queued:';
-
-  @override
-  String get assistantQuickPromptCalendar => 'Summarize my calendar for today';
-
-  @override
-  String get assistantQuickPromptTasks => 'Show my most urgent tasks';
-
-  @override
-  String get assistantQuickPromptFocus => 'Help me plan my next focus block';
-
-  @override
-  String get assistantQuickPromptExpense => 'Log a quick expense for lunch';
-
-  @override
-  String get assistantNewConversation => 'New conversation';
-
-  @override
-  String get assistantExportChat => 'Export chat';
-
-  @override
-  String get assistantModelLabel => 'Model';
-
-  @override
-  String get assistantSearchModels => 'Search models';
-
-  @override
-  String get assistantModelAll => 'All';
-
-  @override
-  String get assistantModelFavorites => 'Favorites';
-
-  @override
-  String get assistantModelHideLocked => 'Hide unavailable models';
-
-  @override
-  String get assistantModelEmpty => 'No models match these filters';
-
-  @override
-  String get assistantModelFavorite => 'Add to favorites';
-
-  @override
-  String get assistantModelUnfavorite => 'Remove from favorites';
-
-  @override
-  String get assistantModelFavoritesError => 'Could not sync favorites. Try again.';
-
-  @override
-  String get assistantModelInputCost => 'Input';
-
-  @override
-  String get assistantModelOutputCost => 'Output';
-
-  @override
-  String get assistantModeFast => 'Fast';
-
-  @override
-  String get assistantModeThinking => 'Thinking';
-
-  @override
-  String get assistantImmersiveLabel => 'Immersive';
-
-  @override
-  String get assistantStandardLabel => 'Standard';
-
-  @override
-  String get assistantViewOnlyLabel => 'View only';
-
-  @override
-  String get assistantEditableLabel => 'Editable';
-
-  @override
-  String get assistantSourceLabel => 'Source';
-
-  @override
-  String get assistantSourcePersonal => 'Personal';
-
-  @override
-  String get assistantSourceWorkspace => 'Workspace';
-
-  @override
-  String get assistantToolLabel => 'Tool';
-
-  @override
-  String get assistantInputLabel => 'Input';
-
-  @override
-  String get assistantOutputLabel => 'Output';
-
-  @override
-  String get assistantSeeMoreLabel => 'See more';
-
-  @override
-  String get assistantSeeLessLabel => 'See less';
-
-  @override
-  String get assistantExportShareText => 'Chat export';
-
-  @override
-  String get assistantAttachmentClearAction => 'Clear attachments';
-
-  @override
-  String get assistantAttachmentSheetTitle => 'Attachments';
-
-  @override
-  String get assistantAttachmentUploadPending => 'Wait for attachment uploads to finish before sending.';
-
-  @override
-  String get assistantAttachmentUploadFailed => 'An attachment failed to upload. Remove it and try again before sending.';
-
-  @override
-  String get assistantAttachmentFailedShort => 'Upload failed';
-
-  @override
-  String get assistantPhotoAttachment => 'Photo';
-
-  @override
-  String get assistantVideoAttachment => 'Video';
-
-  @override
-  String get assistantMediaPreviewError => 'Could not open this media. Try again.';
-
-  @override
-  String get assistantContextUpdatedLabel => 'Workspace context updated';
-
-  @override
-  String get assistantPreferencesUpdatedLabel => 'Assistant preferences updated';
-
-  @override
-  String get assistantStarterBacklog => 'Backlog cleanup';
-
-  @override
-  String get assistantStarterCaptionBacklog => 'Break open tasks into a clean next-step list.';
-
-  @override
-  String get assistantStarterCaptionDraft => 'Shape a concise update before you send it.';
-
-  @override
-  String get assistantStarterCaptionFocus => 'Let Mira surface the best next move.';
-
-  @override
-  String get assistantStarterCaptionPlan => 'Balance meetings, tasks, and real focus time.';
-
-  @override
-  String get assistantStarterDraft => 'Team update';
-
-  @override
-  String get assistantStarterFocus => 'Today\'s focus';
-
-  @override
-  String get assistantStarterPlan => 'Day plan';
-
-  @override
-  String get assistantStarterSubtitle => 'Pick a quick starter or type your own.';
-
-  @override
-  String get assistantStarterTitle => 'Need a place to start?';
-
-  @override
-  String get assistantShowBottomNavLabel => 'Show bottom nav';
-
-  @override
-  String get assistantHideBottomNavLabel => 'Hide bottom nav';
-
-  @override
-  String assistantLiveAccessSummary(String workspace, String source) {
-    return '$workspace • $source';
-  }
-
-  @override
-  String assistantLiveAccessUsingPersonal(String tier) {
-    return 'Using personal $tier';
-  }
-
-  @override
-  String assistantLiveAccessUsingWorkspace(String tier) {
-    return 'Using workspace $tier';
-  }
-
-  @override
-  String get assistantLiveCameraPreview => 'Live camera';
-
-  @override
-  String get assistantLiveSettingSaveError => 'Couldn\'t save Live settings. Try again.';
-
-  @override
-  String get assistantKeepLiveBrowsingTitle => 'Keep Live while browsing';
-
-  @override
-  String get assistantKeepLiveBrowsingDescription => 'Mira keeps listening as you browse and can read the current app section to find relevant tasks. Live ends when you turn this off or leave the app.';
-
-  @override
-  String get assistantLiveIdleHeading => 'Talk with Mira';
-
-  @override
-  String get assistantLiveConnect => 'Start live session';
-
-  @override
-  String get assistantLiveDescriptionConnecting => 'Creating a direct Gemini Live session for text, audio, and camera input.';
-
-  @override
-  String get assistantLiveDescriptionError => 'The live session hit an error. Retry or start a fresh session.';
-
-  @override
-  String get assistantLiveDescriptionIdle => 'Start a live session to talk, type, or stream camera context into the same assistant chat.';
-
-  @override
-  String get assistantLiveDescriptionListening => 'Microphone streaming is active. Mira will keep listening for new audio input.';
-
-  @override
-  String get assistantLiveDescriptionPreparing => 'Minting an ephemeral token and restoring the last resumable live session.';
-
-  @override
-  String get assistantLiveDescriptionReady => 'Live text and audio are ready. Type a turn, talk, or share your camera feed.';
-
-  @override
-  String get assistantLiveDescriptionReconnecting => 'The session is reconnecting with the latest resumable handle and restored history.';
-
-  @override
-  String get assistantLiveDisconnect => 'End live session';
-
-  @override
-  String get assistantLiveDraftAssistant => 'Mira is replying';
-
-  @override
-  String get assistantLiveDraftUser => 'You are speaking';
-
-  @override
-  String get assistantLiveHideCamera => 'Hide camera';
-
-  @override
-  String get assistantLiveInsightsTitle => 'Live insights';
-
-  @override
-  String get assistantLiveListen => 'Open mic';
-
-  @override
-  String get miraChatTitle => 'Mira Chat';
-
-  @override
-  String get miraLiveTitle => 'Mira Live';
-
-  @override
-  String get assistantLiveModelBadge => 'Gemini 3.8 Live';
-
-  @override
-  String get assistantLiveMute => 'Mute mic';
-
-  @override
-  String get assistantLiveNoMessagesBody => 'Use voice, text, or attachments to start a chat. Everything from the live session will sync back into this thread.';
-
-  @override
-  String get assistantLiveNoMessagesTitle => 'Your live assistant is ready';
-
-  @override
-  String get assistantLiveOpenMode => 'Open live mode';
-
-  @override
-  String get assistantLivePermissionDenied => 'Camera or microphone access is blocked. Enable permissions to use the full live mode.';
-
-  @override
-  String assistantLiveReconnectBanner(String timeLeft) {
-    return 'Session rotation detected. Reconnecting with about $timeLeft remaining.';
-  }
-
-  @override
-  String get assistantLiveShowCamera => 'Show camera';
-
-  @override
-  String get assistantLiveRetryAction => 'Retry live session';
-
-  @override
-  String get assistantLiveReturnToChat => 'Return to chat';
-
-  @override
-  String get assistantLiveStageAssistantReady => 'Waiting for the next reply';
-
-  @override
-  String get assistantLiveStageAssistantSpeaking => 'Voice response is streaming';
-
-  @override
-  String get assistantLiveStageYouListening => 'Your microphone is live';
-
-  @override
-  String get assistantLiveStageYouMuted => 'Tap the mic to speak again';
-
-  @override
-  String get assistantLiveStatusAvailable => 'Available';
-
-  @override
-  String get assistantLiveStatusConnecting => 'Connecting';
-
-  @override
-  String get assistantLiveStatusDisconnected => 'Not connected';
-
-  @override
-  String get assistantLiveStatusError => 'Needs attention';
-
-  @override
-  String get assistantLiveStatusPreparing => 'Preparing';
-
-  @override
-  String get assistantLiveStatusReady => 'Live';
-
-  @override
-  String get assistantLiveStatusReconnecting => 'Reconnecting';
-
-  @override
-  String get assistantLiveStatusSyncing => 'Syncing';
-
-  @override
-  String get assistantLiveStatusUnavailable => 'Unavailable';
-
-  @override
-  String get assistantLiveSubtitle => 'Gemini 3.1 Flash Live with voice, camera, attachments, and unified chat history.';
-
-  @override
-  String get assistantLiveTierRequired => 'Live voice is available on PLUS and above.';
-
-  @override
-  String get assistantLiveTranscriptEmpty => 'Start talking or type a message. Your conversation appears here.';
-
-  @override
-  String get assistantLiveTranscriptTitle => 'Live transcript';
-
-  @override
-  String get assistantLiveTitle => 'Mira Live';
-
-  @override
-  String get assistantLiveTypeMessage => 'Type';
-
-  @override
-  String get assistantLiveInfoAccessHeading => 'Current access';
-
-  @override
-  String get assistantLiveInfoDismiss => 'Got it';
-
-  @override
-  String assistantLiveWorkspaceTierLabel(String tier) {
-    return 'Workspace $tier';
-  }
-
-  @override
-  String get assistantMermaidDiagramLabel => 'Diagram';
-
-  @override
-  String get assistantMermaidRenderError => 'Couldn\'t render this Mermaid diagram.';
-
-  @override
-  String get assistantMermaidZoomHint => 'Pinch or use the zoom controls to inspect the diagram in fullscreen.';
-
-  @override
-  String get assistantMermaidZoomIn => 'Zoom in';
-
-  @override
-  String get assistantMermaidZoomOut => 'Zoom out';
-
-  @override
-  String get assistantMermaidZoomReset => 'Reset zoom';
-
-  @override
-  String get assistantMessageActionsTitle => 'Message actions';
-
-  @override
-  String get assistantCopyMessageAction => 'Copy message';
-
-  @override
-  String get assistantCopiedMessageAction => 'Copied';
-
-  @override
-  String get assistantScrollToBottomAction => 'Scroll to bottom';
-
-  @override
-  String get assistantToolCompleted => 'Completed';
-
-  @override
-  String get assistantToolGeneratedImage => 'Generated image';
-
-  @override
-  String get assistantToolImageUnavailable => 'The generated image is unavailable right now.';
-
-  @override
-  String get assistantToolNoActionNeeded => 'No tools were needed for this reply.';
-
-  @override
-  String get assistantToolSelectedTools => 'Selected tools';
-
-  @override
-  String get assistantToolsLabel => 'Tools';
-
-  @override
-  String assistantCreditsSummary(int remaining, String tier) {
-    return '$remaining remaining • $tier';
+  String dashboardEventsMetric(Object count) {
+    return '$count next up';
   }
 
   @override
   String get dashboardGreeting => 'Welcome back!';
 
   @override
-  String get dashboardQuickActions => 'Quick actions';
-
-  @override
-  String get dashboardTodayTitle => 'Today at a glance';
-
-  @override
-  String get dashboardActiveTasksLabel => 'Active tasks';
-
-  @override
-  String get dashboardQuickLaunch => 'Quick launch';
-
-  @override
-  String get dashboardAssignedToMe => 'My tasks';
-
-  @override
-  String get dashboardUpcomingEvents => 'Upcoming events';
-
-  @override
-  String get dashboardUpcomingMeetings => 'Upcoming meetings';
-
-  @override
   String get dashboardMailInbox => 'Mail Inbox';
-
-  @override
-  String get dashboardNoUpcomingMeetings => 'No meetings coming up';
-
-  @override
-  String get dashboardOpenTasks => 'Open';
-
-  @override
-  String get dashboardOpenCalendar => 'Open';
 
   @override
   String get dashboardNoAssignedTasks => 'No active tasks assigned to you.';
@@ -1866,6 +1981,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardNoUpcomingEventsDescription => 'Your schedule looks open.';
 
   @override
+  String get dashboardNoUpcomingMeetings => 'No meetings coming up';
+
+  @override
+  String get dashboardOpenCalendar => 'Open';
+
+  @override
+  String get dashboardOpenTasks => 'Open';
+
+  @override
+  String dashboardOverdueMetric(Object count) {
+    return '$count overdue';
+  }
+
+  @override
+  String get dashboardQuickActions => 'Quick actions';
+
+  @override
+  String get dashboardQuickLaunch => 'Quick launch';
+
+  @override
+  String get dashboardTaskNoDate => 'No due date';
+
+  @override
   String get dashboardTaskOverdue => 'Overdue';
 
   @override
@@ -1878,1638 +2016,1801 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardTaskUpcoming => 'Upcoming';
 
   @override
-  String get dashboardTaskNoDate => 'No due date';
-
-  @override
-  String get dashboardEventAllDay => 'All day';
-
-  @override
   String dashboardTasksMetric(Object count) {
     return '$count active';
   }
 
   @override
-  String dashboardOverdueMetric(Object count) {
-    return '$count overdue';
+  String get dashboardTodayTitle => 'Today at a glance';
+
+  @override
+  String get dashboardUpcomingEvents => 'Upcoming events';
+
+  @override
+  String get dashboardUpcomingMeetings => 'Upcoming meetings';
+
+  @override
+  String get desktopUpdateCancel => 'Cancel scheduled update';
+
+  @override
+  String get desktopUpdateDismiss => 'Dismiss update';
+
+  @override
+  String get desktopUpdateFailed => 'Update could not be installed. Your current version is still available.';
+
+  @override
+  String get desktopUpdateInstall => 'Install and restart';
+
+  @override
+  String get desktopUpdateManual => 'Download manually';
+
+  @override
+  String get desktopUpdateNextLaunch => 'Install on next launch';
+
+  @override
+  String desktopUpdateReady(String version) {
+    return 'Tuturuuu $version is ready to install.';
   }
 
   @override
-  String dashboardEventsMetric(Object count) {
-    return '$count next up';
+  String get desktopUpdateScheduled => 'This update will install the next time you open Tuturuuu.';
+
+  @override
+  String get deviceMfaActionFailed => 'Could not finish this step';
+
+  @override
+  String get deviceMfaCancelled => 'Device verification was cancelled. Try again and confirm with Face ID, fingerprint, or your device passcode.';
+
+  @override
+  String get deviceMfaClose => 'Close authenticator';
+
+  @override
+  String get deviceMfaCodeHint => 'Enter this code on your other device. It changes every 30 seconds.';
+
+  @override
+  String get deviceMfaCurrentDevice => 'This device';
+
+  @override
+  String get deviceMfaDefaultName => 'Tuturuuu mobile';
+
+  @override
+  String get deviceMfaDeny => 'Deny request';
+
+  @override
+  String get deviceMfaDescription => 'Use this device to verify sign-ins, show a one-time code, or approve another device.';
+
+  @override
+  String get deviceMfaEnroll => 'Register this device';
+
+  @override
+  String get deviceMfaEnrollWarning => 'Keep another authenticator as a backup. Registration may require signing in again on your other devices. This device’s secret stays in its secure storage.';
+
+  @override
+  String get deviceMfaError => 'Could not complete verification. Check your connection and authenticator, then try again.';
+
+  @override
+  String get deviceMfaExistingRequired => 'Verify your existing authenticator in your account sign-in flow, then return here to finish setup.';
+
+  @override
+  String get deviceMfaExpired => 'This request expired. Start again on the other device.';
+
+  @override
+  String get deviceMfaHideCode => 'Hide code';
+
+  @override
+  String get deviceMfaLockHint => 'Only your registered devices can approve sign-ins. Unlock here before registering another device.';
+
+  @override
+  String get deviceMfaLockRecoveryHint => 'Keep a second trusted device before locking registrations. If you lose every trusted device, you cannot unlock this setting from a new device.';
+
+  @override
+  String get deviceMfaLockTitle => 'Lock new registrations';
+
+  @override
+  String get deviceMfaLocked => 'New registrations are locked. Open these settings on an existing trusted device to unlock them.';
+
+  @override
+  String get deviceMfaManage => 'Set up authenticator';
+
+  @override
+  String get deviceMfaName => 'Device name';
+
+  @override
+  String get deviceMfaNeedBackup => 'Register a second trusted device before locking new registrations.';
+
+  @override
+  String get deviceMfaNoRequests => 'No sign-in requests. Start a sign-in on your other device.';
+
+  @override
+  String get deviceMfaNotNow => 'Not now';
+
+  @override
+  String get deviceMfaNumberHint => 'Enter the six-digit number shown on the device you are signing in to. Only approve a request you started.';
+
+  @override
+  String get deviceMfaNumberTitle => 'Is this your sign-in?';
+
+  @override
+  String get deviceMfaOffline => 'Could not reach Tuturuuu. Check your connection and try again.';
+
+  @override
+  String get deviceMfaPending => 'Setup incomplete';
+
+  @override
+  String get deviceMfaQrPaste => 'Enter a sign-in link';
+
+  @override
+  String get deviceMfaQrPasteHint => 'Paste the Tuturuuu sign-in QR link from your other device.';
+
+  @override
+  String get deviceMfaRateLimited => 'Too many attempts. Wait a minute before trying again.';
+
+  @override
+  String get deviceMfaReady => 'This device is registered';
+
+  @override
+  String get deviceMfaRemove => 'Remove this authenticator';
+
+  @override
+  String get deviceMfaRemoveDeviceHint => 'This device will no longer approve sign-ins or generate valid codes.';
+
+  @override
+  String get deviceMfaRemoveHint => 'This device will stop generating valid codes. Keep another sign-in method available.';
+
+  @override
+  String get deviceMfaRemoveTrusted => 'Remove trusted device';
+
+  @override
+  String get deviceMfaReview => 'Review sign-in request';
+
+  @override
+  String get deviceMfaSessionExpired => 'Your session could not be verified. Sign in again before changing authenticators.';
+
+  @override
+  String get deviceMfaShowCode => 'Show verification code';
+
+  @override
+  String get deviceMfaSuggestBody => 'Approve your sign-ins with device verification and generate codes for your other devices. You can manage trusted devices in Security settings.';
+
+  @override
+  String get deviceMfaSuggestTitle => 'Make this your authenticator?';
+
+  @override
+  String get deviceMfaTitle => 'Device authenticator';
+
+  @override
+  String get deviceMfaTrustedTitle => 'Trusted authenticators';
+
+  @override
+  String get deviceMfaUnavailable => 'Authenticator registration is temporarily unavailable. Try again shortly.';
+
+  @override
+  String get deviceMfaUseDevice => 'Verify with this device';
+
+  @override
+  String get deviceMfaVerifyReason => 'Verify your identity to use your Tuturuuu authenticator';
+
+  @override
+  String get deviceMfaWorking => 'Checking device security…';
+
+  @override
+  String get documentsContentHint => 'Start writing...';
+
+  @override
+  String get documentsCreated => 'Document created.';
+
+  @override
+  String get documentsDelete => 'Delete document';
+
+  @override
+  String get documentsDeleteConfirm => 'Delete this document? This cannot be undone.';
+
+  @override
+  String get documentsDeleted => 'Document deleted.';
+
+  @override
+  String get documentsDocumentName => 'Document name';
+
+  @override
+  String get documentsEditor => 'Editor';
+
+  @override
+  String get documentsEmptyDescription => 'No documents yet. Create one to capture decisions, notes, or plans.';
+
+  @override
+  String get documentsNewDocument => 'New document';
+
+  @override
+  String get documentsPublic => 'Public document';
+
+  @override
+  String get documentsSearchHint => 'Search documents';
+
+  @override
+  String get documentsSubtitle => 'Draft and maintain workspace knowledge.';
+
+  @override
+  String get documentsTitle => 'Documents';
+
+  @override
+  String get documentsUpdated => 'Document saved.';
+
+  @override
+  String get driveCopyPath => 'Copy path';
+
+  @override
+  String get driveCreateFolder => 'Create folder';
+
+  @override
+  String driveDeleteManyConfirm(int count) {
+    return 'Delete $count selected items?';
   }
 
   @override
-  String get tasksTitle => 'Tasks';
-
-  @override
-  String get tasksEmpty => 'No tasks yet';
-
-  @override
-  String get tasksLoadError => 'Couldn\'t load tasks right now';
-
-  @override
-  String get tasksCreate => 'Create task';
-
-  @override
-  String get tasksAllCaughtUp => 'You\'re all caught up!';
-
-  @override
-  String get tasksAllCaughtUpSubtitle => 'No pending tasks right now';
-
-  @override
-  String get tasksOverdue => 'Overdue';
-
-  @override
-  String get tasksDueToday => 'Due today';
-
-  @override
-  String get tasksUpcoming => 'Upcoming';
-
-  @override
-  String get tasksGoodMorning => 'Good morning';
-
-  @override
-  String get tasksGoodAfternoon => 'Good afternoon';
-
-  @override
-  String get tasksGoodEvening => 'Good evening';
-
-  @override
-  String get tasksGoodNight => 'Good night';
-
-  @override
-  String get tasksRequiresAttention => 'Requires attention';
-
-  @override
-  String get tasksCompleteByEndOfDay => 'Complete by end of day';
-
-  @override
-  String get tasksPlanAhead => 'Plan ahead';
-
-  @override
-  String get tasksCompleted => 'Completed';
-
-  @override
-  String tasksCompletedCount(int count) {
-    return '$count completed';
+  String driveDeleteSelected(int count) {
+    return 'Delete selected ($count)';
   }
 
   @override
-  String get tasksPriorityCritical => 'Critical';
+  String get driveDeleteSingleConfirm => 'Delete this item?';
 
   @override
-  String get tasksPriorityHigh => 'High';
+  String get driveDeleteSuccess => 'Items deleted.';
 
   @override
-  String get tasksPriorityNormal => 'Normal';
+  String get driveEmptyState => 'This folder is empty.';
 
   @override
-  String get tasksPriorityLow => 'Low';
+  String get driveExportLinksTitle => 'Export links';
 
   @override
-  String get tasksUntitled => 'Untitled task';
+  String get driveFilesLabel => 'Files';
 
   @override
-  String get taskBoardsTitle => 'Boards';
+  String get driveFolderCreated => 'Folder created.';
 
   @override
-  String get taskBoardsCreate => 'Create board';
+  String get driveFolderLabel => 'Folder';
 
   @override
-  String get taskBoardsEdit => 'Edit board';
+  String get driveFolderName => 'Folder name';
 
   @override
-  String get taskBoardsDelete => 'Delete board';
+  String get driveGoUp => 'Up';
 
   @override
-  String get taskBoardsDeleteForever => 'Delete forever';
+  String get driveGridView => 'Grid view';
 
   @override
-  String get taskBoardsDuplicate => 'Duplicate board';
+  String get driveLimitLabel => 'Limit';
 
   @override
-  String get taskBoardsArchive => 'Archive board';
+  String get driveLinkCopied => 'Link copied.';
 
   @override
-  String get taskBoardsUnarchive => 'Unarchive board';
+  String get driveListView => 'List view';
 
   @override
-  String get taskBoardsRestore => 'Restore board';
+  String get drivePathCopied => 'Path copied.';
 
   @override
-  String get taskBoardsCreated => 'Board created.';
+  String get drivePermissionDenied => 'You do not have permission to manage Drive.';
 
   @override
-  String get taskBoardsUpdated => 'Board updated.';
+  String get driveRenameHint => 'New name';
 
   @override
-  String get taskBoardsDeleted => 'Board moved to recently deleted.';
+  String get driveRenameSuccess => 'Item renamed.';
 
   @override
-  String get taskBoardsDeletedForever => 'Board permanently deleted.';
+  String get driveRootLabel => 'Root';
 
   @override
-  String get taskBoardsDuplicated => 'Board duplicated.';
+  String get driveSearchHint => 'Search files and folders';
 
   @override
-  String get taskBoardsArchived => 'Board archived.';
+  String get driveSortNameAsc => 'Name (A-Z)';
 
   @override
-  String get taskBoardsUnarchived => 'Board unarchived.';
+  String get driveSortNameDesc => 'Name (Z-A)';
 
   @override
-  String get taskBoardsRestored => 'Board restored.';
+  String get driveSortSize => 'Largest size';
 
   @override
-  String get taskBoardsLoadError => 'Couldn\'t load boards right now';
+  String get driveSortUpdated => 'Recently updated';
 
   @override
-  String get taskBoardsNameLabel => 'Board name';
+  String get driveTitle => 'Drive';
 
   @override
-  String get taskBoardsNamePlaceholder => 'Untitled board';
+  String get driveUploadFiles => 'Upload files';
 
   @override
-  String get taskBoardsNameRequired => 'Board name is required';
+  String get driveUsageLabel => 'Usage';
 
   @override
-  String get taskBoardsIconLabel => 'Board icon';
+  String get driveUsedLabel => 'Used';
 
   @override
-  String get taskBoardsIconPlaceholder => 'Select icon';
+  String get educationAddOption => 'Add option';
 
   @override
-  String get taskBoardsIconPickerTitle => 'Select board icon';
+  String get educationAttemptQuizSetLabel => 'Quiz set';
 
   @override
-  String get taskBoardsIconPickerSearch => 'Search icons';
+  String get educationAttemptStatusCompleted => 'Completed';
 
   @override
-  String get taskBoardsIconPickerEmpty => 'No icons found';
+  String get educationAttemptStatusIncomplete => 'Incomplete';
 
   @override
-  String get taskBoardsAccessDeniedTitle => 'Access restricted';
+  String get educationAttemptStatusLabel => 'Status';
 
   @override
-  String get taskBoardsAccessDeniedDescription => 'You need project management permission in this workspace to manage task boards.';
+  String get educationAttemptsLabel => 'Attempts';
 
   @override
-  String get taskBoardsFilterAll => 'All';
+  String get educationAttemptsSubtitle => 'Review learner submissions, completion state, and answer detail.';
 
   @override
-  String get taskBoardsFilterActive => 'Active';
+  String get educationClearFilters => 'Clear filters';
 
   @override
-  String get taskBoardsFilterArchived => 'Archived';
+  String get educationCourseDescriptionLabel => 'Description';
 
   @override
-  String get taskBoardsFilterRecentlyDeleted => 'Recently deleted';
+  String get educationCourseNameLabel => 'Course name';
 
   @override
-  String get taskBoardsPageSize => 'Page size';
+  String get educationCoursesLabel => 'Courses';
 
   @override
-  String taskBoardsPageSizeOption(int count) {
-    return '$count items';
+  String get educationCoursesSubtitle => 'Manage learning tracks, descriptions, and module-ready course records.';
+
+  @override
+  String get educationCreateCourse => 'Create course';
+
+  @override
+  String get educationCreateFlashcard => 'Create flashcard';
+
+  @override
+  String get educationCreateQuiz => 'Create quiz';
+
+  @override
+  String get educationCreateQuizSet => 'Create quiz set';
+
+  @override
+  String educationDeleteCourseConfirm(String name) {
+    return 'Delete $name?';
   }
 
   @override
-  String taskBoardsPageInfo(int current, int total) {
-    return 'Page $current of $total';
+  String get educationDeleteFlashcardConfirm => 'Delete this flashcard?';
+
+  @override
+  String get educationDeleteQuizConfirm => 'Delete this quiz?';
+
+  @override
+  String educationDeleteQuizSetConfirm(String name) {
+    return 'Delete $name?';
   }
 
   @override
-  String taskBoardsListsCount(int count) {
+  String get educationEditCourse => 'Edit course';
+
+  @override
+  String get educationEditFlashcard => 'Edit flashcard';
+
+  @override
+  String get educationEditQuiz => 'Edit quiz';
+
+  @override
+  String get educationEditQuizSet => 'Edit quiz set';
+
+  @override
+  String get educationEmptyAttempts => 'No attempts match the current filters.';
+
+  @override
+  String get educationEmptyCourses => 'No courses yet.';
+
+  @override
+  String get educationEmptyFlashcards => 'No flashcards yet.';
+
+  @override
+  String get educationEmptyQuizSets => 'No quiz sets yet.';
+
+  @override
+  String get educationEmptyQuizzes => 'No quizzes yet.';
+
+  @override
+  String get educationFlashcardBackLabel => 'Back';
+
+  @override
+  String get educationFlashcardFrontLabel => 'Front';
+
+  @override
+  String get educationLibraryFlashcardsLabel => 'Flashcards';
+
+  @override
+  String get educationLibraryFlashcardsSubtitle => 'Build quick memorization prompts with front and back content.';
+
+  @override
+  String get educationLibraryLabel => 'Library';
+
+  @override
+  String get educationLibraryQuizSetsLabel => 'Quiz sets';
+
+  @override
+  String get educationLibraryQuizSetsSubtitle => 'Organize assessments into reusable sets for modules and attempts.';
+
+  @override
+  String get educationLibraryQuizzesLabel => 'Quizzes';
+
+  @override
+  String get educationLibraryQuizzesSubtitle => 'Maintain question banks, answer choices, and correctness rules.';
+
+  @override
+  String get educationLibrarySubtitle => 'Manage reusable assessment assets for the workspace learning library.';
+
+  @override
+  String get educationOverviewHighlightsTitle => 'Highlights';
+
+  @override
+  String get educationOverviewLabel => 'Overview';
+
+  @override
+  String get educationOverviewRecentAttemptsTitle => 'Recent attempts';
+
+  @override
+  String get educationOverviewRecentCoursesTitle => 'Recent courses';
+
+  @override
+  String get educationOverviewSubtitle => 'Track learning structure, practice assets, and learner progress in one mobile workspace.';
+
+  @override
+  String get educationQuizOptionExplanationLabel => 'Explanation';
+
+  @override
+  String educationQuizOptionLabel(int index) {
+    return 'Option $index';
+  }
+
+  @override
+  String get educationQuizOptionValueLabel => 'Option text';
+
+  @override
+  String get educationQuizQuestionLabel => 'Question';
+
+  @override
+  String get educationQuizSetNameLabel => 'Quiz set name';
+
+  @override
+  String get educationSearchCoursesHint => 'Search courses';
+
+  @override
+  String get educationSearchFlashcardsHint => 'Search flashcards';
+
+  @override
+  String get educationSearchQuizSetsHint => 'Search quiz sets';
+
+  @override
+  String get educationSearchQuizzesHint => 'Search quizzes';
+
+  @override
+  String get educationTitle => 'Education';
+
+  @override
+  String get emailLabel => 'Email';
+
+  @override
+  String get financeActivityClearSearch => 'Clear search';
+
+  @override
+  String get financeActivityDefaultHint => 'Search and review money movement by day.';
+
+  @override
+  String get financeActivityLabel => 'Activity';
+
+  @override
+  String get financeActivitySearchEmptyBody => 'Try a different keyword, wallet, or category name.';
+
+  @override
+  String get financeActivitySearchHint => 'Search is open. Filter by merchant, wallet, or category.';
+
+  @override
+  String financeActivitySearchResults(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count lists',
-      one: '$count list',
+      other: '$count transactions matched',
+      one: '1 transaction matched',
+      zero: 'No matches yet',
     );
     return '$_temp0';
   }
 
   @override
-  String taskBoardsTasksCount(int count) {
+  String get financeAddAttachments => 'Add attachments';
+
+  @override
+  String get financeAddFirstTransaction => 'Add first transaction';
+
+  @override
+  String get financeAddTransaction => 'Add';
+
+  @override
+  String get financeAmount => 'Amount';
+
+  @override
+  String financeAttachmentCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count tasks',
-      one: '$count task',
+      other: '$count files selected',
+      one: '1 file selected',
+      zero: 'No files selected',
     );
     return '$_temp0';
   }
 
   @override
-  String get taskBoardsCreatedAt => 'Created';
+  String get financeAttachmentEmpty => 'No attachments selected';
 
   @override
-  String get taskBoardsRecentlyDeleted => 'Recently deleted';
-
-  @override
-  String get taskBoardsDeleteConfirm => 'Move this board to recently deleted?';
-
-  @override
-  String get taskBoardsDeleteForeverConfirm => 'Permanently delete this board? This action cannot be undone.';
-
-  @override
-  String get taskBoardsEmptyTitle => 'No boards yet';
-
-  @override
-  String get taskBoardsEmptyDescription => 'Create your first board to organize tasks.';
-
-  @override
-  String get taskBoardsEmptyArchivedTitle => 'No archived boards';
-
-  @override
-  String get taskBoardsEmptyArchivedDescription => 'Archived boards will appear here.';
-
-  @override
-  String get taskBoardsEmptyDeletedTitle => 'No recently deleted boards';
-
-  @override
-  String get taskBoardsEmptyDeletedDescription => 'Deleted boards will appear here before permanent removal.';
-
-  @override
-  String get taskBoardDetailLoadError => 'Couldn\'t load board details right now';
-
-  @override
-  String get taskBoardDetailUntitledBoard => 'Untitled board';
-
-  @override
-  String get taskBoardDetailUntitledList => 'Untitled list';
-
-  @override
-  String get taskBoardDetailUntitledTask => 'Untitled task';
-
-  @override
-  String get taskBoardDetailListView => 'List';
-
-  @override
-  String get taskBoardDetailKanbanView => 'Kanban';
-
-  @override
-  String get taskBoardDetailTimelineView => 'Timeline';
-
-  @override
-  String get taskBoardDetailSearchTitle => 'Search tasks';
-
-  @override
-  String get taskBoardDetailSearchPlaceholder => 'Search tasks';
-
-  @override
-  String get taskBoardDetailSearchDone => 'Done';
-
-  @override
-  String get taskBoardDetailNoListsTitle => 'No lists yet';
-
-  @override
-  String get taskBoardDetailNoListsDescription => 'Create a list to start organizing tasks in this board.';
-
-  @override
-  String get taskBoardDetailNoTasksInList => 'No tasks in this list';
-
-  @override
-  String get taskBoardDetailNoMatchingTasks => 'No tasks match your search.';
-
-  @override
-  String get taskBoardDetailTimelineEmptyTitle => 'No scheduled tasks yet';
-
-  @override
-  String get taskBoardDetailTimelineEmptyDescription => 'Add start and end dates to tasks to place them on the timeline.';
-
-  @override
-  String get taskBoardDetailTimelineUnscheduledTitle => 'Unscheduled tasks';
-
-  @override
-  String get taskBoardDetailTaskActions => 'Task actions';
-
-  @override
-  String get taskBoardDetailCollapseList => 'Collapse list';
-
-  @override
-  String get taskBoardDetailExpandList => 'Expand list';
-
-  @override
-  String get taskBoardDetailInformation => 'Information';
-
-  @override
-  String get taskBoardDetailMoveTask => 'Move task';
-
-  @override
-  String get taskBoardDetailTaskMoved => 'Task moved.';
-
-  @override
-  String get taskBoardDetailCreateTask => 'Create task';
-
-  @override
-  String get taskBoardDetailEditTask => 'Edit task';
-
-  @override
-  String get taskBoardDetailTaskTitleLabel => 'Title';
-
-  @override
-  String get taskBoardDetailTaskTitleHint => 'Untitled task';
-
-  @override
-  String get taskBoardDetailTaskTitleRequired => 'Task title is required';
-
-  @override
-  String get taskBoardDetailTaskDescriptionLabel => 'Description';
-
-  @override
-  String get taskBoardDetailTaskEditDescription => 'Edit description';
-
-  @override
-  String get taskBoardDetailTaskDescriptionHint => 'Add description';
-
-  @override
-  String get taskBoardDetailTaskNoDescription => 'No description yet';
-
-  @override
-  String get taskBoardDetailTaskDescriptionComingSoon => 'Description editing is coming soon on mobile.';
-
-  @override
-  String get taskBoardDetailTaskDescriptionDone => 'Done';
-
-  @override
-  String get taskBoardDetailTaskDescriptionPersonalOnly => 'Description editing is currently available only in personal workspaces.';
-
-  @override
-  String get taskBoardDetailTaskDescriptionImageSourceTitle => 'Add image';
-
-  @override
-  String get taskBoardDetailTaskDescriptionImageSourceCamera => 'Camera';
-
-  @override
-  String get taskBoardDetailTaskDescriptionImageSourceGallery => 'Gallery';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarBlockquote => 'Block quote';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarBold => 'Bold';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarBulletList => 'Bullet list';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarCodeBlock => 'Code block';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarHeading1 => 'Heading 1';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarHeading2 => 'Heading 2';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarHeading3 => 'Heading 3';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarHighlight => 'Highlight';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarInlineCode => 'Inline code';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarInsertImage => 'Insert image';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarItalic => 'Italic';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarOrderedList => 'Ordered list';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarStrikethrough => 'Strikethrough';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarSubscript => 'Subscript';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarSuperscript => 'Superscript';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarTaskList => 'Task list';
-
-  @override
-  String get taskBoardDetailTaskDescriptionTableAddColumn => 'Add column';
-
-  @override
-  String get taskBoardDetailTaskDescriptionTableAddRow => 'Add row';
-
-  @override
-  String get taskBoardDetailTaskDescriptionTableRemoveColumn => 'Remove column';
-
-  @override
-  String get taskBoardDetailTaskDescriptionTableRemoveRow => 'Remove row';
-
-  @override
-  String get taskBoardDetailTaskDescriptionToolbarUnderline => 'Underline';
-
-  @override
-  String get taskBoardDetailTaskListLabel => 'List';
-
-  @override
-  String get taskBoardDetailTaskListSelect => 'Choose list';
-
-  @override
-  String get taskBoardDetailPriority => 'Priority';
-
-  @override
-  String get taskBoardDetailTaskDates => 'Dates';
-
-  @override
-  String get taskBoardDetailTaskStartDate => 'Start date';
-
-  @override
-  String get taskBoardDetailTaskEndDate => 'End date';
-
-  @override
-  String get taskBoardDetailTaskEstimation => 'Estimation';
-
-  @override
-  String get taskBoardDetailTaskEstimationNone => 'No estimate';
-
-  @override
-  String get taskBoardDetailTaskAssignees => 'Assignees';
-
-  @override
-  String get taskBoardDetailTaskLabels => 'Labels';
-
-  @override
-  String get taskBoardDetailTaskProjects => 'Projects';
-
-  @override
-  String get taskBoardDetailTaskSelectAssignees => 'Select assignees';
-
-  @override
-  String get taskBoardDetailTaskSelectLabels => 'Select labels';
-
-  @override
-  String get taskBoardDetailTaskSelectProjects => 'Select projects';
-
-  @override
-  String get taskBoardDetailEditorDetailsTab => 'Details';
-
-  @override
-  String get taskBoardDetailEditorRelationshipsTab => 'Relationships';
-
-  @override
-  String get taskBoardDetailParentTask => 'Parent task';
-
-  @override
-  String get taskBoardDetailChildTasks => 'Child tasks';
-
-  @override
-  String get taskBoardDetailBlockedBy => 'Blocked by';
-
-  @override
-  String get taskBoardDetailBlocking => 'Blocking';
-
-  @override
-  String get taskBoardDetailRelatedTasks => 'Related tasks';
-
-  @override
-  String get taskBoardDetailAddParentTask => 'Add parent task';
-
-  @override
-  String get taskBoardDetailAddChildTask => 'Add child task';
-
-  @override
-  String get taskBoardDetailAddBlockedByTask => 'Add blocker';
-
-  @override
-  String get taskBoardDetailAddBlockingTask => 'Add blocked task';
-
-  @override
-  String get taskBoardDetailAddRelatedTask => 'Add related task';
-
-  @override
-  String get taskBoardDetailOpenRelatedTask => 'Open related task';
-
-  @override
-  String get taskBoardDetailRemoveRelationship => 'Remove relationship';
-
-  @override
-  String get taskBoardDetailUnableToOpenLinkedTask => 'This linked task can\'t be opened from here.';
-
-  @override
-  String get taskBoardDetailSelectTask => 'Select task';
-
-  @override
-  String get taskBoardDetailSearchTasks => 'Search tasks';
-
-  @override
-  String get taskBoardDetailNoAvailableRelationshipTasks => 'No available tasks for this relationship.';
-
-  @override
-  String get taskBoardDetailRelationshipAdded => 'Relationship added.';
-
-  @override
-  String get taskBoardDetailRelationshipRemoved => 'Relationship removed.';
-
-  @override
-  String get taskBoardDetailNone => 'None';
-
-  @override
-  String get taskBoardDetailNoDate => 'No date';
-
-  @override
-  String taskBoardDetailDueAt(String date) {
-    return 'Due $date';
+  String financeAttachmentHint(int count, String size) {
+    return 'Attach up to $count files. Max $size each.';
   }
 
   @override
-  String taskBoardDetailStartsAt(String date) {
-    return 'Starts $date';
-  }
+  String get financeAttachmentLimitReached => 'Attachment limit reached';
 
   @override
-  String get taskBoardDetailOverdue => 'Overdue';
-
-  @override
-  String get taskBoardDetailToday => 'Today';
-
-  @override
-  String get taskBoardDetailTomorrow => 'Tomorrow';
-
-  @override
-  String get taskBoardDetailYesterday => 'yesterday';
-
-  @override
-  String taskBoardDetailInDays(int count) {
+  String financeAttachmentRejected(int count, String size) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'in $count days',
-      one: 'in $count day',
+      other: '$count files were too large or over the limit. Max $size each.',
+      one: '1 file was too large. Max $size.',
     );
     return '$_temp0';
   }
 
   @override
-  String taskBoardDetailDaysAgo(int count) {
+  String financeAttachmentUploadFailed(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count days ago',
-      one: '$count day ago',
+      other: '$count attachments failed to upload',
+      one: '1 attachment failed to upload',
     );
     return '$_temp0';
   }
 
   @override
-  String get taskBoardDetailInvalidDateRange => 'End date must be on or after start date';
-
-  @override
-  String get taskBoardDetailTaskSaved => 'Task updated.';
-
-  @override
-  String get taskBoardDetailTaskCreated => 'Task created.';
-
-  @override
-  String get taskBoardDetailTaskDeleted => 'Task deleted.';
-
-  @override
-  String get taskBoardDetailTaskDeletedForever => 'Task permanently deleted.';
-
-  @override
-  String get taskBoardDetailTaskRestored => 'Task restored.';
-
-  @override
-  String get taskBoardDetailBulkActions => 'Bulk actions';
-
-  @override
-  String taskBoardDetailBulkAllSuccess(int count) {
+  String financeAttachmentUploadSuccess(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count tasks',
-      one: '$count task',
-    );
-    return 'Updated $_temp0.';
-  }
-
-  @override
-  String get taskBoardDetailBulkClearAssignees => 'Clear assignees';
-
-  @override
-  String get taskBoardDetailBulkClearLabels => 'Clear labels';
-
-  @override
-  String get taskBoardDetailBulkClearProjects => 'Clear projects';
-
-  @override
-  String get taskBoardDetailBulkMarkClosed => 'Mark as closed';
-
-  @override
-  String get taskBoardDetailBulkMarkDone => 'Mark as done';
-
-  @override
-  String get taskBoardDetailBulkMoveToBoard => 'Move to board';
-
-  @override
-  String taskBoardDetailBulkPartialSuccess(int success, int failed) {
-    return 'Updated $success tasks, $failed failed.';
-  }
-
-  @override
-  String get taskBoardDetailEnterBulkSelect => 'Select tasks';
-
-  @override
-  String get taskBoardDetailExitBulkSelect => 'Clear selection';
-
-  @override
-  String get taskBoardDetailNoTasksSelected => 'No tasks selected';
-
-  @override
-  String get taskBoardDetailNextWeek => 'Next week';
-
-  @override
-  String get taskBoardDetailQuickActions => 'Quick actions';
-
-  @override
-  String get taskBoardDetailChangePriority => 'Change priority';
-
-  @override
-  String get taskBoardDetailMarkNotStarted => 'Move to Not started';
-
-  @override
-  String get taskBoardDetailOpenFullDetails => 'Open full details';
-
-  @override
-  String get taskBoardDetailPriorityUpdated => 'Priority updated.';
-
-  @override
-  String get taskBoardDetailProperties => 'Properties';
-
-  @override
-  String get taskBoardDetailMove => 'Move';
-
-  @override
-  String get taskBoardDetailSetDueDate => 'Set due date';
-
-  @override
-  String get taskBoardDetailSetEstimation => 'Set estimation';
-
-  @override
-  String get taskBoardDetailPriorityNone => 'No priority';
-
-  @override
-  String get taskBoardDetailRecycleBin => 'Recycle Bin';
-
-  @override
-  String get taskBoardDetailRecycleBinDescription => 'Deleted tasks from this board. Select tasks to restore or permanently delete them.';
-
-  @override
-  String get taskBoardDetailRecycleBinEmpty => 'No deleted tasks';
-
-  @override
-  String get taskBoardDetailRecycleBinEmptyHint => 'Deleted tasks will appear here.';
-
-  @override
-  String get taskBoardDetailSelectAllTasks => 'Select all tasks';
-
-  @override
-  String taskBoardDetailDeletedTasksCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count deleted tasks',
-      one: '$count deleted task',
+      other: '$count attachments uploaded',
+      one: '1 attachment uploaded',
     );
     return '$_temp0';
   }
 
   @override
-  String taskBoardDetailSelectedCount(int selected, int total) {
-    return '$selected of $total selected';
+  String get financeAttachmentUploaded => 'Uploaded';
+
+  @override
+  String get financeAttachmentUploading => 'Uploading...';
+
+  @override
+  String get financeAttachments => 'Attachments';
+
+  @override
+  String get financeBasic => 'Basic';
+
+  @override
+  String get financeCategories => 'Categories';
+
+  @override
+  String get financeCategory => 'Category';
+
+  @override
+  String get financeCategoryDialogSubtitle => 'Define how this category should look and whether it counts as income or expense.';
+
+  @override
+  String get financeCategoryNameRequired => 'Category name is required';
+
+  @override
+  String get financeCheckpointsActualBalance => 'Actual balance';
+
+  @override
+  String financeCheckpointsActualBalanceWithCurrency(String currency) {
+    return 'Actual balance ($currency)';
   }
 
   @override
-  String taskBoardDetailRestoreTasks(int count) {
-    return 'Restore ($count)';
+  String get financeCheckpointsActualDelta => 'Actual delta';
+
+  @override
+  String get financeCheckpointsAmountRequired => 'Enter a valid actual balance';
+
+  @override
+  String get financeCheckpointsBatchDescription => 'Enter actual balances for every wallet you want to checkpoint at the same time.';
+
+  @override
+  String get financeCheckpointsBatchRecord => 'All-wallet check';
+
+  @override
+  String get financeCheckpointsBatchSaved => 'Wallet checkpoints saved';
+
+  @override
+  String get financeCheckpointsCategory => 'Category';
+
+  @override
+  String get financeCheckpointsCheckedAt => 'Checked at';
+
+  @override
+  String get financeCheckpointsCheckedAtRequired => 'Enter a valid checked-at time';
+
+  @override
+  String get financeCheckpointsCreateReconciliation => 'Create reconciliation';
+
+  @override
+  String get financeCheckpointsCurrentVariance => 'Current variance';
+
+  @override
+  String get financeCheckpointsDelete => 'Delete checkpoint';
+
+  @override
+  String get financeCheckpointsDeleteDescription => 'Delete this checkpoint and recalculate the wallet audit timeline.';
+
+  @override
+  String get financeCheckpointsDeleted => 'Checkpoint deleted';
+
+  @override
+  String get financeCheckpointsDescription => 'Record real balances, compare ledger movement, and resolve differences between checks.';
+
+  @override
+  String get financeCheckpointsDescriptionLabel => 'Description';
+
+  @override
+  String get financeCheckpointsEdit => 'Edit checkpoint';
+
+  @override
+  String get financeCheckpointsEntriesRequired => 'Enter at least one wallet balance';
+
+  @override
+  String get financeCheckpointsLatest => 'Latest checkpoint';
+
+  @override
+  String get financeCheckpointsLedgerBalance => 'Ledger balance';
+
+  @override
+  String get financeCheckpointsLedgerDelta => 'Ledger delta';
+
+  @override
+  String get financeCheckpointsNoCategory => 'No category';
+
+  @override
+  String get financeCheckpointsNoCheckpoint => 'No checkpoint';
+
+  @override
+  String get financeCheckpointsNoCheckpointDetail => 'Record a checkpoint to start audited balance tracking.';
+
+  @override
+  String get financeCheckpointsNoCheckpointShort => 'No checkpoint';
+
+  @override
+  String get financeCheckpointsNoWallets => 'No wallets available';
+
+  @override
+  String get financeCheckpointsNoWalletsDetail => 'Create wallets before recording finance checkpoints.';
+
+  @override
+  String get financeCheckpointsNote => 'Note';
+
+  @override
+  String get financeCheckpointsNotePlaceholder => 'Optional context for this checkpoint';
+
+  @override
+  String get financeCheckpointsOverviewHint => 'Record actual balances and review unresolved audit windows.';
+
+  @override
+  String get financeCheckpointsReconcile => 'Reconcile';
+
+  @override
+  String financeCheckpointsReconcileDefaultDescription(String wallet) {
+    return 'Wallet reconciliation for $wallet';
   }
 
   @override
-  String taskBoardDetailDeleteTasks(int count) {
-    return 'Delete ($count)';
+  String get financeCheckpointsReconcileDescription => 'Create a non-reporting adjustment transaction for the signed variance in this window.';
+
+  @override
+  String get financeCheckpointsReconciliationClean => 'Checkpoint is already clean';
+
+  @override
+  String get financeCheckpointsReconciliationCreated => 'Reconciliation transaction created';
+
+  @override
+  String get financeCheckpointsRecord => 'Record checkpoint';
+
+  @override
+  String financeCheckpointsRecordDescription(String wallet) {
+    return 'Save the actual balance visible in $wallet.';
   }
 
   @override
-  String taskBoardDetailFromList(String list) {
-    return 'from: $list';
+  String get financeCheckpointsSaved => 'Checkpoint saved';
+
+  @override
+  String get financeCheckpointsSharedNote => 'Shared note';
+
+  @override
+  String get financeCheckpointsShortLabel => 'Checkpoints';
+
+  @override
+  String get financeCheckpointsTimeline => 'Checkpoint timeline';
+
+  @override
+  String get financeCheckpointsTitle => 'Wallet checkpoints';
+
+  @override
+  String get financeCheckpointsTransactionCountHint => 'Transaction counts are based on ledger activity inside each window.';
+
+  @override
+  String get financeCheckpointsVariance => 'Variance';
+
+  @override
+  String financeCheckpointsVarianceValue(String value) {
+    return 'Variance: $value';
   }
 
   @override
-  String taskBoardDetailDeletedAgo(String time) {
-    return 'Deleted $time';
+  String get financeCheckpointsWalletsSubtitle => 'Pick a wallet to review its latest checkpoint and reconciliation windows.';
+
+  @override
+  String get financeCheckpointsWalletsTitle => 'Wallet audit';
+
+  @override
+  String get financeCheckpointsWindows => 'Reconciliation windows';
+
+  @override
+  String get financeCheckpointsWindowsSubtitle => 'Each window compares real movement against ledger movement between two checkpoints.';
+
+  @override
+  String get financeConfidentialAmount => 'Confidential amount';
+
+  @override
+  String get financeConfidentialCategory => 'Confidential category';
+
+  @override
+  String get financeConfidentialDescription => 'Confidential description';
+
+  @override
+  String get financeCreateCategory => 'Create category';
+
+  @override
+  String get financeCreateFirstWallet => 'Create first wallet';
+
+  @override
+  String get financeCreateTag => 'Create tag';
+
+  @override
+  String get financeCreateTransaction => 'Create transaction';
+
+  @override
+  String get financeCreateWallet => 'Create wallet';
+
+  @override
+  String get financeCurrencyPickerSubtitle => 'Choose the code that best matches how this wallet is tracked.';
+
+  @override
+  String get financeDeleteCategory => 'Delete category';
+
+  @override
+  String get financeDeleteCategoryConfirm => 'Delete this category?';
+
+  @override
+  String get financeDeleteTag => 'Delete tag';
+
+  @override
+  String get financeDeleteTagConfirm => 'Delete this tag?';
+
+  @override
+  String get financeDeleteTransaction => 'Delete transaction';
+
+  @override
+  String get financeDeleteTransactionConfirm => 'Delete this transaction?';
+
+  @override
+  String get financeDeleteWallet => 'Delete wallet';
+
+  @override
+  String get financeDeleteWalletConfirm => 'Delete this wallet?';
+
+  @override
+  String get financeDescription => 'Description';
+
+  @override
+  String get financeDestinationAmountAuto => 'Auto';
+
+  @override
+  String get financeDestinationAmountAutoHint => 'Auto-filled from live exchange rate';
+
+  @override
+  String get financeDestinationAmountOptional => 'Destination amount';
+
+  @override
+  String get financeDestinationAmountOverride => 'Manual';
+
+  @override
+  String get financeDestinationAmountOverrideHint => 'Using custom amount — tap to switch to auto';
+
+  @override
+  String get financeDestinationWallet => 'Destination wallet';
+
+  @override
+  String get financeEditCategory => 'Edit category';
+
+  @override
+  String get financeEditTag => 'Edit tag';
+
+  @override
+  String get financeEditTransaction => 'Edit transaction';
+
+  @override
+  String get financeEditWallet => 'Edit wallet';
+
+  @override
+  String get financeExchangeRate => 'Exchange rate';
+
+  @override
+  String get financeExcludedFromReports => 'Excluded from reports';
+
+  @override
+  String get financeExpense => 'Expense';
+
+  @override
+  String get financeFrequentlyUsedCategories => 'Frequently used';
+
+  @override
+  String get financeHideAmounts => 'Hide amounts';
+
+  @override
+  String get financeIcon => 'Icon';
+
+  @override
+  String get financeIncome => 'Income';
+
+  @override
+  String get financeInvalidAmount => 'Enter a valid amount';
+
+  @override
+  String get financeInvalidColor => 'Enter a valid hex color';
+
+  @override
+  String get financeInvalidDestinationAmount => 'Enter a valid destination amount';
+
+  @override
+  String get financeInvertRate => 'Invert rate';
+
+  @override
+  String get financeManageCategoriesEmptyBody => 'Create categories for recurring income and expense patterns.';
+
+  @override
+  String get financeManageCategoriesSubtitle => 'Group transactions into clear spending and income buckets.';
+
+  @override
+  String get financeManageCategoriesTitle => 'Categories';
+
+  @override
+  String get financeManageLabel => 'Manage';
+
+  @override
+  String get financeManageTagsEmptyBody => 'Create tags for ad-hoc labels like trips, subscriptions, or projects.';
+
+  @override
+  String get financeManageTagsSubtitle => 'Use tags for lightweight labels and flexible reporting.';
+
+  @override
+  String get financeManageTagsTitle => 'Tags';
+
+  @override
+  String get financeNet => 'Net';
+
+  @override
+  String get financeNetBalance => 'Net balance';
+
+  @override
+  String get financeNoCategories => 'No categories yet';
+
+  @override
+  String get financeNoColor => 'No color';
+
+  @override
+  String get financeNoIconsFound => 'No icons found';
+
+  @override
+  String get financeNoSearchResults => 'No matching transactions';
+
+  @override
+  String get financeNoTag => 'No tag';
+
+  @override
+  String get financeNoTags => 'No tags yet';
+
+  @override
+  String get financeNoTransactions => 'No transactions yet';
+
+  @override
+  String get financeNoWallets => 'No wallets yet';
+
+  @override
+  String get financeOverviewActionsSubtitle => 'Jump into the next thing you need to do.';
+
+  @override
+  String get financeOverviewActivitySubtitle => 'The latest movement across your wallets.';
+
+  @override
+  String get financeOverviewActivityTitle => 'Activity';
+
+  @override
+  String get financeOverviewCreateTransactionHint => 'Capture income, expenses, or transfers quickly.';
+
+  @override
+  String financeOverviewCrossCurrencyHint(String currency) {
+    return 'Includes converted balances across wallets. Base currency: $currency.';
   }
 
   @override
-  String get taskBoardDetailPriorityCritical => 'Critical';
+  String get financeOverviewEyebrow => 'Workspace snapshot';
 
   @override
-  String get taskBoardDetailPriorityHigh => 'High';
+  String get financeOverviewLabel => 'Overview';
 
   @override
-  String get taskBoardDetailPriorityNormal => 'Normal';
+  String get financeOverviewManageHint => 'Shape categories, tags, and finance structure.';
 
   @override
-  String get taskBoardDetailPriorityLow => 'Low';
+  String get financeOverviewNoTransactionsBody => 'Transactions appear here once you start logging money in and out.';
 
   @override
-  String taskBoardDetailPoints(int count) {
+  String get financeOverviewNoWalletsBody => 'Create your first wallet to start tracking balances, transfers, and categories.';
+
+  @override
+  String financeOverviewRecentCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count pts',
-      one: '$count pt',
+      other: '$count recent transactions',
+      one: '1 recent transaction',
     );
     return '$_temp0';
   }
 
   @override
-  String taskBoardDetailNProjects(int count) {
+  String financeOverviewSingleCurrencyHint(String currency) {
+    return 'Everything is already tracked in $currency.';
+  }
+
+  @override
+  String financeOverviewWalletCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count projects',
-      one: '$count project',
+      other: '$count wallets',
+      one: '1 wallet',
     );
     return '$_temp0';
   }
 
   @override
-  String get taskBoardDetailNoMoveTargets => 'No other lists available for moving this task.';
+  String get financeOverviewWalletSectionSubtitle => 'Your most important balances at a glance.';
 
   @override
-  String get taskBoardDetailRemoveDueDate => 'Remove due date';
+  String get financeOverviewWalletSectionTitle => 'Wallets';
 
   @override
-  String get taskBoardDetailSelectAllFiltered => 'Select visible';
+  String get financeOverviewWalletsHint => 'Review balances and tune each account.';
 
   @override
-  String get taskBoardDetailSetCustomDate => 'Set custom date';
+  String get financePickColor => 'Pick color';
 
   @override
-  String get taskBoardDetailThisWeek => 'This week';
+  String get financePickerCategorySubtitle => 'Choose the bucket that best describes the transaction.';
 
   @override
-  String get taskBoardDetailBoardActions => 'Board actions';
+  String get financePickerLoadingOptions => 'Loading wallets, categories, and tags...';
 
   @override
-  String get taskBoardDetailManageBoardLayout => 'Manage board layout';
+  String get financePickerTagSubtitle => 'Select an optional label for extra context.';
 
   @override
-  String get taskBoardDetailManageBoardLayoutDescription => 'Manage board columns by status and reorder lists within each status.';
+  String get financePickerWalletSubtitle => 'Pick the wallet this transaction should affect.';
 
   @override
-  String get taskBoardDetailRefresh => 'Refresh board';
+  String get financePreview => 'Preview';
 
   @override
-  String get taskBoardDetailRenameBoard => 'Rename board';
+  String get financeQuickActions => 'Quick actions';
 
   @override
-  String get taskBoardDetailBoardRenamed => 'Board renamed.';
+  String get financeRandomizeColor => 'Randomize';
 
   @override
-  String get taskBoardDetailCreateList => 'Create list';
+  String get financeRecentTransactions => 'Recent transactions';
 
   @override
-  String get taskBoardDetailEditList => 'Edit list';
+  String get financeReportOptIn => 'Include in reports';
 
   @override
-  String get taskBoardDetailRenameList => 'Rename list';
+  String get financeSearchCategories => 'Search categories';
 
   @override
-  String get taskBoardDetailListActions => 'List actions';
+  String get financeSearchIcons => 'Search icons';
 
   @override
-  String get taskBoardDetailListCreated => 'List created.';
+  String get financeSearchTransactions => 'Search transactions';
 
   @override
-  String get taskBoardDetailListRenamed => 'List renamed.';
+  String get financeSearchWallets => 'Search wallets';
 
   @override
-  String get taskBoardDetailListUpdated => 'List updated.';
+  String get financeSelectDestinationWallet => 'Select destination wallet';
 
   @override
-  String get taskBoardDetailListDeleted => 'List deleted.';
+  String get financeSelectIcon => 'Select icon';
 
   @override
-  String get taskBoardDetailDeleteList => 'Delete list';
+  String get financeSelectWalletAndCategoryFirst => 'Choose a wallet and category first';
 
   @override
-  String get taskBoardDetailDeleteListTitle => 'Delete list?';
+  String get financeSelectWalletAndDestinationFirst => 'Choose source and destination wallets first';
 
   @override
-  String get taskBoardDetailDeleteListDescription => 'Are you sure you want to delete this list? All tasks in this list will also be deleted. This action cannot be undone.';
+  String get financeShowAmounts => 'Show amounts';
 
   @override
-  String get taskBoardDetailDeleteTask => 'Delete task';
+  String get financeSourceWallet => 'Source wallet';
 
   @override
-  String get taskBoardDetailDeleteTaskForever => 'Delete task forever';
+  String get financeStatisticsSummary => 'Statistics summary';
 
   @override
-  String get taskBoardDetailDeleteTaskForeverDescription => 'Permanently delete this task from the recycle bin? This action cannot be undone.';
+  String get financeTagDialogSubtitle => 'Describe the label and choose a color that is easy to scan.';
 
   @override
-  String get taskBoardDetailDeleteForever => 'Delete forever';
+  String get financeTagName => 'Tag name';
 
   @override
-  String get taskBoardDetailDeleteTaskTitle => 'Delete task?';
+  String get financeTagNameRequired => 'Tag name is required';
 
   @override
-  String get taskBoardDetailDeleteTaskDescription => 'Move this task to the recycle bin?';
+  String get financeTags => 'Tags';
 
   @override
-  String get taskBoardDetailMoveListToStatus => 'Move list to status';
-
-  @override
-  String get taskBoardDetailCannotMoveToClosedStatus => 'Cannot move lists to or from closed status';
-
-  @override
-  String get taskBoardDetailCannotCreateMoreClosedLists => 'Only one closed list is allowed per board.';
-
-  @override
-  String get taskBoardDetailClosedListCapacityHint => '1 closed list max';
-
-  @override
-  String get taskBoardDetailAddNewList => 'Add new list';
-
-  @override
-  String get taskBoardDetailNoListsInStatus => 'No lists in this status';
-
-  @override
-  String get taskBoardDetailListsReordered => 'Lists reordered.';
-
-  @override
-  String get taskBoardDetailMoveListDown => 'Move list down';
-
-  @override
-  String get taskBoardDetailMoveListUp => 'Move list up';
-
-  @override
-  String taskBoardDetailMovedToStatus(String status) {
-    return 'Moved to $status';
-  }
-
-  @override
-  String get taskBoardDetailNameRequired => 'Name is required';
-
-  @override
-  String get taskBoardDetailListNameLabel => 'List name';
-
-  @override
-  String get taskBoardDetailStatusCategoryLabel => 'Status category';
-
-  @override
-  String get taskBoardDetailColorLabel => 'Color';
-
-  @override
-  String get taskBoardDetailDefaultHiddenListsTitle => 'Hidden by default';
-
-  @override
-  String get taskBoardDetailDefaultHiddenListsDescription => 'List mode hides Documents lists until you choose a list or status filter.';
-
-  @override
-  String get taskBoardDetailDefaultHiddenListsOverrideTitle => 'Default hidden lists are visible';
-
-  @override
-  String get taskBoardDetailDefaultHiddenListsOverrideDescription => 'Your list or status filter is overriding the default Documents exclusion.';
-
-  @override
-  String get taskBoardDetailFilters => 'Filters';
-
-  @override
-  String get taskBoardDetailFiltersActive => 'Filters active';
-
-  @override
-  String get taskBoardDetailFilterLists => 'Lists';
-
-  @override
-  String get taskBoardDetailFilterStatuses => 'Statuses';
-
-  @override
-  String get taskBoardDetailFilterAssignees => 'Assignees';
-
-  @override
-  String get taskBoardDetailFilterLabels => 'Labels';
-
-  @override
-  String get taskBoardDetailFilterProjects => 'Projects';
-
-  @override
-  String get taskBoardDetailNoFilterOptions => 'No options available';
-
-  @override
-  String get taskBoardDetailStatusNotStarted => 'Not started';
-
-  @override
-  String get taskBoardDetailStatusActive => 'Active';
-
-  @override
-  String get taskBoardDetailStatusReview => 'Review';
-
-  @override
-  String get taskBoardDetailStatusDone => 'Done';
-
-  @override
-  String get taskBoardDetailStatusClosed => 'Closed';
-
-  @override
-  String get taskBoardDetailStatusDocuments => 'Documents';
-
-  @override
-  String get taskBoardDetailColorGray => 'Gray';
-
-  @override
-  String get taskBoardDetailColorRed => 'Red';
-
-  @override
-  String get taskBoardDetailColorBlue => 'Blue';
-
-  @override
-  String get taskBoardDetailColorGreen => 'Green';
-
-  @override
-  String get taskBoardDetailColorYellow => 'Yellow';
-
-  @override
-  String get taskBoardDetailColorOrange => 'Orange';
-
-  @override
-  String get taskBoardDetailColorPurple => 'Purple';
-
-  @override
-  String get taskBoardDetailColorPink => 'Pink';
-
-  @override
-  String get taskBoardDetailColorIndigo => 'Indigo';
-
-  @override
-  String get taskBoardDetailColorCyan => 'Cyan';
-
-  @override
-  String get taskBoardDetailClearFilters => 'Clear filters';
-
-  @override
-  String get taskBoardDetailApplyFilters => 'Apply filters';
-
-  @override
-  String get taskPlanningTitle => 'Planning';
-
-  @override
-  String get taskEstimatesTitle => 'Estimations';
-
-  @override
-  String get taskLabelsTab => 'Labels';
-
-  @override
-  String get taskLabelsCreate => 'Create label';
-
-  @override
-  String get taskLabelsEdit => 'Edit label';
-
-  @override
-  String get taskLabelsDelete => 'Delete label';
-
-  @override
-  String get taskLabelsDeleteConfirm => 'Delete this label?';
-
-  @override
-  String get taskLabelsCreated => 'Label created.';
-
-  @override
-  String get taskLabelsUpdated => 'Label updated.';
-
-  @override
-  String get taskLabelsDeleted => 'Label deleted.';
-
-  @override
-  String get taskLabelsName => 'Label name';
-
-  @override
-  String get taskLabelsNameRequired => 'Label name is required';
-
-  @override
-  String get taskLabelsColorInvalid => 'Enter a valid hex color';
-
-  @override
-  String get taskLabelsEmptyTitle => 'No labels yet';
-
-  @override
-  String get taskLabelsEmptyDescription => 'Create labels to tag and organize task work.';
-
-  @override
-  String get taskEstimatesDescription => 'Configure estimation methods for your task boards and review their current coverage.';
-
-  @override
-  String get taskEstimatesAccessDeniedTitle => 'Access restricted';
-
-  @override
-  String get taskEstimatesAccessDeniedDescription => 'You need project management permission in this workspace to change task board estimation settings.';
-
-  @override
-  String get taskEstimatesTotalBoards => 'Total boards';
-
-  @override
-  String get taskEstimatesConfiguredBoards => 'Configured';
-
-  @override
-  String get taskEstimatesExtendedRangeBoards => 'Extended range';
-
-  @override
-  String get taskEstimatesDistributionTitle => 'Estimation methods';
-
-  @override
-  String get taskEstimatesBoardConfigTitle => 'Board estimation configuration';
-
-  @override
-  String get taskEstimatesNoBoardsTitle => 'No boards found';
-
-  @override
-  String get taskEstimatesNoBoardsDescription => 'Create a task board first, then come back here to configure its estimation method.';
-
-  @override
-  String get taskEstimatesExtendedBadge => 'Extended';
-
-  @override
-  String taskEstimatesDialogTitle(String boardName) {
-    return 'Edit $boardName';
-  }
-
-  @override
-  String get taskEstimatesDialogEstimationMethod => 'Estimation method';
-
-  @override
-  String taskEstimatesDialogRangeTitle(String label) {
-    return '$label range';
-  }
-
-  @override
-  String get taskEstimatesDialogEstimationOptions => 'Estimation options';
-
-  @override
-  String get taskEstimatesDialogSelectedConfiguration => 'Selected configuration';
-
-  @override
-  String get taskEstimatesDialogSave => 'Update estimation';
-
-  @override
-  String get taskEstimatesRangeStandard => 'Standard range';
-
-  @override
-  String get taskEstimatesRangeExtended => 'Extended range';
-
-  @override
-  String get taskEstimatesUnnamedBoard => 'Untitled board';
-
-  @override
-  String get taskEstimatesAllowZeroEstimates => 'Allow zero estimates';
-
-  @override
-  String get taskEstimatesAllowZeroEstimatesDescription => 'When enabled, tasks can be estimated as 0 and contribute 0 to totals.';
-
-  @override
-  String get taskEstimatesCountUnestimatedIssues => 'Count unestimated issues';
-
-  @override
-  String get taskEstimatesCountUnestimatedIssuesDescription => 'When enabled, unestimated tasks contribute 1 estimate unit to totals. When disabled, they contribute 0.';
-
-  @override
-  String get taskEstimatesUpdateSuccess => 'Estimation updated successfully.';
-
-  @override
-  String get taskEstimatesTypeNoneLabel => 'None';
-
-  @override
-  String get taskEstimatesTypeNoneDescription => 'No estimation is configured for this board.';
-
-  @override
-  String get taskEstimatesTypeFibonacciLabel => 'Fibonacci';
-
-  @override
-  String get taskEstimatesTypeFibonacciStandardZeroEnabled => 'Fibonacci sequence: 0, 1, 2, 3, 5, 8.';
-
-  @override
-  String get taskEstimatesTypeFibonacciStandardZeroDisabled => 'Fibonacci sequence: 1, 2, 3, 5, 8.';
-
-  @override
-  String get taskEstimatesTypeFibonacciExtendedZeroEnabled => 'Extended Fibonacci sequence: 0, 1, 2, 3, 5, 8, 13, 21.';
-
-  @override
-  String get taskEstimatesTypeFibonacciExtendedZeroDisabled => 'Extended Fibonacci sequence: 1, 2, 3, 5, 8, 13, 21.';
-
-  @override
-  String get taskEstimatesTypeLinearLabel => 'Linear';
-
-  @override
-  String get taskEstimatesTypeLinearStandardZeroEnabled => 'Linear sequence: 0, 1, 2, 3, 4, 5.';
-
-  @override
-  String get taskEstimatesTypeLinearStandardZeroDisabled => 'Linear sequence: 1, 2, 3, 4, 5.';
-
-  @override
-  String get taskEstimatesTypeLinearExtendedZeroEnabled => 'Extended linear sequence: 0, 1, 2, 3, 4, 5, 6, 7.';
-
-  @override
-  String get taskEstimatesTypeLinearExtendedZeroDisabled => 'Extended linear sequence: 1, 2, 3, 4, 5, 6, 7.';
-
-  @override
-  String get taskEstimatesTypeExponentialLabel => 'Exponential';
-
-  @override
-  String get taskEstimatesTypeExponentialStandardZeroEnabled => 'Exponential sequence: 0, 1, 2, 4, 8, 16.';
-
-  @override
-  String get taskEstimatesTypeExponentialStandardZeroDisabled => 'Exponential sequence: 1, 2, 4, 8, 16.';
-
-  @override
-  String get taskEstimatesTypeExponentialExtendedZeroEnabled => 'Extended exponential sequence: 0, 1, 2, 4, 8, 16, 32, 64.';
-
-  @override
-  String get taskEstimatesTypeExponentialExtendedZeroDisabled => 'Extended exponential sequence: 1, 2, 4, 8, 16, 32, 64.';
-
-  @override
-  String get taskEstimatesTypeTshirtLabel => 'T-shirt';
-
-  @override
-  String get taskEstimatesTypeTshirtStandard => 'T-shirt sizes: -, XS, S, M, L, XL.';
-
-  @override
-  String get taskEstimatesTypeTshirtExtended => 'Extended T-shirt sizes: -, XS, S, M, L, XL, XXL, XXXL.';
-
-  @override
-  String get taskPortfolioTitle => 'Portfolio';
-
-  @override
-  String get taskPortfolioProjectsTab => 'Projects';
-
-  @override
-  String get taskPortfolioInitiativesTab => 'Initiatives';
-
-  @override
-  String get taskPortfolioAccessDeniedTitle => 'Access restricted';
-
-  @override
-  String get taskPortfolioAccessDeniedDescription => 'You need project management permission in this workspace to manage projects and initiatives.';
-
-  @override
-  String get taskPortfolioProjectsEmptyTitle => 'No projects yet';
-
-  @override
-  String get taskPortfolioProjectsEmptyDescription => 'Create your first project to organize work beyond individual tasks.';
-
-  @override
-  String get taskPortfolioInitiativesEmptyTitle => 'No initiatives yet';
-
-  @override
-  String get taskPortfolioInitiativesEmptyDescription => 'Create an initiative to group related projects under a shared outcome.';
-
-  @override
-  String get taskPortfolioNoDescription => 'No description yet';
-
-  @override
-  String get taskPortfolioProjectTasksLinked => 'tasks linked';
-
-  @override
-  String get taskPortfolioProjectCompletedTasks => 'completed';
-
-  @override
-  String get taskPortfolioInitiativeProjectsLinked => 'projects linked';
-
-  @override
-  String get taskPortfolioCreateProject => 'Create project';
-
-  @override
-  String get taskPortfolioEditProject => 'Edit project';
-
-  @override
-  String get taskPortfolioDeleteProject => 'Delete project';
-
-  @override
-  String get taskPortfolioDeleteProjectConfirm => 'Delete this project?';
-
-  @override
-  String get taskPortfolioProjectCreated => 'Project created.';
-
-  @override
-  String get taskPortfolioProjectUpdated => 'Project updated.';
-
-  @override
-  String get taskPortfolioProjectDeleted => 'Project deleted.';
-
-  @override
-  String get taskPortfolioProjectName => 'Project name';
-
-  @override
-  String get taskPortfolioProjectNameRequired => 'Project name is required';
-
-  @override
-  String get taskPortfolioProjectDescriptionHint => 'Describe the project goals';
-
-  @override
-  String get taskPortfolioProjectStatus => 'Project status';
-
-  @override
-  String get taskPortfolioProjectPriority => 'Priority';
-
-  @override
-  String get taskPortfolioProjectHealth => 'Health status';
-
-  @override
-  String get taskPortfolioProjectLead => 'Project lead';
-
-  @override
-  String get taskPortfolioProjectNoHealth => 'No health status';
-
-  @override
-  String get taskPortfolioProjectNoLead => 'No lead assigned';
-
-  @override
-  String get taskPortfolioProjectStartDate => 'Start date';
-
-  @override
-  String get taskPortfolioProjectEndDate => 'End date';
-
-  @override
-  String get taskPortfolioProjectArchived => 'Archived';
-
-  @override
-  String get taskPortfolioProjectArchivedHint => 'Hide this project from active planning views.';
-
-  @override
-  String get taskPortfolioPickDate => 'Pick date';
-
-  @override
-  String get taskPortfolioClearSelection => 'Clear';
-
-  @override
-  String get taskPortfolioProjectStatusActive => 'Active';
-
-  @override
-  String get taskPortfolioProjectStatusBacklog => 'Backlog';
-
-  @override
-  String get taskPortfolioProjectStatusPlanned => 'Planned';
-
-  @override
-  String get taskPortfolioProjectStatusInProgress => 'In progress';
-
-  @override
-  String get taskPortfolioProjectStatusInReview => 'In review';
-
-  @override
-  String get taskPortfolioProjectStatusInTesting => 'In testing';
-
-  @override
-  String get taskPortfolioProjectStatusCompleted => 'Completed';
-
-  @override
-  String get taskPortfolioProjectStatusCancelled => 'Cancelled';
-
-  @override
-  String get taskPortfolioProjectStatusOnHold => 'On hold';
-
-  @override
-  String get taskPortfolioProjectPriorityCritical => 'Critical';
-
-  @override
-  String get taskPortfolioProjectPriorityHigh => 'High';
-
-  @override
-  String get taskPortfolioProjectPriorityNormal => 'Normal';
-
-  @override
-  String get taskPortfolioProjectPriorityLow => 'Low';
-
-  @override
-  String get taskPortfolioCreateInitiative => 'Create initiative';
-
-  @override
-  String get taskPortfolioEditInitiative => 'Edit initiative';
-
-  @override
-  String get taskPortfolioDeleteInitiative => 'Delete initiative';
-
-  @override
-  String get taskPortfolioDeleteInitiativeConfirm => 'Delete this initiative?';
-
-  @override
-  String get taskPortfolioInitiativeCreated => 'Initiative created.';
-
-  @override
-  String get taskPortfolioInitiativeUpdated => 'Initiative updated.';
-
-  @override
-  String get taskPortfolioInitiativeDeleted => 'Initiative deleted.';
-
-  @override
-  String get taskPortfolioInitiativeName => 'Initiative name';
-
-  @override
-  String get taskPortfolioInitiativeNameRequired => 'Initiative name is required';
-
-  @override
-  String get taskPortfolioInitiativeDescriptionHint => 'Describe the initiative outcome';
-
-  @override
-  String get taskPortfolioInitiativeStatus => 'Initiative status';
-
-  @override
-  String get taskPortfolioInitiativeStatusActive => 'Active';
-
-  @override
-  String get taskPortfolioInitiativeStatusCompleted => 'Completed';
-
-  @override
-  String get taskPortfolioInitiativeStatusOnHold => 'On hold';
-
-  @override
-  String get taskPortfolioInitiativeStatusCancelled => 'Cancelled';
-
-  @override
-  String get taskPortfolioManageProjects => 'Manage projects';
-
-  @override
-  String get taskPortfolioLinkedProjects => 'Linked projects';
-
-  @override
-  String get taskPortfolioNoLinkedProjects => 'No linked projects yet';
-
-  @override
-  String get taskPortfolioProjectHealthOnTrack => 'On track';
-
-  @override
-  String get taskPortfolioProjectHealthAtRisk => 'At risk';
-
-  @override
-  String get taskPortfolioProjectHealthOffTrack => 'Off track';
-
-  @override
-  String taskPortfolioProjectTasksProgress(int completed, int total) {
-    return '$completed of $total tasks';
-  }
-
-  @override
-  String get taskPortfolioLinkProject => 'Link project';
-
-  @override
-  String get taskPortfolioNoAvailableProjects => 'Select project';
-
-  @override
-  String get taskPortfolioAllProjectsLinked => 'All workspace projects are already linked.';
-
-  @override
-  String get taskPortfolioProjectLinked => 'Project linked.';
-
-  @override
-  String get taskPortfolioProjectUnlinked => 'Project unlinked.';
-
-  @override
-  String get taskPortfolioProjectDetailsTitle => 'Project details';
-
-  @override
-  String get taskPortfolioProjectNotFoundTitle => 'Project not found';
-
-  @override
-  String get taskPortfolioProjectNotFoundDescription => 'This project is no longer available in the current workspace.';
-
-  @override
-  String get taskPortfolioProjectTimeline => 'Timeline';
-
-  @override
-  String get taskPortfolioProjectTasks => 'Tasks';
-
-  @override
-  String get taskPortfolioLinkedTasks => 'Linked tasks';
-
-  @override
-  String get taskPortfolioUnlinkTask => 'Unlink task';
-
-  @override
-  String get taskPortfolioProjectStats => 'Project stats';
-
-  @override
-  String get taskPortfolioNoLinkedTasks => 'No linked tasks yet';
-
-  @override
-  String get taskPortfolioLinkTask => 'Link task';
-
-  @override
-  String get taskPortfolioSearchTasksHint => 'Search tasks';
-
-  @override
-  String get taskPortfolioNoMatchingTasks => 'No tasks match your search.';
-
-  @override
-  String get taskPortfolioSelectTask => 'Select task';
-
-  @override
-  String get taskPortfolioSelectTaskHint => 'Choose a task';
-
-  @override
-  String get taskPortfolioNoAvailableTasks => 'All available tasks are already linked to this project.';
-
-  @override
-  String get taskPortfolioProjectCompletion => 'Completion';
-
-  @override
-  String get taskPortfolioTaskLinked => 'Task linked.';
-
-  @override
-  String get taskPortfolioTaskUnlinked => 'Task unlinked.';
-
-  @override
-  String get taskPortfolioProjectUpdates => 'Project updates';
-
-  @override
-  String get taskPortfolioUpdatePlaceholder => 'Share the latest progress, blockers, or wins...';
-
-  @override
-  String get taskPortfolioPostUpdate => 'Post update';
-
-  @override
-  String get taskPortfolioPostingUpdate => 'Posting...';
-
-  @override
-  String get taskPortfolioNoProjectUpdates => 'No updates yet';
-
-  @override
-  String get taskPortfolioUnknownUser => 'Unknown user';
-
-  @override
-  String get taskPortfolioUpdateEdited => 'Edited';
-
-  @override
-  String get taskPortfolioEditUpdate => 'Edit update';
-
-  @override
-  String get taskPortfolioDeleteUpdate => 'Delete update';
-
-  @override
-  String get taskPortfolioDeleteUpdateConfirm => 'Delete this update?';
-
-  @override
-  String get taskPortfolioUpdateCannotBeEmpty => 'Update content cannot be empty';
-
-  @override
-  String get taskPortfolioUpdatePosted => 'Update posted.';
-
-  @override
-  String get taskPortfolioUpdateSaved => 'Update saved.';
-
-  @override
-  String get taskPortfolioUpdateDeleted => 'Update deleted.';
-
-  @override
-  String get taskEstimatesTypeTshirtStandardZeroEnabled => 'T-shirt sizes: -, XS, S, M, L, XL.';
-
-  @override
-  String get taskEstimatesTypeTshirtStandardZeroDisabled => 'T-shirt sizes: XS, S, M, L, XL.';
-
-  @override
-  String get taskEstimatesTypeTshirtExtendedZeroEnabled => 'Extended T-shirt sizes: -, XS, S, M, L, XL, XXL, XXXL.';
-
-  @override
-  String get taskEstimatesTypeTshirtExtendedZeroDisabled => 'Extended T-shirt sizes: XS, S, M, L, XL, XXL, XXXL.';
-
-  @override
-  String get calendarTitle => 'Calendar';
-
-  @override
-  String get calendarEmpty => 'No events';
-
-  @override
-  String get calendarToday => 'Today';
-
-  @override
-  String get calendarDayView => 'Day';
-
-  @override
-  String get calendarWeekView => 'Week';
-
-  @override
-  String get calendarMonthView => 'Month';
-
-  @override
-  String get calendarYearView => 'Year';
-
-  @override
-  String get calendarAllDay => 'All day';
-
-  @override
-  String get calendarNoEvents => 'No events for this day';
-
-  @override
-  String get calendarNewEvent => 'New event';
-
-  @override
-  String get calendarEditEvent => 'Edit event';
-
-  @override
-  String get calendarDeleteEvent => 'Delete event';
-
-  @override
-  String get calendarDeleteConfirm => 'Delete this event?';
-
-  @override
-  String get calendarEventTitle => 'Title';
-
-  @override
-  String get calendarEventTitleHint => 'Add title';
-
-  @override
-  String get calendarEventDescription => 'Description';
-
-  @override
-  String get calendarEventDescriptionHint => 'Add description';
-
-  @override
-  String get calendarEventStartDate => 'Start date';
-
-  @override
-  String get calendarEventEndDate => 'End date';
-
-  @override
-  String get calendarEventStartTime => 'Start time';
-
-  @override
-  String get calendarEventEndTime => 'End time';
-
-  @override
-  String get calendarEventAllDay => 'All day';
-
-  @override
-  String get calendarEventColor => 'Color';
-
-  @override
-  String get calendarEventSave => 'Save';
-
-  @override
-  String get calendarEventCreate => 'Create event';
-
-  @override
-  String get calendarEventUpdate => 'Update event';
-
-  @override
-  String get calendarEventDeleted => 'Event deleted';
-
-  @override
-  String get calendarEventCreated => 'Event created';
-
-  @override
-  String get calendarEventUpdated => 'Event updated';
-
-  @override
-  String get calendarEventCancel => 'Cancel';
-
-  @override
-  String get calendarEventDelete => 'Delete';
-
-  @override
-  String get calendarThreeDayView => '3 Days';
-
-  @override
-  String get calendarAgendaView => 'Agenda';
-
-  @override
-  String get calendarAgendaEmpty => 'No upcoming events';
-
-  @override
-  String calendarAllDayProgress(int current, int total) {
-    return 'Day $current of $total';
-  }
-
-  @override
-  String get calendarConnectionsTitle => 'Manage Calendar Accounts';
-
-  @override
-  String get calendarConnectionsSubtitle => 'Connect Google and Microsoft accounts to sync calendars.';
-
-  @override
-  String get calendarConnectionsAccounts => 'Connected accounts';
-
-  @override
-  String get calendarConnectionsAddAccount => 'Add account';
-
-  @override
-  String get calendarConnectionsEmpty => 'No accounts connected';
-
-  @override
-  String get calendarConnectionsDisconnect => 'Disconnect';
-
-  @override
-  String calendarConnectionsDisconnectConfirm(String account) {
-    return 'Disconnect $account? Associated calendars will be disabled.';
-  }
+  String get financeTakenAt => 'Taken at';
 
   @override
   String get financeTitle => 'Finance';
+
+  @override
+  String get financeToday => 'Today';
+
+  @override
+  String get financeTotalTransactions => 'Total transactions';
+
+  @override
+  String get financeTransactionCountShort => 'tx';
+
+  @override
+  String get financeTransactionCreated => 'Transaction created';
+
+  @override
+  String get financeTransactionDeleted => 'Transaction deleted';
+
+  @override
+  String get financeTransactionDetails => 'Transaction details';
+
+  @override
+  String get financeTransactionDialogSubtitle => 'Capture the amount, source, and visibility settings in one place.';
+
+  @override
+  String get financeTransactionUpdated => 'Transaction updated';
+
+  @override
+  String get financeTransactions => 'Transactions';
+
+  @override
+  String get financeTransfer => 'Transfer';
+
+  @override
+  String get financeTransferMode => 'Transfer mode';
+
+  @override
+  String get financeTransferModeEditHint => 'Transfer mode can only be edited for existing transfers.';
+
+  @override
+  String get financeType => 'Type';
+
+  @override
+  String get financeViewAll => 'View all';
+
+  @override
+  String get financeWallet => 'Wallet';
+
+  @override
+  String get financeWalletBalance => 'Balance';
+
+  @override
+  String get financeWalletBankTab => 'Bank';
+
+  @override
+  String get financeWalletClearImage => 'Clear image';
+
+  @override
+  String get financeWalletClearVisual => 'Clear visual';
+
+  @override
+  String get financeWalletCreditDetails => 'Credit details';
+
+  @override
+  String get financeWalletCreditLimit => 'Credit limit';
+
+  @override
+  String get financeWalletCreditLimitRequired => 'Credit limit must be greater than 0';
+
+  @override
+  String get financeWalletCurrency => 'Currency';
+
+  @override
+  String get financeWalletCurrencyRequired => 'Enter a valid 3-letter currency code';
+
+  @override
+  String get financeWalletDateRequired => 'Enter a date between 1 and 31';
+
+  @override
+  String get financeWalletDescriptionTooLong => 'Description must be 500 characters or fewer';
+
+  @override
+  String get financeWalletDialogSubtitle => 'Set up how this wallet should look and behave in finance.';
+
+  @override
+  String get financeWalletIconOrImage => 'Icon or image';
+
+  @override
+  String financeWalletImageCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count available',
+      one: '1 available',
+      zero: 'No images',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get financeWalletMetadata => 'Wallet metadata';
+
+  @override
+  String get financeWalletMobileTab => 'Mobile';
+
+  @override
+  String get financeWalletName => 'Wallet name';
+
+  @override
+  String get financeWalletNameRequired => 'Wallet name is required';
+
+  @override
+  String get financeWalletNoVisual => 'No visual selected';
+
+  @override
+  String get financeWalletNotFound => 'Wallet not found';
+
+  @override
+  String get financeWalletPaymentDate => 'Payment date';
+
+  @override
+  String get financeWalletPickImage => 'Pick image';
+
+  @override
+  String get financeWalletSearchCurrency => 'Search currencies';
+
+  @override
+  String get financeWalletSearchImage => 'Search images';
+
+  @override
+  String get financeWalletSelectCurrency => 'Select currency';
+
+  @override
+  String get financeWalletStatementDate => 'Statement date';
+
+  @override
+  String financeWalletSummaryHint(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count wallets are ready to use',
+      one: '1 wallet is ready to use',
+      zero: 'No wallets configured yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get financeWalletTypeCredit => 'Credit';
+
+  @override
+  String get financeWalletTypeStandard => 'Standard';
+
+  @override
+  String get financeWallets => 'Wallets';
+
+  @override
+  String get financeWalletsMustBeDifferent => 'Source and destination wallets must be different';
+
+  @override
+  String get financeYesterday => 'Yesterday';
+
+  @override
+  String get financeYourWallets => 'Your wallets';
+
+  @override
+  String get forgotPasswordBackToLogin => 'Back to login';
+
+  @override
+  String get forgotPasswordDescription => 'Use the web app to update your password.';
+
+  @override
+  String get forgotPasswordInstructions => 'Sign in on the web with a social account already linked to your email, then change your password from account settings.';
+
+  @override
+  String get forgotPasswordNote => 'Email-based password reset is not supported at this time.';
+
+  @override
+  String get forgotPasswordSendReset => 'Send reset link';
+
+  @override
+  String get forgotPasswordSentMessage => 'Check your inbox for the password reset link.';
+
+  @override
+  String get forgotPasswordSentTitle => 'Email sent';
+
+  @override
+  String get forgotPasswordTitle => 'Password help';
+
+  @override
+  String get gallery => 'Gallery';
+
+  @override
+  String get habitsActiveLabel => 'Active';
+
+  @override
+  String get habitsActivityEmptyBody => 'When someone logs a habit entry, it will appear here.';
+
+  @override
+  String get habitsActivityEmptyTitle => 'No logs yet';
+
+  @override
+  String get habitsActivityLabel => 'Activity';
+
+  @override
+  String get habitsActivityNoTrackers => 'Create a habit tracker first to start collecting activity.';
+
+  @override
+  String get habitsActivitySubtitle => 'Review the latest habit logs across every tracker in this workspace.';
+
+  @override
+  String get habitsActivityTitle => 'Activity';
+
+  @override
+  String get habitsAddExerciseBlock => 'Add exercise';
+
+  @override
+  String get habitsAddField => 'Add field';
+
+  @override
+  String get habitsAdvancedComposerDescription => 'Use a simple value entry for fully custom trackers.';
+
+  @override
+  String get habitsAdvancedComposerTitle => 'Custom entry';
+
+  @override
+  String get habitsAggregationBooleanAny => 'Any complete';
+
+  @override
+  String get habitsAggregationCountEntries => 'Count entries';
+
+  @override
+  String get habitsAggregationLabel => 'Aggregation';
+
+  @override
+  String get habitsAggregationMax => 'Max';
+
+  @override
+  String get habitsAggregationSum => 'Sum';
+
+  @override
+  String get habitsAppearanceLabel => 'Appearance';
+
+  @override
+  String get habitsArchiveTrackerAction => 'Archive tracker';
+
+  @override
+  String get habitsArchiveTrackerMessage => 'This tracker will be removed from the active habits view.';
+
+  @override
+  String get habitsArchiveTrackerTitle => 'Archive habit tracker?';
+
+  @override
+  String get habitsBestStreak => 'Best streak';
+
+  @override
+  String get habitsCompleteNow => 'Complete now';
+
+  @override
+  String get habitsComposerAdvancedCustom => 'Custom';
+
+  @override
+  String get habitsComposerMeasurement => 'Measurement';
+
+  @override
+  String get habitsComposerQuickCheck => 'Quick check';
+
+  @override
+  String get habitsComposerQuickIncrement => 'Quick increment';
+
+  @override
+  String get habitsComposerWorkoutSession => 'Workout';
+
+  @override
+  String get habitsConsistencyLabel => 'Consistency';
+
+  @override
+  String get habitsCreateTrackerAction => 'Create tracker';
+
+  @override
+  String get habitsCreateTrackerDescription => 'Define the goal, logging fields, and quick actions your workspace will use.';
+
+  @override
+  String get habitsCreateTrackerTitle => 'Create habit tracker';
+
+  @override
+  String get habitsCurrentPeriodMetricsTitle => 'Current period metrics';
+
+  @override
+  String get habitsCurrentStreak => 'Current streak';
+
+  @override
+  String get habitsDeleteEntryAction => 'Delete entry';
+
+  @override
+  String get habitsDeleteEntryMessage => 'This habit entry will be permanently removed.';
+
+  @override
+  String get habitsDeleteEntryTitle => 'Delete entry?';
+
+  @override
+  String get habitsDescriptionLabel => 'Description';
+
+  @override
+  String get habitsEditTrackerAction => 'Edit tracker';
+
+  @override
+  String get habitsEditTrackerDescription => 'Update the tracker structure, goal, and quick-add behavior.';
+
+  @override
+  String get habitsEditTrackerTitle => 'Edit habit tracker';
+
+  @override
+  String get habitsEmptyDescription => 'Create your first tracker to turn recurring habits into something the whole workspace can follow.';
+
+  @override
+  String get habitsEmptyTitle => 'No habit trackers yet';
+
+  @override
+  String habitsEntriesCountLabel(int count) {
+    return '$count entries';
+  }
+
+  @override
+  String get habitsEntriesLabel => 'Entries';
+
+  @override
+  String get habitsEntriesTab => 'Entries';
+
+  @override
+  String get habitsEntryDateLabel => 'Entry date';
+
+  @override
+  String get habitsEntryNoteLabel => 'Note';
+
+  @override
+  String get habitsEntryTagsHint => 'Comma-separated tags';
+
+  @override
+  String get habitsEntryTagsLabel => 'Tags';
+
+  @override
+  String habitsFieldCardTitle(int count) {
+    return 'Field $count';
+  }
+
+  @override
+  String get habitsFieldKey => 'Field key';
+
+  @override
+  String get habitsFieldKeysUnique => 'Field keys must be unique';
+
+  @override
+  String get habitsFieldLabel => 'Field label';
+
+  @override
+  String get habitsFieldOptions => 'Options';
+
+  @override
+  String get habitsFieldOptionsHint => 'Example: easy, medium, hard';
+
+  @override
+  String get habitsFieldRequired => 'Required field';
+
+  @override
+  String get habitsFieldType => 'Field type';
+
+  @override
+  String get habitsFieldTypeBoolean => 'Boolean';
+
+  @override
+  String get habitsFieldTypeDuration => 'Duration';
+
+  @override
+  String get habitsFieldTypeNumber => 'Number';
+
+  @override
+  String get habitsFieldTypeSelect => 'Select';
+
+  @override
+  String get habitsFieldTypeText => 'Text';
+
+  @override
+  String get habitsFieldUnit => 'Unit';
+
+  @override
+  String get habitsFieldsRequired => 'Add at least one valid field';
+
+  @override
+  String get habitsFieldsTitle => 'Fields';
+
+  @override
+  String get habitsFormInvalidNumber => 'Enter a valid number';
+
+  @override
+  String get habitsFormRequiredField => 'Please complete the required fields';
+
+  @override
+  String get habitsFreezeAllowanceLabel => 'Freeze allowance';
+
+  @override
+  String get habitsIconLabel => 'Icon';
+
+  @override
+  String habitsLatestValueLabel(String value) {
+    return 'Latest: $value';
+  }
+
+  @override
+  String get habitsLeaderboardTab => 'Leaderboard';
+
+  @override
+  String get habitsLibraryComposerChip => 'Composer';
+
+  @override
+  String get habitsLibraryCustomizeAction => 'Customize';
+
+  @override
+  String get habitsLibraryCustomizeDescription => 'Start from a blank tracker when the preset library is close but not exact.';
+
+  @override
+  String get habitsLibraryCustomizeTitle => 'Customize your own';
+
+  @override
+  String get habitsLibraryDisciplineSubtitle => 'Simple yes-or-no commitments you want to see every day.';
+
+  @override
+  String get habitsLibraryDisciplineTitle => 'Discipline';
+
+  @override
+  String get habitsLibraryGoalChip => 'Goal';
+
+  @override
+  String get habitsLibraryHealthSubtitle => 'Measurements and daily totals that keep your baseline visible.';
+
+  @override
+  String get habitsLibraryHealthTitle => 'Health';
+
+  @override
+  String get habitsLibraryLabel => 'Library';
+
+  @override
+  String get habitsLibraryRecoverySubtitle => 'Sleep, sauna, meditation, and reset rituals.';
+
+  @override
+  String get habitsLibraryRecoveryTitle => 'Recovery';
+
+  @override
+  String get habitsLibraryStrengthSubtitle => 'Heavy sessions, structured lifts, and bodyweight output.';
+
+  @override
+  String get habitsLibraryStrengthTitle => 'Strength';
+
+  @override
+  String get habitsLibrarySubtitle => 'Start from strong defaults for fitness, recovery, and disciplined daily routines.';
+
+  @override
+  String get habitsLibraryTitle => 'Library';
+
+  @override
+  String get habitsLoadError => 'Couldn\'t load habits right now';
+
+  @override
+  String get habitsLogEntryAction => 'Log entry';
+
+  @override
+  String get habitsLogEntryDescription => 'Capture a habit update without leaving the habits area.';
+
+  @override
+  String get habitsLogEntryTitle => 'Log entry';
+
+  @override
+  String get habitsLogMeasurementAction => 'Log measurement';
+
+  @override
+  String get habitsLogSessionAction => 'Log session';
+
+  @override
+  String get habitsMarkDone => 'Mark done';
+
+  @override
+  String get habitsMarkedDone => 'Marked done';
+
+  @override
+  String get habitsMeasurementDescription => 'Enter one focused measurement and compare it to the latest check-in.';
+
+  @override
+  String get habitsMeasurementTitle => 'Measurement';
+
+  @override
+  String get habitsMemberPickerLabel => 'View member';
+
+  @override
+  String get habitsMemberSummariesTitle => 'Member summaries';
+
+  @override
+  String get habitsMetricMet => 'Met';
+
+  @override
+  String get habitsMetricPending => 'Pending';
+
+  @override
+  String get habitsModeDailySummary => 'Daily summary';
+
+  @override
+  String get habitsModeEventLog => 'Event log';
+
+  @override
+  String get habitsNameLabel => 'Name';
+
+  @override
+  String get habitsNameRequired => 'Tracker name is required';
+
+  @override
+  String get habitsNoEntries => 'No entries yet';
+
+  @override
+  String get habitsNoLeaderboard => 'No leaderboard data yet';
+
+  @override
+  String get habitsOverviewLabel => 'Today';
+
+  @override
+  String get habitsOverviewTab => 'Overview';
+
+  @override
+  String get habitsPeriodDaily => 'Daily';
+
+  @override
+  String get habitsPeriodWeekly => 'Weekly';
+
+  @override
+  String get habitsPrimaryMetricLabel => 'Primary metric';
+
+  @override
+  String get habitsPrimaryMetricRequired => 'Choose a primary metric field';
+
+  @override
+  String get habitsQuickAddValuesHint => 'Example: 1, 2, 3';
+
+  @override
+  String get habitsQuickAddValuesLabel => 'Quick-add values';
+
+  @override
+  String get habitsQuickCheckDescription => 'Use one tap when this habit is simply done or not done.';
+
+  @override
+  String get habitsQuickCheckTitle => 'Quick check-in';
+
+  @override
+  String get habitsQuickIncrementDescription => 'Adjust the running total with fast chips or enter a custom amount.';
+
+  @override
+  String get habitsQuickIncrementTitle => 'Quick increments';
+
+  @override
+  String get habitsQuickLogValueRequired => 'Enter a value before saving';
+
+  @override
+  String get habitsRecoveryWindowDescription => 'Use a repair or freeze when a streak period needs help staying intact.';
+
+  @override
+  String get habitsRecoveryWindowLabel => 'Recovery windows';
+
+  @override
+  String get habitsRecoveryWindowTitle => 'Recovery window';
+
+  @override
+  String get habitsRepairStreakAction => 'Repair streak';
+
+  @override
+  String get habitsSaveEntry => 'Save entry';
+
+  @override
+  String get habitsSaveTrackerAction => 'Save tracker';
+
+  @override
+  String get habitsScopeMember => 'Member';
+
+  @override
+  String get habitsScopeSelf => 'Self';
+
+  @override
+  String get habitsScopeTeam => 'Team';
+
+  @override
+  String get habitsSearchHint => 'Search habits, rituals, or metrics';
+
+  @override
+  String get habitsSelectOptionsRequired => 'Select fields need at least one option';
+
+  @override
+  String get habitsStartDateLabel => 'Start date';
+
+  @override
+  String habitsStreakChip(int count) {
+    return '$count streak';
+  }
+
+  @override
+  String get habitsSummarySubtitle => 'Track rituals, routines, and shared momentum across your workspace.';
+
+  @override
+  String get habitsSummaryTargetsMet => 'Targets met';
+
+  @override
+  String get habitsSummaryTopStreak => 'Top streak';
+
+  @override
+  String get habitsSummaryTrackers => 'Trackers';
+
+  @override
+  String get habitsSummaryVolume => 'Current volume';
+
+  @override
+  String habitsTargetChip(double count) {
+    return '$count target';
+  }
+
+  @override
+  String get habitsTargetOperatorEq => 'Exactly';
+
+  @override
+  String get habitsTargetOperatorGte => 'At least';
+
+  @override
+  String get habitsTargetOperatorLabel => 'Target operator';
+
+  @override
+  String get habitsTargetPeriodLabel => 'Target period';
+
+  @override
+  String get habitsTargetValueLabel => 'Target value';
+
+  @override
+  String get habitsTargetValueRequired => 'Target value must be greater than zero';
+
+  @override
+  String get habitsTeamMembers => 'Team members';
+
+  @override
+  String get habitsTeamSummaryTitle => 'Team summary';
+
+  @override
+  String get habitsTemplateLabel => 'Start from a template';
+
+  @override
+  String get habitsTitle => 'Habits';
+
+  @override
+  String get habitsTodayLabel => 'Today';
+
+  @override
+  String get habitsTodayTotalHint => 'Today\'s total';
+
+  @override
+  String get habitsTopStreakLabel => 'Top streak';
+
+  @override
+  String get habitsTrackerNoDescription => 'No description yet';
+
+  @override
+  String get habitsTrackingModeLabel => 'Tracking mode';
+
+  @override
+  String get habitsUseFreezeAction => 'Use freeze';
+
+  @override
+  String get habitsWorkoutBlockTitle => 'Exercise block';
+
+  @override
+  String get habitsWorkoutBlocksRequired => 'Add at least one exercise block';
+
+  @override
+  String get habitsWorkoutExerciseName => 'Exercise';
+
+  @override
+  String get habitsWorkoutReps => 'Reps';
+
+  @override
+  String get habitsWorkoutSessionDescription => 'Add one or more exercise blocks with sets, reps, and optional load.';
+
+  @override
+  String get habitsWorkoutSessionTitle => 'Workout session';
+
+  @override
+  String get habitsWorkoutSets => 'Sets';
+
+  @override
+  String get habitsWorkoutTotalReps => 'Total reps';
+
+  @override
+  String get habitsWorkoutTotalSets => 'Total sets';
+
+  @override
+  String get habitsWorkoutTotalVolume => 'Total volume';
+
+  @override
+  String get habitsWorkoutWeight => 'Weight';
+
+  @override
+  String get homeCustomize => 'Customize Home';
+
+  @override
+  String get homeHiddenWidgets => 'Hidden widgets';
+
+  @override
+  String get homeHideWidget => 'Hide widget';
+
+  @override
+  String get homePersonalAgenda => 'Agenda';
+
+  @override
+  String get homePersonalAgendaUnavailable => 'Personal calendar is unavailable.';
+
+  @override
+  String get homeShowWidget => 'Show widget';
 
   @override
   String get inventoryAddCategory => 'Add category';
@@ -3525,6 +3826,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryAddWarehouse => 'Add warehouse';
+
+  @override
+  String get inventoryAuditActorLabel => 'Actor';
+
+  @override
+  String get inventoryAuditAfter => 'After';
+
+  @override
+  String get inventoryAuditBefore => 'Before';
+
+  @override
+  String get inventoryAuditChangedFields => 'Changed fields';
+
+  @override
+  String inventoryAuditChanges(int count) {
+    return '$count changes';
+  }
 
   @override
   String get inventoryAuditEmpty => 'Inventory activity will appear here after products, stock, and sales are updated.';
@@ -3551,21 +3869,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryAuditLabel => 'Audit';
 
   @override
-  String get inventoryAuditActorLabel => 'Actor';
+  String get inventoryAuditNoChanges => 'No field changes';
 
   @override
-  String get inventoryAuditAfter => 'After';
-
-  @override
-  String get inventoryAuditBefore => 'Before';
-
-  @override
-  String get inventoryAuditChangedFields => 'Changed fields';
-
-  @override
-  String inventoryAuditChanges(int count) {
-    return '$count changes';
-  }
+  String get inventoryAuditOccurredAt => 'Occurred at';
 
   @override
   String get inventoryAuditRecentSubtitle => 'Follow product, stock, setup, and sale changes across the workspace.';
@@ -3574,16 +3881,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryAuditRecentTitle => 'Recent activity';
 
   @override
-  String get inventoryAuditNoChanges => 'No field changes';
-
-  @override
-  String get inventoryAuditOccurredAt => 'Occurred at';
+  String get inventoryAuditSubject => 'Subject';
 
   @override
   String get inventoryAuditSubtitle => 'Track who changed products, stock, setup, and sales.';
 
   @override
-  String get inventoryAuditSubject => 'Subject';
+  String get inventoryCheckoutAllCategories => 'All categories';
+
+  @override
+  String get inventoryCheckoutAutoCategory => 'Auto-linked category';
 
   @override
   String get inventoryCheckoutAvailableProductsSubtitle => 'Adjust quantities directly from the available booth inventory.';
@@ -3592,16 +3899,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryCheckoutAvailableProductsTitle => 'Available products';
 
   @override
-  String get inventoryCheckoutAutoCategory => 'Auto-linked category';
-
-  @override
-  String get inventoryCheckoutAllCategories => 'All categories';
-
-  @override
   String get inventoryCheckoutBrowseTab => 'Browse';
 
   @override
   String get inventoryCheckoutCartEmpty => 'Add products from the browse tab to review and submit the sale.';
+
+  @override
+  String get inventoryCheckoutCartReconciled => 'Cart updated. Review the total before submitting.';
+
+  @override
+  String inventoryCheckoutCartRemoved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Removed $count unavailable items. Review the cart before submitting.',
+      one: 'Removed $count unavailable item. Review the cart before submitting.',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get inventoryCheckoutCartTab => 'Cart';
@@ -3610,16 +3925,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryCheckoutCartTotal => 'Cart total';
 
   @override
-  String get inventoryCheckoutCheckoutDetailsSubtitle => 'Choose where the sale lands before submitting the invoice.';
-
-  @override
-  String get inventoryCheckoutCheckoutDetailsTitle => 'Checkout details';
-
-  @override
   String get inventoryCheckoutCategoryOverride => 'Category override';
 
   @override
   String get inventoryCheckoutCategoryRequired => 'Choose an income category before creating the sale.';
+
+  @override
+  String get inventoryCheckoutCheckoutDetailsSubtitle => 'Choose where the sale lands before submitting the invoice.';
+
+  @override
+  String get inventoryCheckoutCheckoutDetailsTitle => 'Checkout details';
 
   @override
   String get inventoryCheckoutEmpty => 'No sellable inventory is available yet.';
@@ -3634,37 +3949,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryCheckoutNoWalletSelected => 'No wallet selected';
 
   @override
+  String get inventoryCheckoutOptionsUnavailable => 'Some checkout choices could not be refreshed. Existing periods stay available; retry to restore missing wallets, categories, products, or periods.';
+
+  @override
+  String get inventoryCheckoutPeriodRulesChanged => 'Some items do not match this period. Reconcile the cart to continue.';
+
+  @override
   String get inventoryCheckoutProductsRequired => 'Add at least one product before creating the sale.';
+
+  @override
+  String get inventoryCheckoutReconcileCart => 'Reconcile cart';
+
+  @override
+  String get inventoryCheckoutReconcileCartHelp => 'Refresh prices and remove items that no longer match this period.';
+
+  @override
+  String get inventoryCheckoutScopeChanged => 'The account or workspace changed. Close this checkout and reopen the sale in its owning workspace.';
 
   @override
   String get inventoryCheckoutSelectedItems => 'Selected lines';
 
   @override
-  String get inventoryCheckoutSubtitle => 'Build a quick booth sale and send it through invoices.';
-
-  @override
   String get inventoryCheckoutSubmit => 'Create sale';
 
   @override
-  String get inventoryCheckoutTotalItems => 'Total items';
+  String get inventoryCheckoutSubtitle => 'Build a quick booth sale and send it through invoices.';
 
   @override
   String get inventoryCheckoutTitle => 'Sell';
 
   @override
+  String get inventoryCheckoutTotalItems => 'Total items';
+
+  @override
   String get inventoryCheckoutValidationError => 'Select a wallet, resolve the category, and add at least one product.';
 
   @override
-  String get inventoryCheckoutWalletRequired => 'Choose a wallet before creating the sale.';
+  String get inventoryCheckoutWallet => 'Wallet';
 
   @override
-  String get inventoryCheckoutWallet => 'Wallet';
+  String get inventoryCheckoutWalletRequired => 'Choose a wallet before creating the sale.';
 
   @override
   String get inventoryCreateProduct => 'Create product';
 
   @override
   String get inventoryEditProduct => 'Edit product';
+
+  @override
+  String get inventoryLoadedLowStock => 'Low stock in loaded products';
 
   @override
   String get inventoryManageCategories => 'Product categories';
@@ -3772,10 +4105,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryProductAmountRequired => 'Enter an amount.';
 
   @override
+  String inventoryProductAvailableSummary(String amount, String price) {
+    return '$amount available • $price';
+  }
+
+  @override
   String get inventoryProductCategory => 'Product category';
 
   @override
   String get inventoryProductCategoryRequired => 'Choose a product category.';
+
+  @override
+  String get inventoryProductDeleteConfirm => 'Remove this product? If existing sales reference it, the server will archive it when syncing.';
 
   @override
   String get inventoryProductDescription => 'Description';
@@ -3802,9 +4143,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryProductInventorySubtitle => 'Each row represents a unit, warehouse, quantity, threshold, and price.';
 
   @override
-  String get inventoryProductOptionsUnavailable => 'Some product options could not be loaded. You can keep editing and retry to restore the missing choices.';
-
-  @override
   String get inventoryProductManufacturer => 'Manufacturer';
 
   @override
@@ -3823,6 +4161,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryProductNumberInvalid => 'Enter a valid number.';
 
   @override
+  String get inventoryProductOptionsUnavailable => 'Some product options could not be loaded. You can keep editing and retry to restore the missing choices.';
+
+  @override
   String get inventoryProductOwner => 'Owner';
 
   @override
@@ -3835,21 +4176,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryProductPriceRequired => 'Enter a price.';
 
   @override
-  String inventoryProductAvailableSummary(String amount, String price) {
-    return '$amount available • $price';
-  }
-
-  @override
   String get inventoryProductSaved => 'Product saved.';
-
-  @override
-  String get inventoryProductUntitled => 'Untitled product';
 
   @override
   String get inventoryProductUnit => 'Unit';
 
   @override
   String get inventoryProductUnitRequired => 'Choose a unit.';
+
+  @override
+  String get inventoryProductUntitled => 'Untitled product';
 
   @override
   String get inventoryProductUsage => 'Usage';
@@ -3885,6 +4221,85 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryRealtimeEnabled => 'Realtime enabled';
 
   @override
+  String get inventoryRedesignAllEvents => 'All events';
+
+  @override
+  String inventoryRedesignDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inventoryRedesignLimitedData => 'Limited data. Last available snapshot shown.';
+
+  @override
+  String get inventoryRedesignLoadedRevenue => 'Revenue in loaded receipts';
+
+  @override
+  String get inventoryRedesignLoadedSearch => 'Search available records';
+
+  @override
+  String inventoryRedesignPendingCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count unsynchronized edits',
+      one: '1 unsynchronized edit',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inventoryRedesignPendingDeletion => 'Deletion pending confirmation';
+
+  @override
+  String get inventoryRedesignReceiptActivity => 'Receipt activity';
+
+  @override
+  String get inventoryRedesignReceiptCoverage => 'Counts from the available recent receipts, not a complete period total. Missing days are unknown. Currency and quantity totals are not inferred.';
+
+  @override
+  String inventoryRedesignRecentSample(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count available records',
+      one: '1 available record',
+    );
+    return '$_temp0 · limited coverage';
+  }
+
+  @override
+  String get inventoryRedesignSelectedLines => 'Selected lines';
+
+  @override
+  String inventoryRedesignUnknownCurrencies(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count receipts with unknown currency excluded',
+      one: '1 receipt with unknown currency excluded',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String inventoryRedesignUnknownDates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count records without a date',
+      one: '1 record without a date',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get inventorySaleCreated => 'Inventory sale created.';
 
   @override
@@ -3894,7 +4309,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventorySaleUpdated => 'Sale updated.';
 
   @override
-  String get inventorySalesEmpty => 'Sales created from invoices will appear here.';
+  String inventorySalesCreatorBadge(String name) {
+    return 'By $name';
+  }
 
   @override
   String get inventorySalesDelete => 'Delete sale';
@@ -3904,6 +4321,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventorySalesEdit => 'Edit sale';
+
+  @override
+  String get inventorySalesEmpty => 'Sales created from invoices will appear here.';
 
   @override
   String get inventorySalesFallbackTitle => 'Inventory sale';
@@ -3917,15 +4337,120 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventorySalesLabel => 'Sales';
 
   @override
-  String inventorySalesCreatorBadge(String name) {
-    return 'By $name';
-  }
-
-  @override
   String get inventorySalesLineItems => 'Line items';
 
   @override
   String get inventorySalesNote => 'Note';
+
+  @override
+  String get inventorySalesPeriodArchive => 'Archive period';
+
+  @override
+  String get inventorySalesPeriodArchived => 'Sales period archived.';
+
+  @override
+  String get inventorySalesPeriodAssignmentHelp => 'Use a season or event period to group this sale in reports.';
+
+  @override
+  String get inventorySalesPeriodAssignmentLabel => 'Sales period';
+
+  @override
+  String get inventorySalesPeriodCreate => 'New period';
+
+  @override
+  String get inventorySalesPeriodCreateDescription => 'Group sales into a season, convention, campaign, or operating window.';
+
+  @override
+  String get inventorySalesPeriodCreateTitle => 'Create sales period';
+
+  @override
+  String get inventorySalesPeriodDateInvalid => 'The end date must be on or after the start date.';
+
+  @override
+  String get inventorySalesPeriodEdit => 'Edit';
+
+  @override
+  String get inventorySalesPeriodEditDescription => 'Update the period name, dates, and team notes.';
+
+  @override
+  String get inventorySalesPeriodEditTitle => 'Edit sales period';
+
+  @override
+  String get inventorySalesPeriodEndsAt => 'End date';
+
+  @override
+  String get inventorySalesPeriodName => 'Name';
+
+  @override
+  String get inventorySalesPeriodNamePlaceholder => 'Summer 2026 or TuCon 2026';
+
+  @override
+  String get inventorySalesPeriodNameRequired => 'Enter a period name.';
+
+  @override
+  String get inventorySalesPeriodNoDate => 'No date';
+
+  @override
+  String get inventorySalesPeriodNotes => 'Notes';
+
+  @override
+  String get inventorySalesPeriodNotesPlaceholder => 'Optional context for your team';
+
+  @override
+  String get inventorySalesPeriodOpen => 'Open sales periods';
+
+  @override
+  String get inventorySalesPeriodProductRules => 'Product eligibility';
+
+  @override
+  String get inventorySalesPeriodProductRulesDescription => 'Choose which product sales can join this period.';
+
+  @override
+  String get inventorySalesPeriodProductsRequired => 'Choose at least one product for this rule.';
+
+  @override
+  String inventorySalesPeriodProductsSelected(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get inventorySalesPeriodRestore => 'Restore period';
+
+  @override
+  String get inventorySalesPeriodRestored => 'Sales period restored.';
+
+  @override
+  String get inventorySalesPeriodSave => 'Save changes';
+
+  @override
+  String get inventorySalesPeriodScopeAll => 'All products';
+
+  @override
+  String get inventorySalesPeriodScopeAllowlist => 'Only selected products';
+
+  @override
+  String get inventorySalesPeriodScopeBlocklist => 'All except selected products';
+
+  @override
+  String get inventorySalesPeriodSearchProducts => 'Search products';
+
+  @override
+  String get inventorySalesPeriodStartsAt => 'Start date';
+
+  @override
+  String get inventorySalesPeriodUnassigned => 'No period';
+
+  @override
+  String get inventorySalesPeriodUpdated => 'Sales period updated.';
+
+  @override
+  String get inventorySalesPeriodsAll => 'All periods';
+
+  @override
+  String get inventorySalesPeriodsDescription => 'Track seasons, conventions, and campaign windows.';
+
+  @override
+  String get inventorySalesPeriodsTitle => 'Sales periods';
 
   @override
   String get inventorySalesRecentSubtitle => 'Review the latest invoice-backed inventory sales.';
@@ -3943,126 +4468,86 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventorySalesTitle => 'Title';
 
   @override
-  String get inventorySalesPeriodsTitle => 'Sales periods';
-
-  @override
-  String get inventorySalesPeriodsDescription => 'Track seasons, conventions, and campaign windows.';
-
-  @override
-  String get inventorySalesPeriodsAll => 'All periods';
-
-  @override
-  String get inventorySalesPeriodArchive => 'Archive period';
-
-  @override
-  String get inventorySalesPeriodRestore => 'Restore period';
-
-  @override
-  String get inventorySalesPeriodCreate => 'New period';
-
-  @override
-  String get inventorySalesPeriodEdit => 'Edit';
-
-  @override
-  String get inventorySalesPeriodOpen => 'Open sales periods';
-
-  @override
-  String get inventorySalesPeriodCreateTitle => 'Create sales period';
-
-  @override
-  String get inventorySalesPeriodCreateDescription => 'Group sales into a season, convention, campaign, or operating window.';
-
-  @override
-  String get inventorySalesPeriodEditTitle => 'Edit sales period';
-
-  @override
-  String get inventorySalesPeriodEditDescription => 'Update the period name, dates, and team notes.';
-
-  @override
-  String get inventorySalesPeriodSave => 'Save changes';
-
-  @override
-  String get inventorySalesPeriodUpdated => 'Sales period updated.';
-
-  @override
-  String get inventorySalesPeriodName => 'Name';
-
-  @override
-  String get inventorySalesPeriodNamePlaceholder => 'Summer 2026 or TuCon 2026';
-
-  @override
-  String get inventorySalesPeriodStartsAt => 'Start date';
-
-  @override
-  String get inventorySalesPeriodEndsAt => 'End date';
-
-  @override
-  String get inventorySalesPeriodNotes => 'Notes';
-
-  @override
-  String get inventorySalesPeriodNotesPlaceholder => 'Optional context for your team';
-
-  @override
-  String get inventorySalesPeriodNameRequired => 'Enter a period name.';
-
-  @override
-  String get inventorySalesPeriodDateInvalid => 'The end date must be on or after the start date.';
-
-  @override
-  String get inventorySalesPeriodProductRules => 'Product eligibility';
-
-  @override
-  String get inventorySalesPeriodProductRulesDescription => 'Choose which product sales can join this period.';
-
-  @override
-  String get inventorySalesPeriodScopeAll => 'All products';
-
-  @override
-  String get inventorySalesPeriodScopeAllowlist => 'Only selected products';
-
-  @override
-  String get inventorySalesPeriodScopeBlocklist => 'All except selected products';
-
-  @override
-  String get inventorySalesPeriodSearchProducts => 'Search products';
-
-  @override
-  String get inventorySalesPeriodProductsRequired => 'Choose at least one product for this rule.';
-
-  @override
-  String inventorySalesPeriodProductsSelected(int count) {
-    return '$count selected';
-  }
-
-  @override
-  String get inventorySalesPeriodNoDate => 'No date';
-
-  @override
-  String get inventorySalesPeriodArchived => 'Sales period archived.';
-
-  @override
-  String get inventorySalesPeriodRestored => 'Sales period restored.';
-
-  @override
-  String get inventorySalesPeriodUnassigned => 'No period';
-
-  @override
-  String get inventorySalesPeriodAssignmentLabel => 'Sales period';
-
-  @override
-  String get inventorySalesPeriodAssignmentHelp => 'Use a season or event period to group this sale in reports.';
-
-  @override
-  String get inventoryCheckoutOptionsUnavailable => 'Some checkout choices could not be refreshed. Existing periods stay available; retry to restore missing wallets, categories, products, or periods.';
-
-  @override
   String get inventorySaveProduct => 'Save product';
 
   @override
   String get inventorySearchProducts => 'Search products';
 
   @override
-  String get inventoryLoadedLowStock => 'Low stock in loaded products';
+  String get inventorySeasonHistoricalReadOnly => 'Scheduled sale history is read only here. Recorded prices are preserved.';
+
+  @override
+  String inventorySeasonPriceAsOf(String currency, String asOf, String timeZone) {
+    return 'Season prices · $currency · as of $asOf (UTC) · season dates in $timeZone';
+  }
+
+  @override
+  String get inventorySeasonPriceCached => 'Offline draft using saved season prices. Prices and availability will be checked when syncing.';
+
+  @override
+  String get inventorySeasonPriceLoading => 'Checking current season prices…';
+
+  @override
+  String get inventorySeasonPriceUnavailable => 'Season prices unavailable or expired. Connect, refresh and review the cart before selling.';
+
+  @override
+  String get inventorySeasonRecoveryCheck => 'Check sale result';
+
+  @override
+  String get inventorySeasonRecoveryTitle => 'Recover sale';
+
+  @override
+  String get inventorySeasonRecoveryUnavailable => 'Sale recovery storage is unavailable. Creation is blocked until this operation can be recovered safely.';
+
+  @override
+  String get inventorySeasonRetryPending => 'Sale response uncertain. Check the recorded request before retrying its exact payload. You can leave and resume recovery in this account and workspace; do not create a replacement sale.';
+
+  @override
+  String get inventorySetupSyncFirst => 'Sync this new item before using, editing, or deleting it.';
+
+  @override
+  String get inventoryStockHealthActive => 'Active products';
+
+  @override
+  String inventoryStockHealthAsOf(String timestamp) {
+    return 'Server snapshot: $timestamp UTC';
+  }
+
+  @override
+  String get inventoryStockHealthDenied => 'You do not have access to stock analytics.';
+
+  @override
+  String get inventoryStockHealthIncomplete => 'Partial snapshot: some counts or the server timestamp are unavailable.';
+
+  @override
+  String get inventoryStockHealthLoading => 'Loading stock health…';
+
+  @override
+  String get inventoryStockHealthLow => 'Low stock rows';
+
+  @override
+  String get inventoryStockHealthOut => 'Out of stock rows';
+
+  @override
+  String get inventoryStockHealthOverlap => 'Low/out counts can overlap. Low/out quantity checks exclude Unlimited rows; Unlimited rows are counted separately. Bars compare row counts.';
+
+  @override
+  String get inventoryStockHealthScope => 'Current active products · all stock rows, including archived warehouses';
+
+  @override
+  String get inventoryStockHealthTitle => 'Stock health';
+
+  @override
+  String get inventoryStockHealthUnavailable => 'Stock health is unavailable. Pull to refresh to try again.';
+
+  @override
+  String get inventoryStockHealthUnconfigured => 'Products without stock rows';
+
+  @override
+  String get inventoryStockHealthUnknown => 'Unavailable';
+
+  @override
+  String get inventoryStockHealthUnlimited => 'Unlimited stock rows';
 
   @override
   String get inventoryStockNoRows => 'No stock rows configured.';
@@ -4077,769 +4562,5436 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryTitle => 'Inventory';
 
   @override
-  String get financeOverviewLabel => 'Overview';
+  String get loginContinueWithEmail => 'Continue with email';
 
   @override
-  String get financeActivityLabel => 'Activity';
+  String get loginForgotPassword => 'Forgot password?';
 
   @override
-  String get financeManageLabel => 'Manage';
+  String get loginOtpInstruction => 'Enter the 6-digit code we sent to your email.';
 
   @override
-  String get financeCheckpointsShortLabel => 'Checkpoints';
-
-  @override
-  String get financeCheckpointsTitle => 'Wallet checkpoints';
-
-  @override
-  String get financeCheckpointsDescription => 'Record real balances, compare ledger movement, and resolve differences between checks.';
-
-  @override
-  String get financeCheckpointsOverviewHint => 'Record actual balances and review unresolved audit windows.';
-
-  @override
-  String get financeCheckpointsWalletsTitle => 'Wallet audit';
-
-  @override
-  String get financeCheckpointsWalletsSubtitle => 'Pick a wallet to review its latest checkpoint and reconciliation windows.';
-
-  @override
-  String get financeCheckpointsLatest => 'Latest checkpoint';
-
-  @override
-  String get financeCheckpointsRecord => 'Record checkpoint';
-
-  @override
-  String get financeCheckpointsEdit => 'Edit checkpoint';
-
-  @override
-  String get financeCheckpointsBatchRecord => 'All-wallet check';
-
-  @override
-  String get financeCheckpointsBatchDescription => 'Enter actual balances for every wallet you want to checkpoint at the same time.';
-
-  @override
-  String get financeCheckpointsBatchSaved => 'Wallet checkpoints saved';
-
-  @override
-  String get financeCheckpointsSaved => 'Checkpoint saved';
-
-  @override
-  String get financeCheckpointsDeleted => 'Checkpoint deleted';
-
-  @override
-  String get financeCheckpointsDelete => 'Delete checkpoint';
-
-  @override
-  String get financeCheckpointsDeleteDescription => 'Delete this checkpoint and recalculate the wallet audit timeline.';
-
-  @override
-  String financeCheckpointsRecordDescription(String wallet) {
-    return 'Save the actual balance visible in $wallet.';
+  String loginOtpRateLimitedInstruction(Object seconds) {
+    return 'Enter your code below, or use password instead. Retry in ${seconds}s.';
   }
 
   @override
-  String get financeCheckpointsActualBalance => 'Actual balance';
+  String get loginResendOtp => 'Resend code';
 
   @override
-  String financeCheckpointsActualBalanceWithCurrency(String currency) {
-    return 'Actual balance ($currency)';
+  String loginRetryAfter(Object seconds) {
+    return 'Try again in ${seconds}s';
   }
 
   @override
-  String get financeCheckpointsLedgerBalance => 'Ledger balance';
-
-  @override
-  String get financeCheckpointsCurrentVariance => 'Current variance';
-
-  @override
-  String get financeCheckpointsActualDelta => 'Actual delta';
-
-  @override
-  String get financeCheckpointsLedgerDelta => 'Ledger delta';
-
-  @override
-  String get financeCheckpointsVariance => 'Variance';
-
-  @override
-  String financeCheckpointsVarianceValue(String value) {
-    return 'Variance: $value';
+  String loginRetryIn(Object seconds) {
+    return 'Retry in ${seconds}s';
   }
 
   @override
-  String get financeCheckpointsCheckedAt => 'Checked at';
+  String get loginSendOtp => 'Send code';
 
   @override
-  String get financeCheckpointsCheckedAtRequired => 'Enter a valid checked-at time';
+  String get loginSignIn => 'Sign in';
 
   @override
-  String get financeCheckpointsNote => 'Note';
+  String get loginSignUpPrompt => 'Don\'t have an account? Sign up';
 
   @override
-  String get financeCheckpointsSharedNote => 'Shared note';
+  String get loginSubtitle => 'Sign in to continue';
 
   @override
-  String get financeCheckpointsNotePlaceholder => 'Optional context for this checkpoint';
+  String get loginTitle => 'Welcome back';
 
   @override
-  String get financeCheckpointsAmountRequired => 'Enter a valid actual balance';
+  String get loginUseOtpInstead => 'Use email code instead';
 
   @override
-  String get financeCheckpointsEntriesRequired => 'Enter at least one wallet balance';
+  String get loginUsePasswordInstead => 'Use password instead';
 
   @override
-  String get financeCheckpointsWindows => 'Reconciliation windows';
+  String get loginVerifyOtp => 'Verify code';
 
   @override
-  String get financeCheckpointsWindowsSubtitle => 'Each window compares real movement against ledger movement between two checkpoints.';
+  String get mailAccessRequired => 'Mail requires a @tuturuuu.com account.';
 
   @override
-  String get financeCheckpointsTransactionCountHint => 'Transaction counts are based on ledger activity inside each window.';
+  String get mailActionFailed => 'Could not complete the action. Your draft is retained; please try again.';
 
   @override
-  String get financeCheckpointsTimeline => 'Checkpoint timeline';
+  String get mailAdmin => 'Admin';
 
   @override
-  String get financeCheckpointsReconcile => 'Reconcile';
+  String get mailAiDraft => 'Write with AI';
 
   @override
-  String get financeCheckpointsReconcileDescription => 'Create a non-reporting adjustment transaction for the signed variance in this window.';
+  String get mailAiInstructions => 'What would you like to say?';
 
   @override
-  String get financeCheckpointsCreateReconciliation => 'Create reconciliation';
+  String get mailAllLabels => 'All labels and folders';
 
   @override
-  String get financeCheckpointsReconciliationCreated => 'Reconciliation transaction created';
+  String get mailAnyone => 'Anyone';
 
   @override
-  String get financeCheckpointsReconciliationClean => 'Checkpoint is already clean';
+  String get mailAppearanceOriginal => 'Original';
 
   @override
-  String financeCheckpointsReconcileDefaultDescription(String wallet) {
-    return 'Wallet reconciliation for $wallet';
+  String get mailArchive => 'Archive';
+
+  @override
+  String get mailAttach => 'Attach file';
+
+  @override
+  String get mailAutoApply => 'Apply automatically';
+
+  @override
+  String get mailAutoDraft => 'Automatically draft replies';
+
+  @override
+  String get mailBcc => 'Bcc';
+
+  @override
+  String get mailBody => 'Message';
+
+  @override
+  String get mailCalendarLinkChanged => 'The invitation or event changed. Preview again.';
+
+  @override
+  String get mailCalendarLinkConfirm => 'Confirm link';
+
+  @override
+  String get mailCalendarLinkFailed => 'Unable to update the link. Try again.';
+
+  @override
+  String get mailCalendarLinkInvalid => 'Paste a Calendar event link containing the selected event.';
+
+  @override
+  String get mailCalendarLinkLinked => 'Calendar event linked';
+
+  @override
+  String get mailCalendarLinkNotice => 'Linking keeps both records. Replies still go to the original organizer.';
+
+  @override
+  String get mailCalendarLinkOpen => 'Open linked event';
+
+  @override
+  String get mailCalendarLinkOriginal => 'Original invitation';
+
+  @override
+  String get mailCalendarLinkPreview => 'Preview link';
+
+  @override
+  String get mailCalendarLinkSelected => 'Selected Calendar event';
+
+  @override
+  String get mailCalendarLinkTitle => 'Link to Calendar';
+
+  @override
+  String get mailCalendarLinkUnavailable => 'This event is unavailable in your account.';
+
+  @override
+  String get mailCalendarLinkUnlink => 'Remove link';
+
+  @override
+  String get mailCalendarLinkUrl => 'Calendar event link';
+
+  @override
+  String get mailCatchAll => 'Catch-all mailbox';
+
+  @override
+  String get mailCc => 'Cc';
+
+  @override
+  String get mailCompose => 'Compose';
+
+  @override
+  String get mailDefaultAction => 'Default email action';
+
+  @override
+  String get mailDeleteConfirm => 'Remove this item? This cannot be undone.';
+
+  @override
+  String get mailDeleteDraft => 'Delete draft';
+
+  @override
+  String get mailDeleteDraftConfirmation => 'Permanently delete this draft and its attachments?';
+
+  @override
+  String get mailDeliveryProvider => 'Delivery provider';
+
+  @override
+  String get mailDescription => 'Description';
+
+  @override
+  String get mailDiscardSettingsAction => 'Discard changes';
+
+  @override
+  String get mailDiscardSettingsDescription => 'Your Mail settings changes have not been saved.';
+
+  @override
+  String get mailDiscardSettingsTitle => 'Discard changes?';
+
+  @override
+  String get mailDomainDefault => 'Domain default';
+
+  @override
+  String get mailDownload => 'Download or share attachment';
+
+  @override
+  String get mailDrafts => 'Drafts';
+
+  @override
+  String get mailEmail => 'Email address';
+
+  @override
+  String get mailEmpty => 'No messages here';
+
+  @override
+  String get mailFolders => 'Folders';
+
+  @override
+  String get mailForward => 'Forward';
+
+  @override
+  String get mailForwardTo => 'Forward to mailbox address';
+
+  @override
+  String get mailForwarding => 'Forwarding';
+
+  @override
+  String get mailForwardingOff => 'Off';
+
+  @override
+  String get mailGenerate => 'Generate';
+
+  @override
+  String get mailGroupAttachments => 'Who can send attachments';
+
+  @override
+  String get mailGroupPosting => 'Who can post to the group';
+
+  @override
+  String get mailGroupSendAs => 'Who can send as the group';
+
+  @override
+  String get mailInbox => 'Inbox';
+
+  @override
+  String get mailInvalidRecipient => 'Enter valid recipient email addresses.';
+
+  @override
+  String get mailInvitationAccept => 'Accept';
+
+  @override
+  String get mailInvitationDecline => 'Decline';
+
+  @override
+  String get mailInvitationFailed => 'Could not confirm your response. Retry the same response to check its status.';
+
+  @override
+  String mailInvitationIdentity(String attendee, String organizer) {
+    return 'Reply as $attendee to organizer $organizer';
   }
 
   @override
-  String get financeCheckpointsCategory => 'Category';
+  String get mailInvitationJoin => 'Join meeting';
 
   @override
-  String get financeCheckpointsNoCategory => 'No category';
+  String get mailInvitationLocation => 'Location';
 
   @override
-  String get financeCheckpointsDescriptionLabel => 'Description';
+  String get mailInvitationPending => 'Response is pending. Check again before replying.';
 
   @override
-  String get financeCheckpointsNoCheckpoint => 'No checkpoint';
+  String get mailInvitationRetry => 'Retry invitation details';
 
   @override
-  String get financeCheckpointsNoCheckpointShort => 'No checkpoint';
+  String get mailInvitationSending => 'Sending your response…';
 
   @override
-  String get financeCheckpointsNoCheckpointDetail => 'Record a checkpoint to start audited balance tracking.';
-
-  @override
-  String get financeCheckpointsNoWallets => 'No wallets available';
-
-  @override
-  String get financeCheckpointsNoWalletsDetail => 'Create wallets before recording finance checkpoints.';
-
-  @override
-  String get financeOverviewEyebrow => 'Workspace snapshot';
-
-  @override
-  String financeOverviewCrossCurrencyHint(String currency) {
-    return 'Includes converted balances across wallets. Base currency: $currency.';
+  String mailInvitationSent(String response) {
+    return 'Response sent: $response';
   }
 
   @override
-  String financeOverviewSingleCurrencyHint(String currency) {
-    return 'Everything is already tracked in $currency.';
+  String get mailInvitationTentative => 'Tentative';
+
+  @override
+  String get mailInvitationTitle => 'Calendar invitation';
+
+  @override
+  String get mailInvitationWhen => 'When';
+
+  @override
+  String get mailLabels => 'Labels';
+
+  @override
+  String get mailLoadImages => 'Load remote images';
+
+  @override
+  String get mailLoadImagesDescription => 'Show images by default. Senders may know when you open a message.';
+
+  @override
+  String get mailLoadMore => 'Load more';
+
+  @override
+  String get mailMailbox => 'Mailbox';
+
+  @override
+  String get mailManagers => 'Managers';
+
+  @override
+  String get mailMarkAllRead => 'Mark all read';
+
+  @override
+  String get mailMarkUnread => 'Mark unread';
+
+  @override
+  String get mailMembers => 'Members';
+
+  @override
+  String get mailMessageAppearance => 'Message appearance';
+
+  @override
+  String get mailMessageDetails => 'Message details';
+
+  @override
+  String get mailMute => 'Mute thread';
+
+  @override
+  String get mailMuted => 'Muted';
+
+  @override
+  String get mailName => 'Name';
+
+  @override
+  String get mailNoSubject => '(No subject)';
+
+  @override
+  String get mailOpenFailed => 'Could not open this message. Please try again.';
+
+  @override
+  String get mailOrganization => 'Organization';
+
+  @override
+  String get mailOwner => 'Owner';
+
+  @override
+  String get mailRemoveAttachment => 'Remove attachment';
+
+  @override
+  String get mailReply => 'Reply';
+
+  @override
+  String get mailReplyAll => 'Reply all';
+
+  @override
+  String get mailRestore => 'Move to inbox';
+
+  @override
+  String get mailSaveDraft => 'Save draft';
+
+  @override
+  String get mailSearch => 'Search mail';
+
+  @override
+  String get mailSelectAll => 'Select all loaded messages';
+
+  @override
+  String get mailSend => 'Send';
+
+  @override
+  String get mailSender => 'Sender';
+
+  @override
+  String get mailSenderName => 'Sender name';
+
+  @override
+  String get mailSent => 'Sent';
+
+  @override
+  String get mailSettings => 'Mail settings';
+
+  @override
+  String get mailSignature => 'Signature';
+
+  @override
+  String get mailSmartLabels => 'Smart labels';
+
+  @override
+  String get mailSnooze => 'Snooze';
+
+  @override
+  String get mailSnoozeCustom => 'Choose date and time';
+
+  @override
+  String get mailSnoozeDay => 'In 24 hours';
+
+  @override
+  String get mailSnoozeFuture => 'Choose a time in the future.';
+
+  @override
+  String get mailSnoozeHour => 'In one hour';
+
+  @override
+  String get mailSnoozeWeek => 'In one week';
+
+  @override
+  String get mailSnoozed => 'Snoozed';
+
+  @override
+  String get mailSpam => 'Spam';
+
+  @override
+  String get mailStar => 'Star';
+
+  @override
+  String get mailStarred => 'Starred';
+
+  @override
+  String get mailSubject => 'Subject';
+
+  @override
+  String get mailSwipeActions => 'Swipe actions';
+
+  @override
+  String get mailSwipeLeft => 'Swipe left';
+
+  @override
+  String get mailSwipeMove => 'Move to folder';
+
+  @override
+  String get mailSwipeNone => 'None';
+
+  @override
+  String get mailSwipeRead => 'Read / unread';
+
+  @override
+  String get mailSwipeRight => 'Swipe right';
+
+  @override
+  String get mailSwipeStar => 'Star / unstar';
+
+  @override
+  String get mailSwipeUndo => 'Undo';
+
+  @override
+  String get mailTitle => 'Mail';
+
+  @override
+  String get mailTo => 'To';
+
+  @override
+  String get mailTrash => 'Trash';
+
+  @override
+  String get mailUnmute => 'Unmute thread';
+
+  @override
+  String get mailUnsnooze => 'Move to Inbox now';
+
+  @override
+  String get mailUnstar => 'Remove star';
+
+  @override
+  String get mailViewOriginal => 'View formatted message';
+
+  @override
+  String get mailViewer => 'Viewer';
+
+  @override
+  String get meetAccessDenied => 'You cannot join this meeting';
+
+  @override
+  String get meetAdmit => 'Admit';
+
+  @override
+  String get meetApprovedParticipant => 'Approved participant';
+
+  @override
+  String get meetAskMira => 'Ask Mira privately';
+
+  @override
+  String get meetCallEnded => 'This meeting has ended';
+
+  @override
+  String get meetCamera => 'Camera';
+
+  @override
+  String get meetCameraOff => 'Turn camera off';
+
+  @override
+  String get meetCameraOn => 'Turn camera on';
+
+  @override
+  String get meetChat => 'Chat';
+
+  @override
+  String get meetCollaboration => 'Collaborate';
+
+  @override
+  String get meetCollaborationUnavailable => 'Collaboration is unavailable. Rejoin the meeting and try again.';
+
+  @override
+  String get meetConnecting => 'Connecting to the meeting…';
+
+  @override
+  String get meetCostsUnavailable => 'Cost estimate is unavailable.';
+
+  @override
+  String get meetCreated => 'Meeting created.';
+
+  @override
+  String get meetDecline => 'Decline';
+
+  @override
+  String get meetDelete => 'Delete meeting';
+
+  @override
+  String get meetDeleteConfirm => 'Delete this meeting? This cannot be undone.';
+
+  @override
+  String get meetDeleted => 'Meeting deleted.';
+
+  @override
+  String get meetDeviceAlreadyJoined => 'You\'re already in this meeting';
+
+  @override
+  String get meetDeviceChoiceHint => 'Choose how to join from this device.';
+
+  @override
+  String get meetDeviceEchoHint => 'Mute one device to avoid audio echo.';
+
+  @override
+  String get meetDurableRequests => 'Room requests';
+
+  @override
+  String get meetDuration => 'Duration';
+
+  @override
+  String get meetEditMeeting => 'Edit meeting';
+
+  @override
+  String get meetEmptyDescription => 'No meetings yet. Schedule one to keep the team aligned.';
+
+  @override
+  String get meetEndForEveryone => 'End for everyone';
+
+  @override
+  String get meetEstimatedCosts => 'Estimated costs';
+
+  @override
+  String get meetEveryone => 'Everyone';
+
+  @override
+  String get meetFixtureConnected => 'Local meeting connected';
+
+  @override
+  String get meetFixtureReconnect => 'Reconnect meeting';
+
+  @override
+  String get meetFixtureRevoke => 'Host: stop screen share';
+
+  @override
+  String get meetForgetApproval => 'Forget approval';
+
+  @override
+  String get meetFutureStartRequired => 'Choose a future start time.';
+
+  @override
+  String get meetInstantMeeting => 'Start an instant meeting';
+
+  @override
+  String get meetInstantMeetingHint => 'Create an Untitled meeting and join now';
+
+  @override
+  String get meetInvitePeople => 'Invite people';
+
+  @override
+  String get meetInvitePeopleHint => 'Share a link to this meeting';
+
+  @override
+  String get meetJoin => 'Join call';
+
+  @override
+  String get meetJoinAnotherDevice => 'Join on another device';
+
+  @override
+  String get meetLeave => 'Leave call';
+
+  @override
+  String get meetLeaveOrEnd => 'Leave or end meeting?';
+
+  @override
+  String get meetLiveCost => 'Mira Live';
+
+  @override
+  String get meetLockRoom => 'Lock room';
+
+  @override
+  String get meetLowerHand => 'Lower hand';
+
+  @override
+  String get meetMediaCaptureFailed => 'Microphone or camera could not start. Check app permissions.';
+
+  @override
+  String get meetMediaConnectFailed => 'The media connection timed out. Try again.';
+
+  @override
+  String get meetMediaPublishFailed => 'Your microphone or camera could not connect to the call.';
+
+  @override
+  String get meetMediaReceiveFailed => 'Other participants\' audio or video could not connect.';
+
+  @override
+  String get meetMediaSendFailed => 'Your microphone or camera connected but is not sending media. Check the device input, then retry.';
+
+  @override
+  String get meetMediaSessionFailed => 'The call could not start a media session.';
+
+  @override
+  String get meetMediaUnavailable => 'Call audio or video could not connect.';
+
+  @override
+  String get meetMeetingName => 'Meeting name';
+
+  @override
+  String get meetMessageHint => 'Message everyone';
+
+  @override
+  String get meetMicrophone => 'Microphone';
+
+  @override
+  String meetMinutes(int count) {
+    return '$count minutes';
   }
 
   @override
-  String get financeWallets => 'Wallets';
+  String get meetMiraActionFailed => 'Couldn\'t update Mira\'s review. Please try again.';
 
   @override
-  String financeOverviewWalletCount(int count) {
+  String get meetMiraApprovalHint => 'Mira will run the listed actions in this workspace. Check every input before approving.';
+
+  @override
+  String get meetMiraApprovalTitle => 'Approve workspace actions?';
+
+  @override
+  String get meetMiraApprove => 'Approve actions';
+
+  @override
+  String get meetMiraAudioMute => 'Mute Mira Live audio';
+
+  @override
+  String get meetMiraAudioRetry => 'Retry Mira Live audio';
+
+  @override
+  String get meetMiraAudioUnmute => 'Unmute Mira Live audio';
+
+  @override
+  String get meetMiraCost => 'Mira';
+
+  @override
+  String get meetMiraDeny => 'Deny actions';
+
+  @override
+  String get meetMiraDiscard => 'Discard draft';
+
+  @override
+  String get meetMiraReplyFailed => 'Mira couldn\'t reply to the room message.';
+
+  @override
+  String get meetMiraRetry => 'Retry Mira';
+
+  @override
+  String get meetMiraReviewFailed => 'Couldn\'t load Mira\'s private reviews.';
+
+  @override
+  String get meetMiraReviewRefresh => 'Refresh reviews';
+
+  @override
+  String get meetMiraReviews => 'Private action reviews';
+
+  @override
+  String get meetMiraReviewsHint => 'Only you can see these drafts and requests. Review the workspace actions before approving them.';
+
+  @override
+  String get meetMiraThinking => 'Mira is preparing a reply…';
+
+  @override
+  String get meetMute => 'Mute microphone';
+
+  @override
+  String get meetMuteParticipant => 'Mute participant';
+
+  @override
+  String get meetNewMeeting => 'New meeting';
+
+  @override
+  String get meetNoParticipants => 'Waiting for others to join';
+
+  @override
+  String meetNoticeChat(String name) {
+    return '$name sent a message';
+  }
+
+  @override
+  String meetNoticeJoined(String name) {
+    return '$name joined the meeting';
+  }
+
+  @override
+  String get meetNoticeView => 'View';
+
+  @override
+  String meetNoticeWaiting(String name) {
+    return '$name is asking to join';
+  }
+
+  @override
+  String get meetNotificationSound => 'Notification sound';
+
+  @override
+  String get meetOpenLink => 'Open link';
+
+  @override
+  String get meetPartialEstimate => 'Partial estimate. Some provider costs are not included.';
+
+  @override
+  String get meetParticipantActions => 'Participant actions';
+
+  @override
+  String get meetParticipantRecording => 'Allow participant recording';
+
+  @override
+  String get meetParticipantRecordingHint => 'Participants can start a recording when their device supports it.';
+
+  @override
+  String get meetParticipants => 'Participants';
+
+  @override
+  String get meetParticipantsAndInvite => 'Participants and invites';
+
+  @override
+  String get meetPreviewPrivate => 'Your camera preview is private until you join.';
+
+  @override
+  String get meetPrivateEmpty => 'Ask Mira privately about this meeting.';
+
+  @override
+  String get meetPrivateHint => 'Only you can see this conversation. Review an answer before sharing it with everyone.';
+
+  @override
+  String get meetPrivateMira => 'Private Mira';
+
+  @override
+  String get meetPrivateRequestFailed => 'Mira couldn\'t answer. Retry your message.';
+
+  @override
+  String get meetRaiseHand => 'Raise hand';
+
+  @override
+  String get meetReactionCelebrate => 'Celebrate';
+
+  @override
+  String get meetReactionClap => 'Clap';
+
+  @override
+  String get meetReactionHeart => 'Love';
+
+  @override
+  String get meetReactionLaugh => 'Laugh';
+
+  @override
+  String get meetReactionLike => 'Like';
+
+  @override
+  String get meetReactionWow => 'Wow';
+
+  @override
+  String get meetReactions => 'Reactions';
+
+  @override
+  String get meetReadyToJoin => 'Ready to join?';
+
+  @override
+  String get meetReconnecting => 'Reconnecting…';
+
+  @override
+  String get meetRecordingAccess => 'Share recordings with participants';
+
+  @override
+  String get meetRecordingAccessHint => 'Participants can access saved meeting recordings.';
+
+  @override
+  String meetRecordingSessions(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count wallets',
-      one: '1 wallet',
+      other: '$count recordings',
+      one: '1 recording',
     );
     return '$_temp0';
   }
 
   @override
-  String financeOverviewRecentCount(int count) {
+  String get meetRecordings => 'Recordings';
+
+  @override
+  String get meetRemoveParticipant => 'Remove participant';
+
+  @override
+  String get meetReviewCheckFailed => 'Couldn\'t check the meeting status. Try again before enabling your microphone or camera.';
+
+  @override
+  String get meetReviewHint => 'Review the transcript and notes from this meeting.';
+
+  @override
+  String get meetReviewMicrophone => 'Microphone';
+
+  @override
+  String get meetReviewNoNotes => 'No notes are available yet.';
+
+  @override
+  String get meetReviewNoTranscript => 'No transcript is available yet.';
+
+  @override
+  String get meetReviewNotes => 'Meeting notes';
+
+  @override
+  String get meetReviewNotesCost => 'Notes generation';
+
+  @override
+  String get meetReviewPrivate => 'The host has not shared this meeting\'s notes.';
+
+  @override
+  String get meetReviewSharedAudio => 'Shared audio';
+
+  @override
+  String get meetReviewTotalCost => 'Total';
+
+  @override
+  String get meetReviewTranscript => 'Transcript';
+
+  @override
+  String get meetReviewTranscriptionCost => 'Transcription';
+
+  @override
+  String get meetReviewUnavailable => 'Meeting details are temporarily unavailable.';
+
+  @override
+  String get meetReviewUnknownSpeaker => 'Unknown speaker';
+
+  @override
+  String get meetReviewUnpriced => 'Some requests are not included in this estimate.';
+
+  @override
+  String get meetSaveChat => 'Save room chat';
+
+  @override
+  String get meetScheduleMeeting => 'Schedule a meeting';
+
+  @override
+  String get meetScheduleMeetingHint => 'Choose a name and time for your calendar';
+
+  @override
+  String meetScreenFixtureFrames(int count) {
+    return 'Decoded receiver frames: $count';
+  }
+
+  @override
+  String get meetScreenFixtureHint => 'Join the synthetic local meeting and share your screen. Media stays on this device; watch the receiver frame counter.';
+
+  @override
+  String get meetScreenFixtureTitle => 'Native screen capture test';
+
+  @override
+  String get meetScreenShareFailed => 'Screen sharing did not start. Check capture permissions and try again.';
+
+  @override
+  String get meetScreenShareHint => 'Your selected screen will be visible to everyone in this meeting until you stop sharing. Use the system chooser to select what to share. System audio is not shared.';
+
+  @override
+  String get meetSearchHint => 'Search meetings';
+
+  @override
+  String get meetSend => 'Send';
+
+  @override
+  String get meetSettings => 'Meeting settings';
+
+  @override
+  String get meetSfuEgress => 'Video and audio delivery';
+
+  @override
+  String get meetShareConfirm => 'Post to room chat';
+
+  @override
+  String get meetShareHint => 'Review or edit this answer before posting it to room chat.';
+
+  @override
+  String get meetShareNotes => 'Share meeting notes';
+
+  @override
+  String get meetShareScreen => 'Share screen';
+
+  @override
+  String get meetShareWithEveryone => 'Share with everyone';
+
+  @override
+  String get meetStopSharing => 'Stop sharing';
+
+  @override
+  String get meetSubtitle => 'Schedule meetings and keep recordings in reach.';
+
+  @override
+  String get meetSwitchCamera => 'Switch camera';
+
+  @override
+  String get meetSwitchDevice => 'Switch to this device';
+
+  @override
+  String get meetTimeRemaining => 'Meeting time remaining';
+
+  @override
+  String get meetTitle => 'Meet';
+
+  @override
+  String get meetUnmute => 'Unmute microphone';
+
+  @override
+  String get meetUntitledMeeting => 'Untitled meeting';
+
+  @override
+  String get meetUpdated => 'Meeting saved.';
+
+  @override
+  String get meetWaitingForHost => 'Waiting for the host to admit you';
+
+  @override
+  String get meetYou => 'You';
+
+  @override
+  String get mfaApprovalApproveAction => 'Approve';
+
+  @override
+  String get mfaApprovalApprovedDescription => 'The browser can now continue without an authenticator code.';
+
+  @override
+  String get mfaApprovalApprovedTitle => 'Web MFA approved';
+
+  @override
+  String get mfaApprovalDialogDescription => 'Confirm that the pair code matches the web MFA page before approving.';
+
+  @override
+  String get mfaApprovalFailed => 'Couldn\'t approve this MFA request.';
+
+  @override
+  String get mfaApprovalPairCodeLabel => 'Pair code';
+
+  @override
+  String mfaApprovalPendingDescription(Object pairCode) {
+    return 'Pair code $pairCode is waiting for approval.';
+  }
+
+  @override
+  String get mfaApprovalRequiresMobileMfa => 'Verify MFA on this mobile session before approving web sign-ins.';
+
+  @override
+  String get mfaApprovalSettingsIdle => 'Open this screen when the web MFA page shows a pair code. Pending requests refresh automatically.';
+
+  @override
+  String get mfaApprovalSettingsTitle => 'Approve web MFA';
+
+  @override
+  String get mfaCodeLabel => '6-digit code';
+
+  @override
+  String get mfaInvalidCode => 'Invalid verification code. Please try again.';
+
+  @override
+  String get mfaReviewSignIn => 'Review sign-in';
+
+  @override
+  String get mfaSignOut => 'Sign out';
+
+  @override
+  String get mfaSubtitle => 'Enter the code from your authenticator app';
+
+  @override
+  String get mfaTitle => 'Two-factor authentication';
+
+  @override
+  String get mfaVerify => 'Verify';
+
+  @override
+  String get miraChatTitle => 'Mira Chat';
+
+  @override
+  String get miraLiveTitle => 'Mira Live';
+
+  @override
+  String get navApps => 'Apps';
+
+  @override
+  String get navAssistant => 'Assistant';
+
+  @override
+  String get navBack => 'Back';
+
+  @override
+  String get navCalendar => 'Calendar';
+
+  @override
+  String get navFinance => 'Finance';
+
+  @override
+  String get navHabits => 'Habits';
+
+  @override
+  String get navHome => 'Home';
+
+  @override
+  String get navMore => 'More';
+
+  @override
+  String get navSettings => 'Settings';
+
+  @override
+  String get navTasks => 'Tasks';
+
+  @override
+  String get navTimer => 'Timer';
+
+  @override
+  String get notesArchive => 'Archive note';
+
+  @override
+  String get notesArchiveEmpty => 'Archived notes will appear here.';
+
+  @override
+  String get notesArchiveTab => 'Archive';
+
+  @override
+  String get notesChecklist => 'Checklist';
+
+  @override
+  String get notesConfirmPassphrase => 'Confirm passphrase';
+
+  @override
+  String get notesConfirmPin => 'Confirm PIN';
+
+  @override
+  String get notesConvertToTask => 'Convert to task';
+
+  @override
+  String get notesCreateTask => 'Create task';
+
+  @override
+  String get notesDelete => 'Delete note';
+
+  @override
+  String get notesDeleteDescription => 'Delete this note permanently? This cannot be undone.';
+
+  @override
+  String get notesDeleteError => 'Could not delete this note. Try again.';
+
+  @override
+  String get notesDeviceKeyUnavailable => 'This note was locked on another device. Open it there, or unlock on web with a passkey or phone QR transfer.';
+
+  @override
+  String get notesDeviceLockDescription => 'Use Face ID or Touch ID for everyday access. A recovery key is stored securely for passkey unlock on another device. You can also transfer access by QR.';
+
+  @override
+  String get notesDeviceUnlockReason => 'Unlock your private note';
+
+  @override
+  String get notesDone => 'Done';
+
+  @override
+  String get notesEdit => 'Edit note';
+
+  @override
+  String get notesEditLink => 'Link';
+
+  @override
+  String get notesEmpty => 'No notes yet. Capture your first idea.';
+
+  @override
+  String get notesHighlight => 'Highlight';
+
+  @override
+  String get notesInbox => 'Inbox';
+
+  @override
+  String get notesIncorrectPassphrase => 'Could not unlock this note. Check the passphrase.';
+
+  @override
+  String get notesIncorrectPin => 'Could not unlock this note. Check your PIN or try again shortly.';
+
+  @override
+  String get notesInsertButton => 'Insert';
+
+  @override
+  String get notesInsertLink => 'Insert link';
+
+  @override
+  String get notesInsertTable => 'Insert table';
+
+  @override
+  String get notesLinkEvents => 'Events';
+
+  @override
+  String get notesLinkFinance => 'Finance';
+
+  @override
+  String get notesLinkMeetings => 'Meetings';
+
+  @override
+  String get notesLinkTasks => 'Tasks';
+
+  @override
+  String get notesLinkText => 'Link text';
+
+  @override
+  String get notesLinkUrl => 'Link to a task, event, meeting or web page';
+
+  @override
+  String get notesLinkWork => 'Link work';
+
+  @override
+  String get notesLoadError => 'Could not load notes. Pull to retry.';
+
+  @override
+  String get notesLock => 'Lock note';
+
+  @override
+  String get notesLockDescription => 'Set a passphrase to encrypt this note across your devices. Keep it safe: it cannot be recovered.';
+
+  @override
+  String get notesLocked => 'Locked note';
+
+  @override
+  String get notesNew => 'New note';
+
+  @override
+  String get notesNoLinkResults => 'No matching items';
+
+  @override
+  String get notesOlder => 'Older';
+
+  @override
+  String get notesOpenLink => 'Open';
+
+  @override
+  String get notesOpenLocked => 'Open locked note';
+
+  @override
+  String get notesPasskeyUnlockFailed => 'Could not unlock with a passkey for this account. Try again or use the original phone.';
+
+  @override
+  String get notesPassphrase => 'Passphrase';
+
+  @override
+  String get notesPassphraseRequirements => 'Use at least 8 characters and enter matching passphrases.';
+
+  @override
+  String get notesPin => 'Six-digit PIN';
+
+  @override
+  String get notesPinLockDescription => 'Use a six-digit PIN on this device. Passkey recovery or a phone-to-web QR transfer can unlock it elsewhere.';
+
+  @override
+  String get notesPinRequirements => 'Enter the same six-digit PIN twice.';
+
+  @override
+  String get notesPinUnlockDescription => 'Enter your six-digit note PIN.';
+
+  @override
+  String get notesPrevious30Days => 'Previous 30 days';
+
+  @override
+  String get notesPrevious7Days => 'Previous 7 days';
+
+  @override
+  String get notesRestore => 'Restore note';
+
+  @override
+  String get notesSaveError => 'Could not save this note. Your edits are still here.';
+
+  @override
+  String get notesSaveLink => 'Save link';
+
+  @override
+  String get notesSearch => 'Search notes';
+
+  @override
+  String get notesSearchWork => 'Search linked work';
+
+  @override
+  String get notesSelectChecklistItem => 'Place the cursor in a checklist item to convert it.';
+
+  @override
+  String get notesStartWriting => 'Start writing...';
+
+  @override
+  String get notesTaskBoard => 'Board';
+
+  @override
+  String get notesTaskCreateError => 'Could not create the task. Try again.';
+
+  @override
+  String get notesTaskList => 'List';
+
+  @override
+  String get notesTaskLoadError => 'Could not load task destinations. Try again.';
+
+  @override
+  String get notesTaskNoBoards => 'No task boards available in this workspace.';
+
+  @override
+  String get notesTaskNoLists => 'This board has no task lists.';
+
+  @override
+  String get notesTitle => 'Notes';
+
+  @override
+  String get notesToday => 'Today';
+
+  @override
+  String get notesTransferApprove => 'Share unlock key';
+
+  @override
+  String notesTransferConfirmDescription(String host) {
+    return 'Share this note\'s unlock key with $host?';
+  }
+
+  @override
+  String get notesTransferFailed => 'Could not transfer this note\'s key. Try a new QR code.';
+
+  @override
+  String get notesTransferInvalidCode => 'This code does not match the current note.';
+
+  @override
+  String get notesTransferOriginalDeviceOnly => 'Scan this code from the phone where the note was locked, or unlock directly with a passkey on web.';
+
+  @override
+  String get notesTransferScanDescription => 'Scan the QR code shown on the locked note on web.';
+
+  @override
+  String get notesTransferTitle => 'Unlock on web';
+
+  @override
+  String get notesUnlock => 'Remove lock';
+
+  @override
+  String get notesUnlockDescription => 'Enter the note passphrase to view its content.';
+
+  @override
+  String get notesUntitled => 'Untitled note';
+
+  @override
+  String get notesUseDeviceLock => 'Use Face ID or Touch ID';
+
+  @override
+  String get notesUsePassphrase => 'Use a custom passphrase';
+
+  @override
+  String get notesUsePin => 'Use a six-digit PIN';
+
+  @override
+  String get notesVoiceActions => 'Proposed action items';
+
+  @override
+  String get notesVoiceAnalyze => 'Transcribe and analyze';
+
+  @override
+  String get notesVoiceCredits => 'Uses your personal AI credits. Review results before saving.';
+
+  @override
+  String get notesVoiceDecisions => 'Decisions';
+
+  @override
+  String get notesVoiceDelete => 'Delete private voice result';
+
+  @override
+  String get notesVoiceEvidence => 'Transcript evidence';
+
+  @override
+  String get notesVoiceFailed => 'Analysis could not start. Retry with the same recording while it is available.';
+
+  @override
+  String get notesVoiceNew => 'Record another voice note';
+
+  @override
+  String get notesVoiceNoSpeech => 'No speech was detected. Record again when ready.';
+
+  @override
+  String get notesVoicePermission => 'Microphone access is needed to record a voice note.';
+
+  @override
+  String get notesVoiceProcessing => 'Transcribing and preparing notes…';
+
+  @override
+  String get notesVoiceProposalNotice => 'Suggestions need your review. Saving does not create tasks or calendar events. Team workspace notes may be visible to workspace members.';
+
+  @override
+  String get notesVoiceQuestions => 'Open questions';
+
+  @override
+  String get notesVoiceRecommendations => 'Recommendations';
+
+  @override
+  String get notesVoiceRecord => 'Record voice note';
+
+  @override
+  String get notesVoiceRecordingError => 'Recording could not be captured. Please try again.';
+
+  @override
+  String get notesVoiceReview => 'Review voice note';
+
+  @override
+  String get notesVoiceReviewRequired => 'Processing needs review. We will not automatically repeat a paid request.';
+
+  @override
+  String get notesVoiceSave => 'Save note to this workspace';
+
+  @override
+  String get notesVoiceSaved => 'Voice note saved';
+
+  @override
+  String get notesVoiceSummary => 'Summary';
+
+  @override
+  String get notesVoiceTranscript => 'Transcript';
+
+  @override
+  String get notesVoiceUnavailable => 'Could not update voice analysis. Your available result is retained.';
+
+  @override
+  String get notesYesterday => 'Yesterday';
+
+  @override
+  String get notificationSecurityAppLabel => 'Security';
+
+  @override
+  String get notificationTaskAppLabel => 'Task';
+
+  @override
+  String get notificationWorkspaceAppLabel => 'Workspace';
+
+  @override
+  String get notificationsAcceptInvite => 'Accept';
+
+  @override
+  String get notificationsArchive => 'Archive';
+
+  @override
+  String get notificationsArchiveAll => 'Archive all';
+
+  @override
+  String get notificationsArchiveAllError => 'Couldn\'t archive notifications right now';
+
+  @override
+  String get notificationsArchiveEmptyMessage => 'Read notifications will move here after you\'ve cleared them.';
+
+  @override
+  String get notificationsArchiveEmptyTitle => 'No archived notifications';
+
+  @override
+  String notificationsDaysAgo(int count) {
+    return '${count}d ago';
+  }
+
+  @override
+  String get notificationsDeclineInvite => 'Decline';
+
+  @override
+  String notificationsHoursAgo(int count) {
+    return '${count}h ago';
+  }
+
+  @override
+  String get notificationsInbox => 'Inbox';
+
+  @override
+  String get notificationsInboxEmptyMessage => 'New activity, mentions, and invites will show up here.';
+
+  @override
+  String get notificationsInboxEmptyTitle => 'No unread notifications';
+
+  @override
+  String get notificationsInviteAccepted => 'Invite accepted';
+
+  @override
+  String get notificationsInviteActionError => 'Couldn\'t update this invite right now';
+
+  @override
+  String get notificationsInviteDeclined => 'Invite declined';
+
+  @override
+  String get notificationsJustNow => 'Just now';
+
+  @override
+  String get notificationsLoadErrorMessage => 'Try again in a moment.';
+
+  @override
+  String get notificationsLoadErrorTitle => 'Couldn\'t load notifications';
+
+  @override
+  String get notificationsLoadingMore => 'Loading more...';
+
+  @override
+  String get notificationsMarkRead => 'Mark as read';
+
+  @override
+  String get notificationsMarkUnread => 'Mark as unread';
+
+  @override
+  String notificationsMinutesAgo(int count) {
+    return '${count}m ago';
+  }
+
+  @override
+  String get notificationsOpenRequestAction => 'Open request';
+
+  @override
+  String get notificationsOpenTaskAction => 'Open task';
+
+  @override
+  String get notificationsOpenUnsupported => 'This notification can\'t be opened yet';
+
+  @override
+  String notificationsSubtitle(int count) {
+    return '$count unread';
+  }
+
+  @override
+  String get notificationsTitle => 'Notifications';
+
+  @override
+  String offlineAvailableItems(int items, int snapshots) {
+    String _temp0 = intl.Intl.pluralLogic(
+      items,
+      locale: localeName,
+      other: '$items unique indexed items',
+      one: '$items unique indexed item',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      snapshots,
+      locale: localeName,
+      other: '$snapshots stored snapshots',
+      one: '$snapshots stored snapshot',
+    );
+    return '$_temp0 across $_temp1';
+  }
+
+  @override
+  String get offlineBrowseStoredItems => 'Browse stored items';
+
+  @override
+  String get offlineBytesExplanation => 'Sizes are logical persisted payload bytes, including snapshot and replica copies. Disk overhead, expected download size, and transferred network bytes are unknown.';
+
+  @override
+  String get offlineChangesDiscard => 'Discard local change';
+
+  @override
+  String get offlineChangesDiscardConfirm => 'This removes the queued change from this device. It does not undo anything the server may have received.';
+
+  @override
+  String get offlineChangesEmpty => 'Everything is synced';
+
+  @override
+  String get offlineChangesRetry => 'Retry';
+
+  @override
+  String get offlineChangesReview => 'Check this action on another device before retrying. It may have reached the server already.';
+
+  @override
+  String get offlineChangesTitle => 'Offline changes';
+
+  @override
+  String get offlineClearScopeDescription => 'Remove cached data only for this account and workspace. Queued writes remain. Storage limits apply to the whole device.';
+
+  @override
+  String get offlineCoverageUnknown => 'A normal fetch may contain only part of a collection. Query totals are shown only when stored pages agree. Explicit downloads cover supported collections, not every module resource.';
+
+  @override
+  String get offlineDependencyAmbiguous => 'More than one queued create uses the same local item. Review this change.';
+
+  @override
+  String get offlineDependencyContract => 'Waiting for server support. This change is saved and retries automatically.';
+
+  @override
+  String get offlineDependencyCycle => 'Related changes depend on each other. Review their references.';
+
+  @override
+  String get offlineDependencyInvalid => 'The saved change has invalid data. Review it before syncing.';
+
+  @override
+  String get offlineDependencyMissing => 'A related local item was discarded or deleted. Review this change.';
+
+  @override
+  String get offlineDependencyWaiting => 'Waiting for related changes. Sync will continue automatically.';
+
+  @override
+  String get offlineDownloadRetryHint => 'Retry downloads to refresh retained data.';
+
+  @override
+  String get offlineEditConflict => 'Needs review before syncing';
+
+  @override
+  String get offlineEditFailed => 'Sync failed';
+
+  @override
+  String get offlineEditQueued => 'Waiting to sync';
+
+  @override
+  String get offlineEditSyncing => 'Syncing…';
+
+  @override
+  String get offlineEvictDescription => 'Remove only this module’s snapshots in the selected account and workspace. Queued writes remain. Download again to restore offline data.';
+
+  @override
+  String get offlineEvictTitle => 'Remove stored module data';
+
+  @override
+  String offlineExpectedTotal(int count) {
+    return 'Server-reported query total: $count. This does not establish complete coverage.';
+  }
+
+  @override
+  String get offlineExpectedTotalUnknown => 'Server-reported query total: unknown.';
+
+  @override
+  String offlineFreshness(int stale, int expired) {
+    String _temp0 = intl.Intl.pluralLogic(
+      stale,
+      locale: localeName,
+      other: '$stale stale snapshots',
+      one: '$stale stale snapshot',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      expired,
+      locale: localeName,
+      other: '$expired expired snapshots',
+      one: '$expired expired snapshot',
+    );
+    return '$_temp0 · $_temp1 retained for offline use';
+  }
+
+  @override
+  String get offlineInventoryError => 'Stored data could not be inspected or updated. Retry.';
+
+  @override
+  String offlineLastFetch(String time) {
+    return 'Latest fetch: $time';
+  }
+
+  @override
+  String offlineLogicalBytes(String bytes) {
+    return '$bytes payload bytes';
+  }
+
+  @override
+  String get offlineModuleDetails => 'Stored data and settings';
+
+  @override
+  String get offlineNoMatchingItems => 'No stored items match.';
+
+  @override
+  String get offlineNoStoredItems => 'No stored collections match.';
+
+  @override
+  String get offlinePauseDownloads => 'Pause downloads';
+
+  @override
+  String offlinePendingCoverage(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count recent transactions',
-      one: '1 recent transaction',
+      other: '$count queued changes. They are kept separately and are not counted as downloaded items.',
+      one: '$count queued change. It is kept separately and is not counted as a downloaded item.',
     );
     return '$_temp0';
   }
 
   @override
-  String get financeTransactions => 'Transactions';
+  String get offlinePreferencesTitle => 'Offline preferences';
 
   @override
-  String get financeCategories => 'Categories';
+  String get offlinePreparationCacheAll => 'Download all';
 
   @override
-  String get financeRecentTransactions => 'Recent transactions';
+  String get offlinePreparationDescription => 'Download workspace data for offline use. Cached data uses your storage limit; files and online services may still need connectivity.';
 
   @override
-  String get financeOverviewActionsSubtitle => 'Jump into the next thing you need to do.';
+  String get offlinePreparationDownloading => 'Downloading';
 
   @override
-  String get financeOverviewCreateTransactionHint => 'Capture income, expenses, or transfers quickly.';
+  String get offlinePreparationFailed => 'Download failed';
 
   @override
-  String get financeOverviewWalletsHint => 'Review balances and tune each account.';
+  String offlinePreparationLastSuccess(String time) {
+    return 'Last downloaded: $time';
+  }
 
   @override
-  String get financeOverviewManageHint => 'Shape categories, tags, and finance structure.';
+  String get offlinePreparationNeedsRefresh => 'Needs refresh';
 
   @override
-  String get financeOverviewWalletSectionTitle => 'Wallets';
+  String offlinePreparationProgress(int completed, int total) {
+    return '$completed of $total modules downloaded';
+  }
 
   @override
-  String get financeOverviewWalletSectionSubtitle => 'Your most important balances at a glance.';
+  String get offlinePreparationQueued => 'Not downloaded';
 
   @override
-  String get financeOverviewNoWalletsBody => 'Create your first wallet to start tracking balances, transfers, and categories.';
+  String get offlinePreparationReady => 'Downloaded';
 
   @override
-  String get financeOverviewActivityTitle => 'Activity';
+  String get offlinePreparationTitle => 'Available offline';
 
   @override
-  String get financeOverviewActivitySubtitle => 'The latest movement across your wallets.';
+  String get offlinePreparationUnavailable => 'Unavailable';
 
   @override
-  String get financeOverviewNoTransactionsBody => 'Transactions appear here once you start logging money in and out.';
+  String get offlinePreparationWaiting => 'Queued';
 
   @override
-  String get financeNoWallets => 'No wallets yet';
+  String get offlineRefreshModule => 'Download / refresh';
 
   @override
-  String get financeCreateWallet => 'Create wallet';
+  String get offlineResumeDownloads => 'Resume unfinished downloads';
 
   @override
-  String get financeEditWallet => 'Edit wallet';
+  String get offlineSearchItems => 'Search stored items by name or ID';
 
   @override
-  String get financeDeleteWallet => 'Delete wallet';
+  String get offlineSearchStored => 'Search stored collections';
 
   @override
-  String get financeDeleteWalletConfirm => 'Delete this wallet?';
+  String get offlineSectionDescription => 'Downloads, stored data, and unsynchronized changes for the selected account and workspace.';
 
   @override
-  String get financeWalletName => 'Wallet name';
+  String get offlineSectionTitle => 'Offline';
 
   @override
-  String get financeWalletNameRequired => 'Wallet name is required';
+  String get offlineStorageNeedsWorkspace => 'Select a workspace to view or clear its cached data. The storage limit applies to this device.';
 
   @override
-  String get financeWalletDescriptionTooLong => 'Description must be 500 characters or fewer';
+  String get offlineStorageScope => 'Storage limit applies to this device. Clearing cached data preserves queued changes.';
 
   @override
-  String get financeWalletTypeStandard => 'Standard';
+  String offlineStoredItemId(String id) {
+    return 'Item ID: $id';
+  }
 
   @override
-  String get financeWalletTypeCredit => 'Credit';
+  String get onboardingGetStarted => 'Get Started';
 
   @override
-  String get financeWalletMetadata => 'Wallet metadata';
+  String get onboardingSlide1Subtitle => 'Your AI companion for work and life. Mira connects your tasks, calendar, and finances.';
 
   @override
-  String get financeWalletBalance => 'Balance';
+  String get onboardingSlide1Title => 'Meet Mira';
 
   @override
-  String get financeWalletCurrency => 'Currency';
+  String get onboardingSlide2Subtitle => 'Tasks, Calendar, and Track - all unified. No more switching between apps.';
 
   @override
-  String get financeWalletSelectCurrency => 'Select currency';
+  String get onboardingSlide2Title => 'Everything in One App';
 
   @override
-  String get financeWalletSearchCurrency => 'Search currencies';
+  String get onboardingSlide3Subtitle => 'Mira remembers your preferences and gets smarter the more you use her.';
 
   @override
-  String get financeCurrencyPickerSubtitle => 'Choose the code that best matches how this wallet is tracked.';
+  String get onboardingSlide3Title => 'Intelligence That Grows';
 
   @override
-  String get financeWalletCurrencyRequired => 'Enter a valid 3-letter currency code';
+  String get passwordLabel => 'Password';
 
   @override
-  String get financeWalletIconOrImage => 'Icon or image';
+  String get profileAccountStatus => 'Account status';
 
   @override
-  String get financeWalletNoVisual => 'No visual selected';
+  String get profileAccountStatusDescription => 'Membership and verification details for this account.';
 
   @override
-  String get financeWalletPickImage => 'Pick image';
+  String get profileActive => 'Active';
 
   @override
-  String get financeWalletClearVisual => 'Clear visual';
+  String get profileAddBanner => 'Add banner';
 
   @override
-  String get financeWalletDialogSubtitle => 'Set up how this wallet should look and behave in finance.';
+  String get profileAvatar => 'Avatar';
 
   @override
-  String get financeWalletCreditDetails => 'Credit details';
+  String get profileAvatarActionDescription => 'Choose a new photo or refresh the one already attached.';
 
   @override
-  String get financeWalletCreditLimit => 'Credit limit';
+  String get profileAvatarDescription => 'Upload your profile picture';
 
   @override
-  String get financeWalletCreditLimitRequired => 'Credit limit must be greater than 0';
+  String get profileAvatarPickerDescription => 'Choose where to pick your new avatar image from.';
 
   @override
-  String get financeWalletStatementDate => 'Statement date';
+  String get profileAvatarRemoveError => 'Failed to remove avatar';
 
   @override
-  String get financeWalletPaymentDate => 'Payment date';
+  String get profileAvatarRemoveSuccess => 'Avatar removed';
 
   @override
-  String get financeWalletDateRequired => 'Enter a date between 1 and 31';
+  String get profileAvatarSectionTitle => 'Avatar';
 
   @override
-  String get financeWalletBankTab => 'Bank';
+  String get profileAvatarSet => 'Photo attached';
 
   @override
-  String get financeWalletMobileTab => 'Mobile';
+  String get profileAvatarUpdateError => 'Failed to update avatar';
 
   @override
-  String get financeWalletSearchImage => 'Search images';
+  String get profileAvatarUpdateSuccess => 'Avatar updated';
 
   @override
-  String financeWalletImageCount(int count) {
+  String get profileBanner => 'Profile banner';
+
+  @override
+  String get profileBannerDescription => 'Add a wide photo to personalize your profile.';
+
+  @override
+  String get profileCancel => 'Cancel';
+
+  @override
+  String get profileChangeAvatar => 'Change avatar';
+
+  @override
+  String get profileChangeBanner => 'Change banner';
+
+  @override
+  String get profileCurrentEmail => 'Current email';
+
+  @override
+  String get profileDangerAction => 'Danger';
+
+  @override
+  String get profileDisplayName => 'Display name';
+
+  @override
+  String get profileDisplayNameDescription => 'This name appears in collaborative surfaces across the app.';
+
+  @override
+  String get profileDisplayNameHint => 'Your display name';
+
+  @override
+  String get profileDisplayNameRequired => 'Display name cannot be empty';
+
+  @override
+  String get profileEmail => 'Email';
+
+  @override
+  String get profileEmailDescription => 'Updating your email sends confirmation to both the old and new addresses.';
+
+  @override
+  String get profileEmailHint => 'example@tuturuuu.com';
+
+  @override
+  String profileEmailPendingChange(String email) {
+    return 'Pending change to $email';
+  }
+
+  @override
+  String get profileEmailUpdateNote => 'Confirmation emails will be sent to both addresses';
+
+  @override
+  String get profileFullName => 'Full name';
+
+  @override
+  String get profileFullNameDescription => 'Use your legal or preferred full name for account records.';
+
+  @override
+  String get profileFullNameHint => 'Your full name';
+
+  @override
+  String get profileFullNameRequired => 'Full name cannot be empty';
+
+  @override
+  String get profileIdentitySectionDescription => 'Keep the core details people see about your account up to date.';
+
+  @override
+  String get profileIdentitySectionTitle => 'Identity';
+
+  @override
+  String get profileInvalidEmail => 'Please enter a valid email address';
+
+  @override
+  String get profileLoading => 'Loading profile...';
+
+  @override
+  String get profileMemberSince => 'Member since';
+
+  @override
+  String get profileMissingValue => 'Not set';
+
+  @override
+  String get profileMoreActivity => 'Show more';
+
+  @override
+  String get profileNewEmail => 'New email';
+
+  @override
+  String get profileNoSharedActivity => 'No one has shared activity here yet.';
+
+  @override
+  String get profileOverviewTab => 'Overview';
+
+  @override
+  String get profilePrivateActivity => 'Your private activity';
+
+  @override
+  String get profilePrivateByDefault => 'Only you can see your activity.';
+
+  @override
+  String get profileRecentActivity => 'Last 12 weeks';
+
+  @override
+  String get profileRemoveAvatar => 'Remove avatar';
+
+  @override
+  String get profileRemoveAvatarDescription => 'Delete the current photo from your account profile.';
+
+  @override
+  String get profileRemoveBanner => 'Remove banner';
+
+  @override
+  String get profileRemoveConfirm => 'Remove avatar?';
+
+  @override
+  String get profileSave => 'Save';
+
+  @override
+  String profileShareActivityConsent(String workspace) {
+    return 'Share your tracked-time totals and daily activity in $workspace with its members. Personal activity and activity in other workspaces stay private. You can stop sharing at any time.';
+  }
+
+  @override
+  String get profileShareActivityTitle => 'Share activity';
+
+  @override
+  String get profileSharedActivityUnavailable => 'This activity is no longer available.';
+
+  @override
+  String profileSharedWithWorkspace(String workspace) {
+    return 'Shared with $workspace';
+  }
+
+  @override
+  String get profileStatus => 'Status';
+
+  @override
+  String get profileStatusUnknown => 'Unknown';
+
+  @override
+  String get profileTimelineAgenda => 'Days with activity';
+
+  @override
+  String get profileTimelineDayEmpty => 'No activity was returned for this day.';
+
+  @override
+  String get profileTimelineDescription => 'Creation activity in this workspace over the last 30 days. Calendar events are workspace activity.';
+
+  @override
+  String get profileTimelineEmpty => 'No recent activity in this workspace';
+
+  @override
+  String get profileTimelineHasActivity => 'Activity in loaded snapshot';
+
+  @override
+  String get profileTimelineHideDates => 'Close dates and browse agenda';
+
+  @override
+  String get profileTimelineLimited => 'Showing recent activity only. Some sources reached the display limit.';
+
+  @override
+  String get profileTimelineLoadedEnd => 'All loaded activity shown';
+
+  @override
+  String get profileTimelineMoreDays => 'Show more loaded days';
+
+  @override
+  String profileTimelineNotes(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count available',
-      one: '1 available',
-      zero: 'No images',
+      other: 'Added $count notes',
+      one: 'Added 1 note',
     );
     return '$_temp0';
   }
 
   @override
-  String get financeWalletClearImage => 'Clear image';
+  String get profileTimelinePartial => 'Some activity is unavailable.';
 
   @override
-  String get financeNoTransactions => 'No transactions yet';
+  String get profileTimelineShowDates => 'Show date selector';
 
   @override
-  String get financeNoCategories => 'No categories yet';
+  String get profileTimelineTab => 'Timeline';
 
   @override
-  String get financeTags => 'Tags';
-
-  @override
-  String get financeNoTags => 'No tags yet';
-
-  @override
-  String get financeManageCategoriesTitle => 'Categories';
-
-  @override
-  String get financeManageCategoriesSubtitle => 'Group transactions into clear spending and income buckets.';
-
-  @override
-  String get financeManageTagsTitle => 'Tags';
-
-  @override
-  String get financeManageTagsSubtitle => 'Use tags for lightweight labels and flexible reporting.';
-
-  @override
-  String get financeManageCategoriesEmptyBody => 'Create categories for recurring income and expense patterns.';
-
-  @override
-  String get financeManageTagsEmptyBody => 'Create tags for ad-hoc labels like trips, subscriptions, or projects.';
-
-  @override
-  String get financeCreateTag => 'Create tag';
-
-  @override
-  String get financeEditTag => 'Edit tag';
-
-  @override
-  String get financeDeleteTag => 'Delete tag';
-
-  @override
-  String get financeDeleteTagConfirm => 'Delete this tag?';
-
-  @override
-  String get financeTagName => 'Tag name';
-
-  @override
-  String get financeTagNameRequired => 'Tag name is required';
-
-  @override
-  String get financeTagDialogSubtitle => 'Describe the label and choose a color that is easy to scan.';
-
-  @override
-  String get financeBasic => 'Basic';
-
-  @override
-  String get financeIncome => 'Income';
-
-  @override
-  String get financeExpense => 'Expense';
-
-  @override
-  String get financeFrequentlyUsedCategories => 'Frequently used';
-
-  @override
-  String get financeHideAmounts => 'Hide amounts';
-
-  @override
-  String get financeViewAll => 'View all';
-
-  @override
-  String get financeSearchTransactions => 'Search transactions';
-
-  @override
-  String get financeSearchCategories => 'Search categories';
-
-  @override
-  String get financeSearchWallets => 'Search wallets';
-
-  @override
-  String get financeShowAmounts => 'Show amounts';
-
-  @override
-  String get financeNoSearchResults => 'No matching transactions';
-
-  @override
-  String get financeActivityDefaultHint => 'Search and review money movement by day.';
-
-  @override
-  String get financeActivitySearchHint => 'Search is open. Filter by merchant, wallet, or category.';
-
-  @override
-  String get financeActivitySearchEmptyBody => 'Try a different keyword, wallet, or category name.';
-
-  @override
-  String get financeActivityClearSearch => 'Clear search';
-
-  @override
-  String financeActivitySearchResults(int count) {
+  String profileTimelineTasks(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count transactions matched',
-      one: '1 transaction matched',
-      zero: 'No matches yet',
+      other: 'Created $count tasks',
+      one: 'Created 1 task',
     );
     return '$_temp0';
   }
 
   @override
-  String get financeAddAttachments => 'Add attachments';
+  String get profileTimelineTitle => 'Timeline';
 
   @override
-  String financeAttachmentCount(int count) {
+  String get profileTimelineToday => 'Today';
+
+  @override
+  String profileTimelineTransactions(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count files selected',
-      one: '1 file selected',
-      zero: 'No files selected',
+      other: 'Created $count transactions',
+      one: 'Created 1 transaction',
     );
     return '$_temp0';
   }
 
   @override
-  String get financeAttachmentEmpty => 'No attachments selected';
+  String get profileTimelineUnavailable => 'Activity could not be refreshed.';
 
   @override
-  String financeAttachmentHint(int count, String size) {
-    return 'Attach up to $count files. Max $size each.';
-  }
-
-  @override
-  String get financeAttachmentLimitReached => 'Attachment limit reached';
-
-  @override
-  String financeAttachmentRejected(int count, String size) {
+  String profileTimelineWorkspaceEvents(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count files were too large or over the limit. Max $size each.',
-      one: '1 file was too large. Max $size.',
+      other: '$count workspace events added',
+      one: '1 workspace event added',
     );
     return '$_temp0';
   }
 
   @override
-  String financeAttachmentUploadFailed(int count) {
+  String get profileTimelineYesterday => 'Yesterday';
+
+  @override
+  String get profileTitle => 'Profile';
+
+  @override
+  String profileTrackedMinutes(int minutes) {
+    return '$minutes min tracked';
+  }
+
+  @override
+  String get profileUpdateError => 'Failed to update profile';
+
+  @override
+  String get profileUpdateSuccess => 'Profile updated';
+
+  @override
+  String get profileUploadAvatar => 'Upload avatar';
+
+  @override
+  String get profileVerification => 'Verification';
+
+  @override
+  String get profileVerified => 'Verified';
+
+  @override
+  String get profileWorkspaceActivity => 'Workspace activity';
+
+  @override
+  String get qrLoginApproveAction => 'Approve';
+
+  @override
+  String qrLoginApproveDescription(Object origin, Object userEmail) {
+    return 'Approve QR sign-in from $origin using $userEmail.';
+  }
+
+  @override
+  String get qrLoginApproveFailed => 'Couldn\'t approve this QR login.';
+
+  @override
+  String get qrLoginApproveTitle => 'Approve QR sign-in';
+
+  @override
+  String get qrLoginApprovedDescription => 'The other device can now finish signing in.';
+
+  @override
+  String get qrLoginApprovedTitle => 'QR sign-in approved';
+
+  @override
+  String get qrLoginCameraUnavailable => 'Camera is unavailable.';
+
+  @override
+  String get qrLoginInvalidCode => 'Point the camera at a Tuturuuu login QR code.';
+
+  @override
+  String get qrLoginLocalAuthFailed => 'Local authentication was cancelled or failed.';
+
+  @override
+  String get qrLoginLocalAuthReason => 'Approve Tuturuuu QR sign-in.';
+
+  @override
+  String get qrLoginMobileApproved => 'QR approved. Signing you in...';
+
+  @override
+  String get qrLoginMobileButton => 'Sign in with mobile QR';
+
+  @override
+  String get qrLoginMobileDescription => 'Open Tuturuuu on a signed-in phone and scan this code.';
+
+  @override
+  String get qrLoginMobileExpired => 'QR code expired. Generate a new code.';
+
+  @override
+  String get qrLoginMobileLoading => 'Generating QR code...';
+
+  @override
+  String get qrLoginMobileRetry => 'Generate new QR code';
+
+  @override
+  String get qrLoginMobileTitle => 'Sign in with mobile QR';
+
+  @override
+  String get qrLoginMobileWaiting => 'Waiting for approval...';
+
+  @override
+  String get qrLoginRequiresAppLock => 'Turn on app lock before approving QR sign-ins.';
+
+  @override
+  String get qrLoginScanAgain => 'Scan again';
+
+  @override
+  String get qrLoginScannerDescription => 'Scan a QR code shown on another Tuturuuu sign-in screen.';
+
+  @override
+  String get qrLoginScannerTitle => 'Scan login QR';
+
+  @override
+  String get qrLoginSettingsDescription => 'Scan a QR code on another sign-in screen and approve it with app lock.';
+
+  @override
+  String get qrLoginSettingsDisabledDescription => 'Turn on app lock before scanning QR login codes.';
+
+  @override
+  String get qrLoginSettingsTitle => 'Scan login QR';
+
+  @override
+  String get reminders12h => '12 hours before';
+
+  @override
+  String get reminders1d => '1 day before';
+
+  @override
+  String get reminders1h => '1 hour before';
+
+  @override
+  String get reminders3d => '3 days before';
+
+  @override
+  String get reminders3h => '3 hours before';
+
+  @override
+  String remindersAllDayEvent(String title) {
+    return 'All-day event: $title';
+  }
+
+  @override
+  String remindersCalendarTiming(String when) {
+    return 'Calendar: $when';
+  }
+
+  @override
+  String get remindersDescription => 'Task deadlines and calendar events, kept ready on this device.';
+
+  @override
+  String get remindersEnableNotifications => 'Enable notifications';
+
+  @override
+  String get remindersEventTitle => 'Calendar events';
+
+  @override
+  String get remindersIn12h => 'In 12 hours';
+
+  @override
+  String get remindersIn1d => 'Tomorrow';
+
+  @override
+  String get remindersIn1h => 'In 1 hour';
+
+  @override
+  String get remindersIn3d => 'In 3 days';
+
+  @override
+  String get remindersIn3h => 'In 3 hours';
+
+  @override
+  String remindersLastChecked(String time) {
+    return 'Last checked: $time';
+  }
+
+  @override
+  String get remindersNeverChecked => 'Waiting for the first refresh';
+
+  @override
+  String remindersNext(String time) {
+    return 'Next reminder: $time';
+  }
+
+  @override
+  String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone) {
+    return '$leadTime · $occurrence ($timezone)';
+  }
+
+  @override
+  String get remindersPermissionOff => 'Device notifications disabled';
+
+  @override
+  String get remindersPermissionOn => 'Device notifications enabled';
+
+  @override
+  String get remindersRefresh => 'Refresh now';
+
+  @override
+  String get remindersRefreshFailed => 'Could not refresh reminders. Scheduled reminders are retained.';
+
+  @override
+  String get remindersRefreshing => 'Checking tasks and events…';
+
+  @override
+  String remindersScheduledCount(int count) {
+    return '$count scheduled';
+  }
+
+  @override
+  String get remindersStatusTitle => 'Reminder status';
+
+  @override
+  String get remindersSystemNote => 'Scheduled alerts can arrive while the app is closed. New or changed items are checked when the app opens or resumes; background refresh timing depends on the device.';
+
+  @override
+  String get remindersTaskTitle => 'Task deadlines';
+
+  @override
+  String get remindersTiming => 'Remind me';
+
+  @override
+  String get remindersTitle => 'Reminders';
+
+  @override
+  String remindersUpcomingEvent(String when, String title) {
+    return '$when: $title';
+  }
+
+  @override
+  String get requiredMfaEnrollDescription => 'Your administrator requires two-step verification. Add this account to an authenticator app to continue.';
+
+  @override
+  String get requiredMfaEnrollTitle => 'Secure your account';
+
+  @override
+  String get requiredMfaError => 'Unable to complete verification. Please try again.';
+
+  @override
+  String get requiredMfaRecoveryDescription => 'Your administrator reset account security. Sign in again before setting up or verifying an authenticator.';
+
+  @override
+  String get requiredMfaRecoveryTitle => 'Sign in again to secure your account';
+
+  @override
+  String get requiredMfaSecretLabel => 'Enter this setup key in your authenticator app. Keep it private.';
+
+  @override
+  String get requiredMfaSignInAgain => 'Sign in again';
+
+  @override
+  String get requiredMfaStart => 'Set up authenticator';
+
+  @override
+  String get requiredMfaVerify => 'Verify and continue';
+
+  @override
+  String get securityCheckTitle => 'Security check';
+
+  @override
+  String get securityConnect => 'Connect';
+
+  @override
+  String get securityConnectionsDescription => 'Choose how you sign in. Keep at least one connected account.';
+
+  @override
+  String get securityConnectionsTitle => 'Connected accounts';
+
+  @override
+  String get securityCurrentSession => 'This session';
+
+  @override
+  String get securityDisconnect => 'Disconnect';
+
+  @override
+  String get securityDisconnectDescription => 'You will no longer be able to sign in with this connected account.';
+
+  @override
+  String get securityRevokeDescription => 'The selected devices will need to sign in again.';
+
+  @override
+  String get securityRevokeOthers => 'Sign out other sessions';
+
+  @override
+  String get securityRevokeSession => 'Sign out this session';
+
+  @override
+  String get securitySessionsDescription => 'Review devices signed in to your account. Signing out another session keeps this device signed in.';
+
+  @override
+  String get securitySessionsTitle => 'Sessions and connections';
+
+  @override
+  String get securityUnknownDevice => 'Unknown device';
+
+  @override
+  String get selectImageSource => 'Select image source';
+
+  @override
+  String get settingsAboutSectionDescription => 'Release details and product information for this build.';
+
+  @override
+  String get settingsAboutSectionTitle => 'About the app';
+
+  @override
+  String get settingsAboutSummary => 'Tuturuuu mobile keeps your workspace tools, assistant, and day-to-day workflows within quick reach.';
+
+  @override
+  String get settingsAboutTab => 'About';
+
+  @override
+  String get settingsAccountSectionDescription => 'Profile access and session controls.';
+
+  @override
+  String get settingsAccountSectionTitle => 'Account';
+
+  @override
+  String get settingsAccountTab => 'Account';
+
+  @override
+  String get settingsAppPreferences => 'App preferences';
+
+  @override
+  String get settingsAppVersion => 'App version';
+
+  @override
+  String get settingsAppearanceLanguage => 'Appearance & language';
+
+  @override
+  String get settingsBuildLabel => 'Build';
+
+  @override
+  String get settingsCalendar => 'Calendar';
+
+  @override
+  String get settingsCalendarTimezone => 'Calendar & timezone';
+
+  @override
+  String get settingsCurrentWorkspace => 'Current workspace';
+
+  @override
+  String get settingsCurrentWorkspaceDescription => 'Choose the workspace you are using right now.';
+
+  @override
+  String get settingsDangerSectionDescription => 'Sign out and end access on this device.';
+
+  @override
+  String get settingsDangerSectionTitle => 'Session';
+
+  @override
+  String get settingsDataStatusCached => 'Cached';
+
+  @override
+  String get settingsDataStatusLabel => 'Data';
+
+  @override
+  String get settingsDataStatusLive => 'Live';
+
+  @override
+  String get settingsDataStatusRefreshing => 'Refreshing';
+
+  @override
+  String get settingsDefaultTaskBoardNavigation => 'Open Tasks board by default';
+
+  @override
+  String get settingsDefaultTaskBoardNavigationBoardPicker => 'Board picker';
+
+  @override
+  String get settingsDefaultTaskBoardNavigationDefaultBoard => 'Tasks board';
+
+  @override
+  String get settingsDefaultTaskBoardNavigationDescription => 'Open your personal Tasks board directly from Boards. Tasks always opens the board list view.';
+
+  @override
+  String get settingsDefaultWorkspace => 'Default workspace';
+
+  @override
+  String get settingsDefaultWorkspaceDescription => 'The app opens here by default on every launch.';
+
+  @override
+  String get settingsExperimentalAppsDisabled => 'Disabled';
+
+  @override
+  String get settingsExperimentalAppsEnabled => 'Enabled';
+
+  @override
+  String get settingsExperimentalAppsSectionDescription => 'Enable non-core apps in the Apps Hub. Tasks, Calendar, and Finance stay available by default.';
+
+  @override
+  String get settingsExperimentalAppsSectionTitle => 'Experiments';
+
+  @override
+  String settingsExperimentalAppsTileDescription(String appName) {
+    return 'Show $appName in the Apps Hub.';
+  }
+
+  @override
+  String get settingsFinanceAmounts => 'Finance amounts';
+
+  @override
+  String get settingsFinanceAmountsDescription => 'Show or hide balances and transaction amounts across finance screens.';
+
+  @override
+  String get settingsFirstDayAuto => 'Auto';
+
+  @override
+  String get settingsFirstDayAutoDescription => 'Use your workspace or locale defaults when available.';
+
+  @override
+  String get settingsFirstDayMonday => 'Monday';
+
+  @override
+  String get settingsFirstDayOfWeek => 'First day of week';
+
+  @override
+  String get settingsFirstDayOfWeekDescription => 'Control how calendars and weekly summaries start.';
+
+  @override
+  String get settingsFirstDaySaturday => 'Saturday';
+
+  @override
+  String get settingsFirstDaySunday => 'Sunday';
+
+  @override
+  String get settingsGeneralGroup => 'Personalize';
+
+  @override
+  String get settingsHaptics => 'Haptic feedback';
+
+  @override
+  String get settingsHeroDescription => 'Personal setup, workspace context, and release details in one place.';
+
+  @override
+  String get settingsInfrastructureSectionDescription => 'Platform-wide controls available in the internal workspace.';
+
+  @override
+  String get settingsInfrastructureSectionTitle => 'Infrastructure';
+
+  @override
+  String get settingsLanguage => 'Language';
+
+  @override
+  String get settingsLanguageDescription => 'Choose the language used throughout the app.';
+
+  @override
+  String get settingsLanguageEnglish => 'English';
+
+  @override
+  String get settingsLanguageSystem => 'System default';
+
+  @override
+  String get settingsLanguageSystemDescription => 'Follow your device language automatically.';
+
+  @override
+  String get settingsLanguageVietnamese => 'Vietnamese';
+
+  @override
+  String get settingsLicenseVersionDescription => 'Reference the installed version while reviewing notices.';
+
+  @override
+  String get settingsLicenseViewerDescription => 'Browse Flutter, plugin, and package licenses included in this build.';
+
+  @override
+  String get settingsLicenseViewerTitle => 'Open license viewer';
+
+  @override
+  String get settingsLicensesSectionDescription => 'Review the third-party software notices bundled with the app.';
+
+  @override
+  String get settingsLicensesSectionTitle => 'Open-source licenses';
+
+  @override
+  String get settingsLicensesTab => 'Licenses';
+
+  @override
+  String get settingsMinutesUnit => 'min';
+
+  @override
+  String get settingsMobileVersions => 'Mobile versions';
+
+  @override
+  String get settingsMobileVersionsAccessDeniedDescription => 'You need the workspace roles permission in the internal workspace to manage mobile version policies.';
+
+  @override
+  String get settingsMobileVersionsAccessDeniedTitle => 'Access required';
+
+  @override
+  String get settingsMobileVersionsAndroidDescription => 'Set the Play Store threshold and update prompt for Android users.';
+
+  @override
+  String get settingsMobileVersionsAndroidOtpDescription => 'Allow Android app logins to use email verification codes.';
+
+  @override
+  String get settingsMobileVersionsAndroidTitle => 'Android';
+
+  @override
+  String get settingsMobileVersionsEffectiveVersion => 'Effective version';
+
+  @override
+  String get settingsMobileVersionsEffectiveVersionDescription => 'Versions below this threshold see a recommended update prompt.';
+
+  @override
+  String get settingsMobileVersionsIosDescription => 'Set the App Store threshold and update prompt for iPhone and iPad users.';
+
+  @override
+  String get settingsMobileVersionsIosOtpDescription => 'Allow iOS app logins to use email verification codes.';
+
+  @override
+  String get settingsMobileVersionsIosTitle => 'iOS';
+
+  @override
+  String get settingsMobileVersionsLoadError => 'Failed to load mobile version policies.';
+
+  @override
+  String get settingsMobileVersionsMinimumVersion => 'Minimum version';
+
+  @override
+  String get settingsMobileVersionsMinimumVersionDescription => 'Versions below this threshold must update before continuing.';
+
+  @override
+  String get settingsMobileVersionsOtpEnabled => 'Enable OTP login';
+
+  @override
+  String get settingsMobileVersionsPageDescription => 'Manage the effective and minimum app versions enforced by the mobile app before users can continue, plus OTP rollout controls for mobile and web.';
+
+  @override
+  String get settingsMobileVersionsSave => 'Save changes';
+
+  @override
+  String get settingsMobileVersionsSaveError => 'Failed to save mobile version policy.';
+
+  @override
+  String get settingsMobileVersionsSaveSuccess => 'Mobile version policy saved.';
+
+  @override
+  String get settingsMobileVersionsSaving => 'Saving...';
+
+  @override
+  String get settingsMobileVersionsStoreUrl => 'Store URL';
+
+  @override
+  String get settingsMobileVersionsStoreUrlDescription => 'Required whenever either version threshold is set.';
+
+  @override
+  String get settingsMobileVersionsStoreUrlPlaceholder => 'https://apps.apple.com/app/id123456789';
+
+  @override
+  String get settingsMobileVersionsTileDescription => 'Manage the effective and minimum versions enforced by the mobile app and OTP rollout controls.';
+
+  @override
+  String get settingsMobileVersionsTitle => 'Mobile versions';
+
+  @override
+  String get settingsMobileVersionsValidationEffectiveAtLeastMinimum => 'Effective version must be greater than or equal to the minimum version.';
+
+  @override
+  String get settingsMobileVersionsValidationStoreUrlRequired => 'Store URL is required when a version is set.';
+
+  @override
+  String get settingsMobileVersionsValidationVersionFormat => 'Use semantic version format x.y.z.';
+
+  @override
+  String get settingsMobileVersionsVersionPlaceholder => '1.2.3';
+
+  @override
+  String get settingsMobileVersionsWebOtpDescription => 'Allow the marketing web login to use email verification-code sign-in.';
+
+  @override
+  String get settingsMobileVersionsWebOtpTitle => 'Web OTP';
+
+  @override
+  String get settingsMobileVersionsWorkspaceRequiredDescription => 'Switch to the internal workspace to manage platform mobile version policies.';
+
+  @override
+  String get settingsMobileVersionsWorkspaceRequiredTitle => 'Internal workspace required';
+
+  @override
+  String get settingsNavApp => 'App';
+
+  @override
+  String get settingsNavWorkspace => 'Workspace';
+
+  @override
+  String get settingsNavYou => 'You';
+
+  @override
+  String get settingsNoEmail => 'No email available';
+
+  @override
+  String get settingsNoWorkspaceSelected => 'No workspace selected';
+
+  @override
+  String get settingsNotificationsInteraction => 'Notifications & interaction';
+
+  @override
+  String get settingsPackageLabel => 'Package';
+
+  @override
+  String get settingsPreferencesSectionDescription => 'Language, appearance, and calendar defaults.';
+
+  @override
+  String get settingsPreferencesSectionTitle => 'Preferences';
+
+  @override
+  String get settingsPreferencesTab => 'Preferences';
+
+  @override
+  String get settingsProductSettings => 'App settings';
+
+  @override
+  String get settingsProfile => 'Profile';
+
+  @override
+  String get settingsProfileDescription => 'Manage your personal details and avatar.';
+
+  @override
+  String get settingsPullToRefreshAction => 'Refresh now';
+
+  @override
+  String get settingsQuickDefaultWorkspace => 'Default workspace';
+
+  @override
+  String get settingsQuickOpenProfile => 'Open profile';
+
+  @override
+  String get settingsQuickSwitchWorkspace => 'Switch current';
+
+  @override
+  String get settingsReleaseHistoryDescription => 'Explore the changes included in each published version, even when you\'re offline.';
+
+  @override
+  String get settingsReleaseHistoryUnavailable => 'Release history is unavailable right now.';
+
+  @override
+  String get settingsReleaseNoDetails => 'No detailed changes were recorded for this version.';
+
+  @override
+  String get settingsSignOut => 'Sign out';
+
+  @override
+  String get settingsSignOutConfirm => 'Are you sure you want to sign out?';
+
+  @override
+  String get settingsSignOutDescription => 'End your session on this device.';
+
+  @override
+  String get settingsSignedInAs => 'Signed in as';
+
+  @override
+  String get settingsSupportGroup => 'Help and account';
+
+  @override
+  String get settingsSwitchWorkspace => 'Switch workspace';
+
+  @override
+  String get settingsSwitchWorkspaceDescription => 'Move between personal and team contexts.';
+
+  @override
+  String get settingsTheme => 'Theme';
+
+  @override
+  String get settingsThemeDark => 'Dark';
+
+  @override
+  String get settingsThemeDescription => 'Adjust the app appearance for your device and preference.';
+
+  @override
+  String get settingsThemeLight => 'Light';
+
+  @override
+  String get settingsThemeSystem => 'System';
+
+  @override
+  String get settingsThemeSystemDescription => 'Match your device appearance automatically.';
+
+  @override
+  String get settingsTimezone => 'Personal timezone';
+
+  @override
+  String get settingsTimezoneAccountPending => 'Waiting for your account.';
+
+  @override
+  String get settingsTimezoneAuto => 'Automatic';
+
+  @override
+  String get settingsTimezoneDescription => 'Personal timezone overrides the workspace timezone. Automatic uses the workspace default, then your device.';
+
+  @override
+  String settingsTimezoneEffective(String timezone) {
+    return 'Effective timezone: $timezone';
+  }
+
+  @override
+  String get settingsTimezoneError => 'Could not load or save timezone. Retry or edit a loaded preference.';
+
+  @override
+  String get settingsTimezoneLoading => 'Resolving timezone…';
+
+  @override
+  String get settingsTimezoneRateLimited => 'Too many requests. Please wait before retrying.';
+
+  @override
+  String get settingsTimezoneRetry => 'Retry timezone';
+
+  @override
+  String get settingsTimezoneSearch => 'Search timezones';
+
+  @override
+  String get settingsTimezoneUnknown => 'Unknown';
+
+  @override
+  String get settingsTitle => 'Settings';
+
+  @override
+  String get settingsVersionLabel => 'Version';
+
+  @override
+  String get settingsVersionTileDescription => 'Installed release currently running on this device.';
+
+  @override
+  String get settingsWhatsNew => 'What\'s new';
+
+  @override
+  String get settingsWhatsNewDescription => 'Updates from every published app release.';
+
+  @override
+  String get settingsWorkspaceAccessTitle => 'Access';
+
+  @override
+  String get settingsWorkspaceActive => 'Active';
+
+  @override
+  String get settingsWorkspaceAvatar => 'Workspace avatar';
+
+  @override
+  String get settingsWorkspaceAvatarDescription => 'Upload a new image or remove the current avatar.';
+
+  @override
+  String get settingsWorkspaceAvatarRemovePending => 'The current avatar will be removed when you save.';
+
+  @override
+  String get settingsWorkspaceDefaultCurrencyDescription => 'Use one currency as the default for finance and invoice flows in this workspace.';
+
+  @override
+  String get settingsWorkspaceDefaultCurrencyField => 'Currency';
+
+  @override
+  String get settingsWorkspaceDefaultCurrencyTitle => 'Default currency';
+
+  @override
+  String get settingsWorkspaceMembersAccessDenied => 'You need member access to manage this workspace.';
+
+  @override
+  String settingsWorkspaceMembersActiveSection(int count) {
+    return 'Members ($count)';
+  }
+
+  @override
+  String get settingsWorkspaceMembersCreatorChip => 'Creator';
+
+  @override
+  String get settingsWorkspaceMembersEmailField => 'Email';
+
+  @override
+  String get settingsWorkspaceMembersEmailInvalid => 'Enter a valid email address.';
+
+  @override
+  String get settingsWorkspaceMembersEmailPlaceholder => 'name@example.com';
+
+  @override
+  String get settingsWorkspaceMembersEmpty => 'No members yet.';
+
+  @override
+  String get settingsWorkspaceMembersInviteAction => 'Invite';
+
+  @override
+  String get settingsWorkspaceMembersInviteSent => 'Invite sent.';
+
+  @override
+  String get settingsWorkspaceMembersLinkAction => 'New link';
+
+  @override
+  String get settingsWorkspaceMembersLinkActive => 'Active';
+
+  @override
+  String get settingsWorkspaceMembersLinkCopied => 'Invite link copied.';
+
+  @override
+  String get settingsWorkspaceMembersLinkCopy => 'Copy';
+
+  @override
+  String get settingsWorkspaceMembersLinkCreated => 'Invite link created.';
+
+  @override
+  String get settingsWorkspaceMembersLinkDeleteMessage => 'Delete this invite link?';
+
+  @override
+  String get settingsWorkspaceMembersLinkDeleteTitle => 'Delete link';
+
+  @override
+  String get settingsWorkspaceMembersLinkExpired => 'Expired';
+
+  @override
+  String get settingsWorkspaceMembersLinkFull => 'Full';
+
+  @override
+  String get settingsWorkspaceMembersLinkLimitField => 'Max uses';
+
+  @override
+  String get settingsWorkspaceMembersLinkLimitInvalid => 'Enter a positive whole number.';
+
+  @override
+  String get settingsWorkspaceMembersLinkLimitPlaceholder => 'Leave empty for unlimited';
+
+  @override
+  String get settingsWorkspaceMembersLinkNever => 'No expiry';
+
+  @override
+  String get settingsWorkspaceMembersLinksEmpty => 'No invite links yet.';
+
+  @override
+  String get settingsWorkspaceMembersLinksSection => 'Invite links';
+
+  @override
+  String get settingsWorkspaceMembersPendingChip => 'Pending';
+
+  @override
+  String get settingsWorkspaceMembersPendingEmpty => 'No pending invites.';
+
+  @override
+  String settingsWorkspaceMembersPendingSection(int count) {
+    return 'Pending ($count)';
+  }
+
+  @override
+  String settingsWorkspaceMembersRemoveMessage(String name) {
+    return 'Remove $name from this workspace?';
+  }
+
+  @override
+  String get settingsWorkspaceMembersRemoveTitle => 'Remove';
+
+  @override
+  String get settingsWorkspaceMembersSubtitle => 'Invite people, review access, and manage links.';
+
+  @override
+  String get settingsWorkspaceMembersTitle => 'Members';
+
+  @override
+  String get settingsWorkspaceNameHint => 'Workspace name';
+
+  @override
+  String get settingsWorkspacePropertiesDescription => 'Update the workspace name and avatar.';
+
+  @override
+  String get settingsWorkspacePropertiesNameRequired => 'Workspace name cannot be empty';
+
+  @override
+  String get settingsWorkspacePropertiesNoAccess => 'You need workspace settings permission to edit these properties.';
+
+  @override
+  String get settingsWorkspacePropertiesPermissionLoading => 'Checking your workspace permissions...';
+
+  @override
+  String get settingsWorkspacePropertiesTitle => 'Workspace information';
+
+  @override
+  String get settingsWorkspacePropertiesUpdated => 'Workspace information updated.';
+
+  @override
+  String get settingsWorkspaceRolesAccessDenied => 'You need role access to manage permissions.';
+
+  @override
+  String get settingsWorkspaceRolesCreate => 'Create role';
+
+  @override
+  String get settingsWorkspaceRolesDefaultTitle => 'Default access';
+
+  @override
+  String settingsWorkspaceRolesDeleteMessage(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get settingsWorkspaceRolesDeleteTitle => 'Delete role';
+
+  @override
+  String get settingsWorkspaceRolesEdit => 'Edit role';
+
+  @override
+  String get settingsWorkspaceRolesEmpty => 'No custom roles yet.';
+
+  @override
+  String get settingsWorkspaceRolesListTitle => 'Roles';
+
+  @override
+  String get settingsWorkspaceRolesMembersEmpty => 'No active members available.';
+
+  @override
+  String get settingsWorkspaceRolesMembersSection => 'Assigned members';
+
+  @override
+  String get settingsWorkspaceRolesNameField => 'Name';
+
+  @override
+  String get settingsWorkspaceRolesNamePlaceholder => 'Role name';
+
+  @override
+  String get settingsWorkspaceRolesNameRequired => 'Enter a role name.';
+
+  @override
+  String settingsWorkspaceRolesPermissionCount(int count) {
+    return '$count permissions enabled';
+  }
+
+  @override
+  String get settingsWorkspaceRolesPermissionsSection => 'Permissions';
+
+  @override
+  String get settingsWorkspaceRolesSave => 'Save';
+
+  @override
+  String get settingsWorkspaceRolesSaved => 'Role saved.';
+
+  @override
+  String get settingsWorkspaceRolesSubtitle => 'Control default access and workspace roles.';
+
+  @override
+  String get settingsWorkspaceRolesTitle => 'Roles';
+
+  @override
+  String get settingsWorkspaceSecretsAccessDeniedDescription => 'You need the manage workspace secrets permission in the internal workspace to open this page.';
+
+  @override
+  String get settingsWorkspaceSecretsAccessDeniedTitle => 'Access required';
+
+  @override
+  String get settingsWorkspaceSecretsActiveBackend => 'Active backend';
+
+  @override
+  String get settingsWorkspaceSecretsAdd => 'Add';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractBlocked => 'Needs proxy secrets';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractDescription => 'Track whether automatic ZIP extraction is enabled and whether the proxy credentials are ready.';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractProxyToken => 'Shared token';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractProxyUrl => 'Proxy URL';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractSwitch => 'Switch';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractTitle => 'Auto extract';
+
+  @override
+  String get settingsWorkspaceSecretsConfigured => 'Configured';
+
+  @override
+  String settingsWorkspaceSecretsCopyInto(String provider) {
+    return 'Copy into $provider';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsCreate => 'Create secret';
+
+  @override
+  String settingsWorkspaceSecretsDeleteMessage(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsDeleteSuccess => 'Secret deleted.';
+
+  @override
+  String get settingsWorkspaceSecretsDeleteTitle => 'Delete';
+
+  @override
+  String get settingsWorkspaceSecretsDriveAutoExtractProxyTokenDescription => 'Shared bearer token used to authenticate requests to the ZIP extraction proxy.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveAutoExtractProxyUrlDescription => 'HTTPS URL for the self-hosted ZIP extraction proxy. Only used when auto extraction is enabled.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveAutoExtractZipDescription => 'Enables automatic ZIP extraction after uploads. Disabled by default.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2AccessKeyIdDescription => 'Access key ID for the Cloudflare R2 token used by the server-side Drive adapter.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2BucketDescription => 'Cloudflare R2 bucket name used for Drive objects when the provider is set to \"r2\".';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2EndpointDescription => 'S3-compatible R2 endpoint, for example https://<account-id>.r2.cloudflarestorage.com.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2SecretAccessKeyDescription => 'Secret access key for the Cloudflare R2 token used by the server-side Drive adapter.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveStorageProviderDescription => 'Selects the Drive backend for this workspace. Use \"supabase\" for the current path or \"r2\" to route Drive through Cloudflare R2.';
+
+  @override
+  String get settingsWorkspaceSecretsEdit => 'Edit';
+
+  @override
+  String get settingsWorkspaceSecretsEditorDescription => 'Update the secret name and value used by this workspace.';
+
+  @override
+  String get settingsWorkspaceSecretsEmptyDescription => 'Create a secret or adjust the search query to see matching entries.';
+
+  @override
+  String get settingsWorkspaceSecretsEmptyTitle => 'No secrets found';
+
+  @override
+  String get settingsWorkspaceSecretsInventory => 'Inventory';
+
+  @override
+  String get settingsWorkspaceSecretsListDescription => 'Search, edit, and remove workspace secrets. Boolean values can be toggled inline.';
+
+  @override
+  String get settingsWorkspaceSecretsListTitle => 'Secrets list';
+
+  @override
+  String get settingsWorkspaceSecretsLoadError => 'Failed to load workspace secrets.';
+
+  @override
+  String get settingsWorkspaceSecretsMigrating => 'Migrating...';
+
+  @override
+  String get settingsWorkspaceSecretsMigrationError => 'Failed to migrate workspace storage.';
+
+  @override
+  String settingsWorkspaceSecretsMigrationSuccess(int filesCopied, String provider) {
+    return 'Copied $filesCopied files into $provider.';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsMissing => 'Missing';
+
+  @override
+  String get settingsWorkspaceSecretsMissingMessage => 'Add the required secrets before routing Drive traffic here.';
+
+  @override
+  String get settingsWorkspaceSecretsNameField => 'Name';
+
+  @override
+  String get settingsWorkspaceSecretsNamePlaceholder => 'SECRET_NAME';
+
+  @override
+  String get settingsWorkspaceSecretsNameRequired => 'Enter a secret name.';
+
+  @override
+  String get settingsWorkspaceSecretsNoValue => 'No value';
+
+  @override
+  String get settingsWorkspaceSecretsObjects => 'Objects';
+
+  @override
+  String get settingsWorkspaceSecretsOptional => 'Optional';
+
+  @override
+  String settingsWorkspaceSecretsPageDescription(String workspaceName) {
+    return 'Manage secrets and storage rollout for $workspaceName.';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsProviderR2Description => 'An S3-compatible backend for external Drive storage.';
+
+  @override
+  String get settingsWorkspaceSecretsProviderR2Title => 'Cloudflare R2';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSecrets => 'Provider secrets';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSecretsDescription => 'Edit the secrets that define which storage provider Drive uses for this workspace.';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSecretsTitle => 'Provider secrets';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSupabaseDescription => 'The current built-in Drive storage backend.';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSupabaseTitle => 'Supabase';
+
+  @override
+  String get settingsWorkspaceSecretsProxySecretsDescription => 'Configure the optional secrets used by the ZIP extraction proxy.';
+
+  @override
+  String get settingsWorkspaceSecretsProxySecretsTitle => 'ZIP proxy secrets';
+
+  @override
+  String get settingsWorkspaceSecretsReadyMessage => 'This backend is ready to receive Drive files.';
+
+  @override
+  String get settingsWorkspaceSecretsRecommended => 'Recommended';
+
+  @override
+  String get settingsWorkspaceSecretsRequired => 'Required';
+
+  @override
+  String get settingsWorkspaceSecretsRolloutDescription => 'Inspect the current Drive backend, confirm required provider secrets, and migrate files between providers when needed.';
+
+  @override
+  String get settingsWorkspaceSecretsRolloutTitle => 'Storage rollout';
+
+  @override
+  String get settingsWorkspaceSecretsSave => 'Save secret';
+
+  @override
+  String get settingsWorkspaceSecretsSaveError => 'Failed to save secret.';
+
+  @override
+  String get settingsWorkspaceSecretsSaveSuccess => 'Secret saved.';
+
+  @override
+  String get settingsWorkspaceSecretsSaving => 'Saving...';
+
+  @override
+  String get settingsWorkspaceSecretsSearchPlaceholder => 'Search secrets';
+
+  @override
+  String get settingsWorkspaceSecretsSelected => 'Selected';
+
+  @override
+  String get settingsWorkspaceSecretsStateDisabled => 'Disabled';
+
+  @override
+  String get settingsWorkspaceSecretsStateEnabled => 'Enabled';
+
+  @override
+  String get settingsWorkspaceSecretsStateMissing => 'Missing';
+
+  @override
+  String get settingsWorkspaceSecretsStatePresent => 'Present';
+
+  @override
+  String get settingsWorkspaceSecretsSubtitle => 'Manage workspace secrets and storage rollout.';
+
+  @override
+  String get settingsWorkspaceSecretsTitle => 'Secrets';
+
+  @override
+  String get settingsWorkspaceSecretsTotalSecrets => 'All secrets';
+
+  @override
+  String get settingsWorkspaceSecretsUnavailable => 'Unavailable';
+
+  @override
+  String get settingsWorkspaceSecretsValueField => 'Value';
+
+  @override
+  String get settingsWorkspaceSecretsValuePlaceholder => 'Secret value';
+
+  @override
+  String get settingsWorkspaceSecretsValueRequired => 'Enter a secret value.';
+
+  @override
+  String get settingsWorkspaceSecretsVisibleSecrets => 'Visible';
+
+  @override
+  String get settingsWorkspaceSecretsWorkspaceRequiredDescription => 'Select a workspace before opening secrets management.';
+
+  @override
+  String get settingsWorkspaceSecretsWorkspaceRequiredTitle => 'Workspace required';
+
+  @override
+  String get settingsWorkspaceSecretsZipAutomation => 'ZIP automation';
+
+  @override
+  String get settingsWorkspaceSectionDescription => 'See your current context and switch when needed.';
+
+  @override
+  String get settingsWorkspaceSectionManageTitle => 'Workspace setup';
+
+  @override
+  String get settingsWorkspaceSectionTitle => 'Workspace';
+
+  @override
+  String get settingsWorkspaceTimezone => 'Workspace timezone';
+
+  @override
+  String get signUpAlreadyHaveAccountPrompt => 'Already have an account?';
+
+  @override
+  String get signUpBackToLogin => 'Back to login';
+
+  @override
+  String get signUpButton => 'Create account';
+
+  @override
+  String get signUpConfirmPassword => 'Confirm password';
+
+  @override
+  String get signUpPasswordLowercase => 'Password must contain a lowercase letter';
+
+  @override
+  String get signUpPasswordMinLength => 'Password must be at least 8 characters';
+
+  @override
+  String get signUpPasswordMismatch => 'Passwords do not match';
+
+  @override
+  String get signUpPasswordNumber => 'Password must contain a number';
+
+  @override
+  String get signUpPasswordUppercase => 'Password must contain an uppercase letter';
+
+  @override
+  String get signUpSignIn => 'Sign in';
+
+  @override
+  String get signUpSubtitle => 'Choose a provider to continue.';
+
+  @override
+  String get signUpSuccessMessage => 'We sent a confirmation link to your email. Please verify to continue.';
+
+  @override
+  String get signUpSuccessTitle => 'Check your email';
+
+  @override
+  String get signUpTitle => 'Create account';
+
+  @override
+  String get sort => 'Sort';
+
+  @override
+  String get sortBy => 'Sort by';
+
+  @override
+  String get storefrontAnalytics => 'Enable storefront analytics';
+
+  @override
+  String get storefrontCheckoutMode => 'Checkout';
+
+  @override
+  String get storefrontCompareAtPrice => 'Compare-at price';
+
+  @override
+  String get storefrontCorners => 'Corner style';
+
+  @override
+  String get storefrontCreate => 'New store';
+
+  @override
+  String get storefrontCurrency => 'Currency';
+
+  @override
+  String get storefrontDelete => 'Delete store';
+
+  @override
+  String get storefrontDeleteConfirm => 'Delete this storefront and all of its listings? This cannot be undone.';
+
+  @override
+  String get storefrontDeleted => 'Storefront deleted.';
+
+  @override
+  String get storefrontDescription => 'Description';
+
+  @override
+  String get storefrontEdit => 'Edit store';
+
+  @override
+  String get storefrontEditorSubtitle => 'Configure identity, checkout, visibility, and the visual presentation of this store.';
+
+  @override
+  String get storefrontEmptyBody => 'Turn inventory into a mobile-ready catalog and publish it when you are ready.';
+
+  @override
+  String get storefrontEmptyTitle => 'Create your first storefront';
+
+  @override
+  String get storefrontInventoryBadges => 'Show stock availability';
+
+  @override
+  String get storefrontLayout => 'Product layout';
+
+  @override
+  String storefrontListingCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count attachments failed to upload',
-      one: '1 attachment failed to upload',
+      other: '$count listings',
+      one: '1 listing',
     );
     return '$_temp0';
   }
 
   @override
-  String financeAttachmentUploadSuccess(int count) {
+  String get storefrontListingCreate => 'Add listing';
+
+  @override
+  String get storefrontListingDelete => 'Delete listing';
+
+  @override
+  String get storefrontListingDeleteConfirm => 'Remove this product from the storefront? The inventory product is not deleted.';
+
+  @override
+  String get storefrontListingDeleted => 'Listing deleted.';
+
+  @override
+  String get storefrontListingEdit => 'Edit listing';
+
+  @override
+  String get storefrontListingEditorSubtitle => 'Choose a stocked product and set how it appears in this storefront.';
+
+  @override
+  String get storefrontListingSaved => 'Listing saved.';
+
+  @override
+  String get storefrontListingTitle => 'Listing title';
+
+  @override
+  String get storefrontListingValidationError => 'Choose a stocked product and enter a valid title, price, and order limit.';
+
+  @override
+  String get storefrontListings => 'Listings';
+
+  @override
+  String get storefrontListingsEmptyBody => 'Add products from Inventory to make this storefront useful to customers.';
+
+  @override
+  String get storefrontListingsEmptyTitle => 'No listings yet';
+
+  @override
+  String get storefrontMaxPerOrder => 'Max per order';
+
+  @override
+  String get storefrontName => 'Store name';
+
+  @override
+  String get storefrontPreview => 'Preview';
+
+  @override
+  String get storefrontPrice => 'Price';
+
+  @override
+  String get storefrontProduct => 'Product';
+
+  @override
+  String get storefrontProductsRequired => 'Create a stocked inventory product before adding a storefront listing.';
+
+  @override
+  String get storefrontPublished => 'Published';
+
+  @override
+  String get storefrontSaved => 'Storefront saved.';
+
+  @override
+  String get storefrontSearch => 'Search storefronts';
+
+  @override
+  String get storefrontSlug => 'Public address';
+
+  @override
+  String get storefrontStatus => 'Status';
+
+  @override
+  String get storefrontStatusAll => 'All';
+
+  @override
+  String get storefrontStatusArchived => 'Archived';
+
+  @override
+  String get storefrontStatusDraft => 'Draft';
+
+  @override
+  String get storefrontStatusPaused => 'Paused';
+
+  @override
+  String get storefrontStatusPublished => 'Published';
+
+  @override
+  String get storefrontStockRow => 'Warehouse and unit';
+
+  @override
+  String get storefrontStores => 'Stores';
+
+  @override
+  String get storefrontSubtitle => 'Publish products, control availability, and manage every customer-facing shop.';
+
+  @override
+  String get storefrontSurface => 'Surface style';
+
+  @override
+  String get storefrontTheme => 'Theme';
+
+  @override
+  String get storefrontTitle => 'Storefront';
+
+  @override
+  String get storefrontValidationError => 'Add a store name, a valid public address, and a three-letter currency code.';
+
+  @override
+  String get storefrontVisibility => 'Visibility';
+
+  @override
+  String get storefrontVisibilityPrivate => 'Private';
+
+  @override
+  String get storefrontVisibilityPublic => 'Public';
+
+  @override
+  String get taskBoardDetailAddBlockedByTask => 'Add blocker';
+
+  @override
+  String get taskBoardDetailAddBlockingTask => 'Add blocked task';
+
+  @override
+  String get taskBoardDetailAddChildTask => 'Add child task';
+
+  @override
+  String get taskBoardDetailAddNewList => 'Add new list';
+
+  @override
+  String get taskBoardDetailAddParentTask => 'Add parent task';
+
+  @override
+  String get taskBoardDetailAddRelatedTask => 'Add related task';
+
+  @override
+  String get taskBoardDetailApplyFilters => 'Apply filters';
+
+  @override
+  String get taskBoardDetailBlockedBy => 'Blocked by';
+
+  @override
+  String get taskBoardDetailBlocking => 'Blocking';
+
+  @override
+  String get taskBoardDetailBoardActions => 'Board actions';
+
+  @override
+  String get taskBoardDetailBoardRenamed => 'Board renamed.';
+
+  @override
+  String get taskBoardDetailBulkActions => 'Bulk actions';
+
+  @override
+  String taskBoardDetailBulkAllSuccess(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count attachments uploaded',
-      one: '1 attachment uploaded',
+      other: '$count tasks',
+      one: '$count task',
+    );
+    return 'Updated $_temp0.';
+  }
+
+  @override
+  String get taskBoardDetailBulkClearAssignees => 'Clear assignees';
+
+  @override
+  String get taskBoardDetailBulkClearLabels => 'Clear labels';
+
+  @override
+  String get taskBoardDetailBulkClearProjects => 'Clear projects';
+
+  @override
+  String get taskBoardDetailBulkMarkClosed => 'Mark as closed';
+
+  @override
+  String get taskBoardDetailBulkMarkDone => 'Mark as done';
+
+  @override
+  String get taskBoardDetailBulkMoveToBoard => 'Move to board';
+
+  @override
+  String taskBoardDetailBulkPartialSuccess(int success, int failed) {
+    return 'Updated $success tasks, $failed failed.';
+  }
+
+  @override
+  String get taskBoardDetailCannotCreateMoreClosedLists => 'Only one closed list is allowed per board.';
+
+  @override
+  String get taskBoardDetailCannotMoveToClosedStatus => 'Cannot move lists to or from closed status';
+
+  @override
+  String get taskBoardDetailChangePriority => 'Change priority';
+
+  @override
+  String get taskBoardDetailChildTasks => 'Child tasks';
+
+  @override
+  String get taskBoardDetailClearFilters => 'Clear filters';
+
+  @override
+  String get taskBoardDetailClosedListCapacityHint => '1 closed list max';
+
+  @override
+  String get taskBoardDetailCollapseList => 'Collapse list';
+
+  @override
+  String get taskBoardDetailColorBlue => 'Blue';
+
+  @override
+  String get taskBoardDetailColorCyan => 'Cyan';
+
+  @override
+  String get taskBoardDetailColorGray => 'Gray';
+
+  @override
+  String get taskBoardDetailColorGreen => 'Green';
+
+  @override
+  String get taskBoardDetailColorIndigo => 'Indigo';
+
+  @override
+  String get taskBoardDetailColorLabel => 'Color';
+
+  @override
+  String get taskBoardDetailColorOrange => 'Orange';
+
+  @override
+  String get taskBoardDetailColorPink => 'Pink';
+
+  @override
+  String get taskBoardDetailColorPurple => 'Purple';
+
+  @override
+  String get taskBoardDetailColorRed => 'Red';
+
+  @override
+  String get taskBoardDetailColorYellow => 'Yellow';
+
+  @override
+  String get taskBoardDetailCreateList => 'Create list';
+
+  @override
+  String get taskBoardDetailCreateTask => 'Create task';
+
+  @override
+  String taskBoardDetailDaysAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days ago',
+      one: '$count day ago',
     );
     return '$_temp0';
   }
 
   @override
-  String get financeAttachmentUploaded => 'Uploaded';
+  String get taskBoardDetailDefaultHiddenListsDescription => 'List mode hides Documents lists until you choose a list or status filter.';
 
   @override
-  String get financeAttachmentUploading => 'Uploading...';
+  String get taskBoardDetailDefaultHiddenListsOverrideDescription => 'Your list or status filter is overriding the default Documents exclusion.';
 
   @override
-  String get financeAttachments => 'Attachments';
+  String get taskBoardDetailDefaultHiddenListsOverrideTitle => 'Default hidden lists are visible';
 
   @override
-  String get financeTransactionDetails => 'Transaction details';
+  String get taskBoardDetailDefaultHiddenListsTitle => 'Hidden by default';
 
   @override
-  String get financeCreateTransaction => 'Create transaction';
+  String get taskBoardDetailDeleteForever => 'Delete forever';
 
   @override
-  String get financeEditTransaction => 'Edit transaction';
+  String get taskBoardDetailDeleteList => 'Delete list';
 
   @override
-  String get financeTransactionDialogSubtitle => 'Capture the amount, source, and visibility settings in one place.';
+  String get taskBoardDetailDeleteListDescription => 'Are you sure you want to delete this list? All tasks in this list will also be deleted. This action cannot be undone.';
 
   @override
-  String get financeDeleteTransaction => 'Delete transaction';
+  String get taskBoardDetailDeleteListTitle => 'Delete list?';
 
   @override
-  String get financeDeleteTransactionConfirm => 'Delete this transaction?';
+  String get taskBoardDetailDeleteTask => 'Delete task';
 
   @override
-  String get financeTransactionCreated => 'Transaction created';
+  String get taskBoardDetailDeleteTaskDescription => 'Move this task to the recycle bin?';
 
   @override
-  String get financeTransactionUpdated => 'Transaction updated';
+  String get taskBoardDetailDeleteTaskForever => 'Delete task forever';
 
   @override
-  String get financeTransactionDeleted => 'Transaction deleted';
+  String get taskBoardDetailDeleteTaskForeverDescription => 'Permanently delete this task from the recycle bin? This action cannot be undone.';
 
   @override
-  String get financeAmount => 'Amount';
+  String get taskBoardDetailDeleteTaskTitle => 'Delete task?';
 
   @override
-  String get financeDescription => 'Description';
+  String taskBoardDetailDeleteTasks(int count) {
+    return 'Delete ($count)';
+  }
 
   @override
-  String get financeTakenAt => 'Taken at';
+  String taskBoardDetailDeletedAgo(String time) {
+    return 'Deleted $time';
+  }
 
   @override
-  String get financeCategory => 'Category';
-
-  @override
-  String get financeWallet => 'Wallet';
-
-  @override
-  String get financePickerWalletSubtitle => 'Pick the wallet this transaction should affect.';
-
-  @override
-  String get financePickerCategorySubtitle => 'Choose the bucket that best describes the transaction.';
-
-  @override
-  String get financePickerTagSubtitle => 'Select an optional label for extra context.';
-
-  @override
-  String get financePickerLoadingOptions => 'Loading wallets, categories, and tags...';
-
-  @override
-  String get financeNoTag => 'No tag';
-
-  @override
-  String get financeDestinationWallet => 'Destination wallet';
-
-  @override
-  String get financeSourceWallet => 'Source wallet';
-
-  @override
-  String get financeSelectDestinationWallet => 'Select destination wallet';
-
-  @override
-  String get financeTransferMode => 'Transfer mode';
-
-  @override
-  String get financeTransferModeEditHint => 'Transfer mode can only be edited for existing transfers.';
-
-  @override
-  String get financeDestinationAmountOptional => 'Destination amount';
-
-  @override
-  String get financeSelectWalletAndCategoryFirst => 'Choose a wallet and category first';
-
-  @override
-  String get financeSelectWalletAndDestinationFirst => 'Choose source and destination wallets first';
-
-  @override
-  String get financeWalletsMustBeDifferent => 'Source and destination wallets must be different';
-
-  @override
-  String get financeInvalidAmount => 'Enter a valid amount';
-
-  @override
-  String get financeInvalidDestinationAmount => 'Enter a valid destination amount';
-
-  @override
-  String get financeExcludedFromReports => 'Excluded from reports';
-
-  @override
-  String get financeReportOptIn => 'Include in reports';
-
-  @override
-  String get financeConfidentialAmount => 'Confidential amount';
-
-  @override
-  String get financeConfidentialDescription => 'Confidential description';
-
-  @override
-  String get financeConfidentialCategory => 'Confidential category';
-
-  @override
-  String get financeStatisticsSummary => 'Statistics summary';
-
-  @override
-  String get financeTotalTransactions => 'Total transactions';
-
-  @override
-  String get financeWalletNotFound => 'Wallet not found';
-
-  @override
-  String get financeCreateCategory => 'Create category';
-
-  @override
-  String get financeEditCategory => 'Edit category';
-
-  @override
-  String get financeDeleteCategory => 'Delete category';
-
-  @override
-  String get financeDeleteCategoryConfirm => 'Delete this category?';
-
-  @override
-  String get financeCategoryNameRequired => 'Category name is required';
-
-  @override
-  String get financeCategoryDialogSubtitle => 'Define how this category should look and whether it counts as income or expense.';
-
-  @override
-  String get financeType => 'Type';
-
-  @override
-  String get financeIcon => 'Icon';
-
-  @override
-  String get financeSelectIcon => 'Select icon';
-
-  @override
-  String get financeSearchIcons => 'Search icons';
-
-  @override
-  String get financeNoIconsFound => 'No icons found';
-
-  @override
-  String get financePreview => 'Preview';
-
-  @override
-  String get financeNoColor => 'No color';
-
-  @override
-  String get financePickColor => 'Pick color';
-
-  @override
-  String get financeInvalidColor => 'Enter a valid hex color';
-
-  @override
-  String get financeRandomizeColor => 'Randomize';
-
-  @override
-  String get financeToday => 'Today';
-
-  @override
-  String get financeYesterday => 'Yesterday';
-
-  @override
-  String get financeNet => 'Net';
-
-  @override
-  String get financeNetBalance => 'Net balance';
-
-  @override
-  String get financeYourWallets => 'Your wallets';
-
-  @override
-  String get financeQuickActions => 'Quick actions';
-
-  @override
-  String financeWalletSummaryHint(int count) {
+  String taskBoardDetailDeletedTasksCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count wallets are ready to use',
-      one: '1 wallet is ready to use',
-      zero: 'No wallets configured yet',
+      other: '$count deleted tasks',
+      one: '$count deleted task',
     );
     return '$_temp0';
   }
 
   @override
-  String get financeAddTransaction => 'Add';
+  String taskBoardDetailDueAt(String date) {
+    return 'Due $date';
+  }
 
   @override
-  String get financeAddFirstTransaction => 'Add first transaction';
+  String get taskBoardDetailEditList => 'Edit list';
 
   @override
-  String get financeCreateFirstWallet => 'Create first wallet';
+  String get taskBoardDetailEditTask => 'Edit task';
 
   @override
-  String get financeTransfer => 'Transfer';
+  String get taskBoardDetailEditorDetailsTab => 'Details';
 
   @override
-  String get financeTransactionCountShort => 'tx';
+  String get taskBoardDetailEditorRelationshipsTab => 'Relationships';
 
   @override
-  String get financeExchangeRate => 'Exchange rate';
+  String get taskBoardDetailEnterBulkSelect => 'Select tasks';
 
   @override
-  String get financeDestinationAmountAuto => 'Auto';
+  String get taskBoardDetailExitBulkSelect => 'Clear selection';
 
   @override
-  String get financeDestinationAmountOverride => 'Manual';
+  String get taskBoardDetailExpandList => 'Expand list';
 
   @override
-  String get financeDestinationAmountAutoHint => 'Auto-filled from live exchange rate';
+  String get taskBoardDetailFilterAssignees => 'Assignees';
 
   @override
-  String get financeDestinationAmountOverrideHint => 'Using custom amount — tap to switch to auto';
+  String get taskBoardDetailFilterLabels => 'Labels';
 
   @override
-  String get financeInvertRate => 'Invert rate';
+  String get taskBoardDetailFilterLists => 'Lists';
 
   @override
-  String get timerTitle => 'Timer';
+  String get taskBoardDetailFilterProjects => 'Projects';
 
   @override
-  String get timerStart => 'Start';
+  String get taskBoardDetailFilterStatuses => 'Statuses';
 
   @override
-  String get timerStop => 'Stop';
+  String get taskBoardDetailFilters => 'Filters';
+
+  @override
+  String get taskBoardDetailFiltersActive => 'Filters active';
+
+  @override
+  String taskBoardDetailFromList(String list) {
+    return 'from: $list';
+  }
+
+  @override
+  String taskBoardDetailInDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'in $count days',
+      one: 'in $count day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get taskBoardDetailInformation => 'Information';
+
+  @override
+  String get taskBoardDetailInvalidDateRange => 'End date must be on or after start date';
+
+  @override
+  String get taskBoardDetailKanbanView => 'Kanban';
+
+  @override
+  String get taskBoardDetailListActions => 'List actions';
+
+  @override
+  String get taskBoardDetailListCreated => 'List created.';
+
+  @override
+  String get taskBoardDetailListDeleted => 'List deleted.';
+
+  @override
+  String get taskBoardDetailListNameLabel => 'List name';
+
+  @override
+  String get taskBoardDetailListRenamed => 'List renamed.';
+
+  @override
+  String get taskBoardDetailListUpdated => 'List updated.';
+
+  @override
+  String get taskBoardDetailListView => 'List';
+
+  @override
+  String get taskBoardDetailListsReordered => 'Lists reordered.';
+
+  @override
+  String get taskBoardDetailLoadError => 'Couldn\'t load board details right now';
+
+  @override
+  String get taskBoardDetailManageBoardLayout => 'Manage board layout';
+
+  @override
+  String get taskBoardDetailManageBoardLayoutDescription => 'Manage board columns by status and reorder lists within each status.';
+
+  @override
+  String get taskBoardDetailMarkNotStarted => 'Move to Not started';
+
+  @override
+  String get taskBoardDetailMove => 'Move';
+
+  @override
+  String get taskBoardDetailMoveListDown => 'Move list down';
+
+  @override
+  String get taskBoardDetailMoveListToStatus => 'Move list to status';
+
+  @override
+  String get taskBoardDetailMoveListUp => 'Move list up';
+
+  @override
+  String get taskBoardDetailMoveTask => 'Move task';
+
+  @override
+  String taskBoardDetailMovedToStatus(String status) {
+    return 'Moved to $status';
+  }
+
+  @override
+  String taskBoardDetailNProjects(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count projects',
+      one: '$count project',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get taskBoardDetailNameRequired => 'Name is required';
+
+  @override
+  String get taskBoardDetailNextWeek => 'Next week';
+
+  @override
+  String get taskBoardDetailNoAvailableRelationshipTasks => 'No available tasks for this relationship.';
+
+  @override
+  String get taskBoardDetailNoDate => 'No date';
+
+  @override
+  String get taskBoardDetailNoFilterOptions => 'No options available';
+
+  @override
+  String get taskBoardDetailNoListsDescription => 'Create a list to start organizing tasks in this board.';
+
+  @override
+  String get taskBoardDetailNoListsInStatus => 'No lists in this status';
+
+  @override
+  String get taskBoardDetailNoListsTitle => 'No lists yet';
+
+  @override
+  String get taskBoardDetailNoMatchingTasks => 'No tasks match your search.';
+
+  @override
+  String get taskBoardDetailNoMoveTargets => 'No other lists available for moving this task.';
+
+  @override
+  String get taskBoardDetailNoTasksInList => 'No tasks in this list';
+
+  @override
+  String get taskBoardDetailNoTasksSelected => 'No tasks selected';
+
+  @override
+  String get taskBoardDetailNone => 'None';
+
+  @override
+  String get taskBoardDetailOpenFullDetails => 'Open full details';
+
+  @override
+  String get taskBoardDetailOpenRelatedTask => 'Open related task';
+
+  @override
+  String get taskBoardDetailOverdue => 'Overdue';
+
+  @override
+  String get taskBoardDetailParentTask => 'Parent task';
+
+  @override
+  String taskBoardDetailPoints(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pts',
+      one: '$count pt',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get taskBoardDetailPriority => 'Priority';
+
+  @override
+  String get taskBoardDetailPriorityCritical => 'Critical';
+
+  @override
+  String get taskBoardDetailPriorityHigh => 'High';
+
+  @override
+  String get taskBoardDetailPriorityLow => 'Low';
+
+  @override
+  String get taskBoardDetailPriorityNone => 'No priority';
+
+  @override
+  String get taskBoardDetailPriorityNormal => 'Normal';
+
+  @override
+  String get taskBoardDetailPriorityUpdated => 'Priority updated.';
+
+  @override
+  String get taskBoardDetailProperties => 'Properties';
+
+  @override
+  String get taskBoardDetailQuickActions => 'Quick actions';
+
+  @override
+  String get taskBoardDetailRecycleBin => 'Recycle Bin';
+
+  @override
+  String get taskBoardDetailRecycleBinDescription => 'Deleted tasks from this board. Select tasks to restore or permanently delete them.';
+
+  @override
+  String get taskBoardDetailRecycleBinEmpty => 'No deleted tasks';
+
+  @override
+  String get taskBoardDetailRecycleBinEmptyHint => 'Deleted tasks will appear here.';
+
+  @override
+  String get taskBoardDetailRefresh => 'Refresh board';
+
+  @override
+  String get taskBoardDetailRelatedTasks => 'Related tasks';
+
+  @override
+  String get taskBoardDetailRelationshipAdded => 'Relationship added.';
+
+  @override
+  String get taskBoardDetailRelationshipRemoved => 'Relationship removed.';
+
+  @override
+  String get taskBoardDetailRemoveDueDate => 'Remove due date';
+
+  @override
+  String get taskBoardDetailRemoveRelationship => 'Remove relationship';
+
+  @override
+  String get taskBoardDetailRenameBoard => 'Rename board';
+
+  @override
+  String get taskBoardDetailRenameList => 'Rename list';
+
+  @override
+  String taskBoardDetailRestoreTasks(int count) {
+    return 'Restore ($count)';
+  }
+
+  @override
+  String get taskBoardDetailSearchDone => 'Done';
+
+  @override
+  String get taskBoardDetailSearchPlaceholder => 'Search tasks';
+
+  @override
+  String get taskBoardDetailSearchTasks => 'Search tasks';
+
+  @override
+  String get taskBoardDetailSearchTitle => 'Search tasks';
+
+  @override
+  String get taskBoardDetailSelectAllFiltered => 'Select visible';
+
+  @override
+  String get taskBoardDetailSelectAllTasks => 'Select all tasks';
+
+  @override
+  String get taskBoardDetailSelectTask => 'Select task';
+
+  @override
+  String taskBoardDetailSelectedCount(int selected, int total) {
+    return '$selected of $total selected';
+  }
+
+  @override
+  String get taskBoardDetailSetCustomDate => 'Set custom date';
+
+  @override
+  String get taskBoardDetailSetDueDate => 'Set due date';
+
+  @override
+  String get taskBoardDetailSetEstimation => 'Set estimation';
+
+  @override
+  String taskBoardDetailStartsAt(String date) {
+    return 'Starts $date';
+  }
+
+  @override
+  String get taskBoardDetailStatusActive => 'Active';
+
+  @override
+  String get taskBoardDetailStatusCategoryLabel => 'Status category';
+
+  @override
+  String get taskBoardDetailStatusClosed => 'Closed';
+
+  @override
+  String get taskBoardDetailStatusDocuments => 'Documents';
+
+  @override
+  String get taskBoardDetailStatusDone => 'Done';
+
+  @override
+  String get taskBoardDetailStatusNotStarted => 'Not started';
+
+  @override
+  String get taskBoardDetailStatusReview => 'Review';
+
+  @override
+  String get taskBoardDetailTaskActions => 'Task actions';
+
+  @override
+  String taskBoardDetailTaskAssigneeCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count assignees',
+      one: '$count assignee',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get taskBoardDetailTaskAssignees => 'Assignees';
+
+  @override
+  String get taskBoardDetailTaskCreated => 'Task created.';
+
+  @override
+  String get taskBoardDetailTaskDates => 'Dates';
+
+  @override
+  String get taskBoardDetailTaskDeleted => 'Task deleted.';
+
+  @override
+  String get taskBoardDetailTaskDeletedForever => 'Task permanently deleted.';
+
+  @override
+  String get taskBoardDetailTaskDescriptionComingSoon => 'Description editing is coming soon on mobile.';
+
+  @override
+  String get taskBoardDetailTaskDescriptionDone => 'Done';
+
+  @override
+  String get taskBoardDetailTaskDescriptionHint => 'Add description';
+
+  @override
+  String get taskBoardDetailTaskDescriptionImageSourceCamera => 'Camera';
+
+  @override
+  String get taskBoardDetailTaskDescriptionImageSourceGallery => 'Gallery';
+
+  @override
+  String get taskBoardDetailTaskDescriptionImageSourceTitle => 'Add image';
+
+  @override
+  String get taskBoardDetailTaskDescriptionLabel => 'Description';
+
+  @override
+  String get taskBoardDetailTaskDescriptionPersonalOnly => 'Description editing is currently available only in personal workspaces.';
+
+  @override
+  String get taskBoardDetailTaskDescriptionTableAddColumn => 'Add column';
+
+  @override
+  String get taskBoardDetailTaskDescriptionTableAddRow => 'Add row';
+
+  @override
+  String get taskBoardDetailTaskDescriptionTableRemoveColumn => 'Remove column';
+
+  @override
+  String get taskBoardDetailTaskDescriptionTableRemoveRow => 'Remove row';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarBlockquote => 'Block quote';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarBold => 'Bold';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarBulletList => 'Bullet list';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarCodeBlock => 'Code block';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarHeading1 => 'Heading 1';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarHeading2 => 'Heading 2';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarHeading3 => 'Heading 3';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarHighlight => 'Highlight';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarInlineCode => 'Inline code';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarInsertImage => 'Insert image';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarItalic => 'Italic';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarOrderedList => 'Ordered list';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarStrikethrough => 'Strikethrough';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarSubscript => 'Subscript';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarSuperscript => 'Superscript';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarTaskList => 'Task list';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarUnderline => 'Underline';
+
+  @override
+  String get taskBoardDetailTaskEditDescription => 'Edit description';
+
+  @override
+  String get taskBoardDetailTaskEndDate => 'End date';
+
+  @override
+  String get taskBoardDetailTaskEstimation => 'Estimation';
+
+  @override
+  String get taskBoardDetailTaskEstimationNone => 'No estimate';
+
+  @override
+  String get taskBoardDetailTaskLabels => 'Labels';
+
+  @override
+  String get taskBoardDetailTaskListLabel => 'List';
+
+  @override
+  String get taskBoardDetailTaskListSelect => 'Choose list';
+
+  @override
+  String get taskBoardDetailTaskMoved => 'Task moved.';
+
+  @override
+  String get taskBoardDetailTaskNoDescription => 'No description yet';
+
+  @override
+  String get taskBoardDetailTaskProjects => 'Projects';
+
+  @override
+  String get taskBoardDetailTaskRestored => 'Task restored.';
+
+  @override
+  String get taskBoardDetailTaskSaved => 'Task updated.';
+
+  @override
+  String get taskBoardDetailTaskSelectAssignees => 'Select assignees';
+
+  @override
+  String get taskBoardDetailTaskSelectLabels => 'Select labels';
+
+  @override
+  String get taskBoardDetailTaskSelectProjects => 'Select projects';
+
+  @override
+  String get taskBoardDetailTaskStartDate => 'Start date';
+
+  @override
+  String get taskBoardDetailTaskTitleHint => 'Untitled task';
+
+  @override
+  String get taskBoardDetailTaskTitleLabel => 'Title';
+
+  @override
+  String get taskBoardDetailTaskTitleRequired => 'Task title is required';
+
+  @override
+  String get taskBoardDetailThisWeek => 'This week';
+
+  @override
+  String get taskBoardDetailTimelineEmptyDescription => 'Add start and end dates to tasks to place them on the timeline.';
+
+  @override
+  String get taskBoardDetailTimelineEmptyTitle => 'No scheduled tasks yet';
+
+  @override
+  String get taskBoardDetailTimelineUnscheduledTitle => 'Unscheduled tasks';
+
+  @override
+  String get taskBoardDetailTimelineView => 'Timeline';
+
+  @override
+  String get taskBoardDetailToday => 'Today';
+
+  @override
+  String get taskBoardDetailTomorrow => 'Tomorrow';
+
+  @override
+  String get taskBoardDetailUnableToOpenLinkedTask => 'This linked task can\'t be opened from here.';
+
+  @override
+  String get taskBoardDetailUntitledBoard => 'Untitled board';
+
+  @override
+  String get taskBoardDetailUntitledList => 'Untitled list';
+
+  @override
+  String get taskBoardDetailUntitledTask => 'Untitled task';
+
+  @override
+  String get taskBoardDetailYesterday => 'yesterday';
+
+  @override
+  String get taskBoardsAccessDeniedDescription => 'You need project management permission in this workspace to manage task boards.';
+
+  @override
+  String get taskBoardsAccessDeniedTitle => 'Access restricted';
+
+  @override
+  String get taskBoardsArchive => 'Archive board';
+
+  @override
+  String get taskBoardsArchived => 'Board archived.';
+
+  @override
+  String get taskBoardsCreate => 'Create board';
+
+  @override
+  String get taskBoardsCreated => 'Board created.';
+
+  @override
+  String get taskBoardsCreatedAt => 'Created';
+
+  @override
+  String get taskBoardsDelete => 'Delete board';
+
+  @override
+  String get taskBoardsDeleteConfirm => 'Move this board to recently deleted?';
+
+  @override
+  String get taskBoardsDeleteForever => 'Delete forever';
+
+  @override
+  String get taskBoardsDeleteForeverConfirm => 'Permanently delete this board? This action cannot be undone.';
+
+  @override
+  String get taskBoardsDeleted => 'Board moved to recently deleted.';
+
+  @override
+  String get taskBoardsDeletedForever => 'Board permanently deleted.';
+
+  @override
+  String get taskBoardsDuplicate => 'Duplicate board';
+
+  @override
+  String get taskBoardsDuplicated => 'Board duplicated.';
+
+  @override
+  String get taskBoardsEdit => 'Edit board';
+
+  @override
+  String get taskBoardsEmptyArchivedDescription => 'Archived boards will appear here.';
+
+  @override
+  String get taskBoardsEmptyArchivedTitle => 'No archived boards';
+
+  @override
+  String get taskBoardsEmptyDeletedDescription => 'Deleted boards will appear here before permanent removal.';
+
+  @override
+  String get taskBoardsEmptyDeletedTitle => 'No recently deleted boards';
+
+  @override
+  String get taskBoardsEmptyDescription => 'Create your first board to organize tasks.';
+
+  @override
+  String get taskBoardsEmptyTitle => 'No boards yet';
+
+  @override
+  String get taskBoardsFilterActive => 'Active';
+
+  @override
+  String get taskBoardsFilterAll => 'All';
+
+  @override
+  String get taskBoardsFilterArchived => 'Archived';
+
+  @override
+  String get taskBoardsFilterRecentlyDeleted => 'Recently deleted';
+
+  @override
+  String get taskBoardsIconLabel => 'Board icon';
+
+  @override
+  String get taskBoardsIconPickerEmpty => 'No icons found';
+
+  @override
+  String get taskBoardsIconPickerSearch => 'Search icons';
+
+  @override
+  String get taskBoardsIconPickerTitle => 'Select board icon';
+
+  @override
+  String get taskBoardsIconPlaceholder => 'Select icon';
+
+  @override
+  String taskBoardsListsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lists',
+      one: '$count list',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get taskBoardsLoadError => 'Couldn\'t load boards right now';
+
+  @override
+  String get taskBoardsNameLabel => 'Board name';
+
+  @override
+  String get taskBoardsNamePlaceholder => 'Untitled board';
+
+  @override
+  String get taskBoardsNameRequired => 'Board name is required';
+
+  @override
+  String taskBoardsPageInfo(int current, int total) {
+    return 'Page $current of $total';
+  }
+
+  @override
+  String get taskBoardsPageSize => 'Page size';
+
+  @override
+  String taskBoardsPageSizeOption(int count) {
+    return '$count items';
+  }
+
+  @override
+  String get taskBoardsRecentlyDeleted => 'Recently deleted';
+
+  @override
+  String get taskBoardsRestore => 'Restore board';
+
+  @override
+  String get taskBoardsRestored => 'Board restored.';
+
+  @override
+  String taskBoardsTasksCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tasks',
+      one: '$count task',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get taskBoardsTitle => 'Boards';
+
+  @override
+  String get taskBoardsUnarchive => 'Unarchive board';
+
+  @override
+  String get taskBoardsUnarchived => 'Board unarchived.';
+
+  @override
+  String get taskBoardsUpdated => 'Board updated.';
+
+  @override
+  String get taskEstimatesAccessDeniedDescription => 'You need project management permission in this workspace to change task board estimation settings.';
+
+  @override
+  String get taskEstimatesAccessDeniedTitle => 'Access restricted';
+
+  @override
+  String get taskEstimatesAllowZeroEstimates => 'Allow zero estimates';
+
+  @override
+  String get taskEstimatesAllowZeroEstimatesDescription => 'When enabled, tasks can be estimated as 0 and contribute 0 to totals.';
+
+  @override
+  String get taskEstimatesBoardConfigTitle => 'Board estimation configuration';
+
+  @override
+  String get taskEstimatesConfiguredBoards => 'Configured';
+
+  @override
+  String get taskEstimatesCountUnestimatedIssues => 'Count unestimated issues';
+
+  @override
+  String get taskEstimatesCountUnestimatedIssuesDescription => 'When enabled, unestimated tasks contribute 1 estimate unit to totals. When disabled, they contribute 0.';
+
+  @override
+  String get taskEstimatesDescription => 'Configure estimation methods for your task boards and review their current coverage.';
+
+  @override
+  String get taskEstimatesDialogEstimationMethod => 'Estimation method';
+
+  @override
+  String get taskEstimatesDialogEstimationOptions => 'Estimation options';
+
+  @override
+  String taskEstimatesDialogRangeTitle(String label) {
+    return '$label range';
+  }
+
+  @override
+  String get taskEstimatesDialogSave => 'Update estimation';
+
+  @override
+  String get taskEstimatesDialogSelectedConfiguration => 'Selected configuration';
+
+  @override
+  String taskEstimatesDialogTitle(String boardName) {
+    return 'Edit $boardName';
+  }
+
+  @override
+  String get taskEstimatesDistributionTitle => 'Estimation methods';
+
+  @override
+  String get taskEstimatesExtendedBadge => 'Extended';
+
+  @override
+  String get taskEstimatesExtendedRangeBoards => 'Extended range';
+
+  @override
+  String get taskEstimatesNoBoardsDescription => 'Create a task board first, then come back here to configure its estimation method.';
+
+  @override
+  String get taskEstimatesNoBoardsTitle => 'No boards found';
+
+  @override
+  String get taskEstimatesRangeExtended => 'Extended range';
+
+  @override
+  String get taskEstimatesRangeStandard => 'Standard range';
+
+  @override
+  String get taskEstimatesTitle => 'Estimations';
+
+  @override
+  String get taskEstimatesTotalBoards => 'Total boards';
+
+  @override
+  String get taskEstimatesTypeExponentialExtendedZeroDisabled => 'Extended exponential sequence: 1, 2, 4, 8, 16, 32, 64.';
+
+  @override
+  String get taskEstimatesTypeExponentialExtendedZeroEnabled => 'Extended exponential sequence: 0, 1, 2, 4, 8, 16, 32, 64.';
+
+  @override
+  String get taskEstimatesTypeExponentialLabel => 'Exponential';
+
+  @override
+  String get taskEstimatesTypeExponentialStandardZeroDisabled => 'Exponential sequence: 1, 2, 4, 8, 16.';
+
+  @override
+  String get taskEstimatesTypeExponentialStandardZeroEnabled => 'Exponential sequence: 0, 1, 2, 4, 8, 16.';
+
+  @override
+  String get taskEstimatesTypeFibonacciExtendedZeroDisabled => 'Extended Fibonacci sequence: 1, 2, 3, 5, 8, 13, 21.';
+
+  @override
+  String get taskEstimatesTypeFibonacciExtendedZeroEnabled => 'Extended Fibonacci sequence: 0, 1, 2, 3, 5, 8, 13, 21.';
+
+  @override
+  String get taskEstimatesTypeFibonacciLabel => 'Fibonacci';
+
+  @override
+  String get taskEstimatesTypeFibonacciStandardZeroDisabled => 'Fibonacci sequence: 1, 2, 3, 5, 8.';
+
+  @override
+  String get taskEstimatesTypeFibonacciStandardZeroEnabled => 'Fibonacci sequence: 0, 1, 2, 3, 5, 8.';
+
+  @override
+  String get taskEstimatesTypeLinearExtendedZeroDisabled => 'Extended linear sequence: 1, 2, 3, 4, 5, 6, 7.';
+
+  @override
+  String get taskEstimatesTypeLinearExtendedZeroEnabled => 'Extended linear sequence: 0, 1, 2, 3, 4, 5, 6, 7.';
+
+  @override
+  String get taskEstimatesTypeLinearLabel => 'Linear';
+
+  @override
+  String get taskEstimatesTypeLinearStandardZeroDisabled => 'Linear sequence: 1, 2, 3, 4, 5.';
+
+  @override
+  String get taskEstimatesTypeLinearStandardZeroEnabled => 'Linear sequence: 0, 1, 2, 3, 4, 5.';
+
+  @override
+  String get taskEstimatesTypeNoneDescription => 'No estimation is configured for this board.';
+
+  @override
+  String get taskEstimatesTypeNoneLabel => 'None';
+
+  @override
+  String get taskEstimatesTypeTshirtExtended => 'Extended T-shirt sizes: -, XS, S, M, L, XL, XXL, XXXL.';
+
+  @override
+  String get taskEstimatesTypeTshirtExtendedZeroDisabled => 'Extended T-shirt sizes: XS, S, M, L, XL, XXL, XXXL.';
+
+  @override
+  String get taskEstimatesTypeTshirtExtendedZeroEnabled => 'Extended T-shirt sizes: -, XS, S, M, L, XL, XXL, XXXL.';
+
+  @override
+  String get taskEstimatesTypeTshirtLabel => 'T-shirt';
+
+  @override
+  String get taskEstimatesTypeTshirtStandard => 'T-shirt sizes: -, XS, S, M, L, XL.';
+
+  @override
+  String get taskEstimatesTypeTshirtStandardZeroDisabled => 'T-shirt sizes: XS, S, M, L, XL.';
+
+  @override
+  String get taskEstimatesTypeTshirtStandardZeroEnabled => 'T-shirt sizes: -, XS, S, M, L, XL.';
+
+  @override
+  String get taskEstimatesUnnamedBoard => 'Untitled board';
+
+  @override
+  String get taskEstimatesUpdateSuccess => 'Estimation updated successfully.';
+
+  @override
+  String get taskLabelsColorInvalid => 'Enter a valid hex color';
+
+  @override
+  String get taskLabelsCreate => 'Create label';
+
+  @override
+  String get taskLabelsCreated => 'Label created.';
+
+  @override
+  String get taskLabelsDelete => 'Delete label';
+
+  @override
+  String get taskLabelsDeleteConfirm => 'Delete this label?';
+
+  @override
+  String get taskLabelsDeleted => 'Label deleted.';
+
+  @override
+  String get taskLabelsEdit => 'Edit label';
+
+  @override
+  String get taskLabelsEmptyDescription => 'Create labels to tag and organize task work.';
+
+  @override
+  String get taskLabelsEmptyTitle => 'No labels yet';
+
+  @override
+  String get taskLabelsName => 'Label name';
+
+  @override
+  String get taskLabelsNameRequired => 'Label name is required';
+
+  @override
+  String get taskLabelsTab => 'Labels';
+
+  @override
+  String get taskLabelsUpdated => 'Label updated.';
+
+  @override
+  String get taskPlanningTitle => 'Planning';
+
+  @override
+  String get taskPortfolioAccessDeniedDescription => 'You need project management permission in this workspace to manage projects and initiatives.';
+
+  @override
+  String get taskPortfolioAccessDeniedTitle => 'Access restricted';
+
+  @override
+  String get taskPortfolioAllProjectsLinked => 'All workspace projects are already linked.';
+
+  @override
+  String get taskPortfolioClearSelection => 'Clear';
+
+  @override
+  String get taskPortfolioCreateInitiative => 'Create initiative';
+
+  @override
+  String get taskPortfolioCreateProject => 'Create project';
+
+  @override
+  String get taskPortfolioDeleteInitiative => 'Delete initiative';
+
+  @override
+  String get taskPortfolioDeleteInitiativeConfirm => 'Delete this initiative?';
+
+  @override
+  String get taskPortfolioDeleteProject => 'Delete project';
+
+  @override
+  String get taskPortfolioDeleteProjectConfirm => 'Delete this project?';
+
+  @override
+  String get taskPortfolioDeleteUpdate => 'Delete update';
+
+  @override
+  String get taskPortfolioDeleteUpdateConfirm => 'Delete this update?';
+
+  @override
+  String get taskPortfolioEditInitiative => 'Edit initiative';
+
+  @override
+  String get taskPortfolioEditProject => 'Edit project';
+
+  @override
+  String get taskPortfolioEditUpdate => 'Edit update';
+
+  @override
+  String get taskPortfolioInitiativeCreated => 'Initiative created.';
+
+  @override
+  String get taskPortfolioInitiativeDeleted => 'Initiative deleted.';
+
+  @override
+  String get taskPortfolioInitiativeDescriptionHint => 'Describe the initiative outcome';
+
+  @override
+  String get taskPortfolioInitiativeName => 'Initiative name';
+
+  @override
+  String get taskPortfolioInitiativeNameRequired => 'Initiative name is required';
+
+  @override
+  String get taskPortfolioInitiativeProjectsLinked => 'projects linked';
+
+  @override
+  String get taskPortfolioInitiativeStatus => 'Initiative status';
+
+  @override
+  String get taskPortfolioInitiativeStatusActive => 'Active';
+
+  @override
+  String get taskPortfolioInitiativeStatusCancelled => 'Cancelled';
+
+  @override
+  String get taskPortfolioInitiativeStatusCompleted => 'Completed';
+
+  @override
+  String get taskPortfolioInitiativeStatusOnHold => 'On hold';
+
+  @override
+  String get taskPortfolioInitiativeUpdated => 'Initiative updated.';
+
+  @override
+  String get taskPortfolioInitiativesEmptyDescription => 'Create an initiative to group related projects under a shared outcome.';
+
+  @override
+  String get taskPortfolioInitiativesEmptyTitle => 'No initiatives yet';
+
+  @override
+  String get taskPortfolioInitiativesTab => 'Initiatives';
+
+  @override
+  String get taskPortfolioLinkProject => 'Link project';
+
+  @override
+  String get taskPortfolioLinkTask => 'Link task';
+
+  @override
+  String get taskPortfolioLinkedProjects => 'Linked projects';
+
+  @override
+  String get taskPortfolioLinkedTasks => 'Linked tasks';
+
+  @override
+  String get taskPortfolioManageProjects => 'Manage projects';
+
+  @override
+  String get taskPortfolioNoAvailableProjects => 'Select project';
+
+  @override
+  String get taskPortfolioNoAvailableTasks => 'All available tasks are already linked to this project.';
+
+  @override
+  String get taskPortfolioNoDescription => 'No description yet';
+
+  @override
+  String get taskPortfolioNoLinkedProjects => 'No linked projects yet';
+
+  @override
+  String get taskPortfolioNoLinkedTasks => 'No linked tasks yet';
+
+  @override
+  String get taskPortfolioNoMatchingTasks => 'No tasks match your search.';
+
+  @override
+  String get taskPortfolioNoProjectUpdates => 'No updates yet';
+
+  @override
+  String get taskPortfolioPickDate => 'Pick date';
+
+  @override
+  String get taskPortfolioPostUpdate => 'Post update';
+
+  @override
+  String get taskPortfolioPostingUpdate => 'Posting...';
+
+  @override
+  String get taskPortfolioProjectArchived => 'Archived';
+
+  @override
+  String get taskPortfolioProjectArchivedHint => 'Hide this project from active planning views.';
+
+  @override
+  String get taskPortfolioProjectCompletedTasks => 'completed';
+
+  @override
+  String get taskPortfolioProjectCompletion => 'Completion';
+
+  @override
+  String get taskPortfolioProjectCreated => 'Project created.';
+
+  @override
+  String get taskPortfolioProjectDeleted => 'Project deleted.';
+
+  @override
+  String get taskPortfolioProjectDescriptionHint => 'Describe the project goals';
+
+  @override
+  String get taskPortfolioProjectDetailsTitle => 'Project details';
+
+  @override
+  String get taskPortfolioProjectEndDate => 'End date';
+
+  @override
+  String get taskPortfolioProjectHealth => 'Health status';
+
+  @override
+  String get taskPortfolioProjectHealthAtRisk => 'At risk';
+
+  @override
+  String get taskPortfolioProjectHealthOffTrack => 'Off track';
+
+  @override
+  String get taskPortfolioProjectHealthOnTrack => 'On track';
+
+  @override
+  String get taskPortfolioProjectLead => 'Project lead';
+
+  @override
+  String get taskPortfolioProjectLinked => 'Project linked.';
+
+  @override
+  String get taskPortfolioProjectName => 'Project name';
+
+  @override
+  String get taskPortfolioProjectNameRequired => 'Project name is required';
+
+  @override
+  String get taskPortfolioProjectNoHealth => 'No health status';
+
+  @override
+  String get taskPortfolioProjectNoLead => 'No lead assigned';
+
+  @override
+  String get taskPortfolioProjectNotFoundDescription => 'This project is no longer available in the current workspace.';
+
+  @override
+  String get taskPortfolioProjectNotFoundTitle => 'Project not found';
+
+  @override
+  String get taskPortfolioProjectPriority => 'Priority';
+
+  @override
+  String get taskPortfolioProjectPriorityCritical => 'Critical';
+
+  @override
+  String get taskPortfolioProjectPriorityHigh => 'High';
+
+  @override
+  String get taskPortfolioProjectPriorityLow => 'Low';
+
+  @override
+  String get taskPortfolioProjectPriorityNormal => 'Normal';
+
+  @override
+  String get taskPortfolioProjectStartDate => 'Start date';
+
+  @override
+  String get taskPortfolioProjectStats => 'Project stats';
+
+  @override
+  String get taskPortfolioProjectStatus => 'Project status';
+
+  @override
+  String get taskPortfolioProjectStatusActive => 'Active';
+
+  @override
+  String get taskPortfolioProjectStatusBacklog => 'Backlog';
+
+  @override
+  String get taskPortfolioProjectStatusCancelled => 'Cancelled';
+
+  @override
+  String get taskPortfolioProjectStatusCompleted => 'Completed';
+
+  @override
+  String get taskPortfolioProjectStatusInProgress => 'In progress';
+
+  @override
+  String get taskPortfolioProjectStatusInReview => 'In review';
+
+  @override
+  String get taskPortfolioProjectStatusInTesting => 'In testing';
+
+  @override
+  String get taskPortfolioProjectStatusOnHold => 'On hold';
+
+  @override
+  String get taskPortfolioProjectStatusPlanned => 'Planned';
+
+  @override
+  String get taskPortfolioProjectTasks => 'Tasks';
+
+  @override
+  String get taskPortfolioProjectTasksLinked => 'tasks linked';
+
+  @override
+  String taskPortfolioProjectTasksProgress(int completed, int total) {
+    return '$completed of $total tasks';
+  }
+
+  @override
+  String get taskPortfolioProjectTimeline => 'Timeline';
+
+  @override
+  String get taskPortfolioProjectUnlinked => 'Project unlinked.';
+
+  @override
+  String get taskPortfolioProjectUpdated => 'Project updated.';
+
+  @override
+  String get taskPortfolioProjectUpdates => 'Project updates';
+
+  @override
+  String get taskPortfolioProjectsEmptyDescription => 'Create your first project to organize work beyond individual tasks.';
+
+  @override
+  String get taskPortfolioProjectsEmptyTitle => 'No projects yet';
+
+  @override
+  String get taskPortfolioProjectsTab => 'Projects';
+
+  @override
+  String get taskPortfolioSearchTasksHint => 'Search tasks';
+
+  @override
+  String get taskPortfolioSelectTask => 'Select task';
+
+  @override
+  String get taskPortfolioSelectTaskHint => 'Choose a task';
+
+  @override
+  String get taskPortfolioTaskLinked => 'Task linked.';
+
+  @override
+  String get taskPortfolioTaskUnlinked => 'Task unlinked.';
+
+  @override
+  String get taskPortfolioTitle => 'Portfolio';
+
+  @override
+  String get taskPortfolioUnknownUser => 'Unknown user';
+
+  @override
+  String get taskPortfolioUnlinkTask => 'Unlink task';
+
+  @override
+  String get taskPortfolioUpdateCannotBeEmpty => 'Update content cannot be empty';
+
+  @override
+  String get taskPortfolioUpdateDeleted => 'Update deleted.';
+
+  @override
+  String get taskPortfolioUpdateEdited => 'Edited';
+
+  @override
+  String get taskPortfolioUpdatePlaceholder => 'Share the latest progress, blockers, or wins...';
+
+  @override
+  String get taskPortfolioUpdatePosted => 'Update posted.';
+
+  @override
+  String get taskPortfolioUpdateSaved => 'Update saved.';
+
+  @override
+  String get tasksAllCaughtUp => 'You\'re all caught up!';
+
+  @override
+  String get tasksAllCaughtUpSubtitle => 'No pending tasks right now';
+
+  @override
+  String get tasksCompleteByEndOfDay => 'Complete by end of day';
+
+  @override
+  String get tasksCompleted => 'Completed';
+
+  @override
+  String tasksCompletedCount(int count) {
+    return '$count completed';
+  }
+
+  @override
+  String get tasksCreate => 'Create task';
+
+  @override
+  String get tasksDueToday => 'Due today';
+
+  @override
+  String get tasksEmpty => 'No tasks yet';
+
+  @override
+  String get tasksGoodAfternoon => 'Good afternoon';
+
+  @override
+  String get tasksGoodEvening => 'Good evening';
+
+  @override
+  String get tasksGoodMorning => 'Good morning';
+
+  @override
+  String get tasksGoodNight => 'Good night';
+
+  @override
+  String get tasksLoadError => 'Couldn\'t load tasks right now';
+
+  @override
+  String get tasksOverdue => 'Overdue';
+
+  @override
+  String get tasksPlanAhead => 'Plan ahead';
+
+  @override
+  String get tasksPriorityCritical => 'Critical';
+
+  @override
+  String get tasksPriorityHigh => 'High';
+
+  @override
+  String get tasksPriorityLow => 'Low';
+
+  @override
+  String get tasksPriorityNormal => 'Normal';
+
+  @override
+  String get tasksRequiresAttention => 'Requires attention';
+
+  @override
+  String get tasksTitle => 'Tasks';
+
+  @override
+  String get tasksUntitled => 'Untitled task';
+
+  @override
+  String get tasksUpcoming => 'Upcoming';
+
+  @override
+  String get timerActiveUsers => 'Active users';
+
+  @override
+  String get timerActivityHeatmap => 'Activity';
+
+  @override
+  String get timerAddCategory => 'Add category';
+
+  @override
+  String get timerAddMissedEntry => 'Add missed entry';
+
+  @override
+  String get timerAdvanced => 'Advanced';
+
+  @override
+  String timerAllEditsRequireApproval(String date) {
+    return 'All time edits must be submitted as requests for approval. This session is from $date.';
+  }
+
+  @override
+  String get timerApprove => 'Approve';
+
+  @override
+  String timerAttachmentCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count attachments',
+      one: '1 attachment',
+      zero: 'No attachments',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timerAutoStartBreaks => 'Auto-start breaks';
+
+  @override
+  String get timerAutoStartFocus => 'Auto-start focus';
+
+  @override
+  String get timerCategory => 'Category';
+
+  @override
+  String get timerCategoryColor => 'Color';
+
+  @override
+  String get timerCategoryColorLime => 'Lime';
+
+  @override
+  String get timerCategoryColorNone => 'None';
+
+  @override
+  String get timerCategoryColorRose => 'Rose';
+
+  @override
+  String get timerCategoryColorSky => 'Sky';
+
+  @override
+  String get timerCategoryColorTeal => 'Teal';
+
+  @override
+  String get timerCategoryCreateInProgress => 'Creating category...';
+
+  @override
+  String get timerCategoryCreateSuccess => 'Category created';
+
+  @override
+  String get timerCategoryDescription => 'Description';
+
+  @override
+  String get timerCategoryName => 'Category name';
+
+  @override
+  String get timerCreateCategory => 'Create category';
+
+  @override
+  String timerDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '$count day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timerDeleteConfirm => 'Delete this session?';
+
+  @override
+  String get timerDeleteSession => 'Delete session';
+
+  @override
+  String get timerDescription => 'Description';
+
+  @override
+  String get timerDiscardSession => 'Discard session';
+
+  @override
+  String get timerDuration => 'Duration';
+
+  @override
+  String get timerEditSession => 'Edit session';
+
+  @override
+  String get timerEndTime => 'End time';
+
+  @override
+  String get timerFocusTime => 'Focus time';
+
+  @override
+  String get timerGoalsActive => 'Active';
+
+  @override
+  String timerGoalsActiveCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '# active goals',
+      one: '# active goal',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timerGoalsActiveLabel => 'Goal is active';
+
+  @override
+  String get timerGoalsAdd => 'Add goal';
+
+  @override
+  String get timerGoalsCategory => 'Category';
+
+  @override
+  String get timerGoalsCreate => 'Create goal';
+
+  @override
+  String get timerGoalsCreateSuccess => 'Goal created';
+
+  @override
+  String get timerGoalsCreateTitle => 'Create goal';
+
+  @override
+  String get timerGoalsDailyMinutes => 'Daily target (minutes)';
+
+  @override
+  String get timerGoalsDailyProgress => 'Daily progress';
+
+  @override
+  String get timerGoalsDailyTarget => 'Daily target';
+
+  @override
+  String get timerGoalsDailyValidation => 'Daily target must be greater than 0.';
+
+  @override
+  String get timerGoalsDelete => 'Delete';
+
+  @override
+  String get timerGoalsDeleteDescription => 'This action cannot be undone.';
+
+  @override
+  String get timerGoalsDeleteSuccess => 'Goal deleted';
+
+  @override
+  String get timerGoalsDeleteTitle => 'Delete goal?';
+
+  @override
+  String get timerGoalsEdit => 'Edit';
+
+  @override
+  String get timerGoalsEditTitle => 'Edit goal';
+
+  @override
+  String get timerGoalsEmptyDescription => 'Create your first goal to measure daily and weekly progress.';
+
+  @override
+  String get timerGoalsEmptyTitle => 'No goals yet';
+
+  @override
+  String get timerGoalsGeneral => 'General';
+
+  @override
+  String get timerGoalsInactive => 'Inactive';
+
+  @override
+  String get timerGoalsOperationFailed => 'Could not save your goal changes.';
+
+  @override
+  String get timerGoalsSave => 'Save goal';
+
+  @override
+  String get timerGoalsSubtitle => 'Track your daily and weekly focus targets';
+
+  @override
+  String get timerGoalsTitle => 'Goals';
+
+  @override
+  String get timerGoalsUpdateSuccess => 'Goal updated';
+
+  @override
+  String get timerGoalsWeeklyMinutesOptional => 'Weekly target (minutes, optional)';
+
+  @override
+  String get timerGoalsWeeklyProgress => 'Weekly progress';
+
+  @override
+  String get timerGoalsWeeklyTarget => 'Weekly target';
+
+  @override
+  String get timerGoalsWeeklyValidation => 'Weekly target must be greater than 0.';
+
+  @override
+  String timerHeatmapActiveDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count active days',
+      one: '$count active day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timerHeatmapActiveDaysLabel => 'Active days';
+
+  @override
+  String get timerHeatmapFri => 'Fr';
+
+  @override
+  String get timerHeatmapLegendLess => 'Less';
+
+  @override
+  String get timerHeatmapLegendMore => 'More';
+
+  @override
+  String get timerHeatmapLessThanMinute => '<1m';
+
+  @override
+  String get timerHeatmapMon => 'Mo';
+
+  @override
+  String timerHeatmapMonthCompact(int month) {
+    return '$month';
+  }
+
+  @override
+  String timerHeatmapMonthNarrowColumn(int month) {
+    return '$month';
+  }
+
+  @override
+  String get timerHeatmapNoActivityYet => 'No activity yet';
+
+  @override
+  String get timerHeatmapSat => 'Sa';
+
+  @override
+  String timerHeatmapSessions(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sessions',
+      one: '$count session',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timerHeatmapSessionsLabel => 'Sessions';
+
+  @override
+  String get timerHeatmapStartTracking => 'Start tracking to build your activity pattern';
+
+  @override
+  String get timerHeatmapSun => 'Su';
+
+  @override
+  String get timerHeatmapThu => 'Th';
+
+  @override
+  String get timerHeatmapTotal => 'Total';
+
+  @override
+  String timerHeatmapTrackedThisYear(String duration) {
+    return 'Tracked $duration this year';
+  }
+
+  @override
+  String get timerHeatmapTue => 'Tu';
+
+  @override
+  String get timerHeatmapViewCalendarOnly => 'Calendar';
+
+  @override
+  String get timerHeatmapViewCompactCards => 'Cards';
+
+  @override
+  String get timerHeatmapViewHybrid => 'Hybrid';
+
+  @override
+  String get timerHeatmapViewOriginal => 'Original';
+
+  @override
+  String get timerHeatmapWed => 'We';
+
+  @override
+  String get timerHeatmapYearPattern => 'Activity Pattern';
 
   @override
   String get timerHistory => 'History';
+
+  @override
+  String get timerHistoryEndOfList => 'You reached the end of the list';
+
+  @override
+  String get timerHistoryLoadMore => 'Load more';
+
+  @override
+  String get timerHistoryNoSessionsForPeriod => 'No sessions for this period';
+
+  @override
+  String get timerHistoryOverview => 'Period overview';
+
+  @override
+  String get timerHistoryPickerCurrent => 'Current';
+
+  @override
+  String get timerHistoryPickerYearTitle => 'Year';
+
+  @override
+  String get timerHistoryTotalTime => 'Total time';
+
+  @override
+  String get timerHourUnitShort => 'h';
+
+  @override
+  String get timerInfoRequired => 'Info (required)';
+
+  @override
+  String get timerInvalidDuration => 'Invalid duration';
+
+  @override
+  String get timerLinkTask => 'Task';
+
+  @override
+  String get timerLongBreak => 'Long break';
+
+  @override
+  String get timerManagementTitle => 'Manage';
+
+  @override
+  String get timerMinuteUnitShort => 'm';
+
+  @override
+  String get timerMissedEntrySavedContent => 'Your missed time entry was added successfully.';
+
+  @override
+  String get timerMissedEntrySavedTitle => 'Entry saved';
+
+  @override
+  String get timerNoCategory => 'No category';
+
+  @override
+  String get timerNoSessions => 'No sessions yet';
+
+  @override
+  String get timerPause => 'Pause';
+
+  @override
+  String get timerPaused => 'Paused';
+
+  @override
+  String get timerPomodoro => 'Pomodoro';
+
+  @override
+  String get timerPomodoroSettings => 'Pomodoro settings';
+
+  @override
+  String get timerPomodoroSettingsDescription => 'Tune focus sessions, breaks, and the automation between them.';
+
+  @override
+  String get timerProofOfWorkRequired => 'At least one proof image is required.';
+
+  @override
+  String get timerReasonOptional => 'Reason (optional)';
+
+  @override
+  String get timerRecentSessions => 'Recent sessions';
+
+  @override
+  String get timerReject => 'Reject';
+
+  @override
+  String get timerRequestActivity => 'Activity';
+
+  @override
+  String get timerRequestActivityActionCommentAdded => 'added comment';
+
+  @override
+  String get timerRequestActivityActionCommentDeleted => 'deleted comment';
+
+  @override
+  String get timerRequestActivityActionCommentUpdated => 'updated comment';
+
+  @override
+  String get timerRequestActivityActionContentUpdated => 'updated content';
+
+  @override
+  String get timerRequestActivityActionCreated => 'created';
+
+  @override
+  String get timerRequestActivityActionStatusChanged => 'changed status';
+
+  @override
+  String get timerRequestActivityCommentAdded => 'added a comment';
+
+  @override
+  String get timerRequestActivityCommentDeleted => 'deleted a comment';
+
+  @override
+  String get timerRequestActivityCommentUpdated => 'updated a comment';
+
+  @override
+  String get timerRequestActivityContentUpdated => 'updated request content';
+
+  @override
+  String get timerRequestActivityCreated => 'created this request';
+
+  @override
+  String get timerRequestActivityFeedbackLabel => 'Feedback';
+
+  @override
+  String get timerRequestActivityFieldDescription => 'Description';
+
+  @override
+  String get timerRequestActivityFieldEndTime => 'End time';
+
+  @override
+  String get timerRequestActivityFieldStartTime => 'Start time';
+
+  @override
+  String get timerRequestActivityFieldTitle => 'Title';
+
+  @override
+  String get timerRequestActivityItemsPerPage => 'Items per page';
+
+  @override
+  String timerRequestActivityPageInfo(int current, int total) {
+    return 'Page $current of $total';
+  }
+
+  @override
+  String get timerRequestActivityStatusChanged => 'changed the request status';
+
+  @override
+  String get timerRequestActivityTitleLabel => 'Title';
+
+  @override
+  String get timerRequestActivityUnknownUser => 'Unknown user';
+
+  @override
+  String get timerRequestActivityUpdated => 'updated this request';
+
+  @override
+  String get timerRequestAddComment => 'Add a comment...';
+
+  @override
+  String get timerRequestAddImage => 'Add image';
+
+  @override
+  String get timerRequestApproved => 'Approved';
+
+  @override
+  String timerRequestApprovedByAt(String name, String date) {
+    return 'Approved by $name on $date';
+  }
+
+  @override
+  String get timerRequestCancelEditComment => 'Cancel';
+
+  @override
+  String get timerRequestComments => 'Comments';
+
+  @override
+  String get timerRequestDeleteComment => 'Delete comment';
+
+  @override
+  String get timerRequestDeleteCommentConfirm => 'Delete this comment?';
+
+  @override
+  String get timerRequestDescription => 'Description';
+
+  @override
+  String get timerRequestDescriptionOptional => 'Description (optional)';
+
+  @override
+  String get timerRequestEdit => 'Edit';
+
+  @override
+  String get timerRequestEditRequest => 'Edit request';
+
+  @override
+  String get timerRequestInfo => 'Request info';
+
+  @override
+  String timerRequestInfoRequestedBy(String name) {
+    return 'Info requested by $name';
+  }
+
+  @override
+  String get timerRequestLastModifiedBy => 'Last modified by';
+
+  @override
+  String get timerRequestNeedsInfo => 'Needs info';
+
+  @override
+  String get timerRequestNeedsInfoReason => 'Requested Information';
+
+  @override
+  String get timerRequestNoActivity => 'No activity yet';
+
+  @override
+  String get timerRequestNoComments => 'No comments yet';
+
+  @override
+  String get timerRequestPending => 'Pending';
+
+  @override
+  String get timerRequestPostComment => 'Post';
+
+  @override
+  String timerRequestProofImagesCount(int current, int max) {
+    return 'Images: $current/$max';
+  }
+
+  @override
+  String get timerRequestRejected => 'Rejected';
+
+  @override
+  String timerRequestRejectedByAt(String name, String date) {
+    return 'Rejected by $name on $date';
+  }
+
+  @override
+  String get timerRequestRejectionReason => 'Rejection reason';
+
+  @override
+  String get timerRequestResubmit => 'Resubmit request';
+
+  @override
+  String get timerRequestRevertToApproved => 'Revert to Approved';
+
+  @override
+  String get timerRequestRevertToRejected => 'Revert to Rejected';
+
+  @override
+  String get timerRequestSubmittedContent => 'Your time entry has been submitted for approval.';
+
+  @override
+  String get timerRequestSubmittedTitle => 'Request sent';
+
+  @override
+  String get timerRequestUpdated => 'Request updated';
+
+  @override
+  String get timerRequestsFilterAllStatuses => 'All';
+
+  @override
+  String get timerRequestsFilterAllUsers => 'All users';
+
+  @override
+  String get timerRequestsFilterApply => 'Apply filters';
+
+  @override
+  String get timerRequestsFilterClear => 'Clear filters';
+
+  @override
+  String get timerRequestsFilterStatusLabel => 'Status';
+
+  @override
+  String get timerRequestsFilterTitle => 'Filter requests';
+
+  @override
+  String get timerRequestsFilterUserLabel => 'User';
+
+  @override
+  String get timerRequestsOpenFailed => 'Couldn\'t open this request right now.';
+
+  @override
+  String get timerRequestsStatusChangeGracePeriodHelp => 'Set how many minutes approvers can revert a request between Approved and Rejected in either direction. Set to 0 to disable both actions.';
+
+  @override
+  String get timerRequestsStatusChangeGracePeriodInvalid => 'Enter a whole number greater than or equal to 0 for status revert grace period.';
+
+  @override
+  String get timerRequestsStatusChangeGracePeriodLabel => 'Approved/rejected status change grace period (minutes)';
+
+  @override
+  String get timerRequestsThresholdDescription => 'Choose when missed entries should require approval.';
+
+  @override
+  String get timerRequestsThresholdHelp => 'Entries older than this number of days must be submitted for approval.';
+
+  @override
+  String get timerRequestsThresholdInvalid => 'Enter a whole number greater than or equal to 0.';
+
+  @override
+  String get timerRequestsThresholdLabel => 'Threshold (days)';
+
+  @override
+  String get timerRequestsThresholdNoApproval => 'No approval needed';
+
+  @override
+  String get timerRequestsThresholdNoApprovalHint => 'Missed entries can be added directly without sending a request.';
+
+  @override
+  String get timerRequestsThresholdTitle => 'Request threshold settings';
+
+  @override
+  String get timerRequestsThresholdUpdated => 'Request threshold updated.';
+
+  @override
+  String get timerRequestsTitle => 'Requests';
+
+  @override
+  String get timerResume => 'Resume';
 
   @override
   String get timerRunning => 'Running';
@@ -4851,10 +10003,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerRunningSessionNoTitle => 'Untitled session';
 
   @override
-  String get timerPaused => 'Paused';
+  String get timerSave => 'Save';
 
   @override
-  String get timerStopped => 'Stopped';
+  String get timerSearchSessions => 'Search sessions...';
+
+  @override
+  String get timerSeeAll => 'See all';
+
+  @override
+  String get timerSelectCategory => 'Select category';
+
+  @override
+  String get timerSessionDeleted => 'Session deleted';
+
+  @override
+  String get timerSessionDescription => 'Description';
+
+  @override
+  String get timerSessionExceeded => 'Session exceeds threshold';
+
+  @override
+  String get timerSessionExceededDescription => 'This session is older than your workspace threshold. You can discard it or submit it as a request for approval.';
 
   @override
   String get timerSessionPauseSuccess => 'Session paused successfully.';
@@ -4866,67 +10036,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerSessionStopSuccess => 'Session stopped successfully.';
 
   @override
-  String get timerPause => 'Pause';
-
-  @override
-  String get timerResume => 'Resume';
-
-  @override
   String get timerSessionTitle => 'Session title';
 
   @override
-  String get timerCategory => 'Category';
+  String get timerSessionUpdated => 'Session updated';
 
   @override
-  String get timerNoCategory => 'No category';
+  String get timerSessionsUntilLong => 'Sessions until long break';
 
   @override
-  String get timerAddCategory => 'Add category';
+  String get timerShortBreak => 'Short break';
 
   @override
-  String get timerCategoryName => 'Category name';
+  String get timerStart => 'Start';
 
   @override
-  String get timerCategoryColor => 'Color';
+  String get timerStartTime => 'Start time';
 
   @override
-  String get timerCategoryColorLime => 'Lime';
+  String get timerStatsPersonal => 'Personal';
 
   @override
-  String get timerCategoryColorTeal => 'Teal';
+  String get timerStatsTitle => 'Statistics';
 
   @override
-  String get timerCategoryColorSky => 'Sky';
+  String get timerStatsWorkspace => 'Workspace';
 
   @override
-  String get timerCategoryColorRose => 'Rose';
+  String get timerStop => 'Stop';
 
   @override
-  String get timerCategoryDescription => 'Description';
+  String get timerStopped => 'Stopped';
 
   @override
-  String get timerCategoryColorNone => 'None';
+  String get timerStreak => 'Streak';
 
   @override
-  String get timerCreateCategory => 'Create category';
+  String get timerSubmitAsRequest => 'Submit as request';
 
   @override
-  String get timerCategoryCreateInProgress => 'Creating category...';
+  String get timerSubmitForApproval => 'Submit for approval';
 
   @override
-  String get timerCategoryCreateSuccess => 'Category created';
+  String get timerSubmitInfo => 'Submit info';
 
   @override
-  String get timerSelectCategory => 'Select category';
-
-  @override
-  String get timerAdvanced => 'Advanced';
-
-  @override
-  String get timerSessionDescription => 'Description';
-
-  @override
-  String get timerLinkTask => 'Task';
+  String get timerTaskIdPlaceholder => 'Select a task';
 
   @override
   String get timerTaskPickerAllTasks => 'All tasks';
@@ -4968,477 +10123,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerTaskPickerSearch => 'Search tasks';
 
   @override
-  String get timerTaskIdPlaceholder => 'Select a task';
-
-  @override
-  String timerAttachmentCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count attachments',
-      one: '1 attachment',
-      zero: 'No attachments',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get timerRecentSessions => 'Recent sessions';
-
-  @override
-  String get timerSeeAll => 'See all';
-
-  @override
-  String get timerNoSessions => 'No sessions yet';
-
-  @override
-  String get timerHistoryNoSessionsForPeriod => 'No sessions for this period';
-
-  @override
-  String get timerHistoryOverview => 'Period overview';
-
-  @override
-  String get timerHistoryTotalTime => 'Total time';
-
-  @override
-  String get timerHistoryLoadMore => 'Load more';
-
-  @override
-  String get timerHistoryEndOfList => 'You reached the end of the list';
-
-  @override
-  String get timerHistoryPickerYearTitle => 'Year';
-
-  @override
-  String get timerHistoryPickerCurrent => 'Current';
-
-  @override
-  String get timerToday => 'Today';
-
-  @override
-  String get timerThisWeek => 'This week';
-
-  @override
   String get timerThisMonth => 'This month';
 
   @override
-  String get timerStreak => 'Streak';
-
-  @override
-  String get timerStatsTitle => 'Statistics';
-
-  @override
-  String get timerStatsPersonal => 'Personal';
-
-  @override
-  String get timerStatsWorkspace => 'Workspace';
-
-  @override
-  String get timerActivityHeatmap => 'Activity';
-
-  @override
-  String timerHeatmapTrackedThisYear(String duration) {
-    return 'Tracked $duration this year';
-  }
-
-  @override
-  String get timerHeatmapStartTracking => 'Start tracking to build your activity pattern';
-
-  @override
-  String get timerHeatmapViewOriginal => 'Original';
-
-  @override
-  String get timerHeatmapViewHybrid => 'Hybrid';
-
-  @override
-  String get timerHeatmapViewCalendarOnly => 'Calendar';
-
-  @override
-  String get timerHeatmapViewCompactCards => 'Cards';
-
-  @override
-  String get timerHeatmapLegendLess => 'Less';
-
-  @override
-  String get timerHeatmapLegendMore => 'More';
-
-  @override
-  String timerHeatmapMonthCompact(int month) {
-    return '$month';
-  }
-
-  @override
-  String timerHeatmapMonthNarrowColumn(int month) {
-    return '$month';
-  }
-
-  @override
-  String get timerHeatmapYearPattern => 'Activity Pattern';
-
-  @override
-  String timerHeatmapActiveDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count active days',
-      one: '$count active day',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get timerHeatmapMon => 'Mo';
-
-  @override
-  String get timerHeatmapTue => 'Tu';
-
-  @override
-  String get timerHeatmapWed => 'We';
-
-  @override
-  String get timerHeatmapThu => 'Th';
-
-  @override
-  String get timerHeatmapFri => 'Fr';
-
-  @override
-  String get timerHeatmapSat => 'Sa';
-
-  @override
-  String get timerHeatmapSun => 'Su';
-
-  @override
-  String timerHeatmapSessions(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count sessions',
-      one: '$count session',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get timerHeatmapTotal => 'Total';
-
-  @override
-  String get timerHeatmapSessionsLabel => 'Sessions';
-
-  @override
-  String get timerHeatmapActiveDaysLabel => 'Active days';
-
-  @override
-  String get timerHeatmapLessThanMinute => '<1m';
-
-  @override
-  String get timerHeatmapNoActivityYet => 'No activity yet';
-
-  @override
-  String get timerViewSessionDetails => 'Session details';
-
-  @override
-  String get timerEditSession => 'Edit session';
-
-  @override
-  String get timerSessionUpdated => 'Session updated';
-
-  @override
-  String get timerSessionDeleted => 'Session deleted';
-
-  @override
-  String get timerDeleteSession => 'Delete session';
-
-  @override
-  String get timerDeleteConfirm => 'Delete this session?';
-
-  @override
-  String get timerAddMissedEntry => 'Add missed entry';
-
-  @override
-  String get timerStartTime => 'Start time';
-
-  @override
-  String get timerEndTime => 'End time';
-
-  @override
-  String get timerDuration => 'Duration';
-
-  @override
-  String get timerInvalidDuration => 'Invalid duration';
-
-  @override
-  String get timerUnknownDate => 'Unknown date';
-
-  @override
-  String get timerSave => 'Save';
-
-  @override
-  String get timerPomodoro => 'Pomodoro';
-
-  @override
-  String get timerPomodoroSettings => 'Pomodoro settings';
-
-  @override
-  String get timerPomodoroSettingsDescription => 'Tune focus sessions, breaks, and the automation between them.';
-
-  @override
-  String get timerFocusTime => 'Focus time';
-
-  @override
-  String get timerShortBreak => 'Short break';
-
-  @override
-  String get timerLongBreak => 'Long break';
-
-  @override
-  String get timerSessionsUntilLong => 'Sessions until long break';
-
-  @override
-  String get timerRequestsTitle => 'Requests';
-
-  @override
-  String get timerRequestsFilterAllStatuses => 'All';
-
-  @override
-  String get timerRequestsFilterTitle => 'Filter requests';
-
-  @override
-  String get timerRequestsFilterStatusLabel => 'Status';
-
-  @override
-  String get timerRequestsFilterUserLabel => 'User';
-
-  @override
-  String get timerRequestsFilterAllUsers => 'All users';
-
-  @override
-  String get timerRequestsFilterClear => 'Clear filters';
-
-  @override
-  String get timerRequestsFilterApply => 'Apply filters';
-
-  @override
-  String get timerRequestPending => 'Pending';
-
-  @override
-  String get timerRequestApproved => 'Approved';
-
-  @override
-  String get timerRequestRejected => 'Rejected';
-
-  @override
-  String get timerRequestNeedsInfo => 'Needs info';
-
-  @override
-  String timerRequestInfoRequestedBy(String name) {
-    return 'Info requested by $name';
-  }
-
-  @override
-  String get timerApprove => 'Approve';
-
-  @override
-  String get timerReject => 'Reject';
-
-  @override
-  String get timerRequestInfo => 'Request info';
-
-  @override
-  String get timerRequestResubmit => 'Resubmit request';
-
-  @override
-  String get timerRequestEdit => 'Edit';
-
-  @override
-  String get timerRequestEditRequest => 'Edit request';
-
-  @override
-  String get timerRequestDescription => 'Description';
-
-  @override
-  String get timerRequestDescriptionOptional => 'Description (optional)';
-
-  @override
-  String get timerRequestComments => 'Comments';
-
-  @override
-  String get timerRequestNoComments => 'No comments yet';
-
-  @override
-  String get timerRequestAddComment => 'Add a comment...';
-
-  @override
-  String get timerRequestPostComment => 'Post';
-
-  @override
-  String get timerRequestCancelEditComment => 'Cancel';
-
-  @override
-  String get timerRequestDeleteComment => 'Delete comment';
-
-  @override
-  String get timerRequestDeleteCommentConfirm => 'Delete this comment?';
-
-  @override
-  String get timerRequestActivity => 'Activity';
-
-  @override
-  String get timerRequestNoActivity => 'No activity yet';
-
-  @override
-  String get timerRequestActivityCreated => 'created this request';
-
-  @override
-  String get timerRequestActivityContentUpdated => 'updated request content';
-
-  @override
-  String get timerRequestActivityStatusChanged => 'changed the request status';
-
-  @override
-  String get timerRequestActivityCommentAdded => 'added a comment';
-
-  @override
-  String get timerRequestActivityCommentUpdated => 'updated a comment';
-
-  @override
-  String get timerRequestActivityCommentDeleted => 'deleted a comment';
-
-  @override
-  String get timerRequestActivityUpdated => 'updated this request';
-
-  @override
-  String taskBoardDetailTaskAssigneeCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count assignees',
-      one: '$count assignee',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get timerRequestActivityFeedbackLabel => 'Feedback';
-
-  @override
-  String get timerRequestActivityTitleLabel => 'Title';
-
-  @override
-  String get timerRequestActivityUnknownUser => 'Unknown user';
-
-  @override
-  String get timerRequestActivityItemsPerPage => 'Items per page';
-
-  @override
-  String timerRequestActivityPageInfo(int current, int total) {
-    return 'Page $current of $total';
-  }
-
-  @override
-  String get timerRequestActivityActionCreated => 'created';
-
-  @override
-  String get timerRequestActivityActionStatusChanged => 'changed status';
-
-  @override
-  String get timerRequestActivityActionContentUpdated => 'updated content';
-
-  @override
-  String get timerRequestActivityActionCommentAdded => 'added comment';
-
-  @override
-  String get timerRequestActivityActionCommentUpdated => 'updated comment';
-
-  @override
-  String get timerRequestActivityActionCommentDeleted => 'deleted comment';
-
-  @override
-  String get timerRequestActivityFieldStartTime => 'Start time';
-
-  @override
-  String get timerRequestActivityFieldEndTime => 'End time';
-
-  @override
-  String get timerRequestActivityFieldTitle => 'Title';
-
-  @override
-  String get timerRequestActivityFieldDescription => 'Description';
-
-  @override
-  String get timerRequestAddImage => 'Add image';
-
-  @override
-  String timerRequestProofImagesCount(int current, int max) {
-    return 'Images: $current/$max';
-  }
-
-  @override
-  String get timerReasonOptional => 'Reason (optional)';
-
-  @override
-  String get timerInfoRequired => 'Info (required)';
-
-  @override
-  String get timerSubmitInfo => 'Submit info';
-
-  @override
-  String get timerRequestUpdated => 'Request updated';
-
-  @override
-  String get timerManagementTitle => 'Manage';
-
-  @override
-  String get timerSearchSessions => 'Search sessions...';
-
-  @override
-  String get timerDescription => 'Description';
-
-  @override
-  String get timerWorkSession => 'Work session';
-
-  @override
-  String get timerSubmitForApproval => 'Submit for approval';
-
-  @override
-  String get timerRequestSubmittedTitle => 'Request sent';
-
-  @override
-  String get timerRequestSubmittedContent => 'Your time entry has been submitted for approval.';
-
-  @override
-  String get timerRequestRejectionReason => 'Rejection reason';
-
-  @override
-  String get timerRequestNeedsInfoReason => 'Requested Information';
-
-  @override
-  String get timerMissedEntrySavedTitle => 'Entry saved';
-
-  @override
-  String get timerMissedEntrySavedContent => 'Your missed time entry was added successfully.';
-
-  @override
-  String get timerSessionExceeded => 'Session exceeds threshold';
-
-  @override
-  String get timerSessionExceededDescription => 'This session is older than your workspace threshold. You can discard it or submit it as a request for approval.';
-
-  @override
-  String get timerTimeEditingRestricted => 'Time Editing Restricted';
-
-  @override
-  String timerAllEditsRequireApproval(String date) {
-    return 'All time edits must be submitted as requests for approval. This session is from $date.';
-  }
-
-  @override
-  String get timerDiscardSession => 'Discard session';
-
-  @override
-  String get timerSubmitAsRequest => 'Submit as request';
-
-  @override
-  String get timerThresholdWarningAll => 'All missed entries in this workspace require approval. Add at least one proof image before submitting.';
+  String get timerThisWeek => 'This week';
 
   @override
   String timerThresholdWarning(int days) {
@@ -5452,787 +10140,114 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get timerProofOfWorkRequired => 'At least one proof image is required.';
+  String get timerThresholdWarningAll => 'All missed entries in this workspace require approval. Add at least one proof image before submitting.';
 
   @override
-  String get timerRequestsThresholdTitle => 'Request threshold settings';
+  String get timerTimeEditingRestricted => 'Time Editing Restricted';
 
   @override
-  String get timerRequestsThresholdDescription => 'Choose when missed entries should require approval.';
+  String get timerTitle => 'Timer';
 
   @override
-  String get timerRequestsThresholdNoApproval => 'No approval needed';
-
-  @override
-  String get timerRequestsThresholdNoApprovalHint => 'Missed entries can be added directly without sending a request.';
-
-  @override
-  String get timerRequestsThresholdLabel => 'Threshold (days)';
-
-  @override
-  String get timerRequestsThresholdHelp => 'Entries older than this number of days must be submitted for approval.';
-
-  @override
-  String get timerRequestsThresholdInvalid => 'Enter a whole number greater than or equal to 0.';
-
-  @override
-  String get timerRequestsStatusChangeGracePeriodLabel => 'Approved/rejected status change grace period (minutes)';
-
-  @override
-  String get timerRequestsStatusChangeGracePeriodHelp => 'Set how many minutes approvers can revert a request between Approved and Rejected in either direction. Set to 0 to disable both actions.';
-
-  @override
-  String get timerRequestsStatusChangeGracePeriodInvalid => 'Enter a whole number greater than or equal to 0 for status revert grace period.';
-
-  @override
-  String get timerRequestsThresholdUpdated => 'Request threshold updated.';
-
-  @override
-  String get timerRequestsOpenFailed => 'Couldn\'t open this request right now.';
-
-  @override
-  String get timerRequestRevertToApproved => 'Revert to Approved';
-
-  @override
-  String get timerRequestRevertToRejected => 'Revert to Rejected';
-
-  @override
-  String get timerRequestLastModifiedBy => 'Last modified by';
-
-  @override
-  String timerRequestApprovedByAt(String name, String date) {
-    return 'Approved by $name on $date';
-  }
-
-  @override
-  String timerRequestRejectedByAt(String name, String date) {
-    return 'Rejected by $name on $date';
-  }
-
-  @override
-  String get timerAutoStartBreaks => 'Auto-start breaks';
-
-  @override
-  String get timerAutoStartFocus => 'Auto-start focus';
-
-  @override
-  String get commonCancel => 'Cancel';
-
-  @override
-  String get commonClearSearch => 'Clear search';
-
-  @override
-  String get commonNoSearchResults => 'No matching results';
+  String get timerToday => 'Today';
 
   @override
   String get timerTotalSessions => 'Total sessions';
 
   @override
-  String get timerActiveUsers => 'Active users';
+  String get timerUnknownDate => 'Unknown date';
 
   @override
-  String get timerGoalsTitle => 'Goals';
+  String get timerViewSessionDetails => 'Session details';
 
   @override
-  String get timerGoalsSubtitle => 'Track your daily and weekly focus targets';
+  String get timerWorkSession => 'Work session';
 
   @override
-  String get timerGoalsAdd => 'Add goal';
+  String get voiceAttach => 'Attach recording';
 
   @override
-  String get timerGoalsCreate => 'Create goal';
+  String get voiceMessage => 'Voice message';
 
   @override
-  String get timerGoalsCreateTitle => 'Create goal';
+  String get voicePause => 'Pause recording';
 
   @override
-  String get timerGoalsCreateSuccess => 'Goal created';
+  String get voicePaused => 'Recording paused';
 
   @override
-  String get timerGoalsEdit => 'Edit';
+  String get voicePermission => 'Allow microphone access to record.';
 
   @override
-  String get timerGoalsEditTitle => 'Edit goal';
+  String get voicePreview => 'Preview recording';
 
   @override
-  String get timerGoalsSave => 'Save goal';
+  String get voiceRecord => 'Record';
 
   @override
-  String get timerGoalsUpdateSuccess => 'Goal updated';
+  String get voiceRecording => 'Recording audio';
 
   @override
-  String get timerGoalsDelete => 'Delete';
+  String get voiceRecordingError => 'Could not record audio. Please try again.';
 
   @override
-  String get timerGoalsDeleteTitle => 'Delete goal?';
+  String get voiceResume => 'Resume recording';
 
   @override
-  String get timerGoalsDeleteDescription => 'This action cannot be undone.';
+  String get voiceRetake => 'Record again';
 
   @override
-  String get timerGoalsDeleteSuccess => 'Goal deleted';
+  String get voiceSendNow => 'Send now';
 
   @override
-  String get timerGoalsOperationFailed => 'Could not save your goal changes.';
+  String get voiceStop => 'Stop';
 
   @override
-  String get timerGoalsEmptyTitle => 'No goals yet';
-
-  @override
-  String get timerGoalsEmptyDescription => 'Create your first goal to measure daily and weekly progress.';
-
-  @override
-  String get timerGoalsCategory => 'Category';
-
-  @override
-  String get timerGoalsGeneral => 'General';
-
-  @override
-  String get timerGoalsDailyMinutes => 'Daily target (minutes)';
-
-  @override
-  String get timerGoalsWeeklyMinutesOptional => 'Weekly target (minutes, optional)';
-
-  @override
-  String get timerGoalsDailyValidation => 'Daily target must be greater than 0.';
-
-  @override
-  String get timerGoalsWeeklyValidation => 'Weekly target must be greater than 0.';
-
-  @override
-  String get timerGoalsActive => 'Active';
-
-  @override
-  String get timerGoalsInactive => 'Inactive';
-
-  @override
-  String get timerGoalsActiveLabel => 'Goal is active';
-
-  @override
-  String get timerGoalsDailyProgress => 'Daily progress';
-
-  @override
-  String get timerGoalsWeeklyProgress => 'Weekly progress';
-
-  @override
-  String get timerGoalsDailyTarget => 'Daily target';
-
-  @override
-  String get timerGoalsWeeklyTarget => 'Weekly target';
-
-  @override
-  String timerGoalsActiveCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '# active goals',
-      one: '# active goal',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get timerHourUnitShort => 'h';
-
-  @override
-  String get timerMinuteUnitShort => 'm';
-
-  @override
-  String timerDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count days',
-      one: '$count day',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get settingsTitle => 'Settings';
-
-  @override
-  String get settingsNavApp => 'App';
-
-  @override
-  String get settingsNavWorkspace => 'Workspace';
-
-  @override
-  String get settingsNavYou => 'You';
-
-  @override
-  String get settingsAccountTab => 'Account';
-
-  @override
-  String get settingsPreferencesTab => 'Preferences';
-
-  @override
-  String get settingsAboutTab => 'About';
-
-  @override
-  String get settingsLicensesTab => 'Licenses';
-
-  @override
-  String get settingsProfile => 'Profile';
-
-  @override
-  String get settingsProfileDescription => 'Manage your personal details and avatar.';
-
-  @override
-  String get settingsLanguage => 'Language';
-
-  @override
-  String get settingsLanguageDescription => 'Choose the language used throughout the app.';
-
-  @override
-  String get settingsAppVersion => 'App version';
-
-  @override
-  String get settingsLanguageSystem => 'System default';
-
-  @override
-  String get settingsLanguageSystemDescription => 'Follow your device language automatically.';
-
-  @override
-  String get settingsLanguageEnglish => 'English';
-
-  @override
-  String get settingsLanguageVietnamese => 'Vietnamese';
-
-  @override
-  String get settingsTheme => 'Theme';
-
-  @override
-  String get settingsThemeDescription => 'Adjust the app appearance for your device and preference.';
-
-  @override
-  String get settingsThemeLight => 'Light';
-
-  @override
-  String get settingsThemeDark => 'Dark';
-
-  @override
-  String get settingsThemeSystem => 'System';
-
-  @override
-  String get settingsThemeSystemDescription => 'Match your device appearance automatically.';
-
-  @override
-  String get settingsFinanceAmounts => 'Finance amounts';
-
-  @override
-  String get settingsHaptics => 'Haptic feedback';
-
-  @override
-  String get settingsFinanceAmountsDescription => 'Show or hide balances and transaction amounts across finance screens.';
-
-  @override
-  String get settingsSwitchWorkspace => 'Switch workspace';
-
-  @override
-  String get settingsSwitchWorkspaceDescription => 'Move between personal and team contexts.';
-
-  @override
-  String get settingsCalendar => 'Calendar';
-
-  @override
-  String get settingsFirstDayOfWeek => 'First day of week';
-
-  @override
-  String get settingsFirstDayOfWeekDescription => 'Control how calendars and weekly summaries start.';
-
-  @override
-  String get settingsFirstDayAuto => 'Auto';
-
-  @override
-  String get settingsFirstDayAutoDescription => 'Use your workspace or locale defaults when available.';
-
-  @override
-  String get settingsFirstDaySunday => 'Sunday';
-
-  @override
-  String get settingsFirstDayMonday => 'Monday';
-
-  @override
-  String get settingsFirstDaySaturday => 'Saturday';
-
-  @override
-  String get settingsHeroDescription => 'Personal setup, workspace context, and release details in one place.';
-
-  @override
-  String get settingsSignedInAs => 'Signed in as';
-
-  @override
-  String get settingsCurrentWorkspace => 'Current workspace';
-
-  @override
-  String get settingsCurrentWorkspaceDescription => 'Choose the workspace you are using right now.';
-
-  @override
-  String get settingsDefaultTaskBoardNavigation => 'Open Tasks board by default';
-
-  @override
-  String get settingsDefaultTaskBoardNavigationBoardPicker => 'Board picker';
-
-  @override
-  String get settingsDefaultTaskBoardNavigationDefaultBoard => 'Tasks board';
-
-  @override
-  String get settingsDefaultTaskBoardNavigationDescription => 'Open your personal Tasks board directly from Boards. Tasks always opens the board list view.';
-
-  @override
-  String get settingsExperimentalAppsDisabled => 'Disabled';
-
-  @override
-  String get settingsExperimentalAppsEnabled => 'Enabled';
-
-  @override
-  String get settingsExperimentalAppsSectionDescription => 'Enable non-core apps in the Apps Hub. Tasks, Calendar, and Finance stay available by default.';
-
-  @override
-  String get settingsExperimentalAppsSectionTitle => 'Experiments';
-
-  @override
-  String settingsExperimentalAppsTileDescription(String appName) {
-    return 'Show $appName in the Apps Hub.';
-  }
-
-  @override
-  String get settingsDefaultWorkspace => 'Default workspace';
-
-  @override
-  String get settingsDefaultWorkspaceDescription => 'The app opens here by default on every launch.';
-
-  @override
-  String get settingsWorkspacePropertiesTitle => 'Workspace information';
-
-  @override
-  String get settingsWorkspacePropertiesDescription => 'Update the workspace name and avatar.';
-
-  @override
-  String get settingsWorkspacePropertiesNoAccess => 'You need workspace settings permission to edit these properties.';
-
-  @override
-  String get settingsWorkspacePropertiesPermissionLoading => 'Checking your workspace permissions...';
-
-  @override
-  String get settingsWorkspacePropertiesUpdated => 'Workspace information updated.';
-
-  @override
-  String get settingsWorkspacePropertiesNameRequired => 'Workspace name cannot be empty';
-
-  @override
-  String get settingsWorkspaceAvatar => 'Workspace avatar';
-
-  @override
-  String get settingsWorkspaceAvatarDescription => 'Upload a new image or remove the current avatar.';
-
-  @override
-  String get settingsWorkspaceAvatarRemovePending => 'The current avatar will be removed when you save.';
-
-  @override
-  String get settingsWorkspaceNameHint => 'Workspace name';
-
-  @override
-  String get settingsNoEmail => 'No email available';
-
-  @override
-  String get settingsNoWorkspaceSelected => 'No workspace selected';
-
-  @override
-  String get settingsWorkspaceActive => 'Active';
-
-  @override
-  String get settingsAccountSectionTitle => 'Account';
-
-  @override
-  String get settingsAccountSectionDescription => 'Profile access and session controls.';
-
-  @override
-  String get settingsWorkspaceSectionTitle => 'Workspace';
-
-  @override
-  String get settingsWorkspaceSectionDescription => 'See your current context and switch when needed.';
-
-  @override
-  String get settingsWorkspaceSectionManageTitle => 'Workspace setup';
-
-  @override
-  String get settingsWorkspaceAccessTitle => 'Access';
-
-  @override
-  String get settingsWorkspaceDefaultCurrencyTitle => 'Default currency';
-
-  @override
-  String get settingsWorkspaceDefaultCurrencyDescription => 'Use one currency as the default for finance and invoice flows in this workspace.';
-
-  @override
-  String get settingsWorkspaceDefaultCurrencyField => 'Currency';
-
-  @override
-  String get settingsPreferencesSectionTitle => 'Preferences';
-
-  @override
-  String get settingsPreferencesSectionDescription => 'Language, appearance, and calendar defaults.';
-
-  @override
-  String get settingsDangerSectionTitle => 'Session';
-
-  @override
-  String get settingsDangerSectionDescription => 'Sign out and end access on this device.';
-
-  @override
-  String get settingsQuickOpenProfile => 'Open profile';
-
-  @override
-  String get settingsQuickSwitchWorkspace => 'Switch current';
-
-  @override
-  String get settingsQuickDefaultWorkspace => 'Default workspace';
-
-  @override
-  String get settingsDataStatusLabel => 'Data';
-
-  @override
-  String get settingsDataStatusLive => 'Live';
-
-  @override
-  String get settingsDataStatusCached => 'Cached';
-
-  @override
-  String get settingsDataStatusRefreshing => 'Refreshing';
-
-  @override
-  String get settingsPullToRefreshAction => 'Refresh now';
-
-  @override
-  String get settingsSignOut => 'Sign out';
-
-  @override
-  String get settingsSignOutDescription => 'End your session on this device.';
-
-  @override
-  String get settingsSignOutConfirm => 'Are you sure you want to sign out?';
-
-  @override
-  String get settingsAboutSummary => 'Tuturuuu mobile keeps your workspace tools, assistant, and day-to-day workflows within quick reach.';
-
-  @override
-  String get settingsAboutSectionTitle => 'About the app';
-
-  @override
-  String get settingsAboutSectionDescription => 'Release details and product information for this build.';
-
-  @override
-  String get settingsWhatsNew => 'What\'s new';
-
-  @override
-  String get settingsWhatsNewDescription => 'Updates from every published app release.';
-
-  @override
-  String get settingsReleaseHistoryDescription => 'Explore the changes included in each published version, even when you\'re offline.';
-
-  @override
-  String get settingsReleaseHistoryUnavailable => 'Release history is unavailable right now.';
-
-  @override
-  String get settingsReleaseNoDetails => 'No detailed changes were recorded for this version.';
-
-  @override
-  String get settingsVersionLabel => 'Version';
-
-  @override
-  String get settingsBuildLabel => 'Build';
-
-  @override
-  String get settingsPackageLabel => 'Package';
-
-  @override
-  String get settingsVersionTileDescription => 'Installed release currently running on this device.';
-
-  @override
-  String get settingsInfrastructureSectionTitle => 'Infrastructure';
-
-  @override
-  String get settingsInfrastructureSectionDescription => 'Platform-wide controls available in the internal workspace.';
-
-  @override
-  String get settingsMobileVersions => 'Mobile versions';
-
-  @override
-  String get settingsMobileVersionsTileDescription => 'Manage the effective and minimum versions enforced by the mobile app and OTP rollout controls.';
-
-  @override
-  String get settingsMobileVersionsTitle => 'Mobile versions';
-
-  @override
-  String get settingsMobileVersionsPageDescription => 'Manage the effective and minimum app versions enforced by the mobile app before users can continue, plus OTP rollout controls for mobile and web.';
-
-  @override
-  String get settingsMobileVersionsIosTitle => 'iOS';
-
-  @override
-  String get settingsMobileVersionsIosDescription => 'Set the App Store threshold and update prompt for iPhone and iPad users.';
-
-  @override
-  String get settingsMobileVersionsAndroidTitle => 'Android';
-
-  @override
-  String get settingsMobileVersionsAndroidDescription => 'Set the Play Store threshold and update prompt for Android users.';
-
-  @override
-  String get settingsMobileVersionsOtpEnabled => 'Enable OTP login';
-
-  @override
-  String get settingsMobileVersionsIosOtpDescription => 'Allow iOS app logins to use email verification codes.';
-
-  @override
-  String get settingsMobileVersionsAndroidOtpDescription => 'Allow Android app logins to use email verification codes.';
-
-  @override
-  String get settingsMobileVersionsWebOtpTitle => 'Web OTP';
-
-  @override
-  String get settingsMobileVersionsWebOtpDescription => 'Allow the marketing web login to use email verification-code sign-in.';
-
-  @override
-  String get settingsMobileVersionsEffectiveVersion => 'Effective version';
-
-  @override
-  String get settingsMobileVersionsEffectiveVersionDescription => 'Versions below this threshold see a recommended update prompt.';
-
-  @override
-  String get settingsMobileVersionsMinimumVersion => 'Minimum version';
-
-  @override
-  String get settingsMobileVersionsMinimumVersionDescription => 'Versions below this threshold must update before continuing.';
-
-  @override
-  String get settingsMobileVersionsStoreUrl => 'Store URL';
-
-  @override
-  String get settingsMobileVersionsStoreUrlDescription => 'Required whenever either version threshold is set.';
-
-  @override
-  String get settingsMobileVersionsVersionPlaceholder => '1.2.3';
-
-  @override
-  String get settingsMobileVersionsStoreUrlPlaceholder => 'https://apps.apple.com/app/id123456789';
-
-  @override
-  String get settingsMobileVersionsSave => 'Save changes';
-
-  @override
-  String get settingsMobileVersionsSaving => 'Saving...';
-
-  @override
-  String get settingsMobileVersionsSaveSuccess => 'Mobile version policy saved.';
-
-  @override
-  String get settingsMobileVersionsSaveError => 'Failed to save mobile version policy.';
-
-  @override
-  String get settingsMobileVersionsLoadError => 'Failed to load mobile version policies.';
-
-  @override
-  String get settingsMobileVersionsWorkspaceRequiredTitle => 'Internal workspace required';
-
-  @override
-  String get settingsMobileVersionsWorkspaceRequiredDescription => 'Switch to the internal workspace to manage platform mobile version policies.';
-
-  @override
-  String get settingsMobileVersionsAccessDeniedTitle => 'Access required';
-
-  @override
-  String get settingsMobileVersionsAccessDeniedDescription => 'You need the workspace roles permission in the internal workspace to manage mobile version policies.';
-
-  @override
-  String get settingsMobileVersionsValidationVersionFormat => 'Use semantic version format x.y.z.';
-
-  @override
-  String get settingsMobileVersionsValidationStoreUrlRequired => 'Store URL is required when a version is set.';
-
-  @override
-  String get settingsMobileVersionsValidationEffectiveAtLeastMinimum => 'Effective version must be greater than or equal to the minimum version.';
-
-  @override
-  String get settingsLicensesSectionTitle => 'Open-source licenses';
-
-  @override
-  String get settingsLicensesSectionDescription => 'Review the third-party software notices bundled with the app.';
-
-  @override
-  String get settingsLicenseViewerTitle => 'Open license viewer';
-
-  @override
-  String get settingsLicenseViewerDescription => 'Browse Flutter, plugin, and package licenses included in this build.';
-
-  @override
-  String get settingsLicenseVersionDescription => 'Reference the installed version while reviewing notices.';
-
-  @override
-  String get settingsMinutesUnit => 'min';
-
-  @override
-  String get profileTitle => 'Profile';
-
-  @override
-  String get profileIdentitySectionTitle => 'Identity';
-
-  @override
-  String get profileIdentitySectionDescription => 'Keep the core details people see about your account up to date.';
-
-  @override
-  String get profileAvatar => 'Avatar';
-
-  @override
-  String get profileAvatarSet => 'Photo attached';
-
-  @override
-  String get profileAvatarDescription => 'Upload your profile picture';
-
-  @override
-  String get profileAvatarSectionTitle => 'Avatar';
-
-  @override
-  String get profileAvatarActionDescription => 'Choose a new photo or refresh the one already attached.';
-
-  @override
-  String get profileAvatarPickerDescription => 'Choose where to pick your new avatar image from.';
+  String get workspaceAllHidden => 'Your workspaces are hidden. Restore one to continue.';
 
   @override
   String get workspaceAvatarPickerDescription => 'Choose where to pick your new workspace avatar image from.';
 
   @override
-  String get profileUploadAvatar => 'Upload avatar';
+  String get workspaceCreateCancel => 'Cancel';
 
   @override
-  String get profileChangeAvatar => 'Change avatar';
+  String get workspaceCreateDescription => 'Create a fresh space for projects, habits, finance, and more.';
 
   @override
-  String get profileRemoveAvatar => 'Remove avatar';
+  String get workspaceCreateError => 'Failed to create workspace';
 
   @override
-  String get profileRemoveAvatarDescription => 'Delete the current photo from your account profile.';
-
-  @override
-  String get profileRemoveConfirm => 'Remove avatar?';
-
-  @override
-  String get profileAccountStatus => 'Account status';
-
-  @override
-  String get profileAccountStatusDescription => 'Membership and verification details for this account.';
-
-  @override
-  String get profileStatus => 'Status';
-
-  @override
-  String get profileStatusUnknown => 'Unknown';
-
-  @override
-  String get profileVerification => 'Verification';
-
-  @override
-  String get profileActive => 'Active';
-
-  @override
-  String get profileVerified => 'Verified';
-
-  @override
-  String get profileMemberSince => 'Member since';
-
-  @override
-  String get profileDisplayName => 'Display name';
-
-  @override
-  String get profileDisplayNameHint => 'Your display name';
-
-  @override
-  String get profileDisplayNameDescription => 'This name appears in collaborative surfaces across the app.';
-
-  @override
-  String get profileDisplayNameRequired => 'Display name cannot be empty';
-
-  @override
-  String get profileFullName => 'Full name';
-
-  @override
-  String get profileFullNameHint => 'Your full name';
-
-  @override
-  String get profileFullNameDescription => 'Use your legal or preferred full name for account records.';
-
-  @override
-  String get profileFullNameRequired => 'Full name cannot be empty';
-
-  @override
-  String get profileEmail => 'Email';
-
-  @override
-  String get profileEmailHint => 'example@tuturuuu.com';
-
-  @override
-  String get profileEmailDescription => 'Updating your email sends confirmation to both the old and new addresses.';
-
-  @override
-  String get profileInvalidEmail => 'Please enter a valid email address';
-
-  @override
-  String get profileCurrentEmail => 'Current email';
-
-  @override
-  String get profileNewEmail => 'New email';
-
-  @override
-  String get profileMissingValue => 'Not set';
-
-  @override
-  String get profileDangerAction => 'Danger';
-
-  @override
-  String profileEmailPendingChange(String email) {
-    return 'Pending change to $email';
+  String workspaceCreateLimitInfo(int current, int limit) {
+    return '$current of $limit workspaces used';
   }
 
   @override
-  String get profileEmailUpdateNote => 'Confirmation emails will be sent to both addresses';
+  String get workspaceCreateLimitReached => 'You have reached the workspace limit';
 
   @override
-  String get profileUpdateSuccess => 'Profile updated';
+  String get workspaceCreateNameHint => 'Workspace name';
 
   @override
-  String get profileUpdateError => 'Failed to update profile';
+  String get workspaceCreateNameRequired => 'Workspace name is required';
 
   @override
-  String get profileAvatarUpdateSuccess => 'Avatar updated';
+  String get workspaceCreateNew => 'New';
 
   @override
-  String get profileAvatarUpdateError => 'Failed to update avatar';
+  String get workspaceCreatePrompt => 'Create your first workspace to get started';
 
   @override
-  String get profileAvatarRemoveSuccess => 'Avatar removed';
+  String get workspaceCreateSubmit => 'Create workspace';
 
   @override
-  String get profileAvatarRemoveError => 'Failed to remove avatar';
+  String get workspaceCreateSuccess => 'Workspace created.';
 
   @override
-  String get profileLoading => 'Loading profile...';
+  String get workspaceCreateSuccessAvatarWarning => 'Workspace created, but profile picture failed to upload.';
 
   @override
-  String get profileSave => 'Save';
-
-  @override
-  String get profileCancel => 'Cancel';
-
-  @override
-  String get workspacePickerTitle => 'Workspaces';
-
-  @override
-  String get workspacePickerSearchHint => 'Search workspaces';
-
-  @override
-  String get workspaceDefaultPickerTitle => 'Default workspace';
+  String get workspaceCreateTitle => 'Create workspace';
 
   @override
   String get workspaceCurrentBadge => 'Current';
@@ -6241,10 +10256,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workspaceDefaultBadge => 'Default';
 
   @override
+  String get workspaceDefaultPickerTitle => 'Default workspace';
+
+  @override
+  String get workspaceHiddenDescription => 'Only you can see this list. Hiding does not change membership or notifications.';
+
+  @override
+  String get workspaceHiddenEmpty => 'No Hidden workspaces';
+
+  @override
+  String get workspaceHiddenLoadError => 'Workspace visibility preferences are unavailable. Saved hidden choices are kept.';
+
+  @override
+  String get workspaceHiddenTitle => 'Hidden workspaces';
+
+  @override
+  String get workspaceHiddenUpdateError => 'Unable to save this change. Try again when connected.';
+
+  @override
+  String get workspaceHideAction => 'Hide';
+
+  @override
   String get workspacePersonalBadge => 'Personal';
 
   @override
   String get workspacePersonalSection => 'Personal';
+
+  @override
+  String get workspacePickerClose => 'Close workspace picker';
+
+  @override
+  String get workspacePickerSearchHint => 'Search workspaces';
+
+  @override
+  String get workspacePickerTitle => 'Workspaces';
+
+  @override
+  String get workspaceRestoreAction => 'Restore';
+
+  @override
+  String get workspaceSelectEmpty => 'No workspaces found';
+
+  @override
+  String get workspaceSelectError => 'Failed to switch workspace';
+
+  @override
+  String get workspaceSelectTitle => 'Select workspace';
 
   @override
   String get workspaceSystemBadge => 'System';
@@ -6254,3958 +10311,4 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workspaceTeamSection => 'Team workspaces';
-
-  @override
-  String get workspaceCreateTitle => 'Create workspace';
-
-  @override
-  String get workspaceCreateDescription => 'Create a fresh space for projects, habits, finance, and more.';
-
-  @override
-  String get workspaceCreateSuccess => 'Workspace created.';
-
-  @override
-  String get workspaceCreateSuccessAvatarWarning => 'Workspace created, but profile picture failed to upload.';
-
-  @override
-  String get workspaceCreateError => 'Failed to create workspace';
-
-  @override
-  String get workspaceCreateNew => 'New';
-
-  @override
-  String get workspaceCreateNameHint => 'Workspace name';
-
-  @override
-  String get workspaceCreateNameRequired => 'Workspace name is required';
-
-  @override
-  String get workspaceCreateSubmit => 'Create workspace';
-
-  @override
-  String get workspaceCreateCancel => 'Cancel';
-
-  @override
-  String get workspaceCreatePrompt => 'Create your first workspace to get started';
-
-  @override
-  String get workspaceCreateLimitReached => 'You have reached the workspace limit';
-
-  @override
-  String workspaceCreateLimitInfo(int current, int limit) {
-    return '$current of $limit workspaces used';
-  }
-
-  @override
-  String get notificationsTitle => 'Notifications';
-
-  @override
-  String notificationsSubtitle(int count) {
-    return '$count unread';
-  }
-
-  @override
-  String get notificationsInbox => 'Inbox';
-
-  @override
-  String get notificationsArchive => 'Archive';
-
-  @override
-  String get notificationsArchiveAll => 'Archive all';
-
-  @override
-  String get notificationsArchiveAllError => 'Couldn\'t archive notifications right now';
-
-  @override
-  String get notificationsMarkRead => 'Mark as read';
-
-  @override
-  String get notificationsMarkUnread => 'Mark as unread';
-
-  @override
-  String get notificationsLoadingMore => 'Loading more...';
-
-  @override
-  String get notificationsInboxEmptyTitle => 'No unread notifications';
-
-  @override
-  String get notificationsInboxEmptyMessage => 'New activity, mentions, and invites will show up here.';
-
-  @override
-  String get notificationsArchiveEmptyTitle => 'No archived notifications';
-
-  @override
-  String get notificationsArchiveEmptyMessage => 'Read notifications will move here after you\'ve cleared them.';
-
-  @override
-  String get notificationsLoadErrorTitle => 'Couldn\'t load notifications';
-
-  @override
-  String get notificationsLoadErrorMessage => 'Try again in a moment.';
-
-  @override
-  String get notificationsAcceptInvite => 'Accept';
-
-  @override
-  String get notificationsDeclineInvite => 'Decline';
-
-  @override
-  String get notificationsInviteAccepted => 'Invite accepted';
-
-  @override
-  String get notificationsInviteDeclined => 'Invite declined';
-
-  @override
-  String get notificationsInviteActionError => 'Couldn\'t update this invite right now';
-
-  @override
-  String get notificationsOpenTaskAction => 'Open task';
-
-  @override
-  String get notificationsOpenRequestAction => 'Open request';
-
-  @override
-  String get notificationsOpenUnsupported => 'This notification can\'t be opened yet';
-
-  @override
-  String get notificationsJustNow => 'Just now';
-
-  @override
-  String notificationsMinutesAgo(int count) {
-    return '${count}m ago';
-  }
-
-  @override
-  String notificationsHoursAgo(int count) {
-    return '${count}h ago';
-  }
-
-  @override
-  String notificationsDaysAgo(int count) {
-    return '${count}d ago';
-  }
-
-  @override
-  String get mfaTitle => 'Two-factor authentication';
-
-  @override
-  String get mfaSubtitle => 'Enter the code from your authenticator app';
-
-  @override
-  String get mfaCodeLabel => '6-digit code';
-
-  @override
-  String get mfaVerify => 'Verify';
-
-  @override
-  String get mfaInvalidCode => 'Invalid verification code. Please try again.';
-
-  @override
-  String get mfaSignOut => 'Sign out';
-
-  @override
-  String get captchaError => 'Security check failed. Please try again.';
-
-  @override
-  String get commonOff => 'Off';
-
-  @override
-  String get commonOn => 'On';
-
-  @override
-  String get commonSomethingWentWrong => 'Something went wrong';
-
-  @override
-  String get selectImageSource => 'Select image source';
-
-  @override
-  String get camera => 'Camera';
-
-  @override
-  String get gallery => 'Gallery';
-
-  @override
-  String get commonRetry => 'Retry';
-
-  @override
-  String get commonShowLess => 'Show less';
-
-  @override
-  String get commonShowMore => 'Show more';
-
-  @override
-  String get commonPressBackAgainToExit => 'Press back again to exit';
-
-  @override
-  String get commonPressBackAgainToExitHint => 'Press back again within 2 seconds to close the app.';
-
-  @override
-  String get commonPrevious => 'Previous';
-
-  @override
-  String get commonNext => 'Next';
-
-  @override
-  String get onboardingSlide1Title => 'Meet Mira';
-
-  @override
-  String get onboardingSlide1Subtitle => 'Your AI companion for work and life. Mira connects your tasks, calendar, and finances.';
-
-  @override
-  String get onboardingSlide2Title => 'Everything in One App';
-
-  @override
-  String get onboardingSlide2Subtitle => 'Tasks, Calendar, and Track - all unified. No more switching between apps.';
-
-  @override
-  String get onboardingSlide3Title => 'Intelligence That Grows';
-
-  @override
-  String get onboardingSlide3Subtitle => 'Mira remembers your preferences and gets smarter the more you use her.';
-
-  @override
-  String get onboardingGetStarted => 'Get Started';
-
-  @override
-  String get settingsWorkspaceMembersTitle => 'Members';
-
-  @override
-  String get settingsWorkspaceMembersSubtitle => 'Invite people, review access, and manage links.';
-
-  @override
-  String get settingsWorkspaceMembersAccessDenied => 'You need member access to manage this workspace.';
-
-  @override
-  String settingsWorkspaceMembersActiveSection(int count) {
-    return 'Members ($count)';
-  }
-
-  @override
-  String get settingsWorkspaceMembersEmpty => 'No members yet.';
-
-  @override
-  String settingsWorkspaceMembersPendingSection(int count) {
-    return 'Pending ($count)';
-  }
-
-  @override
-  String get settingsWorkspaceMembersPendingEmpty => 'No pending invites.';
-
-  @override
-  String get settingsWorkspaceMembersLinksSection => 'Invite links';
-
-  @override
-  String get settingsWorkspaceMembersLinksEmpty => 'No invite links yet.';
-
-  @override
-  String get settingsWorkspaceMembersInviteAction => 'Invite';
-
-  @override
-  String get settingsWorkspaceMembersLinkAction => 'New link';
-
-  @override
-  String get settingsWorkspaceMembersLinkCopied => 'Invite link copied.';
-
-  @override
-  String get settingsWorkspaceMembersRemoveTitle => 'Remove';
-
-  @override
-  String settingsWorkspaceMembersRemoveMessage(String name) {
-    return 'Remove $name from this workspace?';
-  }
-
-  @override
-  String get settingsWorkspaceMembersLinkDeleteTitle => 'Delete link';
-
-  @override
-  String get settingsWorkspaceMembersLinkDeleteMessage => 'Delete this invite link?';
-
-  @override
-  String get settingsWorkspaceMembersEmailField => 'Email';
-
-  @override
-  String get settingsWorkspaceMembersEmailPlaceholder => 'name@example.com';
-
-  @override
-  String get settingsWorkspaceMembersEmailInvalid => 'Enter a valid email address.';
-
-  @override
-  String get settingsWorkspaceMembersInviteSent => 'Invite sent.';
-
-  @override
-  String get settingsWorkspaceMembersLinkLimitField => 'Max uses';
-
-  @override
-  String get settingsWorkspaceMembersLinkLimitPlaceholder => 'Leave empty for unlimited';
-
-  @override
-  String get settingsWorkspaceMembersLinkLimitInvalid => 'Enter a positive whole number.';
-
-  @override
-  String get settingsWorkspaceMembersLinkCreated => 'Invite link created.';
-
-  @override
-  String get settingsWorkspaceMembersCreatorChip => 'Creator';
-
-  @override
-  String get settingsWorkspaceMembersPendingChip => 'Pending';
-
-  @override
-  String get settingsWorkspaceMembersLinkNever => 'No expiry';
-
-  @override
-  String get settingsWorkspaceMembersLinkExpired => 'Expired';
-
-  @override
-  String get settingsWorkspaceMembersLinkFull => 'Full';
-
-  @override
-  String get settingsWorkspaceMembersLinkActive => 'Active';
-
-  @override
-  String get settingsWorkspaceMembersLinkCopy => 'Copy';
-
-  @override
-  String get settingsWorkspaceRolesTitle => 'Roles';
-
-  @override
-  String get settingsWorkspaceRolesSubtitle => 'Control default access and workspace roles.';
-
-  @override
-  String get settingsWorkspaceRolesAccessDenied => 'You need role access to manage permissions.';
-
-  @override
-  String get settingsWorkspaceRolesCreate => 'Create role';
-
-  @override
-  String get settingsWorkspaceRolesDefaultTitle => 'Default access';
-
-  @override
-  String get settingsWorkspaceRolesListTitle => 'Roles';
-
-  @override
-  String get settingsWorkspaceRolesEmpty => 'No custom roles yet.';
-
-  @override
-  String get settingsWorkspaceRolesDeleteTitle => 'Delete role';
-
-  @override
-  String settingsWorkspaceRolesDeleteMessage(String name) {
-    return 'Delete $name?';
-  }
-
-  @override
-  String settingsWorkspaceRolesPermissionCount(int count) {
-    return '$count permissions enabled';
-  }
-
-  @override
-  String get settingsWorkspaceRolesEdit => 'Edit role';
-
-  @override
-  String get settingsWorkspaceRolesSave => 'Save';
-
-  @override
-  String get settingsWorkspaceRolesNameField => 'Name';
-
-  @override
-  String get settingsWorkspaceRolesNamePlaceholder => 'Role name';
-
-  @override
-  String get settingsWorkspaceRolesNameRequired => 'Enter a role name.';
-
-  @override
-  String get settingsWorkspaceRolesPermissionsSection => 'Permissions';
-
-  @override
-  String get settingsWorkspaceRolesMembersSection => 'Assigned members';
-
-  @override
-  String get settingsWorkspaceRolesMembersEmpty => 'No active members available.';
-
-  @override
-  String get settingsWorkspaceRolesSaved => 'Role saved.';
-
-  @override
-  String get settingsWorkspaceSecretsTitle => 'Secrets';
-
-  @override
-  String get settingsWorkspaceSecretsSubtitle => 'Manage workspace secrets and storage rollout.';
-
-  @override
-  String get settingsWorkspaceSecretsAccessDeniedTitle => 'Access required';
-
-  @override
-  String get settingsWorkspaceSecretsAccessDeniedDescription => 'You need the manage workspace secrets permission in the internal workspace to open this page.';
-
-  @override
-  String get settingsWorkspaceSecretsWorkspaceRequiredTitle => 'Workspace required';
-
-  @override
-  String get settingsWorkspaceSecretsWorkspaceRequiredDescription => 'Select a workspace before opening secrets management.';
-
-  @override
-  String settingsWorkspaceSecretsPageDescription(String workspaceName) {
-    return 'Manage secrets and storage rollout for $workspaceName.';
-  }
-
-  @override
-  String get settingsWorkspaceSecretsTotalSecrets => 'All secrets';
-
-  @override
-  String get settingsWorkspaceSecretsVisibleSecrets => 'Visible';
-
-  @override
-  String get settingsWorkspaceSecretsActiveBackend => 'Active backend';
-
-  @override
-  String get settingsWorkspaceSecretsCreate => 'Create secret';
-
-  @override
-  String get settingsWorkspaceSecretsRolloutTitle => 'Storage rollout';
-
-  @override
-  String get settingsWorkspaceSecretsRolloutDescription => 'Inspect the current Drive backend, confirm required provider secrets, and migrate files between providers when needed.';
-
-  @override
-  String get settingsWorkspaceSecretsProviderSecrets => 'Provider secrets';
-
-  @override
-  String get settingsWorkspaceSecretsZipAutomation => 'ZIP automation';
-
-  @override
-  String get settingsWorkspaceSecretsStateEnabled => 'Enabled';
-
-  @override
-  String get settingsWorkspaceSecretsAutoExtractBlocked => 'Needs proxy secrets';
-
-  @override
-  String get settingsWorkspaceSecretsStateDisabled => 'Disabled';
-
-  @override
-  String get settingsWorkspaceSecretsSelected => 'Selected';
-
-  @override
-  String get settingsWorkspaceSecretsRecommended => 'Recommended';
-
-  @override
-  String get settingsWorkspaceSecretsObjects => 'Objects';
-
-  @override
-  String get settingsWorkspaceSecretsInventory => 'Inventory';
-
-  @override
-  String get settingsWorkspaceSecretsUnavailable => 'Unavailable';
-
-  @override
-  String get settingsWorkspaceSecretsReadyMessage => 'This backend is ready to receive Drive files.';
-
-  @override
-  String get settingsWorkspaceSecretsMissingMessage => 'Add the required secrets before routing Drive traffic here.';
-
-  @override
-  String get settingsWorkspaceSecretsMigrating => 'Migrating...';
-
-  @override
-  String settingsWorkspaceSecretsCopyInto(String provider) {
-    return 'Copy into $provider';
-  }
-
-  @override
-  String get settingsWorkspaceSecretsAutoExtractTitle => 'Auto extract';
-
-  @override
-  String get settingsWorkspaceSecretsAutoExtractDescription => 'Track whether automatic ZIP extraction is enabled and whether the proxy credentials are ready.';
-
-  @override
-  String get settingsWorkspaceSecretsAutoExtractSwitch => 'Switch';
-
-  @override
-  String get settingsWorkspaceSecretsAutoExtractProxyUrl => 'Proxy URL';
-
-  @override
-  String get settingsWorkspaceSecretsAutoExtractProxyToken => 'Shared token';
-
-  @override
-  String get settingsWorkspaceSecretsStatePresent => 'Present';
-
-  @override
-  String get settingsWorkspaceSecretsStateMissing => 'Missing';
-
-  @override
-  String get settingsWorkspaceSecretsProviderSecretsTitle => 'Provider secrets';
-
-  @override
-  String get settingsWorkspaceSecretsProviderSecretsDescription => 'Edit the secrets that define which storage provider Drive uses for this workspace.';
-
-  @override
-  String get settingsWorkspaceSecretsProxySecretsTitle => 'ZIP proxy secrets';
-
-  @override
-  String get settingsWorkspaceSecretsProxySecretsDescription => 'Configure the optional secrets used by the ZIP extraction proxy.';
-
-  @override
-  String get settingsWorkspaceSecretsDriveStorageProviderDescription => 'Selects the Drive backend for this workspace. Use \"supabase\" for the current path or \"r2\" to route Drive through Cloudflare R2.';
-
-  @override
-  String get settingsWorkspaceSecretsDriveR2BucketDescription => 'Cloudflare R2 bucket name used for Drive objects when the provider is set to \"r2\".';
-
-  @override
-  String get settingsWorkspaceSecretsDriveR2EndpointDescription => 'S3-compatible R2 endpoint, for example https://<account-id>.r2.cloudflarestorage.com.';
-
-  @override
-  String get settingsWorkspaceSecretsDriveR2AccessKeyIdDescription => 'Access key ID for the Cloudflare R2 token used by the server-side Drive adapter.';
-
-  @override
-  String get settingsWorkspaceSecretsDriveR2SecretAccessKeyDescription => 'Secret access key for the Cloudflare R2 token used by the server-side Drive adapter.';
-
-  @override
-  String get settingsWorkspaceSecretsDriveAutoExtractZipDescription => 'Enables automatic ZIP extraction after uploads. Disabled by default.';
-
-  @override
-  String get settingsWorkspaceSecretsDriveAutoExtractProxyUrlDescription => 'HTTPS URL for the self-hosted ZIP extraction proxy. Only used when auto extraction is enabled.';
-
-  @override
-  String get settingsWorkspaceSecretsDriveAutoExtractProxyTokenDescription => 'Shared bearer token used to authenticate requests to the ZIP extraction proxy.';
-
-  @override
-  String get settingsWorkspaceSecretsNoValue => 'No value';
-
-  @override
-  String get settingsWorkspaceSecretsConfigured => 'Configured';
-
-  @override
-  String get settingsWorkspaceSecretsMissing => 'Missing';
-
-  @override
-  String get settingsWorkspaceSecretsRequired => 'Required';
-
-  @override
-  String get settingsWorkspaceSecretsOptional => 'Optional';
-
-  @override
-  String get settingsWorkspaceSecretsAdd => 'Add';
-
-  @override
-  String get settingsWorkspaceSecretsListTitle => 'Secrets list';
-
-  @override
-  String get settingsWorkspaceSecretsListDescription => 'Search, edit, and remove workspace secrets. Boolean values can be toggled inline.';
-
-  @override
-  String get settingsWorkspaceSecretsSearchPlaceholder => 'Search secrets';
-
-  @override
-  String get settingsWorkspaceSecretsEmptyTitle => 'No secrets found';
-
-  @override
-  String get settingsWorkspaceSecretsEmptyDescription => 'Create a secret or adjust the search query to see matching entries.';
-
-  @override
-  String get settingsWorkspaceSecretsEdit => 'Edit';
-
-  @override
-  String get settingsWorkspaceSecretsDeleteTitle => 'Delete';
-
-  @override
-  String settingsWorkspaceSecretsDeleteMessage(String name) {
-    return 'Delete $name?';
-  }
-
-  @override
-  String get settingsWorkspaceSecretsDeleteSuccess => 'Secret deleted.';
-
-  @override
-  String get settingsWorkspaceSecretsNameField => 'Name';
-
-  @override
-  String get settingsWorkspaceSecretsNamePlaceholder => 'SECRET_NAME';
-
-  @override
-  String get settingsWorkspaceSecretsValueField => 'Value';
-
-  @override
-  String get settingsWorkspaceSecretsValuePlaceholder => 'Secret value';
-
-  @override
-  String get settingsWorkspaceSecretsEditorDescription => 'Update the secret name and value used by this workspace.';
-
-  @override
-  String get settingsWorkspaceSecretsSaving => 'Saving...';
-
-  @override
-  String get settingsWorkspaceSecretsSave => 'Save secret';
-
-  @override
-  String get settingsWorkspaceSecretsNameRequired => 'Enter a secret name.';
-
-  @override
-  String get settingsWorkspaceSecretsValueRequired => 'Enter a secret value.';
-
-  @override
-  String get settingsWorkspaceSecretsSaveSuccess => 'Secret saved.';
-
-  @override
-  String get settingsWorkspaceSecretsSaveError => 'Failed to save secret.';
-
-  @override
-  String get settingsWorkspaceSecretsLoadError => 'Failed to load workspace secrets.';
-
-  @override
-  String settingsWorkspaceSecretsMigrationSuccess(int filesCopied, String provider) {
-    return 'Copied $filesCopied files into $provider.';
-  }
-
-  @override
-  String get settingsWorkspaceSecretsMigrationError => 'Failed to migrate workspace storage.';
-
-  @override
-  String get settingsWorkspaceSecretsProviderSupabaseTitle => 'Supabase';
-
-  @override
-  String get settingsWorkspaceSecretsProviderSupabaseDescription => 'The current built-in Drive storage backend.';
-
-  @override
-  String get settingsWorkspaceSecretsProviderR2Title => 'Cloudflare R2';
-
-  @override
-  String get settingsWorkspaceSecretsProviderR2Description => 'An S3-compatible backend for external Drive storage.';
-
-  @override
-  String get commonActive => 'Active';
-
-  @override
-  String get commonAll => 'All';
-
-  @override
-  String get commonApply => 'Apply';
-
-  @override
-  String get commonArchived => 'Archived';
-
-  @override
-  String get commonBackfilled => 'Backfilled';
-
-  @override
-  String get commonCopy => 'Copy';
-
-  @override
-  String get commonCreate => 'Create';
-
-  @override
-  String get commonCreated => 'Created';
-
-  @override
-  String get commonDelete => 'Delete';
-
-  @override
-  String get commonDeleted => 'Deleted';
-
-  @override
-  String get commonEdit => 'Edit';
-
-  @override
-  String get commonFilters => 'Filters';
-
-  @override
-  String get commonImport => 'Import';
-
-  @override
-  String get commonLinked => 'Linked';
-
-  @override
-  String get commonLive => 'Live';
-
-  @override
-  String get commonLoadMore => 'Load more';
-
-  @override
-  String get commonOpen => 'Open';
-
-  @override
-  String get commonRefresh => 'Refresh';
-
-  @override
-  String get commonReactivated => 'Reactivated';
-
-  @override
-  String get commonRename => 'Rename';
-
-  @override
-  String get commonRequired => 'Required';
-
-  @override
-  String get commonSave => 'Save';
-
-  @override
-  String get commonSelectDate => 'Select a date';
-
-  @override
-  String get commonShare => 'Share';
-
-  @override
-  String get commonUpdated => 'Updated';
-
-  @override
-  String get commonVirtual => 'Virtual';
-
-  @override
-  String get commonWithGroups => 'With groups';
-
-  @override
-  String get commonWithoutGroups => 'Without groups';
-
-  @override
-  String get crmAddFeedback => 'Add feedback';
-
-  @override
-  String get crmAddress => 'Address';
-
-  @override
-  String get crmArchived => 'Archived';
-
-  @override
-  String get crmArchivedUntil => 'Archived until';
-
-  @override
-  String get crmAuditActor => 'Actor';
-
-  @override
-  String get crmAuditAffectedUser => 'Affected user';
-
-  @override
-  String get crmAuditEvent => 'Audit event';
-
-  @override
-  String get crmAuditRange => 'Date range';
-
-  @override
-  String get crmAuditSource => 'Source';
-
-  @override
-  String get crmAuditTab => 'Audit log';
-
-  @override
-  String get crmBirthday => 'Birthday';
-
-  @override
-  String get crmCreateUser => 'Create user';
-
-  @override
-  String get crmDeleteUserConfirm => 'Delete this user?';
-
-  @override
-  String get crmDeleteUserSuccess => 'User deleted.';
-
-  @override
-  String get crmDetectDuplicates => 'Detect duplicates';
-
-  @override
-  String get crmDisplayName => 'Display name';
-
-  @override
-  String crmDuplicateResults(int count) {
-    return '$count duplicate clusters found';
-  }
-
-  @override
-  String get crmEmptyAudit => 'No audit events found';
-
-  @override
-  String get crmEmptyUsers => 'No users found';
-
-  @override
-  String get crmExcludedGroups => 'Excluded groups';
-
-  @override
-  String get crmFeedback => 'Feedback';
-
-  @override
-  String get crmFeedbackAction => 'Feedback';
-
-  @override
-  String crmFeedbackFor(String name) {
-    return 'Feedback for $name';
-  }
-
-  @override
-  String get crmFullName => 'Full name';
-
-  @override
-  String get crmGroup => 'Group';
-
-  @override
-  String get crmGroupMembership => 'Group membership';
-
-  @override
-  String get crmGuestUser => 'Guest user';
-
-  @override
-  String get crmImportEmpty => 'No valid users were found in that file.';
-
-  @override
-  String crmImportPreview(int count) {
-    return 'Ready to import $count users';
-  }
-
-  @override
-  String crmImportSuccess(int count) {
-    return 'Imported $count users.';
-  }
-
-  @override
-  String get crmImportUsers => 'Import users';
-
-  @override
-  String get crmIncludedGroups => 'Included groups';
-
-  @override
-  String get crmLinkStatus => 'Link status';
-
-  @override
-  String get crmLinkedUser => 'Linked user';
-
-  @override
-  String get crmMergeTarget => 'Merge target';
-
-  @override
-  String get crmMergeUsers => 'Merge users';
-
-  @override
-  String get crmNote => 'Note';
-
-  @override
-  String get crmPermissionDenied => 'You do not have permission to access this CRM view.';
-
-  @override
-  String get crmPhone => 'Phone';
-
-  @override
-  String get crmExportUsers => 'Export users';
-
-  @override
-  String get crmRequireAttention => 'Require attention';
-
-  @override
-  String get crmSearchAuditHint => 'Search audit actor or affected user';
-
-  @override
-  String get crmSearchUsersHint => 'Search users by name, email, or phone';
-
-  @override
-  String get crmStatus => 'Status';
-
-  @override
-  String get crmTitle => 'CRM';
-
-  @override
-  String get crmUploadAvatar => 'Upload avatar';
-
-  @override
-  String get crmUsersTab => 'Users';
-
-  @override
-  String get educationAddOption => 'Add option';
-
-  @override
-  String get educationAttemptQuizSetLabel => 'Quiz set';
-
-  @override
-  String get educationAttemptStatusCompleted => 'Completed';
-
-  @override
-  String get educationAttemptStatusIncomplete => 'Incomplete';
-
-  @override
-  String get educationAttemptStatusLabel => 'Status';
-
-  @override
-  String get educationAttemptsLabel => 'Attempts';
-
-  @override
-  String get educationAttemptsSubtitle => 'Review learner submissions, completion state, and answer detail.';
-
-  @override
-  String get educationClearFilters => 'Clear filters';
-
-  @override
-  String get educationCourseDescriptionLabel => 'Description';
-
-  @override
-  String get educationCourseNameLabel => 'Course name';
-
-  @override
-  String get educationCoursesLabel => 'Courses';
-
-  @override
-  String get educationCoursesSubtitle => 'Manage learning tracks, descriptions, and module-ready course records.';
-
-  @override
-  String get educationCreateCourse => 'Create course';
-
-  @override
-  String get educationCreateFlashcard => 'Create flashcard';
-
-  @override
-  String get educationCreateQuiz => 'Create quiz';
-
-  @override
-  String get educationCreateQuizSet => 'Create quiz set';
-
-  @override
-  String educationDeleteCourseConfirm(String name) {
-    return 'Delete $name?';
-  }
-
-  @override
-  String get educationDeleteFlashcardConfirm => 'Delete this flashcard?';
-
-  @override
-  String get educationDeleteQuizConfirm => 'Delete this quiz?';
-
-  @override
-  String educationDeleteQuizSetConfirm(String name) {
-    return 'Delete $name?';
-  }
-
-  @override
-  String get educationEditCourse => 'Edit course';
-
-  @override
-  String get educationEditFlashcard => 'Edit flashcard';
-
-  @override
-  String get educationEditQuiz => 'Edit quiz';
-
-  @override
-  String get educationEditQuizSet => 'Edit quiz set';
-
-  @override
-  String get educationEmptyAttempts => 'No attempts match the current filters.';
-
-  @override
-  String get educationEmptyCourses => 'No courses yet.';
-
-  @override
-  String get educationEmptyFlashcards => 'No flashcards yet.';
-
-  @override
-  String get educationEmptyQuizzes => 'No quizzes yet.';
-
-  @override
-  String get educationEmptyQuizSets => 'No quiz sets yet.';
-
-  @override
-  String get educationFlashcardBackLabel => 'Back';
-
-  @override
-  String get educationFlashcardFrontLabel => 'Front';
-
-  @override
-  String get educationLibraryFlashcardsLabel => 'Flashcards';
-
-  @override
-  String get educationLibraryFlashcardsSubtitle => 'Build quick memorization prompts with front and back content.';
-
-  @override
-  String get educationLibraryLabel => 'Library';
-
-  @override
-  String get educationLibraryQuizSetsLabel => 'Quiz sets';
-
-  @override
-  String get educationLibraryQuizSetsSubtitle => 'Organize assessments into reusable sets for modules and attempts.';
-
-  @override
-  String get educationLibraryQuizzesLabel => 'Quizzes';
-
-  @override
-  String get educationLibraryQuizzesSubtitle => 'Maintain question banks, answer choices, and correctness rules.';
-
-  @override
-  String get educationLibrarySubtitle => 'Manage reusable assessment assets for the workspace learning library.';
-
-  @override
-  String get educationOverviewHighlightsTitle => 'Highlights';
-
-  @override
-  String get educationOverviewLabel => 'Overview';
-
-  @override
-  String get educationOverviewRecentAttemptsTitle => 'Recent attempts';
-
-  @override
-  String get educationOverviewRecentCoursesTitle => 'Recent courses';
-
-  @override
-  String get educationOverviewSubtitle => 'Track learning structure, practice assets, and learner progress in one mobile workspace.';
-
-  @override
-  String get educationQuizOptionExplanationLabel => 'Explanation';
-
-  @override
-  String educationQuizOptionLabel(int index) {
-    return 'Option $index';
-  }
-
-  @override
-  String get educationQuizOptionValueLabel => 'Option text';
-
-  @override
-  String get educationQuizQuestionLabel => 'Question';
-
-  @override
-  String get educationQuizSetNameLabel => 'Quiz set name';
-
-  @override
-  String get educationSearchCoursesHint => 'Search courses';
-
-  @override
-  String get educationSearchFlashcardsHint => 'Search flashcards';
-
-  @override
-  String get educationSearchQuizzesHint => 'Search quizzes';
-
-  @override
-  String get educationSearchQuizSetsHint => 'Search quiz sets';
-
-  @override
-  String get educationTitle => 'Education';
-
-  @override
-  String get driveCopyPath => 'Copy path';
-
-  @override
-  String get driveCreateFolder => 'Create folder';
-
-  @override
-  String driveDeleteManyConfirm(int count) {
-    return 'Delete $count selected items?';
-  }
-
-  @override
-  String driveDeleteSelected(int count) {
-    return 'Delete selected ($count)';
-  }
-
-  @override
-  String get driveDeleteSingleConfirm => 'Delete this item?';
-
-  @override
-  String get driveDeleteSuccess => 'Items deleted.';
-
-  @override
-  String get driveEmptyState => 'This folder is empty.';
-
-  @override
-  String get driveExportLinksTitle => 'Export links';
-
-  @override
-  String get driveFilesLabel => 'Files';
-
-  @override
-  String get driveFolderCreated => 'Folder created.';
-
-  @override
-  String get driveFolderLabel => 'Folder';
-
-  @override
-  String get driveFolderName => 'Folder name';
-
-  @override
-  String get driveGoUp => 'Up';
-
-  @override
-  String get driveGridView => 'Grid view';
-
-  @override
-  String get driveLimitLabel => 'Limit';
-
-  @override
-  String get driveLinkCopied => 'Link copied.';
-
-  @override
-  String get driveListView => 'List view';
-
-  @override
-  String get drivePathCopied => 'Path copied.';
-
-  @override
-  String get drivePermissionDenied => 'You do not have permission to manage Drive.';
-
-  @override
-  String get driveRenameHint => 'New name';
-
-  @override
-  String get driveRenameSuccess => 'Item renamed.';
-
-  @override
-  String get driveRootLabel => 'Root';
-
-  @override
-  String get driveSearchHint => 'Search files and folders';
-
-  @override
-  String get driveSortNameAsc => 'Name (A-Z)';
-
-  @override
-  String get driveSortNameDesc => 'Name (Z-A)';
-
-  @override
-  String get driveSortSize => 'Largest size';
-
-  @override
-  String get driveSortUpdated => 'Recently updated';
-
-  @override
-  String get driveTitle => 'Drive';
-
-  @override
-  String get driveUploadFiles => 'Upload files';
-
-  @override
-  String get driveUsageLabel => 'Usage';
-
-  @override
-  String get driveUsedLabel => 'Used';
-
-  @override
-  String get documentsContentHint => 'Start writing...';
-
-  @override
-  String get documentsCreated => 'Document created.';
-
-  @override
-  String get documentsDeleted => 'Document deleted.';
-
-  @override
-  String get documentsDelete => 'Delete document';
-
-  @override
-  String get documentsDeleteConfirm => 'Delete this document? This cannot be undone.';
-
-  @override
-  String get documentsDocumentName => 'Document name';
-
-  @override
-  String get documentsEditor => 'Editor';
-
-  @override
-  String get documentsEmptyDescription => 'No documents yet. Create one to capture decisions, notes, or plans.';
-
-  @override
-  String get documentsNewDocument => 'New document';
-
-  @override
-  String get documentsPublic => 'Public document';
-
-  @override
-  String get documentsSearchHint => 'Search documents';
-
-  @override
-  String get documentsSubtitle => 'Draft and maintain workspace knowledge.';
-
-  @override
-  String get documentsTitle => 'Documents';
-
-  @override
-  String get documentsUpdated => 'Document saved.';
-
-  @override
-  String get cmsAllCollections => 'All collections';
-
-  @override
-  String get cmsArchivedBacklog => 'Archived backlog';
-
-  @override
-  String get cmsCollection => 'Collection';
-
-  @override
-  String get cmsCollectionCreated => 'Collection created.';
-
-  @override
-  String get cmsCollectionDeleted => 'Collection deleted.';
-
-  @override
-  String get cmsCollectionEnabled => 'Enabled';
-
-  @override
-  String get cmsCollectionType => 'Collection type';
-
-  @override
-  String get cmsCollectionUpdated => 'Collection saved.';
-
-  @override
-  String get cmsCollections => 'Collections';
-
-  @override
-  String get cmsDeleteCollection => 'Delete collection';
-
-  @override
-  String get cmsDeleteCollectionConfirm => 'Delete this collection? Entries in the collection may also be affected.';
-
-  @override
-  String get cmsDeleteEntry => 'Delete entry';
-
-  @override
-  String get cmsDeleteEntryConfirm => 'Delete this entry? This cannot be undone.';
-
-  @override
-  String get cmsDescription => 'Description';
-
-  @override
-  String get cmsEditCollection => 'Edit collection';
-
-  @override
-  String get cmsEditEntry => 'Edit entry';
-
-  @override
-  String get cmsEntries => 'Entries';
-
-  @override
-  String get cmsEntryCreated => 'Entry created.';
-
-  @override
-  String get cmsEntryDeleted => 'Entry deleted.';
-
-  @override
-  String get cmsEntryUpdated => 'Entry saved.';
-
-  @override
-  String get cmsLibrary => 'Library';
-
-  @override
-  String get cmsNeedsAttention => 'Needs attention';
-
-  @override
-  String get cmsNewCollection => 'New collection';
-
-  @override
-  String get cmsNewEntry => 'New entry';
-
-  @override
-  String get cmsNoAccess => 'CMS is not available for this workspace.';
-
-  @override
-  String get cmsNoCollections => 'No collections yet.';
-
-  @override
-  String get cmsNoEntries => 'No entries yet.';
-
-  @override
-  String get cmsOverview => 'Overview';
-
-  @override
-  String get cmsQueueEmpty => 'Nothing waiting here.';
-
-  @override
-  String get cmsScheduledSoon => 'Scheduled soon';
-
-  @override
-  String get cmsSlug => 'Slug';
-
-  @override
-  String get cmsStatus => 'Status';
-
-  @override
-  String get cmsStatusArchived => 'Archived';
-
-  @override
-  String get cmsStatusDraft => 'Draft';
-
-  @override
-  String get cmsStatusPublished => 'Published';
-
-  @override
-  String get cmsStatusScheduled => 'Scheduled';
-
-  @override
-  String get cmsSubtitle => 'Subtitle';
-
-  @override
-  String get cmsSubtitleApp => 'Manage content collections, entries, and publish queues.';
-
-  @override
-  String get cmsSummary => 'Summary';
-
-  @override
-  String get cmsTitle => 'Title';
-
-  @override
-  String get cmsTitleApp => 'CMS';
-
-  @override
-  String get storefrontTitle => 'Storefront';
-
-  @override
-  String get storefrontSubtitle => 'Publish products, control availability, and manage every customer-facing shop.';
-
-  @override
-  String get storefrontStores => 'Stores';
-
-  @override
-  String get storefrontPublished => 'Published';
-
-  @override
-  String get storefrontListings => 'Listings';
-
-  @override
-  String get storefrontCreate => 'New store';
-
-  @override
-  String get storefrontEdit => 'Edit store';
-
-  @override
-  String get storefrontEditorSubtitle => 'Configure identity, checkout, visibility, and the visual presentation of this store.';
-
-  @override
-  String get storefrontName => 'Store name';
-
-  @override
-  String get storefrontSlug => 'Public address';
-
-  @override
-  String get storefrontDescription => 'Description';
-
-  @override
-  String get storefrontCurrency => 'Currency';
-
-  @override
-  String get storefrontStatus => 'Status';
-
-  @override
-  String get storefrontVisibility => 'Visibility';
-
-  @override
-  String get storefrontCheckoutMode => 'Checkout';
-
-  @override
-  String get storefrontTheme => 'Theme';
-
-  @override
-  String get storefrontLayout => 'Product layout';
-
-  @override
-  String get storefrontSurface => 'Surface style';
-
-  @override
-  String get storefrontCorners => 'Corner style';
-
-  @override
-  String get storefrontInventoryBadges => 'Show stock availability';
-
-  @override
-  String get storefrontAnalytics => 'Enable storefront analytics';
-
-  @override
-  String get storefrontValidationError => 'Add a store name, a valid public address, and a three-letter currency code.';
-
-  @override
-  String get storefrontSaved => 'Storefront saved.';
-
-  @override
-  String get storefrontSearch => 'Search storefronts';
-
-  @override
-  String get storefrontEmptyTitle => 'Create your first storefront';
-
-  @override
-  String get storefrontEmptyBody => 'Turn inventory into a mobile-ready catalog and publish it when you are ready.';
-
-  @override
-  String storefrontListingCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count listings',
-      one: '1 listing',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get storefrontListingCreate => 'Add listing';
-
-  @override
-  String get storefrontListingEdit => 'Edit listing';
-
-  @override
-  String get storefrontListingEditorSubtitle => 'Choose a stocked product and set how it appears in this storefront.';
-
-  @override
-  String get storefrontProduct => 'Product';
-
-  @override
-  String get storefrontStockRow => 'Warehouse and unit';
-
-  @override
-  String get storefrontListingTitle => 'Listing title';
-
-  @override
-  String get storefrontPrice => 'Price';
-
-  @override
-  String get storefrontCompareAtPrice => 'Compare-at price';
-
-  @override
-  String get storefrontMaxPerOrder => 'Max per order';
-
-  @override
-  String get storefrontListingValidationError => 'Choose a stocked product and enter a valid title, price, and order limit.';
-
-  @override
-  String get storefrontPreview => 'Preview';
-
-  @override
-  String get storefrontDelete => 'Delete store';
-
-  @override
-  String get storefrontDeleteConfirm => 'Delete this storefront and all of its listings? This cannot be undone.';
-
-  @override
-  String get storefrontDeleted => 'Storefront deleted.';
-
-  @override
-  String get storefrontListingsEmptyTitle => 'No listings yet';
-
-  @override
-  String get storefrontListingsEmptyBody => 'Add products from Inventory to make this storefront useful to customers.';
-
-  @override
-  String get storefrontProductsRequired => 'Create a stocked inventory product before adding a storefront listing.';
-
-  @override
-  String get storefrontListingSaved => 'Listing saved.';
-
-  @override
-  String get storefrontListingDelete => 'Delete listing';
-
-  @override
-  String get storefrontListingDeleteConfirm => 'Remove this product from the storefront? The inventory product is not deleted.';
-
-  @override
-  String get storefrontListingDeleted => 'Listing deleted.';
-
-  @override
-  String get storefrontStatusAll => 'All';
-
-  @override
-  String get storefrontStatusDraft => 'Draft';
-
-  @override
-  String get storefrontStatusPublished => 'Published';
-
-  @override
-  String get storefrontStatusPaused => 'Paused';
-
-  @override
-  String get storefrontStatusArchived => 'Archived';
-
-  @override
-  String get storefrontVisibilityPrivate => 'Private';
-
-  @override
-  String get storefrontVisibilityPublic => 'Public';
-
-  @override
-  String get meetCreated => 'Meeting created.';
-
-  @override
-  String get meetDeleted => 'Meeting deleted.';
-
-  @override
-  String get meetDelete => 'Delete meeting';
-
-  @override
-  String get meetDeleteConfirm => 'Delete this meeting? This cannot be undone.';
-
-  @override
-  String get meetEditMeeting => 'Edit meeting';
-
-  @override
-  String get meetEmptyDescription => 'No meetings yet. Schedule one to keep the team aligned.';
-
-  @override
-  String get meetMeetingName => 'Meeting name';
-
-  @override
-  String get meetNewMeeting => 'New meeting';
-
-  @override
-  String get meetInstantMeeting => 'Start an instant meeting';
-
-  @override
-  String get meetInstantMeetingHint => 'Create an Untitled meeting and join now';
-
-  @override
-  String get meetScheduleMeeting => 'Schedule a meeting';
-
-  @override
-  String get meetScheduleMeetingHint => 'Choose a name and time for your calendar';
-
-  @override
-  String get meetFutureStartRequired => 'Choose a future start time.';
-
-  @override
-  String get meetUntitledMeeting => 'Untitled meeting';
-
-  @override
-  String get meetDuration => 'Duration';
-
-  @override
-  String meetMinutes(int count) {
-    return '$count minutes';
-  }
-
-  @override
-  String meetRecordingSessions(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count recordings',
-      one: '1 recording',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get meetSearchHint => 'Search meetings';
-
-  @override
-  String get meetSubtitle => 'Schedule meetings and keep recordings in reach.';
-
-  @override
-  String get meetTitle => 'Meet';
-
-  @override
-  String get meetUpdated => 'Meeting saved.';
-
-  @override
-  String get meetJoin => 'Join call';
-
-  @override
-  String get meetReadyToJoin => 'Ready to join?';
-
-  @override
-  String get meetPreviewPrivate => 'Your camera preview is private until you join.';
-
-  @override
-  String get meetMute => 'Mute microphone';
-
-  @override
-  String get meetUnmute => 'Unmute microphone';
-
-  @override
-  String get meetCameraOn => 'Turn camera on';
-
-  @override
-  String get meetCameraOff => 'Turn camera off';
-
-  @override
-  String get meetDeviceAlreadyJoined => 'You\'re already in this meeting';
-
-  @override
-  String get meetDeviceChoiceHint => 'Choose how to join from this device.';
-
-  @override
-  String get meetSwitchDevice => 'Switch to this device';
-
-  @override
-  String get meetJoinAnotherDevice => 'Join on another device';
-
-  @override
-  String get meetDeviceEchoHint => 'Mute one device to avoid audio echo.';
-
-  @override
-  String get meetTimeRemaining => 'Meeting time remaining';
-
-  @override
-  String get meetRaiseHand => 'Raise hand';
-
-  @override
-  String get meetLowerHand => 'Lower hand';
-
-  @override
-  String get meetReactions => 'Reactions';
-
-  @override
-  String get meetReactionLike => 'Like';
-
-  @override
-  String get meetReactionHeart => 'Love';
-
-  @override
-  String get meetReactionClap => 'Clap';
-
-  @override
-  String get meetReactionLaugh => 'Laugh';
-
-  @override
-  String get meetReactionWow => 'Wow';
-
-  @override
-  String get meetReactionCelebrate => 'Celebrate';
-
-  @override
-  String get meetParticipantActions => 'Participant actions';
-
-  @override
-  String get meetMuteParticipant => 'Mute participant';
-
-  @override
-  String get meetRemoveParticipant => 'Remove participant';
-
-  @override
-  String get meetShareNotes => 'Share meeting notes';
-
-  @override
-  String get meetApprovedParticipant => 'Approved participant';
-
-  @override
-  String get meetForgetApproval => 'Forget approval';
-
-  @override
-  String get meetEstimatedCosts => 'Estimated costs';
-
-  @override
-  String get meetCostsUnavailable => 'Cost estimate is unavailable.';
-
-  @override
-  String get meetPartialEstimate => 'Partial estimate. Some provider costs are not included.';
-
-  @override
-  String get meetSfuEgress => 'Video and audio delivery';
-
-  @override
-  String get meetDurableRequests => 'Room requests';
-
-  @override
-  String get meetMiraCost => 'Mira';
-
-  @override
-  String get meetLiveCost => 'Mira Live';
-
-  @override
-  String get meetLockRoom => 'Lock room';
-
-  @override
-  String get meetSaveChat => 'Save room chat';
-
-  @override
-  String get meetSettings => 'Meeting settings';
-
-  @override
-  String get meetRecordings => 'Recordings';
-
-  @override
-  String get meetRecordingAccess => 'Share recordings with participants';
-
-  @override
-  String get meetRecordingAccessHint => 'Participants can access saved meeting recordings.';
-
-  @override
-  String get meetParticipantRecording => 'Allow participant recording';
-
-  @override
-  String get meetParticipantRecordingHint => 'Participants can start a recording when their device supports it.';
-
-  @override
-  String get meetLeave => 'Leave call';
-
-  @override
-  String get meetLeaveOrEnd => 'Leave or end meeting?';
-
-  @override
-  String get meetEndForEveryone => 'End for everyone';
-
-  @override
-  String get meetMicrophone => 'Microphone';
-
-  @override
-  String get meetMediaUnavailable => 'Call audio or video could not connect.';
-
-  @override
-  String get meetMediaCaptureFailed => 'Microphone or camera could not start. Check app permissions.';
-
-  @override
-  String get meetMediaSendFailed => 'Your microphone or camera connected but is not sending media. Check the device input, then retry.';
-
-  @override
-  String get meetMediaSessionFailed => 'The call could not start a media session.';
-
-  @override
-  String get meetMediaPublishFailed => 'Your microphone or camera could not connect to the call.';
-
-  @override
-  String get meetMediaReceiveFailed => 'Other participants\' audio or video could not connect.';
-
-  @override
-  String get meetMediaConnectFailed => 'The media connection timed out. Try again.';
-
-  @override
-  String get meetCamera => 'Camera';
-
-  @override
-  String get meetSwitchCamera => 'Switch camera';
-
-  @override
-  String get meetChat => 'Chat';
-
-  @override
-  String get meetEveryone => 'Everyone';
-
-  @override
-  String get meetPrivateMira => 'Private Mira';
-
-  @override
-  String get meetPrivateHint => 'Only you can see this conversation. Review an answer before sharing it with everyone.';
-
-  @override
-  String get meetPrivateEmpty => 'Ask Mira privately about this meeting.';
-
-  @override
-  String get meetAskMira => 'Ask Mira privately';
-
-  @override
-  String get meetPrivateRequestFailed => 'Mira couldn\'t answer. Retry your message.';
-
-  @override
-  String get meetShareWithEveryone => 'Share with everyone';
-
-  @override
-  String get meetShareHint => 'Review or edit this answer before posting it to room chat.';
-
-  @override
-  String get meetShareConfirm => 'Post to room chat';
-
-  @override
-  String get meetMiraThinking => 'Mira is preparing a reply…';
-
-  @override
-  String get meetMiraReplyFailed => 'Mira couldn\'t reply to the room message.';
-
-  @override
-  String get meetMiraRetry => 'Retry Mira';
-
-  @override
-  String get meetMiraReviews => 'Private action reviews';
-
-  @override
-  String get meetMiraReviewsHint => 'Only you can see these drafts and requests. Review the workspace actions before approving them.';
-
-  @override
-  String get meetMiraAudioMute => 'Mute Mira Live audio';
-
-  @override
-  String get meetMiraAudioUnmute => 'Unmute Mira Live audio';
-
-  @override
-  String get meetMiraAudioRetry => 'Retry Mira Live audio';
-
-  @override
-  String get meetMiraReviewFailed => 'Couldn\'t load Mira\'s private reviews.';
-
-  @override
-  String get meetMiraReviewRefresh => 'Refresh reviews';
-
-  @override
-  String get meetMiraApprove => 'Approve actions';
-
-  @override
-  String get meetMiraDeny => 'Deny actions';
-
-  @override
-  String get meetMiraDiscard => 'Discard draft';
-
-  @override
-  String get meetMiraApprovalTitle => 'Approve workspace actions?';
-
-  @override
-  String get meetMiraApprovalHint => 'Mira will run the listed actions in this workspace. Check every input before approving.';
-
-  @override
-  String get meetMiraActionFailed => 'Couldn\'t update Mira\'s review. Please try again.';
-
-  @override
-  String get meetOpenLink => 'Open link';
-
-  @override
-  String get meetMessageHint => 'Message everyone';
-
-  @override
-  String get meetSend => 'Send';
-
-  @override
-  String get meetWaitingForHost => 'Waiting for the host to admit you';
-
-  @override
-  String get meetConnecting => 'Connecting to the meeting…';
-
-  @override
-  String get meetReconnecting => 'Reconnecting…';
-
-  @override
-  String get meetCallEnded => 'This meeting has ended';
-
-  @override
-  String get meetReviewCheckFailed => 'Couldn\'t check the meeting status. Try again before enabling your microphone or camera.';
-
-  @override
-  String get meetReviewUnavailable => 'Meeting details are temporarily unavailable.';
-
-  @override
-  String get meetReviewHint => 'Review the transcript and notes from this meeting.';
-
-  @override
-  String get meetReviewPrivate => 'The host has not shared this meeting\'s notes.';
-
-  @override
-  String get meetReviewNotes => 'Meeting notes';
-
-  @override
-  String get meetReviewNoNotes => 'No notes are available yet.';
-
-  @override
-  String get meetReviewTranscript => 'Transcript';
-
-  @override
-  String get meetReviewNoTranscript => 'No transcript is available yet.';
-
-  @override
-  String get meetReviewUnknownSpeaker => 'Unknown speaker';
-
-  @override
-  String get meetReviewMicrophone => 'Microphone';
-
-  @override
-  String get meetReviewSharedAudio => 'Shared audio';
-
-  @override
-  String get meetReviewTranscriptionCost => 'Transcription';
-
-  @override
-  String get meetReviewNotesCost => 'Notes generation';
-
-  @override
-  String get meetReviewTotalCost => 'Total';
-
-  @override
-  String get meetReviewUnpriced => 'Some requests are not included in this estimate.';
-
-  @override
-  String get meetAccessDenied => 'You cannot join this meeting';
-
-  @override
-  String get meetNoParticipants => 'Waiting for others to join';
-
-  @override
-  String get meetAdmit => 'Admit';
-
-  @override
-  String get meetDecline => 'Decline';
-
-  @override
-  String get meetParticipants => 'Participants';
-
-  @override
-  String get meetParticipantsAndInvite => 'Participants and invites';
-
-  @override
-  String get meetInvitePeople => 'Invite people';
-
-  @override
-  String get meetInvitePeopleHint => 'Share a link to this meeting';
-
-  @override
-  String get meetYou => 'You';
-
-  @override
-  String get connectedOnboardingEcosystemTitle => 'Your goals, connected';
-
-  @override
-  String get connectedOnboardingEcosystemSubtitle => 'Tuturuuu brings planning, collaboration, operations, learning, and creation into one adaptive workspace.';
-
-  @override
-  String get connectedOnboardingRoleTitle => 'Make Tuturuuu yours';
-
-  @override
-  String get connectedOnboardingRoleSubtitle => 'Choose the perspective that best matches how you work. This only changes recommendations.';
-
-  @override
-  String get connectedOnboardingRoleProfessional => 'Professional';
-
-  @override
-  String get connectedOnboardingRoleStudent => 'Student';
-
-  @override
-  String get connectedOnboardingRoleFounder => 'Founder';
-
-  @override
-  String get connectedOnboardingRoleExecutive => 'Executive';
-
-  @override
-  String get connectedOnboardingRoleTeamLeader => 'Team leader';
-
-  @override
-  String get connectedOnboardingGoalTitle => 'What do you want to move forward?';
-
-  @override
-  String get connectedOnboardingGoalSubtitle => 'Pick one or more goal pathways. You can change them whenever you want.';
-
-  @override
-  String get connectedOnboardingGoalFocus => 'Focus and plan';
-
-  @override
-  String get connectedOnboardingGoalCollaborate => 'Collaborate';
-
-  @override
-  String get connectedOnboardingGoalOperate => 'Operate a business';
-
-  @override
-  String get connectedOnboardingGoalLearn => 'Learn and teach';
-
-  @override
-  String get connectedOnboardingGoalBuild => 'Build and create';
-
-  @override
-  String get connectedOnboardingToolkitTitle => 'A toolkit that adapts to you';
-
-  @override
-  String get connectedOnboardingToolkitSubtitle => 'Tasks, Calendar, Finance, Learn, and Mira work together. Every guide is short, optional, and replayable.';
-
-  @override
-  String get connectedOnboardingFinish => 'Explore Tuturuuu';
-
-  @override
-  String get connectedOnboardingSkip => 'Skip for now';
-
-  @override
-  String get connectedOnboardingSettingsTitle => 'Replay Tuturuuu guide';
-
-  @override
-  String get connectedOnboardingSettingsDescription => 'Revisit roles, goal pathways, and the connected app ecosystem without changing your data.';
-
-  @override
-  String get mailTitle => 'Mail';
-
-  @override
-  String get mailAccessRequired => 'Mail requires a @tuturuuu.com account.';
-
-  @override
-  String get mailInbox => 'Inbox';
-
-  @override
-  String get mailSent => 'Sent';
-
-  @override
-  String get mailDrafts => 'Drafts';
-
-  @override
-  String get mailStarred => 'Starred';
-
-  @override
-  String get mailArchive => 'Archive';
-
-  @override
-  String get mailSpam => 'Spam';
-
-  @override
-  String get mailTrash => 'Trash';
-
-  @override
-  String get mailCompose => 'Compose';
-
-  @override
-  String get mailMailbox => 'Mailbox';
-
-  @override
-  String get mailSearch => 'Search mail';
-
-  @override
-  String get mailEmpty => 'No messages here';
-
-  @override
-  String get mailNoSubject => '(No subject)';
-
-  @override
-  String get mailLoadMore => 'Load more';
-
-  @override
-  String get mailTo => 'To';
-
-  @override
-  String get mailCc => 'Cc';
-
-  @override
-  String get mailBcc => 'Bcc';
-
-  @override
-  String get mailSubject => 'Subject';
-
-  @override
-  String get mailBody => 'Message';
-
-  @override
-  String get mailSaveDraft => 'Save draft';
-
-  @override
-  String get mailSend => 'Send';
-
-  @override
-  String get mailAttach => 'Attach file';
-
-  @override
-  String get mailRemoveAttachment => 'Remove attachment';
-
-  @override
-  String get mailActionFailed => 'Could not complete the action. Your draft is retained; please try again.';
-
-  @override
-  String get mailOpenFailed => 'Could not open this message. Please try again.';
-
-  @override
-  String get mailInvalidRecipient => 'Enter valid recipient email addresses.';
-
-  @override
-  String get mailMarkUnread => 'Mark unread';
-
-  @override
-  String get mailRestore => 'Move to inbox';
-
-  @override
-  String get mailStar => 'Star';
-
-  @override
-  String get mailUnstar => 'Remove star';
-
-  @override
-  String get mailReply => 'Reply';
-
-  @override
-  String get mailReplyAll => 'Reply all';
-
-  @override
-  String get mailForward => 'Forward';
-
-  @override
-  String get mailAiDraft => 'Write with AI';
-
-  @override
-  String get mailAiInstructions => 'What would you like to say?';
-
-  @override
-  String get mailGenerate => 'Generate';
-
-  @override
-  String get mailViewOriginal => 'View formatted message';
-
-  @override
-  String get mailMessageAppearance => 'Message appearance';
-
-  @override
-  String get mailAppearanceOriginal => 'Original';
-
-  @override
-  String get mailDownload => 'Download or share attachment';
-
-  @override
-  String get mailLoadImages => 'Load remote images';
-
-  @override
-  String get mailLoadImagesDescription => 'Show images by default. Senders may know when you open a message.';
-
-  @override
-  String get mailSettings => 'Mail settings';
-
-  @override
-  String get mailDefaultAction => 'Default email action';
-
-  @override
-  String get mailSenderName => 'Sender name';
-
-  @override
-  String get mailSignature => 'Signature';
-
-  @override
-  String get mailAutoDraft => 'Automatically draft replies';
-
-  @override
-  String get mailDeliveryProvider => 'Delivery provider';
-
-  @override
-  String get mailDomainDefault => 'Domain default';
-
-  @override
-  String get mailSmartLabels => 'Smart labels';
-
-  @override
-  String get mailForwarding => 'Forwarding';
-
-  @override
-  String get mailForwardingOff => 'Off';
-
-  @override
-  String get mailCatchAll => 'Catch-all mailbox';
-
-  @override
-  String get mailForwardTo => 'Forward to mailbox address';
-
-  @override
-  String get mailGroupPosting => 'Who can post to the group';
-
-  @override
-  String get mailGroupAttachments => 'Who can send attachments';
-
-  @override
-  String get mailGroupSendAs => 'Who can send as the group';
-
-  @override
-  String get mailAnyone => 'Anyone';
-
-  @override
-  String get mailOrganization => 'Organization';
-
-  @override
-  String get mailMembers => 'Members';
-
-  @override
-  String get mailManagers => 'Managers';
-
-  @override
-  String get mailLabels => 'Labels';
-
-  @override
-  String get mailFolders => 'Folders';
-
-  @override
-  String get mailEmail => 'Email address';
-
-  @override
-  String get mailName => 'Name';
-
-  @override
-  String get mailViewer => 'Viewer';
-
-  @override
-  String get mailSender => 'Sender';
-
-  @override
-  String get mailAdmin => 'Admin';
-
-  @override
-  String get mailOwner => 'Owner';
-
-  @override
-  String get mailDescription => 'Description';
-
-  @override
-  String get mailAutoApply => 'Apply automatically';
-
-  @override
-  String get mailDeleteConfirm => 'Remove this item? This cannot be undone.';
-
-  @override
-  String get mailMarkAllRead => 'Mark all read';
-
-  @override
-  String get mailAllLabels => 'All labels and folders';
-
-  @override
-  String get mailSelectAll => 'Select all loaded messages';
-
-  @override
-  String get mailDeleteDraft => 'Delete draft';
-
-  @override
-  String get mailDeleteDraftConfirmation => 'Permanently delete this draft and its attachments?';
-
-  @override
-  String get deviceMfaTitle => 'Device authenticator';
-
-  @override
-  String get deviceMfaDescription => 'Use this device to verify sign-ins, show a one-time code, or approve another device.';
-
-  @override
-  String get deviceMfaEnroll => 'Register this device';
-
-  @override
-  String get deviceMfaEnrollWarning => 'Keep another authenticator as a backup. Registration may require signing in again on your other devices. This device’s secret stays in its secure storage.';
-
-  @override
-  String get deviceMfaName => 'Device name';
-
-  @override
-  String get deviceMfaDefaultName => 'Tuturuuu mobile';
-
-  @override
-  String get deviceMfaReady => 'This device is registered';
-
-  @override
-  String get deviceMfaShowCode => 'Show verification code';
-
-  @override
-  String get deviceMfaCodeHint => 'Enter this code on your other device. It changes every 30 seconds.';
-
-  @override
-  String get deviceMfaVerifyReason => 'Verify your identity to use your Tuturuuu authenticator';
-
-  @override
-  String get deviceMfaRemove => 'Remove this authenticator';
-
-  @override
-  String get deviceMfaRemoveHint => 'This device will stop generating valid codes. Keep another sign-in method available.';
-
-  @override
-  String get deviceMfaError => 'Could not complete verification. Check your connection and authenticator, then try again.';
-
-  @override
-  String get deviceMfaUseDevice => 'Verify with this device';
-
-  @override
-  String get deviceMfaNumberTitle => 'Is this your sign-in?';
-
-  @override
-  String get deviceMfaNumberHint => 'Enter the six-digit number shown on the device you are signing in to. Only approve a request you started.';
-
-  @override
-  String get deviceMfaDeny => 'Deny request';
-
-  @override
-  String get deviceMfaExpired => 'This request expired. Start again on the other device.';
-
-  @override
-  String get deviceMfaReview => 'Review sign-in request';
-
-  @override
-  String get deviceMfaNoRequests => 'No sign-in requests. Start a sign-in on your other device.';
-
-  @override
-  String get deviceMfaHideCode => 'Hide code';
-
-  @override
-  String get deviceMfaQrPaste => 'Enter a sign-in link';
-
-  @override
-  String get deviceMfaQrPasteHint => 'Paste the Tuturuuu sign-in QR link from your other device.';
-
-  @override
-  String get appsShowBottomTab => 'Show Apps in bottom navigation';
-
-  @override
-  String get appsNoMatches => 'No matching apps';
-
-  @override
-  String get securitySessionsTitle => 'Sessions and connections';
-
-  @override
-  String get securitySessionsDescription => 'Review devices signed in to your account. Signing out another session keeps this device signed in.';
-
-  @override
-  String get securityUnknownDevice => 'Unknown device';
-
-  @override
-  String get securityCurrentSession => 'This session';
-
-  @override
-  String get securityRevokeSession => 'Sign out this session';
-
-  @override
-  String get securityRevokeOthers => 'Sign out other sessions';
-
-  @override
-  String get securityRevokeDescription => 'The selected devices will need to sign in again.';
-
-  @override
-  String get securityConnectionsTitle => 'Connected accounts';
-
-  @override
-  String get securityConnectionsDescription => 'Choose how you sign in. Keep at least one connected account.';
-
-  @override
-  String get securityDisconnect => 'Disconnect';
-
-  @override
-  String get securityDisconnectDescription => 'You will no longer be able to sign in with this connected account.';
-
-  @override
-  String get securityConnect => 'Connect';
-
-  @override
-  String get deviceMfaTrustedTitle => 'Trusted authenticators';
-
-  @override
-  String get deviceMfaLockTitle => 'Lock new registrations';
-
-  @override
-  String get deviceMfaLockHint => 'Only your registered devices can approve sign-ins. Unlock here before registering another device.';
-
-  @override
-  String get deviceMfaLocked => 'New registrations are locked. Open these settings on an existing trusted device to unlock them.';
-
-  @override
-  String get deviceMfaLockRecoveryHint => 'Keep a second trusted device before locking registrations. If you lose every trusted device, you cannot unlock this setting from a new device.';
-
-  @override
-  String get deviceMfaCurrentDevice => 'This device';
-
-  @override
-  String get deviceMfaPending => 'Setup incomplete';
-
-  @override
-  String get deviceMfaRemoveTrusted => 'Remove trusted device';
-
-  @override
-  String get deviceMfaSuggestTitle => 'Make this your authenticator?';
-
-  @override
-  String get deviceMfaSuggestBody => 'Approve your sign-ins with device verification and generate codes for your other devices. You can manage trusted devices in Security settings.';
-
-  @override
-  String get deviceMfaNotNow => 'Not now';
-
-  @override
-  String get deviceMfaManage => 'Set up authenticator';
-
-  @override
-  String get deviceMfaRemoveDeviceHint => 'This device will no longer approve sign-ins or generate valid codes.';
-
-  @override
-  String get deviceMfaNeedBackup => 'Register a second trusted device before locking new registrations.';
-
-  @override
-  String get mfaReviewSignIn => 'Review sign-in';
-
-  @override
-  String get deviceMfaClose => 'Close authenticator';
-
-  @override
-  String get deviceMfaWorking => 'Checking device security…';
-
-  @override
-  String get deviceMfaActionFailed => 'Could not finish this step';
-
-  @override
-  String get deviceMfaCancelled => 'Device verification was cancelled. Try again and confirm with Face ID, fingerprint, or your device passcode.';
-
-  @override
-  String get deviceMfaExistingRequired => 'Verify your existing authenticator in your account sign-in flow, then return here to finish setup.';
-
-  @override
-  String get deviceMfaSessionExpired => 'Your session could not be verified. Sign in again before changing authenticators.';
-
-  @override
-  String get deviceMfaRateLimited => 'Too many attempts. Wait a minute before trying again.';
-
-  @override
-  String get deviceMfaUnavailable => 'Authenticator registration is temporarily unavailable. Try again shortly.';
-
-  @override
-  String get deviceMfaOffline => 'Could not reach Tuturuuu. Check your connection and try again.';
-
-  @override
-  String get securityCheckTitle => 'Security check';
-
-  @override
-  String get appsCustomize => 'Customize apps';
-
-  @override
-  String get appsHide => 'Hide app';
-
-  @override
-  String get appsShow => 'Show app';
-
-  @override
-  String get appsHiddenSection => 'Hidden apps';
-
-  @override
-  String get appsHiddenExperimentsSection => 'Hidden experiments';
-
-  @override
-  String get appsUnavailableWithCurrentAccess => 'Unavailable with current access';
-
-  @override
-  String get appsHideConfirmTitle => 'Hide this app?';
-
-  @override
-  String get appsHideConfirmDescription => 'It will move below your shown apps. You can show it again at any time.';
-
-  @override
-  String get appsReorder => 'Drag to reorder';
-
-  @override
-  String get homeCustomize => 'Customize Home';
-
-  @override
-  String get homeHideWidget => 'Hide widget';
-
-  @override
-  String get homeShowWidget => 'Show widget';
-
-  @override
-  String get homeHiddenWidgets => 'Hidden widgets';
-
-  @override
-  String get voiceMessage => 'Voice message';
-
-  @override
-  String get voiceRecord => 'Record';
-
-  @override
-  String get voiceStop => 'Stop';
-
-  @override
-  String get voicePreview => 'Preview recording';
-
-  @override
-  String get voiceAttach => 'Attach recording';
-
-  @override
-  String get voiceRetake => 'Record again';
-
-  @override
-  String get voiceSendNow => 'Send now';
-
-  @override
-  String get voicePermission => 'Allow microphone access to record.';
-
-  @override
-  String get voiceRecordingError => 'Could not record audio. Please try again.';
-
-  @override
-  String get remindersTitle => 'Reminders';
-
-  @override
-  String get remindersDescription => 'Task deadlines and calendar events, kept ready on this device.';
-
-  @override
-  String get notificationTaskAppLabel => 'Task';
-
-  @override
-  String get notificationWorkspaceAppLabel => 'Workspace';
-
-  @override
-  String get notificationSecurityAppLabel => 'Security';
-
-  @override
-  String get remindersTaskTitle => 'Task deadlines';
-
-  @override
-  String get remindersEventTitle => 'Calendar events';
-
-  @override
-  String remindersCalendarTiming(String when) {
-    return 'Calendar: $when';
-  }
-
-  @override
-  String get calendarEventUnavailable => 'This event is no longer available.';
-
-  @override
-  String remindersAllDayEvent(String title) {
-    return 'All-day event: $title';
-  }
-
-  @override
-  String remindersUpcomingEvent(String when, String title) {
-    return '$when: $title';
-  }
-
-  @override
-  String get remindersIn3d => 'In 3 days';
-
-  @override
-  String get remindersIn1d => 'Tomorrow';
-
-  @override
-  String get remindersIn12h => 'In 12 hours';
-
-  @override
-  String get remindersIn3h => 'In 3 hours';
-
-  @override
-  String get remindersIn1h => 'In 1 hour';
-
-  @override
-  String get remindersTiming => 'Remind me';
-
-  @override
-  String get reminders3d => '3 days before';
-
-  @override
-  String get reminders1d => '1 day before';
-
-  @override
-  String get reminders12h => '12 hours before';
-
-  @override
-  String get reminders3h => '3 hours before';
-
-  @override
-  String get reminders1h => '1 hour before';
-
-  @override
-  String get remindersStatusTitle => 'Reminder status';
-
-  @override
-  String get remindersPermissionOn => 'Device notifications enabled';
-
-  @override
-  String get remindersPermissionOff => 'Device notifications disabled';
-
-  @override
-  String remindersScheduledCount(int count) {
-    return '$count scheduled';
-  }
-
-  @override
-  String remindersLastChecked(String time) {
-    return 'Last checked: $time';
-  }
-
-  @override
-  String remindersNext(String time) {
-    return 'Next reminder: $time';
-  }
-
-  @override
-  String get remindersNeverChecked => 'Waiting for the first refresh';
-
-  @override
-  String get remindersRefresh => 'Refresh now';
-
-  @override
-  String get remindersEnableNotifications => 'Enable notifications';
-
-  @override
-  String get remindersRefreshing => 'Checking tasks and events…';
-
-  @override
-  String get remindersRefreshFailed => 'Could not refresh reminders. Scheduled reminders are retained.';
-
-  @override
-  String get remindersSystemNote => 'Scheduled alerts can arrive while the app is closed. New or changed items are checked when the app opens or resumes; background refresh timing depends on the device.';
-
-  @override
-  String get settingsGeneralGroup => 'Personalize';
-
-  @override
-  String get settingsSupportGroup => 'Help and account';
-
-  @override
-  String get profilePrivateActivity => 'Your private activity';
-
-  @override
-  String get profileTimelineDescription => 'Creation activity in this workspace over the last 30 days. Calendar events are workspace activity.';
-
-  @override
-  String get profileTimelineLimited => 'Showing recent activity only. Some sources reached the display limit.';
-
-  @override
-  String get profileTimelineUnavailable => 'Activity could not be refreshed.';
-
-  @override
-  String get profileTimelineTitle => 'Timeline';
-
-  @override
-  String get profileTimelineToday => 'Today';
-
-  @override
-  String get profileTimelineYesterday => 'Yesterday';
-
-  @override
-  String get profileTimelineEmpty => 'No recent activity in this workspace';
-
-  @override
-  String get profileTimelinePartial => 'Some activity is unavailable.';
-
-  @override
-  String profileTimelineTasks(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Created $count tasks',
-      one: 'Created 1 task',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String profileTimelineTransactions(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Created $count transactions',
-      one: 'Created 1 transaction',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String profileTimelineNotes(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Added $count notes',
-      one: 'Added 1 note',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String profileTimelineWorkspaceEvents(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count workspace events added',
-      one: '1 workspace event added',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String profileTrackedMinutes(int minutes) {
-    return '$minutes min tracked';
-  }
-
-  @override
-  String get profileShareActivityTitle => 'Share activity';
-
-  @override
-  String profileShareActivityConsent(String workspace) {
-    return 'Share your tracked-time totals and daily activity in $workspace with its members. Personal activity and activity in other workspaces stay private. You can stop sharing at any time.';
-  }
-
-  @override
-  String profileSharedWithWorkspace(String workspace) {
-    return 'Shared with $workspace';
-  }
-
-  @override
-  String get profilePrivateByDefault => 'Only you can see your activity.';
-
-  @override
-  String get profileWorkspaceActivity => 'Workspace activity';
-
-  @override
-  String get profileNoSharedActivity => 'No one has shared activity here yet.';
-
-  @override
-  String get profileMoreActivity => 'Show more';
-
-  @override
-  String get profileSharedActivityUnavailable => 'This activity is no longer available.';
-
-  @override
-  String get profileRecentActivity => 'Last 12 weeks';
-
-  @override
-  String get assistantReplyFailed => 'Mira\'s reply stopped. Your message is still here. Retry';
-
-  @override
-  String get assistantCreditsUnavailable => 'Could not load your credit sources. Please try again.';
-
-  @override
-  String get assistantMicrophoneUnavailable => 'Microphone unavailable. Check microphone access or reconnect your headset, then try again.';
-
-  @override
-  String get assistantAudioUnavailable => 'Audio was interrupted. Reconnect to continue this conversation.';
-
-  @override
-  String get mailSwipeActions => 'Swipe actions';
-
-  @override
-  String get mailSwipeLeft => 'Swipe left';
-
-  @override
-  String get mailSwipeRight => 'Swipe right';
-
-  @override
-  String get mailSwipeRead => 'Read / unread';
-
-  @override
-  String get mailSwipeStar => 'Star / unstar';
-
-  @override
-  String get mailSwipeMove => 'Move to folder';
-
-  @override
-  String get mailSwipeNone => 'None';
-
-  @override
-  String get mailSwipeUndo => 'Undo';
-
-  @override
-  String get adminAccountsTitle => 'Internal accounts';
-
-  @override
-  String get adminAccountsDescription => 'Manage Tuturuuu accounts and account security.';
-
-  @override
-  String get adminAccountsSearch => 'Search accounts';
-
-  @override
-  String get adminAccountsUnavailable => 'Unable to load accounts. Check your administrator access and try again.';
-
-  @override
-  String get adminAccountsEmpty => 'No accounts found';
-
-  @override
-  String get adminAccountsMore => 'Load more';
-
-  @override
-  String get adminAccountsDisabled => 'Access disabled';
-
-  @override
-  String get adminAccountsActive => 'Access enabled';
-
-  @override
-  String get adminAccountsResetPassword => 'Reset password';
-
-  @override
-  String get adminAccountsEnableAccess => 'Enable access';
-
-  @override
-  String get adminAccountsDisableAccess => 'Disable access';
-
-  @override
-  String get adminAccountsConfirmEmail => 'Type the account email to confirm';
-
-  @override
-  String get adminAccountsNewPassword => 'New password (12–72 characters)';
-
-  @override
-  String get adminAccountsSave => 'Save changes';
-
-  @override
-  String get adminAccountsFailed => 'The change could not be saved. Try again.';
-
-  @override
-  String get adminAccountsEditProfile => 'Edit profile';
-
-  @override
-  String get adminAccountsDisplayName => 'Display name';
-
-  @override
-  String get adminAccountsUsername => 'Username';
-
-  @override
-  String get adminAccountsResetMfa => 'Reset authenticators';
-
-  @override
-  String get adminAccountsResetMfaDescription => 'Remove all MFA factors and trusted device registrations. The user will need to register their authenticators again.';
-
-  @override
-  String get assistantLiveShareScreen => 'Share screen';
-
-  @override
-  String get assistantLiveStopScreen => 'Stop sharing';
-
-  @override
-  String get assistantLiveScreenActive => 'Your screen is shared with Live';
-
-  @override
-  String get assistantLiveScreenPending => 'Waiting for screen-sharing permission';
-
-  @override
-  String get assistantLiveScreenStopped => 'Screen sharing ended.';
-
-  @override
-  String get assistantLiveScreenUnavailable => 'Screen sharing could not start. Please try again.';
-
-  @override
-  String get assistantLiveScreenMicrophoneRequired => 'Turn on the microphone before sharing your screen. Live needs the voice session to continue while you switch apps.';
-
-  @override
-  String get assistantLiveScreenConnectionRequired => 'Connect to Live before sharing your screen.';
-
-  @override
-  String get assistantLiveScreenPrivacy => 'Anything visible on your screen may be shared with Live. Hide private information before continuing.';
-
-  @override
-  String desktopUpdateReady(String version) {
-    return 'Tuturuuu $version is ready to install.';
-  }
-
-  @override
-  String get desktopUpdateFailed => 'Update could not be installed. Your current version is still available.';
-
-  @override
-  String get desktopUpdateScheduled => 'This update will install the next time you open Tuturuuu.';
-
-  @override
-  String get desktopUpdateInstall => 'Install and restart';
-
-  @override
-  String get desktopUpdateCancel => 'Cancel scheduled update';
-
-  @override
-  String get desktopUpdateNextLaunch => 'Install on next launch';
-
-  @override
-  String get desktopUpdateDismiss => 'Dismiss update';
-
-  @override
-  String get desktopUpdateManual => 'Download manually';
-
-  @override
-  String get mailSnooze => 'Snooze';
-
-  @override
-  String get mailUnsnooze => 'Move to Inbox now';
-
-  @override
-  String get mailMute => 'Mute thread';
-
-  @override
-  String get mailUnmute => 'Unmute thread';
-
-  @override
-  String get mailSnoozed => 'Snoozed';
-
-  @override
-  String get mailMuted => 'Muted';
-
-  @override
-  String get mailSnoozeHour => 'In one hour';
-
-  @override
-  String get mailSnoozeDay => 'In 24 hours';
-
-  @override
-  String get mailSnoozeWeek => 'In one week';
-
-  @override
-  String get mailSnoozeCustom => 'Choose date and time';
-
-  @override
-  String get mailSnoozeFuture => 'Choose a time in the future.';
-
-  @override
-  String get requiredMfaEnrollTitle => 'Secure your account';
-
-  @override
-  String get requiredMfaEnrollDescription => 'Your administrator requires two-step verification. Add this account to an authenticator app to continue.';
-
-  @override
-  String get requiredMfaSecretLabel => 'Enter this setup key in your authenticator app. Keep it private.';
-
-  @override
-  String get requiredMfaError => 'Unable to complete verification. Please try again.';
-
-  @override
-  String get requiredMfaVerify => 'Verify and continue';
-
-  @override
-  String get requiredMfaStart => 'Set up authenticator';
-
-  @override
-  String get adminAccountsRequireMfa => 'Require MFA';
-
-  @override
-  String get adminAccountsOptionalMfa => 'Make MFA optional';
-
-  @override
-  String get adminAccountsMfaPolicyDescription => 'Requiring MFA invalidates previous verification. Making MFA optional keeps existing authenticators; reset them separately to remove them.';
-
-  @override
-  String get requiredMfaRecoveryTitle => 'Sign in again to secure your account';
-
-  @override
-  String get requiredMfaRecoveryDescription => 'Your administrator reset account security. Sign in again before setting up or verifying an authenticator.';
-
-  @override
-  String get requiredMfaSignInAgain => 'Sign in again';
-
-  @override
-  String get appsHubNotesDescription => 'Capture ideas and connect them to your work.';
-
-  @override
-  String get notesTitle => 'Notes';
-
-  @override
-  String get notesToday => 'Today';
-
-  @override
-  String get notesYesterday => 'Yesterday';
-
-  @override
-  String get notesPrevious7Days => 'Previous 7 days';
-
-  @override
-  String get notesPrevious30Days => 'Previous 30 days';
-
-  @override
-  String get notesOlder => 'Older';
-
-  @override
-  String get notesLocked => 'Locked note';
-
-  @override
-  String get notesLock => 'Lock note';
-
-  @override
-  String get notesUnlock => 'Remove lock';
-
-  @override
-  String get notesOpenLocked => 'Open locked note';
-
-  @override
-  String get notesLockDescription => 'Set a passphrase to encrypt this note across your devices. Keep it safe: it cannot be recovered.';
-
-  @override
-  String get notesDeviceLockDescription => 'Use Face ID or Touch ID for everyday access. A recovery key is stored securely for passkey unlock on another device. You can also transfer access by QR.';
-
-  @override
-  String get notesPinLockDescription => 'Use a six-digit PIN on this device. Passkey recovery or a phone-to-web QR transfer can unlock it elsewhere.';
-
-  @override
-  String get notesPinUnlockDescription => 'Enter your six-digit note PIN.';
-
-  @override
-  String get notesUseDeviceLock => 'Use Face ID or Touch ID';
-
-  @override
-  String get notesUsePin => 'Use a six-digit PIN';
-
-  @override
-  String get notesUsePassphrase => 'Use a custom passphrase';
-
-  @override
-  String get notesPin => 'Six-digit PIN';
-
-  @override
-  String get notesConfirmPin => 'Confirm PIN';
-
-  @override
-  String get notesPinRequirements => 'Enter the same six-digit PIN twice.';
-
-  @override
-  String get notesIncorrectPin => 'Could not unlock this note. Check your PIN or try again shortly.';
-
-  @override
-  String get notesDeviceUnlockReason => 'Unlock your private note';
-
-  @override
-  String get notesDeviceKeyUnavailable => 'This note was locked on another device. Open it there, or unlock on web with a passkey or phone QR transfer.';
-
-  @override
-  String get notesPasskeyUnlockFailed => 'Could not unlock with a passkey for this account. Try again or use the original phone.';
-
-  @override
-  String get notesTransferTitle => 'Unlock on web';
-
-  @override
-  String get notesTransferScanDescription => 'Scan the QR code shown on the locked note on web.';
-
-  @override
-  String notesTransferConfirmDescription(String host) {
-    return 'Share this note\'s unlock key with $host?';
-  }
-
-  @override
-  String get notesTransferInvalidCode => 'This code does not match the current note.';
-
-  @override
-  String get notesTransferApprove => 'Share unlock key';
-
-  @override
-  String get notesTransferFailed => 'Could not transfer this note\'s key. Try a new QR code.';
-
-  @override
-  String get notesTransferOriginalDeviceOnly => 'Scan this code from the phone where the note was locked, or unlock directly with a passkey on web.';
-
-  @override
-  String get notesUnlockDescription => 'Enter the note passphrase to view its content.';
-
-  @override
-  String get notesPassphrase => 'Passphrase';
-
-  @override
-  String get notesConfirmPassphrase => 'Confirm passphrase';
-
-  @override
-  String get notesPassphraseRequirements => 'Use at least 8 characters and enter matching passphrases.';
-
-  @override
-  String get notesIncorrectPassphrase => 'Could not unlock this note. Check the passphrase.';
-
-  @override
-  String get notesNew => 'New note';
-
-  @override
-  String get notesInbox => 'Inbox';
-
-  @override
-  String get notesArchiveTab => 'Archive';
-
-  @override
-  String get notesArchive => 'Archive note';
-
-  @override
-  String get notesRestore => 'Restore note';
-
-  @override
-  String get notesEdit => 'Edit note';
-
-  @override
-  String get notesDone => 'Done';
-
-  @override
-  String get notesDelete => 'Delete note';
-
-  @override
-  String get notesDeleteDescription => 'Delete this note permanently? This cannot be undone.';
-
-  @override
-  String get notesDeleteError => 'Could not delete this note. Try again.';
-
-  @override
-  String get notesSearch => 'Search notes';
-
-  @override
-  String get notesEmpty => 'No notes yet. Capture your first idea.';
-
-  @override
-  String get notesArchiveEmpty => 'Archived notes will appear here.';
-
-  @override
-  String get notesUntitled => 'Untitled note';
-
-  @override
-  String get notesStartWriting => 'Start writing...';
-
-  @override
-  String get notesHighlight => 'Highlight';
-
-  @override
-  String get notesChecklist => 'Checklist';
-
-  @override
-  String get notesConvertToTask => 'Convert to task';
-
-  @override
-  String get notesSelectChecklistItem => 'Place the cursor in a checklist item to convert it.';
-
-  @override
-  String get notesTaskBoard => 'Board';
-
-  @override
-  String get notesTaskList => 'List';
-
-  @override
-  String get notesTaskNoBoards => 'No task boards available in this workspace.';
-
-  @override
-  String get notesTaskNoLists => 'This board has no task lists.';
-
-  @override
-  String get notesTaskLoadError => 'Could not load task destinations. Try again.';
-
-  @override
-  String get notesTaskCreateError => 'Could not create the task. Try again.';
-
-  @override
-  String get notesCreateTask => 'Create task';
-
-  @override
-  String get notesInsertTable => 'Insert table';
-
-  @override
-  String get notesInsertLink => 'Insert link';
-
-  @override
-  String get notesOpenLink => 'Open';
-
-  @override
-  String get notesEditLink => 'Link';
-
-  @override
-  String get notesSaveLink => 'Save link';
-
-  @override
-  String get notesLinkEvents => 'Events';
-
-  @override
-  String get notesLinkFinance => 'Finance';
-
-  @override
-  String get notesLinkMeetings => 'Meetings';
-
-  @override
-  String get notesLinkTasks => 'Tasks';
-
-  @override
-  String get notesLinkWork => 'Link work';
-
-  @override
-  String get notesLinkText => 'Link text';
-
-  @override
-  String get notesLinkUrl => 'Link to a task, event, meeting or web page';
-
-  @override
-  String get notesInsertButton => 'Insert';
-
-  @override
-  String get notesNoLinkResults => 'No matching items';
-
-  @override
-  String get notesSearchWork => 'Search linked work';
-
-  @override
-  String get notesLoadError => 'Could not load notes. Pull to retry.';
-
-  @override
-  String get notesSaveError => 'Could not save this note. Your edits are still here.';
-
-  @override
-  String get cacheStorageTitle => 'Storage and cache';
-
-  @override
-  String get cacheStorageDescription => 'See cached data by category and choose how much space it can use.';
-
-  @override
-  String get cacheStorageLimit => 'Maximum cached data';
-
-  @override
-  String get cacheStorageClear => 'Clear cached data';
-
-  @override
-  String get cacheStorageClearDescription => 'Downloaded data will be fetched again when needed. Pending offline changes are kept.';
-
-  @override
-  String get cacheStorageError => 'Could not read or update cached data. Try again.';
-
-  @override
-  String get cacheStorageEstimateNote => 'Estimated saved data. Encrypted file overhead and system caches may differ.';
-
-  @override
-  String get cacheCategoryMailMedia => 'Mail images';
-
-  @override
-  String get cacheCategoryMail => 'Mail';
-
-  @override
-  String get cacheCategoryMessages => 'Messages and notes';
-
-  @override
-  String get cacheCategoryTasks => 'Tasks';
-
-  @override
-  String get cacheCategoryCalendar => 'Calendar';
-
-  @override
-  String get cacheCategoryFinance => 'Finance';
-
-  @override
-  String get cacheCategoryOther => 'Other data';
-
-  @override
-  String get offlineDependencyWaiting => 'Waiting for related changes. Sync will continue automatically.';
-
-  @override
-  String get offlineDependencyMissing => 'A related local item was discarded or deleted. Review this change.';
-
-  @override
-  String get offlineDependencyCycle => 'Related changes depend on each other. Review their references.';
-
-  @override
-  String get offlineDependencyAmbiguous => 'More than one queued create uses the same local item. Review this change.';
-
-  @override
-  String get offlineDependencyInvalid => 'The saved change has invalid data. Review it before syncing.';
-
-  @override
-  String get offlineDependencyContract => 'Waiting for server support. This change is saved and retries automatically.';
-
-  @override
-  String get offlineEditSyncing => 'Syncing…';
-
-  @override
-  String get offlineEditQueued => 'Waiting to sync';
-
-  @override
-  String get offlineEditConflict => 'Needs review before syncing';
-
-  @override
-  String get offlineEditFailed => 'Sync failed';
-
-  @override
-  String get offlineChangesTitle => 'Offline changes';
-
-  @override
-  String get offlineChangesEmpty => 'Everything is synced';
-
-  @override
-  String get offlineChangesReview => 'Check this action on another device before retrying. It may have reached the server already.';
-
-  @override
-  String get offlineChangesRetry => 'Retry';
-
-  @override
-  String get offlineChangesDiscard => 'Discard local change';
-
-  @override
-  String get offlineChangesDiscardConfirm => 'This removes the queued change from this device. It does not undo anything the server may have received.';
-
-  @override
-  String get mailMessageDetails => 'Message details';
-
-  @override
-  String get mailInvitationTitle => 'Calendar invitation';
-
-  @override
-  String get mailInvitationAccept => 'Accept';
-
-  @override
-  String get mailInvitationDecline => 'Decline';
-
-  @override
-  String get mailInvitationTentative => 'Tentative';
-
-  @override
-  String mailInvitationIdentity(String attendee, String organizer) {
-    return 'Reply as $attendee to organizer $organizer';
-  }
-
-  @override
-  String get mailInvitationLocation => 'Location';
-
-  @override
-  String get mailInvitationWhen => 'When';
-
-  @override
-  String get mailInvitationJoin => 'Join meeting';
-
-  @override
-  String get mailInvitationRetry => 'Retry invitation details';
-
-  @override
-  String get mailInvitationSending => 'Sending your response…';
-
-  @override
-  String mailInvitationSent(String response) {
-    return 'Response sent: $response';
-  }
-
-  @override
-  String get mailInvitationPending => 'Response is pending. Check again before replying.';
-
-  @override
-  String get mailInvitationFailed => 'Could not confirm your response. Retry the same response to check its status.';
-
-  @override
-  String get mailCalendarLinkTitle => 'Link to Calendar';
-
-  @override
-  String get mailCalendarLinkUrl => 'Calendar event link';
-
-  @override
-  String get mailCalendarLinkPreview => 'Preview link';
-
-  @override
-  String get mailCalendarLinkConfirm => 'Confirm link';
-
-  @override
-  String get mailCalendarLinkOriginal => 'Original invitation';
-
-  @override
-  String get mailCalendarLinkSelected => 'Selected Calendar event';
-
-  @override
-  String get mailCalendarLinkNotice => 'Linking keeps both records. Replies still go to the original organizer.';
-
-  @override
-  String get mailCalendarLinkChanged => 'The invitation or event changed. Preview again.';
-
-  @override
-  String get mailCalendarLinkUnavailable => 'This event is unavailable in your account.';
-
-  @override
-  String get mailCalendarLinkFailed => 'Unable to update the link. Try again.';
-
-  @override
-  String get mailCalendarLinkInvalid => 'Paste a Calendar event link containing the selected event.';
-
-  @override
-  String get mailCalendarLinkLinked => 'Calendar event linked';
-
-  @override
-  String get mailCalendarLinkUnlink => 'Remove link';
-
-  @override
-  String get mailCalendarLinkOpen => 'Open linked event';
-
-  @override
-  String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone) {
-    return '$leadTime · $occurrence ($timezone)';
-  }
-
-  @override
-  String get settingsTimezone => 'Personal timezone';
-
-  @override
-  String get settingsWorkspaceTimezone => 'Workspace timezone';
-
-  @override
-  String get settingsTimezoneDescription => 'Personal timezone overrides the workspace timezone. Automatic uses the workspace default, then your device.';
-
-  @override
-  String get settingsTimezoneAuto => 'Automatic';
-
-  @override
-  String get settingsTimezoneSearch => 'Search timezones';
-
-  @override
-  String get settingsTimezoneLoading => 'Resolving timezone…';
-
-  @override
-  String get settingsTimezoneAccountPending => 'Waiting for your account.';
-
-  @override
-  String get settingsTimezoneUnknown => 'Unknown';
-
-  @override
-  String settingsTimezoneEffective(String timezone) {
-    return 'Effective timezone: $timezone';
-  }
-
-  @override
-  String get settingsTimezoneRateLimited => 'Too many requests. Please wait before retrying.';
-
-  @override
-  String get settingsTimezoneRetry => 'Retry timezone';
-
-  @override
-  String get settingsTimezoneError => 'Could not load or save timezone. Retry or edit a loaded preference.';
-
-  @override
-  String get calendarInvalidLocalTime => 'Choose a valid start and end time. Some times do not exist when daylight saving time changes.';
-
-  @override
-  String get profileOverviewTab => 'Overview';
-
-  @override
-  String get profileTimelineTab => 'Timeline';
-
-  @override
-  String get profileTimelineShowDates => 'Show date selector';
-
-  @override
-  String get profileTimelineHideDates => 'Close dates and browse agenda';
-
-  @override
-  String get profileTimelineAgenda => 'Days with activity';
-
-  @override
-  String get profileTimelineDayEmpty => 'No activity was returned for this day.';
-
-  @override
-  String get profileTimelineHasActivity => 'Activity in loaded snapshot';
-
-  @override
-  String get profileTimelineLoadedEnd => 'All loaded activity shown';
-
-  @override
-  String get profileTimelineMoreDays => 'Show more loaded days';
-
-  @override
-  String meetNoticeJoined(String name) {
-    return '$name joined the meeting';
-  }
-
-  @override
-  String meetNoticeWaiting(String name) {
-    return '$name is asking to join';
-  }
-
-  @override
-  String meetNoticeChat(String name) {
-    return '$name sent a message';
-  }
-
-  @override
-  String get meetNoticeView => 'View';
-
-  @override
-  String get meetNotificationSound => 'Notification sound';
-
-  @override
-  String get meetShareScreen => 'Share screen';
-
-  @override
-  String get meetStopSharing => 'Stop sharing';
-
-  @override
-  String get meetScreenShareHint => 'Your selected screen will be visible to everyone in this meeting until you stop sharing. Use the system chooser to select what to share. System audio is not shared.';
-
-  @override
-  String get meetScreenShareFailed => 'Screen sharing did not start. Check capture permissions and try again.';
-
-  @override
-  String get inventoryStockHealthTitle => 'Stock health';
-
-  @override
-  String get inventoryStockHealthScope => 'Current active products · all stock rows, including archived warehouses';
-
-  @override
-  String inventoryStockHealthAsOf(String timestamp) {
-    return 'Server snapshot: $timestamp UTC';
-  }
-
-  @override
-  String get inventoryStockHealthIncomplete => 'Partial snapshot: some counts or the server timestamp are unavailable.';
-
-  @override
-  String get inventoryStockHealthUnavailable => 'Stock health is unavailable. Pull to refresh to try again.';
-
-  @override
-  String get inventoryStockHealthDenied => 'You do not have access to stock analytics.';
-
-  @override
-  String get inventoryStockHealthLoading => 'Loading stock health…';
-
-  @override
-  String get inventoryStockHealthActive => 'Active products';
-
-  @override
-  String get inventoryStockHealthUnconfigured => 'Products without stock rows';
-
-  @override
-  String get inventoryStockHealthLow => 'Low stock rows';
-
-  @override
-  String get inventoryStockHealthOut => 'Out of stock rows';
-
-  @override
-  String get inventoryStockHealthUnlimited => 'Unlimited stock rows';
-
-  @override
-  String get inventoryStockHealthOverlap => 'Low/out counts can overlap. Low/out quantity checks exclude Unlimited rows; Unlimited rows are counted separately. Bars compare row counts.';
-
-  @override
-  String get inventoryStockHealthUnknown => 'Unavailable';
-
-  @override
-  String get inventoryProductDeleteConfirm => 'Remove this product? If existing sales reference it, the server will archive it when syncing.';
-
-  @override
-  String get inventorySeasonPriceCached => 'Offline draft using saved season prices. Prices and availability will be checked when syncing.';
-
-  @override
-  String get inventorySeasonPriceLoading => 'Checking current season prices…';
-
-  @override
-  String get inventorySeasonPriceUnavailable => 'Season prices unavailable or expired. Connect, refresh and review the cart before selling.';
-
-  @override
-  String inventorySeasonPriceAsOf(String currency, String asOf, String timeZone) {
-    return 'Season prices · $currency · as of $asOf (UTC) · season dates in $timeZone';
-  }
-
-  @override
-  String get inventorySeasonRecoveryTitle => 'Recover sale';
-
-  @override
-  String get inventorySeasonRecoveryCheck => 'Check sale result';
-
-  @override
-  String get inventorySeasonRecoveryUnavailable => 'Sale recovery storage is unavailable. Creation is blocked until this operation can be recovered safely.';
-
-  @override
-  String get inventorySeasonRetryPending => 'Sale response uncertain. Check the recorded request before retrying its exact payload. You can leave and resume recovery in this account and workspace; do not create a replacement sale.';
-
-  @override
-  String get inventoryCheckoutScopeChanged => 'The account or workspace changed. Close this checkout and reopen the sale in its owning workspace.';
-
-  @override
-  String get inventorySeasonHistoricalReadOnly => 'Scheduled sale history is read only here. Recorded prices are preserved.';
-
-  @override
-  String get offlinePreparationTitle => 'Available offline';
-
-  @override
-  String get offlinePreparationCacheAll => 'Download all';
-
-  @override
-  String get offlinePreparationDescription => 'Download workspace data for offline use. Cached data uses your storage limit; files and online services may still need connectivity.';
-
-  @override
-  String get offlinePreparationQueued => 'Not downloaded';
-
-  @override
-  String get offlinePreparationWaiting => 'Queued';
-
-  @override
-  String get offlinePreparationDownloading => 'Downloading';
-
-  @override
-  String get offlinePreparationReady => 'Downloaded';
-
-  @override
-  String get offlinePreparationFailed => 'Download failed';
-
-  @override
-  String get offlinePreparationUnavailable => 'Unavailable';
-
-  @override
-  String offlinePreparationLastSuccess(String time) {
-    return 'Last downloaded: $time';
-  }
-
-  @override
-  String offlinePreparationProgress(int completed, int total) {
-    return '$completed of $total modules downloaded';
-  }
-
-  @override
-  String get offlinePreparationNeedsRefresh => 'Needs refresh';
-
-  @override
-  String get inventoryCheckoutReconcileCart => 'Reconcile cart';
-
-  @override
-  String get inventoryCheckoutReconcileCartHelp => 'Refresh prices and remove items that no longer match this period.';
-
-  @override
-  String get inventoryCheckoutCartReconciled => 'Cart updated. Review the total before submitting.';
-
-  @override
-  String inventoryCheckoutCartRemoved(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Removed $count unavailable items. Review the cart before submitting.',
-      one: 'Removed $count unavailable item. Review the cart before submitting.',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get inventoryCheckoutPeriodRulesChanged => 'Some items do not match this period. Reconcile the cart to continue.';
-
-  @override
-  String get offlineSectionTitle => 'Offline';
-
-  @override
-  String get offlineSectionDescription => 'Downloads, stored data, and unsynchronized changes for the selected account and workspace.';
-
-  @override
-  String get offlinePreferencesTitle => 'Offline preferences';
-
-  @override
-  String get offlineStorageScope => 'Storage limit applies to this device. Clearing cached data preserves queued changes.';
-
-  @override
-  String get offlineRefreshModule => 'Download / refresh';
-
-  @override
-  String get offlineModuleDetails => 'Stored data and settings';
-
-  @override
-  String get offlineDownloadRetryHint => 'Retry downloads to refresh retained data.';
-
-  @override
-  String get offlineCoverageUnknown => 'A normal fetch may contain only part of a collection. Query totals are shown only when stored pages agree. Explicit downloads cover supported collections, not every module resource.';
-
-  @override
-  String get offlineBytesExplanation => 'Sizes are logical persisted payload bytes, including snapshot and replica copies. Disk overhead, expected download size, and transferred network bytes are unknown.';
-
-  @override
-  String offlineLogicalBytes(String bytes) {
-    return '$bytes payload bytes';
-  }
-
-  @override
-  String offlinePendingCoverage(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count queued changes. They are kept separately and are not counted as downloaded items.',
-      one: '$count queued change. It is kept separately and is not counted as a downloaded item.',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get offlineSearchStored => 'Search stored collections';
-
-  @override
-  String get offlineNoStoredItems => 'No stored collections match.';
-
-  @override
-  String offlineAvailableItems(int items, int snapshots) {
-    String _temp0 = intl.Intl.pluralLogic(
-      items,
-      locale: localeName,
-      other: '$items unique indexed items',
-      one: '$items unique indexed item',
-    );
-    String _temp1 = intl.Intl.pluralLogic(
-      snapshots,
-      locale: localeName,
-      other: '$snapshots stored snapshots',
-      one: '$snapshots stored snapshot',
-    );
-    return '$_temp0 across $_temp1';
-  }
-
-  @override
-  String offlineFreshness(int stale, int expired) {
-    String _temp0 = intl.Intl.pluralLogic(
-      stale,
-      locale: localeName,
-      other: '$stale stale snapshots',
-      one: '$stale stale snapshot',
-    );
-    String _temp1 = intl.Intl.pluralLogic(
-      expired,
-      locale: localeName,
-      other: '$expired expired snapshots',
-      one: '$expired expired snapshot',
-    );
-    return '$_temp0 · $_temp1 retained for offline use';
-  }
-
-  @override
-  String offlineLastFetch(String time) {
-    return 'Latest fetch: $time';
-  }
-
-  @override
-  String get offlineEvictTitle => 'Remove stored module data';
-
-  @override
-  String get offlineEvictDescription => 'Remove only this module’s snapshots in the selected account and workspace. Queued writes remain. Download again to restore offline data.';
-
-  @override
-  String get offlineInventoryError => 'Stored data could not be inspected or updated. Retry.';
-
-  @override
-  String get settingsAppearanceLanguage => 'Appearance & language';
-
-  @override
-  String get settingsCalendarTimezone => 'Calendar & timezone';
-
-  @override
-  String get settingsNotificationsInteraction => 'Notifications & interaction';
-
-  @override
-  String get settingsAppPreferences => 'App preferences';
-
-  @override
-  String get offlinePauseDownloads => 'Pause downloads';
-
-  @override
-  String get offlineResumeDownloads => 'Resume unfinished downloads';
-
-  @override
-  String get offlineClearScopeDescription => 'Remove cached data only for this account and workspace. Queued writes remain. Storage limits apply to the whole device.';
-
-  @override
-  String offlineExpectedTotal(int count) {
-    return 'Server-reported query total: $count. This does not establish complete coverage.';
-  }
-
-  @override
-  String get offlineExpectedTotalUnknown => 'Server-reported query total: unknown.';
-
-  @override
-  String get offlineStorageNeedsWorkspace => 'Select a workspace to view or clear its cached data. The storage limit applies to this device.';
-
-  @override
-  String get offlineBrowseStoredItems => 'Browse stored items';
-
-  @override
-  String get offlineSearchItems => 'Search stored items by name or ID';
-
-  @override
-  String get offlineNoMatchingItems => 'No stored items match.';
-
-  @override
-  String offlineStoredItemId(String id) {
-    return 'Item ID: $id';
-  }
-
-  @override
-  String get homePersonalAgenda => 'Agenda';
-
-  @override
-  String get homePersonalAgendaUnavailable => 'Personal calendar is unavailable.';
-
-  @override
-  String get assistantExpandNavigation => 'Show navigation';
-
-  @override
-  String get assistantCollapseNavigation => 'Hide navigation';
-
-  @override
-  String get assistantCloseComposer => 'Close prompt';
-
-  @override
-  String get inventoryRedesignLimitedData => 'Limited data. Last available snapshot shown.';
-
-  @override
-  String get inventoryRedesignReceiptActivity => 'Receipt activity';
-
-  @override
-  String get inventoryRedesignReceiptCoverage => 'Counts from the available recent receipts, not a complete period total. Missing days are unknown. Currency and quantity totals are not inferred.';
-
-  @override
-  String inventoryRedesignDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count days',
-      one: '1 day',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String inventoryRedesignRecentSample(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count available records',
-      one: '1 available record',
-    );
-    return '$_temp0 · limited coverage';
-  }
-
-  @override
-  String inventoryRedesignUnknownDates(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count records without a date',
-      one: '1 record without a date',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get inventoryRedesignLoadedRevenue => 'Revenue in loaded receipts';
-
-  @override
-  String inventoryRedesignUnknownCurrencies(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count receipts with unknown currency excluded',
-      one: '1 receipt with unknown currency excluded',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get inventoryRedesignPendingDeletion => 'Deletion pending confirmation';
-
-  @override
-  String inventoryRedesignPendingCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count unsynchronized edits',
-      one: '1 unsynchronized edit',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get inventoryRedesignLoadedSearch => 'Search available records';
-
-  @override
-  String get inventoryRedesignAllEvents => 'All events';
-
-  @override
-  String get inventoryRedesignSelectedLines => 'Selected lines';
-
-  @override
-  String get calendarGoogleColorInherit => 'Use calendar color';
-
-  @override
-  String calendarGoogleColorLabel(String id) {
-    return 'Custom label $id';
-  }
-
-  @override
-  String calendarGoogleColorEvent(String id) {
-    return 'Google color $id';
-  }
-
-  @override
-  String get calendarProviderColorSeparateEdit => 'Save other changes before changing the Google color.';
-
-  @override
-  String get inventorySetupSyncFirst => 'Sync this new item before using, editing, or deleting it.';
-
-  @override
-  String get meetCollaboration => 'Collaborate';
-
-  @override
-  String get meetCollaborationUnavailable => 'Collaboration is unavailable. Rejoin the meeting and try again.';
-
-  @override
-  String get meetScreenFixtureTitle => 'Native screen capture test';
-
-  @override
-  String get meetScreenFixtureHint => 'Join the synthetic local meeting and share your screen. Media stays on this device; watch the receiver frame counter.';
-
-  @override
-  String meetScreenFixtureFrames(int count) {
-    return 'Decoded receiver frames: $count';
-  }
-
-  @override
-  String get meetFixtureConnected => 'Local meeting connected';
-
-  @override
-  String get meetFixtureRevoke => 'Host: stop screen share';
-
-  @override
-  String get meetFixtureReconnect => 'Reconnect meeting';
-
-  @override
-  String get connectedOnboardingMiraTitle => 'Meet Mira, your AI companion';
-
-  @override
-  String get connectedOnboardingMiraSubtitle => 'Start a conversation, shape a plan, or think through your next step. Mira lives alongside the tools you use every day.';
-
-  @override
-  String get connectedOnboardingMiraToolkit => 'One place to chat with Mira and reach your tasks, calendar, finances, and inventory. Choose what works for you.';
-
-  @override
-  String get connectedOnboardingOptional => 'Your pace. Your workspace. Always optional.';
-
-  @override
-  String connectedOnboardingStep(int step, int total) {
-    return 'Step $step of $total';
-  }
-
-  @override
-  String get assistantAttachCaptureAction => 'Capture & Record';
-
-  @override
-  String get assistantAttachFilesSource => 'Files';
-
-  @override
-  String get assistantCaptureAudio => 'Record audio';
-
-  @override
-  String get assistantCapturePhoto => 'Take photo';
-
-  @override
-  String get assistantCaptureVideo => 'Record video';
-
-  @override
-  String get settingsProductSettings => 'App settings';
-
-  @override
-  String get mailDiscardSettingsTitle => 'Discard changes?';
-
-  @override
-  String get mailDiscardSettingsDescription => 'Your Mail settings changes have not been saved.';
-
-  @override
-  String get mailDiscardSettingsAction => 'Discard changes';
-
-  @override
-  String get profileBanner => 'Profile banner';
-
-  @override
-  String get profileBannerDescription => 'Add a wide photo to personalize your profile.';
-
-  @override
-  String get profileChangeBanner => 'Change banner';
-
-  @override
-  String get profileAddBanner => 'Add banner';
-
-  @override
-  String get profileRemoveBanner => 'Remove banner';
-
-  @override
-  String get voicePause => 'Pause recording';
-
-  @override
-  String get voiceResume => 'Resume recording';
-
-  @override
-  String get voicePaused => 'Recording paused';
-
-  @override
-  String get voiceRecording => 'Recording audio';
-
-  @override
-  String get notesVoiceRecord => 'Record voice note';
-
-  @override
-  String get notesVoiceAnalyze => 'Transcribe and analyze';
-
-  @override
-  String get notesVoiceCredits => 'Uses your personal AI credits. Review results before saving.';
-
-  @override
-  String get notesVoiceProcessing => 'Transcribing and preparing notes…';
-
-  @override
-  String get notesVoiceReviewRequired => 'Processing needs review. We will not automatically repeat a paid request.';
-
-  @override
-  String get notesVoiceUnavailable => 'Could not update voice analysis. Your available result is retained.';
-
-  @override
-  String get notesVoiceReview => 'Review voice note';
-
-  @override
-  String get notesVoiceSave => 'Save note to this workspace';
-
-  @override
-  String get notesVoiceSaved => 'Voice note saved';
-
-  @override
-  String get notesVoiceDelete => 'Delete private voice result';
-
-  @override
-  String get notesVoiceNoSpeech => 'No speech was detected. Record again when ready.';
-
-  @override
-  String get notesVoiceTranscript => 'Transcript';
-
-  @override
-  String get notesVoiceSummary => 'Summary';
-
-  @override
-  String get notesVoiceDecisions => 'Decisions';
-
-  @override
-  String get notesVoiceActions => 'Proposed action items';
-
-  @override
-  String get notesVoiceRecommendations => 'Recommendations';
-
-  @override
-  String get notesVoiceQuestions => 'Open questions';
-
-  @override
-  String get notesVoiceEvidence => 'Transcript evidence';
-
-  @override
-  String get notesVoiceNew => 'Record another voice note';
-
-  @override
-  String get notesVoicePermission => 'Microphone access is needed to record a voice note.';
-
-  @override
-  String get notesVoiceRecordingError => 'Recording could not be captured. Please try again.';
-
-  @override
-  String get notesVoiceFailed => 'Analysis could not start. Retry with the same recording while it is available.';
-
-  @override
-  String get notesVoiceProposalNotice => 'Suggestions need your review. Saving does not create tasks or calendar events. Team workspace notes may be visible to workspace members.';
-
-  @override
-  String get cmsSearchHint => 'Search collections and entries';
 }

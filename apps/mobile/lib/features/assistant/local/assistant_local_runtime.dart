@@ -118,6 +118,11 @@ class AssistantLocalRuntime {
     await _session?.stop();
   }
 
+  Future<void> stopAndDrain() async {
+    await stop();
+    await _activeDone?.future;
+  }
+
   Future<void> unload() async {
     final model = _model;
     _model = null;

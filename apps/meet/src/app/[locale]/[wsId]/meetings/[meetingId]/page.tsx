@@ -79,6 +79,12 @@ export default async function MeetingDetailPage({
   }
 
   const isHost = meeting.creator_id === user.id;
+  // Permissions do not depend on room policy. Capture rejection immediately so
+  // the ended-room shortcut and policy error precedence remain unchanged.
+  const permissionsPromise = getPermissions({ user, wsId }).then(
+    (permissions) => ({ permissions }),
+    (error: unknown) => ({ error })
+  );
   const policy = await readMeetingRoomPolicy({
     meetingId,
     wsId,
@@ -98,7 +104,9 @@ export default async function MeetingDetailPage({
         backHref={`/${workspaceSlug}/meetings`}
       />
     );
-  const permissions = await getPermissions({ user, wsId });
+  const permissionOutcome = await permissionsPromise;
+  if ('error' in permissionOutcome) throw permissionOutcome.error;
+  const { permissions } = permissionOutcome;
   const calendarEvent = await loadMeetingCalendarEvent({
     supabase,
     permissions,

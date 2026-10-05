@@ -1,5 +1,5 @@
 // Relative imports preserve the existing Assistant module layout.
-// ignore_for_file: always_use_package_imports, lines_longer_than_80_chars, avoid_positional_boolean_parameters, inference_failure_on_collection_literal, avoid_single_cascade_in_expression_statements, unnecessary_breaks
+// ignore_for_file: always_use_package_imports, lines_longer_than_80_chars, avoid_positional_boolean_parameters, inference_failure_on_collection_literal, unnecessary_breaks
 
 import 'dart:async';
 
@@ -18,6 +18,7 @@ part 'assistant_chat_attachments.dart';
 part 'assistant_chat_restore.dart';
 part 'assistant_chat_state.dart';
 part 'assistant_chat_stream_reconcile.dart';
+part 'assistant_chat_submission.dart';
 
 class AssistantChatCubit extends Cubit<AssistantChatState> {
   AssistantChatCubit({
@@ -101,95 +102,26 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     required String timezone,
     String? creditWsId,
     String? retryMessageId,
-  }) async {
-    final trimmed = message.trim();
-    final uploadedAttachments = retryMessageId == null
-        ? state.composerAttachments
-              .where((attachment) => attachment.isUploaded)
-              .toList()
-        : (state.attachmentsByMessageId[retryMessageId] ??
-                  const <AssistantAttachment>[])
-              .where((attachment) => attachment.isUploaded)
-              .toList();
-    if (trimmed.isEmpty && uploadedAttachments.isEmpty) {
-      return;
-    }
+    bool Function()? isCurrent,
+  }) => _submit(
+    wsId: wsId,
+    message: message,
+    modelId: modelId,
+    thinkingMode: thinkingMode,
+    creditSource: creditSource,
+    workspaceContextId: workspaceContextId,
+    timezone: timezone,
+    creditWsId: creditWsId,
+    retryMessageId: retryMessageId,
+    isCurrent: isCurrent,
+  );
 
-    // Preserve the selected conversation until its identity and messages load.
-    if (state.status == AssistantChatStatus.restoring) return;
-    final queueMessage = trimmed.isEmpty
-        ? 'Please analyze the attached file(s).'
-        : trimmed;
-    final queued = AssistantQueuedSubmission(
-      message: queueMessage,
-      attachments: uploadedAttachments,
-    );
-
-    final isDuplicate = _queue.any((item) => item.message == queued.message);
-    if (!isDuplicate || uploadedAttachments.isNotEmpty) {
-      _queue.add(queued);
-    }
-
-    final shouldPrimeUi = _shouldPrimeConversationUi(uploadedAttachments);
-    final queuedMessages = _queue
-        .map((item) => item.message)
-        .toList(growable: false);
-
-    if (shouldPrimeUi) {
-      final optimisticMessage = AssistantMessage(
-        id: _repository.generateUuid(),
-        role: 'user',
-        parts: [AssistantMessagePart(type: 'text', text: queueMessage)],
-        createdAt: DateTime.now(),
-      );
-      final nextAttachments = Map<String, List<AssistantAttachment>>.from(
-        state.attachmentsByMessageId,
-      );
-      if (uploadedAttachments.isNotEmpty) {
-        nextAttachments[optimisticMessage.id] = uploadedAttachments;
-      }
-
-      emit(
-        state.copyWith(
-          queuedMessages: queuedMessages,
-          chat: AssistantChatRecord(
-            id: state.fallbackChatId,
-            model: modelId,
-            createdAt: DateTime.now(),
-          ),
-          messages: [...state.messages, optimisticMessage],
-          attachmentsByMessageId: nextAttachments,
-          composerAttachments: const [],
-          clearError: true,
-        ),
-      );
-    } else {
-      emit(state.copyWith(queuedMessages: queuedMessages, clearError: true));
-    }
-
-    if (state.isBusy) {
-      await stopStreaming();
-    }
-
+  Future<void> stopStreaming({bool discardQueued = false}) async {
     _queueDebounce?.cancel();
-    _queueDebounce = Timer(const Duration(milliseconds: 220), () {
-      unawaited(
-        _flushQueue(
-          wsId: wsId,
-          modelId: modelId,
-          thinkingMode: thinkingMode,
-          creditSource: creditSource,
-          workspaceContextId: workspaceContextId,
-          timezone: timezone,
-          creditWsId: creditWsId,
-          retryMessageId: retryMessageId,
-        ),
-      );
-    });
-  }
-
-  Future<void> stopStreaming() async {
-    _queueDebounce?.cancel();
+    if (discardQueued) {
+      _queue.clear();
+      _emitIfOpen(state.copyWith(queuedMessages: const []));
+    }
     await _streamSubscription?.cancel();
     _streamSubscription = null;
     emit(state.copyWith(status: AssistantChatStatus.idle));
@@ -203,7 +135,9 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     required String workspaceContextId,
     required String timezone,
     String? creditWsId,
+    bool Function()? isCurrent,
   }) async {
+    if (isCurrent != null && !isCurrent()) return;
     final lastUserMessage = state.messages.lastWhere(
       (message) => message.role == 'user',
       orElse: () => const AssistantMessage(id: '', role: 'user'),
@@ -236,6 +170,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
       timezone: timezone,
       creditWsId: creditWsId,
       retryMessageId: lastUserMessage.id,
+      isCurrent: isCurrent,
     );
   }
 
@@ -293,143 +228,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
         ),
       ),
     };
-  }
-
-  Future<void> _flushQueue({
-    required String wsId,
-    required String modelId,
-    required AssistantThinkingMode thinkingMode,
-    required AssistantCreditSource creditSource,
-    required String workspaceContextId,
-    required String timezone,
-    String? creditWsId,
-    String? retryMessageId,
-  }) async {
-    if (_queue.isEmpty) return;
-
-    try {
-      final unique = <String>[];
-      for (final item in _queue) {
-        if (!unique.contains(item.message)) {
-          unique.add(item.message);
-        }
-      }
-      final attachments = _queue.expand((item) => item.attachments).toList();
-      _queue..clear();
-
-      final combined = unique.join('\n\n');
-      var chat = state.chat;
-      var chatId = chat?.id ?? state.fallbackChatId;
-
-      emit(
-        state.copyWith(
-          status: AssistantChatStatus.submitting,
-          queuedMessages: const [],
-          clearError: true,
-        ),
-      );
-
-      if (chat == null || state.storedChatId == null) {
-        final created = await _repository.createChat(
-          id: chatId,
-          wsId: wsId,
-          modelId: modelId,
-          message: combined,
-          timezone: timezone,
-        );
-        chat = created;
-        chatId = created.id;
-        await _preferences.saveChatId(wsId, chatId);
-        emit(state.copyWith(chat: created, storedChatId: chatId));
-        // History is secondary to the first response. Refresh it without
-        // delaying the stream after a conversation is created.
-        unawaited(refreshHistory());
-      }
-
-      final shouldAppendUserMessage =
-          retryMessageId == null &&
-          !_matchesLatestQueuedMessage(state, combined, attachments);
-
-      var nextMessages = state.messages;
-      final attachmentsByMessageId =
-          Map<String, List<AssistantAttachment>>.from(
-            state.attachmentsByMessageId,
-          );
-
-      if (shouldAppendUserMessage) {
-        final userMessage = AssistantMessage(
-          id: _repository.generateUuid(),
-          role: 'user',
-          parts: [AssistantMessagePart(type: 'text', text: combined)],
-          createdAt: DateTime.now(),
-        );
-
-        if (attachments.isNotEmpty) {
-          attachmentsByMessageId[userMessage.id] = attachments;
-        }
-
-        nextMessages = [...state.messages, userMessage];
-        emit(
-          state.copyWith(
-            messages: nextMessages,
-            attachmentsByMessageId: attachmentsByMessageId,
-            composerAttachments: const [],
-          ),
-        );
-      }
-
-      _activeAssistantMessageId = null;
-      _activeTextBlockId = null;
-      _activeReasoningBlockId = null;
-
-      _streamSubscription = _repository
-          .streamChat(
-            chatId: chatId,
-            wsId: wsId,
-            workspaceContextId: workspaceContextId,
-            modelId: modelId,
-            messages: nextMessages,
-            thinkingMode: thinkingMode,
-            creditSource: creditSource,
-            timezone: timezone,
-            attachments: attachments,
-            creditWsId: creditWsId,
-          )
-          .listen(
-            _handleStreamEvent,
-            onError: (Object error, StackTrace stackTrace) {
-              emit(
-                state.copyWith(
-                  messages: _withoutEmptyAssistantReply(
-                    state.messages,
-                    _activeAssistantMessageId,
-                  ),
-                  status: AssistantChatStatus.error,
-                  error: error.toString(),
-                ),
-              );
-            },
-            onDone: () async {
-              _streamSubscription = null;
-              _finalizeToolParts();
-              if (isClosed || state.status == AssistantChatStatus.error) return;
-              emit(state.copyWith(status: AssistantChatStatus.idle));
-              _persistAssistantChatCache();
-            },
-            cancelOnError: false,
-          );
-    } on Exception catch (error) {
-      emit(
-        state.copyWith(
-          messages: _withoutEmptyAssistantReply(
-            state.messages,
-            _activeAssistantMessageId,
-          ),
-          status: AssistantChatStatus.error,
-          error: error.toString(),
-        ),
-      );
-    }
   }
 
   bool _shouldPrimeConversationUi(List<AssistantAttachment> attachments) {
