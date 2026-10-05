@@ -402,7 +402,9 @@ Validate this policy with `node --test scripts/ci/e2e-runtime-budget.test.js`.
 For wrapped native select controls, Playwright’s exact label matching includes
 nested option text. Give the import Source select an explicit localized accessible
 label so canonical-file selection remains reliable; the focused import component
-test uses the installed Playwright label implementation as a regression check.
+test checks the explicit accessible label and associated native labels without
+relying on private browser bundles. Maintained authenticated import E2E uses
+Playwright’s public `getByLabel('Source', { exact: true })` locator for browser coverage.
 
 The Markdown persistence helper bounds actions at 15 seconds and navigation/reload
 at 60 seconds, identifies opening the project dialog separately from navigation,
