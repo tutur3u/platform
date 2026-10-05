@@ -52,6 +52,51 @@ describe('complete Outlook calendar snapshots', () => {
       'outlook.timezone="UTC"',
     ]);
   });
+  test('opts into immutable IDs on every page and checks authorization before each authenticated read', async () => {
+    const { client, calls } = graph([
+      { value: [{ id: 'a' }], '@odata.nextLink': continuation },
+      { value: [] },
+    ]);
+    let authorized = 0;
+    await fetchCalendarViewPages(
+      client,
+      'cal',
+      '2026-01-01T00:00:00Z',
+      '2027-01-01T00:00:00Z',
+      {
+        immutableIds: true,
+        beforeRead: async () => {
+          authorized++;
+        },
+      }
+    );
+    expect(authorized).toBe(2);
+    expect(calls.map((call) => call.header)).toEqual([
+      'IdType="ImmutableId", outlook.timezone="UTC"',
+      'IdType="ImmutableId", outlook.timezone="UTC"',
+    ]);
+  });
+  test('stops before sending the continuation request after permission revocation', async () => {
+    const { client, calls } = graph([
+      { value: [], '@odata.nextLink': continuation },
+      { value: [] },
+    ]);
+    let authorized = 0;
+    await expect(
+      fetchCalendarViewPages(
+        client,
+        'cal',
+        '2026-01-01T00:00:00Z',
+        '2027-01-01T00:00:00Z',
+        {
+          beforeRead: async () => {
+            if (++authorized === 2) throw new Error('Revoked');
+          },
+        }
+      )
+    ).rejects.toThrow('Revoked');
+    expect(calls).toHaveLength(1);
+  });
   test('deduplicates repeated provider identities, retaining latest page', async () => {
     const { client } = graph([
       { value: [{ id: 'a', subject: 'old' }], '@odata.nextLink': continuation },

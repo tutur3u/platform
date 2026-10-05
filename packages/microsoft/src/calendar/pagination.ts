@@ -9,7 +9,8 @@ export async function fetchCalendarViewPages<T extends { id: string }>(
   client: Client,
   calendarId: string,
   startDateTime: string,
-  endDateTime: string
+  endDateTime: string,
+  options: { immutableIds?: boolean; beforeRead?: () => Promise<void> } = {}
 ): Promise<T[]> {
   const path = `/me/calendars/${encodeURIComponent(calendarId)}/calendarView`;
   const events = new Map<string, T>();
@@ -20,7 +21,15 @@ export async function fetchCalendarViewPages<T extends { id: string }>(
       throw new Error('Microsoft calendar pagination limit or loop detected');
     }
     visited.add(next);
-    let request = client.api(next).header('Prefer', 'outlook.timezone="UTC"');
+    await options.beforeRead?.();
+    let request = client
+      .api(next)
+      .header(
+        'Prefer',
+        options.immutableIds
+          ? 'IdType="ImmutableId", outlook.timezone="UTC"'
+          : 'outlook.timezone="UTC"'
+      );
     if (page === 0) {
       request = request.query({
         startDateTime,

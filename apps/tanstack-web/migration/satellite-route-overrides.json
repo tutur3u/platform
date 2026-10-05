@@ -74,6 +74,11 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "First-class Calendar recoverable provider recurrence operations. Preserve verified actor/source permissions, encrypted journal, durable provider checkpoints, leased worker fencing, native revision locks and immutable original occurrence identities; never expose the raw encrypted operation or credentials."
+    },
+    "api:/api/v1/workspaces/:wsId/calendar/sync:apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/sync/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Calendar live sync includes canonical recurrence reconciliation before legacy instance persistence. Preserve token-owner authorization, complete provider snapshot and immutable original-slot identities, pending outbound fences and atomic binding publication."
     }
   }
 }
