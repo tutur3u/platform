@@ -21,6 +21,7 @@ import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
 import { CalendarNavigationProvider } from '@/components/calendar-navigation-provider';
+import { SettingsDialogHost } from '@/components/settings/settings-dialog-host';
 import { SidebarProvider } from '@/context/sidebar-context';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
@@ -126,6 +127,7 @@ export default async function Layout({ children, params }: LayoutProps) {
                   tier={workspace.tier ?? null}
                   enabled={!workspace.personal}
                 >
+                  <SettingsDialogHost user={user} wsId={wsId} />
                   {children}
                 </WorkspacePresenceProvider>
               </RealtimeLogProvider>

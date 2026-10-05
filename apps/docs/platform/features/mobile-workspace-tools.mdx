@@ -850,6 +850,33 @@ The Education screen in `apps/mobile` supports:
 - Quiz authoring with answer options, correctness flags, and explanations
 - Attempt browsing with status and quiz-set filters plus attempt-detail review
 
+Education's native session is keyed to the current account and workspace. Its
+repository binds API reads, cache keys, pending-edit overlays, mutation admission,
+and tag invalidation to that actor. Legacy callers without an explicitly bound
+account capture the active actor before each request and retain that identity
+through cache reads, pending-edit overlays, and write admission. Anonymous reads
+cannot publish after sign-in; writes require an account before queue admission.
+`education_actor_scope_test.dart` covers delayed
+responses/queue reads and exact actor filtering across all four collections.
+Changing either scope removes the old list,
+search, and owned modal routes immediately; late responses cannot repopulate it.
+
+Course/library search uses the persistent shell dock and resets when the section
+changes. Collection rows build lazily, page ahead when the viewport is within
+400 pixels of the end, deduplicate stable IDs, and stop when the server returns
+an empty page even if its count is stale. Temporary failures and verification
+challenges retain authorized rows while offering explicit retry; definitive
+authentication/permission denial clears visible collections. Normal entry has a
+cached phase followed by revalidation, while pull-to-refresh awaits a fresh phase.
+
+Attempt details likewise retain their authorized snapshot during revalidation and
+clear on definitive denial. Authoring forms keep server failures in the form for
+retry instead of letting an exception escape. No new teaching or assessment API
+behavior is implied by this presentation change; existing endpoint permissions
+remain authoritative. Widget regressions in `education_workspace_test.dart`
+cover account/workspace transitions, paging, lazy rendering, challenges/denial,
+and dock search reset.
+
 The mobile Education module uses authenticated workspace routes from `apps/web`:
 
 - `/api/v1/workspaces/:wsId/courses`
