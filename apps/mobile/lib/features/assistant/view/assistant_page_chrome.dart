@@ -32,17 +32,6 @@ extension _AssistantPageChrome on _AssistantPageState {
       callbackToken: '$wsId:$_keepLiveWhileBrowsing',
       onPressed: () => unawaited(_showLiveSettings()),
     ),
-    if (isLiveMode &&
-        liveState.status == AssistantLiveConnectionStatus.disconnected)
-      ShellActionSpec(
-        id: 'assistant-live-start',
-        inDock: true,
-        icon: Icons.mic_rounded,
-        tooltip: context.l10n.assistantLiveConnect,
-        callbackToken: '$wsId:${liveState.status}',
-        onPressed: () =>
-            unawaited(_handleLiveMicrophoneToggle(wsId, chatState)),
-      ),
     ShellActionSpec(
       id: 'assistant-mode-chat',
       segmentGroup: 'assistant-modes',
@@ -62,6 +51,30 @@ extension _AssistantPageChrome on _AssistantPageState {
           : () => unawaited(_handleMicrophoneTap(wsId)),
     ),
   ];
+
+  void _toggleLiveDockNavigation() {
+    context.read<AssistantChromeCubit>().toggleComposerNavigation();
+  }
+
+  Widget _liveCallDock(
+    String wsId,
+    AssistantChatState chatState,
+    AssistantLiveState liveState,
+  ) => AssistantLiveCallControls(
+    state: liveState,
+    onMicrophone: () => _handleLiveMicrophoneToggle(wsId, chatState),
+    onCamera: _liveCubit.toggleCamera,
+    onText: _openChatComposerFromLiveMode,
+    onDisconnect: () async {
+      final actorEpoch = _voiceActorScopeEpoch;
+      await _liveCubit.disconnect(clearSession: true);
+      if (mounted &&
+          actorEpoch == _voiceActorScopeEpoch &&
+          _loadedWorkspaceId == wsId) {
+        context.read<AssistantChromeCubit>().exitLiveMode();
+      }
+    },
+  );
 
   bool _hasLiveAccess(AssistantShellState shellState) {
     return hasAssistantLiveWorkspaceAccess(

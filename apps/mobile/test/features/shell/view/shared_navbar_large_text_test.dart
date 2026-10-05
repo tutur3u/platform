@@ -16,6 +16,8 @@ import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
+import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
+import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
@@ -24,6 +26,7 @@ import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
+import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/shell/view/shell_top_bar_title.dart';
@@ -205,6 +208,59 @@ void main() {
     );
     await _pump(tester);
   }
+
+  testWidgets('actual shell retains its dock material from Chat to Live', (
+    tester,
+  ) async {
+    width = 320;
+    textScale = 3;
+    await mount(tester);
+    router.go(Routes.assistant);
+    assistant.setComposerVisible(visible: true);
+    await _pump(tester);
+    final surface = find.byKey(
+      const ValueKey('persistent-shell-dock-material'),
+    );
+    expect(surface, findsOneWidget);
+    final materialElement = tester.element(surface);
+    // Exercise the actual cached AssistantPage publisher and its internal
+    // composer state, rather than replacing the shell's registered page slot.
+    await tester.tap(find.byType(AssistantComposerFab));
+    await _pump(tester);
+    expect(find.byType(TextField), findsOneWidget);
+    assistant.enterLiveMode();
+    // Page slots publish after layout; retain identity during that frame too.
+    await tester.pump();
+    expect(tester.element(surface), same(materialElement));
+    for (final frame in [16, 80, 180, 320]) {
+      await tester.pump(Duration(milliseconds: frame));
+      expect(surface, findsOneWidget);
+      expect(tester.element(surface), same(materialElement));
+      expect(find.byType(ShellDockSurface), findsOneWidget);
+      expect(find.byType(AssistantLiveCallControls), findsOneWidget);
+      expect(find.byType(TextField), findsNothing);
+      expect(tester.takeException(), isNull);
+    }
+    assistant.toggleComposerNavigation();
+    await _pump(tester);
+    expect(tester.element(surface), same(materialElement));
+    expect(find.byType(AssistantLiveCallControls), findsNothing);
+    assistant.toggleComposerNavigation();
+    await _pump(tester);
+    expect(tester.element(surface), same(materialElement));
+    expect(find.byType(AssistantLiveCallControls), findsOneWidget);
+    assistant.enterFullscreen();
+    await _pump(tester);
+    expect(tester.element(surface), same(materialElement));
+    expect(find.byType(AssistantLiveCallControls), findsOneWidget);
+    assistant.exitLiveMode();
+    await _pump(tester);
+    await tester.tap(find.byType(AssistantComposerFab));
+    await _pump(tester);
+    expect(tester.element(surface), same(materialElement));
+    expect(find.byType(TextField), findsOneWidget);
+    expect(find.byType(AssistantLiveCallControls), findsNothing);
+  });
 
   for (final title in ['Settings', 'Profile', 'Mira Chat', 'Mira Live']) {
     final profileSection = title == 'Profile';

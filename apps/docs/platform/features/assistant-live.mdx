@@ -373,3 +373,9 @@ upload. An upload already in flight retains its original workspace and does not
 update a replacement composer. Voice send-now also checks the original scope.
 Delayed file decoding and stale pre-timezone scope are covered by
 `assistant_chat_restore_test.dart`.
+
+### Mobile Live calling surface
+
+Mira Live uses the app background for its calling stage and transcript. Camera, microphone, text-entry and end-call actions are published as content of the existing shell-owned floating dock; the page creates no second control rail. The same dock material persists when switching between Chat input and Live controls. The stage reflects real connection and speaking state, respects reduced motion, and retains permission/recovery feedback. Camera is enabled only after connection, microphone toggling is disabled while connecting, and end-call remains available to cancel an in-progress connection. This presentation does not claim a provider-latency improvement or on-device model execution.
+
+Regression coverage: `assistant_live_mode_view_test.dart` and `assistant_live_call_controls_test.dart` cover narrow/landscape and enlarged-text layouts, real connection-state action availability, and the absence of a body-owned control rail. `shared_navbar_large_text_test.dart` exercises the actual shell at enlarged text size and verifies the same dock Material element survives Chat, Live, global-navigation and full-screen transitions.

@@ -261,82 +261,6 @@ extension _AssistantPageLayout on _AssistantPageState {
                                             ),
                                         ],
                                       ),
-                                      ShellDockPublisher(
-                                        slot: ShellDockSlot(
-                                          location: Routes.assistant,
-                                          workspaceId: currentWorkspace.id,
-                                          composing: _isComposerVisible,
-                                          content: AssistantComposerDock(
-                                            embedded: true,
-                                            voiceCapture: _voiceCapture,
-                                            onAttachVoice: () =>
-                                                _finishVoiceRecording(
-                                                  sendNow: false,
-                                                ),
-                                            onSendVoice: () =>
-                                                _finishVoiceRecording(
-                                                  sendNow: true,
-                                                ),
-                                            repository: _repository,
-                                            chatState: chatState,
-                                            liveState: liveState,
-                                            liveUiState: liveUiState,
-                                            shellState: shellState,
-                                            navigationExpanded:
-                                                chrome.navigationExpanded,
-                                            bottomInset: 0,
-                                            isPersonalWorkspace:
-                                                isPersonalWorkspace,
-                                            onModelSelected:
-                                                _shellCubit.setSelectedModel,
-                                            onOpenCreditSourceSheet: () =>
-                                                _showCreditSourceSheet(
-                                                  context,
-                                                  shellState: shellState,
-                                                  isPersonalWorkspace:
-                                                      isPersonalWorkspace,
-                                                ),
-                                            onThinkingModeChanged:
-                                                _shellCubit.setThinkingMode,
-                                            controller: _inputController,
-                                            focusNode: _inputFocusNode,
-                                            onOpenAttachments: () =>
-                                                _showAttachmentSheet(
-                                                  context,
-                                                  currentWorkspace.id,
-                                                ),
-                                            onCloseComposer:
-                                                _collapseComposerToFab,
-                                            onToggleNavigation:
-                                                _toggleComposerNavigation,
-                                            onMicrophoneTap: () =>
-                                                _recordVoiceMessage(
-                                                  currentWorkspace.id,
-                                                ),
-                                            onSend: () => _handleSend(
-                                              currentWorkspace.id,
-                                              shellState,
-                                              chatState,
-                                              liveState,
-                                            ),
-                                            onRemoveAttachment:
-                                                removeComposerAttachment,
-                                          ),
-                                          primary: _isComposerVisible
-                                              ? AssistantNavigationToggle(
-                                                  focusNode: _inputFocusNode,
-                                                  onToggle:
-                                                      _toggleComposerNavigation,
-                                                )
-                                              : AssistantComposerFab(
-                                                  label: context
-                                                      .l10n
-                                                      .assistantAskPlaceholder,
-                                                  onPressed:
-                                                      _restoreComposerAndFocus,
-                                                ),
-                                        ),
-                                      ),
                                       if (hasTranscript)
                                         AssistantScrollToBottomOverlay(
                                           composerVisible: _isComposerVisible,
@@ -348,6 +272,96 @@ extension _AssistantPageLayout on _AssistantPageState {
                                               _handleScrollToBottomPressed,
                                         ),
                                     ],
+                                    ShellDockPublisher(
+                                      slot: ShellDockSlot(
+                                        location: Routes.assistant,
+                                        workspaceId: currentWorkspace.id,
+                                        composing: isLiveMode
+                                            ? !chrome.navigationExpanded
+                                            : _isComposerVisible,
+                                        content: isLiveMode
+                                            ? _liveCallDock(
+                                                currentWorkspace.id,
+                                                chatState,
+                                                liveState,
+                                              )
+                                            : AssistantComposerDock(
+                                                embedded: true,
+                                                voiceCapture: _voiceCapture,
+                                                onAttachVoice: () =>
+                                                    _finishVoiceRecording(
+                                                      sendNow: false,
+                                                    ),
+                                                onSendVoice: () =>
+                                                    _finishVoiceRecording(
+                                                      sendNow: true,
+                                                    ),
+                                                repository: _repository,
+                                                chatState: chatState,
+                                                liveState: liveState,
+                                                liveUiState: liveUiState,
+                                                shellState: shellState,
+                                                navigationExpanded:
+                                                    chrome.navigationExpanded,
+                                                bottomInset: 0,
+                                                isPersonalWorkspace:
+                                                    isPersonalWorkspace,
+                                                onModelSelected: _shellCubit
+                                                    .setSelectedModel,
+                                                onOpenCreditSourceSheet: () =>
+                                                    _showCreditSourceSheet(
+                                                      context,
+                                                      shellState: shellState,
+                                                      isPersonalWorkspace:
+                                                          isPersonalWorkspace,
+                                                    ),
+                                                onThinkingModeChanged:
+                                                    _shellCubit.setThinkingMode,
+                                                controller: _inputController,
+                                                focusNode: _inputFocusNode,
+                                                onOpenAttachments: () =>
+                                                    _showAttachmentSheet(
+                                                      context,
+                                                      currentWorkspace.id,
+                                                    ),
+                                                onCloseComposer:
+                                                    _collapseComposerToFab,
+                                                onToggleNavigation:
+                                                    _toggleComposerNavigation,
+                                                onMicrophoneTap: () =>
+                                                    _recordVoiceMessage(
+                                                      currentWorkspace.id,
+                                                    ),
+                                                onSend: () => _handleSend(
+                                                  currentWorkspace.id,
+                                                  shellState,
+                                                  chatState,
+                                                  liveState,
+                                                ),
+                                                onRemoveAttachment:
+                                                    removeComposerAttachment,
+                                              ),
+                                        primary: isLiveMode
+                                            ? AssistantNavigationToggle(
+                                                focusNode: _inputFocusNode,
+                                                onToggle:
+                                                    _toggleLiveDockNavigation,
+                                              )
+                                            : _isComposerVisible
+                                            ? AssistantNavigationToggle(
+                                                focusNode: _inputFocusNode,
+                                                onToggle:
+                                                    _toggleComposerNavigation,
+                                              )
+                                            : AssistantComposerFab(
+                                                label: context
+                                                    .l10n
+                                                    .assistantAskPlaceholder,
+                                                onPressed:
+                                                    _restoreComposerAndFocus,
+                                              ),
+                                      ),
+                                    ),
                                     ShellChromeActions(
                                       ownerId: 'assistant-root',
                                       locations: const {Routes.assistant},
