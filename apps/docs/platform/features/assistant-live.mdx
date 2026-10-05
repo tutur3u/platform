@@ -373,3 +373,9 @@ upload. An upload already in flight retains its original workspace and does not
 update a replacement composer. Voice send-now also checks the original scope.
 Delayed file decoding and stale pre-timezone scope are covered by
 `assistant_chat_restore_test.dart`.
+
+### Central mobile Mira settings
+
+On mobile, Settings → Product settings → Assistant opens the same live-browsing preference used by Mira quick settings. The shared shell supplies the title and back dock; the editor adds no second navbar. The preference defaults to off and remains scoped to the signed-in actor and workspace. Switching either scope invalidates the open editor and prevents late reads or writes from publishing into the replacement scope. An unreadable preference shows retry without an editable guessed value; a failed save retains the last confirmed value. This surface configures the existing live-browsing setting only, not local-model installation or provider credentials.
+
+Regression coverage: `assistant_settings_cubit_test.dart`, `assistant_settings_hub_test.dart`, and `assistant_preferences_test.dart` cover persisted values, shared shell publication, failed reads/writes, and async scope invalidation.
