@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const https = require('node:https');
 const os = require('node:os');
 const path = require('node:path');
+const { runPlaywrightWithHeartbeat } = require('./ci/e2e-runtime-heartbeat');
 
 const {
   parseArgs: parseDockerWebArgs,
@@ -2120,14 +2121,10 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
       );
       playwrightEnv = getTasksSatellitePlaywrightEnv(playwrightEnv);
     }
-    await runCommand(
-      'bunx',
-      ['playwright', 'test', ...frontendArgs.playwrightArgs],
-      {
-        cwd: WEB_DIR,
-        env: playwrightEnv,
-      }
-    );
+    await runPlaywrightWithHeartbeat(runCommand, frontendArgs.playwrightArgs, {
+      cwd: WEB_DIR,
+      env: playwrightEnv,
+    });
   } catch (error) {
     runError = error;
     await printE2EFailureDiagnostics({ env, error });
