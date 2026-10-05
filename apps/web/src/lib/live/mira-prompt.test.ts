@@ -30,6 +30,20 @@ const supabase = {} as TypedSupabaseClient;
 const user = { id: 'user-1' };
 
 describe('Live Mira personalization', () => {
+  it('provides canonical discovery guidance without legacy-only limitations', async () => {
+    const live = await buildLiveMiraPrompt({
+      supabase,
+      user,
+      wsId: workspace.wsId,
+      dashboard: false,
+      toolProtocol: 'canonical-v1',
+    });
+    expect(live).toContain('search_workspace_tools');
+    expect(live).toContain('execute_workspace_tool');
+    expect(live).toContain('Stay in the current workspace');
+    expect(live).not.toContain('Chat-only discovery, memory/settings writes');
+    expect(live).not.toContain('Use search_tasks');
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.workspace.mockResolvedValue(workspace);
