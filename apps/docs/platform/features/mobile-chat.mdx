@@ -1,0 +1,32 @@
+---
+title: Mobile Chat navigation and pagination
+description: Native conversation browsing and scoped background loading.
+---
+
+## Conversation browsing
+
+Mobile Chat retains the shared app shell and navigation while compact screens
+switch between the conversation list and a selected thread. Wide screens keep
+both panes visible. The list remains scrollable with tall filter content.
+
+Conversation pages load automatically when the remaining scroll distance falls
+below three quarters of the viewport, including when the first page cannot fill
+the screen. Only one automatic request is made for an unchanged scoped list;
+failed or empty pages retain a manual Load more action rather than retrying in a
+loop. The manual action also remains available when filters show no rows.
+
+Pagination results and failures from an older workspace or refresh generation
+cannot publish into the current list. Pending local rows continue to use the
+existing scoped Chat collection overlay.
+
+## Composer
+
+Attachments use the adaptive sheet shared by compact and expanded mobile
+surfaces. Send remains disabled while a message or attachment upload is in
+flight, and the icon exposes a localized tooltip. This changes neither message
+transport nor attachment permissions; live device and production verification
+are still required for delivery.
+
+Regression coverage: `chat_conversation_layout_test.dart`,
+`chat_pagination_scope_test.dart`, and `chat_thread_layout_test.dart` in
+`apps/mobile/test/features/chat`.
