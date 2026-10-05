@@ -96,6 +96,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "page:/:locale/:wsId/meetings/:meetingId:apps/meet/src/app/[locale]/[wsId]/meetings/[meetingId]/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/:wsId/meetings/:meetingId",
+      "sourceFile": "apps/meet/src/app/[locale]/[wsId]/meetings/[meetingId]/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "page:/:locale/:wsId/moderation:apps/lettin/src/app/[locale]/[wsId]/moderation/page.tsx",
       "kind": "page",
       "methods": [],

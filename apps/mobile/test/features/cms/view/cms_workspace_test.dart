@@ -238,9 +238,21 @@ void main() {
     action('cms-new-collection').onPressed!();
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'Private draft');
+    final navigator = Navigator.of(
+      tester.element(find.byType(TextField).first),
+    );
+    final covered = showDialog<void>(
+      context: tester.element(find.byType(TextField).first),
+      builder: (_) => const AlertDialog(content: Text('Unrelated modal')),
+    );
+    await tester.pumpAndSettle();
     actor.value = 'next';
     await tester.pumpAndSettle();
-    expect(find.widgetWithText(TextField, 'Private draft'), findsNothing);
+    expect(find.text('Private draft', skipOffstage: false), findsNothing);
+    expect(find.text('Unrelated modal'), findsOneWidget);
+    navigator.pop();
+    await tester.pumpAndSettle();
+    await covered;
     expect(repository.saves, 0);
   });
 }

@@ -34,10 +34,20 @@ class _CmsOwnedOverlay extends StatefulWidget {
 }
 
 class _CmsOwnedOverlayState extends State<_CmsOwnedOverlay> {
+  bool _listening = false;
   @override
   void initState() {
     super.initState();
-    widget.alive.addListener(_ownerChanged);
+    if (widget.alive.value) {
+      widget.alive.addListener(_ownerChanged);
+      _listening = true;
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!widget.alive.value) _ownerChanged();
   }
 
   void _ownerChanged() {
@@ -49,11 +59,13 @@ class _CmsOwnedOverlayState extends State<_CmsOwnedOverlay> {
         navigator.removeRoute(route);
       }
     });
+    // A covered route may be settled with no subsequent frame scheduled.
+    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
   @override
   void dispose() {
-    widget.alive.removeListener(_ownerChanged);
+    if (_listening) widget.alive.removeListener(_ownerChanged);
     super.dispose();
   }
 

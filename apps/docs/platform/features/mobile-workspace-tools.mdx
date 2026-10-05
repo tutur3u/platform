@@ -892,7 +892,9 @@ retry instead of letting an exception escape. No new teaching or assessment API
 behavior is implied by this presentation change; existing endpoint permissions
 remain authoritative. Widget regressions in `education_workspace_test.dart`
 cover account/workspace transitions, paging, lazy rendering, challenges/denial,
-and dock search reset.
+and dock search reset. Owned creation routes also close when another modal
+covers them: session cleanup requests a frame and removes only the departed
+route, preserving the unrelated modal above it.
 
 The mobile Education module uses authenticated workspace routes from `apps/web`:
 
@@ -1567,4 +1569,6 @@ retry without silently replaying an uncertain write.
 
 Regression coverage: `cms_workspace_test.dart` exercises lazy 500-row rendering,
 shared dock search, stale-scope responses, denied versus challenged refreshes,
-retained failed-save drafts, and actor-owned editor dismissal.
+retained failed-save drafts, and actor-owned editor dismissal beneath an
+unrelated modal. Cleanup schedules a frame even when the covered route is
+settled; it removes that editor alone and preserves the covering modal.
