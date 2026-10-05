@@ -58,8 +58,28 @@ public static class TuturuuuWindowCapture {
   [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr window, out Rect rect);
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr window);
   [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+  [DllImport("shcore.dll")] public static extern int GetProcessDpiAwareness(IntPtr process, out int awareness);
+  [DllImport("user32.dll")] public static extern IntPtr GetWindowDpiAwarenessContext(IntPtr window);
+  [DllImport("user32.dll")] public static extern bool AreDpiAwarenessContextsEqual(IntPtr first, IntPtr second);
 }
 '@
+  # Diagnose the built, installed process, not only the source manifest. This
+  # receipt is not a substitute for a passing certification report.
+  $awareness = -1
+  $dpiResult = [TuturuuuWindowCapture]::GetProcessDpiAwareness($app.Handle, [ref]$awareness)
+  $windowContext = [TuturuuuWindowCapture]::GetWindowDpiAwarenessContext($app.MainWindowHandle)
+  $perMonitorV2 = [TuturuuuWindowCapture]::AreDpiAwarenessContextsEqual($windowContext, [IntPtr]::new(-4))
+  "processDpiQuerySucceeded=$($dpiResult -eq 0)`nprocessDpiAwareness=$awareness`nwindowPerMonitorV2=$perMonitorV2" | Set-Content (Join-Path $ReportDirectory 'dpi-awareness.txt')
+  $manifestTool = Get-ChildItem $sdkRoot -Filter mt.exe -Recurse | Where-Object { $_.Directory.Name -eq 'x64' } | Sort-Object FullName -Descending | Select-Object -First 1
+  if ($manifestTool) {
+    $manifestReceipt = Join-Path $ReportDirectory 'embedded-executable.manifest'
+    & $manifestTool.FullName "-inputresource:$($app.Path);#1" "-out:$manifestReceipt" 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+      'Unavailable: Windows SDK could not extract the installed executable manifest.' | Set-Content (Join-Path $ReportDirectory 'embedded-manifest-unavailable.txt')
+    }
+  } else {
+    'Unavailable: Windows SDK manifest tool not found.' | Set-Content (Join-Path $ReportDirectory 'embedded-manifest-unavailable.txt')
+  }
   [TuturuuuWindowCapture]::SetForegroundWindow($app.MainWindowHandle) | Out-Null
   Start-Sleep -Seconds 2
   if ([TuturuuuWindowCapture]::GetForegroundWindow() -ne $app.MainWindowHandle) { throw 'App is not foreground; refusing to capture another window' }
@@ -87,6 +107,14 @@ public static class TuturuuuWindowCapture {
     if (!(Test-Path (Join-Path $ReportDirectory 'wack.xml'))) { throw 'Missing WACK report' }
     [xml]$report = Get-Content (Join-Path $ReportDirectory 'wack.xml') -Raw
     $overall = $report.SelectSingleNode('//*[@OVERALL_RESULT]')
+    $summary = @(if ($overall) { "overall=$($overall.GetAttribute('OVERALL_RESULT'))" } else { 'overall=UNKNOWN' })
+    foreach ($test in $report.SelectNodes('//TEST')) {
+      $result = $test.SelectSingleNode('RESULT')
+      if ($result -and $result.InnerText.Trim() -ne 'PASS') {
+        $summary += "$($test.GetAttribute('NAME')) | optional=$($test.GetAttribute('OPTIONAL')) | result=$($result.InnerText.Trim())"
+      }
+    }
+    $summary | Set-Content (Join-Path $ReportDirectory 'wack-summary.txt')
     if (!$overall -or $overall.GetAttribute('OVERALL_RESULT') -ne 'PASS') { throw 'WACK report does not establish an overall pass' }
   }
 } finally {
