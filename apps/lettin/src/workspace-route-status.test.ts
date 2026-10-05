@@ -108,7 +108,6 @@ it.each(['en', 'vi'])(
 it.each([
   '/workspace/worlds/13c20381-54cd-4563-9c47-c9b499397daf',
   '/worlds/invalid',
-  '/workspace/wiki/invalid/entries',
   '/workspace/worlds/invalid/extra',
 ])('keeps unaffected route %s', async (path) => {
   expect(await resolve(path)).toBeNull();
@@ -135,3 +134,22 @@ it.each([
   mocks.status.mockRejectedValue(error);
   await expect(resolve('/workspace/wiki')).rejects.toBe(error);
 });
+
+it.each([
+  '/workspace/wiki/invalid/overview',
+  '/workspace/wiki/13c20381-54cd-4563-9c47-c9b499397daf/unknown',
+])('rejects invalid wiki route %s before streaming', async (path) => {
+  expect((await resolve(path))?.status).toBe(404);
+  mocks.status.mockResolvedValue({ status: 'pending_invite' });
+  expect(await resolve(path)).toBeNull();
+});
+it.each(['overview', 'timeline', 'relationships', 'pages'])(
+  'admits valid joined-workspace wiki section %s',
+  async (section) => {
+    expect(
+      await resolve(
+        `/workspace/wiki/13c20381-54cd-4563-9c47-c9b499397daf/${section}`
+      )
+    ).toBeNull();
+  }
+);
