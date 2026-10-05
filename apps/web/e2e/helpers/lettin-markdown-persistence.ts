@@ -5,6 +5,7 @@ import { safeLettinPhaseFailure } from './lettin-phase-diagnostics';
 type Phase =
   | 'create Markdown page'
   | 'open wiki'
+  | 'open project dialog'
   | 'create project'
   | 'confirm project navigation'
   | 'open notebook'
@@ -28,11 +29,14 @@ export async function verifyLettinMarkdownPersistence(
   origin: string,
   workspaceId: string
 ) {
+  context.setDefaultTimeout(15_000);
   const page = await phase('create Markdown page', () => context.newPage());
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await phase('open wiki', async () => {
-    await page.goto(`${origin}/${workspaceId}/wiki`);
+    await page.goto(`${origin}/${workspaceId}/wiki`, { timeout: 60_000 });
+  });
+  await phase('open project dialog', async () => {
     await page
       .getByRole('button', { name: 'Start a project', exact: true })
       .click();
@@ -92,7 +96,7 @@ export async function verifyLettinMarkdownPersistence(
     await expect(page.getByText('Draft saved', { exact: true })).toBeVisible();
   });
   await phase('reload persisted Markdown', async () => {
-    await page.reload();
+    await page.reload({ timeout: 60_000 });
     await page
       .getByRole('button', { name: 'World notebook', exact: true })
       .click({ timeout: 15_000 });

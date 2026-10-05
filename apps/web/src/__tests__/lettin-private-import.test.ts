@@ -30,8 +30,9 @@ test('import dialog action is bounded and preserves its failure through cleanup'
     { timeout: 60_000 }
   );
   expect(close).toHaveBeenCalledOnce();
-  expect(info.mock.calls.at(-1)).toEqual([
-    '[lettin-e2e] open import dialog: started',
+  expect(info.mock.calls.slice(-2)).toEqual([
+    ['[lettin-e2e] open import dialog: started'],
+    ['[lettin-e2e] close import context: started'],
   ]);
   expect(warn.mock.calls[0]).toEqual([
     '[lettin-e2e] open import dialog: failed',

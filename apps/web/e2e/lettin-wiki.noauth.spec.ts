@@ -6,6 +6,7 @@ import {
   assertSafeE2EEnvironment,
   LOCAL_E2E_APP_COORDINATION_SECRET,
 } from './helpers/environment';
+import { withLettinContextCleanup } from './helpers/lettin-context-cleanup';
 import {
   lettinFixturePhase,
   runLettinFixtureCommand,
@@ -166,13 +167,11 @@ test.describe
         origin!,
         session
       );
-      try {
-        await verifyLettinMarkdownPersistence(context, origin!, workspaceId);
-      } finally {
-        console.info('[lettin-e2e] close browser context: started');
-        await context.close();
-        console.info('[lettin-e2e] close browser context: completed');
-      }
+      await withLettinContextCleanup(
+        context,
+        () => verifyLettinMarkdownPersistence(context, origin!, workspaceId),
+        'Markdown'
+      );
     });
 
     test('serves dedicated timeline and relationship pages and filters unpublished targets for guests', async ({
