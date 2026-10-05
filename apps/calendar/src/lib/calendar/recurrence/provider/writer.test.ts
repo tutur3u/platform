@@ -591,3 +591,66 @@ describe('fresh conference split execution', () => {
     expect(calls.some((call) => call.method === 'POST')).toBe(false);
   });
 });
+
+describe('Outlook future split attendee privacy', () => {
+  const create = () => {
+    const operation = providerSeriesCreatePlan('operation', snapshot);
+    const step = operation.steps[0]!;
+    if (step.kind !== 'create') throw new Error('Expected create');
+    step.metadata = providerFutureCreateMetadata('microsoft', {
+      isOrganizer: true,
+      hideAttendees: true,
+      attendees: [
+        {
+          type: 'required',
+          emailAddress: { address: 'guest@example.invalid' },
+        },
+      ],
+    });
+    return { operation, step };
+  };
+  it('preserves privacy in the create body and requires the provider receipt', async () => {
+    const { writer, calls } = graphWriter([
+      { value: [] },
+      { value: [{ alias: 'America/New_York' }] },
+      { id: 'private-tail', '@odata.etag': 'v1', hideAttendees: true },
+    ]);
+    const { operation, step } = create();
+    await expect(writer.apply(operation, step, [])).resolves.toEqual({
+      eventId: 'private-tail',
+      etag: 'v1',
+    });
+    expect(calls[2]?.body).toMatchObject({ hideAttendees: true });
+  });
+  it.each([false, undefined])(
+    'does not checkpoint a privacy-mismatched create receipt %s',
+    async (hideAttendees) => {
+      const { writer } = graphWriter([
+        { value: [] },
+        { value: [{ alias: 'America/New_York' }] },
+        { id: 'private-tail', '@odata.etag': 'v1', hideAttendees },
+      ]);
+      const { operation, step } = create();
+      await expect(writer.apply(operation, step, [])).rejects.toThrow(
+        'privacy'
+      );
+    }
+  );
+  it.each([true, false])(
+    'verifies privacy on retained creation recovery %s',
+    async (hideAttendees) => {
+      const { writer, calls } = graphWriter([
+        { value: [{ id: 'private-tail' }] },
+        { id: 'private-tail', '@odata.etag': 'v1', hideAttendees },
+      ]);
+      const { operation, step } = create();
+      const pending = writer.apply(operation, step, []);
+      if (hideAttendees)
+        await expect(pending).resolves.toMatchObject({
+          eventId: 'private-tail',
+        });
+      else await expect(pending).rejects.toThrow('privacy');
+      expect(calls.every((call) => call.method === 'GET')).toBe(true);
+    }
+  );
+});
