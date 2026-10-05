@@ -281,3 +281,37 @@ overall WACK `PASS`, plus the existing runtime and publisher review gates.
 Do not remove Flutter license notices or required plugin functionality merely to
 hide an informational test. [Microsoft documents optional Desktop Bridge tests](https://learn.microsoft.com/en-us/windows/uwp/debug-test-perf/windows-desktop-bridge-app-tests)
 as informational, but a required DPI warning still needs investigation.
+
+### Private desktop vault storage
+
+Desktop signing storage is additive and separate from the mobile vault. Windows
+and macOS have independent draft versions and exact resource names; Linux and
+Store MSIX drafts do not receive desktop signing bundles. Ordinary authenticated
+and anonymous database roles cannot read encrypted resources, data keys or token
+hashes. Service-only administration requires an explicit actor who belongs to the
+root workspace and has `manage_desktop_deployment_vault` permission.
+
+Each resource is encrypted with AES-GCM and authenticated against its desktop
+version, platform and resource name. A replacement cannot transplant ciphertext
+between platforms or versions. Draft writes increment the revision and invalidate
+readiness; active resource values and encrypted data-key identity are immutable.
+Validation and activation use the expected revision. Complete resource names are
+a structural prerequisite, not proof of a valid signing certificate: the server's
+certificate and platform readiness checks must succeed before it records a clean
+validation result.
+
+CI tokens contain only a stored hash and bind to a single platform and version.
+The verified desktop OIDC run and attempt reserve a unique fetch lease before
+decryption. Completion rechecks current admission, token expiry and revocation,
+and the active version before any bundle may be returned. A delivered or failed
+lease cannot replay; a lost response requires a new workflow run attempt. Audit
+records use fixed event names and contain no credential values or exception text.
+
+Both platform environments start disabled. Activating a structurally ready
+version does not enable delivery. This storage and cryptography foundation alone
+does not provide an admin screen, bundle endpoint, runner hydration or signing
+proof; those follow in the dependent implementation. Protected GitHub signing
+continues to be the existing source until that integration is explicitly enabled.
+Regression coverage: `desktop-deployment-vault.sql` tests permission boundaries,
+platform separation, revision invalidation, immutable active bytes, replay and
+revocation; `vault-crypto.test.ts` tests tamper and identity binding.
