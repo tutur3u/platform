@@ -187,4 +187,61 @@ describe('useTaskYjsSync', () => {
       yjsHelperMocks.mockConvertJsonContentToYjsState
     ).not.toHaveBeenCalled();
   });
+  it('does not initialize or persist while the peer channel is unavailable', async () => {
+    const props = makeProps();
+    renderHook(() =>
+      useTaskYjsSync({
+        ...props,
+        realtimeEnabled: true,
+        hydrated: true,
+        connected: false,
+      })
+    );
+    await Promise.resolve();
+    expect(
+      taskApiMocks.mockFetchWorkspaceTaskDescription
+    ).not.toHaveBeenCalled();
+    expect(
+      taskApiMocks.mockUpdateWorkspaceTaskDescription
+    ).not.toHaveBeenCalled();
+  });
+
+  it('does not write a late null response after changing resources', async () => {
+    const props = makeProps();
+    let finish!: (value: unknown) => void;
+    taskApiMocks.mockFetchWorkspaceTaskDescription.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve;
+      })
+    );
+    const { unmount } = renderHook(() => useTaskYjsSync(props));
+    unmount();
+    finish({
+      description: JSON.stringify(description),
+      description_yjs_state: null,
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(
+      taskApiMocks.mockUpdateWorkspaceTaskDescription
+    ).not.toHaveBeenCalled();
+    props.doc.destroy();
+  });
+  it('does not publish the unhydrated empty editor into retained task caches', async () => {
+    const props = makeProps();
+    const flush = vi.fn(() => null);
+    renderHook(() =>
+      useTaskYjsSync({
+        ...props,
+        realtimeEnabled: true,
+        hydrated: false,
+        connected: false,
+        flushEditorPendingRef: { current: flush },
+      })
+    );
+    props.doc.getMap('pending').set('key', 'value');
+    await Promise.resolve();
+    expect(flush).not.toHaveBeenCalled();
+    props.doc.destroy();
+  });
 });

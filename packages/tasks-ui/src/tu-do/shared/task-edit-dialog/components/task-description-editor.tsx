@@ -31,6 +31,8 @@ export interface TaskDescriptionEditorProps {
   /** Whether realtime features (Yjs sync) are enabled - true for all tiers */
   realtimeEnabled?: boolean;
   isYjsSyncing: boolean;
+  isYjsConnected: boolean;
+  isYjsHydrationFailed: boolean;
   wsId: string;
   boardId: string;
   taskId?: string;
@@ -96,6 +98,8 @@ export function TaskDescriptionEditor({
   collaborationMode,
   realtimeEnabled = false,
   isYjsSyncing,
+  isYjsConnected,
+  isYjsHydrationFailed,
   wsId,
   boardId,
   taskId,
@@ -367,7 +371,9 @@ export function TaskDescriptionEditor({
           // The dialog is read-first: keep the formatting controls out of the
           // way until the description is actually being edited.
           revealToolbarOnFocus
-          readOnly={isYjsSyncing || disabled}
+          readOnly={
+            isYjsSyncing || (allowYjsSync && !isYjsConnected) || disabled
+          }
           mentionTranslations={mentionTranslations}
         />
 
@@ -380,11 +386,19 @@ export function TaskDescriptionEditor({
         )}
 
         {/* Collaboration sync indicator - shows while Yjs is syncing */}
-        {isYjsSyncing && (
+        {(isYjsSyncing || (allowYjsSync && !isYjsConnected)) && (
           <div className="pointer-events-none absolute top-4 right-4 flex items-center gap-2 rounded-lg border bg-background/95 px-3 py-2 shadow-lg backdrop-blur-sm md:right-8">
-            <Loader2 className="h-4 w-4 animate-spin text-dynamic-yellow" />
+            {!isYjsHydrationFailed && (
+              <Loader2 className="h-4 w-4 animate-spin text-dynamic-yellow" />
+            )}
             <p className="text-muted-foreground text-xs">
-              {t('syncing_collaboration_state')}
+              {t(
+                isYjsHydrationFailed
+                  ? 'connection_lost'
+                  : isYjsSyncing
+                    ? 'syncing_collaboration_state'
+                    : 'reconnecting'
+              )}
             </p>
           </div>
         )}
