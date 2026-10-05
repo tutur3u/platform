@@ -8,6 +8,7 @@ import {
   UnsupportedCalendarRecurrenceError,
 } from '@tuturuuu/utils/calendar-recurrence';
 import { CalendarSeriesError } from '../../service';
+import { verifyGraphLegacySeriesIdentities } from './graph-legacy-identities';
 import { readGraphSeriesSnapshot } from './graph-snapshot';
 import type { GraphSeriesEvent } from './observation';
 import {
@@ -64,6 +65,12 @@ export async function reconcileGraphConnectionSeries(args: {
   }
   if (masters.size > 1000)
     throw new RangeError('Provider recurrence master bound exceeded');
+  const persistedIdentities = await verifyGraphLegacySeriesIdentities({
+    access: args.access,
+    api: args.api,
+    masters,
+    authorize: service.authorize,
+  });
   const handled = new Set<string>();
   for (const masterId of masters) {
     try {
@@ -105,8 +112,11 @@ export async function reconcileGraphConnectionSeries(args: {
         rawExceptions: snapshot.master
           .exceptionOccurrences as unknown as Record<string, unknown>[],
         representedInstanceIds: [
-          ...represented.map((event) => event.id),
-          ...mutable.map((event) => event.id),
+          ...new Set([
+            ...represented.map((event) => event.id),
+            ...mutable.map((event) => event.id),
+            ...(persistedIdentities.get(masterId) ?? []),
+          ]),
         ],
         coverage: snapshot.coverage,
       });
