@@ -864,3 +864,29 @@ changed exceptions, immutable identity bridging, encrypted metadata, cancellatio
 coverage and the disabled default. Microsoft pagination/timezone and shared
 recurrence-edit tests cover continuation authorization, Windows zones and DST
 interval boundaries.
+
+
+### Future provider split metadata
+
+A provider **this and following** edit reads and revision-checks the fresh master
+before reserving its trim. It retains supported writable metadata in the encrypted
+create step: guest identities/options, reminders, visibility/privacy, free-busy,
+Google guest rights and non-operation custom properties, or Outlook categories
+and response-request settings. Old organizer IDs, attendee RSVP replies, provider
+IDs and recovery markers are not copied to the new invitation. Outlook HTML notes
+keep their content type when unchanged; an explicitly edited description uses text.
+
+The current preflight rejects Google conferences, attachments, special event types,
+omitted attendee lists or a non-organizer copy, and Outlook online meetings,
+attachments, hidden guests or a non-organizer copy. It rejects malformed metadata
+instead of silently replacing privacy/reminder settings with provider defaults.
+These exceptions are rejected **before any trim**. Other edit scopes patch the
+existing provider event and do not create a replacement metadata copy. New external
+admission remains disabled; provider UI and authenticated end-to-end verification
+are still required before rollout.
+
+Regression evidence: `create-metadata.test.ts`, `future-admission.test.ts` and
+provider `writer.test.ts` cover preserved metadata, omitted replies/identities,
+HTML notes, strict journal shape, preflight-before-reservation, revision conflicts,
+source mismatch and actual provider create payloads. Recovery fingerprints include
+the retained metadata so retries cannot silently substitute a different tail.
