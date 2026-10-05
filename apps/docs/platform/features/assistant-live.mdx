@@ -406,3 +406,23 @@ attachment metadata; its pending output cannot overwrite the new draft.
 Regression evidence lives in `assistant_live_persistence_test.dart` and
 `assistant_live_turn_parts_test.dart`. These are lifecycle and metadata checks;
 provider latency and live device connectivity require separate runtime evidence.
+
+## Mobile startup measurements
+
+After the authenticated token arrives, mobile binds the owned conversation and
+initializes its native audio player concurrently. Both must finish before the
+provider socket is opened. A failure settles both operations; cancellation or an
+actor/workspace epoch change prevents later connection and timing publication.
+Native playback initialization and disposal retain their existing serial queue.
+
+Live state records monotonic millisecond durations for token minting, history
+binding, audio initialization, socket connection, provider readiness, and the
+whole attempt. These measurements contain no tokens, account identifiers, message
+content, or error payloads and are not uploaded automatically. Concurrent stage
+durations must not be added to estimate total latency. Failed attempts retain
+only completed phase timings; obsolete attempts publish none.
+
+`assistant_live_startup_phases_test.dart` verifies independent overlap, the
+settle-all failure barrier, cancelled scope fencing, and immutable measurements.
+This removes serial client-side waiting; actual device/provider speed remains a
+runtime measurement rather than a promised fixed latency reduction.

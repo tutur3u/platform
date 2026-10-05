@@ -30,6 +30,7 @@ class AssistantLiveState extends Equatable {
     this.assistantDraft = '',
     this.assistantTranscript = '',
     this.assistantParts = const [],
+    this.startupTimings = const {},
     this.insightCards = const [],
     this.goAwayTimeLeft,
     this.error,
@@ -59,6 +60,7 @@ class AssistantLiveState extends Equatable {
   final String assistantDraft;
   final String assistantTranscript;
   final List<AssistantMessagePart> assistantParts;
+  final Map<AssistantLiveStartupPhase, int> startupTimings;
   final List<AssistantLiveInsightCard> insightCards;
   final String? goAwayTimeLeft;
   final String? error;
@@ -100,6 +102,7 @@ class AssistantLiveState extends Equatable {
     String? assistantDraft,
     String? assistantTranscript,
     List<AssistantMessagePart>? assistantParts,
+    Map<AssistantLiveStartupPhase, int>? startupTimings,
     List<AssistantLiveInsightCard>? insightCards,
     Object? goAwayTimeLeft = _assistantLiveSentinel,
     Object? error = _assistantLiveSentinel,
@@ -143,6 +146,7 @@ class AssistantLiveState extends Equatable {
       assistantDraft: assistantDraft ?? this.assistantDraft,
       assistantTranscript: assistantTranscript ?? this.assistantTranscript,
       assistantParts: assistantParts ?? this.assistantParts,
+      startupTimings: startupTimings ?? this.startupTimings,
       insightCards: insightCards ?? this.insightCards,
       goAwayTimeLeft: goAwayTimeLeft == _assistantLiveSentinel
           ? this.goAwayTimeLeft
@@ -181,6 +185,7 @@ class AssistantLiveState extends Equatable {
     assistantDraft,
     assistantTranscript,
     assistantParts,
+    startupTimings,
     insightCards,
     goAwayTimeLeft,
     error,

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:bloc/bloc.dart';
 import 'package:camera/camera.dart';
 import 'package:equatable/equatable.dart';
@@ -16,6 +17,7 @@ import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_live_screen_service.dart';
 import 'package:mobile/features/assistant/data/assistant_live_socket.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
+import 'package:mobile/features/assistant/models/assistant_live_startup_timings.dart';
 import 'package:mobile/features/assistant/models/assistant_live_turn_parts.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 
@@ -113,10 +115,12 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     _pendingTools = Future<void>.value();
     _manualDisconnect = false;
     _readyCompleter = Completer<void>();
+    final timings = AssistantLiveStartupTimings();
 
     emit(
       state.copyWith(
         workspaceId: wsId,
+        startupTimings: const {},
         status: reconnect
             ? AssistantLiveConnectionStatus.reconnecting
             : AssistantLiveConnectionStatus.preparing,
@@ -126,11 +130,14 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     );
 
     try {
-      final envelope = await _repository.fetchLiveToken(
-        wsId: wsId,
-        chatId: chatId ?? state.chatId,
-        model: model ?? state.model ?? assistantLiveModelId,
-        forceFresh: forceFresh,
+      final envelope = await timings.measure(
+        AssistantLiveStartupPhase.token,
+        () => _repository.fetchLiveToken(
+          wsId: wsId,
+          chatId: chatId ?? state.chatId,
+          model: model ?? state.model ?? assistantLiveModelId,
+          forceFresh: forceFresh,
+        ),
       );
       if (_isStale(requestVersion)) {
         return;
@@ -151,20 +158,31 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         ),
       );
 
-      await _onChatBound(wsId, envelope.chatId);
-      if (_isStale(requestVersion)) {
-        return;
-      }
-
-      await _audioPlayer.initialize();
+      // Both operations are independent, but chat ownership and native media
+      // must be ready before exposing the provider connection. Settle both even
+      // if one fails so no background startup error escapes the owned attempt.
+      await Future.wait<void>([
+        timings.measure(
+          AssistantLiveStartupPhase.history,
+          () => _onChatBound(wsId, envelope.chatId),
+        ),
+        timings.measure(
+          AssistantLiveStartupPhase.audio,
+          _audioPlayer.initialize,
+        ),
+      ]);
       if (_isStale(requestVersion)) return;
-      await _socket.connect(
-        token: envelope.token,
-        model: envelope.model,
-        seedHistory: envelope.seedHistory,
-        sessionHandle: sessionHandle,
+      await timings.measure(
+        AssistantLiveStartupPhase.socket,
+        () => _socket.connect(
+          token: envelope.token,
+          model: envelope.model,
+          seedHistory: envelope.seedHistory,
+          sessionHandle: sessionHandle,
+        ),
       );
-      await _waitForReady();
+      if (_isStale(requestVersion)) return;
+      await timings.measure(AssistantLiveStartupPhase.ready, _waitForReady);
       if (_isStale(requestVersion)) {
         return;
       }
@@ -191,6 +209,11 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     } on Exception catch (error) {
       if (_isStale(requestVersion)) return;
       _emitError(error.toString());
+    } finally {
+      timings.finish();
+      if (!_isStale(requestVersion)) {
+        emit(state.copyWith(startupTimings: timings.snapshot));
+      }
     }
   }
 
