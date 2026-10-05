@@ -22,6 +22,9 @@ export default defineConfig({
       '@tuturuuu/internal-api/lettin': fileURLToPath(
         new URL('../../packages/internal-api/src/lettin.ts', import.meta.url)
       ),
+      '@tuturuuu/internal-api': fileURLToPath(
+        new URL('../../packages/internal-api/src/index.ts', import.meta.url)
+      ),
     },
   },
   test: { exclude: ['**/.next/**', '**/node_modules/**'] },
