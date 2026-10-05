@@ -18,6 +18,7 @@ import {
 import { MIN_COLUMN_WIDTH } from './config';
 import { CalendarEventProviderIcon } from './event-provider-display';
 import { LocationTimeline } from './location-timeline';
+import { pastEventTreatment } from './past-event-treatment';
 import { useCalendarSettings } from './settings/settings-context';
 import { getEventLocationType } from './working-location';
 
@@ -85,7 +86,13 @@ const EventContent = ({ event }: { event: CalendarEvent }) => (
 );
 
 export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
-  const { openModal, updateEvent, addEvent, deleteEvent } = useCalendar();
+  const {
+    openModal,
+    updateEvent,
+    addEvent,
+    deleteEvent,
+    preservePastEventOpacity,
+  } = useCalendar();
   const { allDayEvents } = useCalendarSync();
   const { settings } = useCalendarSettings();
   const showWeekends = settings.appearance.showWeekends;
@@ -106,15 +113,12 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     previewSpan: null,
   });
 
-  // Use ref to store the current drag state for stable handlers
   const dragStateRef = useRef<DragState>(dragState);
   dragStateRef.current = dragState;
 
-  // Refs for drag handling
   const containerRef = useRef<HTMLDivElement>(null);
   const dragPreviewRef = useRef<HTMLDivElement>(null);
 
-  // Add refs for drag threshold and timer
   const dragStartPos = useRef<{ x: number; y: number } | null>(null);
   const dragInitiated = useRef(false);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
@@ -864,8 +868,6 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             />
           )}
 
-        {/* Absolute positioned spanning events */}
-        {/* Location timeline strip at the top */}
         <LocationTimeline
           visibleDates={visibleDates}
           locationSpans={locationSpans}
@@ -876,7 +878,6 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           deleteEvent={deleteEvent}
         />
 
-        {/* Absolute positioned spanning events */}
         {regularSpans.map((eventSpan) => {
           const { event, startIndex, span, row, isCutOffStart, isCutOffEnd } =
             eventSpan;
@@ -884,7 +885,6 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           const eventStyle = calendarEventStyle(event);
           const eventRow = row;
 
-          // Check if this event should be visible based on expansion state
           const shouldHideEvent = visibleDates.some((date, dateIndex) => {
             if (dateIndex < startIndex || dateIndex > startIndex + span - 1)
               return false;
@@ -903,11 +903,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
           if (shouldHideEvent) return null;
 
-          // Check if this event is currently being dragged
           const isDraggedEvent =
             dragState.isDragging && dragState.draggedEvent?.id === event.id;
 
-          // Calculate top offset based on location strip presence
           const topOffset = locationTopOffset;
           const optimisticStatus = (
             event as CalendarEvent & {
@@ -926,15 +924,17 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
               key={`spanning-event-${event.id}`}
               className={cn(
                 'absolute flex items-center rounded-sm border-l-2 px-2 py-1 font-semibold text-xs transition-all duration-200',
-                // Cursor changes based on drag state
+                pastEventTreatment(
+                  event,
+                  preservePastEventOpacity,
+                  isDraggedEvent
+                ),
                 dragState.isDragging
                   ? 'cursor-grabbing'
                   : 'cursor-grab hover:cursor-grab',
-                // Visual feedback for dragging
                 isDraggedEvent && 'scale-95 outline outline-dashed',
                 isPendingMutation &&
                   'outline outline-dashed outline-1 outline-primary',
-                // Special styling for cut-off events
                 (isCutOffStart || isCutOffEnd) && 'border-dashed'
               )}
               style={{
@@ -947,7 +947,6 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                 zIndex: isDraggedEvent ? 10 : 5,
               }}
               onClick={() => {
-                // Only open modal if not dragging (locked events can still be clicked to edit)
                 if (!dragState.isDragging) {
                   openModal(event.id, 'all-day');
                 }

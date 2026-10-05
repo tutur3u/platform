@@ -27,6 +27,7 @@ import {
 import { Button } from '../../button';
 import { Input } from '../../input';
 import { calendarDraftDate } from './calendar-period';
+import { pastEventTreatment } from './past-event-treatment';
 import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(utc);
@@ -72,6 +73,7 @@ function EventCard({
   onOpen: (id: string) => void;
 }) {
   const { settings } = useCalendarSettings();
+  const { preservePastEventOpacity } = useCalendar();
   const isAllDay = isAllDayEvent(event);
 
   return (
@@ -80,7 +82,8 @@ function EventCard({
       onClick={() => onOpen(event.id)}
       style={calendarEventStyle(event)}
       className={cn(
-        'group flex w-full cursor-pointer items-start gap-3 rounded-lg border-l-[3px] px-3 py-2.5 text-left transition-colors hover:ring-1 hover:ring-current'
+        'group relative flex w-full cursor-pointer items-start gap-3 rounded-lg border-l-[3px] px-3 py-2.5 text-left transition-colors hover:ring-1 hover:ring-current',
+        pastEventTreatment(event, preservePastEventOpacity)
       )}
     >
       {/* Time column */}
