@@ -75,8 +75,16 @@ if (request.endsWith('/git/ref/heads/production')) {
     marker(98, sha, '2026-01-04', {workflowName: 'other-workflow.yaml'}),
     marker(97, sha, '2026-01-03', {markerKind: 'build'}),
   ];
+  if (process.env.MARKER_PAYLOAD === 'empty') {
+    response = [{id: 17, sha, created_at: '2026-01-06', payload: {}}];
+  } else if (process.env.MARKER_PAYLOAD === 'wrong-sha') {
+    response = [marker(17, sha, '2026-01-06', {sha: process.env.UNRELATED_SHA})];
+  } else {
+    response.push({id: 96, sha, created_at: '2026-01-06', payload: {}});
+  }
 } else if (request.endsWith('/deployments/17/statuses')) {
   response = [{state: process.env.MARKER_STATE}];
+  if (process.env.OLD_SUCCESS === 'true') response.push({state: 'success'});
 } else process.exit(8);
 const projection = process.argv.indexOf('--jq');
 const json = JSON.stringify(response);
@@ -210,6 +218,9 @@ for (const overrides of [
   { STAGING_RESULT: 'skipped' },
   { STAGING_STATUS: 'in_progress' },
   { MARKER_STATE: 'failure' },
+  { MARKER_STATE: 'failure', OLD_SUCCESS: 'true' },
+  { MARKER_PAYLOAD: 'empty' },
+  { MARKER_PAYLOAD: 'wrong-sha' },
   { DATABASE_AFFECTED: 'false' },
   { PLANNER_RESULT: 'failure' },
   { PLANNER_SHA: stagingSha },

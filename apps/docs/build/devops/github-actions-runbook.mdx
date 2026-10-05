@@ -461,6 +461,19 @@ unreferenced and do not keep either process alive. No identities, fixtures, URLs
 request bodies, or raw errors are included. Timeline page creation, navigation,
 and assertions emit fixed operation markers without changing their deadlines.
 
+On Linux, only the parent runner also samples five fixed `/proc` files:
+`meminfo`, `vmstat`, and CPU, memory, and I/O pressure. Logs contain only available
+memory/free swap in KiB, major fault/swap page counters, cumulative PSI stall
+microseconds, and parent RSS bytes. Each asynchronous read allocates at most
+32 KiB plus one byte and checks a shared one-second abort signal before and
+after I/O. Samples never overlap and suppress late publication after command
+cleanup. Unsupported
+or unreadable fields emit only `{ unavailable: 1 }`; raw file data and errors
+are never logged. These counters can distinguish pressure during delayed ticks;
+current readings alone do not prove which process caused it. Regression coverage
+in `e2e-runtime-resources.test.js` checks numeric output, privacy, non-overlap,
+and stopped publication.
+
 CI shards use the public Playwright JSON discovery receipt to partition selected
 tests into sequential cohorts by their declared satellite dependencies. Only a
 cohort's owned Next.js dev servers remain live during its tests; launcher process
@@ -1073,6 +1086,64 @@ deployment for database migrations. Database paths therefore select the
 platform deployment in the production planner, and `supabase-production.yaml`
 requires both the successful planner run and the `vercel-production-platform`
 deployment marker for the same SHA before it can run production migrations.
+The marker must explicitly name the platform workflow, deployment kind, and
+matching payload SHA, and its latest status must be successful. GitHub
+environment records with an empty payload only describe job completion; they
+are not deployment evidence. In particular, a package-deferred platform job can
+succeed without deploying the API and must never unlock contract-changing
+migrations.
+
+`production-package-resume.yaml` listens to completed package releases and successful planner
+completions. A failed package-workflow tail still requires live completion agreement
+and every exact package version on npm; its conclusion alone proves no publication.
+It resumes the owning planner for the exact current production SHA
+only when the prior platform job explicitly deferred for package publishing and
+all changed package versions are visible on npm. It checks the live completion,
+fully paginates planner runs/jobs, and skips active, failed, promoted, or stale candidates. Planner completion also wakes recovery when the
+last package became visible before the original planner finished. The dispatch
+carries `expected_sha`; the planner skips a recovery if production moves before
+it starts. Recovery uses commit-driven deployment-marker and affected-path
+selection, including the Cron Control and Devbox Control Workers. An exact-SHA successful deployment marker skips its already covered target,
+including Platform, only when its payload explicitly identifies the workflow,
+deployment kind, and production ref. Automatic job environment records, build
+markers, and a bare marker-SHA override cannot establish recovery coverage. An
+older Platform marker still permits package recovery. A known marker
+with no affected Worker paths skips them; a missing marker still fails open.
+Ordinary operator dispatches continue selecting all enabled targets.
+Every snapshotted planner's attempt, status, and conclusion must remain unchanged;
+the latest job evidence and run attempt are checked again before reserving an
+intent. A completed rerun with the same run ID therefore blocks stale recovery.
+Satellite deployments still require the normal verified platform
+promotion marker. Completion events use [`queue: max`](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#example-queueing-multiple-pending-runs) with cancellation disabled,
+so up to 100 completions wait instead of replacing the single pending event;
+GitHub cancels overflow beyond that limit. API and npm calls are bounded to
+15 seconds each with a four-minute recovery deadline, below the five-minute
+job limit. Missing npm visibility and registry read failures retry every two
+seconds within that shared deadline, including the final package completion.
+Exhaustion fails the recovery job explicitly before creating an intent or
+requesting dispatch; it never reports a successful deferred skip. Planner runs
+are rechecked after registry reads and immediately before dispatch. GitHub API
+timeouts, unreadable/incomplete results, and changed candidates never retry
+intent or dispatch writes.
+Before dispatch it reserves a durable exact-SHA intent in the dedicated
+`production-package-resume` deployment environment with `auto_merge=false`,
+empty required contexts, `production_environment=false`, and
+`transient_environment=true`. This is a dispatch lock, not deployment or
+migration evidence: no success status is emitted and the real platform marker
+still uses `vercel-production-platform`. Each dispatch passes the returned reservation ID as `resume_intent`; the planner's
+run-name binds that ID and exact SHA. An existing intent blocks subsequent
+completions until its uniquely bound planner is proven completed successfully,
+package-deferred, and unpromoted. If npm visibility failed again, a later completion
+may reserve a new intent only after all prior intents have that proof, current
+versions are visible, and fresh intent/run/attempt/job/ref snapshots agree.
+Legacy or unbound intents, absent runs, failed, uncertain, or timed-out requests
+remain blocked for operator inspection. Intents are never deleted; the exact-SHA
+recovery concurrency group serializes reservation, and a changed intent set blocks
+the next write. This
+requires `deployments: write` only in the recovery workflow.
+A deferred successful workflow is not deployment evidence.
+Validate this guard with `node --test scripts/ci/resume-production-package-deployment*.test.js`.
+
 The gate queries the planner run because reusable app workflows do not create
 standalone Actions runs.
 

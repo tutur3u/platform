@@ -170,9 +170,9 @@ jobs:
                     | . as $deployment
                     | (payload_obj) as $payload
                     | select(
-                        ($deployment.sha == $sha or $payload.sha == $sha)
-                        and (($payload.markerKind // "deployment") == "deployment")
-                        and (($payload.workflowName // "vercel-production-platform.yaml") == "vercel-production-platform.yaml")
+                        ($deployment.sha == $sha and $payload.sha == $sha)
+                        and ($payload.markerKind == "deployment")
+                        and ($payload.workflowName == "vercel-production-platform.yaml")
                       )
                   ]
                   | sort_by(.created_at // "")
@@ -192,13 +192,13 @@ jobs:
                 DEPLOYMENT_MARKER_STATUSES=$(gh api \
                   "repos/${{ github.repository }}/deployments/$DEPLOYMENT_MARKER_DEPLOYMENT_ID/statuses")
                 DEPLOYMENT_MARKER_STATE=$(echo "$DEPLOYMENT_MARKER_STATUSES" | jq -r '.[0].state // "missing"')
-                DEPLOYMENT_MARKER_HAS_SUCCESS=$(echo "$DEPLOYMENT_MARKER_STATUSES" | jq -r '[.[]? | select(.state == "success")] | length > 0')
+                DEPLOYMENT_MARKER_HAS_SUCCESS=$(echo "$DEPLOYMENT_MARKER_STATUSES" | jq -r '.[0].state == "success"')
 
                 echo "Production platform deployment marker latest state: $DEPLOYMENT_MARKER_STATE"
                 echo "Production platform deployment marker has success status: $DEPLOYMENT_MARKER_HAS_SUCCESS"
 
                 if [ "$DEPLOYMENT_MARKER_HAS_SUCCESS" != "true" ]; then
-                  echo "::notice::Skipping production migration because the production platform deployment marker for $TARGET_SHA does not include a success status. Latest state is '$DEPLOYMENT_MARKER_STATE'."
+                  echo "::notice::Skipping production migration because the production platform deployment marker for $TARGET_SHA does not have a current success status. Latest state is '$DEPLOYMENT_MARKER_STATE'."
                 else
                   echo "Checking staging migration status..."
                   STAGING_RUN=$(gh api \
