@@ -1,7 +1,15 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Circle, Code2, FileText, Leaf, WifiOff } from '@tuturuuu/icons';
+import {
+  Circle,
+  Code2,
+  FileText,
+  Leaf,
+  Sparkles,
+  Users,
+  WifiOff,
+} from '@tuturuuu/icons';
 import { MeetLivePanel } from '@tuturuuu/meet-core/features/live-assistant/live-panel';
 import { RoomAssistantAudio } from '@tuturuuu/meet-core/features/live-assistant/room-audio';
 import { meetingAudioSources } from '@tuturuuu/meet-core/features/meeting-ai/audio-sources';
@@ -33,11 +41,12 @@ import { CallExtras } from './call-extras';
 import { CallResourceNotice, resourceErrorKey } from './call-resource-notice';
 import { CallSettings } from './call-settings';
 import { type CallLayout, CallStage } from './call-stage';
-import { type CallPanel, ControlBar } from './control-bar';
+import { type CallPanel, ControlBar, ControlButton } from './control-bar';
 import { CopyInvite } from './copy-invite';
 import { DocumentPanel } from './document-panel';
 import { LeaveDialog } from './leave-dialog';
 import { Lobby } from './lobby';
+import { MeetingActionHint } from './meeting-action-hint';
 import { MeetingTitle } from './meeting-title';
 import {
   PlaybackVolumeControl,
@@ -334,18 +343,21 @@ function CallShellContent({
           </span>
         )}
         {canReadNotes && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 max-w-full rounded-full text-xs"
-            aria-expanded={showAi}
-            onClick={() => {
-              setShowAi(!showAi);
-              setPanel(null);
-            }}
-          >
-            {aiT('title')}
-          </Button>
+          <MeetingActionHint label={aiT('title')}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 max-w-full rounded-full text-xs"
+              aria-expanded={showAi}
+              onClick={() => {
+                setShowAi(!showAi);
+                setPanel(null);
+              }}
+            >
+              <Sparkles className="size-3.5" />
+              {aiT('title')}
+            </Button>
+          </MeetingActionHint>
         )}
         <CopyInvite
           meetingId={meetingId}
@@ -412,17 +424,22 @@ function CallShellContent({
           <span className="text-sm">
             {t('waiting_room', { count: state.waiting.length })}
           </span>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-8 rounded-full"
-            onClick={() => {
-              setPanel('participants');
-              setShowAi(false);
-            }}
+          <MeetingActionHint
+            label={t('participants', { count: participants.length })}
           >
-            {t('participants', { count: participants.length })}
-          </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 rounded-full"
+              onClick={() => {
+                setPanel('participants');
+                setShowAi(false);
+              }}
+            >
+              <Users className="size-3.5" />
+              {t('participants', { count: participants.length })}
+            </Button>
+          </MeetingActionHint>
         </div>
       )}
       <CallResourceNotice error={state.error} />
@@ -547,32 +564,26 @@ function CallShellContent({
         extraControls={
           <>
             {MEETING_APP === 'meet' && (
-              <Button
-                size="icon"
-                variant={showProgramming ? 'secondary' : 'ghost'}
-                aria-label={programmingT('coding')}
-                aria-pressed={showProgramming}
+              <ControlButton
+                active={showProgramming}
+                icon={Code2}
+                label={programmingT('coding')}
                 onClick={() => {
                   setShowDocument(false);
                   setShowProgramming((value) => !value);
                 }}
-              >
-                <Code2 className="size-5" />
-              </Button>
+              />
             )}
             {MEETING_APP === 'meet' && (
-              <Button
-                size="icon"
-                variant={showDocument ? 'secondary' : 'ghost'}
-                aria-label={collaborationT('document')}
-                aria-pressed={showDocument}
+              <ControlButton
+                active={showDocument}
+                icon={FileText}
+                label={collaborationT('document')}
                 onClick={() => {
                   setShowProgramming(false);
                   setShowDocument((value) => !value);
                 }}
-              >
-                <FileText className="size-5" />
-              </Button>
+              />
             )}
             <CallExtras
               layout={layout}

@@ -15,6 +15,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
+import { MeetingActionHint } from './meeting-action-hint';
 
 export function MeetingTitle({
   meetingId,
@@ -46,16 +47,18 @@ export function MeetingTitle({
             }
           }}
         >
-          <DialogTrigger asChild>
-            <button
-              type="button"
-              className="group flex max-w-full items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label={t('edit_title_of', { title: displayed })}
-            >
-              <h1 className="truncate font-medium text-sm">{displayed}</h1>
-              <Pencil className="size-3.5 shrink-0 text-muted-foreground opacity-50 group-hover:opacity-100" />
-            </button>
-          </DialogTrigger>
+          <MeetingActionHint label={t('edit_title')}>
+            <DialogTrigger asChild>
+              <button
+                type="button"
+                className="group flex max-w-full items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={t('edit_title_of', { title: displayed })}
+              >
+                <h1 className="truncate font-medium text-sm">{displayed}</h1>
+                <Pencil className="size-3.5 shrink-0 text-muted-foreground opacity-50 group-hover:opacity-100" />
+              </button>
+            </DialogTrigger>
+          </MeetingActionHint>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{t('edit_title')}</DialogTitle>

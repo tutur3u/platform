@@ -14,6 +14,7 @@ import {
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import { DocumentStatus } from './document-status';
 export function DocumentPanel({
   meetingId,
   accountId,
@@ -110,25 +111,15 @@ export function DocumentEditor({
     };
   }, [doc, initial, join, meetingId]);
   return (
-    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border bg-background">
-      <div className="flex items-center justify-between border-b px-4 py-2 text-sm">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
+      <div className="flex items-center justify-between px-4 py-2 text-sm">
         <strong>{t('document')}</strong>
-        <span className="text-muted-foreground">
-          {connected ? t('live') : t('reconnecting')}
-        </span>
+        <DocumentStatus connected={connected} checkpoint={checkpoint} />
       </div>
-      {checkpoint && checkpoint !== 'saved' && (
-        <p role="alert" className="border-b p-3 text-muted-foreground text-sm">
-          {t(
-            checkpoint === 'conflict'
-              ? 'checkpoint_conflict'
-              : 'checkpoint_deferred'
-          )}
-        </p>
-      )}
       <div className="min-h-0 flex-1 overflow-auto p-4">
         {provider ? (
           <RichTextEditor
+            className="rounded-none! border-0!"
             content={null}
             yjsDoc={doc}
             yjsProvider={provider}
