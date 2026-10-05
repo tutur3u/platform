@@ -19320,6 +19320,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Suggestions need your review. Saving does not create tasks or calendar events. Team workspace notes may be visible to workspace members.'**
   String get notesVoiceProposalNotice;
+
+  /// No description provided for @assistantLocalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'On-device models'**
+  String get assistantLocalTitle;
+
+  /// No description provided for @assistantLocalHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Local text stays on this device. Live voice, attachments and workspace tools use remote mode.'**
+  String get assistantLocalHelp;
+
+  /// No description provided for @assistantLocalHardware.
+  ///
+  /// In en, this message translates to:
+  /// **'Local inference requires a supported device with at least 4 GiB of installed memory. Available memory and native loading still determine readiness.'**
+  String get assistantLocalHardware;
+
+  /// No description provided for @assistantLocalRemote.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote models'**
+  String get assistantLocalRemote;
+
+  /// No description provided for @assistantLocalRemoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use online providers. Local conversations are never uploaded.'**
+  String get assistantLocalRemoteHint;
+
+  /// No description provided for @assistantLocalVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified download'**
+  String get assistantLocalVerified;
+
+  /// No description provided for @assistantLocalSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected for Mira'**
+  String get assistantLocalSelected;
+
+  /// No description provided for @assistantLocalNotDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Not downloaded'**
+  String get assistantLocalNotDownloaded;
+
+  /// No description provided for @assistantLocalDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get assistantLocalDownload;
+
+  /// No description provided for @assistantLocalImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import licensed file'**
+  String get assistantLocalImport;
+
+  /// No description provided for @assistantLocalLicense.
+  ///
+  /// In en, this message translates to:
+  /// **'License'**
+  String get assistantLocalLicense;
+
+  /// No description provided for @assistantLocalDownloadSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Get model from publisher'**
+  String get assistantLocalDownloadSource;
+
+  /// No description provided for @assistantLocalUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Use on this device'**
+  String get assistantLocalUse;
+
+  /// No description provided for @assistantLocalRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove weights'**
+  String get assistantLocalRemove;
+
+  /// No description provided for @assistantLocalBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Model storage budget exceeded. Remove a model before installing another.'**
+  String get assistantLocalBudget;
+
+  /// No description provided for @assistantLocalBudgetDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Models share a 1 GiB device storage budget. Replacement temporarily needs both files.'**
+  String get assistantLocalBudgetDescription;
+
+  /// No description provided for @assistantLocalIntegrity.
+  ///
+  /// In en, this message translates to:
+  /// **'This file does not match the verified model. Obtain the exact published version.'**
+  String get assistantLocalIntegrity;
+
+  /// No description provided for @assistantLocalUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The local model could not be prepared. Check storage and try again.'**
+  String get assistantLocalUnavailable;
+
+  /// No description provided for @assistantLocalBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Another model operation is running on this device.'**
+  String get assistantLocalBusy;
+
+  /// No description provided for @assistantLocalLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing on-device model'**
+  String get assistantLocalLoading;
+
+  /// No description provided for @assistantLocalMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected local model is unavailable. Download it or explicitly choose remote mode.'**
+  String get assistantLocalMissing;
+
+  /// No description provided for @assistantLocalTextOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Local mode supports text only'**
+  String get assistantLocalTextOnly;
+
+  /// No description provided for @assistantLocalEngineError.
+  ///
+  /// In en, this message translates to:
+  /// **'On-device inference failed. Choose the model again to reload it. Your prompt was not sent remotely.'**
+  String get assistantLocalEngineError;
+
+  /// No description provided for @assistantLocalStorageError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save local history or mode. Your conversation has not been uploaded.'**
+  String get assistantLocalStorageError;
+
+  /// No description provided for @assistantLocalInputError.
+  ///
+  /// In en, this message translates to:
+  /// **'Local prompts are limited to 6,000 characters.'**
+  String get assistantLocalInputError;
+
+  /// No description provided for @assistantLocalModeAction.
+  ///
+  /// In en, this message translates to:
+  /// **'On-device model settings'**
+  String get assistantLocalModeAction;
+
+  /// No description provided for @assistantLocalStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop local generation'**
+  String get assistantLocalStop;
+
+  /// No description provided for @assistantLocalHistoryNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'One device-only conversation per model and workspace. Up to 32 messages are retained, subject to encrypted cache eviction.'**
+  String get assistantLocalHistoryNotice;
+
+  /// No description provided for @assistantLocalModeSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Local and remote histories stay separate. Your typed draft stays in the composer.'**
+  String get assistantLocalModeSwitch;
+
+  /// No description provided for @assistantLocalUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'On-device inference is unavailable for this device.'**
+  String get assistantLocalUnsupported;
+
+  /// No description provided for @assistantLocalSelectionUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'A previously selected local model is no longer in the catalogue. Choose a model or explicitly choose remote mode.'**
+  String get assistantLocalSelectionUnknown;
+
+  /// No description provided for @assistantLocalMode.
+  ///
+  /// In en, this message translates to:
+  /// **'On device: {model}'**
+  String assistantLocalMode(String model);
+
+  /// No description provided for @assistantLocalSize.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} MiB'**
+  String assistantLocalSize(int size);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -3,16 +3,29 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
+import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dart';
+import 'package:mobile/features/assistant/local/assistant_local_preferences.dart';
 import 'package:mobile/features/assistant/view/assistant_settings_hub.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/pump_app.dart';
+import '../local/assistant_local_chat_harness.dart';
 
 class _Preferences extends Mock implements AssistantPreferences {}
 
+AssistantLocalModelsCubit _localModels() => AssistantLocalModelsCubit(
+  workspaceId: 'ws',
+  isScopeCurrent: () => true,
+  store: LocalTestStore()..installed = false,
+  preferences: AssistantLocalPreferences(currentUserId: () => 'user'),
+  supported: () async => false,
+);
+
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
   setUpAll(() => registerFallbackValue(() => true));
   testWidgets(
     'central editor uses shell chrome and confirms saved preference',
@@ -31,6 +44,7 @@ void main() {
       ).thenAnswer((_) => saved.future);
       await tester.pumpApp(
         AssistantSettingsHub(
+          localModels: _localModels(),
           workspaceId: 'ws',
           locations: const {'/test'},
           isScopeCurrent: () => true,
@@ -81,6 +95,7 @@ void main() {
     ).thenThrow(StateError('Unavailable'));
     await tester.pumpApp(
       AssistantSettingsHub(
+        localModels: _localModels(),
         workspaceId: 'ws',
         locations: const {'/test'},
         isScopeCurrent: () => true,

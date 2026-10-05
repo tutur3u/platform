@@ -10205,4 +10205,107 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notesVoiceProposalNotice => 'Suggestions need your review. Saving does not create tasks or calendar events. Team workspace notes may be visible to workspace members.';
+
+  @override
+  String get assistantLocalTitle => 'On-device models';
+
+  @override
+  String get assistantLocalHelp => 'Local text stays on this device. Live voice, attachments and workspace tools use remote mode.';
+
+  @override
+  String get assistantLocalHardware => 'Local inference requires a supported device with at least 4 GiB of installed memory. Available memory and native loading still determine readiness.';
+
+  @override
+  String get assistantLocalRemote => 'Remote models';
+
+  @override
+  String get assistantLocalRemoteHint => 'Use online providers. Local conversations are never uploaded.';
+
+  @override
+  String get assistantLocalVerified => 'Verified download';
+
+  @override
+  String get assistantLocalSelected => 'Selected for Mira';
+
+  @override
+  String get assistantLocalNotDownloaded => 'Not downloaded';
+
+  @override
+  String get assistantLocalDownload => 'Download';
+
+  @override
+  String get assistantLocalImport => 'Import licensed file';
+
+  @override
+  String get assistantLocalLicense => 'License';
+
+  @override
+  String get assistantLocalDownloadSource => 'Get model from publisher';
+
+  @override
+  String get assistantLocalUse => 'Use on this device';
+
+  @override
+  String get assistantLocalRemove => 'Remove weights';
+
+  @override
+  String get assistantLocalBudget => 'Model storage budget exceeded. Remove a model before installing another.';
+
+  @override
+  String get assistantLocalBudgetDescription => 'Models share a 1 GiB device storage budget. Replacement temporarily needs both files.';
+
+  @override
+  String get assistantLocalIntegrity => 'This file does not match the verified model. Obtain the exact published version.';
+
+  @override
+  String get assistantLocalUnavailable => 'The local model could not be prepared. Check storage and try again.';
+
+  @override
+  String get assistantLocalBusy => 'Another model operation is running on this device.';
+
+  @override
+  String get assistantLocalLoading => 'Preparing on-device model';
+
+  @override
+  String get assistantLocalMissing => 'The selected local model is unavailable. Download it or explicitly choose remote mode.';
+
+  @override
+  String get assistantLocalTextOnly => 'Local mode supports text only';
+
+  @override
+  String get assistantLocalEngineError => 'On-device inference failed. Choose the model again to reload it. Your prompt was not sent remotely.';
+
+  @override
+  String get assistantLocalStorageError => 'Could not save local history or mode. Your conversation has not been uploaded.';
+
+  @override
+  String get assistantLocalInputError => 'Local prompts are limited to 6,000 characters.';
+
+  @override
+  String get assistantLocalModeAction => 'On-device model settings';
+
+  @override
+  String get assistantLocalStop => 'Stop local generation';
+
+  @override
+  String get assistantLocalHistoryNotice => 'One device-only conversation per model and workspace. Up to 32 messages are retained, subject to encrypted cache eviction.';
+
+  @override
+  String get assistantLocalModeSwitch => 'Local and remote histories stay separate. Your typed draft stays in the composer.';
+
+  @override
+  String get assistantLocalUnsupported => 'On-device inference is unavailable for this device.';
+
+  @override
+  String get assistantLocalSelectionUnknown => 'A previously selected local model is no longer in the catalogue. Choose a model or explicitly choose remote mode.';
+
+  @override
+  String assistantLocalMode(String model) {
+    return 'On device: $model';
+  }
+
+  @override
+  String assistantLocalSize(int size) {
+    return '$size MiB';
+  }
 }

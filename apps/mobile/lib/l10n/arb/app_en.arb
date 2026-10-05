@@ -4344,5 +4344,52 @@
     "notesVoicePermission": "Microphone access is needed to record a voice note.",
     "notesVoiceRecordingError": "Recording could not be captured. Please try again.",
     "notesVoiceFailed": "Analysis could not start. Retry with the same recording while it is available.",
-    "notesVoiceProposalNotice": "Suggestions need your review. Saving does not create tasks or calendar events. Team workspace notes may be visible to workspace members."
+    "notesVoiceProposalNotice": "Suggestions need your review. Saving does not create tasks or calendar events. Team workspace notes may be visible to workspace members.",
+    "assistantLocalTitle": "On-device models",
+    "assistantLocalHelp": "Local text stays on this device. Live voice, attachments and workspace tools use remote mode.",
+    "assistantLocalHardware": "Local inference requires a supported device with at least 4 GiB of installed memory. Available memory and native loading still determine readiness.",
+    "assistantLocalRemote": "Remote models",
+    "assistantLocalRemoteHint": "Use online providers. Local conversations are never uploaded.",
+    "assistantLocalVerified": "Verified download",
+    "assistantLocalSelected": "Selected for Mira",
+    "assistantLocalNotDownloaded": "Not downloaded",
+    "assistantLocalDownload": "Download",
+    "assistantLocalImport": "Import licensed file",
+    "assistantLocalLicense": "License",
+    "assistantLocalDownloadSource": "Get model from publisher",
+    "assistantLocalUse": "Use on this device",
+    "assistantLocalRemove": "Remove weights",
+    "assistantLocalBudget": "Model storage budget exceeded. Remove a model before installing another.",
+    "assistantLocalBudgetDescription": "Models share a 1 GiB device storage budget. Replacement temporarily needs both files.",
+    "assistantLocalIntegrity": "This file does not match the verified model. Obtain the exact published version.",
+    "assistantLocalUnavailable": "The local model could not be prepared. Check storage and try again.",
+    "assistantLocalBusy": "Another model operation is running on this device.",
+    "assistantLocalLoading": "Preparing on-device model",
+    "assistantLocalMissing": "The selected local model is unavailable. Download it or explicitly choose remote mode.",
+    "assistantLocalTextOnly": "Local mode supports text only",
+    "assistantLocalEngineError": "On-device inference failed. Choose the model again to reload it. Your prompt was not sent remotely.",
+    "assistantLocalStorageError": "Could not save local history or mode. Your conversation has not been uploaded.",
+    "assistantLocalInputError": "Local prompts are limited to 6,000 characters.",
+    "assistantLocalModeAction": "On-device model settings",
+    "assistantLocalStop": "Stop local generation",
+    "assistantLocalHistoryNotice": "One device-only conversation per model and workspace. Up to 32 messages are retained, subject to encrypted cache eviction.",
+    "assistantLocalModeSwitch": "Local and remote histories stay separate. Your typed draft stays in the composer.",
+    "assistantLocalUnsupported": "On-device inference is unavailable for this device.",
+    "assistantLocalSelectionUnknown": "A previously selected local model is no longer in the catalogue. Choose a model or explicitly choose remote mode.",
+    "assistantLocalMode": "On device: {model}",
+    "assistantLocalSize": "{size} MiB",
+    "@assistantLocalMode": {
+        "placeholders": {
+            "model": {
+                "type": "String"
+            }
+        }
+    },
+    "@assistantLocalSize": {
+        "placeholders": {
+            "size": {
+                "type": "int"
+            }
+        }
+    }
 }

@@ -1,9 +1,10 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/assistant/cubit/assistant_settings_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
+import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dart';
+import 'package:mobile/features/assistant/local/widgets/assistant_local_models_section.dart';
 import 'package:mobile/features/assistant/widgets/assistant_settings_sheet_body.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
@@ -19,12 +20,14 @@ class AssistantSettingsHub extends StatefulWidget {
     required this.locations,
     required this.isScopeCurrent,
     this.preferences,
+    this.localModels,
     super.key,
   });
   final String workspaceId;
   final Set<String> locations;
   final bool Function() isScopeCurrent;
   final AssistantPreferences? preferences;
+  final AssistantLocalModelsCubit? localModels;
   @override
   State<AssistantSettingsHub> createState() => _AssistantSettingsHubState();
 }
@@ -89,6 +92,12 @@ class _AssistantSettingsHubState extends State<AssistantSettingsHub> {
                           ],
                         ),
                       ),
+                    AssistantLocalModelsSection(
+                      key: ValueKey(widget.workspaceId),
+                      cubit: widget.localModels,
+                      workspaceId: widget.workspaceId,
+                      isScopeCurrent: widget.isScopeCurrent,
+                    ),
                   ],
                 ),
         ),

@@ -10078,4 +10078,107 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get notesVoiceProposalNotice => 'Các đề xuất cần được bạn xem lại. Lưu ghi chú không tạo công việc hoặc sự kiện lịch. Ghi chú trong không gian nhóm có thể hiển thị với thành viên.';
+
+  @override
+  String get assistantLocalTitle => 'Mô hình trên thiết bị';
+
+  @override
+  String get assistantLocalHelp => 'Văn bản cục bộ được giữ trên thiết bị. Giọng nói Live, tệp đính kèm và công cụ không gian làm việc dùng chế độ từ xa.';
+
+  @override
+  String get assistantLocalHardware => 'Suy luận cục bộ cần thiết bị được hỗ trợ có ít nhất 4 GiB bộ nhớ. Bộ nhớ khả dụng và khả năng nạp mô hình vẫn quyết định việc sử dụng.';
+
+  @override
+  String get assistantLocalRemote => 'Mô hình từ xa';
+
+  @override
+  String get assistantLocalRemoteHint => 'Dùng nhà cung cấp trực tuyến. Hội thoại cục bộ không được tải lên.';
+
+  @override
+  String get assistantLocalVerified => 'Tệp tải đã xác minh';
+
+  @override
+  String get assistantLocalSelected => 'Đã chọn cho Mira';
+
+  @override
+  String get assistantLocalNotDownloaded => 'Chưa tải xuống';
+
+  @override
+  String get assistantLocalDownload => 'Tải xuống';
+
+  @override
+  String get assistantLocalImport => 'Nhập tệp có giấy phép';
+
+  @override
+  String get assistantLocalLicense => 'Giấy phép';
+
+  @override
+  String get assistantLocalDownloadSource => 'Lấy mô hình từ nhà phát hành';
+
+  @override
+  String get assistantLocalUse => 'Dùng trên thiết bị này';
+
+  @override
+  String get assistantLocalRemove => 'Xóa tệp mô hình';
+
+  @override
+  String get assistantLocalBudget => 'Vượt giới hạn lưu trữ mô hình. Hãy xóa một mô hình trước khi cài mô hình khác.';
+
+  @override
+  String get assistantLocalBudgetDescription => 'Các mô hình dùng chung giới hạn lưu trữ 1 GiB. Khi thay thế, tạm thời cần lưu cả hai tệp.';
+
+  @override
+  String get assistantLocalIntegrity => 'Tệp này không khớp với mô hình đã xác minh. Hãy lấy đúng phiên bản được phát hành.';
+
+  @override
+  String get assistantLocalUnavailable => 'Không thể chuẩn bị mô hình cục bộ. Hãy kiểm tra bộ nhớ lưu trữ và thử lại.';
+
+  @override
+  String get assistantLocalBusy => 'Một thao tác mô hình khác đang chạy trên thiết bị này.';
+
+  @override
+  String get assistantLocalLoading => 'Đang chuẩn bị mô hình trên thiết bị';
+
+  @override
+  String get assistantLocalMissing => 'Mô hình cục bộ đã chọn không khả dụng. Hãy tải mô hình hoặc chủ động chọn chế độ từ xa.';
+
+  @override
+  String get assistantLocalTextOnly => 'Chế độ cục bộ chỉ hỗ trợ văn bản';
+
+  @override
+  String get assistantLocalEngineError => 'Suy luận trên thiết bị không thành công. Hãy chọn lại mô hình để nạp lại. Lời nhắc của bạn không được gửi từ xa.';
+
+  @override
+  String get assistantLocalStorageError => 'Không thể lưu lịch sử hoặc chế độ cục bộ. Hội thoại của bạn không được tải lên.';
+
+  @override
+  String get assistantLocalInputError => 'Lời nhắc cục bộ được giới hạn ở 6.000 ký tự.';
+
+  @override
+  String get assistantLocalModeAction => 'Cài đặt mô hình trên thiết bị';
+
+  @override
+  String get assistantLocalStop => 'Dừng tạo phản hồi cục bộ';
+
+  @override
+  String get assistantLocalHistoryNotice => 'Mỗi mô hình và không gian làm việc có một hội thoại trên thiết bị. Tối đa 32 tin nhắn được giữ lại, tùy việc dọn bộ nhớ đệm mã hóa.';
+
+  @override
+  String get assistantLocalModeSwitch => 'Lịch sử cục bộ và từ xa được giữ riêng. Bản nháp đang nhập được giữ trong ô soạn thảo.';
+
+  @override
+  String get assistantLocalUnsupported => 'Suy luận trên thiết bị không khả dụng cho thiết bị này.';
+
+  @override
+  String get assistantLocalSelectionUnknown => 'Mô hình cục bộ đã chọn không còn trong danh mục. Hãy chọn mô hình khác hoặc chủ động chọn chế độ từ xa.';
+
+  @override
+  String assistantLocalMode(String model) {
+    return 'Trên thiết bị: $model';
+  }
+
+  @override
+  String assistantLocalSize(int size) {
+    return '$size MiB';
+  }
 }

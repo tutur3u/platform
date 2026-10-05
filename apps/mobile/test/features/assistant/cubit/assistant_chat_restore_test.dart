@@ -9,6 +9,7 @@ import 'package:mobile/features/assistant/data/assistant_memory_file.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
+import 'package:mobile/features/assistant/local/assistant_remote_scope_guard.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -131,6 +132,45 @@ void main() {
       );
     },
   );
+
+  for (final switchBack in [false, true]) {
+    test('delayed attachment decode rejects local mode '
+        '${switchBack ? 'ABA' : 'selection'}', () async {
+      await cubit.loadWorkspace('ws');
+      final scope = Object();
+      var version = 1;
+      var remote = true;
+      final guard = AssistantRemoteScopeGuard(
+        scope: () => scope,
+        version: () => version,
+        remote: () => remote,
+      );
+      final length = Completer<int>();
+      final upload = cubit.addComposerAttachments(
+        wsId: 'ws',
+        files: [_DelayedFile(length)],
+        modelId: 'model',
+        timezone: 'UTC',
+        isCurrentActor: () => guard.current,
+      );
+      remote = false;
+      version++;
+      if (switchBack) {
+        remote = true;
+        version++;
+      }
+      length.complete(4);
+      await upload;
+      expect(cubit.state.composerAttachments, isEmpty);
+      verifyNever(
+        () => repository.uploadAttachment(
+          wsId: any(named: 'wsId'),
+          chatId: any(named: 'chatId'),
+          file: any(named: 'file'),
+        ),
+      );
+    });
+  }
 
   test(
     'voice upload rejects actor change while decoding the local file',
