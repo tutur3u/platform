@@ -40,6 +40,7 @@ const RELATION_REVALIDATE_DELAY_MS = 5_000;
 
 interface Props {
   boardId: string;
+  initialBoard?: WorkspaceTaskBoard;
   workspace: Workspace;
   workspaceTier?: WorkspaceProductTier | null;
   currentUserId?: string;
@@ -51,6 +52,7 @@ interface Props {
 
 export function BoardClient({
   boardId,
+  initialBoard,
   defaultView,
   idleBottomIsland,
   workspace,
@@ -97,8 +99,14 @@ export function BoardClient({
       const result = await getWorkspaceTaskBoard(workspace.id, boardId);
       return result.board as WorkspaceTaskBoard;
     },
-    refetchOnMount: 'always',
-    staleTime: 0,
+    // The server already authorized this exact board for the current request.
+    // Reuse it through hydration instead of paying for the same API read twice.
+    initialData:
+      initialBoard?.id === boardId && initialBoard.ws_id === workspace.id
+        ? initialBoard
+        : undefined,
+    refetchOnMount: true,
+    staleTime: initialBoard ? 30_000 : 0,
   });
   const boardWorkspaceId = board?.ws_id ?? workspace.id;
   const canManageBoard =
