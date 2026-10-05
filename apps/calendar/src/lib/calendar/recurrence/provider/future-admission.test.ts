@@ -184,7 +184,7 @@ describe('future split admission before remote effects', () => {
     { organizer: { self: true }, conferenceData: { conferenceId: 'fixture' } },
     {
       organizer: { self: true },
-      attachments: [{ fileUrl: 'https://drive.google.com/fixture' }],
+      attachments: [{ title: 'missing required reference' }],
     },
     { organizer: { self: true }, attendeesOmitted: true },
     { organizer: { self: false } },

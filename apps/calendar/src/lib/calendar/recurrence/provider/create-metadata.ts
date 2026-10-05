@@ -16,6 +16,19 @@ const googleAttendee = z
 const googleFields = z
   .object({
     attendees: z.array(googleAttendee).max(1000).optional(),
+    attachments: z
+      .array(
+        z
+          .object({
+            fileUrl: z.string().url().max(8192),
+            title: z.string().max(2048).optional(),
+            mimeType: z.string().max(256).optional(),
+            iconLink: z.string().url().max(8192).optional(),
+          })
+          .strict()
+      )
+      .max(25)
+      .optional(),
     reminders: z
       .object({
         useDefault: z.boolean(),
@@ -107,11 +120,10 @@ export function providerFutureCreateMetadata(
     if (
       (master.eventType !== undefined && master.eventType !== 'default') ||
       master.conferenceData ||
-      master.hangoutLink ||
-      (Array.isArray(master.attachments) && master.attachments.length)
+      master.hangoutLink
     )
       throw new RangeError(
-        'Future split does not yet support provider meetings, attachments or special events'
+        'Future split does not yet support provider meetings or special events'
       );
     if (
       master.organizer &&
@@ -143,6 +155,18 @@ export function providerFutureCreateMetadata(
           'comment',
         ]);
       });
+    }
+    if (master.attachments !== undefined && master.attachments !== null) {
+      if (!Array.isArray(master.attachments))
+        throw new RangeError('Provider attachments unavailable');
+      value.attachments = master.attachments.map((attachment) =>
+        pick(z.record(z.string(), z.unknown()).parse(attachment), [
+          'fileUrl',
+          'title',
+          'mimeType',
+          'iconLink',
+        ])
+      );
     }
     if (master.extendedProperties) {
       const properties = z

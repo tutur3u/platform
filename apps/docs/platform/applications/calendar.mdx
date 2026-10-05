@@ -890,3 +890,19 @@ provider `writer.test.ts` cover preserved metadata, omitted replies/identities,
 HTML notes, strict journal shape, preflight-before-reservation, revision conflicts,
 source mismatch and actual provider create payloads. Recovery fingerprints include
 the retained metadata so retries cannot silently substitute a different tail.
+
+### Google future-series attachment references
+
+A future split preserves up to 25 Google attachment references from the freshly
+read organizer-owned master. The replacement event uses Google's
+`supportsAttachments` request option and excludes read-only file IDs. This copies
+links and display metadata, not file content or Drive permissions. Incomplete
+references fail before the original series is trimmed. Google conference
+reuse remains blocked because it can change access and expose meeting details;
+Outlook attachment and online-meeting splits also remain blocked. Provider
+editing admission stays disabled until the remaining parity checks pass.
+
+Regression coverage: `create-metadata.test.ts`, `future-admission.test.ts`, and
+`writer.test.ts` verify reference validation, preflight ordering, and create
+request options. See the [Google event resource](https://developers.google.com/workspace/calendar/api/v3/reference/events)
+for attachment limits and conference reuse restrictions.
