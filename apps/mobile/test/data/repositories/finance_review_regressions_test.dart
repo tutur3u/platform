@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -167,6 +168,100 @@ void main() {
       ).called(1);
     },
   );
+
+  test(
+    'awaited detail transport fallback respects newer list redaction',
+    () async {
+      final path = FinanceEndpoints.transaction('ws', 'redacted');
+      await snapshot('transactionDetail', path, {
+        ..._transaction('redacted', 1),
+        'description': 'Synthetic private older detail',
+      });
+      await snapshot('infiniteTransactions', 'page', {
+        'data': [
+          {..._transaction('redacted', 1), 'description': '[CONFIDENTIAL]'},
+        ],
+      });
+      online = true;
+      final detail = await CacheStore.awaitRevalidation(
+        () => repo.getTransactionById(wsId: 'ws', transactionId: 'redacted'),
+      );
+      expect(detail?.description, '[CONFIDENTIAL]');
+      expect(
+        jsonEncode(detail?.toJson()),
+        isNot(contains('Synthetic private')),
+      );
+      expect(
+        (await repo.getTransactionsInfinite(
+          wsId: 'ws',
+          search: 'private',
+        )).data,
+        isEmpty,
+      );
+    },
+  );
+
+  for (final error in [
+    const ApiException(message: 'Denied', statusCode: 401),
+    const ApiException(
+      message: 'Verify',
+      statusCode: 403,
+      code: 'MFA_REQUIRED',
+      isVerificationRequired: true,
+    ),
+  ]) {
+    test(
+      'awaited transaction detail rejects ${error.statusCode}/${error.code}',
+      () async {
+        final path = FinanceEndpoints.transaction('ws', 'restricted');
+        await snapshot(
+          'transactionDetail',
+          path,
+          _transaction('restricted', 1),
+        );
+        online = true;
+        when(() => api.getJson(path)).thenThrow(error);
+        await expectLater(
+          CacheStore.awaitRevalidation(
+            () => repo.getTransactionById(
+              wsId: 'ws',
+              transactionId: 'restricted',
+            ),
+          ),
+          throwsA(
+            isA<ApiException>().having(
+              (e) => e.statusCode,
+              'status',
+              error.statusCode,
+            ),
+          ),
+        );
+        expect(
+          (await store.read<Object?>(
+            key: key('transactionDetail', path),
+            decode: (v) => v,
+          )).hasValue,
+          error.isVerificationRequired,
+        );
+      },
+    );
+  }
+
+  test('actor switch blocks awaited detail transport fallback', () async {
+    final path = FinanceEndpoints.transaction('ws', 'owned');
+    await snapshot('transactionDetail', path, _transaction('owned', 1));
+    online = true;
+    when(() => api.getJson(path)).thenAnswer((_) async {
+      user = 'other';
+      throw const ApiException.transport(message: 'Offline');
+    });
+    await expectLater(
+      CacheStore.awaitRevalidation(
+        () => repo.getTransactionById(wsId: 'ws', transactionId: 'owned'),
+      ),
+      throwsA(isA<ApiException>().having((e) => e.statusCode, 'status', 401)),
+    );
+  });
 
   test('server 404 evicts a retained transaction detail', () async {
     final path = FinanceEndpoints.transaction('ws', 'deleted');

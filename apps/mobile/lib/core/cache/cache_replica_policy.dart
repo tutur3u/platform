@@ -137,10 +137,16 @@ ReplicaEntityRecord mergeReplicaRows(
         if (row.payload.containsKey(field) && row.payload[field] == null)
           (time: row.fetchedAt, rank: _replicaAuthority(row)),
     ];
+    final redactions = [
+      for (final row in ordered)
+        if (_isRedaction(row, field)) row.fetchedAt,
+    ];
     ReplicaEntityRecord? selected;
     for (final row in ordered) {
       if (!row.payload.containsKey(field) ||
           row.payload[field] == null ||
+          (!_isRedaction(row, field) &&
+              redactions.any((time) => !row.fetchedAt.isAfter(time))) ||
           clears.any(
             (clear) =>
                 !row.fetchedAt.isAfter(clear.time) ||
@@ -169,6 +175,13 @@ ReplicaEntityRecord mergeReplicaRows(
     mergeSources: List.unmodifiable(ordered),
   );
 }
+
+// A newer server redaction is an authorization boundary, not a sparse value.
+// A later authorized response may restore the field; older detail may not.
+bool _isRedaction(ReplicaEntityRecord row, String field) =>
+    row.namespace.startsWith('finance.') &&
+    field == 'description' &&
+    row.payload[field] == '[CONFIDENTIAL]';
 
 int _compareReplicaAuthority(ReplicaEntityRecord a, ReplicaEntityRecord b) {
   final rank = _replicaAuthority(a).compareTo(_replicaAuthority(b));

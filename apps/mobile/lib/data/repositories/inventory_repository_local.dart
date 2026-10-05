@@ -234,7 +234,15 @@ extension _InventoryLocalReads on InventoryRepository {
         includeArchived: true,
         pending: await _mutationQueue.listPending(),
       );
-      period = periods.where((row) => row.id == periodId).firstOrNull;
+      period =
+          periods.where((row) => row.id == periodId).firstOrNull ??
+          (detail.period?.id == periodId ? detail.period : null) ??
+          InventorySalesPeriod(
+            id: periodId,
+            name: periodId,
+            status: 'unknown',
+            saleCount: 0,
+          );
     }
     checkActor();
     return InventorySaleDetail(

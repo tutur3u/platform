@@ -107,6 +107,53 @@ void main() {
     );
   }
 
+  for (final stage in ['snapshot', 'replica-rows', 'replica-index']) {
+    test('$stage tag invalidation retains previous stale snapshot', () async {
+      await store.write(
+        key: key,
+        policy: CachePolicies.moduleData,
+        tags: const ['inventory'],
+        payload: [
+          {'id': 'product', 'name': 'Previous'},
+        ],
+      );
+      Future<void>? invalidation;
+      checkpoint = (at) async {
+        if (at != stage) return;
+        invalidation = store.invalidateTags(
+          const ['inventory'],
+          userId: 'a',
+          workspaceId: 'one',
+        );
+        // Let invalidation fence the flight before its serialized stale mark.
+        await Future<void>.delayed(Duration.zero);
+      };
+      final response = await store.prefetch<List<dynamic>>(
+        key: key,
+        policy: CachePolicies.moduleData,
+        tags: const ['inventory'],
+        decode: (json) => json! as List<dynamic>,
+        fetch: () async => [
+          {'id': 'product', 'name': 'Attempt'},
+        ],
+        forceRefresh: true,
+      );
+      await invalidation;
+      checkpoint = null;
+      expect(response.hasValue, isFalse);
+      expect(await names(), ['Previous']);
+      final saved = store.peek<List<dynamic>>(
+        key: key,
+        decode: (json) => json! as List<dynamic>,
+      );
+      expect((saved.data!.single as Map)['name'], 'Previous');
+      expect(saved.state.name, 'stale');
+      await store.closeForTesting();
+      store = open();
+      expect(await names(), ['Previous']);
+    });
+  }
+
   test(
     'resource clear during a failed refresh never resurrects old rows',
     () async {

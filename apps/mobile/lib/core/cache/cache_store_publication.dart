@@ -75,6 +75,9 @@ extension CacheStorePublication on CacheStore {
       tags: tags,
       params: key.params,
     );
+    final scopeRevisions = {
+      for (final scope in _scopes(key)) scope: _scopeRevisions[scope] ?? 0,
+    };
     final journal = await _beginResourceJournal([key]);
     try {
       await _resourceBox.put(key.value, record.toJson());
@@ -88,8 +91,13 @@ extension CacheStorePublication on CacheStore {
         journal,
         restore: (_) {
           try {
-            checkCurrent();
-            return true;
+            checkScope?.call();
+            // Tag/key invalidation rejects the attempted response but retains
+            // the last authorized snapshot. Only actor/scope clears erase it.
+            return !_isClearing(key) &&
+                scopeRevisions.entries.every(
+                  (entry) => (_scopeRevisions[entry.key] ?? 0) == entry.value,
+                );
           } on Object {
             return false;
           }

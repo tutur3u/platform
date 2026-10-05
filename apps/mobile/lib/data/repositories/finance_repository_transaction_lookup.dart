@@ -8,7 +8,15 @@ extension FinanceRepositoryTransactionLookup on FinanceRepository {
     final userId = _cacheUserId();
     final local = await _localTransactions(wsId);
     final pending = await _mutationQueue.listPending();
-    if (!await _networkAvailable() ||
+    void checkActor() {
+      if (_cacheUserId() != userId) {
+        throw const ApiException(message: 'Account changed', statusCode: 401);
+      }
+    }
+
+    final online = await _networkAvailable();
+    checkActor();
+    if (!online ||
         pending.any(
           (row) =>
               row.feature == 'finance' &&
@@ -30,9 +38,13 @@ extension FinanceRepositoryTransactionLookup on FinanceRepository {
         cacheStore: _cacheStore,
         cacheUserId: _cacheUserId,
         forceRefresh: true,
+        // Fall back through merged rows so newer server redactions win over an
+        // older raw detail snapshot during awaited refresh transport errors.
+        allowAwaitedTransportFallback: false,
       );
       return Transaction.fromJson(response);
     } on Object catch (error) {
+      checkActor();
       if (error is ApiException && error.statusCode == 404) {
         await _cacheStore.remove(
           CacheKey(

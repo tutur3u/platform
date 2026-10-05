@@ -149,6 +149,32 @@ void main() {
     },
   );
 
+  test(
+    'evicted metadata keeps queued period identity until explicit clear',
+    () async {
+      await saveDetail();
+      await assign('confirmed-sale', 'new-period');
+      await harness.store.clearScope(
+        userId: 'actor',
+        workspaceId: 'ws',
+        namespace: 'inventory.sales-periods',
+        resourceOnly: true,
+      );
+      final assigned = await repository.getSaleDetail('ws', 'confirmed-sale');
+      expect(assigned.period?.id, 'new-period');
+      expect(assigned.period?.name, 'new-period');
+      expect(assigned.period?.status, 'unknown');
+      expect(assigned.lines.single.productId, 'product');
+      expect(await harness.queue.listPending(), hasLength(1));
+      await assign('confirmed-sale', null);
+      expect(
+        (await repository.getSaleDetail('ws', 'confirmed-sale')).period,
+        isNull,
+      );
+      verifyNever(() => api.getJson(any()));
+    },
+  );
+
   test('another workspace assignment does not alter the saved sale', () async {
     await saveDetail();
     await assign('confirmed-sale', 'new-period', ws: 'other');

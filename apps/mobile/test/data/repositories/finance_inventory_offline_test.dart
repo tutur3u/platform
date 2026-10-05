@@ -140,7 +140,6 @@ void main() {
     policy: CachePolicies.offlineCatalog,
     payload: payload,
   );
-
   test(
     'offline product queries preserve whole query, accents and wildcards',
     () async {
@@ -187,7 +186,24 @@ void main() {
       verifyNever(() => api.getJson(any()));
     },
   );
-
+  test('newer finance redaction hides old detail offline', () async {
+    await snapshot('finance.transactionDetail', {
+      'data': _transaction('secret', 'Synthetic private detail', 1),
+    });
+    await snapshot('finance.infiniteTransactions', {
+      'data': [_transaction('secret', '[CONFIDENTIAL]', 1)],
+    });
+    final visible = await finance.getTransactionsInfinite(wsId: 'ws');
+    expect(visible.data.single.description, '[CONFIDENTIAL]');
+    expect(
+      (await finance.getTransactionsInfinite(
+        wsId: 'ws',
+        search: 'private',
+      )).data,
+      isEmpty,
+    );
+    verifyNever(() => api.getJson(any()));
+  });
   test(
     'finance search uses descriptions and excludes redacted and other scopes',
     () async {

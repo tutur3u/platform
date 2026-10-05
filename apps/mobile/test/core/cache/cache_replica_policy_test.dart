@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -187,6 +188,49 @@ void main() {
       }
     },
   );
+  test('newer finance redaction blocks old detail in every merge order', () {
+    ReplicaEntityRecord source(
+      String namespace,
+      int day,
+      String? description,
+    ) => ReplicaEntityRecord(
+      id: 'transaction',
+      namespace: namespace,
+      sourceKey: namespace,
+      fetchedAt: DateTime.utc(2026, 1, day),
+      userId: 'a',
+      workspaceId: 'ws',
+      payload: {
+        'id': 'transaction',
+        'wallet_id': 'wallet',
+        'amount': 10,
+        'description': description,
+      },
+    );
+    final private = source('finance.transactionDetail', 1, 'Private old note');
+    final redacted = source('finance.transactions', 2, '[CONFIDENTIAL]');
+    for (final pair in [
+      [private, redacted],
+      [redacted, private],
+    ]) {
+      final result = pair.reduce(mergeReplicaRows);
+      expect(result.payload['description'], '[CONFIDENTIAL]');
+      expect(jsonEncode(result.toJson()), isNot(contains('Private old note')));
+    }
+    final authorized = source(
+      'finance.transactionDetail',
+      3,
+      'Authorized new note',
+    );
+    final restored = mergeReplicaRows(
+      mergeReplicaRows(private, redacted),
+      authorized,
+    );
+    expect(restored.payload['description'], 'Authorized new note');
+    final clear = source('finance.transactions', 4, null);
+    expect(mergeReplicaRows(restored, clear).payload['description'], isNull);
+  });
+
   for (final clear in [false, true]) {
     test(
       'three-source fold retains canonical field and later clear=$clear',
