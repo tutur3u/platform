@@ -1,5 +1,6 @@
-param([Parameter(Mandatory=$true)][string]$Package, [Parameter(Mandatory=$true)][string]$ReportDirectory)
+param([Parameter(Mandatory=$true)][string]$Package, [Parameter(Mandatory=$true)][string]$ReportDirectory, [switch]$DiagnosticsOnly)
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'store-certification-gate.ps1')
 $publisher = 'CN=0AC0922B-9A14-4E11-AC48-1A1AC49C81E1'
 $name = 'Tuturuuu.Tuturuuu'
 if (Get-AppxPackage -Name $name) { throw 'Refusing to replace an existing installed app during CI validation' }
@@ -97,10 +98,7 @@ public static class TuturuuuWindowCapture {
   'Installed identity, first-frame window, and harmless URI activation passed. Authentication and Store upgrade still need device testing.' | Set-Content (Join-Path $ReportDirectory 'runtime.txt')
   Stop-Process -Id $app.Id
   $wack = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\App Certification Kit\appcert.exe'
-  if (!(Test-Path $wack) -or [Diagnostics.Process]::GetCurrentProcess().SessionId -eq 0) {
-    'BLOCKED: WACK requires the current Windows App Certification Kit in an interactive user session. Do not submit this package until a complete passing report is attached.' | Set-Content (Join-Path $ReportDirectory 'wack-blocked.txt')
-    Write-Warning 'WACK unavailable; Store submission remains blocked pending interactive Windows certification testing.'
-  } else {
+  if (Test-WindowsStoreCertificationPrerequisites -KitPath $wack -SessionId ([Diagnostics.Process]::GetCurrentProcess().SessionId) -ReportDirectory $ReportDirectory -DiagnosticsOnly:$DiagnosticsOnly) {
     & $wack reset
     & $wack test -packagefullname $installed.PackageFullName -reportoutputpath (Join-Path $ReportDirectory 'wack.xml')
     if ($LASTEXITCODE -ne 0) { throw 'Windows App Certification Kit reported a failure' }
