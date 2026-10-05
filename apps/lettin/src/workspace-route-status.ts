@@ -39,6 +39,14 @@ export async function getWorkspaceRouteStatus(
       withForwardedInternalApiAuth(verifiedHeaders)
     );
   } catch (error) {
+    // This probe preserves HTTP status before streaming; it is not the access
+    // guard. The workspace layout still verifies the actor and membership.
+    // Let that guarded layout recover from a temporarily unavailable probe.
+    if (
+      error instanceof TypeError ||
+      (error instanceof InternalApiError && error.status >= 500)
+    )
+      return null;
     if (
       !(error instanceof InternalApiError) ||
       ![401, 403, 404].includes(error.status)
