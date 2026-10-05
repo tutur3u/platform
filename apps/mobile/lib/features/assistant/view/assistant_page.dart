@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
@@ -28,14 +29,19 @@ import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_live_socket.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/assistant/local/assistant_local_chat_cubit.dart';
+import 'package:mobile/features/assistant/local/assistant_local_chat_state.dart';
+import 'package:mobile/features/assistant/local/assistant_local_model.dart';
+import 'package:mobile/features/assistant/local/assistant_remote_chat_actions.dart';
+import 'package:mobile/features/assistant/local/assistant_remote_scope_guard.dart';
 import 'package:mobile/features/assistant/models/assistant_chat_identity.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_mobile_screen_context.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/view/assistant_settings_hub.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_capture_sheet.dart';
-import 'package:mobile/features/assistant/widgets/assistant_chat_feedback.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
@@ -46,11 +52,11 @@ import 'package:mobile/features/assistant/widgets/assistant_live_info_sheet_body
 import 'package:mobile/features/assistant/widgets/assistant_live_mode_view.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_stage_card.dart';
 import 'package:mobile/features/assistant/widgets/assistant_scroll_to_bottom_overlay.dart';
-import 'package:mobile/features/assistant/widgets/assistant_settings_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_starter_prompts.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -66,6 +72,8 @@ part 'assistant_page_layout.dart';
 part 'assistant_page_workspace.dart';
 part 'assistant_page_attachments.dart';
 part 'assistant_page_chrome.dart';
+part 'assistant_page_history.dart';
+part 'assistant_page_local.dart';
 
 class AssistantPage extends StatefulWidget {
   const AssistantPage({this.replayToken = 0, super.key});
@@ -85,6 +93,7 @@ class _AssistantPageState extends State<AssistantPage>
   String? _voiceWorkspaceId;
   String? _voiceActorId;
   int? _voiceScopeVersion;
+  int? _voiceLocalVersion;
   int _voiceActorScopeEpoch = 0;
   final _inputController = TextEditingController();
   final _inputFocusNode = FocusNode();
@@ -142,6 +151,8 @@ class _AssistantPageState extends State<AssistantPage>
     },
   );
 
+  late final _localCubit = AssistantLocalChatCubit(currentScope: _localScope);
+
   String? _loadedWorkspaceId;
   String? _lastEmptyStateResetKey;
   bool _wasAssistantEmptyLayout = false;
@@ -154,8 +165,10 @@ class _AssistantPageState extends State<AssistantPage>
   bool _lifecycleDisconnectPending = false;
   bool _appIsForeground = true;
 
-  void _setKeepLiveWhileBrowsing(bool value) {
-    if (mounted) setState(() => _keepLiveWhileBrowsing = value);
+  void _resetLocalActor() {
+    ++_voiceActorScopeEpoch;
+    unawaited(_localCubit.invalidate());
+    setState(() => _loadedWorkspaceId = null);
   }
 
   bool _ignoreScrollVisibilityUpdates = false;
@@ -171,10 +184,14 @@ class _AssistantPageState extends State<AssistantPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _appIsForeground = true;
+    if (state == AppLifecycleState.resumed) {
+      _appIsForeground = true;
+      _resumeLocal();
+    }
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
       _appIsForeground = false;
+      unawaited(_localCubit.invalidate());
       unawaited(_disconnectForLifecycle());
     }
   }
@@ -197,10 +214,13 @@ class _AssistantPageState extends State<AssistantPage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!TickerMode.valuesOf(context).enabled) {
+    if (TickerMode.valuesOf(context).enabled) {
+      _resumeLocal();
+    } else {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || TickerMode.valuesOf(context).enabled) return;
         unawaited(_voiceCapture.cancel());
+        unawaited(_localCubit.invalidate());
         _collapseComposerToFab();
         unawaited(_disconnectWhenHidden());
       });
@@ -225,6 +245,7 @@ class _AssistantPageState extends State<AssistantPage>
     unawaited(_liveCubit.close());
     unawaited(_shellCubit.close());
     unawaited(_chatCubit.close());
+    unawaited(_localCubit.close().catchError((Object _) {}));
     super.dispose();
   }
 
@@ -435,9 +456,21 @@ class _AssistantPageState extends State<AssistantPage>
   ) async {
     _dismissKeyboard();
     _inputController.clear();
+    if (_localCubit.state.local || _localCubit.state.blocked) {
+      await _localCubit.clearConversation();
+      if (mounted) _scheduleScrollToTop();
+      return;
+    }
 
+    final scope = _localScope();
+    final version = _localCubit.scopeVersion;
     if (_isVisibleLiveSession(chatState, liveState)) {
       await _liveCubit.disconnect(clearSession: true);
+    }
+    if (!mounted ||
+        scope != _localScope() ||
+        version != _localCubit.scopeVersion) {
+      return;
     }
 
     await _chatCubit.resetConversation(wsId);
@@ -453,6 +486,12 @@ class _AssistantPageState extends State<AssistantPage>
     AssistantChatState chatState,
     AssistantLiveState liveState,
   ) async {
+    if (_localCubit.state.local || _localCubit.state.blocked) {
+      await _sendLocal();
+      return;
+    }
+    final guard = _remoteGuard(wsId);
+    if (!guard.current) return;
     final workspaceVersion = _chatCubit.attachmentScopeVersion;
     if (_chatCubit.state.workspaceId != wsId ||
         _chatCubit.state.status == AssistantChatStatus.restoring) {
@@ -487,33 +526,28 @@ class _AssistantPageState extends State<AssistantPage>
         text: text,
         attachments: attachments,
       );
-      if (!mounted ||
+      if (!guard.current ||
+          !mounted ||
           _chatCubit.attachmentScopeVersion != workspaceVersion ||
           _liveCubit.state.status == AssistantLiveConnectionStatus.error) {
         return;
       }
       _chatCubit.takeUploadedComposerAttachments();
     } else {
-      final timezone = await getCurrentTimezoneIdentifier();
-      if (!mounted ||
-          _chatCubit.attachmentScopeVersion != workspaceVersion ||
-          _chatCubit.state.status == AssistantChatStatus.restoring ||
-          _chatCubit.state.workspaceId != wsId) {
-        return;
-      }
-      await _chatCubit.submit(
+      if (!await submitAssistantRemoteChat(
+        _chatCubit,
+        shellState,
         wsId: wsId,
         message: text,
-        modelId: shellState.selectedModel.value,
-        thinkingMode: shellState.thinkingMode,
-        creditSource: shellState.creditSource,
-        workspaceContextId: shellState.workspaceContextId,
-        timezone: timezone,
-        creditWsId: _resolveCreditWorkspaceId(shellState, wsId),
-      );
+        isCurrent: () =>
+            guard.current &&
+            _chatCubit.attachmentScopeVersion == workspaceVersion,
+      )) {
+        return;
+      }
     }
 
-    if (!mounted) {
+    if (!guard.current || !mounted) {
       return;
     }
 
@@ -525,56 +559,6 @@ class _AssistantPageState extends State<AssistantPage>
     final messenger = ScaffoldMessenger.maybeOf(context);
     messenger?.hideCurrentSnackBar();
     messenger?.showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  Future<void> _showHistorySheet(BuildContext context, String wsId) async {
-    await _chatCubit.refreshHistory();
-    if (!mounted || !context.mounted) {
-      return;
-    }
-    await showAdaptiveDrawer(
-      context: context,
-      builder: (drawerContext) => AssistantHistorySheetBody(
-        chatCubit: _chatCubit,
-        activeChatId: _chatCubit.state.chat?.id,
-        onClose: () => dismissAdaptiveDrawerOverlay(drawerContext),
-        onNewConversation: () async {
-          await dismissAdaptiveDrawerOverlay(drawerContext);
-          if (!mounted) return;
-          if (this.context.read<AssistantChromeCubit>().state.isLiveMode) {
-            await _exitLiveMode();
-          }
-          await _startNewConversation(wsId, _chatCubit.state, _liveCubit.state);
-        },
-        onSelectChat: (chat) async {
-          await dismissAdaptiveDrawerOverlay(drawerContext);
-          if (!mounted) return;
-          if (_liveCubit.state.chatId != null &&
-              _liveCubit.state.chatId != chat.id) {
-            await _liveCubit.disconnect();
-          }
-          if (!mounted) return;
-          if (this.context.read<AssistantChromeCubit>().state.isLiveMode) {
-            await _exitLiveMode();
-          }
-          await _chatCubit.openChat(wsId, chat);
-        },
-      ),
-    );
-  }
-
-  Future<void> _showCreditSourceSheet(
-    BuildContext context, {
-    required AssistantShellState shellState,
-    required bool isPersonalWorkspace,
-  }) async {
-    await showAdaptiveSheet<void>(
-      context: context,
-      builder: (sheetContext) => AssistantCreditSourceSheet(
-        cubit: _shellCubit,
-        isPersonalWorkspace: isPersonalWorkspace,
-      ),
-    );
   }
 
   double _horizontalPadding(BuildContext context) =>

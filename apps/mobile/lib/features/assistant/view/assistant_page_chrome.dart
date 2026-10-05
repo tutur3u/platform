@@ -122,13 +122,4 @@ extension _AssistantPageChrome on _AssistantPageState {
   ) {
     return chatState.messages.isNotEmpty || liveState.hasDraft;
   }
-
-  String? _resolveCreditWorkspaceId(
-    AssistantShellState shellState,
-    String wsId,
-  ) {
-    return shellState.creditSource == AssistantCreditSource.personal
-        ? shellState.personalWorkspaceId
-        : wsId;
-  }
 }

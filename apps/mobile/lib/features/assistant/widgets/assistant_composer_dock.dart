@@ -42,6 +42,12 @@ class AssistantComposerDock extends StatelessWidget {
     this.onAttachVoice,
     this.onSendVoice,
     this.embedded = false,
+    this.localOnly = false,
+    this.localBlocked = false,
+    this.localGenerating = false,
+    this.localModelLabel,
+    this.onOpenLocalModels,
+    this.onStopLocal,
     super.key,
   });
 
@@ -54,6 +60,12 @@ class AssistantComposerDock extends StatelessWidget {
   final AssistantShellState shellState;
   final AssistantRepository? repository;
   final bool embedded;
+  final bool localOnly;
+  final bool localBlocked;
+  final bool localGenerating;
+  final String? localModelLabel;
+  final Future<void> Function()? onOpenLocalModels;
+  final Future<void> Function()? onStopLocal;
   final bool navigationExpanded;
   final double bottomInset;
   final bool isPersonalWorkspace;
@@ -74,6 +86,9 @@ class AssistantComposerDock extends StatelessWidget {
     final content = Row(
       children: [
         AssistantComposerOptions(
+          localOnly: localOnly,
+          localModelLabel: localModelLabel,
+          onOpenLocalModels: onOpenLocalModels,
           chatState: chatState,
           shellState: shellState,
           repository: repository,
@@ -92,7 +107,9 @@ class AssistantComposerDock extends StatelessWidget {
             style: const TextStyle(fontSize: 16, height: 1.25),
             minLines: 1,
             textInputAction: TextInputAction.send,
-            onSubmitted: chatState.status == AssistantChatStatus.restoring
+            onSubmitted:
+                localBlocked ||
+                    chatState.status == AssistantChatStatus.restoring
                 ? null
                 : (_) {
                     if (controller.text.trim().isNotEmpty ||
@@ -116,12 +133,20 @@ class AssistantComposerDock extends StatelessWidget {
                 value.text.trim().isNotEmpty ||
                 chatState.composerAttachments.isNotEmpty;
             return IconButton(
-              tooltip: hasPrompt
+              tooltip: localGenerating
+                  ? context.l10n.assistantLocalStop
+                  : localOnly && !hasPrompt
+                  ? context.l10n.assistantLocalTextOnly
+                  : hasPrompt
                   ? context.l10n.assistantSendAction
                   : context.l10n.voiceRecord,
               constraints: const BoxConstraints.tightFor(width: 44, height: 44),
               padding: EdgeInsets.zero,
-              onPressed: chatState.status == AssistantChatStatus.restoring
+              onPressed: localGenerating
+                  ? onStopLocal
+                  : localBlocked ||
+                        (localOnly && !hasPrompt) ||
+                        chatState.status == AssistantChatStatus.restoring
                   ? null
                   : hasPrompt
                   ? onSend
@@ -130,14 +155,18 @@ class AssistantComposerDock extends StatelessWidget {
                       unawaited(onMicrophoneTap());
                     },
               icon: Icon(
-                hasPrompt ? Icons.arrow_upward_rounded : Icons.mic_none_rounded,
+                localGenerating
+                    ? Icons.stop_rounded
+                    : hasPrompt
+                    ? Icons.arrow_upward_rounded
+                    : Icons.mic_none_rounded,
               ),
             );
           },
         ),
       ],
     );
-    final capture = voiceCapture;
+    final capture = localOnly ? null : voiceCapture;
     final composer = capture == null
         ? content
         : BlocBuilder<AssistantVoiceCaptureCubit, AssistantVoiceCaptureState>(

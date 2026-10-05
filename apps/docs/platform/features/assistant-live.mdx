@@ -10,15 +10,28 @@ Gen AI SDK. The server supplies a single-use, constrained ephemeral token;
 `/api/v1/live/token` and passed to the client. Google documents the protocol in the
 [Live API guide](https://ai.google.dev/gemini-api/docs/live-api).
 
-## Native local-model foundation
+## Native local text models
 
 Mobile's local text inference adapter uses the pinned Flutter Edge AI LiteRT-LM
 engine directly; it does not route prompts to the remote Assistant API or use a
-global active-model preference. This foundation is not a device-ready claim or
-a new default: the existing Chat and Live experiences continue using their
-remote providers until the model-management and mode-selection surfaces are
-integrated. Live audio, server tools, attachments, and workspace context are not
-implemented by this local text adapter.
+global active-model preference. Remote Chat remains the default. Mira quick
+settings and the centralized Assistant settings page share model management:
+install or import a verified model, then explicitly choose it for the current
+account and workspace. The existing persistent dock remains in place when
+switching; local generation exposes a native stop action. Live audio, server
+tools, attachments, and workspace context are unavailable in local text mode.
+Choosing a remote model is an explicit separate action, never a failure fallback.
+
+Local and remote conversations remain separate; switching never uploads local
+history. The unsent composer draft stays in place, and the next send uses the
+chosen mode. Local history is encrypted with the existing device cache and
+partitioned by actor, workspace, and model. Only the latest 32 messages / 64,000
+characters are retained, and cache eviction or clearing can remove them. A new
+local conversation clears that local history after stopping and draining any
+active generation. Deleting weights leaves local mode selected but blocked;
+missing weights, unknown selections, and native load failures never silently
+select a remote provider. Account/session changes, backgrounding, and hiding
+Mira stop and unload native inference before another scoped load.
 
 The initial catalogue pins publisher revisions, file lengths, and SHA-256
 digests for Gemma 3 270M and Qwen 3 0.6B. Gemma requires the user to obtain a
@@ -30,8 +43,10 @@ a 1 GiB device weight budget, including temporary replacement space.
 
 Native support is restricted to the archive's supported ABIs: arm64 iOS/macOS,
 arm64 Android API 28+, arm64/x64 Linux, and x64 Windows. Other ABIs remain
-unavailable. The app's existing OS floors are preserved. Supported ABI does not
-guarantee sufficient RAM or a working accelerator: successful model loading is
+unavailable. The app's existing OS floors are preserved. Product admission also
+requires at least 4 GiB installed RAM; unavailable hardware information fails
+closed. This conservative threshold is not a guarantee of available memory or
+a working accelerator: successful model loading is
 required before readiness. Text generation uses one session, a 2048-token
 context, a separate 256-output-token limit, and bounded input. Actor/session
 epoch changes suppress late output and unload tears down the session before
