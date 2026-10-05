@@ -22,6 +22,15 @@ export default defineConfig({
       '@tuturuuu/internal-api/lettin': fileURLToPath(
         new URL('../../packages/internal-api/src/lettin.ts', import.meta.url)
       ),
+      '@tuturuuu/internal-api/client': fileURLToPath(
+        new URL('../../packages/internal-api/src/client.ts', import.meta.url)
+      ),
+      '@tuturuuu/internal-api/workspaces': fileURLToPath(
+        new URL(
+          '../../packages/internal-api/src/workspaces.ts',
+          import.meta.url
+        )
+      ),
       '@tuturuuu/internal-api': fileURLToPath(
         new URL('../../packages/internal-api/src/index.ts', import.meta.url)
       ),
