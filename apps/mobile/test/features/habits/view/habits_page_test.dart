@@ -15,6 +15,7 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../helpers/helpers.dart';
+import 'habits_auth_fixture.dart';
 
 class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
     implements WorkspaceCubit {}
@@ -219,6 +220,7 @@ void main() {
   }) {
     return MultiBlocProvider(
       providers: [
+        habitsAuthProvider(),
         BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
         BlocProvider(create: (_) => ShellChromeActionsCubit()),
       ],
