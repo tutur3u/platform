@@ -11,6 +11,7 @@ import {
 import { join, resolve } from 'node:path';
 import { auditBundle } from './audit-bundle.mjs';
 import { withMacosSigning } from './sign-macos.mjs';
+import { stageLocalInferenceMacos } from './stage-local-inference-macos.mjs';
 
 const platform = process.env.DESKTOP_PLATFORM;
 const runnerTemp = process.env.RUNNER_TEMP;
@@ -90,6 +91,7 @@ if (platform === 'linux') {
   const bundle = resolve(
     'apps/mobile/build/macos/Build/Products/Release-production/Tuturuuu.app'
   );
+  await stageLocalInferenceMacos(bundle);
   for (const locale of ['en', 'vi']) {
     const destination = join(bundle, 'Contents/Resources', `${locale}.lproj`);
     await mkdir(destination, { recursive: true });
