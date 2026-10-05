@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TimerDisplay extends StatelessWidget {
@@ -46,13 +47,30 @@ class TimerDisplay extends StatelessWidget {
               ),
             ),
           ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              '$hours:$minutes:$seconds',
+              style: theme.typography.h1.copyWith(
+                fontWeight: FontWeight.w300,
+                fontSize: 64,
+                color: color,
+                fontFeatures: [const FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
         Text(
-          '$hours:$minutes:$seconds',
-          style: theme.typography.h1.copyWith(
-            fontWeight: FontWeight.w300,
-            fontSize: 64,
-            color: color,
-            fontFeatures: [const FontFeature.tabularFigures()],
+          isPaused
+              ? context.l10n.timerPaused
+              : isRunning
+              ? context.l10n.timerRunning
+              : context.l10n.timerStopped,
+          style: theme.typography.small.copyWith(
+            color: theme.colorScheme.mutedForeground,
           ),
         ),
       ],
@@ -61,9 +79,9 @@ class TimerDisplay extends StatelessWidget {
 
   String _phaseLabel(BuildContext context) {
     return switch (pomodoroPhase) {
-      PomodoroPhase.focus => 'Focus',
-      PomodoroPhase.shortBreak => 'Short Break',
-      PomodoroPhase.longBreak => 'Long Break',
+      PomodoroPhase.focus => context.l10n.timerFocusTime,
+      PomodoroPhase.shortBreak => context.l10n.timerShortBreak,
+      PomodoroPhase.longBreak => context.l10n.timerLongBreak,
       PomodoroPhase.idle => '',
     };
   }

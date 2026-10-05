@@ -1,8 +1,10 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/features/assistant/view/assistant_settings_hub.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/mail/data/mail_access.dart';
 import 'package:mobile/features/mail/view/mail_settings_hub.dart';
@@ -31,6 +33,31 @@ class ProductSettingsEntry {
 }
 
 final productSettingsRegistry = <ProductSettingsEntry>[
+  ProductSettingsEntry(
+    id: 'assistant',
+    icon: Icons.auto_awesome_outlined,
+    title: (context) => context.l10n.navAssistant,
+    visible: (context) =>
+        context.read<AuthCubit>().state.user != null &&
+        context.read<WorkspaceCubit>().state.currentWorkspace != null,
+    open: (context) async {
+      final workspaceId = context
+          .read<WorkspaceCubit>()
+          .state
+          .currentWorkspace
+          ?.id;
+      if (workspaceId == null) return;
+      final location = GoRouterState.of(context).matchedLocation;
+      await pushScopedSettingsPage(
+        context,
+        builder: (_, isCurrent) => AssistantSettingsHub(
+          workspaceId: workspaceId,
+          locations: {location},
+          isScopeCurrent: isCurrent,
+        ),
+      );
+    },
+  ),
   ProductSettingsEntry(
     id: 'calendar',
     icon: Icons.calendar_today_outlined,

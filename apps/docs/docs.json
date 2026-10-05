@@ -32,6 +32,7 @@
                 "pages": [
                   "platform/features/command-center-dashboard",
                   "platform/features/assistant-live",
+                  "platform/features/mobile-timer",
                   "platform/features/colab",
                   "platform/features/lettin",
                   "platform/features/cms-site-contract-v1",

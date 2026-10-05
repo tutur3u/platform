@@ -821,3 +821,46 @@ Regression evidence: `calendar-provider-series.sql`, provider `plan.test.ts` and
 `writer.test.ts`, plus `calendar-provider-series.test.ts` in Internal API cover
 permission revocation, leases, publication ordering, idempotent create recovery,
 revision conflicts, immutable identities, scope splitting and pending status.
+
+
+### Provider inbound recurrence observations
+
+Canonical provider import uses the same default-disabled admission flag as
+recoverable external series operations. When enabled for verification, the live
+Google and Outlook sync paths reconcile supported recurring masters before
+persisting ordinary expanded instances. This is a staged integration, not a claim
+that provider editing or full recurrence parity is enabled in production.
+
+Google reads complete non-expanded `iCalUID` exception lists, including cancelled
+and moved instances outside the viewport. Outlook expands master exceptions and
+reads complete bounded immutable-ID views twice. Separate occurrence snapshots
+and the master revision are compared before publication. Windows timezone names
+use CLDR's default territory mapping to IANA; unknown/custom names and nonzero
+fractional occurrence precision fail closed. There is no machine-timezone fallback.
+
+Reconciliation rechecks the token-owning actor, workspace membership,
+`manage_calendar`, source ownership and inbound permission throughout the read
+and before commit. The transaction compares the captured local binding ETag and
+defers while an outbound operation is pending. It publishes encrypted native
+fields and actor/source-bound encrypted provider metadata before suppressing
+explicitly represented legacy identities. Other calendars and unrepresented
+provider rows remain untouched. Outlook cancellations proven inside the complete
+view replace that covered range; known cancellations outside it survive if their
+original slots still belong to the current rule. Deleted bound masters are
+rechecked even when the Outlook view contains no remaining occurrences.
+
+New unsupported masters remain in the existing provider projection rather than
+being converted lossily. A malformed or changing snapshot of an already-bound
+master retains the prior canonical projection and rejects that refresh. Keep
+admission disabled until metadata-preserving future splits, full legacy identity
+suppression across ranges, provider UI, and authenticated Google/Outlook
+verification are completed together.
+
+Regression evidence: `calendar-provider-reconciliation.sql` applies the actual
+migration and covers actor/source revocation, pending-operation deferral, stale
+observations, replay, deletion, rollback and scoped legacy suppression. Provider
+inbound reader/connection/service tests cover complete snapshots, independently
+changed exceptions, immutable identity bridging, encrypted metadata, cancellation
+coverage and the disabled default. Microsoft pagination/timezone and shared
+recurrence-edit tests cover continuation authorization, Windows zones and DST
+interval boundaries.

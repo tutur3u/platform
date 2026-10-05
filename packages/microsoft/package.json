@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "@azure/msal-node": "^6.0.0",
-    "@microsoft/microsoft-graph-client": "^3.0.7"
+    "@microsoft/microsoft-graph-client": "^3.0.7",
+    "cldr-core": "^48.2.0"
   },
   "devDependencies": {
     "@tuturuuu/types": "workspace:*",
