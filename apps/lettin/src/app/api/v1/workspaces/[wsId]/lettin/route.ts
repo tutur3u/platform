@@ -6,20 +6,26 @@ import { boundedBody, handle, respond } from '@/server/http';
 import { resolveActor } from '@/server/identity';
 import { mutate } from '@/server/mutations';
 import { readOverview, readWorld } from '@/server/queries';
+import { traceLettinRead } from '@/server/read-diagnostics';
 import { lettinCommandSchema, withinLettinDepth } from '@/server/schema';
 
 type Context = { params: Promise<{ wsId: string }> };
 export function GET(request: Request, { params }: Context) {
   return handle(async () => {
     await connection();
-    const actor = await resolveActor((await params).wsId);
+    const wsId = (await params).wsId;
+    const actor = await traceLettinRead('resolve actor', () =>
+      resolveActor(wsId)
+    );
     const worldId = new URL(request.url).searchParams.get('worldId');
     if (worldId && !z.guid().safeParse(worldId).success)
       throw new LettinError(400);
-    const { db } = await bindings();
+    const { db } = await traceLettinRead('resolve bindings', bindings);
     return respond(
       worldId
-        ? await readWorld(db, actor, worldId)
+        ? await traceLettinRead('read world', () =>
+            readWorld(db, actor, worldId)
+          )
         : await readOverview(db, actor)
     );
   });
