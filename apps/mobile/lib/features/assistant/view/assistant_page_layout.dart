@@ -29,6 +29,32 @@ extension _AssistantPageLayout on _AssistantPageState {
 
           return MultiBlocListener(
             listeners: [
+              BlocListener<AuthCubit, AuthState>(
+                listenWhen: (previous, current) =>
+                    previous.user?.id != current.user?.id,
+                listener: (_, _) {
+                  ++_voiceActorScopeEpoch;
+                  unawaited(_voiceCapture.cancel());
+                },
+              ),
+              BlocListener<
+                AssistantVoiceCaptureCubit,
+                AssistantVoiceCaptureState
+              >(
+                bloc: _voiceCapture,
+                listenWhen: (previous, current) =>
+                    current.error != null && previous.error != current.error,
+                listener: (_, state) => _showInlineNotice(
+                  state.error == AssistantVoiceCaptureError.permission
+                      ? context.l10n.voicePermission
+                      : context.l10n.voiceRecordingError,
+                ),
+              ),
+              BlocListener<AssistantChromeCubit, AssistantChromeState>(
+                listenWhen: (previous, current) =>
+                    !previous.isLiveMode && current.isLiveMode,
+                listener: (_, _) => unawaited(_voiceCapture.cancel()),
+              ),
               BlocListener<AssistantChromeCubit, AssistantChromeState>(
                 listenWhen: (previous, current) =>
                     previous.composerVisible && !current.composerVisible,
@@ -242,6 +268,15 @@ extension _AssistantPageLayout on _AssistantPageState {
                                           composing: _isComposerVisible,
                                           content: AssistantComposerDock(
                                             embedded: true,
+                                            voiceCapture: _voiceCapture,
+                                            onAttachVoice: () =>
+                                                _finishVoiceRecording(
+                                                  sendNow: false,
+                                                ),
+                                            onSendVoice: () =>
+                                                _finishVoiceRecording(
+                                                  sendNow: true,
+                                                ),
                                             repository: _repository,
                                             chatState: chatState,
                                             liveState: liveState,

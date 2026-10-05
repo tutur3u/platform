@@ -4320,5 +4320,9 @@
     "profileBannerDescription": "Thêm ảnh ngang để cá nhân hóa hồ sơ của bạn.",
     "profileChangeBanner": "Đổi ảnh bìa",
     "profileAddBanner": "Thêm ảnh bìa",
-    "profileRemoveBanner": "Gỡ ảnh bìa"
+    "profileRemoveBanner": "Gỡ ảnh bìa",
+    "voicePause": "Tạm dừng ghi âm",
+    "voiceResume": "Tiếp tục ghi âm",
+    "voicePaused": "Đã tạm dừng ghi âm",
+    "voiceRecording": "Đang ghi âm"
 }

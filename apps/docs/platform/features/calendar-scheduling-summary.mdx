@@ -1,0 +1,31 @@
+---
+title: Calendar task scheduling summaries
+description: Actor-scoped batched scheduling reads in Calendar task panels.
+---
+
+Calendar's priority task panel loads scheduling settings and scheduled minutes in
+batches of up to 100 distinct tasks. Larger lists use sequential batches. This
+applies to both personal and workspace Calendar surfaces, including the shared
+Calendar panel in Tasks; scheduling mutations and task history retain their
+existing endpoints.
+
+Per-user settings default to no duration, no automatic scheduling, and no
+splitting when the user has not configured them. Only member-authorized source
+tasks are returned. Personal mode counts events in the personal calendar;
+workspace mode counts each task's events in its source workspace. Linked and
+direct task events contribute once per task/event pair.
+
+The panel retains its last authorized snapshot during transient revalidation and
+MFA challenges, but hides it after definitive access denial. Stale summaries
+refresh when the user returns to the browser tab. Failed database reads or
+incomplete event pagination fail the refresh rather than publishing a partial or
+zeroed summary.
+
+Regression coverage: `task-schedule-batch.test.ts` checks membership, actor-scoped
+settings, calendar isolation, defaults, deduplication and late-page failures;
+`tasks-scheduling-batch.test.ts` checks request chunking and partial failures;
+`task-schedule-snapshot.test.ts` checks transient versus denied visibility.
+
+This is a reduction in scheduling requests, not proof that every Calendar startup
+waterfall is resolved. Validate authenticated meaningful-content timing after
+production deployment of the exact tested source.

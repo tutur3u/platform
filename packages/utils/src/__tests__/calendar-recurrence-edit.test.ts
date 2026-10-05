@@ -2,6 +2,8 @@ import type { CalendarRecurrenceRule } from '@tuturuuu/types/primitives/calendar
 import { describe, expect, it } from 'vitest';
 import {
   calendarAnchorAtSlot,
+  calendarProviderDateTimeLocal,
+  calendarRecurrenceSlotInstant,
   inspectCalendarRecurrenceSlot,
 } from '../calendar-recurrence-edit';
 
@@ -74,6 +76,44 @@ describe('recurrence edit identity and future split', () => {
         anchor,
         originalStartLocal: '2026-03-14T02:30:00',
       })
+    ).toThrow();
+  });
+});
+
+describe('provider occurrence timezone identity', () => {
+  it('keeps the immutable slot instant after daylight saving changes', () => {
+    expect(
+      calendarRecurrenceSlotInstant({
+        rule,
+        anchor,
+        originalStartLocal: '2026-03-09T02:30:00',
+      })
+    ).toBe('2026-03-09T06:30:00Z');
+  });
+  it('rejects a nonexistent original slot instead of shifting its identity', () => {
+    expect(() =>
+      calendarRecurrenceSlotInstant({
+        rule,
+        anchor,
+        originalStartLocal: '2026-03-08T02:30:00',
+      })
+    ).toThrow();
+  });
+  it.each([
+    { dateTime: '2026-03-09T06:30:00Z' },
+    { dateTime: '2026-03-09T02:30:00-04:00' },
+    { dateTime: '2026-03-09T06:30:00.0000000', timeZone: 'UTC' },
+  ])('normalizes provider time without machine timezone: %j', (input) => {
+    expect(calendarProviderDateTimeLocal(input, 'America/New_York')).toBe(
+      '2026-03-09T02:30:00'
+    );
+  });
+  it('rejects unsupported timezone names', () => {
+    expect(() =>
+      calendarProviderDateTimeLocal(
+        { dateTime: '2026-03-09T09:00:00', timeZone: 'not-a-zone' },
+        'UTC'
+      )
     ).toThrow();
   });
 });

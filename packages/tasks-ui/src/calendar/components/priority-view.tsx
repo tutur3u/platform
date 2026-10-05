@@ -26,8 +26,10 @@ import {
   listWorkspaceTasks,
   updateWorkspaceTask,
 } from '@tuturuuu/internal-api/tasks';
+import { getTaskScheduleBatch } from '@tuturuuu/internal-api/tasks-scheduling';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { useWorkspaceActor } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { getTaskApiUrl } from '@tuturuuu/ui/lib/tasks-app-url';
 import { Progress } from '@tuturuuu/ui/progress';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -42,6 +44,7 @@ import ActionsDropdown from './actions-dropdown';
 import PriorityDropdown from './priority-dropdown';
 import { QuickTaskDialog } from './quick-task-dialog';
 import { SchedulingDialog } from './scheduling-dialog';
+import { visibleTaskScheduleSnapshot } from './task-schedule-snapshot';
 
 // Priority labels (matching task-properties-section.tsx)
 const PRIORITY_LABELS: Record<TaskPriority, string> = {
@@ -98,15 +101,6 @@ function formatDuration(totalMinutes: number): string {
   if (minutes === 0) return `${hours}h`;
   return `${hours}h ${minutes}m`;
 }
-
-type TaskScheduleSettings = {
-  total_duration: number | null;
-  is_splittable: boolean | null;
-  min_split_duration_minutes: number | null;
-  max_split_duration_minutes: number | null;
-  calendar_hours: string | null;
-  auto_schedule: boolean | null;
-};
 
 export default function PriorityView({
   wsId,
@@ -239,80 +233,43 @@ export default function PriorityView({
     [combinedTasks]
   );
 
+  const actor = useWorkspaceActor();
   const {
-    data: scheduleBatch,
+    data: scheduleSnapshot,
+    error: scheduleError,
     isLoading: isLoadingScheduleBatch,
     isFetching: isFetchingScheduleBatch,
   } = useQuery({
     queryKey: [
       'task-schedule-batch',
-      // Include workspace context because personal workspace can include cross-workspace tasks.
+      actor?.actorId,
+      wsId,
       tasksToFetchSchedule
-        .map((t) => `${t.ws_id ?? wsId}:${t.id}`)
+        .map((t) => t.id)
         .sort()
         .join(','),
       isPersonalWorkspace ? 'personal' : 'workspace',
     ],
-    queryFn: async () => {
-      if (tasksToFetchSchedule.length === 0) {
-        return {
-          minutesByTaskId: {} as Record<string, number>,
-          settingsByTaskId: {} as Record<string, TaskScheduleSettings | null>,
-        };
-      }
-
-      const results = await Promise.allSettled(
-        tasksToFetchSchedule.map(async (task) => {
-          const response = await fetch(
-            getTaskApiUrl(
-              isPersonalWorkspace
-                ? `/api/v1/users/me/tasks/${task.id}/schedule`
-                : `/api/v1/workspaces/${task.ws_id ?? wsId}/tasks/${task.id}/schedule`
-            ),
-            { cache: 'no-store' }
-          );
-          if (!response.ok) {
-            return {
-              taskId: task.id,
-              minutes: 0,
-              settings: null as TaskScheduleSettings | null,
-            };
-          }
-
-          const data = (await response.json()) as {
-            task?: TaskScheduleSettings | null;
-            events?: Array<{ scheduled_minutes?: number }>;
-          };
-
-          const totalScheduled = (data.events || []).reduce(
-            (sum: number, e: { scheduled_minutes?: number }) =>
-              sum + (e.scheduled_minutes || 0),
-            0
-          );
-
-          return {
-            taskId: task.id,
-            minutes: totalScheduled,
-            settings: (data.task ?? null) as TaskScheduleSettings | null,
-          };
-        })
+    queryFn: async ({ signal }) => {
+      actor?.assertActive();
+      const result = await getTaskScheduleBatch(
+        wsId,
+        tasksToFetchSchedule.map((t) => t.id),
+        isPersonalWorkspace,
+        signal
       );
-
-      const minutesByTaskId: Record<string, number> = {};
-      const settingsByTaskId: Record<string, TaskScheduleSettings | null> = {};
-
-      for (const result of results) {
-        if (result.status !== 'fulfilled') continue;
-        minutesByTaskId[result.value.taskId] = result.value.minutes;
-        settingsByTaskId[result.value.taskId] = result.value.settings;
-      }
-
-      return { minutesByTaskId, settingsByTaskId };
+      actor?.assertActive();
+      return result;
     },
-    staleTime: 30000, // Cache for 30 seconds
-    refetchOnWindowFocus: false,
-    enabled: tasksToFetchSchedule.length > 0,
+    staleTime: 30000,
+    refetchOnWindowFocus: true,
+    enabled: !!actor && tasksToFetchSchedule.length > 0,
   });
+
+  const scheduleBatch = visibleTaskScheduleSnapshot(
+    scheduleSnapshot,
+    scheduleError
+  );
 
   const scheduledMinutesMap = scheduleBatch?.minutesByTaskId ?? {};
   const scheduleSettingsByTaskId = scheduleBatch?.settingsByTaskId ?? {};

@@ -3,9 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
+import 'package:mobile/features/assistant/cubit/assistant_voice_capture_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
+import 'package:mobile/features/assistant/widgets/assistant_dock_surface.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -36,6 +38,9 @@ Widget _app({
   Future<void> Function()? onCredits,
   Future<void> Function(AssistantThinkingMode)? onThinking,
   Future<void> Function(String)? onRemove,
+  AssistantVoiceCaptureCubit? capture,
+  Future<void> Function()? onAttachVoice,
+  Future<void> Function()? onSendVoice,
 }) => MaterialApp(
   localizationsDelegates: AppLocalizations.localizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
@@ -55,6 +60,9 @@ Widget _app({
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: AssistantComposerDock(
+            voiceCapture: capture,
+            onAttachVoice: onAttachVoice,
+            onSendVoice: onSendVoice,
             chatState: chat,
             liveState: const AssistantLiveState(),
             liveUiState: const AssistantLiveUiState(
@@ -92,7 +100,88 @@ Widget _app({
   ),
 );
 
+class _Recorder implements AssistantVoiceRecorder {
+  @override
+  Future<bool> hasPermission() async => true;
+  @override
+  Future<void> start(String path) async {}
+  @override
+  Future<void> pause() async {}
+  @override
+  Future<void> resume() async {}
+  @override
+  Future<void> stop() async {}
+  @override
+  Stream<double> get levels => const Stream.empty();
+  @override
+  Future<void> dispose() async {}
+}
+
+class _Capture extends AssistantVoiceCaptureCubit {
+  _Capture() : super(recorder: _Recorder());
+  void show(AssistantVoiceCaptureStatus status) => emit(
+    AssistantVoiceCaptureState(
+      status: status,
+      levels: const [0.2, 0.7],
+      seconds: 9,
+    ),
+  );
+}
+
 void main() {
+  testWidgets(
+    'inline recording keeps same dock and paused actions at narrow width',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final controller = TextEditingController(text: 'Retained draft');
+      final focus = FocusNode();
+      final capture = _Capture();
+      addTearDown(controller.dispose);
+      addTearDown(focus.dispose);
+      addTearDown(capture.close);
+      var attach = 0;
+      var send = 0;
+      await tester.pumpWidget(
+        _app(
+          controller: controller,
+          focus: focus,
+          capture: capture,
+          scale: 3,
+          onAttachVoice: () async {
+            attach++;
+          },
+          onSendVoice: () async {
+            send++;
+          },
+        ),
+      );
+      final surface = tester.element(find.byType(AssistantDockSurface));
+      capture.show(AssistantVoiceCaptureStatus.recording);
+      await tester.pumpAndSettle();
+      expect(tester.element(find.byType(AssistantDockSurface)), same(surface));
+      expect(find.byType(TextField), findsNothing);
+      expect(
+        find.byKey(const ValueKey('assistant-inline-voice-waveform')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('voice-attach')), findsNothing);
+      capture.show(AssistantVoiceCaptureStatus.paused);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('voice-restart')), findsOneWidget);
+      expect(find.byTooltip('Resume recording'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('voice-attach')));
+      await tester.tap(find.byKey(const ValueKey('voice-send')));
+      expect(attach, 1);
+      expect(send, 1);
+      expect(controller.text, 'Retained draft');
+      expect(find.byType(Dialog), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets(
     'restoring retains draft and disables send including keyboard submission',
     (tester) async {

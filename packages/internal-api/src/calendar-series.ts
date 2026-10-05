@@ -22,6 +22,12 @@ export interface NativeCalendarSeries {
   ws_id: string;
   revision: number;
   workspace_calendar_id: string | null;
+  providerSource?: {
+    provider: 'google' | 'microsoft';
+    connectionId: string;
+    externalCalendarId: string;
+    externalEventId: string;
+  } | null;
   rule: CalendarRecurrenceRule;
   anchor: CalendarRecurrenceAnchor;
   payload: CalendarSeriesEventPayload;

@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:camera/camera.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -20,6 +19,7 @@ import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
+import 'package:mobile/features/assistant/cubit/assistant_voice_capture_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_live_audio_player.dart';
 import 'package:mobile/features/assistant/data/assistant_live_camera_service.dart';
 import 'package:mobile/features/assistant/data/assistant_live_config.dart';
@@ -48,7 +48,8 @@ import 'package:mobile/features/assistant/widgets/assistant_scroll_to_bottom_ove
 import 'package:mobile/features/assistant/widgets/assistant_settings_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_starter_prompts.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
-import 'package:mobile/features/assistant/widgets/assistant_voice_message_sheet.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -63,6 +64,7 @@ part 'assistant_page_live_actions.dart';
 part 'assistant_page_layout.dart';
 part 'assistant_page_workspace.dart';
 part 'assistant_page_attachments.dart';
+part 'assistant_page_chrome.dart';
 
 class AssistantPage extends StatefulWidget {
   const AssistantPage({this.replayToken = 0, super.key});
@@ -78,6 +80,11 @@ class _AssistantPageState extends State<AssistantPage>
   final _repository = AssistantRepository();
   final _preferences = AssistantPreferences();
   final _liveRepository = AssistantLiveRepository();
+  final _voiceCapture = AssistantVoiceCaptureCubit();
+  String? _voiceWorkspaceId;
+  String? _voiceActorId;
+  int? _voiceScopeVersion;
+  int _voiceActorScopeEpoch = 0;
   final _inputController = TextEditingController();
   final _inputFocusNode = FocusNode();
   final _scrollController = ScrollController();
@@ -191,6 +198,7 @@ class _AssistantPageState extends State<AssistantPage>
     if (!TickerMode.valuesOf(context).enabled) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || TickerMode.valuesOf(context).enabled) return;
+        unawaited(_voiceCapture.cancel());
         _collapseComposerToFab();
         unawaited(_disconnectWhenHidden());
       });
@@ -211,6 +219,7 @@ class _AssistantPageState extends State<AssistantPage>
     _inputController.dispose();
     _inputFocusNode.dispose();
     _scrollController.dispose();
+    unawaited(_voiceCapture.close());
     unawaited(_liveCubit.close());
     unawaited(_shellCubit.close());
     unawaited(_chatCubit.close());
@@ -400,6 +409,7 @@ class _AssistantPageState extends State<AssistantPage>
   }
 
   void _collapseComposerToFab() {
+    unawaited(_voiceCapture.cancel());
     _dismissKeyboard();
     _setComposerVisible(false);
     _composerVisibilityAnchorOffset = null;
@@ -679,125 +689,6 @@ class _AssistantPageState extends State<AssistantPage>
       onDisconnect: () => _liveCubit.disconnect(clearSession: true),
       onCameraToggle: _liveCubit.toggleCamera,
     );
-  }
-
-  List<ShellActionSpec> _buildChromeActions(
-    BuildContext context, {
-    required String wsId,
-    required AssistantShellState shellState,
-    required AssistantChatState chatState,
-    required AssistantLiveState liveState,
-    required bool isLiveMode,
-  }) => <ShellActionSpec>[
-    if (!_isComposerVisible && !isLiveMode)
-      ShellActionSpec(
-        id: 'assistant-compose',
-        inDock: true,
-        icon: Icons.chat_bubble_outline_rounded,
-        tooltip: context.l10n.assistantAskPlaceholder,
-        onPressed: _restoreComposerAndFocus,
-      ),
-    if (!isLiveMode)
-      ShellActionSpec(
-        id: 'assistant-history',
-        icon: Icons.history_rounded,
-        callbackToken: '${identityHashCode(this)}:$wsId:${widget.replayToken}',
-        tooltip: context.l10n.assistantHistoryTitle,
-        onPressed: () => unawaited(_showHistorySheet(context, wsId)),
-      ),
-    if (isLiveMode)
-      ShellActionSpec(
-        id: 'assistant-live-settings',
-        icon: Icons.tune_rounded,
-        tooltip: context.l10n.assistantSettingsTitle,
-        callbackToken: '$wsId:$_keepLiveWhileBrowsing',
-        onPressed: () => unawaited(_showLiveSettings()),
-      ),
-    if (isLiveMode &&
-        liveState.status == AssistantLiveConnectionStatus.disconnected)
-      ShellActionSpec(
-        id: 'assistant-live-start',
-        inDock: true,
-        icon: Icons.mic_rounded,
-        tooltip: context.l10n.assistantLiveConnect,
-        callbackToken: '$wsId:${liveState.status}',
-        onPressed: () =>
-            unawaited(_handleLiveMicrophoneToggle(wsId, chatState)),
-      ),
-    ShellActionSpec(
-      id: 'assistant-mode-chat',
-      segmentGroup: 'assistant-modes',
-      icon: Icons.chat_bubble_outline_rounded,
-      tooltip: context.l10n.chatTitle,
-      highlighted: !isLiveMode,
-      onPressed: isLiveMode ? () => unawaited(_exitLiveMode()) : null,
-    ),
-    ShellActionSpec(
-      id: 'assistant-mode-live',
-      segmentGroup: 'assistant-modes',
-      icon: Icons.graphic_eq_rounded,
-      tooltip: context.l10n.commonLive,
-      highlighted: isLiveMode,
-      onPressed: isLiveMode
-          ? null
-          : () => unawaited(_handleMicrophoneTap(wsId)),
-    ),
-  ];
-
-  bool _hasLiveAccess(AssistantShellState shellState) {
-    return hasAssistantLiveWorkspaceAccess(
-      shellState.workspaceCredits,
-      workspaceTier: shellState.workspace?.tier,
-    );
-  }
-
-  bool _isCurrentChatLive(
-    AssistantChatState chatState,
-    AssistantLiveState liveState,
-  ) {
-    final activeChatId = chatState.chat?.id ?? chatState.storedChatId;
-    return isSameAssistantLiveChat(activeChatId, liveState.chatId);
-  }
-
-  bool _isVisibleLiveSession(
-    AssistantChatState chatState,
-    AssistantLiveState liveState,
-  ) {
-    final activeChatId = chatState.chat?.id ?? chatState.storedChatId;
-    if (liveState.workspaceId != null &&
-        chatState.workspaceId != null &&
-        liveState.workspaceId != chatState.workspaceId) {
-      return false;
-    }
-    if (liveState.chatId == null) return false;
-    if (activeChatId == null) return true;
-    return isSameAssistantLiveChat(activeChatId, liveState.chatId) ||
-        liveState.status != AssistantLiveConnectionStatus.disconnected;
-  }
-
-  bool _shouldSendThroughLive(
-    AssistantChatState chatState,
-    AssistantLiveState liveState,
-  ) {
-    return _isCurrentChatLive(chatState, liveState) &&
-        liveState.chatId != null &&
-        liveState.status != AssistantLiveConnectionStatus.disconnected;
-  }
-
-  bool _hasTranscript(
-    AssistantChatState chatState,
-    AssistantLiveState liveState,
-  ) {
-    return chatState.messages.isNotEmpty || liveState.hasDraft;
-  }
-
-  String? _resolveCreditWorkspaceId(
-    AssistantShellState shellState,
-    String wsId,
-  ) {
-    return shellState.creditSource == AssistantCreditSource.personal
-        ? shellState.personalWorkspaceId
-        : wsId;
   }
 }
 

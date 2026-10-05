@@ -133,6 +133,33 @@ void main() {
   );
 
   test(
+    'voice upload rejects actor change while decoding the local file',
+    () async {
+      await cubit.loadWorkspace('ws');
+      var currentActor = true;
+      final length = Completer<int>();
+      final upload = cubit.addComposerAttachments(
+        wsId: 'ws',
+        files: [_DelayedFile(length)],
+        modelId: 'model',
+        timezone: 'UTC',
+        isCurrentActor: () => currentActor,
+      );
+      currentActor = false;
+      length.complete(4);
+      await upload;
+      expect(cubit.state.composerAttachments, isEmpty);
+      verifyNever(
+        () => repository.uploadAttachment(
+          wsId: any(named: 'wsId'),
+          chatId: any(named: 'chatId'),
+          file: any(named: 'file'),
+        ),
+      );
+    },
+  );
+
+  test(
     'picker scope captured before timezone await rejects stale upload',
     () async {
       await cubit.loadWorkspace('ws');

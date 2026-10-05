@@ -41,6 +41,40 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/workspaces/:wsId/calendar/series/provider-operations:apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/series/provider-operations/route.ts",
+      "kind": "api",
+      "methods": [
+        "POST"
+      ],
+      "routePath": "/api/v1/workspaces/:wsId/calendar/series/provider-operations",
+      "sourceFile": "apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/series/provider-operations/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/calendar/series/provider-operations/:operationId:apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/series/provider-operations/[operationId]/route.ts",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "routePath": "/api/v1/workspaces/:wsId/calendar/series/provider-operations/:operationId",
+      "sourceFile": "apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/series/provider-operations/[operationId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/tasks/schedule-batch:apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/schedule-batch/route.ts",
+      "kind": "api",
+      "methods": [
+        "GET"
+      ],
+      "routePath": "/api/v1/workspaces/:wsId/tasks/schedule-batch",
+      "sourceFile": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/schedule-batch/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "page:/:locale/:wsId/account-benefits:apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/account-benefits/page.tsx",
       "kind": "page",
       "methods": [],
