@@ -799,6 +799,32 @@ The CRM screen in `apps/mobile` supports:
 - CSV import with preview and deduping by email
 - CSV export of the currently filtered users dataset
 
+CRM mounts a separate native screen session for each signed-in account and
+workspace. The default users tab reads only that tab, renders the scoped stored
+snapshot, and publishes the refreshed result; pull-to-refresh awaits revalidation.
+Temporary transport failures and explicit MFA/abuse-verification challenges retain
+authorized rows. Optional group reads do not delay customer rendering. Row fields
+are intersected with current workspace permissions even when a refresh falls back
+to older cached data. Cold loads reserve row geometry and announce loading. Definitive access denial
+clears visible customer and audit data. Changing scope closes that session's
+forms and sheets and rejects late responses and queued writes.
+
+Search lives in the persistent shell dock. Customer rows open a compact detail
+view using the permission-redacted `/users/database` result; private contact
+fields require its private-information permission flag. Pending local edits are
+redacted again using that metadata, so they cannot restore newly denied fields. Detail viewing does not
+call the individual-user GET endpoint. The shell owns the title and Back action.
+The existing create/edit/avatar, feedback, filtering, import/export, and
+permission-gated duplicate/merge tools remain available. Lists build rows lazily,
+load another page near the viewport end, deduplicate overlapping IDs, and stop
+when an empty page disproves a stale total. A failed page offers an explicit retry.
+
+Regression coverage: `crm_workspace_test.dart` covers scoped late responses,
+permission-redacted detail, enlarged text, automatic paging, empty-page termination,
+and retained-versus-denied refreshes. `offline_mutation_admission_test.dart`
+ensures model-returning CRM commands cannot queue for a departed account.
+These checks do not establish authenticated device or production behavior.
+
 The mobile CRM uses the existing authenticated routes:
 
 - `/api/v1/workspaces/:wsId/users/database`
