@@ -224,6 +224,20 @@ plus a narrowly scoped CI workload identity. Its non-exportable signing key is
 not a PFX to retrieve from an account. Keep Windows unavailable until a supported
 signing provider is configured and CI verifies the actual installer signature.
 
+## Failed platform builds
+
+Platform builds run independently. If one fails, the publication job may still
+publish the successful platforms after exact run/source/hash receipts and signed
+provenance verification. A present but incomplete or invalid package blocks
+publication; missing failed platforms remain unavailable. Cancelled workflows do
+not publish. The workflow itself remains failed so the platform problem stays
+visible.
+
+macOS signing failures report only a fixed stage name, such as certificate import,
+artifact signing, notarization, or Gatekeeper assessment. Private command arguments,
+stdout and stderr remain suppressed. Check the named provider stage without
+posting credentials or weakening the signing gates.
+
 ## Infrastructure desktop status
 
 The root workspace's Infrastructure **Desktop deployment** page shows public
