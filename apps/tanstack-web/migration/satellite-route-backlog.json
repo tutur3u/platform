@@ -44,6 +44,7 @@
       "id": "api:/api/v1/workspaces/:wsId/calendar/series/provider-operations:apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/series/provider-operations/route.ts",
       "kind": "api",
       "methods": [
+        "GET",
         "POST"
       ],
       "routePath": "/api/v1/workspaces/:wsId/calendar/series/provider-operations",
