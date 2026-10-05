@@ -107,6 +107,9 @@ List<Transaction> overlayPendingTransactions(
           mutation.createdAt.toIso8601String(),
     });
   }
+  final matcher = search == null || search.isEmpty
+      ? null
+      : compileLocalIlike(search);
   final result =
       rows.values
           .where(
@@ -114,7 +117,8 @@ List<Transaction> overlayPendingTransactions(
                 search == null ||
                 search.isEmpty ||
                 (row.description != '[CONFIDENTIAL]' &&
-                    localIlike(row.description, search)),
+                    row.description != null &&
+                    matcher!.hasMatch(row.description!)),
           )
           .toList(growable: false)
         ..sort((a, b) {

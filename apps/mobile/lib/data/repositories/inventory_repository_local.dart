@@ -538,13 +538,17 @@ extension _InventoryLocalReads on InventoryRepository {
     required int pageSize,
     String? query,
   }) async {
+    final search = query?.trim() ?? '';
+    final matcher = search.isEmpty ? null : compileLocalIlike(search);
     final products =
         (await _localCatalog(wsId))
             .where(
               (product) =>
                   (status == 'all' ||
                       product.archived == (status == 'archived')) &&
-                  inventoryProductMatchesQuery(product, query),
+                  (matcher == null ||
+                      (product.name != null &&
+                          matcher.hasMatch(product.name!))),
             )
             .toList(growable: false)
           ..sort((a, b) {

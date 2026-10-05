@@ -1,10 +1,10 @@
 import 'dart:async';
-
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/local_replica_query.dart';
+import 'package:mobile/core/cache/local_search.dart';
 import 'package:mobile/core/cache/offline_download_manifest.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_network.dart';

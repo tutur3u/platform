@@ -16,6 +16,8 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
+import 'finance_permission_restoration_cases.dart';
+
 class _SecureStorage extends Mock implements FlutterSecureStorage {}
 
 class _Api extends Mock implements ApiClient {}
@@ -157,6 +159,8 @@ void main() {
             query: text,
           )).data.map((row) => row.id).toList();
       expect(await query('Cà phê'), ['coffee']);
+      expect(await query('  Cà phê  '), ['coffee']);
+      expect(await query('  '), ['coffee', 'latte', 'percent']);
       expect(await query('phê Cà'), isEmpty);
       expect(await query('Ca phe'), isEmpty);
       expect(await query('Mocha'), isEmpty);
@@ -186,24 +190,12 @@ void main() {
       verifyNever(() => api.getJson(any()));
     },
   );
-  test('newer finance redaction hides old detail offline', () async {
-    await snapshot('finance.transactionDetail', {
-      'data': _transaction('secret', 'Synthetic private detail', 1),
-    });
-    await snapshot('finance.infiniteTransactions', {
-      'data': [_transaction('secret', '[CONFIDENTIAL]', 1)],
-    });
-    final visible = await finance.getTransactionsInfinite(wsId: 'ws');
-    expect(visible.data.single.description, '[CONFIDENTIAL]');
-    expect(
-      (await finance.getTransactionsInfinite(
-        wsId: 'ws',
-        search: 'private',
-      )).data,
-      isEmpty,
-    );
-    verifyNever(() => api.getJson(any()));
-  });
+  registerFinancePermissionRestorationTests(
+    writeSnapshot: snapshot,
+    repository: () => finance,
+    transaction: _transaction,
+    verifyNoRequests: () => verifyNever(() => api.getJson(any())),
+  );
   test(
     'finance search uses descriptions and excludes redacted and other scopes',
     () async {

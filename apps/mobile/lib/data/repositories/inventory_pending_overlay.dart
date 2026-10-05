@@ -9,6 +9,8 @@ List<InventoryProduct> overlayPendingProducts(
   String? query,
   bool includeCreates = true,
 }) {
+  final search = query?.trim() ?? '';
+  final matcher = search.isEmpty ? null : compileLocalIlike(search);
   final rows = {for (final product in source) product.id: product};
   for (final mutation in pending) {
     if (mutation.feature != 'inventory' ||
@@ -92,7 +94,8 @@ List<InventoryProduct> overlayPendingProducts(
               .toList() ??
           const <Map<String, dynamic>>[],
     });
-    if (!inventoryProductMatchesQuery(product, query)) {
+    if (matcher != null &&
+        (product.name == null || !matcher.hasMatch(product.name!))) {
       rows.remove(id);
     } else {
       rows[id] = product;

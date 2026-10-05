@@ -231,6 +231,67 @@ void main() {
     expect(mergeReplicaRows(restored, clear).payload['description'], isNull);
   });
 
+  test('newer authorized list restores stale confidential detail fields', () {
+    ReplicaEntityRecord row(
+      String namespace,
+      int day,
+      Map<String, dynamic> fields,
+    ) => ReplicaEntityRecord(
+      id: 'transaction',
+      namespace: namespace,
+      sourceKey: namespace,
+      fetchedAt: DateTime.utc(2026, 1, day),
+      userId: 'a',
+      workspaceId: 'ws',
+      payload: {'id': 'transaction', 'wallet_id': 'wallet', ...fields},
+    );
+    final denied = row('finance.transactionDetail', 1, {
+      'description': '[CONFIDENTIAL]',
+      'amount': null,
+      'category_id': null,
+      'is_amount_confidential': true,
+      'is_category_confidential': true,
+      'detail_only': 'retained',
+    });
+    final authorized = row('finance.transactions', 2, {
+      'description': 'Authorized note',
+      'amount': 25,
+      'category_id': 'category',
+      'is_amount_confidential': true,
+      'is_category_confidential': true,
+    });
+    for (final pair in [
+      [denied, authorized],
+      [authorized, denied],
+    ]) {
+      final result = pair.reduce(mergeReplicaRows);
+      expect(result.payload['description'], 'Authorized note');
+      expect(result.payload['amount'], 25);
+      expect(result.payload['category_id'], 'category');
+      expect(result.payload['detail_only'], 'retained');
+      final revoked = row('finance.infiniteTransactions', 3, {
+        'description': '[CONFIDENTIAL]',
+        'amount': null,
+        'category_id': null,
+        'is_amount_confidential': true,
+        'is_category_confidential': true,
+      });
+      final hidden = mergeReplicaRows(result, revoked);
+      expect(hidden.payload['description'], '[CONFIDENTIAL]');
+      expect(hidden.payload['amount'], isNull);
+      expect(hidden.payload['category_id'], isNull);
+    }
+    final ordinaryClear = row('finance.transactionDetail', 1, {
+      'amount': null,
+      'category_id': null,
+      'is_amount_confidential': false,
+      'is_category_confidential': false,
+    });
+    final ordinary = mergeReplicaRows(ordinaryClear, authorized);
+    expect(ordinary.payload['amount'], isNull);
+    expect(ordinary.payload['category_id'], isNull);
+  });
+
   for (final clear in [false, true]) {
     test(
       'three-source fold retains canonical field and later clear=$clear',

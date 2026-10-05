@@ -17,6 +17,15 @@ void main() {
     expect(localIlike('A\u{1F34E}B', 'A_B'), isTrue);
     expect(localIlike('line\nbreak', 'line_break'), isTrue);
   });
+  test('one scan matcher preserves wildcards and escaped literals', () {
+    final matcher = compileLocalIlike('C%_beans');
+    expect(
+      ['Coffee beans', 'Café beans', 'Tea beans'].where(matcher.hasMatch),
+      ['Coffee beans', 'Café beans'],
+    );
+    final literal = compileLocalIlike(r'100\%');
+    expect(['100% real', '1000 real'].where(literal.hasMatch), ['100% real']);
+  });
   test('query compilation has no process-global private query cache', () {
     final first = compileLocalIlike('Coffee%beans');
     final source = File('lib/core/cache/local_search.dart').readAsStringSync();

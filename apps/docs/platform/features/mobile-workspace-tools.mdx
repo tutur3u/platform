@@ -1417,7 +1417,7 @@ Regression evidence: `season_pricing_controller_test.dart`.
 A concurrent tag invalidation rejects the new response but retains the previous
 authorized snapshot as stale, including its replica rows. Account/workspace clears
 and actor changes still erase it. Offline search patterns are compiled per call
-or retained only by the current search caller; no application-owned global raw query cache
+once per Finance/Inventory collection scan and retained only by that caller; no application-owned global raw query cache
 survives logout. A queued sale-period assignment retains its period ID when period
 metadata is evicted, with unknown metadata distinct from an explicit null removal.
 Regression coverage: `cache_store_publication_test.dart`, `local_search_test.dart`,
@@ -1426,7 +1426,10 @@ and `inventory_sale_period_projection_test.dart`.
 Finance replica merging treats a newer server `[CONFIDENTIAL]` description as an
 authorization barrier regardless of detail authority: older plaintext cannot
 appear in offline lists/search or merged JSON. A newer authorized response may
-restore that field; newer explicit null clears it. This projection rule is covered
+restore that field even from a list after an older redacted detail. Amount and
+category permission nulls (with their server confidentiality flags) likewise yield
+to newer explicit authorized values, while ordinary detail clears and sparse-field
+authority remain unchanged. Newer explicit null still clears the field. This projection rule is covered
 by `cache_replica_policy_test.dart` and `finance_inventory_offline_test.dart`.
 
 Direct transaction detail refresh also routes transport fallback through merged

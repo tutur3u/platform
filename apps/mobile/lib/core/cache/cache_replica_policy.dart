@@ -135,7 +135,11 @@ ReplicaEntityRecord mergeReplicaRows(
     final clears = [
       for (final row in ordered)
         if (row.payload.containsKey(field) && row.payload[field] == null)
-          (time: row.fetchedAt, rank: _replicaAuthority(row)),
+          (
+            time: row.fetchedAt,
+            rank: _replicaAuthority(row),
+            permissionRedaction: _isPermissionNull(row, field),
+          ),
     ];
     final redactions = [
       for (final row in ordered)
@@ -145,12 +149,21 @@ ReplicaEntityRecord mergeReplicaRows(
     for (final row in ordered) {
       if (!row.payload.containsKey(field) ||
           row.payload[field] == null ||
+          (_isRedaction(row, field) &&
+              ordered.any(
+                (candidate) =>
+                    candidate.fetchedAt.isAfter(row.fetchedAt) &&
+                    candidate.payload.containsKey(field) &&
+                    candidate.payload[field] != null &&
+                    !_isRedaction(candidate, field),
+              )) ||
           (!_isRedaction(row, field) &&
               redactions.any((time) => !row.fetchedAt.isAfter(time))) ||
           clears.any(
             (clear) =>
                 !row.fetchedAt.isAfter(clear.time) ||
-                _replicaAuthority(row) < clear.rank,
+                (!clear.permissionRedaction &&
+                    _replicaAuthority(row) < clear.rank),
           )) {
         continue;
       }
@@ -182,6 +195,17 @@ bool _isRedaction(ReplicaEntityRecord row, String field) =>
     row.namespace.startsWith('finance.') &&
     field == 'description' &&
     row.payload[field] == '[CONFIDENTIAL]';
+
+// The server retains confidentiality flags while redacting amount/category
+// to null. Only these permission nulls may yield to a newer explicit value
+// from a lower-authority list; ordinary detail clears keep their authority.
+bool _isPermissionNull(ReplicaEntityRecord row, String field) =>
+    row.namespace.startsWith('finance.') &&
+    switch (field) {
+      'amount' => row.payload['is_amount_confidential'] == true,
+      'category_id' => row.payload['is_category_confidential'] == true,
+      _ => false,
+    };
 
 int _compareReplicaAuthority(ReplicaEntityRecord a, ReplicaEntityRecord b) {
   final rank = _replicaAuthority(a).compareTo(_replicaAuthority(b));
