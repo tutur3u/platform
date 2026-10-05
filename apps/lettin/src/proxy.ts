@@ -31,6 +31,7 @@ import {
 } from './i18n/routing';
 
 import { getLoginRedirect } from './login-redirect';
+import { getWorkspaceRouteStatus } from './workspace-route-status';
 
 const intlMiddleware = createIntlMiddleware(routing);
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
@@ -271,7 +272,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       return clearSupabaseAuthCookies(request, NextResponse.redirect(url));
     }
 
-    const response = intlMiddleware(request);
+    const routeStatus = await getWorkspaceRouteStatus(
+      request,
+      unlocalizedPath,
+      requestWithRefresh.headers,
+      getPreferredLocale(request)
+    );
+    const response = routeStatus ?? intlMiddleware(request);
     setLocaleCookie(response, request, getPreferredLocale(request));
     if (appSessionRefresh.ok) {
       propagateAuthCookies(appSessionRefresh.response, response);
