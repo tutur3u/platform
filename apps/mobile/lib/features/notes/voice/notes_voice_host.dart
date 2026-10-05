@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -300,6 +301,9 @@ class _NotesVoiceHostState extends State<NotesVoiceHost>
                                     child: Text(
                                       state.unavailable
                                           ? l10n.notesVoiceUnavailable
+                                          : state.busy &&
+                                                job?.processing != true
+                                          ? l10n.commonLoading
                                           : l10n.notesVoiceProcessing,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
@@ -309,6 +313,8 @@ class _NotesVoiceHostState extends State<NotesVoiceHost>
                           primary: IconButton(
                             tooltip: state.unavailable
                                 ? l10n.commonRetry
+                                : state.busy
+                                ? l10n.commonLoading
                                 : '${l10n.notesVoiceAnalyze}. '
                                       '${l10n.notesVoiceCredits}',
                             onPressed: state.unavailable && !capture.visible

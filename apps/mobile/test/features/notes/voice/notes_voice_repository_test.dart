@@ -231,4 +231,86 @@ void main() {
       expect(payload.keys, isNot(contains('audio')));
     },
   );
+  for (final status in [401, 403, 404]) {
+    test('DELETE $status erases only its scoped cache key', () async {
+      when(
+        () => api.deleteJson(any()),
+      ).thenThrow(ApiException(message: 'denied', statusCode: status));
+      await expectLater(
+        repository.delete('actor', 'ws', 'job'),
+        throwsA(isA<ApiException>()),
+      );
+      final captured = verify(
+        () => cache.remove(
+          captureAny(),
+          checkScope: captureAny(named: 'checkScope'),
+        ),
+      ).captured;
+      final key = captured[0] as CacheKey;
+      expect(key.userId, 'actor');
+      expect(key.workspaceId, 'ws');
+      repository.invalidateScope();
+      expect(captured[1] as void Function(), throwsA(isA<ApiException>()));
+    });
+  }
+  for (final failure in [
+    const ApiException.transport(message: 'offline'),
+    const ApiException(
+      message: 'MFA code',
+      statusCode: 403,
+      code: 'MFA_REQUIRED',
+    ),
+    const ApiException(
+      message: 'MFA',
+      statusCode: 403,
+      isVerificationRequired: true,
+    ),
+  ]) {
+    test('temporary or MFA DELETE does not erase cache: $failure', () async {
+      when(() => api.deleteJson(any())).thenThrow(failure);
+      await expectLater(
+        repository.delete('actor', 'ws', 'job'),
+        throwsA(isA<ApiException>()),
+      );
+      verifyNever(
+        () => cache.remove(any(), checkScope: any(named: 'checkScope')),
+      );
+    });
+  }
+  test(
+    'code-only MFA on GET or POST never purges the scoped snapshot',
+    () async {
+      const challenge = ApiException(
+        message: 'MFA',
+        statusCode: 403,
+        code: 'MFA_REQUIRED',
+      );
+      when(() => api.getJson(any())).thenThrow(challenge);
+      await expectLater(
+        repository.refresh('actor', 'ws', 'job'),
+        throwsA(isA<ApiException>()),
+      );
+      when(
+        () => api.sendMultipart(
+          any(),
+          any(),
+          fields: any(named: 'fields'),
+          files: any(named: 'files'),
+        ),
+      ).thenThrow(challenge);
+      await expectLater(
+        repository.submit(
+          'actor',
+          'ws',
+          requestId: 'job',
+          audio: Uint8List.fromList([1]),
+          timezone: 'UTC',
+        ),
+        throwsA(isA<ApiException>()),
+      );
+      verifyNever(
+        () => cache.remove(any(), checkScope: any(named: 'checkScope')),
+      );
+    },
+  );
 }

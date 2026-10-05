@@ -6,6 +6,7 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/notes/voice/notes_voice_access.dart';
 import 'package:mobile/features/notes/voice/notes_voice_document.dart';
 import 'package:mobile/features/notes/voice/notes_voice_job.dart';
 
@@ -136,8 +137,7 @@ class NotesVoiceRepository {
       );
     } on ApiException catch (error) {
       _guardScope(actor, scope);
-      if ({401, 403}.contains(error.statusCode) &&
-          !error.isVerificationRequired) {
+      if (notesVoiceAccessDenied(error, includeNotFound: false)) {
         await _cache.remove(
           _key(actor, ws),
           checkScope: () => _guardScope(actor, scope),
@@ -173,8 +173,7 @@ class NotesVoiceRepository {
       return await _publish(actor, ws, json, scope);
     } on ApiException catch (error) {
       _guardScope(actor, scope);
-      if ({401, 403, 404}.contains(error.statusCode) &&
-          !error.isVerificationRequired) {
+      if (notesVoiceAccessDenied(error)) {
         await _cache.remove(
           _key(actor, ws),
           checkScope: () => _guardScope(actor, scope),
@@ -187,7 +186,18 @@ class NotesVoiceRepository {
   Future<void> delete(String actor, String ws, String id) async {
     final scope = _scopeRevision;
     _guardScope(actor, scope);
-    await ApiClient.runForUser(actor, () => _api.deleteJson(_path(ws, id)));
+    try {
+      await ApiClient.runForUser(actor, () => _api.deleteJson(_path(ws, id)));
+    } on ApiException catch (error) {
+      _guardScope(actor, scope);
+      if (notesVoiceAccessDenied(error)) {
+        await _cache.remove(
+          _key(actor, ws),
+          checkScope: () => _guardScope(actor, scope),
+        );
+      }
+      rethrow;
+    }
     _guardScope(actor, scope);
     await _cache.remove(
       _key(actor, ws),

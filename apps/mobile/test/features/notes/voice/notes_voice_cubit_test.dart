@@ -35,6 +35,7 @@ class Repository implements NotesVoiceRepository {
   NotesVoiceJob? retained;
   Exception? failure;
   Completer<NotesVoiceJob?>? pendingRefresh;
+  Completer<void>? pendingDelete;
   final ids = <String>[];
   final revisions = <int?>[];
   int saves = 0;
@@ -70,6 +71,8 @@ class Repository implements NotesVoiceRepository {
 
   @override
   Future<void> delete(String actor, String ws, String id) async {
+    await pendingDelete?.future;
+    if (failure != null) throw failure!;
     retained = null;
   }
 
@@ -199,7 +202,7 @@ void main() {
     repository.failure = const ApiException(
       message: 'MFA',
       statusCode: 403,
-      isVerificationRequired: true,
+      code: 'MFA_REQUIRED',
     );
     await cubit.refresh();
     expect(cubit.state.job?.transcript, 'Speech');
@@ -254,4 +257,77 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(cubit.state.job, isNull);
   });
+  Future<void> ready() async {
+    repository.retained = const NotesVoiceJob(
+      id: 'job',
+      workspaceId: 'workspace',
+      status: 'completed',
+      revision: 4,
+      transcript: 'Speech',
+    );
+    await cubit.setScope('actor', 'different');
+    await cubit.setScope('actor', 'workspace');
+  }
+
+  test('pending deletion blocks new recording until it completes', () async {
+    await ready();
+    repository.pendingDelete = Completer<void>();
+    final deletion = cubit.discard();
+    await Future<void>.delayed(Duration.zero);
+    expect(cubit.state.busy, true);
+    await cubit.start();
+    expect(recorder.path, isNull);
+    repository.pendingDelete!.complete();
+    await deletion;
+    expect(cubit.state.busy, false);
+    await cubit.start();
+    expect(cubit.capture.state.recording, true);
+  });
+  for (final status in [401, 403, 404]) {
+    test('DELETE $status clears retained private results', () async {
+      await ready();
+      repository.failure = ApiException(message: 'denied', statusCode: status);
+      await cubit.discard();
+      expect(cubit.state.job, isNull);
+      expect(cubit.state.busy, false);
+      expect(cubit.state.unavailable, true);
+    });
+  }
+  for (final failure in [
+    const ApiException.transport(message: 'offline'),
+    const ApiException(
+      message: 'MFA code',
+      statusCode: 403,
+      code: 'MFA_REQUIRED',
+    ),
+    const ApiException(
+      message: 'MFA',
+      statusCode: 403,
+      isVerificationRequired: true,
+    ),
+  ]) {
+    test('temporary or MFA DELETE retains scoped result: $failure', () async {
+      await ready();
+      repository.failure = failure;
+      await cubit.discard();
+      expect(cubit.state.job?.transcript, 'Speech');
+      expect(cubit.state.busy, false);
+      expect(cubit.state.unavailable, true);
+    });
+  }
+  test(
+    'status response started before deletion cannot resurrect its result',
+    () async {
+      await ready();
+      final original = repository.retained;
+      repository.pendingRefresh = Completer<NotesVoiceJob?>();
+      final refreshing = cubit.refresh();
+      await Future<void>.delayed(Duration.zero);
+      await cubit.discard();
+      repository.pendingRefresh!.complete(original);
+      await refreshing;
+      expect(cubit.state.job, isNull);
+      expect(cubit.state.busy, false);
+    },
+  );
 }
