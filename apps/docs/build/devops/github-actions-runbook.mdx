@@ -401,7 +401,13 @@ prevent them. Setup exhausting the runtime budget fails before starting tests.
 Validate this policy with `node --test scripts/ci/e2e-runtime-budget.test.js`.
 The Markdown persistence helper also logs page creation before navigation,
 using the same fixed phase summaries. This exposes a previously silent browser
-boundary without claiming it caused the recurring stall.
+boundary without claiming it caused the recurring stall. Canonical import
+browser checks also emit fixed phase names and use a 15-second action deadline
+(the existing 60-second navigation deadline remains). Import context cleanup
+has a ten-second bound and retains the original assertion failure if cleanup
+also fails; cleanup failure still fails an otherwise successful test. This
+prevents a disposed-context error from obscuring the first failed operation.
+Regression coverage lives in `lettin-context-cleanup.test.ts`.
 
 ### Meet, Lettin, and Parley Cloudflare validation
 
