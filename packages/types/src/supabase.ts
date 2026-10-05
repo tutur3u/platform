@@ -2629,6 +2629,115 @@ export type Database = {
         };
         Relationships: [];
       };
+      calendar_provider_series_bindings: {
+        Row: {
+          calendar_id: string;
+          connection_id: string;
+          etag: string | null;
+          master_id: string;
+          provider: string;
+          series_id: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          calendar_id: string;
+          connection_id: string;
+          etag?: string | null;
+          master_id: string;
+          provider: string;
+          series_id: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          calendar_id?: string;
+          connection_id?: string;
+          etag?: string | null;
+          master_id?: string;
+          provider?: string;
+          series_id?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_provider_series_bindings_series_id_fkey';
+            columns: ['series_id'];
+            isOneToOne: true;
+            referencedRelation: 'calendar_event_series';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      calendar_provider_series_operations: {
+        Row: {
+          actor_id: string;
+          checkpoints: Json;
+          connection_id: string;
+          created_at: string;
+          id: string;
+          intent_hash: string;
+          journal: Json;
+          lease: string | null;
+          lease_until: string | null;
+          native_action: string;
+          native_input: Json;
+          phase: string;
+          result: Json | null;
+          series_id: string | null;
+          step_count: number;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          checkpoints?: Json;
+          connection_id: string;
+          created_at?: string;
+          id: string;
+          intent_hash: string;
+          journal: Json;
+          lease?: string | null;
+          lease_until?: string | null;
+          native_action: string;
+          native_input: Json;
+          phase?: string;
+          result?: Json | null;
+          series_id?: string | null;
+          step_count: number;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          checkpoints?: Json;
+          connection_id?: string;
+          created_at?: string;
+          id?: string;
+          intent_hash?: string;
+          journal?: Json;
+          lease?: string | null;
+          lease_until?: string | null;
+          native_action?: string;
+          native_input?: Json;
+          phase?: string;
+          result?: Json | null;
+          series_id?: string | null;
+          step_count?: number;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_provider_series_operations_series_id_fkey';
+            columns: ['series_id'];
+            isOneToOne: false;
+            referencedRelation: 'calendar_event_series';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       calendar_user_workspace_preferences: {
         Row: {
           conflict_policy: string;
@@ -17603,6 +17712,15 @@ export type Database = {
       calendar_series_json: {
         Args: {
           s: Database['private']['Tables']['calendar_event_series']['Row'];
+        };
+        Returns: Json;
+      };
+      calendar_series_operation: {
+        Args: {
+          p_action: string;
+          p_actor_id?: string;
+          p_input?: Json;
+          p_ws_id: string;
         };
         Returns: Json;
       };
@@ -43885,6 +44003,15 @@ export type Database = {
           p_actor_id: string;
           p_event_id: string;
           p_input?: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      calendar_provider_series_operation: {
+        Args: {
+          p_action: string;
+          p_actor_id: string;
+          p_input: Json;
           p_ws_id: string;
         };
         Returns: Json;

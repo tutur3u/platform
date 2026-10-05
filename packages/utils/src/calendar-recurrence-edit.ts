@@ -96,3 +96,34 @@ export function calendarAnchorAtSlot(
     endLocal: slot.add(duration).toString({ smallestUnit: 'second' }),
   };
 }
+
+/** Immutable original slot as a UTC instant for provider occurrence lookup. */
+export function calendarRecurrenceSlotInstant(input: {
+  rule: CalendarRecurrenceRule;
+  anchor: CalendarRecurrenceAnchor;
+  originalStartLocal: string;
+}) {
+  inspectCalendarRecurrenceSlot(input);
+  return Temporal.PlainDateTime.from(input.originalStartLocal)
+    .toZonedDateTime(input.rule.timeZone, { disambiguation: 'compatible' })
+    .toInstant()
+    .toString();
+}
+
+/** Normalize a provider date-time without falling back to the machine timezone. */
+export function calendarProviderDateTimeLocal(
+  input: { dateTime: string; timeZone?: string },
+  timeZone: string
+) {
+  const instant = /(?:Z|[+-]\d{2}:\d{2})$/i.test(input.dateTime)
+    ? Temporal.Instant.from(input.dateTime)
+    : Temporal.PlainDateTime.from(input.dateTime)
+        .toZonedDateTime(input.timeZone ?? timeZone, {
+          disambiguation: 'compatible',
+        })
+        .toInstant();
+  return instant
+    .toZonedDateTimeISO(timeZone)
+    .toPlainDateTime()
+    .toString({ smallestUnit: 'second' });
+}
