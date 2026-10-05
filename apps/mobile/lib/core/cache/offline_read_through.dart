@@ -15,6 +15,7 @@ Future<Map<String, dynamic>> readThroughJson({
   required String path,
   CachePolicy policy = CachePolicies.moduleData,
   bool forceRefresh = false,
+  bool allowAwaitedTransportFallback = true,
   CacheStore? cacheStore,
   String? Function()? cacheUserId,
 }) async {
@@ -46,6 +47,7 @@ Future<Map<String, dynamic>> readThroughJson({
     store: store,
     key: key,
     checkScope: checkScope,
+    allowAwaitedTransportFallback: allowAwaitedTransportFallback,
     decode: (payload) => Map<String, dynamic>.from(payload! as Map),
     read: () => store.prefetch<Map<String, dynamic>>(
       key: key,
@@ -160,6 +162,7 @@ Future<CacheReadResult<T>> _readRevalidated<T>({
   required void Function() checkScope,
   required CacheJsonDecoder<T> decode,
   required Future<CacheReadResult<T>> Function() read,
+  bool allowAwaitedTransportFallback = true,
 }) async {
   try {
     checkScope();
@@ -167,7 +170,9 @@ Future<CacheReadResult<T>> _readRevalidated<T>({
     checkScope();
     return value;
   } on Object catch (error) {
-    if (!CacheStore.awaitingRevalidation || !isOfflineTransportFailure(error)) {
+    if (!allowAwaitedTransportFallback ||
+        !CacheStore.awaitingRevalidation ||
+        !isOfflineTransportFailure(error)) {
       rethrow;
     }
     checkScope();

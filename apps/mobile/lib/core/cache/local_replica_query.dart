@@ -1,7 +1,8 @@
+import 'package:mobile/core/cache/cache_replica_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/replica_entity_record.dart';
 
-/// Merge visited pages/details by stable ID, retaining the latest scoped row.
+/// Merge authorized pages/details by ID without degrading canonical rows.
 Future<List<Map<String, dynamic>>> queryLocalRows({
   required CacheStore store,
   required String? userId,
@@ -17,9 +18,7 @@ Future<List<Map<String, dynamic>>> queryLocalRows({
       workspaceId: workspaceId,
     )) {
       final previous = rows[row.id];
-      if (previous == null || row.fetchedAt.isAfter(previous.fetchedAt)) {
-        rows[row.id] = row;
-      }
+      rows[row.id] = previous == null ? row : mergeReplicaRows(previous, row);
     }
   }
   return rows.values.map((row) => row.payload).toList();

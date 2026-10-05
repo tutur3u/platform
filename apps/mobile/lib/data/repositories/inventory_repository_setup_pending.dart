@@ -1,10 +1,17 @@
 part of 'inventory_repository.dart';
 
-Future<List<T>> _setupRows<T>(Future<List<T>> request) async {
+Future<List<T>> _setupRows<T>(
+  bool forceRefresh,
+  Future<List<T>> request,
+) async {
   try {
     return await request;
   } on Object catch (error) {
-    if (!isOfflineTransportFailure(error)) rethrow;
+    if (forceRefresh ||
+        CacheStore.awaitingRevalidation ||
+        !isOfflineTransportFailure(error)) {
+      rethrow;
+    }
     return <T>[];
   }
 }

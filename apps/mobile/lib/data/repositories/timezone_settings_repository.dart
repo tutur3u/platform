@@ -77,6 +77,7 @@ class TimezoneSettingsRepository {
                     Duration.microsecondsPerSecond)
                 .ceil(),
         code: cooldown.error.code,
+        rateLimitDiagnostics: cooldown.error.rateLimitDiagnostics,
       );
     }
     try {

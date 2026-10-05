@@ -328,19 +328,16 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
                     ),
                     onToday: () => _select(_today),
                   ),
-                  if (widget.refreshing)
-                    Semantics(
-                      key: const ValueKey('timeline-refreshing'),
-                      label: context.l10n.commonLoading,
-                      liveRegion: true,
-                      child: const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Icon(Icons.sync, size: 16),
-                      ),
-                    ),
                   if (widget.loading ||
                       (widget.refreshing && widget.items.isEmpty))
-                    const FinanceSkeletonBlock(height: 112, radius: 20)
+                    Semantics(
+                      label: context.l10n.commonLoading,
+                      liveRegion: true,
+                      child: const FinanceSkeletonBlock(
+                        height: 112,
+                        radius: 20,
+                      ),
+                    )
                   else if (entries.isEmpty &&
                       !(widget.statusReportedByParent &&
                           widget.availability !=

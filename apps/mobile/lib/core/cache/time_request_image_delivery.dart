@@ -63,20 +63,15 @@ Future<List<String>> deliverTimeRequestImages({
           )
           .timeout(const Duration(seconds: 60));
     } on SocketException catch (_) {
-      throw const ApiException(
+      throw const ApiException.transport(
         message: 'Image upload connection lost',
-        statusCode: 0,
       );
     } on http.ClientException catch (_) {
-      throw const ApiException(
+      throw const ApiException.transport(
         message: 'Image upload connection lost',
-        statusCode: 0,
       );
     } on TimeoutException catch (_) {
-      throw const ApiException(
-        message: 'Image upload timed out',
-        statusCode: 0,
-      );
+      throw const ApiException.transport(message: 'Image upload timed out');
     }
     if (result.statusCode < 200 || result.statusCode >= 300) {
       throw ApiException(

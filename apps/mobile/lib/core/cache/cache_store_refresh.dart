@@ -36,37 +36,44 @@ extension CacheStoreRefresh on CacheStore {
       });
     }
     final flightKey = '$revision:${key.value}';
-    Future<Object?> refresh() => _inFlight.putIfAbsent(flightKey, () {
-      _flightScopes[flightKey] = (key: key, tags: tags);
-      return Future<Object?>.sync(fetch)
-          .then((payload) async {
-            // Never resurrect data invalidated by a mutation or account logout.
-            checkScope?.call();
-            if (revision == _revisionFor(key)) {
-              try {
-                await write(
-                  key: key,
-                  policy: policy,
-                  payload: payload,
-                  tags: tags,
-                  expectedRevision: revision,
-                  checkScope: checkScope,
-                );
-              } on Object {
-                debugPrint(
-                  'Cache persistence unavailable; using network data.',
-                );
+    Future<Object?> refresh() => _CacheRevalidationScope.refresh(
+      this,
+      flightKey,
+      () => _inFlight.putIfAbsent(flightKey, () {
+        _flightScopes[flightKey] = (key: key, tags: tags);
+        return Future<Object?>.sync(fetch)
+            .then((payload) async {
+              // Never resurrect data after a mutation or account logout.
+              checkScope?.call();
+              // A successful HTTP status is not a valid domain snapshot.
+              // Decode before replacing the last authorized stored response.
+              decode(payload);
+              if (revision == _revisionFor(key)) {
+                try {
+                  await write(
+                    key: key,
+                    policy: policy,
+                    payload: payload,
+                    tags: tags,
+                    expectedRevision: revision,
+                    checkScope: checkScope,
+                  );
+                } on Object {
+                  debugPrint(
+                    'Cache persistence unavailable; using network data.',
+                  );
+                }
               }
-            }
-            return payload;
-          })
-          .whenComplete(() {
-            // Remove the reference without returning/awaiting this same future.
-            // ignore: discarded_futures
-            _inFlight.remove(flightKey);
-            _flightScopes.remove(flightKey);
-          });
-    });
+              return payload;
+            })
+            .whenComplete(() {
+              // Remove the reference without returning/awaiting this same future.
+              // ignore: discarded_futures
+              _inFlight.remove(flightKey);
+              _flightScopes.remove(flightKey);
+            });
+      }),
+    );
 
     // Auth-sensitive resources handle permission failures in their callers.
     // Preserve their explicit refresh contract so a background 403 cannot

@@ -1,17 +1,24 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/sources/api_error_payload.dart';
+import 'package:mobile/data/sources/api_exception.dart';
+import 'package:mobile/data/sources/api_multipart_file.dart';
+import 'package:mobile/data/sources/api_rate_limit_diagnostics.dart';
 import 'package:mobile/data/sources/api_verification.dart';
 import 'package:mobile/data/sources/offline_api_request.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/auth/required_mfa_policy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+export 'api_exception.dart';
+export 'api_multipart_file.dart';
 
 /// Lightweight HTTP client for calling mobile API endpoints.
 ///
@@ -22,12 +29,14 @@ class ApiClient {
     http.Client? httpClient,
     SupabaseClient? authClient,
     DateTime Function()? clock,
+    Duration requestTimeout = const Duration(seconds: 30),
     String? expectedUserId,
   }) : _baseUrl = baseUrl?.replaceAll(RegExp(r'/$'), ''),
        _client = httpClient ?? http.Client(),
        _authClient = authClient,
        _expectedUserId = expectedUserId,
-       _clock = clock ?? DateTime.now;
+       _clock = clock ?? DateTime.now,
+       _requestTimeout = requestTimeout;
 
   static final Object _expectedUserKey = Object();
 
@@ -56,6 +65,7 @@ class ApiClient {
   final DateTime Function() _clock;
   GoTrueClient get _auth => (_authClient ?? supabase).auth;
   final String? _baseUrl;
+  final Duration _requestTimeout;
   static const int _expiryBufferMs = 60 * 1000;
 
   Uri _url(String path) =>
@@ -70,7 +80,9 @@ class ApiClient {
       final request = http.Request('GET', _url(path))
         ..followRedirects = false
         ..headers.addAll(await _getHeaders(accept: '*/*', offlineRead: true));
-      return await OfflineApiRequest.paced(() => _client.send(request));
+      return await OfflineApiRequest.paced(
+        () => _client.send(request).timeout(_requestTimeout),
+      );
     });
     if (response.statusCode != 200 ||
         (response.contentLength != null &&
@@ -92,6 +104,7 @@ class ApiClient {
         throw const ApiException(
           message: 'Attachment exceeds download limit',
           statusCode: 0,
+          failureKind: ApiFailureKind.response,
         );
       }
       bytes.add(chunk);
@@ -118,14 +131,14 @@ class ApiClient {
         throw const ApiException(
           message: 'Failed to refresh session',
           statusCode: 0,
+          failureKind: ApiFailureKind.session,
         );
       }
-    } on ApiException {
-      rethrow;
-    } catch (e) {
-      throw ApiException(
-        message: 'Failed to refresh session: $e',
+    } on Object {
+      throw const ApiException(
+        message: 'Failed to refresh session',
         statusCode: 0,
+        failureKind: ApiFailureKind.session,
       );
     }
   }
@@ -189,7 +202,7 @@ class ApiClient {
       return await OfflineApiRequest.paced(
         () {
           if (requiresAuth) _checkRequestUser(userId);
-          return _client.get(url, headers: headers);
+          return _client.get(url, headers: headers).timeout(_requestTimeout);
         },
         prepare: () async {
           headers = await _getHeaders(
@@ -218,7 +231,7 @@ class ApiClient {
       return await OfflineApiRequest.paced(
         () {
           if (requiresAuth) _checkRequestUser(userId);
-          return _client.get(url, headers: headers);
+          return _client.get(url, headers: headers).timeout(_requestTimeout);
         },
         prepare: () async {
           headers = await _getHeaders(
@@ -247,11 +260,16 @@ class ApiClient {
       throw const ApiException(
         message: 'Expected a JSON array response',
         statusCode: 0,
+        failureKind: ApiFailureKind.response,
       );
     } on ApiException {
       rethrow;
     } on FormatException {
-      throw const ApiException(message: 'Invalid JSON response', statusCode: 0);
+      throw const ApiException(
+        message: 'Invalid JSON response',
+        statusCode: 0,
+        failureKind: ApiFailureKind.response,
+      );
     }
   }
 
@@ -267,16 +285,17 @@ class ApiClient {
     final url = _url(path);
 
     final response = await _performRequest(
-      () async => await _client.post(
-        url,
-        headers: await _getHeaders(
-          contentType: 'application/json',
-          requiresAuth: requiresAuth,
-        ),
-        body: jsonEncode(body),
-      ),
+      () async => await _client
+          .post(
+            url,
+            headers: await _getHeaders(
+              contentType: 'application/json',
+              requiresAuth: requiresAuth,
+            ),
+            body: jsonEncode(body),
+          )
+          .timeout(timeout),
       requiresAuth: requiresAuth,
-      timeout: timeout,
     );
 
     return _handleResponse(response);
@@ -293,14 +312,16 @@ class ApiClient {
     final url = _url(path);
 
     final response = await _performRequest(
-      () async => await _client.patch(
-        url,
-        headers: await _getHeaders(
-          contentType: 'application/json',
-          requiresAuth: requiresAuth,
-        ),
-        body: jsonEncode(body),
-      ),
+      () async => await _client
+          .patch(
+            url,
+            headers: await _getHeaders(
+              contentType: 'application/json',
+              requiresAuth: requiresAuth,
+            ),
+            body: jsonEncode(body),
+          )
+          .timeout(_requestTimeout),
       requiresAuth: requiresAuth,
     );
 
@@ -318,14 +339,16 @@ class ApiClient {
     final url = _url(path);
 
     final response = await _performRequest(
-      () async => await _client.delete(
-        url,
-        headers: await _getHeaders(
-          contentType: body == null ? null : 'application/json',
-          requiresAuth: requiresAuth,
-        ),
-        body: body == null ? null : jsonEncode(body),
-      ),
+      () async => await _client
+          .delete(
+            url,
+            headers: await _getHeaders(
+              contentType: body == null ? null : 'application/json',
+              requiresAuth: requiresAuth,
+            ),
+            body: body == null ? null : jsonEncode(body),
+          )
+          .timeout(_requestTimeout),
       requiresAuth: requiresAuth,
     );
 
@@ -343,14 +366,16 @@ class ApiClient {
     final url = _url(path);
 
     final response = await _performRequest(
-      () async => await _client.put(
-        url,
-        headers: await _getHeaders(
-          contentType: 'application/json',
-          requiresAuth: requiresAuth,
-        ),
-        body: jsonEncode(body),
-      ),
+      () async => await _client
+          .put(
+            url,
+            headers: await _getHeaders(
+              contentType: 'application/json',
+              requiresAuth: requiresAuth,
+            ),
+            body: jsonEncode(body),
+          )
+          .timeout(_requestTimeout),
       requiresAuth: requiresAuth,
     );
 
@@ -375,7 +400,9 @@ class ApiClient {
             offlineRead: true,
           ),
         );
-      return await OfflineApiRequest.paced(() => _client.send(request));
+      return await OfflineApiRequest.paced(
+        () => _client.send(request).timeout(_requestTimeout),
+      );
     }, requiresAuth: requiresAuth);
   }
 
@@ -398,7 +425,7 @@ class ApiClient {
           ),
         )
         ..body = jsonEncode(body);
-      return await _client.send(request);
+      return await _client.send(request).timeout(_requestTimeout);
     }, requiresAuth: requiresAuth);
   }
 
@@ -439,7 +466,7 @@ class ApiClient {
       }
 
       if (requiresAuth) _checkRequestUser(userId);
-      return await _client.send(request);
+      return await _client.send(request).timeout(_requestTimeout);
     }, requiresAuth: requiresAuth);
 
     final response = await http.Response.fromStream(streamedResponse);
@@ -462,32 +489,40 @@ class ApiClient {
     }
   }
 
+  Future<String?> _verificationToken() async {
+    try {
+      return await ApiVerification.requestToken?.call();
+    } on Object {
+      throw const ApiException(
+        message: 'Unable to verify request',
+        statusCode: 0,
+        failureKind: ApiFailureKind.session,
+      );
+    }
+  }
+
   Future<http.Response> _performRequest(
     Future<http.Response> Function() request, {
     bool requiresAuth = true,
-    Duration timeout = const Duration(seconds: 30),
   }) async {
     try {
       final userId = requiresAuth ? _auth.currentUser?.id : null;
-      var response = await request().timeout(timeout);
+      var response = await request();
       if (requiresAuth) _checkRequestUser(userId);
       if (requiresAuth && response.statusCode == 401) {
         await _ensureValidSession(forceRefresh: true);
         _checkRequestUser(userId);
-        response = await request().timeout(timeout);
+        response = await request();
         _checkRequestUser(userId);
       }
       if (requiresAuth &&
           response.statusCode == 403 &&
           response.headers['x-abuse-challenge'] == 'turnstile' &&
           OfflineApiRequest.allowsChallenge) {
-        final token = await ApiVerification.requestToken?.call();
+        final token = await _verificationToken();
         _checkRequestUser(userId);
         if (token != null && token.isNotEmpty) {
-          response = await ApiVerification.retry(
-            token,
-            () => request().timeout(timeout),
-          );
+          response = await ApiVerification.retry(token, () => request());
           _checkRequestUser(userId);
         }
       }
@@ -495,9 +530,17 @@ class ApiClient {
     } on ApiException {
       rethrow;
     } on TimeoutException {
-      throw const ApiException(message: 'Request timed out', statusCode: 0);
-    } catch (e) {
-      throw ApiException(message: e.toString(), statusCode: 0);
+      throw const ApiException.transport(message: 'Request timed out');
+    } on SocketException {
+      throw const ApiException.transport(message: 'Connection unavailable');
+    } on http.ClientException {
+      throw const ApiException.transport(message: 'Connection unavailable');
+    } on Object {
+      throw const ApiException(
+        message: 'Unable to complete request',
+        statusCode: 0,
+        failureKind: ApiFailureKind.unknown,
+      );
     }
   }
 
@@ -507,27 +550,24 @@ class ApiClient {
   }) async {
     try {
       final userId = requiresAuth ? _auth.currentUser?.id : null;
-      var response = await request().timeout(const Duration(seconds: 30));
+      var response = await request();
       if (requiresAuth) _checkRequestUser(userId);
       if (requiresAuth && response.statusCode == 401) {
         await response.stream.listen(null).cancel();
         await _ensureValidSession(forceRefresh: true);
         _checkRequestUser(userId);
-        response = await request().timeout(const Duration(seconds: 30));
+        response = await request();
         _checkRequestUser(userId);
       }
       if (requiresAuth &&
           response.statusCode == 403 &&
           response.headers['x-abuse-challenge'] == 'turnstile' &&
           OfflineApiRequest.allowsChallenge) {
-        final token = await ApiVerification.requestToken?.call();
+        final token = await _verificationToken();
         _checkRequestUser(userId);
         if (token != null && token.isNotEmpty) {
           await response.stream.listen(null).cancel();
-          response = await ApiVerification.retry(
-            token,
-            () => request().timeout(const Duration(seconds: 30)),
-          );
+          response = await ApiVerification.retry(token, () => request());
           _checkRequestUser(userId);
         }
       }
@@ -535,9 +575,17 @@ class ApiClient {
     } on ApiException {
       rethrow;
     } on TimeoutException {
-      throw const ApiException(message: 'Request timed out', statusCode: 0);
-    } catch (e) {
-      throw ApiException(message: e.toString(), statusCode: 0);
+      throw const ApiException.transport(message: 'Request timed out');
+    } on SocketException {
+      throw const ApiException.transport(message: 'Connection unavailable');
+    } on http.ClientException {
+      throw const ApiException.transport(message: 'Connection unavailable');
+    } on Object {
+      throw const ApiException(
+        message: 'Unable to complete request',
+        statusCode: 0,
+        failureKind: ApiFailureKind.unknown,
+      );
     }
   }
 
@@ -559,8 +607,12 @@ class ApiClient {
         unawaited(refreshRequiredMfa(_auth));
       }
       final error = ApiErrorPayload(parsed);
+      final rateLimit = response.statusCode == 429
+          ? ApiRateLimitDiagnostics.fromHeaders(response.headers)
+          : null;
       developer.log(
-        'HTTP ${response.statusCode}; code=${error.code ?? 'unknown'}',
+        'HTTP ${response.statusCode}; code=${error.code ?? 'unknown'}'
+        '${rateLimit == null ? '' : '; ${rateLimit.safeSummary}'}',
         name: 'ApiClient',
       );
       throw ApiException(
@@ -569,6 +621,7 @@ class ApiClient {
         retryAfter:
             _retryAfter(response.headers['retry-after']) ?? error.retryAfter,
         code: error.code,
+        rateLimitDiagnostics: rateLimit,
         offlineContractObserved:
             response.headers['x-tuturuuu-offline-contract'] ==
             'inventory-offline-create-v1',
@@ -579,6 +632,13 @@ class ApiClient {
       );
     }
 
+    if (response.body.isNotEmpty && parsed == null) {
+      throw const ApiException(
+        message: 'Expected a JSON object response',
+        statusCode: 0,
+        failureKind: ApiFailureKind.response,
+      );
+    }
     return parsed ?? {};
   }
 
@@ -619,48 +679,4 @@ class ApiClient {
   }
 
   void dispose() => _client.close();
-}
-
-/// Exception thrown by [ApiClient] on non-2xx responses or network errors.
-class ApiException implements Exception {
-  const ApiException({
-    required this.message,
-    required this.statusCode,
-    this.retryAfter,
-    this.code,
-    this.isVerificationRequired = false,
-    this.offlineContractObserved = false,
-  });
-
-  final String message;
-  final int statusCode;
-  final int? retryAfter;
-  final String? code;
-  final bool isVerificationRequired;
-  final bool offlineContractObserved;
-
-  @override
-  String toString() => 'ApiException($statusCode): $message';
-}
-
-class ApiMultipartFile {
-  const ApiMultipartFile({
-    required this.field,
-    required this.filePath,
-    this.filename,
-    this.contentType,
-  }) : bytes = null;
-
-  const ApiMultipartFile.bytes({
-    required this.field,
-    required this.bytes,
-    this.filename,
-    this.contentType,
-  }) : filePath = null;
-
-  final String field;
-  final String? filePath;
-  final Uint8List? bytes;
-  final String? filename;
-  final MediaType? contentType;
 }

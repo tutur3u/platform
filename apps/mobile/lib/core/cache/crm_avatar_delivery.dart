@@ -44,11 +44,11 @@ Future<String> deliverCrmAvatar({
         )
         .timeout(const Duration(seconds: 60));
   } on SocketException catch (_) {
-    throw const ApiException(message: 'Avatar connection lost', statusCode: 0);
+    throw const ApiException.transport(message: 'Avatar connection lost');
   } on http.ClientException catch (_) {
-    throw const ApiException(message: 'Avatar connection lost', statusCode: 0);
+    throw const ApiException.transport(message: 'Avatar connection lost');
   } on TimeoutException catch (_) {
-    throw const ApiException(message: 'Avatar timed out', statusCode: 0);
+    throw const ApiException.transport(message: 'Avatar timed out');
   }
   if (uploadResponse.statusCode < 200 || uploadResponse.statusCode >= 300) {
     throw ApiException(

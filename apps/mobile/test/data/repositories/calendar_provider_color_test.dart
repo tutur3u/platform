@@ -33,7 +33,7 @@ class _Api extends ApiClient {
     Duration timeout = const Duration(seconds: 30),
   }) async {
     body = data! as Map<String, dynamic>;
-    throw const ApiException(message: 'Uncertain send', statusCode: 0);
+    throw const ApiException.transport(message: 'Uncertain send');
   }
 
   @override
@@ -44,7 +44,7 @@ class _Api extends ApiClient {
   }) async {
     paths.add(path);
     body = data;
-    throw const ApiException(message: 'Synthetic offline', statusCode: 0);
+    throw const ApiException.transport(message: 'Synthetic offline');
   }
 }
 

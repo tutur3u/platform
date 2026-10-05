@@ -6,9 +6,11 @@ on:
 permissions:
   contents: read
 
+# Immutable canonical/generated commits must not cancel another check on the
+# same SHA. Ordinary feature refs still supersede their obsolete source commits.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/release-please--branches--production--release-notes' && github.sha || github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && github.ref != 'refs/heads/release-please--branches--production--release-notes' }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')) && github.sha || 'latest' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--') }}
 
 jobs:
   check-ci:
@@ -20,10 +22,39 @@ jobs:
       workflow_name: turbo-unit-tests.yaml
       check_release_only: true
 
-  test-shards:
-    name: Unit test shard (${{ matrix.shard }})
+  duplicate-validation:
+    name: Check completed validation
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      run_checks: ${{ steps.proof.outputs.run_checks }}
+    steps:
+      - name: Checkout validation helper
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          sparse-checkout: scripts/ci/check-completed-validation.js
+          sparse-checkout-cone-mode: false
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Prove completed duplicate
+        id: proof
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_NAME: turbo-unit-tests.yaml
+        run: node scripts/ci/check-completed-validation.js
+
+  test-shards:
+    name: Unit test shard (${{ matrix.shard }})
+    needs: [check-ci, duplicate-validation]
+    if: ${{ !cancelled() && needs.check-ci.result == 'success' && (needs.duplicate-validation.result != 'success' || needs.duplicate-validation.outputs.run_checks != 'false') && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' }}
     timeout-minutes: 20
     runs-on: ubuntu-latest
     strategy:
@@ -85,8 +116,8 @@ jobs:
 
   build:
     name: Unit Tests (24)
-    needs: [check-ci, test-shards]
-    if: always() && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'
+    needs: [check-ci, duplicate-validation, test-shards]
+    if: ${{ !cancelled() && needs.check-ci.result == 'success' && (needs.duplicate-validation.result != 'success' || needs.duplicate-validation.outputs.run_checks != 'false') && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Require every unit-test shard

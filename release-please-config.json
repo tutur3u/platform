@@ -251,6 +251,10 @@
       "component": "payment",
       "package-name": "@tuturuuu/payment"
     },
+    "packages/programming-ui": {
+      "component": "programming-ui",
+      "package-name": "@tuturuuu/programming-ui"
+    },
     "packages/realtime": {
       "component": "realtime",
       "package-name": "@tuturuuu/realtime"

@@ -28,6 +28,28 @@ Finder date(DateTime day) =>
     find.byKey(ValueKey('timeline-date-${day.toIso8601String()}'));
 
 void main() {
+  testWidgets('cold loading is announced without a visible refresh control', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpApp(
+      ProfileTimelineBrowser(items: const [], loading: true, onOpen: (_) {}),
+    );
+    final loading = find.bySemanticsLabel('Loading');
+    expect(loading, findsOneWidget);
+    expect(
+      tester
+          .getSemantics(loading)
+          .getSemanticsData()
+          .flagsCollection
+          .isLiveRegion,
+      isTrue,
+    );
+    expect(find.text('Loading'), findsNothing);
+    expect(find.byIcon(Icons.sync), findsNothing);
+    handle.dispose();
+  });
+
   testWidgets('untitled activity announces its milestone only once', (
     tester,
   ) async {

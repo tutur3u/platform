@@ -5,6 +5,12 @@
 bool localIlike(String? value, String query) {
   if (query.isEmpty) return true;
   if (value == null) return false;
+  return compileLocalIlike(query).hasMatch(value);
+}
+
+/// Callers may reuse this within one search.
+/// This module retains no process-global raw-query cache.
+RegExp compileLocalIlike(String query) {
   final pattern = StringBuffer(r'[\s\S]*');
   var escaped = false;
   for (final rune in query.runes) {
@@ -24,9 +30,5 @@ bool localIlike(String? value, String query) {
   }
   // The server's wrapping '%' is escaped by a final query backslash.
   pattern.write(escaped ? '%' : r'[\s\S]*');
-  return RegExp(
-    '^$pattern\$',
-    caseSensitive: false,
-    unicode: true,
-  ).hasMatch(value);
+  return RegExp('^$pattern\$', caseSensitive: false, unicode: true);
 }

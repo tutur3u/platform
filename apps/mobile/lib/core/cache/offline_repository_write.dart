@@ -73,7 +73,7 @@ Future<void> queueOrSendVoid({
       rethrow;
     }
     final queued = await mutations.enqueueAfterNetworkFailure(
-      error: const ApiException(message: 'Network unavailable', statusCode: 0),
+      error: const ApiException.transport(message: 'Network unavailable'),
       feature: feature,
       method: method,
       path: path,
@@ -155,7 +155,7 @@ Future<T> queueOrSendValue<T>({
       rethrow;
     }
     if (await mutations.enqueueAfterNetworkFailure(
-      error: const ApiException(message: 'Network unavailable', statusCode: 0),
+      error: const ApiException.transport(message: 'Network unavailable'),
       feature: feature,
       method: method,
       path: path,

@@ -6,9 +6,22 @@ extension FinanceRepositoryTransactionLookup on FinanceRepository {
     required String transactionId,
   }) async {
     final userId = _cacheUserId();
-    final local = await _localTransactions(wsId);
+    void checkActor() {
+      if (_cacheUserId() != userId) {
+        throw const ApiException(message: 'Account changed', statusCode: 401);
+      }
+    }
+
+    Future<Transaction?> localDetail() async {
+      final local = await _localTransactions(wsId);
+      checkActor();
+      return local.where((row) => row.id == transactionId).firstOrNull;
+    }
+
     final pending = await _mutationQueue.listPending();
-    if (!await _networkAvailable() ||
+    final online = await _networkAvailable();
+    checkActor();
+    if (!online ||
         pending.any(
           (row) =>
               row.feature == 'finance' &&
@@ -19,7 +32,7 @@ extension FinanceRepositoryTransactionLookup on FinanceRepository {
                       FinanceEndpoints.transaction(wsId, transactionId) ||
                   row.path == FinanceEndpoints.transfers(wsId)),
         )) {
-      return local.where((row) => row.id == transactionId).firstOrNull;
+      return await localDetail();
     }
     try {
       final response = await readThroughJson(
@@ -30,9 +43,13 @@ extension FinanceRepositoryTransactionLookup on FinanceRepository {
         cacheStore: _cacheStore,
         cacheUserId: _cacheUserId,
         forceRefresh: true,
+        // Fall back through merged rows so newer server redactions win over an
+        // older raw detail snapshot during awaited refresh transport errors.
+        allowAwaitedTransportFallback: false,
       );
       return Transaction.fromJson(response);
     } on Object catch (error) {
+      checkActor();
       if (error is ApiException && error.statusCode == 404) {
         await _cacheStore.remove(
           CacheKey(
@@ -45,7 +62,7 @@ extension FinanceRepositoryTransactionLookup on FinanceRepository {
         return null;
       }
       if (!isOfflineTransportFailure(error)) rethrow;
-      return local.where((row) => row.id == transactionId).firstOrNull;
+      return await localDetail();
     }
   }
 }

@@ -20,7 +20,7 @@ void main() {
     final repository = FinanceRepository(apiClient: apiClient);
     when(
       () => apiClient.getJson(any()),
-    ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));
+    ).thenThrow(const ApiException.transport(message: 'Offline'));
     OfflineMutationQueue.instance.pending.value = [
       PendingMutationRecord(
         id: 'checkpoint-edit',

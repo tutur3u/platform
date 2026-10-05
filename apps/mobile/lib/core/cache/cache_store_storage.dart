@@ -57,40 +57,78 @@ extension CacheStoreStorage on CacheStore {
       throw ArgumentError.value(bytes, 'bytes', 'Unsupported cache limit');
     }
     await init();
-    await _secureStorage.write(
-      key: CacheStore._maxBytesStorageKey,
-      value: '$bytes',
-    );
-    _maxBytes = bytes;
-    await _pruneResourceCache();
+    await _replicaMigration;
+    await _serializeResources(() async {
+      await _secureStorage.write(
+        key: CacheStore._maxBytesStorageKey,
+        value: '$bytes',
+      );
+      _maxBytes = bytes;
+      await _pruneResourceCache();
+    });
   }
 
   Future<void> clearResourceCache() => clearScope(resourceOnly: true);
 
+  @visibleForTesting
+  Future<void> pruneForTesting(int limit) async {
+    await init();
+    await _replicaMigration;
+    await _serializeResources(() async {
+      final previous = _maxBytes;
+      _maxBytes = limit;
+      try {
+        await _pruneResourceCache();
+      } finally {
+        _maxBytes = previous;
+      }
+    });
+  }
+
   Future<void> _pruneResourceCache() async {
     if (_resourceBytes + _entityBytes <= _maxBytes) return;
+    await _replicaMigration;
     final now = DateTime.now();
-    final surviving = <CachedResourceRecord>[];
-    for (final record in _memory.values.toList(growable: false)) {
-      if (!now.isBefore(record.expireAt)) {
+    final records = _memory.values.toList(growable: false)
+      ..sort((a, b) {
+        final aExpired = !now.isBefore(a.expireAt);
+        final bExpired = !now.isBefore(b.expireAt);
+        if (aExpired != bExpired) return aExpired ? -1 : 1;
+        return a.fetchedAt.compareTo(b.fetchedAt);
+      });
+    var projectedBytes = _resourceBytes + _entityBytes;
+    final selected = <CachedResourceRecord>[];
+    for (final record in records) {
+      if (projectedBytes <= _maxBytes && now.isBefore(record.expireAt)) break;
+      selected.add(record);
+      final index = _entityBox.get(_replicaSourceKey(record.key));
+      final replicaBytes = ((index as List?)?.whereType<String>() ?? <String>[])
+          .fold<int>(
+            0,
+            (sum, key) => sum + _replicaPayloadBytes(_entityBox.get(key)),
+          );
+      projectedBytes -= utf8.encode(record.jsonPayload).length + replicaBytes;
+    }
+    final keys = {
+      for (final record in selected) record.key: _keyForRecord(record),
+    };
+    final journal = await _beginResourceDeletion(keys.values);
+    try {
+      for (final record in selected) {
         _advanceKey(record.key);
         _dropRecord(record.key);
         await _resourceBox.delete(record.key);
-        await _replicaMigration;
         await _removeReplicaSource(record.key);
-      } else {
-        surviving.add(record);
+        await persistenceCheckpoint?.call('pruning');
       }
+    } on Object catch (error) {
+      if (error is CachePersistenceInterruption) rethrow;
+      await _restoreResourceJournal(journal, restore: (_) => false);
+      rethrow;
     }
-    if (_resourceBytes + _entityBytes <= _maxBytes) return;
-    surviving.sort((a, b) => a.fetchedAt.compareTo(b.fetchedAt));
-    for (final record in surviving) {
-      if (_resourceBytes + _entityBytes <= _maxBytes) break;
-      _advanceKey(record.key);
+    await _finishResourceJournal(journal);
+    for (final record in selected) {
       _dropRecord(record.key);
-      await _resourceBox.delete(record.key);
-      await _replicaMigration;
-      await _removeReplicaSource(record.key);
     }
   }
 }
