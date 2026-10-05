@@ -252,3 +252,15 @@ Microsoft signing resources, and the existing Microsoft Store submission. Window
 Store MSIX drafts use the reserved identity and become Microsoft-signed only after
 certification. They do not make the direct-download EXE signed or available.
 Regression coverage: Infrastructure desktop status parser and navigation tests.
+
+### Windows certification diagnostics
+
+A Store draft validation retains the installed executable's embedded manifest,
+process/window DPI awareness, and a compact list of non-passing WACK tests in
+its validation artifact. Missing manifest-tool output is explicitly unavailable.
+These receipts help distinguish packaging errors from certification-tool
+warnings; they do not approve a package. The submission gate still requires an
+overall WACK `PASS`, plus the existing runtime and publisher review gates.
+Do not remove Flutter license notices or required plugin functionality merely to
+hide an informational test. [Microsoft documents optional Desktop Bridge tests](https://learn.microsoft.com/en-us/windows/uwp/debug-test-perf/windows-desktop-bridge-app-tests)
+as informational, but a required DPI warning still needs investigation.

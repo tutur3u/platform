@@ -26,6 +26,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { NativeRecurrenceContextMenu } from '../components/ui/legacy/calendar/native-recurrence-context-menu';
 import { getTaskApiUrl } from '../lib/tasks-app-url';
 import {
   createCalendarCreationRequests,
@@ -33,7 +34,13 @@ import {
 } from './calendar-creation-request';
 import { roundToNearest15Minutes } from './calendar-date-utils';
 import { createCalendarEventLookup } from './calendar-event-lookup';
-import { calendarEventUpdatePayload } from './calendar-event-write-payload';
+import type { PendingEventUpdate } from './calendar-event-update-queue-types';
+import {
+  assertOrdinaryCalendarEvent,
+  calendarEventByIdentity,
+  calendarEventUpdatePayload,
+  cleanCalendarEventUpdates,
+} from './calendar-event-write-payload';
 import { useCalendarSync } from './use-calendar-sync';
 import { useOpenInitialCalendarEvent } from './use-open-initial-calendar-event';
 
@@ -228,18 +235,6 @@ const CalendarContext = createContext<{
   isEventReadOnly: () => false,
   readOnly: false,
 });
-
-// Add this interface before the updateEvent function
-interface PendingEventUpdate extends Partial<CalendarEvent> {
-  _updateId?: string;
-  _timestamp: number;
-  _eventId: string;
-  _previousEvent?: CalendarEvent;
-  _resolvers?: Array<{
-    resolve: (value: CalendarEvent) => void;
-    reject: (reason: unknown) => void;
-  }>;
-}
 
 export type CalendarEventAdapter = {
   disableBuiltInEventUi?: boolean;
@@ -484,11 +479,7 @@ export const CalendarProvider = ({
   // Event getters
   const getEvent = useCallback(
     (eventId: string) => {
-      // Handle IDs for split multi-day events (they contain a dash and date)
-      const originalId = eventId.includes('-')
-        ? eventId.split('-')[0]
-        : eventId;
-      return events.find((e: Partial<CalendarEvent>) => e.id === originalId);
+      return calendarEventByIdentity(events, eventId);
     },
     [events]
   );
@@ -917,24 +908,8 @@ export const CalendarProvider = ({
         return undefined;
       }
 
-      // Clean and validate the event updates - only allow known CalendarEvent fields
-      const allowedFields: (keyof CalendarEvent)[] = [
-        'title',
-        'description',
-        'start_at',
-        'end_at',
-        'color',
-        'location',
-        'locked',
-        'source',
-      ];
-
-      const cleanedUpdates: Partial<CalendarEvent> = {};
-      for (const field of allowedFields) {
-        if (eventUpdates[field] !== undefined) {
-          (cleanedUpdates as any)[field] = eventUpdates[field];
-        }
-      }
+      assertOrdinaryCalendarEvent(events, eventId);
+      const cleanedUpdates = cleanCalendarEventUpdates(eventUpdates);
 
       // Round start and end times to nearest 15-minute interval if they exist
       if (cleanedUpdates.start_at) {
@@ -1075,6 +1050,7 @@ export const CalendarProvider = ({
         console.warn('Calendar is in read-only mode');
         return;
       }
+      assertOrdinaryCalendarEvent(events, eventId);
       // If this is a pending new event that hasn't been saved yet
       if (pendingNewEvent && eventId === 'new') {
         // Just clear the pending event
@@ -1618,8 +1594,18 @@ export const CalendarProvider = ({
     defaultNewEventTab,
     disableBuiltInEventUi: eventAdapter?.disableBuiltInEventUi ?? false,
     preservePastEventOpacity: eventAdapter?.preservePastEventOpacity ?? false,
-    renderEventContextMenu: eventAdapter?.renderContextMenu,
-    isEventReadOnly: eventAdapter?.isEventReadOnly ?? (() => false),
+    renderEventContextMenu: (event: CalendarEvent) =>
+      event.seriesId ? (
+        <NativeRecurrenceContextMenu
+          onEdit={() => openEventEditor(event._originalId ?? event.id)}
+          readOnly={readOnly}
+        />
+      ) : (
+        eventAdapter?.renderContextMenu?.(event)
+      ),
+    isEventReadOnly: (event: CalendarEvent) =>
+      Boolean(event.seriesId) ||
+      (eventAdapter?.isEventReadOnly?.(event) ?? false),
     readOnly,
   };
 

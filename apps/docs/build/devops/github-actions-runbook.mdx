@@ -1438,3 +1438,21 @@ SHA relevance and deployment-marker guards remain responsible for target validit
 Regression coverage: `scripts/ci/protected-workflow-concurrency.test.js` reads the
 actual workflow concurrency blocks, checks protected SHA/run separation and PR
 supersession, and enforces serialization with expanded queues.
+
+
+### Calendar scheduling startup requests
+
+The Calendar priority panel reads per-user scheduling summaries through the Tasks
+batch API, using at most 100 distinct task IDs per request and sequential chunks.
+This replaces one HTTP request per task. The verified actor, calendar workspace,
+and source-task membership are checked before settings or event data are returned;
+personal mode counts events only in the personal calendar. Event pages must all
+succeed before a snapshot is published. Linked and directly associated events are
+deduplicated by task and event ID.
+
+The client retains the last snapshot during transient revalidation, clears visible
+summaries on definitive access denial, and refreshes stale data on window focus.
+This scope is scheduling summaries, not the whole Calendar startup waterfall.
+Regression coverage lives in `task-schedule-batch.test.ts` and
+`tasks-scheduling-batch.test.ts`. Measure authenticated navigation and meaningful
+content after the exact source is deployed; local checks alone are not latency proof.

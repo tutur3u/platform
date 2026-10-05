@@ -530,4 +530,31 @@ describe('CalendarProvider Read-Only Mode', () => {
       baseEvent,
     ]);
   });
+  it('blocks ordinary update/delete/drag writes for native recurrence occurrences', async () => {
+    const occurrence = {
+      ...baseEvent,
+      seriesId: 'series',
+      seriesRevision: 3,
+      originalStartLocal: '2026-06-22T09:00:00',
+    };
+    calendarMockState.events = [occurrence];
+    const { result } = renderHook(() => useCalendar(), {
+      wrapper: createWrapper(),
+    });
+    await expect(
+      result.current.updateEvent(occurrence.id, {
+        start_at: '2026-06-23T09:00:00Z',
+      })
+    ).rejects.toThrow('explicit series edit scope');
+    await expect(result.current.deleteEvent(occurrence.id)).rejects.toThrow(
+      'explicit series edit scope'
+    );
+    expect(
+      internalApiMocks.updateWorkspaceCalendarEvent
+    ).not.toHaveBeenCalled();
+    expect(
+      internalApiMocks.deleteWorkspaceCalendarEvent
+    ).not.toHaveBeenCalled();
+    expect(result.current.isEventReadOnly(occurrence)).toBe(true);
+  });
 });
