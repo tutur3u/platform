@@ -12,19 +12,49 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/habits/cubit/habits_state.dart';
 
 part 'habits_cache_json.dart';
+part 'habits_cubit_loading.dart';
+part 'habits_cubit_mutations.dart';
+part 'habits_cubit_optimistic.dart';
 
 class HabitsCubit extends Cubit<HabitsState> {
   HabitsCubit({
     required IHabitTrackerRepository repository,
     HabitsState? initialState,
+    String? actorId,
+    String? Function()? currentUserId,
+    CacheStore? cacheStore,
   }) : _repository = repository,
-       super(initialState ?? const HabitsState());
+       _ownerId = actorId ?? (currentUserId ?? currentCacheUserId)(),
+       _currentUserId = currentUserId ?? currentCacheUserId,
+       _store = cacheStore ?? CacheStore.instance,
+       _requestedWorkspaceId = initialState?.activeWorkspaceId,
+       super(initialState ?? const HabitsState()) {
+    _ownerCacheRevision = _store.resourceRevisionFor(_actorFenceKey);
+  }
 
   final IHabitTrackerRepository _repository;
+  final String? _ownerId;
+  final String? Function() _currentUserId;
+  final CacheStore _store;
+  late final int _ownerCacheRevision;
+  CacheKey get _actorFenceKey =>
+      CacheKey(namespace: 'habits.actor', userId: _ownerId);
+  bool get _scopeActive =>
+      !isClosed &&
+      _currentUserId() == _ownerId &&
+      _store.resourceRevisionFor(_actorFenceKey) == _ownerCacheRevision;
+  void _checkScope() {
+    if (!_scopeActive) {
+      throw const ApiException(message: 'Account changed', statusCode: 401);
+    }
+  }
+
   static const CachePolicy _cachePolicy = CachePolicies.moduleData;
   static const _cacheTag = 'habits:workspace';
   static final Map<String, _HabitsCacheEntry> _cache = {};
   static final Map<String, String> _latestCacheKeyByWorkspace = {};
+  String? _requestedWorkspaceId;
+  int _workspaceEpoch = 0;
   int _listRequestToken = 0;
   int _detailRequestToken = 0;
   int _activityRequestToken = 0;
@@ -37,8 +67,9 @@ class HabitsCubit extends Cubit<HabitsState> {
     return Map<String, dynamic>.from(json);
   }
 
-  static HabitsState? cachedStateForWorkspace(String wsId) {
-    final key = _latestCacheKeyByWorkspace[userScopedCacheKey(wsId)];
+  static HabitsState? cachedStateForWorkspace(String wsId, {String? actorId}) {
+    final key =
+        _latestCacheKeyByWorkspace[userScopedCacheKey(wsId, userId: actorId)];
     if (key == null) {
       return null;
     }
@@ -48,11 +79,12 @@ class HabitsCubit extends Cubit<HabitsState> {
   static CacheKey _storeKey(
     String wsId,
     HabitTrackerScope scope,
-    String? userId,
-  ) {
+    String? userId, {
+    required String? actorId,
+  }) {
     return CacheKey(
       namespace: 'habits.workspace',
-      userId: currentCacheUserId(),
+      userId: actorId,
       workspaceId: wsId,
       locale: currentCacheLocaleTag(),
       params: {
@@ -66,21 +98,23 @@ class HabitsCubit extends Cubit<HabitsState> {
     String wsId, {
     HabitTrackerScope initialScope = HabitTrackerScope.self,
     String? userId,
+    String? actorId,
   }) {
+    final owner = actorId ?? currentCacheUserId();
     final cached = CacheStore.instance.peek<HabitsState>(
-      key: _storeKey(wsId, initialScope, userId),
+      key: _storeKey(wsId, initialScope, userId, actorId: owner),
       decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
     );
     if (!cached.hasValue || cached.data == null) {
-      return cachedStateForWorkspace(wsId);
+      return cachedStateForWorkspace(wsId, actorId: owner);
     }
 
-    final cacheKey = _cacheKeyFor(wsId, initialScope, userId);
+    final cacheKey = _cacheKeyFor(wsId, initialScope, userId, actorId: owner);
     _cache[cacheKey] = _HabitsCacheEntry(
       state: cached.data!,
       fetchedAt: cached.fetchedAt ?? DateTime.now(),
     );
-    _latestCacheKeyByWorkspace[userScopedCacheKey(wsId)] = cacheKey;
+    _latestCacheKeyByWorkspace['${owner ?? 'anonymous'}::$wsId'] = cacheKey;
     return cached.data;
   }
 
@@ -97,20 +131,33 @@ class HabitsCubit extends Cubit<HabitsState> {
     bool includeActivity = false,
     bool forceRefresh = false,
   }) async {
+    final actorId = currentCacheUserId();
+    final fence = CacheKey(namespace: 'habits.actor', userId: actorId);
+    final ownerRevision = CacheStore.instance.resourceRevisionFor(fence);
+    void checkScope() {
+      if (currentCacheUserId() != actorId ||
+          CacheStore.instance.resourceRevisionFor(fence) != ownerRevision) {
+        throw const ApiException(message: 'Account changed', statusCode: 401);
+      }
+    }
+
     final scopeUserId = scope == HabitTrackerScope.member ? userId : null;
     try {
       await CacheStore.instance.prefetch<HabitsState>(
-        key: _storeKey(wsId, scope, scopeUserId),
+        key: _storeKey(wsId, scope, scopeUserId, actorId: actorId),
         policy: _cachePolicy,
         decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
         forceRefresh: forceRefresh,
+        checkScope: checkScope,
         tags: [_cacheTag, 'workspace:$wsId', 'module:habits'],
         fetch: () async {
+          checkScope();
           final response = await repository.listTrackers(
             wsId,
             scope: scope,
             userId: scopeUserId,
           );
+          checkScope();
           final selectedTrackerId = response.trackers.isEmpty
               ? null
               : response.trackers.first.tracker.id;
@@ -146,6 +193,7 @@ class HabitsCubit extends Cubit<HabitsState> {
                   );
           }
 
+          checkScope();
           final now = DateTime.now();
           return _stateToCacheJson(
             HabitsState(
@@ -182,388 +230,6 @@ class HabitsCubit extends Cubit<HabitsState> {
         return;
       }
       rethrow;
-    }
-  }
-
-  Future<void> loadWorkspace(
-    String wsId, {
-    bool refresh = false,
-    HabitTrackerScope? scopeOverride,
-  }) async {
-    final isSameWorkspace = state.activeWorkspaceId == wsId;
-    final effectiveScope = scopeOverride ?? state.selectedScope;
-    final requestedMemberId = effectiveScope == HabitTrackerScope.member
-        ? state.selectedMemberId
-        : null;
-    final cacheKey = _cacheKeyFor(wsId, effectiveScope, requestedMemberId);
-    final cached = _cache[cacheKey];
-    final diskCached = cached == null
-        ? await CacheStore.instance.read<HabitsState>(
-            key: _storeKey(wsId, effectiveScope, requestedMemberId),
-            decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
-          )
-        : null;
-    var hasVisibleData =
-        isSameWorkspace &&
-        state.listResponse != null &&
-        effectiveScope == state.selectedScope &&
-        requestedMemberId == _scopeUserIdFor(effectiveScope, state);
-
-    if (diskCached?.hasValue == true &&
-        diskCached?.data != null &&
-        !hasVisibleData) {
-      final cachedState = _decorateCachedState(
-        diskCached!.data!,
-        fetchedAt: diskCached.fetchedAt,
-      );
-      emit(cachedState);
-      _cache[cacheKey] = _HabitsCacheEntry(
-        state: cachedState,
-        fetchedAt: diskCached.fetchedAt ?? DateTime.now(),
-      );
-      _latestCacheKeyByWorkspace[userScopedCacheKey(wsId)] = cacheKey;
-      hasVisibleData = true;
-    }
-
-    if (cached != null && !hasVisibleData) {
-      emit(_decorateCachedState(cached.state, fetchedAt: cached.fetchedAt));
-      hasVisibleData = true;
-    }
-
-    final requestToken = ++_listRequestToken;
-    if (hasVisibleData) {
-      emit(
-        state.copyWith(
-          status: HabitsStatus.loaded,
-          activeWorkspaceId: wsId,
-          selectedScope: effectiveScope,
-          selectedMemberId: requestedMemberId,
-          isRefreshing: true,
-          error: null,
-          detailError: null,
-          activityError: null,
-        ),
-      );
-    } else {
-      emit(
-        state.copyWith(
-          status: HabitsStatus.loading,
-          isFromCache: false,
-          isRefreshing: false,
-          lastUpdatedAt: null,
-          isDetailFromCache: false,
-          isDetailRefreshing: false,
-          detailLastUpdatedAt: null,
-          isActivityFromCache: false,
-          isActivityRefreshing: false,
-          activityLastUpdatedAt: null,
-          activityStatus: HabitsStatus.initial,
-          activeWorkspaceId: wsId,
-          selectedScope: effectiveScope,
-          selectedMemberId: requestedMemberId,
-          activityEntries: const [],
-          error: null,
-          detailError: null,
-          activityError: null,
-        ),
-      );
-    }
-
-    try {
-      final previousMemberId = state.selectedMemberId;
-      final response = await _repository.listTrackers(
-        wsId,
-        scope: effectiveScope,
-        userId: requestedMemberId,
-      );
-
-      if (_isStaleListRequest(wsId, requestToken)) {
-        return;
-      }
-
-      final nextMemberId = _resolveSelectedMemberId(
-        scope: effectiveScope,
-        requestedMemberId: requestedMemberId,
-        response: response,
-      );
-
-      final nextTrackerId = _resolveSelectedTrackerId(
-        requestedTrackerId: state.selectedTrackerId,
-        trackers: response.trackers,
-        searchQuery: state.searchQuery,
-      );
-
-      final nextState = state.copyWith(
-        status: HabitsStatus.loaded,
-        isFromCache: false,
-        isRefreshing: false,
-        lastUpdatedAt: DateTime.now(),
-        listResponse: response,
-        selectedScope: effectiveScope,
-        selectedMemberId: nextMemberId,
-        selectedTrackerId: nextTrackerId,
-        error: null,
-      );
-      emit(nextState);
-      _storeCache(nextState);
-
-      if (effectiveScope == HabitTrackerScope.member &&
-          nextMemberId != previousMemberId &&
-          nextMemberId != null) {
-        await loadWorkspace(wsId, refresh: true, scopeOverride: effectiveScope);
-        return;
-      }
-
-      if (nextTrackerId != null) {
-        await loadTrackerDetail(nextTrackerId);
-      } else {
-        final nextState = state.copyWith(
-          detailStatus: HabitsStatus.initial,
-          isDetailFromCache: false,
-          isDetailRefreshing: false,
-          detailLastUpdatedAt: null,
-          detail: null,
-          detailError: null,
-          detailScope: null,
-          detailScopeUserId: null,
-          activityStatus: HabitsStatus.initial,
-          isActivityFromCache: false,
-          isActivityRefreshing: false,
-          activityLastUpdatedAt: null,
-          activityEntries: const [],
-          activityError: null,
-        );
-        emit(nextState);
-        _storeCache(nextState);
-      }
-    } on Exception catch (error) {
-      if (_isStaleListRequest(wsId, requestToken)) {
-        return;
-      }
-
-      emit(
-        state.copyWith(
-          status: hasVisibleData ? HabitsStatus.loaded : HabitsStatus.error,
-          isRefreshing: false,
-          error: hasVisibleData ? null : error.toString(),
-          listResponse: hasVisibleData ? state.listResponse : null,
-          selectedTrackerId: hasVisibleData ? state.selectedTrackerId : null,
-          detail: hasVisibleData ? state.detail : null,
-          detailStatus: hasVisibleData
-              ? state.detailStatus
-              : HabitsStatus.initial,
-          detailScope: hasVisibleData ? state.detailScope : null,
-          detailScopeUserId: hasVisibleData ? state.detailScopeUserId : null,
-          activityStatus: hasVisibleData
-              ? state.activityStatus
-              : HabitsStatus.initial,
-          activityEntries: hasVisibleData ? state.activityEntries : const [],
-          activityError: hasVisibleData ? state.activityError : null,
-        ),
-      );
-    }
-  }
-
-  Future<void> loadActivity({bool refresh = false}) async {
-    final wsId = state.activeWorkspaceId;
-    if (wsId == null || wsId.isEmpty) {
-      return;
-    }
-    final cacheKey = _cacheKeyFor(
-      wsId,
-      state.selectedScope,
-      _scopeUserIdFor(state.selectedScope, state),
-    );
-    final cached = _cache[cacheKey];
-    var hasVisibleEntries =
-        state.activityEntries.isNotEmpty ||
-        state.activityStatus == HabitsStatus.loaded;
-
-    if (cached != null && !hasVisibleEntries) {
-      emit(_applyCachedActivityState(state, cached.state, cached.fetchedAt));
-      hasVisibleEntries = true;
-    }
-    if (state.listResponse == null) {
-      await loadWorkspace(wsId, refresh: refresh);
-      if (state.listResponse == null) {
-        return;
-      }
-    }
-
-    final requestToken = ++_activityRequestToken;
-    final activityScope = state.selectedScope;
-    final activityUserId = activityScope == HabitTrackerScope.member
-        ? state.selectedMemberId
-        : null;
-
-    emit(
-      state.copyWith(
-        activityStatus: hasVisibleEntries
-            ? HabitsStatus.loaded
-            : HabitsStatus.loading,
-        isActivityRefreshing: hasVisibleEntries,
-        activityError: null,
-      ),
-    );
-
-    try {
-      final trackers = state.trackers;
-      if (trackers.isEmpty) {
-        emit(
-          state.copyWith(
-            activityStatus: HabitsStatus.loaded,
-            isActivityFromCache: false,
-            isActivityRefreshing: false,
-            activityLastUpdatedAt: DateTime.now(),
-            activityEntries: const [],
-            activityError: null,
-          ),
-        );
-        return;
-      }
-
-      final details = await Future.wait(
-        trackers.map(
-          (summary) => _repository.getTrackerDetail(
-            wsId,
-            summary.tracker.id,
-            scope: activityScope,
-            userId: activityUserId,
-          ),
-        ),
-      );
-
-      if (_isStaleActivityRequest(
-        wsId,
-        requestToken,
-        activityScope,
-        activityUserId,
-      )) {
-        return;
-      }
-
-      final entries =
-          details
-              .expand(
-                (detail) => detail.entries.map(
-                  (entry) =>
-                      HabitActivityEntry(tracker: detail.tracker, entry: entry),
-                ),
-              )
-              .toList(growable: false)
-            ..sort((left, right) => right.timestamp.compareTo(left.timestamp));
-
-      final nextState = state.copyWith(
-        activityStatus: HabitsStatus.loaded,
-        isActivityFromCache: false,
-        isActivityRefreshing: false,
-        activityLastUpdatedAt: DateTime.now(),
-        activityEntries: entries,
-        activityError: null,
-      );
-      emit(nextState);
-      _storeCache(nextState);
-    } on Exception catch (error) {
-      if (_isStaleActivityRequest(
-        wsId,
-        requestToken,
-        activityScope,
-        activityUserId,
-      )) {
-        return;
-      }
-
-      emit(
-        state.copyWith(
-          activityStatus: hasVisibleEntries
-              ? HabitsStatus.loaded
-              : HabitsStatus.error,
-          isActivityRefreshing: false,
-          activityError: hasVisibleEntries ? null : error.toString(),
-        ),
-      );
-    }
-  }
-
-  Future<void> loadTrackerDetail(
-    String trackerId, {
-    bool refresh = false,
-  }) async {
-    final wsId = state.activeWorkspaceId;
-    final detailScope = state.selectedScope;
-    final detailScopeUserId = detailScope == HabitTrackerScope.member
-        ? state.selectedMemberId
-        : null;
-    if (wsId == null || wsId.isEmpty) {
-      return;
-    }
-    final cacheKey = _cacheKeyFor(wsId, detailScope, detailScopeUserId);
-    final cached = _cache[cacheKey];
-    var hasVisibleDetail =
-        state.detail?.tracker.id == trackerId &&
-        state.detailScope == detailScope &&
-        state.detailScopeUserId == detailScopeUserId &&
-        state.detailStatus == HabitsStatus.loaded;
-
-    if (cached != null && !hasVisibleDetail) {
-      final cachedDetail = cached.state.detail;
-      if (cachedDetail?.tracker.id == trackerId &&
-          cached.state.detailScope == detailScope &&
-          cached.state.detailScopeUserId == detailScopeUserId) {
-        emit(_applyCachedDetailState(state, cached.state, cached.fetchedAt));
-        hasVisibleDetail = true;
-      }
-    }
-
-    final requestToken = ++_detailRequestToken;
-    emit(
-      state.copyWith(
-        selectedTrackerId: trackerId,
-        detailStatus: hasVisibleDetail
-            ? HabitsStatus.loaded
-            : HabitsStatus.loading,
-        isDetailRefreshing: hasVisibleDetail,
-        detailError: null,
-      ),
-    );
-
-    try {
-      final detail = await _repository.getTrackerDetail(
-        wsId,
-        trackerId,
-        scope: detailScope,
-        userId: detailScopeUserId,
-      );
-
-      if (_isStaleDetailRequest(wsId, trackerId, requestToken)) {
-        return;
-      }
-
-      final nextState = state.copyWith(
-        detail: detail,
-        detailStatus: HabitsStatus.loaded,
-        isDetailFromCache: false,
-        isDetailRefreshing: false,
-        detailLastUpdatedAt: DateTime.now(),
-        detailError: null,
-        detailScope: detailScope,
-        detailScopeUserId: detailScopeUserId,
-      );
-      emit(nextState);
-      _storeCache(nextState);
-    } on Exception catch (error) {
-      if (_isStaleDetailRequest(wsId, trackerId, requestToken)) {
-        return;
-      }
-      emit(
-        state.copyWith(
-          detailStatus: hasVisibleDetail
-              ? HabitsStatus.loaded
-              : HabitsStatus.error,
-          isDetailRefreshing: false,
-          detailError: hasVisibleDetail ? null : error.toString(),
-        ),
-      );
     }
   }
 
@@ -633,148 +299,43 @@ class HabitsCubit extends Cubit<HabitsState> {
     _storeCache(nextState);
   }
 
-  Future<void> createTracker(HabitTrackerInput input) async {
-    final wsId = state.activeWorkspaceId;
-    if (wsId == null || wsId.isEmpty) {
-      return;
-    }
-
-    emit(state.copyWith(isSubmittingTracker: true, error: null));
-    try {
-      final tracker = await _repository.createTracker(wsId, input);
-      await _reloadAfterMutation(selectTrackerId: tracker.id);
-    } finally {
-      emit(state.copyWith(isSubmittingTracker: false));
-    }
+  void _publish(HabitsState nextState) {
+    if (_scopeActive) emit(nextState);
   }
 
-  Future<void> updateTracker(String trackerId, HabitTrackerInput input) async {
-    final wsId = state.activeWorkspaceId;
-    if (wsId == null || wsId.isEmpty) {
-      return;
-    }
-
-    emit(state.copyWith(isSubmittingTracker: true, error: null));
-    try {
-      final tracker = await _repository.updateTracker(wsId, trackerId, input);
-      await _reloadAfterMutation(selectTrackerId: tracker.id);
-    } finally {
-      emit(state.copyWith(isSubmittingTracker: false));
-    }
-  }
-
-  Future<void> archiveTracker(String trackerId) async {
-    final wsId = state.activeWorkspaceId;
-    if (wsId == null || wsId.isEmpty) {
-      return;
-    }
-
-    emit(state.copyWith(isArchivingTracker: true, error: null));
-    try {
-      await _repository.archiveTracker(wsId, trackerId);
-      final nextTrackers = state.trackers
-          .where((value) => value.tracker.id != trackerId)
-          .toList(growable: false);
-      final nextTrackerId = nextTrackers.isEmpty
-          ? null
-          : nextTrackers.first.tracker.id;
-      await _reloadAfterMutation(selectTrackerId: nextTrackerId);
-    } finally {
-      emit(state.copyWith(isArchivingTracker: false));
-    }
-  }
-
-  Future<void> createEntry(
-    String trackerId,
-    HabitTrackerEntryInput input,
-  ) async {
-    final wsId = state.activeWorkspaceId;
-    if (wsId == null || wsId.isEmpty) {
-      return;
-    }
-
-    emit(state.copyWith(isSubmittingEntry: true, error: null));
-    try {
-      final entry = await _repository.createEntry(wsId, trackerId, input);
-      final drafts = <String, String>{...state.quickLogDrafts}
-        ..remove(trackerId);
-      var nextState = state.copyWith(quickLogDrafts: drafts);
-      nextState = _applyCreatedEntryLocally(nextState, trackerId, entry);
-      final now = DateTime.now();
-      nextState = nextState.copyWith(
-        lastUpdatedAt: now,
-        detailLastUpdatedAt: nextState.detail == null ? null : now,
-        activityLastUpdatedAt: nextState.activityEntries.isEmpty ? null : now,
-      );
-      emit(nextState);
-      _storeCache(nextState);
-      await _reloadAfterMutation(selectTrackerId: trackerId);
-    } finally {
-      emit(state.copyWith(isSubmittingEntry: false));
-    }
-  }
-
-  Future<void> deleteEntry(String trackerId, String entryId) async {
-    final wsId = state.activeWorkspaceId;
-    if (wsId == null || wsId.isEmpty) {
-      return;
-    }
-
-    emit(state.copyWith(isSubmittingEntry: true, error: null));
-    try {
-      await _repository.deleteEntry(wsId, trackerId, entryId);
-      await _reloadAfterMutation(selectTrackerId: trackerId);
-    } finally {
-      emit(state.copyWith(isSubmittingEntry: false));
-    }
-  }
-
+  Future<void> loadWorkspace(
+    String wsId, {
+    bool refresh = false,
+    HabitTrackerScope? scopeOverride,
+  }) => _loadWorkspace(wsId, refresh: refresh, scopeOverride: scopeOverride);
+  Future<void> loadActivity({bool refresh = false}) =>
+      _loadActivity(refresh: refresh);
+  Future<void> loadTrackerDetail(String trackerId, {bool refresh = false}) =>
+      _loadTrackerDetail(trackerId, refresh: refresh);
+  Future<void> createTracker(HabitTrackerInput input) => _createTracker(input);
+  Future<void> updateTracker(String trackerId, HabitTrackerInput input) =>
+      _updateTracker(trackerId, input);
+  Future<void> archiveTracker(String trackerId) => _archiveTracker(trackerId);
+  Future<void> createEntry(String trackerId, HabitTrackerEntryInput input) =>
+      _createEntry(trackerId, input);
+  Future<void> deleteEntry(String trackerId, String entryId) =>
+      _deleteEntry(trackerId, entryId);
   Future<void> createStreakAction(
     String trackerId,
     HabitTrackerStreakActionInput input,
-  ) async {
-    final wsId = state.activeWorkspaceId;
-    if (wsId == null || wsId.isEmpty) {
-      return;
-    }
-
-    emit(state.copyWith(isSubmittingStreakAction: true, error: null));
-    try {
-      await _repository.createStreakAction(wsId, trackerId, input);
-      await _reloadAfterMutation(selectTrackerId: trackerId);
-    } finally {
-      emit(state.copyWith(isSubmittingStreakAction: false));
-    }
-  }
-
-  Future<void> _reloadAfterMutation({String? selectTrackerId}) async {
-    final wsId = state.activeWorkspaceId;
-    if (wsId == null || wsId.isEmpty) {
-      return;
-    }
-
-    final shouldRefreshActivity =
-        state.activityStatus != HabitsStatus.initial ||
-        state.activityEntries.isNotEmpty;
-
-    final nextState = state.copyWith(selectedTrackerId: selectTrackerId);
-    emit(nextState);
-    _storeCache(nextState);
-    await loadWorkspace(wsId, refresh: true);
-    if (selectTrackerId != null) {
-      await loadTrackerDetail(selectTrackerId, refresh: true);
-    }
-    if (shouldRefreshActivity) {
-      await loadActivity(refresh: true);
-    }
-  }
+  ) => _createStreakAction(trackerId, input);
 
   bool _isStaleListRequest(String wsId, int requestToken) {
-    return state.activeWorkspaceId != wsId || requestToken != _listRequestToken;
+    return !_scopeActive ||
+        _requestedWorkspaceId != wsId ||
+        state.activeWorkspaceId != wsId ||
+        requestToken != _listRequestToken;
   }
 
   bool _isStaleDetailRequest(String wsId, String trackerId, int requestToken) {
-    return state.activeWorkspaceId != wsId ||
+    return !_scopeActive ||
+        _requestedWorkspaceId != wsId ||
+        state.activeWorkspaceId != wsId ||
         state.selectedTrackerId != trackerId ||
         requestToken != _detailRequestToken;
   }
@@ -785,7 +346,8 @@ class HabitsCubit extends Cubit<HabitsState> {
     HabitTrackerScope scope,
     String? userId,
   ) {
-    if (state.activeWorkspaceId != wsId ||
+    if (!_scopeActive ||
+        state.activeWorkspaceId != wsId ||
         requestToken != _activityRequestToken) {
       return true;
     }
@@ -805,279 +367,54 @@ class HabitsCubit extends Cubit<HabitsState> {
   static String _cacheKeyFor(
     String wsId,
     HabitTrackerScope scope,
-    String? userId,
-  ) {
-    return userScopedCacheKey('$wsId::${scope.apiValue}::${userId ?? ''}');
-  }
-
-  HabitsState _applyCreatedEntryLocally(
-    HabitsState currentState,
-    String trackerId,
-    HabitTrackerEntry entry,
-  ) {
-    final listResponse = currentState.listResponse;
-    if (listResponse == null) {
-      return currentState;
-    }
-
-    final trackerIndex = listResponse.trackers.indexWhere(
-      (value) => value.tracker.id == trackerId,
-    );
-    if (trackerIndex < 0) {
-      return currentState;
-    }
-
-    final summary = listResponse.trackers[trackerIndex];
-    final nextSummary = _patchSummaryWithEntry(
-      currentState,
-      listResponse,
-      summary,
-      entry,
-    );
-    final nextTrackers = [...listResponse.trackers];
-    nextTrackers[trackerIndex] = nextSummary;
-
-    var nextState = currentState.copyWith(
-      listResponse: listResponse.copyWith(trackers: nextTrackers),
-    );
-
-    if (currentState.detail?.tracker.id == trackerId) {
-      final detail = currentState.detail!;
-      final nextEntries = [
-        entry,
-        ...detail.entries.where((value) => value.id != entry.id),
-      ];
-      nextState = nextState.copyWith(
-        detail: detail.copyWith(
-          entries: nextEntries,
-          currentMember: nextSummary.currentMember,
-          team: nextSummary.team,
-        ),
-      );
-    }
-
-    if (currentState.activityStatus != HabitsStatus.initial ||
-        currentState.activityEntries.isNotEmpty) {
-      final tracker = nextSummary.tracker;
-      final nextActivityEntries = [
-        HabitActivityEntry(tracker: tracker, entry: entry),
-        ...currentState.activityEntries.where(
-          (value) => value.entry.id != entry.id,
-        ),
-      ]..sort((left, right) => right.timestamp.compareTo(left.timestamp));
-      nextState = nextState.copyWith(
-        activityStatus: HabitsStatus.loaded,
-        activityEntries: nextActivityEntries,
-      );
-    }
-
-    return nextState;
-  }
-
-  HabitTrackerCardSummary _patchSummaryWithEntry(
-    HabitsState currentState,
-    HabitTrackerListResponse listResponse,
-    HabitTrackerCardSummary summary,
-    HabitTrackerEntry entry,
-  ) {
-    final tracker = summary.tracker;
-    final entryValue = _primaryEntryValue(tracker, entry);
-    final affectsCurrentPeriod = _entryAffectsCurrentPeriod(tracker, entry);
-    final memberSummary =
-        summary.currentMember ??
-        _buildFallbackCurrentMember(currentState, listResponse, entry);
-
-    final nextCurrentMember = memberSummary == null
-        ? null
-        : _patchCurrentMemberSummary(
-            memberSummary,
-            tracker,
-            entry,
-            entryValue,
-            affectsCurrentPeriod,
-          );
-    final previousCurrentPeriod =
-        summary.currentMember?.currentPeriodTotal ?? 0;
-    final nextCurrentPeriod = nextCurrentMember?.currentPeriodTotal ?? 0;
-    final nextTeam = summary.team == null
-        ? null
-        : _patchTeamSummary(
-            summary.team!,
-            entryValue,
-            previousCurrentPeriod: previousCurrentPeriod,
-            nextCurrentPeriod: nextCurrentPeriod,
-          );
-
-    return summary.copyWith(currentMember: nextCurrentMember, team: nextTeam);
-  }
-
-  HabitTrackerMemberSummary? _buildFallbackCurrentMember(
-    HabitsState currentState,
-    HabitTrackerListResponse listResponse,
-    HabitTrackerEntry entry,
-  ) {
-    final targetUserId = currentState.selectedScope == HabitTrackerScope.member
-        ? currentState.selectedMemberId
-        : listResponse.viewerUserId;
-    if (targetUserId == null || targetUserId.isEmpty) {
-      return null;
-    }
-
-    HabitTrackerMember? member;
-    for (final value in listResponse.members) {
-      if (value.userId == targetUserId) {
-        member = value;
-        break;
-      }
-    }
-    member ??= entry.member != null && entry.member!.userId == targetUserId
-        ? entry.member
-        : null;
-    member ??= HabitTrackerMember(userId: targetUserId, displayName: 'You');
-
-    return HabitTrackerMemberSummary(
-      member: member,
-      total: 0,
-      entryCount: 0,
-      currentPeriodTotal: 0,
-      streak: const HabitTrackerStreakSummary(
-        currentStreak: 0,
-        bestStreak: 0,
-        freezeCount: 0,
-        freezesUsed: 0,
-        perfectWeekCount: 0,
-        consistencyRate: 0,
-        recoveryWindow: HabitTrackerRecoveryWindowState(eligible: false),
-      ),
-    );
-  }
-
-  HabitTrackerMemberSummary _patchCurrentMemberSummary(
-    HabitTrackerMemberSummary summary,
-    HabitTracker tracker,
-    HabitTrackerEntry entry,
-    double entryValue,
-    bool affectsCurrentPeriod,
-  ) {
-    final nextTotal = _applyAggregation(
-      currentValue: summary.total,
-      entryValue: entryValue,
-      strategy: tracker.aggregationStrategy,
-    );
-    final nextCurrentPeriod = affectsCurrentPeriod
-        ? _applyAggregation(
-            currentValue: summary.currentPeriodTotal,
-            entryValue: entryValue,
-            strategy: tracker.aggregationStrategy,
-          )
-        : summary.currentPeriodTotal;
-
-    return summary.copyWith(
-      total: nextTotal,
-      entryCount: summary.entryCount + 1,
-      currentPeriodTotal: nextCurrentPeriod,
-      latestValue: entryValue,
-      latestEntryId: entry.id,
-      latestEntryDate: entry.entryDate,
-      latestOccurredAt: entry.occurredAt ?? entry.createdAt,
-      latestValues: entry.values,
-    );
-  }
-
-  HabitTrackerTeamSummary _patchTeamSummary(
-    HabitTrackerTeamSummary summary,
-    double entryValue, {
-    required double previousCurrentPeriod,
-    required double nextCurrentPeriod,
+    String? userId, {
+    required String? actorId,
   }) {
-    final delta = nextCurrentPeriod - previousCurrentPeriod;
-    return summary.copyWith(
-      totalEntries: summary.totalEntries + 1,
-      totalValue: summary.totalValue + delta,
-    );
-  }
-
-  double _primaryEntryValue(HabitTracker tracker, HabitTrackerEntry entry) {
-    if (entry.primaryValue != null) {
-      return entry.primaryValue!;
-    }
-
-    final rawValue = entry.values[tracker.primaryMetricKey];
-    if (rawValue is num) {
-      return rawValue.toDouble();
-    }
-    if (rawValue is bool) {
-      return rawValue ? 1 : 0;
-    }
-    return 0;
-  }
-
-  bool _entryAffectsCurrentPeriod(
-    HabitTracker tracker,
-    HabitTrackerEntry entry,
-  ) {
-    final entryDate = DateTime.tryParse(entry.entryDate);
-    if (entryDate == null) {
-      return false;
-    }
-
-    final now = DateTime.now();
-    final current = DateTime(now.year, now.month, now.day);
-    final candidate = DateTime(entryDate.year, entryDate.month, entryDate.day);
-
-    switch (tracker.targetPeriod) {
-      case HabitTrackerTargetPeriod.daily:
-        return candidate == current;
-      case HabitTrackerTargetPeriod.weekly:
-        final startOfWeek = current.subtract(
-          Duration(days: current.weekday - DateTime.monday),
-        );
-        final endOfWeek = startOfWeek.add(const Duration(days: 6));
-        return !candidate.isBefore(startOfWeek) &&
-            !candidate.isAfter(endOfWeek);
-    }
-  }
-
-  double _applyAggregation({
-    required double currentValue,
-    required double entryValue,
-    required HabitTrackerAggregationStrategy strategy,
-  }) {
-    return switch (strategy) {
-      HabitTrackerAggregationStrategy.max =>
-        entryValue > currentValue ? entryValue : currentValue,
-      HabitTrackerAggregationStrategy.countEntries => currentValue + 1,
-      HabitTrackerAggregationStrategy.booleanAny =>
-        (currentValue > 0 || entryValue > 0) ? 1 : 0,
-      HabitTrackerAggregationStrategy.sum => currentValue + entryValue,
-    };
+    final partition = actorId ?? 'anonymous';
+    return '$partition::$wsId::${scope.apiValue}::${userId ?? ''}';
   }
 
   void _storeCache(HabitsState nextState) {
+    if (!_scopeActive) return;
     final wsId = nextState.activeWorkspaceId;
     final listResponse = nextState.listResponse;
     if (wsId == null || wsId.isEmpty || listResponse == null) {
       return;
     }
 
+    final epoch = _workspaceEpoch;
+    void checkPublication() {
+      _checkScope();
+      if (epoch != _workspaceEpoch || _requestedWorkspaceId != wsId) {
+        throw const ApiException(
+          message: 'Workspace changed',
+          statusCode: 0,
+          failureKind: ApiFailureKind.session,
+        );
+      }
+    }
+
     final cacheKey = _cacheKeyFor(
       wsId,
       nextState.selectedScope,
       _scopeUserIdFor(nextState.selectedScope, nextState),
+      actorId: _ownerId,
     );
     _cache[cacheKey] = _HabitsCacheEntry(
       state: nextState,
       fetchedAt: DateTime.now(),
     );
-    _latestCacheKeyByWorkspace[userScopedCacheKey(wsId)] = cacheKey;
+    _latestCacheKeyByWorkspace['${_ownerId ?? 'anonymous'}::$wsId'] = cacheKey;
     unawaited(
-      CacheStore.instance
+      _store
           .write(
             key: _storeKey(
               wsId,
               nextState.selectedScope,
               _scopeUserIdFor(nextState.selectedScope, nextState),
+              actorId: _ownerId,
             ),
+            checkScope: checkPublication,
             policy: _cachePolicy,
             payload: _stateToCacheJson(nextState),
             tags: [_cacheTag, 'workspace:$wsId', 'module:habits'],

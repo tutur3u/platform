@@ -384,6 +384,18 @@ overlaid. A member detail includes queued entries only for the selected target
 member. Writes require authentication before queue admission and invalidate the
 owning account/workspace. `habit_tracker_actor_scope_test.dart` verifies owner
 filtering, delayed reads, anonymous transitions, and member-target isolation.
+The native Habits screen recreates its cubit when the authenticated account or
+workspace changes. Screen snapshot keys and pending asynchronous publication use
+the initiating actor; closed or departed sessions cannot publish late list or
+mutation responses, and workspace switches reset mutation busy state and quick-log
+drafts. Authentication cache cleanup also invalidates work when the same account
+signs out and back in. Forms and details remove only their owned route on scope
+departure, including a route covered by another modal. These rules are covered by
+`habits_actor_lifetime_test.dart`, real encrypted storage in
+`habits_cache_lifetime_test.dart`, `habits_host_scope_test.dart`, and
+`habits_owned_overlay_test.dart`. Durable denial fencing for the separate
+`habits.workspace` snapshot is a subsequent cache policy packet; this host change
+does not claim that existing denial-retention behavior has been corrected.
 Meet meeting create, edit, and delete also queue offline with a pending list
 treatment. Assistant model favorites and name changes now queue offline and
 overlay pending values on their scoped cached reads. Live room access,

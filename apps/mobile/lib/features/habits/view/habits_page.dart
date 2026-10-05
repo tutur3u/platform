@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +9,7 @@ import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/habits/cubit/habits_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_state.dart';
@@ -17,6 +17,7 @@ import 'package:mobile/features/habits/habit_tracker_presentation.dart';
 import 'package:mobile/features/habits/view/habits_activity_section.dart';
 import 'package:mobile/features/habits/view/habits_library_section.dart';
 import 'package:mobile/features/habits/view/habits_overview_section.dart';
+import 'package:mobile/features/habits/view/habits_owned_overlay.dart';
 import 'package:mobile/features/habits/view/habits_page_chrome.dart';
 import 'package:mobile/features/habits/widgets/habit_tracker_detail_sheet.dart';
 import 'package:mobile/features/habits/widgets/habit_tracker_entry_sheet.dart';
@@ -43,37 +44,77 @@ class HabitsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final actor = context.select<AuthCubit, String?>((c) => c.state.user?.id);
+    final workspace = context.select<WorkspaceCubit, String?>(
+      (c) => c.state.currentWorkspace?.id,
+    );
+    if (actor == null || workspace == null) return const SizedBox.shrink();
+    return HabitsWorkspace(
+      key: ValueKey('$actor:$workspace'),
+      actorId: actor,
+      workspaceId: workspace,
+      repository: repository,
+      initialSection: initialSection,
+    );
+  }
+}
+
+class HabitsWorkspace extends StatelessWidget {
+  const HabitsWorkspace({
+    required this.actorId,
+    required this.workspaceId,
+    super.key,
+    this.repository,
+    this.initialSection = HabitsSection.overview,
+  });
+  final String actorId;
+  final String workspaceId;
+  final IHabitTrackerRepository? repository;
+  final HabitsSection initialSection;
+  @override
+  Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) {
         final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
-        final wsId = workspace?.id;
         final cubit = HabitsCubit(
-          repository: repository ?? HabitTrackerRepository(),
-          initialState: wsId != null && wsId.isNotEmpty
-              ? HabitsCubit.seedStateForWorkspace(wsId)
-              : null,
+          repository:
+              repository ?? HabitTrackerRepository(expectedUserId: actorId),
+          actorId: actorId,
+          currentUserId: () => context.read<AuthCubit>().state.user?.id,
+          initialState: HabitsCubit.seedStateForWorkspace(
+            workspaceId,
+            actorId: actorId,
+          ),
         );
-        if (wsId != null && wsId.isNotEmpty) {
-          unawaited(
-            _loadWorkspaceForSection(
-              cubit,
-              wsId,
-              initialSection,
-              scopeOverride: workspace?.personal ?? false
-                  ? HabitTrackerScope.self
-                  : null,
-            ),
-          );
-        }
+        unawaited(
+          _loadWorkspaceForSection(
+            cubit,
+            workspaceId,
+            initialSection,
+            scopeOverride: workspace?.personal ?? false
+                ? HabitTrackerScope.self
+                : null,
+          ),
+        );
         return cubit;
       },
-      child: _HabitsView(initialSection: initialSection),
+      child: _HabitsView(
+        initialSection: initialSection,
+        actorId: actorId,
+        workspaceId: workspaceId,
+      ),
     );
   }
 }
 
 class _HabitsView extends StatefulWidget {
-  const _HabitsView({required this.initialSection});
+  const _HabitsView({
+    required this.initialSection,
+    required this.actorId,
+    required this.workspaceId,
+  });
+  final String actorId;
+  final String workspaceId;
 
   final HabitsSection initialSection;
 
@@ -84,6 +125,7 @@ class _HabitsView extends StatefulWidget {
 class _HabitsViewState extends State<_HabitsView> {
   late final TextEditingController _searchController;
   var _isSearchVisible = false;
+  final _alive = ValueNotifier<bool>(true);
 
   bool get _supportsSearch => widget.initialSection == HabitsSection.overview;
 
@@ -95,234 +137,212 @@ class _HabitsViewState extends State<_HabitsView> {
 
   @override
   void dispose() {
+    _alive.value = false;
+    _alive.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<WorkspaceCubit, WorkspaceState>(
-      listenWhen: (previous, current) =>
-          previous.currentWorkspace?.id != current.currentWorkspace?.id,
-      listener: (context, state) {
-        final workspace = state.currentWorkspace;
-        final wsId = workspace?.id;
-        if (wsId != null && wsId.isNotEmpty) {
-          unawaited(
-            _loadWorkspaceForSection(
-              context.read<HabitsCubit>(),
-              wsId,
-              widget.initialSection,
-              refresh: true,
-              scopeOverride: workspace?.personal ?? false
-                  ? HabitTrackerScope.self
-                  : null,
-            ),
-          );
-        }
-      },
-      child: shad.Scaffold(
-        child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
-          builder: (context, workspaceState) {
-            final workspace = workspaceState.currentWorkspace;
-            if (workspace == null) {
-              if (workspaceState.status == WorkspaceStatus.initial ||
-                  workspaceState.status == WorkspaceStatus.loading) {
-                return const Center(child: NovaLoadingIndicator());
-              }
-              return Center(child: Text(context.l10n.assistantSelectWorkspace));
+    return shad.Scaffold(
+      child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
+        builder: (context, workspaceState) {
+          final workspace = workspaceState.currentWorkspace;
+          if (workspace == null) {
+            if (workspaceState.status == WorkspaceStatus.initial ||
+                workspaceState.status == WorkspaceStatus.loading) {
+              return const Center(child: NovaLoadingIndicator());
             }
-            final isActivitySection =
-                widget.initialSection == HabitsSection.activity;
-            final isLibrarySection =
-                widget.initialSection == HabitsSection.library;
-            final shellOwnerId = isActivitySection
-                ? 'habits-activity'
-                : isLibrarySection
-                ? 'habits-library'
-                : 'habits-today';
-            final shellLocation = isActivitySection
-                ? Routes.habitsActivity
-                : isLibrarySection
-                ? Routes.habitsLibrary
-                : Routes.habits;
+            return Center(child: Text(context.l10n.assistantSelectWorkspace));
+          }
+          final isActivitySection =
+              widget.initialSection == HabitsSection.activity;
+          final isLibrarySection =
+              widget.initialSection == HabitsSection.library;
+          final shellOwnerId = isActivitySection
+              ? 'habits-activity:${widget.actorId}:${widget.workspaceId}'
+              : isLibrarySection
+              ? 'habits-library:${widget.actorId}:${widget.workspaceId}'
+              : 'habits-today:${widget.actorId}:${widget.workspaceId}';
+          final shellLocation = isActivitySection
+              ? Routes.habitsActivity
+              : isLibrarySection
+              ? Routes.habitsLibrary
+              : Routes.habits;
 
-            final shellActionRegistration =
-                BlocBuilder<HabitsCubit, HabitsState>(
-                  builder: (context, state) {
-                    final shellActions = <ShellActionSpec>[
-                      if (_supportsSearch)
-                        ShellActionSpec(
-                          id: 'habits-search',
-                          icon: _isSearchVisible
-                              ? Icons.close_rounded
-                              : Icons.search_rounded,
-                          tooltip: _isSearchVisible
-                              ? context.l10n.commonClearSearch
-                              : context.l10n.habitsSearchHint,
-                          highlighted:
-                              _isSearchVisible || state.searchQuery.isNotEmpty,
-                          searchController: _isSearchVisible
-                              ? _searchController
-                              : null,
-                          searchHint: context.l10n.habitsSearchHint,
-                          onSearchChanged: (value) =>
-                              context.read<HabitsCubit>().setSearchQuery(value),
-                          onCloseSearch: _toggleSearch,
-                          onPressed: _toggleSearch,
-                        ),
-                      ShellActionSpec(
-                        id: 'habits-create',
-                        icon: Icons.add,
-                        tooltip: isLibrarySection
-                            ? context.l10n.habitsLibraryCustomizeAction
-                            : context.l10n.habitsCreateTrackerAction,
-                        onPressed: () {
-                          if (isLibrarySection) {
-                            unawaited(
-                              _openCreateTracker(
-                                template: habitTrackerTemplateById('custom'),
-                              ),
-                            );
-                            return;
-                          }
-                          context.go(Routes.habitsLibrary);
-                        },
-                      ),
-                    ];
-
-                    return ShellChromeActions(
-                      ownerId: shellOwnerId,
-                      locations: {shellLocation},
-                      actions: shellActions,
-                    );
-                  },
-                );
-
-            return Stack(
-              children: [
-                shellActionRegistration,
-                Positioned.fill(
-                  child: BlocBuilder<HabitsCubit, HabitsState>(
-                    builder: (context, state) {
-                      if (state.status == HabitsStatus.loading &&
-                          state.trackers.isEmpty) {
-                        return const Center(child: NovaLoadingIndicator());
-                      }
-                      if (state.status == HabitsStatus.error &&
-                          state.trackers.isEmpty) {
-                        return HabitsErrorView(error: state.error);
-                      }
-
-                      final isPersonalWorkspace = workspace.personal;
-
-                      return ResponsiveWrapper(
-                        maxWidth: ResponsivePadding.maxContentWidth(
-                          context.deviceClass,
-                        ),
-                        child: NovaRefreshIndicator(
-                          onRefresh: _refreshCurrentSection,
-                          child: ListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: EdgeInsets.fromLTRB(
-                              ResponsivePadding.horizontal(context.deviceClass),
-                              12,
-                              ResponsivePadding.horizontal(context.deviceClass),
-                              24 + MediaQuery.paddingOf(context).bottom,
-                            ),
-                            children: [
-                              if (!isPersonalWorkspace) ...[
-                                const SizedBox(height: 4),
-                                HabitsScopeControls(
-                                  selectedScope: state.selectedScope,
-                                  onScopeSelected: (scope) async {
-                                    final cubit = context.read<HabitsCubit>();
-                                    await cubit.setScope(scope);
-                                    if (!context.mounted) {
-                                      return;
-                                    }
-                                    if (widget.initialSection ==
-                                        HabitsSection.activity) {
-                                      await cubit.loadActivity();
-                                    }
-                                  },
-                                ),
-                              ],
-                              if (!isPersonalWorkspace &&
-                                  state.selectedScope ==
-                                      HabitTrackerScope.member) ...[
-                                const SizedBox(height: 10),
-                                HabitsMemberPicker(
-                                  members: state.members,
-                                  selectedMemberId: state.selectedMemberId,
-                                  onChanged: (value) async {
-                                    final cubit = context.read<HabitsCubit>();
-                                    await cubit.setSelectedMember(value);
-                                    if (!context.mounted) {
-                                      return;
-                                    }
-                                    if (widget.initialSection ==
-                                        HabitsSection.activity) {
-                                      await cubit.loadActivity();
-                                    }
-                                  },
-                                ),
-                              ],
-                              const SizedBox(height: 8),
-                              if (state.isRefreshing &&
-                                  widget.initialSection !=
-                                      HabitsSection.activity) ...[
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(999),
-                                    child: const NovaLoadingIndicator(size: 20),
-                                  ),
-                                ),
-                              ],
-                              const SizedBox(height: 12),
-                              if (widget.initialSection ==
-                                  HabitsSection.activity)
-                                HabitsActivitySection(
-                                  state: state,
-                                  onOpenTracker: _openTrackerDetail,
-                                )
-                              else if (widget.initialSection ==
-                                  HabitsSection.library)
-                                HabitsLibrarySection(
-                                  onUseTemplate: (template) =>
-                                      _openCreateTracker(template: template),
-                                  onCustomize: () => _openCreateTracker(
-                                    template: habitTrackerTemplateById(
-                                      'custom',
-                                    ),
-                                  ),
-                                )
-                              else
-                                HabitsOverviewSection(
-                                  filteredTrackers: state.filteredTrackers,
-                                  state: state,
-                                  onCreateTracker: _openCreateTracker,
-                                  onEditTracker: _openEditTracker,
-                                  onOpenTracker: _openTrackerDetail,
-                                  onQuickLog: _quickLogTracker,
-                                ),
-                            ],
-                          ),
+          final shellActionRegistration = BlocBuilder<HabitsCubit, HabitsState>(
+            builder: (context, state) {
+              final shellActions = <ShellActionSpec>[
+                if (_supportsSearch)
+                  ShellActionSpec(
+                    id: 'habits-search',
+                    icon: _isSearchVisible
+                        ? Icons.close_rounded
+                        : Icons.search_rounded,
+                    tooltip: _isSearchVisible
+                        ? context.l10n.commonClearSearch
+                        : context.l10n.habitsSearchHint,
+                    highlighted:
+                        _isSearchVisible || state.searchQuery.isNotEmpty,
+                    searchController: _isSearchVisible
+                        ? _searchController
+                        : null,
+                    searchHint: context.l10n.habitsSearchHint,
+                    onSearchChanged: (value) =>
+                        context.read<HabitsCubit>().setSearchQuery(value),
+                    onCloseSearch: _toggleSearch,
+                    onPressed: _toggleSearch,
+                  ),
+                ShellActionSpec(
+                  id: 'habits-create',
+                  icon: Icons.add,
+                  tooltip: isLibrarySection
+                      ? context.l10n.habitsLibraryCustomizeAction
+                      : context.l10n.habitsCreateTrackerAction,
+                  onPressed: () {
+                    if (isLibrarySection) {
+                      unawaited(
+                        _openCreateTracker(
+                          template: habitTrackerTemplateById('custom'),
                         ),
                       );
-                    },
-                  ),
+                      return;
+                    }
+                    context.go(Routes.habitsLibrary);
+                  },
                 ),
-              ],
-            );
-          },
-        ),
+              ];
+
+              return ShellChromeActions(
+                ownerId: shellOwnerId,
+                locations: {shellLocation},
+                actions: shellActions,
+              );
+            },
+          );
+
+          return Stack(
+            children: [
+              shellActionRegistration,
+              Positioned.fill(
+                child: BlocBuilder<HabitsCubit, HabitsState>(
+                  builder: (context, state) {
+                    if (state.status == HabitsStatus.loading &&
+                        state.trackers.isEmpty) {
+                      return const Center(child: NovaLoadingIndicator());
+                    }
+                    if (state.status == HabitsStatus.error &&
+                        state.trackers.isEmpty) {
+                      return HabitsErrorView(error: state.error);
+                    }
+
+                    final isPersonalWorkspace = workspace.personal;
+
+                    return ResponsiveWrapper(
+                      maxWidth: ResponsivePadding.maxContentWidth(
+                        context.deviceClass,
+                      ),
+                      child: NovaRefreshIndicator(
+                        onRefresh: _refreshCurrentSection,
+                        child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: EdgeInsets.fromLTRB(
+                            ResponsivePadding.horizontal(context.deviceClass),
+                            12,
+                            ResponsivePadding.horizontal(context.deviceClass),
+                            24 + MediaQuery.paddingOf(context).bottom,
+                          ),
+                          children: [
+                            if (!isPersonalWorkspace) ...[
+                              const SizedBox(height: 4),
+                              HabitsScopeControls(
+                                selectedScope: state.selectedScope,
+                                onScopeSelected: (scope) async {
+                                  final cubit = context.read<HabitsCubit>();
+                                  await cubit.setScope(scope);
+                                  if (!context.mounted) {
+                                    return;
+                                  }
+                                  if (widget.initialSection ==
+                                      HabitsSection.activity) {
+                                    await cubit.loadActivity();
+                                  }
+                                },
+                              ),
+                            ],
+                            if (!isPersonalWorkspace &&
+                                state.selectedScope ==
+                                    HabitTrackerScope.member) ...[
+                              const SizedBox(height: 10),
+                              HabitsMemberPicker(
+                                members: state.members,
+                                selectedMemberId: state.selectedMemberId,
+                                onChanged: (value) async {
+                                  final cubit = context.read<HabitsCubit>();
+                                  await cubit.setSelectedMember(value);
+                                  if (!context.mounted) {
+                                    return;
+                                  }
+                                  if (widget.initialSection ==
+                                      HabitsSection.activity) {
+                                    await cubit.loadActivity();
+                                  }
+                                },
+                              ),
+                            ],
+                            const SizedBox(height: 8),
+                            if (state.isRefreshing &&
+                                widget.initialSection !=
+                                    HabitsSection.activity) ...[
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(999),
+                                  child: const NovaLoadingIndicator(size: 20),
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 12),
+                            if (widget.initialSection == HabitsSection.activity)
+                              HabitsActivitySection(
+                                state: state,
+                                onOpenTracker: _openTrackerDetail,
+                              )
+                            else if (widget.initialSection ==
+                                HabitsSection.library)
+                              HabitsLibrarySection(
+                                onUseTemplate: (template) =>
+                                    _openCreateTracker(template: template),
+                                onCustomize: () => _openCreateTracker(
+                                  template: habitTrackerTemplateById('custom'),
+                                ),
+                              )
+                            else
+                              HabitsOverviewSection(
+                                filteredTrackers: state.filteredTrackers,
+                                state: state,
+                                onCreateTracker: _openCreateTracker,
+                                onEditTracker: _openEditTracker,
+                                onOpenTracker: _openTrackerDetail,
+                                onQuickLog: _quickLogTracker,
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
   Future<void> _refreshCurrentSection() async {
+    if (!mounted || !_alive.value) return;
     final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
     final wsId = workspace?.id;
     if (wsId == null || wsId.isEmpty) {
@@ -345,6 +365,7 @@ class _HabitsViewState extends State<_HabitsView> {
   }
 
   void _toggleSearch() {
+    if (!mounted || !_alive.value) return;
     setState(() {
       final nextVisible = !_isSearchVisible;
       _isSearchVisible = nextVisible;
@@ -356,27 +377,37 @@ class _HabitsViewState extends State<_HabitsView> {
   }
 
   Future<void> _openCreateTracker({HabitTrackerTemplate? template}) async {
+    if (!mounted) return;
+    final ownedCubit = context.read<HabitsCubit>();
     await showFinanceFullscreenModal<void>(
       context: context,
-      builder: (sheetContext) => HabitTrackerFormSheet(
-        initialTemplateId: template?.id,
-        onSubmit: (input) => context.read<HabitsCubit>().createTracker(input),
+      builder: (sheetContext) => HabitsOwnedOverlay(
+        alive: _alive,
+        child: HabitTrackerFormSheet(
+          initialTemplateId: template?.id,
+          onSubmit: ownedCubit.createTracker,
+        ),
       ),
     );
   }
 
   Future<void> _openEditTracker(HabitTracker tracker) async {
+    if (!mounted) return;
+    final ownedCubit = context.read<HabitsCubit>();
     await showFinanceFullscreenModal<void>(
       context: context,
-      builder: (sheetContext) => HabitTrackerFormSheet(
-        tracker: tracker,
-        onSubmit: (input) =>
-            context.read<HabitsCubit>().updateTracker(tracker.id, input),
+      builder: (sheetContext) => HabitsOwnedOverlay(
+        alive: _alive,
+        child: HabitTrackerFormSheet(
+          tracker: tracker,
+          onSubmit: (input) => ownedCubit.updateTracker(tracker.id, input),
+        ),
       ),
     );
   }
 
   Future<void> _openTrackerDetail(String trackerId) async {
+    if (!mounted || !_alive.value) return;
     final cubit = context.read<HabitsCubit>();
     final isPersonalWorkspace =
         context.read<WorkspaceCubit>().state.currentWorkspace?.personal ??
@@ -391,37 +422,40 @@ class _HabitsViewState extends State<_HabitsView> {
       showAdaptiveDrawer(
         context: context,
         maxDialogWidth: 920,
-        builder: (sheetContext) => BlocProvider.value(
-          value: cubit,
-          child: BlocBuilder<HabitsCubit, HabitsState>(
-            builder: (context, state) {
-              return HabitTrackerDetailSheet(
-                detail: state.detail?.tracker.id == trackerId
-                    ? state.detail
-                    : null,
-                detailStatus: state.detailStatus,
-                detailError: state.detailError,
-                isDetailRefreshing: state.isDetailRefreshing,
-                isSubmittingEntry: state.isSubmittingEntry,
-                isSubmittingStreakAction: state.isSubmittingStreakAction,
-                isArchivingTracker: state.isArchivingTracker,
-                showLeaderboard: !isPersonalWorkspace,
-                onRetry: () =>
-                    cubit.loadTrackerDetail(trackerId, refresh: true),
-                onLogEntry: () => _openTrackerEntryComposer(trackerId),
-                onEditTracker: () async {
-                  final tracker = state.detail?.tracker;
-                  if (tracker != null) {
-                    await _openEditTracker(tracker);
-                  }
-                },
-                onDeleteEntry: (entryId) =>
-                    cubit.deleteEntry(trackerId, entryId),
-                onApplyStreakAction: (input) =>
-                    cubit.createStreakAction(trackerId, input),
-                onArchiveTracker: () => cubit.archiveTracker(trackerId),
-              );
-            },
+        builder: (sheetContext) => HabitsOwnedOverlay(
+          alive: _alive,
+          child: BlocProvider.value(
+            value: cubit,
+            child: BlocBuilder<HabitsCubit, HabitsState>(
+              builder: (context, state) {
+                return HabitTrackerDetailSheet(
+                  detail: state.detail?.tracker.id == trackerId
+                      ? state.detail
+                      : null,
+                  detailStatus: state.detailStatus,
+                  detailError: state.detailError,
+                  isDetailRefreshing: state.isDetailRefreshing,
+                  isSubmittingEntry: state.isSubmittingEntry,
+                  isSubmittingStreakAction: state.isSubmittingStreakAction,
+                  isArchivingTracker: state.isArchivingTracker,
+                  showLeaderboard: !isPersonalWorkspace,
+                  onRetry: () =>
+                      cubit.loadTrackerDetail(trackerId, refresh: true),
+                  onLogEntry: () => _openTrackerEntryComposer(trackerId),
+                  onEditTracker: () async {
+                    final tracker = state.detail?.tracker;
+                    if (tracker != null) {
+                      await _openEditTracker(tracker);
+                    }
+                  },
+                  onDeleteEntry: (entryId) =>
+                      cubit.deleteEntry(trackerId, entryId),
+                  onApplyStreakAction: (input) =>
+                      cubit.createStreakAction(trackerId, input),
+                  onArchiveTracker: () => cubit.archiveTracker(trackerId),
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -429,6 +463,7 @@ class _HabitsViewState extends State<_HabitsView> {
   }
 
   Future<void> _openTrackerEntryComposer(String trackerId) async {
+    if (!mounted || !_alive.value) return;
     final cubit = context.read<HabitsCubit>();
     await cubit.selectTracker(trackerId);
     if (!mounted) {
@@ -438,11 +473,16 @@ class _HabitsViewState extends State<_HabitsView> {
     if (detail == null || detail.tracker.id != trackerId) {
       return;
     }
+    if (!mounted) return;
+    final ownedCubit = context.read<HabitsCubit>();
     await showFinanceFullscreenModal<void>(
       context: context,
-      builder: (sheetContext) => HabitTrackerEntrySheet(
-        detail: detail,
-        onSubmit: (input) => cubit.createEntry(trackerId, input),
+      builder: (sheetContext) => HabitsOwnedOverlay(
+        alive: _alive,
+        child: HabitTrackerEntrySheet(
+          detail: detail,
+          onSubmit: (input) => ownedCubit.createEntry(trackerId, input),
+        ),
       ),
     );
   }
