@@ -6,6 +6,8 @@ extension _AssistantPageWorkspace on _AssistantPageState {
       return;
     }
 
+    ++_voiceActorScopeEpoch;
+    unawaited(_voiceCapture.cancel());
     _loadedWorkspaceId = workspace.id;
     _keepLiveWhileBrowsing = false;
     _liveBrowsingPreferenceLoad = _loadLiveBrowsingPreference(workspace.id);

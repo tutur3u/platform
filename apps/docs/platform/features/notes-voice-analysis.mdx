@@ -1,0 +1,43 @@
+---
+title: Notes voice analysis
+description: Private, metered voice transcripts and proposals with explicit retry controls.
+---
+
+The Notes voice API accepts a short native recording and returns an actor-owned
+job. This foundation does not yet expose mobile recording controls; the native
+Notes dock integration follows separately. Existing Notes editing and locking
+remain unchanged.
+
+Input is mono 16 kHz PCM16 WAV, at most 120 seconds. The server verifies actual
+frames and bounds streamed multipart bytes rather than trusting a claimed duration.
+Audio bytes are transient and are not stored in job rows or billing metadata.
+
+Transcription and structured analysis use the requesting user's personal AI
+credits. Results include a transcript, summary, supported decisions, action items,
+recommendations with evidence, and open questions. These are proposals for review;
+the API creates no Notes documents, tasks, Calendar events, or room-shared artifacts.
+Transcripts are untrusted input, including spoken instructions. Unknown owners and
+deadlines remain unspecified. Silence does not trigger a second analysis request.
+
+Jobs and artifacts are private to the requesting actor, even in team workspaces.
+Every status read, creation, retry, and deletion verifies current workspace access.
+Definitive loss of access denies retained artifacts. Workspace/account deletion
+cascades job deletion; completed or stopped jobs can be explicitly deleted through
+the job endpoint. Processing jobs must finish or enter review before deletion.
+
+A stable request ID plus audio/time-zone digest deduplicates creation. Changed
+payloads conflict. Atomic revision claims prevent duplicate provider execution.
+Known preflight failures require an explicit retry against the current revision;
+a successful transcript is reused when only analysis needs retry. Provider or
+settlement outcomes without reliable accounting enter **review required** rather
+than being automatically replayed or assigned an invented charge/refund.
+
+Processing runs in a bounded Next response-tail callback. Persisted status is
+recoverable after client navigation; the callback is not a durable execution queue.
+Interrupted or abandoned work is marked for review after its execution window.
+Clients must not automatically resubmit review-required jobs.
+
+Regression coverage: `notes-voice/audio.test.ts`, `jobs.test.ts`, `provider.test.ts`,
+`request.test.ts`, the internal API client tests, and `note-voice-jobs.sql` cover
+input limits, metering, actor isolation, revision/retry behavior and RLS. API routes
+are first-class Next handlers tracked as Rust migration backlog.

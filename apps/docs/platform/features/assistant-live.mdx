@@ -92,13 +92,21 @@ seconds of 16 kHz mono PCM. Once ready, chunks drain in order; cancelling captur
 or leaving the session discards unsent audio. Connection errors do not persist
 this buffer to disk.
 
-The normal mobile chat microphone opens a recording sheet. Record up to two
-minutes, stop, preview, and explicitly attach the voice message. Attaching uses
-the existing chat upload path; sending remains a separate composer action.
-Temporary recordings are deleted when the sheet closes. Backgrounding stops an
-active recording, and dismissal waits for outstanding recorder operations before
-releasing native resources. The tablet's collapsed composer includes its text
-prompt alongside the chat icon.
+The normal mobile chat microphone replaces the text field with a real microphone
+waveform inside the same persistent floating dock. It opens no recording sheet.
+Pause reveals restart, attach, send, and resume; the two-minute limit pauses
+capture rather than discarding it. Restart erases only the current unsent local
+recording. Attach keeps the text draft and uploads through the existing attachment
+flow; send explicitly attaches and submits it. Backgrounding pauses capture.
+Leaving the Assistant, switching actors or workspaces, and disposal cancel the
+unsent recording. Async completion cannot attach or send into a different scope.
+
+Mobile assistant Markdown renders directly against the app background. Text,
+reasoning, and separate tool activity follow canonical persisted part order after
+history restoration. User messages keep their own bubble. Chat and Live both
+expose the shared quick-settings action. Regression coverage lives in the voice
+capture, composer dock, and transcript bubble tests under
+`apps/mobile/test/features/assistant/`.
 
 ## Flash and Pro
 
@@ -365,3 +373,9 @@ upload. An upload already in flight retains its original workspace and does not
 update a replacement composer. Voice send-now also checks the original scope.
 Delayed file decoding and stale pre-timezone scope are covered by
 `assistant_chat_restore_test.dart`.
+
+### Central mobile Mira settings
+
+On mobile, Settings → Product settings → Assistant opens the same live-browsing preference used by Mira quick settings. The shared shell supplies the title and back dock; the editor adds no second navbar. The preference defaults to off and remains scoped to the signed-in actor and workspace. Switching either scope invalidates the open editor and prevents late reads or writes from publishing into the replacement scope. An unreadable preference shows retry without an editable guessed value; a failed save retains the last confirmed value. This surface configures the existing live-browsing setting only, not local-model installation or provider credentials.
+
+Regression coverage: `assistant_settings_cubit_test.dart`, `assistant_settings_hub_test.dart`, and `assistant_preferences_test.dart` cover persisted values, shared shell publication, failed reads/writes, and async scope invalidation.

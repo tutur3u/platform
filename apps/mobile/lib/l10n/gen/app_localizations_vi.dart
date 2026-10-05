@@ -9997,4 +9997,16 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get profileRemoveBanner => 'Gỡ ảnh bìa';
+
+  @override
+  String get voicePause => 'Tạm dừng ghi âm';
+
+  @override
+  String get voiceResume => 'Tiếp tục ghi âm';
+
+  @override
+  String get voicePaused => 'Đã tạm dừng ghi âm';
+
+  @override
+  String get voiceRecording => 'Đang ghi âm';
 }

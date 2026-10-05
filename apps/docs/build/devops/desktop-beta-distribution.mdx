@@ -158,7 +158,7 @@ account alone does not supply the Authenticode certificate used by this workflow
 
 ## Windows Store draft channel
 
-`desktop-store-draft.yaml` is a manual, production-only build. It produces an
+`desktop-store-draft.yaml` is a manual build. Its default production-only mode produces an
 unsigned MSIX artifact for the reserved **Tuturuuu** product (`9N7B6VC7RR7W`),
 using the exact Partner Center package name and publisher from
 `windows-store-manifest.xml`. Microsoft signs packages distributed through the
@@ -169,6 +169,14 @@ unsigned submission artifact is unchanged; the test package and certificate are
 removed afterward. WACK runs when the kit and an interactive session are present.
 A missing kit/session produces an explicit submission-blocked report, not a
 certification pass. Inspect the attached validation reports before submission.
+
+For pre-promotion diagnostics, dispatch this workflow on `main` with
+`diagnostics_only=true`. It runs the same production-channel build, installed-app
+smoke, and strict certification checks, but uploads only validation evidence.
+It never uploads the submission MSIX, submits to Partner Center, or publishes a
+beta. Main without this explicit input and all other branches are skipped.
+This permits investigation of certification blockers before production sync;
+a diagnostics run is not evidence that production or Store distribution changed.
 
 Store builds omit `DESKTOP_RELEASE_RUN_ID`: the Store manages their updates,
 while the direct EXE installer remains a separate certificate-backed channel.

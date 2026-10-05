@@ -32,6 +32,7 @@
                 "pages": [
                   "platform/features/command-center-dashboard",
                   "platform/features/assistant-live",
+                  "platform/features/mobile-timer",
                   "platform/features/colab",
                   "platform/features/lettin",
                   "platform/features/cms-site-contract-v1",
@@ -40,6 +41,7 @@
                   "platform/features/forms-studio-layouts",
                   "platform/features/meet-calls",
                   "platform/features/native-calendar-recurrence",
+                  "platform/features/notes-voice-analysis",
                   "platform/features/programming-playgrounds",
                   "platform/features/account-benefits",
                   "platform/features/meet-followups",

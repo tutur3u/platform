@@ -48,11 +48,15 @@ class AssistantPreferences {
   Future<void> saveKeepLiveWhileBrowsing(
     String wsId, {
     required bool value,
+    bool Function()? shouldWrite,
   }) async {
     final key = _key(assistantKeepLiveWhileBrowsingKeyPrefix, wsId);
     if (key == null) return;
     final prefs = await SharedPreferences.getInstance();
-    if (key != _key(assistantKeepLiveWhileBrowsingKeyPrefix, wsId)) return;
+    if (key != _key(assistantKeepLiveWhileBrowsingKeyPrefix, wsId) ||
+        shouldWrite?.call() == false) {
+      return;
+    }
     await prefs.setBool(key, value);
   }
 

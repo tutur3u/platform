@@ -19,6 +19,7 @@ class AssistantTranscriptBubble extends StatelessWidget {
     required this.timestamp,
     required this.toolNames,
     this.toolParts = const [],
+    this.orderedParts = const [],
     this.isDraft = false,
     super.key,
   });
@@ -31,6 +32,7 @@ class AssistantTranscriptBubble extends StatelessWidget {
   final DateTime? timestamp;
   final List<String> toolNames;
   final List<AssistantMessagePart> toolParts;
+  final List<AssistantMessagePart> orderedParts;
   final bool isDraft;
 
   @override
@@ -72,59 +74,69 @@ class AssistantTranscriptBubble extends StatelessWidget {
                   ? CrossAxisAlignment.end
                   : CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: bubbleColor,
-                    borderRadius: BorderRadius.circular(22),
+                if (!alignEnd && orderedParts.isNotEmpty)
+                  ..._orderedAssistantChildren(context)
+                else
+                  Container(
+                    padding: alignEnd
+                        ? const EdgeInsets.all(14)
+                        : const EdgeInsets.symmetric(vertical: 8),
+                    decoration: alignEnd
+                        ? BoxDecoration(
+                            color: bubbleColor,
+                            borderRadius: BorderRadius.circular(22),
+                          )
+                        : null,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (text.trim().isNotEmpty)
+                          _AssistantMessageMarkdownBody(
+                            data: text.trim(),
+                            collapsible: alignEnd && !isDraft,
+                          ),
+                        if (inlineImageParts.isNotEmpty) ...[
+                          if (text.trim().isNotEmpty)
+                            const SizedBox(height: 12),
+                          AssistantInlineToolImages(parts: inlineImageParts),
+                        ],
+                        if (transcript.trim().isNotEmpty) ...[
+                          if (text.trim().isNotEmpty ||
+                              inlineImageParts.isNotEmpty)
+                            const SizedBox(height: 10),
+                          AssistantMarkdownBody(
+                            data: transcript.trim(),
+                            subdued: true,
+                            selectable: false,
+                          ),
+                        ],
+                        if (attachments.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: attachments
+                                .map(
+                                  (attachment) => AssistantAttachmentPreview(
+                                    attachment: attachment,
+                                  ),
+                                )
+                                .toList(growable: false),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (text.trim().isNotEmpty)
-                        _AssistantMessageMarkdownBody(
-                          data: text.trim(),
-                          collapsible: alignEnd && !isDraft,
-                        ),
-                      if (inlineImageParts.isNotEmpty) ...[
-                        if (text.trim().isNotEmpty) const SizedBox(height: 12),
-                        AssistantInlineToolImages(parts: inlineImageParts),
-                      ],
-                      if (transcript.trim().isNotEmpty) ...[
-                        if (text.trim().isNotEmpty ||
-                            inlineImageParts.isNotEmpty)
-                          const SizedBox(height: 10),
-                        AssistantMarkdownBody(
-                          data: transcript.trim(),
-                          subdued: true,
-                          selectable: false,
-                        ),
-                      ],
-                      if (attachments.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: attachments
-                              .map(
-                                (attachment) => AssistantAttachmentPreview(
-                                  attachment: attachment,
-                                ),
-                              )
-                              .toList(growable: false),
-                        ),
-                      ],
-                      if (toolParts.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        AssistantToolResultsSection(parts: toolParts),
-                      ],
-                      if (toolNames.isNotEmpty && toolParts.isEmpty) ...[
-                        const SizedBox(height: 8),
-                        _AssistantToolCallsCollapsible(toolNames: toolNames),
-                      ],
-                    ],
-                  ),
-                ),
+                if (orderedParts.isEmpty || alignEnd) ...[
+                  if (toolParts.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    AssistantToolResultsSection(parts: toolParts),
+                  ],
+                  if (toolNames.isNotEmpty && toolParts.isEmpty) ...[
+                    const SizedBox(height: 8),
+                    _AssistantToolCallsCollapsible(toolNames: toolNames),
+                  ],
+                ],
                 if (timestampLabel != null && !isDraft)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
@@ -142,6 +154,38 @@ class AssistantTranscriptBubble extends StatelessWidget {
       ),
     );
   }
+
+  List<Widget> _orderedAssistantChildren(BuildContext context) => [
+    for (var index = 0; index < orderedParts.length; index++)
+      if (orderedParts[index].type == 'dynamic-tool')
+        Padding(
+          key: ValueKey('assistant-tool-part-$index'),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: assistantImageToolParts([orderedParts[index]]).isNotEmpty
+              ? AssistantInlineToolImages(parts: [orderedParts[index]])
+              : AssistantToolResultsSection(parts: [orderedParts[index]]),
+        )
+      else if ((orderedParts[index].type == 'text' ||
+              orderedParts[index].type == 'reasoning') &&
+          (orderedParts[index].text?.trim().isNotEmpty ?? false))
+        Padding(
+          key: ValueKey('assistant-text-part-$index'),
+          padding: const EdgeInsets.only(bottom: 8),
+          child: AssistantMarkdownBody(
+            data: orderedParts[index].text!.trim(),
+            subdued: orderedParts[index].type == 'reasoning',
+          ),
+        ),
+    if (attachments.isNotEmpty)
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          for (final attachment in attachments)
+            AssistantAttachmentPreview(attachment: attachment),
+        ],
+      ),
+  ];
 }
 
 Future<void> _showMessageActions(BuildContext context, String text) async {
