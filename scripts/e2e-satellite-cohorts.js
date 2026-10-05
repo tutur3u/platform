@@ -309,6 +309,7 @@ async function runSatelliteCohorts({
       ),
     };
     const runtime = { owned: [], tasks: null };
+    let cleanupFailure;
     try {
       await start(cohort, cohortEnv, runtime);
       const selectedArgs = cohortArgs(
@@ -338,10 +339,21 @@ async function runSatelliteCohorts({
         throw new Error('Cohort execution did not cover its selected manifest');
     } catch (error) {
       firstFailure ??= error;
-      await diagnose(runtime, error);
+      try {
+        await diagnose(runtime, error);
+      } catch (diagnosticError) {
+        console.error(diagnosticError);
+      }
     } finally {
-      await stop(runtime);
+      try {
+        await stop(runtime);
+      } catch (cleanupError) {
+        if (firstFailure) console.error(cleanupError);
+        // Unsafe cleanup must stop subsequent fixture startup, retaining the causal failure.
+        cleanupFailure = cleanupError;
+      }
     }
+    if (cleanupFailure) throw firstFailure ?? cleanupFailure;
     if (fs.existsSync(cohortBlobDir)) {
       for (const name of fs.readdirSync(cohortBlobDir)) {
         if (name.endsWith('.zip'))

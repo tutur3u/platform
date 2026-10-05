@@ -21,6 +21,29 @@ const {
 } = require('./e2e-tasks-satellite');
 const { runPlaywrightWithHeartbeat } = require('./ci/e2e-runtime-heartbeat');
 
+async function runFixtureLifecycle({ start, run, diagnose, stop, runtime }) {
+  let primary;
+  try {
+    await start(runtime);
+    await run(runtime);
+  } catch (error) {
+    primary = error;
+    try {
+      await diagnose(runtime, error);
+    } catch (diagnosticError) {
+      console.error(diagnosticError);
+    }
+  } finally {
+    try {
+      await stop(runtime);
+    } catch (cleanupError) {
+      if (!primary) primary = cleanupError;
+      else console.error(cleanupError);
+    }
+  }
+  if (primary) throw primary;
+}
+
 async function runE2ESatelliteFixtures({
   args,
   list,
@@ -76,18 +99,17 @@ async function runE2ESatelliteFixtures({
   const isolatedArgs = isolationArgs(args, list || null);
   if (cohorts.length < 2 || !isolatedArgs) {
     const runtime = { owned: [], tasks: null };
-    try {
-      await start({ satellites, tasks: tasksRequired }, env, runtime);
-      await runPlaywrightWithHeartbeat(runCommand, args, {
-        cwd: webDir,
-        env: runtime.env,
-      });
-    } catch (error) {
-      await diagnose(runtime);
-      throw error;
-    } finally {
-      await stop(runtime);
-    }
+    await runFixtureLifecycle({
+      runtime,
+      start: () => start({ satellites, tasks: tasksRequired }, env, runtime),
+      run: () =>
+        runPlaywrightWithHeartbeat(runCommand, args, {
+          cwd: webDir,
+          env: runtime.env,
+        }),
+      diagnose,
+      stop,
+    });
     return;
   }
   let activeEnv;
@@ -120,4 +142,4 @@ async function runE2ESatelliteFixtures({
   );
   if (result.firstFailure) throw result.firstFailure;
 }
-module.exports = { runE2ESatelliteFixtures };
+module.exports = { runE2ESatelliteFixtures, runFixtureLifecycle };
