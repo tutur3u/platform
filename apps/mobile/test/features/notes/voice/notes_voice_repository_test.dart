@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
@@ -14,10 +15,13 @@ class Api extends Mock implements ApiClient {}
 
 class Cache extends Mock implements CacheStore {}
 
+class Storage extends Mock implements FlutterSecureStorage {}
+
 void main() {
   late Api api;
   late Cache cache;
   late NotesVoiceRepository repository;
+  late Storage storage;
   setUpAll(() {
     registerFallbackValue(const CacheKey(namespace: 'test'));
     registerFallbackValue(CachePolicies.detail);
@@ -25,6 +29,17 @@ void main() {
   setUp(() {
     api = Api();
     cache = Cache();
+    storage = Storage();
+    when(
+      () => storage.read(key: any(named: 'key')),
+    ).thenAnswer((_) async => null);
+    when(() => storage.delete(key: any(named: 'key'))).thenAnswer((_) async {});
+    when(
+      () => storage.write(
+        key: any(named: 'key'),
+        value: any(named: 'value'),
+      ),
+    ).thenAnswer((_) async {});
     when(
       () => cache.remove(any(), checkScope: any(named: 'checkScope')),
     ).thenAnswer((_) async {});
@@ -42,11 +57,13 @@ void main() {
         payload: any(named: 'payload'),
         tags: any(named: 'tags'),
         checkScope: any(named: 'checkScope'),
+        requirePublication: any(named: 'requirePublication'),
       ),
     ).thenAnswer((_) async {});
     repository = NotesVoiceRepository(
       api: api,
       cache: cache,
+      secureStorage: storage,
       actor: () => 'actor',
     );
   });
@@ -189,6 +206,7 @@ void main() {
           payload: any(named: 'payload'),
           tags: any(named: 'tags'),
           checkScope: any(named: 'checkScope'),
+          requirePublication: any(named: 'requirePublication'),
         ),
       ).thenAnswer((_) async {
         order.add('cache');
@@ -223,6 +241,7 @@ void main() {
                   payload: captureAny(named: 'payload'),
                   tags: any(named: 'tags'),
                   checkScope: any(named: 'checkScope'),
+                  requirePublication: any(named: 'requirePublication'),
                 ),
               ).captured.single
               as Map;

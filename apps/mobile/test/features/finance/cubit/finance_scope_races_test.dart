@@ -46,6 +46,7 @@ class _Store extends Mock implements CacheStore {
     List<String> tags = const <String>[],
     int? expectedRevision,
     void Function()? checkScope,
+    bool requirePublication = false,
   }) async {
     checkScope?.call();
     writes.add(key);

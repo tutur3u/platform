@@ -463,9 +463,13 @@ class CacheStore {
     List<String> tags = const <String>[],
     int? expectedRevision,
     void Function()? checkScope,
+    bool requirePublication = false,
   }) async {
     checkScope?.call();
-    if (_isClearing(key)) return;
+    if (_isClearing(key)) {
+      if (requirePublication) throw StateError('Cache scope is clearing.');
+      return;
+    }
     if (expectedRevision == null) _advanceKey(key.value);
     final revision = expectedRevision ?? _revisionFor(key);
     await init();
@@ -479,6 +483,7 @@ class CacheStore {
         tags: tags,
         expectedRevision: revision,
         checkScope: checkScope,
+        requirePublication: requirePublication,
       ),
     );
   }
