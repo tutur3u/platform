@@ -1257,3 +1257,17 @@ When a production channel request returns an HTML 404, verify the deployed Web
 source SHA and first-class `/api/v1/realtime/channels` route before changing
 channel permissions. A green branch or a production sync receipt alone does not
 prove that the live API deployment contains that route.
+
+## Authorized board hydration
+
+Tasks and the shared web board reuse the board metadata already authorized by the
+server for the current request. The client validates both board and workspace IDs
+before using that snapshot, so controls and list structure can appear without a
+second metadata round trip. The snapshot is fresh for 30 seconds; explicit refresh,
+realtime updates, and returning to a visible tab still revalidate it. Existing
+loaded cards remain visible while those requests finish. Cached data does not
+replace server membership or board-access checks.
+
+Regression evidence: `board-client.test.tsx` covers immediate authorized metadata,
+rejection of mismatched snapshots, and focus revalidation. Production timing must
+be measured after deployment; focused tests do not prove network performance.

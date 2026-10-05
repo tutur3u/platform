@@ -100,6 +100,7 @@ export default async function TaskBoardServerPage({
   return (
     <BoardClient
       boardId={boardId}
+      initialBoard={board}
       workspace={workspace}
       workspaceTier={workspace.tier ?? null}
       currentUserId={user.id}

@@ -91,6 +91,56 @@ describe('BoardClient', () => {
     setActiveBoardRefresh(null);
   });
 
+  it('renders an authorized server board without a second startup request, then refreshes on focus', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId="board-1"
+          currentUserId="user-1"
+          workspace={{ id: 'board-ws-uuid', personal: false } as any}
+          initialBoard={
+            {
+              id: 'board-1',
+              name: 'Server board',
+              ws_id: 'board-ws-uuid',
+              task_lists: [],
+              access_type: 'member',
+            } as any
+          }
+        />
+      </QueryClientProvider>
+    );
+    expect(screen.getByTestId('board-views')).toBeInTheDocument();
+    expect(getWorkspaceTaskBoardMock).not.toHaveBeenCalled();
+    await act(async () => window.dispatchEvent(new Event('focus')));
+    await waitFor(() =>
+      expect(getWorkspaceTaskBoardMock).toHaveBeenCalledTimes(1)
+    );
+    queryClient.clear();
+  });
+
+  it('does not hydrate a board from a different workspace or board ID', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId="board-1"
+          workspace={{ id: 'workspace-uuid', personal: false } as any}
+          initialBoard={{ id: 'wrong', ws_id: 'other' } as any}
+        />
+      </QueryClientProvider>
+    );
+    await waitFor(() =>
+      expect(getWorkspaceTaskBoardMock).toHaveBeenCalledTimes(1)
+    );
+    queryClient.clear();
+  });
+
   it('hydrates a cached board immediately and revalidates it in the background', async () => {
     const cachedPagination = {
       'list-1': {
