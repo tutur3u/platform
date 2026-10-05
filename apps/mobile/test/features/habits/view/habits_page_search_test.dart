@@ -8,6 +8,7 @@ import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
 import 'package:mobile/features/habits/cubit/habits_cubit.dart';
 import 'package:mobile/features/habits/view/habits_page.dart';
+import 'package:mobile/features/habits/view/habits_page_chrome.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -242,20 +243,34 @@ void main() {
     when(() => workspaceCubit.stream).thenAnswer((_) => const Stream.empty());
   });
 
-  testWidgets('search is hidden by default and toggles from the app bar', (
+  testWidgets('search uses the persistent dock and clears on close', (
     tester,
   ) async {
+    final section = ValueNotifier(HabitsSection.overview);
+    addTearDown(section.dispose);
     await tester.pumpApp(
       buildSurface(
         workspaceCubit: workspaceCubit,
-        child: HabitsPage(repository: repository),
+        child: ValueListenableBuilder<HabitsSection>(
+          valueListenable: section,
+          builder: (context, value, _) =>
+              HabitsPage(repository: repository, initialSection: value),
+        ),
       ),
     );
     await pumpUi(tester);
 
     expect(find.byType(shad.TextField), findsNothing);
 
-    await tester.tap(find.byIcon(Icons.search_rounded));
+    final chrome = tester
+        .element(find.byType(HabitsPage))
+        .read<ShellChromeActionsCubit>();
+    final initialAction = chrome.state
+        .resolveForLocation('/habits')
+        .firstWhere((action) => action.id == 'habits-search');
+    expect(initialAction.inDock, isTrue);
+    expect(find.byIcon(Icons.search_rounded), findsNothing);
+    initialAction.onPressed!();
     await pumpUi(tester);
 
     final searchAction = tester
@@ -267,7 +282,16 @@ void main() {
     expect(searchAction.searchController, isNotNull);
     expect(find.byType(shad.TextField), findsNothing);
 
-    await tester.tap(find.byIcon(Icons.close_rounded));
+    searchAction.onSearchChanged!('Water');
+    expect(
+      tester
+          .element(find.byType(HabitsScopeControls))
+          .read<HabitsCubit>()
+          .state
+          .searchQuery,
+      'Water',
+    );
+    searchAction.onCloseSearch!();
     await pumpUi(tester);
 
     final closedAction = tester
@@ -277,5 +301,31 @@ void main() {
         .resolveForLocation('/habits')
         .firstWhere((action) => action.id == 'habits-search');
     expect(closedAction.searchController, isNull);
+    expect(
+      tester
+          .element(find.byType(HabitsScopeControls))
+          .read<HabitsCubit>()
+          .state
+          .searchQuery,
+      isEmpty,
+    );
+    closedAction.onPressed!();
+    await pumpUi(tester);
+    chrome.state
+        .resolveForLocation('/habits')
+        .firstWhere((a) => a.id == 'habits-search')
+        .onSearchChanged!('No match');
+    await pumpUi(tester);
+    expect(find.text('Water'), findsNothing);
+    section.value = HabitsSection.library;
+    await pumpUi(tester);
+    section.value = HabitsSection.overview;
+    await pumpUi(tester);
+    final returnedAction = chrome.state
+        .resolveForLocation('/habits')
+        .firstWhere((a) => a.id == 'habits-search');
+    expect(returnedAction.searchController, isNull);
+    expect(find.text('Water'), findsWidgets);
+    expect(tester.takeException(), isNull);
   });
 }

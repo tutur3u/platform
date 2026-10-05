@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -125,6 +126,7 @@ class _HabitsView extends StatefulWidget {
 class _HabitsViewState extends State<_HabitsView> {
   late final TextEditingController _searchController;
   var _isSearchVisible = false;
+  var _detailOpen = false;
   final _alive = ValueNotifier<bool>(true);
 
   bool get _supportsSearch => widget.initialSection == HabitsSection.overview;
@@ -133,6 +135,12 @@ class _HabitsViewState extends State<_HabitsView> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+  }
+
+  @override
+  void didUpdateWidget(covariant _HabitsView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialSection != widget.initialSection) _resetSearch();
   }
 
   @override
@@ -177,6 +185,8 @@ class _HabitsViewState extends State<_HabitsView> {
                 if (_supportsSearch)
                   ShellActionSpec(
                     id: 'habits-search',
+                    inDock: true,
+                    callbackToken: (_isSearchVisible, state.searchQuery),
                     icon: _isSearchVisible
                         ? Icons.close_rounded
                         : Icons.search_rounded,
@@ -191,7 +201,7 @@ class _HabitsViewState extends State<_HabitsView> {
                     searchHint: context.l10n.habitsSearchHint,
                     onSearchChanged: (value) =>
                         context.read<HabitsCubit>().setSearchQuery(value),
-                    onCloseSearch: _toggleSearch,
+                    onCloseSearch: _resetSearch,
                     onPressed: _toggleSearch,
                   ),
                 ShellActionSpec(
@@ -218,6 +228,7 @@ class _HabitsViewState extends State<_HabitsView> {
                 ownerId: shellOwnerId,
                 locations: {shellLocation},
                 actions: shellActions,
+                onResetSection: _resetSearch,
               );
             },
           );
@@ -366,14 +377,18 @@ class _HabitsViewState extends State<_HabitsView> {
 
   void _toggleSearch() {
     if (!mounted || !_alive.value) return;
-    setState(() {
-      final nextVisible = !_isSearchVisible;
-      _isSearchVisible = nextVisible;
-      if (!nextVisible) {
-        _searchController.clear();
-        context.read<HabitsCubit>().setSearchQuery('');
-      }
-    });
+    if (_isSearchVisible) {
+      _resetSearch();
+    } else {
+      setState(() => _isSearchVisible = true);
+    }
+  }
+
+  void _resetSearch() {
+    if (!mounted || !_alive.value) return;
+    setState(() => _isSearchVisible = false);
+    _searchController.clear();
+    context.read<HabitsCubit>().setSearchQuery('');
   }
 
   Future<void> _openCreateTracker({HabitTrackerTemplate? template}) async {
@@ -407,19 +422,21 @@ class _HabitsViewState extends State<_HabitsView> {
   }
 
   Future<void> _openTrackerDetail(String trackerId) async {
-    if (!mounted || !_alive.value) return;
+    if (!mounted || !_alive.value || _detailOpen) return;
+    _detailOpen = true;
     final cubit = context.read<HabitsCubit>();
     final isPersonalWorkspace =
         context.read<WorkspaceCubit>().state.currentWorkspace?.personal ??
         false;
-    await cubit.selectTracker(trackerId);
-
-    if (!mounted) {
-      return;
+    final detailInFlight =
+        cubit.state.selectedTrackerId == trackerId &&
+        (cubit.state.detailStatus == HabitsStatus.loading ||
+            cubit.state.isDetailRefreshing);
+    if (!detailInFlight) {
+      unawaited(cubit.loadTrackerDetail(trackerId, refresh: true));
     }
-
-    unawaited(
-      showAdaptiveDrawer(
+    try {
+      await showAdaptiveDrawer(
         context: context,
         maxDialogWidth: 920,
         builder: (sheetContext) => HabitsOwnedOverlay(
@@ -458,8 +475,10 @@ class _HabitsViewState extends State<_HabitsView> {
             ),
           ),
         ),
-      ),
-    );
+      );
+    } finally {
+      _detailOpen = false;
+    }
   }
 
   Future<void> _openTrackerEntryComposer(String trackerId) async {
