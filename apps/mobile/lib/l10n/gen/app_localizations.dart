@@ -19320,6 +19320,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Suggestions need your review. Saving does not create tasks or calendar events. Team workspace notes may be visible to workspace members.'**
   String get notesVoiceProposalNotice;
+
+  /// No description provided for @cmsSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search collections and entries'**
+  String get cmsSearchHint;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
