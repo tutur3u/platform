@@ -228,7 +228,11 @@ export async function savePlayground(
                   personalWorkspaceId,
                   file.pointer.storagePath,
                   file.bytes,
-                  { contentType: 'text/plain; charset=utf-8', upsert: false }
+                  {
+                    allowEmpty: true,
+                    contentType: 'text/plain; charset=utf-8',
+                    upsert: false,
+                  }
                 ),
               catch: () => new AccountServiceError(500, 'Drive save failed'),
             })
