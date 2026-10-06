@@ -9,6 +9,7 @@ import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/features/chat/widgets/chat_conversation_list.dart';
@@ -28,14 +29,52 @@ part 'chat_page_surface.dart';
 part 'chat_page_filters.dart';
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({super.key});
+  const ChatPage({super.key, this.cubitFactory});
+
+  final ChatCubit Function(String? actorId)? cubitFactory;
 
   @override
-  State<ChatPage> createState() => _ChatPageState();
+  State<ChatPage> createState() => _ChatLifetimeState();
 }
 
-class _ChatPageState extends State<ChatPage> {
-  late final ChatCubit _chatCubit = ChatCubit();
+class _ChatLifetimeState extends State<ChatPage> {
+  int _actorGeneration = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.read<AuthCubit>();
+    final actorId = context.select<AuthCubit, String?>((c) => c.state.user?.id);
+    return BlocListener<AuthCubit, AuthState>(
+      listenWhen: (previous, current) => previous.user?.id != current.user?.id,
+      listener: (_, _) => setState(() => ++_actorGeneration),
+      child: _ChatActorHost(
+        key: ValueKey((actorId, _actorGeneration)),
+        actorId: actorId,
+        currentUserId: () => auth.state.user?.id,
+        cubitFactory: widget.cubitFactory,
+      ),
+    );
+  }
+}
+
+class _ChatActorHost extends StatefulWidget {
+  const _ChatActorHost({
+    required this.actorId,
+    required this.currentUserId,
+    required this.cubitFactory,
+    super.key,
+  });
+  final String? actorId;
+  final String? Function() currentUserId;
+  final ChatCubit Function(String? actorId)? cubitFactory;
+  @override
+  State<_ChatActorHost> createState() => _ChatPageState();
+}
+
+class _ChatPageState extends State<_ChatActorHost> {
+  late final ChatCubit _chatCubit =
+      widget.cubitFactory?.call(widget.actorId) ??
+      ChatCubit(currentUserId: widget.currentUserId);
   final TextEditingController _searchController = TextEditingController();
   bool _searchVisible = false;
   String? _loadedWorkspaceId;
@@ -302,6 +341,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _syncWorkspace() {
+    if (widget.actorId == null) return;
     final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
     final wsId = workspace?.id;
     if (wsId == null) return;
