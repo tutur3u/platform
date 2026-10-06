@@ -1,4 +1,10 @@
 import { uploadCurrentUserProfileMedia } from './profile-media';
+
+export {
+  removeCurrentUserBanner,
+  uploadCurrentUserBanner,
+} from './profile-banner';
+
 import { optimizeProfileMediaFile } from './profile-media-optimize';
 import type {
   CurrentUserProfileResponse,

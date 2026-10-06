@@ -509,6 +509,14 @@ operation finishes cleanup without applying an old upload or removal over a
 newer profile edit. A staged upload captures the prior banner; an intervening
 change returns a conflict rather than overwriting it. Avatar behavior is unchanged.
 
+The web Account settings also display the current banner and offer upload,
+replacement and removal. Upload retries retain the same operation receipt after
+an ambiguous response, keep the saved preview until finalize succeeds, and never
+patch the profile or delete Storage objects directly. The web and mobile surfaces
+share the existing server quotas and lifecycle; no client success establishes
+production migration or Storage availability. Web coverage is in
+`profile-banner.test.ts` and `settings-banner.test.tsx`.
+
 Profile writes retire only canonical banner object paths under the configured
 Storage origin and the authenticated actor's directory. External URLs and another
 actor's objects are never deleted. Retirement is atomic with the existing locked
