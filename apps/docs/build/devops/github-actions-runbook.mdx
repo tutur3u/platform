@@ -154,6 +154,36 @@ workflow. The same trusted job paginates through Actions cache entries and
 deletes only entries whose ref equals the closed pull request's merge ref
 (`refs/pull/<number>/merge`). It never deletes default-branch cache entries.
 
+## Authorized CI Queue Cleanup
+
+Manual cancellation requires explicit authorization for the cleanup scope. Start
+from a fresh inventory of active run IDs, workflow names, events, repositories,
+head branches and SHAs, together with current `main` and `production` refs and
+live open PR heads. Pin those current heads before selecting candidates.
+
+Classify protected branches **before** checking whether a branch appears among
+merged PR heads. A historical promotion PR can have `main` as its head branch;
+that does not make current `main` runs redundant. Never classify `main` or
+`production` as merged-PR branches. Preserve every run on the current protected
+heads and current open PR heads. Older protected-branch validation runs are
+eligible only when the explicit cleanup scope includes superseded runs; deployment,
+migration, release and signing work needs its own authorization.
+
+A branch name alone is not cancellation evidence. Confirm each candidate's event,
+repository, SHA and current PR state against the authorized scope. Freeze a finite
+list of run IDs and recheck protected refs before sending requests; if they moved,
+refresh the inventory and remove newly protected candidates. Do not expand the
+batch while it is running.
+
+Record a receipt per run with the requested action, API response and observed
+status. An accepted cancellation request is not a terminal `cancelled` result.
+Use a bounded follow-up read of the selected IDs to distinguish completed runs,
+requests still taking effect, conflicts and runs still active. Report remaining
+runs without a polling loop or a claim that queue allocation has improved.
+Force cancellation requires explicit authorization and must stay within the
+remaining eligible IDs from the same finite batch. A one-time cleanup does not
+authorize recurring cancellation.
+
 ## Main Workflow Groups
 
 ### Hosted web build and deployment checks

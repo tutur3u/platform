@@ -298,6 +298,15 @@ formatting behavior, or repo-wide verification.
   newer pushes. Protected validation groups include SHA, event, and run identity;
   job-level duplicate proofs decide valid skips. Never combine `queue: max` with
   cancellation enabled.
+- For explicitly authorized manual CI cleanup, inventory fresh protected refs
+  and open PR heads, then protect `main` and `production` before testing merged
+  PR branch membership. Historical promotion PRs can use `main` as their head;
+  branch membership alone must never authorize cancellation. Pin current head
+  SHAs, preserve their runs, and freeze eligible run IDs within the authorized
+  scope. Keep per-run receipts and distinguish accepted requests from terminal
+  cancellation. Any force phase needs explicit authorization, bounded remaining
+  IDs and a bounded verification read, not polling or automatic batch expansion.
+  Follow the [queue cleanup procedure](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#authorized-ci-queue-cleanup).
 - Key preview concurrency by workflow and `preview_ref` and enable
   `cancel-in-progress`. This lets a newer protected-main platform signal or a
   repeated manual preview replace stale work without serializing unrelated
