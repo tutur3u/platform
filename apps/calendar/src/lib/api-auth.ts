@@ -39,6 +39,10 @@ import {
   recordResponseAbuseSignal,
   resolveWebAbuseDecision,
 } from './abuse-risk';
+import {
+  buildCalendarRateLimitResponse,
+  buildIpBlockResponse,
+} from './calendar-rate-limit-response';
 import { setLogDrainUserContext } from './infrastructure/log-drain';
 import { checkRateLimit, type RateLimitConfig } from './rate-limit';
 
@@ -46,21 +50,6 @@ export type AuthorizedRequest = {
   user: SupabaseUser;
   supabase: TypedSupabaseClient;
 };
-
-function buildIpBlockResponse(blockInfo: BlockInfo) {
-  const retryAfter = Math.max(
-    1,
-    Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
-  );
-
-  return NextResponse.json(
-    { error: 'Too Many Requests', message: 'Rate limit exceeded' },
-    {
-      status: 429,
-      headers: { 'Retry-After': `${retryAfter}` },
-    }
-  );
-}
 
 function writeVerifiedSessionCacheForRequest(
   request: Pick<NextRequest, 'headers'>,
@@ -898,12 +887,9 @@ export function withSessionAuth<T = unknown>(
           )
         : 60;
 
-      return NextResponse.json(
-        { error: 'Too Many Requests', message: 'Rate limit exceeded' },
-        {
-          status: 429,
-          headers: { 'Retry-After': `${retryAfter}` },
-        }
+      return buildCalendarRateLimitResponse(
+        retryAfter,
+        'backend-auth-rate-limit'
       );
     }
 
