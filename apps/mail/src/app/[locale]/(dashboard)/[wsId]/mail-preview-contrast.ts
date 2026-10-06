@@ -20,10 +20,16 @@ export function contrastRatio(first: RGB, second: RGB) {
 
 export function readableMailColor(foreground: RGB, background: RGB): RGB {
   if (contrastRatio(foreground, background) >= 4.5) return foreground;
-  return contrastRatio(lightText, background) >
-    contrastRatio(darkText, background)
-    ? lightText
-    : darkText;
+  const preferred =
+    contrastRatio(lightText, background) > contrastRatio(darkText, background)
+      ? lightText
+      : darkText;
+  if (contrastRatio(preferred, background) >= 4.5) return preferred;
+  const black: RGB = [0, 0, 0];
+  const white: RGB = [255, 255, 255];
+  return contrastRatio(white, background) > contrastRatio(black, background)
+    ? white
+    : black;
 }
 
 function parseColor(value: string): { rgb: RGB; alpha: number } | null {
@@ -109,6 +115,7 @@ export function applyMailPreviewContrast(
     );
   }
   const backgrounds = new WeakMap<Element, RGB>();
+  const unresolvedPaint = new WeakSet<Element>();
   for (const element of [
     document.body,
     ...document.body.querySelectorAll<HTMLElement>('*'),
@@ -151,9 +158,18 @@ export function applyMailPreviewContrast(
     ) {
       element.style.setProperty('background-image', 'none', 'important');
     }
+    // Original images and gradients are retained. A guessed background-color
+    // cannot establish their text contrast; keep sender text until an opaque
+    // solid child gives us a known surface again.
+    const painted =
+      mode === 'original' &&
+      ((!!style.backgroundImage && style.backgroundImage !== 'none') ||
+        (unresolvedPaint.has(element.parentElement!) && original?.alpha !== 1));
+    if (painted) unresolvedPaint.add(element);
     backgrounds.set(element, background);
     const foreground = readColor(style.color);
     if (
+      !painted &&
       !['IMG', 'STYLE', 'BR', 'HR'].includes(element.tagName) &&
       foreground &&
       foreground.alpha > 0
