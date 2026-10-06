@@ -106,6 +106,7 @@ class _TaskProjectUpdatesSectionState extends State<TaskProjectUpdatesSection> {
           ),
           const shad.Gap(10),
           shad.TextArea(
+            selectionControls: platformTextSelectionControls(),
             contextMenuBuilder: platformTextContextMenuBuilder(),
             controller: _newUpdateController,
             placeholder: Text(context.l10n.taskPortfolioUpdatePlaceholder),
@@ -195,6 +196,7 @@ class _TaskProjectUpdatesSectionState extends State<TaskProjectUpdatesSection> {
               const shad.Gap(8),
               if (isEditing)
                 shad.TextArea(
+                  selectionControls: platformTextSelectionControls(),
                   contextMenuBuilder: platformTextContextMenuBuilder(),
                   controller: _editUpdateController,
                   enabled: !_isSavingEdit,

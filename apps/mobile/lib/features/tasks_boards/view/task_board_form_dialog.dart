@@ -60,6 +60,7 @@ class _TaskBoardFormDialogState extends State<TaskBoardFormDialog> {
           Text(l10n.taskBoardsNameLabel),
           const shad.Gap(8),
           shad.TextField(
+            selectionControls: platformTextSelectionControls(),
             contextMenuBuilder: platformTextContextMenuBuilder(),
             controller: _nameController,
             hintText: l10n.taskBoardsNamePlaceholder,

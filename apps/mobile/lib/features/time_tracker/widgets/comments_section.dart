@@ -74,6 +74,7 @@ class CommentsSection extends StatelessWidget {
         if (canAddComments) ...[
           const shad.Gap(16),
           shad.TextField(
+            selectionControls: platformTextSelectionControls(),
             contextMenuBuilder: platformTextContextMenuBuilder(),
             controller: commentController,
             placeholder: Text(l10n.timerRequestAddComment),
@@ -188,6 +189,7 @@ class _CommentTileState extends State<_CommentTile> {
             const shad.Gap(4),
             if (_isEditing) ...[
               shad.TextField(
+                selectionControls: platformTextSelectionControls(),
                 contextMenuBuilder: platformTextContextMenuBuilder(),
                 controller: _editController,
                 maxLines: 3,

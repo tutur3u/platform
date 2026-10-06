@@ -50,6 +50,7 @@ class _CurrencyPickerDialogState extends State<CurrencyPickerDialog> {
       child: Column(
         children: [
           shad.TextField(
+            selectionControls: platformTextSelectionControls(),
             contextMenuBuilder: platformTextContextMenuBuilder(),
             controller: _searchController,
             hintText: l10n.financeWalletSearchCurrency,
