@@ -14,13 +14,14 @@ export function fitsStorageBudget(
   used: number,
   incoming: number,
   limit: number,
-  replaced = 0
+  replaced = 0,
+  allowEmpty = false
 ): boolean {
   if (
     ![used, incoming, limit, replaced].every(
       (value) => Number.isSafeInteger(value) && value >= 0
     ) ||
-    incoming === 0 ||
+    (incoming === 0 && (!allowEmpty || limit === 0)) ||
     replaced > used
   )
     return false;

@@ -35,6 +35,7 @@ import { downloadGuardedSupabaseStorageObject } from './storage-download-object'
 import { createGuardedSupabaseStorageReadUrl } from './storage-download-sign';
 import { fitsStorageBudget, readStorageUsageBytes } from './storage-quota';
 import { getStorageLimit } from './storage-quota-reader';
+import { assertStorageUploadSize } from './storage-upload-capacity';
 
 export { WorkspaceStorageError } from './storage-download-error';
 
@@ -606,20 +607,12 @@ async function ensureWorkspaceCapacity(
   incomingBytes?: number,
   options?: {
     provider?: WorkspaceStorageProvider;
+    allowEmpty?: boolean;
     fullPath?: string;
     upsert?: boolean;
   }
 ): Promise<void> {
-  if (
-    incomingBytes === undefined ||
-    !Number.isSafeInteger(incomingBytes) ||
-    incomingBytes <= 0
-  ) {
-    throw new WorkspaceStorageError(
-      'A valid file size is required for storage uploads.',
-      400
-    );
-  }
+  assertStorageUploadSize(incomingBytes, options?.allowEmpty);
   const overview = options?.provider
     ? await getWorkspaceStorageOverviewForProvider(wsId, options.provider, true)
     : await getWorkspaceStorageOverview(wsId, true);
@@ -659,7 +652,8 @@ async function ensureWorkspaceCapacity(
       overview.totalSize,
       incomingBytes,
       overview.storageLimit,
-      existingBytes
+      existingBytes,
+      options?.allowEmpty
     )
   ) {
     throw new WorkspaceStorageError(
@@ -1246,6 +1240,7 @@ export async function uploadWorkspaceStorageFileDirectToProvider(
   path: string,
   buffer: Uint8Array,
   options?: {
+    allowEmpty?: boolean;
     allowReservedMobileDeploymentVault?: boolean;
     contentType?: string;
     upsert?: boolean;
@@ -1281,6 +1276,7 @@ export async function uploadWorkspaceStorageFileDirectToProvider(
     if (!options?.skipCapacityCheck) {
       await ensureWorkspaceCapacity(wsId, buffer.byteLength, {
         provider,
+        allowEmpty: options?.allowEmpty,
         fullPath,
         upsert: options?.upsert,
       });
@@ -1320,6 +1316,7 @@ export async function uploadWorkspaceStorageFileDirectToProvider(
   if (!options?.skipCapacityCheck) {
     await ensureWorkspaceCapacity(wsId, buffer.byteLength, {
       provider,
+      allowEmpty: options?.allowEmpty,
       fullPath,
       upsert: options?.upsert,
     });
@@ -1545,6 +1542,7 @@ export async function uploadWorkspaceStorageFileDirect(
   path: string,
   buffer: Uint8Array,
   options?: {
+    allowEmpty?: boolean;
     allowReservedMobileDeploymentVault?: boolean;
     contentType?: string;
     upsert?: boolean;
