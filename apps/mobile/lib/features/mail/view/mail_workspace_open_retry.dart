@@ -51,16 +51,20 @@ extension _MailWorkspaceOpenRetry on _MailWorkspaceState {
   ) async {
     for (var attempt = 0; ; attempt++) {
       try {
-        return await _repository
-            .detail(widget.workspaceId, mailboxId, id, thread: thread)
-            .timeout(const Duration(seconds: 12));
+        return await _repository.detail(
+          widget.workspaceId,
+          mailboxId,
+          id,
+          thread: thread,
+        );
       } on Object catch (error) {
+        // ApiClient owns the transport timeout. A shorter outer timeout
+        // would rejoin the same cached flight and fail before it settles.
         final transient =
-            error is TimeoutException ||
-            (error is ApiException &&
-                (error.failureKind == ApiFailureKind.transport ||
-                    error.statusCode == 408 ||
-                    error.statusCode >= 500));
+            error is ApiException &&
+            (error.failureKind == ApiFailureKind.transport ||
+                error.statusCode == 408 ||
+                error.statusCode >= 500);
         if (!transient || attempt >= 1 || !mounted || mailboxId != _mailboxId) {
           rethrow;
         }

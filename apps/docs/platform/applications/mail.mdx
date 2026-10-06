@@ -925,6 +925,19 @@ the same account/workspace/mailbox and retain the existing cache permission
 checks. `mail_background_refresh_test.dart` and existing inbox mutation tests
 cover this behavior; authenticated provider/device proof remains a release gate.
 
+A completed Mail mutation can invalidate a concurrent inbox or detail fetch.
+Within an unchanged actor/workspace cache scope, the native repository restarts
+that interrupted read once and coalesces concurrent consumers onto the new
+request. Repeated invalidations remain bounded and surface a failure for retry;
+authentication, access denial, logout and scope clears never trigger this restart.
+The reader awaits the API client's transport timeout rather than starting a
+shorter timeout that rejoins the same unfinished request. Real API failures still
+use the existing transient-error policy. `mail_invalidation_race_test.dart` covers
+delayed mark-read success/failure, coalescing, bounded restarts, scoped mutations
+and denial/logout ABA fences with the actual encrypted cache and repository.
+`mail_error_scope_test.dart` covers awaited fallback and cache-unavailable
+publication boundaries, including late errors after a new same-ID session.
+
 Mail quick settings and central App settings use the same mailbox settings
 editor. Central settings resolves real mailbox membership before opening the
 editor; members keep personal device options and only owners/admins edit mailbox
