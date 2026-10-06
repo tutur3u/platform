@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-agent-coordination
-description: "Coordinate Tuturuuu shared-worktree ownership, handoffs, and Git commit windows."
+description: "Coordinate Tuturuuu multi-agent programs, exact-head evidence, shared-worktree ownership, and handoffs."
 ---
 
 # Tuturuuu Agent Coordination
@@ -19,6 +19,11 @@ handoffs, delegated lanes, generated-output isolation, or cleanup. Create a note
 for shared/dirty, overlapping, long-running, or tooling-rule changes. Include Agent,
 Intent, Owned paths, Observed dirty paths, Status, Needs, Verification, Risks, and
 Commit window. Use statuses `working`, `blocked`, `handoff`, or `done`; never stage notes.
+
+For multi-lane work spanning PR/CI/delivery wakes, use
+`references/program-orchestration.md`: own the program board and acceptance,
+relay complete briefs, drain completed handoffs, and reconcile exact-head proof.
+Do not spawn additional agents without applicable delegation authority.
 
 Before staging or committing, inspect existing staged paths and claim the window:
 
