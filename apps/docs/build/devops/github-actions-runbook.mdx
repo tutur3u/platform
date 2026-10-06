@@ -8,6 +8,14 @@ GitHub Actions is the primary automation plane for Tuturuuu.
 
 ## Validation and Delivery Evidence
 
+Focused source-only TypeScript checks must use the source entry corresponding to
+its package `exports` artifact and retain the repository compiler flags,
+including `noUncheckedIndexedAccess`. When a package contains both a same-named
+file and a directory index, mapping the directory can hide missing public
+exports. Regression tests for shared helpers should import through the shipped
+entry; the Infrastructure desktop public-entry test covers this boundary. Resolve source fixtures relative to `import.meta.dirname`,
+so workspace-owned test runs read the same files as root runs.
+
 - Run tests from the owning workspace with its actual config, dependencies and
   providers. Root-hoisted packages or aliases can conceal undeclared dependencies
   and invalid test boundaries. If a narrow source-alias fixture is needed, record
