@@ -17,6 +17,8 @@ export type DesktopVaultState = {
   platforms: {
     platform: DesktopVaultPlatform;
     enabled: boolean;
+    /** Null/missing before the additive admission schema rolls out; never invent a CAS revision. */
+    revision?: number | null;
     activeVersionId: string | null;
   }[];
   versions: DesktopVaultVersion[];
@@ -55,7 +57,19 @@ export type DesktopVaultMutation =
   | { action: 'validate'; versionId: string; revision: number }
   | { action: 'activate'; versionId: string; revision: number }
   | { action: 'create_token'; versionId: string; expiresAt: string }
-  | { action: 'revoke_token'; tokenId: string };
+  | { action: 'revoke_token'; tokenId: string }
+  | {
+      action: 'disable_delivery';
+      platform: DesktopVaultPlatform;
+      environmentRevision: number;
+    }
+  | {
+      action: 'enable_delivery';
+      platform: DesktopVaultPlatform;
+      environmentRevision: number;
+      versionId: string;
+      revision: number;
+    };
 
 export async function mutateDesktopVault(
   payload: DesktopVaultMutation,

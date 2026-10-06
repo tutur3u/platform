@@ -4,6 +4,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { TextDecoder } from 'node:util';
 import type { DesktopVaultMutation } from '@tuturuuu/internal-api/infrastructure';
 import type { DesktopAdminDb } from './access';
+import { setDesktopDelivery } from './admission';
 import {
   inspectDesktopCertificate,
   inspectNotarizationKey,
@@ -185,6 +186,10 @@ export async function applyDesktopMutation(
 ): Promise<string | undefined> {
   const privateDb = db.schema('private');
   switch (input.action) {
+    case 'enable_delivery':
+    case 'disable_delivery':
+      await setDesktopDelivery(db, actor, input);
+      return;
     case 'create_version': {
       const dataKey = await createDesktopDataKey();
       try {
