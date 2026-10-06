@@ -87,4 +87,28 @@ void main() {
       await player.dispose();
     },
   );
+  for (final terminal in ['pause', 'dispose']) {
+    test('$terminal during first-frame setup prevents stale feed', () async {
+      final setup = Completer<void>();
+      final calls = <String>[];
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        calls.add(call.method);
+        if (call.method == 'setup') await setup.future;
+        return true;
+      });
+      final player = AssistantLiveAudioPlayer();
+      final frame = player.play(Uint8List.fromList([1, 0]));
+      await Future<void>.delayed(Duration.zero);
+      final stopping = terminal == 'pause' ? player.pause() : player.dispose();
+      setup.complete();
+      await Future.wait([frame, stopping]);
+      expect(calls.where((call) => call == 'feed'), isEmpty);
+      expect(calls.last, 'release');
+      if (terminal == 'pause') {
+        await player.play(Uint8List.fromList([2, 0]));
+        expect(calls.where((call) => call == 'feed'), hasLength(1));
+        await player.dispose();
+      }
+    });
+  }
 }

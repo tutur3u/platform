@@ -27,6 +27,7 @@ extension AssistantLiveMicrophoneControls on AssistantLiveCubit {
     if (state.isMicrophoneActive || _startingMicrophone) {
       if (_screenService.requiresMicrophone) await stopScreenSharing();
       _microphoneVersion++;
+      _startingMicrophone = false;
       _startupAudio.clear();
       await _stopRecorderSafely();
       await _syncScreenMicrophone(false);
@@ -103,6 +104,7 @@ extension AssistantLiveMicrophoneControls on AssistantLiveCubit {
     } on Exception {
       if (!isClosed && version == _microphoneVersion) {
         _microphoneVersion++;
+        _startingMicrophone = false;
         _startupAudio.clear();
         await _stopRecorderSafely();
         if (!isClosed) {
@@ -113,7 +115,9 @@ extension AssistantLiveMicrophoneControls on AssistantLiveCubit {
         }
       }
     } finally {
-      _startingMicrophone = false;
+      if (version == _microphoneVersion) {
+        _startingMicrophone = false;
+      }
     }
   }
 }
