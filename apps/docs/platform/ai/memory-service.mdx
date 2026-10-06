@@ -173,3 +173,40 @@ Regression coverage in `packages/ai/src/memory/operations-consent.test.ts` uses 
 real settings/admission flow with synthetic RPC error and exception boundaries,
 asserting no embedding or sidecar access. Positive missing-row and disabled/product
 cases distinguish this rule from a blanket change to successful lookups.
+
+## In-place edit foundation
+
+The private first-party sidecar exposes scoped read and revision-CAS update
+primitives for existing active memories. The service must have an API key
+configured for these new surfaces. Every read/update matches the memory ID,
+container, metadata user, workspace, product, and `done` status. This foundation
+alone does not expose a web/mobile editing API or a new assistant tool.
+
+The opaque revision is computed in PostgreSQL from the full-precision timestamp
+and stored content/metadata plus the PostgreSQL tuple version, before JavaScript
+can round timestamp precision. The tuple component fences same-content updates
+within one transaction. PostgreSQL documents that the
+[tuple version changes on update or `VACUUM FULL`](https://www.postgresql.org/docs/current/ddl-system-columns.html);
+table maintenance can require a fresh scoped read even
+when content is unchanged; it does not change the logical memory ID.
+It is a concurrency token, not an authorization token. Updates replace text and
+its fresh 3072-dimensional vector atomically, clear the old derived summary, and
+preserve the ID, original custom ID, creation time and provenance metadata.
+Forgotten memories are never revived. A stale update receives a conflict instead
+of overwriting the winner.
+
+The service operation preflights ownership and revision before metered embedding.
+Default operation admission still honors memory collection settings; the existing
+explicit management exception must be passed deliberately by an authorized
+future API. A stale preflight starts no embedding. Another edit or deletion can
+win while embedding is underway: that CAS conflict may occur after credits were
+used. Retrying the same stale revision is rejected before another embedding,
+but there is no persistent idempotency key or guarantee of idempotent charging.
+Do not retry using a newly loaded revision without reviewing the current content.
+
+Regression coverage uses the actual sidecar route and emitted parameterized SQL
+with a synthetic database boundary, plus operation/client tests with synthetic
+network and embedding boundaries. This is source evidence, not live PostgreSQL,
+provider, deployment or device proof. Proper edit-audit recording and the public
+API/mobile editor remain dependent packets; no existing audit action is relabeled
+and no background dreaming is dispatched.

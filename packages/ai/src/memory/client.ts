@@ -1,5 +1,5 @@
 import { getAiMemoryConfig } from './config';
-import type { AiMemoryConfig } from './types';
+import type { AiEditableMemory, AiMemoryConfig } from './types';
 
 type RequestOptions = {
   timeout?: number;
@@ -37,6 +37,20 @@ type ForgetMemoryPayload = {
   id: string;
   reason: string;
 };
+
+export type MemoryEditScopePayload = {
+  id: string;
+  containerTag: string;
+  userId: string;
+  wsId: string;
+  product: string;
+};
+
+export class AiMemoryServiceHttpError extends Error {
+  constructor(readonly status: number) {
+    super(`AI memory request failed with HTTP ${status}`);
+  }
+}
 
 let cachedClient: AiMemoryServiceClient | null = null;
 let cachedSignature: string | null = null;
@@ -108,6 +122,26 @@ export class AiMemoryServiceClient {
     );
   }
 
+  async readEditableMemory(payload: MemoryEditScopePayload) {
+    return this.post<{ memory: AiEditableMemory }>(
+      '/v1/memories/read',
+      payload
+    );
+  }
+
+  async updateEditableMemory(
+    payload: MemoryEditScopePayload & {
+      content: string;
+      revision: string;
+      embedding: number[];
+    }
+  ) {
+    return this.post<{ updated: true; memory: AiEditableMemory }>(
+      '/v1/memories/update',
+      payload
+    );
+  }
+
   private async post<T>(
     path: string,
     payload: unknown,
@@ -131,9 +165,7 @@ export class AiMemoryServiceClient {
       });
 
       if (!response.ok) {
-        throw new Error(
-          `AI memory request failed with HTTP ${response.status}`
-        );
+        throw new AiMemoryServiceHttpError(response.status);
       }
 
       return (await response.json()) as T;
