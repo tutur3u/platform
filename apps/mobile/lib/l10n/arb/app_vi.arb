@@ -34,6 +34,20 @@
       }
     }
   },
+  "@assistantLiveCallAssistant": {
+    "placeholders": {
+      "assistantName": {
+        "type": "String"
+      }
+    }
+  },
+  "@assistantLiveCallingAssistant": {
+    "placeholders": {
+      "assistantName": {
+        "type": "String"
+      }
+    }
+  },
   "@assistantLiveReconnectBanner": {
     "placeholders": {
       "timeLeft": {
@@ -1284,6 +1298,12 @@
   "assistantCreditsTitle": "Tín dụng",
   "assistantCreditsUnavailable": "Chưa thể tải nguồn tín dụng của bạn. Vui lòng thử lại.",
   "assistantDoneTodayLabel": "hoàn thành hôm nay",
+  "assistantDownloadAdmissionFailure": "Nhà cung cấp yêu cầu chấp thuận tài khoản hoặc giấy phép. Mở nguồn trong trình duyệt, chấp nhận điều khoản rồi nhập đúng tệp mô hình.",
+  "assistantDownloadBackgroundNotice": "Tải xuống tiếp tục khi bạn rời Cài đặt. Tải chỉ qua Wi-Fi sẽ chờ Wi-Fi. Hệ thống quyết định thời gian chạy nền; buộc đóng có thể làm gián đoạn. Mở lại Cài đặt để tiếp tục.",
+  "assistantDownloadNetworkFailure": "Tải từ nhà cung cấp bị gián đoạn. Thử lại khi có mạng hoặc nhập đúng tệp đã công bố.",
+  "assistantDownloadPause": "Tạm dừng tải",
+  "assistantDownloadResume": "Tiếp tục tải",
+  "assistantDownloadStorageFailure": "Không thể lưu mô hình. Giải phóng bộ nhớ thiết bị rồi thử lại. Mô hình hiện có được giữ nguyên.",
   "assistantEditableLabel": "Có thể chỉnh sửa",
   "assistantEnterFullscreenAction": "Vào toàn màn hình",
   "assistantExitFullscreenAction": "Thoát toàn màn hình",
@@ -1301,7 +1321,10 @@
   "assistantLiveAccessSummary": "{workspace} • {source}",
   "assistantLiveAccessUsingPersonal": "Đang dùng gói cá nhân {tier}",
   "assistantLiveAccessUsingWorkspace": "Đang dùng gói không gian làm việc {tier}",
+  "assistantLiveCallAssistant": "Gọi {assistantName}",
+  "assistantLiveCallingAssistant": "Đang gọi {assistantName}",
   "assistantLiveCameraPreview": "Camera trực tiếp",
+  "assistantLiveCancelCall": "Hủy cuộc gọi",
   "assistantLiveConnect": "Bắt đầu phiên trực tiếp",
   "assistantLiveDescriptionConnecting": "Đang tạo phiên Gemini Live trực tiếp cho văn bản, âm thanh và camera.",
   "assistantLiveDescriptionError": "Phiên trực tiếp gặp lỗi. Hãy thử lại hoặc bắt đầu phiên mới.",
@@ -1899,6 +1922,10 @@
   "documentsSubtitle": "Soạn thảo và duy trì tri thức workspace.",
   "documentsTitle": "Tài liệu",
   "documentsUpdated": "Đã lưu tài liệu.",
+  "downloadNetworkContinue": "Tiếp tục",
+  "downloadNetworkUseWifi": "Dùng Wi-Fi",
+  "downloadNetworkWarningBody": "Tải xuống có thể dùng nhiều dữ liệu. Chọn Tiếp tục để cho phép dữ liệu di động hoặc Dùng Wi-Fi để chờ Wi-Fi.",
+  "downloadNetworkWarningTitle": "Tải xuống bằng dữ liệu di động?",
   "driveCopyPath": "Sao chép đường dẫn",
   "driveCreateFolder": "Tạo thư mục",
   "driveDeleteManyConfirm": "Xóa {count} mục đã chọn?",
@@ -4412,23 +4439,5 @@
   "workspaceSelectTitle": "Chọn không gian làm việc",
   "workspaceSystemBadge": "Hệ thống",
   "workspaceSystemSection": "Nội bộ",
-  "workspaceTeamSection": "Nhóm làm việc",
-  "assistantLiveCallAssistant": "Gọi {assistantName}",
-  "@assistantLiveCallAssistant": {
-    "placeholders": {
-      "assistantName": {
-        "type": "String"
-      }
-    }
-  },
-  "assistantLiveCallingAssistant": "Đang gọi {assistantName}",
-  "@assistantLiveCallingAssistant": {
-    "placeholders": {
-      "assistantName": {
-        "type": "String"
-      }
-    }
-  },
-  "assistantLiveCancelCall": "Hủy cuộc gọi"
-
+  "workspaceTeamSection": "Nhóm làm việc"
 }

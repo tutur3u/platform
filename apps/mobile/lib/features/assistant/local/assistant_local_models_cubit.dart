@@ -26,6 +26,7 @@ class AssistantLocalModelsState {
     this.received = 0,
     this.total = 0,
     this.error,
+    this.paused = false,
   });
   final bool supported;
   final bool loaded;
@@ -36,6 +37,7 @@ class AssistantLocalModelsState {
   final int received;
   final int total;
   final LocalModelFailure? error;
+  final bool paused;
   bool get busy => operation != LocalModelsOperation.idle;
 }
 
@@ -51,13 +53,16 @@ class AssistantLocalModelsCubit extends Cubit<AssistantLocalModelsState> {
        _store = store ?? AssistantLocalModelStore(),
        _preferences = preferences ?? AssistantLocalPreferences(),
        _supported = supported ?? supportsAssistantLocalInference,
-       super(const AssistantLocalModelsState());
+       super(const AssistantLocalModelsState()) {
+    _store.background?.state.addListener(_backgroundChanged);
+  }
 
   final String workspaceId;
   final bool Function() _isScopeCurrent;
   final AssistantLocalModelStore _store;
   final AssistantLocalPreferences _preferences;
   final Future<bool> Function() _supported;
+  bool get supportsBackgroundDownloads => _store.background != null;
   bool get _current => !isClosed && _isScopeCurrent();
 
   Future<void> load() async {
@@ -85,9 +90,10 @@ class AssistantLocalModelsCubit extends Cubit<AssistantLocalModelsState> {
         );
       }
     });
+    _backgroundChanged();
   }
 
-  Future<void> download(AssistantLocalModel model) =>
+  Future<void> download(AssistantLocalModel model, {bool wifiOnly = true}) =>
       _operate(LocalModelsOperation.downloading, model.id, () async {
         final clock = Stopwatch()..start();
         var publishedAt = 0;
@@ -96,6 +102,7 @@ class AssistantLocalModelsCubit extends Cubit<AssistantLocalModelsState> {
         }
         await _store.download(
           model,
+          wifiOnly: wifiOnly,
           isScopeCurrent: () => _current,
           onProgress: (received, total) {
             if (!_current ||
@@ -160,7 +167,65 @@ class AssistantLocalModelsCubit extends Cubit<AssistantLocalModelsState> {
         if (_current) emit(_state(selected: modelId, replaceSelection: true));
       });
 
-  void cancel() => _store.cancel();
+  void _backgroundChanged() {
+    final job = _store.background?.state.value;
+    if (!_current || !state.loaded || job == null) return;
+    emit(
+      AssistantLocalModelsState(
+        supported: state.supported,
+        loaded: state.loaded,
+        installed: job.complete
+            ? {...state.installed, job.modelId}
+            : state.installed,
+        selected: state.selected,
+        operation: job.active
+            ? LocalModelsOperation.downloading
+            : LocalModelsOperation.idle,
+        modelId: job.active ? job.modelId : null,
+        received:
+            (job.progress *
+                    assistantLocalModels
+                        .firstWhere((m) => m.id == job.modelId)
+                        .bytes)
+                .round(),
+        total: assistantLocalModels
+            .firstWhere((m) => m.id == job.modelId)
+            .bytes,
+        error: job.failure == LocalModelFailure.cancelled ? null : job.failure,
+        paused: job.paused,
+      ),
+    );
+  }
+
+  Future<void> pause() =>
+      _control(() async => await _store.background?.pause() ?? false);
+
+  Future<void> resume() =>
+      _control(() async => await _store.background?.resume() ?? false);
+
+  Future<void> _control(Future<bool> Function() command) async {
+    if (!_current) return;
+    var succeeded = false;
+    try {
+      succeeded = await command();
+    } on Object {
+      // A native control failure leaves the existing transfer observable.
+    }
+    if (!succeeded && _current) {
+      emit(
+        _state(
+          error: LocalModelFailure.unavailable,
+          received: state.received,
+          total: state.total,
+          paused: state.paused,
+        ),
+      );
+    }
+  }
+
+  void cancel() {
+    if (_current) _store.cancel();
+  }
 
   Future<void> _operate(
     LocalModelsOperation operation,
@@ -176,6 +241,8 @@ class AssistantLocalModelsCubit extends Cubit<AssistantLocalModelsState> {
       error = failure.reason == LocalModelFailure.cancelled
           ? null
           : failure.reason;
+    } on FileSystemException {
+      error = LocalModelFailure.storage;
     } on Object {
       error = LocalModelFailure.unavailable;
     } finally {
@@ -194,6 +261,7 @@ class AssistantLocalModelsCubit extends Cubit<AssistantLocalModelsState> {
     int received = 0,
     int total = 0,
     LocalModelFailure? error,
+    bool paused = false,
   }) => AssistantLocalModelsState(
     supported: state.supported,
     loaded: state.loaded,
@@ -206,11 +274,13 @@ class AssistantLocalModelsCubit extends Cubit<AssistantLocalModelsState> {
     received: received,
     total: total,
     error: error,
+    paused: paused,
   );
 
   @override
   Future<void> close() {
-    _store.cancel();
+    _store.background?.state.removeListener(_backgroundChanged);
+    _store.cancelForeground();
     return super.close();
   }
 }

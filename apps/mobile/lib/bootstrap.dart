@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:bloc/bloc.dart';
@@ -17,6 +18,7 @@ import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/features/assistant/local/assistant_model_downloads.dart';
 import 'package:mobile/features/notifications/push/push_background_handler.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -52,6 +54,13 @@ Future<void> bootstrap(
 ) async {
   WidgetsFlutterBinding.ensureInitialized();
   ApiConfig.configure(appFlavor);
+  if (Platform.isAndroid || Platform.isIOS) {
+    // Restore public model jobs without blocking authenticated app startup.
+    // Settings exposes initialization failures and permits a fresh retry.
+    unawaited(
+      AssistantModelDownloads.instance.initialize().catchError((Object _) {}),
+    );
+  }
   await AppHaptics.initialize();
 
   final settingsRepository = SettingsRepository();

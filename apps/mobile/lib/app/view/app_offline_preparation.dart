@@ -68,14 +68,52 @@ extension _AppOfflinePreparation on _AppState {
     }
   }
 
+  Future<void> _refreshOfflinePreparationOnResume() async {
+    final userId = _authCubit.state.user?.id;
+    final workspaceId = _workspaceCubit.state.currentWorkspace?.id;
+    final auth = _authCubit.state;
+    final revision = OfflinePreparationCoordinator.instance.scopeRevision;
+    await _authCubit.refreshAccountAssurance();
+    if (!mounted ||
+        revision != OfflinePreparationCoordinator.instance.scopeRevision ||
+        auth.status != AuthStatus.authenticated ||
+        userId == null ||
+        workspaceId == null ||
+        _authCubit.state.status != AuthStatus.authenticated ||
+        _authCubit.state.user?.id != userId ||
+        _workspaceCubit.state.currentWorkspace?.id != workspaceId) {
+      return;
+    }
+    _syncOfflinePreparationScope();
+  }
+
   void _syncOfflinePreparationScope({bool resetWorkspace = false}) {
+    final auth = _authCubit.state;
+    final userId = auth.user?.id;
+    final workspaceId = resetWorkspace
+        ? null
+        : _workspaceCubit.state.currentWorkspace?.id;
+    final coordinator = OfflinePreparationCoordinator.instance;
     unawaited(
-      OfflinePreparationCoordinator.instance.setScope(
-        userId: _authCubit.state.user?.id,
-        workspaceId: resetWorkspace
-            ? null
-            : _workspaceCubit.state.currentWorkspace?.id,
-      ),
+      coordinator
+          .setScope(userId: userId, workspaceId: workspaceId)
+          .then((_) async {
+            if (!mounted ||
+                !identical(auth, _authCubit.state) ||
+                auth.status != AuthStatus.authenticated ||
+                userId == null ||
+                workspaceId == null ||
+                _workspaceCubit.state.currentWorkspace?.id != workspaceId) {
+              return;
+            }
+            await coordinator.resumePending(
+              userId: userId,
+              workspaceId: workspaceId,
+            );
+          })
+          .catchError((Object _) {
+            // A failed plan stays pending; the Offline screen offers retry.
+          }),
     );
   }
 

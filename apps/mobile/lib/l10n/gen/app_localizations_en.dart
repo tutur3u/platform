@@ -371,6 +371,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantDoneTodayLabel => 'done today';
 
   @override
+  String get assistantDownloadAdmissionFailure => 'This provider requires account or license approval. Open the source in your browser, accept its terms, then import the exact model file.';
+
+  @override
+  String get assistantDownloadBackgroundNotice => 'Downloads continue when you leave Settings. Wi-Fi-only transfers wait for Wi-Fi. Your system controls background timing; force-quitting may interrupt them. Reopen Settings to resume.';
+
+  @override
+  String get assistantDownloadNetworkFailure => 'The provider download was interrupted. Retry when connected, or import the exact published file.';
+
+  @override
+  String get assistantDownloadPause => 'Pause download';
+
+  @override
+  String get assistantDownloadResume => 'Resume download';
+
+  @override
+  String get assistantDownloadStorageFailure => 'The model could not be saved. Free device storage and retry. Existing models were kept.';
+
+  @override
   String get assistantEditableLabel => 'Editable';
 
   @override
@@ -428,7 +446,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String assistantLiveCallAssistant(String assistantName) {
+    return 'Call $assistantName';
+  }
+
+  @override
+  String assistantLiveCallingAssistant(String assistantName) {
+    return 'Calling $assistantName';
+  }
+
+  @override
   String get assistantLiveCameraPreview => 'Live camera';
+
+  @override
+  String get assistantLiveCancelCall => 'Cancel call';
 
   @override
   String get assistantLiveConnect => 'Start live session';
@@ -2266,6 +2297,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get documentsUpdated => 'Document saved.';
+
+  @override
+  String get downloadNetworkContinue => 'Continue';
+
+  @override
+  String get downloadNetworkUseWifi => 'Use Wi-Fi';
+
+  @override
+  String get downloadNetworkWarningBody => 'This download may use a large amount of data. Choose Continue to allow mobile data, or Use Wi-Fi to wait for Wi-Fi.';
+
+  @override
+  String get downloadNetworkWarningTitle => 'Download using mobile data?';
 
   @override
   String get driveCopyPath => 'Copy path';
@@ -10343,17 +10386,4 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workspaceTeamSection => 'Team workspaces';
-
-  @override
-  String assistantLiveCallAssistant(String assistantName) {
-    return 'Call $assistantName';
-  }
-
-  @override
-  String assistantLiveCallingAssistant(String assistantName) {
-    return 'Calling $assistantName';
-  }
-
-  @override
-  String get assistantLiveCancelCall => 'Cancel call';
 }
