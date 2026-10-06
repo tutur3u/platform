@@ -4409,5 +4409,15 @@
   "workspaceSelectTitle": "Select workspace",
   "workspaceSystemBadge": "System",
   "workspaceSystemSection": "Internal",
-  "workspaceTeamSection": "Team workspaces"
+  "workspaceTeamSection": "Team workspaces",
+  "downloadNetworkWarningTitle": "Download using mobile data?",
+  "downloadNetworkWarningBody": "This download may use a large amount of data. Choose Continue to allow mobile data, or Use Wi-Fi to wait for Wi-Fi.",
+  "downloadNetworkUseWifi": "Use Wi-Fi",
+  "downloadNetworkContinue": "Continue",
+  "assistantDownloadBackgroundNotice": "Downloads continue when you leave Settings. Wi-Fi-only transfers wait for Wi-Fi. Your system controls background timing; force-quitting may interrupt them. Reopen Settings to resume.",
+  "assistantDownloadPause": "Pause download",
+  "assistantDownloadResume": "Resume download",
+  "assistantDownloadNetworkFailure": "The provider download was interrupted. Retry when connected, or import the exact published file.",
+  "assistantDownloadStorageFailure": "The model could not be saved. Free device storage and retry. Existing models were kept.",
+  "assistantDownloadAdmissionFailure": "This provider requires account or license approval. Open the source in your browser, accept its terms, then import the exact model file."
 }

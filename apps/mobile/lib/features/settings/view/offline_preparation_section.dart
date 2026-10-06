@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/cache/download_network_consent.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -17,6 +18,7 @@ class OfflinePreparationSection extends StatefulWidget {
     this.coordinator,
     this.productId,
     this.showModuleDetails = false,
+    this.connectivity,
     super.key,
   });
   final String? productId;
@@ -24,6 +26,7 @@ class OfflinePreparationSection extends StatefulWidget {
 
   final OfflinePreparationCoordinator? coordinator;
 
+  final DownloadConnectivity? connectivity;
   @override
   State<OfflinePreparationSection> createState() =>
       _OfflinePreparationSectionState();
@@ -68,13 +71,28 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
     final userId = _userId;
     final workspaceId = _workspaceId;
     if (userId == null || workspaceId == null || _starting) return;
+    final auth = context.read<AuthCubit?>()?.state;
     setState(() {
       _starting = true;
       _failed = false;
     });
     try {
+      final consent = await requestDownloadNetworkConsent(
+        context,
+        connectivity: widget.connectivity,
+      );
+      if (!mounted ||
+          consent == null ||
+          !identical(auth, context.read<AuthCubit?>()?.state) ||
+          _userId != userId ||
+          _workspaceId != workspaceId) {
+        return;
+      }
       await ApiClient.offlinePreparation(() async {
-        if (!mounted || _userId != userId || _workspaceId != workspaceId) {
+        if (!mounted ||
+            !identical(auth, context.read<AuthCubit?>()?.state) ||
+            _userId != userId ||
+            _workspaceId != workspaceId) {
           return;
         }
         await _coordinator.run(
@@ -82,6 +100,7 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
           workspaceId: workspaceId,
           productId: productId,
           resume: resume,
+          wifiOnly: consent == DownloadNetworkConsent.wifiOnly,
         );
       }, shouldContinue: () => _coordinator.canContinue(userId, workspaceId));
     } on Object {

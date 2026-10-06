@@ -1,7 +1,11 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_preparation_intent.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
 typedef OfflinePreparationTask = Future<void> Function(String workspaceId);
@@ -63,14 +67,23 @@ class OfflinePreparationState {
 class OfflinePreparationCoordinator {
   OfflinePreparationCoordinator._()
     : _load = _loadMetadata,
-      _write = _writeMetadata;
+      _write = _writeMetadata,
+      _intents = CachedOfflinePreparationIntentStore(),
+      _network = Connectivity().checkConnectivity,
+      _networkEvents = Connectivity().onConnectivityChanged;
 
   @visibleForTesting
   OfflinePreparationCoordinator.forTesting({
     required OfflinePreparationLoader load,
     required OfflinePreparationWriter write,
+    OfflinePreparationIntentStore? intents,
+    Future<List<ConnectivityResult>> Function()? network,
+    Stream<List<ConnectivityResult>>? networkEvents,
   }) : _load = load,
-       _write = write;
+       _write = write,
+       _intents = intents,
+       _network = network ?? (() async => [ConnectivityResult.wifi]),
+       _networkEvents = networkEvents;
 
   static final OfflinePreparationCoordinator instance =
       OfflinePreparationCoordinator._();
@@ -81,10 +94,20 @@ class OfflinePreparationCoordinator {
   final _tasks = <String, OfflinePreparationTask>{};
   final OfflinePreparationLoader _load;
   final OfflinePreparationWriter _write;
+  final OfflinePreparationIntentStore? _intents;
+  final Future<List<ConnectivityResult>> Function() _network;
+  final Stream<List<ConnectivityResult>>? _networkEvents;
+  Set<String> _pendingProducts = {};
+  bool _wifiOnly = true;
+  Future<void> _intentWrites = Future<void>.value();
   int _generation = 0;
   bool _busy = false;
+  Future<void>? _resuming;
+  int? _resumeGeneration;
   int? _activeGeneration;
   final Set<String> _removedDuringRun = {};
+
+  int get scopeRevision => _generation;
 
   bool canContinue(String userId, String workspaceId) =>
       _busy &&
@@ -156,9 +179,18 @@ class OfflinePreparationCoordinator {
     required String workspaceId,
     String? productId,
     bool resume = false,
+    bool wifiOnly = true,
+    Set<String>? requestedProducts,
+    int? expectedScopeGeneration,
   }) async {
+    if (expectedScopeGeneration != null &&
+        !_current(expectedScopeGeneration, userId, workspaceId)) {
+      return;
+    }
     await setScope(userId: userId, workspaceId: workspaceId);
-    if (_busy ||
+    if ((expectedScopeGeneration != null &&
+            !_current(expectedScopeGeneration, userId, workspaceId)) ||
+        _busy ||
         state.value.userId != userId ||
         state.value.workspaceId != workspaceId) {
       return;
@@ -167,7 +199,9 @@ class OfflinePreparationCoordinator {
     _busy = true;
     _activeGeneration = generation;
     _removedDuringRun.clear();
-    final ids = productId != null
+    final ids = requestedProducts != null
+        ? productIds.where(requestedProducts.contains).toList()
+        : productId != null
         ? [productId]
         : resume
         ? productIds
@@ -178,6 +212,15 @@ class OfflinePreparationCoordinator {
               )
               .toList()
         : productIds;
+    final networkSubscription = _networkEvents?.listen((interfaces) {
+      if (_wifiOnly &&
+          !interfaces.contains(ConnectivityResult.wifi) &&
+          _current(generation, userId, workspaceId)) {
+        _stop(clearIntent: false);
+      }
+    });
+    _wifiOnly = wifiOnly;
+    _pendingProducts = ids.where(_tasks.containsKey).toSet();
     final products = {...state.value.products};
     void publish({required bool running}) {
       // Retention reads yield; a verified earlier product can be evicted while
@@ -211,10 +254,19 @@ class OfflinePreparationCoordinator {
         );
       }
       publish(running: true);
+      if (_intents != null) await _saveIntent(userId, workspaceId);
+      if (!_current(generation, userId, workspaceId)) return;
       for (final id in ids) {
         if (!_current(generation, userId, workspaceId)) return;
         final task = _tasks[id];
         if (task == null) continue;
+        if (_wifiOnly) {
+          final interfaces = await _network();
+          if (!_current(generation, userId, workspaceId) ||
+              !interfaces.contains(ConnectivityResult.wifi)) {
+            return;
+          }
+        }
         final lastSuccess = products[id]?.lastSuccess;
         products[id] = OfflineProductPreparation(
           status: OfflinePreparationStatus.downloading,
@@ -236,12 +288,24 @@ class OfflinePreparationCoordinator {
           // Its successful download supersedes prior/own reconciliation.
           // Final retention checks still detect eviction or later removals.
           _removedDuringRun.remove(id);
+          _pendingProducts.remove(id);
+          if (_intents != null) await _saveIntent(userId, workspaceId);
+          if (!_current(generation, userId, workspaceId)) return;
           products[id] = OfflineProductPreparation(
             status: OfflinePreparationStatus.ready,
             lastSuccess: timestamp,
           );
         } on Object catch (error) {
           if (!_current(generation, userId, workspaceId)) return;
+          if (error is OfflinePreparationUnavailable ||
+              (error is ApiException &&
+                  (error.statusCode == 401 ||
+                      error.statusCode == 403 &&
+                          !error.isVerificationRequired))) {
+            _pendingProducts.remove(id);
+            if (_intents != null) await _saveIntent(userId, workspaceId);
+            if (!_current(generation, userId, workspaceId)) return;
+          }
           products[id] = OfflineProductPreparation(
             status:
                 error is OfflinePreparationUnavailable ||
@@ -296,6 +360,7 @@ class OfflinePreparationCoordinator {
       }
       if (_current(generation, userId, workspaceId)) publish(running: false);
     } finally {
+      if (networkSubscription != null) await networkSubscription.cancel();
       _busy = false;
       _activeGeneration = null;
       final latest = state.value;
@@ -307,8 +372,17 @@ class OfflinePreparationCoordinator {
     }
   }
 
-  void cancel() {
+  void cancel() => _stop(clearIntent: true);
+
+  void _stop({required bool clearIntent}) {
     _generation++;
+    if (clearIntent) _pendingProducts = {};
+    final user = state.value.userId;
+    final workspace = state.value.workspaceId;
+    if (clearIntent && user != null && workspace != null) {
+      // Capture the empty plan before another run starts.
+      unawaited(_saveIntent(user, workspace).catchError((Object _) {}));
+    }
     final latest = state.value;
     state.value = OfflinePreparationState(
       userId: latest.userId,
@@ -320,6 +394,63 @@ class OfflinePreparationCoordinator {
               ? OfflineProductPreparation(lastSuccess: entry.value.lastSuccess)
               : entry.value,
       },
+    );
+  }
+
+  Future<void> _saveIntent(String user, String workspace) {
+    final intent = OfflinePreparationIntent(
+      products: Set.of(_pendingProducts),
+      wifiOnly: _wifiOnly,
+    );
+    final generation = _generation;
+    final write = _intentWrites.then((_) async {
+      if (!_current(generation, user, workspace)) return;
+      await _intents?.save(user, workspace, intent);
+    });
+    _intentWrites = write.catchError((Object _) {});
+    return write;
+  }
+
+  Future<void> resumePending({
+    required String userId,
+    required String workspaceId,
+  }) {
+    if (_resumeGeneration == _generation && _resuming != null) {
+      return _resuming!;
+    }
+    final generation = _generation;
+    _resumeGeneration = generation;
+    final work = _resumePending(userId: userId, workspaceId: workspaceId);
+    _resuming = work;
+    return work.whenComplete(() {
+      if (identical(_resuming, work)) _resuming = null;
+    });
+  }
+
+  Future<void> _resumePending({
+    required String userId,
+    required String workspaceId,
+  }) async {
+    if (_busy ||
+        state.value.userId != userId ||
+        state.value.workspaceId != workspaceId) {
+      return;
+    }
+    final generation = _generation;
+    final intent = await _intents?.load(userId, workspaceId);
+    if (!_current(generation, userId, workspaceId) || intent == null) return;
+    final pending = intent.products.where(_tasks.containsKey).toSet();
+    if (pending.isEmpty) return;
+    // Only original requested modules resume; no automatic scope expansion.
+    await ApiClient.offlinePreparation(
+      () => run(
+        userId: userId,
+        workspaceId: workspaceId,
+        requestedProducts: pending,
+        expectedScopeGeneration: generation,
+        wifiOnly: intent.wifiOnly,
+      ),
+      shouldContinue: () => canContinue(userId, workspaceId),
     );
   }
 

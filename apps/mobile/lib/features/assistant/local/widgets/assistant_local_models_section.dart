@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/cache/download_network_consent.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model_store.dart';
 import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dart';
@@ -16,11 +17,13 @@ class AssistantLocalModelsSection extends StatefulWidget {
     required this.workspaceId,
     required this.isScopeCurrent,
     this.cubit,
+    this.connectivity,
     super.key,
   });
   final String workspaceId;
   final bool Function() isScopeCurrent;
   final AssistantLocalModelsCubit? cubit;
+  final DownloadConnectivity? connectivity;
   @override
   State<AssistantLocalModelsSection> createState() =>
       _AssistantLocalModelsSectionState();
@@ -50,7 +53,18 @@ class _AssistantLocalModelsSectionState
 
   Future<void> _install(AssistantLocalModel model) async {
     if (!model.requiresLicensedImport) {
-      await _models.download(model);
+      if (_picking || !widget.isScopeCurrent()) return;
+      setState(() => _picking = true);
+      final consent = await requestDownloadNetworkConsent(
+        context,
+        connectivity: widget.connectivity,
+      );
+      if (mounted) setState(() => _picking = false);
+      if (!mounted || !widget.isScopeCurrent() || consent == null) return;
+      await _models.download(
+        model,
+        wifiOnly: consent == DownloadNetworkConsent.wifiOnly,
+      );
       return;
     }
     if (_picking || !widget.isScopeCurrent()) return;
@@ -99,7 +113,7 @@ class _AssistantLocalModelsSectionState
       final enabled =
           state.loaded && state.supported && !state.busy && !_picking;
       return Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -111,6 +125,10 @@ class _AssistantLocalModelsSectionState
             Text(l10n.assistantLocalHelp),
             const SizedBox(height: 8),
             Text(l10n.assistantLocalBudgetDescription),
+            if (_models.supportsBackgroundDownloads) ...[
+              const SizedBox(height: 8),
+              Text(l10n.assistantDownloadBackgroundNotice),
+            ],
             if (state.loaded && !state.supported) ...[
               const SizedBox(height: 12),
               Text(l10n.assistantLocalHardware),
@@ -163,6 +181,18 @@ class _AssistantLocalModelsSectionState
                         : null,
                   ),
                 ),
+                if (state.operation == LocalModelsOperation.downloading &&
+                    _models.supportsBackgroundDownloads)
+                  TextButton(
+                    onPressed: () => unawaited(
+                      state.paused ? _models.resume() : _models.pause(),
+                    ),
+                    child: Text(
+                      state.paused
+                          ? l10n.assistantDownloadResume
+                          : l10n.assistantDownloadPause,
+                    ),
+                  ),
                 if (state.operation == LocalModelsOperation.downloading ||
                     state.operation == LocalModelsOperation.importing)
                   TextButton(
@@ -195,11 +225,17 @@ class _AssistantLocalModelsSectionState
     },
   );
 
-  String _error(BuildContext context, LocalModelFailure failure) =>
-      switch (failure) {
-        LocalModelFailure.integrity => context.l10n.assistantLocalIntegrity,
-        LocalModelFailure.budget => context.l10n.assistantLocalBudget,
-        LocalModelFailure.busy => context.l10n.assistantLocalBusy,
-        _ => context.l10n.assistantLocalUnavailable,
-      };
+  String _error(
+    BuildContext context,
+    LocalModelFailure failure,
+  ) => switch (failure) {
+    LocalModelFailure.integrity => context.l10n.assistantLocalIntegrity,
+    LocalModelFailure.budget => context.l10n.assistantLocalBudget,
+    LocalModelFailure.busy => context.l10n.assistantLocalBusy,
+    LocalModelFailure.network => context.l10n.assistantDownloadNetworkFailure,
+    LocalModelFailure.storage => context.l10n.assistantDownloadStorageFailure,
+    LocalModelFailure.authentication =>
+      context.l10n.assistantDownloadAdmissionFailure,
+    _ => context.l10n.assistantLocalUnavailable,
+  };
 }
