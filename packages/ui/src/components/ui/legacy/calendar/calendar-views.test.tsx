@@ -215,34 +215,65 @@ describe('calendar view interactions', () => {
 });
 
 describe('calendar view opaque effective colors', () => {
-  it('preserves borderline provider contrast with a visible month hover ring', () => {
-    state.events = [
-      {
-        id: 'borderline-rgb',
-        title: 'Borderline RGB',
-        color: 'BLUE',
-        start_at: new Date(2026, 8, 7, 10).toISOString(),
-        end_at: new Date(2026, 8, 7, 11).toISOString(),
-        scheduling_metadata: {
-          google_color: { version: 1, inherited: false, background: '#757575' },
+  it.each([false, true])(
+    'preserves provider contrast and accessible month treatment, past=%s',
+    (past) => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(2026, 8, past ? 8 : 7, 9));
+      state.events = [
+        {
+          id: 'borderline-rgb',
+          title: 'Borderline RGB',
+          color: 'BLUE',
+          start_at: new Date(2026, 8, 7, 10).toISOString(),
+          end_at: new Date(2026, 8, 7, 11).toISOString(),
+          scheduling_metadata: {
+            google_color: {
+              version: 1,
+              inherited: false,
+              background: '#757575',
+            },
+          },
         },
-      },
-    ];
-    render(<MonthCalendar date={date} viewedMonth={date} locale="en" />);
-    const card = screen.getByRole('button', { name: /Borderline RGB/ });
-    expect(card.style.backgroundColor).toBe('rgb(117, 117, 117)');
-    expect(card.style.color).toBe('rgb(255, 255, 255)');
-    fireEvent.mouseEnter(card);
-    expect(card).toHaveClass('hover:ring-1', 'hover:ring-current');
-    expect(card.className).not.toMatch(/(?:brightness|opacity)-/);
-    expect(card.style.filter).toBe('');
-    expect(card.style.backgroundColor).toBe('rgb(117, 117, 117)');
-    expect(card.style.color).toBe('rgb(255, 255, 255)');
-    const luminance = ((117 / 255 + 0.055) / 1.055) ** 2.4;
-    expect(1.05 / (luminance + 0.05)).toBeGreaterThanOrEqual(4.5);
-    fireEvent.click(card);
-    expect(state.openModal).toHaveBeenCalledWith('borderline-rgb');
-  });
+      ];
+      render(<MonthCalendar date={date} viewedMonth={date} locale="en" />);
+      const card = screen.getByRole('button', { name: /Borderline RGB/ });
+      expect(card.style.backgroundColor).toBe('rgb(117, 117, 117)');
+      expect(card.style.color).toBe('rgb(255, 255, 255)');
+      fireEvent.mouseEnter(card);
+      expect(card).toHaveClass('hover:ring-1', 'hover:ring-current');
+      const wholeCardDimming = card.className.split(/\s+/).filter((token) => {
+        const variants = token.split(':');
+        return (
+          !variants.includes('after') &&
+          /^(?:brightness|opacity)-/.test(variants.at(-1) ?? '')
+        );
+      });
+      expect(wholeCardDimming).toEqual([]);
+      expect(card.style.opacity).toBe('');
+      expect(card).toHaveClass(
+        'focus-visible:outline-2',
+        'focus-visible:outline-ring'
+      );
+      if (past) {
+        expect(card).toHaveClass(
+          'after:bg-background/50',
+          'after:pointer-events-none',
+          'hover:after:opacity-0',
+          'focus-visible:after:opacity-0'
+        );
+      } else {
+        expect(card).not.toHaveClass('after:bg-background/50');
+      }
+      expect(card.style.filter).toBe('');
+      expect(card.style.backgroundColor).toBe('rgb(117, 117, 117)');
+      expect(card.style.color).toBe('rgb(255, 255, 255)');
+      const luminance = ((117 / 255 + 0.055) / 1.055) ** 2.4;
+      expect(1.05 / (luminance + 0.05)).toBeGreaterThanOrEqual(4.5);
+      fireEvent.click(card);
+      expect(state.openModal).toHaveBeenCalledWith('borderline-rgb');
+    }
+  );
 
   it.each([false, true])(
     'uses provider RGB in month and agenda, inherited=%s',
