@@ -292,10 +292,16 @@ export async function sendNativeAiConversationMessages({
     throw new Error('Chat conversation not found');
   }
 
-  await cleanupNativeAiShadowChat({
-    shadowChatId,
-    wsId: context.normalizedWsId,
-  });
+  try {
+    await cleanupNativeAiShadowChat({
+      shadowChatId,
+      wsId: context.normalizedWsId,
+    });
+  } catch {
+    // The authoritative batch is already saved. Cleanup cannot revoke its
+    // receipt or make the client retry an accepted assistant reply.
+    console.warn('Saved native Chat AI reply but shadow cleanup failed');
+  }
 
   return persistence;
 }
