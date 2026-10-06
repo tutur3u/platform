@@ -14,13 +14,6 @@ import { useEffect, useRef, useState } from 'react';
 import { DesktopPlatformPanel } from './desktop-platform-panel';
 import { DesktopTokenPanel } from './desktop-token-panel';
 
-type Upload = {
-  action: 'upload_file';
-  versionId: string;
-  revision: number;
-  name: string;
-  file: File;
-};
 function statusOf(error: unknown) {
   return typeof error === 'object' && error !== null && 'status' in error
     ? error.status
@@ -37,6 +30,8 @@ function DesktopVaultSession({ actorId }: { actorId: string }) {
   const client = useQueryClient();
   const key = ['desktop-signing-vault', actorId];
   const scope = useRef(true);
+  const busy = useRef(false);
+  const operation = useRef<(() => Promise<void>) | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [denied, setDenied] = useState(false);
@@ -45,6 +40,7 @@ function DesktopVaultSession({ actorId }: { actorId: string }) {
     scope.current = true;
     return () => {
       scope.current = false;
+      operation.current = null;
     };
   }, []);
   const query = useQuery({
@@ -54,16 +50,21 @@ function DesktopVaultSession({ actorId }: { actorId: string }) {
     staleTime: 0,
   });
   const mutation = useMutation({
-    mutationFn: (input: DesktopVaultMutation | Upload) =>
-      input.action === 'upload_file'
-        ? uploadDesktopVaultFile(input)
-        : mutateDesktopVault(input),
-    onSuccess: (result) => {
-      if (!scope.current) return;
-      client.setQueryData(key, result.state);
-      if ('token' in result && typeof result.token === 'string')
-        setToken(result.token);
-      setFailed(false);
+    gcTime: 0,
+    // The shared MutationCache receives neither credentials as variables nor
+    // response tokens as data. Private inputs live only in this actor's operation.
+    mutationFn: async () => {
+      const current = operation.current;
+      operation.current = null;
+      if (!current) throw new Error('Desktop operation unavailable');
+      try {
+        await current();
+      } catch (error) {
+        // Never retain a server body or input-bearing exception in MutationCache.
+        throw Object.assign(new Error('Desktop operation rejected'), {
+          status: typeof statusOf(error) === 'number' ? statusOf(error) : null,
+        });
+      }
     },
     onError: (error) => {
       if (!scope.current) return;
@@ -74,9 +75,29 @@ function DesktopVaultSession({ actorId }: { actorId: string }) {
         void client.invalidateQueries({ queryKey: key });
     },
   });
+  async function run(current: () => Promise<void>) {
+    if (!scope.current || busy.current)
+      throw new Error('Desktop operation unavailable');
+    busy.current = true;
+    operation.current = current;
+    try {
+      await mutation.mutateAsync();
+    } finally {
+      if (operation.current === current) operation.current = null;
+      busy.current = false;
+    }
+  }
+  function publish(result: Awaited<ReturnType<typeof mutateDesktopVault>>) {
+    if (!scope.current) return;
+    client.setQueryData(key, result.state);
+    if (typeof result.token === 'string') setToken(result.token);
+    setFailed(false);
+  }
   async function act(input: DesktopVaultMutation) {
     if (input.action === 'create_token') setToken(null);
-    await mutation.mutateAsync(input);
+    await run(async () => {
+      publish(await mutateDesktopVault(input));
+    });
   }
   async function upload(
     version: DesktopVaultVersion,
@@ -87,12 +108,15 @@ function DesktopVaultSession({ actorId }: { actorId: string }) {
       setFailed(true);
       throw new Error('Desktop file rejected');
     }
-    await mutation.mutateAsync({
-      action: 'upload_file',
-      versionId: version.id,
-      revision: version.revision,
-      name,
-      file,
+    await run(async () => {
+      publish(
+        await uploadDesktopVaultFile({
+          versionId: version.id,
+          revision: version.revision,
+          name,
+          file,
+        })
+      );
     });
   }
   if (denied || query.isError)
