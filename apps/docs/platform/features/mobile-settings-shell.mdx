@@ -182,12 +182,19 @@ error category, HTTP status, retry delay and allowlisted rate-limit policy field
 It never includes messages, prompts, response bodies, URLs, email addresses or
 credentials, and never uploads diagnostics. Retry and cooldown rules are unchanged.
 Recovery clears old diagnostics; timezone actor/workspace changes discard them.
-Streamed HTTP errors retain at most 64 KiB before parsing. Oversized bodies are
+Streamed HTTP errors retain at most 64 KiB before parsing. Error-body reads have
+a total deadline matching the request timeout (30 seconds by default), even if
+small chunks keep arriving. Deadline, source failure or overflow requests source
+cancellation and discards partial payloads while preserving HTTP status and
+headers for typed errors; transport cleanup cannot delay that result. Logout or
+actor departure during this read cancels it and rejects publication, including
+a return to the same actor. Successful streams keep their existing lifetime. Oversized bodies are
 canceled and become generic status failures; status/retry headers survive.
 Successful streams remain unread until consumed by the assistant transport.
 
 Coverage: `safe_error_diagnostics_test.dart`, `api_client_stream_error_test.dart`,
-`bounded_stream_error_test.dart`, `internal_diagnostics_copy_test.dart` and
+`bounded_stream_error_test.dart`, `stream_error_deadline_test.dart`,
+`internal_diagnostics_copy_test.dart` and
 `timezone_safe_diagnostics_test.dart`. These tests establish local capture,
 clipboard privacy and cooldown behavior; they do not establish the cause of a
 production 429 or stopped reply.
