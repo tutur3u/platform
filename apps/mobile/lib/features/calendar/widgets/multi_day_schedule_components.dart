@@ -132,7 +132,18 @@ class _MultiDayTimelineColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final layouts = calculateEventLayout(events);
+    final minimumHeight = timedEventMinimumHeight(
+      hourHeight,
+      MediaQuery.textScalerOf(
+                context,
+              ).scale(Theme.of(context).textTheme.labelMedium?.fontSize ?? 14) *
+              1.1 +
+          16,
+    );
+    final layouts = calculateEventLayout(
+      events,
+      minimumDuration: timedEventMinimumDuration(hourHeight, minimumHeight),
+    );
 
     return GestureDetector(
       onLongPressStart: (details) {
@@ -215,16 +226,19 @@ class _MultiDayEventCard extends StatelessWidget {
     final event = layoutInfo.event;
     final start = event.startAt ?? DateTime.now();
     final end = event.endAt ?? start.add(const Duration(minutes: 30));
-    final startMinutes = start.hour * 60 + start.minute;
-    final durationMinutes = end.difference(start).inMinutes.clamp(15, 1440);
+    final startMinutes = timedEventStartMinutes(start);
+    final durationMinutes = timedEventDurationMinutes(start, end);
     final top = (startMinutes / 60) * hourHeight;
     final height = math.max(
       (durationMinutes / 60) * hourHeight,
-      MediaQuery.textScalerOf(
-                context,
-              ).scale(Theme.of(context).textTheme.labelMedium?.fontSize ?? 14) *
-              1.1 +
-          16,
+      timedEventMinimumHeight(
+        hourHeight,
+        MediaQuery.textScalerOf(context).scale(
+                  Theme.of(context).textTheme.labelMedium?.fontSize ?? 14,
+                ) *
+                1.1 +
+            16,
+      ),
     );
     final subColumnWidth = columnWidth / layoutInfo.totalColumns;
     final left = layoutInfo.column * subColumnWidth;
