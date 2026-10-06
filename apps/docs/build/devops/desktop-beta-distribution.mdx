@@ -306,3 +306,25 @@ does not establish provisioning, certificate validity or signed runtime success.
 `desktop-deployment/contract.test.ts` and `desktop-deployment/oidc.test.ts` cover
 platform isolation and locally signed JWT rejection. Actual protected-workflow
 OIDC, certificate identity, installation, WACK and update proof remain required.
+
+### Portable certificate readiness
+
+Desktop vault readiness inspects the uploaded PKCS#12 material for one matching
+private key and certificate, a current validity interval and an explicit
+code-signing extended key usage. macOS additionally requires the Developer ID
+Application extension, an exact configured common-name signing identity and a
+matching team identifier. The notarization key must parse as a PKCS#8 EC P-256
+private key. Rejections return fixed codes; passwords, private key bytes and
+parser errors are never part of a readiness response. Successful responses contain
+only a certificate fingerprint, expiry and algorithm.
+
+These are portable material checks, not operating-system trust-chain or revocation
+verification, Apple account access, notarization or artifact-signing proof. The
+protected per-platform signing and verification workflow remains required before
+publishing a downloadable artifact. The current PKCS#12 parser supports RSA
+certificate bags; unsupported key/certificate material fails closed instead of
+being described as ready. [Forge documents its PKCS#12 parser and unsupported-key behavior](https://github.com/digitalbazaar/forge),
+and [Apple documents the Developer ID Application certificate extension](https://developer.apple.com/documentation/technotes/tn3127-inside-code-signing-requirements).
+Regression coverage: `certificate-readiness.test.ts` uses freshly generated
+synthetic material for key mismatch, missing keys, duplicate matches, validity,
+code-signing, Developer ID identity/team and notarization-key boundaries.
