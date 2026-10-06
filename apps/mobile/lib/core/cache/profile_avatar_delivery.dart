@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/media/profile_media_optimizer.dart';
+import 'package:mobile/core/media/profile_upload_failure.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
 /// Obtains a fresh signed URL when a staged avatar leaves the outbox.
@@ -30,7 +31,27 @@ Future<void> deliverProfileAvatar({
       if (banner && operationId != null) 'operationId': operationId,
     },
   );
-  final bannerOperation = operationId ?? signed['operationId'] as String?;
+  final receivedOperation = signed['operationId'];
+  final bannerOperation = receivedOperation is String
+      ? receivedOperation
+      : null;
+  final publicUrl = signed['publicUrl'];
+  if (banner &&
+      (bannerOperation == null ||
+          !RegExp(
+            r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+            caseSensitive: false,
+          ).hasMatch(bannerOperation) ||
+          (operationId != null && operationId != bannerOperation) ||
+          publicUrl is! String ||
+          publicUrl.trim().isEmpty)) {
+    throw const ApiException(
+      message: 'Invalid banner upload receipt',
+      statusCode: 0,
+      failureKind: ApiFailureKind.response,
+      code: 'PROFILE_UPLOAD_RECEIPT_INVALID',
+    );
+  }
   if (banner && signed['committed'] == true) return;
   if (banner && signed['uploaded'] == true) {
     await api.postJson(ProfileEndpoints.banner, {
@@ -39,12 +60,15 @@ Future<void> deliverProfileAvatar({
     });
     return;
   }
-  final uploadUrl = (signed['uploadUrl'] ?? signed['signedUrl']) as String?;
-  final publicUrl = signed['publicUrl'] as String?;
-  if (uploadUrl == null || publicUrl == null) {
+  final uploadUrl = signed['uploadUrl'] ?? signed['signedUrl'];
+  if (uploadUrl is! String ||
+      uploadUrl.trim().isEmpty ||
+      publicUrl is! String ||
+      publicUrl.trim().isEmpty) {
     throw const ApiException(
       message: 'Invalid avatar upload URL',
       statusCode: 0,
+      failureKind: ApiFailureKind.response,
     );
   }
   late http.Response uploaded;
@@ -68,10 +92,7 @@ Future<void> deliverProfileAvatar({
     throw const ApiException.transport(message: 'Avatar upload timed out');
   }
   if (uploaded.statusCode < 200 || uploaded.statusCode >= 300) {
-    throw ApiException(
-      message: 'Avatar upload failed',
-      statusCode: uploaded.statusCode,
-    );
+    throw profileUploadHttpFailure(uploaded);
   }
   if (banner) {
     await api.postJson(ProfileEndpoints.banner, {
