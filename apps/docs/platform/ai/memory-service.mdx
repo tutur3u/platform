@@ -210,3 +210,34 @@ network and embedding boundaries. This is source evidence, not live PostgreSQL,
 provider, deployment or device proof. Proper edit-audit recording and the public
 API/mobile editor remain dependent packets; no existing audit action is relabeled
 and no background dreaming is dispatched.
+
+
+### Authenticated in-place editing
+
+The live workspace memory item route provides `GET`/`HEAD` for an uncached
+`id`, `content`, and opaque `revision` projection, and `PATCH` for a strict
+`value`/`revision` body with the product in the query. Bearer and cookie sessions
+both resolve the current actor, normalized workspace, and MEMBER admission before
+private memory access. Another actor's memory is unavailable; unknown products
+are rejected rather than silently mapped to a different product.
+
+Explicit owner editing remains available when automatic memory collection is
+disabled, matching manual creation/deletion. This exception does not authorize
+background consolidation or automatic dreaming. A stale revision returns `409`;
+callers preserve unsaved text and reread the current revision before retrying.
+Embedding may already be metered when a concurrent edit wins the final CAS.
+
+Confirmed edits record the distinct `edit` audit action with revision-only
+metadata, never memory content or private provenance. If audit recording fails
+after the durable edit, the response remains `updated: true` with
+`auditRecorded: false` and `warning: "audit_failed"`; callers must not treat it as
+a rolled-back edit or repeat the mutation. A missing audit receipt also counts as
+an audit failure. GET responses do not expose source metadata or custom IDs.
+
+Regression coverage: the item route and internal API client tests cover admission,
+validation, conflicts, safe projections, and partial audit receipts. The
+`ai-memory-edit-audit.sql` pgTAP fixture exercises the actual audit RPC and CHECK,
+prior actions, membership and service-only access; the existing Programming
+database contract workflow runs it after complete schema replay. Local wiring
+checks are not PostgreSQL execution proof. Exact-head CI schema replay, typegen,
+and web build remain required; the mobile editor is a separate dependent packet.

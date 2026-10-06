@@ -3225,6 +3225,9 @@
       "id": "api:/api/v1/workspaces/:wsId/ai/memory/items/:memoryId:apps/web/src/app/api/v1/workspaces/[wsId]/ai/memory/items/[memoryId]/route.ts",
       "kind": "api",
       "methods": [
+        "GET",
+        "HEAD",
+        "PATCH",
         "DELETE"
       ],
       "routePath": "/api/v1/workspaces/:wsId/ai/memory/items/:memoryId",
@@ -9920,11 +9923,11 @@
     "pages": 156,
     "routeHandlers": 646,
     "methodCounts": {
-      "GET": 326,
-      "HEAD": 14,
+      "GET": 327,
+      "HEAD": 15,
       "POST": 320,
       "PUT": 60,
-      "PATCH": 64,
+      "PATCH": 65,
       "DELETE": 102,
       "OPTIONS": 24
     },

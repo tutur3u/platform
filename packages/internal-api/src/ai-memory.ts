@@ -174,3 +174,45 @@ export async function exportWorkspaceAiMemoryItems(
     }
   );
 }
+
+export interface EditableWorkspaceAiMemory {
+  id: string;
+  content: string;
+  revision: string;
+}
+export interface UpdateWorkspaceAiMemoryItemResponse {
+  updated: true;
+  memory: EditableWorkspaceAiMemory;
+  auditRecorded: boolean;
+  warning: 'audit_failed' | null;
+}
+export async function getWorkspaceAiMemoryItemForEdit(
+  wsId: string,
+  memoryId: string,
+  options?: InternalApiClientOptions & { product?: string }
+) {
+  return getInternalApiClient(options).json<{
+    memory: EditableWorkspaceAiMemory;
+  }>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/ai/memory/items/${encodePathSegment(memoryId)}`,
+    { cache: 'no-store', query: { product: options?.product } }
+  );
+}
+export async function updateWorkspaceAiMemoryItem(
+  wsId: string,
+  memoryId: string,
+  payload: { value: string; revision: string },
+  options?: InternalApiClientOptions & { product?: string }
+) {
+  return getInternalApiClient(
+    options
+  ).json<UpdateWorkspaceAiMemoryItemResponse>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/ai/memory/items/${encodePathSegment(memoryId)}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json' },
+      query: { product: options?.product },
+    }
+  );
+}

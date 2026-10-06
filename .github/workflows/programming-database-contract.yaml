@@ -5,10 +5,12 @@ on:
       - "apps/database/supabase/migrations/**"
       - "apps/database/supabase/tests/learn-programming-full-schema.sql"
       - "apps/database/supabase/tests/hosted-playgrounds.sql"
+      - "apps/database/supabase/tests/ai-memory-edit-audit.sql"
       - "apps/database/scripts/verify-programming-database-contract.mjs"
       - "apps/database/scripts/run-supabase*.js"
       - "apps/database/scripts/programming-database-tap.mjs"
       - "apps/database/scripts/programming-database-tap.test.mjs"
+      - "apps/database/scripts/memory-edit-audit-wiring.test.mjs"
       - "apps/database/tests/programming-disposable/session.mjs"
       - "apps/database/tests/programming-disposable/session.test.mjs"
       - "tuturuuu.ci.ts"
@@ -52,7 +54,7 @@ jobs:
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Verify TAP parser and bounded fixture sessions
-        run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/tests/programming-disposable/session.test.mjs
+        run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/tests/programming-disposable/session.test.mjs apps/database/scripts/memory-edit-audit-wiring.test.mjs
       - name: Apply complete schema, run strict pgTAP, generate actual schema types
         run: node apps/database/scripts/verify-programming-database-contract.mjs
       - uses: actions/upload-artifact@v7
