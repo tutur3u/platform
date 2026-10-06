@@ -1016,3 +1016,18 @@ Regression coverage: `calendar_viewport_test.dart`,
 connected groups, visible clipped labels, native scroll settling, synchronized
 surfaces, continuous month traversal and programmatic date navigation. Widget
 coverage is separate from native-device gesture and provider verification.
+
+
+## Mobile timeline overlap geometry
+
+Mobile day and multi-day timelines reserve columns for the painted minimum card
+height as well as timestamp overlap. This keeps adjacent short events and their
+tap targets separate, including enlarged text, while isolated groups still use
+the full column width. Card positions and durations retain sub-minute precision
+so rounded pixels cannot create an untracked overlap. Event timestamps, recurring rules, and provider writes
+remain unchanged. The fixed all-day gutter label stays on one ellipsized line;
+the complete localized label remains available to accessibility services.
+
+`calendar_rendered_overlap_test.dart` checks actual card bounds and bottom-edge
+taps at normal and enlarged text sizes, and the fixed all-day gutter. These
+widget checks require device gesture verification after delivery.

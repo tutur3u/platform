@@ -20,8 +20,13 @@ class EventLayoutInfo {
 /// Calculates side-by-side column layout for overlapping timed events.
 ///
 /// Uses greedy interval-graph coloring: events sorted by start time are
-/// assigned to the first available column that has no time conflict.
-List<EventLayoutInfo> calculateEventLayout(List<CalendarEvent> events) {
+/// assigned to the first available column that has no time conflict. Timeline
+/// callers include their rendered minimum duration so short cards cannot cover
+/// a later card, without changing the underlying event timestamps.
+List<EventLayoutInfo> calculateEventLayout(
+  List<CalendarEvent> events, {
+  Duration minimumDuration = Duration.zero,
+}) {
   if (events.isEmpty) return [];
 
   final sorted = [...events]
@@ -58,7 +63,9 @@ List<EventLayoutInfo> calculateEventLayout(List<CalendarEvent> events) {
 
   for (final event in sorted) {
     final start = event.startAt ?? DateTime(0);
-    final end = event.endAt ?? start.add(const Duration(minutes: 30));
+    final timestampEnd = event.endAt ?? start.add(const Duration(minutes: 30));
+    final minimumEnd = start.add(minimumDuration);
+    final end = timestampEnd.isBefore(minimumEnd) ? minimumEnd : timestampEnd;
 
     // Half-open intervals that start after every active end form a new
     // connected component. Transitive overlaps retain the same columns.

@@ -9,6 +9,7 @@ import 'package:mobile/features/calendar/utils/all_day_layout.dart';
 import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
 import 'package:mobile/features/calendar/utils/event_layout.dart';
+import 'package:mobile/features/calendar/utils/timed_event_geometry.dart';
 import 'package:mobile/features/calendar/utils/working_location_icon.dart';
 import 'package:mobile/features/calendar/widgets/current_time_indicator.dart';
 import 'package:mobile/features/calendar/widgets/date_snap_scroll_physics.dart';
@@ -354,6 +355,9 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                               padding: const EdgeInsets.only(top: 10, right: 8),
                               child: Text(
                                 context.l10n.calendarAllDay,
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.ellipsis,
                                 textAlign: TextAlign.right,
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   color: colorScheme.onSurfaceVariant,
