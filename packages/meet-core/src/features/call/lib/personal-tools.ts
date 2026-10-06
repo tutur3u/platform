@@ -1,6 +1,6 @@
 import { listWorkspaceCalendarEvents } from '@tuturuuu/internal-api/calendar';
 import { InternalApiError } from '@tuturuuu/internal-api/client';
-import { getUserTaskDashboard } from '@tuturuuu/internal-api/tasks-dashboard';
+import { getUserTaskDashboard } from '@tuturuuu/internal-api/tasks';
 import { getCurrentUserProfile } from '@tuturuuu/internal-api/users';
 import { listWorkspaces } from '@tuturuuu/internal-api/workspaces';
 

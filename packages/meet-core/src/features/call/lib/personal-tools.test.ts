@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { InternalApiError } from '@tuturuuu/internal-api/client';
 import { expect, it, vi } from 'vitest';
 import {
@@ -24,6 +26,27 @@ function api() {
       .mockResolvedValue({ data: [{ id: 'event', title: 'Private event' }] }),
   } satisfies typeof personalToolsApi;
 }
+it('uses published internal API entry points, including without test aliases', () => {
+  const source = readFileSync(
+    path.join(import.meta.dirname, 'personal-tools.ts'),
+    'utf8'
+  );
+  const manifest = JSON.parse(
+    readFileSync(
+      path.resolve(
+        import.meta.dirname,
+        '../../../../../internal-api/package.json'
+      ),
+      'utf8'
+    )
+  );
+  const imports = [
+    ...source.matchAll(/from ['"]@tuturuuu\/internal-api\/([^'"]+)['"]/gu),
+  ];
+  expect(imports.length).toBeGreaterThan(0);
+  for (const [, subpath] of imports)
+    expect(manifest.exports).toHaveProperty(`./${subpath}`);
+});
 it('reads only the authenticated personal workspace, never the meeting workspace', async () => {
   const services = api();
   const result = await loadPersonalTools(
