@@ -1,5 +1,10 @@
 {
   "routes": {
+    "api:/api/v1/notifications/account-preferences:apps/web/src/app/api/v1/notifications/account-preferences/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class account-scoped GET/HEAD and PUT accept cookie or mobile Bearer sessions. Rust GET already preserves caller-token reads; PUT and HEAD parity remain pending."
+    },
     "api:/api/:wsId/crawlers/domains:apps/web/src/legacy-api-routes/[wsId]/crawlers/domains/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
