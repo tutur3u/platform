@@ -18,6 +18,7 @@ class ApiRateLimitDiagnostics {
       reason: read('x-proxy-block-reason', {
         'route-rate-limit',
         'ip-already-blocked',
+        'backend-auth-rate-limit',
       }),
       policy: read('x-ratelimit-policy', {
         'default',
