@@ -41,9 +41,31 @@ List<EventLayoutInfo> calculateEventLayout(List<CalendarEvent> events) {
   // Track end times per column for overlap detection.
   final columnEnds = <DateTime>[];
 
+  final result = <EventLayoutInfo>[];
+  void flushGroup() {
+    for (final assignment in assignments) {
+      result.add(
+        EventLayoutInfo(
+          event: assignment.$1,
+          column: assignment.$2,
+          totalColumns: columnEnds.length,
+        ),
+      );
+    }
+    assignments.clear();
+    columnEnds.clear();
+  }
+
   for (final event in sorted) {
     final start = event.startAt ?? DateTime(0);
     final end = event.endAt ?? start.add(const Duration(minutes: 30));
+
+    // Half-open intervals that start after every active end form a new
+    // connected component. Transitive overlaps retain the same columns.
+    if (columnEnds.isNotEmpty &&
+        columnEnds.every((end) => !start.isBefore(end))) {
+      flushGroup();
+    }
 
     // Find first column where this event doesn't overlap.
     var assigned = -1;
@@ -63,15 +85,6 @@ List<EventLayoutInfo> calculateEventLayout(List<CalendarEvent> events) {
     assignments.add((event, assigned));
   }
 
-  final totalColumns = columnEnds.length;
-
-  return assignments
-      .map(
-        (a) => EventLayoutInfo(
-          event: a.$1,
-          column: a.$2,
-          totalColumns: totalColumns,
-        ),
-      )
-      .toList();
+  flushGroup();
+  return result;
 }
