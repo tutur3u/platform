@@ -6,6 +6,10 @@ import 'package:image/image.dart' as img;
 
 enum ProfileMediaKind { avatar, banner }
 
+/// A source can exceed the upload limit before compression. Decoding still has
+/// an independent pixel ceiling and the encoded result keeps its smaller cap.
+const int profileMediaSourceByteLimit = 20 * 1024 * 1024;
+
 class OptimizedProfileMedia {
   const OptimizedProfileMedia(this.bytes, this.contentType, this.filename);
   final Uint8List bytes;
@@ -17,10 +21,7 @@ Future<OptimizedProfileMedia> optimizeProfileMediaFile(
   File file, {
   ProfileMediaKind kind = ProfileMediaKind.avatar,
 }) async {
-  final maximum = kind == ProfileMediaKind.avatar
-      ? 2 * 1024 * 1024
-      : 5 * 1024 * 1024;
-  if (await file.length() > maximum) {
+  if (await file.length() > profileMediaSourceByteLimit) {
     throw const FormatException('Source image exceeds the size limit');
   }
   return await optimizeProfileMediaBytes(await file.readAsBytes(), kind: kind);
@@ -45,7 +46,7 @@ OptimizedProfileMedia _optimize((Uint8List, ProfileMediaKind) input) {
 OptimizedProfileMedia _optimizeImage((Uint8List, ProfileMediaKind) input) {
   final (bytes, kind) = input;
   final avatar = kind == ProfileMediaKind.avatar;
-  if (bytes.isEmpty || bytes.length > (avatar ? 2 : 5) * 1024 * 1024) {
+  if (bytes.isEmpty || bytes.length > profileMediaSourceByteLimit) {
     throw const FormatException('Source image exceeds the size limit');
   }
   if (bytes.length < 12) throw const FormatException('Invalid profile image');

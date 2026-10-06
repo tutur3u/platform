@@ -175,7 +175,7 @@ class _MonthDayCell extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
           decoration: BoxDecoration(
-            color: isSelected
+            color: isToday
                 ? colorScheme.primary.withValues(alpha: 0.08)
                 : Colors.transparent,
             border: Border(
@@ -286,19 +286,14 @@ class _MonthDayNumber extends StatelessWidget {
       height: 32,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isSelected ? colorScheme.primary : Colors.transparent,
-        border: isToday && !isSelected
-            ? Border.all(color: colorScheme.primary.withValues(alpha: 0.6))
-            : null,
+        color: isToday ? colorScheme.primary : Colors.transparent,
       ),
       alignment: Alignment.center,
       child: Text(
         '$day',
         style: theme.textTheme.titleSmall?.copyWith(
-          color: isSelected
+          color: isToday
               ? colorScheme.onPrimary
-              : isToday
-              ? colorScheme.primary
               : isInFocusedMonth
               ? colorScheme.onSurface
               : colorScheme.onSurfaceVariant.withValues(alpha: 0.68),

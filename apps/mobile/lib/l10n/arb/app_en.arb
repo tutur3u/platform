@@ -4464,5 +4464,11 @@
   "calendarTimelineZoom": "Timeline zoom",
   "calendarZoomIn": "Zoom in",
   "calendarZoomOut": "Zoom out",
-  "calendarZoomReset": "Reset"
+  "calendarZoomReset": "Reset",
+  "settingsLinkBrowser": "Open links in",
+  "settingsLinkBrowserDescription": "Choose a browser for web links. Sign-in and app update links keep their required behavior.",
+  "settingsLinkBrowserBuiltIn": "Built-in browser",
+  "settingsLinkBrowserExternal": "Default browser",
+  "settingsLinkBrowserError": "Could not load or save browser preference. Tap to retry.",
+  "settingsLinkOpenError": "Could not open this link. Please try again."
 }

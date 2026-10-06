@@ -360,6 +360,7 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                                 animation: _allDayController,
                                 builder: (context, _) => _MultiDayAllDayRow(
                                   layout: allDayLayout,
+                                  scope: widget.zoomScope,
                                   timeGutterWidth: gutterWidth,
                                   dayColumnWidth: dayColumnWidth,
                                   viewportStart:

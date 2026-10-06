@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   getMailPreviewAppearance,
+  resolveMailPreviewAppearance,
   setMailPreviewAppearance,
 } from './mail-preview-appearance';
 
@@ -31,7 +32,7 @@ describe('mail appearance persistence', () => {
     expect(getMailPreviewAppearance()).toBe('dark');
     setMailPreviewAppearance('original');
   });
-  it('returns to dark when the saved original preference is cleared', () => {
+  it('returns to the app theme when the saved original preference is cleared', () => {
     const storage = new Map<string, string>();
     vi.stubGlobal('window', {
       localStorage: {
@@ -41,7 +42,7 @@ describe('mail appearance persistence', () => {
     });
     setMailPreviewAppearance('original');
     storage.clear();
-    expect(getMailPreviewAppearance()).toBe('dark');
+    expect(getMailPreviewAppearance()).toBe('auto');
   });
   it('retains the selected preference when writes fail but reads still work', () => {
     vi.stubGlobal('window', {
@@ -55,4 +56,11 @@ describe('mail appearance persistence', () => {
     setMailPreviewAppearance('original');
     expect(getMailPreviewAppearance()).toBe('original');
   });
+});
+
+it('follows the selected app theme unless the reader explicitly overrides it', () => {
+  expect(resolveMailPreviewAppearance('auto', 'dark')).toBe('dark');
+  expect(resolveMailPreviewAppearance('auto', 'light')).toBe('original');
+  expect(resolveMailPreviewAppearance('original', 'dark')).toBe('original');
+  expect(resolveMailPreviewAppearance('dark', 'light')).toBe('dark');
 });

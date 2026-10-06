@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/inventory/inventory_models.dart';
@@ -24,7 +25,6 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class StorefrontDetailPage extends StatefulWidget {
   const StorefrontDetailPage({
@@ -133,7 +133,7 @@ class _StorefrontDetailPageState extends State<StorefrontDetailPage> {
     final slug = _storefront?.slug;
     if (slug == null || slug.isEmpty) return;
     final uri = Uri.https('storefront.tuturuuu.com', '/$slug');
-    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    final opened = await launchMobileLink(uri);
     if (!opened && mounted) {
       showInventoryToast(
         context,

@@ -19788,6 +19788,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reset'**
   String get calendarZoomReset;
+
+  /// No description provided for @settingsLinkBrowser.
+  ///
+  /// In en, this message translates to:
+  /// **'Open links in'**
+  String get settingsLinkBrowser;
+
+  /// No description provided for @settingsLinkBrowserDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a browser for web links. Sign-in and app update links keep their required behavior.'**
+  String get settingsLinkBrowserDescription;
+
+  /// No description provided for @settingsLinkBrowserBuiltIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in browser'**
+  String get settingsLinkBrowserBuiltIn;
+
+  /// No description provided for @settingsLinkBrowserExternal.
+  ///
+  /// In en, this message translates to:
+  /// **'Default browser'**
+  String get settingsLinkBrowserExternal;
+
+  /// No description provided for @settingsLinkBrowserError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load or save browser preference. Tap to retry.'**
+  String get settingsLinkBrowserError;
+
+  /// No description provided for @settingsLinkOpenError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open this link. Please try again.'**
+  String get settingsLinkOpenError;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

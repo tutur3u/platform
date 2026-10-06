@@ -558,12 +558,13 @@ without resolved provider metadata retain their canonical event color. Rendering
 does not infer old color intent, fetch a provider palette, or rewrite events.
 
 Web timed, all-day, agenda, month/year, location and drag previews use the same
-read-only color policy. Past web events use text decoration rather than translucent
+read-only color policy. Past web events fade with an overlay over their opaque
 fills; optimistic/preview status uses outlines. Hovering an overlapped lower card
 hides upper cards instead of blending their fills, and restores them when the
 hover ends. Focus/drag/resize states retain opaque backgrounds. The existing
-`preservePastEventOpacity` adapter option suppresses this fade. External provider
-events, previews, pending writes and active drag/resize states keep full intensity.
+`preservePastEventOpacity` adapter option suppresses this fade. Past external
+provider events follow the same policy; previews, pending writes and active
+drag/resize states keep full intensity.
 Regression coverage for the policy and hover treatment lives in
 `past-event-treatment.test.ts` and `event-card.test.tsx`. Mobile source RGB survives date projections and local cache
 serialization. Regression coverage lives in `calendar-event-colors.test.ts`,
@@ -1050,3 +1051,27 @@ height remains part of both painting and overlap grouping at every zoom level.
 `calendar_timeline_zoom_test.dart`, `calendar_zoom_lifecycle_test.dart`, and
 `calendar_timeline_zoom_state_test.dart` cover gesture coexistence, focal anchors,
 bounds, accessible controls, and scoped preference restoration.
+
+## Day highlighting, all-day spans and past events
+
+Mobile multi-day headers, timeline columns, month and year date fills highlight only the current civil
+calendar day in the resolved timezone. The first visible or selected navigation
+day remains neutral when it is not today; selection still drives navigation.
+All-day materials retain occurrence identity through row and viewport changes,
+using workspace, event identifier and start/end boundaries so recurring instances
+with reused provider identifiers stay distinct.
+
+Web and mobile preserve the stored UTC calendar dates of untagged legacy
+UTC-midnight all-day imports. Their original provider dates/timezone are absent
+from the current API. Other all-day boundaries project into the resolved display
+timezone; the end remains exclusive, including 23/25-hour DST days and long spans.
+This rendering policy does not rewrite provider data or claim date-only provider
+write support.
+
+Past events fade consistently across native, Google and Microsoft providers on
+Web using an overlay over the opaque fill. All-day spans fade only after their
+displayed exclusive end, including merged spans, using the shared calendar clock. Explicit adapter preservation,
+interaction, previews and pending optimistic writes remain exceptions. Mobile
+keeps its existing past-event presentation. Regression coverage is
+`calendar_day_identity_test.dart`, `calendar_viewport_test.dart`,
+`all-day-event-layout.test.ts` and `past-event-treatment.test.ts`.

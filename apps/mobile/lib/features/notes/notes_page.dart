@@ -12,6 +12,7 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/notes/note_checklist_selection.dart';
@@ -39,7 +40,6 @@ import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:passkeys/authenticator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 part 'notes_page_links.dart';
 part 'notes_page_lock.dart';

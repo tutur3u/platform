@@ -1,6 +1,6 @@
 'use client';
 
-import { Moon, Sun } from '@tuturuuu/icons';
+import { Monitor, Moon, Sun } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
@@ -22,9 +22,15 @@ export function MailAppearanceControls({
       }
       aria-label={t('message_appearance')}
     >
-      {(['dark', 'original'] as const).map((value) => {
-        const Icon = value === 'dark' ? Moon : Sun;
-        const label = t(value === 'dark' ? 'dark_view' : 'original_view');
+      {(['auto', 'dark', 'original'] as const).map((value) => {
+        const Icon = value === 'auto' ? Monitor : value === 'dark' ? Moon : Sun;
+        const label = t(
+          value === 'auto'
+            ? 'app_theme_view'
+            : value === 'dark'
+              ? 'dark_view'
+              : 'original_view'
+        );
         return (
           <Tooltip key={value}>
             <TooltipTrigger asChild>

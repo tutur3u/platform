@@ -4467,5 +4467,11 @@
   "calendarTimelineZoom": "Thu phóng dòng thời gian",
   "calendarZoomIn": "Phóng to",
   "calendarZoomOut": "Thu nhỏ",
-  "calendarZoomReset": "Đặt lại"
+  "calendarZoomReset": "Đặt lại",
+  "settingsLinkBrowser": "Mở liên kết bằng",
+  "settingsLinkBrowserDescription": "Chọn trình duyệt cho liên kết web. Liên kết đăng nhập và cập nhật ứng dụng giữ cách xử lý cần thiết.",
+  "settingsLinkBrowserBuiltIn": "Trình duyệt tích hợp",
+  "settingsLinkBrowserExternal": "Trình duyệt mặc định",
+  "settingsLinkBrowserError": "Không thể tải hoặc lưu tùy chọn trình duyệt. Nhấn để thử lại.",
+  "settingsLinkOpenError": "Không thể mở liên kết này. Vui lòng thử lại."
 }

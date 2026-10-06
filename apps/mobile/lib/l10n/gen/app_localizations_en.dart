@@ -10451,4 +10451,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarZoomReset => 'Reset';
+
+  @override
+  String get settingsLinkBrowser => 'Open links in';
+
+  @override
+  String get settingsLinkBrowserDescription => 'Choose a browser for web links. Sign-in and app update links keep their required behavior.';
+
+  @override
+  String get settingsLinkBrowserBuiltIn => 'Built-in browser';
+
+  @override
+  String get settingsLinkBrowserExternal => 'Default browser';
+
+  @override
+  String get settingsLinkBrowserError => 'Could not load or save browser preference. Tap to retry.';
+
+  @override
+  String get settingsLinkOpenError => 'Could not open this link. Please try again.';
 }
