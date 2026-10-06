@@ -5,12 +5,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/download_network_consent.dart';
+import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model_store.dart';
 import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dart';
 import 'package:mobile/features/assistant/local/widgets/assistant_local_model_tile.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class AssistantLocalModelsSection extends StatefulWidget {
   const AssistantLocalModelsSection({
@@ -91,7 +91,7 @@ class _AssistantLocalModelsSectionState
   Future<void> _open(Uri uri) async {
     if (!widget.isScopeCurrent()) return;
     try {
-      if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
+      if (await launchMobileLink(uri)) return;
     } on Object {
       /* Report a generic message without native file/credential details. */
     }

@@ -47,3 +47,16 @@ directly, matching general Settings: Calendar edits the first day of the week,
 and Finance controls amount visibility. Legacy Preferences deep links still
 redirect to general Settings. `settings_product_editor_checks.dart` covers
 opening each product editor and persisting a choice on the actual Settings host.
+
+
+### Mobile link browser choice
+
+General Settings offers a device-persisted built-in browser (default) or external
+default browser choice for ordinary web links, including assistant Markdown and
+model publisher/license links, Mail, Meet chat, Notes and storefront previews.
+Authentication, app-update and signed-download flows keep their dedicated
+launchers. Mail, phone and SMS links use the system handler. Visible link actions report a localized generic failure without exposing URLs
+or platform details, or silently switching browser modes. Initial app-link
+opt-outs return a safe failed result when no UI feedback surface is available.
+Late settings reads cannot replace a newer read or a saved selection. Helper and settings widget
+regressions cover persistence, URL admission, mode selection and retry errors.
