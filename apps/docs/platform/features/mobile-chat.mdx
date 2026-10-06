@@ -30,3 +30,20 @@ are still required for delivery.
 Regression coverage: `chat_conversation_layout_test.dart`,
 `chat_pagination_scope_test.dart`, and `chat_thread_layout_test.dart` in
 `apps/mobile/test/features/chat`.
+
+
+### Assistant settings route chrome
+
+Mira quick settings and the Assistant entry in general Settings open the same
+account- and workspace-scoped editor. Because this imperative route covers the
+app shell, it owns a branded Assistant Settings header, top safe area, and the
+shared floating Back action. Content reserves space above that action. Model
+selection and download state remain in the existing scoped model controller.
+The actual header and saved preference are covered by
+`assistant_settings_hub_test.dart`.
+
+Calendar and Finance product entries open their existing preference editors
+directly, matching general Settings: Calendar edits the first day of the week,
+and Finance controls amount visibility. Legacy Preferences deep links still
+redirect to general Settings. `settings_product_editor_checks.dart` covers
+opening each product editor and persisting a choice on the actual Settings host.
