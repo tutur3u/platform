@@ -14,6 +14,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/router/settings_routes.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
 import 'package:mobile/core/utils/supported_timezones.dart';
+import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
@@ -55,12 +56,14 @@ part 'settings_compact_harness.dart';
 part 'settings_hidden_recovery_checks.dart';
 part 'settings_detail_shell_checks.dart';
 part 'settings_product_editor_checks.dart';
+part 'settings_design_checks.dart';
 
 void main() {
   tearDown(() => GoRouter.optionURLReflectsImperativeAPIs = false);
   registerHiddenRecoveryChecks();
   registerSettingsDetailShellChecks();
   registerProductEditorChecks();
+  registerSettingsDesignChecks();
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await supa.Supabase.initialize(
