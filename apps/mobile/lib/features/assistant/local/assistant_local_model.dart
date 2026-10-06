@@ -10,6 +10,7 @@ class AssistantLocalModel {
     required this.bytes,
     required this.licenseUrl,
     this.requiresLicensedImport = false,
+    this.contextTokens = 2048,
   });
 
   final String id;
@@ -21,6 +22,7 @@ class AssistantLocalModel {
   final int bytes;
   final String licenseUrl;
   final bool requiresLicensedImport;
+  final int contextTokens;
 
   Uri get downloadUri =>
       Uri.https('huggingface.co', '/$repository/resolve/$revision/$filename');
@@ -41,6 +43,8 @@ const assistantLocalModels = [
   AssistantLocalModel(
     id: 'qwen3-600m',
     name: 'Qwen 3 0.6B',
+    // The immutable publisher README declares a 4096-token context.
+    contextTokens: 4096,
     repository: 'litert-community/Qwen3-0.6B',
     revision: 'a3c5d805ae362dff7f580bc25f2dfb9a5a7eaa76',
     filename: 'Qwen3-0.6B.litertlm',

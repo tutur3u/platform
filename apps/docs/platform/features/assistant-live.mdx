@@ -77,7 +77,7 @@ unavailable. The app's existing OS floors are preserved. Product admission also
 requires at least 4 GiB installed RAM; unavailable hardware information fails
 closed. This conservative threshold is not a guarantee of available memory or
 a working accelerator: successful model loading is
-required before readiness. Text generation uses one session, a 2048-token
+required before readiness. Text generation uses one session, a catalog-specific token
 context, a separate 256-output-token limit, and bounded input. Actor/session
 epoch changes suppress late output and unload tears down the session before
 freeing its model. No local failure silently switches a private prompt to a
@@ -663,3 +663,22 @@ Regression coverage is in `assistant_live_persistence_test.dart`,
 `assistant_live_history_confirmation_cases.dart`, `assistant_live_socket_test.dart`
 and the Live dock/calling widget tests. Device audio quality, suspended-process
 survival and published mobile builds require separate delivery evidence.
+
+
+### Pinned local runtime configuration
+
+On-device preparation resolves only the app-owned `<catalog-id>.litertlm`
+filename after store integrity verification. The pinned Qwen 3 0.6B artifact
+uses its publisher-declared 4096-token context; Gemma and SmolLM2 retain the
+existing 2048-token configuration. CPU, general-model interpretation, one
+concurrent session and 256 output tokens remain unchanged. The Qwen context
+is documented by its [immutable publisher README](https://huggingface.co/litert-community/Qwen3-0.6B/blob/a3c5d805ae362dff7f580bc25f2dfb9a5a7eaa76/README.md).
+
+`assistant_litert_configuration_test.dart` checks actual adapter configuration,
+unknown filename rejection, real import/verification through a fresh store,
+saved selection reload and late native-result disposal after session ABA.
+`assistant_local_reselection_test.dart` checks that held preparation is disposed
+before the newest local choice activates. Synthetic bytes and native factories
+prove persistence and configuration wiring only; they do not prove device
+format compatibility or successful inference. Failed local prompts remain local
+with visible recovery and never silently fall back to a remote provider.
