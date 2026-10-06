@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobile/data/models/profile_media_result.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -48,9 +49,11 @@ class _Repository extends ProfileRepository {
   @override
   Future<void> saveCachedProfile(UserProfile profile) async {}
   @override
-  Future<({bool success, String? error})> saveAvatar(File file) async {
+  Future<ProfileMediaResult> saveAvatarResult(File file) async {
     writes.add(currentActor());
-    return (success: succeeds, error: succeeds ? null : 'Synthetic failure');
+    return succeeds
+        ? const ProfileMediaResult.success()
+        : ProfileMediaResult.failure(Exception('Synthetic failure'));
   }
 }
 

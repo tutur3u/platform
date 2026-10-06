@@ -12,6 +12,7 @@ import 'package:mobile/core/cache/profile_avatar_delivery.dart';
 import 'package:mobile/core/cache/profile_banner_write.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/media/profile_media_optimizer.dart';
+import 'package:mobile/data/models/profile_media_result.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
@@ -125,13 +126,20 @@ class ProfileRepository {
     }
   }
 
-  Future<({bool success, String? error})> saveAvatar(File file) =>
+  Future<({bool success, String? error})> saveAvatar(File file) async =>
+      (await saveAvatarResult(file)).legacy;
+  Future<({bool success, String? error})> saveBanner(File file) async =>
+      (await saveBannerResult(file)).legacy;
+  Future<({bool success, String? error})> removeBanner() async =>
+      (await removeBannerResult()).legacy;
+
+  Future<ProfileMediaResult> saveAvatarResult(File file) =>
       _saveMedia(file, banner: false);
 
-  Future<({bool success, String? error})> saveBanner(File file) =>
+  Future<ProfileMediaResult> saveBannerResult(File file) =>
       _saveMedia(file, banner: true);
 
-  Future<({bool success, String? error})> removeBanner() async {
+  Future<ProfileMediaResult> removeBannerResult() async {
     try {
       final actor = getCurrentUserIdSync();
       if (actor == null) {
@@ -152,18 +160,18 @@ class ProfileRepository {
           await _apiClient.postJson(ProfileEndpoints.banner, payload);
         }),
       );
-      return (success: true, error: null);
+      return const ProfileMediaResult.success();
     } on ApiException catch (error) {
-      return (success: false, error: error.message);
-    } on Exception {
-      return (success: false, error: 'Profile update failed');
+      return ProfileMediaResult.failure(error);
+    } on Exception catch (error) {
+      return ProfileMediaResult.failure(error);
     } on Object catch (error) {
       if (error is! StateError) rethrow;
-      return (success: false, error: 'Profile update failed');
+      return ProfileMediaResult.failure(error);
     }
   }
 
-  Future<({bool success, String? error})> _saveMedia(
+  Future<ProfileMediaResult> _saveMedia(
     File file, {
     required bool banner,
   }) async {
@@ -220,14 +228,14 @@ class ProfileRepository {
           send: send,
         );
       }
-      return (success: true, error: null);
+      return const ProfileMediaResult.success();
     } on ApiException catch (error) {
-      return (success: false, error: error.message);
+      return ProfileMediaResult.failure(error);
     } on Exception catch (error) {
-      return (success: false, error: error.toString());
+      return ProfileMediaResult.failure(error);
     } on Object catch (error) {
       if (error is! StateError) rethrow;
-      return (success: false, error: 'Profile update failed');
+      return ProfileMediaResult.failure(error);
     }
   }
 

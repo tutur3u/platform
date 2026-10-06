@@ -10389,4 +10389,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonCopyDiagnostics => 'Copy debug information';
+
+  @override
+  String get profileMediaInvalidImage => 'Choose a valid JPEG, PNG, WebP or GIF within the image limits.';
+
+  @override
+  String get profileMediaImageTooLarge => 'The image is too large. Choose a smaller image.';
+
+  @override
+  String get profileMediaNotAuthorized => 'This upload is not authorized. Check your account and permissions before trying again.';
+
+  @override
+  String get profileMediaConflict => 'Your profile changed during the upload. Select the image again.';
+
+  @override
+  String get profileMediaRateLimit => 'The upload limit was reached. Wait before selecting the image again.';
+
+  @override
+  String profileMediaRateLimitWait(int seconds) {
+    return 'The upload limit was reached. Wait $seconds seconds before trying again.';
+  }
+
+  @override
+  String get profileMediaUnavailable => 'Uploading is temporarily unavailable. Try a fresh selection later.';
+
+  @override
+  String get profileMediaInvalidReceipt => 'The upload could not be confirmed. Select the image again; it has not been accepted as complete.';
+
+  @override
+  String get profileMediaFileUnavailable => 'The selected image is no longer available. Select another image.';
+
+  @override
+  String get profileMediaRecoveryTitle => 'Profile image could not be updated';
+
+  @override
+  String get profileMediaSelectAgain => 'Select image again';
+
+  @override
+  String get profileMediaDismiss => 'Dismiss';
 }

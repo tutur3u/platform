@@ -19668,6 +19668,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copy debug information'**
   String get commonCopyDiagnostics;
+
+  /// No description provided for @profileMediaInvalidImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a valid JPEG, PNG, WebP or GIF within the image limits.'**
+  String get profileMediaInvalidImage;
+
+  /// No description provided for @profileMediaImageTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'The image is too large. Choose a smaller image.'**
+  String get profileMediaImageTooLarge;
+
+  /// No description provided for @profileMediaNotAuthorized.
+  ///
+  /// In en, this message translates to:
+  /// **'This upload is not authorized. Check your account and permissions before trying again.'**
+  String get profileMediaNotAuthorized;
+
+  /// No description provided for @profileMediaConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile changed during the upload. Select the image again.'**
+  String get profileMediaConflict;
+
+  /// No description provided for @profileMediaRateLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'The upload limit was reached. Wait before selecting the image again.'**
+  String get profileMediaRateLimit;
+
+  /// No description provided for @profileMediaRateLimitWait.
+  ///
+  /// In en, this message translates to:
+  /// **'The upload limit was reached. Wait {seconds} seconds before trying again.'**
+  String profileMediaRateLimitWait(int seconds);
+
+  /// No description provided for @profileMediaUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading is temporarily unavailable. Try a fresh selection later.'**
+  String get profileMediaUnavailable;
+
+  /// No description provided for @profileMediaInvalidReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'The upload could not be confirmed. Select the image again; it has not been accepted as complete.'**
+  String get profileMediaInvalidReceipt;
+
+  /// No description provided for @profileMediaFileUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected image is no longer available. Select another image.'**
+  String get profileMediaFileUnavailable;
+
+  /// No description provided for @profileMediaRecoveryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile image could not be updated'**
+  String get profileMediaRecoveryTitle;
+
+  /// No description provided for @profileMediaSelectAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Select image again'**
+  String get profileMediaSelectAgain;
+
+  /// No description provided for @profileMediaDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get profileMediaDismiss;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
