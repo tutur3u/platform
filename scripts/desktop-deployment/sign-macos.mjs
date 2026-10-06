@@ -3,9 +3,10 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { lstat, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { codesignDiagnostic } from './codesign-diagnostic.mjs';
 
 // Commands handling private inputs never inherit stdout/stderr. The caller gets
-// only a fixed error; the keychain, P12 and API key always leave with the runner.
+// only fixed stage/classification errors; the keychain, P12 and API key always leave with the runner.
 export async function withMacosSigning(
   callback,
   { execute = execFileSync, inspect = spawnSync } = {}
@@ -35,7 +36,8 @@ export async function withMacosSigning(
   const password = randomBytes(32).toString('hex');
   const identity = process.env.MACOS_SIGNING_IDENTITY;
   let stage = 'private-input-preparation';
-  const exec = (command, args) => {
+  let failureDiagnostic = '';
+  const exec = (command, args, artifactKind = 'unknown') => {
     stage =
       command === 'security'
         ? ({
@@ -57,10 +59,16 @@ export async function withMacosSigning(
             : command === 'spctl'
               ? 'gatekeeper-assessment'
               : 'signing-command';
-    return execute(command, args, {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    try {
+      return execute(command, args, {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+    } catch (error) {
+      if (command === 'codesign')
+        failureDiagnostic = `; ${codesignDiagnostic(error, artifactKind)}`;
+      throw error;
+    }
   };
   try {
     await writeFile(
@@ -95,19 +103,23 @@ export async function withMacosSigning(
       password,
       keychain,
     ]);
-    const sign = (path, entitlements) =>
-      exec('codesign', [
-        '--force',
-        '--options',
-        'runtime',
-        '--timestamp',
-        '--sign',
-        identity,
-        '--keychain',
-        keychain,
-        ...(entitlements ? ['--entitlements', entitlements] : []),
-        path,
-      ]);
+    const sign = (path, artifactKind, entitlements) =>
+      exec(
+        'codesign',
+        [
+          '--force',
+          '--options',
+          'runtime',
+          '--timestamp',
+          '--sign',
+          identity,
+          '--keychain',
+          keychain,
+          ...(entitlements ? ['--entitlements', entitlements] : []),
+          path,
+        ],
+        artifactKind
+      );
     await callback({
       async signApp(app) {
         // Sign real Mach-O files first, then nested bundles from the inside out.
@@ -118,7 +130,14 @@ export async function withMacosSigning(
             for (const name of await readdir(path))
               await visit(join(path, name));
             if (/\.(?:framework|app|xpc)$/.test(path) && path !== app)
-              sign(path);
+              sign(
+                path,
+                path.endsWith('.framework')
+                  ? 'framework'
+                  : path.endsWith('.xpc')
+                    ? 'xpc-service'
+                    : 'nested-application'
+              );
           } else if (stat.isFile()) {
             const bytes = await readFile(path);
             if (
@@ -128,12 +147,20 @@ export async function withMacosSigning(
                 0xbebafeca,
               ].includes(bytes.readUInt32BE(0))
             )
-              sign(path);
+              sign(path, 'mach-o');
           }
         }
         await visit(app);
-        sign(app, 'apps/mobile/macos/Runner/Release.entitlements');
-        exec('codesign', ['--verify', '--deep', '--strict', app]);
+        sign(
+          app,
+          'application',
+          'apps/mobile/macos/Runner/Release.entitlements'
+        );
+        exec(
+          'codesign',
+          ['--verify', '--deep', '--strict', app],
+          'application'
+        );
         stage = 'signing-team-verification';
         const details = inspect('codesign', ['-d', '--verbose=4', app], {
           encoding: 'utf8',
@@ -147,7 +174,7 @@ export async function withMacosSigning(
           throw new Error('Unexpected signing team');
       },
       async notarize(dmg) {
-        sign(dmg);
+        sign(dmg, 'disk-image');
         const result = JSON.parse(
           exec('xcrun', [
             'notarytool',
@@ -182,7 +209,7 @@ export async function withMacosSigning(
     });
   } catch {
     throw new Error(
-      `macOS signing failed at ${stage}; no public release was created`
+      `macOS signing failed at ${stage}${failureDiagnostic}; no public release was created`
     );
   } finally {
     try {

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -101,3 +102,60 @@ test('notary rejection retains strict signing and never staples', async () =>
       )
     );
   }));
+
+for (const verification of [false, true]) {
+  test(`real codesign child failure stays private during ${verification ? 'verification' : 'signing'}`, async () =>
+    fixture(async (directory) => {
+      const app = join(directory, 'Fixture.app');
+      await mkdir(app);
+      const commands = [];
+      await assert.rejects(
+        withMacosSigning((signer) => signer.signApp(app), {
+          execute(command, args, options) {
+            commands.push([command, ...args]);
+            if (
+              command === 'codesign' &&
+              args.includes('--verify') === verification
+            ) {
+              return execFileSync(
+                process.execPath,
+                [
+                  '-e',
+                  'process.stdout.write("private-output"); process.stderr.write("errSecInternalComponent private-password /private/identity fixture-private-key"); process.exit(7);',
+                ],
+                options
+              );
+            }
+            return '';
+          },
+          inspect() {
+            assert.fail('failed codesign must not reach team inspection');
+          },
+        }),
+        (error) => {
+          assert.equal(
+            error.message,
+            `macOS signing failed at ${verification ? 'signature-verification' : 'artifact-signing'}; codesign category=keychain-access artifact=application exit=7; no public release was created`
+          );
+          assert.equal(error.cause, undefined);
+          assert.doesNotMatch(
+            error.stack,
+            /private-output|private-password|\/private\/identity|fixture-private-key/
+          );
+          return true;
+        }
+      );
+      assert.ok(commands.some(([, action]) => action === 'delete-keychain'));
+      assert.ok(
+        !commands.some(
+          ([command]) => command === 'xcrun' || command === 'spctl'
+        )
+      );
+      await assert.rejects(readFile(join(directory, 'desktop-signing.p12')), {
+        code: 'ENOENT',
+      });
+      await assert.rejects(readFile(join(directory, 'desktop-notary.p8')), {
+        code: 'ENOENT',
+      });
+    }));
+}
