@@ -282,6 +282,24 @@ Do not remove Flutter license notices or required plugin functionality merely to
 hide an informational test. [Microsoft documents optional Desktop Bridge tests](https://learn.microsoft.com/en-us/windows/uwp/debug-test-perf/windows-desktop-bridge-app-tests)
 as informational, but a required DPI warning still needs investigation.
 
+The Windows runner manifest declares both the legacy `dpiAware` value `true/pm`
+and modern `dpiAwareness` value `PerMonitorV2`. [Microsoft documents both
+manifest declarations](https://learn.microsoft.com/en-us/windows/win32/sbscs/application-manifests):
+Windows 10 version 1607 and later uses the modern declaration in preference to
+the legacy one. This preserves PerMonitorV2 while exposing the compatible legacy
+fallback to older consumers.
+
+A diagnostic report can still return overall `WARNING`: observed optional tests
+flagged Flutter's compressed `NOTICES.Z` and process-launch references in bundled
+binaries, while the required DPI test could not process the executable despite
+its extracted PerMonitorV2 manifest and positive installed-process DPI receipt.
+These are different findings. The dual declaration is a compatibility change,
+not proof the certification warning is resolved. Require a fresh exact-source
+Windows build, extracted manifest/runtime DPI checks, and overall WACK `PASS`
+before submission. Preserve licenses and legitimate functionality while
+investigating; do not convert warnings into passing results.
+
+
 ### Infrastructure desktop signing contract
 
 The separate Infrastructure desktop contract admits only the direct
