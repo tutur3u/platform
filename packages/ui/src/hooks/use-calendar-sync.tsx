@@ -747,20 +747,16 @@ export const CalendarSyncProvider = ({
   const eventsWithoutAllDays = useMemo(() => {
     // Process events immediately when they change
     return events.filter((event) => {
-      // Note: We can't access settings here easily, so we use default timezone detection
-      // This is acceptable since this is used for layout purposes mainly
-      return !isAllDayEvent(event);
+      return !isAllDayEvent(event, timezone);
     });
-  }, [events]);
+  }, [events, timezone]);
 
   const allDayEvents = useMemo(() => {
     // Process events immediately when they change
     return events.filter((event) => {
-      // Note: We can't access settings here easily, so we use default timezone detection
-      // This is acceptable since this is used for layout purposes mainly
-      return isAllDayEvent(event);
+      return isAllDayEvent(event, timezone);
     });
-  }, [events]);
+  }, [events, timezone]);
 
   const syncToGoogle = useCallback(async () => {
     toast.info('Provider events sync when you create or edit them.');

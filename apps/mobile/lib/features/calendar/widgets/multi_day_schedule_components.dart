@@ -13,11 +13,6 @@ class _MultiDayHeaderCell extends StatelessWidget {
   final bool isToday;
   final VoidCallback onTap;
 
-  bool get _isSelected =>
-      date.year == selectedDate.year &&
-      date.month == selectedDate.month &&
-      date.day == selectedDate.day;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -37,17 +32,13 @@ class _MultiDayHeaderCell extends StatelessWidget {
             curve: Curves.easeOutCubic,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: _isSelected
+              color: isToday
                   ? colorScheme.primary
-                  : isToday
-                  ? colorScheme.primary.withValues(alpha: 0.10)
                   : colorScheme.surfaceContainerLowest,
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: _isSelected
+                color: isToday
                     ? colorScheme.primary
-                    : isToday
-                    ? colorScheme.primary.withValues(alpha: 0.45)
                     : colorScheme.outlineVariant.withValues(alpha: 0.55),
               ),
             ),
@@ -59,10 +50,8 @@ class _MultiDayHeaderCell extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: _isSelected
+                    color: isToday
                         ? colorScheme.onPrimary.withValues(alpha: 0.82)
-                        : isToday
-                        ? colorScheme.primary
                         : colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.5,
@@ -76,7 +65,7 @@ class _MultiDayHeaderCell extends StatelessWidget {
                     Text(
                       '${date.day}',
                       style: theme.textTheme.titleLarge?.copyWith(
-                        color: _isSelected
+                        color: isToday
                             ? colorScheme.onPrimary
                             : colorScheme.onSurface,
                         fontWeight: FontWeight.w800,
@@ -88,7 +77,7 @@ class _MultiDayHeaderCell extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.labelSmall?.copyWith(
-                        color: _isSelected
+                        color: isToday
                             ? colorScheme.onPrimary.withValues(alpha: 0.72)
                             : colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
@@ -123,11 +112,6 @@ class _MultiDayTimelineColumn extends StatelessWidget {
   final bool isToday;
   final ValueChanged<CalendarEvent> onEventTap;
   final ValueChanged<DateTime> onCreateAtTime;
-
-  bool get _isSelected =>
-      date.year == selectedDate.year &&
-      date.month == selectedDate.month &&
-      date.day == selectedDate.day;
 
   @override
   Widget build(BuildContext context) {
@@ -164,7 +148,7 @@ class _MultiDayTimelineColumn extends StatelessWidget {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: _isSelected
+          color: isToday
               ? colorScheme.primary.withValues(alpha: 0.035)
               : Colors.transparent,
           border: Border(
@@ -353,6 +337,7 @@ class _MultiDayEventCardSurface extends StatelessWidget {
 class _MultiDayAllDayRow extends StatelessWidget {
   const _MultiDayAllDayRow({
     required this.layout,
+    required this.scope,
     required this.timeGutterWidth,
     required this.dayColumnWidth,
     required this.maxVisibleRows,
@@ -362,6 +347,7 @@ class _MultiDayAllDayRow extends StatelessWidget {
   });
 
   final AllDayLayoutResult layout;
+  final Object? scope;
   final double timeGutterWidth;
   final double dayColumnWidth;
   final int? maxVisibleRows;
@@ -408,6 +394,13 @@ class _MultiDayAllDayRow extends StatelessWidget {
                     viewportStart + viewportWidth,
           ))
             Positioned(
+              key: ValueKey((
+                scope,
+                span.event.wsId,
+                span.event.id,
+                span.event.startAt,
+                span.event.endAt,
+              )),
               left: timeGutterWidth + span.startIndex * dayColumnWidth + 4,
               top: span.row * (rowHeight + _rowGap) + 6,
               width: span.span * dayColumnWidth - 8,
