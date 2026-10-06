@@ -27,7 +27,7 @@ export async function withMacosSigning(
       'macOS beta publication requires Developer ID signing and notarization credentials'
     );
   }
-  const temp = process.env.RUNNER_TEMP;
+  const temp = process.env.DESKTOP_SIGNING_TEMP ?? process.env.RUNNER_TEMP;
   if (!temp) throw new Error('CI runner required');
   const keychain = join(temp, 'desktop-signing.keychain-db');
   const certificate = join(temp, 'desktop-signing.p12');

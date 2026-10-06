@@ -6,6 +6,7 @@ on:
     paths:
       - "apps/mobile/**"
       - "scripts/desktop-deployment/**"
+      - "packages/utils/src/desktop-signing-profiles.ts"
       - ".github/workflows/desktop-beta.yaml"
   workflow_dispatch:
 
@@ -56,6 +57,10 @@ jobs:
     needs: [check-ci, release-status]
     if: needs.release-status.outputs.enabled == 'true' && github.ref == 'refs/heads/production'
     environment: desktop-beta
+    permissions:
+      contents: read
+      deployments: read
+      id-token: write
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -69,7 +74,7 @@ jobs:
       - name: Require desktop signing configuration
         shell: bash
         env:
-          SIGNING_READY: ${{ matrix.platform == 'linux' || (matrix.platform == 'windows' && secrets.WINDOWS_SIGNING_CERTIFICATE_PFX_B64 != '' && secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD != '') || (matrix.platform == 'macos' && secrets.MACOS_CERTIFICATE_P12_B64 != '' && secrets.MACOS_CERTIFICATE_PASSWORD != '' && vars.MACOS_SIGNING_IDENTITY != '' && vars.APPLE_TEAM_ID != '' && secrets.APP_STORE_CONNECT_API_KEY_ID != '' && secrets.APP_STORE_CONNECT_ISSUER_ID != '' && secrets.APP_STORE_CONNECT_PRIVATE_KEY_P8_B64 != '') }}
+          SIGNING_READY: ${{ matrix.platform == 'linux' || (vars.DESKTOP_SIGNING_SOURCE == 'vault' && ((matrix.platform == 'windows' && secrets.DESKTOP_WINDOWS_VAULT_CI_TOKEN != '') || (matrix.platform == 'macos' && secrets.DESKTOP_MACOS_VAULT_CI_TOKEN != ''))) || (vars.DESKTOP_SIGNING_SOURCE != 'vault' && ((matrix.platform == 'windows' && secrets.WINDOWS_SIGNING_CERTIFICATE_PFX_B64 != '' && secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD != '') || (matrix.platform == 'macos' && secrets.MACOS_CERTIFICATE_P12_B64 != '' && secrets.MACOS_CERTIFICATE_PASSWORD != '' && vars.MACOS_SIGNING_IDENTITY != '' && vars.APPLE_TEAM_ID != '' && secrets.APP_STORE_CONNECT_API_KEY_ID != '' && secrets.APP_STORE_CONNECT_ISSUER_ID != '' && secrets.APP_STORE_CONNECT_PRIVATE_KEY_P8_B64 != ''))) }}
         run: |
           if [ "$SIGNING_READY" != true ]; then
             echo "::error::Desktop signing credentials are not configured. Public beta publication is blocked."
@@ -123,15 +128,29 @@ jobs:
           sudo apt-get install -y "$RUNNER_TEMP/desktop-artifacts/Tuturuuu-linux-x64.deb"
           sudo update-desktop-database
           xvfb-run -a dbus-run-session -- node scripts/desktop-deployment/smoke-linux.mjs
+      - name: Sign Windows beta with Infrastructure vault
+        if: matrix.platform == 'windows' && vars.DESKTOP_SIGNING_SOURCE == 'vault'
+        env:
+          DESKTOP_PLATFORM: windows
+          DESKTOP_SIGNING_SOURCE: vault
+          DESKTOP_VAULT_CI_TOKEN: ${{ secrets.DESKTOP_WINDOWS_VAULT_CI_TOKEN }}
+        run: node scripts/desktop-deployment/package-vault-ci.mjs
+      - name: Sign macOS beta with Infrastructure vault
+        if: matrix.platform == 'macos' && vars.DESKTOP_SIGNING_SOURCE == 'vault'
+        env:
+          DESKTOP_PLATFORM: macos
+          DESKTOP_SIGNING_SOURCE: vault
+          DESKTOP_VAULT_CI_TOKEN: ${{ secrets.DESKTOP_MACOS_VAULT_CI_TOKEN }}
+        run: node scripts/desktop-deployment/package-vault-ci.mjs
       - name: Sign and package Windows beta
-        if: matrix.platform == 'windows'
+        if: matrix.platform == 'windows' && vars.DESKTOP_SIGNING_SOURCE != 'vault'
         env:
           DESKTOP_PLATFORM: windows
           WINDOWS_SIGNING_CERTIFICATE_PFX_B64: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_PFX_B64 }}
           WINDOWS_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
         run: node scripts/desktop-deployment/package-ci.mjs
       - name: Sign and notarize macOS beta
-        if: matrix.platform == 'macos'
+        if: matrix.platform == 'macos' && vars.DESKTOP_SIGNING_SOURCE != 'vault'
         env:
           DESKTOP_PLATFORM: macos
           MACOS_CERTIFICATE_P12_B64: ${{ secrets.MACOS_CERTIFICATE_P12_B64 }}

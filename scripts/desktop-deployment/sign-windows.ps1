@@ -3,7 +3,8 @@ $ErrorActionPreference = 'Stop'
 if (-not $env:WINDOWS_SIGNING_CERTIFICATE_PFX_B64 -or -not $env:WINDOWS_SIGNING_CERTIFICATE_PASSWORD) {
   throw 'Windows publication requires a trusted code-signing certificate in the desktop-beta environment.'
 }
-$certificatePath = Join-Path $env:RUNNER_TEMP 'desktop-signing.pfx'
+$signingTemp = if ($env:DESKTOP_SIGNING_TEMP) { $env:DESKTOP_SIGNING_TEMP } else { $env:RUNNER_TEMP }
+$certificatePath = Join-Path $signingTemp 'desktop-signing.pfx'
 $certificate = $null
 $password = [System.Security.SecureString]::new()
 try {
