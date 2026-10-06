@@ -14,16 +14,16 @@ import { useTranslations } from 'next-intl';
 export function AssistantWorkspacePicker({
   value,
   onChange,
-  selfUserId,
+  accountId,
 }: {
   value: string;
   onChange: (value: string) => void;
-  selfUserId: string | null;
+  accountId: string | null;
 }) {
   const t = useTranslations('meet.call');
   const { workspaces, allowed } = useAssistantWorkspaceSelection(
     value,
-    selfUserId
+    accountId
   );
   return (
     <div className="flex items-center gap-2 border-b px-3 py-2">
@@ -59,16 +59,16 @@ export function AssistantWorkspacePicker({
 
 export function useAssistantWorkspaceSelection(
   value: string,
-  selfUserId: string | null,
+  accountId: string | null,
   enabled = true
 ) {
   const actor = useWorkspaceActor();
   const workspaces = useVisibleWorkspaces(
-    enabled && Boolean(selfUserId) && actor?.actorId === selfUserId
+    enabled && Boolean(accountId) && actor?.actorId === accountId
   );
   const allowed =
     enabled &&
-    actor?.actorId === selfUserId &&
+    actor?.actorId === accountId &&
     !workspaces.isError &&
     Boolean(
       workspaces.data?.some((workspace) =>

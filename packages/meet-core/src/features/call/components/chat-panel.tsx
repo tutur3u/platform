@@ -99,6 +99,7 @@ export function ChatPanel({
   chat,
   onSendChat,
   selfUserId,
+  accountId,
   meetingId,
 }: {
   mentionRequest?: number;
@@ -106,6 +107,7 @@ export function ChatPanel({
   chat: CallChatMessage[];
   onSendChat: (body: string, attachments?: string[]) => Promise<{ id: string }>;
   selfUserId: string | null;
+  accountId: string;
   meetingId: string;
 }) {
   const t = useTranslations('meet.call');
@@ -124,7 +126,7 @@ export function ChatPanel({
     [thinking, setThinking] = useState(false);
   const assistantScope = useAssistantWorkspaceSelection(
     assistantWorkspace,
-    selfUserId,
+    accountId,
     hasMeetAssistantMention(draft) || thinking
   );
   const currentAssistantScope = useRef(assistantScope);
@@ -228,7 +230,7 @@ export function ChatPanel({
         <AssistantWorkspacePicker
           value={assistantWorkspace}
           onChange={setAssistantWorkspace}
-          selfUserId={selfUserId}
+          accountId={accountId}
         />
       )}
       <ScrollArea className="[&_[data-radix-scroll-area-viewport]>div]:!block [&_[data-radix-scroll-area-viewport]>div]:!min-w-0 min-h-0 min-w-0 flex-1 px-4 py-3 [&_[data-radix-scroll-area-viewport]>div]:w-full [&_[data-radix-scroll-area-viewport]>div]:max-w-full">

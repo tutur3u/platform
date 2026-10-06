@@ -81,7 +81,7 @@ it('assistant options exclude Hidden personal and team workspaces', async () => 
     >
       <WorkspaceVisibilityProvider actorId="synthetic-actor">
         <AssistantWorkspacePicker
-          selfUserId="synthetic-actor"
+          accountId="synthetic-actor"
           value="personal"
           onChange={vi.fn()}
         />
