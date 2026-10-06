@@ -809,7 +809,11 @@ switching against the Worker. Set `MEET_CHECK_REALTIME_URL` and
 `MEET_REALTIME_TOKEN_SECRET`; the default endpoint is local port 8799. The check
 uses a fresh synthetic room, ends it after success, and never uploads files or
 calls Gemini. The production deployment workflow runs this after the existing
-signaling/SFU check. Abandoned Mira requests release their per-account pending
+signaling/SFU check. Each room-controls connection has a ten-second deadline;
+failed or closed attempts dispose their listeners and socket without retrying.
+The signaling check’s `ALL CHECKS PASSED` line does not establish room-controls
+success: require its own assertions and the complete workflow result. Lifecycle
+regressions live in `apps/meet-realtime/src/check-socket.test.ts`. Abandoned Mira requests release their per-account pending
 limit after two minutes; late provider costs can still be recorded.
 
 ## Assistant identity and panel interactions
