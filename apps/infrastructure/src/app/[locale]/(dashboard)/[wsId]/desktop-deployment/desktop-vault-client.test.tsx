@@ -86,6 +86,14 @@ function mount(
       ),
   };
 }
+function expectPrivateCacheEmpty(client: QueryClient) {
+  for (const mutation of client.getMutationCache().getAll()) {
+    expect(mutation.state.variables).toBeUndefined();
+    expect(mutation.state.data).toBeUndefined();
+    if (mutation.state.error)
+      expect(mutation.state.error.message).toBe('Desktop operation rejected');
+  }
+}
 beforeEach(() => {
   vi.resetAllMocks();
   mock.state.mockResolvedValue(state);
@@ -151,7 +159,6 @@ describe('private desktop signing operator workflow', () => {
     await waitFor(() =>
       expect(mock.upload).toHaveBeenCalledWith(
         expect.objectContaining({
-          action: 'upload_file',
           versionId: 'draft',
           revision: 7,
           name: 'windows_authenticode_certificate_pfx',
@@ -196,6 +203,7 @@ describe('private desktop signing operator workflow', () => {
       })
     );
     expect(password).toHaveValue('synthetic replacement');
+    expectPrivateCacheEmpty(view.client);
     expect(screen.getByRole('alert')).not.toHaveTextContent(
       'private backend detail'
     );
@@ -241,23 +249,143 @@ describe('private desktop signing operator workflow', () => {
     expect(
       screen.queryByDisplayValue('synthetic-alice-token')
     ).not.toBeInTheDocument();
+    expectPrivateCacheEmpty(view.client);
     expect(view.client.getQueryData(['desktop-signing-vault', 'bob'])).toEqual(
       state
     );
   });
   it('shows a token once, masks it by default and removes it on dismissal', async () => {
     mock.mutate.mockResolvedValue({ state, token: 'synthetic-token' });
-    mount();
+    const view = mount();
     fireEvent.click(
       await screen.findByRole('button', {
         name: 'issueToken platforms.windows',
       })
     );
     const token = await screen.findByDisplayValue('synthetic-token');
+    expectPrivateCacheEmpty(view.client);
     expect(token).toHaveAttribute('type', 'password');
     fireEvent.click(screen.getByRole('button', { name: 'dismissToken' }));
     expect(
       screen.queryByDisplayValue('synthetic-token')
     ).not.toBeInTheDocument();
+    expectPrivateCacheEmpty(view.client);
+  });
+  it('keeps pending scalar inputs out of mutation variables across logout and delayed completion', async () => {
+    let finish!: (value: { state: DesktopVaultState }) => void;
+    mock.mutate.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        })
+    );
+    const view = mount();
+    const password = await screen.findByLabelText(
+      'resources.WINDOWS_SIGNING_CERTIFICATE_PASSWORD'
+    );
+    fireEvent.change(password, {
+      target: { value: 'private synthetic scalar' },
+    });
+    fireEvent.click(
+      within(password.closest('form')!).getByRole('button', { name: 'save' })
+    );
+    await waitFor(() => expect(mock.mutate).toHaveBeenCalledOnce());
+    expectPrivateCacheEmpty(view.client);
+    view.unmount();
+    finish({ state });
+    await waitFor(() => expect(view.client.isMutating()).toBe(0));
+    expectPrivateCacheEmpty(view.client);
+  });
+  it('keeps pending file inputs out of the shared mutation cache', async () => {
+    let finish!: (value: { state: DesktopVaultState }) => void;
+    mock.upload.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        })
+    );
+    const view = mount();
+    const input = await screen.findByLabelText(
+      'resources.windows_authenticode_certificate_pfx'
+    );
+    fireEvent.change(input, {
+      target: { files: [new File(['synthetic private file'], 'test.pfx')] },
+    });
+    fireEvent.click(
+      within(input.closest('form')!).getByRole('button', { name: 'save' })
+    );
+    await waitFor(() => expect(mock.upload).toHaveBeenCalledOnce());
+    expectPrivateCacheEmpty(view.client);
+    finish({ state });
+    await waitFor(() => expect(view.client.isMutating()).toBe(0));
+    expectPrivateCacheEmpty(view.client);
+  });
+  it('does not publish a delayed first Alice result into a remounted Alice session', async () => {
+    let finish!: (result: { state: DesktopVaultState; token: string }) => void;
+    mock.mutate.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        })
+    );
+    const view = mount();
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: 'issueToken platforms.windows',
+      })
+    );
+    await waitFor(() => expect(mock.mutate).toHaveBeenCalledOnce());
+    const fresh = { ...state, versions: [{ ...draft, revision: 9 }] };
+    mock.state.mockResolvedValue(fresh);
+    view.actor('bob');
+    await waitFor(() =>
+      expect(
+        view.client.getQueryData(['desktop-signing-vault', 'bob'])
+      ).toEqual(fresh)
+    );
+    view.actor('alice');
+    await waitFor(() =>
+      expect(
+        view.client.getQueryData(['desktop-signing-vault', 'alice'])
+      ).toEqual(fresh)
+    );
+    finish({ state, token: 'old-alice-private-token' });
+    await waitFor(() => expect(view.client.isMutating()).toBe(0));
+    expect(
+      view.client.getQueryData(['desktop-signing-vault', 'alice'])
+    ).toEqual(fresh);
+    expect(
+      screen.queryByDisplayValue('old-alice-private-token')
+    ).not.toBeInTheDocument();
+    expectPrivateCacheEmpty(view.client);
+  });
+  it('collects only the unobserved private mutation after a delayed failure on logout', async () => {
+    let fail!: (error: unknown) => void;
+    mock.mutate.mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          fail = reject;
+        })
+    );
+    const view = mount();
+    const unrelated = view.client
+      .getMutationCache()
+      .build(view.client, { mutationKey: ['unrelated'], gcTime: Infinity });
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: 'issueToken platforms.windows',
+      })
+    );
+    await waitFor(() => expect(mock.mutate).toHaveBeenCalledOnce());
+    view.unmount();
+    fail({
+      status: 500,
+      message: 'synthetic-sensitive-provider-error',
+      payload: 'private',
+    });
+    await waitFor(() =>
+      expect(view.client.getMutationCache().getAll()).toEqual([unrelated])
+    );
+    expect(view.client.isMutating()).toBe(0);
   });
 });

@@ -404,3 +404,10 @@ The client uses shared Internal API functions and actor-scoped TanStack Query
 keys. This administration surface does not establish provider provisioning,
 OS trust, WACK, signing, notarization or protected hydration success. Regression
 coverage: `page-access.test.ts` and `desktop-vault-client.test.tsx`.
+
+Private operator writes pass no credential variables into the shared TanStack
+mutation cache and return no signing token as mutation data. The actor-local
+operation publishes safe metadata and the one-time token separately; completion
+and unmount clear the operation reference, and cache errors retain only a fixed
+status/message. Cache regressions cover pending scalar/file writes, dismissal,
+conflicts, logout and delayed old-actor completion.
