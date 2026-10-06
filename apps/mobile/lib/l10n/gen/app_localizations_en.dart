@@ -702,6 +702,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLocalHardware => 'Local inference requires a supported device with at least 4 GiB of installed memory. Available memory and native loading still determine readiness.';
 
   @override
+  String get assistantLocalHeaderIssue => 'Needs attention';
+
+  @override
+  String get assistantLocalHeaderPreparing => 'Preparing';
+
+  @override
+  String get assistantLocalHeaderReady => 'On device';
+
+  @override
   String get assistantLocalHelp => 'Local text stays on this device. Live voice, attachments and workspace tools use remote mode.';
 
   @override

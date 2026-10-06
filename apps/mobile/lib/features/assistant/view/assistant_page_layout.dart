@@ -129,6 +129,10 @@ extension _AssistantPageLayout on _AssistantPageState {
                         .watch<AssistantLocalChatCubit>()
                         .state;
                     final localLane = local.local || local.blocked;
+                    final headerHeight = assistantHeaderContentHeight(
+                      context,
+                      location: Routes.assistant,
+                    );
                     final chatState = localLane ? local.chat : remoteChatState;
                     return BlocBuilder<AssistantLiveCubit, AssistantLiveState>(
                       builder: (context, remoteLiveState) {
@@ -230,6 +234,8 @@ extension _AssistantPageLayout on _AssistantPageState {
                                                   _horizontalPadding(context),
                                                   floatingShellHeaderInset(
                                                         context,
+                                                        minimumContentHeight:
+                                                            headerHeight,
                                                       ) +
                                                       12,
                                                   _horizontalPadding(context),
@@ -252,8 +258,6 @@ extension _AssistantPageLayout on _AssistantPageState {
                                                         height: 12,
                                                       ),
                                                     ],
-                                                    if (localLane)
-                                                      _localStatus(local),
                                                     if (hasTranscript)
                                                       _buildTranscriptSection(
                                                         chatState,
@@ -440,6 +444,7 @@ extension _AssistantPageLayout on _AssistantPageState {
                                               ),
                                       ),
                                     ),
+                                    _localHeader(shellState, local),
                                     ShellChromeActions(
                                       ownerId: 'assistant-root',
                                       locations: const {Routes.assistant},

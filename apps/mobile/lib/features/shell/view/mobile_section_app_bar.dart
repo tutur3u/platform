@@ -12,7 +12,10 @@ const EdgeInsets mobileSectionAppBarPadding = EdgeInsets.fromLTRB(16, 4, 16, 4);
 
 /// Fit the scaled title line plus the brand control's vertical padding without
 /// reducing accessibility text. Default text keeps the normal compact height.
-double mobileSectionAppBarHeightFor(BuildContext context) {
+double mobileSectionAppBarHeightFor(
+  BuildContext context, {
+  double minimumContentHeight = mobileSectionAppBarHeight,
+}) {
   final painter = TextPainter(
     text: TextSpan(
       text: 'Ag',
@@ -35,9 +38,10 @@ double mobileSectionAppBarHeightFor(BuildContext context) {
   )..layout();
   final titleHeight = painter.height + 16;
   painter.dispose();
-  return titleHeight > mobileSectionAppBarHeight
-      ? titleHeight.ceilToDouble()
+  final minimum = minimumContentHeight > mobileSectionAppBarHeight
+      ? minimumContentHeight
       : mobileSectionAppBarHeight;
+  return titleHeight > minimum ? titleHeight.ceilToDouble() : minimum;
 }
 
 class MobileSectionAppBar extends StatelessWidget {

@@ -11,12 +11,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
+import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
+import 'package:mobile/features/assistant/widgets/assistant_header_status_chip.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_primary_action.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -62,6 +64,7 @@ void main() {
   late AssistantChromeCubit assistant;
   var textScale = 1.0;
   var width = 320.0;
+  var locale = const Locale('en');
   final baseline = Platform.environment['NAVBAR_BASELINE'] == '1';
 
   setUpAll(() async {
@@ -191,10 +194,11 @@ void main() {
           ],
           child: shad.ShadcnApp.router(
             theme: MobileShadTheme.light,
+            locale: locale,
             debugShowCheckedModeBanner: false,
             localizationsDelegates: const [
               ...AppLocalizations.localizationsDelegates,
-              shad.ShadcnLocalizations.delegate,
+              AppShadcnLocalizationsDelegate(),
             ],
             supportedLocales: AppLocalizations.supportedLocales,
             builder: (context, child) => MediaQuery(
@@ -411,6 +415,61 @@ void main() {
           expect(tester.takeException(), isNull);
         });
       }
+    }
+  }
+  for (final language in ['en', 'vi']) {
+    for (final scale in [1.0, 2.0, 3.0]) {
+      testWidgets(
+        'actual 320px navbar $language text$scale: title and recovery',
+        (tester) async {
+          width = 320;
+          textScale = scale;
+          locale = Locale(language);
+          await mount(tester);
+          router.go(Routes.assistant);
+          await _pump(tester);
+          final context = tester.element(find.byType(ShellTopBarTitle));
+          final titles = context.read<ShellTitleOverrideCubit>();
+          final status = AppLocalizations.of(context).assistantLocalHeaderIssue;
+          var opened = 0;
+          titles.register(
+            registrationId: 'synthetic-header-test',
+            ownerId: 'synthetic-header-test',
+            locations: {Routes.assistant},
+            title: 'Atlas',
+            subtitle: status,
+            onSubtitlePressed: () => opened++,
+          );
+          await _pump(tester);
+          final titleFinder = find.descendant(
+            of: find.byType(ShellTopBarTitle),
+            matching: find.text('Atlas'),
+          );
+          expect(titleFinder, findsOneWidget);
+          final paragraph = tester.renderObject<RenderParagraph>(titleFinder);
+          expect(
+            await _firstGlyphInk(
+              tester,
+              paragraph,
+              tester.getRect(titleFinder),
+            ),
+            greaterThan(0),
+          );
+          final target = find.byKey(
+            const ValueKey('assistant-local-header-status'),
+          );
+          expect(find.byType(AssistantHeaderStatusChip), findsOneWidget);
+          expect(tester.getSize(target).height, greaterThanOrEqualTo(48));
+          expect(tester.getSize(target).width, greaterThanOrEqualTo(48));
+          await tester.tap(target);
+          await tester.pump();
+          expect(opened, 1);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump();
+          locale = const Locale('en');
+        },
+      );
     }
   }
 }
