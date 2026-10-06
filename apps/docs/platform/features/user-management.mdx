@@ -231,3 +231,18 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 - Attachment uploads must prepare signed upload URLs through the central workspace storage route, then upload bytes directly to the active storage provider. Do not stream attachment bytes through Topic Announcement-specific Next.js routes.
 - User group and course storage uploads are quota-sensitive and must use the server-mediated `uploadWorkspaceUserGroupStorageFile` / group storage multipart route. Do not mint signed upload URLs from this route because the app server cannot verify the final object size after a direct provider upload.
 - Attachment rows keep workspace, announcement, storage path, content type, and size metadata. Email delivery downloads the stored files and switches to raw MIME only when attachments exist; regular no-attachment messages should keep the standard SES `SendEmailCommand` path.
+
+
+### Mobile profile image optimization
+
+Avatar and banner inputs may be up to 20 MiB before optimization. That input
+allowance is separate from the upload limits: the mobile optimizer keeps avatars
+within 1,000,000 bytes and 1024 pixels per side, and banners within 2,000,000
+bytes and 2560 by 1440 pixels. The decoder retains its 20-megapixel ceiling,
+first-frame handling, supported codec checks, orientation correction and
+metadata removal. Signed uploads and server storage quotas remain authoritative.
+
+`apps/mobile/test/core/media/profile_media_optimizer_test.dart` covers source
+files above the old pre-compression limits for both targets, file/byte output
+parity, bounded results and oversized-input rejection. Actor-race and failure
+contract tests cover the surrounding repository path.
