@@ -949,6 +949,24 @@ abstract class AppLocalizations {
   /// **'Using workspace {tier}'**
   String assistantLiveAccessUsingWorkspace(String tier);
 
+  /// No description provided for @assistantLiveCallAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Call again'**
+  String get assistantLiveCallAgain;
+
+  /// No description provided for @assistantLiveViewTranscript.
+  ///
+  /// In en, this message translates to:
+  /// **'View transcript'**
+  String get assistantLiveViewTranscript;
+
+  /// No description provided for @assistantLiveCallEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Call ended'**
+  String get assistantLiveCallEnded;
+
   /// No description provided for @assistantLiveCallAssistant.
   ///
   /// In en, this message translates to:
@@ -1356,6 +1374,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start talking or type a message. Your conversation appears here.'**
   String get assistantLiveTranscriptEmpty;
+
+  /// No description provided for @assistantLiveTranscriptPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcript changes are not yet synchronized.'**
+  String get assistantLiveTranscriptPending;
 
   /// No description provided for @assistantLiveTranscriptTitle.
   ///

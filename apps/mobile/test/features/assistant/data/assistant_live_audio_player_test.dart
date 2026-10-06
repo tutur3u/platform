@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import 'package:flutter_pcm_sound/flutter_pcm_sound.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/assistant/data/assistant_live_audio_player.dart';
+import 'package:mobile/features/assistant/models/assistant_playback_spectrum.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -10,6 +12,90 @@ void main() {
   final messenger =
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   tearDown(() => messenger.setMockMethodCallHandler(channel, null));
+
+  test(
+    'activity follows admitted PCM and native buffer completion, not receipt',
+    () async {
+      final feeding = Completer<void>();
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        if (call.method == 'feed') await feeding.future;
+        return true;
+      });
+      final player = AssistantLiveAudioPlayer();
+      final activity = <AssistantPlaybackSpectrum>[];
+      final subscription = player.activity!.listen(activity.add);
+      final frame = player.play(Uint8List.fromList([0, 64, 0, 64]));
+      await Future<void>.delayed(Duration.zero);
+      expect(activity, isEmpty);
+      feeding.complete();
+      await frame;
+      await Future<void>.delayed(Duration.zero);
+      expect(activity.single.energy, .5);
+      FlutterPcmSound.onFeedSamplesCallback!(0);
+      await Future<void>.delayed(Duration.zero);
+      expect(activity.last.energy, 0);
+      await player.pause();
+      await player.dispose();
+      await subscription.cancel();
+    },
+  );
+
+  test(
+    'native drained callback before feed receipt cannot revive speaking',
+    () async {
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        if (call.method == 'feed') FlutterPcmSound.onFeedSamplesCallback!(0);
+        return true;
+      });
+      final player = AssistantLiveAudioPlayer();
+      final activity = <AssistantPlaybackSpectrum>[];
+      final subscription = player.activity!.listen(activity.add);
+      await player.play(Uint8List.fromList([0, 64]));
+      await Future<void>.delayed(Duration.zero);
+      expect(activity.map((frame) => frame.energy), everyElement(0));
+      await player.dispose();
+      await subscription.cancel();
+    },
+  );
+
+  test('rejected playback emits no fabricated spectrum', () async {
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'feed') throw PlatformException(code: 'unavailable');
+      return true;
+    });
+    final player = AssistantLiveAudioPlayer();
+    final activity = <AssistantPlaybackSpectrum>[];
+    final subscription = player.activity!.listen(activity.add);
+    await expectLater(
+      player.play(Uint8List.fromList([0, 64])),
+      throwsA(isA<PlatformException>()),
+    );
+    expect(activity, isEmpty);
+    await player.dispose();
+    await subscription.cancel();
+  });
+
+  test(
+    'native PCM logging is disabled before setup or sensitive feed',
+    () async {
+      final calls = <MethodCall>[];
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        calls.add(call);
+        return true;
+      });
+      final player = AssistantLiveAudioPlayer();
+      await player.play(Uint8List.fromList([0, 64]));
+      expect(calls.first.method, 'setLogLevel');
+      expect(calls.first.arguments, {'log_level': LogLevel.none.index});
+      expect(calls.map((call) => call.method), [
+        'setLogLevel',
+        'setup',
+        'setFeedThreshold',
+        'feed',
+      ]);
+      await player.dispose();
+    },
+  );
 
   test('serializes startup and feeds only the PCM slice', () async {
     final setup = Completer<void>();
@@ -30,10 +116,10 @@ void main() {
     final first = player.play(Uint8List.sublistView(backing, 2, 6));
     final second = player.play(Uint8List.fromList([5, 6]));
     await Future<void>.delayed(Duration.zero);
-    expect(calls, ['setup']);
+    expect(calls, ['setLogLevel', 'setup']);
     setup.complete();
     await Future.wait([starting, duplicate, first, second]);
-    expect(calls, ['setup', 'setFeedThreshold', 'feed', 'feed']);
+    expect(calls, ['setLogLevel', 'setup', 'setFeedThreshold', 'feed', 'feed']);
     expect(frames, [
       [1, 2, 3, 4],
       [5, 6],
@@ -74,12 +160,14 @@ void main() {
       final player = AssistantLiveAudioPlayer();
       await player.initialize();
       await player.pause();
-      expect(calls, ['setup', 'setFeedThreshold', 'release']);
+      expect(calls, ['setLogLevel', 'setup', 'setFeedThreshold', 'release']);
       await player.play(Uint8List.fromList([1, 0]));
       expect(calls, [
+        'setLogLevel',
         'setup',
         'setFeedThreshold',
         'release',
+        'setLogLevel',
         'setup',
         'setFeedThreshold',
         'feed',

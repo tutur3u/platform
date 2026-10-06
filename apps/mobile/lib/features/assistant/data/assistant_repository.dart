@@ -20,6 +20,7 @@ import 'package:mobile/features/chat/models/chat_models.dart';
 import '../models/assistant_chat_identity.dart';
 import '../models/assistant_models.dart';
 import 'assistant_calendar_insight.dart';
+import 'assistant_history_message.dart';
 import 'assistant_history_parts.dart';
 import 'assistant_stream_parser.dart';
 
@@ -897,19 +898,8 @@ class AssistantRepository {
     );
   }
 
-  AssistantMessage _assistantMessageFromChatMessage(ChatMessage message) {
-    final role = switch (message.kind) {
-      ChatMessageKind.assistant => 'assistant',
-      ChatMessageKind.system => 'system',
-      ChatMessageKind.user => 'user',
-    };
-    return AssistantMessage(
-      id: message.id,
-      role: role,
-      parts: restoreAssistantHistoryParts(message.content, message.metadata),
-      createdAt: message.createdAt,
-    );
-  }
+  AssistantMessage _assistantMessageFromChatMessage(ChatMessage message) =>
+      restoreAssistantChatMessage(message);
 
   Map<String, List<AssistantAttachment>> _assistantAttachmentsFromChatMessages(
     List<ChatMessage> messages,
@@ -1019,10 +1009,10 @@ class AssistantRepository {
             message['content'] as String?,
             message['metadata'] as Map<String, dynamic>?,
           );
-
           return AssistantMessage(
             id: message['id'] as String,
             role: _normalizeRole(message['role'] as String?),
+            liveTurnId: (message['metadata'] as Map?)?['liveTurnId'] as String?,
             parts: parts,
             createdAt: DateTime.tryParse(
               message['created_at'] as String? ?? '',

@@ -6,6 +6,7 @@ extension AssistantLiveScreenControls on AssistantLiveCubit {
     required String stopLabel,
     required String stopMessage,
   }) async {
+    if (_isClosing || isClosed) return;
     if (state.isScreenSharing || state.isScreenSharingPending) {
       await stopScreenSharing();
       return;
@@ -31,13 +32,14 @@ extension AssistantLiveScreenControls on AssistantLiveCubit {
     );
     try {
       await _cameraService.stopStreaming();
-      if (isClosed || version != _screenVersion) return;
+      if (_isClosing || isClosed || version != _screenVersion) return;
       _emitMicrophoneState(
         state.copyWith(isCameraActive: false, latestCameraFrame: null),
       );
       _screenSubscription = _screenService.events.listen(
         (event) {
-          if (isClosed ||
+          if (_isClosing ||
+              isClosed ||
               version != _screenVersion ||
               state.workspaceId != workspace) {
             return;
@@ -83,7 +85,7 @@ extension AssistantLiveScreenControls on AssistantLiveCubit {
         microphoneActive: state.isMicrophoneActive,
       );
       if (version != _screenVersion) return;
-      if (!allowed || isClosed || request != _requestVersion) {
+      if (!allowed || _isClosing || isClosed || request != _requestVersion) {
         await stopScreenSharing();
       }
     } on Exception {

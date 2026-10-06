@@ -446,6 +446,15 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get assistantLiveCallAgain => 'Gọi lại';
+
+  @override
+  String get assistantLiveViewTranscript => 'Xem bản ghi';
+
+  @override
+  String get assistantLiveCallEnded => 'Cuộc gọi đã kết thúc';
+
+  @override
   String assistantLiveCallAssistant(String assistantName) {
     return 'Gọi $assistantName';
   }
@@ -656,6 +665,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantLiveTranscriptEmpty => 'Bắt đầu nói hoặc nhập tin nhắn. Cuộc trò chuyện sẽ hiển thị ở đây.';
+
+  @override
+  String get assistantLiveTranscriptPending => 'Các thay đổi trong bản ghi chưa được đồng bộ.';
 
   @override
   String get assistantLiveTranscriptTitle => 'Bản ghi trực tiếp';
