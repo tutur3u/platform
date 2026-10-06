@@ -25,48 +25,26 @@ class DismissKeyboardOnPointerDown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Listener(
-      behavior: HitTestBehavior.translucent,
-      onPointerDown: (event) {
-        if (KeyboardDismissGuard.isSuspended) {
-          return;
-        }
-
-        if (MediaQuery.viewInsetsOf(context).bottom <= 0) {
-          return;
-        }
-
-        final primaryFocus = FocusManager.instance.primaryFocus;
-        final focusedContext = primaryFocus?.context;
-        if (primaryFocus == null || focusedContext == null) {
-          return;
-        }
-
-        final focusedRenderObject = focusedContext.findRenderObject();
-        final focusedRenderBox = _resolveAttachedRenderBox(focusedRenderObject);
-        if (focusedRenderBox == null) {
-          return;
-        }
-
-        final localPosition = focusedRenderBox.globalToLocal(event.position);
-        if (focusedRenderBox.size.contains(localPosition)) {
-          return;
-        }
-
-        primaryFocus.unfocus();
+    // EditableText groups its field, selection handles and toolbar into a
+    // TextFieldTapRegion. Honor that group instead of the focused render box:
+    // toolbar pointer-down must not dispose the overlay before its tap fires.
+    // Dialogs may consume the inherited inset; the view still reports the
+    // visible system keyboard. This is a predicate, not additional padding.
+    return Actions(
+      actions: <Type, Action<Intent>>{
+        EditableTextTapOutsideIntent:
+            CallbackAction<EditableTextTapOutsideIntent>(
+              onInvoke: (intent) {
+                if (!KeyboardDismissGuard.isSuspended &&
+                    (MediaQuery.viewInsetsOf(context).bottom > 0 ||
+                        View.of(context).viewInsets.bottom > 0)) {
+                  intent.focusNode.unfocus();
+                }
+                return null;
+              },
+            ),
       },
       child: child,
     );
-  }
-
-  RenderBox? _resolveAttachedRenderBox(RenderObject? renderObject) {
-    var current = renderObject;
-    while (current != null) {
-      if (current is RenderBox && current.attached && current.hasSize) {
-        return current;
-      }
-      current = current.parent;
-    }
-    return null;
   }
 }
