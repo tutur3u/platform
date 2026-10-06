@@ -90,11 +90,26 @@ it('late prior-account lookup cannot recreate an ended hint across actor ABA', a
   }>((done) => {
     resolve = done;
   });
-  mocks.state.mockReturnValueOnce(old).mockResolvedValue({
-    ended: false,
-    canReadNotes: true,
-    lifecycleVersion: 4,
+  let resolveCurrent!: (value: {
+    ended: boolean;
+    canReadNotes: boolean;
+    lifecycleVersion: number;
+  }) => void;
+  const current = new Promise<{
+    ended: boolean;
+    canReadNotes: boolean;
+    lifecycleVersion: number;
+  }>((done) => {
+    resolveCurrent = done;
   });
+  mocks.state
+    .mockReturnValueOnce(old)
+    .mockResolvedValueOnce({
+      ended: false,
+      canReadNotes: true,
+      lifecycleVersion: 4,
+    })
+    .mockReturnValueOnce(current);
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -117,6 +132,22 @@ it('late prior-account lookup cannot recreate an ended hint across actor ABA', a
     resolve({ ended: true, canReadNotes: true, lifecycleVersion: 1 });
     await old;
   });
+  expect(mocks.state.mock.calls[0]?.[1].signal.aborted).toBe(true);
+  expect(mocks.state.mock.calls[2]?.[1].signal.aborted).toBe(false);
   expect(isKnownEndedRoom('account-a', meetingId)).toBe(false);
-  expect(screen.getByRole('link', { name: 'Join call' })).toBeTruthy();
+  expect(screen.getByRole('link', { name: 'Open meeting' })).toBeTruthy();
+  expect(
+    screen.queryByRole('link', { name: 'View notes & transcript' })
+  ).toBeNull();
+  await act(async () => {
+    resolveCurrent({ ended: false, canReadNotes: true, lifecycleVersion: 4 });
+    await current;
+  });
+  await waitFor(() =>
+    expect(screen.getByRole('link', { name: 'Join call' })).toBeTruthy()
+  );
+  expect(isKnownEndedRoom('account-a', meetingId)).toBe(false);
+  expect(
+    screen.getByRole('link', { name: 'Join call' }).getAttribute('href')
+  ).not.toContain('?notes=1');
 });

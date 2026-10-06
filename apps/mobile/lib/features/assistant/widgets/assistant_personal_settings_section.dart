@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/features/assistant/cubit/assistant_personal_settings_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_personal_settings_repository.dart';
+import 'package:mobile/features/assistant/widgets/assistant_memory_editor.dart';
 import 'package:mobile/features/assistant/widgets/assistant_personality_editor.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/features/settings/view/settings_scoped_sheet.dart';
@@ -163,16 +164,15 @@ class _AssistantPersonalSettingsSectionState
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      onTap: () => showScopedSettingsSheet<void>(
-                        context: context,
-                        builder: (_) => SafeArea(
-                          top: false,
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.all(20),
-                            child: SelectableText(item.text),
-                          ),
-                        ),
-                      ),
+                      onTap: state.busy
+                          ? null
+                          : () => showScopedSettingsSheet<void>(
+                              context: context,
+                              builder: (_) => AssistantMemoryEditor(
+                                settings: cubit,
+                                memoryId: item.id,
+                              ),
+                            ),
                       trailing: IconButton(
                         tooltip: l.commonDelete,
                         onPressed: state.busy ? null : () => _delete(item),

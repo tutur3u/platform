@@ -895,7 +895,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantRenameAction => 'Rename';
 
   @override
-  String get assistantRenameTitle => 'Rename Assistant';
+  String get assistantRenameTitle => 'Rename assistant';
 
   @override
   String get assistantReplyFailed => 'Mira\'s reply stopped. Your message is still here. Retry';
@@ -10559,4 +10559,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantPersonalSettingsError => 'Could not complete this change. Try again.';
+
+  @override
+  String get assistantRenameLabel => 'Assistant name';
+
+  @override
+  String get assistantRenameError => 'Could not update the name. Your draft is kept; try again.';
+
+  @override
+  String get assistantMemoryEditTitle => 'Edit memory';
+
+  @override
+  String get assistantMemoryEditText => 'Memory';
+
+  @override
+  String get assistantMemoryLatest => 'Current saved version';
+
+  @override
+  String get assistantMemoryEditConflict => 'This memory changed. Review the latest version before saving your changes.';
+
+  @override
+  String get assistantMemoryEditDenied => 'You no longer have access to this memory.';
+
+  @override
+  String get assistantMemoryEditMissing => 'This memory is no longer available.';
+
+  @override
+  String get assistantMemoryEditAuditWarning => 'Your changes are saved, but the activity record could not be confirmed. Do not save them again.';
+
+  @override
+  String get assistantMemoryReviewLatest => 'Review latest version';
+
+  @override
+  String get assistantMemorySaveChanges => 'Save my changes';
 }

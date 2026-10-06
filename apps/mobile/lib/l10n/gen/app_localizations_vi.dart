@@ -895,7 +895,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantRenameAction => 'Đổi tên';
 
   @override
-  String get assistantRenameTitle => 'Đổi tên Mira';
+  String get assistantRenameTitle => 'Đổi tên trợ lý';
 
   @override
   String get assistantReplyFailed => 'Mira chưa trả lời xong. Tin nhắn của bạn vẫn ở đây. Thử lại';
@@ -10432,4 +10432,37 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantPersonalSettingsError => 'Không thể hoàn tất thay đổi. Hãy thử lại.';
+
+  @override
+  String get assistantRenameLabel => 'Tên trợ lý';
+
+  @override
+  String get assistantRenameError => 'Không thể cập nhật tên. Bản nháp vẫn được giữ; hãy thử lại.';
+
+  @override
+  String get assistantMemoryEditTitle => 'Chỉnh sửa bộ nhớ';
+
+  @override
+  String get assistantMemoryEditText => 'Nội dung bộ nhớ';
+
+  @override
+  String get assistantMemoryLatest => 'Phiên bản đang lưu';
+
+  @override
+  String get assistantMemoryEditConflict => 'Bộ nhớ này đã thay đổi. Xem phiên bản mới nhất trước khi lưu thay đổi của bạn.';
+
+  @override
+  String get assistantMemoryEditDenied => 'Bạn không còn quyền truy cập bộ nhớ này.';
+
+  @override
+  String get assistantMemoryEditMissing => 'Bộ nhớ này không còn khả dụng.';
+
+  @override
+  String get assistantMemoryEditAuditWarning => 'Thay đổi đã được lưu, nhưng chưa thể xác nhận bản ghi hoạt động. Không cần lưu lại.';
+
+  @override
+  String get assistantMemoryReviewLatest => 'Xem phiên bản mới nhất';
+
+  @override
+  String get assistantMemorySaveChanges => 'Lưu thay đổi của tôi';
 }

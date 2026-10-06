@@ -8,69 +8,138 @@ extension _AssistantPageChrome on _AssistantPageState {
     required AssistantChatState chatState,
     required AssistantLiveState liveState,
     required bool isLiveMode,
-  }) => <ShellActionSpec>[
-    if (!_isComposerVisible && !isLiveMode)
-      ShellActionSpec(
-        id: 'assistant-compose',
-        inDock: true,
-        icon: Icons.chat_bubble_outline_rounded,
-        tooltip: context.l10n.assistantAskPlaceholder,
-        onPressed: _restoreComposerAndFocus,
-      ),
-    if (!isLiveMode)
-      ShellActionSpec(
-        id: 'assistant-history',
-        icon: Icons.history_rounded,
-        callbackToken: '${identityHashCode(this)}:$wsId:${widget.replayToken}',
-        tooltip: context.l10n.assistantHistoryTitle,
-        onPressed: () => unawaited(_showHistorySheet(context, wsId)),
-      ),
-    if (isLiveMode)
-      ShellActionSpec(
-        id: 'assistant-live-info',
-        icon: Icons.info_outline_rounded,
-        tooltip: context.l10n.assistantLiveInfoTitle,
-        callbackToken: '$wsId:${liveState.status}:${liveState.startupTimings}',
-        onPressed: () => unawaited(
-          _showLiveInfoSheet(
-            context,
-            liveUiState: deriveAssistantLiveUiState(
-              shellState: shellState,
-              liveState: liveState,
-              isEligible: _hasLiveAccess(shellState),
-              showBlockedReason: false,
-              isVisibleLiveSession: _isVisibleLiveSession(chatState, liveState),
-            ),
+  }) {
+    final scope = _localScope();
+    final actor = _currentActor();
+    final epoch = _voiceActorScopeEpoch;
+    final l10n = context.l10n;
+    final material = MaterialLocalizations.of(context);
+    final liveUi = isLiveMode
+        ? deriveAssistantLiveUiState(
+            shellState: shellState,
             liveState: liveState,
+            isEligible: _hasLiveAccess(shellState),
+            showBlockedReason: false,
+            isVisibleLiveSession: _isVisibleLiveSession(chatState, liveState),
+          )
+        : null;
+    final key = (
+      scope,
+      actor,
+      epoch,
+      wsId,
+      isLiveMode,
+      _isComposerVisible,
+      l10n,
+      material,
+      liveUi,
+      isLiveMode ? liveState : null,
+    );
+    if (_chromeActionsKey == key && _chromeActions != null) {
+      return _chromeActions!;
+    }
+    _chromeActionsKey = key;
+    VoidCallback guarded(VoidCallback action, {bool localDraft = false}) => () {
+      if (!mounted ||
+          !context.mounted ||
+          (!localDraft && scope == null) ||
+          actor != _currentActor() ||
+          epoch != _voiceActorScopeEpoch ||
+          wsId != _loadedWorkspaceId ||
+          scope != _localScope() ||
+          _chromeActionsKey != key ||
+          context.read<AssistantChromeCubit>().state.isLiveMode != isLiveMode) {
+        return;
+      }
+      action();
+    };
+    return _chromeActions = <ShellActionSpec>[
+      if (!_isComposerVisible && !isLiveMode)
+        ShellActionSpec(
+          id: 'assistant-compose',
+          inDock: true,
+          icon: Icons.chat_bubble_outline_rounded,
+          tooltip: context.l10n.assistantAskPlaceholder,
+          // Opening an unsent local draft needs no network authentication.
+          onPressed: guarded(_restoreComposerAndFocus, localDraft: true),
+        ),
+      if (isLiveMode)
+        ShellActionSpec(
+          id: 'assistant-live-info',
+          icon: Icons.info_outline_rounded,
+          tooltip: context.l10n.assistantLiveInfoTitle,
+          callbackToken:
+              '$wsId:${liveState.status}:${liveState.startupTimings}',
+          onPressed: guarded(
+            () => unawaited(
+              _showLiveInfoSheet(
+                context,
+                liveUiState: liveUi!,
+                liveState: liveState,
+              ),
+            ),
           ),
         ),
+      ShellActionSpec(
+        id: 'assistant-more',
+        icon: Icons.more_horiz_rounded,
+        tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+        callbackToken: (_localScope(), isLiveMode),
+        onPressed: guarded(() => unawaited(_showAssistantMore(isLiveMode))),
       ),
-    ShellActionSpec(
-      id: 'assistant-settings',
-      icon: Icons.tune_rounded,
-      tooltip: context.l10n.assistantSettingsTitle,
-      callbackToken: '$wsId:$_keepLiveWhileBrowsing',
-      onPressed: () => unawaited(_showLiveSettings()),
-    ),
-    ShellActionSpec(
-      id: 'assistant-mode-chat',
-      segmentGroup: 'assistant-modes',
-      icon: Icons.chat_bubble_outline_rounded,
-      tooltip: context.l10n.chatTitle,
-      highlighted: !isLiveMode,
-      onPressed: isLiveMode ? () => unawaited(_exitLiveMode()) : null,
-    ),
-    ShellActionSpec(
-      id: 'assistant-mode-live',
-      segmentGroup: 'assistant-modes',
-      icon: Icons.graphic_eq_rounded,
-      tooltip: context.l10n.commonLive,
-      highlighted: isLiveMode,
-      onPressed: isLiveMode
-          ? null
-          : () => unawaited(_handleMicrophoneTap(wsId)),
-    ),
-  ];
+      ShellActionSpec(
+        id: 'assistant-mode-chat',
+        segmentGroup: 'assistant-modes',
+        icon: Icons.chat_bubble_outline_rounded,
+        tooltip: context.l10n.chatTitle,
+        highlighted: !isLiveMode,
+        onPressed: isLiveMode
+            ? guarded(() => unawaited(_exitLiveMode()))
+            : null,
+      ),
+      ShellActionSpec(
+        id: 'assistant-mode-live',
+        segmentGroup: 'assistant-modes',
+        icon: Icons.graphic_eq_rounded,
+        tooltip: context.l10n.commonLive,
+        highlighted: isLiveMode,
+        onPressed: isLiveMode
+            ? null
+            : guarded(() => unawaited(_handleMicrophoneTap(wsId))),
+      ),
+    ];
+  }
+
+  Future<void> _showAssistantMore(bool isLiveMode) async {
+    final scope = _localScope();
+    if (scope == null) return;
+    final choice = await showAdaptiveSheet<String>(
+      context: context,
+      builder: (sheetContext) => Material(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!isLiveMode)
+              ListTile(
+                leading: const Icon(Icons.history_rounded),
+                title: Text(context.l10n.assistantHistoryTitle),
+                onTap: () => Navigator.of(sheetContext).pop('history'),
+              ),
+            ListTile(
+              leading: const Icon(Icons.tune_rounded),
+              title: Text(context.l10n.assistantSettingsTitle),
+              onTap: () => Navigator.of(sheetContext).pop('settings'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted || scope != _localScope()) return;
+    if (choice == 'history') {
+      await _showHistorySheet(context, _loadedWorkspaceId!);
+    }
+    if (choice == 'settings') await _showLiveSettings();
+  }
 
   void _toggleLiveDockNavigation() {
     context.read<AssistantChromeCubit>().toggleComposerNavigation();

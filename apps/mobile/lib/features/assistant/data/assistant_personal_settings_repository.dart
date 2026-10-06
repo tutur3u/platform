@@ -1,5 +1,6 @@
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/assistant/data/assistant_memory_edit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 
 class AssistantMemoryItem {
@@ -122,6 +123,40 @@ class AssistantPersonalSettingsRepository {
       throw StateError('Consent update not confirmed');
     }
     return response['enabled'] as bool;
+  }
+
+  Future<EditableAssistantMemory> readMemoryForEdit(
+    String workspaceId,
+    String id,
+  ) async {
+    final response = await _api.getJson(
+      '${_memoryPath(workspaceId)}/items/${Uri.encodeComponent(id)}?product=mira',
+    );
+    if (response['memory'] is! Map<String, dynamic>) {
+      throw const FormatException('Memory revision unavailable');
+    }
+    return EditableAssistantMemory.fromJson(
+      response['memory'] as Map<String, dynamic>,
+      expectedId: id,
+    );
+  }
+
+  Future<AssistantMemoryEditReceipt> editMemory(
+    String workspaceId,
+    String id, {
+    required String value,
+    required String revision,
+  }) async {
+    final response = await _api.patchJson(
+      '${_memoryPath(workspaceId)}/items/${Uri.encodeComponent(id)}?product=mira',
+      {'value': value, 'revision': revision},
+    );
+    return AssistantMemoryEditReceipt.fromJson(
+      response,
+      expectedId: id,
+      previousRevision: revision,
+      submittedText: value,
+    );
   }
 
   Future<void> deleteMemory(String workspaceId, String id) async {

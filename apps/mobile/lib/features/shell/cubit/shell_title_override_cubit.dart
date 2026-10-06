@@ -9,6 +9,7 @@ class ShellTitleOverrideRegistration extends Equatable {
     required this.showLeadingBrand,
     required this.showAvatar,
     this.onTitleSubmitted,
+    this.titleActionToken,
     this.subtitle,
     this.onSubtitlePressed,
     this.subtitleActionToken,
@@ -17,6 +18,7 @@ class ShellTitleOverrideRegistration extends Equatable {
   final String ownerId;
   final Set<String> locations;
   final String title;
+  final Object? titleActionToken;
   final String? subtitle;
   final void Function()? onSubtitlePressed;
   final Object? subtitleActionToken;
@@ -34,6 +36,7 @@ class ShellTitleOverrideRegistration extends Equatable {
     showLeadingBrand,
     showAvatar,
     canEditTitle,
+    titleActionToken,
     subtitle,
     onSubtitlePressed != null,
     subtitleActionToken,
@@ -130,6 +133,7 @@ class ShellTitleOverrideCubit extends Cubit<ShellTitleOverrideState> {
     bool showLeadingBrand = true,
     bool showAvatar = true,
     Future<void> Function(String title)? onTitleSubmitted,
+    Object? titleActionToken,
     String? subtitle,
     void Function()? onSubtitlePressed,
     Object? subtitleActionToken,
@@ -141,6 +145,7 @@ class ShellTitleOverrideCubit extends Cubit<ShellTitleOverrideState> {
       showLeadingBrand: showLeadingBrand,
       showAvatar: showAvatar,
       onTitleSubmitted: onTitleSubmitted,
+      titleActionToken: titleActionToken,
       subtitle: subtitle,
       onSubtitlePressed: onSubtitlePressed,
       subtitleActionToken: subtitleActionToken,
