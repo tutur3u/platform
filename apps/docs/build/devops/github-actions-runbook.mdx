@@ -587,7 +587,11 @@ The production-only deploy job runs `scripts/ci/verify-meet-build-info.js` again
 the canonical endpoint before recording its success marker. It requires HTTP 200,
 JSON, `appName: meet`, the full candidate SHA, and production environment/ref;
 local fallback, stale bundles, and preview metadata fail closed. Main validation
-never probes production as proof of its own artifact. Run the focused contracts
+never probes production as proof of its own artifact. Workflow contracts parse YAML
+through `scripts/ci/workflow-yaml-test-helper.js` using the installed Bun runtime's
+built-in parser. They must not import an undeclared transitive Node YAML package:
+local hoisting can hide a clean-runner resolution failure. A dependency-free
+snapshot runs the same ordering, identity, and cache assertions as a regression. Run the focused contracts
 with `node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js`.
 
 ### TanStack/Rust Cloudflare deployment

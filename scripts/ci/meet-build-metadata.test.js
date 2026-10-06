@@ -1,13 +1,14 @@
 // biome-ignore-all lint/suspicious/noTemplateCurlyInString: GitHub expressions are tested as literal YAML values.
 const assert = require('node:assert/strict');
 const { readFileSync } = require('node:fs');
-const { resolve } = require('node:path');
+const { cp, mkdtemp, mkdir, rm } = require('node:fs/promises');
+const { spawnSync } = require('node:child_process');
+const { tmpdir } = require('node:os');
+const { dirname, join, resolve } = require('node:path');
 const test = require('node:test');
-const YAML = require('yaml');
+const { readWorkflow } = require('./workflow-yaml-test-helper');
 const root = resolve(__dirname, '../..');
-const workflow = YAML.parse(
-  readFileSync(resolve(root, '.github/workflows/meet-cloudflare.yaml'), 'utf8')
-);
+const workflow = readWorkflow('meet-cloudflare.yaml');
 
 test('Meet generates source metadata before dependency and Worker builds', () => {
   const steps = workflow.jobs.validate.steps;
@@ -82,4 +83,45 @@ test('metadata source and environment identity participate in dependency cache i
     ).with.name,
     'meet-worker-${{ github.sha }}'
   );
+});
+
+test('Meet workflow contracts run in a clean snapshot without Node dependencies', async () => {
+  const snapshot = await mkdtemp(join(tmpdir(), 'meet-workflow-clean-'));
+  try {
+    for (const file of [
+      'scripts/ci/meet-build-metadata.test.js',
+      'scripts/ci/workflow-yaml-test-helper.js',
+      '.github/workflows/meet-cloudflare.yaml',
+      'turbo.json',
+      'packages/utils/src/generated/platform-build-metadata.ts',
+    ]) {
+      const destination = join(snapshot, file);
+      await mkdir(dirname(destination), { recursive: true });
+      await cp(resolve(root, file), destination);
+    }
+    const env = { ...process.env, NODE_PATH: '' };
+    // A nested Node test worker otherwise suppresses its standalone reporter.
+    delete env.NODE_TEST_CONTEXT;
+    const result = spawnSync(
+      process.execPath,
+      [
+        '--test',
+        '--test-reporter=tap',
+        '--test-name-pattern=Meet generates|only the production|metadata source',
+        join(snapshot, 'scripts/ci/meet-build-metadata.test.js'),
+      ],
+      {
+        cwd: snapshot,
+        env,
+        encoding: 'utf8',
+        timeout: 15000,
+        maxBuffer: 128 * 1024,
+      }
+    );
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    assert.match(result.stdout, /pass 3/);
+    assert.match(result.stdout, /fail 0/);
+  } finally {
+    await rm(snapshot, { recursive: true, force: true });
+  }
 });
