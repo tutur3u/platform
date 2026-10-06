@@ -90,6 +90,30 @@ describe('default-off independent desktop signing endpoint', () => {
     expect(result.headers.get('Cache-Control')).toBe('no-store');
     expect(result.headers.get('Pragma')).toBe('no-cache');
   });
+  it.each([
+    'application/json; charset=utf-8',
+    'application/json ; charset=UTF-8',
+    'Application/JSON; charset=utf-8',
+  ])('accepts JSON media-type parameters: %s', async (contentType) => {
+    const result = await POST(
+      request(undefined, { 'content-type': contentType })
+    );
+    expect(result.status).toBe(200);
+    expect(mock.verify).toHaveBeenCalledWith('signed-fixture');
+    expect(mock.fetch).toHaveBeenCalled();
+  });
+  it.each(['text/plain', 'application/jsonp', 'application/problem+json', ''])(
+    'rejects non-JSON media types before verification: %s',
+    async (contentType) => {
+      const result = await POST(
+        request(undefined, { 'content-type': contentType })
+      );
+      expect(result.status).toBe(400);
+      expect(mock.verify).not.toHaveBeenCalled();
+      expect(mock.db).not.toHaveBeenCalled();
+      expect(mock.fetch).not.toHaveBeenCalled();
+    }
+  );
   it('denies invalid/expired OIDC before service access without exposing diagnostics', async () => {
     mock.verify.mockRejectedValue(new Error('synthetic-private-claims'));
     const result = await POST(request());

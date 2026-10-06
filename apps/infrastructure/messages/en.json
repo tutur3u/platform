@@ -6198,8 +6198,6 @@
       "conceal": "Hide token",
       "configured": "Configured",
       "createDraft": "Create credential draft",
-      "deliveryDisabled": "Vault delivery disabled",
-      "deliveryEnabled": "Vault delivery enabled",
       "description": "Stage Windows and macOS signing credentials securely. Delivery stays disabled until protected workflow verification is complete.",
       "dismissToken": "Dismiss token",
       "draftVersion": "Draft {version} · revision {revision}",
@@ -6219,6 +6217,8 @@
         "notarization_key_invalid": "The App Store Connect key must be PKCS#8 EC P-256.",
         "signing_profile_invalid": "Complete the required signing files and identity fields."
       },
+      "globalDeliveryDisabled": "Global delivery disabled",
+      "globalDeliveryEnabled": "Global delivery enabled",
       "issueToken": "Issue 7-day {platform} token",
       "loading": "Loading signing state…",
       "materialReady": "Material checks passed",
@@ -6229,6 +6229,8 @@
       "noTokens": "No workflow tokens",
       "notValidated": "Validation required",
       "operationFailed": "The operation could not be confirmed. Reload state before retrying.",
+      "platformDeliveryDisabled": "Platform admission disabled",
+      "platformDeliveryEnabled": "Platform admission enabled",
       "platforms": {
         "macos": "macOS",
         "windows": "Windows"

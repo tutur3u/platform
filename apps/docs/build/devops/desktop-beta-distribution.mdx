@@ -437,7 +437,11 @@ Infrastructure exposes a separate machine-only `POST /api/v1/desktop-deployment/
 for Windows and macOS. `DESKTOP_DEPLOYMENT_VAULT_ENABLED` defaults off and the private
 platform environment must independently be enabled. Operator activation selects an
 immutable version; it never changes either admission switch. Metadata distinguishes
-the global switch from platform admission, without exposing an enabling control.
+the global switch from platform admission as two independent badges on each platform,
+including when only one is enabled, without exposing an enabling control. The
+operator regression covers all four switch combinations. JSON requests may include
+media-type parameters such as `application/json; charset=utf-8`; unrelated media
+types are rejected before verification or service access.
 
 The endpoint verifies the signed fixed desktop GitHub OIDC contract before token
 lookup or service-client access. A hashed token binds platform and active version;

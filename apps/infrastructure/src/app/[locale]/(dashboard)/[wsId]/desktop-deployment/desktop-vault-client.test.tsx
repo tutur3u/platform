@@ -109,10 +109,58 @@ describe('private desktop signing operator workflow', () => {
     );
     expect(password).toHaveValue('');
     expect(password).toHaveAttribute('type', 'password');
-    expect(screen.getAllByText('vault.deliveryDisabled')).toHaveLength(2);
+    expect(screen.getAllByText('vault.globalDeliveryDisabled')).toHaveLength(2);
+    expect(screen.getAllByText('vault.platformDeliveryDisabled')).toHaveLength(
+      2
+    );
     expect(screen.queryByRole('switch')).not.toBeInTheDocument();
     expect(screen.queryByText('PRIVATE SAVED VALUE')).not.toBeInTheDocument();
   });
+  it.each([
+    [false, false],
+    [false, true],
+    [true, false],
+    [true, true],
+  ])(
+    'shows independent global=%s and platform=%s admission gates',
+    async (globalEnabled, platformEnabled) => {
+      mock.state.mockResolvedValue({
+        ...state,
+        deliveryEnabled: globalEnabled,
+        platforms: [
+          { ...state.platforms[0], enabled: platformEnabled },
+          { ...state.platforms[1], enabled: !platformEnabled },
+        ],
+      });
+      mount();
+      const windows = within(
+        await screen.findByRole('region', { name: 'platforms.windows' })
+      );
+      const macos = within(
+        screen.getByRole('region', { name: 'platforms.macos' })
+      );
+      const globalKey = globalEnabled
+        ? 'vault.globalDeliveryEnabled'
+        : 'vault.globalDeliveryDisabled';
+      const platformKey = platformEnabled
+        ? 'vault.platformDeliveryEnabled'
+        : 'vault.platformDeliveryDisabled';
+      expect(windows.getByText(globalKey)).toBeInTheDocument();
+      expect(macos.getByText(globalKey)).toBeInTheDocument();
+      expect(windows.getByText(platformKey)).toBeInTheDocument();
+      expect(
+        macos.getByText(
+          platformEnabled
+            ? 'vault.platformDeliveryDisabled'
+            : 'vault.platformDeliveryEnabled'
+        )
+      ).toBeInTheDocument();
+      expect(screen.queryByRole('switch')).not.toBeInTheDocument();
+      expect(
+        windows.queryByRole('button', { name: 'enable' })
+      ).not.toBeInTheDocument();
+    }
+  );
   it('sends the current expected revision and clears an edited scalar after successful save', async () => {
     mount();
     const password = await screen.findByLabelText(
@@ -388,32 +436,4 @@ describe('private desktop signing operator workflow', () => {
     );
     expect(view.client.isMutating()).toBe(0);
   });
-  it.each([
-    [false, true, false],
-    [true, false, false],
-    [true, true, true],
-  ])(
-    'requires global %s and platform %s admission for the vault badge',
-    async (global, platform, enabled) => {
-      mock.state.mockResolvedValue({
-        ...state,
-        deliveryEnabled: global,
-        platforms: [
-          { platform: 'windows', enabled: platform, activeVersionId: 'active' },
-        ],
-      });
-      mount();
-      const panel = await screen.findByRole('region', {
-        name: 'platforms.windows',
-      });
-      expect(
-        within(panel).getByText(
-          enabled ? 'vault.deliveryEnabled' : 'vault.deliveryDisabled'
-        )
-      ).toBeInTheDocument();
-      expect(
-        within(panel).queryByRole('button', { name: 'enable' })
-      ).not.toBeInTheDocument();
-    }
-  );
 });

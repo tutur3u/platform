@@ -6198,8 +6198,6 @@
       "conceal": "Ẩn mã",
       "configured": "Đã cấu hình",
       "createDraft": "Tạo bản nháp thông tin ký",
-      "deliveryDisabled": "Phân phối từ kho bị tắt",
-      "deliveryEnabled": "Phân phối từ kho được bật",
       "description": "Chuẩn bị thông tin ký Windows và macOS an toàn. Phân phối vẫn bị tắt cho đến khi hoàn tất xác minh quy trình được bảo vệ.",
       "dismissToken": "Đóng mã",
       "draftVersion": "Bản nháp {version} · lần sửa {revision}",
@@ -6219,6 +6217,8 @@
         "notarization_key_invalid": "Khóa App Store Connect phải là PKCS#8 EC P-256.",
         "signing_profile_invalid": "Bổ sung đầy đủ các tệp ký và trường danh tính bắt buộc."
       },
+      "globalDeliveryDisabled": "Phân phối toàn cục bị tắt",
+      "globalDeliveryEnabled": "Phân phối toàn cục được bật",
       "issueToken": "Cấp mã {platform} trong 7 ngày",
       "loading": "Đang tải trạng thái thông tin ký…",
       "materialReady": "Đã qua kiểm tra thông tin ký",
@@ -6229,6 +6229,8 @@
       "noTokens": "Chưa có mã truy cập quy trình",
       "notValidated": "Cần kiểm tra",
       "operationFailed": "Không thể xác nhận thao tác. Tải lại trạng thái trước khi thử lại.",
+      "platformDeliveryDisabled": "Quyền phân phối của nền tảng bị tắt",
+      "platformDeliveryEnabled": "Quyền phân phối của nền tảng được bật",
       "platforms": {
         "macos": "macOS",
         "windows": "Windows"
