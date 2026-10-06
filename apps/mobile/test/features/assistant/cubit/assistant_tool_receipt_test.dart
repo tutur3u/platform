@@ -42,11 +42,15 @@ void main() {
   late AssistantChatCubit chat;
   late AssistantShellCubit shell;
   late List<SafeErrorDiagnostics> failures;
+  late List<String> workspaceChanges;
+  late List<bool> immersiveChanges;
   var epoch = 0;
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     epoch = 0;
     failures = [];
+    workspaceChanges = [];
+    immersiveChanges = [];
     repository = ToolReceiptRepository();
     final preferences = AssistantPreferences(currentUserId: () => 'actor-a');
     shell = AssistantShellCubit(
@@ -57,10 +61,10 @@ void main() {
     chat = AssistantChatCubit(
       repository: repository,
       preferences: preferences,
-      onWorkspaceContextChanged: (_) async {},
+      onWorkspaceContextChanged: (id) async => workspaceChanges.add(id),
       onSoulRefreshRequested: shell.refreshSoul,
       onSoulRefreshFailed: failures.add,
-      onImmersiveModeChanged: (_) {},
+      onImmersiveModeChanged: immersiveChanges.add,
       onChatRestored: (_) async {},
     );
     await chat.loadWorkspace('synthetic-ws');
@@ -277,14 +281,96 @@ void main() {
       } else {
         await chat.loadWorkspace('other-ws');
         await chat.loadWorkspace('synthetic-ws');
-        // Production Shell workspace reload owns its own request generation;
-        // captured actor/workspace scope token also departs on this transition.
-        epoch += 2;
+        // Keep actor epoch unchanged: only the workspace-version guard rejects.
       }
       repository.heldSoul!.completeError(StateError('Synthetic late failure'));
       await Future<void>.delayed(Duration.zero);
       expect(failures, isEmpty);
       expect(shell.state.soul.name, 'Mira');
     });
+  }
+  for (final effect in ['set_workspace_context', 'set_immersive_mode']) {
+    for (final outcome in [
+      'nameless',
+      'conflict',
+      'unsolicited',
+      'error',
+      'preliminary',
+      'malformed',
+      'false-success',
+      'invalid-value',
+      'duplicate',
+      'false-enabled',
+    ]) {
+      test('native $effect $outcome receipt admission', () async {
+        await start();
+        if (outcome != 'unsolicited') {
+          repository.input(
+            name: effect,
+            args: effect == 'set_workspace_context'
+                ? {'workspaceId': 'target-ws'}
+                : {'enabled': outcome != 'false-enabled'},
+          );
+        }
+        final result = <String, dynamic>{
+          'success': outcome != 'false-success',
+          if (effect == 'set_workspace_context')
+            'workspaceContextId': 'target-ws'
+          else
+            'enabled': outcome != 'false-enabled',
+          if (outcome == 'error') 'error': 'Synthetic refusal',
+        };
+        if (outcome == 'malformed') {
+          result.remove(
+            effect == 'set_workspace_context'
+                ? 'workspaceContextId'
+                : 'enabled',
+          );
+        }
+        if (outcome == 'invalid-value') {
+          result[effect == 'set_workspace_context'
+              ? 'workspaceContextId'
+              : 'enabled'] = effect == 'set_workspace_context'
+              ? '   '
+              : 'true';
+        }
+        repository.output(
+          result: result,
+          name: outcome == 'conflict'
+              ? 'other_tool'
+              : [
+                  'unsolicited',
+                  'error',
+                  'preliminary',
+                  'malformed',
+                  'false-success',
+                  'invalid-value',
+                ].contains(outcome)
+              ? effect
+              : null,
+          preliminary: outcome == 'preliminary',
+        );
+        if (outcome == 'duplicate') repository.output(result: result);
+        await finish();
+        final admitted = [
+          'nameless',
+          'duplicate',
+          'false-enabled',
+        ].contains(outcome);
+        expect(
+          workspaceChanges,
+          admitted && effect == 'set_workspace_context'
+              ? ['target-ws']
+              : <String>[],
+        );
+        expect(
+          immersiveChanges,
+          admitted && effect == 'set_immersive_mode'
+              ? [outcome != 'false-enabled']
+              : <bool>[],
+        );
+        expect(repository.soulReads, 0);
+      });
+    }
   }
 }

@@ -173,6 +173,11 @@ assistant settings. Genuine reply persistence and transport failures remain
 separate failures. This rule does not settle conflicts with pending offline name
 edits or provide cross-client ordering guarantees.
 
+Workspace-context and immersive-mode effects use the same current-input identity,
+definitive-success and duplicate admission rules. Workspace context requires a
+nonempty destination; immersive mode requires an explicit boolean, including
+`false`. A missing or malformed value does not become a fabricated UI action.
+
 `assistant_tool_receipt_test.dart` exercises the actual native NDJSON mapping,
 tool admission, duplicate/history isolation and delayed scope changes;
 `assistant_tool_name_title_test.dart` verifies the production shell title in both

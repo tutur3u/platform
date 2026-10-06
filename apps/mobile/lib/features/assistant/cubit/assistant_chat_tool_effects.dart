@@ -26,22 +26,22 @@ extension _AssistantChatToolEffects on AssistantChatCubit {
     if (!isCurrent()) return;
     final output = payload['output'];
     final reportedName = payload['toolName'];
-    final toolName = reportedName is String ? reportedName : retainedName;
+    final callId = payload['toolCallId'];
+    // Normal SDK output omits toolName. Only the current message's input
+    // establishes call identity. Unsolicited/conflicting names fail closed.
+    if (retainedName == null ||
+        (reportedName != null && reportedName != retainedName) ||
+        callId is! String ||
+        callId.isEmpty ||
+        payload['preliminary'] == true ||
+        output is! Map ||
+        output['success'] != true ||
+        output.containsKey('error')) {
+      return;
+    }
 
-    if (toolName == 'update_my_settings') {
-      final callId = payload['toolCallId'];
-      // Normal SDK output omits toolName. Only the current message's input
-      // establishes call identity. Unsolicited/conflicting names fail closed.
-      if (retainedName != toolName ||
-          callId is! String ||
-          callId.isEmpty ||
-          payload['preliminary'] == true ||
-          output is! Map ||
-          output['success'] != true ||
-          output.containsKey('error') ||
-          !handled.add(callId)) {
-        return;
-      }
+    if (retainedName == 'update_my_settings') {
+      if (!handled.add(callId)) return;
       try {
         await _onSoulRefreshRequested();
       } on Object catch (error) {
@@ -58,15 +58,17 @@ extension _AssistantChatToolEffects on AssistantChatCubit {
       return;
     }
 
-    // Other tool effects retain their existing behavior.
-    if (reportedName == 'set_workspace_context') {
-      final contextId = readWorkspaceContextId(output);
-      if (contextId != null && contextId.isNotEmpty) {
+    if (retainedName == 'set_workspace_context') {
+      final contextId = readWorkspaceContextId(output)?.trim();
+      if (contextId != null && contextId.isNotEmpty && handled.add(callId)) {
         await _onWorkspaceContextChanged(contextId);
       }
     }
-    if (reportedName == 'set_immersive_mode') {
-      _onImmersiveModeChanged(readImmersiveFlag(output));
+    if (retainedName == 'set_immersive_mode') {
+      final enabled = output['enabled'];
+      if (enabled is bool && handled.add(callId)) {
+        _onImmersiveModeChanged(enabled);
+      }
     }
   }
 }

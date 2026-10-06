@@ -145,13 +145,16 @@ class ToolReceiptRepository extends ReplyRepository {
       send({'type': 'assistant_part', 'part': part});
   void send(Map<String, dynamic> event) =>
       body.add(utf8.encode('${jsonEncode(event)}\n'));
-  void input({String callId = 'rename', String name = 'update_my_settings'}) =>
-      part({
-        'type': 'tool-input-available',
-        'toolCallId': callId,
-        'toolName': name,
-        'input': {'name': 'Nova'},
-      });
+  void input({
+    String callId = 'rename',
+    String name = 'update_my_settings',
+    Map<String, dynamic> args = const {'name': 'Nova'},
+  }) => part({
+    'type': 'tool-input-available',
+    'toolCallId': callId,
+    'toolName': name,
+    'input': args,
+  });
   void output({
     String callId = 'rename',
     Object? result = const {
