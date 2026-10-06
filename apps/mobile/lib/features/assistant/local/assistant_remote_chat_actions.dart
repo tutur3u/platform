@@ -10,6 +10,7 @@ Future<bool> submitAssistantRemoteChat(
   required String message,
   required bool Function() isCurrent,
   Future<String> Function()? resolveTimezone,
+  bool Function()? isOperationCurrent,
 }) async {
   bool admitted() =>
       isCurrent() &&
@@ -27,7 +28,7 @@ Future<bool> submitAssistantRemoteChat(
     creditSource: shell.creditSource,
     workspaceContextId: shell.workspaceContextId,
     timezone: timezone,
-    isCurrent: isCurrent,
+    isCurrent: isOperationCurrent ?? isCurrent,
     creditWsId: shell.creditSource == AssistantCreditSource.personal
         ? shell.personalWorkspaceId
         : wsId,
@@ -40,6 +41,7 @@ Future<void> retryAssistantChat(
   AssistantShellState shell, {
   bool Function()? isCurrent,
   Future<String> Function()? resolveTimezone,
+  bool Function()? isOperationCurrent,
 }) async {
   if (isCurrent != null && !isCurrent()) return;
   final wsId = shell.workspace?.id;
@@ -57,7 +59,7 @@ Future<void> retryAssistantChat(
     creditSource: shell.creditSource,
     workspaceContextId: shell.workspaceContextId,
     timezone: timezone,
-    isCurrent: isCurrent,
+    isCurrent: isOperationCurrent ?? isCurrent,
     creditWsId: shell.creditSource == AssistantCreditSource.personal
         ? shell.personalWorkspaceId
         : wsId,

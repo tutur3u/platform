@@ -1,6 +1,6 @@
-/// A remote drawer or picker must not outlive its captured local-mode scope.
-/// Every asynchronous drawer phase rechecks the same account/workspace epoch
-/// and mode version before exposing or operating on a remote conversation.
+/// A remote action must not outlive its captured account/workspace/mode scope.
+/// Callers choose a transient interaction version or durable operation version;
+/// every asynchronous phase rechecks the same captured lease.
 class AssistantRemoteScopeGuard {
   AssistantRemoteScopeGuard({
     required Object? Function() scope,

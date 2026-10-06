@@ -590,3 +590,20 @@ session port follows the same validation; web remains the production runtime.
 `session-scope.test.ts`, and `assistant_live_repository_test.dart` cover schema
 validation, permissions, unavailable tools, scope separation, and compatibility.
 Provider calls and latency still require authenticated runtime verification.
+
+### Mobile remote reply lifecycle
+
+An admitted mobile Chat reply keeps streaming while the app is temporarily
+backgrounded and can complete or report its error before the user returns.
+Foreground admission still applies to new prompts, attachments, history actions,
+and Live controls. Account and workspace changes, including leaving and returning
+to the same identity, and an explicit local/remote mode change invalidate the old
+reply lease. Local runtime unload/reload alone does not invalidate that lease;
+selecting a local model still stops remote work before local interaction.
+
+`assistant_background_reply_test.dart` exercises the actual page and shell dock
+through pause, completion/error, active resume, and account/workspace/mode ABA.
+`assistant_local_chat_cubit_test.dart` verifies that semantic mode selection and
+transient runtime epochs remain separate. These injected stream tests do not
+guarantee that an operating system keeps a suspended app's network connection
+alive; device and provider delivery remain separate evidence.

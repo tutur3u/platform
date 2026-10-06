@@ -170,6 +170,15 @@ For the source-linked diagnosis guide, read
   remains pending; connect only after all prerequisites succeed and scope is
   still current. Test pending and failing tasks with controlled completers.
 
+- Separate foreground interaction admission from the lease of an already admitted
+  remote operation. A transient local runtime invalidation on pause must not drop
+  remote chunks, errors, or completion. Keep sticky actor/workspace and semantic
+  mode-selection epochs; runtime hydration may block new actions without
+  cancelling an existing remote reply. Test through the actual page and dock,
+  including paused completion/error, active resume, and ABA transitions. In widget
+  fixtures, supply native platform boundaries explicitly and pump stream closure
+  before awaiting fake-async completion.
+
 Keep runtime claims separate: source and injected-host tests do not establish
 provider/device operation or production delivery.
 
