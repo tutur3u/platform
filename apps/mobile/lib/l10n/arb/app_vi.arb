@@ -1466,7 +1466,7 @@
   "assistantQuickPromptTasks": "Cho tôi xem các công việc khẩn cấp nhất",
   "assistantReasoningLabel": "Lý do",
   "assistantRenameAction": "Đổi tên",
-  "assistantRenameTitle": "Đổi tên Mira",
+  "assistantRenameTitle": "Đổi tên trợ lý",
   "assistantReplyFailed": "Mira chưa trả lời xong. Tin nhắn của bạn vẫn ở đây. Thử lại",
   "assistantSaveAction": "Lưu",
   "assistantScrollToBottomAction": "Cuộn xuống cuối",
@@ -4503,5 +4503,7 @@
   "assistantMemoryDeleteTitle": "Xóa ký ức?",
   "assistantMemoryDeleteDescription": "Xóa ký ức đã lưu này khỏi bộ nhớ không gian làm việc của bạn.",
   "assistantMemoryExport": "Xuất ký ức",
-  "assistantPersonalSettingsError": "Không thể hoàn tất thay đổi. Hãy thử lại."
+  "assistantPersonalSettingsError": "Không thể hoàn tất thay đổi. Hãy thử lại.",
+  "assistantRenameLabel": "Tên trợ lý",
+  "assistantRenameError": "Không thể cập nhật tên. Bản nháp vẫn được giữ; hãy thử lại."
 }

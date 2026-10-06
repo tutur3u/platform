@@ -119,10 +119,16 @@ extension _ShellPageLayout on _ShellPageState {
                                 replayToken:
                                     _rootTabReplayTokens[Routes.home] ?? 0,
                               ),
-                              (_) => AssistantPage(
-                                replayToken:
+                              (_) =>
+                                  widget.assistantPageBuilder?.call(
                                     _rootTabReplayTokens[Routes.assistant] ?? 0,
-                              ),
+                                  ) ??
+                                  AssistantPage(
+                                    replayToken:
+                                        _rootTabReplayTokens[Routes
+                                            .assistant] ??
+                                        0,
+                                  ),
                               (_) => AppsScreen(
                                 isActive: widget.matchedLocation == Routes.apps,
                                 replayToken:

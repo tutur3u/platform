@@ -895,7 +895,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantRenameAction => 'Đổi tên';
 
   @override
-  String get assistantRenameTitle => 'Đổi tên Mira';
+  String get assistantRenameTitle => 'Đổi tên trợ lý';
 
   @override
   String get assistantReplyFailed => 'Mira chưa trả lời xong. Tin nhắn của bạn vẫn ở đây. Thử lại';
@@ -10432,4 +10432,10 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantPersonalSettingsError => 'Không thể hoàn tất thay đổi. Hãy thử lại.';
+
+  @override
+  String get assistantRenameLabel => 'Tên trợ lý';
+
+  @override
+  String get assistantRenameError => 'Không thể cập nhật tên. Bản nháp vẫn được giữ; hãy thử lại.';
 }

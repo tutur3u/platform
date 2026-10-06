@@ -1463,7 +1463,7 @@
   "assistantQuickPromptTasks": "Show my most urgent tasks",
   "assistantReasoningLabel": "Reasoning",
   "assistantRenameAction": "Rename",
-  "assistantRenameTitle": "Rename Assistant",
+  "assistantRenameTitle": "Rename assistant",
   "assistantReplyFailed": "Mira's reply stopped. Your message is still here. Retry",
   "assistantSaveAction": "Save",
   "assistantScrollToBottomAction": "Scroll to bottom",
@@ -4500,5 +4500,7 @@
   "assistantMemoryDeleteTitle": "Delete memory?",
   "assistantMemoryDeleteDescription": "Remove this saved memory from your workspace memory.",
   "assistantMemoryExport": "Export memories",
-  "assistantPersonalSettingsError": "Could not complete this change. Try again."
+  "assistantPersonalSettingsError": "Could not complete this change. Try again.",
+  "assistantRenameLabel": "Assistant name",
+  "assistantRenameError": "Could not update the name. Your draft is kept; try again."
 }
