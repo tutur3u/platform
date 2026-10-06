@@ -1,8 +1,11 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from '@testing-library/react';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
+import { createElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  client: { removeQueries: vi.fn() },
   update: vi.fn(),
   upload: vi.fn(),
   stop: vi.fn(),
@@ -14,7 +17,12 @@ vi.mock('@tuturuuu/internal-api', () => ({
   updateMeetAiSession: mocks.update,
   uploadMeetAiChunk: mocks.upload,
 }));
+vi.mock('@tuturuuu/internal-api/users', () => ({
+  getCurrentUserHiddenWorkspaces: vi.fn(),
+  updateCurrentUserHiddenWorkspace: vi.fn(),
+}));
 vi.mock('@tanstack/react-query', () => ({
+  useQueryClient: () => mocks.client,
   useQuery: () => ({ data: { sessions: [] }, refetch: mocks.refetch }),
   useMutation: ({ mutationFn }: { mutationFn: unknown }) => ({
     mutateAsync: mutationFn,
@@ -44,7 +52,13 @@ beforeEach(() => {
 
 it('marks a missing final flush as incomplete', async () => {
   mocks.stop.mockResolvedValue(false);
-  const hook = renderHook(() => useMeetingAi('workspace', 'meeting'));
+  const hook = renderHook(() => useMeetingAi('workspace', 'meeting'), {
+    wrapper: ({ children }: { children: ReactNode }) =>
+      createElement(WorkspaceVisibilityProvider, {
+        actorId: 'actor-a',
+        children,
+      }),
+  });
   await act(() => hook.result.current.start());
   await act(() => hook.result.current.finish());
   expect(mocks.update).toHaveBeenLastCalledWith('workspace', 'meeting', {
@@ -58,7 +72,13 @@ it('marks a missing final flush as incomplete', async () => {
 });
 
 it('drains queued uploads and finalizes when capture overloads', async () => {
-  const hook = renderHook(() => useMeetingAi('workspace', 'meeting'));
+  const hook = renderHook(() => useMeetingAi('workspace', 'meeting'), {
+    wrapper: ({ children }: { children: ReactNode }) =>
+      createElement(WorkspaceVisibilityProvider, {
+        actorId: 'actor-a',
+        children,
+      }),
+  });
   await act(() => hook.result.current.start());
   await act(async () => {
     for (let index = 0; index < 61; index++)
@@ -85,7 +105,13 @@ it('waits for an in-flight start before finalizing for leave', async () => {
       resolveStart = resolve;
     })
   );
-  const hook = renderHook(() => useMeetingAi('workspace', 'meeting'));
+  const hook = renderHook(() => useMeetingAi('workspace', 'meeting'), {
+    wrapper: ({ children }: { children: ReactNode }) =>
+      createElement(WorkspaceVisibilityProvider, {
+        actorId: 'actor-a',
+        children,
+      }),
+  });
   await act(async () => {
     const started = hook.result.current.start();
     await Promise.resolve();
@@ -106,7 +132,13 @@ it('waits for an in-flight start before finalizing for leave', async () => {
 
 it('counts simultaneous sources as one upload window and flushes final audio on finish', async () => {
   vi.useFakeTimers();
-  const hook = renderHook(() => useMeetingAi('workspace', 'meeting'));
+  const hook = renderHook(() => useMeetingAi('workspace', 'meeting'), {
+    wrapper: ({ children }: { children: ReactNode }) =>
+      createElement(WorkspaceVisibilityProvider, {
+        actorId: 'actor-a',
+        children,
+      }),
+  });
   await act(() => hook.result.current.start());
   await act(async () => {
     for (let index = 0; index < 12; index++)
@@ -134,7 +166,13 @@ it('counts simultaneous sources as one upload window and flushes final audio on 
 });
 it('finishes before the wall-clock server expiry even when there is no speech', async () => {
   vi.useFakeTimers();
-  const hook = renderHook(() => useMeetingAi('workspace', 'meeting'));
+  const hook = renderHook(() => useMeetingAi('workspace', 'meeting'), {
+    wrapper: ({ children }: { children: ReactNode }) =>
+      createElement(WorkspaceVisibilityProvider, {
+        actorId: 'actor-a',
+        children,
+      }),
+  });
   await act(() => hook.result.current.start());
   await act(async () => {
     await vi.advanceTimersByTimeAsync(3 * 60 * 60 * 1000 - 15_000);
@@ -160,7 +198,13 @@ it('gives a queued clip a fresh retry window when its upload starts', async () =
       release = resolve;
     })
   );
-  const hook = renderHook(() => useMeetingAi('workspace', 'meeting'));
+  const hook = renderHook(() => useMeetingAi('workspace', 'meeting'), {
+    wrapper: ({ children }: { children: ReactNode }) =>
+      createElement(WorkspaceVisibilityProvider, {
+        actorId: 'actor-a',
+        children,
+      }),
+  });
   await act(() => hook.result.current.start());
   await act(async () => {
     mocks.onChunk?.(new Blob(['first']), 0);
@@ -200,7 +244,13 @@ it('waits for a delayed final worklet flush and its upload before notes finaliza
         releaseUpload = () => resolve({ status: 'completed' });
       })
   );
-  const hook = renderHook(() => useMeetingAi('workspace', 'meeting'));
+  const hook = renderHook(() => useMeetingAi('workspace', 'meeting'), {
+    wrapper: ({ children }: { children: ReactNode }) =>
+      createElement(WorkspaceVisibilityProvider, {
+        actorId: 'actor-a',
+        children,
+      }),
+  });
   await act(() => hook.result.current.start());
   let finished!: Promise<void>;
   await act(async () => {
