@@ -7,9 +7,9 @@ import {
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Button } from '@tuturuuu/ui/button';
-import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
+import { showMeetingAiFailure } from './failure-toast';
 import { MeetingFollowups } from './meeting-followups';
 import { MeetingTranscript } from './meeting-transcript';
 import type { useMeetingAi } from './use-meeting-ai';
@@ -23,7 +23,7 @@ export function MeetingAiPanel({
 }) {
   const t = useTranslations('meet.ai');
   const run = (work: () => Promise<unknown>) =>
-    void work().catch(() => toast.error(t('failed')));
+    void work().catch((error: unknown) => showMeetingAiFailure(t, error));
   const data = ai.data;
   const active = data?.sessions.find((session) => !session.ended_at);
   return (
