@@ -1,5 +1,6 @@
 type RGB = [number, number, number];
 const darkBackground: RGB = [18, 18, 18];
+const originalBackground: RGB = [255, 255, 255];
 const lightText: RGB = [231, 231, 231];
 const darkText: RGB = [23, 23, 23];
 
@@ -66,7 +67,8 @@ function css(color: RGB) {
 /** Runs in the trusted parent, never by enabling scripts inside the email. */
 export function applyMailPreviewContrast(
   document: Document,
-  surface?: HTMLElement | null
+  surface?: HTMLElement | null,
+  mode: 'dark' | 'original' = 'dark'
 ) {
   const view = document.defaultView;
   if (!view) return;
@@ -83,8 +85,8 @@ export function applyMailPreviewContrast(
     const [r, g, b, alpha] = context.getImageData(0, 0, 1, 1).data;
     return { rgb: [r!, g!, b!] as RGB, alpha: alpha! / 255 };
   };
-  let surfaceBackground = darkBackground;
-  if (surface) {
+  let surfaceBackground = mode === 'dark' ? darkBackground : originalBackground;
+  if (surface && mode === 'dark') {
     const color =
       surface.ownerDocument.defaultView?.getComputedStyle(
         surface
@@ -94,16 +96,18 @@ export function applyMailPreviewContrast(
       surfaceBackground = mailDarkSurface(sampled.rgb);
   }
 
-  document.documentElement.style.setProperty(
-    'background-color',
-    css(surfaceBackground),
-    'important'
-  );
-  document.body.style.setProperty(
-    'background-color',
-    css(surfaceBackground),
-    'important'
-  );
+  if (mode === 'dark') {
+    document.documentElement.style.setProperty(
+      'background-color',
+      css(surfaceBackground),
+      'important'
+    );
+    document.body.style.setProperty(
+      'background-color',
+      css(surfaceBackground),
+      'important'
+    );
+  }
   const backgrounds = new WeakMap<Element, RGB>();
   for (const element of [
     document.body,
@@ -117,7 +121,11 @@ export function applyMailPreviewContrast(
     if (original && original.alpha > 0) {
       background = composite(original.rgb, parentBackground, original.alpha);
       // Normalize neutral paper, black and gray panels to the host surface.
-      if (neutralMailSurface(background) && element.tagName !== 'IMG') {
+      if (
+        mode === 'dark' &&
+        neutralMailSurface(background) &&
+        element.tagName !== 'IMG'
+      ) {
         background = surfaceBackground;
         element.style.setProperty(
           'background-color',
@@ -132,6 +140,7 @@ export function applyMailPreviewContrast(
       /(?:rgba?|color|oklch|oklab|lab|lch)\([^)]*\)/g
     );
     if (
+      mode === 'dark' &&
       element.tagName !== 'IMG' &&
       !style.backgroundImage.includes('url(') &&
       gradientColors?.length &&
@@ -164,6 +173,7 @@ export function applyMailPreviewContrast(
         );
       }
     }
+    if (mode === 'original') continue;
     // Resolve currentColor after foreground correction so borders cannot turn white.
     const borderStyle = view.getComputedStyle(element);
     for (const side of ['top', 'right', 'bottom', 'left']) {

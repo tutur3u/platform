@@ -23,3 +23,21 @@ describe('email border rendering', () => {
     );
   });
 });
+
+describe('calendar invitation paper contrast', () => {
+  it('corrects pale sender text on original white paper without flattening it', () => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+    document.body.innerHTML =
+      '<table style="background:white"><tbody><tr><td style="color:rgb(231,231,231)"><strong>When</strong><a href="https://calendar.google.com" style="color:rgb(180,190,210)">Respond</a></td></tr></tbody></table>';
+    applyMailPreviewContrast(document, null, 'original');
+    expect(
+      getComputedStyle(document.querySelector('table')!).backgroundColor
+    ).toBe('rgb(255, 255, 255)');
+    expect(getComputedStyle(document.querySelector('td')!).color).toBe(
+      'rgb(23, 23, 23)'
+    );
+    expect(getComputedStyle(document.querySelector('a')!).color).toBe(
+      'rgb(23, 23, 23)'
+    );
+  });
+});

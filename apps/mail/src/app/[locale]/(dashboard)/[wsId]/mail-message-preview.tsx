@@ -2,6 +2,7 @@
 
 import type { MailAttachment } from '@tuturuuu/internal-api';
 import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import {
   useCallback,
   useEffect,
@@ -10,7 +11,10 @@ import {
   useSyncExternalStore,
 } from 'react';
 import { buildMailMessagePreviewDocument } from './mail-message-preview-utils';
-import { useMailPreviewAppearance } from './mail-preview-appearance';
+import {
+  resolveMailPreviewAppearance,
+  useMailPreviewAppearance,
+} from './mail-preview-appearance';
 import { applyMailPreviewContrast } from './mail-preview-contrast';
 import { collapseMailQuotedHistory } from './mail-quoted-history';
 
@@ -26,7 +30,9 @@ export function MailMessagePreview({
   title: string;
 }) {
   const t = useTranslations('mail');
-  const [mode] = useMailPreviewAppearance();
+  const [appearance] = useMailPreviewAppearance();
+  const { resolvedTheme } = useTheme();
+  const mode = resolveMailPreviewAppearance(appearance, resolvedTheme);
   const hydrated = useSyncExternalStore(
     subscribeHydration,
     () => true,
@@ -72,12 +78,11 @@ export function MailMessagePreview({
     const body = frame.current?.contentDocument?.body;
     if (!hydrated || !body?.hasAttribute('data-mail-preview')) return;
     collapseMailQuotedHistory(body.ownerDocument, t('quoted_text'));
-    if (mode === 'dark') {
-      applyMailPreviewContrast(
-        body.ownerDocument,
-        frame.current?.parentElement
-      );
-    }
+    applyMailPreviewContrast(
+      body.ownerDocument,
+      frame.current?.parentElement,
+      mode
+    );
     setReadyDocument(previewDocument);
     observer.current = new ResizeObserver(resize);
     observer.current.observe(body);
