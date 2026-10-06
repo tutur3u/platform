@@ -6,6 +6,8 @@ import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dart';
 import 'package:mobile/features/assistant/local/assistant_local_preferences.dart';
 import 'package:mobile/features/assistant/view/assistant_settings_hub.dart';
+import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
+import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mocktail/mocktail.dart';
@@ -53,6 +55,14 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.byType(AppBar), findsNothing);
+      expect(find.byType(MobileSectionAppBar), findsOneWidget);
+      expect(find.text('Assistant settings'), findsOneWidget);
+      expect(find.byType(ShellDockActionButton), findsOneWidget);
+      expect(find.byType(Image), findsWidgets);
+      expect(
+        tester.getTopLeft(find.byType(SwitchListTile)).dy,
+        greaterThan(tester.getBottomLeft(find.byType(MobileSectionAppBar)).dy),
+      );
       expect(
         tester
             .widget<ShellTitleOverride>(find.byType(ShellTitleOverride))

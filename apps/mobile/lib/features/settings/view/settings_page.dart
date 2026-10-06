@@ -20,6 +20,7 @@ import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
+import 'package:mobile/features/settings/view/product_preference_editors.dart';
 import 'package:mobile/features/settings/view/product_settings_registry.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/features/settings/view/settings_session_section.dart';
@@ -405,30 +406,8 @@ class _SettingsViewState extends State<_SettingsView> {
     if (mounted) setState(() => _disableDefaultTaskBoardNavigation = selected);
   }
 
-  Future<void> _showFinanceAmountsDialog(FinancePreferencesCubit cubit) async {
-    final l10n = context.l10n;
-    final selected = await showSettingsChoiceDialog<bool>(
-      context: context,
-      title: l10n.settingsFinanceAmounts,
-      description: l10n.settingsFinanceAmountsDescription,
-      currentValue: cubit.state.showAmounts,
-      options: [
-        SettingsChoiceOption(
-          value: true,
-          label: l10n.financeShowAmounts,
-          icon: Icons.visibility_outlined,
-        ),
-        SettingsChoiceOption(
-          value: false,
-          label: l10n.financeHideAmounts,
-          icon: Icons.visibility_off_outlined,
-        ),
-      ],
-    );
-    if (selected != null && mounted && selected != cubit.state.showAmounts) {
-      await cubit.setShowAmounts(value: selected);
-    }
-  }
+  Future<void> _showFinanceAmountsDialog(FinancePreferencesCubit cubit) =>
+      openFinanceProductSettings(context, cubit);
 
   Future<void> _showHapticsDialog() async {
     final l10n = context.l10n;
@@ -523,43 +502,7 @@ class _SettingsViewState extends State<_SettingsView> {
     ]);
   }
 
-  Future<void> _showCalendarDialog() async {
-    final l10n = context.l10n;
-    final cubit = context.read<CalendarSettingsCubit>();
-    final selected = await showSettingsChoiceDialog<FirstDayOfWeek>(
-      context: context,
-      title: l10n.settingsFirstDayOfWeek,
-      description: l10n.settingsFirstDayOfWeekDescription,
-      currentValue: cubit.state.userPreference,
-      options: [
-        SettingsChoiceOption(
-          value: FirstDayOfWeek.auto_,
-          label: l10n.settingsFirstDayAuto,
-          icon: Icons.auto_mode_rounded,
-          description: l10n.settingsFirstDayAutoDescription,
-        ),
-        SettingsChoiceOption(
-          value: FirstDayOfWeek.monday,
-          label: l10n.settingsFirstDayMonday,
-          icon: Icons.calendar_view_week_rounded,
-        ),
-        SettingsChoiceOption(
-          value: FirstDayOfWeek.sunday,
-          label: l10n.settingsFirstDaySunday,
-          icon: Icons.view_week_rounded,
-        ),
-        SettingsChoiceOption(
-          value: FirstDayOfWeek.saturday,
-          label: l10n.settingsFirstDaySaturday,
-          icon: Icons.event_repeat_rounded,
-        ),
-      ],
-    );
-
-    if (selected != null && mounted) {
-      await cubit.setFirstDayOfWeek(selected);
-    }
-  }
+  Future<void> _showCalendarDialog() => openCalendarProductSettings(context);
 
   Future<void> _showLanguageDialog() async {
     final l10n = context.l10n;
