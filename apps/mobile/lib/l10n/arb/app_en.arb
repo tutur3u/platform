@@ -4437,5 +4437,9 @@
   "workspaceSystemBadge": "System",
   "workspaceSystemSection": "Internal",
   "workspaceTeamSection": "Team workspaces",
-  "commonCopyDiagnostics": "Copy debug information"
+  "commonCopyDiagnostics": "Copy debug information",
+  "calendarTimelineZoom": "Timeline zoom",
+  "calendarZoomIn": "Zoom in",
+  "calendarZoomOut": "Zoom out",
+  "calendarZoomReset": "Reset"
 }

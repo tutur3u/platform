@@ -19668,6 +19668,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copy debug information'**
   String get commonCopyDiagnostics;
+
+  /// No description provided for @calendarTimelineZoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline zoom'**
+  String get calendarTimelineZoom;
+
+  /// No description provided for @calendarZoomIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom in'**
+  String get calendarZoomIn;
+
+  /// No description provided for @calendarZoomOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom out'**
+  String get calendarZoomOut;
+
+  /// No description provided for @calendarZoomReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get calendarZoomReset;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

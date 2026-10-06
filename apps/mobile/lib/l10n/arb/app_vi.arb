@@ -4440,5 +4440,9 @@
   "workspaceSystemBadge": "Hệ thống",
   "workspaceSystemSection": "Nội bộ",
   "workspaceTeamSection": "Nhóm làm việc",
-  "commonCopyDiagnostics": "Sao chép thông tin gỡ lỗi"
+  "commonCopyDiagnostics": "Sao chép thông tin gỡ lỗi",
+  "calendarTimelineZoom": "Thu phóng dòng thời gian",
+  "calendarZoomIn": "Phóng to",
+  "calendarZoomOut": "Thu nhỏ",
+  "calendarZoomReset": "Đặt lại"
 }

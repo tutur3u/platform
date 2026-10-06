@@ -9,6 +9,7 @@ import 'package:mobile/features/calendar/utils/timed_event_geometry.dart';
 import 'package:mobile/features/calendar/widgets/all_day_event_bar.dart';
 import 'package:mobile/features/calendar/widgets/current_time_indicator.dart';
 import 'package:mobile/features/calendar/widgets/event_card.dart';
+import 'package:mobile/features/calendar/widgets/timeline_zoom_viewport.dart';
 
 /// Full-day timeline view showing a 24-hour grid with positioned event cards.
 ///
@@ -27,8 +28,14 @@ class DayScheduleView extends StatefulWidget {
     required this.onCreateAtTime,
     required this.onSwipe,
     super.key,
+    this.timelineZoom = 1,
+    this.zoomScope,
+    this.onTimelineZoomEnd,
   });
 
+  final double timelineZoom;
+  final Object? zoomScope;
+  final ValueChanged<double>? onTimelineZoomEnd;
   final DateTime selectedDate;
   final List<CalendarEvent> allDayEvents;
   final List<CalendarEvent> timedEvents;
@@ -44,9 +51,11 @@ class DayScheduleView extends StatefulWidget {
 
 class _DayScheduleViewState extends State<DayScheduleView> {
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey _timelineViewportKey = GlobalKey();
+  bool Function() _zoomBlocked = () => false;
   bool _didAutoScroll = false;
 
-  double _hourHeight(BuildContext context) =>
+  double _baseHourHeight(BuildContext context) =>
       responsiveValue(context, compact: 60, medium: 70, expanded: 80);
 
   double _timeGutterWidth(BuildContext context) =>
@@ -71,7 +80,7 @@ class _DayScheduleViewState extends State<DayScheduleView> {
     if (_didAutoScroll || !_scrollController.hasClients) return;
     _didAutoScroll = true;
 
-    final hourH = _hourHeight(context);
+    final hourH = _baseHourHeight(context) * widget.timelineZoom;
     final now = calendarNowInContext(context);
     final isToday =
         widget.selectedDate.year == now.year &&
@@ -104,10 +113,26 @@ class _DayScheduleViewState extends State<DayScheduleView> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => TimelineZoomViewport(
+    zoom: widget.timelineZoom,
+    scope: widget.zoomScope,
+    baseHourHeight: _baseHourHeight(context),
+    verticalController: _scrollController,
+    viewportKey: _timelineViewportKey,
+
+    onZoomEnd: widget.onTimelineZoomEnd,
+    builder: _buildZoomedTimeline,
+  );
+
+  Widget _buildZoomedTimeline(
+    BuildContext context,
+    double zoom,
+    bool Function() blocked,
+  ) {
+    _zoomBlocked = blocked;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final hourH = _hourHeight(context);
+    final hourH = _baseHourHeight(context) * zoom;
     final layouts = calculateEventLayout(
       widget.timedEvents,
       minimumDuration: timedEventMinimumDuration(
@@ -126,6 +151,7 @@ class _DayScheduleViewState extends State<DayScheduleView> {
 
     return GestureDetector(
       onHorizontalDragEnd: (details) {
+        if (_zoomBlocked()) return;
         final velocity = details.primaryVelocity ?? 0;
         if (velocity > 300) {
           widget.onSwipe(-1); // Swipe right → previous day.
@@ -137,7 +163,11 @@ class _DayScheduleViewState extends State<DayScheduleView> {
         children: [
           AllDayEventBar(
             events: widget.allDayEvents,
-            onEventTap: widget.onEventTap,
+            onEventTap: (event) {
+              if (!_zoomBlocked()) {
+                widget.onEventTap(event);
+              }
+            },
           ),
           Expanded(
             child: LayoutBuilder(
@@ -145,9 +175,11 @@ class _DayScheduleViewState extends State<DayScheduleView> {
                 final availableWidth = constraints.maxWidth - gutterW - 16;
 
                 return SingleChildScrollView(
+                  key: _timelineViewportKey,
                   controller: _scrollController,
                   child: GestureDetector(
                     onLongPressStart: (details) {
+                      if (_zoomBlocked()) return;
                       final localY = details.localPosition.dy;
                       final minutes = (localY / hourH * 60).round();
                       final roundedMinutes = (minutes ~/ 15) * 15;
@@ -207,7 +239,11 @@ class _DayScheduleViewState extends State<DayScheduleView> {
                               hourHeight: hourH,
                               timelineLeft: gutterW,
                               timelineWidth: availableWidth,
-                              onTap: () => widget.onEventTap(layout.event),
+                              onTap: () {
+                                if (!_zoomBlocked()) {
+                                  widget.onEventTap(layout.event);
+                                }
+                              },
                             ),
                           ),
                           // Current time indicator.

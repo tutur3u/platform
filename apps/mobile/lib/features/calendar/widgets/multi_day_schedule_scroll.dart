@@ -36,7 +36,8 @@ extension _ContinuousDateScroll on _MultiDayScheduleViewState {
   }
 
   bool _settleDateScroll(ScrollEndNotification notification) {
-    if (notification.metrics.axis != Axis.horizontal ||
+    if (_zoomBlocked() ||
+        notification.metrics.axis != Axis.horizontal ||
         _syncingHorizontalScroll ||
         _dayWidth == 0 ||
         !_gridController.hasClients) {

@@ -10389,4 +10389,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonCopyDiagnostics => 'Copy debug information';
+
+  @override
+  String get calendarTimelineZoom => 'Timeline zoom';
+
+  @override
+  String get calendarZoomIn => 'Zoom in';
+
+  @override
+  String get calendarZoomOut => 'Zoom out';
+
+  @override
+  String get calendarZoomReset => 'Reset';
 }

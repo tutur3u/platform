@@ -14,17 +14,21 @@ import 'package:mobile/data/models/google_calendar_color.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
+import 'package:mobile/features/calendar/utils/timeline_zoom.dart';
 
 part 'calendar_state.dart';
+part 'calendar_zoom_actions.dart';
 part 'calendar_cache_state.dart';
 part 'calendar_provider_color_actions.dart';
 
 class CalendarCubit extends Cubit<CalendarState> {
   CalendarCubit({
     required CalendarRepository calendarRepository,
+    CacheStore? cacheStore,
     CalendarState? initialState,
     CalendarViewMode defaultViewMode = CalendarViewMode.agenda,
   }) : _repo = calendarRepository,
+       _cacheStore = cacheStore ?? CacheStore.instance,
        _defaultViewMode = defaultViewMode,
        super(
          initialState?.hasSelectedView == true
@@ -82,6 +86,7 @@ class CalendarCubit extends Cubit<CalendarState> {
   );
 
   final CalendarRepository _repo;
+  final CacheStore _cacheStore;
   static const CachePolicy _cachePolicy = CachePolicies.summary;
   static const _cacheTag = 'calendar:events';
   static final Map<String, _CalendarCacheEntry> _cache = {};
@@ -89,6 +94,8 @@ class CalendarCubit extends Cubit<CalendarState> {
   String? _wsId;
   String? _userId;
   int _loadGeneration = 0;
+  Object _timelineZoomScopeToken = Object();
+  (Object, int) get timelineZoomScope => (_timelineZoomScopeToken, _cacheEpoch);
   static final Map<String, int> _mutationVersions = {};
   static final Map<String, int> _refreshVersions = {};
 
@@ -178,6 +185,7 @@ class CalendarCubit extends Cubit<CalendarState> {
             center.month,
           ).toIso8601String(),
           'viewMode': previous?.viewMode.name ?? CalendarViewMode.agenda.name,
+          'timelineZoom': previous?.timelineZoom ?? 1,
           'hasSelectedView': previous?.hasSelectedView ?? false,
           'events': events
               .map((event) => event.toJson())
@@ -215,6 +223,7 @@ class CalendarCubit extends Cubit<CalendarState> {
               )
             : null);
     if (!sameActor || (_wsId != null && _wsId != wsId)) {
+      _timelineZoomScopeToken = Object();
       emit(CalendarState(viewMode: _defaultViewMode, timezone: state.timezone));
     }
     _wsId = wsId;
@@ -239,7 +248,7 @@ class CalendarCubit extends Cubit<CalendarState> {
     }
 
     final diskCached = shouldReadDiskCache
-        ? await CacheStore.instance.read<CalendarState>(
+        ? await _cacheStore.read<CalendarState>(
             key: cacheKey,
             decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
           )
@@ -321,7 +330,7 @@ class CalendarCubit extends Cubit<CalendarState> {
       );
       emit(nextState);
       _storeCache(nextState);
-      await CacheStore.instance.write(
+      await _cacheStore.write(
         key: cacheKey,
         checkScope: () {
           if (!isCurrent()) throw StateError('Calendar scope changed.');
@@ -345,7 +354,7 @@ class CalendarCubit extends Cubit<CalendarState> {
           ),
         );
         try {
-          await CacheStore.instance.remove(cacheKey);
+          await _cacheStore.remove(cacheKey);
         } on Exception {
           // Keep access denied even when persistent storage is unavailable.
         }
@@ -415,7 +424,7 @@ class CalendarCubit extends Cubit<CalendarState> {
         isLoadingMore: false,
       );
       emit(_storeAndReturn(next));
-      await CacheStore.instance.write(
+      await _cacheStore.write(
         key: _cacheKey(wsId),
         checkScope: () {
           if (!isCurrent()) throw StateError('Calendar scope changed.');
@@ -472,13 +481,25 @@ class CalendarCubit extends Cubit<CalendarState> {
     selectDate(current.add(Duration(days: delta)));
   }
 
+  Future<void> setTimelineZoom(
+    double value, {
+    required String? expectedUserId,
+    required String? expectedWorkspaceId,
+    required (Object, int) expectedScope,
+  }) => _setTimelineZoom(
+    value,
+    expectedUserId,
+    expectedWorkspaceId,
+    expectedScope,
+  );
+
   Future<void> setViewMode(CalendarViewMode mode) async {
     final next = state.copyWith(viewMode: mode, hasSelectedView: true);
     emit(_storeAndReturn(next));
     final wsId = _wsId;
     if (wsId == null) return;
     try {
-      await CacheStore.instance.write(
+      await _cacheStore.write(
         key: _cacheKey(wsId),
         policy: _cachePolicy,
         payload: _stateToCacheJson(next),

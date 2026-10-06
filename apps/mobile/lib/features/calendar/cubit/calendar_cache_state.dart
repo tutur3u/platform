@@ -5,6 +5,7 @@ Map<String, dynamic> _stateToCacheJson(CalendarState state) {
     'selectedDate': state.selectedDate?.toIso8601String(),
     'focusedMonth': state.focusedMonth?.toIso8601String(),
     'viewMode': state.viewMode.name,
+    'timelineZoom': state.timelineZoom,
     'hasSelectedView': state.hasSelectedView,
     'events': state.events
         .map((event) => event.toJson())
@@ -44,6 +45,7 @@ CalendarState _stateFromCacheJson(Map<String, dynamic> json) {
         ? DateTime.tryParse(json['lastUpdatedAt'] as String)
         : null,
     viewMode: viewMode,
+    timelineZoom: calendarTimelineZoom(json['timelineZoom']),
     hasSelectedView: json['hasSelectedView'] == true,
     selectedDate: json['selectedDate'] != null
         ? DateTime.tryParse(json['selectedDate'] as String)

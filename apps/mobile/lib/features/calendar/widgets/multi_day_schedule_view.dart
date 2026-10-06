@@ -13,6 +13,7 @@ import 'package:mobile/features/calendar/utils/timed_event_geometry.dart';
 import 'package:mobile/features/calendar/utils/working_location_icon.dart';
 import 'package:mobile/features/calendar/widgets/current_time_indicator.dart';
 import 'package:mobile/features/calendar/widgets/date_snap_scroll_physics.dart';
+import 'package:mobile/features/calendar/widgets/timeline_zoom_viewport.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 part 'multi_day_schedule_components.dart';
@@ -28,10 +29,16 @@ class MultiDayScheduleView extends StatefulWidget {
     required this.onSwipe,
     required this.visibleDayCount,
     super.key,
+    this.timelineZoom = 1,
+    this.zoomScope,
+    this.onTimelineZoomEnd,
     this.alignToWeekStart = false,
     this.firstDayOfWeek = 0,
   });
 
+  final double timelineZoom;
+  final Object? zoomScope;
+  final ValueChanged<double>? onTimelineZoomEnd;
   final DateTime selectedDate;
   final List<CalendarEvent> events;
   final ValueChanged<CalendarEvent> onEventTap;
@@ -52,6 +59,8 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
   final ScrollController _allDayController = ScrollController();
   final ScrollController _gridController = ScrollController();
 
+  final GlobalKey _timelineViewportKey = GlobalKey();
+  bool Function() _zoomBlocked = () => false;
   bool _didAutoScroll = false;
   bool _syncingHorizontalScroll = false;
   bool _allDayExpanded = false;
@@ -69,7 +78,7 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
     _gridController,
   ];
 
-  double _hourHeight(BuildContext context) =>
+  double _baseHourHeight(BuildContext context) =>
       responsiveValue(context, compact: 58, medium: 64, expanded: 70);
 
   double _timeGutterWidth(BuildContext context) =>
@@ -148,7 +157,7 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
     }
 
     _didAutoScroll = true;
-    final hourHeight = _hourHeight(context);
+    final hourHeight = _baseHourHeight(context) * widget.timelineZoom;
     final hasTodayInRange = _visibleDates.any(_isToday);
     final now = calendarNowInContext(context);
     final earliestEventHour = _visibleDates
@@ -225,7 +234,23 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => TimelineZoomViewport(
+    zoom: widget.timelineZoom,
+    scope: widget.zoomScope,
+    baseHourHeight: _baseHourHeight(context),
+    verticalController: _verticalController,
+    viewportKey: _timelineViewportKey,
+    horizontalControllers: _horizontalControllers,
+    onZoomEnd: widget.onTimelineZoomEnd,
+    builder: _buildZoomedTimeline,
+  );
+
+  Widget _buildZoomedTimeline(
+    BuildContext context,
+    double zoom,
+    bool Function() blocked,
+  ) {
+    _zoomBlocked = blocked;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final visibleDates = _visibleDates;
@@ -235,7 +260,7 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
       events: allDayEvents,
     );
     final hasCollapsedAllDayRows = allDayLayout.maxRow >= 2;
-    final hourHeight = _hourHeight(context);
+    final hourHeight = _baseHourHeight(context) * zoom;
     final gutterWidth = _timeGutterWidth(context);
 
     return LayoutBuilder(
@@ -284,7 +309,11 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                                   date: date,
                                   selectedDate: widget.selectedDate,
                                   isToday: _isToday(date),
-                                  onTap: () => widget.onDaySelected(date),
+                                  onTap: () {
+                                    if (!_zoomBlocked()) {
+                                      widget.onDaySelected(date);
+                                    }
+                                  },
                                 ),
                               ),
                           ],
@@ -340,7 +369,11 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                                       gutterWidth,
                                   viewportWidth: viewportWidth - gutterWidth,
                                   maxVisibleRows: _allDayExpanded ? null : 2,
-                                  onEventTap: widget.onEventTap,
+                                  onEventTap: (event) {
+                                    if (!_zoomBlocked()) {
+                                      widget.onEventTap(event);
+                                    }
+                                  },
                                 ),
                               ),
                             ),
@@ -390,6 +423,7 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                 ),
               Expanded(
                 child: SingleChildScrollView(
+                  key: _timelineViewportKey,
                   controller: _verticalController,
                   physics: const AlwaysScrollableScrollPhysics(),
                   child: Stack(
@@ -417,8 +451,16 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                                       hourHeight: hourHeight,
                                       events: _timedEventsForDay(date),
                                       isToday: _isToday(date),
-                                      onEventTap: widget.onEventTap,
-                                      onCreateAtTime: widget.onCreateAtTime,
+                                      onEventTap: (event) {
+                                        if (!_zoomBlocked()) {
+                                          widget.onEventTap(event);
+                                        }
+                                      },
+                                      onCreateAtTime: (time) {
+                                        if (!_zoomBlocked()) {
+                                          widget.onCreateAtTime(time);
+                                        }
+                                      },
                                     ),
                                   ),
                               ],
