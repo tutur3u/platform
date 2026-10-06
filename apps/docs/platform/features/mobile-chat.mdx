@@ -90,3 +90,15 @@ Regression coverage: `chat_stream_terminal_test.dart` and
 Assistant cubit with synthetic response bytes, alongside parser and scope tests.
 These checks establish source behavior; production provider/storage failures
 and actual device transport still require separate runtime evidence.
+
+
+### Durable assistant receipt and cleanup
+
+After the native Chat/Mira batch RPC returns saved assistant messages, shadow
+resource cleanup is supplementary. A thrown cleanup failure cannot remove the
+saved JSON/NDJSON receipt or turn an accepted reply into a retry prompt. Failures
+before authoritative persistence, including permission or database errors,
+remain failures; no text-only success or remote fallback is introduced.
+`native-ai-cleanup-receipt.test.ts` covers the actual message route with durable
+save followed by failed cleanup. This establishes a source boundary, not the
+cause of every missing reply or device/provider delivery evidence.
