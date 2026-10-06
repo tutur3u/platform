@@ -1,0 +1,85 @@
+---
+title: 'Mobile state and lifecycle regressions'
+description: 'Diagnose retained state, owned overlays, and asynchronous mobile failures with real host coverage.'
+---
+
+## Remove the route owned by the departed session
+
+An account or workspace switch can happen while an editor is covered by another
+modal. A generic navigator pop can dismiss the covering route and leave the old
+editor alive. Capture the editor's own route and remove that route after the
+frame, checking that it is still active and the navigator is mounted. If the UI
+is settled, call `WidgetsBinding.instance.ensureVisualUpdate()` when scheduling
+that cleanup: adding a post-frame callback alone does not request a frame.
+
+`HabitsOwnedOverlay` implements this ownership pattern. The CMS and Education
+workspace regressions also cover an editor beneath an unrelated modal and assert
+that the previous actor's content is gone without dismissing the unrelated route.
+See `cms_workspace_test.dart`, `education_workspace_test.dart`, and
+`habits_host_scope_test.dart` under `apps/mobile/test/features`.
+
+## Test the real entry path, not only the destination widget
+
+A review sheet can render correctly in isolation while the page never exposes
+its action. Mount the actual host with its shell action publisher, invoke the
+published action, and assert the resulting widget and side effects. Inject a
+bounded repository or cubit result to avoid accidental provider calls, but keep
+the real host admission and navigation code in the test.
+
+Notes voice review distinguishes `canReview` from `canSave`: completed silence
+can explain the result, while Save stays disabled and no analysis is replayed.
+`notes/voice/notes_voice_host_review_test.dart` covers the published dock action;
+`notes_voice_widgets_test.dart` covers the review widget itself. Both are useful,
+but the latter alone does not establish reachability.
+
+## Cached display data is not a fresh authorization result
+
+A read-through repository can return a previously authorized snapshot while its
+network revalidation continues. That is appropriate for stale-while-revalidate
+rendering. It cannot authorize publication into a second cache or reauthorize
+content after a durable denial marker has been written.
+
+For an authorization-sensitive publication, request the repository's explicit
+fresh path and disable awaited transport fallback. Habits uses `requireFresh`
+for this purpose; its repository passes `forceRefresh: true` and
+`allowAwaitedTransportFallback: false` to `readThroughJson`. Preserve the actor,
+workspace, request token, and denial revision checks around reads and writes.
+A fresh read failure must not silently promote an older cached result.
+
+`habits/cubit/habits_snapshot_access_test.dart` covers transport fallback,
+denial serialization, and scoped publication. The product policy is documented
+in [Mobile workspace tools](/platform/features/mobile-workspace-tools).
+
+## Distinguish verification from definitive denial
+
+An HTTP status alone does not distinguish an MFA challenge from revoked access.
+Check both the typed verification flag and the `MFA_REQUIRED` error code when
+that endpoint's contract supports them. Keep the existing scoped view during a
+challenge and show its message; a later definitive denial still clears retained
+rows and selection. Do not treat retaining the view as permission to bypass the
+challenge for a mutation or a new request.
+
+The Drive page regression exercises both challenge forms through actual refresh
+and then verifies clearing on a definitive 403. See
+`drive/drive_page_test.dart` and the [Drive policy](/platform/applications/drive).
+
+## Attach handlers to independent startup tasks together
+
+Independent prerequisites can run concurrently, but sequentially awaiting already
+started futures can leave the second failure unhandled while the first is still
+pending. Attach both to a shared `Future.wait` before awaiting either. Its default
+settle-all behavior keeps the owned attempt pending until both finish. Connect
+only after both succeed, then recheck the actor/session/request generation.
+
+Mira Live binds history and initializes native audio this way before opening the
+socket. `assistant/assistant_live_startup_phases_test.dart` verifies overlap,
+settle-all failure handling, and scope cancellation. Duration-only diagnostics
+show completed phases; concurrent phase durations must not be summed as a total.
+
+## Keep validation claims scoped
+
+Focused host, state, and cache regressions establish these source behaviors.
+Run the required full mobile checks for implementation changes, then use CI for
+native builds. A mocked provider result or a passing widget suite does not prove
+authenticated device behavior, provider billing, installed model inference, or
+production delivery. Record those missing gates separately from the code fix.
