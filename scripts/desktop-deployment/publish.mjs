@@ -2,6 +2,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { readDraftRelease, verifyDraftRelease } from './draft-release.mjs';
 import { verifyPublication } from './verify-publication.mjs';
 
 if (
@@ -49,29 +50,11 @@ gh([
   notes,
   ...files.map(({ name }) => join(directory, name)),
 ]);
-const uploaded = JSON.parse(
-  execFileSync('gh', ['api', `repos/tutur3u/platform/releases/tags/${tag}`], {
-    encoding: 'utf8',
-  })
-);
-if (
-  uploaded.draft !== true ||
-  uploaded.prerelease !== true ||
-  uploaded.assets?.length !== files.length ||
-  files.some(
-    ({ name, sha256 }) =>
-      !uploaded.assets.some(
-        (asset) =>
-          asset.name === name &&
-          asset.state === 'uploaded' &&
-          asset.digest === `sha256:${sha256}`
-      )
-  )
-) {
-  throw new Error(
-    'GitHub asset verification failed; the beta release remains a draft'
-  );
-}
+verifyDraftRelease(readDraftRelease(tag), {
+  tag,
+  source: process.env.GITHUB_SHA,
+  files,
+});
 gh([
   'release',
   'edit',
