@@ -63,6 +63,7 @@ class SafeErrorDiagnostics {
 
 enum DiagnosticStage {
   assistantReply,
+  assistantSettings,
   timezoneRead,
   timezoneWrite,
   profileUpload,

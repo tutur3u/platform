@@ -4506,6 +4506,7 @@
   "assistantPersonalSettingsError": "Không thể hoàn tất thay đổi. Hãy thử lại.",
   "assistantRenameLabel": "Tên trợ lý",
   "assistantRenameError": "Không thể cập nhật tên. Bản nháp vẫn được giữ; hãy thử lại.",
+  "assistantSettingsRefreshFailed": "Cài đặt đã được lưu nhưng chưa thể cập nhật tại đây. Mở lại cài đặt trợ lý để thử lại.",
   "assistantMemoryEditTitle": "Chỉnh sửa bộ nhớ",
   "assistantMemoryEditText": "Nội dung bộ nhớ",
   "assistantMemoryLatest": "Phiên bản đang lưu",

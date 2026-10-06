@@ -10440,6 +10440,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantRenameError => 'Không thể cập nhật tên. Bản nháp vẫn được giữ; hãy thử lại.';
 
   @override
+  String get assistantSettingsRefreshFailed => 'Cài đặt đã được lưu nhưng chưa thể cập nhật tại đây. Mở lại cài đặt trợ lý để thử lại.';
+
+  @override
   String get assistantMemoryEditTitle => 'Chỉnh sửa bộ nhớ';
 
   @override

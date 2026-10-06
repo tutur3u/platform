@@ -125,7 +125,14 @@ extension _AssistantChatSubmission on AssistantChatCubit {
     String? retryMessageId,
     bool Function()? isCurrent,
   }) async {
-    bool current() => !isClosed && (isCurrent?.call() ?? true);
+    final workspaceVersion = _workspaceVersion;
+    final operationVersion = ++_toolOperationVersion;
+    final handledToolEffects = <String>{};
+    bool current() =>
+        !isClosed &&
+        workspaceVersion == _workspaceVersion &&
+        operationVersion == _toolOperationVersion &&
+        (isCurrent?.call() ?? true);
     if (!current() || _queue.isEmpty) return;
 
     try {
@@ -221,7 +228,13 @@ extension _AssistantChatSubmission on AssistantChatCubit {
           )
           .listen(
             (event) {
-              if (current()) _handleStreamEvent(event);
+              if (current()) {
+                _handleStreamEvent(
+                  event,
+                  isCurrent: current,
+                  handledToolEffects: handledToolEffects,
+                );
+              }
             },
             onError: (Object error, StackTrace stackTrace) {
               if (!current()) return;

@@ -4503,6 +4503,7 @@
   "assistantPersonalSettingsError": "Could not complete this change. Try again.",
   "assistantRenameLabel": "Assistant name",
   "assistantRenameError": "Could not update the name. Your draft is kept; try again.",
+  "assistantSettingsRefreshFailed": "Settings were saved, but could not be refreshed here. Reopen assistant settings to try again.",
   "assistantMemoryEditTitle": "Edit memory",
   "assistantMemoryEditText": "Memory",
   "assistantMemoryLatest": "Current saved version",
