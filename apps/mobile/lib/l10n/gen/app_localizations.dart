@@ -19824,6 +19824,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not open this link. Please try again.'**
   String get settingsLinkOpenError;
+
+  /// No description provided for @assistantPersonalityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Personality'**
+  String get assistantPersonalityTitle;
+
+  /// No description provided for @assistantPersonalityName.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant name'**
+  String get assistantPersonalityName;
+
+  /// No description provided for @assistantPersonalityNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an assistant name'**
+  String get assistantPersonalityNameRequired;
+
+  /// No description provided for @assistantPersonalityTone.
+  ///
+  /// In en, this message translates to:
+  /// **'Tone'**
+  String get assistantPersonalityTone;
+
+  /// No description provided for @assistantPersonalityVerbosity.
+  ///
+  /// In en, this message translates to:
+  /// **'Response length'**
+  String get assistantPersonalityVerbosity;
+
+  /// No description provided for @assistantPersonalityDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Personality'**
+  String get assistantPersonalityDescription;
+
+  /// No description provided for @assistantPersonalityBoundaries.
+  ///
+  /// In en, this message translates to:
+  /// **'Boundaries'**
+  String get assistantPersonalityBoundaries;
+
+  /// No description provided for @assistantPersonalityBalanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced'**
+  String get assistantPersonalityBalanced;
+
+  /// No description provided for @assistantPersonalityWarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm'**
+  String get assistantPersonalityWarm;
+
+  /// No description provided for @assistantPersonalityFriendly.
+  ///
+  /// In en, this message translates to:
+  /// **'Friendly'**
+  String get assistantPersonalityFriendly;
+
+  /// No description provided for @assistantPersonalityCasual.
+  ///
+  /// In en, this message translates to:
+  /// **'Casual'**
+  String get assistantPersonalityCasual;
+
+  /// No description provided for @assistantPersonalityFormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Formal'**
+  String get assistantPersonalityFormal;
+
+  /// No description provided for @assistantPersonalityPlayful.
+  ///
+  /// In en, this message translates to:
+  /// **'Playful'**
+  String get assistantPersonalityPlayful;
+
+  /// No description provided for @assistantPersonalityProfessional.
+  ///
+  /// In en, this message translates to:
+  /// **'Professional'**
+  String get assistantPersonalityProfessional;
+
+  /// No description provided for @assistantPersonalityThorough.
+  ///
+  /// In en, this message translates to:
+  /// **'Thorough'**
+  String get assistantPersonalityThorough;
+
+  /// No description provided for @assistantPersonalityConcise.
+  ///
+  /// In en, this message translates to:
+  /// **'Concise'**
+  String get assistantPersonalityConcise;
+
+  /// No description provided for @assistantPersonalityBrief.
+  ///
+  /// In en, this message translates to:
+  /// **'Brief'**
+  String get assistantPersonalityBrief;
+
+  /// No description provided for @assistantPersonalityDetailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Detailed'**
+  String get assistantPersonalityDetailed;
+
+  /// No description provided for @assistantMemoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory'**
+  String get assistantMemoryTitle;
+
+  /// No description provided for @assistantMemoryCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect memories'**
+  String get assistantMemoryCollection;
+
+  /// No description provided for @assistantMemoryWorkspaceScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Your memory in this workspace'**
+  String get assistantMemoryWorkspaceScope;
+
+  /// No description provided for @assistantMemoryProductDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira collection is disabled in product settings.'**
+  String get assistantMemoryProductDisabled;
+
+  /// No description provided for @assistantMemoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved memories'**
+  String get assistantMemoryEmpty;
+
+  /// No description provided for @assistantMemoryDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete memory?'**
+  String get assistantMemoryDeleteTitle;
+
+  /// No description provided for @assistantMemoryDeleteDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this saved memory from your workspace memory.'**
+  String get assistantMemoryDeleteDescription;
+
+  /// No description provided for @assistantMemoryExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export memories'**
+  String get assistantMemoryExport;
+
+  /// No description provided for @assistantPersonalSettingsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not complete this change. Try again.'**
+  String get assistantPersonalSettingsError;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
