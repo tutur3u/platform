@@ -1312,3 +1312,25 @@ to that toolbar roster.
 `document-presence.test.tsx` uses real awareness updates for join, rename,
 departure, duplicate clients, malformed identity fields, and provider/disconnect
 transitions. Source fixtures do not establish deployed multi-client delivery.
+
+## Recovering the final AI notes write
+
+Meet retries a failed final notes persistence step at most twice after its initial
+attempt, reusing the already generated and settled notes, usage and cost. These
+retries retain the same session/attempt predicate; they do not repeat provider
+generation, credit admission or billing. A missing compare-and-set row is a
+conflict and stops immediately. Failure cleanup only changes a still-processing
+row, so an uncertain transport response cannot demote already completed notes.
+
+If every persistence attempt fails, the request reports failure without claiming
+that notes were saved. Saved transcript chunks remain unchanged. This is bounded
+recovery within one request, not durable cross-request output recovery: a later
+explicit retry can generate and bill again. The existing unpriced-attempt counter
+also remains conservative when generation succeeded but persistence failed; this
+packet does not reconcile that counter against settled billing runs.
+
+`server/sessions.test.ts` reproduces successful generation followed by a returned
+storage error or a thrown unknown-commit error, and covers equal output/usage/cost,
+same attempt predicates, exhausted recovery, safe errors and immediate conflict.
+These source fixtures do not identify the original incident's provider status or
+establish deployed database/provider delivery.
