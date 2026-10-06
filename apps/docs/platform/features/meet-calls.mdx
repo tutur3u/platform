@@ -1144,16 +1144,23 @@ acceptance additionally require configured exact-commit mobile CI artifacts.
 
 ## In-call document workspace
 
-Meet and Parley render the shared document editor as a seamless workspace rather
-than nested bordered cards. Healthy live synchronization stays quiet. Reconnecting
+Meet and Parley render the shared document editor edge to edge, without a separate
+Shared document heading or padding outside the editor. The editor keeps its own
+text padding. Backup status sits in the editor toolbar; secondary formatting,
+media, and copy controls open from Tools, while bold, italic, and strike remain
+directly available. Other shared-editor surfaces keep their full toolbar.
+Healthy live synchronization stays quiet. Reconnecting
 is announced as a status; delayed or conflicted backups use a keyboard-focusable
 warning icon with an explanatory tooltip, without pushing the editor downward.
 Document and programming controls use the same icon-button tooltips as media
 controls, and meeting action triggers expose consistent tooltips. No room access,
 checkpoint behavior, or document broadcasting policy changes.
 
-Regression coverage: `document-status.test.tsx` verifies quiet healthy state,
-accessible reconnection, and distinct backup-warning labels without inline alerts.
+Regression coverage: `document-panel.test.tsx` checks the toolbar status placement
+and seamless editor container; `fixed-toolbar-contents.test.tsx` exercises actual
+Tools opening and formatting actions alongside the unchanged full toolbar.
+`document-status.test.tsx` verifies quiet healthy state, accessible reconnection,
+and distinct backup-warning labels without inline alerts.
 
 ### Programming preparation and resource discovery
 
