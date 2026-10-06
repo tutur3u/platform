@@ -141,6 +141,65 @@ class _Capture extends AssistantVoiceCaptureCubit {
 
 void main() {
   testWidgets(
+    'navbar reacts to draft and cancellation preserves dock identity',
+    (tester) async {
+      final controller = TextEditingController();
+      final focus = FocusNode();
+      final capture = _Capture();
+      addTearDown(controller.dispose);
+      addTearDown(focus.dispose);
+
+      var sends = 0;
+      var navigation = 0;
+      await tester.pumpWidget(
+        _app(
+          controller: controller,
+          focus: focus,
+          capture: capture,
+          onSend: () async {
+            sends++;
+          },
+          onNavigation: () {
+            navigation++;
+          },
+        ),
+      );
+      final surface = tester.element(find.byType(AssistantDockSurface));
+      final primary = find.byKey(const ValueKey('assistant-navigation-toggle'));
+      await tester.tap(primary);
+      expect(navigation, 1);
+      controller.text = 'Unsent draft';
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.arrow_upward_rounded), findsOneWidget);
+      expect(
+        find.widgetWithIcon(IconButton, Icons.arrow_upward_rounded),
+        findsNothing,
+      );
+      await tester.tap(primary);
+      expect(sends, 1);
+      capture.show(AssistantVoiceCaptureStatus.recording);
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
+      expect(
+        find.widgetWithIcon(IconButton, Icons.pause_rounded),
+        findsNothing,
+      );
+      await tester.tap(find.byKey(const ValueKey('voice-cancel')));
+      await tester.pumpAndSettle();
+      expect(find.byType(TextField), findsOneWidget);
+      expect(controller.text, 'Unsent draft');
+      expect(tester.element(find.byType(AssistantDockSurface)), same(surface));
+      expect(find.byIcon(Icons.arrow_upward_rounded), findsOneWidget);
+      controller.clear();
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.menu_rounded), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await capture.close();
+    },
+  );
+
+  testWidgets(
     'local mode keeps dock identity, disables audio and uses native stop',
     (tester) async {
       final controller = TextEditingController(text: 'Private draft');
@@ -238,7 +297,6 @@ void main() {
       final capture = _Capture();
       addTearDown(controller.dispose);
       addTearDown(focus.dispose);
-      addTearDown(capture.close);
       var attach = 0;
       var send = 0;
       await tester.pumpWidget(
@@ -265,17 +323,24 @@ void main() {
         findsOneWidget,
       );
       expect(find.byKey(const ValueKey('voice-attach')), findsNothing);
-      capture.show(AssistantVoiceCaptureStatus.paused);
+      await tester.tap(
+        find.byKey(const ValueKey('assistant-navigation-toggle')),
+      );
       await tester.pumpAndSettle();
+      expect(capture.state.paused, isTrue);
       expect(find.byKey(const ValueKey('voice-restart')), findsOneWidget);
       expect(find.byTooltip('Resume recording'), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey('voice-attach')));
-      await tester.tap(find.byKey(const ValueKey('voice-send')));
+      await tester.tap(
+        find.byKey(const ValueKey('assistant-navigation-toggle')),
+      );
       expect(attach, 1);
       expect(send, 1);
       expect(controller.text, 'Retained draft');
       expect(find.byType(Dialog), findsNothing);
       expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await capture.close();
     },
   );
 
