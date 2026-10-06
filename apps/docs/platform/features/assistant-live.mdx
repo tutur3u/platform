@@ -62,6 +62,18 @@ Developer ID signing, and notarization gates.
 
 ## Experience
 
+Mobile chat uses the shell's existing dock for its composer and primary action.
+An empty draft keeps the navigation menu; a nonempty draft or attachment changes
+that action to Send. During inline recording it becomes Pause, then Send while
+paused. Cancel discards only the recording and returns to the retained text draft.
+The input row has no second Send button. Tool calls appear as compact transparent
+summaries that open their detailed output on tap. The transcript's scroll-to-bottom
+action clears the dock using the shell viewport's inherited clearance; the outer
+shell consumes the keyboard inset once. Regressions cover controller and capture
+transitions, retained dock identity, transparent tool inspection, and actual shell
+geometry in `apps/mobile/test/features/assistant/widgets/`.
+
+
 Start or stop Live with the waveform icon in the chat composer. Live keeps the
 same message timeline visible, with a compact gradient visualization and media
 controls above it. Spoken turns, typed prompts, tool calls, and search sources

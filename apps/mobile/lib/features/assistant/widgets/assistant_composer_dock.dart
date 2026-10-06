@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
@@ -10,11 +11,10 @@ import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_options.dart';
+import 'package:mobile/features/assistant/widgets/assistant_composer_primary_action.dart';
 import 'package:mobile/features/assistant/widgets/assistant_dock_surface.dart';
 import 'package:mobile/features/assistant/widgets/assistant_inline_voice_controls.dart';
-import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_dock_rail.dart';
-import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 class AssistantComposerDock extends StatelessWidget {
@@ -132,35 +132,23 @@ class AssistantComposerDock extends StatelessWidget {
             final hasPrompt =
                 value.text.trim().isNotEmpty ||
                 chatState.composerAttachments.isNotEmpty;
+            if (hasPrompt || localGenerating) return const SizedBox.shrink();
             return IconButton(
-              tooltip: localGenerating
-                  ? context.l10n.assistantLocalStop
-                  : localOnly && !hasPrompt
+              tooltip: localOnly
                   ? context.l10n.assistantLocalTextOnly
-                  : hasPrompt
-                  ? context.l10n.assistantSendAction
                   : context.l10n.voiceRecord,
               constraints: const BoxConstraints.tightFor(width: 44, height: 44),
               padding: EdgeInsets.zero,
-              onPressed: localGenerating
-                  ? onStopLocal
-                  : localBlocked ||
-                        (localOnly && !hasPrompt) ||
-                        chatState.status == AssistantChatStatus.restoring
+              onPressed:
+                  localBlocked ||
+                      localOnly ||
+                      chatState.status == AssistantChatStatus.restoring
                   ? null
-                  : hasPrompt
-                  ? onSend
                   : () {
                       focusNode.unfocus();
                       unawaited(onMicrophoneTap());
                     },
-              icon: Icon(
-                localGenerating
-                    ? Icons.stop_rounded
-                    : hasPrompt
-                    ? Icons.arrow_upward_rounded
-                    : Icons.mic_none_rounded,
-              ),
+              icon: const Icon(Icons.mic_none_rounded),
             );
           },
         ),
@@ -189,7 +177,6 @@ class AssistantComposerDock extends StatelessWidget {
                       capture: capture,
                       state: state,
                       onAttach: onAttachVoice ?? () async {},
-                      onSend: onSendVoice ?? () async {},
                     )
                   : KeyedSubtree(
                       key: const ValueKey('text-composer'),
@@ -207,16 +194,18 @@ class AssistantComposerDock extends StatelessWidget {
     );
   }
 
-  Widget navigationToggle(BuildContext context) => ShellDockActionButton(
-    key: const ValueKey('assistant-navigation-toggle'),
-    action: ShellActionSpec(
-      id: 'assistant-navigation',
-      tooltip: context.l10n.assistantExpandNavigation,
-      icon: Icons.menu_rounded,
-      onPressed: () {
-        focusNode.unfocus();
-        onToggleNavigation();
-      },
-    ),
-  );
+  Widget navigationToggle(BuildContext context) =>
+      AssistantComposerPrimaryAction(
+        controller: controller,
+        focusNode: focusNode,
+        onToggleNavigation: onToggleNavigation,
+        onSend: onSend,
+        voiceCapture: localOnly ? null : voiceCapture,
+        onSendVoice: onSendVoice,
+        hasAttachments: chatState.composerAttachments.isNotEmpty,
+        blocked:
+            localBlocked || chatState.status == AssistantChatStatus.restoring,
+        localGenerating: localGenerating,
+        onStopLocal: onStopLocal,
+      );
 }

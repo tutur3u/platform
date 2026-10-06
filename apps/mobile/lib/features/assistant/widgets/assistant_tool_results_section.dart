@@ -5,87 +5,22 @@ import 'package:flutter/material.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_markdown_body.dart';
+import 'package:mobile/features/assistant/widgets/assistant_tool_json_preview.dart';
+import 'package:mobile/features/assistant/widgets/assistant_tool_summary.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 
+/// A compact transparent summary; detailed tool output stays inspectable.
 class AssistantToolResultsSection extends StatelessWidget {
   const AssistantToolResultsSection({required this.parts, super.key});
 
   final List<AssistantMessagePart> parts;
 
   @override
-  Widget build(BuildContext context) {
-    final visible = _visibleToolParts(parts);
-    if (visible.isEmpty) return const SizedBox.shrink();
-    final theme = Theme.of(context);
-    final actionCount = visible
-        .where((part) => part.toolName != 'search_tools')
-        .length;
-    final displayCount = actionCount == 0 ? visible.length : actionCount;
-    final label = displayCount == 1
-        ? context.l10n.assistantToolLabel
-        : context.l10n.assistantToolsLabel;
-    final sheetLabel = visible.length == 1
-        ? context.l10n.assistantToolLabel
-        : context.l10n.assistantToolsLabel;
-    return Material(
-      color: theme.colorScheme.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => showModalBottomSheet<void>(
-          context: context,
-          isScrollControlled: true,
-          showDragHandle: true,
-          builder: (sheetContext) => SafeArea(
-            child: FractionallySizedBox(
-              heightFactor: 0.72,
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-                    child: Text(
-                      '$sheetLabel · ${visible.length}',
-                      style: theme.textTheme.titleMedium,
-                    ),
-                  ),
-                  Expanded(
-                    child: ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                      itemCount: visible.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 8),
-                      itemBuilder: (_, index) =>
-                          _AssistantToolResultTile(part: visible[index]),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.handyman_outlined,
-                size: 16,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '$label · $displayCount',
-                style: theme.textTheme.labelMedium,
-              ),
-              const SizedBox(width: 4),
-              const Icon(Icons.chevron_right_rounded, size: 16),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => AssistantToolSummary(
+    parts: _visibleToolParts(parts),
+    tileBuilder: (part) => _AssistantToolResultTile(part: part),
+  );
 }
 
 class AssistantInlineToolImages extends StatelessWidget {
@@ -166,7 +101,7 @@ class _AssistantToolResultTileState extends State<_AssistantToolResultTile> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -297,7 +232,7 @@ class _AssistantToolResultTileState extends State<_AssistantToolResultTile> {
       return AssistantMarkdownBody(data: markdownSummary, subdued: true);
     }
 
-    return _AssistantJsonPreview(data: widget.part.output);
+    return AssistantToolJsonPreview(data: widget.part.output);
   }
 }
 
@@ -606,24 +541,6 @@ class _AssistantImageErrorState extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _AssistantJsonPreview extends StatelessWidget {
-  const _AssistantJsonPreview({required this.data});
-
-  final dynamic data;
-
-  @override
-  Widget build(BuildContext context) {
-    const encoder = JsonEncoder.withIndent('  ');
-    final pretty = switch (data) {
-      null => '{}',
-      String() => data,
-      _ => encoder.convert(data),
-    };
-
-    return AssistantMarkdownBody(data: '```json\n$pretty\n```', subdued: true);
   }
 }
 

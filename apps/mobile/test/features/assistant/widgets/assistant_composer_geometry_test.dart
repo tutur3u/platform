@@ -115,7 +115,7 @@ void main() {
               expect(fab.bottom, lessThanOrEqualTo(composer.top - 16));
               expect(900 - composer.bottom, (keyboard ? 0 : safeArea) + 8);
               final gap = composer.top - fab.bottom;
-              expect(gap, 16 + (navigationExpanded && !keyboard ? 84 : 0));
+              expect(gap, 18);
               expect(tester.takeException(), isNull);
             },
           );
