@@ -3197,48 +3197,50 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/ai/memory/export:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/ai/memory/export/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/ai/memory/export:apps/web/src/app/api/v1/workspaces/[wsId]/ai/memory/export/route.ts",
       "kind": "api",
       "methods": [
         "POST"
       ],
       "routePath": "/api/v1/workspaces/:wsId/ai/memory/export",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/ai/memory/export/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/ai/memory/export/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/ai/memory/items:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/ai/memory/items/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/ai/memory/items:apps/web/src/app/api/v1/workspaces/[wsId]/ai/memory/items/route.ts",
       "kind": "api",
       "methods": [
         "GET",
+        "HEAD",
         "POST"
       ],
       "routePath": "/api/v1/workspaces/:wsId/ai/memory/items",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/ai/memory/items/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/ai/memory/items/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/ai/memory/items/:memoryId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/ai/memory/items/[memoryId]/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/ai/memory/items/:memoryId:apps/web/src/app/api/v1/workspaces/[wsId]/ai/memory/items/[memoryId]/route.ts",
       "kind": "api",
       "methods": [
         "DELETE"
       ],
       "routePath": "/api/v1/workspaces/:wsId/ai/memory/items/:memoryId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/ai/memory/items/[memoryId]/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/ai/memory/items/[memoryId]/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/ai/memory/settings:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/ai/memory/settings/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/ai/memory/settings:apps/web/src/app/api/v1/workspaces/[wsId]/ai/memory/settings/route.ts",
       "kind": "api",
       "methods": [
         "GET",
+        "HEAD",
         "PATCH"
       ],
       "routePath": "/api/v1/workspaces/:wsId/ai/memory/settings",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/ai/memory/settings/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/ai/memory/settings/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -9918,7 +9920,7 @@
     "routeHandlers": 646,
     "methodCounts": {
       "GET": 326,
-      "HEAD": 11,
+      "HEAD": 13,
       "POST": 320,
       "PUT": 60,
       "PATCH": 64,
