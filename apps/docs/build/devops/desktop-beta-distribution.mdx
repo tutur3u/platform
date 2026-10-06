@@ -76,6 +76,16 @@ visible. It never marks the desktop beta as the repository's latest stable
 release or overwrites an existing release tag. A failed draft needs inspection
 before rerunning; do not replace assets of a published tag.
 
+Draft publication resolves the authenticated `gh release view` database ID and
+reads the release by REST ID; the release-by-tag endpoint can return 404 for an
+existing draft. Before making the prerelease visible, the publisher checks the
+resolved ID, exact expected tag and source SHA, draft/prerelease flags, and the
+complete owned asset names, upload states, and SHA-256 digests. A lookup or
+identity mismatch leaves publication blocked. The actual publisher's mocked-CLI
+404 and mismatch regressions run with
+`node --test scripts/desktop-deployment/publish.test.mjs`; no release is written
+by those tests.
+
 The download page caches public release metadata for five minutes and sends
 package downloads directly to GitHub's CDN. It validates the exact repository,
 tag format, filenames, uploaded state, positive sizes, and GitHub SHA-256 digests.
