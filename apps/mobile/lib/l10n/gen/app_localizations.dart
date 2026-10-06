@@ -19662,6 +19662,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Team workspaces'**
   String get workspaceTeamSection;
+
+  /// No description provided for @commonCopyDiagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy debug information'**
+  String get commonCopyDiagnostics;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

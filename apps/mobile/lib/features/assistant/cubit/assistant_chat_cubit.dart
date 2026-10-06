@@ -7,6 +7,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:mobile/data/sources/safe_error_diagnostics.dart';
 
 import '../data/assistant_preferences.dart';
 import '../data/assistant_repository.dart';
@@ -335,6 +336,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
             status: AssistantChatStatus.error,
             error:
                 payload['errorText'] as String? ?? 'Assistant stream failed.',
+            diagnostics: const SafeErrorDiagnostics.streamFailure(),
           ),
         );
         break;
