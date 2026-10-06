@@ -4353,6 +4353,7 @@
       "checkpoint_deferred": "Bản lưu tại không gian làm việc đang bị chậm. Nội dung cộng tác vẫn được giữ trong phòng trong khi hệ thống thử lưu lại.",
       "connecting": "Đang kết nối tài liệu chung…",
       "document": "Tài liệu chung",
+      "document_presence": "{count} người trong tài liệu này",
       "live": "Trực tiếp · đồng bộ tự động",
       "placeholder": "Cùng nhau viết…",
       "reconnecting": "Đang kết nối lại…",

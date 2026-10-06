@@ -4353,6 +4353,7 @@
       "checkpoint_deferred": "Workspace backup is delayed. Live edits remain in this room while saving is retried.",
       "connecting": "Connecting to the shared document…",
       "document": "Shared document",
+      "document_presence": "{count, plural, one {# person in this document} other {# people in this document}}",
       "live": "Live · automatic sync",
       "placeholder": "Write together…",
       "reconnecting": "Reconnecting…",
