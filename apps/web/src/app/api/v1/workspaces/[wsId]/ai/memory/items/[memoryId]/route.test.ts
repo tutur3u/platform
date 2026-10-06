@@ -314,3 +314,25 @@ it.each(['unauthenticated', 'normalize', 'nonmember', 'lookup'])(
     expect(mocks.admin).not.toHaveBeenCalled();
   }
 );
+
+it.each([true, false])(
+  'protects PATCH content from caching with audit success=%s',
+  async (auditSuccess) => {
+    if (!auditSuccess)
+      mocks.rpc.mockResolvedValue({
+        data: null,
+        error: { message: 'synthetic audit failure' },
+      });
+    const response = await call(
+      'PATCH',
+      request('PATCH', { value: memory.content, revision })
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      updated: true,
+      memory: { content: memory.content },
+      auditRecorded: auditSuccess,
+    });
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+  }
+);

@@ -158,10 +158,13 @@ export async function PATCH(
   } catch {
     /* The durable edit is already confirmed; never imply rollback. */
   }
-  return NextResponse.json({
-    updated: true,
-    memory: projection(result.memory),
-    auditRecorded,
-    warning: auditRecorded ? null : 'audit_failed',
-  });
+  return NextResponse.json(
+    {
+      updated: true,
+      memory: projection(result.memory),
+      auditRecorded,
+      warning: auditRecorded ? null : 'audit_failed',
+    },
+    { headers: { 'Cache-Control': 'private, no-store' } }
+  );
 }
