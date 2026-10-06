@@ -6,6 +6,14 @@ const DEFAULT_SETTINGS: AiMemorySettings = {
   products: {},
 };
 
+// Lookup failure is not evidence that the current actor/product consented.
+// Successful missing rows retain the existing defaults above.
+const UNAVAILABLE_SETTINGS: AiMemorySettings = {
+  enabled: false,
+  productEnabled: false,
+  products: {},
+};
+
 type RpcSettingsRow = {
   enabled?: boolean | null;
   product_enabled?: boolean | null;
@@ -65,12 +73,12 @@ export async function getAiMemorySettings({
         p_ws_id: wsId,
       });
 
-    if (error) return DEFAULT_SETTINGS;
+    if (error) return UNAVAILABLE_SETTINGS;
 
     const row = Array.isArray(data) ? data[0] : data;
     return normalizeSettings(row as RpcSettingsRow | null, product);
   } catch {
-    return DEFAULT_SETTINGS;
+    return UNAVAILABLE_SETTINGS;
   }
 }
 
@@ -116,6 +124,6 @@ export async function disableAiMemoryForMeteringFailure({
       p_ws_id: wsId,
     });
   } catch {
-    // Memory settings are fail-open elsewhere; disabling is best effort.
+    // Persisting the disable flag is best effort; failed reads deny admission.
   }
 }
