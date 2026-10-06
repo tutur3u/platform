@@ -139,6 +139,14 @@ class _AssistantPageState extends State<AssistantPage>
     onWorkspaceContextChanged: (workspaceContextId) =>
         _shellCubit.setWorkspaceContextId(workspaceContextId),
     onSoulRefreshRequested: _shellCubit.refreshSoul,
+    onSoulRefreshFailed: (_) {
+      if (!mounted) return;
+      final message = context.l10n.assistantSettingsRefreshFailed;
+      shad.showToast(
+        context: context,
+        builder: (_, _) => shad.SurfaceCard(child: Text(message)),
+      );
+    },
     onImmersiveModeChanged: _shellCubit.setImmersiveMode,
     onChatRestored: (modelId) async {
       if (modelId == null || assistantLiveModelMatches(modelId)) {

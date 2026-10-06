@@ -10567,6 +10567,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantRenameError => 'Could not update the name. Your draft is kept; try again.';
 
   @override
+  String get assistantSettingsRefreshFailed => 'Settings were saved, but could not be refreshed here. Reopen assistant settings to try again.';
+
+  @override
   String get assistantMemoryEditTitle => 'Edit memory';
 
   @override

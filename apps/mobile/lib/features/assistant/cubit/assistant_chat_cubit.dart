@@ -20,6 +20,7 @@ part 'assistant_chat_restore.dart';
 part 'assistant_chat_state.dart';
 part 'assistant_chat_stream_reconcile.dart';
 part 'assistant_chat_submission.dart';
+part 'assistant_chat_tool_effects.dart';
 
 class AssistantChatCubit extends Cubit<AssistantChatState> {
   AssistantChatCubit({
@@ -30,10 +31,12 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     required Future<void> Function() onSoulRefreshRequested,
     required void Function(bool isImmersive) onImmersiveModeChanged,
     required Future<void> Function(String? modelId) onChatRestored,
+    void Function(SafeErrorDiagnostics diagnostics)? onSoulRefreshFailed,
   }) : _repository = repository,
        _preferences = preferences,
        _onWorkspaceContextChanged = onWorkspaceContextChanged,
        _onSoulRefreshRequested = onSoulRefreshRequested,
+       _onSoulRefreshFailed = onSoulRefreshFailed,
        _onImmersiveModeChanged = onImmersiveModeChanged,
        _onChatRestored = onChatRestored,
        super(AssistantChatState(fallbackChatId: repository.generateUuid()));
@@ -43,6 +46,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   final Future<void> Function(String workspaceContextId)
   _onWorkspaceContextChanged;
   final Future<void> Function() _onSoulRefreshRequested;
+  final void Function(SafeErrorDiagnostics diagnostics)? _onSoulRefreshFailed;
   final void Function(bool isImmersive) _onImmersiveModeChanged;
   final Future<void> Function(String? modelId) _onChatRestored;
 
@@ -51,6 +55,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   final List<AssistantQueuedSubmission> _queue = [];
   int _workspaceVersion = 0;
   int _historyVersion = 0;
+  int _toolOperationVersion = 0;
   String? _activeAssistantMessageId;
   String? _activeTextBlockId;
   String? _activeReasoningBlockId;
@@ -118,6 +123,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   );
 
   Future<void> stopStreaming({bool discardQueued = false}) async {
+    _toolOperationVersion++;
     _queueDebounce?.cancel();
     if (discardQueued) {
       _queue.clear();
@@ -239,7 +245,11 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
         (attachments.isNotEmpty || _queue.isNotEmpty);
   }
 
-  void _handleStreamEvent(AssistantStreamEvent event) {
+  void _handleStreamEvent(
+    AssistantStreamEvent event, {
+    required bool Function() isCurrent,
+    required Set<String> handledToolEffects,
+  }) {
     if (isClosed || state.status == AssistantChatStatus.error) return;
     if (event is AssistantDoneStreamEvent) {
       emit(state.copyWith(status: AssistantChatStatus.idle));
@@ -315,13 +325,21 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
         );
         break;
       case 'tool-output-available':
+        final retainedName = _currentInputToolName(payload['toolCallId']);
         _upsertToolPart(
           toolCallId: payload['toolCallId'] as String?,
-          toolName: payload['toolName'] as String?,
+          toolName: retainedName ?? payload['toolName'] as String?,
           toolState: 'output-available',
           output: payload['output'],
         );
-        unawaited(_handleToolSideEffect(payload));
+        unawaited(
+          _handleToolSideEffect(
+            payload,
+            retainedName: retainedName,
+            isCurrent: isCurrent,
+            handled: handledToolEffects,
+          ),
+        );
         break;
       case 'start-step':
         _appendPart(const AssistantMessagePart(type: 'step-start'));
@@ -379,27 +397,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
         ],
       ),
     );
-  }
-
-  Future<void> _handleToolSideEffect(Map<String, dynamic> payload) async {
-    final toolName = payload['toolName'] as String?;
-    final output = payload['output'];
-
-    if (toolName == 'set_workspace_context') {
-      final contextId = readWorkspaceContextId(output);
-      if (contextId != null && contextId.isNotEmpty) {
-        await _onWorkspaceContextChanged(contextId);
-      }
-    }
-
-    if (toolName == 'update_my_settings') {
-      await _onSoulRefreshRequested();
-    }
-
-    if (toolName == 'set_immersive_mode') {
-      final isImmersive = readImmersiveFlag(output);
-      _onImmersiveModeChanged(isImmersive);
-    }
   }
 
   void _appendTextPart({required String? blockId, required String delta}) {
