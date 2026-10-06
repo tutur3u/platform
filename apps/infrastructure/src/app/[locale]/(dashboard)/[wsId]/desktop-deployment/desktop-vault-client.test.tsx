@@ -102,7 +102,7 @@ beforeEach(() => {
 });
 
 describe('private desktop signing operator workflow', () => {
-  it('shows only configured names with empty credential inputs and no delivery enable control', async () => {
+  it('shows only configured names with empty credential inputs and no automatic activation', async () => {
     mount();
     const password = await screen.findByLabelText(
       'resources.WINDOWS_SIGNING_CERTIFICATE_PASSWORD'
@@ -435,5 +435,222 @@ describe('private desktop signing operator workflow', () => {
       expect(view.client.getMutationCache().getAll()).toEqual([unrelated])
     );
     expect(view.client.isMutating()).toBe(0);
+  });
+});
+
+function admissionState(enabled = false, global = false): DesktopVaultState {
+  return {
+    ...state,
+    deliveryEnabled: global,
+    platforms: state.platforms.map((entry) => ({
+      ...entry,
+      revision: 8,
+      enabled: entry.platform === 'windows' ? enabled : false,
+    })),
+  };
+}
+async function windowsPanel() {
+  return within(
+    await screen.findByRole('region', { name: 'platforms.windows' })
+  );
+}
+async function enableWindows() {
+  const panel = await windowsPanel();
+  await waitFor(() =>
+    expect(panel.getByRole('button', { name: 'enableDelivery' })).toBeEnabled()
+  );
+  fireEvent.click(panel.getByRole('button', { name: 'enableDelivery' }));
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'confirmEnableDelivery' })
+  );
+}
+describe('audited operator platform admission', () => {
+  it.each([
+    [false, false],
+    [false, true],
+    [true, false],
+    [true, true],
+  ])(
+    'keeps global=%s independent of platform=%s control',
+    async (global, enabled) => {
+      mock.state.mockResolvedValue(admissionState(enabled, global));
+      const view = mount();
+      const panel = await windowsPanel();
+      if (enabled) {
+        const stop = panel.getByRole('button', { name: 'disableDelivery' });
+        await waitFor(() => expect(stop).toBeEnabled());
+        fireEvent.click(stop);
+      } else {
+        fireEvent.click(panel.getByRole('button', { name: 'enableDelivery' }));
+        expect(mock.mutate).not.toHaveBeenCalled();
+        fireEvent.click(
+          await screen.findByRole('button', { name: 'confirmEnableDelivery' })
+        );
+      }
+      await waitFor(() =>
+        expect(mock.mutate).toHaveBeenCalledWith(
+          enabled
+            ? {
+                action: 'disable_delivery',
+                platform: 'windows',
+                environmentRevision: 8,
+              }
+            : {
+                action: 'enable_delivery',
+                platform: 'windows',
+                environmentRevision: 8,
+                versionId: 'active',
+                revision: 7,
+              }
+        )
+      );
+      expectPrivateCacheEmpty(view.client);
+    }
+  );
+  it.each([undefined, null, -1, 0.5, Number.MAX_SAFE_INTEGER + 1])(
+    'cannot invent missing or invalid revision %s',
+    async (revision) => {
+      const current = admissionState();
+      current.platforms[0]!.revision = revision;
+      mock.state.mockResolvedValue(current);
+      mount();
+      expect(
+        (await windowsPanel()).getByRole('button', { name: 'enableDelivery' })
+      ).toBeDisabled();
+      expect(mock.mutate).not.toHaveBeenCalled();
+    }
+  );
+  it.each(['missing', 'unvalidated', 'mismatch'])(
+    'blocks %s active version while leaving disable credential-free',
+    async (mode) => {
+      const current = admissionState();
+      current.versions =
+        mode === 'missing'
+          ? []
+          : current.versions.map((version) =>
+              version.status === 'active'
+                ? {
+                    ...version,
+                    validatedRevision:
+                      mode === 'unvalidated' ? null : version.revision,
+                  }
+                : version
+            );
+      if (mode === 'mismatch') current.platforms[0]!.activeVersionId = 'other';
+      mock.state.mockResolvedValue(current);
+      const view = mount();
+      expect(
+        (await windowsPanel()).getByRole('button', { name: 'enableDelivery' })
+      ).toBeDisabled();
+      view.client.setQueryData(['desktop-signing-vault', 'alice'], {
+        ...current,
+        platforms: current.platforms.map((entry) => ({
+          ...entry,
+          enabled: entry.platform === 'windows',
+        })),
+      });
+      const stop = await screen.findByRole('button', {
+        name: 'disableDelivery',
+      });
+      expect(stop).toBeEnabled();
+      fireEvent.click(stop);
+      await waitFor(() =>
+        expect(mock.mutate).toHaveBeenCalledWith({
+          action: 'disable_delivery',
+          platform: 'windows',
+          environmentRevision: 8,
+        })
+      );
+    }
+  );
+  it('cancels enable confirmation without dispatch', async () => {
+    mock.state.mockResolvedValue(admissionState());
+    mount();
+    fireEvent.click(
+      (await windowsPanel()).getByRole('button', { name: 'enableDelivery' })
+    );
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'cancelAdmission' })
+    );
+    expect(mock.mutate).not.toHaveBeenCalled();
+  });
+  it('drops a stale confirmation when environment identity or revision changes', async () => {
+    mock.state.mockResolvedValue(admissionState());
+    const view = mount();
+    fireEvent.click(
+      (await windowsPanel()).getByRole('button', { name: 'enableDelivery' })
+    );
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    const fresh = admissionState();
+    fresh.platforms[0]!.revision = 9;
+    view.client.setQueryData(['desktop-signing-vault', 'alice'], fresh);
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    );
+    expect(mock.mutate).not.toHaveBeenCalled();
+  });
+  it('blocks concurrent controls while one actor-owned mutation is pending', async () => {
+    let finish!: (result: { state: DesktopVaultState }) => void;
+    mock.state.mockResolvedValue(admissionState(true));
+    mock.mutate.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        })
+    );
+    const view = mount();
+    const panel = await windowsPanel();
+    const stop = panel.getByRole('button', { name: 'disableDelivery' });
+    fireEvent.click(stop);
+    fireEvent.click(stop);
+    await waitFor(() => expect(mock.mutate).toHaveBeenCalledOnce());
+    expect(stop).toBeDisabled();
+    expectPrivateCacheEmpty(view.client);
+    finish({ state: admissionState(false) });
+    await waitFor(() => expect(view.client.isMutating()).toBe(0));
+  });
+  it('rejects late admission publication after actor ABA and uses fresh CAS', async () => {
+    let finish!: (result: { state: DesktopVaultState }) => void;
+    mock.state.mockResolvedValue(admissionState());
+    mock.mutate.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        })
+    );
+    const view = mount();
+    await enableWindows();
+    await waitFor(() => expect(mock.mutate).toHaveBeenCalledOnce());
+    const fresh = admissionState();
+    fresh.platforms[0]!.revision = 10;
+    mock.state.mockResolvedValue(fresh);
+    view.actor('bob');
+    await waitFor(() =>
+      expect(
+        view.client.getQueryData(['desktop-signing-vault', 'bob'])
+      ).toEqual(fresh)
+    );
+    view.actor('alice');
+    await waitFor(() =>
+      expect(
+        view.client.getQueryData(['desktop-signing-vault', 'alice'])
+      ).toEqual(fresh)
+    );
+    finish({ state: admissionState(true) });
+    await waitFor(() => expect(view.client.isMutating()).toBe(0));
+    expect(
+      view.client.getQueryData(['desktop-signing-vault', 'alice'])
+    ).toEqual(fresh);
+    await enableWindows();
+    await waitFor(() =>
+      expect(mock.mutate).toHaveBeenLastCalledWith({
+        action: 'enable_delivery',
+        platform: 'windows',
+        environmentRevision: 10,
+        versionId: 'active',
+        revision: 7,
+      })
+    );
+    expectPrivateCacheEmpty(view.client);
   });
 });
