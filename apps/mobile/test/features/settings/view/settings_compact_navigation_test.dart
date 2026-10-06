@@ -54,11 +54,13 @@ import '../../../helpers/helpers.dart';
 part 'settings_compact_harness.dart';
 part 'settings_hidden_recovery_checks.dart';
 part 'settings_detail_shell_checks.dart';
+part 'settings_product_editor_checks.dart';
 
 void main() {
   tearDown(() => GoRouter.optionURLReflectsImperativeAPIs = false);
   registerHiddenRecoveryChecks();
   registerSettingsDetailShellChecks();
+  registerProductEditorChecks();
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await supa.Supabase.initialize(

@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/assistant/view/assistant_settings_hub.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/mail/data/mail_access.dart';
 import 'package:mobile/features/mail/view/mail_settings_hub.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
+import 'package:mobile/features/settings/view/product_preference_editors.dart';
 import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -63,14 +63,17 @@ final productSettingsRegistry = <ProductSettingsEntry>[
     icon: Icons.calendar_today_outlined,
     title: (context) => context.l10n.navCalendar,
     visible: (context) => context.read<CalendarSettingsCubit?>() != null,
-    open: (context) async => context.go(Routes.settingsPreferences),
+    open: openCalendarProductSettings,
   ),
   ProductSettingsEntry(
     id: 'finance',
     icon: Icons.account_balance_wallet_outlined,
     title: (context) => context.l10n.navFinance,
     visible: (context) => context.read<FinancePreferencesCubit?>() != null,
-    open: (context) async => context.go(Routes.settingsPreferences),
+    open: (context) => openFinanceProductSettings(
+      context,
+      context.read<FinancePreferencesCubit>(),
+    ),
   ),
   ProductSettingsEntry(
     id: 'mail',

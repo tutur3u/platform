@@ -6,12 +6,12 @@ import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dart';
 import 'package:mobile/features/assistant/local/widgets/assistant_local_models_section.dart';
 import 'package:mobile/features/assistant/widgets/assistant_settings_sheet_body.dart';
+import 'package:mobile/features/settings/view/settings_route_frame.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Central Settings and Mira quick settings use the same preference editor.
 class AssistantSettingsHub extends StatefulWidget {
@@ -51,8 +51,8 @@ class _AssistantSettingsHubState extends State<AssistantSettingsHub> {
   }
 
   @override
-  Widget build(BuildContext context) => Material(
-    color: shad.Theme.of(context).colorScheme.background,
+  Widget build(BuildContext context) => SettingsRouteFrame(
+    title: context.l10n.assistantSettingsTitle,
     child: Stack(
       fit: StackFit.expand,
       children: [
