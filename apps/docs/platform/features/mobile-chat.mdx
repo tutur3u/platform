@@ -61,6 +61,17 @@ opt-outs return a safe failed result when no UI feedback surface is available.
 Late settings reads cannot replace a newer read or a saved selection. Helper and settings widget
 regressions cover persistence, URL admission, mode selection and retry errors.
 
+
+### Account notification preferences
+
+Account notification preference reads and writes accept browser cookies and mobile
+Bearer sessions. Reads remain scoped to the authenticated user and account rows
+(`ws_id IS NULL`); writes derive the actor from the session. This authentication
+repair does not establish cross-platform notification delivery or enforcement.
+Route regressions cover credential forwarding, anonymous rejection, account
+isolation, invalid writes and bodyless HEAD responses. Rust GET already uses
+caller-token reads; unported methods continue through the live Next API.
+
 ## Stream completion
 
 Native Chat and Mira replies stop reading their NDJSON response after a verified

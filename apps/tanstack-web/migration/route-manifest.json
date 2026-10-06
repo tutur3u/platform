@@ -2471,14 +2471,15 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/notifications/account-preferences:apps/web/src/legacy-api-routes/v1/notifications/account-preferences/route.ts",
+      "id": "api:/api/v1/notifications/account-preferences:apps/web/src/app/api/v1/notifications/account-preferences/route.ts",
       "kind": "api",
       "methods": [
         "GET",
+        "HEAD",
         "PUT"
       ],
       "routePath": "/api/v1/notifications/account-preferences",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/notifications/account-preferences/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/notifications/account-preferences/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -9920,7 +9921,7 @@
     "routeHandlers": 646,
     "methodCounts": {
       "GET": 326,
-      "HEAD": 13,
+      "HEAD": 14,
       "POST": 320,
       "PUT": 60,
       "PATCH": 64,
