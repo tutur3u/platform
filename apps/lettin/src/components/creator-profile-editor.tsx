@@ -10,7 +10,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { isValidNewUsername } from '@tuturuuu/utils/username-policy';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { CreatorAboutEditor } from './creator-about-editor';
 import { CreatorProfileHeader } from './creator-profile-header';
@@ -91,6 +91,7 @@ function ProfileForm({
   const client = useQueryClient();
   const router = useRouter();
   const { dirty, setDirty } = useNavigationGuard();
+  const fieldId = useId();
   const initial = {
     display_name: profile.display_name ?? '',
     bio: profile.bio ?? '',
@@ -170,9 +171,15 @@ function ProfileForm({
         }}
       >
         {(['display_name', 'handle'] as const).map((field) => (
-          <label key={field} className="block space-y-2 text-sm">
-            {t(`profile${field}`)}
+          <div key={field} className="block space-y-2 text-sm">
+            <label htmlFor={`${fieldId}-${field}`}>
+              {t(`profile${field}`)}
+            </label>
             <Input
+              id={`${fieldId}-${field}`}
+              aria-describedby={
+                field === 'handle' ? `${fieldId}-handle-help` : undefined
+              }
               disabled={mutation.isPending || uploading}
               value={fields[field]}
               type={field.endsWith('_url') ? 'url' : 'text'}
@@ -186,11 +193,14 @@ function ProfileForm({
               }}
             />
             {field === 'handle' && (
-              <small className="text-muted-foreground">
+              <small
+                id={`${fieldId}-handle-help`}
+                className="text-muted-foreground"
+              >
                 {t('usernameHint')}
               </small>
             )}
-          </label>
+          </div>
         ))}
         {(['avatar', 'banner'] as const).map((kind) => (
           <ProfileMediaField
