@@ -1596,3 +1596,5 @@ shared dock search, stale-scope responses, denied versus challenged refreshes,
 retained failed-save drafts, and actor-owned editor dismissal beneath an
 unrelated modal. Cleanup schedules a frame even when the covered route is
 settled; it removes that editor alone and preserves the covering modal.
+
+Timer also remounts its native host for each authentication transition, including batched logout and login to the same account. A preference read owned by the disposed host cannot prevent the new host from loading or resume its previous request. The actual-host deferred preference regression covers this liveness boundary independently of Timer load-publication fences.

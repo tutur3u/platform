@@ -50,10 +50,11 @@ int _resolvedFirstDayOfWeek(
   return _weekdayByIndex[firstDayOfWeekIndex % 7];
 }
 
-class TimeTrackerPage extends StatelessWidget {
+class TimeTrackerPage extends StatefulWidget {
   const TimeTrackerPage({
     super.key,
     this.repository,
+    this.cubitFactory,
     this.initialSection = TimeTrackerSection.timer,
     this.initialStatsScope = TimeTrackerStatsScope.personal,
     this.initialHistoryDate,
@@ -61,32 +62,45 @@ class TimeTrackerPage extends StatelessWidget {
   });
 
   final ITimeTrackerRepository? repository;
+  final TimeTrackerCubit Function(String? actorId)? cubitFactory;
   final TimeTrackerSection initialSection;
   final TimeTrackerStatsScope initialStatsScope;
   final DateTime? initialHistoryDate;
   final HistoryViewMode? initialHistoryViewMode;
 
   @override
+  State<TimeTrackerPage> createState() => _TimeTrackerLifetimeState();
+}
+
+class _TimeTrackerLifetimeState extends State<TimeTrackerPage> {
+  int _actorGeneration = 0;
+
+  @override
   Widget build(BuildContext context) {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     final userId = context.select<AuthCubit, String?>((c) => c.state.user?.id);
 
-    return BlocProvider(
-      key: ValueKey(userId),
-      create: (context) {
-        final repo = repository ?? TimeTrackerRepository();
-        return TimeTrackerCubit(
-          repository: repo,
-          initialState: wsId != null && userId != null
-              ? TimeTrackerCubit.seedStateFor(wsId: wsId, userId: userId)
-              : null,
-        );
-      },
-      child: _TimeTrackerView(
-        initialSection: initialSection,
-        initialStatsScope: initialStatsScope,
-        initialHistoryDate: initialHistoryDate,
-        initialHistoryViewMode: initialHistoryViewMode,
+    return BlocListener<AuthCubit, AuthState>(
+      listenWhen: (previous, current) => previous.user?.id != current.user?.id,
+      listener: (_, _) => setState(() => ++_actorGeneration),
+      child: BlocProvider(
+        key: ValueKey((userId, _actorGeneration)),
+        create: (context) {
+          if (widget.cubitFactory case final factory?) return factory(userId);
+          final repo = widget.repository ?? TimeTrackerRepository();
+          return TimeTrackerCubit(
+            repository: repo,
+            initialState: wsId != null && userId != null
+                ? TimeTrackerCubit.seedStateFor(wsId: wsId, userId: userId)
+                : null,
+          );
+        },
+        child: _TimeTrackerView(
+          initialSection: widget.initialSection,
+          initialStatsScope: widget.initialStatsScope,
+          initialHistoryDate: widget.initialHistoryDate,
+          initialHistoryViewMode: widget.initialHistoryViewMode,
+        ),
       ),
     );
   }
