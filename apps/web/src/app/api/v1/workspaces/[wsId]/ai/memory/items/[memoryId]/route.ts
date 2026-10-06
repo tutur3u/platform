@@ -4,15 +4,10 @@ import {
   forgetAiMemory,
   resolveAiMemoryScope,
 } from '@tuturuuu/ai/memory';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import {
-  normalizeWorkspaceId,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
+import { resolveMemoryRequestContext } from './request-context';
+
+export { GET, HEAD, PATCH } from './edit-handlers';
+
 import { type NextRequest, NextResponse } from 'next/server';
 
 type Params = {
@@ -24,65 +19,6 @@ function normalizeProduct(value: string | null): AiMemoryProduct {
   return AI_MEMORY_PRODUCTS.includes(value as AiMemoryProduct)
     ? (value as AiMemoryProduct)
     : 'memories';
-}
-
-async function resolveMemoryRequestContext(
-  request: NextRequest,
-  rawWsId: string
-) {
-  const supabase = await createClient(request);
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-  if (!user?.id) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
-  }
-
-  const sbAdmin = await createAdminClient();
-  let wsId: string;
-  try {
-    wsId = await normalizeWorkspaceId(rawWsId, supabase, request);
-  } catch (error) {
-    console.warn('Failed to normalize AI memory delete workspace id', error);
-    return {
-      ok: false as const,
-      response: NextResponse.json(
-        { error: 'Invalid workspace identifier' },
-        { status: 422 }
-      ),
-    };
-  }
-
-  const membership = await verifyWorkspaceMembershipType({
-    requiredType: 'MEMBER',
-    supabase: sbAdmin,
-    userId: user.id,
-    wsId,
-  });
-
-  if (membership.error === 'membership_lookup_failed') {
-    console.error('Failed to verify AI memory delete workspace access', {
-      userId: user.id,
-      wsId,
-    });
-    return {
-      ok: false as const,
-      response: NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
-      ),
-    };
-  }
-
-  if (!membership.ok) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
-    };
-  }
-
-  return { ok: true as const, sbAdmin, user, wsId };
 }
 
 export async function DELETE(

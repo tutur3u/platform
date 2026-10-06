@@ -38,6 +38,7 @@ const trackedFiles = execFileSync(
 const fixtures = [
   'learn-programming-full-schema.sql',
   'hosted-playgrounds.sql',
+  'ai-memory-edit-audit.sql',
 ];
 const ports = await chooseAvailablePortBlock(identity);
 const metadata = await stageDisposableProject({
