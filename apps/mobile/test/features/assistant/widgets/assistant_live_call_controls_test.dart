@@ -33,12 +33,17 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.byIcon(Icons.mic_off_rounded));
-      await tester.tap(find.byIcon(Icons.videocam_off_rounded));
-      await tester.tap(find.byIcon(Icons.call_end_rounded));
-      expect(microphone, state.isBusy ? 0 : 1);
-      expect(camera, status == AssistantLiveConnectionStatus.connected ? 1 : 0);
-      expect(end, status == AssistantLiveConnectionStatus.disconnected ? 0 : 1);
+      if (status == AssistantLiveConnectionStatus.connected) {
+        await tester.tap(find.byIcon(Icons.mic_off_rounded));
+        await tester.tap(find.byIcon(Icons.videocam_off_rounded));
+        await tester.tap(find.byIcon(Icons.call_end_rounded));
+        expect(microphone, 1);
+        expect(camera, 1);
+        expect(end, 1);
+      } else {
+        expect(find.byType(IconButton), findsNothing);
+        expect(microphone + camera + end, 0);
+      }
       expect(tester.takeException(), isNull);
     });
   }

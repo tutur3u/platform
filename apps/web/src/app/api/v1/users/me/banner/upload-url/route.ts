@@ -15,6 +15,7 @@ import { createOptimizedBannerOperationTicket } from '@/lib/profile-media-ticket
 
 const PostBannerUploadSchema = z.object({
   operationId: z.uuid().optional(),
+  expectedActorId: z.uuid().optional(),
   filename: z
     .string()
     .min(3)
@@ -25,8 +26,16 @@ export const POST = withSessionAuth(
   async (req, { user }) => {
     try {
       const body = await req.json();
-      const { filename, operationId = crypto.randomUUID() } =
-        PostBannerUploadSchema.parse(body);
+      const {
+        filename,
+        operationId = crypto.randomUUID(),
+        expectedActorId,
+      } = PostBannerUploadSchema.parse(body);
+      if (expectedActorId !== undefined && expectedActorId !== user.id)
+        return NextResponse.json(
+          { message: 'Profile actor changed' },
+          { status: 409 }
+        );
 
       // Personal banners use the same authenticated ticket contract as avatars.
       const fileExt = filename.split('.').pop()?.toLowerCase();

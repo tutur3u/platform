@@ -28,13 +28,13 @@ import { CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH } from '@/legacy-api-routes
 import { POST } from './route';
 
 const actor = '00000000-0000-4000-8000-000000000901';
-const invoke = (filename = 'banner.png') =>
+const invoke = (filename = 'banner.png', expectedActorId?: string) =>
   (
     POST as unknown as (request: Request, context: unknown) => Promise<Response>
   )(
     new Request('https://example.test/api/v1/users/me/banner/upload-url', {
       method: 'POST',
-      body: JSON.stringify({ filename }),
+      body: JSON.stringify({ filename, expectedActorId }),
     }),
     { user: { id: actor } }
   );
@@ -82,6 +82,26 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe('budgeted current-user banner tickets', () => {
+  it('rejects a switched actor before any privileged or quota effects', async () => {
+    const response = await invoke(
+      'banner.png',
+      '00000000-0000-4000-8000-000000000902'
+    );
+    expect(response.status).toBe(409);
+    expect(mocks.admin).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(mocks.budget).not.toHaveBeenCalled();
+    expect(mocks.info).not.toHaveBeenCalled();
+    expect(mocks.sign).not.toHaveBeenCalled();
+    expect(mocks.publicUrl).not.toHaveBeenCalled();
+  });
+
+  it('admits the expected authenticated actor', async () => {
+    expect((await invoke('banner.png', actor)).status).toBe(200);
+    expect(mocks.admin).toHaveBeenCalledTimes(1);
+    expect(mocks.budget).toHaveBeenCalledTimes(1);
+  });
+
   it('preserves profile-write app-session auth and existing throttle', () => {
     expect(mocks.authOptions).toEqual({
       allowAppSessionAuth: CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH,

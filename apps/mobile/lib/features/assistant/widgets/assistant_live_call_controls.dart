@@ -21,22 +21,21 @@ class AssistantLiveCallControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final connected = state.status == AssistantLiveConnectionStatus.connected;
-    final idle = state.status == AssistantLiveConnectionStatus.disconnected;
+    if (state.status != AssistantLiveConnectionStatus.connected) {
+      return const SizedBox.shrink();
+    }
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         _CallButton(
-          label: idle
-              ? context.l10n.assistantLiveConnect
-              : state.isMicrophoneActive
+          label: state.isMicrophoneActive
               ? context.l10n.assistantLiveMute
               : context.l10n.assistantLiveListen,
           icon: state.isMicrophoneActive
               ? Icons.mic_rounded
               : Icons.mic_off_rounded,
           active: state.isMicrophoneActive,
-          onPressed: state.isBusy ? null : onMicrophone,
+          onPressed: onMicrophone,
         ),
         _CallButton(
           label: state.isCameraActive
@@ -46,7 +45,7 @@ class AssistantLiveCallControls extends StatelessWidget {
               ? Icons.videocam_rounded
               : Icons.videocam_off_rounded,
           active: state.isCameraActive,
-          onPressed: connected ? onCamera : null,
+          onPressed: onCamera,
         ),
         _CallButton(
           label: context.l10n.assistantLiveTypeMessage,
@@ -56,7 +55,7 @@ class AssistantLiveCallControls extends StatelessWidget {
         _CallButton(
           label: context.l10n.assistantLiveDisconnect,
           icon: Icons.call_end_rounded,
-          onPressed: idle ? null : onDisconnect,
+          onPressed: onDisconnect,
         ),
       ],
     );
@@ -82,7 +81,7 @@ class _CallButton extends StatelessWidget {
       onPressed: onPressed,
       icon: Icon(icon),
       style: IconButton.styleFrom(
-        minimumSize: const Size(44, 48),
+        minimumSize: const Size(48, 48),
         backgroundColor: active ? colors.primaryContainer : Colors.transparent,
         foregroundColor: active ? colors.onPrimaryContainer : colors.onSurface,
       ),
