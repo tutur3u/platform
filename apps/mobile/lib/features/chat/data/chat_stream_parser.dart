@@ -61,24 +61,55 @@ class ChatStreamErrorEvent extends ChatMessageStreamEvent {
 
 class ChatNdjsonStreamParser {
   String _carry = '';
+  final _decoded = StringBuffer();
+  late final ByteConversionSink _decoder = utf8.decoder.startChunkedConversion(
+    StringConversionSink.fromStringSink(_decoded),
+  );
+  bool _done = false;
 
   List<ChatMessageStreamEvent> addChunk(List<int> chunk) {
-    final text = _carry + utf8.decode(chunk, allowMalformed: true);
-    final normalized = text.replaceAll('\r\n', '\n');
-    final lines = normalized.split('\n');
-    _carry = normalized.endsWith('\n') ? '' : lines.removeLast();
-
-    return lines
-        .map(_parseLine)
-        .whereType<ChatMessageStreamEvent>()
-        .toList(growable: false);
+    if (_done) return const [];
+    final events = <ChatMessageStreamEvent>[];
+    var start = 0;
+    // Decode one NDJSON line at a time so a completed response never decodes
+    // trailing bytes. The decoder still retains split UTF-8 code points.
+    for (var index = 0; index < chunk.length; index++) {
+      if (chunk[index] != 10) continue;
+      _decoder.addSlice(chunk, start, index + 1, false);
+      events.addAll(_takeDecoded());
+      if (_done) return events;
+      start = index + 1;
+    }
+    if (start < chunk.length) {
+      _decoder.addSlice(chunk, start, chunk.length, false);
+      events.addAll(_takeDecoded());
+    }
+    return events;
   }
 
   List<ChatMessageStreamEvent> close() {
-    if (_carry.trim().isEmpty) return const [];
-    final event = _parseLine(_carry);
-    _carry = '';
-    return event == null ? const [] : [event];
+    if (_done) return const [];
+    _decoder.close();
+    return _takeDecoded(finalChunk: true);
+  }
+
+  List<ChatMessageStreamEvent> _takeDecoded({bool finalChunk = false}) {
+    final normalized = (_carry + _decoded.toString()).replaceAll('\r\n', '\n');
+    _decoded.clear();
+    final lines = normalized.split('\n');
+    _carry = finalChunk || normalized.endsWith('\n') ? '' : lines.removeLast();
+    final events = <ChatMessageStreamEvent>[];
+    for (final line in lines) {
+      final event = _parseLine(line);
+      if (event == null) continue;
+      events.add(event);
+      if (event is ChatStreamDoneEvent) {
+        _done = true;
+        _carry = '';
+        break;
+      }
+    }
+    return events;
   }
 
   ChatMessageStreamEvent? _parseLine(String line) {
