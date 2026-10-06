@@ -101,6 +101,11 @@ test('exact-head CI replays full schema, strict TAP, concurrency and real typege
     workflow,
     /ref: \$\{\{ github.event.pull_request.head.sha \|\| github.sha \}\}/u
   );
+  const checkout = workflow.match(
+    /- uses: actions\/checkout@[^\n]+\n([\s\S]*?)(?=\n {6}-|$)/u
+  )?.[1];
+  assert.ok(checkout, 'contract must check out its exact candidate');
+  assert.match(checkout, /persist-credentials: false/u);
   assert.match(workflow, /permissions:\n {2}contents: read/u);
   assert.match(workflow, /CONTRACT_ENABLED/u);
   assert.match(workflow, /test "\$CONTRACT_ENABLED" = true/u);
