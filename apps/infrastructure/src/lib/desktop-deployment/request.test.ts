@@ -30,6 +30,40 @@ describe('bounded desktop input', () => {
         }).success
       ).toBe(false);
   });
+  it('requires admission CAS and rejects browser readiness receipts or credentials', () => {
+    const enable = {
+      action: 'enable_delivery',
+      platform: 'windows',
+      environmentRevision: 0,
+      versionId: '00000000-0000-4000-8000-000000000001',
+      revision: 1,
+    };
+    expect(DesktopMutationSchema.safeParse(enable).success).toBe(true);
+    for (const environmentRevision of [-1, 0.5, Number.MAX_SAFE_INTEGER + 1])
+      expect(
+        DesktopMutationSchema.safeParse({ ...enable, environmentRevision })
+          .success
+      ).toBe(false);
+    expect(
+      DesktopMutationSchema.safeParse({ ...enable, verifiedAt: '2099-01-01' })
+        .success
+    ).toBe(false);
+    expect(
+      DesktopMutationSchema.safeParse({
+        action: 'disable_delivery',
+        platform: 'macos',
+        environmentRevision: 0,
+      }).success
+    ).toBe(true);
+    expect(
+      DesktopMutationSchema.safeParse({
+        action: 'disable_delivery',
+        platform: 'macos',
+        environmentRevision: 0,
+        password: 'private',
+      }).success
+    ).toBe(false);
+  });
   it('collects a valid streamed body without zeroing the returned copy', async () => {
     const result = await readDesktopBody(
       new Request('https://infra.example', {

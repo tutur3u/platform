@@ -41,10 +41,12 @@ archive, or an artifact path.
 | macOS identity | `MACOS_SIGNING_IDENTITY`, `APPLE_TEAM_ID` environment variables identifying the intended Developer ID signer. |
 | Notarization | `APP_STORE_CONNECT_API_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, `APP_STORE_CONNECT_PRIVATE_KEY_P8_B64` secrets. |
 
-Store the source signing material in the Infrastructure secrets/encrypted blob
-vault. Provision only the required credentials into the protected desktop CI
-environment, without printing or committing their values. Certificate issuance,
-rotation, and identity verification remain prerequisites for a real release.
+Keep source signing material in the dedicated encrypted Infrastructure desktop
+vault. Desktop jobs use protected environment secrets by default; the explicit
+vault opt-in obtains only the matching platform's approved material through its
+separate desktop OIDC contract. Never use the mobile bundle endpoint or token for
+desktop jobs. Certificate issuance, rotation, and identity verification remain
+prerequisites for a real release.
 
 ## Packages and trust
 
@@ -82,17 +84,25 @@ alternative; they never produce guessed download URLs.
 
 ## Verification
 
+Local validation stays limited to non-build checks and is admitted through the
+resource queue:
+
 ```sh
-node --test scripts/desktop-deployment/*.test.mjs
-node scripts/desktop-deployment/prepare-macos.mjs
-bun check:mobile
-bun check
+ttr resources status --json
+ttr resources run -- node --test scripts/desktop-deployment/*.test.mjs
+ttr resources run -- bun check:mobile
 ```
 
-Also run the actual web production build and native release builds. Before
-publishing, verify installation, browser sign-in callbacks, workspace isolation,
-resizing, and core app flows on each supported OS. A passing macOS build does
-not prove Windows/Linux runtime compatibility. Linux CI installs the generated package,
+Run focused Infrastructure route, operator UI and source TypeScript checks when
+those surfaces change. Do not run `bun check`, `bun setup`, app/package builds, or
+native release builds locally. Require the applicable app and desktop release
+builds in CI for the exact source commit. `prepare-macos.mjs` is runner preparation
+that rewrites Firebase metadata and copies the selected flavor plist; it is not a
+read-only verification command.
+
+Before publishing, verify installation, browser sign-in callbacks, workspace
+isolation, resizing, and core app flows on each supported OS. A passing macOS build
+does not prove Windows/Linux runtime compatibility. Linux CI installs the generated package,
 waits for a visible first-frame window under Xvfb, and checks that a harmless
 browser callback activation leaves the app running. This smoke check does not
 prove authenticated sign-in or interactive Polkit updates. Never label missing platform
@@ -153,7 +163,8 @@ The existing Infrastructure mobile vault supports Android/iOS bundles and binds
 its OIDC audience to the mobile store workflow. Its App Store distribution P12
 is **not** a macOS Developer ID certificate, and the desktop workflow cannot use
 that bundle endpoint under the mobile workflow's identity. Provision the desktop
-credentials listed above from an approved vault path; do not copy a mobile CI
+credentials listed above through the separate desktop vault and protected
+environment-secret or explicit vault workflow path; do not copy a mobile CI
 token into desktop jobs or weaken that OIDC policy. A Microsoft Store developer
 account alone does not supply the Authenticode certificate used by this workflow.
 
@@ -317,11 +328,11 @@ rejects missing, duplicate, extra or other-platform resources. Public Flutter
 configuration is a separate contract and never belongs in a signing bundle.
 Linux and Store MSIX do not consume this signing bundle.
 
-This executable contract is preparatory: encrypted desktop storage, operator UI,
-bundle delivery and protected workflow hydration are separate implementation
-layers. The existing mobile vault is unchanged, and desktop publication remains
-opt-in. `desktopVaultEnabled` requires an explicit `true`; implementing a validator
-does not establish provisioning, certificate validity or signed runtime success.
+The desktop contract, encrypted storage, operator UI, protected bundle endpoint,
+and runner hydration are implemented as separate layers. The existing mobile
+vault is unchanged, and desktop publication remains opt-in. `desktopVaultEnabled`
+requires an explicit `true`; implemented source does not establish provisioning,
+certificate validity or signed runtime success.
 `desktop-deployment/contract.test.ts` and `desktop-deployment/oidc.test.ts` cover
 platform isolation and locally signed JWT rejection. Actual protected-workflow
 OIDC, certificate identity, installation, WACK and update proof remain required.
@@ -351,11 +362,13 @@ and the active version before any bundle may be returned. A delivered or failed
 lease cannot replay; a lost response requires a new workflow run attempt. Audit
 records use fixed event names and contain no credential values or exception text.
 
-Both platform environments start disabled. Activating a structurally ready
-version does not enable delivery. This storage and cryptography foundation alone
-does not provide an admin screen, bundle endpoint, runner hydration or signing
-proof; those follow in the dependent implementation. Protected GitHub signing
-continues to be the existing source until that integration is explicitly enabled.
+Both platform environments start disabled. Activating a ready version selects
+immutable signing material; it does not enable delivery. The operator screen,
+protected bundle endpoint and optional runner hydration are implemented in the
+sections below. Environment-secret signing remains the default until
+`DESKTOP_SIGNING_SOURCE=vault` is explicitly selected and the independent server
+admission gates are enabled. None of these source layers establishes certificate
+trust, artifact signing, notarization or installation proof.
 Regression coverage: `desktop-deployment-vault.sql` tests permission boundaries,
 platform separation, revision invalidation, immutable active bytes, replay and
 revocation; `vault-crypto.test.ts` tests tamper and identity binding.
@@ -397,10 +410,10 @@ once to its authorized creator and is never included in state reads.
 
 Draft edits use expected revisions and invalidate readiness. Activation repeats
 time-sensitive portable certificate checks before the atomic revision-fenced
-activation RPC. Windows and macOS resource names cannot cross platforms. No
-operation enables a platform environment; runner bundle delivery remains a
-separate default-off integration. Operator UI and protected workflow hydration
-are follow-up layers, so these endpoints alone do not establish signed delivery.
+activation RPC. Windows and macOS resource names cannot cross platforms. No version
+operation enables a platform environment. Bundle delivery is independently
+default-off; the operator UI and protected workflow hydration are implemented
+separately. These endpoints alone do not establish signed delivery.
 Regression coverage: desktop `access.test.ts`, `request.test.ts`,
 `store.test.ts` and `mutations.test.ts`.
 
@@ -451,9 +464,10 @@ a final live revocation/expiry/version check precede response. Failed or deliver
 leases cannot be reused, including after a response is lost; a new workflow attempt
 is required. Signing buffers are wiped on success and failure.
 
-This endpoint does not install runner hydration, enable any environment, provision
-credentials, establish OS trust or prove artifact signing/notarization. Linux and
-Store MSIX diagnostics do not fetch this bundle. Mobile trust remains independent.
+This endpoint supplies the optional runner hydrator described below. It does not
+enable any environment, provision credentials, establish OS trust or prove
+artifact signing/notarization. Linux and Store MSIX diagnostics do not fetch this
+bundle. Mobile trust remains independent.
 Regression coverage lives in the desktop `bundle-store.test.ts`, bundle route tests
 and operator admission-badge cases; previous actual lease SQL and signed OIDC tests
 remain the storage and signature boundaries.
@@ -495,3 +509,31 @@ notarization, or protected production configuration. The workflow's actual Node 
 and operating-system jobs remain required delivery evidence. See the
 [Node TypeScript runtime](https://nodejs.org/docs/latest-v24.x/api/typescript.html)
 and [Windows ACL command contract](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/icacls).
+
+### Audited platform admission control
+
+The Infrastructure desktop administration API accepts `enable_delivery` and
+`disable_delivery` for Windows and macOS. Both require same-origin operator
+mutation admission, explicit root `MEMBER` membership, the desktop vault permission,
+and the current `environmentRevision`. Enabling also names the active version and
+its validated revision; the server decrypts and verifies the exact profile, fresh
+certificate validity, and macOS P8 material before issuing its short-lived internal
+receipt. Browser credentials or readiness receipts cannot authorize enabling.
+Disabling needs no credential inspection, so unavailable or expired material does
+not prevent an operator from stopping delivery. Version activation still does not
+enable a platform. No operation changes `DESKTOP_DEPLOYMENT_VAULT_ENABLED`, which
+remains an independent global default-off gate.
+
+Each successful platform control writes an actor audit event and advances the
+environment revision. Bundle reservation captures that revision; final delivery
+rejects older reservations after disable, re-enable, or active-version changes.
+Pre-migration leases with revision `-1` cannot deliver. The existing token,
+environment, then lease lock order remains intact. During additive-schema rollout,
+metadata reports a missing revision as `null`; clients must reload a real revision
+before offering a control. Source availability does not establish activation,
+OS trust, signing, provisioning, or publication proof.
+
+Regression coverage: `desktop-deployment-admission.sql` exercises permission, CAS,
+freshness, disable/re-enable and legacy-lease denial; `admission.test.ts` and
+`request.test.ts` cover credential-free disable, trusted receipts, fresh material,
+sanitized failures, and strict browser inputs.
