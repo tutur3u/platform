@@ -312,16 +312,10 @@ class _YearDayCell extends StatelessWidget {
         date!.year == now.year &&
         date!.month == now.month &&
         date!.day == now.day;
-    final isSelected =
-        date!.year == selectedDate.year &&
-        date!.month == selectedDate.month &&
-        date!.day == selectedDate.day;
-    final backgroundColor = isSelected
+    final backgroundColor = isToday
         ? theme.colorScheme.primary
-        : isToday
-        ? theme.colorScheme.primary.withValues(alpha: 0.10)
         : Colors.transparent;
-    final textColor = isSelected
+    final textColor = isToday
         ? theme.colorScheme.primaryForeground
         : theme.colorScheme.foreground;
 
@@ -335,11 +329,6 @@ class _YearDayCell extends StatelessWidget {
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(12),
-            border: isToday && !isSelected
-                ? Border.all(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.35),
-                  )
-                : null,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -354,9 +343,7 @@ class _YearDayCell extends StatelessWidget {
                     fontSize: 12,
                     height: 1,
                     color: textColor,
-                    fontWeight: isSelected || isToday
-                        ? FontWeight.w800
-                        : FontWeight.w600,
+                    fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
                   ),
                 ),
               ),
@@ -372,7 +359,7 @@ class _YearDayCell extends StatelessWidget {
                           height: 4,
                           margin: const EdgeInsets.symmetric(horizontal: 1),
                           decoration: BoxDecoration(
-                            color: isSelected
+                            color: isToday
                                 ? theme.colorScheme.primaryForeground
                                       .withValues(alpha: 0.92)
                                 : color,
