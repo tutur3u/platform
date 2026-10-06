@@ -56,6 +56,7 @@ it('opens Everyone, preserves drafts, inserts one mention and focuses after open
         <ConversationPanel
           solo
           meetingId="meeting"
+          accountId="synthetic-account"
           selfUserId="self"
           chat={[]}
           onSendChat={vi.fn()}

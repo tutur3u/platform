@@ -395,6 +395,7 @@ function CallShellContent({
           outputDeviceId={outputDeviceId}
         />
         <MeetLivePanel
+          accountId={accountId}
           key="live-assistant"
           onOpenChat={askMira}
           room={room}
@@ -520,6 +521,7 @@ function CallShellContent({
         )}
         {panel && (
           <SidePanel
+            accountId={accountId}
             mentionRequest={mentionRequest}
             onMentionHandled={onMentionHandled}
             meetingId={meetingId}

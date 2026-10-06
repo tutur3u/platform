@@ -28,7 +28,12 @@ cannot impersonate Mira's audio.
 The model can inspect current public meeting context, recall earlier session
 turns, and organize its context. Personal memory is not included in room mode.
 Personal sessions can use the selected workspace through the same permission-checked
-tools as text chat. Every workspace read or change requires an inline private
+tools as text chat. The workspace picker validates the authenticated account
+against the current workspace actor; the per-device participant ID remains
+reserved for room transport and chat attribution. Hidden workspaces, guests,
+foreign actors and stale actor leases remain unavailable. The actual nested Live
+dialog regression uses distinct account and device IDs
+(`live-workspace-identity.test.tsx`). Every workspace read or change requires an inline private
 approval before execution. Membership, current permissions, and arguments are
 validated again at execution time. Room sessions never receive these tools.
 A room admin can stop the shared assistant even when another admin invited it.

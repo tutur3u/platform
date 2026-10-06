@@ -35,6 +35,7 @@ it('defaults to room chat and keeps an explicitly chosen conversation private wh
           solo={solo}
           chat={[]}
           meetingId="meeting"
+          accountId="synthetic-account"
           selfUserId="me"
           onSendChat={onSendChat}
         />
