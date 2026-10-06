@@ -46,13 +46,15 @@ export function MailReadingSettings() {
         <Select
           value={appearance}
           onValueChange={(value) => {
-            if (value === 'dark' || value === 'original') setAppearance(value);
+            if (value === 'auto' || value === 'dark' || value === 'original')
+              setAppearance(value);
           }}
         >
           <SelectTrigger id="mail-content-appearance">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="auto">{t('app_theme_view')}</SelectItem>
             <SelectItem value="dark">{t('dark_view')}</SelectItem>
             <SelectItem value="original">{t('original_view')}</SelectItem>
           </SelectContent>
