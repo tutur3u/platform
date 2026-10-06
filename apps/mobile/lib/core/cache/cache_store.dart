@@ -159,6 +159,14 @@ class CacheStore {
     return revision;
   }
 
+  /// Clear/logout fence, independent of ordinary mutation invalidation.
+  int scopeRevisionFor(CacheKey key) => _scopes(key).fold(
+    0,
+    (revision, scope) => (_scopeRevisions[scope] ?? 0) > revision
+        ? _scopeRevisions[scope]!
+        : revision,
+  );
+
   bool _isClearing(CacheKey key) =>
       _scopes(key).any((scope) => (_clearingScopes[scope] ?? 0) > 0);
 
