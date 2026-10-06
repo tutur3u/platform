@@ -180,8 +180,11 @@ function DesktopVaultSession({ actorId }: { actorId: string }) {
             platformDeliveryEnabled={query.data.platforms.some(
               (entry) => entry.platform === platform && entry.enabled
             )}
+            environment={query.data.platforms.find(
+              (entry) => entry.platform === platform
+            )}
             versions={query.data.versions}
-            pending={mutation.isPending}
+            pending={mutation.isPending || query.isFetching}
             act={act}
             upload={upload}
           />
