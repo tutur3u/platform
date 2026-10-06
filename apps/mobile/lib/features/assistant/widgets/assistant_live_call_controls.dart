@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Content for the existing shell dock, never a second floating surface.
@@ -62,29 +66,46 @@ class AssistantLiveCallControls extends StatelessWidget {
   }
 }
 
-class _CallButton extends StatelessWidget {
+class _CallButton extends StatefulWidget {
   const _CallButton({
     required this.label,
     required this.icon,
     required this.onPressed,
-    this.active = false,
+    this.active,
   });
   final String label;
   final IconData icon;
   final Future<void> Function()? onPressed;
-  final bool active;
+  final bool? active;
   @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return IconButton(
-      tooltip: label,
-      onPressed: onPressed,
-      icon: Icon(icon),
-      style: IconButton.styleFrom(
-        minimumSize: const Size(48, 48),
-        backgroundColor: active ? colors.primaryContainer : Colors.transparent,
-        foregroundColor: active ? colors.onPrimaryContainer : colors.onSurface,
-      ),
-    );
+  State<_CallButton> createState() => _CallButtonState();
+}
+
+class _CallButtonState extends State<_CallButton> {
+  bool _running = false;
+
+  Future<void> _invoke() async {
+    if (_running || widget.onPressed == null) return;
+    setState(() => _running = true);
+    try {
+      await widget.onPressed!();
+    } finally {
+      if (mounted) setState(() => _running = false);
+    }
   }
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    toggled: widget.active,
+    child: ShellDockActionButton(
+      primary: widget.active ?? false,
+      action: ShellActionSpec(
+        id: 'live-control-${widget.icon.codePoint}',
+        icon: widget.icon,
+        tooltip: widget.label,
+        enabled: !_running && widget.onPressed != null,
+        onPressed: () => unawaited(_invoke()),
+      ),
+    ),
+  );
 }

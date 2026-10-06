@@ -4,10 +4,13 @@ import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
+import 'package:mobile/features/assistant/widgets/assistant_live_playback_blob.dart';
+import 'package:mobile/features/assistant/widgets/assistant_live_post_call_view.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_screen_control.dart';
-import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
+import 'package:mobile/features/assistant/widgets/assistant_live_transcript_section.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 part 'assistant_live_mode_components.dart';
 
@@ -79,7 +82,17 @@ class AssistantLiveModeView extends StatelessWidget {
         else
           SizedBox(height: floatingShellHeaderInset(context)),
         Expanded(
-          child: isIdle
+          child: !connected && liveState.hasEnded
+              ? AssistantLivePostCallView(
+                  onCall: onToggleMicrophone,
+                  transcript: _LiveTranscript(
+                    chatState: chatState,
+                    liveState: liveState,
+                    assistantName: assistantName,
+                    scrollController: scrollController,
+                  ),
+                )
+              : isIdle
               ? const _LiveIdleState()
               : liveState.isBusy
               ? _LiveConnectingState(

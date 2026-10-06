@@ -21,8 +21,10 @@ class AssistantLiveState extends Equatable {
     this.screenSharingError,
     this.isInterrupted = false,
     this.isPersisting = false,
+    this.hasEnded = false,
     this.audioLevel = 0,
     this.assistantAudioLevel = 0,
+    this.assistantSpectrum = const [0, 0, 0],
     this.isAssistantSpeaking = false,
     this.latestCameraFrame,
     this.userDraft = '',
@@ -30,6 +32,7 @@ class AssistantLiveState extends Equatable {
     this.assistantDraft = '',
     this.assistantTranscript = '',
     this.assistantParts = const [],
+    this.completedTurns = const [],
     this.startupTimings = const {},
     this.insightCards = const [],
     this.goAwayTimeLeft,
@@ -51,8 +54,10 @@ class AssistantLiveState extends Equatable {
   final String? screenSharingError;
   final bool isInterrupted;
   final bool isPersisting;
+  final bool hasEnded;
   final double audioLevel;
   final double assistantAudioLevel;
+  final List<double> assistantSpectrum;
   final bool isAssistantSpeaking;
   final Uint8List? latestCameraFrame;
   final String userDraft;
@@ -60,6 +65,7 @@ class AssistantLiveState extends Equatable {
   final String assistantDraft;
   final String assistantTranscript;
   final List<AssistantMessagePart> assistantParts;
+  final List<AssistantLiveTurnSnapshot> completedTurns;
   final Map<AssistantLiveStartupPhase, int> startupTimings;
   final List<AssistantLiveInsightCard> insightCards;
   final String? goAwayTimeLeft;
@@ -93,8 +99,10 @@ class AssistantLiveState extends Equatable {
     Object? screenSharingError = _assistantLiveSentinel,
     bool? isInterrupted,
     bool? isPersisting,
+    bool? hasEnded,
     double? audioLevel,
     double? assistantAudioLevel,
+    List<double>? assistantSpectrum,
     bool? isAssistantSpeaking,
     Object? latestCameraFrame = _assistantLiveSentinel,
     String? userDraft,
@@ -102,6 +110,7 @@ class AssistantLiveState extends Equatable {
     String? assistantDraft,
     String? assistantTranscript,
     List<AssistantMessagePart>? assistantParts,
+    List<AssistantLiveTurnSnapshot>? completedTurns,
     Map<AssistantLiveStartupPhase, int>? startupTimings,
     List<AssistantLiveInsightCard>? insightCards,
     Object? goAwayTimeLeft = _assistantLiveSentinel,
@@ -135,8 +144,10 @@ class AssistantLiveState extends Equatable {
           : screenSharingError as String?,
       isInterrupted: isInterrupted ?? this.isInterrupted,
       isPersisting: isPersisting ?? this.isPersisting,
+      hasEnded: hasEnded ?? this.hasEnded,
       audioLevel: audioLevel ?? this.audioLevel,
       assistantAudioLevel: assistantAudioLevel ?? this.assistantAudioLevel,
+      assistantSpectrum: assistantSpectrum ?? this.assistantSpectrum,
       isAssistantSpeaking: isAssistantSpeaking ?? this.isAssistantSpeaking,
       latestCameraFrame: latestCameraFrame == _assistantLiveSentinel
           ? this.latestCameraFrame
@@ -146,6 +157,7 @@ class AssistantLiveState extends Equatable {
       assistantDraft: assistantDraft ?? this.assistantDraft,
       assistantTranscript: assistantTranscript ?? this.assistantTranscript,
       assistantParts: assistantParts ?? this.assistantParts,
+      completedTurns: completedTurns ?? this.completedTurns,
       startupTimings: startupTimings ?? this.startupTimings,
       insightCards: insightCards ?? this.insightCards,
       goAwayTimeLeft: goAwayTimeLeft == _assistantLiveSentinel
@@ -176,8 +188,10 @@ class AssistantLiveState extends Equatable {
     screenSharingError,
     isInterrupted,
     isPersisting,
+    hasEnded,
     audioLevel,
     assistantAudioLevel,
+    assistantSpectrum,
     isAssistantSpeaking,
     latestCameraFrame,
     userDraft,
@@ -185,6 +199,7 @@ class AssistantLiveState extends Equatable {
     assistantDraft,
     assistantTranscript,
     assistantParts,
+    completedTurns,
     startupTimings,
     insightCards,
     goAwayTimeLeft,

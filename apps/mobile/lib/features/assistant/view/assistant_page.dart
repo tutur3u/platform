@@ -36,6 +36,7 @@ import 'package:mobile/features/assistant/local/assistant_local_model.dart';
 import 'package:mobile/features/assistant/local/assistant_remote_chat_actions.dart';
 import 'package:mobile/features/assistant/local/assistant_remote_scope_guard.dart';
 import 'package:mobile/features/assistant/models/assistant_chat_identity.dart';
+import 'package:mobile/features/assistant/models/assistant_live_history_confirmation.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_live_start_gate.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
@@ -156,6 +157,24 @@ class _AssistantPageState extends State<AssistantPage>
     onHistoryUpdated: (wsId, chatId) async {
       await _chatCubit.openChatById(wsId, assistantLiveConversationId(chatId));
       await _chatCubit.refreshHistory();
+    },
+    isTurnRestored: (wsId, chatId, turnId, roles) {
+      final chat = _chatCubit.state;
+      return isAssistantLiveTurnHistoryConfirmed(
+        loadedWorkspaceId: chat.workspaceId,
+        loadedConversationId: chat.chat?.id == chat.storedChatId
+            ? chat.chat?.id
+            : null,
+        restoreSucceeded:
+            chat.status == AssistantChatStatus.idle &&
+            chat.error == null &&
+            chat.hasLoadedOnce,
+        messages: chat.messages,
+        workspaceId: wsId,
+        conversationId: assistantLiveConversationId(chatId),
+        turnId: turnId,
+        expectedRoles: roles,
+      );
     },
     screenContextProvider: () {
       if (!_keepLiveWhileBrowsing || !mounted) {
@@ -584,10 +603,8 @@ class _AssistantPageState extends State<AssistantPage>
       onRetry: () => _handleLiveRetry(wsId, chatState),
       onToggleMicrophone: () => _handleLiveMicrophoneToggle(wsId, chatState),
       onToggleCamera: _liveCubit.toggleCamera,
-      onDisconnect: () async {
-        await _liveCubit.disconnect(clearSession: true);
-        if (mounted) context.read<AssistantChromeCubit>().exitLiveMode();
-      },
+      onDisconnect: () =>
+          _liveCubit.disconnect(clearSession: true, finishTurn: true),
       onOpenTextEntry: _openChatComposerFromLiveMode,
     );
   }
@@ -607,7 +624,8 @@ class _AssistantPageState extends State<AssistantPage>
         autoStartMicrophone: false,
       ),
       onRetry: () => _handleLiveRetry(wsId, chatState),
-      onDisconnect: () => _liveCubit.disconnect(clearSession: true),
+      onDisconnect: () =>
+          _liveCubit.disconnect(clearSession: true, finishTurn: true),
       onCameraToggle: _liveCubit.toggleCamera,
     );
   }

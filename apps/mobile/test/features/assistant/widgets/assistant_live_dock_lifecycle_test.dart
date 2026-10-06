@@ -6,6 +6,7 @@ import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.d
 import 'package:mobile/features/assistant/widgets/assistant_live_primary_action.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/persistent_shell_dock.dart';
+import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
 import 'package:mobile/l10n/gen/app_localizations.dart';
 
@@ -115,7 +116,13 @@ void main() {
       expect(tester.element(material), same(element));
       await tester.pumpAndSettle();
       expect(find.text('Navigation'), findsNothing);
-      expect(find.byType(IconButton), findsNWidgets(4));
+      expect(
+        find.descendant(
+          of: find.byType(AssistantLiveCallControls),
+          matching: find.byType(ShellDockActionButton),
+        ),
+        findsNWidgets(4),
+      );
       for (final button in tester.widgetList<IconButton>(
         find.byType(IconButton),
       )) {

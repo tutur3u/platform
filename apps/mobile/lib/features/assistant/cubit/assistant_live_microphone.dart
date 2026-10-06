@@ -6,7 +6,8 @@ extension _AssistantLiveMicrophone on AssistantLiveCubit {
     _drainingAudio = true;
     final version = _microphoneVersion;
     try {
-      while (!isClosed &&
+      while (!_isClosing &&
+          !isClosed &&
           version == _microphoneVersion &&
           state.status == AssistantLiveConnectionStatus.connected) {
         final bytes = _startupAudio.take();
@@ -24,6 +25,7 @@ extension _AssistantLiveMicrophone on AssistantLiveCubit {
 
 extension AssistantLiveMicrophoneControls on AssistantLiveCubit {
   Future<void> toggleMicrophone() async {
+    if (_isClosing || isClosed) return;
     if (state.isMicrophoneActive || _startingMicrophone) {
       if (_screenService.requiresMicrophone) await stopScreenSharing();
       _microphoneVersion++;
@@ -43,7 +45,7 @@ extension AssistantLiveMicrophoneControls on AssistantLiveCubit {
     _startingMicrophone = true;
     try {
       final granted = await _recorder.ensurePermission();
-      if (isClosed || version != _microphoneVersion) return;
+      if (_isClosing || isClosed || version != _microphoneVersion) return;
       _emitMicrophoneState(
         state.copyWith(
           microphonePermission: granted
@@ -60,10 +62,10 @@ extension AssistantLiveMicrophoneControls on AssistantLiveCubit {
       // Configure playback before capture; changing the shared iOS audio
       // category after the microphone starts can invalidate its input route.
       await _audioPlayer.initialize();
-      if (isClosed || version != _microphoneVersion) return;
+      if (_isClosing || isClosed || version != _microphoneVersion) return;
       await _recorder.start(
         onData: (bytes) {
-          if (isClosed || version != _microphoneVersion) return;
+          if (_isClosing || isClosed || version != _microphoneVersion) return;
           if (!_startupAudio.add(bytes)) {
             unawaited(toggleMicrophone());
             _emitError('Connection took too long. Please try recording again.');
@@ -74,17 +76,17 @@ extension AssistantLiveMicrophoneControls on AssistantLiveCubit {
           }
         },
         onError: (_) {
-          if (!isClosed && version == _microphoneVersion) {
+          if (!_isClosing && !isClosed && version == _microphoneVersion) {
             _emitError('microphone_unavailable');
           }
         },
         onAmplitude: (level) {
-          if (!isClosed && version == _microphoneVersion) {
+          if (!_isClosing && !isClosed && version == _microphoneVersion) {
             _emitMicrophoneState(state.copyWith(audioLevel: level));
           }
         },
       );
-      if (isClosed || version != _microphoneVersion) {
+      if (_isClosing || isClosed || version != _microphoneVersion) {
         await _stopRecorderSafely();
         return;
       }
@@ -102,7 +104,7 @@ extension AssistantLiveMicrophoneControls on AssistantLiveCubit {
         await toggleMicrophone();
       }
     } on Exception {
-      if (!isClosed && version == _microphoneVersion) {
+      if (!_isClosing && !isClosed && version == _microphoneVersion) {
         _microphoneVersion++;
         _startingMicrophone = false;
         _startupAudio.clear();
