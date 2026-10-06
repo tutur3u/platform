@@ -125,6 +125,7 @@ export function DocumentEditor({
               />
             }
             toolbarToolsLabel={t('tools')}
+            allowCollaboration
             yjsDoc={doc}
             yjsProvider={provider}
             collaborationUser={{
