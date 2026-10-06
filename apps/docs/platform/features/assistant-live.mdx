@@ -76,14 +76,18 @@ pinned iOS recorder enables native voice processing, and playback preserves its
 existing category/options. Disconnect stops capture and releases the playback
 unit instead of immediately initializing it again; this does not claim global
 iOS audio-session deactivation. Delayed setup/frame work and cancelled call starts are generation fenced; old
-requests cannot connect or clear a restarted call’s pending state.
+requests cannot connect or clear a restarted call's pending state. Cancelling
+capture clears its startup ownership immediately; obsolete permission or ready
+waits cannot block or clear the replacement microphone attempt.
 Device routes and echo reduction still require device verification, including
 speaker, headset, and Bluetooth calls. Regression coverage includes
 `assistant_live_dock_lifecycle_test.dart`, `assistant_live_calling_view_test.dart`,
-`assistant_live_recorder_test.dart`, and `assistant_live_disconnect_audio_test.dart`.
+`assistant_live_recorder_test.dart`, `assistant_live_disconnect_audio_test.dart`,
+and `assistant_live_microphone_restart_test.dart`.
 
 
-Start or stop Live with the waveform icon in the chat composer. Live keeps the
+On the web dashboard, start or stop Live with the waveform icon in the chat
+composer. Live keeps the
 same message timeline visible, with a compact gradient visualization and media
 controls above it. Spoken turns, typed prompts, tool calls, and search sources
 appear in that timeline and share the workspace artifacts. Close Live or press
@@ -150,11 +154,12 @@ expiration ends media capture and keeps the saved conversation available.
 
 On mobile, Chat and Live use the same top header mode switch and page background.
 Live keeps the floating bottom navigation visible. Its idle start action is the
-icon-only microphone button beside that navigation; the top header opens Live
+icon-only **Call Mira** button beside that navigation; the top header opens Live
 settings in a sheet with the Keep Live while browsing switch. The idle screen
 does not show an availability badge or a second start button. During a session,
-the controls above the navigation provide camera, microphone, typing, and end
-actions. Connection problems show a retry message without changing the page
+connected call controls replace navigation inside the same dock and provide
+camera, microphone, typing, and end actions. A connecting call retains navigation
+and offers cancel. Connection problems show retry without changing the page
 background.
 
 Starting mobile Live with the microphone enabled requests permission and captures

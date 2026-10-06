@@ -25,8 +25,9 @@ void main() {
     final gate = AssistantLiveStartGate();
     final old = gate.begin(1)!;
     final next = gate.begin(3)!;
-    gate.cancel(old);
-    gate.finish(old);
+    gate
+      ..cancel(old)
+      ..finish(old);
     expect(gate.pendingFor(3), isTrue);
     expect(gate.pendingFor(1), isFalse);
     gate.finish(next);

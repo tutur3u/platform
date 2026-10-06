@@ -142,6 +142,9 @@ extension _AssistantPageLayout on _AssistantPageState {
                         // Pending preferences block sends and retained content.
                         // Preserve the requested dock presentation.
                         final isLiveMode = chrome.isLiveMode && !local.local;
+                        final liveConnected =
+                            liveState.status ==
+                            AssistantLiveConnectionStatus.connected;
                         final liveCameraController =
                             _liveCubit.cameraController;
                         final isVisibleLiveSession = _isVisibleLiveSession(
@@ -298,15 +301,11 @@ extension _AssistantPageLayout on _AssistantPageState {
                                         workspaceId: currentWorkspace.id,
                                         expandContent: !isLiveMode,
                                         composing: isLiveMode
-                                            ? liveState.status ==
-                                                      AssistantLiveConnectionStatus
-                                                          .connected &&
+                                            ? liveConnected &&
                                                   !chrome.navigationExpanded
                                             : _isComposerVisible,
                                         content: isLiveMode
-                                            ? liveState.status ==
-                                                      AssistantLiveConnectionStatus
-                                                          .connected
+                                            ? liveConnected
                                                   ? _liveCallDock(
                                                       currentWorkspace.id,
                                                       chatState,

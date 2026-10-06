@@ -71,7 +71,7 @@ void main() {
           home: MediaQuery(
             data: MediaQueryData(
               size: Size(width, 720),
-              textScaler: TextScaler.linear(2),
+              textScaler: const TextScaler.linear(2),
             ),
             child: ShellDockScope(
               controller: controller,

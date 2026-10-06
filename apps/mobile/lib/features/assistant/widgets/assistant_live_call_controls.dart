@@ -21,8 +21,9 @@ class AssistantLiveCallControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (state.status != AssistantLiveConnectionStatus.connected)
+    if (state.status != AssistantLiveConnectionStatus.connected) {
       return const SizedBox.shrink();
+    }
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
