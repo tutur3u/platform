@@ -867,7 +867,6 @@ class _WalletPickerDialogState extends State<_WalletPickerDialog> {
               return haystack.contains(query);
             })
             .toList(growable: false);
-
     return FinanceModalScaffold(
       title: widget.title,
       subtitle: context.l10n.financePickerWalletSubtitle,
@@ -881,6 +880,7 @@ class _WalletPickerDialogState extends State<_WalletPickerDialog> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           shad.TextField(
+            selectionControls: platformTextSelectionControls(),
             contextMenuBuilder: platformTextContextMenuBuilder(),
             controller: _searchController,
             onChanged: (_) => setState(() {}),
@@ -1011,7 +1011,6 @@ class _CategoryPickerDialogState extends State<_CategoryPickerDialog> {
     final remainingCategories = filteredCategories
         .where((category) => !frequentIds.contains(category.id))
         .toList(growable: false);
-
     return FinanceModalScaffold(
       title: context.l10n.financeCategory,
       subtitle: context.l10n.financePickerCategorySubtitle,
@@ -1025,6 +1024,7 @@ class _CategoryPickerDialogState extends State<_CategoryPickerDialog> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           shad.TextField(
+            selectionControls: platformTextSelectionControls(),
             contextMenuBuilder: platformTextContextMenuBuilder(),
             controller: _searchController,
             onChanged: (_) => setState(() {}),

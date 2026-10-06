@@ -135,6 +135,7 @@ class _WalletCheckpointFormSheetState extends State<WalletCheckpointFormSheet> {
           _FieldLabel(label: l10n.financeCheckpointsNote),
           const shad.Gap(6),
           shad.TextArea(
+            selectionControls: platformTextSelectionControls(),
             contextMenuBuilder: platformTextContextMenuBuilder(),
             controller: _noteController,
             placeholder: Text(l10n.financeCheckpointsNotePlaceholder),
@@ -148,7 +149,6 @@ class _WalletCheckpointFormSheetState extends State<WalletCheckpointFormSheet> {
   void _submit() {
     final amount = double.tryParse(_amountController.text.trim());
     final checkedAt = _parseDateTimeInput(_checkedAtController.text.trim());
-
     setState(() {
       _amountError = amount == null
           ? context.l10n.financeCheckpointsAmountRequired
@@ -157,7 +157,6 @@ class _WalletCheckpointFormSheetState extends State<WalletCheckpointFormSheet> {
           ? context.l10n.financeCheckpointsCheckedAtRequired
           : null;
     });
-
     if (amount == null || checkedAt == null) {
       return;
     }
@@ -323,6 +322,7 @@ class _WalletCheckpointReconciliationSheetState
           _FieldLabel(label: l10n.financeCheckpointsDescriptionLabel),
           const shad.Gap(6),
           shad.TextArea(
+            selectionControls: platformTextSelectionControls(),
             contextMenuBuilder: platformTextContextMenuBuilder(),
             controller: _descriptionController,
             placeholder: Text(
@@ -344,7 +344,6 @@ class WalletCheckpointBatchSheet extends StatefulWidget {
     required this.showAmounts,
     super.key,
   });
-
   final List<Wallet> wallets;
   final bool showAmounts;
 
@@ -412,6 +411,7 @@ class _WalletCheckpointBatchSheetState
           _FieldLabel(label: l10n.financeCheckpointsSharedNote),
           const shad.Gap(6),
           shad.TextArea(
+            selectionControls: platformTextSelectionControls(),
             contextMenuBuilder: platformTextContextMenuBuilder(),
             controller: _noteController,
             placeholder: Text(l10n.financeCheckpointsNotePlaceholder),
@@ -554,6 +554,7 @@ class _BatchWalletRow extends StatelessWidget {
           SizedBox(
             width: 132,
             child: shad.TextField(
+              selectionControls: platformTextSelectionControls(),
               contextMenuBuilder: platformTextContextMenuBuilder(),
               controller: controller,
               placeholder: Text(currency),
@@ -640,7 +641,6 @@ class _SheetTextField extends StatelessWidget {
     this.keyboardType,
     this.errorText,
   });
-
   final TextEditingController controller;
   final String placeholder;
   final ValueChanged<String> onChanged;
@@ -653,6 +653,7 @@ class _SheetTextField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         shad.TextField(
+          selectionControls: platformTextSelectionControls(),
           contextMenuBuilder: platformTextContextMenuBuilder(),
           controller: controller,
           placeholder: Text(placeholder),
@@ -670,7 +671,6 @@ class _SheetTextField extends StatelessWidget {
 
 class _FieldError extends StatelessWidget {
   const _FieldError({required this.message});
-
   final String message;
 
   @override

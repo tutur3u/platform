@@ -146,7 +146,14 @@ keyboard inset still recognize the visible keyboard from the view. A field's
 explicit `onTapOutside`
 callback retains control of its behavior. The task interaction dismissal guard
 still suspends outside dismissal. Without a visible keyboard, the existing
-focus policy is unchanged.
+focus policy is delegated to Flutter, including mouse and stylus outside
+dismissal.
+
+Shadcn text fields and areas explicitly pair the platform menu builder with
+native handle-only selection controls. Android and iOS retain draggable
+selection handles; desktop keeps its platform handle policy. The device-name
+and QR-link inputs use the same native editing controls. Workspace search
+already uses a native Material field.
 
 This applies to Material fields and shadcn fields and text areas, including the
 Assistant composer and settings forms. Disabled fields remain disabled,

@@ -354,6 +354,7 @@ class _ReasonDialogContentState extends State<_ReasonDialogContent> {
     return shad.AlertDialog(
       title: Text(widget.title),
       content: shad.TextField(
+        selectionControls: platformTextSelectionControls(),
         contextMenuBuilder: platformTextContextMenuBuilder(),
         controller: _controller,
         maxLines: 3,

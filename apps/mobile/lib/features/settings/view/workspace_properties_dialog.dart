@@ -313,6 +313,7 @@ class _WorkspacePropertiesDialogState
             ],
             const shad.Gap(16),
             shad.TextField(
+              selectionControls: platformTextSelectionControls(),
               contextMenuBuilder: platformTextContextMenuBuilder(),
               controller: _nameController,
               enabled: !_isSaving,

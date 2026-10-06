@@ -110,6 +110,7 @@ class _TaskProjectSheetState extends State<TaskProjectSheet> {
                       ),
                       const shad.Gap(8),
                       shad.TextField(
+                        selectionControls: platformTextSelectionControls(),
                         contextMenuBuilder: platformTextContextMenuBuilder(),
                         controller: _nameController,
                         hintText: context.l10n.taskPortfolioProjectName,
@@ -136,6 +137,7 @@ class _TaskProjectSheetState extends State<TaskProjectSheet> {
                       ),
                       const shad.Gap(8),
                       shad.TextArea(
+                        selectionControls: platformTextSelectionControls(),
                         contextMenuBuilder: platformTextContextMenuBuilder(),
                         controller: _descriptionController,
                         hintText:

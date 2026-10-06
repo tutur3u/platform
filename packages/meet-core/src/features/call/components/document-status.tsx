@@ -9,7 +9,9 @@ import { useTranslations } from 'next-intl';
 export function DocumentStatus({
   connected,
   checkpoint,
+  compact = false,
 }: {
+  compact?: boolean;
   connected: boolean;
   checkpoint: DocumentCheckpointStatus | null;
 }) {
@@ -29,7 +31,9 @@ export function DocumentStatus({
             className="size-3 animate-spin motion-reduce:animate-none"
             aria-hidden="true"
           />
-          {t('reconnecting')}
+          <span className={compact ? 'sr-only' : undefined}>
+            {t('reconnecting')}
+          </span>
         </span>
       )}
       {warning && (

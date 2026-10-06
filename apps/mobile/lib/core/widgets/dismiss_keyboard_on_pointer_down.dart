@@ -32,19 +32,36 @@ class DismissKeyboardOnPointerDown extends StatelessWidget {
     // visible system keyboard. This is a predicate, not additional padding.
     return Actions(
       actions: <Type, Action<Intent>>{
-        EditableTextTapOutsideIntent:
-            CallbackAction<EditableTextTapOutsideIntent>(
-              onInvoke: (intent) {
-                if (!KeyboardDismissGuard.isSuspended &&
-                    (MediaQuery.viewInsetsOf(context).bottom > 0 ||
-                        View.of(context).viewInsets.bottom > 0)) {
-                  intent.focusNode.unfocus();
-                }
-                return null;
-              },
-            ),
+        EditableTextTapOutsideIntent: _KeyboardDismissTapOutsideAction(context),
       },
       child: child,
     );
+  }
+}
+
+class _KeyboardDismissTapOutsideAction
+    extends ContextAction<EditableTextTapOutsideIntent> {
+  _KeyboardDismissTapOutsideAction(this.keyboardContext);
+
+  final BuildContext keyboardContext;
+
+  @override
+  Object? invoke(EditableTextTapOutsideIntent intent, [BuildContext? context]) {
+    if (KeyboardDismissGuard.isSuspended) {
+      return null;
+    }
+    if (MediaQuery.viewInsetsOf(keyboardContext).bottom > 0 ||
+        View.of(keyboardContext).viewInsets.bottom > 0) {
+      intent.focusNode.unfocus();
+      return null;
+    }
+
+    // Preserve Flutter's pointer/platform policy when the IME is absent.
+    // The overridable EditableText action supplies its native callingAction.
+    final nativeAction = callingAction;
+    if (nativeAction is ContextAction<EditableTextTapOutsideIntent>) {
+      return nativeAction.invoke(intent, context ?? keyboardContext);
+    }
+    return nativeAction?.invoke(intent);
   }
 }

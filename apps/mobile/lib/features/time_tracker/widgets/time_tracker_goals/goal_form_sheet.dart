@@ -161,6 +161,7 @@ class _GoalFormSheetState extends State<GoalFormSheet> {
             Text(l10n.timerGoalsDailyMinutes),
             const shad.Gap(4),
             shad.TextField(
+              selectionControls: platformTextSelectionControls(),
               contextMenuBuilder: platformTextContextMenuBuilder(),
               controller: _dailyController,
               keyboardType: TextInputType.number,
@@ -170,6 +171,7 @@ class _GoalFormSheetState extends State<GoalFormSheet> {
             Text(l10n.timerGoalsWeeklyMinutesOptional),
             const shad.Gap(4),
             shad.TextField(
+              selectionControls: platformTextSelectionControls(),
               contextMenuBuilder: platformTextContextMenuBuilder(),
               controller: _weeklyController,
               keyboardType: TextInputType.number,

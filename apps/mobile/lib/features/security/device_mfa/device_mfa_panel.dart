@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_error.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_repository.dart';
@@ -144,6 +145,8 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
             Text(l10n.deviceMfaEnrollWarning, style: theme.typography.small),
             const shad.Gap(12),
             shad.TextField(
+              selectionControls: platformTextSelectionControls(),
+              contextMenuBuilder: platformTextContextMenuBuilder(),
               controller: _name,
               enabled: !_busy,
               placeholder: Text(l10n.deviceMfaName),

@@ -93,6 +93,7 @@ class _EditRequestDialogState extends State<EditRequestDialog> {
             Text(l10n.timerSessionTitle, style: theme.typography.small),
             const shad.Gap(4),
             shad.TextField(
+              selectionControls: platformTextSelectionControls(),
               contextMenuBuilder: platformTextContextMenuBuilder(),
               controller: _titleController,
               hintText: l10n.timerSessionTitle,
@@ -101,6 +102,7 @@ class _EditRequestDialogState extends State<EditRequestDialog> {
             Text(l10n.timerRequestDescription, style: theme.typography.small),
             const shad.Gap(4),
             shad.TextField(
+              selectionControls: platformTextSelectionControls(),
               contextMenuBuilder: platformTextContextMenuBuilder(),
               controller: _descriptionController,
               maxLines: 3,

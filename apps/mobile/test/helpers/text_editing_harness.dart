@@ -75,6 +75,7 @@ class TextEditingHarness {
         enabled: enabled,
         obscureText: obscured,
         inputFormatters: inputFormatters,
+        selectionControls: platformTextSelectionControls(),
         contextMenuBuilder: platformTextContextMenuBuilder(),
       );
     } else if (textArea) {
@@ -84,6 +85,7 @@ class TextEditingHarness {
         readOnly: readOnly,
         enabled: enabled,
         inputFormatters: inputFormatters,
+        selectionControls: platformTextSelectionControls(),
         contextMenuBuilder: platformTextContextMenuBuilder(),
       );
     } else if (material) {
@@ -96,6 +98,7 @@ class TextEditingHarness {
         obscureText: obscured,
         onTapOutside: onTapOutside,
         inputFormatters: inputFormatters,
+        selectionControls: platformTextSelectionControls(),
         contextMenuBuilder: platformTextContextMenuBuilder(),
       );
     } else {
@@ -108,6 +111,7 @@ class TextEditingHarness {
         obscureText: obscured,
         onTapOutside: onTapOutside,
         inputFormatters: inputFormatters,
+        selectionControls: platformTextSelectionControls(),
         contextMenuBuilder: nativeMenu
             ? platformTextContextMenuBuilder()
             : shad.TextField.defaultContextMenuBuilder,
