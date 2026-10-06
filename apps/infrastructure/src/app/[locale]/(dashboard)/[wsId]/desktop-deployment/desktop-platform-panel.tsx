@@ -3,6 +3,7 @@
 import type {
   DesktopVaultMutation,
   DesktopVaultPlatform,
+  DesktopVaultState,
   DesktopVaultVersion,
 } from '@tuturuuu/internal-api/infrastructure';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -10,11 +11,13 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { useTranslations } from 'next-intl';
 import { DESKTOP_SIGNING_PROFILES } from '@/lib/desktop-deployment/contract';
+import { DesktopAdmissionControl } from './desktop-admission-control';
 import { DesktopResourceField } from './desktop-resource-field';
 export function DesktopPlatformPanel({
   platform,
   globalDeliveryEnabled,
   platformDeliveryEnabled,
+  environment,
   versions,
   pending,
   act,
@@ -23,6 +26,7 @@ export function DesktopPlatformPanel({
   platform: DesktopVaultPlatform;
   globalDeliveryEnabled: boolean;
   platformDeliveryEnabled: boolean;
+  environment?: DesktopVaultState['platforms'][number];
   versions: DesktopVaultVersion[];
   pending: boolean;
   act: (input: DesktopVaultMutation) => Promise<void>;
@@ -74,6 +78,14 @@ export function DesktopPlatformPanel({
             ? t('vault.activeVersion', { version: active.version })
             : t('vault.noActiveVersion')}
         </p>
+        <DesktopAdmissionControl
+          key={`${environment?.revision}:${environment?.activeVersionId}`}
+          platform={platform}
+          environment={environment}
+          active={active}
+          pending={pending}
+          act={act}
+        />
         {!draft ? (
           <Button
             disabled={pending}
