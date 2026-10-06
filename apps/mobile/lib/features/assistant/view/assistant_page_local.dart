@@ -79,11 +79,18 @@ extension _AssistantPageLocal on _AssistantPageState {
     return ShellTitleOverride(
       ownerId: 'assistant-model-status',
       locations: const {Routes.assistant},
-      title: scope == null
-          ? context.watch<AssistantChromeCubit>().state.isLiveMode
-                ? context.l10n.miraLiveTitle
-                : context.l10n.miraChatTitle
+      title: scope == null || shell.soul.name.trim().isEmpty
+          ? 'Mira'
           : shell.soul.name,
+      titleActionToken: (scope, identityHashCode(_shellCubit)),
+      onTitleSubmitted: scope == null
+          ? null
+          : (name) async {
+              if (!mounted || scope != _localScope()) {
+                throw StateError('Assistant name scope changed');
+              }
+              await _shellCubit.renameAssistant(name);
+            },
       subtitle: localLane && scope != null ? label : null,
       subtitleActionToken: (scope, selection, state.failure, state.ready),
       onSubtitlePressed: localLane && scope != null

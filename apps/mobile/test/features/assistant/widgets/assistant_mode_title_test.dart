@@ -8,7 +8,7 @@ import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/l10n/gen/app_localizations.dart';
 
 void main() {
-  testWidgets('mode title stays Mira Chat or Mira Live without animation', (
+  testWidgets('fallback name stays Mira in both modes without animation', (
     tester,
   ) async {
     final chrome = AssistantChromeCubit();
@@ -34,14 +34,14 @@ void main() {
         .map((text) => text.data ?? '')
         .join();
 
-    expect(title(), 'Mira Chat');
+    expect(title(), 'Mira');
     chrome.enterLiveMode();
     await tester.pump();
-    expect(title(), 'Mira Live');
+    expect(title(), 'Mira');
 
     chrome.exitLiveMode();
     await tester.pumpAndSettle();
-    expect(title(), 'Mira Chat');
+    expect(title(), 'Mira');
   });
   testWidgets('current name in both modes; local status in Chat only', (
     tester,

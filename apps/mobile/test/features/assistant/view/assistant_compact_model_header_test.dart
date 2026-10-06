@@ -7,6 +7,7 @@ import 'package:mobile/features/assistant/widgets/assistant_header_status_chip.d
 import 'package:mobile/features/assistant/widgets/assistant_local_status_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_mode_title.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/l10n/l10n.dart';
 
 import 'compact_model_header_harness.dart';
 
@@ -43,7 +44,11 @@ void main() {
         );
         expect(local.state.failure, isNotNull);
         final status = h.titles.state.registrationForLocation('/assistant')!;
-        expect(find.text(status.subtitle!), findsOneWidget);
+        final action = AppLocalizations.of(
+          h.pageContext(tester),
+        ).assistantLocalModeAction;
+        final label = '$action: ${status.subtitle}';
+        expect(find.byTooltip(label), findsOneWidget);
         expect(find.textContaining('On device:'), findsNothing);
         expect(find.textContaining('Trên thiết bị:'), findsNothing);
         h.chrome.enterLiveMode();

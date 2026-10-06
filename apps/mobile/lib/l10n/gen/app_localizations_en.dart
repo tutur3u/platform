@@ -895,7 +895,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantRenameAction => 'Rename';
 
   @override
-  String get assistantRenameTitle => 'Rename Assistant';
+  String get assistantRenameTitle => 'Rename assistant';
 
   @override
   String get assistantReplyFailed => 'Mira\'s reply stopped. Your message is still here. Retry';
@@ -10559,4 +10559,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantPersonalSettingsError => 'Could not complete this change. Try again.';
+
+  @override
+  String get assistantRenameLabel => 'Assistant name';
+
+  @override
+  String get assistantRenameError => 'Could not update the name. Your draft is kept; try again.';
 }

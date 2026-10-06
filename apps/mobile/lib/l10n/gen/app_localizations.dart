@@ -1822,7 +1822,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantRenameTitle.
   ///
   /// In en, this message translates to:
-  /// **'Rename Assistant'**
+  /// **'Rename assistant'**
   String get assistantRenameTitle;
 
   /// No description provided for @assistantReplyFailed.
@@ -20004,6 +20004,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not complete this change. Try again.'**
   String get assistantPersonalSettingsError;
+
+  /// No description provided for @assistantRenameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant name'**
+  String get assistantRenameLabel;
+
+  /// No description provided for @assistantRenameError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update the name. Your draft is kept; try again.'**
+  String get assistantRenameError;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

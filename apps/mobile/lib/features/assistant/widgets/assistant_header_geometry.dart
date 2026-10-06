@@ -5,7 +5,7 @@ import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 
-/// Only Chat's registered local recovery control needs the larger touch target.
+/// Only registered assistant title/recovery controls need the larger target.
 /// The caller provides its route so cached pages cannot resize another header.
 double assistantHeaderContentHeight(
   BuildContext context, {
@@ -14,10 +14,12 @@ double assistantHeaderContentHeight(
   if (location != Routes.assistant) return mobileSectionAppBarHeight;
   final live =
       context.watch<AssistantChromeCubit?>()?.state.isLiveMode ?? false;
-  final status = context
+  final registration = context
       .watch<ShellTitleOverrideCubit?>()
       ?.state
-      .registrationForLocation(location)
-      ?.subtitle;
-  return !live && status != null ? 48 : mobileSectionAppBarHeight;
+      .registrationForLocation(location);
+  return (registration?.canEditTitle ?? false) ||
+          (!live && registration?.subtitle != null)
+      ? 48
+      : mobileSectionAppBarHeight;
 }
