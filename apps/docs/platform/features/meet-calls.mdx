@@ -1177,6 +1177,13 @@ acceptance additionally require configured exact-commit mobile CI artifacts.
 
 ## In-call document workspace
 
+Meet and Parley explicitly enable the rich-text editor collaboration binding with
+the room Yjs document and provider. This applies to every admitted editor: passing
+a provider without enabling the binding must never create a local-only document.
+`document-panel.test.tsx` guards the binding; shared provider tests cover peer
+updates and reconnect reconciliation. Hosted multi-user verification remains a
+separate delivery gate.
+
 Meet and Parley render the shared document editor edge to edge, without a separate
 Shared document heading or padding outside the editor. The editor keeps its own
 text padding. Backup status sits in the editor toolbar; secondary formatting,
