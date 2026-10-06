@@ -3445,6 +3445,304 @@ export type Database = {
         };
         Relationships: [];
       };
+      desktop_deployment_audit_events: {
+        Row: {
+          actor_id: string | null;
+          created_at: string;
+          environment_id: string;
+          event_type: string;
+          id: string;
+          token_id: string | null;
+          version_id: string | null;
+        };
+        Insert: {
+          actor_id?: string | null;
+          created_at?: string;
+          environment_id: string;
+          event_type: string;
+          id?: string;
+          token_id?: string | null;
+          version_id?: string | null;
+        };
+        Update: {
+          actor_id?: string | null;
+          created_at?: string;
+          environment_id?: string;
+          event_type?: string;
+          id?: string;
+          token_id?: string | null;
+          version_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'desktop_deployment_audit_events_environment_id_fkey';
+            columns: ['environment_id'];
+            isOneToOne: false;
+            referencedRelation: 'desktop_deployment_environments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'desktop_deployment_audit_events_token_id_fkey';
+            columns: ['token_id'];
+            isOneToOne: false;
+            referencedRelation: 'desktop_deployment_ci_tokens';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'desktop_deployment_audit_events_version_id_fkey';
+            columns: ['version_id'];
+            isOneToOne: false;
+            referencedRelation: 'desktop_deployment_versions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      desktop_deployment_ci_tokens: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          environment_id: string;
+          expires_at: string;
+          id: string;
+          name: string;
+          platform: string;
+          revoked_at: string | null;
+          token_hash: string;
+          token_prefix: string;
+          version_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          environment_id: string;
+          expires_at: string;
+          id?: string;
+          name: string;
+          platform: string;
+          revoked_at?: string | null;
+          token_hash: string;
+          token_prefix: string;
+          version_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          environment_id?: string;
+          expires_at?: string;
+          id?: string;
+          name?: string;
+          platform?: string;
+          revoked_at?: string | null;
+          token_hash?: string;
+          token_prefix?: string;
+          version_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'desktop_deployment_ci_tokens_environment_id_platform_fkey';
+            columns: ['environment_id', 'platform'];
+            isOneToOne: false;
+            referencedRelation: 'desktop_deployment_environments';
+            referencedColumns: ['id', 'platform'];
+          },
+          {
+            foreignKeyName: 'desktop_deployment_ci_tokens_version_id_environment_id_fkey';
+            columns: ['version_id', 'environment_id'];
+            isOneToOne: false;
+            referencedRelation: 'desktop_deployment_versions';
+            referencedColumns: ['id', 'environment_id'];
+          },
+        ];
+      };
+      desktop_deployment_environments: {
+        Row: {
+          active_version_id: string | null;
+          created_at: string;
+          enabled: boolean;
+          id: string;
+          platform: string;
+        };
+        Insert: {
+          active_version_id?: string | null;
+          created_at?: string;
+          enabled?: boolean;
+          id?: string;
+          platform: string;
+        };
+        Update: {
+          active_version_id?: string | null;
+          created_at?: string;
+          enabled?: boolean;
+          id?: string;
+          platform?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'desktop_environment_active_version_fk';
+            columns: ['active_version_id', 'id'];
+            isOneToOne: false;
+            referencedRelation: 'desktop_deployment_versions';
+            referencedColumns: ['id', 'environment_id'];
+          },
+        ];
+      };
+      desktop_deployment_fetch_leases: {
+        Row: {
+          completed_at: string | null;
+          created_at: string;
+          failure_code: string | null;
+          id: string;
+          platform: string;
+          run_attempt: string;
+          run_id: string;
+          source_sha: string;
+          status: string;
+          token_id: string;
+          version_id: string;
+        };
+        Insert: {
+          completed_at?: string | null;
+          created_at?: string;
+          failure_code?: string | null;
+          id?: string;
+          platform: string;
+          run_attempt: string;
+          run_id: string;
+          source_sha: string;
+          status?: string;
+          token_id: string;
+          version_id: string;
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string;
+          failure_code?: string | null;
+          id?: string;
+          platform?: string;
+          run_attempt?: string;
+          run_id?: string;
+          source_sha?: string;
+          status?: string;
+          token_id?: string;
+          version_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'desktop_deployment_fetch_leases_token_id_platform_fkey';
+            columns: ['token_id', 'platform'];
+            isOneToOne: false;
+            referencedRelation: 'desktop_deployment_ci_tokens';
+            referencedColumns: ['id', 'platform'];
+          },
+          {
+            foreignKeyName: 'desktop_deployment_fetch_leases_version_id_fkey';
+            columns: ['version_id'];
+            isOneToOne: false;
+            referencedRelation: 'desktop_deployment_versions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      desktop_deployment_resources: {
+        Row: {
+          encrypted_value: string;
+          id: string;
+          name: string;
+          plaintext_sha256: string;
+          plaintext_size: number;
+          platform: string;
+          updated_at: string;
+          updated_by: string;
+          version_id: string;
+        };
+        Insert: {
+          encrypted_value: string;
+          id?: string;
+          name: string;
+          plaintext_sha256: string;
+          plaintext_size: number;
+          platform: string;
+          updated_at?: string;
+          updated_by: string;
+          version_id: string;
+        };
+        Update: {
+          encrypted_value?: string;
+          id?: string;
+          name?: string;
+          plaintext_sha256?: string;
+          plaintext_size?: number;
+          platform?: string;
+          updated_at?: string;
+          updated_by?: string;
+          version_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'desktop_deployment_resources_version_id_platform_fkey';
+            columns: ['version_id', 'platform'];
+            isOneToOne: false;
+            referencedRelation: 'desktop_deployment_versions';
+            referencedColumns: ['id', 'platform'];
+          },
+        ];
+      };
+      desktop_deployment_versions: {
+        Row: {
+          activated_at: string | null;
+          activated_by: string | null;
+          created_at: string;
+          created_by: string;
+          data_key_ciphertext: string;
+          environment_id: string;
+          id: string;
+          platform: string;
+          revision: number;
+          status: string;
+          validated_revision: number | null;
+          validation_errors: string[];
+          version: number;
+        };
+        Insert: {
+          activated_at?: string | null;
+          activated_by?: string | null;
+          created_at?: string;
+          created_by: string;
+          data_key_ciphertext: string;
+          environment_id: string;
+          id?: string;
+          platform: string;
+          revision?: number;
+          status?: string;
+          validated_revision?: number | null;
+          validation_errors?: string[];
+          version: number;
+        };
+        Update: {
+          activated_at?: string | null;
+          activated_by?: string | null;
+          created_at?: string;
+          created_by?: string;
+          data_key_ciphertext?: string;
+          environment_id?: string;
+          id?: string;
+          platform?: string;
+          revision?: number;
+          status?: string;
+          validated_revision?: number | null;
+          validation_errors?: string[];
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'desktop_deployment_versions_environment_id_platform_fkey';
+            columns: ['environment_id', 'platform'];
+            isOneToOne: false;
+            referencedRelation: 'desktop_deployment_environments';
+            referencedColumns: ['id', 'platform'];
+          },
+        ];
+      };
       devbox_artifacts: {
         Row: {
           artifact_type: string;
@@ -18550,6 +18848,137 @@ export type Database = {
       delete_managed_cron_whitelisted_domain: {
         Args: { p_domain: string };
         Returns: undefined;
+      };
+      desktop_deployment_activate_version: {
+        Args: { p_actor: string; p_revision: number; p_version: string };
+        Returns: undefined;
+      };
+      desktop_deployment_assert_admin: {
+        Args: { p_actor: string };
+        Returns: undefined;
+      };
+      desktop_deployment_complete_bundle: {
+        Args: { p_failure_code?: string; p_lease: string };
+        Returns: undefined;
+      };
+      desktop_deployment_create_token: {
+        Args: {
+          p_actor: string;
+          p_expires: string;
+          p_hash: string;
+          p_name: string;
+          p_prefix: string;
+          p_version: string;
+        };
+        Returns: {
+          created_at: string;
+          created_by: string;
+          environment_id: string;
+          expires_at: string;
+          id: string;
+          name: string;
+          platform: string;
+          revoked_at: string | null;
+          token_hash: string;
+          token_prefix: string;
+          version_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'desktop_deployment_ci_tokens';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      desktop_deployment_create_version: {
+        Args: {
+          p_actor: string;
+          p_data_key_ciphertext: string;
+          p_platform: string;
+        };
+        Returns: {
+          activated_at: string | null;
+          activated_by: string | null;
+          created_at: string;
+          created_by: string;
+          data_key_ciphertext: string;
+          environment_id: string;
+          id: string;
+          platform: string;
+          revision: number;
+          status: string;
+          validated_revision: number | null;
+          validation_errors: string[];
+          version: number;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'desktop_deployment_versions';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      desktop_deployment_remove_resource: {
+        Args: {
+          p_actor: string;
+          p_name: string;
+          p_revision: number;
+          p_version: string;
+        };
+        Returns: number;
+      };
+      desktop_deployment_reserve_bundle: {
+        Args: {
+          p_attempt: string;
+          p_platform: string;
+          p_run_id: string;
+          p_sha: string;
+          p_token: string;
+        };
+        Returns: {
+          completed_at: string | null;
+          created_at: string;
+          failure_code: string | null;
+          id: string;
+          platform: string;
+          run_attempt: string;
+          run_id: string;
+          source_sha: string;
+          status: string;
+          token_id: string;
+          version_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'desktop_deployment_fetch_leases';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      desktop_deployment_revoke_token: {
+        Args: { p_actor: string; p_token: string };
+        Returns: undefined;
+      };
+      desktop_deployment_validate_version: {
+        Args: {
+          p_actor: string;
+          p_errors: string[];
+          p_revision: number;
+          p_version: string;
+        };
+        Returns: undefined;
+      };
+      desktop_deployment_write_resource: {
+        Args: {
+          p_actor: string;
+          p_ciphertext: string;
+          p_name: string;
+          p_revision: number;
+          p_sha256: string;
+          p_size: number;
+          p_version: string;
+        };
+        Returns: number;
       };
       detect_wallet_interest_transactions: {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
@@ -50169,7 +50598,8 @@ export type Database = {
         | 'manage_ai_evaluations'
         | 'view_ai_usage'
         | 'view_ai_logs'
-        | 'manage_git_repositories';
+        | 'manage_git_repositories'
+        | 'manage_desktop_deployment_vault';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -52954,6 +53384,7 @@ export const Constants = {
         'view_ai_usage',
         'view_ai_logs',
         'manage_git_repositories',
+        'manage_desktop_deployment_vault',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },
