@@ -7,10 +7,17 @@ dayjs.extend(timezone);
 dayjs.extend(utc);
 
 export function isAllDayEvent(
-  event: Pick<CalendarEvent, 'start_at' | 'end_at'>
+  event: Pick<CalendarEvent, 'start_at' | 'end_at'>,
+  displayTimezone?: string
 ): boolean {
-  const start = dayjs(event.start_at);
-  const end = dayjs(event.end_at);
+  const start =
+    displayTimezone && displayTimezone !== 'auto'
+      ? dayjs(event.start_at).tz(displayTimezone)
+      : dayjs(event.start_at);
+  const end =
+    displayTimezone && displayTimezone !== 'auto'
+      ? dayjs(event.end_at).tz(displayTimezone)
+      : dayjs(event.end_at);
 
   const durationMs = end.diff(start, 'millisecond');
   const isMultipleOf24Hours = durationMs % (24 * 60 * 60 * 1000) === 0;
@@ -25,6 +32,37 @@ export function isAllDayEvent(
     (isMultipleOf24Hours ||
       (spansLocalMidnights && wallDuration % (24 * 60 * 60 * 1000) === 0))
   );
+}
+
+/** Civil date carriers for all-day rendering, with an exclusive end date.
+ * Untagged UTC-midnight legacy imports preserve their stored YMD, matching mobile.
+ * Other rows project actual instants into the configured display timezone.
+ */
+export function allDayEventCivilDates(
+  event: Pick<CalendarEvent, 'start_at' | 'end_at'>,
+  displayTimezone?: string
+) {
+  const rawStart = dayjs(event.start_at);
+  const rawEnd = dayjs(event.end_at);
+  if (!rawStart.isValid() || !rawEnd.isValid() || !rawEnd.isAfter(rawStart))
+    return null;
+  const utcStart = rawStart.utc();
+  const utcEnd = rawEnd.utc();
+  const midnight = (date: dayjs.Dayjs) =>
+    date.hour() === 0 &&
+    date.minute() === 0 &&
+    date.second() === 0 &&
+    date.millisecond() === 0;
+  const legacyDateOnly = midnight(utcStart) && midnight(utcEnd);
+  const project = (date: dayjs.Dayjs) =>
+    legacyDateOnly
+      ? date.utc()
+      : displayTimezone && displayTimezone !== 'auto'
+        ? date.tz(displayTimezone)
+        : date;
+  const civil = (date: dayjs.Dayjs) =>
+    new Date(date.year(), date.month(), date.date());
+  return { start: civil(project(rawStart)), end: civil(project(rawEnd)) };
 }
 
 // Helper function to convert Google Calendar all-day events to proper timezone

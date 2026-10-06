@@ -561,3 +561,13 @@ lease ordering, storage failure/retry, malformed input and object validation.
 `profile_banner_delivery_test.dart` covers stable replay IDs and lost-finalize
 responses. SQL application/type generation, real Storage/CDN behavior and device
 offline delivery require exact CI and authenticated deployment verification.
+
+
+### Identity field accessibility
+
+Creator identity fields expose the translated field name as their accessible
+label. Username policy help is a separate description, so keyboard and assistive
+technology users can locate the field without treating the help as its name.
+English and Vietnamese rendered regressions in
+`apps/lettin/src/components/creator-profile-labels.test.tsx` cover the exact labels,
+help association, and reserved-name validation.

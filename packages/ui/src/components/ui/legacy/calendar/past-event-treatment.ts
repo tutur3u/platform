@@ -1,5 +1,4 @@
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import { readGoogleEventColor } from '@tuturuuu/utils/google-calendar-colors';
 
 // Fade over an opaque fill, never through it: the grid beneath stays occluded.
 const PAST_EVENT_TREATMENT =
@@ -9,9 +8,9 @@ export function pastEventTreatment(
   event: CalendarEvent,
   preserve = false,
   interacting = false,
-  now = Date.now()
+  now = Date.now(),
+  displayEndAt = Date.parse(event.end_at)
 ): string | undefined {
-  const provider = event.source?.provider ?? event.provider;
   const status = (event as CalendarEvent & { _optimisticStatus?: string })
     ._optimisticStatus;
   if (
@@ -19,12 +18,7 @@ export function pastEventTreatment(
     interacting ||
     event._isPreview ||
     status ||
-    (provider && provider !== 'tuturuuu') ||
-    (!provider &&
-      (event.google_calendar_id ||
-        event.google_event_id ||
-        readGoogleEventColor(event.scheduling_metadata))) ||
-    !(Date.parse(event.end_at) < now)
+    !(displayEndAt < now)
   )
     return undefined;
   return PAST_EVENT_TREATMENT;

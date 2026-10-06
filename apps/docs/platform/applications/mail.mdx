@@ -146,8 +146,12 @@ Email frames remain hidden until the saved appearance is restored and contrast
 adjustments finish. Dark mode matches neutral paper surfaces to the reader's
 background, including black and gray panels and neutral gradients, and softens
 bright neutral borders while preserving colored panels and images. Compact
-Dark/Original icon controls live on the floating action toolbar with tooltips.
-Original mode retains the sender's colors. Neither mode enables scripts inside email HTML.
+App theme/Dark/Original icon controls live on the floating action toolbar with tooltips.
+New browsers follow the selected app theme; saved explicit choices remain unchanged.
+Original mode retains sender backgrounds and images, while unreadable text is corrected
+to at least 4.5:1 contrast on resolved solid backgrounds, including calendar invitations.
+Dark mode keeps the same contrast floor. Regression coverage lives in
+`mail-preview-contrast-dom.test.ts` and `mail-preview-appearance.test.ts`. Neither mode enables scripts inside email HTML.
 
 Message headers use a single truncated sender-to-recipient row. The participant
 button opens full address details; the separate chevron collapses the message.
@@ -946,3 +950,7 @@ actions, without a second app bar. Unsaved mailbox changes require confirmation
 to discard; saves block exit until settled. Account or workspace transitions
 cancel the editor, including a switch away and back.
 `mail_settings_navigation_test.dart` covers the title/actions and edit guards.
+
+Retained sender image and gradient backgrounds in Original view keep their
+foreground colors, because a background-color alone does not establish the
+painted contrast. An opaque solid child resumes contrast correction.
