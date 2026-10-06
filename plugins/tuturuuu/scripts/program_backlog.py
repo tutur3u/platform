@@ -107,6 +107,8 @@ def intake(db, incoming):
             key = item["id"]
             if key in proposed:
                 original = proposed[key]
+                if original.get("priority", 2) != item.get("priority", 2):
+                    raise ValueError(f"conflicting priority {key}; use audited update --priority")
                 fields = ["title", "source", "acceptance", "kind", "dependencies", "requiredEvidence"]
                 if any(original.get(f, []) != item.get(f, []) for f in fields):
                     raise ValueError(f"conflicting intake {key}; update intentionally, never overwrite")
@@ -123,7 +125,7 @@ def intake(db, incoming):
     return {"added": added, "retained": retained}
 
 
-def update(db, key, *, status=None, owner=None, note=None, link=None, evidence=None):
+def update(db, key, *, status=None, owner=None, note=None, link=None, evidence=None, priority=None):
     with db:
         db.execute("BEGIN IMMEDIATE")
         items = records(db)
@@ -151,10 +153,15 @@ def update(db, key, *, status=None, owner=None, note=None, link=None, evidence=N
                 if not check_program(proof)["recordedEvidenceComplete"]:
                     raise ValueError("current-head evidence is incomplete")
                 item["verification"] = proof
+                item.pop("invalidatedDependencies", None)
             elif item.get("status") == "verified":
                 # Reopening invalidates completion without deleting the historical receipt.
                 item.pop("verification", None)
             item["status"] = status
+        if priority is not None:
+            if type(priority) is not int or not 0 <= priority <= 3:
+                raise ValueError("priority must be 0 (urgent) through 3 (later)")
+            item["priority"] = priority
         if owner is not None:
             item["owner"] = owner
         if note is not None:
@@ -164,6 +171,21 @@ def update(db, key, *, status=None, owner=None, note=None, link=None, evidence=N
         if item["status"] == "active" and not item["owner"].strip():
             raise ValueError("active request needs an owner")
         event(db, item, "update")
+        items[key] = item
+        # Reopening a prerequisite revokes current dependent verdicts, not history.
+        while True:
+            invalidated = False
+            for dependent in items.values():
+                pending = [d for d in dependent.get("dependencies", [])
+                           if items[d]["status"] != "verified"]
+                if dependent["status"] == "verified" and pending:
+                    dependent["status"] = "implemented"
+                    dependent.pop("verification", None)
+                    dependent["invalidatedDependencies"] = pending
+                    event(db, dependent, "dependency-invalidated")
+                    invalidated = True
+            if not invalidated:
+                break
     return item
 
 
@@ -186,6 +208,7 @@ def main():
     change = sub.add_parser("update")
     change.add_argument("id")
     change.add_argument("--status", choices=sorted(STATES))
+    change.add_argument("--priority", type=int, choices=range(4))
     change.add_argument("--owner")
     change.add_argument("--note")
     change.add_argument("--link")
@@ -205,7 +228,7 @@ def main():
             else:
                 evidence = json.loads(args.evidence.read_text()) if args.evidence else None
                 result = update(db, args.id, status=args.status, owner=args.owner,
-                                note=args.note, link=args.link, evidence=evidence)
+                                note=args.note, link=args.link, evidence=evidence, priority=args.priority)
         print(json.dumps(result, ensure_ascii=False))
         return 0
     except (OSError, ValueError, TypeError, sqlite3.Error) as error:

@@ -33,6 +33,51 @@ class BacklogTests(unittest.TestCase):
         self.db.close()
         self.directory.cleanup()
 
+    def test_changed_duplicate_priority_requires_audited_update(self):
+        intake(self.db, [dict(request(), priority=2)])
+        with self.assertRaisesRegex(ValueError, "priority"):
+            intake(self.db, [request()])
+        self.assertEqual(records(self.db)["repair"]["priority"], 2)
+
+    def test_reopening_parent_invalidates_transitive_verified_dependents(self):
+        intake(self.db, [request(), dict(request("second"), dependencies=["repair"]),
+                         dict(request("third"), dependencies=["second"])])
+        for key in ["repair", "second", "third"]:
+            update(self.db, key, status="verified", evidence=proof(key))
+        update(self.db, "repair", status="active", owner="worker")
+        self.assertEqual(snapshot(self.db)["counts"]["verified"], 0)
+        for key in ["second", "third"]:
+            self.assertEqual(records(self.db)[key]["status"], "implemented")
+            self.assertNotIn("verification", records(self.db)[key])
+            history = [json.loads(r[0]) for r in self.db.execute(
+                "SELECT payload FROM events WHERE item_id=? ORDER BY seq", (key,))]
+            self.assertIn("verification", history[-2])
+
+    def test_cli_priority_update_is_audited_without_resetting_progress(self):
+        intake(self.db, [dict(request(), priority=2)])
+        update(self.db, "repair", status="active", owner="worker")
+        command = [sys.executable, str(Path(__file__).with_name("program_backlog.py")),
+                   "--db", str(self.path), "update", "repair", "--priority", "0"]
+        result = subprocess.run(command, capture_output=True, text=True, check=True)
+        self.assertEqual(json.loads(result.stdout)["priority"], 0)
+        self.assertEqual(records(self.db)["repair"]["status"], "active")
+        self.assertEqual(self.db.execute("SELECT count(*) FROM events").fetchone()[0], 3)
+        for priority in [True, -1, 4]:
+            with self.assertRaises(ValueError):
+                update(self.db, "repair", priority=priority)
+        self.assertEqual(self.db.execute("SELECT count(*) FROM events").fetchone()[0], 3)
+
+    def test_reverified_parent_does_not_restore_dependent_old_receipt(self):
+        intake(self.db, [request(), dict(request("second"), dependencies=["repair"])])
+        update(self.db, "repair", status="verified", evidence=proof())
+        update(self.db, "second", status="verified", evidence=proof("second"))
+        update(self.db, "repair", status="blocked")
+        update(self.db, "repair", status="verified", evidence=proof())
+        self.assertEqual(records(self.db)["second"]["status"], "implemented")
+        self.assertNotIn("verification", records(self.db)["second"])
+        update(self.db, "second", status="verified", evidence=proof("second"))
+        self.assertNotIn("invalidatedDependencies", records(self.db)["second"])
+
     def test_concurrent_duplicate_intake_creates_one_event(self):
         file = Path(self.directory.name) / "intake.json"
         file.write_text(json.dumps([request()]))
