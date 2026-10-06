@@ -10375,7 +10375,10 @@
         "tasks": "Công việc",
         "title": "Ngày của tôi",
         "unavailable": "Các công cụ cá nhân hiện chưa khả dụng."
-      }
+      },
+      "restore_call": "Khôi phục cuộc họp",
+      "restore_failed": "Không thể khôi phục cuộc họp. Trạng thái có thể đã thay đổi hoặc thời lượng cuộc gọi ban đầu đã hết.",
+      "restoring_call": "Đang khôi phục cuộc họp…"
     },
     "collaboration": {
       "checkpoint_conflict": "Tài liệu không gian làm việc đã được sửa ở nơi khác. Nội dung cộng tác vẫn được giữ trong phòng; bản lưu tại không gian làm việc đang xung đột.",

@@ -36,6 +36,39 @@ bandwidth counters are diagnostic, not billing evidence. Monthly workspace media
 aggregation and provider invoice reconciliation remain prerequisites for selling
 meeting overages. Internal or sponsored workspaces do not bypass these ceilings.
 
+## Empty rooms and owner restoration
+
+Meet and Parley calls end automatically after five consecutive minutes with no
+admitted participant connected to the room. The durable timer starts at the last
+disconnect, including recoverable transport loss; the shorter media-presence
+recovery grace does not extend it. An admitted reconnect cancels the deadline.
+Quiet or muted participants with an open connection keep the meeting live;
+waiting-room connections do not. Rooms that have never admitted anyone do not
+start this timer. The persisted deadline survives room-object hibernation, and
+an alarm from an older connection generation cannot end a newer call.
+
+Only the meeting's original owner may restore an ended call. Restoration requires
+a fresh room-state version, the same authenticated actor, a same-origin request,
+and a server-authorized owner command. It preserves the original room expiration,
+participant usage, capacity limits, and outstanding provider cleanup. It never
+creates a new resource allowance: expired rooms and rooms whose historical budget
+cannot be established cannot be restored. Restoring clears old live-assistant and
+share sessions. A restored empty room gets the same five-minute disconnect rule
+until an admitted participant connects.
+
+Ended-room browser storage is an actor-scoped hint, not authorization or permanent
+state. Meeting-list actions revalidate it against the server so a restored room
+can become joinable again. Delayed restoration work cannot clear another account's
+hint or finish a newer attempt. The destination still checks access independently.
+
+Regression coverage lives in `room-lifecycle.test.ts`,
+`room-do-empty-lifecycle.test.ts`, the room-state route tests, and
+`restore-room-button.test.tsx`. These source tests do not establish actual deployed
+alarm behavior or browser reconnection; verify both on the deployed commit.
+Cloudflare validation runs the explicit durable-object test files from
+`RUNNER_TEMP`, using absolute checkout paths. Running `bun test` from the repository
+root invokes its preload and redirects to the monorepo test suite instead.
+
 ## Pieces
 
 | piece | where |

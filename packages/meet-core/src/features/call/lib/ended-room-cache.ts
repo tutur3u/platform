@@ -55,6 +55,21 @@ export function rememberEndedRoom(accountId: string, meetingId: string) {
   }
 }
 
+export function forgetEndedRoom(accountId: string, meetingId: string) {
+  if (!accountId || typeof window === 'undefined') return;
+  try {
+    const records = read(accountId);
+    if (!Object.hasOwn(records, meetingId)) return;
+    delete records[meetingId];
+    localStorage.setItem(PREFIX + accountId, JSON.stringify(records));
+    window.dispatchEvent(
+      new CustomEvent(ENDED_ROOM_EVENT, { detail: accountId })
+    );
+  } catch {
+    // A storage restriction cannot change the authoritative room lifecycle.
+  }
+}
+
 export function subscribeEndedRooms(accountId: string, notify: () => void) {
   const onStorage = (event: StorageEvent) => {
     let storage: Storage;

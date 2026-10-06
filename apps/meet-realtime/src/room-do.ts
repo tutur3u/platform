@@ -21,6 +21,11 @@ import {
   remoteMeetTracks,
 } from '../../../packages/realtime/src/meet';
 import {
+  emptyRoomDeadline,
+  expireEmptyRoom,
+  observeRoomConnections,
+} from '../../../packages/realtime/src/meet/room-lifecycle';
+import {
   expireRoomLive,
   liveRoomAnnouncements,
 } from '../../../packages/realtime/src/meet/room-live';
@@ -28,8 +33,8 @@ import { parseMeetRoomSettingsPatch } from '../../../packages/realtime/src/meet/
 import { createRoomUsage } from '../../../packages/realtime/src/meet/room-usage';
 import { personalReceiptStorage } from './personal-receipt-storage';
 import { type RoomServiceState, roomService } from './room-service';
-
-import { getSessionIceServers, type TurnEnv } from './turn-credentials';
+import { runRoomSfuIntent } from './room-sfu-intent';
+import type { TurnEnv } from './turn-credentials';
 
 /**
  * One Durable Object per meeting room.
@@ -126,6 +131,27 @@ export class MeetRoomDurableObject implements DurableObject {
     return attachment?.token ?? null;
   }
 
+  private connectionState(
+    excluded?: WebSocket,
+    token?: MeetRealtimeTokenPayload
+  ) {
+    const connected = new Set(
+      this.sockets()
+        .filter(
+          (socket) =>
+            socket !== excluded && socket.readyState === WebSocket.OPEN
+        )
+        .map((socket) => this.tokenOf(socket)?.userId)
+        .filter((id): id is string => !!id)
+    );
+    return observeRoomConnections(this.snapshot, connected, Date.now(), token);
+  }
+
+  private async scheduleEmptyRoom() {
+    const deadline = emptyRoomDeadline(this.snapshot);
+    if (deadline !== undefined) await this.scheduleSweep(deadline);
+  }
+
   private sendTo(socket: WebSocket, message: MeetRealtimeServerMessage) {
     try {
       socket.send(JSON.stringify(message));
@@ -197,28 +223,7 @@ export class MeetRoomDurableObject implements DurableObject {
   }
 
   private async runSfuIntent(intent: MeetSfuIntent) {
-    const client = this.sfuClient();
-    const { message } = intent;
-
-    if (message.type === 'sfu.session.create') {
-      const [session, iceServers] = await Promise.all([
-        client.createSession(message.sessionDescription),
-        getSessionIceServers(this.env),
-      ]);
-      if (!session || typeof session !== 'object' || Array.isArray(session))
-        throw new Error('Invalid SFU session response');
-      return { ...session, iceServers };
-    }
-    if (
-      message.type === 'sfu.tracks.publish' ||
-      message.type === 'sfu.tracks.subscribe'
-    ) {
-      return client.addTracks(message);
-    }
-    if (message.type === 'sfu.renegotiate') {
-      return client.renegotiate(message);
-    }
-    return client.closeTracks(message);
+    return runRoomSfuIntent(this.sfuClient(), this.env, intent);
   }
 
   async fetch(request: Request): Promise<Response> {
@@ -276,6 +281,11 @@ export class MeetRoomDurableObject implements DurableObject {
           )
         )
           await this.persist();
+        await this.scheduleEmptyRoom();
+        if (this.snapshot.budget?.pendingPublications?.length)
+          await this.scheduleSweep(
+            this.snapshot.budget.nextCleanupAt ?? Date.now()
+          );
         this.broadcast(result.messages ?? []);
         if (
           this.snapshot.liveAssistant &&
@@ -311,7 +321,9 @@ export class MeetRoomDurableObject implements DurableObject {
           this.snapshot = result.state;
           released.push({ person, result });
         }
+        this.snapshot = this.connectionState();
         await this.persist();
+        await this.scheduleEmptyRoom();
         for (const { person, result } of released) {
           this.sendToUser(person.userId, [
             {
@@ -347,6 +359,7 @@ export class MeetRoomDurableObject implements DurableObject {
         {
           canReadNotes: canReadRoomNotes(this.snapshot, token),
           ended: !!this.snapshot.ended,
+          lifecycleVersion: this.snapshot.lifecycle?.version ?? 0,
           ...(token.role === 'host'
             ? { settings: this.snapshot.settings ?? { shareNotes: false } }
             : {}),
@@ -382,6 +395,7 @@ export class MeetRoomDurableObject implements DurableObject {
 
     const outcome = admitOrHold(this.snapshot, token, new Date().toISOString());
     this.snapshot = outcome.state;
+    this.snapshot = this.connectionState(undefined, token);
     if (this.snapshot.budget?.pendingPublications?.length)
       await this.scheduleSweep(Date.now());
     else if (this.snapshot.budget && !this.snapshot.ended)
@@ -456,7 +470,9 @@ export class MeetRoomDurableObject implements DurableObject {
 
   private async flush(socket: WebSocket, result: MeetRoomOutcome) {
     this.snapshot = result.state;
+    this.snapshot = this.connectionState();
     await this.persist();
+    await this.scheduleEmptyRoom();
     if (this.snapshot.budget?.pendingPublications?.length)
       await this.scheduleSweep(Date.now());
     for (const message of result.reply) this.sendTo(socket, message);
@@ -501,6 +517,7 @@ export class MeetRoomDurableObject implements DurableObject {
         ...this.snapshot.presence[token.userId]!,
         lastSeenAt: new Date().toISOString(),
       };
+      this.snapshot = this.connectionState(socket, token);
       await this.persist();
       await this.scheduleSweep();
       return;
@@ -513,7 +530,9 @@ export class MeetRoomDurableObject implements DurableObject {
       token.roomId
     );
     this.snapshot = outcome.state;
+    this.snapshot = this.connectionState(socket, token);
     await this.persist();
+    await this.scheduleEmptyRoom();
     this.broadcast(outcome.broadcast);
     this.sendToManagers(outcome.toManagers);
   }
@@ -527,6 +546,7 @@ export class MeetRoomDurableObject implements DurableObject {
 
   async alarm() {
     await this.load();
+    const emptyVersion = this.snapshot.lifecycle?.version;
     const expiredBudget = expireRoomBudget(this.snapshot);
     if (expiredBudget) {
       this.snapshot = expiredBudget.state;
@@ -634,6 +654,28 @@ export class MeetRoomDurableObject implements DurableObject {
       }
     }
 
+    const observed = observeRoomConnections(
+      this.snapshot,
+      connectedUserIds,
+      Date.now()
+    );
+    if (observed !== this.snapshot) {
+      this.snapshot = observed;
+      await this.persist();
+    }
+    const empty = expireEmptyRoom(
+      this.snapshot,
+      emptyVersion,
+      connectedUserIds,
+      Date.now()
+    );
+    if (empty) {
+      this.snapshot = empty.state;
+      await this.persist();
+      this.broadcast(empty.broadcast);
+      this.disconnect(empty.disconnect);
+    }
+    await this.scheduleEmptyRoom();
     // Only disconnected participants need a grace-period alarm. Idle open
     // sockets can hibernate; joins and media changes already broadcast presence.
     if (
@@ -643,7 +685,13 @@ export class MeetRoomDurableObject implements DurableObject {
     )
       await this.scheduleSweep();
     if (this.snapshot.liveAssistant)
-      await this.scheduleSweep(this.snapshot.liveAssistant.expiresAt);
+      await this.scheduleSweep(
+        this.snapshot.ended ? Date.now() : this.snapshot.liveAssistant.expiresAt
+      );
+    if (this.snapshot.budget?.pendingPublications?.length)
+      await this.scheduleSweep(
+        this.snapshot.budget.nextCleanupAt ?? Date.now()
+      );
     if (this.snapshot.budget && !this.snapshot.ended)
       await this.scheduleSweep(this.snapshot.budget.expiresAt);
   }
