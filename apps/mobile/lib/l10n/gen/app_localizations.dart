@@ -1441,6 +1441,24 @@ abstract class AppLocalizations {
   /// **'Local inference requires a supported device with at least 4 GiB of installed memory. Available memory and native loading still determine readiness.'**
   String get assistantLocalHardware;
 
+  /// No description provided for @assistantLocalHeaderIssue.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get assistantLocalHeaderIssue;
+
+  /// No description provided for @assistantLocalHeaderPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing'**
+  String get assistantLocalHeaderPreparing;
+
+  /// No description provided for @assistantLocalHeaderReady.
+  ///
+  /// In en, this message translates to:
+  /// **'On device'**
+  String get assistantLocalHeaderReady;
+
   /// No description provided for @assistantLocalHelp.
   ///
   /// In en, this message translates to:

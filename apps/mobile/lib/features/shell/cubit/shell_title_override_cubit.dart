@@ -9,11 +9,17 @@ class ShellTitleOverrideRegistration extends Equatable {
     required this.showLeadingBrand,
     required this.showAvatar,
     this.onTitleSubmitted,
+    this.subtitle,
+    this.onSubtitlePressed,
+    this.subtitleActionToken,
   });
 
   final String ownerId;
   final Set<String> locations;
   final String title;
+  final String? subtitle;
+  final void Function()? onSubtitlePressed;
+  final Object? subtitleActionToken;
   final bool showLeadingBrand;
   final bool showAvatar;
   final Future<void> Function(String title)? onTitleSubmitted;
@@ -28,6 +34,9 @@ class ShellTitleOverrideRegistration extends Equatable {
     showLeadingBrand,
     showAvatar,
     canEditTitle,
+    subtitle,
+    onSubtitlePressed != null,
+    subtitleActionToken,
   ];
 }
 
@@ -44,6 +53,14 @@ class ShellTitleOverrideState extends Equatable {
       if (registration.locations.contains(matchedLocation)) {
         resolved = registration.title;
       }
+    }
+    return resolved;
+  }
+
+  ShellTitleOverrideRegistration? registrationForLocation(String location) {
+    ShellTitleOverrideRegistration? resolved;
+    for (final registration in registrations.values) {
+      if (registration.locations.contains(location)) resolved = registration;
     }
     return resolved;
   }
@@ -113,6 +130,9 @@ class ShellTitleOverrideCubit extends Cubit<ShellTitleOverrideState> {
     bool showLeadingBrand = true,
     bool showAvatar = true,
     Future<void> Function(String title)? onTitleSubmitted,
+    String? subtitle,
+    void Function()? onSubtitlePressed,
+    Object? subtitleActionToken,
   }) {
     final nextRegistration = ShellTitleOverrideRegistration(
       ownerId: ownerId,
@@ -121,6 +141,9 @@ class ShellTitleOverrideCubit extends Cubit<ShellTitleOverrideState> {
       showLeadingBrand: showLeadingBrand,
       showAvatar: showAvatar,
       onTitleSubmitted: onTitleSubmitted,
+      subtitle: subtitle,
+      onSubtitlePressed: onSubtitlePressed,
+      subtitleActionToken: subtitleActionToken,
     );
     final currentRegistration = state.registrations[registrationId];
     if (currentRegistration == nextRegistration) {

@@ -15,9 +15,15 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// The floating header includes the system status bar and the section bar.
-double floatingShellHeaderInset(BuildContext context) =>
+double floatingShellHeaderInset(
+  BuildContext context, {
+  double minimumContentHeight = mobileSectionAppBarHeight,
+}) =>
     MediaQuery.viewPaddingOf(context).top +
-    mobileSectionAppBarHeightFor(context) +
+    mobileSectionAppBarHeightFor(
+      context,
+      minimumContentHeight: minimumContentHeight,
+    ) +
     mobileSectionAppBarPadding.vertical;
 
 /// Overlays the dock without shortening the page viewport.
@@ -31,6 +37,7 @@ class FloatingShellDock extends StatefulWidget {
     required this.navigation,
     required this.child,
     this.header,
+    this.minimumHeaderContentHeight = mobileSectionAppBarHeight,
     this.scrollableHeader = false,
     this.keyboardVisible = false,
     this.onVisibilityChanged,
@@ -56,6 +63,7 @@ class FloatingShellDock extends StatefulWidget {
   final Widget navigation;
   final Widget child;
   final Widget? header;
+  final double minimumHeaderContentHeight;
   final bool scrollableHeader;
   final bool keyboardVisible;
   final ValueChanged<bool>? onVisibilityChanged;
@@ -76,13 +84,23 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     super.didChangeDependencies();
     // Theme, default text style, text scale, direction and safe-area changes
     // invalidate this measurement; scroll frames only read the cached value.
-    _headerInset = floatingShellHeaderInset(context);
+    _headerInset = floatingShellHeaderInset(
+      context,
+      minimumContentHeight: widget.minimumHeaderContentHeight,
+    );
     _accessibleNavigation = MediaQuery.of(context).accessibleNavigation;
   }
 
   @override
   void didUpdateWidget(covariant FloatingShellDock oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.minimumHeaderContentHeight !=
+        widget.minimumHeaderContentHeight) {
+      _headerInset = floatingShellHeaderInset(
+        context,
+        minimumContentHeight: widget.minimumHeaderContentHeight,
+      );
+    }
     if (oldWidget.location != widget.location ||
         oldWidget.keepNavigationVisible != widget.keepNavigationVisible ||
         (widget.bottomInset == 0 && widget.header == null)) {

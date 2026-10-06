@@ -64,20 +64,69 @@ extension _AssistantPageLocal on _AssistantPageState {
     }
   }
 
-  Widget _localStatus(AssistantLocalChatState state) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        state.local
-            ? context.l10n.assistantLocalMode(
-                _localModelLabel(state.selectedModelId)!,
-              )
-            : context.l10n.assistantLocalLoading,
-      ),
-      if (state.failure != null) Text(_localNotice(state.failure)),
-      const SizedBox(height: 12),
-    ],
-  );
+  Widget _localHeader(
+    AssistantShellState shell,
+    AssistantLocalChatState state,
+  ) {
+    final scope = _localScope();
+    final selection = _localCubit.selectionVersion;
+    final localLane = state.local || state.blocked;
+    final label = state.failure != null
+        ? context.l10n.assistantLocalHeaderIssue
+        : state.ready
+        ? context.l10n.assistantLocalHeaderReady
+        : context.l10n.assistantLocalHeaderPreparing;
+    return ShellTitleOverride(
+      ownerId: 'assistant-model-status',
+      locations: const {Routes.assistant},
+      title: scope == null
+          ? context.watch<AssistantChromeCubit>().state.isLiveMode
+                ? context.l10n.miraLiveTitle
+                : context.l10n.miraChatTitle
+          : shell.soul.name,
+      subtitle: localLane && scope != null ? label : null,
+      subtitleActionToken: (scope, selection, state.failure, state.ready),
+      onSubtitlePressed: localLane && scope != null
+          ? () {
+              if (!mounted ||
+                  scope != _localScope() ||
+                  selection != _localCubit.selectionVersion) {
+                return;
+              }
+              unawaited(_showLocalStatus(scope, selection));
+            }
+          : null,
+    );
+  }
+
+  Future<void> _showLocalStatus(Object scope, int selection) async {
+    bool current() =>
+        mounted &&
+        scope == _localScope() &&
+        selection == _localCubit.selectionVersion;
+    if (!current()) return;
+    await showAdaptiveSheet<void>(
+      context: context,
+      builder: (sheetContext) =>
+          BlocBuilder<AssistantLocalChatCubit, AssistantLocalChatState>(
+            bloc: _localCubit,
+            builder: (_, state) => !current()
+                ? const SizedBox.shrink()
+                : AssistantLocalStatusSheet(
+                    modelLabel: _localModelLabel(state.selectedModelId),
+                    notice: state.failure == null
+                        ? null
+                        : _localNotice(state.failure),
+                    preparing: state.transitioning,
+                    onManage: () {
+                      if (!current()) return;
+                      Navigator.of(sheetContext).pop();
+                      unawaited(_showLiveSettings());
+                    },
+                  ),
+          ),
+    );
+  }
 
   Future<void> _sendLocal() async {
     final state = _localCubit.state;
