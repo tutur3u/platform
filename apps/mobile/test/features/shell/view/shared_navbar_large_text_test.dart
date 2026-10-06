@@ -18,6 +18,7 @@ import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
+import 'package:mobile/features/assistant/widgets/assistant_live_primary_action.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
@@ -25,6 +26,7 @@ import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
+import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
@@ -209,7 +211,7 @@ void main() {
     await _pump(tester);
   }
 
-  testWidgets('actual shell retains its dock material from Chat to Live', (
+  testWidgets('actual shell retains its dock material from Chat to idle Live', (
     tester,
   ) async {
     width = 320;
@@ -237,10 +239,14 @@ void main() {
       expect(surface, findsOneWidget);
       expect(tester.element(surface), same(materialElement));
       expect(find.byType(ShellDockSurface), findsOneWidget);
-      expect(find.byType(AssistantLiveCallControls), findsOneWidget);
+      expect(find.byType(AssistantLiveCallControls), findsNothing);
+      expect(find.byType(MorphingNavigationBar), findsOneWidget);
       expect(find.byType(TextField), findsNothing);
       expect(tester.takeException(), isNull);
     }
+    // The action rail replaces Chat's action after its outgoing transition.
+    expect(find.byType(AssistantLivePrimaryAction), findsOneWidget);
+    expect(find.byTooltip('Call Mira'), findsOneWidget);
     assistant.toggleComposerNavigation();
     await _pump(tester);
     expect(tester.element(surface), same(materialElement));
@@ -248,11 +254,13 @@ void main() {
     assistant.toggleComposerNavigation();
     await _pump(tester);
     expect(tester.element(surface), same(materialElement));
-    expect(find.byType(AssistantLiveCallControls), findsOneWidget);
+    expect(find.byType(AssistantLiveCallControls), findsNothing);
+    expect(find.byTooltip('Call Mira'), findsOneWidget);
     assistant.enterFullscreen();
     await _pump(tester);
     expect(tester.element(surface), same(materialElement));
-    expect(find.byType(AssistantLiveCallControls), findsOneWidget);
+    expect(find.byType(AssistantLiveCallControls), findsNothing);
+    expect(find.byTooltip('Call Mira'), findsOneWidget);
     assistant.exitLiveMode();
     await _pump(tester);
     await tester.tap(find.byType(AssistantComposerFab));

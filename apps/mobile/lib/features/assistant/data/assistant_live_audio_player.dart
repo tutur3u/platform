@@ -37,6 +37,7 @@ class AssistantLiveAudioPlayer {
     return _enqueue(() async {
       if (_disposed || generation != _generation) return;
       await _initialize();
+      if (_disposed || generation != _generation) return;
       await FlutterPcmSound.feed(
         PcmArrayInt16(bytes: samples.buffer.asByteData()),
       );

@@ -106,6 +106,7 @@ void main() {
     when(() => socket.events).thenAnswer((_) => events.stream);
     when(socket.disconnect).thenAnswer((_) async {});
     when(player.clear).thenAnswer((_) async {});
+    when(player.pause).thenAnswer((_) async {});
     when(player.dispose).thenAnswer((_) async {});
     when(recorder.stop).thenAnswer((_) async {});
     when(recorder.dispose).thenAnswer((_) async {});

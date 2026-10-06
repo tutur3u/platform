@@ -57,7 +57,8 @@ extension _AssistantPageLiveActions on _AssistantPageState {
       return;
     }
     final guard = _remoteGuard(wsId);
-    _liveStartPending = true;
+    final attempt = _liveStartGate.begin(_voiceActorScopeEpoch);
+    if (attempt == null) return;
     try {
       if (!await guard.run(() => _workspaceDisconnect) || !mounted) return;
       await _liveCubit.prepareSession(
@@ -66,7 +67,7 @@ extension _AssistantPageLiveActions on _AssistantPageState {
         reconnect: _liveCubit.state.chatId != null,
       );
     } finally {
-      _liveStartPending = false;
+      _liveStartGate.finish(attempt);
     }
   }
 
@@ -96,7 +97,8 @@ extension _AssistantPageLiveActions on _AssistantPageState {
       return;
     }
     final guard = _remoteGuard(wsId);
-    _liveStartPending = true;
+    final attempt = _liveStartGate.begin(_voiceActorScopeEpoch);
+    if (attempt == null) return;
     try {
       if (!await guard.run(() => _workspaceDisconnect) || !mounted) return;
       _dismissKeyboard();
@@ -133,7 +135,7 @@ extension _AssistantPageLiveActions on _AssistantPageState {
         await _liveCubit.toggleMicrophone();
       }
     } finally {
-      _liveStartPending = false;
+      _liveStartGate.finish(attempt);
     }
   }
 
