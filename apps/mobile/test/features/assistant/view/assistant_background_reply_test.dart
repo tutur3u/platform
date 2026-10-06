@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
@@ -19,7 +18,7 @@ void main() {
     await h.mount(tester);
     addTearDown(() => h.dispose(tester));
     await h.send(tester);
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    h.pause(tester);
     h.repository.stream.add(
       const AssistantJsonStreamEvent({
         'type': 'text-delta',
@@ -34,7 +33,7 @@ void main() {
       h.chat.state.messages.last.parts.last.text,
       'Synthetic background answer',
     );
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    h.resume(tester);
     await tester.pumpAndSettle();
     expect(h.chat.state.status, AssistantChatStatus.idle);
     expect(find.text('Synthetic background answer'), findsOneWidget);
@@ -44,13 +43,13 @@ void main() {
     addTearDown(() => h.dispose(tester));
     await h.mount(tester);
     await h.send(tester);
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    h.pause(tester);
     h.repository.stream.addError(StateError('Synthetic stream failure'));
     unawaited(h.repository.stream.close());
     await tester.pump();
     expect(h.chat.state.status, AssistantChatStatus.error);
     expect(h.chat.state.error, contains('Synthetic stream failure'));
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    h.resume(tester);
     await tester.pumpAndSettle();
     expect(h.chat.state.status, AssistantChatStatus.error);
     expect(h.repository.starts, 1);
@@ -62,7 +61,7 @@ void main() {
     addTearDown(() => h.dispose(tester));
     await h.mount(tester);
     await h.send(tester);
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    h.pause(tester);
     h.repository.stream.add(
       const AssistantJsonStreamEvent({
         'type': 'text-delta',
@@ -71,7 +70,7 @@ void main() {
       }),
     );
     await tester.pump();
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    h.resume(tester);
     await tester.pump(const Duration(milliseconds: 50));
     h.repository.stream.add(
       const AssistantJsonStreamEvent({

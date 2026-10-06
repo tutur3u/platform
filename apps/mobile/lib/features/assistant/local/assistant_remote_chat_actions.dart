@@ -17,6 +17,11 @@ Future<bool> submitAssistantRemoteChat(
       !chat.isClosed &&
       chat.state.workspaceId == wsId &&
       chat.state.status != AssistantChatStatus.restoring;
+  bool accepted() =>
+      (isOperationCurrent ?? isCurrent)() &&
+      !chat.isClosed &&
+      chat.state.workspaceId == wsId &&
+      chat.state.status != AssistantChatStatus.restoring;
   if (!admitted()) return false;
   final timezone = await (resolveTimezone ?? getCurrentTimezoneIdentifier)();
   if (!admitted()) return false;
@@ -33,7 +38,7 @@ Future<bool> submitAssistantRemoteChat(
         ? shell.personalWorkspaceId
         : wsId,
   );
-  return admitted();
+  return accepted();
 }
 
 Future<void> retryAssistantChat(
