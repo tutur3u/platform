@@ -21,8 +21,11 @@ class AssistantSettingsSheetBody extends StatelessWidget {
     final theme = Theme.of(context);
     return SafeArea(
       top: false,
+      bottom: showTitle,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+        padding: showTitle
+            ? const EdgeInsets.fromLTRB(20, 20, 20, 24)
+            : const EdgeInsets.fromLTRB(20, 8, 20, 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,

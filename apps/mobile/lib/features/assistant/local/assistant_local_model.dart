@@ -48,4 +48,14 @@ const assistantLocalModels = [
     bytes: 614236160,
     licenseUrl: 'https://huggingface.co/Qwen/Qwen3-0.6B/blob/main/LICENSE',
   ),
+  AssistantLocalModel(
+    id: 'smollm2-360m',
+    name: 'SmolLM2 360M',
+    repository: 'litert-community/SmolLM2-360M-Instruct',
+    revision: '507c99cfe6541ba2bcd84818786f7b025935e5e1',
+    filename: 'SmolLM2_360M_instruct.litertlm',
+    sha256: '8e2834da211b439751af968ed650febdde5a8cb8d88bc6c1a3059f049caa5c2e',
+    bytes: 373719040,
+    licenseUrl: 'https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct',
+  ),
 ];

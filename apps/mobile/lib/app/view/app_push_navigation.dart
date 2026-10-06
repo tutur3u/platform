@@ -32,7 +32,7 @@ extension _AppPushNavigation on _AppState {
       _appLockCubit.lock();
     }
 
-    unawaited(_authCubit.refreshAccountAssurance());
+    unawaited(_refreshOfflinePreparationOnResume());
     unawaited(_appVersionCubit.checkVersion(background: true));
     unawaited(CacheWarmupCoordinator.instance.prewarmHome());
     unawaited(_shellProfileCubit.refreshIfStale(_authCubit.state.user));
