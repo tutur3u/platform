@@ -53,6 +53,7 @@ import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { PermissionId } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { ReactNode } from 'react';
+import { deploymentVaultPermissions } from './deployment-vault-permissions';
 
 export type RolePermission = {
   id: PermissionId;
@@ -142,16 +143,7 @@ export const permissionGroups = ({
                   disableOnProduction: false,
                   disabled: false,
                 },
-                {
-                  id: 'manage_mobile_deployment_vault' as PermissionId,
-                  icon: <FileKey2 />,
-                  title: t('ws-roles.manage_mobile_deployment_vault'),
-                  description: t(
-                    'ws-roles.manage_mobile_deployment_vault_description'
-                  ),
-                  disableOnProduction: false,
-                  disabled: false,
-                },
+                ...deploymentVaultPermissions(t),
                 {
                   id: 'manage_external_migrations',
                   icon: <DatabaseZap />,

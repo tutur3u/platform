@@ -1866,6 +1866,8 @@
     "roles_selected": "{count, plural, =0 {No roles selected} =1 {# role selected} other {# roles selected}}"
   },
   "ws-roles": {
+    "manage_desktop_deployment_vault": "Manage desktop deployment vault",
+    "manage_desktop_deployment_vault_description": "Allows root workspace members to manage private Windows/macOS signing resources and protected workflow tokens. Does not enable delivery.",
     "manage_git_repositories": "Manage Git repositories",
     "manage_git_repositories_description": "Allows platform administrators to configure the GitHub App and approve public repositories for Git."
   },

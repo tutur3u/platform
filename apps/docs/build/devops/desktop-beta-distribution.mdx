@@ -402,3 +402,23 @@ separate default-off integration. Operator UI and protected workflow hydration
 are follow-up layers, so these endpoints alone do not establish signed delivery.
 Regression coverage: desktop `access.test.ts`, `request.test.ts`,
 `store.test.ts` and `mutations.test.ts`.
+
+### Private desktop operator panel
+
+Root workspace members can continue viewing public desktop deployment metadata.
+Only the verified Infrastructure satellite actor with explicit MEMBER membership
+and desktop vault permission sees signing administration. The desktop page uses
+that actor for permission checks; personal and non-root redirects are preserved.
+
+Windows and macOS drafts use empty replacement inputs and configured-name status
+without saved-value readback. Activation requires current revision readiness and
+still repeats certificate checks on the server. The UI never enables vault
+delivery. Newly issued seven-day tokens are masked, shown once, discarded on
+dismissal or actor/page lifetime changes, and cannot be recovered from state.
+A definitive permission denial hides retained metadata; revision conflicts reload
+current state while retaining the operator's replacement input for retry.
+
+The client uses shared Internal API functions and actor-scoped TanStack Query
+keys. This administration surface does not establish provider provisioning,
+OS trust, WACK, signing, notarization or protected hydration success. Regression
+coverage: `page-access.test.ts` and `desktop-vault-client.test.tsx`.

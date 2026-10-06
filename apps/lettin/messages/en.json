@@ -1296,5 +1296,9 @@
     "recovery_unavailable": "This deletion has no active recovery snapshot. Review its audit details; support must verify the original payment and related records before restoration is available.",
     "recovery_undo": "Undo",
     "restore_invoice": "Restore invoice"
+  },
+  "ws-roles": {
+    "manage_desktop_deployment_vault": "Manage desktop deployment vault",
+    "manage_desktop_deployment_vault_description": "Allows root workspace members to manage private Windows/macOS signing resources and protected workflow tokens. Does not enable delivery."
   }
 }

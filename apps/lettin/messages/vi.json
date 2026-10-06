@@ -1296,5 +1296,9 @@
     "recovery_unavailable": "Lần xóa này chưa có bản dữ liệu khôi phục khả dụng. Hãy xem nhật ký; bộ phận hỗ trợ cần xác minh giao dịch thanh toán và các dữ liệu liên quan trước khi có thể khôi phục.",
     "recovery_undo": "Hoàn tác",
     "restore_invoice": "Khôi phục hóa đơn"
+  },
+  "ws-roles": {
+    "manage_desktop_deployment_vault": "Quản lý kho triển khai máy tính",
+    "manage_desktop_deployment_vault_description": "Cho phép thành viên không gian làm việc gốc quản lý thông tin ký Windows/macOS riêng tư và mã truy cập quy trình được bảo vệ. Không bật phân phối."
   }
 }

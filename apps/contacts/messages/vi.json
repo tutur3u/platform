@@ -7836,6 +7836,8 @@
     "initiate_pos_checkout": "Bắt đầu thanh toán POS",
     "initiate_pos_checkout_description": "Cho phép thành viên gửi đơn hàng tới Square Terminal đã được phê duyệt hoặc mở Square POS trên thiết bị hiện tại. Quyền này không cho phép sửa tồn kho, doanh số, thanh toán, thành viên hoặc cài đặt.",
     "inventory_promotions_access_denied_description": "Bạn không có quyền xem khuyến mãi kho.",
+    "manage_desktop_deployment_vault": "Quản lý kho triển khai máy tính",
+    "manage_desktop_deployment_vault_description": "Cho phép thành viên không gian làm việc gốc quản lý thông tin ký Windows/macOS riêng tư và mã truy cập quy trình được bảo vệ. Không bật phân phối.",
     "manage_git_repositories": "Quản lý kho mã Git",
     "manage_git_repositories_description": "Cho phép quản trị viên nền tảng cấu hình Ứng dụng GitHub và phê duyệt các kho mã công khai cho Git.",
     "manage_user_report_automation": "Quản lý tự động hóa báo cáo",
