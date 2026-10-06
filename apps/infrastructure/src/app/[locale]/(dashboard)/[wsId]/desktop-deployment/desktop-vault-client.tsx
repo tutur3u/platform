@@ -176,6 +176,12 @@ function DesktopVaultSession({ actorId }: { actorId: string }) {
           <DesktopPlatformPanel
             key={platform}
             platform={platform}
+            vaultDeliveryEnabled={
+              query.data.deliveryEnabled &&
+              query.data.platforms.some(
+                (entry) => entry.platform === platform && entry.enabled
+              )
+            }
             versions={query.data.versions}
             pending={mutation.isPending}
             act={act}

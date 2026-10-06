@@ -388,4 +388,32 @@ describe('private desktop signing operator workflow', () => {
     );
     expect(view.client.isMutating()).toBe(0);
   });
+  it.each([
+    [false, true, false],
+    [true, false, false],
+    [true, true, true],
+  ])(
+    'requires global %s and platform %s admission for the vault badge',
+    async (global, platform, enabled) => {
+      mock.state.mockResolvedValue({
+        ...state,
+        deliveryEnabled: global,
+        platforms: [
+          { platform: 'windows', enabled: platform, activeVersionId: 'active' },
+        ],
+      });
+      mount();
+      const panel = await screen.findByRole('region', {
+        name: 'platforms.windows',
+      });
+      expect(
+        within(panel).getByText(
+          enabled ? 'vault.deliveryEnabled' : 'vault.deliveryDisabled'
+        )
+      ).toBeInTheDocument();
+      expect(
+        within(panel).queryByRole('button', { name: 'enable' })
+      ).not.toBeInTheDocument();
+    }
+  );
 });

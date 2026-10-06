@@ -28,6 +28,17 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/desktop-deployment/bundle:apps/infrastructure/src/app/api/v1/desktop-deployment/bundle/route.ts",
+      "kind": "api",
+      "methods": [
+        "POST"
+      ],
+      "routePath": "/api/v1/desktop-deployment/bundle",
+      "sourceFile": "apps/infrastructure/src/app/api/v1/desktop-deployment/bundle/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/desktop-deployment/resources:apps/infrastructure/src/app/api/v1/desktop-deployment/resources/route.ts",
       "kind": "api",
       "methods": [

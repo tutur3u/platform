@@ -99,6 +99,11 @@
       "status": "legacy-next",
       "targetOwner": "tanstack-start",
       "note": "Infrastructure desktop status plus permission-gated private signing UI. Preserve canonical root redirects, registered satellite actor, explicit MEMBER membership, separate desktop-vault permission, actor-scoped client state, no credential SSR/readback and disabled vault delivery."
+    },
+    "api:/api/v1/desktop-deployment/bundle:apps/infrastructure/src/app/api/v1/desktop-deployment/bundle/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Protected desktop signing machine endpoint: preserve default-off global and per-platform admission, separate exact signed desktop OIDC before service access, hashed version/platform token, one-use run/attempt/SHA lease and fresh-material/final revocation checks. Linux/Store/mobile trust never admitted."
     }
   }
 }

@@ -20,8 +20,9 @@ Set repository variable `DESKTOP_BETA_PLATFORMS` to a comma-separated subset of
 `windows,macos,linux` (default: all three). Selected platforms build concurrently.
 Linux can ship while another platform completes signing setup.
 The `desktop-beta` GitHub environment owns the release configuration. Publication
-requires every selected platform job to succeed; a missing certificate is a blocked release,
-not permission to publish unsigned packages.
+can publish the successfully verified selected-platform subset; failed platforms
+remain unavailable. Present invalid assets block publication rather than being
+dropped. Missing certificates never permit unsigned Windows or macOS packages.
 
 Build inputs contain only allowlisted public URLs, publishable Supabase keys,
 OAuth client IDs, and feature flags. `DESKTOP_PUBLIC_CONFIG` is a JSON environment
@@ -429,3 +430,26 @@ operation publishes safe metadata and the one-time token separately; completion
 and unmount clear the operation reference, and cache errors retain only a fixed
 status/message. Cache regressions cover pending scalar/file writes, dismissal,
 conflicts, logout and delayed old-actor completion.
+
+## Protected desktop signing bundle
+
+Infrastructure exposes a separate machine-only `POST /api/v1/desktop-deployment/bundle`
+for Windows and macOS. `DESKTOP_DEPLOYMENT_VAULT_ENABLED` defaults off and the private
+platform environment must independently be enabled. Operator activation selects an
+immutable version; it never changes either admission switch. Metadata distinguishes
+the global switch from platform admission, without exposing an enabling control.
+
+The endpoint verifies the signed fixed desktop GitHub OIDC contract before token
+lookup or service-client access. A hashed token binds platform and active version;
+the private reserve RPC binds the verified run, attempt and source SHA. Exact
+resource names, encrypted identities, fresh portable certificate/P8 readiness and
+a final live revocation/expiry/version check precede response. Failed or delivered
+leases cannot be reused, including after a response is lost; a new workflow attempt
+is required. Signing buffers are wiped on success and failure.
+
+This endpoint does not install runner hydration, enable any environment, provision
+credentials, establish OS trust or prove artifact signing/notarization. Linux and
+Store MSIX diagnostics do not fetch this bundle. Mobile trust remains independent.
+Regression coverage lives in the desktop `bundle-store.test.ts`, bundle route tests
+and operator admission-badge cases; previous actual lease SQL and signed OIDC tests
+remain the storage and signature boundaries.
