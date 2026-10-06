@@ -30,14 +30,18 @@ class _Api extends ApiClient {
 
 class _Repository extends ProfileRepository {
   _Repository(_Api api, OfflineMutationQueue queue, this.actor)
-    : super(apiClient: api, bannerMutationQueue: queue);
+    : super(
+        apiClient: api,
+        bannerMutationQueue: queue,
+        avatarMutationQueue: queue,
+      );
   final String? Function() actor;
   @override
   String? getCurrentUserIdSync() => actor();
 }
 
 void main() {
-  for (final action in ['remove', 'banner']) {
+  for (final action in ['remove', 'banner', 'avatar']) {
     for (final phase in ['cache', 'connectivity']) {
       test(
         '$action returns bounded failure on actor switch during $phase',
@@ -93,7 +97,9 @@ void main() {
           try {
             final pending = action == 'remove'
                 ? repository.removeBanner()
-                : repository.saveBanner(file);
+                : action == 'banner'
+                ? repository.saveBanner(file)
+                : repository.saveAvatar(file);
             await entered.future;
             actor = 'new';
             release.complete();
