@@ -26,7 +26,7 @@ revertible.
 - Keep plugin and script validators standard-library based when feasible so CI stays fast and stable.
 - Add new workflows to `tuturuuu.ts` so the repo CI switchboard can enable or disable them consistently.
 - Use read-only permissions for validation jobs unless a workflow truly writes commits, comments, or artifacts.
-- Finite builds needed to validate the authorized change may run; starting a long-lived server requires the runtime task to need it. Deployment authority remains separate.
+- Run focused non-build validation locally and require builds in exact-commit CI; do not run local setup/builds/root `bun check`. A long-lived server requires a runtime verification need. Deployment authority remains separate.
 
 ## Documentation Patterns
 
@@ -44,4 +44,4 @@ For CI and docs work:
 - Parse changed JSON with `python3 -m json.tool`.
 - Run formatter/linter commands required by the repo for touched files.
 - Run `git diff --check`.
-- If root TypeScript config changed, finish with `bun check` when feasible.
+- If root TypeScript config changed, run focused non-build checks and require applicable exact-commit CI type-check/build results.

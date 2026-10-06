@@ -20,12 +20,12 @@ formatting behavior, or repo-wide verification.
 
 ## Commands And Formatting
 
-- Finite setup, tests, and builds needed to validate authorized work may run.
+- Focused non-build tests needed to validate authorized work may run. Builds
+  and setup-triggered builds run in CI only.
   Start long-lived development servers only when requested or needed for
   explicitly requested runtime verification. Deployment authority stays separate.
-- For TypeScript, JavaScript, root scripts, or repo config changes, finish with
-  `bun check` unless a documented unrelated blocker prevents it.
-- Use focused package-local tests first, then repo checks.
+- For TypeScript, JavaScript, root scripts, or repo config changes, run focused non-build checks locally; do not run local `bun check`.
+- Use focused package-local tests, then applicable exact-commit CI checks.
 - Normally run the applicable check, lint, test, and build workflows in CI for
   the exact authored commit, then inspect their terminal results. A demonstrably
   stuck queue can defer this proof; record pending jobs and local evidence, and
@@ -35,9 +35,8 @@ formatting behavior, or repo-wide verification.
   through Turbo.
 - Run `bun ff` for touched frontend/TS files when required, but do not format
   unrelated dirty files.
-- If `bun ff -- <files>` still triggers repo-wide Biome behavior, treat
-  `bun check` as the authoritative final signal and keep any manual fixes
-  scoped to owned files.
+- If `bun ff -- <files>` still triggers repo-wide Biome behavior, use exact-file Biome commands and keep fixes scoped to owned
+  files; require the applicable lint workflow in exact-commit CI.
 
 ## Root Scripts
 
@@ -146,11 +145,11 @@ formatting behavior, or repo-wide verification.
   not help. Route the build through
   `.github/actions/run-with-turbo-remote-cache`; `ci-cache-policy` rejects a
   bare `run:` for cacheable turbo tasks.
-- Reproduce a CI-only `bun check` failure with `CI=true bun check`, not
-  `bun check`. The turbo `test` task passes `CI` through, so anything gated on
-  `process.env.CI` fails only under the first. To reproduce a *fresh checkout*,
-  delete every `packages/*/dist` as well — a stale local `dist` hides exactly
-  the class of failure above.
+- For a CI-only failure, reproduce the affected non-build test with `CI=true`
+  and an explicit environment. Require exact-commit clean-checkout CI for build
+  or dependency-output failures; never run local `bun check` or delete shared
+  `packages/*/dist` to simulate CI. Stale local outputs can conceal missing
+  build prerequisites, so inspect the actual CI dependency graph and logs.
 - Tests must pin any environment they depend on rather than inheriting the
   runner's. `scripts/setup-portless.test.js` injected `isTTY`/`log`/`runner` but
   let `env` default to `process.env`, so it passed locally and failed under
