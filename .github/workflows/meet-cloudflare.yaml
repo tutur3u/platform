@@ -101,6 +101,15 @@ jobs:
       - run: bun run --cwd packages/supabase build
       - run: bun run test
         working-directory: packages/realtime
+      - name: Test durable room lifecycle and recovery
+        timeout-minutes: 2
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP"
+          bun test \
+            "$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-empty-lifecycle.test.ts" \
+            "$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-lifecycle-race.test.ts" \
+            "$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-recovery.test.ts"
       - name: Verify real local Durable Objects and collaboration protocols
         timeout-minutes: 5
         run: bun apps/meet-realtime/tests/local-check.ts

@@ -39,6 +39,7 @@ export async function readMeetingRoomPolicy(
   return (await response.json()) as {
     canReadNotes: boolean;
     ended: boolean;
+    lifecycleVersion?: number;
     settings?: {
       shareNotes?: boolean;
       shareNotesAfterMeeting?: boolean;

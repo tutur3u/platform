@@ -132,7 +132,18 @@ class _MultiDayTimelineColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final layouts = calculateEventLayout(events);
+    final minimumHeight = timedEventMinimumHeight(
+      hourHeight,
+      MediaQuery.textScalerOf(
+                context,
+              ).scale(Theme.of(context).textTheme.labelMedium?.fontSize ?? 14) *
+              1.1 +
+          16,
+    );
+    final layouts = calculateEventLayout(
+      events,
+      minimumDuration: timedEventMinimumDuration(hourHeight, minimumHeight),
+    );
 
     return GestureDetector(
       onLongPressStart: (details) {
@@ -215,16 +226,19 @@ class _MultiDayEventCard extends StatelessWidget {
     final event = layoutInfo.event;
     final start = event.startAt ?? DateTime.now();
     final end = event.endAt ?? start.add(const Duration(minutes: 30));
-    final startMinutes = start.hour * 60 + start.minute;
-    final durationMinutes = end.difference(start).inMinutes.clamp(15, 1440);
+    final startMinutes = timedEventStartMinutes(start);
+    final durationMinutes = timedEventDurationMinutes(start, end);
     final top = (startMinutes / 60) * hourHeight;
     final height = math.max(
       (durationMinutes / 60) * hourHeight,
-      MediaQuery.textScalerOf(
-                context,
-              ).scale(Theme.of(context).textTheme.labelMedium?.fontSize ?? 14) *
-              1.1 +
-          16,
+      timedEventMinimumHeight(
+        hourHeight,
+        MediaQuery.textScalerOf(context).scale(
+                  Theme.of(context).textTheme.labelMedium?.fontSize ?? 14,
+                ) *
+                1.1 +
+            16,
+      ),
     );
     final subColumnWidth = columnWidth / layoutInfo.totalColumns;
     final left = layoutInfo.column * subColumnWidth;
@@ -342,6 +356,8 @@ class _MultiDayAllDayRow extends StatelessWidget {
     required this.timeGutterWidth,
     required this.dayColumnWidth,
     required this.maxVisibleRows,
+    required this.viewportStart,
+    required this.viewportWidth,
     required this.onEventTap,
   });
 
@@ -349,6 +365,8 @@ class _MultiDayAllDayRow extends StatelessWidget {
   final double timeGutterWidth;
   final double dayColumnWidth;
   final int? maxVisibleRows;
+  final double viewportStart;
+  final double viewportWidth;
   final ValueChanged<CalendarEvent> onEventTap;
 
   static const _rowHeight = 22.0;
@@ -361,38 +379,53 @@ class _MultiDayAllDayRow extends StatelessWidget {
     }
 
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final rowHeight = math.max(
+      _rowHeight,
+      MediaQuery.textScalerOf(
+                context,
+              ).scale(theme.textTheme.labelSmall?.fontSize ?? 12) *
+              1.2 +
+          8,
+    );
     final rows = math.min(
       layout.maxRow + 1,
       maxVisibleRows ?? layout.maxRow + 1,
     );
-    final height = rows * _rowHeight + (math.max(rows - 1, 0) * _rowGap) + 14;
+    final height = rows * rowHeight + (math.max(rows - 1, 0) * _rowGap) + 14;
 
     return SizedBox(
       height: height,
       child: Stack(
         children: [
-          Positioned(
-            left: 0,
-            top: 10,
-            width: timeGutterWidth - 8,
-            child: Text(
-              context.l10n.calendarAllDay,
-              textAlign: TextAlign.right,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          for (final span in layout.spans.where((span) => span.row < rows))
+          for (final span in layout.spans.where(
+            (span) =>
+                span.row < rows &&
+                timeGutterWidth +
+                        (span.startIndex + span.span) * dayColumnWidth -
+                        4 >
+                    viewportStart &&
+                timeGutterWidth + span.startIndex * dayColumnWidth + 4 <
+                    viewportStart + viewportWidth,
+          ))
             Positioned(
               left: timeGutterWidth + span.startIndex * dayColumnWidth + 4,
-              top: span.row * (_rowHeight + _rowGap) + 6,
+              top: span.row * (rowHeight + _rowGap) + 6,
               width: span.span * dayColumnWidth - 8,
-              height: _rowHeight,
+              height: rowHeight,
               child: _MultiDayAllDayChip(
                 event: span.event,
+                labelLeft: math.max(
+                  0,
+                  viewportStart -
+                      (timeGutterWidth + span.startIndex * dayColumnWidth + 4),
+                ),
+                labelRight: math.max(
+                  0,
+                  timeGutterWidth +
+                      (span.startIndex + span.span) * dayColumnWidth -
+                      4 -
+                      (viewportStart + viewportWidth),
+                ),
                 onTap: () => onEventTap(span.event),
               ),
             ),
@@ -403,10 +436,17 @@ class _MultiDayAllDayRow extends StatelessWidget {
 }
 
 class _MultiDayAllDayChip extends StatelessWidget {
-  const _MultiDayAllDayChip({required this.event, required this.onTap});
+  const _MultiDayAllDayChip({
+    required this.event,
+    required this.onTap,
+    required this.labelLeft,
+    required this.labelRight,
+  });
 
   final CalendarEvent event;
   final VoidCallback onTap;
+  final double labelLeft;
+  final double labelRight;
 
   @override
   Widget build(BuildContext context) {
@@ -419,35 +459,41 @@ class _MultiDayAllDayChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(999),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: EdgeInsets.only(
+            left: labelLeft + 10,
+            right: labelRight + 10,
+          ),
           decoration: BoxDecoration(
             color: EventColors.inContext(event, context).background,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(color: accentColor),
           ),
           alignment: Alignment.centerLeft,
-          child: Row(
-            children: [
-              if (event.workingLocationKind case final kind?) ...[
-                Icon(
-                  workingLocationIcon(kind),
-                  size: 14,
-                  color: foregroundColor,
-                ),
-                const SizedBox(width: 4),
-              ],
-              Expanded(
-                child: Text(
-                  event.title ?? '',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          child: LayoutBuilder(
+            builder: (context, constraints) => Row(
+              children: [
+                if (constraints.maxWidth >= 18 &&
+                    event.workingLocationKind != null) ...[
+                  Icon(
+                    workingLocationIcon(event.workingLocationKind!),
+                    size: 14,
                     color: foregroundColor,
-                    fontWeight: FontWeight.w700,
+                  ),
+                  const SizedBox(width: 4),
+                ],
+                Expanded(
+                  child: Text(
+                    event.title ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: foregroundColor,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

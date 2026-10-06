@@ -38,11 +38,32 @@ export function updateMeetCallTitle(meetingId: string, name: string) {
   );
 }
 
-export function getMeetCallRoomState(meetingId: string) {
-  return getInternalApiClient().json<{ ended: boolean; canReadNotes: boolean }>(
-    `/api/meet-call/${encodePathSegment(meetingId)}/state`,
-    { cache: 'no-store' }
-  );
+export function getMeetCallRoomState(
+  meetingId: string,
+  options?: { signal?: AbortSignal }
+) {
+  return getInternalApiClient().json<{
+    ended: boolean;
+    canReadNotes: boolean;
+    lifecycleVersion: number;
+  }>(`/api/meet-call/${encodePathSegment(meetingId)}/state`, {
+    cache: 'no-store',
+    signal: options?.signal,
+  });
+}
+
+export function restoreMeetCallRoom(
+  meetingId: string,
+  expectedVersion: number,
+  expectedActorId: string
+) {
+  return getInternalApiClient().json<{
+    ended: false;
+    lifecycleVersion: number;
+  }>(`/api/meet-call/${encodePathSegment(meetingId)}/state`, {
+    method: 'POST',
+    body: JSON.stringify({ expectedVersion, expectedActorId }),
+  });
 }
 
 export function askMeetAssistant(

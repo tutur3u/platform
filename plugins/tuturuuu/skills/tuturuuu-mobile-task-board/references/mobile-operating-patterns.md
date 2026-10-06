@@ -181,3 +181,5 @@ For the source-linked diagnosis guide, read
 
 Keep runtime claims separate: source and injected-host tests do not establish
 provider/device operation or production delivery.
+
+- **Continuous Calendar Geometry**: Keep fractional movement during active horizontal drags, then use day-width ballistic snapping on synchronized header, all-day and timed-grid surfaces. Preserve the buffered date window/recenter and loaded cache. Partition timed layout into connected half-open overlap components so isolated groups regain full column width; anchor all-day label content inside the viewport intersection of its span, with fixed gutter clearance and text-scaled rows. Regress actual gestures on every surface, explicit date navigation, clipping boundaries and large text; widget results are not native-device proof.

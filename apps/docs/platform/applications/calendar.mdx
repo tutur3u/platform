@@ -1,7 +1,7 @@
 ---
 title: "Calendar"
-description: "Shared Calendar product surface across apps/web and apps/calendar."
-updatedAt: "2026-10-02"
+description: "Calendar behavior across Web, standalone Calendar, and mobile."
+updatedAt: "2026-10-06"
 ---
 
 ## Calendar editor timezone
@@ -991,3 +991,43 @@ pending. No resource reads begin before authorization. Coverage:
 `page-date-loading.test.tsx` uses an unresolved event response to verify overlap,
 actor/workspace filters, date-only and DST-offset links, fallbacks and both error
 paths. Browser latency improvement still requires post-deployment measurement.
+
+## Mobile continuous schedule geometry
+
+Mobile three-day and week timelines retain their continuous buffered date window.
+Dragging remains continuous; releasing settles header, all-day strip and timed grid
+on the same day boundary. Selected-date navigation and window recentering preserve
+that alignment without replacing the loaded event range or cache.
+
+Timed event widths use connected overlap groups with half-open time intervals.
+Transitive overlaps share columns; an event starting exactly when a group ends
+belongs to a new group. Isolated groups receive the full available date-column
+width. This shared layout also applies to the mobile day timeline.
+
+All-day span backgrounds retain their date extent while their title and optional
+working-location icon stay inside the span's intersection with the current
+viewport, clear of the fixed time gutter. Labels truncate when the visible portion
+is narrow; offscreen spans do not expose duplicate visible labels. All-day rows
+reserve enough height for the current text scale. These are display rules and do
+not change event dates, actor permissions, recurrence, providers or cache scope.
+
+Regression coverage: `calendar_viewport_test.dart`,
+`date_snap_scroll_physics_test.dart` and `continuous_date_scroll_test.dart` cover
+connected groups, visible clipped labels, native scroll settling, synchronized
+surfaces, continuous month traversal and programmatic date navigation. Widget
+coverage is separate from native-device gesture and provider verification.
+
+
+## Mobile timeline overlap geometry
+
+Mobile day and multi-day timelines reserve columns for the painted minimum card
+height as well as timestamp overlap. This keeps adjacent short events and their
+tap targets separate, including enlarged text, while isolated groups still use
+the full column width. Card positions and durations retain sub-minute precision
+so rounded pixels cannot create an untracked overlap. Event timestamps, recurring rules, and provider writes
+remain unchanged. The fixed all-day gutter label stays on one ellipsized line;
+the complete localized label remains available to accessibility services.
+
+`calendar_rendered_overlap_test.dart` checks actual card bounds and bottom-edge
+taps at normal and enlarged text sizes, and the fixed all-day gutter. These
+widget checks require device gesture verification after delivery.

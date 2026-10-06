@@ -5,8 +5,9 @@ import { getMeetCallRoomState } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { useRef } from 'react';
 import { useEndedRoom } from '../hooks/use-ended-room';
-import { rememberEndedRoom } from '../lib/ended-room-cache';
+import { forgetEndedRoom, rememberEndedRoom } from '../lib/ended-room-cache';
 import { encodeRoomCode } from '../lib/room-code';
 
 export function MeetingRoomAction({
@@ -17,15 +18,27 @@ export function MeetingRoomAction({
   accountId: string;
 }) {
   const t = useTranslations('meet.call');
+  const scope = useRef({ accountId, meetingId });
+  if (
+    scope.current.accountId !== accountId ||
+    scope.current.meetingId !== meetingId
+  )
+    scope.current = { accountId, meetingId };
   const knownEnded = useEndedRoom(accountId, meetingId);
   const { data } = useQuery({
     queryKey: ['meet-room-state', meetingId, accountId],
-    queryFn: async () => {
-      const state = await getMeetCallRoomState(meetingId);
+    queryFn: async ({ signal }) => {
+      const current = scope.current;
+      if (current.accountId !== accountId || current.meetingId !== meetingId)
+        throw new DOMException('Meeting scope changed', 'AbortError');
+      const state = await getMeetCallRoomState(meetingId, { signal });
+      if (signal.aborted || scope.current !== current)
+        throw new DOMException('Meeting scope changed', 'AbortError');
       if (state.ended) rememberEndedRoom(accountId, meetingId);
+      else forgetEndedRoom(accountId, meetingId);
       return state;
     },
-    enabled: !knownEnded,
+    enabled: !!accountId,
     staleTime: 15000,
     refetchInterval: 60000,
     refetchIntervalInBackground: false,

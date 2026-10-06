@@ -5,6 +5,7 @@ import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:mobile/features/calendar/utils/event_layout.dart';
+import 'package:mobile/features/calendar/utils/timed_event_geometry.dart';
 import 'package:mobile/features/calendar/widgets/all_day_event_bar.dart';
 import 'package:mobile/features/calendar/widgets/current_time_indicator.dart';
 import 'package:mobile/features/calendar/widgets/event_card.dart';
@@ -106,8 +107,21 @@ class _DayScheduleViewState extends State<DayScheduleView> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final layouts = calculateEventLayout(widget.timedEvents);
     final hourH = _hourHeight(context);
+    final layouts = calculateEventLayout(
+      widget.timedEvents,
+      minimumDuration: timedEventMinimumDuration(
+        hourH,
+        timedEventMinimumHeight(
+          hourH,
+          MediaQuery.textScalerOf(
+                    context,
+                  ).scale(textTheme.labelSmall?.fontSize ?? 12) *
+                  1.1 +
+              6,
+        ),
+      ),
+    );
     final gutterW = _timeGutterWidth(context);
 
     return GestureDetector(

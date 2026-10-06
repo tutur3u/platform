@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -30,7 +31,7 @@ extension PumpApp on WidgetTester {
         ),
         localizationsDelegates: const [
           ...AppLocalizations.localizationsDelegates,
-          shad.ShadcnLocalizations.delegate,
+          AppShadcnLocalizationsDelegate(),
         ],
         supportedLocales: AppLocalizations.supportedLocales,
         routerConfig: router,

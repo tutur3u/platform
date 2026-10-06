@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useEndedRoom } from '../hooks/use-ended-room';
 import { EndedMeetingSettings } from './ended-meeting-settings';
+import { RestoreRoomButton } from './restore-room-button';
 
 export function CallEnded({
   accountId,
@@ -65,6 +66,13 @@ export function CallEnded({
             </p>
           )}
           <div className="mt-7 flex flex-wrap justify-center gap-3">
+            {ended && canManage && (
+              <RestoreRoomButton
+                accountId={accountId}
+                meetingId={meetingId}
+                disabled={saving}
+              />
+            )}
             {!ended && (
               <Button
                 onClick={() => window.location.reload()}
