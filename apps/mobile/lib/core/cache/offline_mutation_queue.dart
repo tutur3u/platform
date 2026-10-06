@@ -241,8 +241,11 @@ class OfflineMutationQueue with WidgetsBindingObserver {
     String? entityId,
     bool replaySafe = false,
     String? expectedUserId,
+    void Function()? checkScope,
   }) async {
+    checkScope?.call();
     await init();
+    checkScope?.call();
     if (expectedUserId != null && expectedUserId != _userId()) {
       throw StateError('Profile actor changed');
     }
@@ -260,8 +263,10 @@ class OfflineMutationQueue with WidgetsBindingObserver {
       try {
         connectivity = await _checkConnectivity();
         _checkOpen();
+        checkScope?.call();
       } on Object {
         _checkOpen();
+        checkScope?.call();
         // A missing platform signal must not silently turn an online write into
         // a queued write (notably on desktop and in widget tests).
         return false;
@@ -273,6 +278,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
     if (expectedUserId != null && expectedUserId != _userId()) {
       throw StateError('Profile actor changed');
     }
+    checkScope?.call();
     await enqueue(
       PendingMutationRecord(
         id: newLocalMutationId(),
@@ -286,6 +292,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
         optimisticPatch: entityId == null ? null : {'entityId': entityId},
         replaySafe: replaySafe,
       ),
+      checkScope: checkScope,
     );
     return true;
   }
@@ -302,6 +309,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
     required String entityId,
     required bool replaySafe,
     String? expectedUserId,
+    void Function()? checkScope,
   }) async {
     if (!isOfflineTransportFailure(error) &&
         !(replaySafe && error.code == 'OFFLINE_CONTRACT_UNAVAILABLE')) {
@@ -310,6 +318,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
     if (expectedUserId != null && expectedUserId != _userId()) {
       throw StateError('Profile actor changed');
     }
+    checkScope?.call();
     await enqueue(
       PendingMutationRecord(
         id: newLocalMutationId(),
@@ -327,6 +336,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
             : PendingMutationStatus.conflict,
         lastError: error.message,
       ),
+      checkScope: checkScope,
     );
     return true;
   }
@@ -339,18 +349,25 @@ class OfflineMutationQueue with WidgetsBindingObserver {
     _scheduleSync();
   }
 
-  Future<void> enqueue(PendingMutationRecord record) async {
+  Future<void> enqueue(
+    PendingMutationRecord record, {
+    void Function()? checkScope,
+  }) async {
+    checkScope?.call();
     await init();
+    checkScope?.call();
     if (record.userId == null || record.userId != _userId()) {
       throw StateError('An authenticated account is required to queue edits');
     }
     _checkOpen();
     await _registerInventoryProvenance(record);
     _checkOpen();
+    checkScope?.call();
     await _store.savePendingMutation(
       record,
       checkScope: () {
         _checkOpen();
+        checkScope?.call();
         if (record.userId != _userId()) {
           throw StateError('Pending mutation actor changed');
         }

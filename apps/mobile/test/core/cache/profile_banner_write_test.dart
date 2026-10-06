@@ -21,7 +21,12 @@ class _Queue extends Fake implements OfflineMutationQueue {
     String? entityId,
     bool replaySafe = false,
     String? expectedUserId,
-  }) async => false;
+    void Function()? checkScope,
+  }) async {
+    checkScope?.call();
+    return false;
+  }
+
   @override
   Future<bool> enqueueAfterNetworkFailure({
     required ApiException error,
@@ -33,9 +38,18 @@ class _Queue extends Fake implements OfflineMutationQueue {
     required String entityId,
     required bool replaySafe,
     String? expectedUserId,
-  }) async => false;
+    void Function()? checkScope,
+  }) async {
+    checkScope?.call();
+    return false;
+  }
+
   @override
-  Future<void> enqueue(PendingMutationRecord record) async {
+  Future<void> enqueue(
+    PendingMutationRecord record, {
+    void Function()? checkScope,
+  }) async {
+    checkScope?.call();
     records.add(record);
   }
 }

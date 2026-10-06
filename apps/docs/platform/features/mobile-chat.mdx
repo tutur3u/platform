@@ -123,3 +123,25 @@ English/Vietnamese at 320px with enlarged text, recovery guidance, remote return
 Live visibility and stale actions. `assistant_mode_title_test.dart` preserves
 fallback titles and verifies current name changes. Actual-device safe-area,
 accessibility and native model loading remain separate delivery checks.
+
+## Assistant name write admission
+
+Mira's custom name is personal to the authenticated account, including when the
+mobile assistant is opened from a workspace. A rename captures its account and
+cache identity before awaiting storage or network admission. Logout/cache-clear
+and superseded local rename intents cannot publish into a successor session or
+enter the outbox after departure. Rename and Soul refresh share a publication
+generation so an older response cannot replace the latest accepted local view.
+
+An online update requires a valid server Soul receipt; missing or malformed
+receipts do not become a fabricated `Mira` success. Offline names remain pending
+account-owned intents, rather than confirmed server writes. This client admission
+boundary does not provide cross-client compare-and-swap or claim that ambiguous
+network writes are safe to replay automatically. Genuine permission and transport
+failures retain their existing behavior.
+
+Regression coverage: `assistant_soul_name_writer_test.dart`,
+`assistant_name_publication_test.dart`, and
+`offline_queue_disposal_regression_test.dart` cover held cache/queue/network
+admission, actor and workspace departure, same-actor logout restoration,
+superseding writes/refreshes, malformed receipts, and admitted ACK cleanup.

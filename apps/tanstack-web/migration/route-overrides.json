@@ -2866,7 +2866,7 @@
     "api:/api/v1/workspaces/:wsId/ai/memory/items/:memoryId:apps/web/src/app/api/v1/workspaces/[wsId]/ai/memory/items/[memoryId]/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "First-class live Next handler forwards Bearer or cookie credentials and retains MEMBER/user-workspace authorization. Existing Rust GET settings/items retain token admission, but complete service/method parity remains backlog; Next remains the live API owner."
+      "note": "First-class live Next handler forwards Bearer or cookie credentials and retains MEMBER/user-workspace authorization. Scoped GET/HEAD revision reads and explicit owner PATCH CAS edits with proper edit-audit receipts remain Next-owned. Existing Rust GET settings/items retain token admission, but item GET/HEAD/PATCH/DELETE service/method parity remains backlog; Next remains the live API owner."
     },
     "api:/api/v1/workspaces/:wsId/ai/memory/export:apps/web/src/app/api/v1/workspaces/[wsId]/ai/memory/export/route.ts": {
       "status": "legacy-next",

@@ -61,7 +61,12 @@ class _Queue extends Fake implements OfflineMutationQueue {
     String? entityId,
     bool replaySafe = false,
     String? expectedUserId,
-  }) async => false;
+    void Function()? checkScope,
+  }) async {
+    checkScope?.call();
+    return false;
+  }
+
   @override
   Future<bool> enqueueAfterNetworkFailure({
     required ApiException error,
@@ -73,7 +78,9 @@ class _Queue extends Fake implements OfflineMutationQueue {
     required String entityId,
     required bool replaySafe,
     String? expectedUserId,
+    void Function()? checkScope,
   }) async {
+    checkScope?.call();
     failedPayload = payload;
     safe = replaySafe;
     return true;
