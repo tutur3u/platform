@@ -167,3 +167,27 @@ press/release gestures with a frame between pointer down and up, Android/iOS,
 English/Vietnamese, single and multiline inputs, modal and enlarged text,
 selection replacement, keyboard shortcuts, field policies and composition.
 Widget evidence does not replace native-device clipboard and IME verification.
+
+
+## Private error diagnostics
+
+Mobile Mira reply failures and timezone read/write failures offer Copy debug
+information only to an authenticated account with a confirmed `@tuturuuu.com`
+email. External addresses, unconfirmed addresses and MFA-required sessions do not
+see this control. Email/confirmation changes update auth-state equality; logout
+and account changes revoke the control and its stale callback.
+
+Copying writes a local, fixed-field envelope to the clipboard: operation stage,
+error category, HTTP status, retry delay and allowlisted rate-limit policy fields.
+It never includes messages, prompts, response bodies, URLs, email addresses or
+credentials, and never uploads diagnostics. Retry and cooldown rules are unchanged.
+Recovery clears old diagnostics; timezone actor/workspace changes discard them.
+Streamed HTTP errors retain at most 64 KiB before parsing. Oversized bodies are
+canceled and become generic status failures; status/retry headers survive.
+Successful streams remain unread until consumed by the assistant transport.
+
+Coverage: `safe_error_diagnostics_test.dart`, `api_client_stream_error_test.dart`,
+`bounded_stream_error_test.dart`, `internal_diagnostics_copy_test.dart` and
+`timezone_safe_diagnostics_test.dart`. These tests establish local capture,
+clipboard privacy and cooldown behavior; they do not establish the cause of a
+production 429 or stopped reply.

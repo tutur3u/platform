@@ -111,6 +111,7 @@ void main() {
     authEvents = StreamController<AuthState>.broadcast();
     workspaceEvents = StreamController<WorkspaceState>.broadcast();
     auth = _Auth();
+    when(() => auth.isClosed).thenReturn(false);
     workspace = _Workspace();
     calendar = _Calendar();
     permissions = _Permissions();

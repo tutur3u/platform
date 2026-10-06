@@ -220,8 +220,11 @@ extension _AssistantChatSubmission on AssistantChatCubit {
             creditWsId: creditWsId,
           )
           .listen(
-            _handleStreamEvent,
+            (event) {
+              if (current()) _handleStreamEvent(event);
+            },
             onError: (Object error, StackTrace stackTrace) {
+              if (!current()) return;
               _emitIfOpen(
                 state.copyWith(
                   messages: _withoutEmptyAssistantReply(
@@ -230,10 +233,15 @@ extension _AssistantChatSubmission on AssistantChatCubit {
                   ),
                   status: AssistantChatStatus.error,
                   error: error.toString(),
+                  diagnostics: SafeErrorDiagnostics.capture(
+                    error,
+                    DiagnosticStage.assistantReply,
+                  ),
                 ),
               );
             },
             onDone: () async {
+              if (!current()) return;
               _streamSubscription = null;
               _finalizeToolParts();
               if (isClosed || state.status == AssistantChatStatus.error) return;
@@ -243,6 +251,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
             cancelOnError: false,
           );
     } on Exception catch (error) {
+      if (!current()) return;
       _emitIfOpen(
         state.copyWith(
           messages: _withoutEmptyAssistantReply(
@@ -251,6 +260,10 @@ extension _AssistantChatSubmission on AssistantChatCubit {
           ),
           status: AssistantChatStatus.error,
           error: error.toString(),
+          diagnostics: SafeErrorDiagnostics.capture(
+            error,
+            DiagnosticStage.assistantReply,
+          ),
         ),
       );
     }

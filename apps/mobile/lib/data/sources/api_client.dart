@@ -12,6 +12,7 @@ import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/data/sources/api_multipart_file.dart';
 import 'package:mobile/data/sources/api_rate_limit_diagnostics.dart';
 import 'package:mobile/data/sources/api_verification.dart';
+import 'package:mobile/data/sources/bounded_stream_error.dart';
 import 'package:mobile/data/sources/offline_api_request.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/auth/required_mfa_policy.dart';
@@ -415,7 +416,8 @@ class ApiClient {
   }) async {
     final url = _url(path);
 
-    return await _performStreamedRequest(() async {
+    final userId = requiresAuth ? _auth.currentUser?.id : null;
+    final response = await _performStreamedRequest(() async {
       final request = http.Request(method, url)
         ..headers.addAll(
           await _getHeaders(
@@ -427,6 +429,14 @@ class ApiClient {
         ..body = jsonEncode(body);
       return await _client.send(request).timeout(_requestTimeout);
     }, requiresAuth: requiresAuth);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final failure = await readBoundedStreamError(
+        response,
+      ).timeout(_requestTimeout);
+      if (requiresAuth) _checkRequestUser(userId);
+      _handleResponse(failure);
+    }
+    return response;
   }
 
   Future<Map<String, dynamic>> sendMultipart(

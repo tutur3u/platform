@@ -8,6 +8,7 @@ import 'package:mobile/features/settings/view/settings_scoped_sheet.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
+import 'package:mobile/widgets/internal_diagnostics_copy.dart';
 
 class TimezoneSettingsTile extends StatefulWidget {
   const TimezoneSettingsTile({
@@ -161,17 +162,27 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
           state.failed &&
               (state.failedSaveZone == null ||
                   state.failedSaveWorkspace == widget.workspace)
-          ? IconButton(
-              key: ValueKey(
-                widget.workspace
-                    ? 'timezone-retry-workspace'
-                    : 'timezone-retry-personal',
-              ),
-              tooltip: context.l10n.settingsTimezoneRetry,
-              onPressed: _coolingDown || state.loading || state.saving
-                  ? null
-                  : () => unawaited(_retry()),
-              icon: const Icon(Icons.refresh_rounded),
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  key: ValueKey(
+                    widget.workspace
+                        ? 'timezone-retry-workspace'
+                        : 'timezone-retry-personal',
+                  ),
+                  tooltip: context.l10n.settingsTimezoneRetry,
+                  onPressed: _coolingDown || state.loading || state.saving
+                      ? null
+                      : () => unawaited(_retry()),
+                  icon: const Icon(Icons.refresh_rounded),
+                ),
+                if (state.diagnostics case final diagnostics?)
+                  InternalDiagnosticsCopy(
+                    diagnostics: diagnostics,
+                    userId: widget.userId,
+                  ),
+              ],
             )
           : null,
       showChevron: !widget.workspace || widget.canManageWorkspace,

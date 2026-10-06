@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:mobile/data/repositories/timezone_settings_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/data/sources/safe_error_diagnostics.dart';
 
 class TimezoneSettingsState {
   const TimezoneSettingsState({
@@ -19,6 +20,7 @@ class TimezoneSettingsState {
     this.failedSaveZone,
     this.failedSaveWorkspace = false,
     this.errorMessage,
+    this.diagnostics,
   });
   final String personal;
   final String workspace;
@@ -33,6 +35,7 @@ class TimezoneSettingsState {
   final String? failedSaveZone;
   final bool failedSaveWorkspace;
   final String? errorMessage;
+  final SafeErrorDiagnostics? diagnostics;
   String get effective => personal != 'auto'
       ? personal
       : workspace != 'auto'
@@ -98,6 +101,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
           loading: false,
           failed: true,
           errorMessage: sameScope ? previous.errorMessage : null,
+          diagnostics: sameScope ? previous.diagnostics : null,
           retryAt: _retryAt,
           failedSaveZone: sameScope ? previous.failedSaveZone : null,
           failedSaveWorkspace: sameScope && previous.failedSaveWorkspace,
@@ -117,6 +121,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
         workspaceLoaded: sameScope && previous.workspaceLoaded,
         failed: failedSaveZone != null,
         errorMessage: failedSaveZone != null ? previous.errorMessage : null,
+        diagnostics: failedSaveZone != null ? previous.diagnostics : null,
         failedSaveZone: failedSaveZone,
         failedSaveWorkspace: failedSaveWorkspace,
       ),
@@ -207,6 +212,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
           workspaceLoaded: workspaceId != null,
           failed: failedSaveZone != null,
           errorMessage: failedSaveZone != null ? previous.errorMessage : null,
+          diagnostics: failedSaveZone != null ? previous.diagnostics : null,
           failedSaveZone: failedSaveZone,
           failedSaveWorkspace: failedSaveWorkspace,
         ),
@@ -231,6 +237,10 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
                   workspaceLoaded: previous.workspaceLoaded,
                   failed: true,
                   errorMessage: _failureMessage(failure),
+                  diagnostics: SafeErrorDiagnostics.capture(
+                    failure,
+                    DiagnosticStage.timezoneRead,
+                  ),
                   retryAt: _retryAt,
                   failedSaveZone: failedSaveZone,
                   failedSaveWorkspace: failedSaveWorkspace,
@@ -257,6 +267,10 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
                   loading: false,
                   failed: true,
                   errorMessage: _failureMessage(failure),
+                  diagnostics: SafeErrorDiagnostics.capture(
+                    failure,
+                    DiagnosticStage.timezoneRead,
+                  ),
                   retryAt: _retryAt,
                   failedSaveZone: failedSaveZone,
                   failedSaveWorkspace: failedSaveWorkspace,
@@ -369,6 +383,10 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
             workspaceLoaded: previous.workspaceLoaded,
             failed: true,
             errorMessage: _failureMessage(error),
+            diagnostics: SafeErrorDiagnostics.capture(
+              error,
+              DiagnosticStage.timezoneWrite,
+            ),
             failedSaveZone: zone,
             failedSaveWorkspace: workspace,
             retryAt: _retryAt,
