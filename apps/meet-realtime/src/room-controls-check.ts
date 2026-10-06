@@ -11,6 +11,7 @@ import {
 } from '../../../packages/realtime/src/meet';
 import { signMeetRealtimeToken } from '../../../packages/realtime/src/meet/token';
 import { validateMeetCheckEndpoint } from './check-endpoint';
+import { waitForCheckSocket } from './check-socket';
 
 const endpoint = validateMeetCheckEndpoint(
   // biome-ignore lint/suspicious/noUndeclaredEnvVars: finite standalone verification harness.
@@ -60,28 +61,7 @@ class Client {
     this.socket.addEventListener('message', (event) =>
       this.messages.push(JSON.parse(String(event.data)))
     );
-    await new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(
-        () => reject(new Error('Connection timed out')),
-        10000
-      );
-      this.socket!.addEventListener(
-        'open',
-        () => {
-          clearTimeout(timer);
-          resolve();
-        },
-        { once: true }
-      );
-      this.socket!.addEventListener(
-        'error',
-        () => {
-          clearTimeout(timer);
-          reject(new Error('Connection failed'));
-        },
-        { once: true }
-      );
-    });
+    await waitForCheckSocket(this.socket);
   }
   send(message: object) {
     this.socket!.send(JSON.stringify(message));
