@@ -982,7 +982,11 @@ not while waiting behind another upload. Credit admission failures stop immediat
 and require the user to check AI Hub; they do not advertise a five-minute network
 reconnection. Other buffered retry feedback describes transcription retry rather
 than claiming the connection failed. Notes generation failures retain saved
-transcript chunks for an explicit retry. The failure UI uses localized fixed
+transcript chunks for an explicit retry. Empty saved speech completes with empty
+notes, zero cost and no provider invocation, even when capture is incomplete;
+missing-audio warnings alone do not admit generation. Real saved speech still
+generates with its incomplete warning. This applies to Meet and Parley notes
+finalization and is covered by `server/sessions.test.ts`. The failure UI uses localized fixed
 guidance with allowlisted HTTP status and provider category diagnostics; raw
 provider bodies, credentials and meeting identities are excluded. Regression
 coverage: `chunk-recovery.test.ts`, `use-meeting-ai.test.ts`,

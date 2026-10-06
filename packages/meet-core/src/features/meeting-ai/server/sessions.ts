@@ -286,6 +286,13 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
       parsed.data.expectedChunks === undefined ||
       parsed.data.expectedChunks !== chunks.length ||
       chunks.some((chunk) => chunk.status !== 'completed');
+    // Metadata and missing-audio warnings are not saved speech to bill for.
+    const hasSavedSpeech = chunks.some((chunk) => {
+      const segments = readTranscriptSegments(chunk.usage);
+      return segments.length
+        ? segments.some((segment) => Boolean(segment.transcript.trim()))
+        : Boolean(chunk.transcript?.trim());
+    });
     const transcript =
       (incomplete
         ? '[This transcript is incomplete. Audio was lost or capture was interrupted.]\n'
@@ -298,8 +305,8 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
         .join('\n');
     if (transcript.length > 500_000)
       throw new MeetAiError(413, 'Transcript exceeds notes limit');
-    providerStarted = !!transcript.trim();
-    const result = transcript.trim()
+    providerStarted = hasSavedSpeech;
+    const result = hasSavedSpeech
       ? await generateBilledMeetArtifact(
           {
             transcript,
