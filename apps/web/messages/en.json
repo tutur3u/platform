@@ -10375,7 +10375,10 @@
         "tasks": "Tasks",
         "title": "My day",
         "unavailable": "Your personal tools are unavailable right now."
-      }
+      },
+      "restore_call": "Restore meeting",
+      "restore_failed": "Could not restore this meeting. Its state may have changed or its original call allowance may have expired.",
+      "restoring_call": "Restoring meeting…"
     },
     "collaboration": {
       "checkpoint_conflict": "The workspace document changed elsewhere. Live edits remain in this room; its workspace backup has a conflict.",
