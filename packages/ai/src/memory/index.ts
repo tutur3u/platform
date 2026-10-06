@@ -1,5 +1,6 @@
 export { getAiMemoryServiceClient, getSupermemoryClient } from './client';
 export { getAiMemoryConfig, isAiMemoryConfigured } from './config';
+export { editAiMemory, readAiMemoryForEdit } from './edit';
 export { ingestAiMemoryEvent } from './ingest';
 export { withAiMemory } from './middleware';
 export {
@@ -16,8 +17,10 @@ export {
 } from './scope';
 export { getAiMemorySettings, isAiMemoryEnabledForScope } from './settings';
 export type {
+  AiEditableMemory,
   AiMemoryConfig,
   AiMemoryDocument,
+  AiMemoryEditResult,
   AiMemoryMetadata,
   AiMemoryMetadataValue,
   AiMemoryModelOptions,

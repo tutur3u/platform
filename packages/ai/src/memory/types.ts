@@ -99,3 +99,26 @@ export type AiMemoryModelOptions<TModel extends LanguageModel = LanguageModel> =
     userId?: string | null;
     wsId?: string | null;
   };
+
+export type AiEditableMemory = {
+  id: string;
+  content: string;
+  customId: string | null;
+  metadata: AiMemoryMetadata;
+  status: 'done';
+  revision: string;
+};
+
+export type AiMemoryEditResult =
+  | { ok: true; memory: AiEditableMemory }
+  | {
+      ok: false;
+      reason:
+        | 'invalid_input'
+        | 'not_configured'
+        | 'disabled'
+        | 'not_found'
+        | 'conflict'
+        | 'embedding_failed'
+        | 'service_failed';
+    };

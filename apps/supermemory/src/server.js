@@ -1,5 +1,11 @@
 import crypto from 'node:crypto';
 import postgres from 'postgres';
+import {
+  readEditableMemory,
+  readEditScope,
+  updateEditableMemory,
+  validEdit,
+} from './memory-edit.js';
 
 const PORT = Number(process.env.PORT || 8787);
 const API_KEY = process.env.SUPERMEMORY_API_KEY?.trim() ?? '';
@@ -330,6 +336,13 @@ async function route(request) {
     return health();
   }
 
+  const editRoute = ['/v1/memories/read', '/v1/memories/update'].includes(
+    url.pathname
+  );
+  // New private edit surfaces require a configured service credential even when
+  // legacy local routes permit an unconfigured key.
+  if (editRoute && !API_KEY) return unauthorized();
+
   if (!assertAuthorized(request)) {
     return unauthorized();
   }
@@ -340,6 +353,23 @@ async function route(request) {
 
   const body = await readJson(request);
   if (!body) return json({ error: 'Invalid JSON body' }, { status: 400 });
+
+  if (editRoute) {
+    const scope = readEditScope(body);
+    if (!scope) return json({ error: 'Invalid memory scope' }, { status: 400 });
+    if (url.pathname === '/v1/memories/read') {
+      const memory = await readEditableMemory(sql, scope);
+      return memory
+        ? json({ memory })
+        : json({ error: 'Memory unavailable' }, { status: 404 });
+    }
+    if (!validEdit(body))
+      return json({ error: 'Invalid memory edit' }, { status: 400 });
+    const memory = await updateEditableMemory(sql, scope, body);
+    return memory
+      ? json({ updated: true, memory })
+      : json({ error: 'Memory edit conflict' }, { status: 409 });
+  }
 
   if (url.pathname === '/v1/memories') return addMemory(body);
   if (url.pathname === '/v1/search') return searchMemories(body);
@@ -354,8 +384,13 @@ Bun.serve({
     route(request).catch((error) =>
       json(
         {
-          error:
-            error instanceof Error ? error.message : 'Internal server error',
+          error: ['/v1/memories/read', '/v1/memories/update'].includes(
+            new URL(request.url).pathname
+          )
+            ? 'Memory service request failed'
+            : error instanceof Error
+              ? error.message
+              : 'Internal server error',
         },
         { status: 500 }
       )
