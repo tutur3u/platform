@@ -80,7 +80,7 @@ class _Fixture {
   final socket = _Socket();
   final events = StreamController<AssistantLiveSocketEvent>();
   late final AssistantLiveCubit cubit;
-  var captures = 0;
+  int captures = 0;
 
   Future<void> close() async {
     await cubit.close();
