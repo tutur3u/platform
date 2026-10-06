@@ -2847,6 +2847,26 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Canonical Live tool bridge authenticates session/temporary principals, verifies workspace membership and voice tier, validates canonical schemas through permission-aware Mira factory; workspace switching and approval-gated tools unavailable. Legacy Live execution remains compatible."
+    },
+    "api:/api/v1/workspaces/:wsId/ai/memory/settings:apps/web/src/app/api/v1/workspaces/[wsId]/ai/memory/settings/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class live Next handler forwards Bearer or cookie credentials and retains MEMBER/user-workspace authorization. Existing Rust GET settings/items retain token admission, but complete service/method parity remains backlog; Next remains the live API owner."
+    },
+    "api:/api/v1/workspaces/:wsId/ai/memory/items:apps/web/src/app/api/v1/workspaces/[wsId]/ai/memory/items/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class live Next handler forwards Bearer or cookie credentials and retains MEMBER/user-workspace authorization. Existing Rust GET settings/items retain token admission, but complete service/method parity remains backlog; Next remains the live API owner."
+    },
+    "api:/api/v1/workspaces/:wsId/ai/memory/items/:memoryId:apps/web/src/app/api/v1/workspaces/[wsId]/ai/memory/items/[memoryId]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class live Next handler forwards Bearer or cookie credentials and retains MEMBER/user-workspace authorization. Existing Rust GET settings/items retain token admission, but complete service/method parity remains backlog; Next remains the live API owner."
+    },
+    "api:/api/v1/workspaces/:wsId/ai/memory/export:apps/web/src/app/api/v1/workspaces/[wsId]/ai/memory/export/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class live Next handler forwards Bearer or cookie credentials and retains MEMBER/user-workspace authorization. Existing Rust GET settings/items retain token admission, but complete service/method parity remains backlog; Next remains the live API owner."
     }
   }
 }
