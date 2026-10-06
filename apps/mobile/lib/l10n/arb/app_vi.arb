@@ -4412,5 +4412,23 @@
   "workspaceSelectTitle": "Chọn không gian làm việc",
   "workspaceSystemBadge": "Hệ thống",
   "workspaceSystemSection": "Nội bộ",
-  "workspaceTeamSection": "Nhóm làm việc"
+  "workspaceTeamSection": "Nhóm làm việc",
+  "assistantLiveCallAssistant": "Gọi {assistantName}",
+  "@assistantLiveCallAssistant": {
+    "placeholders": {
+      "assistantName": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantLiveCallingAssistant": "Đang gọi {assistantName}",
+  "@assistantLiveCallingAssistant": {
+    "placeholders": {
+      "assistantName": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantLiveCancelCall": "Hủy cuộc gọi"
+
 }

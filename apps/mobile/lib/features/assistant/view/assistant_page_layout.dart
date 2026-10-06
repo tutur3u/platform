@@ -296,15 +296,23 @@ extension _AssistantPageLayout on _AssistantPageState {
                                       slot: ShellDockSlot(
                                         location: Routes.assistant,
                                         workspaceId: currentWorkspace.id,
+                                        expandContent: !isLiveMode,
                                         composing: isLiveMode
-                                            ? !chrome.navigationExpanded
+                                            ? liveState.status ==
+                                                      AssistantLiveConnectionStatus
+                                                          .connected &&
+                                                  !chrome.navigationExpanded
                                             : _isComposerVisible,
                                         content: isLiveMode
-                                            ? _liveCallDock(
-                                                currentWorkspace.id,
-                                                chatState,
-                                                liveState,
-                                              )
+                                            ? liveState.status ==
+                                                      AssistantLiveConnectionStatus
+                                                          .connected
+                                                  ? _liveCallDock(
+                                                      currentWorkspace.id,
+                                                      chatState,
+                                                      liveState,
+                                                    )
+                                                  : const SizedBox.shrink()
                                             : AssistantComposerDock(
                                                 embedded: true,
                                                 localOnly: localLane,
@@ -381,10 +389,10 @@ extension _AssistantPageLayout on _AssistantPageState {
                                                     removeComposerAttachment,
                                               ),
                                         primary: isLiveMode
-                                            ? AssistantNavigationToggle(
-                                                focusNode: _inputFocusNode,
-                                                onToggle:
-                                                    _toggleLiveDockNavigation,
+                                            ? _livePrimaryAction(
+                                                currentWorkspace.id,
+                                                chatState,
+                                                liveState,
                                               )
                                             : _isComposerVisible
                                             ? AssistantNavigationToggle(

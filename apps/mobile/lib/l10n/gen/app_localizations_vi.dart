@@ -10216,4 +10216,17 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get workspaceTeamSection => 'Nhóm làm việc';
+
+  @override
+  String assistantLiveCallAssistant(String assistantName) {
+    return 'Gọi $assistantName';
+  }
+
+  @override
+  String assistantLiveCallingAssistant(String assistantName) {
+    return 'Đang gọi $assistantName';
+  }
+
+  @override
+  String get assistantLiveCancelCall => 'Hủy cuộc gọi';
 }

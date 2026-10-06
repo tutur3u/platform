@@ -37,10 +37,12 @@ class ShellDockSlot {
     required this.content,
     required this.primary,
     this.workspaceId,
+    this.expandContent = true,
   });
   final String location;
   final String? workspaceId;
   final bool composing;
+  final bool expandContent;
   final Widget content;
   final Widget primary;
 }

@@ -19584,6 +19584,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Team workspaces'**
   String get workspaceTeamSection;
+
+  /// No description provided for @assistantLiveCallAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Call {assistantName}'**
+  String assistantLiveCallAssistant(String assistantName);
+
+  /// No description provided for @assistantLiveCallingAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Calling {assistantName}'**
+  String assistantLiveCallingAssistant(String assistantName);
+
+  /// No description provided for @assistantLiveCancelCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel call'**
+  String get assistantLiveCancelCall;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

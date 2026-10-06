@@ -62,6 +62,27 @@ Developer ID signing, and notarization gates.
 
 ## Experience
 
+On mobile, entering Live keeps the shell navbar available until an explicit
+**Call Mira** action starts the call. Preparing, connecting, and reconnecting
+show a calling screen with the real connection status and a cancel action;
+microphone/camera/text/end controls appear only after connection. The connected
+controls replace navigation inside the same shell material at the same adaptive
+navbar width. Expanding navigation or ending the call preserves that surface.
+Text chat keeps its existing composer sizing.
+
+Live capture requests PCM16 mono, gain control, echo cancellation, and noise
+suppression. Android uses the communication source/mode and speaker route. The
+pinned iOS recorder enables native voice processing, and playback preserves its
+existing category/options. Disconnect stops capture and releases the playback
+unit instead of immediately initializing it again; this does not claim global
+iOS audio-session deactivation. Delayed setup/frame work and cancelled call starts are generation fenced; old
+requests cannot connect or clear a restarted call’s pending state.
+Device routes and echo reduction still require device verification, including
+speaker, headset, and Bluetooth calls. Regression coverage includes
+`assistant_live_dock_lifecycle_test.dart`, `assistant_live_calling_view_test.dart`,
+`assistant_live_recorder_test.dart`, and `assistant_live_disconnect_audio_test.dart`.
+
+
 Start or stop Live with the waveform icon in the chat composer. Live keeps the
 same message timeline visible, with a compact gradient visualization and media
 controls above it. Spoken turns, typed prompts, tool calls, and search sources

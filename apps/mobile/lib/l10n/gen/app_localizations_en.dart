@@ -10343,4 +10343,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workspaceTeamSection => 'Team workspaces';
+
+  @override
+  String assistantLiveCallAssistant(String assistantName) {
+    return 'Call $assistantName';
+  }
+
+  @override
+  String assistantLiveCallingAssistant(String assistantName) {
+    return 'Calling $assistantName';
+  }
+
+  @override
+  String get assistantLiveCancelCall => 'Cancel call';
 }

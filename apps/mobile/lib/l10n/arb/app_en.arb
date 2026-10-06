@@ -4409,5 +4409,23 @@
   "workspaceSelectTitle": "Select workspace",
   "workspaceSystemBadge": "System",
   "workspaceSystemSection": "Internal",
-  "workspaceTeamSection": "Team workspaces"
+  "workspaceTeamSection": "Team workspaces",
+  "assistantLiveCallAssistant": "Call {assistantName}",
+  "@assistantLiveCallAssistant": {
+    "placeholders": {
+      "assistantName": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantLiveCallingAssistant": "Calling {assistantName}",
+  "@assistantLiveCallingAssistant": {
+    "placeholders": {
+      "assistantName": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantLiveCancelCall": "Cancel call"
+
 }

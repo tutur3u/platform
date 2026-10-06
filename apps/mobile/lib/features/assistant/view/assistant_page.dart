@@ -36,6 +36,7 @@ import 'package:mobile/features/assistant/local/assistant_remote_chat_actions.da
 import 'package:mobile/features/assistant/local/assistant_remote_scope_guard.dart';
 import 'package:mobile/features/assistant/models/assistant_chat_identity.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
+import 'package:mobile/features/assistant/models/assistant_live_start_gate.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_mobile_screen_context.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
@@ -49,6 +50,7 @@ import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet.
 import 'package:mobile/features/assistant/widgets/assistant_history_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_info_sheet_body.dart';
+import 'package:mobile/features/assistant/widgets/assistant_live_primary_action.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_mode_view.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_stage_card.dart';
 import 'package:mobile/features/assistant/widgets/assistant_scroll_to_bottom_overlay.dart';
@@ -161,7 +163,9 @@ class _AssistantPageState extends State<AssistantPage>
   bool _keepLiveWhileBrowsing = false;
   Future<void> _workspaceDisconnect = Future<void>.value();
   Future<void> _liveBrowsingPreferenceLoad = Future<void>.value();
-  bool _liveStartPending = false;
+  final _liveStartGate = AssistantLiveStartGate();
+  bool get _liveStartPending =>
+      _liveStartGate.pendingFor(_voiceActorScopeEpoch);
   bool _lifecycleDisconnectPending = false;
   bool _appIsForeground = true;
 
@@ -204,8 +208,11 @@ class _AssistantPageState extends State<AssistantPage>
       return;
     }
     _lifecycleDisconnectPending = true;
+    final epoch = _voiceActorScopeEpoch;
+    final attempt = _liveStartGate.currentFor(epoch);
     try {
       await _liveCubit.disconnect();
+      if (epoch == _voiceActorScopeEpoch) _liveStartGate.cancel(attempt);
     } finally {
       _lifecycleDisconnectPending = false;
     }
