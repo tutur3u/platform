@@ -44,10 +44,21 @@ class AssistantLocalChatCubit extends Cubit<AssistantLocalChatState> {
   late String _actor;
   late String _workspace;
   int _version = 0;
+  int _selectionVersion = 0;
+  String? _selectedModeId;
   int _messageSequence = 0;
   late Future<void> _transition = Future<void>.value();
   bool get scopeCurrent => _current;
   int get scopeVersion => _version;
+
+  /// User mode intent survives transient runtime unloads while backgrounded.
+  int get selectionVersion => _selectionVersion;
+  bool get selectedLocalMode => _selectedModeId != null;
+  void _recordSelection(String? modelId, {bool explicit = false}) {
+    if (explicit || modelId != _selectedModeId) ++_selectionVersion;
+    _selectedModeId = modelId;
+  }
+
   bool get _current => !isClosed && _scope != null && _scope == _currentScope();
 
   Future<void> syncWorkspace(String actor, String workspace) async {
@@ -63,6 +74,7 @@ class AssistantLocalChatCubit extends Cubit<AssistantLocalChatState> {
         isScopeCurrent: () => _current && version == _version,
       );
       if (!_current || version != _version) return;
+      _recordSelection(selected);
       await _activate(selected, version, persist: false);
     }, version);
   }
@@ -73,6 +85,7 @@ class AssistantLocalChatCubit extends Cubit<AssistantLocalChatState> {
         !assistantLocalModels.any((model) => model.id == modelId)) {
       return;
     }
+    _recordSelection(modelId, explicit: true);
     final version = ++_version;
     emit(
       AssistantLocalChatState(

@@ -180,4 +180,24 @@ void main() {
       await h.cubit.close();
     },
   );
+  test(
+    'mode epoch survives runtime pause but fences local-to-remote ABA',
+    () async {
+      final h = LocalChatHarness();
+      await h.cubit.syncWorkspace('user', 'workspace');
+      final mode = h.cubit.selectionVersion;
+      final runtime = h.cubit.scopeVersion;
+      expect(h.cubit.selectedLocalMode, isFalse);
+      await h.cubit.invalidate();
+      expect(h.cubit.scopeVersion, greaterThan(runtime));
+      expect(h.cubit.selectionVersion, mode);
+      await h.cubit.syncWorkspace('user', 'workspace');
+      expect(h.cubit.selectionVersion, mode);
+      await h.cubit.select(assistantLocalModels.first.id);
+      await h.cubit.select(null);
+      expect(h.cubit.selectedLocalMode, isFalse);
+      expect(h.cubit.selectionVersion, greaterThan(mode));
+      await h.cubit.close();
+    },
+  );
 }

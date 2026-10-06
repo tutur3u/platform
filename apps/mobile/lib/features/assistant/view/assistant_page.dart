@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:camera/camera.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -79,9 +80,18 @@ part 'assistant_page_history.dart';
 part 'assistant_page_local.dart';
 
 class AssistantPage extends StatefulWidget {
-  const AssistantPage({this.replayToken = 0, super.key});
+  const AssistantPage({
+    this.replayToken = 0,
+    super.key,
+    this.repository,
+    this.preferences,
+    this.currentActor,
+  });
 
   final int replayToken;
+  final AssistantRepository? repository;
+  final AssistantPreferences? preferences;
+  final String? Function()? currentActor;
 
   @override
   State<AssistantPage> createState() => _AssistantPageState();
@@ -89,8 +99,11 @@ class AssistantPage extends StatefulWidget {
 
 class _AssistantPageState extends State<AssistantPage>
     with WidgetsBindingObserver {
-  final _repository = AssistantRepository();
-  final _preferences = AssistantPreferences();
+  late final AssistantRepository _repository =
+      widget.repository ?? AssistantRepository();
+  late final AssistantPreferences _preferences =
+      widget.preferences ?? AssistantPreferences();
+  String? _currentActor() => (widget.currentActor ?? currentCacheUserId)();
   final _liveRepository = AssistantLiveRepository();
   final _voiceCapture = AssistantVoiceCaptureCubit();
   String? _voiceWorkspaceId;
@@ -500,6 +513,7 @@ class _AssistantPageState extends State<AssistantPage>
     }
     final guard = _remoteGuard(wsId);
     if (!guard.current) return;
+    final operation = _remoteOperationGuard(wsId);
     final workspaceVersion = _chatCubit.attachmentScopeVersion;
     if (_chatCubit.state.workspaceId != wsId ||
         _chatCubit.state.status == AssistantChatStatus.restoring) {
@@ -549,6 +563,9 @@ class _AssistantPageState extends State<AssistantPage>
         message: text,
         isCurrent: () =>
             guard.current &&
+            _chatCubit.attachmentScopeVersion == workspaceVersion,
+        isOperationCurrent: () =>
+            operation.current &&
             _chatCubit.attachmentScopeVersion == workspaceVersion,
       )) {
         return;

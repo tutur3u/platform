@@ -2,7 +2,7 @@ part of 'assistant_page.dart';
 
 extension _AssistantPageLocal on _AssistantPageState {
   Object? _localScope() {
-    final actor = currentCacheUserId();
+    final actor = _currentActor();
     if (actor == null || _loadedWorkspaceId == null) return null;
     return (
       actor: actor,
@@ -23,13 +23,23 @@ extension _AssistantPageLocal on _AssistantPageState {
             !_localCubit.state.blocked,
       );
 
+  AssistantRemoteScopeGuard _remoteOperationGuard(String wsId) =>
+      AssistantRemoteScopeGuard(
+        scope: _localScope,
+        version: () => _localCubit.selectionVersion,
+        remote: () =>
+            mounted &&
+            _loadedWorkspaceId == wsId &&
+            !_localCubit.selectedLocalMode,
+      );
+
   void _resumeLocal() {
     if (!_appIsForeground ||
         !TickerMode.valuesOf(context).enabled ||
         _localCubit.scopeCurrent) {
       return;
     }
-    final actor = currentCacheUserId();
+    final actor = _currentActor();
     final workspace = _loadedWorkspaceId;
     if (actor != null && workspace != null) {
       unawaited(_syncLocal(actor, workspace));
@@ -38,15 +48,15 @@ extension _AssistantPageLocal on _AssistantPageState {
 
   Future<void> _syncLocal(String actor, String workspace) async {
     final scope = _localScope();
-    // Publish the loading fence synchronously before awaiting remote teardown.
-    await Future.wait([
-      _localCubit.syncWorkspace(actor, workspace),
-      _chatCubit.stopStreaming(discardQueued: true),
-    ]);
+    // Runtime hydration blocks new interactions, but an admitted remote reply
+    // keeps its actor/workspace/mode lease through a transient foreground pause.
+    await _localCubit.syncWorkspace(actor, workspace);
     if (!mounted || scope == null || scope != _localScope()) return;
     if (!mounted || !_localCubit.scopeCurrent || !_localCubit.state.local) {
       return;
     }
+    await _chatCubit.stopStreaming(discardQueued: true);
+    if (!mounted || scope != _localScope()) return;
     await _voiceCapture.cancel();
     await _liveCubit.disconnect();
     if (mounted && _localCubit.scopeCurrent) {
@@ -99,8 +109,15 @@ extension _AssistantPageLocal on _AssistantPageState {
   };
 
   Future<void> _retryRemote(AssistantShellState shell) async {
-    final guard = _remoteGuard(shell.workspace?.id ?? '');
-    await retryAssistantChat(_chatCubit, shell, isCurrent: () => guard.current);
+    final wsId = shell.workspace?.id ?? '';
+    final guard = _remoteGuard(wsId);
+    final operation = _remoteOperationGuard(wsId);
+    await retryAssistantChat(
+      _chatCubit,
+      shell,
+      isCurrent: () => guard.current,
+      isOperationCurrent: () => operation.current,
+    );
   }
 
   Future<void> _selectRemoteModel(AssistantGatewayModel model) async {

@@ -9,7 +9,7 @@ extension _AssistantPageWorkspace on _AssistantPageState {
     ++_voiceActorScopeEpoch;
     unawaited(_voiceCapture.cancel());
     _loadedWorkspaceId = workspace.id;
-    final actor = currentCacheUserId();
+    final actor = _currentActor();
     if (actor != null) {
       unawaited(_syncLocal(actor, workspace.id));
     } else {
