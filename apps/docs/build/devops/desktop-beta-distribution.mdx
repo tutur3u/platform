@@ -555,3 +555,18 @@ environment revision or active version dismisses an old confirmation. The
 independent gate badges remain visible for all four global/platform combinations.
 `desktop-vault-client.test.tsx` exercises real QueryClient confirmation, CAS,
 credential-free disable, concurrent dispatch, and actor-ABA publication.
+
+### Private macOS signing failure diagnostics
+
+The macOS signer captures child output privately. Failed `codesign` commands
+publish only an allowlisted category, artifact kind and bounded numeric exit
+status, alongside the fixed signing stage. Categories cover keychain access,
+identity availability, certificate trust, unsigned components, bundle format,
+resource metadata and timestamp availability; unmatched output is `unknown`.
+Paths, signing identities, command arguments, raw output and private inputs never
+become public error details. This classification preserves failure, cleanup,
+strict signature/team verification and required notarization gates. It improves
+next-run diagnosis without establishing or repairing the original signing cause.
+Regression coverage includes real failing child processes, private-output
+suppression and failure cleanup in `sign-macos.test.mjs`, plus the finite
+classification contract in `codesign-diagnostic.test.mjs`.
