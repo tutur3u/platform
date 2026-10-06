@@ -198,3 +198,15 @@ Coverage: `safe_error_diagnostics_test.dart`, `api_client_stream_error_test.dart
 `timezone_safe_diagnostics_test.dart`. These tests establish local capture,
 clipboard privacy and cooldown behavior; they do not establish the cause of a
 production 429 or stopped reply.
+
+
+## Component localization fallback
+
+The mobile app supports English and Vietnamese. App and Material strings keep
+the selected language, including native text actions. The installed Shad
+component library supplies English resources only, so its built-in control
+strings use an explicit English fallback in Vietnamese sessions. This does not
+expand the app's supported locales or claim those component strings are
+translated. The shared widget-test app uses the same production delegate.
+Coverage: `shadcn_localizations_fallback_test.dart` renders the actual Shad date
+picker and Material/app strings in both locales without missing delegates.

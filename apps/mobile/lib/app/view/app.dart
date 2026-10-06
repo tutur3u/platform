@@ -18,6 +18,7 @@ import 'package:mobile/core/router/deep_links.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
 import 'package:mobile/core/widgets/dismiss_keyboard_on_pointer_down.dart';
+import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
@@ -489,7 +490,7 @@ class _AppState extends State<App> {
                     locale: localeState.locale,
                     localizationsDelegates: const [
                       ...AppLocalizations.localizationsDelegates,
-                      shad.ShadcnLocalizations.delegate,
+                      AppShadcnLocalizationsDelegate(),
                     ],
                     supportedLocales: AppLocalizations.supportedLocales,
                     routerConfig: _router,
