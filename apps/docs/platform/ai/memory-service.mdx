@@ -105,6 +105,38 @@ rollout. Product ingestion should persist concise summaries only; do not ingest
 raw files or binaries unless the source is user-owned, enabled, and explicitly
 appropriate for memory.
 
+## Mobile Assistant Settings
+
+The mobile Assistant settings hub separates personal assistant identity from
+workspace memory. Name, tone, personality, and boundaries update the current
+user's existing Mira soul. Memory controls address that user's current workspace
+and list Mira memories only. Opening settings never changes consent. The global
+memory toggle preserves all existing product overrides; an existing disabled
+Mira override remains visible rather than implying that the global toggle enables
+Mira. An unavailable consent read is shown as unavailable, with retry, rather than
+inventing an enabled or disabled state.
+
+Memory viewing, confirmed deletion, and explicit export use the existing internal
+API. A row disappears only after the server confirms deletion. Export is shared
+only after the request completes within the same authorized settings scope. These
+controls create no offline privacy replay or separate memory store. Editing a
+saved memory is not yet supported by this API and remains a separate backend
+feature; the app must not approximate editing by deleting and recreating a memory.
+Meet's separate opt-in memory remains independent.
+
+Settings retain prior confirmed values when a write fails and expose a localized
+retryable error. Account or workspace changes invalidate delayed reads, writes,
+and exports. Returning from settings refreshes the assistant soul from the server;
+request generations and the page's actor epoch prevent older responses and
+account/workspace ABA transitions from replacing the current assistant identity.
+Regression coverage lives in `assistant_personal_settings_repository_test.dart`,
+`assistant_personal_settings_cubit_test.dart`,
+`assistant_personal_settings_section_test.dart`, and
+`assistant_soul_refresh_test.dart`. These tests cover API receipts, product
+preservation, delayed scope changes, English/Vietnamese controls, and large text
+with a visible keyboard; they do not establish native-device or deployed runtime
+proof.
+
 ## Consolidating Mira memories
 
 The `merge_memories` tool preserves source memories until the sidecar confirms

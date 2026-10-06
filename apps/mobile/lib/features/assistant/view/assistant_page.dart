@@ -30,6 +30,7 @@ import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_live_socket.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/assistant/data/assistant_settings_refresh.dart';
 import 'package:mobile/features/assistant/local/assistant_local_chat_cubit.dart';
 import 'package:mobile/features/assistant/local/assistant_local_chat_state.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model.dart';
@@ -125,6 +126,7 @@ class _AssistantPageState extends State<AssistantPage>
   late final AssistantShellCubit _shellCubit = AssistantShellCubit(
     repository: _repository,
     preferences: _preferences,
+    currentScopeToken: () => _voiceActorScopeEpoch,
   );
   late final AssistantChatCubit _chatCubit = AssistantChatCubit(
     repository: _repository,

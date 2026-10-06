@@ -10342,4 +10342,85 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsLinkOpenError => 'Không thể mở liên kết này. Vui lòng thử lại.';
+
+  @override
+  String get assistantPersonalityTitle => 'Tính cách';
+
+  @override
+  String get assistantPersonalityName => 'Tên trợ lý';
+
+  @override
+  String get assistantPersonalityNameRequired => 'Nhập tên trợ lý';
+
+  @override
+  String get assistantPersonalityTone => 'Giọng điệu';
+
+  @override
+  String get assistantPersonalityVerbosity => 'Độ dài trả lời';
+
+  @override
+  String get assistantPersonalityDescription => 'Tính cách';
+
+  @override
+  String get assistantPersonalityBoundaries => 'Giới hạn';
+
+  @override
+  String get assistantPersonalityBalanced => 'Cân bằng';
+
+  @override
+  String get assistantPersonalityWarm => 'Ấm áp';
+
+  @override
+  String get assistantPersonalityFriendly => 'Thân thiện';
+
+  @override
+  String get assistantPersonalityCasual => 'Thoải mái';
+
+  @override
+  String get assistantPersonalityFormal => 'Trang trọng';
+
+  @override
+  String get assistantPersonalityPlayful => 'Vui vẻ';
+
+  @override
+  String get assistantPersonalityProfessional => 'Chuyên nghiệp';
+
+  @override
+  String get assistantPersonalityThorough => 'Đầy đủ';
+
+  @override
+  String get assistantPersonalityConcise => 'Súc tích';
+
+  @override
+  String get assistantPersonalityBrief => 'Ngắn gọn';
+
+  @override
+  String get assistantPersonalityDetailed => 'Chi tiết';
+
+  @override
+  String get assistantMemoryTitle => 'Bộ nhớ';
+
+  @override
+  String get assistantMemoryCollection => 'Lưu ký ức';
+
+  @override
+  String get assistantMemoryWorkspaceScope => 'Bộ nhớ của bạn trong không gian làm việc này';
+
+  @override
+  String get assistantMemoryProductDisabled => 'Tính năng lưu ký ức của Mira đang tắt trong cài đặt sản phẩm.';
+
+  @override
+  String get assistantMemoryEmpty => 'Chưa có ký ức được lưu';
+
+  @override
+  String get assistantMemoryDeleteTitle => 'Xóa ký ức?';
+
+  @override
+  String get assistantMemoryDeleteDescription => 'Xóa ký ức đã lưu này khỏi bộ nhớ không gian làm việc của bạn.';
+
+  @override
+  String get assistantMemoryExport => 'Xuất ký ức';
+
+  @override
+  String get assistantPersonalSettingsError => 'Không thể hoàn tất thay đổi. Hãy thử lại.';
 }
