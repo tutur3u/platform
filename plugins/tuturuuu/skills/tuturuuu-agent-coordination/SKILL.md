@@ -24,6 +24,9 @@ For multi-lane work spanning PR/CI/delivery wakes, use
 `references/program-orchestration.md`: own the program board and acceptance,
 relay complete briefs, drain completed handoffs, and reconcile exact-head proof.
 Do not spawn additional agents without applicable delegation authority.
+For assigned ongoing idea/bug/feature intake, read `references/request-backlog.md`:
+capture each outcome before dispatch, recover durable requests on every wake, and
+keep implemented work distinct from verified delivery.
 
 Before staging or committing, inspect existing staged paths and claim the window:
 

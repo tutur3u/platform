@@ -104,3 +104,19 @@ Connectors such as Google Drive, OneDrive, and Notion are disabled for the first
 rollout. Product ingestion should persist concise summaries only; do not ingest
 raw files or binaries unless the source is user-owned, enabled, and explicitly
 appropriate for memory.
+
+## Consolidating Mira memories
+
+The `merge_memories` tool preserves source memories until the sidecar confirms
+that the replacement has persisted (`done` with a memory ID). Skipped, queued,
+missing, or failed replacement receipts never authorize original deletion.
+A successful replacement does not imply that every deletion succeeded: the
+result includes its replacement ID/key, confirmed deleted keys, and retained
+keys. Retry only retained keys; never claim the whole merge completed when
+any deletion remains unconfirmed. Duplicate source keys are processed once,
+and the replacement key is never deleted.
+
+This rule applies to Mira's existing user/workspace memory tool. It does not
+admit background consolidation or combine Meet's separately opted-in private
+Live memory with workspace memory. Regression coverage lives in
+`packages/ai/src/tools/executors/memory.test.ts`.
