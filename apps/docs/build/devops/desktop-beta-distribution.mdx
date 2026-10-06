@@ -426,8 +426,8 @@ that actor for permission checks; personal and non-root redirects are preserved.
 
 Windows and macOS drafts use empty replacement inputs and configured-name status
 without saved-value readback. Activation requires current revision readiness and
-still repeats certificate checks on the server. The UI never enables vault
-delivery. Newly issued seven-day tokens are masked, shown once, discarded on
+still repeats certificate checks on the server. Operators can explicitly change platform admission with the audited controls
+described below; the UI never changes the global delivery gate. Newly issued seven-day tokens are masked, shown once, discarded on
 dismissal or actor/page lifetime changes, and cannot be recovered from state.
 A definitive permission denial hides retained metadata; revision conflicts reload
 current state while retaining the operator's replacement input for retry.
@@ -537,3 +537,14 @@ Regression coverage: `desktop-deployment-admission.sql` exercises permission, CA
 freshness, disable/re-enable and legacy-lease denial; `admission.test.ts` and
 `request.test.ts` cover credential-free disable, trusted receipts, fresh material,
 sanitized failures, and strict browser inputs.
+
+The operator panel offers a confirmation before enabling platform admission. It
+requires the environment's real revision and matching validated active version;
+missing rollout metadata, stale actor refreshes, or an in-flight mutation disable
+controls. Disable remains available without active credentials and while the
+global gate is off. Both controls use the actor-local mutation boundary, reload
+on revision conflicts, and discard late results after actor changes. A changed
+environment revision or active version dismisses an old confirmation. The
+independent gate badges remain visible for all four global/platform combinations.
+`desktop-vault-client.test.tsx` exercises real QueryClient confirmation, CAS,
+credential-free disable, concurrent dispatch, and actor-ABA publication.
