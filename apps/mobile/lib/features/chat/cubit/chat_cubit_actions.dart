@@ -44,6 +44,8 @@ extension ChatCubitActions on ChatCubit {
     String? modelId,
     String? systemPrompt,
   }) async {
+    if (!_scopeActive) return null;
+    final requestVersion = _loadToken;
     final wsId = state.wsId;
     if (wsId == null) return null;
 
@@ -59,6 +61,9 @@ extension ChatCubitActions on ChatCubit {
         modelId: modelId,
         systemPrompt: systemPrompt,
       );
+      if (!_scopeActive || state.wsId != wsId || _loadToken != requestVersion) {
+        return null;
+      }
       _upsertConversation(conversation, select: true);
       if (_isPendingChatItem(wsId, conversation.id)) {
         _emitState(
@@ -73,7 +78,9 @@ extension ChatCubitActions on ChatCubit {
       } else {
         await selectConversation(conversation.id, forceRefresh: true);
       }
-      return conversation;
+      return _scopeActive && state.wsId == wsId && _loadToken == requestVersion
+          ? conversation
+          : null;
     } on ApiException catch (error) {
       _emitState(state.copyWith(error: error.message));
       return null;
@@ -81,6 +88,8 @@ extension ChatCubitActions on ChatCubit {
   }
 
   Future<void> sendMessage(String content) async {
+    if (!_scopeActive) return;
+    final requestVersion = _loadToken;
     final wsId = state.wsId;
     final conversation = state.selectedConversation;
     final trimmed = content.trim();
@@ -105,6 +114,12 @@ extension ChatCubitActions on ChatCubit {
     );
 
     await _sendSubscription?.cancel();
+    if (!_scopeActive ||
+        state.wsId != wsId ||
+        _loadToken != requestVersion ||
+        state.selectedConversationId != conversation.id) {
+      return;
+    }
     _sendSubscription = _repository
         .sendMessageStream(
           wsId,
@@ -134,6 +149,7 @@ extension ChatCubitActions on ChatCubit {
   }
 
   Future<void> uploadAttachment(PlatformFile file) async {
+    if (!_scopeActive) return;
     final wsId = state.wsId;
     final conversationId = state.selectedConversationId;
     if (wsId == null ||
@@ -176,6 +192,7 @@ extension ChatCubitActions on ChatCubit {
   }
 
   Future<void> toggleReaction(ChatMessage message, String emoji) async {
+    if (!_scopeActive) return;
     final wsId = state.wsId;
     if (wsId == null ||
         (state.selectedConversation?.isReadOnlyAgent ?? false)) {
@@ -195,6 +212,7 @@ extension ChatCubitActions on ChatCubit {
   }
 
   Future<void> togglePin(ChatConversation conversation) async {
+    if (!_scopeActive) return;
     final wsId = state.wsId;
     if (wsId == null || conversation.isReadOnlyAgent) return;
     try {
@@ -214,6 +232,7 @@ extension ChatCubitActions on ChatCubit {
   }
 
   Future<void> deleteConversation(ChatConversation conversation) async {
+    if (!_scopeActive) return;
     final wsId = state.wsId;
     if (wsId == null || conversation.isReadOnlyAgent) return;
     try {
@@ -225,6 +244,7 @@ extension ChatCubitActions on ChatCubit {
   }
 
   Future<void> searchDirectory(String query) async {
+    if (!_scopeActive) return;
     final wsId = state.wsId;
     if (wsId == null || query.trim().length < 2) {
       _emitState(state.copyWith(directoryResults: const []));
@@ -239,6 +259,7 @@ extension ChatCubitActions on ChatCubit {
   }
 
   Future<void> searchMessages(String query) async {
+    if (!_scopeActive) return;
     final requestVersion = ++_searchRequestVersion;
     final wsId = state.wsId;
     if (wsId == null || query.trim().length < 2) {
@@ -260,6 +281,7 @@ extension ChatCubitActions on ChatCubit {
   }
 
   Future<void> loadFriendRequests() async {
+    if (!_scopeActive) return;
     final wsId = state.wsId;
     if (wsId == null) return;
     try {
@@ -273,6 +295,7 @@ extension ChatCubitActions on ChatCubit {
   }
 
   Future<void> createFriendRequest(String email) async {
+    if (!_scopeActive) return;
     final wsId = state.wsId;
     if (wsId == null || email.trim().isEmpty) return;
     try {
@@ -287,6 +310,7 @@ extension ChatCubitActions on ChatCubit {
     ChatFriendRequest request,
     ChatFriendRequestStatus status,
   ) async {
+    if (!_scopeActive) return;
     final wsId = state.wsId;
     if (wsId == null) return;
     try {
@@ -298,6 +322,7 @@ extension ChatCubitActions on ChatCubit {
   }
 
   Future<void> revokeFriendRequest(ChatFriendRequest request) async {
+    if (!_scopeActive) return;
     final wsId = state.wsId;
     if (wsId == null) return;
     try {
@@ -309,6 +334,7 @@ extension ChatCubitActions on ChatCubit {
   }
 
   Future<void> loadConversationPanels() async {
+    if (!_scopeActive) return;
     final wsId = state.wsId;
     final conversation = state.selectedConversation;
     if (wsId == null || conversation == null || conversation.isReadOnlyAgent) {
@@ -355,6 +381,7 @@ extension ChatCubitActions on ChatCubit {
     String? systemPrompt,
     ChatAiThinkingMode? thinkingMode,
   }) async {
+    if (!_scopeActive) return;
     final wsId = state.wsId;
     final conversation = state.selectedConversation;
     if (wsId == null || conversation == null || conversation.isReadOnlyAgent) {

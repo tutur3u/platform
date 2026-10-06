@@ -1608,3 +1608,5 @@ callbacks before subscription cancellation finishes; actor and cache-resource
 lifetime checks also fence delayed results. This preserves the existing shared
 shell dock and API-backed workspace chat behavior. The actual host account-switch
 and delayed-cancellation regressions are in `chat_actor_lifetime_test.dart`.
+
+Chat rejects retained-cubit API dispatch after its actor lifetime ends. A send waiting for previous stream cancellation rechecks actor, workspace and selected conversation before starting a new request; stale conversation creation results do not trigger selection reads or return a navigable result. Already dispatched server writes are not cancelled by this client boundary. Deferred cancellation and creation regressions cover these rules.
