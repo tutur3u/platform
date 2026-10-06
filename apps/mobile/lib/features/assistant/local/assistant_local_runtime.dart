@@ -76,7 +76,7 @@ class AssistantLocalRuntime {
       if (!current()) return;
       _session = session;
       // Bound context before calling native code; tokenization enforces the
-      // model's 2048-token window, with a separate 256 output-token limit.
+      // configured catalog window, with a separate 256 output-token limit.
       var characters = 0;
       final selected = <LocalChatTurn>[];
       for (final turn in history.reversed) {

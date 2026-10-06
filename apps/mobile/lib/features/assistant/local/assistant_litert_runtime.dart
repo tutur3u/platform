@@ -1,22 +1,40 @@
+import 'dart:io';
+
 import 'package:flutter_edge_ai/core/registry/runtime_config.dart';
 import 'package:flutter_edge_ai/flutter_edge_ai.dart';
 import 'package:flutter_edge_ai_litertlm/flutter_edge_ai_litertlm.dart';
+import 'package:mobile/features/assistant/local/assistant_local_model.dart';
 import 'package:mobile/features/assistant/local/assistant_local_runtime.dart';
+
+typedef AssistantNativeModelFactory =
+    Future<InferenceModel> Function(
+      InferenceModelSpec spec,
+      RuntimeConfig config,
+    );
 
 /// Direct engine creation avoids the plugin's global active-model preference.
 /// Only a previously verified, app-owned file path is supplied by the manager.
 Future<LocalInferenceModel> loadAssistantLiteRtModel(
-  String verifiedPath,
-) async {
-  final model = await const LiteRtLmEngine().createModel(
+  String verifiedPath, {
+  AssistantNativeModelFactory? createModel,
+}) async {
+  final filename = File(verifiedPath).uri.pathSegments.last;
+  final matches = assistantLocalModels.where(
+    (model) => filename == '${model.id}.litertlm',
+  );
+  if (matches.length != 1) {
+    throw ArgumentError('Unknown app-owned local model');
+  }
+  final configuration = matches.single;
+  final model = await (createModel ?? const LiteRtLmEngine().createModel)(
     InferenceModelSpec(
-      name: 'Mira local text',
+      name: configuration.name,
       modelSource: FileSource(verifiedPath),
       modelType: ModelType.general,
       fileType: ModelFileType.litertlm,
     ),
     RuntimeConfig(
-      maxTokens: 2048,
+      maxTokens: configuration.contextTokens,
       modelPath: verifiedPath,
       preferredBackend: PreferredBackend.cpu,
       maxConcurrentSessions: 1,
