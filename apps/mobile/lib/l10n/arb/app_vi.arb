@@ -4500,5 +4500,14 @@
   "assistantMemoryDeleteTitle": "Xóa ký ức?",
   "assistantMemoryDeleteDescription": "Xóa ký ức đã lưu này khỏi bộ nhớ không gian làm việc của bạn.",
   "assistantMemoryExport": "Xuất ký ức",
-  "assistantPersonalSettingsError": "Không thể hoàn tất thay đổi. Hãy thử lại."
+  "assistantPersonalSettingsError": "Không thể hoàn tất thay đổi. Hãy thử lại.",
+  "assistantMemoryEditTitle": "Chỉnh sửa bộ nhớ",
+  "assistantMemoryEditText": "Nội dung bộ nhớ",
+  "assistantMemoryLatest": "Phiên bản đang lưu",
+  "assistantMemoryEditConflict": "Bộ nhớ này đã thay đổi. Xem phiên bản mới nhất trước khi lưu thay đổi của bạn.",
+  "assistantMemoryEditDenied": "Bạn không còn quyền truy cập bộ nhớ này.",
+  "assistantMemoryEditMissing": "Bộ nhớ này không còn khả dụng.",
+  "assistantMemoryEditAuditWarning": "Thay đổi đã được lưu, nhưng chưa thể xác nhận bản ghi hoạt động. Không cần lưu lại.",
+  "assistantMemoryReviewLatest": "Xem phiên bản mới nhất",
+  "assistantMemorySaveChanges": "Lưu thay đổi của tôi"
 }

@@ -19986,6 +19986,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not complete this change. Try again.'**
   String get assistantPersonalSettingsError;
+
+  /// No description provided for @assistantMemoryEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit memory'**
+  String get assistantMemoryEditTitle;
+
+  /// No description provided for @assistantMemoryEditText.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory'**
+  String get assistantMemoryEditText;
+
+  /// No description provided for @assistantMemoryLatest.
+  ///
+  /// In en, this message translates to:
+  /// **'Current saved version'**
+  String get assistantMemoryLatest;
+
+  /// No description provided for @assistantMemoryEditConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'This memory changed. Review the latest version before saving your changes.'**
+  String get assistantMemoryEditConflict;
+
+  /// No description provided for @assistantMemoryEditDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'You no longer have access to this memory.'**
+  String get assistantMemoryEditDenied;
+
+  /// No description provided for @assistantMemoryEditMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'This memory is no longer available.'**
+  String get assistantMemoryEditMissing;
+
+  /// No description provided for @assistantMemoryEditAuditWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Your changes are saved, but the activity record could not be confirmed. Do not save them again.'**
+  String get assistantMemoryEditAuditWarning;
+
+  /// No description provided for @assistantMemoryReviewLatest.
+  ///
+  /// In en, this message translates to:
+  /// **'Review latest version'**
+  String get assistantMemoryReviewLatest;
+
+  /// No description provided for @assistantMemorySaveChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Save my changes'**
+  String get assistantMemorySaveChanges;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

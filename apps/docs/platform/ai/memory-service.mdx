@@ -241,3 +241,27 @@ prior actions, membership and service-only access; the existing Programming
 database contract workflow runs it after complete schema replay. Local wiring
 checks are not PostgreSQL execution proof. Exact-head CI schema replay, typegen,
 and web build remain required; the mobile editor is a separate dependent packet.
+
+
+### Mobile memory editor
+
+Mira's Assistant Settings memory list opens a compact, keyboard-aware editor.
+Opening an item reads canonical content and its current opaque revision; the list
+preview is not the mutation source of truth. Editing preserves the original ID
+and uses the scoped PATCH route, without delete-and-create replacement. Manual
+editing does not enable automatic collection or expand Meet memory scope.
+
+A conflict preserves the draft and requires a successful reread of the saved
+version before an explicit retry. Permission and missing-item failures remain
+visible. A confirmed save with an unconfirmed audit record stays open with a
+warning and does not resubmit the unchanged content. Text typed while a save is
+pending remains editable against the returned revision. Closing the editor does
+not promise cancellation of an already admitted server write.
+
+Account/workspace changes cancel the modal, including a switch away and back.
+Once its route is dismissed, a late response cannot update the list or pop the
+underlying page. Confirmed list updates preserve newer consent/personality state
+and fence older list reads. Regression tests cover these held-response boundaries,
+conflict review, audit warnings, English/Vietnamese labels, enlarged text and
+48-pixel actions. Actual native paste gestures run through the global keyboard
+wrapper on Android/iOS widget targets; these are not physical-device proof.
