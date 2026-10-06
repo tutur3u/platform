@@ -11,6 +11,7 @@ export const ci = {
   'check-migration-timestamps.yml': true,
   'check-migrations.yml': true,
   'programming-database-contract.yaml': true,
+  'time-tracker-control-contract.yaml': true,
   'programming-app-builds.yaml': true,
   'playground-runtime-acceptance.yaml': true,
   'codecov.yaml': true,
