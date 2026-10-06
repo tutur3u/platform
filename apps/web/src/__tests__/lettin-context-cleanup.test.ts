@@ -9,7 +9,7 @@ afterEach(() => {
 const context = (close: () => Promise<void>) =>
   ({ close }) as unknown as BrowserContext;
 
-test.each(['import', 'Markdown'] as const)(
+test.each(['import', 'Markdown', 'profile'] as const)(
   '%s cleanup failure preserves the original assertion and safe logs',
   async (kind) => {
     const original = new Error('original assertion');
@@ -48,7 +48,7 @@ test('a successful assertion still fails when owned context cleanup fails', asyn
   ).rejects.toBe(failure);
 });
 
-test.each(['import', 'Markdown'] as const)(
+test.each(['import', 'Markdown', 'profile'] as const)(
   '%s hung cleanup is bounded and retains the primary error',
   async (kind) => {
     vi.useFakeTimers();

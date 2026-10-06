@@ -13,6 +13,13 @@ wall-clock times remain stable across DST.
 Nonexistent spring-forward slots are skipped; repeated fall-back times use the
 earlier instant. All-day end dates are exclusive midnight boundaries.
 
+Expansion visits at most 36,600 local dates from the anchor, including history
+needed to preserve counts and exception identities. Uncounted rules reject an
+oversized effective range before generating occurrences; an inclusive end date
+caps that range, while count rules may finish earlier and keep the same scan
+limit. Far-away original exception slots also contribute to the effective range.
+`calendar-recurrence.test.ts` covers early rejection and count/end-date behavior.
+
 Generated occurrences open a dedicated editor. **Only this occurrence**,
 **Entire series**, and **This and following occurrences** are explicit choices,
 defaulting to this occurrence. Requests preserve its immutable original slot and

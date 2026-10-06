@@ -8,6 +8,14 @@ GitHub Actions is the primary automation plane for Tuturuuu.
 
 ## Validation and Delivery Evidence
 
+Focused source-only TypeScript checks must use the source entry corresponding to
+its package `exports` artifact and retain the repository compiler flags,
+including `noUncheckedIndexedAccess`. When a package contains both a same-named
+file and a directory index, mapping the directory can hide missing public
+exports. Regression tests for shared helpers should import through the shipped
+entry; the Infrastructure desktop public-entry test covers this boundary. Resolve source fixtures relative to `import.meta.dirname`,
+so workspace-owned test runs read the same files as root runs.
+
 - Run tests from the owning workspace with its actual config, dependencies and
   providers. Root-hoisted packages or aliases can conceal undeclared dependencies
   and invalid test boundaries. If a narrow source-alias fixture is needed, record
@@ -429,6 +437,16 @@ prevent them. Setup exhausting the runtime budget fails before starting tests.
 Validate this policy with `node --test scripts/ci/e2e-runtime-budget.test.js`.
 
 ### Lettin E2E fixture and browser diagnostics
+
+The canonical identity/About persistence check uses the same fixed browser phases
+and bounded context cleanup as the Markdown/import checks. Each complete phase
+has a 60-second cap within the existing 180-second test budget; cleanup retains
+the original action/assertion failure even if closing the browser context fails.
+Use the last entered profile phase to locate a stalled navigation, banner upload,
+save, or reload. A context-close error after the overall timeout is insufficient
+to identify the failing profile operation. Coverage is in
+`lettin-browser-phase.test.ts` and `lettin-context-cleanup.test.ts`; successful
+unit checks do not prove authenticated profile persistence in CI.
 
 Lettin fixture phases print fixed names for account creation, D1 migration and
 seeding, browser context/cookie installation, and cleanup. Timed-out owned fixture

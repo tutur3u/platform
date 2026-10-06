@@ -1,8 +1,9 @@
+import { Temporal } from '@js-temporal/polyfill';
 import type {
   CalendarRecurrenceAnchor,
   CalendarRecurrenceRule,
 } from '@tuturuuu/types/primitives/calendar-recurrence';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   CalendarRecurrenceRuleSchema,
   expandCalendarRecurrence,
@@ -421,6 +422,36 @@ describe('bounded timezone-aware occurrence expansion', () => {
       '100 years'
     );
     expect(() => expand(daily, { limit: 1001 })).toThrow('1–1000');
+  });
+  it('rejects oversized effective history before walking any dates', () => {
+    const add = vi.spyOn(Temporal.PlainDate.prototype, 'add');
+    try {
+      for (const options of [
+        { to: '2200-01-01T00:00:00Z' },
+        {
+          exceptions: [
+            { originalStartLocal: '2200-01-01T09:00:00', cancelled: true },
+          ],
+        },
+      ]) {
+        expect(() => expand(daily, options)).toThrow('100 years');
+      }
+      expect(add).not.toHaveBeenCalled();
+    } finally {
+      add.mockRestore();
+    }
+  });
+  it('lets COUNT and a nearer UNTIL terminate a far-future viewport', () => {
+    for (const end of [
+      { type: 'count', count: 2 },
+      { type: 'until', date: '2026-01-02' },
+    ] as const) {
+      const result = expand({ ...daily, end }, { to: '2200-01-01T00:00:00Z' });
+      expect(
+        result.occurrences.map((event) => event.originalStartLocal)
+      ).toEqual(['2026-01-01T09:00:00', '2026-01-02T09:00:00']);
+      expect(result.truncated).toBe(false);
+    }
   });
   it('uses 23-hour all-day duration across DST with exclusive end boundary', () => {
     const result = expand(

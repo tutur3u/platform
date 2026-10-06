@@ -405,7 +405,12 @@ formatting behavior, or repo-wide verification.
 - Do not patch unrelated packages just because `bun check` fails outside the
   owned scope. Run focused verification and report the blocker.
 - Package subpath imports must be covered by the package `exports`; do not
-  assume a directory `index.ts` is importable through a bare subpath.
+  assume a directory `index.ts` is importable through a bare subpath. For focused
+  source-only TypeScript checks, map each subpath to the source entry that
+  produces its exported artifact (for example, `infrastructure.ts` rather than
+  `infrastructure/index.ts`). Preserve the repository compiler flags, including
+  `noUncheckedIndexedAccess`; a different barrel or weaker flags can hide CI
+  failures. Exercise changed public helpers through that entry in regressions.
 
 ## Plugin Changes
 
