@@ -1249,7 +1249,7 @@
     "api:/api/v1/users/me/banner/upload-url:apps/web/src/app/api/v1/users/me/banner/upload-url/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "First-class actor-derived banner tickets preserve existing quotas, stable immutable operation paths and committed replay receipts. Signed non-upsert tokens are returned only after durable expiry lease recording. Rust endpoint parity pending."
+      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Native/offline PUT compatibility retained. Rust parity pending."
     },
     "api:/api/v1/users/me/banner/upload:apps/web/src/app/api/v1/users/me/banner/upload/route.ts": {
       "status": "legacy-next",
@@ -2822,6 +2822,11 @@
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles GET/POST browser-state recovery with no-store HTML, same-origin POST protection, Clear-Site-Data, redirect, and Supabase auth cookie clearing behavior."
+    },
+    "api:/api/v1/users/me/banner/upload-url:apps/web/src/app/api/v1/users/me/banner/upload-url/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class actor-derived banner tickets preserve existing quotas, stable immutable operation paths and committed replay receipts. Signed non-upsert tokens are returned only after durable expiry lease recording. Rust endpoint parity pending."
     },
     "api:/api/v1/users/me/banner:apps/web/src/app/api/v1/users/me/banner/route.ts": {
       "status": "legacy-next",
