@@ -22,6 +22,7 @@ import '../models/assistant_models.dart';
 import 'assistant_calendar_insight.dart';
 import 'assistant_history_message.dart';
 import 'assistant_history_parts.dart';
+import 'assistant_soul_name_writer.dart';
 import 'assistant_stream_parser.dart';
 
 part 'assistant_repository_preferences.dart';
@@ -95,13 +96,6 @@ class AssistantRepository {
       throw const FormatException('Invalid assistant chat cache payload.');
     }
     return AssistantRestoredChat.fromJson(Map<String, dynamic>.from(json));
-  }
-
-  static AssistantSoul _decodeSoulCache(Object? json) {
-    if (json is! Map) {
-      throw const FormatException('Invalid assistant soul cache payload.');
-    }
-    return AssistantSoul.fromJson(Map<String, dynamic>.from(json));
   }
 
   static String _decodePersonalWorkspaceCache(Object? json) {
