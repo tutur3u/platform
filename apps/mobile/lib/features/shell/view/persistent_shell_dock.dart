@@ -9,6 +9,7 @@ class PersistentShellDock extends StatefulWidget {
     required this.content,
     this.navigationWidth = 264,
     this.composing = false,
+    this.expandContent = true,
     this.primary,
     this.secondary,
     super.key,
@@ -16,6 +17,7 @@ class PersistentShellDock extends StatefulWidget {
   final Widget content;
   final double navigationWidth;
   final bool composing;
+  final bool expandContent;
   final Widget? primary;
   final Widget? secondary;
   @override
@@ -29,7 +31,7 @@ class _PersistentShellDockState extends State<PersistentShellDock> {
       // Animate the unconstrained navigation/composer width independently.
       // The rail's CURRENT occupied action slots supply the actual available
       // width below, so removal cannot widen the composer before actions hide.
-      final target = widget.composing
+      final target = widget.composing && widget.expandContent
           ? constraints.maxWidth
           : widget.navigationWidth.clamp(0.0, constraints.maxWidth);
       return TweenAnimationBuilder<double>(

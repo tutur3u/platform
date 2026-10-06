@@ -279,7 +279,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     _requestVersion++;
     await _stopInputs();
     await _socket.disconnect();
-    await _audioPlayer.clear();
+    await _audioPlayer.pause();
     _clearAssistantActivity();
 
     final wsId = state.workspaceId;

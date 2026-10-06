@@ -327,6 +327,7 @@ class _DockActionsState extends State<_DockActions> {
       return PersistentShellDock(
         content: active && slot!.composing ? slot.content : navigation,
         composing: active && slot!.composing,
+        expandContent: !active || slot!.expandContent,
         navigationWidth: widget.navigationWidth,
         primary: active ? slot!.primary : primary,
         secondary: active && slot!.composing ? null : secondary,

@@ -50,6 +50,8 @@ class AssistantLiveModeView extends StatelessWidget {
         ? context.l10n.assistantLiveStageAssistantSpeaking
         : context.l10n.assistantLiveStageAssistantReady;
     final hasTranscript = chatState.messages.isNotEmpty || liveState.hasDraft;
+    final connected =
+        liveState.status == AssistantLiveConnectionStatus.connected;
     final isIdle =
         liveState.status == AssistantLiveConnectionStatus.disconnected;
 
@@ -60,7 +62,7 @@ class AssistantLiveModeView extends StatelessWidget {
 
     return Column(
       children: [
-        if (needsRecovery)
+        if (needsRecovery && !liveState.isBusy)
           Padding(
             padding: EdgeInsets.fromLTRB(
               12,
@@ -79,6 +81,12 @@ class AssistantLiveModeView extends StatelessWidget {
         Expanded(
           child: isIdle
               ? const _LiveIdleState()
+              : liveState.isBusy
+              ? _LiveConnectingState(
+                  assistantName: assistantName,
+                  liveUiState: liveUiState,
+                  liveState: liveState,
+                )
               : LayoutBuilder(
                   builder: (context, constraints) {
                     final wide = constraints.maxWidth >= 840;
@@ -149,7 +157,7 @@ class AssistantLiveModeView extends StatelessWidget {
                   },
                 ),
         ),
-        if (!isIdle) AssistantLiveScreenControl(state: liveState),
+        if (connected) AssistantLiveScreenControl(state: liveState),
       ],
     );
   }

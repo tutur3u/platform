@@ -46,6 +46,54 @@ class _LiveIdleState extends StatelessWidget {
   }
 }
 
+class _LiveConnectingState extends StatelessWidget {
+  const _LiveConnectingState({
+    required this.assistantName,
+    required this.liveUiState,
+    required this.liveState,
+  });
+  final AssistantLiveState liveState;
+  final String assistantName;
+  final AssistantLiveUiState liveUiState;
+  @override
+  Widget build(BuildContext context) => Center(
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(
+            radius: 48,
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+            child: const Icon(Icons.call_rounded, size: 40),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            context.l10n.assistantLiveCallingAssistant(assistantName),
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 12),
+          Semantics(
+            liveRegion: true,
+            child: Text(
+              liveUiState.statusLabel(context.l10n),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          if (liveUiState.kind == AssistantLiveUiKind.reconnecting) ...[
+            const SizedBox(height: 8),
+            Text(
+              liveUiState.detailLabel(context.l10n, liveState),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
+}
+
 class _LiveModeHeader extends StatelessWidget {
   const _LiveModeHeader({
     required this.liveState,

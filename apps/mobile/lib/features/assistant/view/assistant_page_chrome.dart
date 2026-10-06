@@ -76,6 +76,30 @@ extension _AssistantPageChrome on _AssistantPageState {
     context.read<AssistantChromeCubit>().toggleComposerNavigation();
   }
 
+  Widget _livePrimaryAction(
+    String wsId,
+    AssistantChatState chatState,
+    AssistantLiveState liveState,
+  ) => AssistantLivePrimaryAction(
+    state: liveState,
+    assistantName: _shellCubit.state.soul.name,
+    onCall: () => _handleLiveMicrophoneToggle(wsId, chatState),
+    onCancel: () async {
+      final epoch = _voiceActorScopeEpoch;
+      final attempt = _liveStartGate.currentFor(epoch);
+      await _liveCubit.disconnect(clearSession: true);
+      if (mounted &&
+          epoch == _voiceActorScopeEpoch &&
+          _loadedWorkspaceId == wsId) {
+        _liveStartGate.cancel(attempt);
+      }
+    },
+    onNavigation: () {
+      _inputFocusNode.unfocus();
+      _toggleLiveDockNavigation();
+    },
+  );
+
   Widget _liveCallDock(
     String wsId,
     AssistantChatState chatState,

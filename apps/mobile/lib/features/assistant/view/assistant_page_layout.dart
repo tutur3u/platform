@@ -142,6 +142,9 @@ extension _AssistantPageLayout on _AssistantPageState {
                         // Pending preferences block sends and retained content.
                         // Preserve the requested dock presentation.
                         final isLiveMode = chrome.isLiveMode && !local.local;
+                        final liveConnected =
+                            liveState.status ==
+                            AssistantLiveConnectionStatus.connected;
                         final liveCameraController =
                             _liveCubit.cameraController;
                         final isVisibleLiveSession = _isVisibleLiveSession(
@@ -296,15 +299,19 @@ extension _AssistantPageLayout on _AssistantPageState {
                                       slot: ShellDockSlot(
                                         location: Routes.assistant,
                                         workspaceId: currentWorkspace.id,
+                                        expandContent: !isLiveMode,
                                         composing: isLiveMode
-                                            ? !chrome.navigationExpanded
+                                            ? liveConnected &&
+                                                  !chrome.navigationExpanded
                                             : _isComposerVisible,
                                         content: isLiveMode
-                                            ? _liveCallDock(
-                                                currentWorkspace.id,
-                                                chatState,
-                                                liveState,
-                                              )
+                                            ? liveConnected
+                                                  ? _liveCallDock(
+                                                      currentWorkspace.id,
+                                                      chatState,
+                                                      liveState,
+                                                    )
+                                                  : const SizedBox.shrink()
                                             : AssistantComposerDock(
                                                 embedded: true,
                                                 localOnly: localLane,
@@ -381,10 +388,10 @@ extension _AssistantPageLayout on _AssistantPageState {
                                                     removeComposerAttachment,
                                               ),
                                         primary: isLiveMode
-                                            ? AssistantNavigationToggle(
-                                                focusNode: _inputFocusNode,
-                                                onToggle:
-                                                    _toggleLiveDockNavigation,
+                                            ? _livePrimaryAction(
+                                                currentWorkspace.id,
+                                                chatState,
+                                                liveState,
                                               )
                                             : _isComposerVisible
                                             ? AssistantComposerPrimaryAction(

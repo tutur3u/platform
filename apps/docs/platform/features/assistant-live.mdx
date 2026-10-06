@@ -92,6 +92,30 @@ Developer ID signing, and notarization gates.
 
 ## Experience
 
+On mobile, entering Live keeps the shell navbar available until an explicit
+**Call Mira** action starts the call. Preparing, connecting, and reconnecting
+show a calling screen with the real connection status and a cancel action;
+microphone/camera/text/end controls appear only after connection. The connected
+controls replace navigation inside the same shell material at the same adaptive
+navbar width. Expanding navigation or ending the call preserves that surface.
+Text chat keeps its existing composer sizing.
+
+Live capture requests PCM16 mono, gain control, echo cancellation, and noise
+suppression. Android uses the communication source/mode and speaker route. The
+pinned iOS recorder enables native voice processing, and playback preserves its
+existing category/options. Disconnect stops capture and releases the playback
+unit instead of immediately initializing it again; this does not claim global
+iOS audio-session deactivation. Delayed setup/frame work and cancelled call starts are generation fenced; old
+requests cannot connect or clear a restarted call's pending state. Cancelling
+capture clears its startup ownership immediately; obsolete permission or ready
+waits cannot block or clear the replacement microphone attempt.
+Device routes and echo reduction still require device verification, including
+speaker, headset, and Bluetooth calls. Regression coverage includes
+`assistant_live_dock_lifecycle_test.dart`, `assistant_live_calling_view_test.dart`,
+`assistant_live_recorder_test.dart`, `assistant_live_disconnect_audio_test.dart`,
+and `assistant_live_microphone_restart_test.dart`.
+
+
 Mobile chat uses the shell's existing dock for its composer and primary action.
 An empty draft keeps the navigation menu; a nonempty draft or attachment changes
 that action to Send. During inline recording it becomes Pause, then Send while
@@ -112,7 +136,8 @@ transitions, retained dock identity, transparent tool inspection, and actual she
 geometry in `apps/mobile/test/features/assistant/widgets/`.
 
 
-Start or stop Live with the waveform icon in the chat composer. Live keeps the
+On the web dashboard, start or stop Live with the waveform icon in the chat
+composer. Live keeps the
 same message timeline visible, with a compact gradient visualization and media
 controls above it. Spoken turns, typed prompts, tool calls, and search sources
 appear in that timeline and share the workspace artifacts. Close Live or press
@@ -179,11 +204,12 @@ expiration ends media capture and keeps the saved conversation available.
 
 On mobile, Chat and Live use the same top header mode switch and page background.
 Live keeps the floating bottom navigation visible. Its idle start action is the
-icon-only microphone button beside that navigation; the top header opens Live
+icon-only **Call Mira** button beside that navigation; the top header opens Live
 settings in a sheet with the Keep Live while browsing switch. The idle screen
 does not show an availability badge or a second start button. During a session,
-the controls above the navigation provide camera, microphone, typing, and end
-actions. Connection problems show a retry message without changing the page
+connected call controls replace navigation inside the same dock and provide
+camera, microphone, typing, and end actions. A connecting call retains navigation
+and offers cancel. Connection problems show retry without changing the page
 background.
 
 Starting mobile Live with the microphone enabled requests permission and captures

@@ -34,6 +34,20 @@
       }
     }
   },
+  "@assistantLiveCallAssistant": {
+    "placeholders": {
+      "assistantName": {
+        "type": "String"
+      }
+    }
+  },
+  "@assistantLiveCallingAssistant": {
+    "placeholders": {
+      "assistantName": {
+        "type": "String"
+      }
+    }
+  },
   "@assistantLiveReconnectBanner": {
     "placeholders": {
       "timeLeft": {
@@ -1281,6 +1295,12 @@
   "assistantCreditsTitle": "Credits",
   "assistantCreditsUnavailable": "Could not load your credit sources. Please try again.",
   "assistantDoneTodayLabel": "done today",
+  "assistantDownloadAdmissionFailure": "This provider requires account or license approval. Open the source in your browser, accept its terms, then import the exact model file.",
+  "assistantDownloadBackgroundNotice": "Downloads continue when you leave Settings. Wi-Fi-only transfers wait for Wi-Fi. Your system controls background timing; force-quitting may interrupt them. Reopen Settings to resume.",
+  "assistantDownloadNetworkFailure": "The provider download was interrupted. Retry when connected, or import the exact published file.",
+  "assistantDownloadPause": "Pause download",
+  "assistantDownloadResume": "Resume download",
+  "assistantDownloadStorageFailure": "The model could not be saved. Free device storage and retry. Existing models were kept.",
   "assistantEditableLabel": "Editable",
   "assistantEnterFullscreenAction": "Enter fullscreen",
   "assistantExitFullscreenAction": "Exit fullscreen",
@@ -1298,7 +1318,10 @@
   "assistantLiveAccessSummary": "{workspace} • {source}",
   "assistantLiveAccessUsingPersonal": "Using personal {tier}",
   "assistantLiveAccessUsingWorkspace": "Using workspace {tier}",
+  "assistantLiveCallAssistant": "Call {assistantName}",
+  "assistantLiveCallingAssistant": "Calling {assistantName}",
   "assistantLiveCameraPreview": "Live camera",
+  "assistantLiveCancelCall": "Cancel call",
   "assistantLiveConnect": "Start live session",
   "assistantLiveDescriptionConnecting": "Creating a direct Gemini Live session for text, audio, and camera input.",
   "assistantLiveDescriptionError": "The live session hit an error. Retry or start a fresh session.",
@@ -1896,6 +1919,10 @@
   "documentsSubtitle": "Draft and maintain workspace knowledge.",
   "documentsTitle": "Documents",
   "documentsUpdated": "Document saved.",
+  "downloadNetworkContinue": "Continue",
+  "downloadNetworkUseWifi": "Use Wi-Fi",
+  "downloadNetworkWarningBody": "This download may use a large amount of data. Choose Continue to allow mobile data, or Use Wi-Fi to wait for Wi-Fi.",
+  "downloadNetworkWarningTitle": "Download using mobile data?",
   "driveCopyPath": "Copy path",
   "driveCreateFolder": "Create folder",
   "driveDeleteManyConfirm": "Delete {count} selected items?",
@@ -4409,15 +4436,5 @@
   "workspaceSelectTitle": "Select workspace",
   "workspaceSystemBadge": "System",
   "workspaceSystemSection": "Internal",
-  "workspaceTeamSection": "Team workspaces",
-  "downloadNetworkWarningTitle": "Download using mobile data?",
-  "downloadNetworkWarningBody": "This download may use a large amount of data. Choose Continue to allow mobile data, or Use Wi-Fi to wait for Wi-Fi.",
-  "downloadNetworkUseWifi": "Use Wi-Fi",
-  "downloadNetworkContinue": "Continue",
-  "assistantDownloadBackgroundNotice": "Downloads continue when you leave Settings. Wi-Fi-only transfers wait for Wi-Fi. Your system controls background timing; force-quitting may interrupt them. Reopen Settings to resume.",
-  "assistantDownloadPause": "Pause download",
-  "assistantDownloadResume": "Resume download",
-  "assistantDownloadNetworkFailure": "The provider download was interrupted. Retry when connected, or import the exact published file.",
-  "assistantDownloadStorageFailure": "The model could not be saved. Free device storage and retry. Existing models were kept.",
-  "assistantDownloadAdmissionFailure": "This provider requires account or license approval. Open the source in your browser, accept its terms, then import the exact model file."
+  "workspaceTeamSection": "Team workspaces"
 }

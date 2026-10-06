@@ -46,6 +46,7 @@ extension _AssistantLiveRecovery on AssistantLiveCubit {
 
   Future<void> _stopInputs() async {
     _microphoneVersion++;
+    _startingMicrophone = false;
     _startupAudio.clear();
     await stopScreenSharing();
     await _stopRecorderSafely();

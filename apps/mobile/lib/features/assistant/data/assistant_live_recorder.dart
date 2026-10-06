@@ -26,6 +26,11 @@ class AssistantLiveRecorder {
         echoCancel: true,
         noiseSuppress: true,
         streamBufferSize: 2048,
+        androidConfig: AndroidRecordConfig(
+          audioSource: AndroidAudioSource.voiceCommunication,
+          audioManagerMode: AudioManagerMode.modeInCommunication,
+          speakerphone: true,
+        ),
       ),
     );
 

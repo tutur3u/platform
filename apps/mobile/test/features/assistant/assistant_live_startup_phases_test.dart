@@ -26,6 +26,7 @@ Future<void> _tick() => Future<void>.delayed(Duration.zero);
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late AssistantLiveCubit cubit;
+  late _Repository repository;
   late _Player player;
   late _Socket socket;
   late StreamController<AssistantLiveSocketEvent> events;
@@ -34,7 +35,7 @@ void main() {
   var scopeToken = 0;
 
   setUp(() {
-    final repository = _Repository();
+    repository = _Repository();
     player = _Player();
     socket = _Socket();
     final camera = _Camera();
@@ -47,6 +48,7 @@ void main() {
     when(socket.disconnect).thenAnswer((_) async {});
     when(player.initialize).thenAnswer((_) async {});
     when(player.dispose).thenAnswer((_) async {});
+    when(player.pause).thenAnswer((_) async {});
     when(recorder.stop).thenAnswer((_) async {});
     when(recorder.dispose).thenAnswer((_) async {});
     when(camera.stopStreaming).thenAnswer((_) async {});
@@ -101,6 +103,53 @@ void main() {
       seedHistory: const [],
       sessionHandle: any(named: 'sessionHandle'),
     ),
+  );
+
+  test(
+    'cancelled delayed token cannot connect or mutate the new pending attempt',
+    () async {
+      final oldToken = Completer<AssistantLiveTokenEnvelope>();
+      final nextToken = Completer<AssistantLiveTokenEnvelope>();
+      var requests = 0;
+      when(
+        () => repository.fetchLiveToken(
+          wsId: 'ws',
+          chatId: any(named: 'chatId'),
+          model: any(named: 'model'),
+          forceFresh: any(named: 'forceFresh'),
+        ),
+      ).thenAnswer((_) => requests++ == 0 ? oldToken.future : nextToken.future);
+      const envelope = AssistantLiveTokenEnvelope(
+        token: 'token',
+        chatId: 'chat',
+        scopeKey: 'scope',
+        sessionHandle: null,
+        model: 'model',
+        seedHistory: [],
+      );
+      final old = cubit.prepareSession(wsId: 'ws');
+      await _tick();
+      await cubit.disconnect();
+      final next = cubit.prepareSession(wsId: 'ws');
+      await _tick();
+      oldToken.complete(envelope);
+      await old;
+      expect(cubit.state.status, AssistantLiveConnectionStatus.preparing);
+      expect(cubit.state.startupTimings, isEmpty);
+      expectNoConnection();
+      nextToken.complete(envelope);
+      history.complete();
+      await next;
+      expect(cubit.state.status, AssistantLiveConnectionStatus.connected);
+      verify(
+        () => socket.connect(
+          token: 'token',
+          model: 'model',
+          seedHistory: const [],
+          sessionHandle: any(named: 'sessionHandle'),
+        ),
+      ).called(1);
+    },
   );
 
   test('history and audio start together but socket waits for both', () async {

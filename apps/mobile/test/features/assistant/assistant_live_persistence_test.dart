@@ -48,6 +48,7 @@ void main() {
     when(recorder.dispose).thenAnswer((_) async {});
     when(player.initialize).thenAnswer((_) async {});
     when(player.clear).thenAnswer((_) async {});
+    when(player.pause).thenAnswer((_) async {});
     when(player.dispose).thenAnswer((_) async {});
     when(camera.stopStreaming).thenAnswer((_) async {});
     when(camera.dispose).thenAnswer((_) async {});
