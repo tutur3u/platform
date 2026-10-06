@@ -362,3 +362,25 @@ and [Apple documents the Developer ID Application certificate extension](https:/
 Regression coverage: `certificate-readiness.test.ts` uses freshly generated
 synthetic material for key mismatch, missing keys, duplicate matches, validity,
 code-signing, Developer ID identity/team and notarization-key boundaries.
+
+### Private desktop administration API
+
+Infrastructure's desktop administration API requires an authenticated registered
+satellite actor, explicit root workspace MEMBER membership and the dedicated
+`manage_desktop_deployment_vault` permission. Browser mutations additionally
+require the exact local origin and desktop action header. JSON and multipart
+uploads enforce actual streamed byte limits, including chunked uploads.
+
+Responses expose version/revision/readiness metadata, configured resource names
+and token identifiers only. Password suffixes, encrypted resources, data keys,
+plaintext hashes and token hashes are excluded. A newly issued token is returned
+once to its authorized creator and is never included in state reads.
+
+Draft edits use expected revisions and invalidate readiness. Activation repeats
+time-sensitive portable certificate checks before the atomic revision-fenced
+activation RPC. Windows and macOS resource names cannot cross platforms. No
+operation enables a platform environment; runner bundle delivery remains a
+separate default-off integration. Operator UI and protected workflow hydration
+are follow-up layers, so these endpoints alone do not establish signed delivery.
+Regression coverage: desktop `access.test.ts`, `request.test.ts`,
+`store.test.ts` and `mutations.test.ts`.
