@@ -5,6 +5,7 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_preview.dart';
 import 'package:mobile/features/assistant/widgets/assistant_markdown_body.dart';
+import 'package:mobile/features/assistant/widgets/assistant_ordered_parts.dart';
 import 'package:mobile/features/assistant/widgets/assistant_tool_results_section.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
@@ -21,6 +22,7 @@ class AssistantTranscriptBubble extends StatelessWidget {
     this.toolParts = const [],
     this.orderedParts = const [],
     this.isDraft = false,
+    this.activityActive = false,
     super.key,
   });
 
@@ -34,6 +36,7 @@ class AssistantTranscriptBubble extends StatelessWidget {
   final List<AssistantMessagePart> toolParts;
   final List<AssistantMessagePart> orderedParts;
   final bool isDraft;
+  final bool activityActive;
 
   @override
   Widget build(BuildContext context) {
@@ -156,26 +159,7 @@ class AssistantTranscriptBubble extends StatelessWidget {
   }
 
   List<Widget> _orderedAssistantChildren(BuildContext context) => [
-    for (var index = 0; index < orderedParts.length; index++)
-      if (orderedParts[index].type == 'dynamic-tool')
-        Padding(
-          key: ValueKey('assistant-tool-part-$index'),
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: assistantImageToolParts([orderedParts[index]]).isNotEmpty
-              ? AssistantInlineToolImages(parts: [orderedParts[index]])
-              : AssistantToolResultsSection(parts: [orderedParts[index]]),
-        )
-      else if ((orderedParts[index].type == 'text' ||
-              orderedParts[index].type == 'reasoning') &&
-          (orderedParts[index].text?.trim().isNotEmpty ?? false))
-        Padding(
-          key: ValueKey('assistant-text-part-$index'),
-          padding: const EdgeInsets.only(bottom: 8),
-          child: AssistantMarkdownBody(
-            data: orderedParts[index].text!.trim(),
-            subdued: orderedParts[index].type == 'reasoning',
-          ),
-        ),
+    ...assistantOrderedPartWidgets(orderedParts, active: activityActive),
     if (attachments.isNotEmpty)
       Wrap(
         spacing: 8,
