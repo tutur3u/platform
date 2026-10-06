@@ -31,8 +31,12 @@ export async function POST(request: Request) {
     return response({ code: 'desktop_bundle_unauthorized' }, 401);
   let platform: 'windows' | 'macos';
   try {
-    if (request.headers.get('content-type') !== 'application/json')
-      throw new Error('Invalid body');
+    const mediaType = request.headers
+      .get('content-type')
+      ?.split(';', 1)[0]
+      ?.trim()
+      .toLowerCase();
+    if (mediaType !== 'application/json') throw new Error('Invalid body');
     const bytes = await readDesktopBody(request, 1024);
     try {
       platform = bodySchema.parse(JSON.parse(bytes.toString('utf8'))).platform;
