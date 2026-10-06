@@ -60,13 +60,14 @@ function dbWith(results: unknown[]) {
   return Object.assign(writes, { updatedTables });
 }
 const result = (data: unknown) => ({ data, error: null });
-const request = () =>
+const request = (overrides: Record<string, unknown> = {}) =>
   new Request('https://meet.tuturuuu.com/api/meet-ai/test', {
     method: 'POST',
     body: JSON.stringify({
       action: 'finish',
       sessionId: id,
       expectedChunks: 1,
+      ...overrides,
     }),
   });
 describe('Meet notes finalization', () => {
@@ -97,6 +98,119 @@ describe('Meet notes finalization', () => {
     ).toBe(409);
     expect(mocks.generate).not.toHaveBeenCalled();
   });
+  it.each([
+    ['no chunks', []],
+    [
+      'blank mixed segments',
+      [
+        {
+          status: 'completed',
+          start_seconds: 0,
+          transcript: 'Metadata fallback is not rendered speech.',
+          usage: {
+            segments: [
+              {
+                speaker: null,
+                kind: 'microphone',
+                startSeconds: 0,
+                transcript: '   ',
+              },
+            ],
+          },
+        },
+      ],
+    ],
+    [
+      'failed audio',
+      [{ status: 'failed', start_seconds: 0, transcript: null }],
+    ],
+    [
+      'blank saved audio',
+      [{ status: 'completed', start_seconds: 0, transcript: '   ' }],
+    ],
+  ])(
+    'completes an ended incomplete retry with %s without billing',
+    async (_label, chunks) => {
+      const writes = dbWith([
+        result({ ...session, ended_at: '2026-01-01T00:00:00Z' }),
+        result(null),
+        result(chunks),
+        result({ id }),
+        result({ id }),
+      ]);
+      await changeMeetAi(
+        request({ expectedChunks: undefined, captureIncomplete: true }),
+        params
+      );
+      expect(mocks.generate).not.toHaveBeenCalled();
+      expect(writes.at(-1)).toMatchObject({
+        notes_status: 'completed',
+        notes_usage: null,
+        notes_cost_usd: 0,
+        notes: {
+          incomplete: true,
+          summary: '',
+          decisions: [],
+          actionItems: [],
+          openQuestions: [],
+        },
+      });
+      expect(writes.updatedTables).toEqual([
+        'meet_ai_sessions',
+        'meet_ai_sessions',
+        'meet_ai_sessions',
+      ]);
+    }
+  );
+  it.each([
+    { transcript: 'Discuss the next release.' },
+    {
+      transcript: null,
+      usage: {
+        segments: [
+          {
+            speaker: null,
+            kind: 'shared_audio',
+            startSeconds: 0,
+            transcript: 'Discuss the next release.',
+          },
+        ],
+      },
+    },
+  ])(
+    'still generates notes from real saved speech during an incomplete retry %#',
+    async (speech) => {
+      dbWith([
+        result({ ...session, ended_at: '2026-01-01T00:00:00Z' }),
+        result(null),
+        result([
+          {
+            status: 'completed',
+            start_seconds: 0,
+            ...speech,
+          },
+        ]),
+        result({ id }),
+        result({ id }),
+      ]);
+      mocks.generate.mockResolvedValue({
+        notes: null,
+        usage: null,
+        costUsd: 0,
+      });
+      await changeMeetAi(
+        request({ expectedChunks: undefined, captureIncomplete: true }),
+        params
+      );
+      expect(mocks.generate).toHaveBeenCalledOnce();
+      expect(mocks.generate.mock.calls[0]?.[0].transcript).toContain(
+        'Discuss the next release.'
+      );
+      expect(mocks.generate.mock.calls[0]?.[0].transcript).toContain(
+        'This transcript is incomplete'
+      );
+    }
+  );
   it('persists missing pricing as null instead of zero', async () => {
     const writes = dbWith([
       result(session),
