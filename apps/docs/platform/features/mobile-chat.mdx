@@ -102,3 +102,24 @@ remain failures; no text-only success or remote fallback is introduced.
 `native-ai-cleanup-receipt.test.ts` covers the actual message route with durable
 save followed by failed cleanup. This establishes a source boundary, not the
 cause of every missing reply or device/provider delivery evidence.
+
+### Compact on-device status in the header
+
+Native Mira Chat shows on-device readiness, preparation or attention status in
+its shared branded header, rather than a repeated block above the conversation.
+The accessible control opens full model status and failure guidance with an
+explicit model-settings action. It retains a 48px touch target and truncates the
+compact label on wide layouts. Narrow action rails fold status into the branded
+name control, preserving a readable title prefix and full accessible status. Only
+Chat with registered local status uses a 48px header content minimum; default and
+other-route geometry stays unchanged, and floating content clearance matches. The current saved assistant
+name appears in both Chat and Live; Live hides the local-text chip because voice
+uses its separate remote runtime. Returning to remote Chat removes the chip.
+Retained recovery actions reject actor/workspace/selection changes and disposal.
+No status control sends a failed local prompt remotely or proves native readiness.
+
+`assistant_compact_model_header_test.dart` covers the actual page and header in
+English/Vietnamese at 320px with enlarged text, recovery guidance, remote return,
+Live visibility and stale actions. `assistant_mode_title_test.dart` preserves
+fallback titles and verifies current name changes. Actual-device safe-area,
+accessibility and native model loading remain separate delivery checks.
