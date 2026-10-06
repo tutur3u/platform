@@ -105,3 +105,9 @@ Tuturuuu authority. Use the actual T3/native tools and
 remain authoritative. Do not execute bundled scripts merely because installation
 succeeded. Refresh pinned upstream deliberately after review, never silently from
 latest. Managed caches are written by the installer, not patched manually.
+
+### Audited amendments and reopened dependencies
+
+Use `update <id> --priority 0` to reprioritize an existing request without resetting its owner or progress. A repeated intake with changed priority is rejected, rather than silently retaining the older priority. Updates remain transactional and append their audit event.
+
+Reopening a verified prerequisite revokes current verification on its verified dependents transitively. Dependents return to `implemented`, retain their source and links, and record the unmet prerequisite; historical receipts remain in the audit log. Re-verifying a parent does not restore a dependent receipt. Each dependent needs a new explicit current-evidence verification. Snapshot and history remain read-only, and recorded evidence does not prove remote delivery. Regression coverage: `test_program_backlog.py` checks CLI amendments, rollback, transitive reopening, and explicit re-verification.
