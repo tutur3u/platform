@@ -533,6 +533,13 @@ metadata reports a missing revision as `null`; clients must reload a real revisi
 before offering a control. Source availability does not establish activation,
 OS trust, signing, provisioning, or publication proof.
 
+Server-page fixtures mock the current `getDesktopPageAccess` boundary and return
+its admitted actor and management permission. Do not mock a superseded root guard
+or suppress `server-only` globally to make page tests import. `page.test.tsx` covers
+access-before-metadata ordering and member-versus-manager controls;
+`page-access.test.ts` independently covers the real satellite actor, root membership
+and permission checks.
+
 Regression coverage: `desktop-deployment-admission.sql` exercises permission, CAS,
 freshness, disable/re-enable and legacy-lease denial; `admission.test.ts` and
 `request.test.ts` cover credential-free disable, trusted receipts, fresh material,
