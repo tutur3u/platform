@@ -1186,12 +1186,18 @@ Tasks feed and next seven days of its personal workspace Calendar. It is closed
 by default and local to that participant; it is never room state, signaling, or
 shared document content. Team meeting workspaces are never used as a fallback.
 Account identity is verified before and after reads, and queries are scoped by
-account ID. Temporary failures retain same-actor, same-workspace source snapshots
+account ID. Calendar collection GET accepts a signed Meet session only for that
+actor's personal workspace, with MEMBER and manage_calendar permission checks.
+Team-workspace reads and Calendar mutations do not gain Meet-session admission.
+Temporary failures retain same-actor, same-workspace source snapshots
 with an explicit stale-source notice; definitive access denials clear that source. Dedicated Tasks and Calendar links open the full apps separately.
 Parley does not show this Meet-only action.
 
 `personal-tools.test.ts` covers personal scope, actor changes, missing personal
-workspaces, and partial source availability.
+workspaces, and partial source availability. `calendar-event-meet-read.test.ts`
+uses signed sessions to cover personal scope, actor/audience/signature/expiry
+denials, membership and permission failures; Calendar events route tests keep
+the audience opt-in exclusive to GET.
 
 ## Meeting-list startup and hosting eligibility
 

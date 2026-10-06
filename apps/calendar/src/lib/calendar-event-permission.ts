@@ -1,3 +1,4 @@
+import { verifyAppSessionRequest } from '@tuturuuu/auth/app-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { PERSONAL_WORKSPACE_SLUG } from '@tuturuuu/utils/constants';
@@ -19,20 +20,37 @@ type CalendarEventManagementAccess =
 export async function authorizeCalendarEventManagement(
   request: Request,
   rawWsId: string,
-  options?: { allowMailPreviewSession?: boolean }
+  options?: {
+    allowMailPreviewSession?: boolean;
+    allowMeetPersonalRead?: boolean;
+  }
 ): Promise<CalendarEventManagementAccess> {
+  // Use the signed audience, never editable user metadata, to narrow Meet reads.
+  const meetSession =
+    options?.allowMeetPersonalRead && request.method === 'GET'
+      ? verifyAppSessionRequest(request, { targetApp: 'meet' })
+      : null;
+  const isMeetRead = meetSession?.ok === true;
   const auth = await resolveSessionAuthContext(request, {
     allowAppSessionAuth: {
-      targetApp: options?.allowMailPreviewSession
-        ? ['calendar', 'tasks', 'mail']
-        : ['calendar', 'tasks'],
+      targetApp: isMeetRead
+        ? ['calendar', 'tasks', 'meet']
+        : options?.allowMailPreviewSession
+          ? ['calendar', 'tasks', 'mail']
+          : ['calendar', 'tasks'],
     },
   });
   if (!auth.ok) return { error: auth.response } as const;
 
   const { user, supabase } = auth;
+  if (isMeetRead && meetSession.claims.sub !== user.id)
+    return {
+      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
+  const isPersonalSlug =
+    rawWsId.trim().toLowerCase() === PERSONAL_WORKSPACE_SLUG;
   let wsId: string;
-  if (rawWsId.trim().toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
+  if (isPersonalSlug || isMeetRead) {
     const { data: personalWorkspace, error: personalWorkspaceError } =
       await supabase
         .from('workspaces')
@@ -74,6 +92,26 @@ export async function authorizeCalendarEventManagement(
         ),
       } as const;
     }
+  }
+  if (isMeetRead && !isPersonalSlug) {
+    let requestedWsId: string;
+    try {
+      requestedWsId = await normalizeWorkspaceId(rawWsId, supabase);
+    } catch {
+      return {
+        error: NextResponse.json(
+          { error: 'Failed to resolve workspace' },
+          { status: 500 }
+        ),
+      };
+    }
+    if (requestedWsId !== wsId)
+      return {
+        error: NextResponse.json(
+          { error: 'Personal workspace access required' },
+          { status: 403 }
+        ),
+      };
   }
   const membership = await verifyWorkspaceMembershipType({
     wsId,

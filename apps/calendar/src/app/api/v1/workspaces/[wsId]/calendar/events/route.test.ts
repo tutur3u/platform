@@ -1,3 +1,5 @@
+import { createAppSessionToken } from '@tuturuuu/auth/app-session';
+import { NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
@@ -131,6 +133,35 @@ function insertQueryResult(data: unknown) {
 }
 
 describe('workspace calendar event collection authorization', () => {
+  it.each(['GET', 'POST'])(
+    'opts only GET into signed Meet reads (%s)',
+    async (method) => {
+      const secret = 'synthetic-calendar-route-test-secret';
+      vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', secret);
+      const { token } = createAppSessionToken(
+        { targetApp: 'meet', userId: USER_ID },
+        { secret }
+      );
+      mocks.resolveAuth.mockResolvedValue({
+        ok: false,
+        response: NextResponse.json({ error: 'Denied' }, { status: 401 }),
+      });
+      const req = new Request('https://calendar.example.invalid/api/events', {
+        method,
+        headers: { cookie: `tuturuuu_app_session=${token}` },
+      });
+      await (method === 'GET' ? GET(req, params()) : POST(req, params()));
+      expect(mocks.resolveAuth).toHaveBeenCalledWith(req, {
+        allowAppSessionAuth: {
+          targetApp:
+            method === 'GET'
+              ? ['calendar', 'tasks', 'meet']
+              : ['calendar', 'tasks'],
+        },
+      });
+      expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    }
+  );
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv('CALENDAR_GOOGLE_COLOR_OPERATIONS_ENABLED', 'false');
