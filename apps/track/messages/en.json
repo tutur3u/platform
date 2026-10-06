@@ -12934,6 +12934,8 @@
     "manage_changelog": "Manage Changelog",
     "manage_changelog_description": "Create, edit, publish, and delete platform changelog entries.",
     "manage_default_permissions": "Manage default permissions",
+    "manage_desktop_deployment_vault": "Manage desktop deployment vault",
+    "manage_desktop_deployment_vault_description": "Allows root workspace members to manage private Windows/macOS signing resources and protected workflow tokens. Does not enable delivery.",
     "manage_documents": "Manage Documents",
     "manage_documents_description": "Allows members to view, create, edit, and delete documents in the workspace.",
     "manage_drive": "Manage Drive",

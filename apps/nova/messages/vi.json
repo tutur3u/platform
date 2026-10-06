@@ -4779,6 +4779,8 @@
     "manage_calendar": "Quản lý lịch",
     "manage_calendar_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa sự kiện trong lịch không gian làm việc.",
     "manage_default_permissions": "Quản lý quyền mặc định",
+    "manage_desktop_deployment_vault": "Quản lý kho triển khai máy tính",
+    "manage_desktop_deployment_vault_description": "Cho phép thành viên không gian làm việc gốc quản lý thông tin ký Windows/macOS riêng tư và mã truy cập quy trình được bảo vệ. Không bật phân phối.",
     "manage_documents": "Quản lý tài liệu",
     "manage_documents_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa tài liệu trong không gian làm việc.",
     "manage_drive": "Quản lý Tuturuuu Drive",

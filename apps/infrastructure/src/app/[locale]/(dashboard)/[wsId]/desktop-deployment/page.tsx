@@ -2,9 +2,10 @@ import { ExternalLink, Monitor, ShieldCheck } from '@tuturuuu/icons';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import { getDesktopPageAccess } from '@/lib/desktop-deployment/page-access';
 import { DESKTOP_PLATFORMS } from '@/lib/desktop-deployment/status';
 import { getDesktopDeploymentStatus } from '@/lib/desktop-deployment/status.server';
-import { enforceInfrastructureRootWorkspace } from '../enforce-infrastructure-root';
+import { DesktopVaultClient } from './desktop-vault-client';
 
 export default async function DesktopDeploymentPage({
   params,
@@ -13,7 +14,7 @@ export default async function DesktopDeploymentPage({
 }) {
   await connection();
   const { wsId } = await params;
-  await enforceInfrastructureRootWorkspace(wsId);
+  const access = await getDesktopPageAccess(wsId);
   const [t, state] = await Promise.all([
     getTranslations('desktop-deployment'),
     getDesktopDeploymentStatus(),
@@ -38,6 +39,7 @@ export default async function DesktopDeploymentPage({
           <ExternalLink className="size-4" />
         </a>
       </header>
+      {access.canManage && <DesktopVaultClient actorId={access.actorId} />}
       <Card>
         <CardHeader>
           <CardTitle>{t('workflow')}</CardTitle>

@@ -1501,6 +1501,8 @@
     "type": "Loại"
   },
   "ws-roles": {
+    "manage_desktop_deployment_vault": "Quản lý kho triển khai máy tính",
+    "manage_desktop_deployment_vault_description": "Cho phép thành viên không gian làm việc gốc quản lý thông tin ký Windows/macOS riêng tư và mã truy cập quy trình được bảo vệ. Không bật phân phối.",
     "manage_git_repositories": "Quản lý kho mã Git",
     "manage_git_repositories_description": "Cho phép quản trị viên nền tảng cấu hình Ứng dụng GitHub và phê duyệt các kho mã công khai cho Git.",
     "manage_user_report_automation": "Quản lý tự động hóa báo cáo",

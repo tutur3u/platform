@@ -23867,6 +23867,8 @@
     "manage_drive_tasks_directory_description": "Cho phép thành viên tải lên và quản lý tệp trong các thư mục media dành riêng cho tác vụ.",
     "manage_e2ee": "Quản lý mã hóa đầu cuối",
     "manage_e2ee_description": "Cho phép các thành viên bật, cấu hình và quản lý cài đặt mã hóa đầu cuối cho dữ liệu nhạy cảm.",
+    "manage_desktop_deployment_vault": "Quản lý kho triển khai máy tính",
+    "manage_desktop_deployment_vault_description": "Cho phép thành viên không gian làm việc gốc quản lý thông tin ký Windows/macOS riêng tư và mã truy cập quy trình được bảo vệ. Không bật phân phối.",
     "manage_external_migrations": "Quản lý chuyển dữ liệu từ bên ngoài",
     "manage_external_migrations_description": "Cho phép thành viên xem và thực thi chuyển dữ liệu từ bên ngoài.",
     "manage_external_projects": "Quản lý dự án ngoài nền tảng",
