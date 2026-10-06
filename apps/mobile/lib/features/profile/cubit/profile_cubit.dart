@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
+import 'package:mobile/data/models/profile_media_result.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/features/profile/cubit/profile_state.dart';
@@ -36,6 +37,8 @@ class ProfileCubit extends Cubit<ProfileState> {
     final generation = ++_loadGeneration;
     final currentUserId = _repository.getCurrentUserIdSync();
     if (state.profile != null && state.profile!.id != currentUserId) {
+      ++_updateGeneration;
+      _updatingActor = null;
       emit(
         ProfileState(
           status: ProfileStatus.loading,
@@ -160,19 +163,33 @@ class ProfileCubit extends Cubit<ProfileState> {
   }
 
   Future<bool> _updateProfileField(
-    Future<({bool success, String? error})> Function() update,
-  ) async {
+    Future<({bool success, String? error})> Function() update, {
+    ProfileMediaFailure? Function()? mediaFailure,
+    ProfileMediaTarget? mediaTarget,
+  }) async {
     final actor = _repository.getCurrentUserIdSync();
     if (!_sameActor(actor)) return false;
     final operation = ++_updateGeneration;
     _updatingActor = actor;
     bool current() => operation == _updateGeneration && _sameActor(actor);
-    emit(state.copyWith(isLoading: true, error: null));
+    emit(
+      state.copyWith(
+        isLoading: true,
+        error: null,
+        mediaFailure: null,
+        mediaTarget: mediaTarget,
+      ),
+    );
     try {
       final result = await update();
       if (!current()) return false;
       if (!result.success) {
-        emit(state.copyWith(error: result.error));
+        emit(
+          state.copyWith(
+            error: result.error,
+            mediaFailure: mediaFailure?.call(),
+          ),
+        );
         return false;
       }
       final cached = await _repository.getCachedProfile();
@@ -191,14 +208,39 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
   }
 
-  /// Uploads avatar.
-  Future<bool> uploadAvatar(File file) =>
-      _updateProfileField(() => _repository.saveAvatar(file));
+  Future<bool> _updateMedia(
+    Future<ProfileMediaResult> Function() update,
+    ProfileMediaTarget target,
+  ) {
+    ProfileMediaFailure? failure;
+    return _updateProfileField(
+      () async {
+        final result = await update();
+        failure = result.failure;
+        return (
+          success: result.success,
+          error: result.success ? null : 'Profile update failed',
+        );
+      },
+      mediaFailure: () => failure,
+      mediaTarget: target,
+    );
+  }
 
-  Future<bool> uploadBanner(File file) =>
-      _updateProfileField(() => _repository.saveBanner(file));
-
-  Future<bool> removeBanner() => _updateProfileField(_repository.removeBanner);
+  Future<bool> uploadAvatar(File file) => _updateMedia(
+    () => _repository.saveAvatarResult(file),
+    ProfileMediaTarget.avatar,
+  );
+  Future<bool> uploadBanner(File file) => _updateMedia(
+    () => _repository.saveBannerResult(file),
+    ProfileMediaTarget.banner,
+  );
+  Future<bool> removeBanner() => _updateMedia(
+    _repository.removeBannerResult,
+    ProfileMediaTarget.removeBanner,
+  );
+  void clearMediaFailure() =>
+      emit(state.copyWith(mediaFailure: null, mediaTarget: null));
 
   /// Removes avatar.
   Future<bool> removeAvatar() => _updateProfileField(_repository.removeAvatar);

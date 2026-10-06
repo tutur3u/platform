@@ -4440,5 +4440,24 @@
   "workspaceSystemBadge": "Hệ thống",
   "workspaceSystemSection": "Nội bộ",
   "workspaceTeamSection": "Nhóm làm việc",
-  "commonCopyDiagnostics": "Sao chép thông tin gỡ lỗi"
+  "commonCopyDiagnostics": "Sao chép thông tin gỡ lỗi",
+  "profileMediaInvalidImage": "Chọn ảnh JPEG, PNG, WebP hoặc GIF hợp lệ trong giới hạn kích thước.",
+  "profileMediaImageTooLarge": "Ảnh quá lớn. Hãy chọn ảnh nhỏ hơn.",
+  "profileMediaNotAuthorized": "Bạn chưa được phép tải ảnh này lên. Kiểm tra tài khoản và quyền truy cập trước khi thử lại.",
+  "profileMediaConflict": "Hồ sơ đã thay đổi trong lúc tải lên. Hãy chọn lại ảnh.",
+  "profileMediaRateLimit": "Đã đạt giới hạn tải lên. Hãy chờ trước khi chọn lại ảnh.",
+  "profileMediaRateLimitWait": "Đã đạt giới hạn tải lên. Hãy chờ {seconds} giây trước khi thử lại.",
+  "profileMediaUnavailable": "Tạm thời không thể tải ảnh lên. Hãy chọn lại ảnh và thử sau.",
+  "profileMediaInvalidReceipt": "Không thể xác nhận lượt tải lên. Hãy chọn lại ảnh; lượt tải này chưa được xác nhận hoàn tất.",
+  "profileMediaFileUnavailable": "Ảnh đã chọn không còn khả dụng. Hãy chọn ảnh khác.",
+  "profileMediaRecoveryTitle": "Không thể cập nhật ảnh hồ sơ",
+  "profileMediaSelectAgain": "Chọn lại ảnh",
+  "@profileMediaRateLimitWait": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "profileMediaDismiss": "Đóng"
 }

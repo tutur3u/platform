@@ -1,11 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:mobile/features/auth/cubit/auth_cubit.dart';
-import 'package:mobile/features/profile/cubit/profile_cubit.dart';
+import 'package:mobile/features/profile/view/profile_media_failure_message.dart';
+import 'package:mobile/features/profile/view/profile_picker_intent.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/image_source_picker_dialog.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -64,24 +63,10 @@ Future<void> pickAndUploadProfileAvatar(
   BuildContext context, {
   ProfileAvatarPicker picker = const ProfileAvatarPicker(),
 }) async {
-  final auth = context.read<AuthCubit>();
-  final cubit = context.read<ProfileCubit>();
-  final actor = auth.state.user?.id;
-  if (actor == null || cubit.state.profile?.id != actor) return;
-  // An identity departure permanently invalidates this intent, including ABA.
-  var departed = false;
-  final subscription = auth.stream.listen((state) {
-    if (state.user?.id != actor) departed = true;
-  });
-  bool current() =>
-      context.mounted &&
-      !departed &&
-      !auth.isClosed &&
-      !cubit.isClosed &&
-      identical(context.read<AuthCubit>(), auth) &&
-      identical(context.read<ProfileCubit>(), cubit) &&
-      auth.state.user?.id == actor &&
-      cubit.state.profile?.id == actor;
+  final intent = ProfilePickerIntent.capture(context);
+  if (intent == null) return;
+  final cubit = intent.cubit..clearMediaFailure();
+  bool current() => intent.current(context);
   try {
     final source = await picker.chooseSource(context);
     if (!current() || source == null) return;
@@ -98,10 +83,16 @@ Future<void> pickAndUploadProfileAvatar(
               title: Text(toastContext.l10n.profileAvatarUpdateSuccess),
             )
           : shad.Alert.destructive(
-              title: Text(toastContext.l10n.profileAvatarUpdateError),
+              title: Text(
+                profileMediaFailureMessage(
+                  toastContext.l10n,
+                  cubit.state.mediaFailure,
+                  fallback: toastContext.l10n.profileAvatarUpdateError,
+                ),
+              ),
             ),
     );
   } finally {
-    await subscription.cancel();
+    await intent.dispose();
   }
 }

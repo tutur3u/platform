@@ -19,6 +19,7 @@ import 'package:mobile/features/profile/cubit/profile_cubit.dart';
 import 'package:mobile/features/profile/cubit/profile_state.dart';
 import 'package:mobile/features/profile/view/profile_avatar_picker.dart';
 import 'package:mobile/features/profile/view/profile_banner.dart';
+import 'package:mobile/features/profile/view/profile_media_recovery.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -160,6 +161,10 @@ class _ProfileView extends StatelessWidget {
                   28 + MediaQuery.paddingOf(context).bottom,
                 ),
                 children: [
+                  ProfileMediaRecovery(
+                    state: state,
+                    avatarPicker: avatarPicker,
+                  ),
                   StaggeredEntry(
                     index: 0,
                     playOnceKey: 'profile-hero',
