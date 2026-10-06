@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
+import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/features/assistant/widgets/assistant_mermaid_diagram.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class AssistantMarkdownBody extends StatelessWidget {
   const AssistantMarkdownBody({
@@ -31,7 +31,7 @@ class AssistantMarkdownBody extends StatelessWidget {
         if (href == null || href.trim().isEmpty) {
           return;
         }
-        unawaited(_openMarkdownLink(href));
+        unawaited(_openMarkdownLink(context, href));
       },
       styleSheet: assistantMarkdownStyle(theme, subdued: subdued),
     );
@@ -192,11 +192,11 @@ class _MermaidDiagramBuilder extends MarkdownElementBuilder {
   }
 }
 
-Future<void> _openMarkdownLink(String href) async {
+Future<void> _openMarkdownLink(BuildContext context, String href) async {
   final uri = Uri.tryParse(href.trim());
   if (uri == null) {
     return;
   }
 
-  await launchUrl(uri, mode: LaunchMode.externalApplication);
+  await openMobileLink(context, uri);
 }

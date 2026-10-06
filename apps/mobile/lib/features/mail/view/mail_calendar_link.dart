@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
+import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/models/mail_calendar_link_preview.dart';
 import 'package:mobile/features/mail/view/mail_calendar_link_details.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class MailCalendarLink extends StatefulWidget {
   const MailCalendarLink({
@@ -182,9 +182,9 @@ class _MailCalendarLinkState extends State<MailCalendarLink> {
           Text('${target['title']} · ${target['accountLabel']}'),
         if (target?['calendarUrl'] is String)
           TextButton(
-            onPressed: () => launchUrl(
+            onPressed: () => openMobileLink(
+              context,
               Uri.parse(target!['calendarUrl'] as String),
-              mode: LaunchMode.externalApplication,
             ),
             child: Text(l.mailCalendarLinkOpen),
           ),

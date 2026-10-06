@@ -4,13 +4,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/features/mail/view/mail_appearance_control.dart';
 import 'package:mobile/features/mail/view/mail_html_document.dart';
 import 'package:mobile/features/mail/view/mail_image_preference.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
-import 'package:url_launcher/url_launcher.dart';
 
 /// Native rendering isolated from the app's authenticated browser state.
 class MailHtmlBody extends StatefulWidget {
@@ -225,10 +225,7 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
                 if (uri != null &&
                     ['https', 'http', 'mailto', 'tel'].contains(uri.scheme) &&
                     action.isForMainFrame) {
-                  await launchUrl(
-                    Uri.parse(value),
-                    mode: LaunchMode.externalApplication,
-                  );
+                  await openMobileLink(context, Uri.parse(value));
                 }
                 return NavigationActionPolicy.CANCEL;
               },
