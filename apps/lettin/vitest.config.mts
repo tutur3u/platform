@@ -31,6 +31,9 @@ export default defineConfig({
           import.meta.url
         )
       ),
+      '@tuturuuu/internal-api/users': fileURLToPath(
+        new URL('../../packages/internal-api/src/users.ts', import.meta.url)
+      ),
       '@tuturuuu/internal-api': fileURLToPath(
         new URL('../../packages/internal-api/src/index.ts', import.meta.url)
       ),
