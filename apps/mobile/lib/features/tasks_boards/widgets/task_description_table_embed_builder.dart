@@ -309,6 +309,8 @@ class TaskDescriptionTableEditorSheetState
                                     Padding(
                                       padding: const EdgeInsets.all(6),
                                       child: shad.TextField(
+                                        selectionControls:
+                                            platformTextSelectionControls(),
                                         contextMenuBuilder:
                                             platformTextContextMenuBuilder(),
                                         controller:

@@ -96,12 +96,14 @@ class _ChatCreateConversationSheetState
                     ),
                     const SizedBox(height: 16),
                     shad.TextField(
+                      selectionControls: platformTextSelectionControls(),
                       contextMenuBuilder: platformTextContextMenuBuilder(),
                       controller: _titleController,
                       hintText: context.l10n.chatConversationTitleHint,
                     ),
                     const SizedBox(height: 10),
                     shad.TextField(
+                      selectionControls: platformTextSelectionControls(),
                       contextMenuBuilder: platformTextContextMenuBuilder(),
                       controller: _descriptionController,
                       hintText: context.l10n.chatConversationDescriptionHint,
@@ -112,6 +114,7 @@ class _ChatCreateConversationSheetState
                         _type == ChatConversationType.group) ...[
                       const SizedBox(height: 16),
                       shad.TextField(
+                        selectionControls: platformTextSelectionControls(),
                         contextMenuBuilder: platformTextContextMenuBuilder(),
                         controller: _searchController,
                         hintText: context.l10n.chatSelectParticipants,

@@ -86,6 +86,7 @@ class _TaskLabelDialogState extends State<TaskLabelDialog> {
                 Text(context.l10n.taskLabelsName),
                 const shad.Gap(4),
                 shad.TextField(
+                  selectionControls: platformTextSelectionControls(),
                   contextMenuBuilder: platformTextContextMenuBuilder(),
                   controller: _nameController,
                   hintText: context.l10n.taskLabelsName,
@@ -123,6 +124,7 @@ class _TaskLabelDialogState extends State<TaskLabelDialog> {
                     const shad.Gap(8),
                     Expanded(
                       child: shad.TextField(
+                        selectionControls: platformTextSelectionControls(),
                         contextMenuBuilder: platformTextContextMenuBuilder(),
                         controller: _colorController,
                         hintText: kDefaultTaskLabelColor,

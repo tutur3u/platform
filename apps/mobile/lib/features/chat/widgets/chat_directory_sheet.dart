@@ -42,6 +42,7 @@ class _ChatDirectorySheetState extends State<ChatDirectorySheet> {
                     _SheetHeader(title: context.l10n.chatDirectory),
                     const SizedBox(height: 16),
                     shad.TextField(
+                      selectionControls: platformTextSelectionControls(),
                       contextMenuBuilder: platformTextContextMenuBuilder(),
                       controller: _searchController,
                       hintText: context.l10n.chatSearchPeople,
@@ -62,6 +63,7 @@ class _ChatDirectorySheetState extends State<ChatDirectorySheet> {
                       children: [
                         Expanded(
                           child: shad.TextField(
+                            selectionControls: platformTextSelectionControls(),
                             contextMenuBuilder:
                                 platformTextContextMenuBuilder(),
                             controller: _emailController,

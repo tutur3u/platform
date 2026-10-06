@@ -63,7 +63,6 @@ class _TaskBoardListFormSheetState extends State<_TaskBoardListFormSheet> {
     final statusOptions = _taskBoardListStatusOptions(context);
     final colorOptions = _taskBoardListColorOptions(context);
     final viewInsets = MediaQuery.of(context).viewInsets;
-
     return PopScope(
       canPop: !_isSubmitting,
       child: SafeArea(
@@ -106,6 +105,7 @@ class _TaskBoardListFormSheetState extends State<_TaskBoardListFormSheet> {
                       ),
                       const shad.Gap(8),
                       shad.TextField(
+                        selectionControls: platformTextSelectionControls(),
                         contextMenuBuilder: platformTextContextMenuBuilder(),
                         controller: _nameController,
                         hintText: context.l10n.taskBoardDetailUntitledList,
@@ -624,7 +624,6 @@ class _TaskBoardRenameBoardSheetState
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
     final viewInsets = MediaQuery.of(context).viewInsets;
-
     return PopScope(
       canPop: !_isSubmitting,
       child: SafeArea(
@@ -654,6 +653,7 @@ class _TaskBoardRenameBoardSheetState
               const shad.Gap(24),
               // Board name field
               shad.TextField(
+                selectionControls: platformTextSelectionControls(),
                 contextMenuBuilder: platformTextContextMenuBuilder(),
                 controller: _controller,
                 hintText: widget.hintText,

@@ -68,6 +68,7 @@ class _WalletImagePickerSheetState extends State<WalletImagePickerSheet> {
             ),
             const shad.Gap(10),
             shad.TextField(
+              selectionControls: platformTextSelectionControls(),
               contextMenuBuilder: platformTextContextMenuBuilder(),
               controller: _searchController,
               hintText: l10n.financeWalletSearchImage,

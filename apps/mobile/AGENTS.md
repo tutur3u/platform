@@ -43,6 +43,9 @@ Flutter/Dart toolchain and app package configuration.
   cannot deduplicate uncertain attempts, retain the edit as a manual conflict
   instead of replaying it automatically. Show unsynchronized rows through
   `PendingSyncFrame` until confirmed.
+- Pair `platformTextContextMenuBuilder()` with `platformTextSelectionControls()`
+  for shadcn text fields and areas. The upstream default suppresses mobile drag
+  handles; preserve field capability checks, formatters and explicit callbacks.
 - Release Please owns release versions. Keep iOS Podfile.lock aligned after changes
   to dependencies with native iOS components.
 - Store CI must verify archived iOS dSYM UUIDs and upload symbols to Crashlytics

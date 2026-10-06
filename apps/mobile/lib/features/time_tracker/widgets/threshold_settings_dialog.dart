@@ -97,6 +97,7 @@ class _ThresholdSettingsDialogState extends State<ThresholdSettingsDialog> {
             ),
             const shad.Gap(4),
             shad.TextField(
+              selectionControls: platformTextSelectionControls(),
               contextMenuBuilder: platformTextContextMenuBuilder(),
               controller: _thresholdController,
               keyboardType: TextInputType.number,
@@ -116,6 +117,7 @@ class _ThresholdSettingsDialogState extends State<ThresholdSettingsDialog> {
           ),
           const shad.Gap(4),
           shad.TextField(
+            selectionControls: platformTextSelectionControls(),
             contextMenuBuilder: platformTextContextMenuBuilder(),
             controller: _statusChangeGracePeriodController,
             keyboardType: TextInputType.number,

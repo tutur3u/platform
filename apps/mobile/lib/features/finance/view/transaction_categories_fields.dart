@@ -21,6 +21,7 @@ class _TaxonomyTextField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         shad.TextField(
+          selectionControls: platformTextSelectionControls(),
           contextMenuBuilder: platformTextContextMenuBuilder(),
           controller: controller,
           placeholder: Text(placeholder),
@@ -50,6 +51,7 @@ class _TaxonomyTextArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return shad.TextArea(
+      selectionControls: platformTextSelectionControls(),
       contextMenuBuilder: platformTextContextMenuBuilder(),
       controller: controller,
       placeholder: Text(placeholder),

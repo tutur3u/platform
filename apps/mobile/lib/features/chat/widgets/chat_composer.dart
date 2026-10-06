@@ -145,6 +145,7 @@ class _ChatComposerState extends State<ChatComposer> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: shad.TextField(
+                    selectionControls: platformTextSelectionControls(),
                     contextMenuBuilder: platformTextContextMenuBuilder(),
                     controller: _controller,
                     hintText: context.l10n.chatMessagePlaceholder,
