@@ -528,6 +528,8 @@ Upload, finalize and removal requests include an expected actor checked before
 privileged effects; existing mobile callers that omit it remain compatible.
 Deferred image preparation and account-switch regressions cover this boundary.
 
+Mobile banner delivery validates the exact operation receipt before accepting an already committed or uploaded response, uploading bytes, or finalizing. A missing, malformed, or different operation ID fails as a response-contract error and cannot be replayed as a transport failure. Capability-upload failures retain HTTP status and `Retry-After` delta seconds or HTTP-date with a fixed safe category; arbitrary provider error bodies are not propagated. Capability retry delays use a defensive seven-day client wait ceiling; this does not bypass server quota admission. Negative or malformed delays are omitted, and expired HTTP-dates become zero. Existing user-facing fallback messages remain unchanged. Regression evidence: `profile_upload_receipt_failure_test.dart`, `profile_banner_delivery_test.dart`, and `profile_avatar_delivery_test.dart`.
+
 Profile writes retire only canonical banner object paths under the configured
 Storage origin and the authenticated actor's directory. External URLs and another
 actor's objects are never deleted. Retirement is atomic with the existing locked
