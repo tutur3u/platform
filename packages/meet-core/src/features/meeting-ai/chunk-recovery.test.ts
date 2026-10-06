@@ -92,3 +92,21 @@ it('cancels a backoff immediately when the meeting is left', async () => {
   await expect(task).rejects.toThrow('left');
   expect(upload).toHaveBeenCalledTimes(1);
 });
+
+it('does not advertise reconnecting when credits require user action', async () => {
+  const error = { status: 402, message: 'Synthetic credit admission' };
+  const upload = vi.fn().mockRejectedValue(error);
+  const onRetry = vi.fn();
+  await expect(
+    recoverMeetChunk(upload, {
+      deadline: 10000,
+      now: () => 0,
+      onRetry,
+      wait: async () => {
+        throw new Error('Unexpected retry after credit denial');
+      },
+    })
+  ).rejects.toBe(error);
+  expect(upload).toHaveBeenCalledTimes(1);
+  expect(onRetry).not.toHaveBeenCalled();
+});

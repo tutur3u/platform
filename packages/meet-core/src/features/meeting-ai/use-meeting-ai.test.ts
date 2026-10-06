@@ -181,3 +181,51 @@ it('gives a queued clip a fresh retry window when its upload starts', async () =
   );
   hook.unmount();
 });
+
+it('waits for a delayed final worklet flush and its upload before notes finalization', async () => {
+  let releaseStop!: () => void;
+  let releaseUpload!: () => void;
+  mocks.stop.mockImplementation(
+    () =>
+      new Promise<boolean>((resolve) => {
+        releaseStop = () => {
+          mocks.onChunk?.(new Blob(['final']), 0);
+          resolve(true);
+        };
+      })
+  );
+  mocks.upload.mockImplementation(
+    () =>
+      new Promise<{ status: string }>((resolve) => {
+        releaseUpload = () => resolve({ status: 'completed' });
+      })
+  );
+  const hook = renderHook(() => useMeetingAi('workspace', 'meeting'));
+  await act(() => hook.result.current.start());
+  let finished!: Promise<void>;
+  await act(async () => {
+    finished = hook.result.current.finish();
+    await Promise.resolve();
+  });
+  expect(mocks.update).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    releaseStop();
+    await Promise.resolve();
+  });
+  await waitFor(() => expect(mocks.upload).toHaveBeenCalledTimes(1));
+  expect(mocks.update).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    releaseUpload();
+    await finished;
+  });
+  expect(mocks.update).toHaveBeenLastCalledWith(
+    'workspace',
+    'meeting',
+    expect.objectContaining({
+      action: 'finish',
+      expectedChunks: 1,
+      captureIncomplete: false,
+    })
+  );
+  hook.unmount();
+});

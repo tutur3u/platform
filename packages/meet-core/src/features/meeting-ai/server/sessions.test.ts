@@ -1,3 +1,4 @@
+import { MeetAiGenerationError } from '@tuturuuu/ai/meetings/failure';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ access: vi.fn(), generate: vi.fn() }));
@@ -30,13 +31,15 @@ const session = {
 };
 function dbWith(results: unknown[]) {
   const writes: unknown[] = [];
-  const from = vi.fn(() => {
+  const updatedTables: string[] = [];
+  const from = vi.fn((table: string) => {
     const result = results.shift();
     const chain: Record<string, unknown> = {};
     for (const key of ['select', 'eq', 'in', 'order', 'range'])
       chain[key] = () => chain;
     chain.update = (value: unknown) => {
       writes.push(value);
+      updatedTables.push(table);
       return chain;
     };
     chain.maybeSingle = () => Promise.resolve(result);
@@ -54,7 +57,7 @@ function dbWith(results: unknown[]) {
     user: { id },
     canManage: true,
   });
-  return writes;
+  return Object.assign(writes, { updatedTables });
 }
 const result = (data: unknown) => ({ data, error: null });
 const request = () =>
@@ -214,4 +217,68 @@ it('redacts all costs and raw usage from a shared-notes reader', async () => {
   expect(state.sessions[0]).toMatchObject({ notes_cost_usd: null });
   expect(state.sessions[0]).not.toHaveProperty('notes_usage');
   expect(state.sessions[0]).not.toHaveProperty('notes_unpriced_attempts');
+});
+
+it('retries failed ended-session notes from saved chunks without changing transcripts', async () => {
+  const chunks = [
+    {
+      status: 'completed',
+      start_seconds: 0,
+      sequence: 0,
+      transcript: 'Synthetic saved discussion.',
+      usage: null,
+    },
+  ];
+  const originalChunks = structuredClone(chunks);
+  const firstWrites = dbWith([
+    result(session),
+    result(null),
+    result(chunks),
+    result({ id }),
+    result({ id }),
+  ]);
+  mocks.generate.mockRejectedValueOnce(new MeetAiGenerationError('timeout'));
+  const failed = await meetAiResponse(() => changeMeetAi(request(), params));
+  expect(failed.status).toBe(502);
+  expect(await failed.json()).toMatchObject({
+    code: 'MEET_AI_PROVIDER_TIMEOUT',
+  });
+  expect(firstWrites.at(-1)).toMatchObject({ notes_status: 'failed' });
+  expect(
+    firstWrites.updatedTables.every((table) => table === 'meet_ai_sessions')
+  ).toBe(true);
+  const retryWrites = dbWith([
+    result({
+      ...session,
+      ended_at: '2026-01-01T00:00:00.000Z',
+      notes_status: 'failed',
+      notes_unpriced_attempts: 1,
+    }),
+    result(null),
+    result(chunks),
+    result({ id }),
+    result({ id }),
+  ]);
+  mocks.generate.mockResolvedValueOnce({
+    notes: {
+      summary: 'Synthetic recovered notes.',
+      decisions: [],
+      actionItems: [],
+      openQuestions: [],
+    },
+    costUsd: 0,
+    usage: { available: true },
+  });
+  expect(await changeMeetAi(request(), params)).toEqual({ sessionId: id });
+  expect(mocks.generate.mock.calls.at(-1)?.[0]).toMatchObject({
+    transcript: expect.stringContaining('Synthetic saved discussion.'),
+  });
+  expect(retryWrites.at(-1)).toMatchObject({
+    notes_status: 'completed',
+    notes: { summary: 'Synthetic recovered notes.' },
+  });
+  expect(
+    retryWrites.updatedTables.every((table) => table === 'meet_ai_sessions')
+  ).toBe(true);
+  expect(chunks).toEqual(originalChunks);
 });

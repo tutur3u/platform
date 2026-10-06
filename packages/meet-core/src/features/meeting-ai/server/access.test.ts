@@ -58,6 +58,7 @@ describe('Meet AI satellite authorization', () => {
     });
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({
+      code: 'MEET_AI_NOT_CONFIGURED',
       error: 'Meeting AI is not configured',
     });
   });
@@ -67,6 +68,7 @@ describe('Meet AI satellite authorization', () => {
     });
     expect(response.status).toBe(502);
     expect(await response.json()).toEqual({
+      code: 'MEET_AI_PROVIDER_UNAVAILABLE',
       error: 'Meeting AI provider request failed',
     });
   });
@@ -143,5 +145,16 @@ describe('Meet AI satellite authorization', () => {
       (await meetAiResponse(() => meetAiAccess(request(), params, true))).status
     ).toBe(403);
     expect(query.eq).toHaveBeenCalledWith('ws_id', 'workspace');
+  });
+});
+
+it('returns an allowlisted provider failure code without raw provider details', async () => {
+  const response = await meetAiResponse(async () => {
+    throw new MeetAiGenerationError('quota_exceeded', 429);
+  });
+  expect(response.status).toBe(502);
+  expect(await response.json()).toEqual({
+    code: 'MEET_AI_PROVIDER_LIMIT',
+    error: 'Meeting AI provider request failed',
   });
 });

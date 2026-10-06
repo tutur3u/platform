@@ -1,6 +1,7 @@
 import { isParleySession } from '@tuturuuu/meet-core/parley/repository';
 import { hasParleyAccess } from '@tuturuuu/meet-core/parley-access';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
+import { meetingAiGenerationFailureCode } from '../request-failure';
 import { canReadSharedMeetingNotes } from './room-access';
 import 'server-only';
 import { MeetAiGenerationError } from '@tuturuuu/ai/meetings/failure';
@@ -130,7 +131,12 @@ export async function meetAiResponse(work: () => Promise<unknown>) {
   } catch (error) {
     return Response.json(
       {
-        code: error instanceof MeetAiError ? error.code : undefined,
+        code:
+          error instanceof MeetAiError
+            ? error.code
+            : error instanceof MeetAiGenerationError
+              ? meetingAiGenerationFailureCode(error.reason)
+              : undefined,
         error:
           error instanceof MeetAiError || error instanceof MeetAiGenerationError
             ? error.message

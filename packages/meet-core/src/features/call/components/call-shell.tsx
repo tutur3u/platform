@@ -24,6 +24,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { ComponentProps } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { showMeetingAiFailure } from '../../meeting-ai/failure-toast';
 import { useCallNotifications } from '../hooks/use-call-notifications';
 import { useMeetRoom } from '../hooks/use-meet-room';
 import { useProgrammingOpener } from '../hooks/use-programming-opener';
@@ -258,11 +259,15 @@ function CallShellContent({
     setLeft(true);
     setLeaveDialog(false);
     setSaving(true);
-    void Promise.allSettled([ai.finish(), recording.stop()]).then((results) => {
-      if (results.some((result) => result.status === 'rejected'))
-        toast.error(aiT('failed'));
-      setSaving(false);
-    });
+    void Promise.allSettled([ai.finish(), recording.stop()]).then(
+      ([aiResult, recordingResult]) => {
+        if (aiResult.status === 'rejected')
+          showMeetingAiFailure(aiT, aiResult.reason);
+        else if (recordingResult.status === 'rejected')
+          toast.error(aiT('failed'));
+        setSaving(false);
+      }
+    );
   }, [room.leave, ai.finish, recording.stop, aiT, flushUsage]);
   useEffect(() => {
     if (panel === 'chat') setLastReadChatId(newestChatId);

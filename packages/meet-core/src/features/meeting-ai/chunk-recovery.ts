@@ -34,8 +34,8 @@ export async function recoverMeetChunk<T extends { status: string }>(
         typeof error === 'object' && error !== null && 'status' in error
           ? Number(error.status)
           : 0;
-      // Authorization, invalid audio, and ended sessions require user action.
-      if ([400, 401, 403, 404, 409, 413].includes(status)) throw error;
+      // Credit admission, authorization, invalid audio and ended sessions require user action.
+      if ([400, 401, 402, 403, 404, 409, 413].includes(status)) throw error;
     } finally {
       clearTimeout(timeout);
     }
