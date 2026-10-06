@@ -24,12 +24,16 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
   AssistantShellCubit({
     required AssistantRepository repository,
     required AssistantPreferences preferences,
+    Object? Function()? currentScopeToken,
   }) : _repository = repository,
        _preferences = preferences,
+       _currentScopeToken = currentScopeToken,
        super(const AssistantShellState());
 
   final AssistantRepository _repository;
   final AssistantPreferences _preferences;
+  final Object? Function()? _currentScopeToken;
+  int _soulRefreshGeneration = 0;
   int _requestVersion = 0;
   int _insightsRequestVersion = 0;
 
@@ -182,8 +186,16 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
   }
 
   Future<void> refreshSoul() async {
-    final soul = await _repository.fetchSoul();
-    if (isClosed) return;
+    final generation = ++_soulRefreshGeneration;
+    final workspaceVersion = _requestVersion;
+    final scopeToken = _currentScopeToken?.call();
+    final soul = await _repository.fetchSoul(forceRefresh: true);
+    if (isClosed ||
+        generation != _soulRefreshGeneration ||
+        workspaceVersion != _requestVersion ||
+        scopeToken != _currentScopeToken?.call()) {
+      return;
+    }
     emit(state.copyWith(soul: soul));
   }
 

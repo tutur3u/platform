@@ -10469,4 +10469,85 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsLinkOpenError => 'Could not open this link. Please try again.';
+
+  @override
+  String get assistantPersonalityTitle => 'Personality';
+
+  @override
+  String get assistantPersonalityName => 'Assistant name';
+
+  @override
+  String get assistantPersonalityNameRequired => 'Enter an assistant name';
+
+  @override
+  String get assistantPersonalityTone => 'Tone';
+
+  @override
+  String get assistantPersonalityVerbosity => 'Response length';
+
+  @override
+  String get assistantPersonalityDescription => 'Personality';
+
+  @override
+  String get assistantPersonalityBoundaries => 'Boundaries';
+
+  @override
+  String get assistantPersonalityBalanced => 'Balanced';
+
+  @override
+  String get assistantPersonalityWarm => 'Warm';
+
+  @override
+  String get assistantPersonalityFriendly => 'Friendly';
+
+  @override
+  String get assistantPersonalityCasual => 'Casual';
+
+  @override
+  String get assistantPersonalityFormal => 'Formal';
+
+  @override
+  String get assistantPersonalityPlayful => 'Playful';
+
+  @override
+  String get assistantPersonalityProfessional => 'Professional';
+
+  @override
+  String get assistantPersonalityThorough => 'Thorough';
+
+  @override
+  String get assistantPersonalityConcise => 'Concise';
+
+  @override
+  String get assistantPersonalityBrief => 'Brief';
+
+  @override
+  String get assistantPersonalityDetailed => 'Detailed';
+
+  @override
+  String get assistantMemoryTitle => 'Memory';
+
+  @override
+  String get assistantMemoryCollection => 'Collect memories';
+
+  @override
+  String get assistantMemoryWorkspaceScope => 'Your memory in this workspace';
+
+  @override
+  String get assistantMemoryProductDisabled => 'Mira collection is disabled in product settings.';
+
+  @override
+  String get assistantMemoryEmpty => 'No saved memories';
+
+  @override
+  String get assistantMemoryDeleteTitle => 'Delete memory?';
+
+  @override
+  String get assistantMemoryDeleteDescription => 'Remove this saved memory from your workspace memory.';
+
+  @override
+  String get assistantMemoryExport => 'Export memories';
+
+  @override
+  String get assistantPersonalSettingsError => 'Could not complete this change. Try again.';
 }

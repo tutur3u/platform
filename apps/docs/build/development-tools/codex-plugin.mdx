@@ -576,3 +576,7 @@ private checkpoints and reconnect recovery. It reuses `packages/realtime` and
 the shared programming workbench. Its focused reference covers admission,
 capability scope, persistence, egress and service verification; operational
 configuration lives in [the programming realtime runbook](/build/devops/programming-realtime-runbook).
+
+### Backlog priority and dependent receipts
+
+Reprioritize requests through the audited `program_backlog.py update <id> --priority <0-3>` command; reimporting a changed priority is rejected. Reopened prerequisites invalidate current dependent verification transitively while preserving audit history and implemented source. Parent recovery never silently restores dependent delivery receipts. See the coordination skill's request-backlog reference and `test_program_backlog.py` for the contract and regressions.

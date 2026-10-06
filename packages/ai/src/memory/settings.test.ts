@@ -40,7 +40,7 @@ describe('AI memory settings', () => {
     });
   });
 
-  it('fails open when settings lookup fails', async () => {
+  it('denies admission when settings lookup fails', async () => {
     const { client } = rpcClient(null, { message: 'temporarily unavailable' });
 
     await expect(
@@ -50,6 +50,32 @@ describe('AI memory settings', () => {
         userId: 'user-1',
         wsId: 'workspace-1',
       })
-    ).resolves.toBe(true);
+    ).resolves.toBe(false);
   });
+  it('denies admission when settings RPC throws', async () => {
+    const { client, rpc } = rpcClient(null);
+    rpc.mockRejectedValueOnce(new Error('Synthetic lookup failure'));
+    await expect(
+      getAiMemorySettings({
+        db: client,
+        product: 'mira',
+        userId: 'user-1',
+        wsId: 'workspace-1',
+      })
+    ).resolves.toEqual({ enabled: false, productEnabled: false, products: {} });
+  });
+
+  for (const data of [null, []]) {
+    it(`preserves successful missing-row defaults for ${JSON.stringify(data)}`, async () => {
+      const { client } = rpcClient(data);
+      await expect(
+        getAiMemorySettings({
+          db: client,
+          product: 'mira',
+          userId: 'user-1',
+          wsId: 'workspace-1',
+        })
+      ).resolves.toEqual({ enabled: true, productEnabled: true, products: {} });
+    });
+  }
 });

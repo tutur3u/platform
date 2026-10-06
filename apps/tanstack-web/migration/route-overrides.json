@@ -1,5 +1,10 @@
 {
   "routes": {
+    "api:/api/v1/notifications/account-preferences:apps/web/src/app/api/v1/notifications/account-preferences/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class account-scoped GET/HEAD and PUT accept cookie or mobile Bearer sessions. Rust GET already preserves caller-token reads; PUT and HEAD parity remain pending."
+    },
     "api:/api/:wsId/crawlers/domains:apps/web/src/legacy-api-routes/[wsId]/crawlers/domains/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
@@ -1346,7 +1351,7 @@
         "POST": {
           "status": "legacy-next",
           "targetOwner": "rust-backend",
-          "note": "The Rust handler intentionally falls through for POST. The live Next.js mutation delivers externally bound staff replies, and its Assistant requests enable Mira tools before native persistence."
+          "note": "The Rust handler intentionally falls through for POST. The live Next.js mutation delivers externally bound staff replies, and its Assistant requests enable Mira tools before native persistence. Durable native assistant receipts survive supplementary shadow-cleanup failures."
         }
       }
     },

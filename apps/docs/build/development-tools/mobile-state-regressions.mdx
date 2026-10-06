@@ -83,3 +83,20 @@ Run the required full mobile checks for implementation changes, then use CI for
 native builds. A mocked provider result or a passing widget suite does not prove
 authenticated device behavior, provider billing, installed model inference, or
 production delivery. Record those missing gates separately from the code fix.
+
+## Close offline queue admission before awaiting cleanup
+
+Disposing an offline mutation queue permanently closes that instance. Mark it
+closed before awaiting subscription cancellation, and check closure after
+connectivity, initialization, and dependency reads before starting another
+request or refreshing cached resources. Disposal must not await an unresolved
+connectivity future. A delayed old queue must not refresh resources registered
+by a replacement queue, including when the same actor returns after logout.
+
+An already dispatched write retains acknowledgment reconciliation so disposal
+cannot make an accepted write replay. Reconcile only its owned pending record;
+skip subsequent dispatch, retry timers, revalidation, and visible refresh after
+closure. A new queue remains able to synchronize the current actor's resources.
+`offline_queue_disposal_regression_test.dart` covers held connectivity, actor
+ABA, disposal before/during initialization, replacement queues, and admitted
+ordinary and inventory acknowledgments using a real scoped temporary cache.

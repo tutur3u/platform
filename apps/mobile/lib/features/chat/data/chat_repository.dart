@@ -13,6 +13,7 @@ import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/cache/pending_collection_overlay.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/chat/data/chat_stream_completion.dart';
 import 'package:mobile/features/chat/data/chat_stream_parser.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 
@@ -351,15 +352,7 @@ class ChatRepository {
       return;
     }
 
-    final parser = ChatNdjsonStreamParser();
-    await for (final chunk in response.stream) {
-      for (final event in parser.addChunk(chunk)) {
-        yield event;
-      }
-    }
-    for (final event in parser.close()) {
-      yield event;
-    }
+    yield* readChatMessageStream(response.stream, requireAssistant: miraMode);
   }
 
   Future<ChatMessage> editMessage(

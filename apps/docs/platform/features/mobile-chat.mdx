@@ -60,3 +60,45 @@ or platform details, or silently switching browser modes. Initial app-link
 opt-outs return a safe failed result when no UI feedback surface is available.
 Late settings reads cannot replace a newer read or a saved selection. Helper and settings widget
 regressions cover persistence, URL admission, mode selection and retry errors.
+
+
+### Account notification preferences
+
+Account notification preference reads and writes accept browser cookies and mobile
+Bearer sessions. Reads remain scoped to the authenticated user and account rows
+(`ws_id IS NULL`); writes derive the actor from the session. This authentication
+repair does not establish cross-platform notification delivery or enforcement.
+Route regressions cover credential forwarding, anonymous rejection, account
+isolation, invalid writes and bodyless HEAD responses. Rust GET already uses
+caller-token reads; unported methods continue through the live Next API.
+
+## Stream completion
+
+Native Chat and Mira replies stop reading their NDJSON response after a verified
+`done` event. Chat requires a saved message receipt; Mira requires a saved
+assistant message receipt. Text or tool deltas alone do not prove persistence.
+An explicit server error remains a failed reply even when followed by `done`.
+Malformed data before completion and EOF without completion remain errors.
+Completed replies ignore post-terminal rows and bytes, and UTF-8 decoding retains
+partial characters across transport chunks. Response cancellation starts at
+completion; cleanup failures or stalls do not replace the saved receipt or an
+earlier transport failure. This applies to native Chat streaming;
+legacy Assistant SSE and explicit Live sessions keep their separate protocols.
+
+Regression coverage: `chat_stream_terminal_test.dart` and
+`assistant_chat_transport_terminal_test.dart` exercise the real repository and
+Assistant cubit with synthetic response bytes, alongside parser and scope tests.
+These checks establish source behavior; production provider/storage failures
+and actual device transport still require separate runtime evidence.
+
+
+### Durable assistant receipt and cleanup
+
+After the native Chat/Mira batch RPC returns saved assistant messages, shadow
+resource cleanup is supplementary. A thrown cleanup failure cannot remove the
+saved JSON/NDJSON receipt or turn an accepted reply into a retry prompt. Failures
+before authoritative persistence, including permission or database errors,
+remain failures; no text-only success or remote fallback is introduced.
+`native-ai-cleanup-receipt.test.ts` covers the actual message route with durable
+save followed by failed cleanup. This establishes a source boundary, not the
+cause of every missing reply or device/provider delivery evidence.

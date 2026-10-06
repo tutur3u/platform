@@ -24,7 +24,12 @@ void main() {
       ),
     ).thenAnswer(
       (_) async => http.StreamedResponse(
-        Stream.value(utf8.encode('{"type":"done"}\n')),
+        Stream.value(
+          utf8.encode(
+            '{"type":"message","message":{"id":"saved-user",'
+            '"kind":"user"}}\n{"type":"done"}\n',
+          ),
+        ),
         201,
         headers: {'content-type': 'application/x-ndjson'},
       ),

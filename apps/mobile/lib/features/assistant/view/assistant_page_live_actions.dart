@@ -172,8 +172,14 @@ extension _AssistantPageLiveActions on _AssistantPageState {
       ),
     );
     if (!mounted || scope != _localScope()) return;
-    await _loadLiveBrowsingPreference(wsId);
-    _resumeLocal();
+    await refreshAssistantSettings(
+      refreshSoul: _shellCubit.refreshSoul,
+      isCurrent: () => mounted && scope == _localScope(),
+      onRefreshFailure: () =>
+          _showInlineNotice(context.l10n.assistantPersonalSettingsError),
+      reloadPreferences: () => _loadLiveBrowsingPreference(wsId),
+      resume: _resumeLocal,
+    );
   }
 
   Future<void> _openChatComposerFromLiveMode() async {
