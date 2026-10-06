@@ -23860,6 +23860,8 @@
     "manage_drive_tasks_directory_description": "Allows members to upload and manage files inside task-specific media directories.",
     "manage_e2ee": "Manage end-to-end encryption",
     "manage_e2ee_description": "Allows members to enable, configure, and manage end-to-end encryption settings for sensitive data.",
+    "manage_desktop_deployment_vault": "Manage desktop deployment vault",
+    "manage_desktop_deployment_vault_description": "Allows root workspace members to manage private Windows/macOS signing resources and protected workflow tokens. Does not enable delivery.",
     "manage_external_migrations": "Manage external migrations",
     "manage_external_migrations_description": "Allows members to view and execute external migrations.",
     "manage_external_projects": "Manage external projects",

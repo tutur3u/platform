@@ -1598,3 +1598,17 @@ unrelated modal. Cleanup schedules a frame even when the covered route is
 settled; it removes that editor alone and preserves the covering modal.
 
 Timer also remounts its native host for each authentication transition, including batched logout and login to the same account. A preference read owned by the disposed host cannot prevent the new host from loading or resume its previous request. The actual-host deferred preference regression covers this liveness boundary independently of Timer load-publication fences.
+
+### Native Chat account lifetime
+
+The native Chat root owns a new host and cubit for each signed-in actor, even
+when the workspace ID stays unchanged. An actor-transition generation also
+replaces the host when logout and same-account login occur before a frame
+renders. Search, selected conversations, drafts,
+and retained messages belong to that host. Closing invalidates asynchronous
+callbacks before subscription cancellation finishes; actor and cache-resource
+lifetime checks also fence delayed results. This preserves the existing shared
+shell dock and API-backed workspace chat behavior. The actual host account-switch
+and delayed-cancellation regressions are in `chat_actor_lifetime_test.dart`.
+
+Chat rejects retained-cubit API dispatch after its actor lifetime ends. A send waiting for previous stream cancellation rechecks actor, workspace and selected conversation before starting a new request; stale conversation creation results do not trigger selection reads or return a navigable result. Already dispatched server writes are not cancelled by this client boundary. Deferred cancellation and creation regressions cover these rules.

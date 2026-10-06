@@ -8235,6 +8235,8 @@
     "manage_calendar": "Manage Calendar",
     "manage_calendar_description": "Allows members to view, create, edit, and delete events in the workspace.",
     "manage_default_permissions": "Manage default permissions",
+    "manage_desktop_deployment_vault": "Manage desktop deployment vault",
+    "manage_desktop_deployment_vault_description": "Allows root workspace members to manage private Windows/macOS signing resources and protected workflow tokens. Does not enable delivery.",
     "manage_documents": "Manage Documents",
     "manage_documents_description": "Allows members to view, create, edit, and delete documents in the workspace.",
     "manage_drive": "Manage Drive",

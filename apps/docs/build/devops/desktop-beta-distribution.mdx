@@ -282,6 +282,24 @@ Do not remove Flutter license notices or required plugin functionality merely to
 hide an informational test. [Microsoft documents optional Desktop Bridge tests](https://learn.microsoft.com/en-us/windows/uwp/debug-test-perf/windows-desktop-bridge-app-tests)
 as informational, but a required DPI warning still needs investigation.
 
+The Windows runner manifest declares both the legacy `dpiAware` value `true/pm`
+and modern `dpiAwareness` value `PerMonitorV2`. [Microsoft documents both
+manifest declarations](https://learn.microsoft.com/en-us/windows/win32/sbscs/application-manifests):
+Windows 10 version 1607 and later uses the modern declaration in preference to
+the legacy one. This preserves PerMonitorV2 while exposing the compatible legacy
+fallback to older consumers.
+
+A diagnostic report can still return overall `WARNING`: observed optional tests
+flagged Flutter's compressed `NOTICES.Z` and process-launch references in bundled
+binaries, while the required DPI test could not process the executable despite
+its extracted PerMonitorV2 manifest and positive installed-process DPI receipt.
+These are different findings. The dual declaration is a compatibility change,
+not proof the certification warning is resolved. Require a fresh exact-source
+Windows build, extracted manifest/runtime DPI checks, and overall WACK `PASS`
+before submission. Preserve licenses and legitimate functionality while
+investigating; do not convert warnings into passing results.
+
+
 ### Infrastructure desktop signing contract
 
 The separate Infrastructure desktop contract admits only the direct
@@ -306,3 +324,108 @@ does not establish provisioning, certificate validity or signed runtime success.
 `desktop-deployment/contract.test.ts` and `desktop-deployment/oidc.test.ts` cover
 platform isolation and locally signed JWT rejection. Actual protected-workflow
 OIDC, certificate identity, installation, WACK and update proof remain required.
+
+### Private desktop vault storage
+
+Desktop signing storage is additive and separate from the mobile vault. Windows
+and macOS have independent draft versions and exact resource names; Linux and
+Store MSIX drafts do not receive desktop signing bundles. Ordinary authenticated
+and anonymous database roles cannot read encrypted resources, data keys or token
+hashes. Service-only administration requires an explicit actor who belongs to the
+root workspace and has `manage_desktop_deployment_vault` permission.
+
+Each resource is encrypted with AES-GCM and authenticated against its desktop
+version, platform and resource name. A replacement cannot transplant ciphertext
+between platforms or versions. Draft writes increment the revision and invalidate
+readiness; active resource values and encrypted data-key identity are immutable.
+Validation and activation use the expected revision. Complete resource names are
+a structural prerequisite, not proof of a valid signing certificate: the server's
+certificate and platform readiness checks must succeed before it records a clean
+validation result.
+
+CI tokens contain only a stored hash and bind to a single platform and version.
+The verified desktop OIDC run and attempt reserve a unique fetch lease before
+decryption. Completion rechecks current admission, token expiry and revocation,
+and the active version before any bundle may be returned. A delivered or failed
+lease cannot replay; a lost response requires a new workflow run attempt. Audit
+records use fixed event names and contain no credential values or exception text.
+
+Both platform environments start disabled. Activating a structurally ready
+version does not enable delivery. This storage and cryptography foundation alone
+does not provide an admin screen, bundle endpoint, runner hydration or signing
+proof; those follow in the dependent implementation. Protected GitHub signing
+continues to be the existing source until that integration is explicitly enabled.
+Regression coverage: `desktop-deployment-vault.sql` tests permission boundaries,
+platform separation, revision invalidation, immutable active bytes, replay and
+revocation; `vault-crypto.test.ts` tests tamper and identity binding.
+
+### Portable certificate readiness
+
+Desktop vault readiness inspects the uploaded PKCS#12 material for one matching
+private key and certificate, a current validity interval and an explicit
+code-signing extended key usage. macOS additionally requires the Developer ID
+Application extension, an exact configured common-name signing identity and a
+matching team identifier. The notarization key must parse as a PKCS#8 EC P-256
+private key. Rejections return fixed codes; passwords, private key bytes and
+parser errors are never part of a readiness response. Successful responses contain
+only a certificate fingerprint, expiry and algorithm.
+
+These are portable material checks, not operating-system trust-chain or revocation
+verification, Apple account access, notarization or artifact-signing proof. The
+protected per-platform signing and verification workflow remains required before
+publishing a downloadable artifact. The current PKCS#12 parser supports RSA
+certificate bags; unsupported key/certificate material fails closed instead of
+being described as ready. [Forge documents its PKCS#12 parser and unsupported-key behavior](https://github.com/digitalbazaar/forge),
+and [Apple documents the Developer ID Application certificate extension](https://developer.apple.com/documentation/technotes/tn3127-inside-code-signing-requirements).
+Regression coverage: `certificate-readiness.test.ts` uses freshly generated
+synthetic material for key mismatch, missing keys, duplicate matches, validity,
+code-signing, Developer ID identity/team and notarization-key boundaries.
+
+### Private desktop administration API
+
+Infrastructure's desktop administration API requires an authenticated registered
+satellite actor, explicit root workspace MEMBER membership and the dedicated
+`manage_desktop_deployment_vault` permission. Browser mutations additionally
+require the exact local origin and desktop action header. JSON and multipart
+uploads enforce actual streamed byte limits, including chunked uploads.
+
+Responses expose version/revision/readiness metadata, configured resource names
+and token identifiers only. Password suffixes, encrypted resources, data keys,
+plaintext hashes and token hashes are excluded. A newly issued token is returned
+once to its authorized creator and is never included in state reads.
+
+Draft edits use expected revisions and invalidate readiness. Activation repeats
+time-sensitive portable certificate checks before the atomic revision-fenced
+activation RPC. Windows and macOS resource names cannot cross platforms. No
+operation enables a platform environment; runner bundle delivery remains a
+separate default-off integration. Operator UI and protected workflow hydration
+are follow-up layers, so these endpoints alone do not establish signed delivery.
+Regression coverage: desktop `access.test.ts`, `request.test.ts`,
+`store.test.ts` and `mutations.test.ts`.
+
+### Private desktop operator panel
+
+Root workspace members can continue viewing public desktop deployment metadata.
+Only the verified Infrastructure satellite actor with explicit MEMBER membership
+and desktop vault permission sees signing administration. The desktop page uses
+that actor for permission checks; personal and non-root redirects are preserved.
+
+Windows and macOS drafts use empty replacement inputs and configured-name status
+without saved-value readback. Activation requires current revision readiness and
+still repeats certificate checks on the server. The UI never enables vault
+delivery. Newly issued seven-day tokens are masked, shown once, discarded on
+dismissal or actor/page lifetime changes, and cannot be recovered from state.
+A definitive permission denial hides retained metadata; revision conflicts reload
+current state while retaining the operator's replacement input for retry.
+
+The client uses shared Internal API functions and actor-scoped TanStack Query
+keys. This administration surface does not establish provider provisioning,
+OS trust, WACK, signing, notarization or protected hydration success. Regression
+coverage: `page-access.test.ts` and `desktop-vault-client.test.tsx`.
+
+Private operator writes pass no credential variables into the shared TanStack
+mutation cache and return no signing token as mutation data. The actor-local
+operation publishes safe metadata and the one-time token separately; completion
+and unmount clear the operation reference, and cache errors retain only a fixed
+status/message. Cache regressions cover pending scalar/file writes, dismissal,
+conflicts, logout and delayed old-actor completion.

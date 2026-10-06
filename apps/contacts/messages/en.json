@@ -7836,6 +7836,8 @@
     "initiate_pos_checkout": "Start POS checkout",
     "initiate_pos_checkout_description": "Allows members to route an order to an approved Square Terminal or open Square POS on their current device. It does not allow editing inventory, sales, payments, members, or settings.",
     "inventory_promotions_access_denied_description": "You don't have permission to view inventory promotions.",
+    "manage_desktop_deployment_vault": "Manage desktop deployment vault",
+    "manage_desktop_deployment_vault_description": "Allows root workspace members to manage private Windows/macOS signing resources and protected workflow tokens. Does not enable delivery.",
     "manage_git_repositories": "Manage Git repositories",
     "manage_git_repositories_description": "Allows platform administrators to configure the GitHub App and approve public repositories for Git.",
     "manage_user_report_automation": "Manage Report Automation",

@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/chat/data/chat_realtime_client.dart';
@@ -14,10 +17,37 @@ part 'chat_state.dart';
 part 'chat_cubit_actions.dart';
 
 class ChatCubit extends Cubit<ChatState> {
-  ChatCubit({ChatRepository? repository, ChatRealtimeClient? realtimeClient})
-    : _repository = repository ?? ChatRepository(),
-      _realtimeClient = realtimeClient ?? ChatRealtimeClient(),
-      super(const ChatState());
+  ChatCubit({
+    ChatRepository? repository,
+    ChatRealtimeClient? realtimeClient,
+    String? Function()? currentUserId,
+    CacheStore? cacheStore,
+  }) : _currentUserId = currentUserId ?? currentCacheUserId,
+       _ownerId = (currentUserId ?? currentCacheUserId)(),
+       _store = cacheStore ?? CacheStore.instance,
+       _repository = repository ?? ChatRepository(),
+       _realtimeClient = realtimeClient ?? ChatRealtimeClient(),
+       super(const ChatState()) {
+    _ownerRevision = _store.resourceRevisionFor(_actorFence);
+  }
+
+  final String? Function() _currentUserId;
+  final String? _ownerId;
+  final CacheStore _store;
+  late final int _ownerRevision;
+  bool _closing = false;
+  CacheKey get _actorFence =>
+      CacheKey(namespace: 'chat.actor', userId: _ownerId);
+  bool get _scopeActive =>
+      !isClosed &&
+      !_closing &&
+      _currentUserId() == _ownerId &&
+      _store.resourceRevisionFor(_actorFence) == _ownerRevision;
+
+  @override
+  void emit(ChatState state) {
+    if (_scopeActive) super.emit(state);
+  }
 
   final ChatRepository _repository;
   final ChatRealtimeClient _realtimeClient;
@@ -39,7 +69,7 @@ class ChatCubit extends Cubit<ChatState> {
   }
 
   void _emitState(ChatState nextState) {
-    if (!isClosed) emit(nextState);
+    if (_scopeActive) emit(nextState);
   }
 
   bool _isPendingChatItem(String wsId, String entityId) =>
@@ -55,6 +85,7 @@ class ChatCubit extends Cubit<ChatState> {
     bool canManageChat = false,
     String? initialConversationId,
   }) async {
+    if (!_scopeActive) return;
     if (state.wsId == wsId &&
         state.status == ChatStatus.loaded &&
         initialConversationId == null) {
@@ -63,6 +94,7 @@ class ChatCubit extends Cubit<ChatState> {
 
     final token = ++_loadToken;
     await _realtimeSubscription?.cancel();
+    if (!_scopeActive || token != _loadToken) return;
     emit(
       ChatState(
         wsId: wsId,
@@ -74,7 +106,7 @@ class ChatCubit extends Cubit<ChatState> {
 
     try {
       final page = await _repository.listConversations(wsId);
-      if (isClosed || token != _loadToken) return;
+      if (!_scopeActive || token != _loadToken) return;
       final selectedId = _resolveSelectedConversationId(
         page.conversations,
         preferredId: initialConversationId,
@@ -94,10 +126,10 @@ class ChatCubit extends Cubit<ChatState> {
       }
       unawaited(loadFriendRequests());
     } on ApiException catch (error) {
-      if (isClosed || token != _loadToken) return;
+      if (!_scopeActive || token != _loadToken) return;
       emit(state.copyWith(status: ChatStatus.error, error: error.message));
     } on Object catch (error) {
-      if (isClosed || token != _loadToken) return;
+      if (!_scopeActive || token != _loadToken) return;
       emit(state.copyWith(status: ChatStatus.error, error: error.toString()));
     }
   }
@@ -119,7 +151,7 @@ class ChatCubit extends Cubit<ChatState> {
         wsId,
         archived: state.archivedFilter,
       );
-      if (isClosed || token != _loadToken) return;
+      if (!_scopeActive || token != _loadToken) return;
       final selectedId = _resolveSelectedConversationId(
         page.conversations,
         preferredId: state.selectedConversationId,
@@ -137,7 +169,7 @@ class ChatCubit extends Cubit<ChatState> {
         await selectConversation(selectedId, forceRefresh: true);
       }
     } on ApiException catch (error) {
-      if (!isClosed && token == _loadToken) {
+      if (_scopeActive && token == _loadToken) {
         emit(state.copyWith(status: ChatStatus.error, error: error.message));
       }
     }
@@ -157,7 +189,7 @@ class ChatCubit extends Cubit<ChatState> {
         archived: archived,
         offset: nextOffset,
       );
-      if (isClosed ||
+      if (!_scopeActive ||
           token != _loadToken ||
           state.wsId != wsId ||
           state.archivedFilter != archived) {
@@ -174,7 +206,7 @@ class ChatCubit extends Cubit<ChatState> {
         ),
       );
     } on ApiException catch (error) {
-      if (!isClosed &&
+      if (_scopeActive &&
           token == _loadToken &&
           state.wsId == wsId &&
           state.archivedFilter == archived) {
@@ -233,7 +265,9 @@ class ChatCubit extends Cubit<ChatState> {
 
     try {
       final messages = await _repository.listMessages(wsId, conversationId);
-      if (isClosed || state.selectedConversationId != conversationId) return;
+      if (!_scopeActive || state.selectedConversationId != conversationId) {
+        return;
+      }
       final allMessages = Map<String, List<ChatMessage>>.from(state.messages);
       allMessages[conversationId] = messages;
       emit(
@@ -245,7 +279,7 @@ class ChatCubit extends Cubit<ChatState> {
       unawaited(_repository.markRead(wsId, conversationId));
       unawaited(loadConversationPanels());
     } on ApiException catch (error) {
-      if (!isClosed && state.selectedConversationId == conversationId) {
+      if (_scopeActive && state.selectedConversationId == conversationId) {
         emit(
           state.copyWith(
             messageStatus: ChatMessageStatus.error,
@@ -258,7 +292,7 @@ class ChatCubit extends Cubit<ChatState> {
 
   void _startRealtime(String wsId) {
     _realtimeSubscription = _realtimeClient.connect(wsId).listen((event) {
-      if (isClosed || state.wsId != wsId) return;
+      if (!_scopeActive || state.wsId != wsId) return;
       _handleRealtimeEvent(event);
     });
   }
@@ -418,6 +452,9 @@ class ChatCubit extends Cubit<ChatState> {
 
   @override
   Future<void> close() async {
+    _closing = true;
+    ++_loadToken;
+    ++_searchRequestVersion;
     await _sendSubscription?.cancel();
     await _realtimeSubscription?.cancel();
     _repository.dispose();

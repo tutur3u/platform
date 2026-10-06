@@ -46,6 +46,27 @@ describe('workspace permission catalog', () => {
     expect(rootPermissionIds).toContain('manage_git_repositories');
   });
 
+  it('exposes both deployment vault permissions only in root or full catalogs', () => {
+    for (const id of [
+      'manage_mobile_deployment_vault',
+      'manage_desktop_deployment_vault',
+    ]) {
+      expect(
+        permissions({ wsId: workspaceId, user: null }).map((entry) => entry.id)
+      ).not.toContain(id);
+      expect(
+        permissions({ wsId: ROOT_WORKSPACE_ID, user: null }).map(
+          (entry) => entry.id
+        )
+      ).toContain(id);
+      expect(
+        permissions({ wsId: workspaceId, user: null, catalog: 'full' }).map(
+          (entry) => entry.id
+        )
+      ).toContain(id);
+    }
+  });
+
   it('keeps internal account permission translations in shared role editors', () => {
     for (const app of ['cms', 'infrastructure', 'inventory', 'web']) {
       for (const locale of ['en', 'vi']) {

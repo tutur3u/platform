@@ -84,6 +84,21 @@
       "status": "legacy-next",
       "targetOwner": "tanstack-start",
       "note": "Meet detail preserves verified satellite actor, joined workspace and workspace-scoped meeting before concurrent room-policy and permission reads. Keep ended-room shortcut and permission-gated Calendar lookup when migrating."
+    },
+    "api:/api/v1/desktop-deployment:apps/infrastructure/src/app/api/v1/desktop-deployment/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Infrastructure private desktop signing administration: preserve explicit root MEMBER plus desktop-vault permission, exact same-origin mutations, bounded upload bytes, safe metadata projections and revision-fenced service RPCs. Delivery remains disabled."
+    },
+    "api:/api/v1/desktop-deployment/resources:apps/infrastructure/src/app/api/v1/desktop-deployment/resources/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Infrastructure private desktop signing administration: preserve explicit root MEMBER plus desktop-vault permission, exact same-origin mutations, bounded upload bytes, safe metadata projections and revision-fenced service RPCs. Delivery remains disabled."
+    },
+    "page:/:locale/:wsId/desktop-deployment:apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/desktop-deployment/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Infrastructure desktop status plus permission-gated private signing UI. Preserve canonical root redirects, registered satellite actor, explicit MEMBER membership, separate desktop-vault permission, actor-scoped client state, no credential SSR/readback and disabled vault delivery."
     }
   }
 }

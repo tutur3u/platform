@@ -924,5 +924,9 @@
     "accept-success": "Đã chấp nhận lời mời vào không gian làm việc",
     "decline-success": "Đã từ chối lời mời vào không gian làm việc"
   },
+  "ws-roles": {
+    "manage_desktop_deployment_vault": "Quản lý kho triển khai máy tính",
+    "manage_desktop_deployment_vault_description": "Cho phép thành viên không gian làm việc gốc quản lý thông tin ký Windows/macOS riêng tư và mã truy cập quy trình được bảo vệ. Không bật phân phối."
+  },
   "yourWorkspace": "Không gian nhóm của bạn"
 }

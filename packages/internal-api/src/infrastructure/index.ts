@@ -4,6 +4,7 @@ export * from './apps';
 export * from './auth-recovery';
 export * from './blocked-ips';
 export * from './cron';
+export * from './desktop';
 export * from './github-bot';
 export * from './internal-accounts';
 export * from './mobile';
