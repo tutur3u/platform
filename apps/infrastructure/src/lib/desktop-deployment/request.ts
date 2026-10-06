@@ -35,6 +35,21 @@ export const DesktopMutationSchema = z.discriminatedUnion('action', [
     })
     .strict(),
   z.object({ action: z.literal('revoke_token'), tokenId: z.uuid() }).strict(),
+  z
+    .object({
+      action: z.literal('disable_delivery'),
+      platform: z.enum(['windows', 'macos']),
+      environmentRevision: revision,
+    })
+    .strict(),
+  z
+    .object({
+      action: z.literal('enable_delivery'),
+      platform: z.enum(['windows', 'macos']),
+      environmentRevision: revision,
+      ...version,
+    })
+    .strict(),
 ]);
 
 /** Enforce actual streamed bytes; Content-Length alone does not bound uploads. */

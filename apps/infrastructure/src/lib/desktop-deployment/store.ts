@@ -31,11 +31,12 @@ export async function listDesktopVaultState(
   db: DesktopAdminDb
 ): Promise<DesktopVaultState> {
   const privateDb = db.schema('private');
-  const [environments, versions, tokens] = await Promise.all([
-    privateDb
-      .from('desktop_deployment_environments')
-      .select('platform,enabled,active_version_id')
-      .order('platform'),
+  const environmentsPromise = privateDb
+    .from('desktop_deployment_environments')
+    .select('platform,enabled,active_version_id,revision')
+    .order('platform');
+  const [initialEnvironments, versions, tokens] = await Promise.all([
+    environmentsPromise,
     privateDb
       .from('desktop_deployment_versions')
       .select(
@@ -49,6 +50,14 @@ export async function listDesktopVaultState(
       .order('created_at', { ascending: false })
       .limit(20),
   ]);
+  const environments =
+    initialEnvironments.error &&
+    ['42703', 'PGRST204'].includes(initialEnvironments.error.code)
+      ? await privateDb
+          .from('desktop_deployment_environments')
+          .select('platform,enabled,active_version_id')
+          .order('platform')
+      : initialEnvironments;
   for (const result of [environments, versions, tokens])
     requireDesktopResult(result.error);
   const ids = (versions.data ?? []).map((row) => row.id);
@@ -67,6 +76,12 @@ export async function listDesktopVaultState(
     platforms: (environments.data ?? []).map((row) => ({
       platform: row.platform as 'windows' | 'macos',
       enabled: row.enabled,
+      revision:
+        'revision' in row &&
+        typeof row.revision === 'number' &&
+        Number.isSafeInteger(row.revision)
+          ? row.revision
+          : null,
       activeVersionId: row.active_version_id,
     })),
     versions: (versions.data ?? []).map(

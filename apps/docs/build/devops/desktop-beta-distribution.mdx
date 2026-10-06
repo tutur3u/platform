@@ -410,11 +410,10 @@ once to its authorized creator and is never included in state reads.
 
 Draft edits use expected revisions and invalidate readiness. Activation repeats
 time-sensitive portable certificate checks before the atomic revision-fenced
-activation RPC. Windows and macOS resource names cannot cross platforms. No
-operation in this administration API enables a platform environment. Bundle
-delivery is independently default-off; the operator UI and protected workflow
-hydration are implemented separately. These endpoints alone do not establish
-signed delivery.
+activation RPC. Windows and macOS resource names cannot cross platforms. No version
+operation enables a platform environment. Bundle delivery is independently
+default-off; the operator UI and protected workflow hydration are implemented
+separately. These endpoints alone do not establish signed delivery.
 Regression coverage: desktop `access.test.ts`, `request.test.ts`,
 `store.test.ts` and `mutations.test.ts`.
 
@@ -510,3 +509,31 @@ notarization, or protected production configuration. The workflow's actual Node 
 and operating-system jobs remain required delivery evidence. See the
 [Node TypeScript runtime](https://nodejs.org/docs/latest-v24.x/api/typescript.html)
 and [Windows ACL command contract](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/icacls).
+
+### Audited platform admission control
+
+The Infrastructure desktop administration API accepts `enable_delivery` and
+`disable_delivery` for Windows and macOS. Both require same-origin operator
+mutation admission, explicit root `MEMBER` membership, the desktop vault permission,
+and the current `environmentRevision`. Enabling also names the active version and
+its validated revision; the server decrypts and verifies the exact profile, fresh
+certificate validity, and macOS P8 material before issuing its short-lived internal
+receipt. Browser credentials or readiness receipts cannot authorize enabling.
+Disabling needs no credential inspection, so unavailable or expired material does
+not prevent an operator from stopping delivery. Version activation still does not
+enable a platform. No operation changes `DESKTOP_DEPLOYMENT_VAULT_ENABLED`, which
+remains an independent global default-off gate.
+
+Each successful platform control writes an actor audit event and advances the
+environment revision. Bundle reservation captures that revision; final delivery
+rejects older reservations after disable, re-enable, or active-version changes.
+Pre-migration leases with revision `-1` cannot deliver. The existing token,
+environment, then lease lock order remains intact. During additive-schema rollout,
+metadata reports a missing revision as `null`; clients must reload a real revision
+before offering a control. Source availability does not establish activation,
+OS trust, signing, provisioning, or publication proof.
+
+Regression coverage: `desktop-deployment-admission.sql` exercises permission, CAS,
+freshness, disable/re-enable and legacy-lease denial; `admission.test.ts` and
+`request.test.ts` cover credential-free disable, trusted receipts, fresh material,
+sanitized failures, and strict browser inputs.

@@ -3561,6 +3561,7 @@ export type Database = {
           enabled: boolean;
           id: string;
           platform: string;
+          revision: number;
         };
         Insert: {
           active_version_id?: string | null;
@@ -3568,6 +3569,7 @@ export type Database = {
           enabled?: boolean;
           id?: string;
           platform: string;
+          revision?: number;
         };
         Update: {
           active_version_id?: string | null;
@@ -3575,6 +3577,7 @@ export type Database = {
           enabled?: boolean;
           id?: string;
           platform?: string;
+          revision?: number;
         };
         Relationships: [
           {
@@ -3590,6 +3593,7 @@ export type Database = {
         Row: {
           completed_at: string | null;
           created_at: string;
+          delivery_revision: number;
           failure_code: string | null;
           id: string;
           platform: string;
@@ -3603,6 +3607,7 @@ export type Database = {
         Insert: {
           completed_at?: string | null;
           created_at?: string;
+          delivery_revision?: number;
           failure_code?: string | null;
           id?: string;
           platform: string;
@@ -3616,6 +3621,7 @@ export type Database = {
         Update: {
           completed_at?: string | null;
           created_at?: string;
+          delivery_revision?: number;
           failure_code?: string | null;
           id?: string;
           platform?: string;
@@ -18938,6 +18944,7 @@ export type Database = {
         Returns: {
           completed_at: string | null;
           created_at: string;
+          delivery_revision: number;
           failure_code: string | null;
           id: string;
           platform: string;
@@ -18958,6 +18965,32 @@ export type Database = {
       desktop_deployment_revoke_token: {
         Args: { p_actor: string; p_token: string };
         Returns: undefined;
+      };
+      desktop_deployment_set_delivery: {
+        Args: {
+          p_actor: string;
+          p_enabled: boolean;
+          p_environment_revision: number;
+          p_material_valid_until?: string;
+          p_platform: string;
+          p_verified_at?: string;
+          p_version?: string;
+          p_version_revision?: number;
+        };
+        Returns: {
+          active_version_id: string | null;
+          created_at: string;
+          enabled: boolean;
+          id: string;
+          platform: string;
+          revision: number;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'desktop_deployment_environments';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       desktop_deployment_validate_version: {
         Args: {
