@@ -111,8 +111,18 @@ class OfflineMutationQueue with WidgetsBindingObserver {
   bool _resumeRequested = false;
   bool _drainRequested = false;
   bool _initialized = false;
+  bool _disposed = false;
+
+  void _checkOpen() {
+    if (_disposed) throw StateError('Offline mutation queue is disposed');
+  }
 
   Future<void> init() {
+    if (_disposed) {
+      return Future<void>.error(
+        StateError('Offline mutation queue is disposed'),
+      );
+    }
     if (_initialized) return Future<void>.value();
     return _initialization ??= _initialize().whenComplete(() {
       _initialization = null;
@@ -121,10 +131,13 @@ class OfflineMutationQueue with WidgetsBindingObserver {
 
   Future<void> _initialize() async {
     await _store.init();
+    if (_disposed) return;
     // Backfill legacy queued creates once, not on each dependency scan.
     for (final record in await _store.listPendingMutations()) {
+      if (_disposed) return;
       await _registerInventoryProvenance(record);
     }
+    if (_disposed) return;
     _dispatchers.putIfAbsent('*', () => _dispatchHttpMutation);
     _connectivitySubscription = _connectivityChanges.listen((results) {
       if (results.any((result) => result != ConnectivityResult.none)) {
@@ -153,6 +166,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
   }
 
   void _scheduleSync({bool onResume = false}) {
+    if (_disposed) return;
     unawaited(
       synchronize(onResume: onResume).then<void>(
         (_) {},
@@ -165,6 +179,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
 
   /// Replay edits before revalidating visited resources.
   Future<void> synchronize({bool onResume = false}) {
+    if (_disposed) return Future<void>.value();
     _resumeRequested |= onResume;
     if (_syncFuture != null) {
       _syncRequested = true;
@@ -177,6 +192,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
 
   Future<void> _synchronize() async {
     do {
+      if (_disposed) return;
       _syncRequested = false;
       final onResume = _resumeRequested;
       _resumeRequested = false;
@@ -185,8 +201,10 @@ class OfflineMutationQueue with WidgetsBindingObserver {
         allowChallenge: false,
         markBulk: false,
       );
+      if (_disposed) return;
       try {
         final results = await _checkConnectivity();
+        if (_disposed) return;
         if (!results.any((result) => result != ConnectivityResult.none)) {
           if (_syncRequested) continue;
           return;
@@ -201,7 +219,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
       await CacheStore.awaitRevalidation(() async {
         await ApiClient.offlinePreparation(
           () => _store.refreshCachedResources(
-            currentUserId: _userId,
+            currentUserId: () => _disposed ? null : _userId(),
             onResume: onResume,
           ),
           allowChallenge: false,
@@ -209,9 +227,9 @@ class OfflineMutationQueue with WidgetsBindingObserver {
         );
         // Visible projections inherit the same cycle and reuse its completed
         // requests, including when an earlier resource refresh has settled.
-        syncRevision.value++;
+        if (!_disposed) syncRevision.value++;
       });
-    } while (_syncRequested);
+    } while (!_disposed && _syncRequested);
   }
 
   Future<bool> enqueueIfOffline({
@@ -241,7 +259,9 @@ class OfflineMutationQueue with WidgetsBindingObserver {
     if (!hasPendingDependency) {
       try {
         connectivity = await _checkConnectivity();
+        _checkOpen();
       } on Object {
+        _checkOpen();
         // A missing platform signal must not silently turn an online write into
         // a queued write (notably on desktop and in widget tests).
         return false;
@@ -324,10 +344,13 @@ class OfflineMutationQueue with WidgetsBindingObserver {
     if (record.userId == null || record.userId != _userId()) {
       throw StateError('An authenticated account is required to queue edits');
     }
+    _checkOpen();
     await _registerInventoryProvenance(record);
+    _checkOpen();
     await _store.savePendingMutation(
       record,
       checkScope: () {
+        _checkOpen();
         if (record.userId != _userId()) {
           throw StateError('Pending mutation actor changed');
         }
@@ -375,8 +398,12 @@ class OfflineMutationQueue with WidgetsBindingObserver {
   }
 
   Future<void> refresh() async {
+    if (_disposed) return;
     await _store.init();
-    pending.value = (await _store.listPendingMutations())
+    if (_disposed) return;
+    final records = await _store.listPendingMutations();
+    if (_disposed) return;
+    pending.value = records
         .where((record) => record.userId == _userId())
         .toList(growable: false);
   }
@@ -395,6 +422,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
   }
 
   Future<void> drain() {
+    if (_disposed) return Future<void>.value();
     if (_drainFuture != null) return _drainFuture!;
     return _drainFuture = _drain().whenComplete(() {
       _drainFuture = null;
@@ -403,10 +431,11 @@ class OfflineMutationQueue with WidgetsBindingObserver {
 
   Future<void> _drain() async {
     await init();
+    if (_disposed) return;
     do {
       _drainRequested = false;
       await _drainOnce();
-    } while (_drainRequested);
+    } while (!_disposed && _drainRequested);
   }
 
   Future<void> _drainOnce() async {
@@ -416,6 +445,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
     }
     try {
       final connectivity = await _checkConnectivity();
+      if (_disposed) return;
       if (connectivity.every((result) => result == ConnectivityResult.none)) {
         return;
       }
@@ -428,7 +458,9 @@ class OfflineMutationQueue with WidgetsBindingObserver {
             (record) => OfflineInventoryMutation.fromRecord(record) != null,
           )
           .toList();
+      if (_disposed) return;
       if (await _drainInventoryDependencies(inventoryRecords)) return;
+      if (_disposed) return;
       final records = await listPending();
       final blockedScopes = <(String, String?)>{};
       final unresolvedEarlier = <(String?, String)>{};
@@ -438,6 +470,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
       }
 
       for (final record in records) {
+        if (_disposed) return;
         if (OfflineInventoryMutation.fromRecord(record) != null) continue;
         if (_cancelingIds.contains(record.id) ||
             record.userId == null ||
@@ -473,7 +506,9 @@ class OfflineMutationQueue with WidgetsBindingObserver {
         syncingIds.value = {...syncingIds.value, record.id};
         try {
           await dispatcher(record);
+          // An already dispatched ACK must be reconciled even after disposal.
           await _store.deletePendingMutation(record.id);
+          if (_disposed) return;
           try {
             final module = record.feature == 'time_tracker'
                 ? 'timer'
@@ -506,7 +541,8 @@ class OfflineMutationQueue with WidgetsBindingObserver {
             status: status,
           );
           await _store.savePendingMutation(nextRecord);
-          if (status == PendingMutationStatus.queued &&
+          if (!_disposed &&
+              status == PendingMutationStatus.queued &&
               !(error is ApiException &&
                   (error.statusCode == 401 || error.isVerificationRequired))) {
             final exponent = nextRecord.attemptCount.clamp(1, 6);
@@ -546,7 +582,13 @@ class OfflineMutationQueue with WidgetsBindingObserver {
     return false;
   }
 
+  /// Closes admission immediately without waiting for blocked connectivity.
+  /// Already dispatched writes retain their durable acknowledgment cleanup.
   Future<void> dispose() async {
+    _disposed = true;
+    _syncRequested = false;
+    _resumeRequested = false;
+    _drainRequested = false;
     WidgetsBinding.instance.removeObserver(this);
     _retryTimer?.cancel();
     _retryTimer = null;
