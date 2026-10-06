@@ -2,7 +2,13 @@
 import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import {
+  type CSSProperties,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { MeetRoomController } from '../lib/room-controller';
 import { MiraParticipant } from './mira-participant';
 import { ParticipantTile } from './participant-tile';
@@ -25,6 +31,7 @@ export function CallStage({
   outputDeviceId,
   audioSuppressed = false,
   layout,
+  compact = false,
   focus,
   onFocus,
   onChat,
@@ -33,6 +40,7 @@ export function CallStage({
   outputDeviceId?: string;
   audioSuppressed?: boolean;
   layout: CallLayout;
+  compact?: boolean;
   focus: string | null;
   onFocus: (key: string | null) => void;
   onChat: () => void;
@@ -114,7 +122,7 @@ export function CallStage({
       <MiraParticipant
         sessionId={mira.sessionId}
         compact={compact}
-        className={className}
+        className={compact ? 'aspect-video w-40 shrink-0 lg:w-full' : className}
         focused={focus === 'mira'}
         onFocus={() => onFocus(focus === 'mira' ? null : 'mira')}
         onChat={onChat}
@@ -140,7 +148,7 @@ export function CallStage({
       silenced={silenced.has(tile.key)}
       onSilence={toggleSilence}
       key={tile.key}
-      className={className}
+      className={compact ? 'aspect-video w-40 shrink-0 lg:w-full' : className}
       kind={tile.kind}
       participant={tile.participant}
       stream={tile.stream}
@@ -156,44 +164,36 @@ export function CallStage({
       onMute={room.state.role === 'host' ? mute : undefined}
     />
   );
-  if (spotlight && focused)
-    return (
-      <div
-        className={cn(
-          'flex h-full min-h-0 gap-3',
-          layout === 'sidebar' ? 'flex-col lg:flex-row' : 'flex-col'
-        )}
-      >
-        {focus === 'mira' && mira
-          ? renderMira('min-h-0 min-w-0 flex-1')
-          : render(focused, 'min-h-0 min-w-0 flex-1')}
-        {(tiles.length > 1 || mira) && (
-          <div
-            className={cn(
-              'flex shrink-0 gap-2 overflow-auto p-1',
-              layout === 'sidebar' ? 'lg:w-52 lg:flex-col' : ''
-            )}
-          >
-            {tiles
-              .filter((tile) => focus === 'mira' || tile.key !== focused.key)
-              .map((tile) =>
-                render(tile, 'aspect-video w-40 shrink-0 lg:w-48')
-              )}
-            {focus !== 'mira' &&
-              renderMira('aspect-video w-40 shrink-0 lg:w-48', true)}
-          </div>
-        )}
-      </div>
+  const focusedKey = focus === 'mira' && mira ? 'mira' : focused?.key;
+  const count = tiles.length + (mira ? 1 : 0);
+  const tileClass = (key: string) => {
+    if (compact) return 'aspect-video w-40 shrink-0 lg:w-full';
+    if (!spotlight) return 'min-h-32';
+    const primary = key === focusedKey;
+    return cn(
+      primary ? 'order-first col-span-full min-h-0' : 'min-h-0',
+      layout === 'sidebar' &&
+        (primary ? 'lg:col-span-1 lg:row-span-full' : 'lg:col-start-2')
     );
+  };
   return (
     <div
+      style={{ '--stage-rows': Math.max(1, count - 1) } as CSSProperties}
       className={cn(
-        'grid h-full min-h-0 auto-rows-[minmax(8rem,1fr)] gap-3 overflow-auto p-1',
-        columns(tiles.length + (mira ? 1 : 0))
+        'grid h-full min-h-0 gap-3 overflow-auto p-1',
+        compact
+          ? 'flex gap-2 lg:flex-col'
+          : spotlight
+            ? 'auto-rows-[8rem] grid-cols-2 grid-rows-[minmax(0,1fr)]'
+            : cn('auto-rows-[minmax(8rem,1fr)]', columns(count)),
+        !compact &&
+          spotlight &&
+          layout === 'sidebar' &&
+          'lg:grid-cols-[minmax(0,1fr)_13rem] lg:grid-rows-[repeat(var(--stage-rows),minmax(0,1fr))]'
       )}
     >
-      {tiles.map((tile) => render(tile, 'min-h-32'))}
-      {renderMira('min-h-32')}
+      {tiles.map((tile) => render(tile, tileClass(tile.key)))}
+      {renderMira(tileClass('mira'), compact)}
     </div>
   );
 }

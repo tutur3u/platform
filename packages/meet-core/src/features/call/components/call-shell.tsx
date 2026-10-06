@@ -43,6 +43,7 @@ import { CallExtras } from './call-extras';
 import { CallResourceNotice, resourceErrorKey } from './call-resource-notice';
 import { CallSettings } from './call-settings';
 import { type CallLayout, CallStage } from './call-stage';
+import { CollaborationStageLayout } from './collaboration-stage-layout';
 import { type CallPanel, ControlBar, ControlButton } from './control-bar';
 import { CopyInvite } from './copy-invite';
 import { DocumentPanel } from './document-panel';
@@ -468,32 +469,35 @@ function CallShellContent({
               <ScreenAudioStatus stream={room.screenStream} />
             </div>
           )}
-          {showProgramming && (
-            <ProgrammingPanel
-              meetingId={meetingId}
-              wsId={wsId}
-              accountId={accountId}
-              preparing={programming.isPending}
-              canManage={canManage}
-              selection={state.settings.programming ?? null}
-            />
-          )}
-          {showDocument && (
-            <DocumentPanel meetingId={meetingId} accountId={accountId} />
-          )}
-          <div
-            className={showProgramming || showDocument ? 'hidden' : 'h-full'}
-          >
-            <CallStage
-              onChat={askMira}
-              audioSuppressed={sharedAudio.shared}
-              outputDeviceId={outputDeviceId}
-              room={room}
-              layout={layout}
-              focus={focus}
-              onFocus={focusFeed}
-            />
-          </div>
+          <CollaborationStageLayout
+            layout={layout}
+            content={
+              showProgramming ? (
+                <ProgrammingPanel
+                  meetingId={meetingId}
+                  wsId={wsId}
+                  accountId={accountId}
+                  preparing={programming.isPending}
+                  canManage={canManage}
+                  selection={state.settings.programming ?? null}
+                />
+              ) : showDocument ? (
+                <DocumentPanel meetingId={meetingId} accountId={accountId} />
+              ) : null
+            }
+            stage={
+              <CallStage
+                onChat={askMira}
+                audioSuppressed={sharedAudio.shared}
+                outputDeviceId={outputDeviceId}
+                room={room}
+                layout={layout}
+                compact={showProgramming || showDocument}
+                focus={focus}
+                onFocus={focusFeed}
+              />
+            }
+          />
           <ReactionOverlay state={state} />
         </main>
         {showPersonalTools && MEETING_APP === 'meet' && (
