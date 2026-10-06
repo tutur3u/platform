@@ -432,9 +432,19 @@ void main() {
         same(input),
       );
       expect(input.text, 'Synthetic unsent draft');
-      await tester.tap(
-        find.byKey(const ValueKey('assistant-navigation-toggle')),
+      final primary = find.byKey(const ValueKey('assistant-navigation-toggle'));
+      expect(
+        find.descendant(
+          of: primary,
+          matching: find.byIcon(Icons.arrow_upward_rounded),
+        ),
+        findsOneWidget,
       );
+      await tester.tap(
+        find.byKey(const ValueKey('assistant-composer-options')),
+      );
+      await settle();
+      await tester.tap(find.text('Close prompt'));
       await settle();
       expect(chrome.state.composerVisible, isFalse);
       expect(chrome.state.navigationExpanded, isFalse);

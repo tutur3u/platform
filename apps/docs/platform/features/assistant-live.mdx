@@ -92,6 +92,26 @@ Developer ID signing, and notarization gates.
 
 ## Experience
 
+Mobile chat uses the shell's existing dock for its composer and primary action.
+An empty draft keeps the navigation menu; a nonempty draft or attachment changes
+that action to Send. During inline recording it becomes Pause, then Send while
+paused. Cancel discards only the recording and returns to the retained text draft.
+The input row has no second Send button. Each assistant turn has one initially
+collapsed transparent thinking accordion, showing the latest heading from reasoning
+text already supplied by the API. Expanding it reveals those existing sections in
+source order. Only the current streaming turn animates its thinking icon; stopped,
+completed, and failed turns use a static icon. Consecutive tool calls share one
+collapsed transparent accordion displaying the latest tool name, while response
+text and generated images keep their relative positions. No additional hidden
+reasoning is requested or inferred. These rules apply to mobile Mira's timeline;
+other clients retain their own presentation. Accordion regressions are in
+`assistant_activity_accordion_test.dart`. The transcript's scroll-to-bottom
+action clears the dock using the shell viewport's inherited clearance; the outer
+shell consumes the keyboard inset once. Regressions cover controller and capture
+transitions, retained dock identity, transparent tool inspection, and actual shell
+geometry in `apps/mobile/test/features/assistant/widgets/`.
+
+
 Start or stop Live with the waveform icon in the chat composer. Live keeps the
 same message timeline visible, with a compact gradient visualization and media
 controls above it. Spoken turns, typed prompts, tool calls, and search sources
