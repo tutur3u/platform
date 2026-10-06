@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -48,6 +49,7 @@ class _Repository extends ProfileRepository {
   final ApiException failure;
   final String? Function() actor;
   int writes = 0;
+  bool succeeds = false;
   @override
   String? getCurrentUserIdSync() => actor();
   @override
@@ -61,7 +63,9 @@ class _Repository extends ProfileRepository {
   @override
   Future<ProfileMediaResult> saveAvatarResult(File file) async {
     writes++;
-    return ProfileMediaResult.failure(failure);
+    return succeeds
+        ? const ProfileMediaResult.success()
+        : ProfileMediaResult.failure(failure);
   }
 }
 
@@ -74,16 +78,48 @@ class _Picker extends ProfileAvatarPicker {
   }
 }
 
+class _ImagePicker extends _Picker {
+  _ImagePicker({this.deferred = false});
+  final bool deferred;
+  final entered = Completer<void>();
+  final release = Completer<void>();
+  final stages = <String>[];
+  @override
+  Future<ImageSource?> chooseSource(BuildContext context) async {
+    stages.add('source');
+    entered.complete();
+    if (deferred) {
+      await release.future;
+    } else {
+      await Future<void>.delayed(Duration.zero);
+    }
+    return ImageSource.gallery;
+  }
+
+  @override
+  Future<File?> pickImage(ImageSource source) async {
+    stages.add('file');
+    return File('/synthetic/recovery.png');
+  }
+
+  @override
+  Future<File?> cropImage(BuildContext context, File file) async {
+    stages.add('crop');
+    return file;
+  }
+}
+
 Future<(_Auth, _Repository, ProfileCubit, _Picker)> _pump(
   WidgetTester tester,
   ApiException error, {
   AuthState? user,
+  _Picker? selectedPicker,
 }) async {
   ProfileCubit.clearMemoryCache();
   final auth = _Auth(user ?? _user());
   final repository = _Repository(error, () => auth.state.user?.id);
   final cubit = ProfileCubit(profileRepository: repository);
-  final picker = _Picker();
+  final picker = selectedPicker ?? _Picker();
   await cubit.loadProfile();
   await cubit.uploadAvatar(File('/synthetic/profile.png'));
   addTearDown(cubit.close);
@@ -94,10 +130,15 @@ Future<(_Auth, _Repository, ProfileCubit, _Picker)> _pump(
         BlocProvider<AuthCubit>.value(value: auth),
         BlocProvider<ProfileCubit>.value(value: cubit),
       ],
-      child: Scaffold(
-        body: BlocBuilder<ProfileCubit, ProfileState>(
-          builder: (context, state) =>
-              ProfileMediaRecovery(state: state, avatarPicker: picker),
+      child: Builder(
+        builder: (ownerContext) => Scaffold(
+          body: BlocBuilder<ProfileCubit, ProfileState>(
+            builder: (context, state) => ProfileMediaRecovery(
+              state: state,
+              avatarPicker: picker,
+              pickerContext: ownerContext,
+            ),
+          ),
         ),
       ),
     ),
@@ -164,6 +205,55 @@ void main() {
       });
     }
   }
+  for (final locale in ['en', 'vi']) {
+    testWidgets('$locale recovery selects file crops and uploads', (
+      tester,
+    ) async {
+      tester.platformDispatcher.localesTestValue = [Locale(locale)];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+      final picker = _ImagePicker(deferred: true);
+      final (_, repository, cubit, _) = await _pump(
+        tester,
+        const ApiException(message: 'synthetic', statusCode: 409),
+        selectedPicker: picker,
+      );
+      repository.succeeds = true;
+      await tester.tap(
+        find.text(locale == 'en' ? 'Select image again' : 'Chọn lại ảnh'),
+      );
+      await tester.pump();
+      await picker.entered.future;
+      expect(cubit.state.mediaFailure, isNull);
+      picker.release.complete();
+      await tester.pumpAndSettle();
+      expect(picker.stages, ['source', 'file', 'crop']);
+      expect(repository.writes, 2);
+      expect(cubit.state.mediaFailure, isNull);
+      expect(cubit.state.isLoading, isFalse);
+      await tester.drainShadToastTimers();
+    });
+  }
+  testWidgets('recovery selection rejects actor ABA before file upload', (
+    tester,
+  ) async {
+    final picker = _ImagePicker(deferred: true);
+    final (auth, repository, _, _) = await _pump(
+      tester,
+      const ApiException(message: 'synthetic', statusCode: 409),
+      selectedPicker: picker,
+    );
+    await tester.tap(find.text('Select image again'));
+    await tester.pump();
+    await picker.entered.future;
+    auth.change(_user(id: 'actor-b'));
+    await tester.pump();
+    auth.change(_user());
+    await tester.pump();
+    picker.release.complete();
+    await tester.pumpAndSettle();
+    expect(repository.writes, 1);
+    expect(picker.stages, ['source']);
+  });
   testWidgets('retained dismiss cannot clear a newer actor failure', (
     tester,
   ) async {

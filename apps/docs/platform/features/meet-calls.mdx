@@ -1281,3 +1281,28 @@ workspace and meeting gates, and this changes neither room admission nor creatio
 and rejection precedence; `meeting-calendar-event.test.ts` retains denied-access
 coverage. This source change still requires deployed meaningful-content timing to
 establish a customer-visible latency improvement.
+
+## Collaboration layout and document presence
+
+Opening Meet's shared document or Programming keeps participant cameras and
+shared screens visible alongside the active content. The existing layout selector
+also controls collaboration: automatic/sidebar uses a compact desktop rail,
+spotlight emphasizes content with a narrower rail, and grid balances content and
+participants. Narrow screens keep a horizontally scrollable filmstrip beneath the
+content. These choices are local to the active call; they never alter admission,
+media publication, or another participant's layout.
+
+The same media stage and keyed camera/screen tiles stay mounted when content,
+layout, or focus changes. Local playback mute state and media element identity
+remain intact, and no second stage duplicates audio. Regression evidence:
+`collaboration-stage-layout.test.tsx` exercises real participant tiles and
+camera/screen audio elements through content and layout transitions.
+
+Shared-document avatars represent users in that document provider's actual
+collaboration awareness, not everyone connected to the meeting. Clients with the
+same authenticated identity appear once; departures and provider switches remove
+old identities, and disconnected document transport hides the roster until it
+reconnects. Four avatars are shown with an accessible overflow count.
+`document-presence.test.tsx` uses real awareness updates for join, rename,
+departure, duplicate clients, malformed identity fields, and provider/disconnect
+transitions. Source fixtures do not establish deployed multi-client delivery.

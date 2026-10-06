@@ -48,6 +48,7 @@ import { useLiveAssistant } from './use-live-assistant';
 
 export function MeetLivePanel({
   room,
+  accountId,
   meetingId,
   outputDeviceId,
   canManage,
@@ -55,6 +56,7 @@ export function MeetLivePanel({
   onOpenChat,
 }: {
   room: MeetRoomController;
+  accountId: string;
   meetingId: string;
   outputDeviceId: string;
   canManage: boolean;
@@ -92,10 +94,7 @@ export function MeetLivePanel({
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
   const [workspace, setWorkspace] = useState('personal');
-  const workspaceScope = useAssistantWorkspaceSelection(
-    workspace,
-    room.state.selfUserId
-  );
+  const workspaceScope = useAssistantWorkspaceSelection(workspace, accountId);
   const currentWorkspaceScope = useRef(workspaceScope);
   currentWorkspaceScope.current = workspaceScope;
   const [voice, setVoice] = useState<MeetLiveVoice>('Aoede');
@@ -180,7 +179,7 @@ export function MeetLivePanel({
         <div className="min-h-0 space-y-4 overflow-y-auto">
           {!active && (
             <AssistantWorkspacePicker
-              selfUserId={room.state.selfUserId}
+              accountId={accountId}
               value={workspace}
               onChange={setWorkspace}
             />

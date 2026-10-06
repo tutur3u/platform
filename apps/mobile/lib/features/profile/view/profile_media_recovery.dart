@@ -17,10 +17,14 @@ class ProfileMediaRecovery extends StatelessWidget {
   const ProfileMediaRecovery({
     required this.state,
     required this.avatarPicker,
+    required this.pickerContext,
     super.key,
   });
   final ProfileState state;
   final ProfileAvatarPicker avatarPicker;
+
+  /// Screen-owned ancestor stays mounted when clearing the alert.
+  final BuildContext pickerContext;
   @override
   Widget build(BuildContext context) {
     final failure = state.mediaFailure;
@@ -66,12 +70,14 @@ class ProfileMediaRecovery extends StatelessWidget {
                                 if (!current()) return;
                                 if (target == ProfileMediaTarget.avatar) {
                                   await pickAndUploadProfileAvatar(
-                                    context,
+                                    pickerContext,
                                     picker: avatarPicker,
                                   );
                                 } else if (target ==
                                     ProfileMediaTarget.banner) {
-                                  await pickAndUploadProfileBanner(context);
+                                  await pickAndUploadProfileBanner(
+                                    pickerContext,
+                                  );
                                 } else {
                                   cubit.clearMediaFailure();
                                   await cubit.removeBanner();
