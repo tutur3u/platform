@@ -67,6 +67,16 @@
       "import": "./dist/calendar.js",
       "require": "./dist/calendar.js"
     },
+    "./calendar-provider-series": {
+      "types": "./dist/calendar-provider-series.d.ts",
+      "import": "./dist/calendar-provider-series.js",
+      "require": "./dist/calendar-provider-series.js"
+    },
+    "./calendar-series": {
+      "types": "./dist/calendar-series.d.ts",
+      "import": "./dist/calendar-series.js",
+      "require": "./dist/calendar-series.js"
+    },
     "./chat": {
       "types": "./dist/chat.d.ts",
       "import": "./dist/chat.js",

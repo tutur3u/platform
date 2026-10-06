@@ -241,6 +241,10 @@ These workflows:
   tarball or cache failures retry after cache cleanup
 - build selected shared workspace dependencies before Vercel resolves package exports:
   `@tuturuuu/types`, `@tuturuuu/supabase`, and `@tuturuuu/internal-api`
+- verify the package export map when a shared UI subpath fails resolution:
+  source files and TypeScript source aliases alone do not expose a package API;
+  `node --test scripts/internal-api-calendar-exports.test.js` exercises Contacts'
+  real ESM resolution for the Calendar series clients without local builds
 - run `vercel pull`
 - run `vercel build`
 - deploy prebuilt artifacts for satellite apps and the hosted platform
