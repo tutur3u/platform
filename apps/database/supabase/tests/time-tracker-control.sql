@@ -31,6 +31,11 @@ returns jsonb language sql as $$ select private.configure_time_tracker_control(
   pg_temp.fid(90511),pg_temp.fid(90501),rev,pg_temp.fid(cmd),config,session);
 $$;
 select ok((select relrowsecurity from pg_class where oid='private.time_tracker_controls'::regclass),'control enables RLS');
+-- Execute every CASE branch at its inclusive boundary and one above it.
+select ok(private.valid_time_tracker_control_config(jsonb_set(pg_temp.config(),array[key],to_jsonb(bound))),key || ' inclusive boundary accepted')
+from (values ('focus_minutes',180),('short_break_minutes',180),('long_break_minutes',180),('sessions_until_long_break',24)) as limits(key,bound);
+select ok(not private.valid_time_tracker_control_config(jsonb_set(pg_temp.config(),array[key],to_jsonb(bound+1))),key || ' above boundary rejected')
+from (values ('focus_minutes',180),('short_break_minutes',180),('long_break_minutes',180),('sessions_until_long_break',24)) as limits(key,bound);
 select ok(not has_table_privilege('anon','private.time_tracker_controls','SELECT'),'anonymous cannot read controls');
 select ok(not has_table_privilege('authenticated','private.time_tracker_controls','SELECT'),'browser cannot read controls');
 select ok(not has_table_privilege('authenticated','private.time_tracker_controls','INSERT,UPDATE,DELETE'),'browser cannot mutate controls');

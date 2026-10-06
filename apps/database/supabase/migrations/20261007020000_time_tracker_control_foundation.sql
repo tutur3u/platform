@@ -19,7 +19,7 @@ begin
     begin
       if jsonb_typeof(p_config->v_key) <> 'number'
         or (p_config->>v_key) !~ '^[1-9][0-9]{0,2}$' then return false; end if;
-      if (p_config->>v_key)::integer > case when i=4 then 24 else 180 end
+      if (p_config->>v_key)::integer > (case when i=4 then 24 else 180 end)
         then return false; end if;
     end;
   end loop;
