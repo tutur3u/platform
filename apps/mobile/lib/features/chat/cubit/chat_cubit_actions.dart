@@ -115,7 +115,7 @@ extension ChatCubitActions on ChatCubit {
         .listen(
           _handleMessageStreamEvent,
           onError: (Object error) {
-            if (isClosed) return;
+            if (!_scopeActive) return;
             _emitState(
               state.copyWith(
                 isSending: false,
@@ -125,7 +125,7 @@ extension ChatCubitActions on ChatCubit {
             );
           },
           onDone: () {
-            if (isClosed) return;
+            if (!_scopeActive) return;
             _emitState(
               state.copyWith(isSending: false, streamingAssistantText: ''),
             );
@@ -149,7 +149,7 @@ extension ChatCubitActions on ChatCubit {
         conversationId,
         file: file,
       );
-      if (isClosed) return;
+      if (!_scopeActive) return;
       _emitState(
         state.copyWith(
           pendingAttachments: [...state.pendingAttachments, attachment],
@@ -157,7 +157,7 @@ extension ChatCubitActions on ChatCubit {
         ),
       );
     } on ApiException catch (error) {
-      if (!isClosed) {
+      if (_scopeActive) {
         _emitState(
           state.copyWith(isUploadingAttachment: false, error: error.message),
         );
@@ -232,7 +232,7 @@ extension ChatCubitActions on ChatCubit {
     }
     try {
       final users = await _repository.searchDirectory(wsId, query.trim());
-      if (!isClosed) _emitState(state.copyWith(directoryResults: users));
+      if (_scopeActive) _emitState(state.copyWith(directoryResults: users));
     } on ApiException catch (error) {
       _emitState(state.copyWith(error: error.message));
     }
@@ -247,13 +247,13 @@ extension ChatCubitActions on ChatCubit {
     }
     try {
       final messages = await _repository.searchMessages(wsId, query.trim());
-      if (!isClosed &&
+      if (_scopeActive &&
           requestVersion == _searchRequestVersion &&
           state.wsId == wsId) {
         _emitState(state.copyWith(searchResults: messages));
       }
     } on ApiException catch (error) {
-      if (!isClosed && requestVersion == _searchRequestVersion) {
+      if (_scopeActive && requestVersion == _searchRequestVersion) {
         _emitState(state.copyWith(error: error.message));
       }
     }
@@ -264,7 +264,9 @@ extension ChatCubitActions on ChatCubit {
     if (wsId == null) return;
     try {
       final friendRequests = await _repository.listFriendRequests(wsId);
-      if (!isClosed) _emitState(state.copyWith(friendRequests: friendRequests));
+      if (_scopeActive) {
+        _emitState(state.copyWith(friendRequests: friendRequests));
+      }
     } on ApiException {
       // Friend requests are secondary chrome; keep the main chat usable.
     }
@@ -331,7 +333,9 @@ extension ChatCubitActions on ChatCubit {
         aiSettingsFuture,
         aiObservabilityFuture,
       ]);
-      if (isClosed || state.selectedConversationId != conversation.id) return;
+      if (!_scopeActive || state.selectedConversationId != conversation.id) {
+        return;
+      }
       _emitState(
         state.copyWith(
           sharedContent: results[0] as ChatSharedContent?,
@@ -340,7 +344,7 @@ extension ChatCubitActions on ChatCubit {
         ),
       );
     } on ApiException catch (error) {
-      if (!isClosed) _emitState(state.copyWith(error: error.message));
+      if (_scopeActive) _emitState(state.copyWith(error: error.message));
     }
   }
 
@@ -366,7 +370,7 @@ extension ChatCubitActions on ChatCubit {
         systemPrompt: systemPrompt,
         thinkingMode: thinkingMode,
       );
-      if (!isClosed) _emitState(state.copyWith(aiSettings: settings));
+      if (_scopeActive) _emitState(state.copyWith(aiSettings: settings));
     } on ApiException catch (error) {
       _emitState(state.copyWith(error: error.message));
     }

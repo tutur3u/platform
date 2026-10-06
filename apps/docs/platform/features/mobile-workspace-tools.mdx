@@ -1596,3 +1596,15 @@ shared dock search, stale-scope responses, denied versus challenged refreshes,
 retained failed-save drafts, and actor-owned editor dismissal beneath an
 unrelated modal. Cleanup schedules a frame even when the covered route is
 settled; it removes that editor alone and preserves the covering modal.
+
+### Native Chat account lifetime
+
+The native Chat root owns a new host and cubit for each signed-in actor, even
+when the workspace ID stays unchanged. An actor-transition generation also
+replaces the host when logout and same-account login occur before a frame
+renders. Search, selected conversations, drafts,
+and retained messages belong to that host. Closing invalidates asynchronous
+callbacks before subscription cancellation finishes; actor and cache-resource
+lifetime checks also fence delayed results. This preserves the existing shared
+shell dock and API-backed workspace chat behavior. The actual host account-switch
+and delayed-cancellation regressions are in `chat_actor_lifetime_test.dart`.
