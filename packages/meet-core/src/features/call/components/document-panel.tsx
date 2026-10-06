@@ -14,6 +14,7 @@ import {
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import { DocumentPresence } from './document-presence';
 import { DocumentStatus } from './document-status';
 export function DocumentPanel({
   meetingId,
@@ -118,11 +119,17 @@ export function DocumentEditor({
             className="rounded-none! border-0!"
             content={null}
             toolbarLeadingContent={
-              <DocumentStatus
-                connected={connected}
-                checkpoint={checkpoint}
-                compact
-              />
+              <div className="flex items-center gap-2">
+                <DocumentStatus
+                  connected={connected}
+                  checkpoint={checkpoint}
+                  compact
+                />
+                <DocumentPresence
+                  awareness={provider.awareness}
+                  connected={connected}
+                />
+              </div>
             }
             toolbarToolsLabel={t('tools')}
             allowCollaboration

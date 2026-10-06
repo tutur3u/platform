@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, within } from '@testing-library/react';
+import type { Awareness, Y } from '@tuturuuu/realtime/documents';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { NextIntlClientProvider } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -8,22 +9,31 @@ import messages from '../../../../../../apps/meet/messages/en.json';
 import { DocumentEditor } from './document-panel';
 
 vi.mock('@tuturuuu/realtime/channels', () => ({ RealtimeChannel: class {} }));
-vi.mock('@tuturuuu/realtime/documents', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@tuturuuu/realtime/documents')>()),
-  CloudflareDocumentProvider: class {
-    awareness = { setLocalStateField: vi.fn() };
-    constructor(
-      _doc: unknown,
-      _channel: unknown,
-      connected: (value: boolean) => void,
-      checkpoint: (value: string) => void
-    ) {
-      connected(true);
-      checkpoint('deferred');
-    }
-    async destroy() {}
-  },
-}));
+const providers = vi.hoisted(() => ({ awareness: [] as Awareness[] }));
+vi.mock('@tuturuuu/realtime/documents', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@tuturuuu/realtime/documents')>();
+  return {
+    ...actual,
+    CloudflareDocumentProvider: class {
+      awareness: Awareness;
+      constructor(
+        doc: Y.Doc,
+        _channel: unknown,
+        connected: (value: boolean) => void,
+        checkpoint: (value: string) => void
+      ) {
+        this.awareness = new actual.Awareness(doc);
+        providers.awareness.push(this.awareness);
+        connected(true);
+        checkpoint('deferred');
+      }
+      async destroy() {
+        this.awareness.destroy();
+      }
+    },
+  };
+});
 vi.mock('@tuturuuu/ui/text-editor/editor', () => ({
   RichTextEditor: ({
     toolbarLeadingContent,
@@ -51,7 +61,10 @@ vi.mock('@tuturuuu/ui/text-editor/editor', () => ({
     </div>
   ),
 }));
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  for (const state of providers.awareness.splice(0)) state.destroy();
+});
 
 it('places backup feedback in the editor toolbar without a padded title wrapper', () => {
   const initial: Parameters<typeof DocumentEditor>[0]['initial'] = {
@@ -82,6 +95,7 @@ it('places backup feedback in the editor toolbar without a padded title wrapper'
     })
   ).toBeTruthy();
   expect(within(toolbar).getByRole('button', { name: 'Tools' })).toBeTruthy();
+  expect(within(toolbar).getByLabelText('Participant')).toBeTruthy();
   const wrapper = screen.getByTestId('editor').parentElement;
   expect(wrapper?.className).not.toMatch(/\bp-4\b|\bpx-4\b/);
   expect(container.querySelector('section')?.className).not.toMatch(
