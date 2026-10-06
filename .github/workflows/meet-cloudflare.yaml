@@ -13,6 +13,9 @@ on:
       - 'bun.lock'
       - 'patches/**'
       - 'scripts/ci/meet-cloudflare-render.test.js'
+      - 'scripts/ci/meet-build-metadata.test.js'
+      - 'scripts/ci/verify-meet-build-info*'
+      - 'scripts/ci/generate-build-metadata*'
       - 'tuturuuu.ts'
       - 'tuturuuu.ci.ts'
       - '.github/workflows/ci-check.yml'
@@ -29,6 +32,9 @@ on:
       - 'bun.lock'
       - 'patches/**'
       - 'scripts/ci/meet-cloudflare-render.test.js'
+      - 'scripts/ci/meet-build-metadata.test.js'
+      - 'scripts/ci/verify-meet-build-info*'
+      - 'scripts/ci/generate-build-metadata*'
       - 'package.json'
       - 'turbo.json'
       - 'tuturuuu.ts'
@@ -97,6 +103,14 @@ jobs:
         with:
           node-version: 24
       - run: bun install --frozen-lockfile
+      - name: Generate shared build metadata
+        env:
+          PLATFORM_BUILD_ENVIRONMENT: ${{ github.ref == 'refs/heads/production' && 'production' || 'preview' }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.ref_name }}
+          PLATFORM_BUILD_COMMIT_HASH: ${{ github.sha }}
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Test build identity and workflow ordering
+        run: node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js
       - run: bun run --cwd packages/types build
       - run: bun run --cwd packages/supabase build
       - run: bun run test
@@ -197,6 +211,8 @@ jobs:
         run: |
           curl --fail --retry 5 --retry-delay 5 https://meet-realtime.tuturuuu.com/health
           curl --fail --retry 5 --retry-delay 5 --output /dev/null https://meet.tuturuuu.com/login
+      - name: Verify canonical frontend build identity
+        run: node scripts/ci/verify-meet-build-info.js
       - name: Verify authenticated realtime and SFU behavior
         env:
           MEET_REALTIME_TOKEN_SECRET: ${{ secrets.MEET_REALTIME_TOKEN_SECRET }}

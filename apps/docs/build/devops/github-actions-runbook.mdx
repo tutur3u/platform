@@ -578,6 +578,18 @@ release badges skip those builds. Source edits, dependency changes, and missing
 comparison history still run validation. Pushes and manual dispatches retain
 their normal validation and deployment behavior.
 
+Meet generates the shared build metadata before dependency Turbo builds and
+OpenNext Worker bundling. Production refs embed `production`; main and pull
+request validation embed `preview` with the checked-out ref and SHA. The generated
+source and build environment inputs participate in Turbo's existing cache keys.
+A Wrangler deployment description alone does not populate `/api/build-info`.
+The production-only deploy job runs `scripts/ci/verify-meet-build-info.js` against
+the canonical endpoint before recording its success marker. It requires HTTP 200,
+JSON, `appName: meet`, the full candidate SHA, and production environment/ref;
+local fallback, stale bundles, and preview metadata fail closed. Main validation
+never probes production as proof of its own artifact. Run the focused contracts
+with `node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js`.
+
 ### TanStack/Rust Cloudflare deployment
 
 `rust-backend.yml` is also the manually dispatched Cloudflare preview deployment
