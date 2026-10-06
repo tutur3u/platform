@@ -2,6 +2,89 @@ part of 'assistant_live_persistence_test.dart';
 
 void _registerLiveTurnLifecycleCases() {
   test(
+    'held close refuses new camera and microphone permission requests',
+    () async {
+      final teardown = Completer<void>();
+      when(socket.disconnect).thenAnswer((_) => teardown.future);
+      when(_camera.ensurePermission).thenAnswer((_) async => false);
+      when(_recorder.ensurePermission).thenAnswer((_) async => false);
+      final closing = cubit.close();
+      try {
+        await _tick();
+        await cubit.toggleMicrophone();
+        await cubit.toggleCamera();
+        verifyNever(_camera.ensurePermission);
+        verifyNever(_recorder.ensurePermission);
+      } finally {
+        teardown.complete();
+        await closing;
+      }
+    },
+  );
+
+  for (final nativeFailure in [false, true]) {
+    test(
+      'close admission is immediate and idempotent failure=$nativeFailure',
+      () async {
+        final teardown = Completer<void>();
+        when(socket.disconnect).thenAnswer((_) => teardown.future);
+        clearInteractions(repository);
+        clearInteractions(socket);
+        final closing = cubit.close();
+        expect(identical(closing, cubit.close()), isTrue);
+        final outcome = nativeFailure
+            ? expectLater(closing, throwsA(isA<ApiException>()))
+            : closing;
+        try {
+          await _tick();
+          expect(cubit.isClosed, isFalse);
+          await cubit.prepareSession(wsId: 'ws', chatId: 'chat');
+          verifyNever(
+            () => repository.fetchLiveToken(
+              wsId: 'ws',
+              chatId: any(named: 'chatId'),
+              forceFresh: any(named: 'forceFresh'),
+              model: any(named: 'model'),
+            ),
+          );
+          verifyNever(
+            () => socket.connect(
+              token: any(named: 'token'),
+              model: any(named: 'model'),
+              seedHistory: any(named: 'seedHistory'),
+              sessionHandle: any(named: 'sessionHandle'),
+            ),
+          );
+        } finally {
+          if (nativeFailure) {
+            teardown.completeError(
+              const ApiException(
+                message: 'Native unavailable',
+                statusCode: 503,
+              ),
+            );
+          } else {
+            teardown.complete();
+          }
+          await outcome;
+        }
+        expect(cubit.isClosed, isTrue);
+        verify(socket.disconnect).called(1);
+        verify(player.dispose).called(1);
+        await cubit.prepareSession(wsId: 'ws', chatId: 'chat');
+        verifyNever(
+          () => repository.fetchLiveToken(
+            wsId: 'ws',
+            chatId: any(named: 'chatId'),
+            forceFresh: any(named: 'forceFresh'),
+            model: any(named: 'model'),
+          ),
+        );
+      },
+    );
+  }
+
+  test(
     'explicit End stops local transport and playback while save is held',
     () async {
       final saving = Completer<void>();

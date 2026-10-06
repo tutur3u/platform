@@ -36,6 +36,8 @@ late StreamController<AssistantLiveSocketEvent> events;
 late AssistantLiveCubit cubit;
 late Socket socket;
 late Player player;
+late _Camera _camera;
+late _Recorder _recorder;
 String? actor;
 int scopeToken = 0;
 int historyUpdates = 0;
@@ -47,8 +49,8 @@ void main() {
   setUp(() async {
     repository = Repository();
     player = Player();
-    final camera = _Camera();
-    final recorder = _Recorder();
+    _camera = _Camera();
+    _recorder = _Recorder();
     socket = Socket();
     actor = null;
     scopeToken = 0;
@@ -57,14 +59,14 @@ void main() {
     _updateHistory = null;
     _confirmTurnHistory = null;
     when(() => socket.events).thenAnswer((_) => events.stream);
-    when(recorder.stop).thenAnswer((_) async {});
-    when(recorder.dispose).thenAnswer((_) async {});
+    when(_recorder.stop).thenAnswer((_) async {});
+    when(_recorder.dispose).thenAnswer((_) async {});
     when(player.initialize).thenAnswer((_) async {});
     when(player.clear).thenAnswer((_) async {});
     when(player.pause).thenAnswer((_) async {});
     when(player.dispose).thenAnswer((_) async {});
-    when(camera.stopStreaming).thenAnswer((_) async {});
-    when(camera.dispose).thenAnswer((_) async {});
+    when(_camera.stopStreaming).thenAnswer((_) async {});
+    when(_camera.dispose).thenAnswer((_) async {});
     when(socket.disconnect).thenAnswer((_) async {});
     when(
       () => repository.fetchLiveToken(
@@ -106,8 +108,8 @@ void main() {
       repository: repository,
       socket: socket,
       audioPlayer: player,
-      recorder: recorder,
-      cameraService: camera,
+      recorder: _recorder,
+      cameraService: _camera,
       isTurnRestored: (wsId, chatId, turnId, roles) =>
           _confirmTurnHistory?.call(wsId, chatId, turnId, roles) ?? true,
       onChatBound: (_, _) async {},
@@ -120,7 +122,7 @@ void main() {
   });
 
   tearDown(() async {
-    await cubit.close();
+    if (!cubit.isClosed) await cubit.close();
     await events.close();
   });
 

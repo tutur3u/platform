@@ -644,7 +644,12 @@ Logout or other privacy teardown clears local drafts without flushing them to a
 remote conversation. Reconnect does not authorize an old actor's work. Queued
 provider frames carry an internal connection generation and are checked at
 delivery; replacing or closing a connection also invalidates its raw listeners.
-A deferred old close cannot revive or close a newer connection.
+A deferred old close cannot revive or close a newer connection. Disposal closes
+admission before native teardown awaits, clears retained retry closures and
+refuses new session, microphone, camera or screen-capture admission. Repeated
+disposal shares one completion; a native cleanup failure still closes the state
+and attempts the remaining cleanup. This is separate from explicit End, which
+may finish the current admitted turn.
 
 Connected controls use the same shell action button geometry and styling as the
 normal navbar, within its existing material. Buttons retain semantic toggle and

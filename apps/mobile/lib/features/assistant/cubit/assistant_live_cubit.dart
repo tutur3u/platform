@@ -32,6 +32,7 @@ part 'assistant_live_socket_events.dart';
 part 'assistant_live_state.dart';
 part 'assistant_live_tools.dart';
 part 'assistant_live_persistence.dart';
+part 'assistant_live_disposal.dart';
 
 class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   AssistantLiveCubit({
@@ -101,6 +102,8 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   final _retryTurns = <String, Future<void> Function()>{};
   String _toolProtocol = 'legacy';
   bool _manualDisconnect = false;
+  bool _isClosing = false;
+  Future<void>? _closeFuture;
   bool _reconnectScheduled = false;
   StreamSubscription<AssistantPlaybackSpectrum>? _playbackSubscription;
   final _startupAudio = AssistantAudioBuffer();
@@ -132,6 +135,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     final requestedActor = _currentUserId();
     final requestedScope = _currentScopeToken();
     bool admitted() =>
+        !_isClosing &&
         !isClosed &&
         admissionVersion == _requestVersion &&
         requestedActor == _currentUserId() &&
@@ -487,6 +491,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   }
 
   bool _isStale(int requestVersion) =>
+      _isClosing ||
       isClosed ||
       requestVersion != _requestVersion ||
       _currentUserId() != _sessionUserId ||
@@ -627,23 +632,24 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     }
   }
 
-  @override
-  Future<void> close() async {
-    _requestVersion++;
-    _conversationVersion++;
-    _manualDisconnect = true;
+  Future<void> _cancelSocketEvents() async =>
+      await _socketSubscription?.cancel();
+  Future<void> _cancelPlayback() async => await _playbackSubscription?.cancel();
+  Future<void> _cancelScreenEvents() async =>
+      await _screenSubscription?.cancel();
 
-    await _socketSubscription?.cancel();
-    await _playbackSubscription?.cancel();
-    await _screenSubscription?.cancel();
-    _screenSubscription = null;
-    await _stopInputs();
-    await _socket.disconnect();
-    await _audioPlayer.dispose();
-    await _recorder.dispose();
-    await _cameraService.dispose();
-    _socket.dispose();
-    return await super.close();
+  @override
+  Future<void> close() {
+    if (_closeFuture != null) return _closeFuture!;
+    final completion = Completer<void>();
+    _closeFuture = completion.future;
+    unawaited(
+      _disposeLive(super.close).then<void>(
+        (_) => completion.complete(),
+        onError: completion.completeError,
+      ),
+    );
+    return completion.future;
   }
 
   void _clearAssistantActivity() {
