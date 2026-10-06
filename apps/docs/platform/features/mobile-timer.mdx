@@ -26,3 +26,42 @@ shell registrations, disabled in-flight controls, route disposal, a long-running
 clock under enlarged text, and Vietnamese Pomodoro labels. Actual native
 session timing and dock transition smoothness require device verification;
 widget tests do not establish either.
+
+
+## Shared Pomodoro preparation is inactive
+
+The private time-tracker control foundation prepares actor/workspace-scoped
+configuration only. Its schema requires `mode=off`, `phase=idle`, and no deadline;
+its service-only RPCs initialize, read, and update configuration with revision
+checks. Browser roles cannot read, write, or execute those RPCs. Configuration
+contains positive integer minute durations up to 180 and a cycle length up to
+24, with explicit boolean automation choices. These are foundation storage
+bounds, not a change to the current mobile or web controls.
+
+A repeated latest command with identical input returns its existing revision;
+a stale revision or reused command with different input fails. An optional
+prepared-session reference must belong to the same actor and workspace. It is
+an inert reference, not a live session binding: existing session deletion stays
+possible. The foundation changes no tracked work, breaks, approval policy,
+client timer, settings preference, notification delivery, or scheduler.
+
+Activation requires a later reviewed contract that normalizes Web, Track,
+quick-start, AI, direct-write and approval lifecycle paths under the same lock
+order and atomically updates phase and existing tracker accounting. This
+foundation is a prerequisite and does not deliver cross-platform Pomodoro or
+completion while every client is closed.
+
+The `time-tracker-control-contract.yaml` workflow checks out the exact source,
+replays the complete schema in the repository-owned isolated lifecycle, runs
+`time-tracker-control.sql` with strict TAP validation, and runs actual concurrent
+configuration-CAS and command-replay races. It then generates actual public
+schema types as an exact-SHA artifact and requires owned lifecycle cleanup.
+No generated type file is hand-edited. The new private preparation objects do
+not imply new public API types.
+
+Focused runner tests can run through `ttr resources run -- node --test
+apps/database/scripts/time-tracker-control-contract.test.mjs
+apps/database/scripts/programming-database-tap.test.mjs`. The full SQL verifier
+starts a disposable database and belongs in exact-head CI or an explicitly
+admitted host; it must not be run under a no-local-setup restriction. Local
+script tests alone are not schema, SQL concurrency, device, or production proof.
