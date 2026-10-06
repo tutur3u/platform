@@ -10300,4 +10300,16 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get profileMediaDismiss => 'Đóng';
+
+  @override
+  String get calendarTimelineZoom => 'Thu phóng dòng thời gian';
+
+  @override
+  String get calendarZoomIn => 'Phóng to';
+
+  @override
+  String get calendarZoomOut => 'Thu nhỏ';
+
+  @override
+  String get calendarZoomReset => 'Đặt lại';
 }

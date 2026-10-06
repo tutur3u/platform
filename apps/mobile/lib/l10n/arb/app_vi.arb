@@ -4459,5 +4459,9 @@
       }
     }
   },
-  "profileMediaDismiss": "Đóng"
+  "profileMediaDismiss": "Đóng",
+  "calendarTimelineZoom": "Thu phóng dòng thời gian",
+  "calendarZoomIn": "Phóng to",
+  "calendarZoomOut": "Thu nhỏ",
+  "calendarZoomReset": "Đặt lại"
 }

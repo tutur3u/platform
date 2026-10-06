@@ -11,8 +11,14 @@ class ThreeDayView extends StatelessWidget {
     required this.onDaySelected,
     required this.onSwipe,
     super.key,
+    this.timelineZoom = 1,
+    this.zoomScope,
+    this.onTimelineZoomEnd,
   });
 
+  final double timelineZoom;
+  final Object? zoomScope;
+  final ValueChanged<double>? onTimelineZoomEnd;
   final DateTime selectedDate;
   final List<CalendarEvent> events;
   final ValueChanged<CalendarEvent> onEventTap;
@@ -23,6 +29,9 @@ class ThreeDayView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiDayScheduleView(
+      timelineZoom: timelineZoom,
+      zoomScope: zoomScope,
+      onTimelineZoomEnd: onTimelineZoomEnd,
       selectedDate: selectedDate,
       events: events,
       onEventTap: onEventTap,

@@ -22,6 +22,7 @@ class CalendarState extends Equatable {
     this.error,
     this.isLoadingMore = false,
     this.timezone,
+    this.timelineZoom = 1,
   });
 
   final CalendarStatus status;
@@ -38,6 +39,7 @@ class CalendarState extends Equatable {
   final String? error;
   final bool isLoadingMore;
   final String? timezone;
+  final double timelineZoom;
 
   List<CalendarEvent> get displayEvents =>
       events.map((event) => calendarProjectEvent(event, timezone)).toList();
@@ -100,6 +102,7 @@ class CalendarState extends Equatable {
     bool? isRefreshing,
     Object? lastUpdatedAt = _sentinel,
     CalendarViewMode? viewMode,
+    double? timelineZoom,
     bool? hasSelectedView,
     Object? selectedDate = _sentinel,
     Object? focusedMonth = _sentinel,
@@ -119,6 +122,7 @@ class CalendarState extends Equatable {
         ? this.lastUpdatedAt
         : lastUpdatedAt as DateTime?,
     viewMode: viewMode ?? this.viewMode,
+    timelineZoom: timelineZoom ?? this.timelineZoom,
     hasSelectedView: hasSelectedView ?? this.hasSelectedView,
     selectedDate: selectedDate == _sentinel
         ? this.selectedDate
@@ -142,6 +146,7 @@ class CalendarState extends Equatable {
     isRefreshing,
     lastUpdatedAt,
     viewMode,
+    timelineZoom,
     hasSelectedView,
     selectedDate,
     focusedMonth,

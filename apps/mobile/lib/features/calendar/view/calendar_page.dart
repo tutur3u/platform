@@ -16,6 +16,7 @@ import 'package:mobile/features/calendar/view/calendar_timezone_listener.dart';
 import 'package:mobile/features/calendar/widgets/agenda_view.dart';
 import 'package:mobile/features/calendar/widgets/calendar_connections_sheet.dart';
 import 'package:mobile/features/calendar/widgets/calendar_minute_clock.dart';
+import 'package:mobile/features/calendar/widgets/calendar_zoom_sheet.dart';
 import 'package:mobile/features/calendar/widgets/event_detail_sheet.dart';
 import 'package:mobile/features/calendar/widgets/event_form_sheet.dart';
 import 'package:mobile/features/calendar/widgets/month_strip.dart';
@@ -35,6 +36,7 @@ import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'calendar_page_actions.dart';
+part 'calendar_zoom_page.dart';
 
 CalendarViewMode _defaultCalendarMode(BuildContext context) =>
     MediaQuery.sizeOf(context).width >= Breakpoints.mediumMin
@@ -276,6 +278,22 @@ class _CalendarViewState extends State<_CalendarView> {
                       onPressed: () => _showCalendarModeMenu(context, state),
                       highlighted: true,
                     ),
+                  if ([
+                    CalendarViewMode.day,
+                    CalendarViewMode.threeDays,
+                    CalendarViewMode.week,
+                  ].contains(state.viewMode))
+                    ShellActionSpec(
+                      id: 'calendar-zoom',
+                      icon: Icons.zoom_in,
+                      tooltip: l10n.calendarTimelineZoom,
+                      callbackToken: 'calendar-zoom-${state.timelineZoom}',
+                      onPressed: () => showCalendarZoomSheet(
+                        context,
+                        zoom: state.timelineZoom,
+                        onChanged: _zoomHandler(context),
+                      ),
+                    ),
                   if (Env.isCalendarIntegrationsEnabled)
                     ShellActionSpec(
                       id: 'calendar-connections',
@@ -394,6 +412,9 @@ class _CalendarViewState extends State<_CalendarView> {
     switch (state.viewMode) {
       case CalendarViewMode.day:
         return MultiDayScheduleView(
+          timelineZoom: state.timelineZoom,
+          zoomScope: context.read<CalendarCubit>().timelineZoomScope,
+          onTimelineZoomEnd: _zoomHandler(context),
           visibleDayCount: 1,
           selectedDate: state.effectiveSelectedDate,
           events: state.displayEvents,
@@ -405,6 +426,9 @@ class _CalendarViewState extends State<_CalendarView> {
         );
       case CalendarViewMode.threeDays:
         return ThreeDayView(
+          timelineZoom: state.timelineZoom,
+          zoomScope: context.read<CalendarCubit>().timelineZoomScope,
+          onTimelineZoomEnd: _zoomHandler(context),
           selectedDate: state.effectiveSelectedDate,
           events: state.displayEvents,
           onEventTap: (event) => _showEventDetail(context, event),
@@ -417,6 +441,9 @@ class _CalendarViewState extends State<_CalendarView> {
         );
       case CalendarViewMode.week:
         return WeekView(
+          timelineZoom: state.timelineZoom,
+          zoomScope: context.read<CalendarCubit>().timelineZoomScope,
+          onTimelineZoomEnd: _zoomHandler(context),
           selectedDate: state.effectiveSelectedDate,
           events: state.displayEvents,
           firstDayOfWeek: firstDayOfWeek,
