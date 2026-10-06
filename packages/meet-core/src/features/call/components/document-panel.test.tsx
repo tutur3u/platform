@@ -28,11 +28,22 @@ vi.mock('@tuturuuu/ui/text-editor/editor', () => ({
   RichTextEditor: ({
     toolbarLeadingContent,
     toolbarToolsLabel,
+    allowCollaboration,
+    yjsDoc,
+    yjsProvider,
   }: {
     toolbarLeadingContent: ReactNode;
     toolbarToolsLabel: string;
+    allowCollaboration?: boolean;
+    yjsDoc?: unknown;
+    yjsProvider?: unknown;
   }) => (
-    <div data-testid="editor">
+    <div
+      data-testid="editor"
+      data-shared={String(
+        allowCollaboration === true && !!yjsDoc && !!yjsProvider
+      )}
+    >
       <div role="toolbar">
         {toolbarLeadingContent}
         <button type="button">{toolbarToolsLabel}</button>
@@ -63,6 +74,7 @@ it('places backup feedback in the editor toolbar without a padded title wrapper'
     </NextIntlClientProvider>
   );
   expect(screen.queryByText(messages.meet.collaboration.document)).toBeNull();
+  expect(screen.getByTestId('editor').getAttribute('data-shared')).toBe('true');
   const toolbar = screen.getByRole('toolbar');
   expect(
     within(toolbar).getByRole('button', {
