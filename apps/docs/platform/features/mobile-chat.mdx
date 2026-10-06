@@ -162,6 +162,23 @@ boundary does not provide cross-client compare-and-swap or claim that ambiguous
 network writes are safe to replay automatically. Genuine permission and transport
 failures retain their existing behavior.
 
+Successful live `update_my_settings` tool results also force an account-owned
+Soul refresh, resolving the SDK's nameless result from its matching input in the
+current assistant message. Preliminary, failed, conflicting and unmatched
+results do not refresh; duplicate results refresh once per submission. Restored
+history never replays this effect. Departed actor/workspace operations cannot
+admit effects or report late refresh errors. A metadata refresh failure keeps the
+confirmed reply and last accepted name, and offers a localized notice to reopen
+assistant settings. Genuine reply persistence and transport failures remain
+separate failures. This rule does not settle conflicts with pending offline name
+edits or provide cross-client ordering guarantees.
+
+`assistant_tool_receipt_test.dart` exercises the actual native NDJSON mapping,
+tool admission, duplicate/history isolation and delayed scope changes;
+`assistant_tool_name_title_test.dart` verifies the production shell title in both
+languages using native-mapped submission events. These tests do not establish
+device or production runtime delivery.
+
 Regression coverage: `assistant_soul_name_writer_test.dart`,
 `assistant_name_publication_test.dart`, and
 `offline_queue_disposal_regression_test.dart` cover held cache/queue/network

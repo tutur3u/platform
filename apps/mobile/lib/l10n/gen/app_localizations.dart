@@ -20017,6 +20017,12 @@ abstract class AppLocalizations {
   /// **'Could not update the name. Your draft is kept; try again.'**
   String get assistantRenameError;
 
+  /// No description provided for @assistantSettingsRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings were saved, but could not be refreshed here. Reopen assistant settings to try again.'**
+  String get assistantSettingsRefreshFailed;
+
   /// No description provided for @assistantMemoryEditTitle.
   ///
   /// In en, this message translates to:
