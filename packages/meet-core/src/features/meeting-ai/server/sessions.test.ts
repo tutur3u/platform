@@ -32,17 +32,27 @@ const session = {
 function dbWith(results: unknown[]) {
   const writes: unknown[] = [];
   const updatedTables: string[] = [];
+  const predicates: Array<Array<[string, unknown]>> = [];
   const from = vi.fn((table: string) => {
     const result = results.shift();
     const chain: Record<string, unknown> = {};
+    const filters: Array<[string, unknown]> = [];
+    predicates.push(filters);
     for (const key of ['select', 'eq', 'in', 'order', 'range'])
       chain[key] = () => chain;
+    chain.eq = (column: string, value: unknown) => {
+      filters.push([column, value]);
+      return chain;
+    };
     chain.update = (value: unknown) => {
       writes.push(value);
       updatedTables.push(table);
       return chain;
     };
-    chain.maybeSingle = () => Promise.resolve(result);
+    chain.maybeSingle = () =>
+      result instanceof Error
+        ? Promise.reject(result)
+        : Promise.resolve(result);
     chain.single = () => Promise.resolve(result);
     // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
     chain.then = (
@@ -57,7 +67,7 @@ function dbWith(results: unknown[]) {
     user: { id },
     canManage: true,
   });
-  return Object.assign(writes, { updatedTables });
+  return Object.assign(writes, { updatedTables, predicates });
 }
 const result = (data: unknown) => ({ data, error: null });
 const request = (overrides: Record<string, unknown> = {}) =>
@@ -395,4 +405,175 @@ it('retries failed ended-session notes from saved chunks without changing transc
     retryWrites.updatedTables.every((table) => table === 'meet_ai_sessions')
   ).toBe(true);
   expect(chunks).toEqual(originalChunks);
+});
+
+describe('generated Meet notes persistence recovery', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.stubEnv('GOOGLE_GENERATIVE_AI_API_KEY', 'test-only');
+  });
+  it.each([
+    [
+      'returned storage error',
+      { data: null, error: { message: 'Synthetic storage error' } },
+    ],
+    ['thrown storage error', new Error('Synthetic unknown commit')],
+  ])(
+    'reuses the generated result after %s without another provider call',
+    async (_, failure) => {
+      const chunks = [
+        {
+          status: 'completed',
+          start_seconds: 0,
+          sequence: 0,
+          transcript: 'Synthetic saved speech.',
+          usage: null,
+        },
+      ];
+      const original = structuredClone(chunks);
+      const writes = dbWith([
+        result(session),
+        result(null),
+        result(chunks),
+        result({ id }),
+        failure,
+        result({ id }),
+      ]);
+      const measured = {
+        notes: {
+          summary: 'Synthetic notes.',
+          decisions: [],
+          actionItems: [],
+          openQuestions: [],
+        },
+        usage: { available: true, inputTokens: 10, outputTokens: 5 },
+        costUsd: 0.25,
+      };
+      mocks.generate.mockResolvedValue(measured);
+      expect(await changeMeetAi(request(), params)).toEqual({ sessionId: id });
+      expect(mocks.generate).toHaveBeenCalledTimes(1);
+      const attempt = (writes[1] as { notes_started_at: string })
+        .notes_started_at;
+      expect(writes.slice(2)).toEqual([
+        {
+          notes_status: 'completed',
+          notes: { ...measured.notes, incomplete: false },
+          notes_usage: measured.usage,
+          notes_cost_usd: 0.25,
+        },
+        {
+          notes_status: 'completed',
+          notes: { ...measured.notes, incomplete: false },
+          notes_usage: measured.usage,
+          notes_cost_usd: 0.25,
+        },
+      ]);
+      expect(writes.predicates.slice(4)).toEqual([
+        [
+          ['id', id],
+          ['notes_started_at', attempt],
+        ],
+        [
+          ['id', id],
+          ['notes_started_at', attempt],
+        ],
+      ]);
+      expect(chunks).toEqual(original);
+      expect(
+        writes.updatedTables.every((table) => table === 'meet_ai_sessions')
+      ).toBe(true);
+    }
+  );
+  it.each([
+    [
+      'returned errors',
+      { data: null, error: { message: 'Synthetic private body' } },
+    ],
+    ['thrown errors', new Error('Synthetic private body')],
+  ])(
+    'bounds %s at three writes and reports no false completion',
+    async (_, failure) => {
+      const writes = dbWith([
+        result(session),
+        result(null),
+        result([
+          {
+            status: 'completed',
+            start_seconds: 0,
+            transcript: 'Synthetic speech.',
+          },
+        ]),
+        result({ id }),
+        failure,
+        failure,
+        failure,
+        result(null),
+      ]);
+      mocks.generate.mockResolvedValue({
+        notes: { summary: 'Synthetic output.', actionItems: [] },
+        usage: { available: true },
+        costUsd: 0.5,
+      });
+      const response = await meetAiResponse(() =>
+        changeMeetAi(request(), params)
+      );
+      expect(response.status).toBe(500);
+      expect(await response.json()).toEqual({ error: 'Could not save notes' });
+      expect(mocks.generate).toHaveBeenCalledTimes(1);
+      expect(writes.slice(2, 5)).toHaveLength(3);
+      expect(writes[2]).toEqual(writes[3]);
+      expect(writes[3]).toEqual(writes[4]);
+      expect(writes.at(-1)).toEqual({
+        notes_status: 'failed',
+        notes_unpriced_attempts: 1,
+      });
+      const attempt = (writes[1] as { notes_started_at: string })
+        .notes_started_at;
+      expect(writes.predicates.slice(4, 7)).toEqual(
+        Array.from({ length: 3 }, () => [
+          ['id', id],
+          ['notes_started_at', attempt],
+        ])
+      );
+      expect(writes.predicates.at(-1)).toEqual([
+        ['id', id],
+        ['notes_started_at', attempt],
+        ['notes_status', 'processing'],
+      ]);
+    }
+  );
+  it('treats a missing CAS row as conflict without retrying or generating again', async () => {
+    const writes = dbWith([
+      result(session),
+      result(null),
+      result([
+        {
+          status: 'completed',
+          start_seconds: 0,
+          transcript: 'Synthetic speech.',
+        },
+      ]),
+      result({ id }),
+      result(null),
+      result(null),
+    ]);
+    mocks.generate.mockResolvedValue({
+      notes: { summary: 'Synthetic output.', actionItems: [] },
+      usage: { available: true },
+      costUsd: 0.5,
+    });
+    const response = await meetAiResponse(() =>
+      changeMeetAi(request(), params)
+    );
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: 'Notes finalization changed',
+    });
+    expect(mocks.generate).toHaveBeenCalledTimes(1);
+    expect(writes).toHaveLength(4);
+    expect(writes.predicates.at(-1)).toContainEqual([
+      'notes_status',
+      'processing',
+    ]);
+  });
 });

@@ -13,6 +13,7 @@ import { meetNotesSchema } from '@tuturuuu/ai/meetings/gemini';
 import { MEET_AI_MODEL } from '@tuturuuu/ai/meetings/usage';
 import type { MeetAiState } from '@tuturuuu/internal-api';
 import type { Json } from '@tuturuuu/types';
+import { Effect, Schedule } from '@tuturuuu/utils/effect';
 import { z } from 'zod';
 import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
 
@@ -337,29 +338,50 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
             : item.owner,
       }));
     }
-    const saved = await db
-      .from('meet_ai_sessions')
-      .update({
-        notes_status: 'completed',
-        notes: {
-          ...(result?.notes ?? {
-            incomplete: false,
-            summary: '',
-            decisions: [],
-            actionItems: [],
-            openQuestions: [],
-          }),
-          incomplete: !!incomplete,
-        } as Json,
-        notes_usage: (result?.usage as Json) ?? null,
-        notes_cost_usd: result ? result.costUsd : 0,
-      })
-      .eq('id', sessionId)
-      .eq('notes_started_at', attemptStartedAt)
-      .select('id')
-      .maybeSingle();
-    if (saved.error || !saved.data)
-      throw new MeetAiError(500, 'Could not save notes');
+    // Reuse the settled output; only the idempotent CAS write is retried.
+    const payload = {
+      notes_status: 'completed',
+      notes: {
+        ...(result?.notes ?? {
+          incomplete: false,
+          summary: '',
+          decisions: [],
+          actionItems: [],
+          openQuestions: [],
+        }),
+        incomplete: !!incomplete,
+      } as Json,
+      notes_usage: (result?.usage as Json) ?? null,
+      notes_cost_usd: result ? result.costUsd : 0,
+    };
+    const persisted = await Effect.runPromise(
+      Effect.tryPromise({
+        try: async () => {
+          const saved = await db
+            .from('meet_ai_sessions')
+            .update(payload)
+            .eq('id', sessionId)
+            .eq('notes_started_at', attemptStartedAt)
+            .select('id')
+            .maybeSingle();
+          if (saved.error) throw new MeetAiError(500, 'Could not save notes');
+          if (!saved.data)
+            throw new MeetAiError(409, 'Notes finalization changed');
+        },
+        catch: (error) =>
+          error instanceof MeetAiError
+            ? error
+            : new MeetAiError(500, 'Could not save notes'),
+      }).pipe(
+        Effect.retry({
+          times: 2,
+          schedule: Schedule.exponential('100 millis'),
+          while: (error) => error.status === 500,
+        }),
+        Effect.either
+      )
+    );
+    if (persisted._tag === 'Left') throw persisted.left;
   } catch (error) {
     await db
       .from('meet_ai_sessions')
@@ -369,7 +391,9 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
           session.notes_unpriced_attempts + (providerStarted ? 1 : 0),
       })
       .eq('id', sessionId)
-      .eq('notes_started_at', attemptStartedAt);
+      .eq('notes_started_at', attemptStartedAt)
+      // An uncertain response must not demote an already committed result.
+      .eq('notes_status', 'processing');
     throw error;
   }
   return { sessionId };
