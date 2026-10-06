@@ -470,6 +470,14 @@ a private native calendar to Google.
 
 ### Recoverable Google color operation development
 
+Exported-route overlap tests model the authoritative provider-series read-only
+RPC separately from operation-ledger RPCs. A writable fixture returns `false`;
+read-only and unavailable states must still reject PUT/DELETE before reservation
+or provider dispatch. `google-color-operations/route-overlap.test.ts` covers these
+states alongside delayed-request fencing and recovery. When adding an admission
+lookup, update shared route fixtures to its actual result contract so a fixture
+failure cannot masquerade as a provider or operation conflict.
+
 The same-calendar color-write followup has a server-only operation ledger,
 immutable prepared patch/ETag and private operation marker. Conditional replay
 uses the original ETag; it never refreshes an old operation's precondition. A
