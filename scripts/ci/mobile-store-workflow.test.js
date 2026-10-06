@@ -92,7 +92,7 @@ test('mobile store deployment workflow is production-only beta delivery with ver
     assert.deepEqual(job.needs, ['check-ci', 'mobile-credentials-preflight']);
     assert.equal(
       job.if,
-      "github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'"
+      "github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'"
     );
     assert.equal(job.environment, 'mobile-store-beta');
     assert.equal(job.defaults.run['working-directory'], 'apps/mobile');
@@ -186,7 +186,7 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   assert.equal(retry.environment, 'mobile-store-beta');
   assert.equal(
     retry.if,
-    "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'"
+    "github.event_name == 'workflow_dispatch' && inputs.mode == 'retry_ios_review' && github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'"
   );
   assert.match(
     step(retry, 'Retry newest eligible build').run,
@@ -330,7 +330,7 @@ test('TestFlight scheduler dispatches only promoted production retry code', () =
   assert.equal(dispatch.if, "steps.promoted.outputs.enabled == 'true'");
   assert.match(
     dispatch.run,
-    /mobile-deploy-stores\.yaml\/dispatches -f ref=production/
+    /mobile-deploy-stores\.yaml\/dispatches -f ref=production -f 'inputs\[mode\]=retry_ios_review'/
   );
   assert.doesNotMatch(workflow, /MOBILE_DEPLOYMENT_CI_TOKEN/);
   assert.doesNotMatch(workflow, /audience=tuturuuu-mobile-deployment/);
@@ -340,5 +340,130 @@ test('TestFlight scheduler dispatches only promoted production retry code', () =
     const action = match[1];
     if (!action || action.startsWith('./')) continue;
     assert.match(action.split('@')[1] || '', /^[0-9a-f]{40}$/);
+  }
+});
+
+test('mobile store event guards separate new releases from review retries', () => {
+  const workflowPath = path.join(
+    repoRoot,
+    '.github/workflows/mobile-deploy-stores.yaml'
+  );
+  const parsed = JSON.parse(
+    execFileSync(
+      'ruby',
+      [
+        '-e',
+        "require 'yaml'; require 'json'; puts JSON.generate(YAML.load_file(ARGV.fetch(0)))",
+        workflowPath,
+      ],
+      { encoding: 'utf8' }
+    )
+  );
+  const input = parsed.true.workflow_dispatch.inputs.mode;
+  assert.equal(input.default, 'release');
+  assert.equal(input.type, 'choice');
+  assert.equal(input.required, true);
+  assert.deepEqual(input.options, ['release', 'retry_ios_review']);
+  const evaluate = (job, context) => {
+    const expression = parsed.jobs[job].if
+      .replaceAll('needs.check-ci', "needs['check-ci']")
+      .replaceAll(
+        'needs.mobile-credentials-preflight',
+        "needs['mobile-credentials-preflight']"
+      );
+    return Function(
+      'github',
+      'needs',
+      'inputs',
+      `return (${expression});`
+    )(context.github, context.needs, context.inputs);
+  };
+  const queue = fs.readFileSync(
+    path.join(
+      repoRoot,
+      '.github/workflows/mobile-testflight-review-queue.yaml'
+    ),
+    'utf8'
+  );
+  const queuedMode = /inputs\[mode\]=([^']+)/u.exec(queue)?.[1];
+  const queuedContext = {
+    github: { event_name: 'workflow_dispatch', ref: 'refs/heads/production' },
+    inputs: { mode: queuedMode },
+    needs: {
+      'check-ci': { outputs: { should_run: 'true' } },
+      'mobile-credentials-preflight': { result: 'success' },
+    },
+  };
+  assert.equal(evaluate('retry-ios-testflight-review', queuedContext), true);
+  for (const job of [
+    'mobile-credentials-preflight',
+    'publish-android-internal',
+    'publish-ios-testflight',
+  ]) {
+    assert.equal(
+      evaluate(job, queuedContext),
+      false,
+      `${job}: queue must never publish a new release`
+    );
+  }
+  for (const event of [
+    'push',
+    'workflow_dispatch',
+    'pull_request',
+    'schedule',
+  ]) {
+    for (const ref of [
+      'refs/heads/production',
+      'refs/heads/main',
+      'refs/tags/v1',
+    ]) {
+      for (const mode of ['release', 'retry_ios_review', '']) {
+        for (const enabled of ['true', 'false']) {
+          for (const preflight of [
+            'success',
+            'failure',
+            'skipped',
+            'cancelled',
+          ]) {
+            const context = {
+              github: { event_name: event, ref },
+              inputs: { mode },
+              needs: {
+                'check-ci': { outputs: { should_run: enabled } },
+                'mobile-credentials-preflight': { result: preflight },
+              },
+            };
+            const admitted =
+              ref === 'refs/heads/production' && enabled === 'true';
+            const release =
+              admitted &&
+              (event === 'push' ||
+                (event === 'workflow_dispatch' && mode === 'release'));
+            const label = JSON.stringify(context);
+            assert.equal(
+              evaluate('mobile-credentials-preflight', context),
+              release,
+              label
+            );
+            for (const job of [
+              'publish-android-internal',
+              'publish-ios-testflight',
+            ])
+              assert.equal(
+                evaluate(job, context),
+                release && preflight === 'success',
+                `${job}: ${label}`
+              );
+            assert.equal(
+              evaluate('retry-ios-testflight-review', context),
+              admitted &&
+                event === 'workflow_dispatch' &&
+                mode === 'retry_ios_review',
+              label
+            );
+          }
+        }
+      }
+    }
   }
 });

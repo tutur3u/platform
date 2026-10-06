@@ -17,6 +17,15 @@ on:
       - "tuturuuu.ci.ts"
       - "tuturuuu.ts"
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Publish a new beta release or retry an existing iOS review
+        required: true
+        default: release
+        type: choice
+        options:
+          - release
+          - retry_ios_review
 
 permissions:
   actions: read
@@ -33,7 +42,7 @@ jobs:
   mobile-credentials-preflight:
     name: Check mobile deployment credentials
     needs: [check-ci]
-    if: github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true'
+    if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     environment: mobile-store-beta
     outputs:
@@ -133,7 +142,7 @@ jobs:
   publish-android-internal:
     name: Publish Android to Google Play internal
     needs: [check-ci, mobile-credentials-preflight]
-    if: github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'
+    if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     environment: mobile-store-beta
@@ -257,7 +266,7 @@ jobs:
   publish-ios-testflight:
     name: Upload iOS to TestFlight
     needs: [check-ci, mobile-credentials-preflight]
-    if: github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'
+    if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'
     runs-on: macos-latest
     timeout-minutes: 120
     environment: mobile-store-beta
@@ -519,7 +528,7 @@ jobs:
   retry-ios-testflight-review:
     name: Retry latest eligible TestFlight review
     needs: [check-ci]
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'retry_ios_review' && github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     environment: mobile-store-beta
     timeout-minutes: 15

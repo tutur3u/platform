@@ -44,4 +44,4 @@ jobs:
         if: steps.promoted.outputs.enabled == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh api -X POST repos/tutur3u/platform/actions/workflows/mobile-deploy-stores.yaml/dispatches -f ref=production
+        run: gh api -X POST repos/tutur3u/platform/actions/workflows/mobile-deploy-stores.yaml/dispatches -f ref=production -f 'inputs[mode]=retry_ios_review'

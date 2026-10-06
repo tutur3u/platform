@@ -209,10 +209,13 @@ and Apple metadata change only after an authorized app update or metadata retry.
 Regression coverage: `release-note-policy.test.js`, `release-history.test.mjs`,
 `build-test-notes.test.mjs`, `release_notes_test.dart`, and `release-query.test.ts`.
 
-The workflow runs after relevant pushes to `production`. Retry the latest push
-run for recovery; vault OIDC validation permits production pushes and the
-manually dispatched review retry.
-Other refs fail the preflight check.
+The workflow runs after relevant pushes to `production`. A manual dispatch on
+`production` with `mode=release` (the default) also prepares and uploads a new
+Android internal and iOS TestFlight beta. Use `mode=retry_ios_review` to retry an
+existing iOS build without uploading a release. Both modes require enabled CI;
+publication additionally requires successful credential preflight. Other refs
+are excluded before credential jobs start. Vault OIDC validation continues to
+require the production branch for both push and manual events.
 Configure the `mobile-store-beta` GitHub environment to allow only the
 `production` branch, and store the issued vault token as its
 `MOBILE_DEPLOYMENT_CI_TOKEN` secret. A missing token fails the run instead of
@@ -373,8 +376,9 @@ permissions, and writes Apple's dedicated demo fields and credential-free notes
 using the active vault API key. If the dialog was closed, rotate the reviewer
 password, verify sign-in again, and publish from the new one-time dialog. Then
 dispatch **Mobile Store Deployment** on the `production` branch (`gh workflow
-run mobile-deploy-stores.yaml --ref production`). Manual dispatch runs its
-**Retry latest eligible TestFlight review** job against the newest processed
+run mobile-deploy-stores.yaml --ref production -f mode=retry_ios_review`). This
+explicit review mode runs its **Retry latest eligible TestFlight review** job
+against the newest processed
 build; it does not upload another IPA. Confirm the new build reaches
 `WAITING_FOR_REVIEW`, `IN_REVIEW`, or `APPROVED` in App Store Connect.
 
@@ -399,8 +403,9 @@ and field pointer to inspect the rejected build's TestFlight information in
 App Store Connect before retrying the production review workflow.
 
 Apple permits one external beta build per app version in review at a time. The
-review queue checks every five minutes and dispatches the production retry
-workflow. It leaves existing reviews in place and submits the newest eligible
+review queue checks every five minutes and explicitly dispatches production
+with `mode=retry_ios_review`, so it never starts a new release. It leaves existing
+reviews in place and submits the newest eligible
 build, even while an older app version is under review. It waits rather than
 falling back to an older build when the newest build is still processing. Once
 an approved build exists, the queue expires superseded builds older than 14
