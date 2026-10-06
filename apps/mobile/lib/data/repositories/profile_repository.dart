@@ -26,13 +26,16 @@ class ProfileRepository {
     bool ownsApiClient = false,
     bool ownsHttpClient = false,
     OfflineMutationQueue? bannerMutationQueue,
+    OfflineMutationQueue? avatarMutationQueue,
   }) : _apiClient = apiClient ?? ApiClient(),
        _httpClient = httpClient ?? http.Client(),
        _bannerMutationQueue = bannerMutationQueue,
+       _avatarMutationQueue = avatarMutationQueue,
        _ownsApiClient = apiClient == null || ownsApiClient,
        _ownsHttpClient = httpClient == null || ownsHttpClient;
 
   final OfflineMutationQueue? _bannerMutationQueue;
+  final OfflineMutationQueue? _avatarMutationQueue;
   final ApiClient _apiClient;
   final http.Client _httpClient;
   final bool _ownsApiClient;
@@ -208,6 +211,8 @@ class ProfileRepository {
         await queueOrSendVoid(
           feature: 'profile',
           method: 'PROFILE_AVATAR_UPLOAD',
+          queue: _avatarMutationQueue,
+          expectedUserId: actor,
           path: ProfileEndpoints.avatarUploadUrl,
           workspaceId: 'personal',
           entityId: actor,

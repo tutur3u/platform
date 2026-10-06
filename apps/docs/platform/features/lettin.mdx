@@ -500,6 +500,12 @@ them, so blank-looking messages are rejected. Regression coverage includes
 support payload boundary tests. Unported inquiry GET/HEAD methods retain the
 backend dispatcher’s fall-through sentinel instead of claiming a 405 response.
 
+### Mobile avatar selection scope
+
+Mobile Account settings bind the source chooser, native picker, and cropper to the initiating account and ProfileCubit. Leaving that account cancels the intent permanently, including signing out and returning to the same account before a dialog finishes. Cancellation retains the saved avatar; a fresh selection can retry a failed upload. Offline avatar admission also retains the captured actor across cache and connectivity waits, rather than assigning the selected image to a later account.
+
+Regression coverage: `profile_avatar_picker_test.dart` exercises delayed native stages, account switch, logout, ABA, cancellation, retry, and disposal; `profile_media_actor_race_test.dart` exercises actual outbox admission waits. These checks establish source behavior, not device upload or production delivery.
+
 ### Personal banner replacement and deletion
 
 The current-user banner endpoints and consolidated mobile Account settings use

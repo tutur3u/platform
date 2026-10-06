@@ -1,11 +1,8 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_cropper/image_cropper.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
@@ -20,12 +17,12 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
 import 'package:mobile/features/profile/cubit/profile_state.dart';
+import 'package:mobile/features/profile/view/profile_avatar_picker.dart';
 import 'package:mobile/features/profile/view/profile_banner.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
-import 'package:mobile/widgets/image_source_picker_dialog.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:mobile/widgets/staggered_entry.dart';
@@ -34,9 +31,14 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 part 'profile_page_widgets.dart';
 
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key, this.profileRepository});
+  const ProfilePage({
+    super.key,
+    this.profileRepository,
+    this.avatarPicker = const ProfileAvatarPicker(),
+  });
 
   final ProfileRepository? profileRepository;
+  final ProfileAvatarPicker avatarPicker;
 
   @override
   Widget build(BuildContext context) {
@@ -52,14 +54,16 @@ class ProfilePage extends StatelessWidget {
       },
       child: ResponsiveWrapper(
         maxWidth: ResponsivePadding.rootContentWidth(context.deviceClass),
-        child: const _ProfileView(),
+        child: _ProfileView(avatarPicker: avatarPicker),
       ),
     );
   }
 }
 
 class _ProfileView extends StatelessWidget {
-  const _ProfileView();
+  const _ProfileView({required this.avatarPicker});
+
+  final ProfileAvatarPicker avatarPicker;
 
   @override
   Widget build(BuildContext context) {
@@ -296,7 +300,10 @@ class _ProfileView extends StatelessWidget {
                                           false
                                       ? l10n.profileAvatarSet
                                       : l10n.profileMissingValue,
-                                  onTap: () => _pickAndUploadAvatar(context),
+                                  onTap: () => pickAndUploadProfileAvatar(
+                                    context,
+                                    picker: avatarPicker,
+                                  ),
                                 ),
                                 if (profile.avatarUrl != null)
                                   const shad.Gap(12),
@@ -403,76 +410,6 @@ class _ProfileView extends StatelessWidget {
             )
           : shad.Alert.destructive(
               title: Text(toastContext.l10n.profileAvatarRemoveError),
-            ),
-    );
-  }
-
-  Future<void> _pickAndUploadAvatar(BuildContext context) async {
-    final l10n = context.l10n;
-    final picker = ImagePicker();
-    final theme = shad.Theme.of(context);
-
-    final source = await showImageSourcePickerDialog(
-      context: context,
-      title: l10n.selectImageSource,
-      description: l10n.profileAvatarPickerDescription,
-      cameraLabel: l10n.camera,
-      galleryLabel: l10n.gallery,
-    );
-
-    if (!context.mounted || source == null) {
-      return;
-    }
-
-    final pickedFile = await picker.pickImage(
-      source: source,
-      maxWidth: 1024,
-      maxHeight: 1024,
-      imageQuality: 85,
-    );
-
-    if (!context.mounted || pickedFile == null) {
-      return;
-    }
-
-    final croppedFile = await ImageCropper().cropImage(
-      sourcePath: pickedFile.path,
-      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
-      uiSettings: [
-        AndroidUiSettings(
-          toolbarTitle: l10n.profileAvatar,
-          toolbarColor: theme.colorScheme.primary,
-          toolbarWidgetColor: theme.colorScheme.primaryForeground,
-          initAspectRatio: CropAspectRatioPreset.square,
-          lockAspectRatio: true,
-        ),
-        IOSUiSettings(
-          title: l10n.profileAvatar,
-          aspectRatioLockEnabled: true,
-          resetAspectRatioEnabled: false,
-        ),
-      ],
-    );
-
-    if (!context.mounted || croppedFile == null) {
-      return;
-    }
-
-    final success = await context.read<ProfileCubit>().uploadAvatar(
-      File(croppedFile.path),
-    );
-    if (!context.mounted) {
-      return;
-    }
-
-    shad.showToast(
-      context: context,
-      builder: (toastContext, _) => success
-          ? shad.Alert(
-              title: Text(toastContext.l10n.profileAvatarUpdateSuccess),
-            )
-          : shad.Alert.destructive(
-              title: Text(toastContext.l10n.profileAvatarUpdateError),
             ),
     );
   }
