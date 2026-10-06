@@ -132,6 +132,7 @@ export interface RichTextEditorProps {
   };
   renderTaskMention?: TaskMentionNodeViewRenderer;
   toolbarLeadingContent?: React.ReactNode;
+  toolbarToolsLabel?: string;
   toggleBlockLabel?: string;
   copyLabels?: EditorCopyLabels;
 }
@@ -164,6 +165,7 @@ export function RichTextEditor({
   mentionTranslations,
   renderTaskMention,
   toolbarLeadingContent,
+  toolbarToolsLabel,
   toggleBlockLabel,
   copyLabels,
 }: RichTextEditorProps) {
@@ -651,6 +653,7 @@ export function RichTextEditor({
           onImageUpload={onImageUpload}
           onConvertToTask={onConvertToTask}
           leadingContent={toolbarLeadingContent}
+          toolsLabel={toolbarToolsLabel}
           toggleBlockLabel={toggleBlockLabel}
           copyLabels={copyLabels}
         />
