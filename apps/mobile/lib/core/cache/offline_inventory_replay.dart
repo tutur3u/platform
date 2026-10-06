@@ -184,6 +184,7 @@ extension OfflineInventoryReplay on OfflineMutationQueue {
       return;
     }
     final mappings = await persistence.mappings(mutation.references);
+    _checkOpen();
     api.checkUser(record.userId!);
     final resolved = mutation.resolve(mappings);
     Map<String, dynamic>? response;
@@ -259,7 +260,7 @@ extension OfflineInventoryReplay on OfflineMutationQueue {
     if (source.isEmpty) return false;
     final attempted = <String>{};
     final persistence = OfflineInventoryPersistence(_store);
-    while (true) {
+    while (!_disposed) {
       final records = (await listPending())
           .where(
             (record) => OfflineInventoryMutation.fromRecord(record) != null,
@@ -298,6 +299,7 @@ extension OfflineInventoryReplay on OfflineMutationQueue {
           )
           .toSet();
       final mappings = await persistence.mappings(references);
+      if (_disposed) return false;
       final ready = graph.ready(
         acknowledged: {},
         mapped: mappings.keys.toSet(),
@@ -377,8 +379,11 @@ extension OfflineInventoryReplay on OfflineMutationQueue {
           await dispatcher(record);
         }
         if (record.userId != _userId()) return true;
-        final latest = (await listPending())
-            .where((item) => item.id == record.id)
+        // Reconcile this admitted response even if the queue closed in flight.
+        final latest = (await _store.listPendingMutations())
+            .where(
+              (item) => item.id == record.id && item.userId == record.userId,
+            )
             .firstOrNull;
         if (next.produces != null && latest?.acknowledgedServerId == null) {
           throw const ApiException(
@@ -397,6 +402,7 @@ extension OfflineInventoryReplay on OfflineMutationQueue {
           _foregroundInventoryResults[record.id] = latest?.acknowledgedData;
         }
         await _store.deletePendingMutation(record.id);
+        if (_disposed) return true;
         try {
           await _store.invalidateTags(
             {'module:${record.feature}'},
@@ -452,7 +458,8 @@ extension OfflineInventoryReplay on OfflineMutationQueue {
             clearDependencyIssue: !unavailable,
           ),
         );
-        if (status == PendingMutationStatus.queued &&
+        if (!_disposed &&
+            status == PendingMutationStatus.queued &&
             changed != null &&
             !(error is ApiException &&
                 (error.statusCode == 401 || error.isVerificationRequired))) {
@@ -479,5 +486,6 @@ extension OfflineInventoryReplay on OfflineMutationQueue {
         syncingIds.value = {...syncingIds.value}..remove(record.id);
       }
     }
+    return false;
   }
 }

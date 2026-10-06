@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -17,6 +19,8 @@ class _AuthClient extends Mock implements SupabaseClient {}
 class _Auth extends Mock implements GoTrueClient {}
 
 class _Session extends Mock implements Session {}
+
+class _Storage extends Mock implements FlutterSecureStorage {}
 
 // Response shapes follow packages/apis/src/finance handlers, not ApiClient mocks.
 const _ws = '11111111-1111-4111-8111-111111111111';
@@ -47,11 +51,27 @@ void main() {
   late FinanceRepository repository;
   late OfflineMutationQueue queue;
   late ApiClient api;
+  late CacheStore store;
+  late Directory directory;
   late Future<http.Response> Function(http.Request) respond;
   late List<http.Request> requests;
 
   setUp(() async {
-    await CacheStore.instance.clearScope();
+    directory = await Directory.systemTemp.createTemp('finance-http-contract-');
+    final storage = _Storage();
+    when(
+      () => storage.read(key: any(named: 'key')),
+    ).thenAnswer((_) async => null);
+    when(
+      () => storage.write(
+        key: any(named: 'key'),
+        value: any(named: 'value'),
+      ),
+    ).thenAnswer((_) async {});
+    store = CacheStore.forTesting(
+      secureStorage: storage,
+      directoryResolver: () async => directory,
+    );
     requests = [];
     respond = (_) async => throw StateError('Unexpected finance HTTP request');
     final authClient = _AuthClient();
@@ -87,24 +107,32 @@ void main() {
       }),
     );
     queue = OfflineMutationQueue.forTesting(
-      store: CacheStore.instance,
+      store: store,
       userId: () => 'synthetic-finance-user',
       checkConnectivity: () async => [ConnectivityResult.wifi],
       connectivityChanges: const Stream<List<ConnectivityResult>>.empty(),
       authChanges: const Stream<AuthState>.empty(),
       apiFactory: (_) => api,
     );
+    // Bootstrap reconnect synchronization before observing contract requests.
+    // No case resources have been registered for revalidation yet.
+    await queue.init();
+    await queue.synchronize();
     repository = FinanceRepository(
       apiClient: api,
+      cacheStore: store,
       mutationQueue: queue,
       cacheUserId: () => 'synthetic-finance-user',
       networkAvailable: () async => true,
     );
   });
   tearDown(() async {
+    await queue.synchronize();
     await queue.dispose();
     api.dispose();
     debugClearFinanceRepositoryWorkspaceCurrencyCache();
+    await store.closeForTesting();
+    await directory.delete(recursive: true);
   });
 
   http.Response json(Object value, [int status = 200]) => http.Response(
