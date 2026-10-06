@@ -1294,7 +1294,9 @@ Shared-document avatars represent users in that document provider's actual
 collaboration awareness, not everyone connected to the meeting. Clients with the
 same authenticated identity appear once; departures and provider switches remove
 old identities, and disconnected document transport hides the roster until it
-reconnects. Four avatars are shown with an accessible overflow count.
+reconnects. Four avatars are shown in the editor toolbar beside backup status, with an accessible overflow count.
+`document-panel.test.tsx` verifies that the live provider awareness is connected
+to that toolbar roster.
 `document-presence.test.tsx` uses real awareness updates for join, rename,
 departure, duplicate clients, malformed identity fields, and provider/disconnect
 transitions. Source fixtures do not establish deployed multi-client delivery.
