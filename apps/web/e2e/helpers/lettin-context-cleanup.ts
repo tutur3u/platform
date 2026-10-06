@@ -4,7 +4,7 @@ import { safeLettinPhaseFailure } from './lettin-phase-diagnostics';
 export async function withLettinContextCleanup<T>(
   context: BrowserContext,
   action: () => Promise<T>,
-  kind: 'import' | 'Markdown' = 'import'
+  kind: 'import' | 'Markdown' | 'profile' = 'import'
 ): Promise<T> {
   const outcome = await action().then(
     (value) => ({ ok: true as const, value }),
