@@ -27,6 +27,7 @@ extension OfflineMutationDispatch on OfflineMutationQueue {
               userId: userId,
               workspaceId: workspaceId,
             );
+      _checkOpen();
       final resolved = reconcileOfflineIds(record.path, record.payload, ids);
       switch (record.method.toUpperCase()) {
         case 'POST':
@@ -74,6 +75,7 @@ extension OfflineMutationDispatch on OfflineMutationQueue {
           String? cursor;
           String? before;
           do {
+            _checkOpen();
             final response = await api.postJson(resolved.path, {
               ...?resolved.payload,
               if (cursor != null) 'cursor': cursor,
