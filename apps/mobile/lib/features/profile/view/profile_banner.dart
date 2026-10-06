@@ -1,13 +1,13 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:mobile/core/widgets/profile_media_image.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
+import 'package:mobile/features/profile/view/profile_banner_picker.dart';
+import 'package:mobile/features/profile/view/profile_media_failure_message.dart';
+import 'package:mobile/features/profile/view/profile_picker_intent.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/image_source_picker_dialog.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Full-width banner; errors keep the surrounding identity usable.
@@ -69,7 +69,9 @@ class ProfileBannerSettings extends StatelessWidget {
             runSpacing: 8,
             children: [
               shad.OutlineButton(
-                onPressed: busy ? null : () => _pick(context),
+                onPressed: busy
+                    ? null
+                    : () => pickAndUploadProfileBanner(context),
                 leading: const Icon(Icons.add_photo_alternate_outlined),
                 child: Text(
                   exists ? l10n.profileChangeBanner : l10n.profileAddBanner,
@@ -92,46 +94,29 @@ class ProfileBannerSettings extends StatelessWidget {
     );
   }
 
-  Future<void> _pick(BuildContext context) async {
-    final l10n = context.l10n;
-    final cubit = context.read<ProfileCubit>();
-    final actor = profile.id;
-    final source = await showImageSourcePickerDialog(
-      context: context,
-      title: l10n.profileBanner,
-      cameraLabel: l10n.camera,
-      galleryLabel: l10n.gallery,
-    );
-    if (!context.mounted ||
-        source == null ||
-        cubit.state.profile?.id != actor) {
-      return;
-    }
-    final file = await ImagePicker().pickImage(
-      source: source,
-      maxWidth: 2048,
-      maxHeight: 2048,
-      imageQuality: 85,
-    );
-    if (!context.mounted || file == null || cubit.state.profile?.id != actor) {
-      return;
-    }
-    await _change(context, () => cubit.uploadBanner(File(file.path)));
-  }
-
   Future<void> _change(
     BuildContext context,
     Future<bool> Function() change,
   ) async {
-    final cubit = context.read<ProfileCubit>();
-    final success = await change();
-    if (!context.mounted || cubit.state.profile?.id != profile.id) return;
-    if (!success) {
+    final intent = ProfilePickerIntent.capture(context);
+    if (intent == null) return;
+    intent.cubit.clearMediaFailure();
+    try {
+      final success = await change();
+      if (!context.mounted || !intent.current(context) || success) return;
       shad.showToast(
         context: context,
-        builder: (context, _) =>
-            shad.Alert(content: Text(context.l10n.profileUpdateError)),
+        builder: (context, _) => shad.Alert(
+          content: Text(
+            profileMediaFailureMessage(
+              context.l10n,
+              intent.cubit.state.mediaFailure,
+            ),
+          ),
+        ),
       );
+    } finally {
+      await intent.dispose();
     }
   }
 }

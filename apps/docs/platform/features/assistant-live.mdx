@@ -607,3 +607,11 @@ through pause, completion/error, active resume, and account/workspace/mode ABA.
 transient runtime epochs remain separate. These injected stream tests do not
 guarantee that an operating system keeps a suspended app's network connection
 alive; device and provider delivery remain separate evidence.
+
+A replacement prompt accepted before pause remains accepted while cancellation
+of the previous reply finishes. The composer clears only that captured prompt
+under the same durable account/workspace/mode and attachment lease; a newer
+unsent edit remains intact. Account departure clears private drafts through the
+existing account reset, and mode/account ABA refuses the stale replacement.
+`assistant_durable_acceptance_test.dart` exercises deferred real cancellation,
+pause/resume, newer edits, and mode/account refusal through the actual dock.

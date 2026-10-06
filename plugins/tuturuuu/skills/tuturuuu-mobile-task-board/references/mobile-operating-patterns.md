@@ -183,3 +183,11 @@ Keep runtime claims separate: source and injected-host tests do not establish
 provider/device operation or production delivery.
 
 - **Continuous Calendar Geometry**: Keep fractional movement during active horizontal drags, then use day-width ballistic snapping on synchronized header, all-day and timed-grid surfaces. Preserve the buffered date window/recenter and loaded cache. Partition timed layout into connected half-open overlap components so isolated groups regain full column width; anchor all-day label content inside the viewport intersection of its span, with fixed gutter clearance and text-scaled rows. Regress actual gestures on every surface, explicit date navigation, clipping boundaries and large text; widget results are not native-device proof.
+
+- After awaiting cancellation to replace a remote reply, report acceptance using
+  the durable operation lease. Composer cleanup must recheck that lease and its
+  attachment revision and clear only unchanged captured text. Test real deferred
+  cancellation, pause, newer edits, and actor/mode refusal. Dock fixtures must
+  wait for hit-testable controls after retained outgoing action transitions; use
+  legal inactive/hidden/paused/resume lifecycle sequences when global cache
+  listeners are present.

@@ -4438,6 +4438,25 @@
   "workspaceSystemSection": "Internal",
   "workspaceTeamSection": "Team workspaces",
   "commonCopyDiagnostics": "Copy debug information",
+  "profileMediaInvalidImage": "Choose a valid JPEG, PNG, WebP or GIF within the image limits.",
+  "profileMediaImageTooLarge": "The image is too large. Choose a smaller image.",
+  "profileMediaNotAuthorized": "This upload is not authorized. Check your account and permissions before trying again.",
+  "profileMediaConflict": "Your profile changed during the upload. Select the image again.",
+  "profileMediaRateLimit": "The upload limit was reached. Wait before selecting the image again.",
+  "profileMediaRateLimitWait": "The upload limit was reached. Wait {seconds} seconds before trying again.",
+  "profileMediaUnavailable": "Uploading is temporarily unavailable. Try a fresh selection later.",
+  "profileMediaInvalidReceipt": "The upload could not be confirmed. Select the image again; it has not been accepted as complete.",
+  "profileMediaFileUnavailable": "The selected image is no longer available. Select another image.",
+  "profileMediaRecoveryTitle": "Profile image could not be updated",
+  "profileMediaSelectAgain": "Select image again",
+  "@profileMediaRateLimitWait": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "profileMediaDismiss": "Dismiss",
   "calendarTimelineZoom": "Timeline zoom",
   "calendarZoomIn": "Zoom in",
   "calendarZoomOut": "Zoom out",

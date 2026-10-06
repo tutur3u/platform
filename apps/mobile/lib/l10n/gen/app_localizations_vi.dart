@@ -10264,6 +10264,44 @@ class AppLocalizationsVi extends AppLocalizations {
   String get commonCopyDiagnostics => 'Sao chép thông tin gỡ lỗi';
 
   @override
+  String get profileMediaInvalidImage => 'Chọn ảnh JPEG, PNG, WebP hoặc GIF hợp lệ trong giới hạn kích thước.';
+
+  @override
+  String get profileMediaImageTooLarge => 'Ảnh quá lớn. Hãy chọn ảnh nhỏ hơn.';
+
+  @override
+  String get profileMediaNotAuthorized => 'Bạn chưa được phép tải ảnh này lên. Kiểm tra tài khoản và quyền truy cập trước khi thử lại.';
+
+  @override
+  String get profileMediaConflict => 'Hồ sơ đã thay đổi trong lúc tải lên. Hãy chọn lại ảnh.';
+
+  @override
+  String get profileMediaRateLimit => 'Đã đạt giới hạn tải lên. Hãy chờ trước khi chọn lại ảnh.';
+
+  @override
+  String profileMediaRateLimitWait(int seconds) {
+    return 'Đã đạt giới hạn tải lên. Hãy chờ $seconds giây trước khi thử lại.';
+  }
+
+  @override
+  String get profileMediaUnavailable => 'Tạm thời không thể tải ảnh lên. Hãy chọn lại ảnh và thử sau.';
+
+  @override
+  String get profileMediaInvalidReceipt => 'Không thể xác nhận lượt tải lên. Hãy chọn lại ảnh; lượt tải này chưa được xác nhận hoàn tất.';
+
+  @override
+  String get profileMediaFileUnavailable => 'Ảnh đã chọn không còn khả dụng. Hãy chọn ảnh khác.';
+
+  @override
+  String get profileMediaRecoveryTitle => 'Không thể cập nhật ảnh hồ sơ';
+
+  @override
+  String get profileMediaSelectAgain => 'Chọn lại ảnh';
+
+  @override
+  String get profileMediaDismiss => 'Đóng';
+
+  @override
   String get calendarTimelineZoom => 'Thu phóng dòng thời gian';
 
   @override

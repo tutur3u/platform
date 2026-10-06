@@ -64,6 +64,17 @@ class ReplyWorkspace extends Cubit<WorkspaceState> implements WorkspaceCubit {
 
 class ReplyRepository extends AssistantRepository {
   final stream = StreamController<AssistantStreamEvent>(sync: true);
+  final replacement = StreamController<AssistantStreamEvent>(sync: true);
+  Completer<void>? cancelGate;
+  bool cancellationEntered = false;
+  void holdCancellation() {
+    cancelGate = Completer<void>();
+    stream.onCancel = () {
+      cancellationEntered = true;
+      return cancelGate!.future;
+    };
+  }
+
   int starts = 0;
   int saves = 0;
   int ids = 0;
@@ -123,8 +134,7 @@ class ReplyRepository extends AssistantRepository {
     List<AssistantAttachment> attachments = const [],
     String? creditWsId,
   }) {
-    starts++;
-    return stream.stream;
+    return starts++ == 0 ? stream.stream : replacement.stream;
   }
 
   @override
@@ -219,8 +229,32 @@ class BackgroundReplyHarness {
     await tester.pump();
   }
 
+  void pause(WidgetTester tester) {
+    const [
+      AppLifecycleState.inactive,
+      AppLifecycleState.hidden,
+      AppLifecycleState.paused,
+    ].forEach(tester.binding.handleAppLifecycleStateChanged);
+  }
+
+  void resume(WidgetTester tester) {
+    if (tester.binding.lifecycleState == AppLifecycleState.paused) {
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    }
+    if (tester.binding.lifecycleState == AppLifecycleState.hidden) {
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    }
+    if (tester.binding.lifecycleState != AppLifecycleState.resumed) {
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    }
+  }
+
   Future<void> dispose(WidgetTester tester) async {
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    if (repository.cancelGate case final gate? when !gate.isCompleted) {
+      gate.complete();
+    }
+    unawaited(repository.replacement.close());
+    resume(tester);
     await tester.pumpWidget(const SizedBox.shrink());
     if (repository.stream.hasListener) {
       unawaited(repository.stream.close());
