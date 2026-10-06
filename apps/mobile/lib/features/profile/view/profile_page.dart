@@ -69,6 +69,7 @@ class _ProfileView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final pickerContext = context;
 
     return MultiBlocListener(
       listeners: [
@@ -164,6 +165,7 @@ class _ProfileView extends StatelessWidget {
                   ProfileMediaRecovery(
                     state: state,
                     avatarPicker: avatarPicker,
+                    pickerContext: pickerContext,
                   ),
                   StaggeredEntry(
                     index: 0,

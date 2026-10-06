@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/widgets/profile_media_image.dart';
+import 'package:mobile/data/models/profile_media_result.dart';
 import 'package:mobile/data/models/user_profile.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
+import 'package:mobile/features/profile/cubit/profile_state.dart';
 import 'package:mobile/features/profile/view/profile_banner_picker.dart';
 import 'package:mobile/features/profile/view/profile_media_failure_message.dart';
 import 'package:mobile/features/profile/view/profile_picker_intent.dart';
@@ -89,6 +93,7 @@ class ProfileBannerSettings extends StatelessWidget {
                 ),
             ],
           ),
+          _BannerFailure(actor: profile.id),
         ],
       ),
     );
@@ -119,4 +124,32 @@ class ProfileBannerSettings extends StatelessWidget {
       await intent.dispose();
     }
   }
+}
+
+/// Current state drives visibility, never a superseded picker's return value.
+class _BannerFailure extends StatelessWidget {
+  const _BannerFailure({required this.actor});
+  final String actor;
+  @override
+  Widget build(BuildContext context) => BlocBuilder<AuthCubit, AuthState>(
+    builder: (context, auth) => BlocBuilder<ProfileCubit, ProfileState>(
+      builder: (context, state) {
+        final failure = state.mediaFailure;
+        if (auth.status != AuthStatus.authenticated ||
+            auth.user?.id != actor ||
+            state.profile?.id != actor ||
+            failure == null ||
+            (state.mediaTarget != ProfileMediaTarget.banner &&
+                state.mediaTarget != ProfileMediaTarget.removeBanner)) {
+          return const SizedBox.shrink();
+        }
+        return Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: shad.Alert.destructive(
+            content: Text(profileMediaFailureMessage(context.l10n, failure)),
+          ),
+        );
+      },
+    ),
+  );
 }
