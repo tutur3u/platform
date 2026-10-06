@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
-import { rememberEndedRoom } from '../lib/ended-room-cache';
+import { isKnownEndedRoom, rememberEndedRoom } from '../lib/ended-room-cache';
 import { MeetingRoomAction } from './meeting-room-action';
 
 const mocks = vi.hoisted(() => ({ state: vi.fn() }));
@@ -32,7 +32,8 @@ function mount(accountId: string) {
     </QueryClientProvider>
   );
 }
-it('keeps the server-checked notes entry available for cached ended rooms', () => {
+it('keeps notes available while revalidating a cached ended hint', () => {
+  mocks.state.mockReturnValue(new Promise(() => {}));
   rememberEndedRoom('account-a', meetingId);
   mount('account-a');
   expect(
@@ -40,7 +41,7 @@ it('keeps the server-checked notes entry available for cached ended rooms', () =
       .getByRole('link', { name: 'View notes & transcript' })
       .getAttribute('href')
   ).toContain('?notes=1');
-  expect(mocks.state).not.toHaveBeenCalled();
+  expect(mocks.state).toHaveBeenCalledOnce();
 });
 it('fetches independently for another account and remembers only an observed terminal state', async () => {
   rememberEndedRoom('account-a', meetingId);
@@ -52,11 +53,70 @@ it('fetches independently for another account and remembers only an observed ter
     ).toBeTruthy()
   );
   expect(mocks.state).toHaveBeenCalledOnce();
-  expect(mocks.state).toHaveBeenCalledWith(meetingId);
+  expect(mocks.state).toHaveBeenCalledWith(meetingId, {
+    signal: expect.any(AbortSignal),
+  });
   cleanup();
   mount('account-b');
   expect(
     screen.getByRole('link', { name: 'View notes & transcript' })
   ).toBeTruthy();
-  expect(mocks.state).toHaveBeenCalledOnce();
+  expect(mocks.state).toHaveBeenCalledTimes(2);
+});
+
+it('forgets an ended hint after a server-authorized restored state is observed', async () => {
+  rememberEndedRoom('account-a', meetingId);
+  mocks.state.mockResolvedValue({
+    ended: false,
+    canReadNotes: true,
+    lifecycleVersion: 4,
+  });
+  mount('account-a');
+  await waitFor(() =>
+    expect(screen.getByRole('link', { name: 'Join call' })).toBeTruthy()
+  );
+});
+
+it('late prior-account lookup cannot recreate an ended hint across actor ABA', async () => {
+  let resolve!: (value: {
+    ended: boolean;
+    canReadNotes: boolean;
+    lifecycleVersion: number;
+  }) => void;
+  const old = new Promise<{
+    ended: boolean;
+    canReadNotes: boolean;
+    lifecycleVersion: number;
+  }>((done) => {
+    resolve = done;
+  });
+  mocks.state.mockReturnValueOnce(old).mockResolvedValue({
+    ended: false,
+    canReadNotes: true,
+    lifecycleVersion: 4,
+  });
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  clients.push(client);
+  const view = (accountId: string) => (
+    <QueryClientProvider client={client}>
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <MeetingRoomAction meetingId={meetingId} accountId={accountId} />
+      </NextIntlClientProvider>
+    </QueryClientProvider>
+  );
+  const ui = render(view('account-a'));
+  ui.rerender(view('account-b'));
+  await waitFor(() =>
+    expect(screen.getByRole('link', { name: 'Join call' })).toBeTruthy()
+  );
+  ui.rerender(view('account-a'));
+  await waitFor(() => expect(mocks.state).toHaveBeenCalledTimes(3));
+  await act(async () => {
+    resolve({ ended: true, canReadNotes: true, lifecycleVersion: 1 });
+    await old;
+  });
+  expect(isKnownEndedRoom('account-a', meetingId)).toBe(false);
+  expect(screen.getByRole('link', { name: 'Join call' })).toBeTruthy();
 });

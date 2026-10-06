@@ -57,6 +57,7 @@ export const MEET_PRESENCE_TTL_MS = 30_000;
 export const MEET_CONNECTED_PRESENCE_TTL_MS = 10 * 60_000;
 
 export interface MeetRoomSnapshot {
+  lifecycle?: import('./room-lifecycle').MeetRoomLifecycle;
   liveAssistant?: import('./room-live').RoomLiveState;
   budget?: RoomBudget;
   attachments?: Record<string, RoomAttachment>;

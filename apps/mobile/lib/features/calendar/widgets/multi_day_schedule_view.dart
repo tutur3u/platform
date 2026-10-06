@@ -11,6 +11,7 @@ import 'package:mobile/features/calendar/utils/event_colors.dart';
 import 'package:mobile/features/calendar/utils/event_layout.dart';
 import 'package:mobile/features/calendar/utils/working_location_icon.dart';
 import 'package:mobile/features/calendar/widgets/current_time_indicator.dart';
+import 'package:mobile/features/calendar/widgets/date_snap_scroll_physics.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 part 'multi_day_schedule_components.dart';
@@ -269,7 +270,7 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                     SingleChildScrollView(
                       controller: _headerController,
                       scrollDirection: Axis.horizontal,
-                      physics: const ClampingScrollPhysics(),
+                      physics: DateSnapScrollPhysics(dayWidth: dayColumnWidth),
                       child: SizedBox(
                         width: gutterWidth + dayAreaWidth,
                         child: Row(
@@ -320,15 +321,26 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                           SingleChildScrollView(
                             controller: _allDayController,
                             scrollDirection: Axis.horizontal,
-                            physics: const ClampingScrollPhysics(),
+                            physics: DateSnapScrollPhysics(
+                              dayWidth: dayColumnWidth,
+                            ),
                             child: SizedBox(
                               width: gutterWidth + dayAreaWidth,
-                              child: _MultiDayAllDayRow(
-                                layout: allDayLayout,
-                                timeGutterWidth: gutterWidth,
-                                dayColumnWidth: dayColumnWidth,
-                                maxVisibleRows: _allDayExpanded ? null : 2,
-                                onEventTap: widget.onEventTap,
+                              child: AnimatedBuilder(
+                                animation: _allDayController,
+                                builder: (context, _) => _MultiDayAllDayRow(
+                                  layout: allDayLayout,
+                                  timeGutterWidth: gutterWidth,
+                                  dayColumnWidth: dayColumnWidth,
+                                  viewportStart:
+                                      (_allDayController.hasClients
+                                          ? _allDayController.offset
+                                          : 0) +
+                                      gutterWidth,
+                                  viewportWidth: viewportWidth - gutterWidth,
+                                  maxVisibleRows: _allDayExpanded ? null : 2,
+                                  onEventTap: widget.onEventTap,
+                                ),
                               ),
                             ),
                           ),
@@ -339,6 +351,15 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                             child: Container(
                               width: gutterWidth,
                               color: colorScheme.surfaceContainerLow,
+                              padding: const EdgeInsets.only(top: 10, right: 8),
+                              child: Text(
+                                context.l10n.calendarAllDay,
+                                textAlign: TextAlign.right,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -372,7 +393,9 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                       SingleChildScrollView(
                         controller: _gridController,
                         scrollDirection: Axis.horizontal,
-                        physics: const ClampingScrollPhysics(),
+                        physics: DateSnapScrollPhysics(
+                          dayWidth: dayColumnWidth,
+                        ),
                         child: SizedBox(
                           width: gutterWidth + dayAreaWidth,
                           child: SizedBox(

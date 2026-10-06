@@ -19,6 +19,7 @@ import {
 } from './personal-chat-receipts';
 import { roomBudgetSummary } from './room-budget';
 import { retainRoomChat } from './room-chat';
+import { applyRoomRestore } from './room-lifecycle';
 import { applyRoomLive, type RoomLiveState } from './room-live';
 import { applyLiveSharing } from './room-live-sharing';
 import {
@@ -120,6 +121,8 @@ export function roomService(
     status,
   });
   if (!token.scopes.includes('meet:server')) return fail('Forbidden');
+  const restored = applyRoomRestore(snapshot, token, input);
+  if (restored) return restored;
   const live =
     applyRoomProgramming(snapshot, token, input) ??
     applyLiveUsage(snapshot, token, input) ??

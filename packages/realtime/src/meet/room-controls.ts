@@ -7,9 +7,8 @@ import type {
   MeetRealtimeTokenPayload,
 } from './primitives';
 import type { MeetRoomSnapshot } from './room';
+import { endMeetRoom } from './room-ending';
 import { denied, outcome } from './room-outcome';
-import { failActiveRecording } from './room-recording';
-import { publicationCleanupKey } from './room-tracks';
 
 export function approvedParticipantsMessage(
   state: MeetRoomSnapshot
@@ -121,46 +120,22 @@ export function applyRoomControl(
     return outcome(next, { toManagers: [approvedParticipantsMessage(next)] });
   }
   if (message.type === 'room.end') {
-    return outcome(
-      {
-        ...failActiveRecording(state, now),
-        budget: state.budget
-          ? {
-              ...state.budget,
-              nextCleanupAt: 0,
-              pendingPublications: [
-                ...new Map(
-                  [
-                    ...(state.budget?.pendingPublications ?? []),
-                    ...Object.values(state.tracks),
-                  ].map((track) => [publicationCleanupKey(track), track])
-                ).values(),
-              ],
-            }
-          : undefined,
-        ended: true,
-        presence: {},
-        waiting: {},
-        tracks: {},
-        lastReactionAt: {},
-      },
-      {
-        reply: [
-          {
-            type: 'room.ended',
-            by: token.userId,
-            requestId: message.requestId,
-          },
-        ],
-        broadcast: [{ type: 'room.ended', by: token.userId }],
-        disconnect: [
-          ...new Set([
-            ...Object.keys(state.presence),
-            ...Object.keys(state.waiting),
-          ]),
-        ],
-      }
-    );
+    return outcome(endMeetRoom(state, now), {
+      reply: [
+        {
+          type: 'room.ended',
+          by: token.userId,
+          requestId: message.requestId,
+        },
+      ],
+      broadcast: [{ type: 'room.ended', by: token.userId }],
+      disconnect: [
+        ...new Set([
+          ...Object.keys(state.presence),
+          ...Object.keys(state.waiting),
+        ]),
+      ],
+    });
   }
   return null;
 }
