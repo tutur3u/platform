@@ -702,6 +702,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLocalHardware => 'Suy luận cục bộ cần thiết bị được hỗ trợ có ít nhất 4 GiB bộ nhớ. Bộ nhớ khả dụng và khả năng nạp mô hình vẫn quyết định việc sử dụng.';
 
   @override
+  String get assistantLocalHeaderIssue => 'Cần kiểm tra';
+
+  @override
+  String get assistantLocalHeaderPreparing => 'Đang chuẩn bị';
+
+  @override
+  String get assistantLocalHeaderReady => 'Trên thiết bị';
+
+  @override
   String get assistantLocalHelp => 'Văn bản cục bộ được giữ trên thiết bị. Giọng nói Live, tệp đính kèm và công cụ không gian làm việc dùng chế độ từ xa.';
 
   @override
@@ -886,7 +895,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantRenameAction => 'Đổi tên';
 
   @override
-  String get assistantRenameTitle => 'Đổi tên Mira';
+  String get assistantRenameTitle => 'Đổi tên trợ lý';
 
   @override
   String get assistantReplyFailed => 'Mira chưa trả lời xong. Tin nhắn của bạn vẫn ở đây. Thử lại';
@@ -10423,6 +10432,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantPersonalSettingsError => 'Không thể hoàn tất thay đổi. Hãy thử lại.';
+
+  @override
+  String get assistantRenameLabel => 'Tên trợ lý';
+
+  @override
+  String get assistantRenameError => 'Không thể cập nhật tên. Bản nháp vẫn được giữ; hãy thử lại.';
 
   @override
   String get assistantMemoryEditTitle => 'Chỉnh sửa bộ nhớ';

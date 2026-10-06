@@ -102,3 +102,68 @@ remain failures; no text-only success or remote fallback is introduced.
 `native-ai-cleanup-receipt.test.ts` covers the actual message route with durable
 save followed by failed cleanup. This establishes a source boundary, not the
 cause of every missing reply or device/provider delivery evidence.
+
+### Compact on-device status in the header
+
+Native Mira Chat shows on-device readiness, preparation or attention status in
+its shared branded header, rather than a repeated block above the conversation.
+The accessible control opens full model status and failure guidance with an
+explicit model-settings action. It retains a 48px touch target and truncates the
+compact label on wide layouts. Editable assistant titles have a separate 48px
+on-device recovery control, so tapping the name always opens rename. History and
+Assistant Settings share the overflow menu; Live exposes Settings there and
+keeps its separate information action. An editable assistant title or registered
+Chat local status uses a 48px header content minimum; default and
+other-route geometry stays unchanged, and floating content clearance matches. The current saved assistant
+name appears in both Chat and Live; Live hides the local-text chip because voice
+uses its separate remote runtime. Returning to remote Chat removes the chip.
+Retained recovery actions reject actor/workspace/selection changes and disposal.
+No status control sends a failed local prompt remotely or proves native readiness.
+
+`assistant_compact_model_header_test.dart` covers the actual page and header in
+English/Vietnamese at 320px with enlarged text, recovery guidance, remote return,
+Live visibility and stale actions. `assistant_mode_title_test.dart` preserves
+fallback titles and verifies current name changes. Actual-device safe-area,
+accessibility and native model loading remain separate delivery checks.
+
+## Assistant name write admission
+
+The mobile header shows the current custom name, or `Mira` when none is set, in
+both Chat and Live. Tapping its name opens an explicitly focused dialog with
+native text selection and paste controls. Save trims the draft and permits
+1–50 characters. Pending saves prevent duplicate submission; failures retain
+the draft with a localized safe error for explicit retry. Cancel closes the
+dialog and does not undo a request already admitted by the server. Account or
+workspace departure invalidates retained dialog actions, including returning to
+the same account or workspace. On-device recovery remains a distinct control.
+Opening an unsent local draft is a presentation action and does not require
+network authentication. Its retained action still checks the captured account,
+workspace and departure epoch. Live, overflow and network actions keep their
+authenticated admission requirements.
+
+`assistant_name_dialog_test.dart` covers English/Vietnamese save, keyboard,
+native paste, safe retry, busy/cancel and held-write departure cases.
+`assistant_name_navbar_test.dart` exercises the production page and action rail
+at 320px with text scales 1, 2 and 3, stable callbacks and stale actions.
+`shared_navbar_large_text_test.dart` retains default factories and other-route
+geometry. These are source/widget checks, not device or server delivery proof.
+
+Mira's custom name is personal to the authenticated account, including when the
+mobile assistant is opened from a workspace. A rename captures its account and
+cache identity before awaiting storage or network admission. Logout/cache-clear
+and superseded local rename intents cannot publish into a successor session or
+enter the outbox after departure. Rename and Soul refresh share a publication
+generation so an older response cannot replace the latest accepted local view.
+
+An online update requires a valid server Soul receipt; missing or malformed
+receipts do not become a fabricated `Mira` success. Offline names remain pending
+account-owned intents, rather than confirmed server writes. This client admission
+boundary does not provide cross-client compare-and-swap or claim that ambiguous
+network writes are safe to replay automatically. Genuine permission and transport
+failures retain their existing behavior.
+
+Regression coverage: `assistant_soul_name_writer_test.dart`,
+`assistant_name_publication_test.dart`, and
+`offline_queue_disposal_regression_test.dart` cover held cache/queue/network
+admission, actor and workspace departure, same-actor logout restoration,
+superseding writes/refreshes, malformed receipts, and admitted ACK cleanup.

@@ -103,7 +103,9 @@ Future<T> queueOrSendValue<T>({
   OfflineMutationQueue? queue,
   ApiClient? apiClient,
   String? expectedUserId,
+  void Function()? checkScope,
 }) async {
+  checkScope?.call();
   final mutations = queue ?? OfflineMutationQueue.instance;
   final localId = entityId ?? newLocalMutationId();
   if (_isInventoryMutation(feature, method, path, workspaceId, localId)) {
@@ -117,6 +119,7 @@ Future<T> queueOrSendValue<T>({
       replaySafe: replaySafe,
       apiClient: apiClient,
     );
+    checkScope?.call();
     if (data != null && acknowledgedValue != null) {
       return acknowledgedValue(data);
     }
@@ -131,11 +134,16 @@ Future<T> queueOrSendValue<T>({
     entityId: localId,
     replaySafe: replaySafe,
     expectedUserId: expectedUserId,
+    checkScope: checkScope,
   )) {
+    checkScope?.call();
     return pendingValue(localId);
   }
   try {
-    return await send();
+    checkScope?.call();
+    final result = await send();
+    checkScope?.call();
+    return result;
   } on ApiException catch (error) {
     if (await mutations.enqueueAfterNetworkFailure(
       error: error,
@@ -147,7 +155,9 @@ Future<T> queueOrSendValue<T>({
       entityId: localId,
       replaySafe: replaySafe,
       expectedUserId: expectedUserId,
+      checkScope: checkScope,
     )) {
+      checkScope?.call();
       return pendingValue(localId);
     }
     rethrow;
@@ -167,7 +177,9 @@ Future<T> queueOrSendValue<T>({
       entityId: localId,
       replaySafe: replaySafe,
       expectedUserId: expectedUserId,
+      checkScope: checkScope,
     )) {
+      checkScope?.call();
       return pendingValue(localId);
     }
     rethrow;

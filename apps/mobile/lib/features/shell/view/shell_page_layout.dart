@@ -119,10 +119,16 @@ extension _ShellPageLayout on _ShellPageState {
                                 replayToken:
                                     _rootTabReplayTokens[Routes.home] ?? 0,
                               ),
-                              (_) => AssistantPage(
-                                replayToken:
+                              (_) =>
+                                  widget.assistantPageBuilder?.call(
                                     _rootTabReplayTokens[Routes.assistant] ?? 0,
-                              ),
+                                  ) ??
+                                  AssistantPage(
+                                    replayToken:
+                                        _rootTabReplayTokens[Routes
+                                            .assistant] ??
+                                        0,
+                                  ),
                               (_) => AppsScreen(
                                 isActive: widget.matchedLocation == Routes.apps,
                                 replayToken:
@@ -247,6 +253,10 @@ extension _ShellPageLayout on _ShellPageState {
         composerVisible: composerVisible,
         navigation: navigationBar,
         header: header,
+        minimumHeaderContentHeight: assistantHeaderContentHeight(
+          context,
+          location: widget.matchedLocation,
+        ),
         scrollableHeader: _isRootTabLocation(widget.matchedLocation),
         child: body,
       ),
@@ -544,7 +554,13 @@ extension _ShellPageLayout on _ShellPageState {
         .firstOrNull;
     if (searchAction != null) {
       return shad.AppBar(
-        height: mobileSectionAppBarHeightFor(context),
+        height: mobileSectionAppBarHeightFor(
+          context,
+          minimumContentHeight: assistantHeaderContentHeight(
+            context,
+            location: widget.matchedLocation,
+          ),
+        ),
         padding: mobileSectionAppBarPadding,
         backgroundColor: Colors.transparent,
         child: ShellSearchField(
@@ -559,7 +575,13 @@ extension _ShellPageLayout on _ShellPageState {
       injectedMiniNavRegistration: injectedMiniNavRegistration,
     );
     return shad.AppBar(
-      height: mobileSectionAppBarHeightFor(context),
+      height: mobileSectionAppBarHeightFor(
+        context,
+        minimumContentHeight: assistantHeaderContentHeight(
+          context,
+          location: widget.matchedLocation,
+        ),
+      ),
       padding: mobileSectionAppBarPadding,
       backgroundColor: Colors.transparent,
       trailingGap: 6,

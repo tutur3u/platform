@@ -15,6 +15,7 @@ import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
+import 'package:mobile/features/assistant/widgets/assistant_header_geometry.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/dashboard/view/home_page.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
@@ -54,12 +55,15 @@ class ShellPage extends StatefulWidget {
     required this.child,
     required this.matchedLocation,
     this.enableDebugLogs = kDebugMode,
+    this.assistantPageBuilder,
     super.key,
   });
 
   final Widget child;
   final String matchedLocation;
   final bool enableDebugLogs;
+  @visibleForTesting
+  final Widget Function(int replayToken)? assistantPageBuilder;
 
   @override
   State<ShellPage> createState() => _ShellPageState();

@@ -11,12 +11,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
+import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
+import 'package:mobile/features/assistant/view/assistant_page.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
+import 'package:mobile/features/assistant/widgets/assistant_header_status_chip.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_primary_action.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -62,6 +65,7 @@ void main() {
   late AssistantChromeCubit assistant;
   var textScale = 1.0;
   var width = 320.0;
+  var locale = const Locale('en');
   final baseline = Platform.environment['NAVBAR_BASELINE'] == '1';
 
   setUpAll(() async {
@@ -191,10 +195,11 @@ void main() {
           ],
           child: shad.ShadcnApp.router(
             theme: MobileShadTheme.light,
+            locale: locale,
             debugShowCheckedModeBanner: false,
             localizationsDelegates: const [
               ...AppLocalizations.localizationsDelegates,
-              shad.ShadcnLocalizations.delegate,
+              AppShadcnLocalizationsDelegate(),
             ],
             supportedLocales: AppLocalizations.supportedLocales,
             builder: (context, child) => MediaQuery(
@@ -234,6 +239,12 @@ void main() {
     // Page slots publish after layout; retain identity during that frame too.
     await tester.pump();
     expect(tester.element(surface), same(materialElement));
+    // Page publication runs after layout; render its dock-listener notification
+    // too. Both handoff frames must retain the same single material surface.
+    await tester.pump();
+    expect(surface, findsOneWidget);
+    expect(tester.element(surface), same(materialElement));
+    expect(find.byType(ShellDockSurface), findsOneWidget);
     for (final frame in [16, 80, 180, 320]) {
       await tester.pump(Duration(milliseconds: frame));
       expect(surface, findsOneWidget);
@@ -272,7 +283,11 @@ void main() {
 
   for (final title in ['Settings', 'Profile', 'Mira Chat', 'Mira Live']) {
     final profileSection = title == 'Profile';
-    final renderedTitle = profileSection ? 'Overview' : title;
+    final renderedTitle = profileSection
+        ? 'Overview'
+        : title.startsWith('Mira')
+        ? 'Mira'
+        : title;
     final assistantSection = title.startsWith('Mira');
     for (final viewport in [320.0, 393.0]) {
       for (final scale in [1.0, 2.0, 3.0]) {
@@ -296,6 +311,16 @@ void main() {
             matching: find.text(renderedTitle),
           );
           expect(titleFinder, findsOneWidget);
+          if (assistantSection) {
+            expect(
+              tester
+                  .widget<AssistantPage>(find.byType(AssistantPage))
+                  .repository,
+              isNull,
+              reason:
+                  'The default cached root factory remains production-owned',
+            );
+          }
           final paragraph = tester.renderObject<RenderParagraph>(titleFinder);
           final intrinsicHeight = paragraph.getMaxIntrinsicHeight(
             paragraph.size.width,
@@ -358,7 +383,11 @@ void main() {
           final semantics = tester.ensureSemantics();
           expect(
             find.bySemanticsLabel(
-              RegExp(assistantSection ? title : '$renderedTitle, Search apps'),
+              RegExp(
+                assistantSection
+                    ? '^${RegExp.escape(renderedTitle)}\$'
+                    : '$renderedTitle, Search apps',
+              ),
             ),
             findsOneWidget,
           );
@@ -411,6 +440,87 @@ void main() {
           expect(tester.takeException(), isNull);
         });
       }
+    }
+  }
+  for (final language in ['en', 'vi']) {
+    for (final scale in [1.0, 2.0, 3.0]) {
+      testWidgets(
+        'actual 320px navbar $language text$scale: title and recovery',
+        (tester) async {
+          width = 320;
+          textScale = scale;
+          locale = Locale(language);
+          await mount(tester);
+          router.go(Routes.assistant);
+          await _pump(tester);
+          final context = tester.element(find.byType(ShellTopBarTitle));
+          final titles = context.read<ShellTitleOverrideCubit>();
+          final status = AppLocalizations.of(context).assistantLocalHeaderIssue;
+          var opened = 0;
+          final submitted = <String>[];
+          titles.register(
+            registrationId: 'synthetic-header-test',
+            ownerId: 'synthetic-header-test',
+            locations: {Routes.assistant},
+            title: 'Atlas',
+            onTitleSubmitted: (name) async => submitted.add(name),
+            titleActionToken: 'synthetic-actor-epoch',
+            subtitle: status,
+            onSubtitlePressed: () => opened++,
+          );
+          await _pump(tester);
+          final titleFinder = find.descendant(
+            of: find.byType(ShellTopBarTitle),
+            matching: find.text('Atlas'),
+          );
+          expect(titleFinder, findsOneWidget);
+          final paragraph = tester.renderObject<RenderParagraph>(titleFinder);
+          expect(
+            await _firstGlyphInk(
+              tester,
+              paragraph,
+              tester.getRect(titleFinder),
+            ),
+            greaterThan(0),
+          );
+          final target = find.byKey(
+            const ValueKey('assistant-local-header-status'),
+          );
+          expect(find.byType(AssistantHeaderStatusChip), findsOneWidget);
+          expect(tester.getSize(target).height, greaterThanOrEqualTo(48));
+          expect(tester.getSize(target).width, greaterThanOrEqualTo(48));
+          final rename = find.byKey(const ValueKey('assistant-name-title'));
+          expect(tester.getSize(rename).height, greaterThanOrEqualTo(48));
+          expect(tester.getSize(rename).width, greaterThanOrEqualTo(48));
+          final bar = tester.getRect(find.byType(shad.AppBar).first);
+          for (final action in [rename, target]) {
+            final rect = tester.getRect(action);
+            expect(bar.contains(rect.topLeft), isTrue);
+            expect(bar.contains(rect.bottomRight), isTrue);
+          }
+          expect(
+            tester.getRect(rename).overlaps(tester.getRect(target)),
+            isFalse,
+          );
+          await tester.tap(rename);
+          await _pump(tester);
+          final input = find.byKey(const ValueKey('assistant-name-input'));
+          expect(input, findsOneWidget);
+          expect(tester.widget<TextField>(input).autofocus, isTrue);
+          await tester.enterText(input, 'Nova');
+          await tester.testTextInput.receiveAction(TextInputAction.done);
+          await _pump(tester);
+          expect(submitted, ['Nova']);
+          expect(input, findsNothing);
+          await tester.tap(target);
+          await tester.pump();
+          expect(opened, 1);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump();
+          locale = const Locale('en');
+        },
+      );
     }
   }
 }

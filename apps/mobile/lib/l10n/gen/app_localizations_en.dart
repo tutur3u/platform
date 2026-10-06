@@ -702,6 +702,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLocalHardware => 'Local inference requires a supported device with at least 4 GiB of installed memory. Available memory and native loading still determine readiness.';
 
   @override
+  String get assistantLocalHeaderIssue => 'Needs attention';
+
+  @override
+  String get assistantLocalHeaderPreparing => 'Preparing';
+
+  @override
+  String get assistantLocalHeaderReady => 'On device';
+
+  @override
   String get assistantLocalHelp => 'Local text stays on this device. Live voice, attachments and workspace tools use remote mode.';
 
   @override
@@ -886,7 +895,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantRenameAction => 'Rename';
 
   @override
-  String get assistantRenameTitle => 'Rename Assistant';
+  String get assistantRenameTitle => 'Rename assistant';
 
   @override
   String get assistantReplyFailed => 'Mira\'s reply stopped. Your message is still here. Retry';
@@ -10550,6 +10559,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantPersonalSettingsError => 'Could not complete this change. Try again.';
+
+  @override
+  String get assistantRenameLabel => 'Assistant name';
+
+  @override
+  String get assistantRenameError => 'Could not update the name. Your draft is kept; try again.';
 
   @override
   String get assistantMemoryEditTitle => 'Edit memory';

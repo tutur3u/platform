@@ -180,8 +180,16 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
 
   Future<void> renameAssistant(String name) async {
     if (state.workspace == null) return;
+    final generation = ++_soulRefreshGeneration;
+    final workspaceVersion = _requestVersion;
+    final scopeToken = _currentScopeToken?.call();
     final soul = await _repository.updateSoulName(name);
-    if (isClosed) return;
+    if (isClosed ||
+        generation != _soulRefreshGeneration ||
+        workspaceVersion != _requestVersion ||
+        scopeToken != _currentScopeToken?.call()) {
+      return;
+    }
     emit(state.copyWith(soul: soul));
   }
 

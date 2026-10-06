@@ -12,11 +12,19 @@ class ShellTitleOverride extends StatefulWidget {
     this.showLeadingBrand = true,
     this.showAvatar = true,
     this.onTitleSubmitted,
+    this.titleActionToken,
+    this.subtitle,
+    this.onSubtitlePressed,
+    this.subtitleActionToken,
   });
 
   final String ownerId;
   final Set<String> locations;
   final String title;
+  final Object? titleActionToken;
+  final String? subtitle;
+  final VoidCallback? onSubtitlePressed;
+  final Object? subtitleActionToken;
   final bool showLeadingBrand;
   final bool showAvatar;
   final Future<void> Function(String title)? onTitleSubmitted;
@@ -49,6 +57,10 @@ class _ShellTitleOverrideState extends State<ShellTitleOverride> {
     if (!setEquals(oldWidget.locations, widget.locations) ||
         oldWidget.ownerId != widget.ownerId ||
         oldWidget.title != widget.title ||
+        oldWidget.titleActionToken != widget.titleActionToken ||
+        oldWidget.subtitle != widget.subtitle ||
+        oldWidget.onSubtitlePressed != widget.onSubtitlePressed ||
+        oldWidget.subtitleActionToken != widget.subtitleActionToken ||
         oldWidget.showLeadingBrand != widget.showLeadingBrand ||
         oldWidget.showAvatar != widget.showAvatar ||
         oldWidget.onTitleSubmitted != widget.onTitleSubmitted) {
@@ -79,6 +91,10 @@ class _ShellTitleOverrideState extends State<ShellTitleOverride> {
       showLeadingBrand: widget.showLeadingBrand,
       showAvatar: widget.showAvatar,
       onTitleSubmitted: widget.onTitleSubmitted,
+      titleActionToken: widget.titleActionToken,
+      subtitle: widget.subtitle,
+      onSubtitlePressed: widget.onSubtitlePressed,
+      subtitleActionToken: widget.subtitleActionToken,
     );
   }
 

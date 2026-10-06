@@ -89,7 +89,7 @@ Future<AssistantSoul> fetchAssistantSoul(
       namespace: 'assistant.soul',
     ),
     policy: AssistantRepository._assistantMetadataCachePolicy,
-    decode: AssistantRepository._decodeSoulCache,
+    decode: AssistantSoulNameWriter.decode,
     forceRefresh: forceRefresh,
     tags: [AssistantRepository._assistantMetadataCacheTag, 'module:assistant'],
     fetch: () async {
@@ -115,37 +115,4 @@ Future<AssistantSoul> fetchAssistantSoul(
 Future<AssistantSoul> updateAssistantSoulName(
   AssistantRepository repository,
   String name,
-) async {
-  const path = '/api/v1/mira/soul';
-  final current = await CacheStore.instance.read<AssistantSoul>(
-    key: AssistantRepository._assistantMetadataCacheKey(
-      namespace: 'assistant.soul',
-    ),
-    decode: AssistantRepository._decodeSoulCache,
-  );
-  final soul = await queueOrSendValue<AssistantSoul>(
-    feature: 'assistant',
-    method: 'PATCH',
-    path: path,
-    workspaceId: 'personal',
-    entityId: 'soul',
-    payload: {'name': name},
-    pendingValue: (_) =>
-        (current.data ?? const AssistantSoul()).copyWith(name: name),
-    send: () async {
-      final response = await repository._apiClient.patchJson(path, {
-        'name': name,
-      });
-      return AssistantSoul.fromJson(response['soul'] as Map<String, dynamic>?);
-    },
-  );
-  await CacheStore.instance.write(
-    key: AssistantRepository._assistantMetadataCacheKey(
-      namespace: 'assistant.soul',
-    ),
-    policy: AssistantRepository._assistantMetadataCachePolicy,
-    payload: soul.toJson(),
-    tags: [AssistantRepository._assistantMetadataCacheTag, 'module:assistant'],
-  );
-  return soul;
-}
+) => AssistantSoulNameWriter(apiClient: repository._apiClient).rename(name);

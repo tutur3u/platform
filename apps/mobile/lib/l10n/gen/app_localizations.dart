@@ -1441,6 +1441,24 @@ abstract class AppLocalizations {
   /// **'Local inference requires a supported device with at least 4 GiB of installed memory. Available memory and native loading still determine readiness.'**
   String get assistantLocalHardware;
 
+  /// No description provided for @assistantLocalHeaderIssue.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get assistantLocalHeaderIssue;
+
+  /// No description provided for @assistantLocalHeaderPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing'**
+  String get assistantLocalHeaderPreparing;
+
+  /// No description provided for @assistantLocalHeaderReady.
+  ///
+  /// In en, this message translates to:
+  /// **'On device'**
+  String get assistantLocalHeaderReady;
+
   /// No description provided for @assistantLocalHelp.
   ///
   /// In en, this message translates to:
@@ -1804,7 +1822,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantRenameTitle.
   ///
   /// In en, this message translates to:
-  /// **'Rename Assistant'**
+  /// **'Rename assistant'**
   String get assistantRenameTitle;
 
   /// No description provided for @assistantReplyFailed.
@@ -19986,6 +20004,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not complete this change. Try again.'**
   String get assistantPersonalSettingsError;
+
+  /// No description provided for @assistantRenameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant name'**
+  String get assistantRenameLabel;
+
+  /// No description provided for @assistantRenameError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update the name. Your draft is kept; try again.'**
+  String get assistantRenameError;
 
   /// No description provided for @assistantMemoryEditTitle.
   ///
