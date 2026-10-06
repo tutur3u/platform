@@ -1203,7 +1203,11 @@ the host's selection and never create a project automatically. The existing
 authorized collaboration ticket, hosted runtime, Run, and problem Test controls
 remain responsible for connecting and executing code. Creating a meeting project
 keeps its runnable entry file empty; standalone playground template defaults are
-unchanged.
+unchanged. Internal checkpoint uploads explicitly permit zero-byte source files
+only with valid positive Drive quota and verified usage accounting; over-quota or
+unknown quota still blocks creation. Signed browser uploads retain their nonempty
+file policy. `empty-playground-storage.test.ts` exercises actual capacity guards
+for both Drive providers, including blank creation, quota denial, and cleanup.
 
 Hosts choose existing personal projects or authorized workspace problems through
 shared UI dropdowns. Problem discovery supports cursor pagination, while project
