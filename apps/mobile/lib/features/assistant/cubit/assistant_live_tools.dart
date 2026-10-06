@@ -8,6 +8,14 @@ extension _AssistantLiveTools on AssistantLiveCubit {
     }
     _ensureActiveTurn();
     final requestVersion = _requestVersion;
+    final conversationVersion = _conversationVersion;
+    final actorScope = _sessionScopeToken;
+    final actor = _sessionUserId;
+    bool staleTurn() =>
+        isClosed ||
+        conversationVersion != _conversationVersion ||
+        actorScope != _currentScopeToken() ||
+        actor != _currentUserId();
     final toolProtocol = _toolProtocol;
     final actorId = _sessionUserId;
     final turnParts = _turnParts;
@@ -22,10 +30,11 @@ extension _AssistantLiveTools on AssistantLiveCubit {
       final responses = <Map<String, dynamic>>[];
       final nextCards = [...state.insightCards];
       for (var index = 0; index < calls.length; index++) {
-        if (_isStale(requestVersion)) return;
+        if (staleTurn()) return;
         final call = calls[index];
         Map<String, dynamic> result;
-        if (!identical(_turnParts, turnParts)) {
+        if (!identical(_turnParts, turnParts) &&
+            !_sealedParts.contains(turnParts)) {
           result = {'error': 'live_tool_cancelled'};
         } else {
           try {
@@ -48,8 +57,21 @@ extension _AssistantLiveTools on AssistantLiveCubit {
             result = {'error': 'live_tool_execution_failed'};
           }
         }
-        if (_isStale(requestVersion)) return;
+        if (staleTurn()) return;
         turnParts.completeTool(parts[index], result);
+        if (_sealedParts.contains(turnParts)) {
+          _emitMicrophoneState(
+            state.copyWith(
+              completedTurns: [
+                for (final turn in state.completedTurns)
+                  if (identical(turn.parts, turnParts))
+                    turn.updatedTools()
+                  else
+                    turn,
+              ],
+            ),
+          );
+        }
         responses.add({
           'id': call.id,
           'name': call.name,

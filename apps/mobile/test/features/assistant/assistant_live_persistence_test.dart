@@ -2,47 +2,60 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_live_audio_player.dart';
 import 'package:mobile/features/assistant/data/assistant_live_camera_service.dart';
 import 'package:mobile/features/assistant/data/assistant_live_recorder.dart';
 import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_live_socket.dart';
+import 'package:mobile/features/assistant/data/assistant_preferences.dart';
+import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/assistant/models/assistant_live_history_confirmation.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
+import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _Repository extends Mock implements AssistantLiveRepository {}
+part 'assistant_live_turn_lifecycle_cases.dart';
+part 'assistant_live_history_confirmation_cases.dart';
 
-class _Player extends Mock implements AssistantLiveAudioPlayer {}
+class Repository extends Mock implements AssistantLiveRepository {}
+
+class Player extends Mock implements AssistantLiveAudioPlayer {}
 
 class _Camera extends Mock implements AssistantLiveCameraService {}
 
 class _Recorder extends Mock implements AssistantLiveRecorder {}
 
-class _Socket extends Mock implements AssistantLiveSocketClient {}
+class Socket extends Mock implements AssistantLiveSocketClient {}
 
 Future<void> _tick() => Future<void>.delayed(const Duration(milliseconds: 20));
 
+late Repository repository;
+late StreamController<AssistantLiveSocketEvent> events;
+late AssistantLiveCubit cubit;
+late Socket socket;
+late Player player;
+String? actor;
+int scopeToken = 0;
+int historyUpdates = 0;
+Future<void> Function()? _updateHistory;
+AssistantLiveTurnConfirmation? _confirmTurnHistory;
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  late _Repository repository;
-  late StreamController<AssistantLiveSocketEvent> events;
-  late AssistantLiveCubit cubit;
-  late _Socket socket;
-  String? actor;
-  var scopeToken = 0;
-  var historyUpdates = 0;
-
   setUp(() async {
-    repository = _Repository();
-    final player = _Player();
+    repository = Repository();
+    player = Player();
     final camera = _Camera();
     final recorder = _Recorder();
-    socket = _Socket();
+    socket = Socket();
     actor = null;
     scopeToken = 0;
     events = StreamController<AssistantLiveSocketEvent>();
     historyUpdates = 0;
+    _updateHistory = null;
+    _confirmTurnHistory = null;
     when(() => socket.events).thenAnswer((_) => events.stream);
     when(recorder.stop).thenAnswer((_) async {});
     when(recorder.dispose).thenAnswer((_) async {});
@@ -95,9 +108,12 @@ void main() {
       audioPlayer: player,
       recorder: recorder,
       cameraService: camera,
+      isTurnRestored: (wsId, chatId, turnId, roles) =>
+          _confirmTurnHistory?.call(wsId, chatId, turnId, roles) ?? true,
       onChatBound: (_, _) async {},
       onHistoryUpdated: (_, _) async {
         historyUpdates++;
+        await _updateHistory?.call();
       },
     );
     await cubit.prepareSession(wsId: 'ws');
@@ -128,10 +144,13 @@ void main() {
     events.add(const AssistantLiveSocketTurnCompleted());
     await _tick();
     expect(cubit.state.status, AssistantLiveConnectionStatus.error);
-    expect(cubit.state.userDraft, 'Keep this question');
-    expect(cubit.state.assistantDraft, 'Keep this answer');
+    expect(cubit.state.completedTurns.single.userText, 'Keep this question');
+    expect(cubit.state.completedTurns.single.assistantText, 'Keep this answer');
     expect(historyUpdates, 0);
   });
+
+  _registerLiveTurnLifecycleCases();
+  _registerLiveHistoryConfirmationCases();
 
   test('finishing an older save cannot clear the next active turn', () async {
     final saving = Completer<void>();

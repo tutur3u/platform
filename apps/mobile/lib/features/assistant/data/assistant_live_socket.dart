@@ -47,9 +47,13 @@ class AssistantLiveSocketTranscriptDelta extends AssistantLiveSocketEvent {
 }
 
 class AssistantLiveSocketAudioChunk extends AssistantLiveSocketEvent {
-  const AssistantLiveSocketAudioChunk(this.bytes);
+  const AssistantLiveSocketAudioChunk(
+    this.bytes, {
+    this.mimeType = 'audio/pcm;rate=24000',
+  });
 
   final Uint8List bytes;
+  final String mimeType;
 }
 
 class AssistantLiveSocketInterrupted extends AssistantLiveSocketEvent {
@@ -92,10 +96,22 @@ class AssistantLiveSocketClient {
         uri,
         pingInterval: const Duration(seconds: 10),
       );
-  final StreamController<AssistantLiveSocketEvent> _events =
-      StreamController<AssistantLiveSocketEvent>.broadcast();
+  final _events =
+      StreamController<
+        ({int generation, AssistantLiveSocketEvent event})
+      >.broadcast();
+  int _connectionGeneration = 0;
 
-  Stream<AssistantLiveSocketEvent> get events => _events.stream;
+  // Admission is checked at delivery, after queued events can be superseded.
+  Stream<AssistantLiveSocketEvent> get events => _events.stream
+      .where((entry) => entry.generation == _connectionGeneration)
+      .map((entry) => entry.event);
+
+  void _emit(AssistantLiveSocketEvent event) {
+    if (!_events.isClosed) {
+      _events.add((generation: _connectionGeneration, event: event));
+    }
+  }
 
   WebSocketChannel? _channel;
   StreamSubscription<dynamic>? _subscription;
@@ -108,7 +124,10 @@ class AssistantLiveSocketClient {
     required List<AssistantLiveSeedContent> seedHistory,
     String? sessionHandle,
   }) async {
-    await disconnect();
+    final closing = disconnect();
+    final generation = _connectionGeneration;
+    await closing;
+    if (generation != _connectionGeneration || _events.isClosed) return;
 
     final uri = Uri.parse(
       'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContentConstrained?access_token=$token',
@@ -120,12 +139,20 @@ class AssistantLiveSocketClient {
     _channel = _connectChannel(uri);
 
     _subscription = _channel!.stream.listen(
-      _handleMessage,
+      (raw) {
+        if (generation == _connectionGeneration && !_events.isClosed) {
+          _handleMessage(raw);
+        }
+      },
       onDone: () {
-        _events.add(const AssistantLiveSocketClosed('socket closed'));
+        if (generation == _connectionGeneration) {
+          _emit(const AssistantLiveSocketClosed('socket closed'));
+        }
       },
       onError: (Object error, StackTrace stackTrace) {
-        _events.add(AssistantLiveSocketError(error.toString()));
+        if (generation == _connectionGeneration) {
+          _emit(AssistantLiveSocketError(error.toString()));
+        }
       },
       cancelOnError: false,
     );
@@ -182,12 +209,15 @@ class AssistantLiveSocketClient {
   }
 
   Future<void> disconnect() async {
-    await _subscription?.cancel();
+    _connectionGeneration++;
+    final cancelling = _subscription?.cancel();
+    final channel = _channel;
     _subscription = null;
-    await _channel?.sink.close();
     _channel = null;
     _seedHistoryPending = false;
     _pendingSeedHistory = const [];
+    await cancelling;
+    await channel?.sink.close();
   }
 
   void dispose() {
@@ -200,7 +230,7 @@ class AssistantLiveSocketClient {
     if (data is! Map<String, dynamic>) return;
 
     if (data['setupComplete'] is Map<String, dynamic>) {
-      _events.add(const AssistantLiveSocketConnected());
+      _emit(const AssistantLiveSocketConnected());
       if (_seedHistoryPending) {
         _send({
           'clientContent': {
@@ -211,19 +241,19 @@ class AssistantLiveSocketClient {
         _seedHistoryPending = false;
         _pendingSeedHistory = const [];
       }
-      _events.add(const AssistantLiveSocketReady());
+      _emit(const AssistantLiveSocketReady());
       return;
     }
 
     final goAway = data['goAway'];
     if (goAway is Map<String, dynamic>) {
-      _events.add(AssistantLiveSocketGoAway(goAway['timeLeft'] as String?));
+      _emit(AssistantLiveSocketGoAway(goAway['timeLeft'] as String?));
       return;
     }
 
     final resumption = data['sessionResumptionUpdate'];
     if (resumption is Map<String, dynamic>) {
-      _events.add(
+      _emit(
         AssistantLiveSocketSessionHandleUpdated(
           resumable: resumption['resumable'] as bool? ?? false,
           newHandle: resumption['newHandle'] as String?,
@@ -244,7 +274,7 @@ class AssistantLiveSocketClient {
             ),
           )
           .toList();
-      _events.add(AssistantLiveSocketToolCall(calls));
+      _emit(AssistantLiveSocketToolCall(calls));
       return;
     }
 
@@ -252,14 +282,14 @@ class AssistantLiveSocketClient {
     if (serverContent is! Map<String, dynamic>) return;
 
     if (serverContent['interrupted'] == true) {
-      _events.add(const AssistantLiveSocketInterrupted());
+      _emit(const AssistantLiveSocketInterrupted());
     }
 
     final outputTranscription = serverContent['outputTranscription'];
     if (outputTranscription is Map<String, dynamic>) {
       final text = outputTranscription['text'] as String?;
       if (text != null && text.isNotEmpty) {
-        _events.add(
+        _emit(
           AssistantLiveSocketTranscriptDelta(text: text, isUserInput: false),
         );
       }
@@ -269,7 +299,7 @@ class AssistantLiveSocketClient {
     if (inputTranscription is Map<String, dynamic>) {
       final text = inputTranscription['text'] as String?;
       if (text != null && text.isNotEmpty) {
-        _events.add(
+        _emit(
           AssistantLiveSocketTranscriptDelta(text: text, isUserInput: true),
         );
       }
@@ -284,7 +314,7 @@ class AssistantLiveSocketClient {
 
       final text = rawPart['text'] as String?;
       if (text != null && text.isNotEmpty && rawPart['thought'] != true) {
-        _events.add(AssistantLiveSocketTextDelta(text));
+        _emit(AssistantLiveSocketTextDelta(text));
       }
 
       final inlineData = rawPart['inlineData'];
@@ -294,10 +324,12 @@ class AssistantLiveSocketClient {
 
       final mimeType = inlineData['mimeType'] as String? ?? 'audio/pcm';
       if (!mimeType.startsWith('audio/')) continue;
-      _events.add(AssistantLiveSocketAudioChunk(base64Decode(base64)));
+      _emit(
+        AssistantLiveSocketAudioChunk(base64Decode(base64), mimeType: mimeType),
+      );
     }
     if (serverContent['turnComplete'] == true) {
-      _events.add(const AssistantLiveSocketTurnCompleted());
+      _emit(const AssistantLiveSocketTurnCompleted());
     }
   }
 
