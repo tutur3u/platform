@@ -22,14 +22,34 @@ class AssistantTranscriptSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final activeMessageId =
+        chatState.status == AssistantChatStatus.streaming &&
+            chatState.messages.isNotEmpty &&
+            chatState.messages.last.role == 'assistant'
+        ? chatState.messages.last.id
+        : null;
+    final hasThinkingPanel =
+        activeMessageId != null &&
+        chatState.messages.last.parts.any(
+          (part) =>
+              part.type == 'reasoning' &&
+              (part.text?.trim().isNotEmpty ?? false),
+        );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ...chatState.messages.map((message) {
           final toolParts = _messageToolParts(message);
           return Padding(
+            key: ValueKey((
+              'assistant-turn',
+              chatState.workspaceId,
+              chatState.chat?.id ?? chatState.fallbackChatId,
+              message.id,
+            )),
             padding: const EdgeInsets.only(bottom: 14),
             child: AssistantTranscriptBubble(
+              activityActive: message.id == activeMessageId,
               label: message.role == 'user'
                   ? context.l10n.assistantYouLabel
                   : assistantName,
@@ -53,7 +73,8 @@ class AssistantTranscriptSection extends StatelessWidget {
             ),
           );
         }),
-        AssistantChatFeedback(state: chatState, onRetry: onRetry),
+        if (!hasThinkingPanel)
+          AssistantChatFeedback(state: chatState, onRetry: onRetry),
         if (liveState.userDraft.isNotEmpty ||
             liveState.userTranscript.isNotEmpty)
           Padding(

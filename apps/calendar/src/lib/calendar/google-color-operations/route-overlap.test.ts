@@ -90,6 +90,32 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe('actual recoverable color route vertical slice', () => {
+  it.each([
+    { readonly: true, status: 422, code: 'PROVIDER_RULE_READ_ONLY' },
+    { readonly: null, status: 503, code: 'PROVIDER_STATE_UNAVAILABLE' },
+  ])(
+    'blocks writes before color admission when readonly state is $readonly',
+    async ({ readonly, status, code }) => {
+      const f = m.fixture as ReturnType<typeof recoverableColorRouteFixture>;
+      f.providerReadonly(readonly);
+      for (const response of [
+        await PUT(request('PUT', choice('7')), params()),
+        await DELETE(request('DELETE'), params()),
+      ]) {
+        expect(response.status).toBe(status);
+        expect(await response.json()).toMatchObject({ code });
+      }
+      expect(f.operation()).toBeNull();
+      expect(f.get).not.toHaveBeenCalled();
+      expect(f.patch).not.toHaveBeenCalled();
+      expect(f.rowWrites).not.toHaveBeenCalled();
+      expect(m.legacy).not.toHaveBeenCalled();
+      expect(f.rpc.mock.calls.map(([name]) => name)).toEqual([
+        'calendar_provider_series_is_readonly',
+        'calendar_provider_series_is_readonly',
+      ]);
+    }
+  );
   it('fences delayed A across A recovery and successor B using original If-Match', async () => {
     const f = m.fixture as ReturnType<typeof recoverableColorRouteFixture>;
     const delayed = f.delayPatch();
@@ -189,6 +215,7 @@ describe('actual recoverable color route vertical slice', () => {
     expect(m.legacy).not.toHaveBeenCalled();
     expect(m.fixture.patch).not.toHaveBeenCalled();
     expect(m.fixture.rpc.mock.calls.map(([name]: [string]) => name)).toEqual([
+      'calendar_provider_series_is_readonly',
       'calendar_retained_generation',
     ]);
   });

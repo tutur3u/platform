@@ -27,24 +27,22 @@ describe('desktop metadata reader', () => {
     ).toBe(true);
   });
   it('rejects unrelated runs instead of following external URLs', async () => {
-    const request = vi
-      .fn()
-      .mockResolvedValue({
-        ok: true,
-        json: async () => ({
-          workflow_runs: [
-            {
-              id: 42,
-              head_branch: 'main',
-              path: '.github/workflows/desktop-beta.yaml',
-              head_sha: 'a'.repeat(40),
-              status: 'completed',
-              conclusion: 'success',
-              html_url: 'https://untrusted.example',
-            },
-          ],
-        }),
-      });
+    const request = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        workflow_runs: [
+          {
+            id: 42,
+            head_branch: 'main',
+            path: '.github/workflows/desktop-beta.yaml',
+            head_sha: 'a'.repeat(40),
+            status: 'completed',
+            conclusion: 'success',
+            html_url: 'https://untrusted.example',
+          },
+        ],
+      }),
+    });
     vi.stubGlobal('fetch', request);
     expect((await getDesktopDeploymentStatus()).run).toBeNull();
     expect(request).toHaveBeenCalledTimes(2);

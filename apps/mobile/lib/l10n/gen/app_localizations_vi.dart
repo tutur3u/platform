@@ -10216,4 +10216,34 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get workspaceTeamSection => 'Nhóm làm việc';
+
+  @override
+  String get downloadNetworkWarningTitle => 'Tải xuống bằng dữ liệu di động?';
+
+  @override
+  String get downloadNetworkWarningBody => 'Tải xuống có thể dùng nhiều dữ liệu. Chọn Tiếp tục để cho phép dữ liệu di động hoặc Dùng Wi-Fi để chờ Wi-Fi.';
+
+  @override
+  String get downloadNetworkUseWifi => 'Dùng Wi-Fi';
+
+  @override
+  String get downloadNetworkContinue => 'Tiếp tục';
+
+  @override
+  String get assistantDownloadBackgroundNotice => 'Tải xuống tiếp tục khi bạn rời Cài đặt. Tải chỉ qua Wi-Fi sẽ chờ Wi-Fi. Hệ thống quyết định thời gian chạy nền; buộc đóng có thể làm gián đoạn. Mở lại Cài đặt để tiếp tục.';
+
+  @override
+  String get assistantDownloadPause => 'Tạm dừng tải';
+
+  @override
+  String get assistantDownloadResume => 'Tiếp tục tải';
+
+  @override
+  String get assistantDownloadNetworkFailure => 'Tải từ nhà cung cấp bị gián đoạn. Thử lại khi có mạng hoặc nhập đúng tệp đã công bố.';
+
+  @override
+  String get assistantDownloadStorageFailure => 'Không thể lưu mô hình. Giải phóng bộ nhớ thiết bị rồi thử lại. Mô hình hiện có được giữ nguyên.';
+
+  @override
+  String get assistantDownloadAdmissionFailure => 'Nhà cung cấp yêu cầu chấp thuận tài khoản hoặc giấy phép. Mở nguồn trong trình duyệt, chấp nhận điều khoản rồi nhập đúng tệp mô hình.';
 }

@@ -31,11 +31,12 @@ class AssistantLocalModelTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ListTile(
+            dense: true,
             contentPadding: EdgeInsets.zero,
             title: Text(model.name),
             subtitle: Text(

@@ -34,12 +34,42 @@ select a remote provider. Account/session changes, backgrounding, and hiding
 Mira stop and unload native inference before another scoped load.
 
 The initial catalogue pins publisher revisions, file lengths, and SHA-256
-digests for Gemma 3 270M and Qwen 3 0.6B. Gemma requires the user to obtain a
+digests for Gemma 3 270M, Qwen 3 0.6B, and SmolLM2 360M. Gemma requires the user to obtain a
 licensed file; the app does not accept a gated model's license on their behalf
-or collect Hugging Face credentials. Qwen uses its Apache 2.0 distribution.
+or collect Hugging Face credentials. Qwen and SmolLM2 use their Apache 2.0 distributions.
 Installation verifies the full file before atomic publication, preserves an
 existing valid file after a corrupt download, allows cancellation, and enforces
 a 1 GiB device weight budget, including temporary replacement space.
+
+On Android and iOS, public provider downloads use persisted native background
+jobs with pause, resume, and explicit cancellation. Opening or closing settings
+observes the same job rather than starting another transfer. A restored job is
+not an installed model until its complete file passes the pinned length and
+SHA-256 checks. Public weights are device-owned; actor changes do not select a
+model or attach private conversation data to the transfer. OS scheduling, force
+quit, and connectivity can delay or terminate background work; an interrupted
+job offers retry. Gated providers still require an externally obtained licensed
+file. Other supported desktop platforms retain foreground downloads.
+
+Wi-Fi-only is the default for model downloads and offline module preparation.
+Cellular or unknown connectivity requires an explicit Continue, Use Wi-Fi, or
+Cancel choice before any transfer or preparation API call starts. Continue
+allows cellular for that requested job; Use Wi-Fi preserves a pending plan.
+Offline module plans persist only the requested product IDs and network choice
+in the encrypted actor/workspace cache, never bearer tokens. Foreground resume
+uses current credentials and scope epochs, coalesces overlapping triggers, and
+never expands the requested modules. Network loss retains pending work;
+definitive permission denial removes it, while an MFA challenge leaves it
+pending. Plans expire after 30 days; clearing the corresponding cache can
+remove them.
+
+Settings expose download, checksum, storage, and provider-admission failures
+separately. A completed download does not prove native engine readiness: the
+existing hardware checks and successful engine load still apply. Embedded quick
+settings avoid a second bottom safe-area inset and use content-sized sections.
+Transfer verification, cellular choice, and scoped resume regressions live in
+`assistant_model_downloads_test.dart`, `download_network_consent_test.dart`, and
+`offline_preparation_intent_test.dart` under `apps/mobile/test/`.
 
 Native support is restricted to the archive's supported ABIs: arm64 iOS/macOS,
 arm64 Android API 28+, arm64/x64 Linux, and x64 Windows. Other ABIs remain
@@ -61,6 +91,26 @@ packaging stages SHA-256-pinned runtime companions before the existing audit,
 Developer ID signing, and notarization gates.
 
 ## Experience
+
+Mobile chat uses the shell's existing dock for its composer and primary action.
+An empty draft keeps the navigation menu; a nonempty draft or attachment changes
+that action to Send. During inline recording it becomes Pause, then Send while
+paused. Cancel discards only the recording and returns to the retained text draft.
+The input row has no second Send button. Each assistant turn has one initially
+collapsed transparent thinking accordion, showing the latest heading from reasoning
+text already supplied by the API. Expanding it reveals those existing sections in
+source order. Only the current streaming turn animates its thinking icon; stopped,
+completed, and failed turns use a static icon. Consecutive tool calls share one
+collapsed transparent accordion displaying the latest tool name, while response
+text and generated images keep their relative positions. No additional hidden
+reasoning is requested or inferred. These rules apply to mobile Mira's timeline;
+other clients retain their own presentation. Accordion regressions are in
+`assistant_activity_accordion_test.dart`. The transcript's scroll-to-bottom
+action clears the dock using the shell viewport's inherited clearance; the outer
+shell consumes the keyboard inset once. Regressions cover controller and capture
+transitions, retained dock identity, transparent tool inspection, and actual shell
+geometry in `apps/mobile/test/features/assistant/widgets/`.
+
 
 Start or stop Live with the waveform icon in the chat composer. Live keeps the
 same message timeline visible, with a compact gradient visualization and media

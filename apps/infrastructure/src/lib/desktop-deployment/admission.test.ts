@@ -130,11 +130,12 @@ describe('fresh material admission', () => {
     );
     for (const value of mock.decryptResource.mock.results)
       expect(value.value.every((byte: number) => byte === 0)).toBe(true);
-    expect(
-      (await mock.decryptKey.mock.results[0].value).every(
-        (byte: number) => byte === 0
-      )
-    ).toBe(true);
+    const decrypted = mock.decryptKey.mock.results[0];
+    if (decrypted?.type !== 'return')
+      throw new Error('Expected a successful key decryption');
+    expect((await decrypted.value).every((byte: number) => byte === 0)).toBe(
+      true
+    );
   });
   it('disables without looking up or decrypting credentials', async () => {
     const { db, rpc } = fixture();

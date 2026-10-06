@@ -48,7 +48,7 @@ const invoke = (handler: unknown) =>
     handler as (
       request: Request,
       auth: unknown,
-      params: typeof params
+      routeParams: typeof params
     ) => Promise<Response>
   )(new Request('https://api.example'), auth, params);
 beforeEach(() => {

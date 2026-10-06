@@ -10,14 +10,12 @@ class AssistantInlineVoiceControls extends StatelessWidget {
     required this.capture,
     required this.state,
     required this.onAttach,
-    required this.onSend,
     super.key,
   });
 
   final AssistantVoiceCaptureCubit capture;
   final AssistantVoiceCaptureState state;
   final Future<void> Function() onAttach;
-  final Future<void> Function() onSend;
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +36,12 @@ class AssistantInlineVoiceControls extends StatelessWidget {
       label: state.paused ? l10n.voicePaused : l10n.voiceRecording,
       child: Row(
         children: [
+          action(
+            'voice-cancel',
+            l10n.assistantCancelAction,
+            Icons.close_rounded,
+            () => unawaited(capture.cancel()),
+          ),
           if (state.paused)
             action(
               'voice-restart',
@@ -83,30 +87,25 @@ class AssistantInlineVoiceControls extends StatelessWidget {
               Icons.attach_file_rounded,
               () => unawaited(onAttach()),
             ),
-            action(
-              'voice-send',
-              l10n.voiceSendNow,
-              Icons.arrow_upward_rounded,
-              () => unawaited(onSend()),
-            ),
           ],
-          IconButton(
-            key: const ValueKey('voice-pause-resume'),
-            tooltip: state.paused ? l10n.voiceResume : l10n.voicePause,
-            constraints: const BoxConstraints.tightFor(width: 40, height: 44),
-            style: const ButtonStyle(
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          if (state.paused)
+            IconButton(
+              key: const ValueKey('voice-resume'),
+              tooltip: state.paused ? l10n.voiceResume : l10n.voicePause,
+              constraints: const BoxConstraints.tightFor(width: 40, height: 44),
+              style: const ButtonStyle(
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              padding: EdgeInsets.zero,
+              onPressed: state.busy || (state.paused && state.seconds >= 120)
+                  ? null
+                  : () => unawaited(
+                      state.paused ? capture.resume() : capture.pause(),
+                    ),
+              icon: Icon(
+                state.paused ? Icons.mic_none_rounded : Icons.pause_rounded,
+              ),
             ),
-            padding: EdgeInsets.zero,
-            onPressed: state.busy || (state.paused && state.seconds >= 120)
-                ? null
-                : () => unawaited(
-                    state.paused ? capture.resume() : capture.pause(),
-                  ),
-            icon: Icon(
-              state.paused ? Icons.mic_none_rounded : Icons.pause_rounded,
-            ),
-          ),
         ],
       ),
     );

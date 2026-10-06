@@ -38,6 +38,7 @@ export function recoverableColorRouteFixture() {
   let failPaletteAfterPatch = false;
   let tokenActive = true;
   let permission = true;
+  let providerReadonly: boolean | null = false;
   let delay: {
     entered: ReturnType<typeof controlledBarrier>;
     release: ReturnType<typeof controlledBarrier>;
@@ -81,6 +82,8 @@ export function recoverableColorRouteFixture() {
         p_actor_id: string;
       }
     ) => {
+      if (name === 'calendar_provider_series_is_readonly')
+        return { data: providerReadonly, error: null };
       // The route now inspects the shared retained ledger before every writer,
       // including when the feature flag is disabled. Model that read separately
       // from color admission and the saga-only recovery lookup.
@@ -296,6 +299,9 @@ export function recoverableColorRouteFixture() {
     },
     tokenActive: (value: boolean) => {
       tokenActive = value;
+    },
+    providerReadonly: (value: boolean | null) => {
+      providerReadonly = value;
     },
     permission: (value: boolean) => {
       permission = value;

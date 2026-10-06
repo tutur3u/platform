@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import type { SupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database } from '@tuturuuu/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -104,7 +105,10 @@ describe('revision-fenced desktop administration', () => {
   it('issues a one-time token whose lookup prefix matches the actual SQL constraint', async () => {
     const { db, rpc } = fixture();
     const migration = readFileSync(
-      'apps/database/supabase/migrations/20261006010001_desktop_deployment_vault.sql',
+      resolve(
+        import.meta.dirname,
+        '../../../../database/supabase/migrations/20261006010001_desktop_deployment_vault.sql'
+      ),
       'utf8'
     );
     const pattern = migration.match(

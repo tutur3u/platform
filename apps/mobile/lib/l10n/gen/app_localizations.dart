@@ -19584,6 +19584,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Team workspaces'**
   String get workspaceTeamSection;
+
+  /// No description provided for @downloadNetworkWarningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Download using mobile data?'**
+  String get downloadNetworkWarningTitle;
+
+  /// No description provided for @downloadNetworkWarningBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This download may use a large amount of data. Choose Continue to allow mobile data, or Use Wi-Fi to wait for Wi-Fi.'**
+  String get downloadNetworkWarningBody;
+
+  /// No description provided for @downloadNetworkUseWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Wi-Fi'**
+  String get downloadNetworkUseWifi;
+
+  /// No description provided for @downloadNetworkContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get downloadNetworkContinue;
+
+  /// No description provided for @assistantDownloadBackgroundNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads continue when you leave Settings. Wi-Fi-only transfers wait for Wi-Fi. Your system controls background timing; force-quitting may interrupt them. Reopen Settings to resume.'**
+  String get assistantDownloadBackgroundNotice;
+
+  /// No description provided for @assistantDownloadPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause download'**
+  String get assistantDownloadPause;
+
+  /// No description provided for @assistantDownloadResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume download'**
+  String get assistantDownloadResume;
+
+  /// No description provided for @assistantDownloadNetworkFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'The provider download was interrupted. Retry when connected, or import the exact published file.'**
+  String get assistantDownloadNetworkFailure;
+
+  /// No description provided for @assistantDownloadStorageFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'The model could not be saved. Free device storage and retry. Existing models were kept.'**
+  String get assistantDownloadStorageFailure;
+
+  /// No description provided for @assistantDownloadAdmissionFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'This provider requires account or license approval. Open the source in your browser, accept its terms, then import the exact model file.'**
+  String get assistantDownloadAdmissionFailure;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

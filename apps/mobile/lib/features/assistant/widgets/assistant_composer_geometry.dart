@@ -19,3 +19,15 @@ double assistantBottomSafeArea(BuildContext context) =>
 
 double assistantComposerBottomOffset(BuildContext context) =>
     assistantBottomSafeArea(context) + assistantComposerBottomGap;
+
+/// Shell Scaffold consumes the IME inset before this viewport. Its inherited
+/// padding already includes navigation clearance when the composer is hidden.
+double assistantTranscriptBottomClearance(
+  BuildContext context, {
+  required bool composerVisible,
+}) => composerVisible
+    ? assistantComposerHeight(context) +
+          assistantComposerBottomOffset(context) +
+          2 + // One-pixel ShellDockSurface border above and below content.
+          16
+    : MediaQuery.paddingOf(context).bottom + 16;

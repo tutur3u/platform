@@ -18,23 +18,31 @@ function muteDiagnostics() {
   };
 }
 
-test('public step receives a finite whole-phase cap and preserves the result', async () => {
-  const { info, warn } = muteDiagnostics();
-  step.mockImplementation((_name, action) => action());
-  const action = vi.fn().mockResolvedValue('persisted');
-  await expect(
-    runLettinBrowserPhase('reload persisted Markdown', action)
-  ).resolves.toBe('persisted');
-  expect(step).toHaveBeenCalledWith('reload persisted Markdown', action, {
-    timeout: 60_000,
-  });
-  expect(LETTIN_BROWSER_PHASE_TIMEOUT_MS).toBe(60_000);
-  expect(info.mock.calls).toEqual([
-    ['[lettin-e2e] reload persisted Markdown: started'],
-    ['[lettin-e2e] reload persisted Markdown: completed'],
-  ]);
-  expect(warn).not.toHaveBeenCalled();
-});
+test.each([
+  'reload persisted Markdown',
+  'open profile',
+  'upload profile banner',
+  'reload persisted profile',
+] as const)(
+  'phase %s receives a finite whole-phase cap and preserves the result',
+  async (name) => {
+    const { info, warn } = muteDiagnostics();
+    step.mockImplementation((_name, action) => action());
+    const action = vi.fn().mockResolvedValue('persisted');
+    await expect(runLettinBrowserPhase(name, action)).resolves.toBe(
+      'persisted'
+    );
+    expect(step).toHaveBeenCalledWith(name, action, {
+      timeout: 60_000,
+    });
+    expect(LETTIN_BROWSER_PHASE_TIMEOUT_MS).toBe(60_000);
+    expect(info.mock.calls).toEqual([
+      [`[lettin-e2e] ${name}: started`],
+      [`[lettin-e2e] ${name}: completed`],
+    ]);
+    expect(warn).not.toHaveBeenCalled();
+  }
+);
 
 test('ordinary action failure remains the original error with safe diagnostics', async () => {
   const { info, warn } = muteDiagnostics();
