@@ -40,7 +40,7 @@ jobs:
         run: python3 -m unittest discover -s plugins/tuturuuu/mcp -p 'test_*.py'
 
       - name: Test orchestration evidence boundaries
-        run: python3 -m unittest discover -s plugins/tuturuuu/scripts -p 'test_program_state.py'
+        run: python3 -m unittest discover -s plugins/tuturuuu/scripts -p 'test_program*.py'
 
       - name: Validate docs navigation JSON
         run: python3 -m json.tool apps/docs/docs.json > /dev/null

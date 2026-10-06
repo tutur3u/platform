@@ -167,9 +167,11 @@ class _SettingsHarness {
         child: shad.ShadcnApp.router(
           theme: MobileShadTheme.light,
           darkTheme: MobileShadTheme.dark,
+          themeMode: theme.state.themeMode,
+          locale: locale.state.locale,
           localizationsDelegates: const [
             ...AppLocalizations.localizationsDelegates,
-            shad.ShadcnLocalizations.delegate,
+            AppShadcnLocalizationsDelegate(),
           ],
           supportedLocales: AppLocalizations.supportedLocales,
           routerConfig: router,

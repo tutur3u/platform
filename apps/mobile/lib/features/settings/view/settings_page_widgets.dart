@@ -357,9 +357,9 @@ class _PreferencesSection extends StatelessWidget {
         Widget column(List<Widget> widgets) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (final widget in widgets) ...[
-              widget,
-              const SizedBox(height: 20),
+            for (var index = 0; index < widgets.length; index++) ...[
+              if (index > 0) const SizedBox(height: 20),
+              widgets[index],
             ],
           ],
         );

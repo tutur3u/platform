@@ -65,6 +65,11 @@ DELETE /api/v1/workspaces/:wsId/ai/memory/items/:memoryId
 POST /api/v1/workspaces/:wsId/ai/memory/export
 ```
 
+These first-class API handlers forward the incoming request to authentication,
+so mobile Bearer credentials and browser cookies use the same current-user and
+MEMBER workspace checks. Export and deletion remain available while collection
+is disabled; that does not enable collection or authorize another actor.
+
 The settings dialog exposes enable/disable, product toggles, search/list,
 delete, and export controls. API routes call private schema RPCs through the
 server-side Supabase admin client.
@@ -131,3 +136,19 @@ Regression coverage lives in `assistant_personal_settings_repository_test.dart`,
 preservation, delayed scope changes, English/Vietnamese controls, and large text
 with a visible keyboard; they do not establish native-device or deployed runtime
 proof.
+
+## Consolidating Mira memories
+
+The `merge_memories` tool preserves source memories until the sidecar confirms
+that the replacement has persisted (`done` with a memory ID). Skipped, queued,
+missing, or failed replacement receipts never authorize original deletion.
+A successful replacement does not imply that every deletion succeeded: the
+result includes its replacement ID/key, confirmed deleted keys, and retained
+keys. Retry only retained keys; never claim the whole merge completed when
+any deletion remains unconfirmed. Duplicate source keys are processed once,
+and the replacement key is never deleted.
+
+This rule applies to Mira's existing user/workspace memory tool. It does not
+admit background consolidation or combine Meet's separately opted-in private
+Live memory with workspace memory. Regression coverage lives in
+`packages/ai/src/tools/executors/memory.test.ts`.

@@ -691,6 +691,17 @@ Bearer serialization, failure/retry and explicit saving with synthetic data.
 Those checks do not prove a real provider session or explain a particular user's
 failed authenticated request without runtime evidence.
 
+Calendar's local authentication rejections classify existing IP blocks as
+`ip-already-blocked` and upstream authentication backpressure as
+`backend-auth-rate-limit`. The native gateway preserves these fixed categories
+for safe timezone diagnostics. Neither branch invents a limiter policy, caller
+class or exhausted window; unavailable fields remain Unknown. Status 429,
+Retry-After, authentication, bans and quotas retain their existing behavior.
+`api-auth-rate-diagnostics.test.ts` exercises the real personal preference GET
+and gateway; `api_rate_limit_local_auth_test.dart` checks the safe mobile copy.
+These classifications do not establish the cause of a past rejection without
+an exact deployed runtime receipt.
+
 
 Mobile Calendar completion styling refreshes at wall-clock minute boundaries.
 Timed events without an end use the same 30-minute fallback as rendered cards.

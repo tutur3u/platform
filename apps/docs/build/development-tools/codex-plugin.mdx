@@ -340,6 +340,31 @@ boundaries. It does not require Cursor, Graphite, cloud agents or a new plugin
 installation. Structural/routing checks are bounded evidence, not a behavioral
 agent evaluation. Managed plugin caches are updated by their installer.
 
+## Long-Term Request Intake
+
+When a user assigns ongoing program ownership, capture each idea, bug, feature,
+improvement and amendment before dispatch. Use stable IDs, source pointers,
+checkable acceptance, dependencies and current owners. The coordination skill's
+`references/request-backlog.md` defines the private SQLite ledger and commands.
+Intake survives conversation compaction and task-worktree retirement; it is local
+persistence, not cross-machine synchronization or a guarantee of unlimited recall.
+
+The standard store is under `~/.local/share/tuturuuu/orchestration/programs/`.
+Never commit user dumps, transcripts, credentials or the database. Repeated
+imports preserve progress, conflicting scopes fail rather than overwrite, and
+updates retain event history. Read backlog and current-unit evidence at every
+wake. Keep captured, active, implemented and verified distinct. Native Tuturuuu
+task creation still uses `ttr` after destination discovery.
+
+The requested pstack upstream package can be used alongside this plugin. Its
+Cursor marketplace does not expose pstack through the Claude marketplace Codex
+reads, so the local compatibility installation adds a Codex manifest/marketplace
+without modifying upstream skills. Pin the reviewed upstream commit, retain the
+license and verify installed/enabled status with the official installer. This
+adapter does not make Cursor-only tools available or override Tuturuuu policy.
+Managed caches stay installer-owned. Start a subsequent turn to discover newly
+installed skills.
+
 ## Shared Worktree Coordination
 
 Agents should assume that humans or other agents may have uncommitted work in the
@@ -551,3 +576,7 @@ private checkpoints and reconnect recovery. It reuses `packages/realtime` and
 the shared programming workbench. Its focused reference covers admission,
 capability scope, persistence, egress and service verification; operational
 configuration lives in [the programming realtime runbook](/build/devops/programming-realtime-runbook).
+
+### Backlog priority and dependent receipts
+
+Reprioritize requests through the audited `program_backlog.py update <id> --priority <0-3>` command; reimporting a changed priority is rejected. Reopened prerequisites invalidate current dependent verification transitively while preserving audit history and implemented source. Parent recovery never silently restores dependent delivery receipts. See the coordination skill's request-backlog reference and `test_program_backlog.py` for the contract and regressions.

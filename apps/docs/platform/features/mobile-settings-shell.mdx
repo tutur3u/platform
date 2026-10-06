@@ -210,3 +210,22 @@ expand the app's supported locales or claim those component strings are
 translated. The shared widget-test app uses the same production delegate.
 Coverage: `shadcn_localizations_fallback_test.dart` renders the actual Shad date
 picker and Material/app strings in both locales without missing delegates.
+
+
+## Compact settings sections
+
+General and product settings share page-background row groups with quiet separators
+and unboxed icons, rather than a separate outlined card for every action. Existing
+profile panels and explicit destructive confirmations retain their grouping.
+Preference categories use one consistent gap between groups and no trailing group
+gap; the parent owns spacing to the next section. Row touch targets remain at least
+48 logical pixels, while translated labels and enlarged text may increase height.
+These defaults apply to mobile English/Vietnamese and light/dark themes; settings
+permissions, destinations and persistence are unchanged. Assistant settings leaves
+use the same shell and row vocabulary.
+
+`settings_design_checks.dart` exercises the actual Settings host spacing and
+320px enlarged-text navigation in both languages/themes. Its harness uses the
+production localization fallback and explicit theme/locale. Widget renders are
+bounded evidence; exact-build device safe-area, keyboard and visual checks remain
+required.
