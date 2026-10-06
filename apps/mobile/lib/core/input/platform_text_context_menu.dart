@@ -2,7 +2,11 @@ import 'package:flutter/cupertino.dart' as cupertino;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' as material;
 import 'package:flutter/widgets.dart'
-    show BuildContext, EditableTextContextMenuBuilder, EditableTextState;
+    show
+        BuildContext,
+        EditableTextContextMenuBuilder,
+        EditableTextState,
+        TextSelectionControls;
 
 EditableTextContextMenuBuilder platformTextContextMenuBuilder() {
   return (BuildContext context, EditableTextState editableTextState) {
@@ -20,5 +24,19 @@ EditableTextContextMenuBuilder platformTextContextMenuBuilder() {
           editableTextState: editableTextState,
         );
     }
+  };
+}
+
+/// Native handles without the deprecated toolbar-building controls path.
+/// Keep capability checks on EditableText, including obscured/read-only fields.
+TextSelectionControls platformTextSelectionControls() {
+  return switch (defaultTargetPlatform) {
+    TargetPlatform.iOS => cupertino.cupertinoTextSelectionHandleControls,
+    TargetPlatform.macOS =>
+      cupertino.cupertinoDesktopTextSelectionHandleControls,
+    TargetPlatform.android ||
+    TargetPlatform.fuchsia => material.materialTextSelectionHandleControls,
+    TargetPlatform.linux ||
+    TargetPlatform.windows => material.desktopTextSelectionHandleControls,
   };
 }

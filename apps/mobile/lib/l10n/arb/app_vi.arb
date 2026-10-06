@@ -4439,5 +4439,6 @@
   "workspaceSelectTitle": "Chọn không gian làm việc",
   "workspaceSystemBadge": "Hệ thống",
   "workspaceSystemSection": "Nội bộ",
-  "workspaceTeamSection": "Nhóm làm việc"
+  "workspaceTeamSection": "Nhóm làm việc",
+  "commonCopyDiagnostics": "Sao chép thông tin gỡ lỗi"
 }

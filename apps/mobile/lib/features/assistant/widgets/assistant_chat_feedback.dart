@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/internal_diagnostics_copy.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 export 'package:mobile/features/assistant/local/assistant_remote_chat_actions.dart'
@@ -44,6 +45,8 @@ class AssistantChatFeedback extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (state.diagnostics case final diagnostics?)
+                  InternalDiagnosticsCopy(diagnostics: diagnostics),
                 if (onRetry != null)
                   IconButton(
                     onPressed: onRetry,

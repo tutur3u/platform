@@ -26,6 +26,7 @@ class _InventoryTextInputCard extends StatelessWidget {
       icon: Icons.edit_note_rounded,
       errorText: errorText,
       child: shad.TextField(
+        selectionControls: platformTextSelectionControls(),
         contextMenuBuilder: platformTextContextMenuBuilder(),
         key: fieldKey,
         controller: controller,
@@ -56,6 +57,7 @@ class _InventoryTextAreaCard extends StatelessWidget {
       label,
       icon: Icons.notes_rounded,
       child: shad.TextArea(
+        selectionControls: platformTextSelectionControls(),
         contextMenuBuilder: platformTextContextMenuBuilder(),
         controller: controller,
         placeholder: Text(placeholder),

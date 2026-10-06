@@ -10259,4 +10259,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get workspaceTeamSection => 'Nhóm làm việc';
+
+  @override
+  String get commonCopyDiagnostics => 'Sao chép thông tin gỡ lỗi';
 }

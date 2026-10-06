@@ -139,6 +139,7 @@ class _PlatformIconPickerSheetState extends State<_PlatformIconPickerSheet> {
         child: Column(
           children: [
             shad.TextField(
+              selectionControls: platformTextSelectionControls(),
               contextMenuBuilder: platformTextContextMenuBuilder(),
               controller: _searchController,
               hintText: widget.searchPlaceholder ?? 'Search icons',

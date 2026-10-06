@@ -144,6 +144,7 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
               key: const shad.FormKey<String>(#editSessionTitle),
               label: Text(l10n.timerSessionTitle),
               child: shad.TextField(
+                selectionControls: platformTextSelectionControls(),
                 contextMenuBuilder: platformTextContextMenuBuilder(),
                 controller: _titleCtrl,
               ),
@@ -153,6 +154,7 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
               key: const shad.FormKey<String>(#editSessionDesc),
               label: Text(l10n.timerDescription),
               child: shad.TextField(
+                selectionControls: platformTextSelectionControls(),
                 contextMenuBuilder: platformTextContextMenuBuilder(),
                 controller: _descCtrl,
                 maxLines: 3,

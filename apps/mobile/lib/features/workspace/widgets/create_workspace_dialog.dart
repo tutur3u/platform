@@ -192,6 +192,7 @@ class _CreateWorkspaceContentState extends State<_CreateWorkspaceContent> {
                 const shad.Gap(16),
               ],
               shad.TextField(
+                selectionControls: platformTextSelectionControls(),
                 contextMenuBuilder: platformTextContextMenuBuilder(),
                 controller: _controller,
                 placeholder: Text(l10n.workspaceCreateNameHint),

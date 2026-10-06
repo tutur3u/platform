@@ -246,7 +246,6 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
           final sheetMaxH = constraints.hasBoundedHeight
               ? constraints.maxHeight
               : screenH * 0.92;
-
           return ConstrainedBox(
             constraints: BoxConstraints(maxHeight: sheetMaxH),
             child: Column(
@@ -292,6 +291,7 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   child: shad.TextField(
+                    selectionControls: platformTextSelectionControls(),
                     contextMenuBuilder: platformTextContextMenuBuilder(),
                     controller: _searchController,
                     hintText: l10n.timerTaskPickerSearch,

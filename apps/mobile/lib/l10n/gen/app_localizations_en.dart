@@ -10386,4 +10386,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workspaceTeamSection => 'Team workspaces';
+
+  @override
+  String get commonCopyDiagnostics => 'Copy debug information';
 }

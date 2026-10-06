@@ -53,12 +53,14 @@ class _AiSettingsSectionState extends State<_AiSettingsSection> {
       title: context.l10n.chatAiSettings,
       children: [
         shad.TextField(
+          selectionControls: platformTextSelectionControls(),
           contextMenuBuilder: platformTextContextMenuBuilder(),
           controller: _modelController,
           hintText: context.l10n.chatAiModel,
         ),
         const SizedBox(height: 10),
         shad.TextField(
+          selectionControls: platformTextSelectionControls(),
           contextMenuBuilder: platformTextContextMenuBuilder(),
           controller: _promptController,
           hintText: context.l10n.chatSystemPrompt,

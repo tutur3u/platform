@@ -318,6 +318,7 @@ class _TimerAdvancedSectionState extends State<TimerAdvancedSection>
                       ),
                       const shad.Gap(6),
                       shad.TextField(
+                        selectionControls: platformTextSelectionControls(),
                         contextMenuBuilder: platformTextContextMenuBuilder(),
                         controller: _descController,
                         hintText: l10n.timerSessionDescription,

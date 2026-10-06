@@ -185,6 +185,7 @@ class _FinanceStyleTextField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         shad.TextField(
+          selectionControls: platformTextSelectionControls(),
           contextMenuBuilder: platformTextContextMenuBuilder(),
           controller: controller,
           placeholder: Text(placeholder),

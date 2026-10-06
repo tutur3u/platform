@@ -172,6 +172,7 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
                 key: const shad.FormKey<String>(#missedEntryTitle),
                 label: Text(l10n.timerSessionTitle),
                 child: shad.TextField(
+                  selectionControls: platformTextSelectionControls(),
                   contextMenuBuilder: platformTextContextMenuBuilder(),
                   controller: _titleCtrl,
                 ),
@@ -181,6 +182,7 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
                 key: const shad.FormKey<String>(#missedEntryDesc),
                 label: Text(l10n.timerDescription),
                 child: shad.TextField(
+                  selectionControls: platformTextSelectionControls(),
                   contextMenuBuilder: platformTextContextMenuBuilder(),
                   controller: _descCtrl,
                   maxLines: 3,

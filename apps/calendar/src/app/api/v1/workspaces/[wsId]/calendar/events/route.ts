@@ -1,4 +1,3 @@
-import { getProviderSyncFields } from '@/lib/calendar/provider-sync-fields';
 import {
   MAX_CALENDAR_EVENT_DESCRIPTION_LENGTH,
   MAX_CALENDAR_EVENT_TITLE_LENGTH,
@@ -31,6 +30,7 @@ import {
   operationFailure,
 } from '@/lib/calendar/google-color-operations/route-handlers';
 import { refreshOwnedGoogleSourceColor } from '@/lib/calendar/google-source-color-refresh';
+import { getProviderSyncFields } from '@/lib/calendar/provider-sync-fields';
 import { createProviderEvent } from '@/lib/calendar/provider-writes';
 import {
   type ResolvedCalendarSource,
@@ -90,7 +90,8 @@ interface Params {
 export async function GET(request: Request, { params }: Params) {
   const access = await authorizeCalendarEventManagement(
     request,
-    (await params).wsId
+    (await params).wsId,
+    { allowMeetPersonalRead: true }
   );
   if ('error' in access) return access.error;
   const { sbAdmin, wsId, userId } = access;

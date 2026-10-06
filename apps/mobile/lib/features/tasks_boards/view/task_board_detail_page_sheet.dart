@@ -262,7 +262,6 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
         ? context.l10n.taskBoardDetailCreateTask
         : context.l10n.timerSave;
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
-
     return SafeArea(
       top: false,
       child: ConstrainedBox(
@@ -393,6 +392,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               shad.TextField(
+                selectionControls: platformTextSelectionControls(),
                 contextMenuBuilder: platformTextContextMenuBuilder(),
                 controller: _nameController,
                 focusNode: _nameFocusNode,

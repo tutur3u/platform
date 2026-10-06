@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as compat;
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_service.dart';
@@ -131,6 +132,8 @@ class _QrLoginScannerPageState extends State<QrLoginScannerPage> {
       builder: (context) => compat.AlertDialog(
         title: Text(context.l10n.deviceMfaQrPaste),
         content: shad.TextField(
+          selectionControls: platformTextSelectionControls(),
+          contextMenuBuilder: platformTextContextMenuBuilder(),
           controller: controller,
           placeholder: Text(context.l10n.deviceMfaQrPasteHint),
         ),

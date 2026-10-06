@@ -548,6 +548,7 @@ class _EditProfileFieldSheetState extends State<_EditProfileFieldSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           shad.TextField(
+            selectionControls: platformTextSelectionControls(),
             contextMenuBuilder: platformTextContextMenuBuilder(),
             controller: _controller,
             placeholder: Text(widget.placeholder),

@@ -238,6 +238,7 @@ class _CreateCategorySheetState extends State<CreateCategorySheet> {
                 ),
                 const shad.Gap(6),
                 shad.TextField(
+                  selectionControls: platformTextSelectionControls(),
                   contextMenuBuilder: platformTextContextMenuBuilder(),
                   controller: _nameController,
                   hintText: l10n.timerCategoryName,
@@ -273,6 +274,7 @@ class _CreateCategorySheetState extends State<CreateCategorySheet> {
                 ),
                 const shad.Gap(6),
                 shad.TextField(
+                  selectionControls: platformTextSelectionControls(),
                   contextMenuBuilder: platformTextContextMenuBuilder(),
                   controller: _descriptionController,
                   hintText: l10n.timerCategoryDescription,

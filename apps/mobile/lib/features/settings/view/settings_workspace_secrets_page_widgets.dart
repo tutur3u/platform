@@ -781,7 +781,6 @@ class _SecretsListPanel extends StatelessWidget {
     required this.onCreateSecret,
     required this.child,
   });
-
   final TextEditingController controller;
   final VoidCallback onCreateSecret;
   final Widget child;
@@ -797,6 +796,7 @@ class _SecretsListPanel extends StatelessWidget {
             description: context.l10n.settingsWorkspaceSecretsListDescription,
             children: [
               shad.TextField(
+                selectionControls: platformTextSelectionControls(),
                 contextMenuBuilder: platformTextContextMenuBuilder(),
                 controller: controller,
                 hintText:
@@ -1162,13 +1162,13 @@ class _EditorFieldBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: theme.typography.small),
         const shad.Gap(6),
         shad.TextField(
+          selectionControls: platformTextSelectionControls(),
           contextMenuBuilder: platformTextContextMenuBuilder(),
           controller: controller,
           enabled: enabled,

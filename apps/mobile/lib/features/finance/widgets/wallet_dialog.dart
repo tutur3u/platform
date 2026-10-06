@@ -858,7 +858,6 @@ class _WalletTextField extends StatelessWidget {
     this.autofocus = false,
     this.errorText,
   });
-
   final TextEditingController controller;
   final String placeholder;
   final ValueChanged<String> onChanged;
@@ -872,6 +871,7 @@ class _WalletTextField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         shad.TextField(
+          selectionControls: platformTextSelectionControls(),
           contextMenuBuilder: platformTextContextMenuBuilder(),
           controller: controller,
           placeholder: Text(placeholder),
@@ -895,7 +895,6 @@ class _WalletTextArea extends StatelessWidget {
     required this.onChanged,
     this.errorText,
   });
-
   final TextEditingController controller;
   final String placeholder;
   final ValueChanged<String> onChanged;
@@ -907,6 +906,7 @@ class _WalletTextArea extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         shad.TextArea(
+          selectionControls: platformTextSelectionControls(),
           contextMenuBuilder: platformTextContextMenuBuilder(),
           controller: controller,
           placeholder: Text(placeholder),

@@ -487,11 +487,9 @@ class _LoginPageState extends State<LoginPage> {
         ],
       ),
     );
-
     if (!widget.addAccountMode) {
       return authScaffold;
     }
-
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -516,6 +514,7 @@ class _LoginPageState extends State<LoginPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               shad.TextField(
+                selectionControls: platformTextSelectionControls(),
                 contextMenuBuilder: platformTextContextMenuBuilder(),
                 key: const shad.FormKey<String>(#loginEmail),
                 controller: _emailController,
@@ -677,6 +676,7 @@ class _LoginPageState extends State<LoginPage> {
                 key: const shad.FormKey<String>(#loginPassword),
                 label: Text(context.l10n.passwordLabel),
                 child: shad.TextField(
+                  selectionControls: platformTextSelectionControls(),
                   contextMenuBuilder: platformTextContextMenuBuilder(),
                   controller: _passwordController,
                   focusNode: _passwordFocusNode,
