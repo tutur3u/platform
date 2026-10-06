@@ -4,6 +4,15 @@ import { safeLettinPhaseFailure } from './lettin-phase-diagnostics';
 export const LETTIN_BROWSER_PHASE_TIMEOUT_MS = 60_000;
 
 type BrowserPhase =
+  | 'create profile page'
+  | 'open profile'
+  | 'edit canonical identity'
+  | 'upload profile banner'
+  | 'save canonical identity'
+  | 'verify profile limits'
+  | 'save rich About profile'
+  | 'reload persisted profile'
+  | 'verify public creator profile'
   | 'create Markdown page'
   | 'open wiki'
   | 'open project dialog'

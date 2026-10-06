@@ -7,6 +7,7 @@ import {
   assertSafeE2EEnvironment,
   LOCAL_E2E_APP_COORDINATION_SECRET,
 } from './helpers/environment';
+import { runLettinBrowserPhase as phase } from './helpers/lettin-browser-phase';
 import { withLettinContextCleanup } from './helpers/lettin-context-cleanup';
 import {
   lettinFixturePhase,
@@ -366,124 +367,155 @@ test.describe
         origin!,
         token()
       );
-      try {
-        const page = await context.newPage();
-        await page.goto(`${origin}/${workspaceId}/profile`);
-        const username = `synthetic_${workspaceId.replaceAll('-', '').slice(0, 16)}`;
-        await page
-          .getByLabel('Display name', { exact: true })
-          .fill('Synthetic storyteller');
-        for (const invalid of ['four', 'google', 'apple', 'microsoft']) {
-          await page.getByLabel('Username', { exact: true }).fill(invalid);
-          await expect(
-            page.getByRole('button', { name: 'Save profile', exact: true })
-          ).toBeDisabled();
-        }
-        await page.getByLabel('Username', { exact: true }).fill(username);
-        const bannerTicketResponse = page.waitForResponse(
-          (response) =>
-            response.url().endsWith('/api/v1/users/me/banner/upload-url') &&
-            response.request().method() === 'POST'
-        );
-        await page.getByLabel('Banner image', { exact: true }).setInputFiles({
-          name: 'synthetic-banner.png',
-          mimeType: 'image/png',
-          buffer: syntheticProfileImage(),
-        });
-        const signedBannerResponse = await bannerTicketResponse;
-        expect(
-          signedBannerResponse.ok(),
-          await signedBannerResponse.text()
-        ).toBe(true);
-        const bannerTicket = await signedBannerResponse.json();
-        profileMediaPaths.push({
-          bucket: 'banners',
-          path: bannerTicket.filePath,
-        });
-        const storedBanner = await page.request.get(bannerTicket.publicUrl);
-        expect(storedBanner.status()).toBe(200);
-        expect((await storedBanner.body()).length).toBeLessThanOrEqual(
-          2_000_000
-        );
-        expect(storedBanner.headers()['content-type']).toContain('image/webp');
-        await expect(
-          page.getByRole('button', { name: 'Save profile', exact: true })
-        ).toBeEnabled();
-        await page
-          .getByRole('button', { name: 'Save profile', exact: true })
-          .click();
-        await expect(
-          page.getByText('Profile saved', { exact: true })
-        ).toBeVisible();
-        const response = await context.request.get(
-          `${origin}/api/v1/users/me/profile`
-        );
-        expect(response.status(), await response.text()).toBe(200);
-        expect(await response.json()).toMatchObject({
-          id: creatorId,
-          handle: username,
-          banner_url: expect.stringContaining(`/banners/${creatorId}/`),
-        });
-        await page
-          .getByLabel('Username', { exact: true })
-          .fill(`${username}_new`);
-        await page
-          .getByRole('button', { name: 'Save profile', exact: true })
-          .click();
-        await expect(
-          page.getByText('You can change your username once every 14 days.', {
-            exact: true,
-          })
-        ).toBeVisible();
-        await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-        await assertLettinProfileLimits(
-          context.request,
-          origin!,
-          username,
-          (ticket) => profileMediaPaths.push(ticket)
-        );
-        await page
-          .getByRole('button', { name: 'About you', exact: true })
-          .click();
-        await page
-          .getByLabel('Creative headline', { exact: true })
-          .fill('Synthetic worldbuilder');
-        await page.getByLabel('Pronouns', { exact: true }).fill('they/them');
-        await page
-          .getByRole('button', { name: 'Markdown', exact: true })
-          .click();
-        await page
-          .getByLabel('Markdown source', { exact: true })
-          .fill('## Synthetic background\n\n**Building quiet worlds.**');
-        await page
-          .getByRole('button', { name: 'Apply Markdown', exact: true })
-          .click();
-        await page
-          .getByRole('button', { name: 'Save profile', exact: true })
-          .click();
-        await expect(
-          page.getByText('Profile saved', { exact: true })
-        ).toBeVisible();
-        await page.reload();
-        await page
-          .getByRole('button', { name: 'About you', exact: true })
-          .click();
-        await expect(
-          page.getByLabel('Creative headline', { exact: true })
-        ).toHaveValue('Synthetic worldbuilder');
-        await expect(page.locator('.notebook-prose')).toContainText(
-          'Building quiet worlds.'
-        );
-        await page.goto(`${origin}/creators/${username}`);
-        await expect(
-          page.getByText('Synthetic worldbuilder', { exact: true })
-        ).toBeVisible();
-        await expect(page.getByText(creatorEmail, { exact: true })).toHaveCount(
-          0
-        );
-      } finally {
-        await context.close();
-      }
+      await withLettinContextCleanup(
+        context,
+        async () => {
+          const page = await phase('create profile page', () =>
+            context.newPage()
+          );
+          await phase('open profile', () =>
+            page.goto(`${origin}/${workspaceId}/profile`)
+          );
+          const username = `synthetic_${workspaceId.replaceAll('-', '').slice(0, 16)}`;
+          await phase('edit canonical identity', async () => {
+            await page
+              .getByLabel('Display name', { exact: true })
+              .fill('Synthetic storyteller');
+            for (const invalid of ['four', 'google', 'apple', 'microsoft']) {
+              await page.getByLabel('Username', { exact: true }).fill(invalid);
+              await expect(
+                page.getByRole('button', { name: 'Save profile', exact: true })
+              ).toBeDisabled();
+            }
+            await page.getByLabel('Username', { exact: true }).fill(username);
+          });
+          await phase('upload profile banner', async () => {
+            const bannerTicketResponse = page.waitForResponse(
+              (response) =>
+                response.url().endsWith('/api/v1/users/me/banner/upload-url') &&
+                response.request().method() === 'POST'
+            );
+            await page
+              .getByLabel('Banner image', { exact: true })
+              .setInputFiles({
+                name: 'synthetic-banner.png',
+                mimeType: 'image/png',
+                buffer: syntheticProfileImage(),
+              });
+            const signedBannerResponse = await bannerTicketResponse;
+            expect(
+              signedBannerResponse.ok(),
+              await signedBannerResponse.text()
+            ).toBe(true);
+            const bannerTicket = await signedBannerResponse.json();
+            profileMediaPaths.push({
+              bucket: 'banners',
+              path: bannerTicket.filePath,
+            });
+            const storedBanner = await page.request.get(bannerTicket.publicUrl);
+            expect(storedBanner.status()).toBe(200);
+            expect((await storedBanner.body()).length).toBeLessThanOrEqual(
+              2_000_000
+            );
+            expect(storedBanner.headers()['content-type']).toContain(
+              'image/webp'
+            );
+          });
+          await phase('save canonical identity', async () => {
+            await expect(
+              page.getByRole('button', { name: 'Save profile', exact: true })
+            ).toBeEnabled();
+            await page
+              .getByRole('button', { name: 'Save profile', exact: true })
+              .click();
+            await expect(
+              page.getByText('Profile saved', { exact: true })
+            ).toBeVisible();
+            const response = await context.request.get(
+              `${origin}/api/v1/users/me/profile`
+            );
+            expect(response.status(), await response.text()).toBe(200);
+            expect(await response.json()).toMatchObject({
+              id: creatorId,
+              handle: username,
+              banner_url: expect.stringContaining(`/banners/${creatorId}/`),
+            });
+          });
+          await phase('verify profile limits', async () => {
+            await page
+              .getByLabel('Username', { exact: true })
+              .fill(`${username}_new`);
+            await page
+              .getByRole('button', { name: 'Save profile', exact: true })
+              .click();
+            await expect(
+              page.getByText(
+                'You can change your username once every 14 days.',
+                {
+                  exact: true,
+                }
+              )
+            ).toBeVisible();
+            await page
+              .getByRole('button', { name: 'Cancel', exact: true })
+              .click();
+            await assertLettinProfileLimits(
+              context.request,
+              origin!,
+              username,
+              (ticket) => profileMediaPaths.push(ticket)
+            );
+          });
+          await phase('save rich About profile', async () => {
+            await page
+              .getByRole('button', { name: 'About you', exact: true })
+              .click();
+            await page
+              .getByLabel('Creative headline', { exact: true })
+              .fill('Synthetic worldbuilder');
+            await page
+              .getByLabel('Pronouns', { exact: true })
+              .fill('they/them');
+            await page
+              .getByRole('button', { name: 'Markdown', exact: true })
+              .click();
+            await page
+              .getByLabel('Markdown source', { exact: true })
+              .fill('## Synthetic background\n\n**Building quiet worlds.**');
+            await page
+              .getByRole('button', { name: 'Apply Markdown', exact: true })
+              .click();
+            await page
+              .getByRole('button', { name: 'Save profile', exact: true })
+              .click();
+            await expect(
+              page.getByText('Profile saved', { exact: true })
+            ).toBeVisible();
+          });
+          await phase('reload persisted profile', async () => {
+            await page.reload();
+            await page
+              .getByRole('button', { name: 'About you', exact: true })
+              .click();
+            await expect(
+              page.getByLabel('Creative headline', { exact: true })
+            ).toHaveValue('Synthetic worldbuilder');
+            await expect(page.locator('.notebook-prose')).toContainText(
+              'Building quiet worlds.'
+            );
+          });
+          await phase('verify public creator profile', async () => {
+            await page.goto(`${origin}/creators/${username}`);
+            await expect(
+              page.getByText('Synthetic worldbuilder', { exact: true })
+            ).toBeVisible();
+            await expect(
+              page.getByText(creatorEmail, { exact: true })
+            ).toHaveCount(0);
+          });
+        },
+        'profile'
+      );
     });
 
     test('hides imports from an ordinary creator and rejects direct calls', async ({
