@@ -11,13 +11,26 @@ import {
 
 const schema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('cleanup') }),
-  z.object({ action: z.enum(['finalize', 'remove']), operationId: z.uuid() }),
+  z.object({
+    action: z.enum(['finalize', 'remove']),
+    operationId: z.uuid(),
+    expectedActorId: z.uuid().optional(),
+  }),
 ]);
 
 export const POST = withSessionAuth(
   async (req, { user }) => {
     try {
       const input = schema.parse(await req.json());
+      if (
+        input.action !== 'cleanup' &&
+        input.expectedActorId !== undefined &&
+        input.expectedActorId !== user.id
+      )
+        return NextResponse.json(
+          { message: 'Profile actor changed' },
+          { status: 409 }
+        );
       const admin = await createDynamicAdminClient();
       const origin = bannerStorageOrigin();
       let state = 'committed';

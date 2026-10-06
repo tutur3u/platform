@@ -69,6 +69,37 @@ beforeEach(() => {
   f.upload.mockResolvedValue({ error: null });
 });
 describe('receipt-based banner lifecycle', () => {
+  it.each(['finalize', 'remove'])(
+    'rejects switched actor %s before any privileged effects',
+    async (action) => {
+      const response = await invoke({
+        action,
+        operationId,
+        expectedActorId: '00000000-0000-4000-8000-000000000003',
+      });
+      expect(response.status).toBe(409);
+      expect(f.admin).not.toHaveBeenCalled();
+      expect(f.rpc).not.toHaveBeenCalled();
+      expect(f.info).not.toHaveBeenCalled();
+      expect(f.remove).not.toHaveBeenCalled();
+      expect(f.upload).not.toHaveBeenCalled();
+    }
+  );
+  it.each(['finalize', 'remove'])(
+    'admits matching expected actor for %s',
+    async (action) => {
+      expect(
+        (await invoke({ action, operationId, expectedActorId: actor })).status
+      ).toBe(200);
+      expect(f.rpc).toHaveBeenCalledWith('commit_profile_banner_operation', {
+        p_user_id: actor,
+        p_operation_id: operationId,
+        p_storage_origin: origin,
+        p_remove: action === 'remove',
+      });
+    }
+  );
+
   it('uses resolved actor, not forged request actor', async () => {
     expect(
       (await invoke({ action: 'finalize', operationId, userId: 'foreign' }))

@@ -35,13 +35,13 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TextEditorColorControls } from './color-controls';
-import { type EditorCopyLabels, EditorCopyMenu } from './copy-menu';
+import type { EditorCopyLabels } from './copy-menu';
+import { FixedToolbarContents } from './fixed-toolbar-contents';
 import {
   MAX_IMAGE_SIZE,
   MAX_VIDEO_SIZE,
   StorageQuotaError,
 } from './media-utils';
-import { TOOLBAR_GROUPS } from './toolbar-config';
 import { ToolbarButton, ToolbarSeparator } from './toolbar-controls';
 
 type LinkEditorContext = 'bubble' | 'popover' | null;
@@ -842,6 +842,7 @@ export function ToolBar({
 }
 
 interface FixedToolbarProps {
+  toolsLabel?: string;
   editor: Editor | null;
   leadingContent?: React.ReactNode;
   workspaceId?: string;
@@ -853,6 +854,7 @@ interface FixedToolbarProps {
   copyLabels?: EditorCopyLabels;
 }
 export function FixedToolbar({
+  toolsLabel,
   editor,
   leadingContent,
   workspaceId,
@@ -1108,78 +1110,20 @@ export function FixedToolbar({
           <ToolbarSeparator />
         </>
       ) : null}
-      {/* Grouped formatting options with separators */}
-      {TOOLBAR_GROUPS.map((group, gi) => (
-        <div key={gi} className="contents">
-          {gi > 0 && <ToolbarSeparator />}
-          {group.map((key) => {
-            const opt = formattingOptions.get(key);
-            if (!opt) return null;
-            return (
-              <ToolbarButton
-                key={key}
-                id={key}
-                label={key === 'toggle-block' ? toggleBlockLabel : undefined}
-                icon={opt.icon}
-                pressed={opt.pressed}
-                onClick={opt.onClick}
-              />
-            );
-          })}
-        </div>
-      ))}
-
-      <ToolbarSeparator />
-      <TextEditorColorControls editor={editor} />
-
-      {onImageUpload && (
-        <>
-          <ToolbarSeparator />
-          <ToolbarButton
-            id="image"
-            icon={
-              isUploadingImage ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <ImageIcon className="size-4" />
-              )
-            }
-            pressed={false}
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploadingImage}
-          />
-          {workspaceId && (
-            <ToolbarButton
-              id="video"
-              icon={
-                isUploadingVideo ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <FileVideo className="size-4" />
-                )
-              }
-              pressed={false}
-              onClick={() => videoInputRef.current?.click()}
-              disabled={isUploadingVideo}
-            />
-          )}
-        </>
-      )}
-
-      {onConvertToTask && (
-        <>
-          <ToolbarSeparator />
-          <ToolbarButton
-            id="convert-to-task"
-            icon={<CirclePlus className="size-4" />}
-            pressed={false}
-            onClick={onConvertToTask}
-          />
-        </>
-      )}
-
-      <ToolbarSeparator />
-      <EditorCopyMenu editor={editor} labels={copyLabels} />
+      <FixedToolbarContents
+        editor={editor}
+        options={formattingOptions}
+        toolsLabel={toolsLabel}
+        toggleBlockLabel={toggleBlockLabel}
+        copyLabels={copyLabels}
+        imageUpload={!!onImageUpload}
+        videoUpload={!!workspaceId}
+        uploadingImage={isUploadingImage}
+        uploadingVideo={isUploadingVideo}
+        onImage={() => fileInputRef.current?.click()}
+        onVideo={() => videoInputRef.current?.click()}
+        onConvertToTask={onConvertToTask}
+      />
     </div>
   );
 }

@@ -112,15 +112,19 @@ export function DocumentEditor({
   }, [doc, initial, join, meetingId]);
   return (
     <section className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
-      <div className="flex items-center justify-between px-4 py-2 text-sm">
-        <strong>{t('document')}</strong>
-        <DocumentStatus connected={connected} checkpoint={checkpoint} />
-      </div>
-      <div className="min-h-0 flex-1 overflow-auto p-4">
+      <div className="min-h-0 flex-1 overflow-auto">
         {provider ? (
           <RichTextEditor
             className="rounded-none! border-0!"
             content={null}
+            toolbarLeadingContent={
+              <DocumentStatus
+                connected={connected}
+                checkpoint={checkpoint}
+                compact
+              />
+            }
+            toolbarToolsLabel={t('tools')}
             yjsDoc={doc}
             yjsProvider={provider}
             collaborationUser={{

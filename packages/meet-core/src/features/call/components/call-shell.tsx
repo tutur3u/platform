@@ -456,7 +456,13 @@ function CallShellContent({
       )}
       <CallResourceNotice error={state.error} />
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-        <main className="relative min-h-0 flex-1 p-2 sm:p-3">
+        <main
+          className={
+            showDocument
+              ? 'relative min-h-0 flex-1'
+              : 'relative min-h-0 flex-1 p-2 sm:p-3'
+          }
+        >
           {room.screenStream && (
             <div className="absolute top-3 left-3 z-20">
               <ScreenAudioStatus stream={room.screenStream} />

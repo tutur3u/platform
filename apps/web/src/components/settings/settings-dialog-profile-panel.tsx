@@ -6,6 +6,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import AccountStatusSection from './account/account-status-section';
 import UserAvatar from './settings-avatar';
+import { UserBanner } from './settings-banner';
 import DisplayNameInput from './settings-display-name-input';
 import EmailInput from './settings-email-input';
 import FullNameInput from './settings-full-name-input';
@@ -22,6 +23,12 @@ export function ProfileSettingsPanel({ user }: { user: WorkspaceUser }) {
           description={t('settings-account.avatar-description')}
         >
           <UserAvatar user={user} />
+        </SettingItemTab>
+        <SettingItemTab
+          title={t('settings-account.banner')}
+          description={t('settings-account.banner-description')}
+        >
+          <UserBanner key={user.id} userId={user.id} />
         </SettingItemTab>
         <AccountStatusSection user={user} />
         <Separator />

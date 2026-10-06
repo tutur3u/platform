@@ -134,3 +134,29 @@ quick settings and central entries share implementations and persisted state.
 Mail's nested editor uses the shell title, bottom navigation/actions and inherited
 background. A scoped route is cancelled on any account/workspace transition;
 request completion cannot replace an editor opened for another scope.
+
+## Native text editing and keyboard dismissal
+
+Across mobile routes and modal forms, editable fields keep their native copy,
+cut, paste and select-all actions while the keyboard is visible. Tapping a
+selection toolbar, selection handle or a `TextFieldTapRegion` accessory keeps
+editing focus. A genuine outside tap dismisses the visible keyboard through
+Flutter's `EditableTextTapOutsideIntent`. Dialogs that consume the inherited
+keyboard inset still recognize the visible keyboard from the view. A field's
+explicit `onTapOutside`
+callback retains control of its behavior. The task interaction dismissal guard
+still suspends outside dismissal. Without a visible keyboard, the existing
+focus policy is unchanged.
+
+This applies to Material fields and shadcn fields and text areas, including the
+Assistant composer and settings forms. Disabled fields remain disabled,
+read-only fields allow selection and copying without mutation, and obscured
+fields retain Flutter's restrictions on copying and cutting. Input formatters
+and IME composition remain owned by the field.
+
+Regression coverage lives in `test/app/view/text_editing_*_test.dart` and
+`dismiss_keyboard_on_pointer_down_test.dart`. It exercises real clipboard menu
+press/release gestures with a frame between pointer down and up, Android/iOS,
+English/Vietnamese, single and multiline inputs, modal and enlarged text,
+selection replacement, keyboard shortcuts, field policies and composition.
+Widget evidence does not replace native-device clipboard and IME verification.
