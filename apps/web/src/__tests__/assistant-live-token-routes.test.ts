@@ -309,6 +309,7 @@ describe('assistant live token routes', () => {
       model: 'gemini-3.1-flash-live-preview',
       sessionHandle: null,
       seedHistory: [],
+      toolProtocol: 'legacy',
     });
     expect(mocks.normalizeWorkspaceId).toHaveBeenCalledWith(
       'personal',
@@ -351,6 +352,7 @@ describe('assistant live token routes', () => {
       user: { id: 'temp-user' },
       wsId: 'personal-workspace-id',
       dashboard: false,
+      toolProtocol: 'legacy',
     });
     expect(mocks.resolveAuthenticatedSessionUser).not.toHaveBeenCalled();
   });
