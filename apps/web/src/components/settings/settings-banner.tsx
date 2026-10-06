@@ -9,7 +9,7 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   currentUserProfileQueryKey,
   useCurrentUserProfile,
@@ -19,6 +19,34 @@ export function UserBanner({ userId }: { userId: string }) {
   const t = useTranslations('settings-account');
   const queryClient = useQueryClient();
   const profile = useCurrentUserProfile({ userId });
+  const lifecycle = useRef({
+    active: true,
+    actor: userId,
+    controller: new AbortController(),
+  });
+  useEffect(() => {
+    const lease = {
+      active: true,
+      actor: userId,
+      controller: new AbortController(),
+    };
+    lifecycle.current = lease;
+    return () => {
+      lease.active = false;
+      lease.controller.abort();
+    };
+  }, [userId]);
+  const isCurrent = () =>
+    lifecycle.current.active && lifecycle.current.actor === userId;
+  const mutationOptions = () => {
+    const lease = lifecycle.current;
+    return {
+      expectedActorId: userId,
+      signal: lease.controller.signal,
+      isCurrent: () =>
+        lease.active && lifecycle.current === lease && lease.actor === userId,
+    };
+  };
   const input = useRef<HTMLInputElement>(null);
   // A failed response can follow a committed upload; retries retain its receipt.
   const pending = useRef<{ file: File; operationId: string } | null>(null);
@@ -26,29 +54,43 @@ export function UserBanner({ userId }: { userId: string }) {
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: currentUserProfileQueryKey });
   const upload = useMutation({
+    onMutate: () => lifecycle.current,
     mutationFn: async (file: File) => {
       if (pending.current?.file !== file)
         pending.current = { file, operationId: crypto.randomUUID() };
-      return uploadCurrentUserBanner(file, pending.current.operationId);
+      return uploadCurrentUserBanner(
+        file,
+        pending.current.operationId,
+        mutationOptions()
+      );
     },
-    onSuccess: async () => {
+    onSuccess: async (_data, _variables, lease) => {
+      if (!isCurrent() || lease !== lifecycle.current) return;
       pending.current = null;
       toast.success(t('banner_updated'));
       await refresh();
     },
-    onError: () => toast.error(t('banner_update_error')),
+    onError: (_error, _variables, lease) => {
+      if (isCurrent() && lease === lifecycle.current)
+        toast.error(t('banner_update_error'));
+    },
   });
   const remove = useMutation({
+    onMutate: () => lifecycle.current,
     mutationFn: () => {
       removal.current ??= crypto.randomUUID();
-      return removeCurrentUserBanner(removal.current);
+      return removeCurrentUserBanner(removal.current, mutationOptions());
     },
-    onSuccess: async () => {
+    onSuccess: async (_data, _variables, lease) => {
+      if (!isCurrent() || lease !== lifecycle.current) return;
       removal.current = null;
       toast.success(t('banner_removed'));
       await refresh();
     },
-    onError: () => toast.error(t('banner_update_error')),
+    onError: (_error, _variables, lease) => {
+      if (isCurrent() && lease === lifecycle.current)
+        toast.error(t('banner_update_error'));
+    },
   });
   const busy = upload.isPending || remove.isPending;
   const url = profile.data?.banner_url;

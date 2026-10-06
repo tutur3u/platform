@@ -97,3 +97,71 @@ it('removes through lifecycle rather than patching or deleting raw storage', asy
     operationId,
   });
 });
+
+it('stops before requesting a ticket when the actor changes during optimization', async () => {
+  let finish!: (file: File) => void;
+  vi.mocked(optimizeProfileMediaFile).mockReturnValueOnce(
+    new Promise((resolve) => {
+      finish = resolve;
+    })
+  );
+  const fetch = vi.fn<typeof globalThis.fetch>();
+  const controller = new AbortController();
+  const upload = uploadCurrentUserBanner(file(), operationId, {
+    ...options(fetch),
+    signal: controller.signal,
+    expectedActorId: operationId,
+  });
+  controller.abort();
+  finish(file());
+  await expect(upload).rejects.toMatchObject({ name: 'AbortError' });
+  expect(fetch).not.toHaveBeenCalled();
+});
+it('stops before storage upload when the actor changes while awaiting a ticket', async () => {
+  let current = true;
+  const fetch = vi
+    .fn<typeof globalThis.fetch>()
+    .mockImplementationOnce(async () => {
+      current = false;
+      return ticket();
+    });
+  await expect(
+    uploadCurrentUserBanner(file(), operationId, {
+      ...options(fetch),
+      isCurrent: () => current,
+    })
+  ).rejects.toMatchObject({ name: 'AbortError' });
+  expect(fetch).toHaveBeenCalledTimes(1);
+});
+it('stops before finalize when the actor changes during storage upload', async () => {
+  let current = true;
+  const fetch = vi
+    .fn<typeof globalThis.fetch>()
+    .mockResolvedValueOnce(ticket())
+    .mockImplementationOnce(async () => {
+      current = false;
+      return new Response('{}');
+    });
+  await expect(
+    uploadCurrentUserBanner(file(), operationId, {
+      ...options(fetch),
+      isCurrent: () => current,
+    })
+  ).rejects.toMatchObject({ name: 'AbortError' });
+  expect(fetch).toHaveBeenCalledTimes(2);
+});
+it('binds all lifecycle mutations to the captured actor', async () => {
+  const fetch = vi
+    .fn<typeof globalThis.fetch>()
+    .mockResolvedValueOnce(ticket())
+    .mockResolvedValueOnce(new Response('{}'))
+    .mockResolvedValueOnce(new Response('{}'))
+    .mockResolvedValueOnce(new Response('{}'));
+  const bound = { ...options(fetch), expectedActorId: operationId };
+  await uploadCurrentUserBanner(file(), operationId, bound);
+  await removeCurrentUserBanner(operationId, bound);
+  for (const index of [0, 2, 3])
+    expect(
+      JSON.parse(String(fetch.mock.calls[index]?.[1]?.body))
+    ).toMatchObject({ expectedActorId: operationId });
+});

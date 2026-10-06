@@ -1,6 +1,12 @@
 import '@testing-library/jest-dom/vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { UserBanner } from './settings-banner';
 
@@ -74,7 +80,9 @@ it('keeps the saved preview after failure and retries the same receipt', async (
   );
   fireEvent.click(screen.getByRole('button', { name: 'retry_banner' }));
   await waitFor(() => expect(mocks.upload).toHaveBeenCalledTimes(2));
-  expect(mocks.upload.mock.calls[1]).toEqual(mocks.upload.mock.calls[0]);
+  expect(mocks.upload.mock.calls[1]?.slice(0, 2)).toEqual(
+    mocks.upload.mock.calls[0]?.slice(0, 2)
+  );
 });
 it('removes the saved banner through the managed API', async () => {
   mocks.remove.mockResolvedValueOnce({ committed: true });
@@ -95,3 +103,49 @@ it('offers upload without a remove action for an empty profile', () => {
     screen.queryByRole('button', { name: 'remove_banner' })
   ).not.toBeInTheDocument();
 });
+
+it.each(['resolve', 'reject'])(
+  'does not publish stale upload %s callbacks after account-switch unmount',
+  async (outcome) => {
+    let resolve!: (value: unknown) => void;
+    let reject!: (error: Error) => void;
+    mocks.upload.mockReturnValueOnce(
+      new Promise((done, fail) => {
+        resolve = done;
+        reject = fail;
+      })
+    );
+    const client = new QueryClient({
+      defaultOptions: { mutations: { retry: false } },
+    });
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    const view = render(
+      <QueryClientProvider client={client}>
+        <UserBanner userId="actor-a" />
+      </QueryClientProvider>
+    );
+    fireEvent.change(screen.getByLabelText('upload_banner'), {
+      target: {
+        files: [new File(['synthetic'], 'banner.png', { type: 'image/png' })],
+      },
+    });
+    await waitFor(() => expect(mocks.upload).toHaveBeenCalledTimes(1));
+    const options = mocks.upload.mock.calls[0]?.[2];
+    view.unmount();
+    expect(options.signal.aborted).toBe(true);
+    expect(options.isCurrent()).toBe(false);
+    render(
+      <QueryClientProvider client={client}>
+        <UserBanner userId="actor-b" />
+      </QueryClientProvider>
+    );
+    await act(async () => {
+      if (outcome === 'resolve')
+        resolve({ publicUrl: 'https://cdn.test/new.webp' });
+      else reject(new Error('Unavailable'));
+    });
+    expect(mocks.success).not.toHaveBeenCalled();
+    expect(mocks.error).not.toHaveBeenCalled();
+    expect(invalidate).not.toHaveBeenCalled();
+  }
+);

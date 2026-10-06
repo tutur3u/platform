@@ -516,6 +516,11 @@ patch the profile or delete Storage objects directly. The web and mobile surface
 share the existing server quotas and lifecycle; no client success establishes
 production migration or Storage availability. Web coverage is in
 `profile-banner.test.ts` and `settings-banner.test.tsx`.
+Web banner selections are bound to the initiating account. Switching accounts or
+closing the editor aborts outstanding requests and suppresses stale notifications.
+Upload, finalize and removal requests include an expected actor checked before
+privileged effects; existing mobile callers that omit it remain compatible.
+Deferred image preparation and account-switch regressions cover this boundary.
 
 Profile writes retire only canonical banner object paths under the configured
 Storage origin and the authenticated actor's directory. External URLs and another
