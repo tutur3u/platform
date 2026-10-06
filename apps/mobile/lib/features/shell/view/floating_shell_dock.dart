@@ -138,6 +138,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
       }
       _returnTimer?.cancel();
     } else if (notification is ScrollEndNotification && _hidden) {
+      _returnTimer?.cancel();
       _returnTimer = Timer(const Duration(milliseconds: 1600), _reveal);
     }
     return false;

@@ -34,7 +34,7 @@ class SettingsPanel extends StatelessWidget {
   }
 }
 
-/// A single, quiet surface keeps navigation rows aligned without card clutter.
+/// Sections inherit the page surface; separators establish a quiet hierarchy.
 class SettingsGroup extends StatelessWidget {
   const SettingsGroup({required this.children, super.key});
 
@@ -47,10 +47,7 @@ class SettingsGroup extends StatelessWidget {
       borderRadius: BorderRadius.circular(17),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: theme.colorScheme.card,
-          border: Border.all(
-            color: theme.colorScheme.border.withValues(alpha: 0.75),
-          ),
+          color: theme.colorScheme.background,
           borderRadius: BorderRadius.circular(17),
         ),
         child: Column(
@@ -221,15 +218,6 @@ class SettingsTile extends StatelessWidget {
             horizontal: grouped ? 14 : 13,
             vertical: grouped ? 8 : 10,
           ),
-          decoration: grouped
-              ? null
-              : BoxDecoration(
-                  color: theme.colorScheme.card,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: theme.colorScheme.border.withValues(alpha: 0.72),
-                  ),
-                ),
           child: Row(
             crossAxisAlignment: hasSupportingLine
                 ? CrossAxisAlignment.start
@@ -239,7 +227,7 @@ class SettingsTile extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.10),
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(11),
                 ),
                 child: Icon(icon, size: 18, color: accentColor),
