@@ -63,6 +63,14 @@ export function expandCalendarRecurrence(args: {
     Temporal.PlainDate.compare(stop, rule.end.date) > 0
   )
     stop = Temporal.PlainDate.from(rule.end.date);
+  // An uncounted rule necessarily visits every date through the effective stop.
+  // Reject oversized history before constructing thousands of zoned occurrences.
+  // COUNT can terminate earlier, so its existing incremental guard remains below.
+  if (
+    rule.end.type !== 'count' &&
+    first.until(stop, { largestUnit: 'days' }).days >= MAX_SCANNED_DAYS
+  )
+    throw new RangeError('Recurrence scan exceeds 100 years');
   const occurrences: CalendarRecurrenceOccurrence[] = [];
   let count = 0;
   let scanned = 0;
