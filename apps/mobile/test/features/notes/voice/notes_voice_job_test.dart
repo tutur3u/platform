@@ -4,6 +4,36 @@ import 'package:mobile/features/notes/voice/notes_voice_document.dart';
 import 'package:mobile/features/notes/voice/notes_voice_job.dart';
 
 void main() {
+  test('silence can be reviewed without saving or safe-preflight retry', () {
+    const silent = NotesVoiceJob(
+      id: 'job',
+      workspaceId: 'ws',
+      status: 'completed',
+      revision: 4,
+      transcript: '  ',
+      artifact: {},
+    );
+    expect(silent.canReview, true);
+    expect(silent.canSave, false);
+    expect(silent.retryable, false);
+    for (final status in [
+      'pending',
+      'transcribing',
+      'summarizing',
+      'failed',
+      'review_required',
+    ]) {
+      final job = NotesVoiceJob(
+        id: 'job',
+        workspaceId: 'ws',
+        status: status,
+        revision: 4,
+        transcript: status == 'review_required' ? 'Speech' : null,
+      );
+      expect(job.canReview, false, reason: status);
+    }
+  });
+
   test(
     'malformed response cannot be treated as an authorized ready result',
     () {

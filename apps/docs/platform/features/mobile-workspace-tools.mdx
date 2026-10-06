@@ -406,6 +406,15 @@ cannot masquerade as renewed authorization. Other repository callers retain the
 default read-through contract. `habits_snapshot_access_test.dart` covers durable
 revocation, storage failures, fresh-read provenance, ordered recovery, private
 member removal, and actor/workspace isolation.
+Habits overview search is hosted by the persistent shell dock; closing search or
+leaving the section clears its query. A tracker detail sheet opens immediately
+while its scoped request loads. Reopened details revalidate in the background
+while keeping their last authorized snapshot; cold loads and background refreshes
+reuse an already-running request for that tracker. Duplicate taps cannot open stacked detail sheets. The scope-owned route
+still closes on account/workspace departure. These native-only presentation rules
+are covered by `habits_page_search_test.dart` and
+`habits_page_personal_detail_test.dart`; the API remains an unpaginated list.
+
 Meet meeting create, edit, and delete also queue offline with a pending list
 treatment. Assistant model favorites and name changes now queue offline and
 overlay pending values on their scoped cached reads. Live room access,
@@ -470,7 +479,12 @@ Workspace avatar bytes remain encrypted in the outbox until a fresh signed URL
 is requested. An uncertain creation or upload requires review to avoid a
 duplicate workspace or avatar operation.
 Timer sessions, history, categories, goals, requests, and summaries use scoped
-snapshots while revalidating. Session start, stop, pause, resume, edit, missed
+snapshots while revalidating. The native Timer root captures its actor lifetime,
+workspace, and request generation before loading. Account and workspace changes
+invalidate old cache, network, and disk publications; a same-account return after
+logout cannot revive the old request. Current-scope snapshots remain visible
+while revalidating. Deferred repository and encrypted-storage regressions in
+`time_tracker_scope_test.dart` cover these boundaries. Session start, stop, pause, resume, edit, missed
 entry creation, and deletion queue offline, with dimmed dashed session cards.
 Timer category creation, goal create, edit, and delete, request create and edit,
 approval changes, comments, and threshold updates queue too. Request images
