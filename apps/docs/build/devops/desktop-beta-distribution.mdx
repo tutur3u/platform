@@ -457,3 +457,41 @@ Store MSIX diagnostics do not fetch this bundle. Mobile trust remains independen
 Regression coverage lives in the desktop `bundle-store.test.ts`, bundle route tests
 and operator admission-badge cases; previous actual lease SQL and signed OIDC tests
 remain the storage and signature boundaries.
+
+### Infrastructure vault runner opt-in
+
+Desktop beta signing uses the existing environment secrets by default. An operator
+can explicitly select `DESKTOP_SIGNING_SOURCE=vault` as a repository variable and
+configure separate `DESKTOP_WINDOWS_VAULT_CI_TOKEN` and
+`DESKTOP_MACOS_VAULT_CI_TOKEN` environment secrets. This selects the protected
+Infrastructure bundle endpoint only for the matching production desktop-beta job
+after Flutter compilation. It does not enable the server vault or either platform;
+all existing server admission gates still apply. A rejected or unavailable bundle
+blocks that platform without falling back to legacy credentials. Linux packaging
+and Store MSIX diagnostics never request this bundle.
+
+The runner imports the same pure signing profile allowlist as Infrastructure,
+checks schema, platform, resource names, canonical base64, SHA-256 and byte bounds,
+and passes only matching material to a short-lived signing child. No credential
+is written to `GITHUB_ENV`, outputs, public build configuration, or artifact paths.
+Wire-valid resources must also fit a conservative 30,000-byte whole-child
+environment budget; oversized certificates/scalars block before signing rather
+than claiming the 2 MiB storage limit is an OS environment guarantee.
+Private signer files use a separate owned directory (0700 on macOS; inherited ACLs
+removed and runner-principal access granted on Windows) while public artifact paths
+remain unchanged. Normal completion and failures remove that directory. Cancellation force-stops
+only the still-owned signing process tree before cleanup; POSIX uses one immediate
+process-group kill, avoiding a delayed kill after the parent exits. JavaScript
+strings and abrupt runner termination cannot promise memory erasure; the hosted
+runner lifecycle remains the final boundary. Child output is suppressed and only
+fixed failure messages are emitted. Bundle requests are not retried because lease
+consumption deliberately binds one run attempt.
+
+Regression coverage: `scripts/desktop-deployment/vault-hydrator.test.mjs` verifies
+exact projection/hash/stream bounds, protected runner admission, fixed destination,
+secret-free child environment, private-directory cleanup and post-compile opt-in.
+These tests do not prove Windows ACL behavior, real GitHub OIDC, signing trust,
+notarization, or protected production configuration. The workflow's actual Node 24
+and operating-system jobs remain required delivery evidence. See the
+[Node TypeScript runtime](https://nodejs.org/docs/latest-v24.x/api/typescript.html)
+and [Windows ACL command contract](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/icacls).

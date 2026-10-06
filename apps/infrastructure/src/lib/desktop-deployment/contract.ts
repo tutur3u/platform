@@ -1,3 +1,7 @@
+import { DESKTOP_SIGNING_PROFILES } from '@tuturuuu/utils/desktop-signing-profiles';
+
+export { DESKTOP_SIGNING_PROFILES } from '@tuturuuu/utils/desktop-signing-profiles';
+
 /** Desktop signing is a separate trust family; Linux and Store MSIX need no signing bundle. */
 export const DESKTOP_DEPLOYMENT_PLATFORMS = ['windows', 'macos'] as const;
 export type DesktopDeploymentPlatform =
@@ -13,25 +17,6 @@ export const DESKTOP_DEPLOYMENT_SUBJECT =
 export const DESKTOP_DEPLOYMENT_ISSUER =
   'https://token.actions.githubusercontent.com';
 
-export const DESKTOP_SIGNING_PROFILES = {
-  windows: {
-    files: ['windows_authenticode_certificate_pfx'],
-    scalars: ['WINDOWS_SIGNING_CERTIFICATE_PASSWORD'],
-  },
-  macos: {
-    files: [
-      'macos_developer_id_certificate_p12',
-      'macos_notarization_private_key_p8',
-    ],
-    scalars: [
-      'MACOS_CERTIFICATE_PASSWORD',
-      'MACOS_SIGNING_IDENTITY',
-      'APPLE_TEAM_ID',
-      'APP_STORE_CONNECT_API_KEY_ID',
-      'APP_STORE_CONNECT_ISSUER_ID',
-    ],
-  },
-} as const;
 export type DesktopSigningFileKind =
   (typeof DESKTOP_SIGNING_PROFILES)[DesktopDeploymentPlatform]['files'][number];
 export type DesktopSigningScalarName =
