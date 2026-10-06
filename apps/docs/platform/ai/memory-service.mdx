@@ -152,3 +152,24 @@ This rule applies to Mira's existing user/workspace memory tool. It does not
 admit background consolidation or combine Meet's separately opted-in private
 Live memory with workspace memory. Regression coverage lives in
 `packages/ai/src/tools/executors/memory.test.ts`.
+
+
+## Settings lookup failures
+
+Consent-checked memory operations deny admission when the current
+user/workspace/product settings
+RPC reports an error or throws. No metered embedding or sidecar read/write starts
+from that failed lookup. Existing separately authorized memory-management routes
+that explicitly bypass collection settings retain their current permissions; the
+repair does not change that management exception. A successful lookup with no settings row retains the
+existing enabled defaults; explicit disabled global or product settings still
+deny admission. This distinction changes outage behavior, not the existing
+missing-row consent policy. It does not introduce consent for background dreaming
+or merge Meet's separately opted-in memory.
+
+The failure path returns a skipped memory operation so an optional memory outage
+does not make the surrounding chat depend on embedding or storage availability.
+Regression coverage in `packages/ai/src/memory/operations-consent.test.ts` uses the
+real settings/admission flow with synthetic RPC error and exception boundaries,
+asserting no embedding or sidecar access. Positive missing-row and disabled/product
+cases distinguish this rule from a blanket change to successful lookups.
