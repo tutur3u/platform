@@ -6199,6 +6199,7 @@
       "configured": "Configured",
       "createDraft": "Create credential draft",
       "deliveryDisabled": "Vault delivery disabled",
+      "deliveryEnabled": "Vault delivery enabled",
       "description": "Stage Windows and macOS signing credentials securely. Delivery stays disabled until protected workflow verification is complete.",
       "dismissToken": "Dismiss token",
       "draftVersion": "Draft {version} · revision {revision}",

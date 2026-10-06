@@ -6199,6 +6199,7 @@
       "configured": "Đã cấu hình",
       "createDraft": "Tạo bản nháp thông tin ký",
       "deliveryDisabled": "Phân phối từ kho bị tắt",
+      "deliveryEnabled": "Phân phối từ kho được bật",
       "description": "Chuẩn bị thông tin ký Windows và macOS an toàn. Phân phối vẫn bị tắt cho đến khi hoàn tất xác minh quy trình được bảo vệ.",
       "dismissToken": "Đóng mã",
       "draftVersion": "Bản nháp {version} · lần sửa {revision}",

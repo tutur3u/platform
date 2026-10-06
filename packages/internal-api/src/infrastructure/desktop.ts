@@ -13,7 +13,7 @@ export type DesktopVaultVersion = {
   resources: string[];
 };
 export type DesktopVaultState = {
-  deliveryEnabled: false;
+  deliveryEnabled: boolean;
   platforms: {
     platform: DesktopVaultPlatform;
     enabled: boolean;

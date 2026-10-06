@@ -5,6 +5,7 @@ import type {
   DesktopVaultVersion,
 } from '@tuturuuu/internal-api/infrastructure';
 import type { DesktopAdminDb } from './access';
+import { desktopVaultEnabled } from './contract';
 
 export class DesktopAdminStoreError extends Error {
   constructor(
@@ -60,7 +61,9 @@ export async function listDesktopVaultState(
   requireDesktopResult(resources.error);
   // Reconstruct each DTO: never spread a private row into a public response.
   return {
-    deliveryEnabled: false,
+    deliveryEnabled: desktopVaultEnabled(
+      process.env.DESKTOP_DEPLOYMENT_VAULT_ENABLED
+    ),
     platforms: (environments.data ?? []).map((row) => ({
       platform: row.platform as 'windows' | 'macos',
       enabled: row.enabled,

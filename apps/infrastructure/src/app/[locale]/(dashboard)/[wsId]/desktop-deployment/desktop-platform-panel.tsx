@@ -13,12 +13,14 @@ import { DESKTOP_SIGNING_PROFILES } from '@/lib/desktop-deployment/contract';
 import { DesktopResourceField } from './desktop-resource-field';
 export function DesktopPlatformPanel({
   platform,
+  vaultDeliveryEnabled,
   versions,
   pending,
   act,
   upload,
 }: {
   platform: DesktopVaultPlatform;
+  vaultDeliveryEnabled: boolean;
   versions: DesktopVaultVersion[];
   pending: boolean;
   act: (input: DesktopVaultMutation) => Promise<void>;
@@ -46,7 +48,13 @@ export function DesktopPlatformPanel({
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center justify-between gap-2">
           {t(`platforms.${platform}`)}
-          <Badge variant="secondary">{t('vault.deliveryDisabled')}</Badge>
+          <Badge variant="secondary">
+            {t(
+              vaultDeliveryEnabled
+                ? 'vault.deliveryEnabled'
+                : 'vault.deliveryDisabled'
+            )}
+          </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
