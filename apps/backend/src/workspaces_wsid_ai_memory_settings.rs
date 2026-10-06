@@ -6,7 +6,10 @@
 //! migrated here — this handler returns `None` for every non-`GET` method so the
 //! worker falls through to the still-live Next.js route.)
 //!
-//! Auth model (legacy GET): authenticate the Supabase session user, normalize the
+//! Mobile parity: request_access_token accepts Bearer or cookie credentials;
+//! the live Next handler forwards its request explicitly.
+//!
+//! Auth model (live GET): authenticate the Supabase session user, normalize the
 //! workspace id (`internal`/`personal` slug, handle, or UUID), then require
 //! **workspace membership of type `MEMBER`** via `verifyWorkspaceMembershipType`.
 //! There is no specific permission gate, so this port reproduces the

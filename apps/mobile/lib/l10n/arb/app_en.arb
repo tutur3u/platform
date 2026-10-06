@@ -1318,6 +1318,9 @@
   "assistantLiveAccessSummary": "{workspace} • {source}",
   "assistantLiveAccessUsingPersonal": "Using personal {tier}",
   "assistantLiveAccessUsingWorkspace": "Using workspace {tier}",
+  "assistantLiveCallAgain": "Call again",
+  "assistantLiveViewTranscript": "View transcript",
+  "assistantLiveCallEnded": "Call ended",
   "assistantLiveCallAssistant": "Call {assistantName}",
   "assistantLiveCallingAssistant": "Calling {assistantName}",
   "assistantLiveCameraPreview": "Live camera",
@@ -1386,6 +1389,7 @@
   "assistantLiveTierRequired": "Live voice is available on PLUS and above.",
   "assistantLiveTitle": "Mira Live",
   "assistantLiveTranscriptEmpty": "Start talking or type a message. Your conversation appears here.",
+  "assistantLiveTranscriptPending": "Transcript changes are not yet synchronized.",
   "assistantLiveTranscriptTitle": "Live transcript",
   "assistantLiveTypeMessage": "Type",
   "assistantLiveWorkspaceTierLabel": "Workspace {tier}",
@@ -4460,5 +4464,11 @@
   "calendarTimelineZoom": "Timeline zoom",
   "calendarZoomIn": "Zoom in",
   "calendarZoomOut": "Zoom out",
-  "calendarZoomReset": "Reset"
+  "calendarZoomReset": "Reset",
+  "settingsLinkBrowser": "Open links in",
+  "settingsLinkBrowserDescription": "Choose a browser for web links. Sign-in and app update links keep their required behavior.",
+  "settingsLinkBrowserBuiltIn": "Built-in browser",
+  "settingsLinkBrowserExternal": "Default browser",
+  "settingsLinkBrowserError": "Could not load or save browser preference. Tap to retry.",
+  "settingsLinkOpenError": "Could not open this link. Please try again."
 }

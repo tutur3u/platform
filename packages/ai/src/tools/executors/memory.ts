@@ -256,22 +256,55 @@ export async function executeMergeMemories(
     value: newValue,
   });
 
-  if (!rememberResult.ok) return { error: rememberResult.error };
+  const sourceKeys = [...new Set(keysToDelete)].filter((key) => key !== newKey);
+  if (!rememberResult.ok) {
+    return {
+      error: rememberResult.error,
+      success: false,
+      replacementKey: newKey,
+      retainedKeys: sourceKeys,
+    };
+  }
+  // Acceptance/queueing is not a persistence receipt. Preserve all originals
+  // until the sidecar confirms the replacement is stored.
+  if (
+    rememberResult.skipped ||
+    rememberResult.value?.status !== 'done' ||
+    !rememberResult.value.id.trim()
+  ) {
+    return {
+      message:
+        'Replacement was not confirmed saved; original memories were retained.',
+      success: false,
+      replacementKey: newKey,
+      retainedKeys: sourceKeys,
+    };
+  }
 
-  await Promise.all(
-    keysToDelete
-      .filter((key) => key !== newKey)
-      .map((key) =>
-        forgetAiMemory({
-          key,
-          reason: `Merged into ${newKey}`,
-          scope,
-        })
-      )
+  const results = await Promise.allSettled(
+    sourceKeys.map((key) =>
+      forgetAiMemory({ key, reason: `Merged into ${newKey}`, scope })
+    )
   );
+  const deletedKeys: string[] = [];
+  const retainedKeys: string[] = [];
+  for (const [index, result] of results.entries()) {
+    const confirmed =
+      result.status === 'fulfilled' &&
+      result.value.ok &&
+      !result.value.skipped &&
+      result.value.value?.forgotten === true;
+    (confirmed ? deletedKeys : retainedKeys).push(sourceKeys[index]!);
+  }
 
   return {
-    message: `Merged ${keysToDelete.length} memories into "${newKey}"`,
-    success: !rememberResult.skipped,
+    message: retainedKeys.length
+      ? 'Replacement saved; some original deletions were not confirmed. Retry retained keys only.'
+      : `Merged ${sourceKeys.length} memories into "${newKey}"`,
+    success: retainedKeys.length === 0,
+    replacementId: rememberResult.value.id,
+    replacementKey: newKey,
+    deletedKeys,
+    retainedKeys,
   };
 }

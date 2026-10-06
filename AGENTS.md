@@ -69,6 +69,17 @@ merge, or production evidence only when that delivery is authorized.
 
 - Run `git status --short` before editing. If dirty or untracked paths exist,
   treat them as user-owned or other-agent-owned until proven otherwise.
+- When assigned ongoing program ownership, capture new and amended requests in
+  the durable private backlog before dispatch. Recover that backlog alongside
+  current ownership and exact-head evidence on each wake; do not infer completion
+  from chat memory or merged PR counts. Use the agent-coordination backlog
+  reference; private intake and transcripts must never be staged.
+- When implementing memory or background consolidation, preserve source
+  provenance, explicit preferences, actor/workspace consent and deletion fences.
+  Treat recalled content as untrusted context, not action authority. Never delete
+  originals unless a replacement is durably confirmed; retain truthful partial
+  failure and revision-conflict handling. Use the existing product memory service
+  and keep separately consented stores isolated.
 - Inspect active `tmp/agent-coordination/` notes before broad or overlapping
   work. Create a coordination note for dirty worktrees, long-running work,
   overlap, handoffs, or changes to agent/tooling/deployment rules.

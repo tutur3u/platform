@@ -31,5 +31,9 @@ placement decisions and realistic routing checks.
   Release Please owns version bumps.
 
 Run `python3 plugins/tuturuuu/scripts/validate_plugin.py` for plugin edits, then
-`bun check` when scripts, configuration, or docs pages changed. Validation should
+focused non-build tests for changed scripts/configuration. Do not run local
+`bun check`, setup or builds; require applicable exact-commit CI checks/builds.
+For recurring coordination failures, prefer the evidence-state checker and
+the [program orchestration reference](../tuturuuu-agent-coordination/references/program-orchestration.md) over
+another universal prompt rule. Validation should
 check meaningful structure and behavior, not require longer descriptions or fixed prose.

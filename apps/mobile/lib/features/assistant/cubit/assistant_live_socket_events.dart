@@ -50,7 +50,6 @@ extension _AssistantLiveSocketEvents on AssistantLiveCubit {
         _scheduleReconnect();
       case AssistantLiveSocketTextDelta(:final text):
         _ensureActiveTurn();
-        _markAssistantActivity(textOnly: true);
         final previousText = _currentAssistantText;
         _currentAssistantText = _mergeProgressiveText(
           _currentAssistantText,
@@ -92,15 +91,19 @@ extension _AssistantLiveSocketEvents on AssistantLiveCubit {
             ),
           );
         }
-      case AssistantLiveSocketAudioChunk(:final bytes):
-        _markAssistantActivity(chunkBytes: bytes);
+      case AssistantLiveSocketAudioChunk(:final bytes, :final mimeType):
+        final format = mimeType.toLowerCase().replaceAll(' ', '');
+        if (format != 'audio/pcm' && format != 'audio/pcm;rate=24000') {
+          throw const FormatException('Unsupported Live audio format');
+        }
         await _audioPlayer.play(bytes);
       case AssistantLiveSocketInterrupted():
+        final interruptedTurn = _finalizeTurn();
         await _audioPlayer.clear();
         _clearAssistantActivity();
         _emitMicrophoneState(state.copyWith(isInterrupted: true));
+        await interruptedTurn;
       case AssistantLiveSocketTurnCompleted():
-        _clearAssistantActivity();
         await _finalizeTurn();
       case AssistantLiveSocketGoAway(:final timeLeft):
         unawaited(stopScreenSharing());

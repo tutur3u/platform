@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/features/mail/models/mail_calendar_link_preview.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class MailCalendarLinkDetails extends StatelessWidget {
   const MailCalendarLinkDetails({
@@ -38,9 +38,9 @@ class MailCalendarLinkDetails extends StatelessWidget {
             SelectableText(preview.original['location'] as String),
             if (preview.original['joinUrl'] is String)
               TextButton(
-                onPressed: () => launchUrl(
+                onPressed: () => openMobileLink(
+                  context,
                   Uri.parse(preview.original['joinUrl'] as String),
-                  mode: LaunchMode.externalApplication,
                 ),
                 child: Text(l.mailInvitationJoin),
               ),
@@ -61,9 +61,9 @@ class MailCalendarLinkDetails extends StatelessWidget {
             SelectableText(preview.target['location'] as String),
             if (preview.target['joinUrl'] is String)
               TextButton(
-                onPressed: () => launchUrl(
+                onPressed: () => openMobileLink(
+                  context,
                   Uri.parse(preview.target['joinUrl'] as String),
-                  mode: LaunchMode.externalApplication,
                 ),
                 child: Text(l.mailInvitationJoin),
               ),

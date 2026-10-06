@@ -343,7 +343,10 @@ class _PreferencesSection extends StatelessWidget {
         [personalZone, if (workspaceZone != null) workspaceZone, calendar],
       ),
       (l10n.settingsNotificationsInteraction, [notifications, interaction]),
-      (l10n.settingsAppPreferences, [finance, tasks]),
+      (
+        l10n.settingsAppPreferences,
+        [finance, tasks, const LinkBrowserSettingsTile()],
+      ),
     ];
     final sections = [
       for (final group in groups)

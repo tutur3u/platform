@@ -109,15 +109,8 @@ extension _AssistantPageChrome on _AssistantPageState {
     onMicrophone: () => _handleLiveMicrophoneToggle(wsId, chatState),
     onCamera: _liveCubit.toggleCamera,
     onText: _openChatComposerFromLiveMode,
-    onDisconnect: () async {
-      final actorEpoch = _voiceActorScopeEpoch;
-      await _liveCubit.disconnect(clearSession: true);
-      if (mounted &&
-          actorEpoch == _voiceActorScopeEpoch &&
-          _loadedWorkspaceId == wsId) {
-        context.read<AssistantChromeCubit>().exitLiveMode();
-      }
-    },
+    onDisconnect: () =>
+        _liveCubit.disconnect(clearSession: true, finishTurn: true),
   );
 
   bool _hasLiveAccess(AssistantShellState shellState) {

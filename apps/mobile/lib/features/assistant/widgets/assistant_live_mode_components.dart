@@ -62,11 +62,7 @@ class _LiveConnectingState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CircleAvatar(
-            radius: 48,
-            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
-            child: const Icon(Icons.call_rounded, size: 40),
-          ),
+          const NovaLoadingIndicator(size: 96),
           const SizedBox(height: 24),
           Text(
             context.l10n.assistantLiveCallingAssistant(assistantName),
@@ -194,24 +190,10 @@ class _LiveCallStage extends StatelessWidget {
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              AnimatedScale(
-                scale:
-                    1 +
-                    (liveState.isAssistantSpeaking ? speakingLevel * .15 : 0),
-                duration: MediaQuery.disableAnimationsOf(context)
-                    ? Duration.zero
-                    : const Duration(milliseconds: 180),
-                child: CircleAvatar(
-                  radius: 48,
-                  backgroundColor: theme.colorScheme.primaryContainer,
-                  foregroundColor: theme.colorScheme.onPrimaryContainer,
-                  child: Icon(
-                    liveState.isAssistantSpeaking
-                        ? Icons.graphic_eq_rounded
-                        : Icons.hearing_rounded,
-                    size: 40,
-                  ),
-                ),
+              AssistantLivePlaybackBlob(
+                energy: speakingLevel,
+                bands: liveState.assistantSpectrum,
+                active: liveState.isAssistantSpeaking,
               ),
               const SizedBox(height: 20),
               Text(
@@ -304,7 +286,7 @@ class _LiveTranscript extends StatelessWidget {
               ? SingleChildScrollView(
                   controller: scrollController,
                   padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
-                  child: AssistantTranscriptSection(
+                  child: AssistantLiveTranscriptSection(
                     chatState: chatState,
                     liveState: liveState,
                     assistantName: assistantName,

@@ -309,6 +309,62 @@ The CI check currently verifies:
 - absence of scaffold `[TODO: ...]` placeholders
 - absence of machine-specific local paths in plugin text
 
+## Program Ownership And Verification
+
+For authorized work spanning multiple owners and delivery wakes, the coordinator
+owns scope, acceptance, dependency order, source review and delivery evidence.
+Workers own disjoint implementation lanes. Use the plugin coordination skill's
+`references/program-orchestration.md` for the brief and current-board format.
+Completions are reconciled after critical sections and before status reports;
+an idle worker is resumed only with concrete work, never merely for status.
+
+Keep the coordinator-owned current board in ignored `tmp/agent-coordination/`
+state rather than reconstructing current progress from a growing event history.
+The read-only checker rejects stale-head delivery claims, conflicting gates and
+multiple active writers in the same worktree:
+
+```bash
+python3 plugins/tuturuuu/scripts/check_program_state.py tmp/agent-coordination/<program>/state.json
+python3 -m unittest discover -s plugins/tuturuuu/scripts -p 'test_program_state.py'
+```
+
+Recorded PASS requires a real receipt. This checker does not query remote systems
+or validate receipt contents. A merge, green summary, skipped deployment or old
+store upload cannot establish new-source availability. Each requested delivery
+stage needs current-source evidence; new heads invalidate prior head receipts.
+Use native PR wakes and an explicitly authorized cadence instead of polling.
+
+This workflow adapts [pstack's upstream orchestration playbook](https://github.com/cursor/plugins/blob/df581122cde17e6e27686b5a448bde23e4ad4318/pstack/skills/poteto-mode/playbooks/orchestrate.md)
+to T3's actual child-task tools and Tuturuuu's ownership, resource and production
+boundaries. It does not require Cursor, Graphite, cloud agents or a new plugin
+installation. Structural/routing checks are bounded evidence, not a behavioral
+agent evaluation. Managed plugin caches are updated by their installer.
+
+## Long-Term Request Intake
+
+When a user assigns ongoing program ownership, capture each idea, bug, feature,
+improvement and amendment before dispatch. Use stable IDs, source pointers,
+checkable acceptance, dependencies and current owners. The coordination skill's
+`references/request-backlog.md` defines the private SQLite ledger and commands.
+Intake survives conversation compaction and task-worktree retirement; it is local
+persistence, not cross-machine synchronization or a guarantee of unlimited recall.
+
+The standard store is under `~/.local/share/tuturuuu/orchestration/programs/`.
+Never commit user dumps, transcripts, credentials or the database. Repeated
+imports preserve progress, conflicting scopes fail rather than overwrite, and
+updates retain event history. Read backlog and current-unit evidence at every
+wake. Keep captured, active, implemented and verified distinct. Native Tuturuuu
+task creation still uses `ttr` after destination discovery.
+
+The requested pstack upstream package can be used alongside this plugin. Its
+Cursor marketplace does not expose pstack through the Claude marketplace Codex
+reads, so the local compatibility installation adds a Codex manifest/marketplace
+without modifying upstream skills. Pin the reviewed upstream commit, retain the
+license and verify installed/enabled status with the official installer. This
+adapter does not make Cursor-only tools available or override Tuturuuu policy.
+Managed caches stay installer-owned. Start a subsequent turn to discover newly
+installed skills.
+
 ## Shared Worktree Coordination
 
 Agents should assume that humans or other agents may have uncommitted work in the
@@ -317,8 +373,8 @@ same checkout. The docs-facing protocol lives in the
 and the agent-facing workflow lives in `$tuturuuu-agent-coordination`.
 
 Open Tuturuuu pull requests are always handled in isolated worktrees under
-`.worktrees/`. Run `bun setup` immediately after creating the PR worktree, keep
-the worktree and local task branch while the PR is open, and remove both only
+`.worktrees/`. Run `bun install` immediately after creating the PR worktree;
+builds run in CI. Keep the worktree and local task branch while the PR is open, and remove both only
 after the merge is confirmed on `main` and post-merge verification is complete.
 This lifecycle is documented in the Agent Operating Manual and enforced as a
 cross-cutting rule in `AGENTS.md`.

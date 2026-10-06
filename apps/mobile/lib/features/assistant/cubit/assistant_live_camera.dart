@@ -2,6 +2,7 @@ part of 'assistant_live_cubit.dart';
 
 extension AssistantLiveCameraControls on AssistantLiveCubit {
   Future<void> toggleCamera() async {
+    if (_isClosing || isClosed) return;
     if (state.isCameraActive) {
       await _cameraService.stopStreaming();
       _emitMicrophoneState(state.copyWith(isCameraActive: false));
@@ -10,9 +11,9 @@ extension AssistantLiveCameraControls on AssistantLiveCubit {
 
     final screenVersion = _screenVersion + 1;
     await stopScreenSharing();
-    if (isClosed || screenVersion != _screenVersion) return;
+    if (_isClosing || isClosed || screenVersion != _screenVersion) return;
     final granted = await _cameraService.ensurePermission();
-    if (isClosed || screenVersion != _screenVersion) return;
+    if (_isClosing || isClosed || screenVersion != _screenVersion) return;
     _emitMicrophoneState(
       state.copyWith(
         cameraPermission: granted
@@ -35,12 +36,12 @@ extension AssistantLiveCameraControls on AssistantLiveCubit {
       await prepareSession(wsId: wsId, chatId: state.chatId);
     }
 
-    if (isClosed || screenVersion != _screenVersion) return;
+    if (_isClosing || isClosed || screenVersion != _screenVersion) return;
     await _cameraService.startStreaming((jpegBytes) {
-      if (isClosed || screenVersion != _screenVersion) return;
+      if (_isClosing || isClosed || screenVersion != _screenVersion) return;
       _ensureActiveTurn();
       _socket.sendVideoFrame(jpegBytes);
-      if (isClosed) {
+      if (_isClosing || isClosed) {
         return;
       }
       _emitMicrophoneState(
@@ -51,7 +52,7 @@ extension AssistantLiveCameraControls on AssistantLiveCubit {
       );
     });
 
-    if (isClosed || screenVersion != _screenVersion) return;
+    if (_isClosing || isClosed || screenVersion != _screenVersion) return;
     _emitMicrophoneState(
       state.copyWith(
         isCameraActive: true,

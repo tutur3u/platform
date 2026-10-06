@@ -164,7 +164,7 @@ describe('Mira memory tool compatibility', () => {
   it('merge_memories writes the merged memory and forgets superseded keys', async () => {
     memoryMocks.rememberAiMemory.mockResolvedValue({
       ok: true,
-      value: { id: 'memory-new', status: 'queued' },
+      value: { id: 'memory-new', status: 'done' },
     });
     memoryMocks.forgetAiMemory.mockResolvedValue({
       ok: true,
@@ -187,4 +187,98 @@ describe('Mira memory tool compatibility', () => {
     );
     expect(memoryMocks.forgetAiMemory).toHaveBeenCalledTimes(2);
   });
+});
+
+const mergeArgs = {
+  keysToDelete: ['old-a', 'old-b'],
+  newCategory: 'fact',
+  newKey: 'new-key',
+  newValue: 'merged value',
+};
+
+it.each([
+  { ok: true, skipped: true, reason: 'service_timeout', value: null },
+  { ok: true, value: { id: 'replacement', status: 'queued' } },
+  { ok: true, value: null },
+])(
+  'preserves originals when replacement is not durably confirmed: %j',
+  async (receipt) => {
+    vi.clearAllMocks();
+    memoryMocks.rememberAiMemory.mockResolvedValue(receipt);
+    const result = await executeMergeMemories(mergeArgs, createContext());
+    expect(memoryMocks.forgetAiMemory).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      success: false,
+      retainedKeys: ['old-a', 'old-b'],
+    });
+  }
+);
+
+it('reports a partial merge and retains retry provenance after a failed deletion', async () => {
+  vi.clearAllMocks();
+  memoryMocks.rememberAiMemory.mockResolvedValue({
+    ok: true,
+    value: { id: 'replacement', status: 'done' },
+  });
+  memoryMocks.forgetAiMemory
+    .mockResolvedValueOnce({
+      ok: true,
+      value: { forgotten: true, id: 'old-id-a' },
+    })
+    .mockResolvedValueOnce({ ok: false, error: 'unavailable' });
+  const result = await executeMergeMemories(mergeArgs, createContext());
+  expect(result).toMatchObject({
+    success: false,
+    replacementId: 'replacement',
+    replacementKey: 'new-key',
+    deletedKeys: ['old-a'],
+    retainedKeys: ['old-b'],
+  });
+});
+
+it.each([
+  { ok: true, skipped: true, reason: 'disabled', value: null },
+  { ok: true, value: { forgotten: false, id: 'old-id' } },
+])(
+  'does not confirm a skipped or unconfirmed deletion: %j',
+  async (receipt) => {
+    vi.clearAllMocks();
+    memoryMocks.rememberAiMemory.mockResolvedValue({
+      ok: true,
+      value: { id: 'replacement', status: 'done' },
+    });
+    memoryMocks.forgetAiMemory.mockResolvedValue(receipt);
+    expect(
+      await executeMergeMemories(mergeArgs, createContext())
+    ).toMatchObject({
+      success: false,
+      deletedKeys: [],
+      retainedKeys: ['old-a', 'old-b'],
+    });
+  }
+);
+
+it('settles thrown deletion failures while preserving confirmed sibling results', async () => {
+  vi.clearAllMocks();
+  memoryMocks.rememberAiMemory.mockResolvedValue({
+    ok: true,
+    value: { id: 'replacement', status: 'done' },
+  });
+  memoryMocks.forgetAiMemory
+    .mockRejectedValueOnce(new Error('synthetic unavailable'))
+    .mockResolvedValueOnce({
+      ok: true,
+      value: { forgotten: true, id: 'old-b' },
+    });
+  expect(
+    await executeMergeMemories(
+      { ...mergeArgs, keysToDelete: ['old-a', 'old-a', 'new-key', 'old-b'] },
+      createContext()
+    )
+  ).toMatchObject({
+    success: false,
+    deletedKeys: ['old-b'],
+    retainedKeys: ['old-a'],
+  });
+  expect(memoryMocks.forgetAiMemory).toHaveBeenCalledTimes(2);
 });

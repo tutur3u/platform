@@ -48,6 +48,10 @@ Review realistic requests against the resulting guidance:
 | Merge after 15 minutes without new activity | Review/check gates and 15-minute watcher; pin head; verify main before sync |
 | Main advances during delivery | Inspect range; pinned authorized SHA or approval for added scope |
 | Docs typo | Owning document; no unrelated skill stack or deployment |
+| Continue three repair lanes after a CI wake | Coordination program board; current heads, bounded drain, existing gate reuse; no extra agents |
+| A worker has finished but deployment skipped | Record source evidence separately; required deployment receipt remains missing |
+| Ask whether an idle worker is alive | Read task status; no status-only resume or duplicate assignment |
+| Two proposed fixes fail the same lifecycle assertion | Write the premise and collect a causal actor census before a third patch |
 
 Run the plugin validator for structural checks and the repository checks required
 by changed files. A static routing review is not proof of model behavior. For

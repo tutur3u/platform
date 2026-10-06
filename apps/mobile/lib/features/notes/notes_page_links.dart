@@ -204,7 +204,7 @@ extension NotesPageLinks on NotesPageState {
         return;
       }
     }
-    await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+    await openMobileLink(context, uri);
   }
 
   Future<bool> _chooseLinkAction(String href) async {

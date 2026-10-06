@@ -3,6 +3,9 @@
 //! Ports the legacy Next.js route at
 //! `apps/web/src/app/api/v1/workspaces/[wsId]/ai/memory/items/route.ts`.
 //!
+//! Mobile parity: request_access_token admits Bearer credentials as well as
+//! session cookies; the live Next handler now forwards its request explicitly.
+//!
 //! ## Auth model
 //!
 //! Resolves the Supabase session user and checks that the caller holds a

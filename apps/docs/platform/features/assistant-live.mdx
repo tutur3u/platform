@@ -615,3 +615,51 @@ unsent edit remains intact. Account departure clears private drafts through the
 existing account reset, and mode/account ABA refuses the stale replacement.
 `assistant_durable_acceptance_test.dart` exercises deferred real cancellation,
 pause/resume, newer edits, and mode/account refusal through the actual dock.
+
+## Mobile playback, transcript and call completion
+
+The Live stage uses a layered gradient blob driven by the assistant's signed
+16-bit, little-endian 24 kHz mono PCM admitted to the native playback queue.
+Microphone input, text events and byte counts do not synthesize speaking energy.
+Spectrum work and visual updates are bounded; a native drained-buffer callback,
+interruption or teardown resets activity. Reduced motion keeps the shape static.
+These controls do not establish physical speaker output or provider/device timing.
+
+A received completed turn is sealed before waiting for tools, persistence or
+history refresh. Subsequent spoken turns receive distinct identities and remain
+in receipt order. Pending turns remain visible until scoped history confirms them;
+restored Live identities prevent duplicate pending/history rows and preserve order
+when server retries receive later timestamps. Failed synchronization stays marked
+as unsynchronized and retries use the same turn identity. A successful write does
+not remove the visible snapshot until restored history confirms every saved role
+for that exact turn, workspace and conversation. A failed history restore retries
+restoration without issuing another successful write. Pending snapshots are
+in memory; process termination does not guarantee recovery of unsaved content.
+
+Explicit End seals the currently observed partial turn before closing the call,
+keeps Live selected and presents centered **Call again** and **View transcript**
+actions. Calling again remains an explicit consent/admission action. Account,
+workspace and conversation epochs refuse stale persistence and End callbacks.
+Logout or other privacy teardown clears local drafts without flushing them to a
+remote conversation. Reconnect does not authorize an old actor's work. Queued
+provider frames carry an internal connection generation and are checked at
+delivery; replacing or closing a connection also invalidates its raw listeners.
+A deferred old close cannot revive or close a newer connection. Disposal closes
+admission before native teardown awaits, clears retained retry closures and
+refuses new session, microphone, camera or screen-capture admission. Repeated
+disposal shares one completion; a native cleanup failure still closes the state
+and attempts the remaining cleanup. This is separate from explicit End, which
+may finish the current admitted turn.
+
+Connected controls use the same shell action button geometry and styling as the
+normal navbar, within its existing material. Buttons retain semantic toggle and
+busy states and use the shared haptic preference. Calling uses the branded pending
+indicator and respects reduced motion. No automatic sound is enabled by this
+presentation change.
+
+Regression coverage is in `assistant_live_persistence_test.dart`,
+`assistant_live_audio_player_test.dart`, `assistant_playback_spectrum_test.dart`,
+`assistant_live_transcript_section_test.dart`, `assistant_live_post_call_view_test.dart`,
+`assistant_live_history_confirmation_cases.dart`, `assistant_live_socket_test.dart`
+and the Live dock/calling widget tests. Device audio quality, suspended-process
+survival and published mobile builds require separate delivery evidence.

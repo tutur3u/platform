@@ -10,13 +10,18 @@
   "homepage": "https://tuturuuu.com",
   "repository": "https://github.com/tutur3u/platform",
   "license": "Apache-2.0",
-  "keywords": ["tuturuuu", "platform", "codex", "monorepo"],
+  "keywords": [
+    "tuturuuu",
+    "platform",
+    "codex",
+    "monorepo"
+  ],
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Tuturuuu",
     "shortDescription": "Keep Tuturuuu platform work aligned with repo conventions.",
-    "longDescription": "Provides Codex skills for safe Tuturuuu platform development, including repo-wide workflow rules, authenticated browser and Vercel CLI production troubleshooting, evidence-driven product improvement and performance diagnosis, external app auth/upload/delivery integrations, CMS and branded content studio guidance, standalone satellite app UX, native-machine local E2E auth debugging, apps/web release badge metadata guidance, dedicated shared-worktree agent coordination with parallel subagent lanes, generated-artifact ownership, archived context support, completed-note archiving, short 5-10-minute commit-window claim/wait/release coordination, scoped Conventional Commit follow-through, proof-gated no-verify commit evidence, native ttr CLI install and SDK-backed workflows, devbox runner operations, heavy validation offload guidance, focused ttr task workflows, task templates, finance CRUD, finance read diagnostics, pagination commands, wrapped finance response normalization, ttr-first task capture, Flutter mobile task-board guidance, Supabase database patterns, CI/docs maintenance, release-please merge automation, PR quiet-window merge sync with a hard main-green gate before production sync, package release auto-recovery, Supabase CLI setup retry, Codecov coverage retry, review-comment follow-through, plugin validation, and incremental tooling improvements.",
+    "longDescription": "Provides Codex skills for safe Tuturuuu platform development, including repo-wide workflow rules, authenticated browser and Vercel CLI production troubleshooting, evidence-driven product improvement and performance diagnosis, external app auth/upload/delivery integrations, CMS and branded content studio guidance, standalone satellite app UX, native-machine local E2E auth debugging, apps/web release badge metadata guidance, dedicated shared-worktree agent coordination with parallel subagent lanes, generated-artifact ownership, archived context support, completed-note archiving, short 5-10-minute commit-window claim/wait/release coordination, scoped Conventional Commit follow-through, proof-gated no-verify commit evidence, native ttr CLI install and SDK-backed workflows, devbox runner operations, heavy validation offload guidance, focused ttr task workflows, task templates, finance CRUD, finance read diagnostics, pagination commands, wrapped finance response normalization, ttr-first task capture, Flutter mobile task-board guidance, Supabase database patterns, CI/docs maintenance, release-please merge automation, PR quiet-window merge sync with a hard main-green gate before production sync, package release auto-recovery, Supabase CLI setup retry, Codecov coverage retry, review-comment follow-through, plugin validation, and incremental tooling improvements. Supports coordinator-owned long-term request intake, deduplication, transactional audit history and exact-head verification ledgers.",
     "developerName": "Tuturuuu",
     "category": "Productivity",
     "capabilities": [
@@ -60,7 +65,9 @@
       "Codecov coverage retry",
       "Review comment resolution",
       "Development tooling improvement",
-      "Local resource admission and diagnostics"
+      "Local resource admission and diagnostics",
+      "Persistent request intake and audit history",
+      "Exact-head program evidence"
     ],
     "websiteURL": "https://tuturuuu.com",
     "privacyPolicyURL": "https://tuturuuu.com/privacy",

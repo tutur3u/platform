@@ -1321,6 +1321,9 @@
   "assistantLiveAccessSummary": "{workspace} • {source}",
   "assistantLiveAccessUsingPersonal": "Đang dùng gói cá nhân {tier}",
   "assistantLiveAccessUsingWorkspace": "Đang dùng gói không gian làm việc {tier}",
+  "assistantLiveCallAgain": "Gọi lại",
+  "assistantLiveViewTranscript": "Xem bản ghi",
+  "assistantLiveCallEnded": "Cuộc gọi đã kết thúc",
   "assistantLiveCallAssistant": "Gọi {assistantName}",
   "assistantLiveCallingAssistant": "Đang gọi {assistantName}",
   "assistantLiveCameraPreview": "Camera trực tiếp",
@@ -1389,6 +1392,7 @@
   "assistantLiveTierRequired": "Giọng nói trực tiếp chỉ có từ gói PLUS trở lên.",
   "assistantLiveTitle": "Mira Live",
   "assistantLiveTranscriptEmpty": "Bắt đầu nói hoặc nhập tin nhắn. Cuộc trò chuyện sẽ hiển thị ở đây.",
+  "assistantLiveTranscriptPending": "Các thay đổi trong bản ghi chưa được đồng bộ.",
   "assistantLiveTranscriptTitle": "Bản ghi trực tiếp",
   "assistantLiveTypeMessage": "Gõ",
   "assistantLiveWorkspaceTierLabel": "Gói không gian làm việc {tier}",
@@ -4463,5 +4467,11 @@
   "calendarTimelineZoom": "Thu phóng dòng thời gian",
   "calendarZoomIn": "Phóng to",
   "calendarZoomOut": "Thu nhỏ",
-  "calendarZoomReset": "Đặt lại"
+  "calendarZoomReset": "Đặt lại",
+  "settingsLinkBrowser": "Mở liên kết bằng",
+  "settingsLinkBrowserDescription": "Chọn trình duyệt cho liên kết web. Liên kết đăng nhập và cập nhật ứng dụng giữ cách xử lý cần thiết.",
+  "settingsLinkBrowserBuiltIn": "Trình duyệt tích hợp",
+  "settingsLinkBrowserExternal": "Trình duyệt mặc định",
+  "settingsLinkBrowserError": "Không thể tải hoặc lưu tùy chọn trình duyệt. Nhấn để thử lại.",
+  "settingsLinkOpenError": "Không thể mở liên kết này. Vui lòng thử lại."
 }

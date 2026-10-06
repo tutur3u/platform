@@ -446,6 +446,15 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get assistantLiveCallAgain => 'Gọi lại';
+
+  @override
+  String get assistantLiveViewTranscript => 'Xem bản ghi';
+
+  @override
+  String get assistantLiveCallEnded => 'Cuộc gọi đã kết thúc';
+
+  @override
   String assistantLiveCallAssistant(String assistantName) {
     return 'Gọi $assistantName';
   }
@@ -656,6 +665,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantLiveTranscriptEmpty => 'Bắt đầu nói hoặc nhập tin nhắn. Cuộc trò chuyện sẽ hiển thị ở đây.';
+
+  @override
+  String get assistantLiveTranscriptPending => 'Các thay đổi trong bản ghi chưa được đồng bộ.';
 
   @override
   String get assistantLiveTranscriptTitle => 'Bản ghi trực tiếp';
@@ -10312,4 +10324,22 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get calendarZoomReset => 'Đặt lại';
+
+  @override
+  String get settingsLinkBrowser => 'Mở liên kết bằng';
+
+  @override
+  String get settingsLinkBrowserDescription => 'Chọn trình duyệt cho liên kết web. Liên kết đăng nhập và cập nhật ứng dụng giữ cách xử lý cần thiết.';
+
+  @override
+  String get settingsLinkBrowserBuiltIn => 'Trình duyệt tích hợp';
+
+  @override
+  String get settingsLinkBrowserExternal => 'Trình duyệt mặc định';
+
+  @override
+  String get settingsLinkBrowserError => 'Không thể tải hoặc lưu tùy chọn trình duyệt. Nhấn để thử lại.';
+
+  @override
+  String get settingsLinkOpenError => 'Không thể mở liên kết này. Vui lòng thử lại.';
 }

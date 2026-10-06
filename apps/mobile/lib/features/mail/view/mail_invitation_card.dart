@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_calendar_link.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class MailInvitationCard extends StatefulWidget {
   const MailInvitationCard({
@@ -143,10 +143,7 @@ class _MailInvitationCardState extends State<MailInvitationCard> {
               ),
             if (joinUrl != null)
               TextButton(
-                onPressed: () => launchUrl(
-                  Uri.parse(joinUrl),
-                  mode: LaunchMode.externalApplication,
-                ),
+                onPressed: () => openMobileLink(context, Uri.parse(joinUrl)),
                 child: Text(l10n.mailInvitationJoin),
               ),
             Wrap(
