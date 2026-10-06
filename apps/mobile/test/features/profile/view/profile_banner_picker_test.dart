@@ -8,9 +8,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile/data/models/profile_media_result.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
+import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
+import 'package:mobile/features/profile/cubit/profile_state.dart';
+import 'package:mobile/features/profile/view/profile_banner.dart';
 import 'package:mobile/features/profile/view/profile_banner_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
@@ -38,6 +41,7 @@ class _Repository extends ProfileRepository {
   final String? Function() actor;
   final writes = <String?>[];
   bool succeeds = true;
+  List<Completer<ProfileMediaResult>>? pending;
   @override
   String? getCurrentUserIdSync() => actor();
   @override
@@ -51,9 +55,16 @@ class _Repository extends ProfileRepository {
   @override
   Future<ProfileMediaResult> saveBannerResult(File file) async {
     writes.add(actor());
+    if (pending != null) {
+      final result = Completer<ProfileMediaResult>();
+      pending!.add(result);
+      return await result.future;
+    }
     return succeeds
         ? const ProfileMediaResult.success()
-        : ProfileMediaResult.failure(Exception('synthetic'));
+        : ProfileMediaResult.failure(
+            const ApiException(message: 'synthetic-private', statusCode: 413),
+          );
   }
 }
 
@@ -94,10 +105,20 @@ Widget _view(_Auth auth, ProfileCubit cubit, _Picker picker) =>
         builder: (context) {
           _chooserContext = context;
           return Scaffold(
-            body: TextButton(
-              onPressed: () =>
-                  pickAndUploadProfileBanner(context, picker: picker),
-              child: const Text('choose'),
+            body: Column(
+              children: [
+                TextButton(
+                  onPressed: () =>
+                      pickAndUploadProfileBanner(context, picker: picker),
+                  child: const Text('choose'),
+                ),
+                BlocBuilder<ProfileCubit, ProfileState>(
+                  builder: (context, state) => ProfileBannerSettings(
+                    profile: state.profile ?? const UserProfile(id: 'actor-a'),
+                    busy: state.isLoading,
+                  ),
+                ),
+              ],
             ),
           );
         },
@@ -212,6 +233,63 @@ void main() {
       expect(repository.writes, ['actor-a']);
     });
   }
+  for (final locale in ['en', 'vi']) {
+    testWidgets('$locale banner failure is visible at active chooser', (
+      tester,
+    ) async {
+      tester.platformDispatcher.localesTestValue = [Locale(locale)];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+      final picker = _Picker('none');
+      final (_, repository, _) = await _pump(tester, picker);
+      repository.succeeds = false;
+      await tester.tap(find.text('choose'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          locale == 'en'
+              ? 'The image is too large. Choose a smaller image.'
+              : 'Ảnh quá lớn. Hãy chọn ảnh nhỏ hơn.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('synthetic-private'), findsNothing);
+    });
+  }
+  testWidgets(
+    'superseded banner result cannot replace active failure guidance',
+    (tester) async {
+      final picker = _Picker('none');
+      final (auth, repository, cubit) = await _pump(tester, picker);
+      repository.pending = [];
+      final first = cubit.uploadBanner(File('/synthetic/first.png'));
+      final second = cubit.uploadBanner(File('/synthetic/second.png'));
+      repository.pending![0].complete(
+        ProfileMediaResult.failure(
+          const ApiException(message: 'synthetic-private', statusCode: 413),
+        ),
+      );
+      expect(await first, isFalse);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Choose a smaller image'), findsNothing);
+      repository.pending![1].complete(
+        ProfileMediaResult.failure(
+          const ApiException(message: 'synthetic-private', statusCode: 409),
+        ),
+      );
+      expect(await second, isFalse);
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'Your profile changed during the upload. Select the image again.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Choose a smaller image'), findsNothing);
+      auth.change(_signedIn('actor-b'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Your profile changed'), findsNothing);
+    },
+  );
   testWidgets('failed upload permits a new selection without replaying', (
     tester,
   ) async {

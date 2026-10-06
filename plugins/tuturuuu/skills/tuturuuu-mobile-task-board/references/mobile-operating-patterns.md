@@ -191,3 +191,11 @@ provider/device operation or production delivery.
   wait for hit-testable controls after retained outgoing action transitions; use
   legal inactive/hidden/paused/resume lifecycle sequences when global cache
   listeners are present.
+
+- Native choosers launched by a conditional error alert must capture a stable
+  screen-owned context. Clearing the alert can unmount its own context before
+  source, file or crop awaits complete. Regress with a held chooser, pump the
+  alert removal, then release a non-null source/file/crop and verify the write;
+  cancellation-only fixtures do not prove recovery. Surface scoped upload
+  failures at the active controls from current state so superseded operations
+  cannot report a newer operation's failure.
