@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/features/assistant/data/assistant_memory_edit.dart';
 import 'package:mobile/features/assistant/data/assistant_personal_settings_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 
@@ -100,7 +101,7 @@ class AssistantPersonalSettingsCubit
     (previous) async => AssistantPersonalSettingsSnapshot(
       soul: await repository.saveSoul(soul),
       memoryEnabled: previous.memoryEnabled,
-      memories: previous.memories,
+      memories: state.snapshot?.memories ?? previous.memories,
       products: previous.products,
     ),
   );
@@ -113,10 +114,36 @@ class AssistantPersonalSettingsCubit
         enabled: enabled,
         products: previous.products,
       ),
-      memories: previous.memories,
+      memories: state.snapshot?.memories ?? previous.memories,
       products: previous.products,
     ),
   );
+
+  void applyConfirmedMemoryEdit(EditableAssistantMemory memory) {
+    if (!admitted || state.snapshot == null) return;
+    final previous = state.snapshot!;
+    // Fence stale list refreshes without discarding an admitted settings write.
+    if (!state.busy) ++_generation;
+    emit(
+      AssistantPersonalSettingsState(
+        snapshot: AssistantPersonalSettingsSnapshot(
+          soul: previous.soul,
+          memoryEnabled: previous.memoryEnabled,
+          products: previous.products,
+          memories: previous.memories
+              .map(
+                (item) => item.id == memory.id
+                    ? AssistantMemoryItem(id: item.id, text: memory.content)
+                    : item,
+              )
+              .toList(),
+        ),
+        loading: false,
+        busy: state.busy,
+        failed: state.failed,
+      ),
+    );
+  }
 
   Future<bool> deleteMemory(String id) => _write((previous) async {
     await repository.deleteMemory(workspaceId, id);

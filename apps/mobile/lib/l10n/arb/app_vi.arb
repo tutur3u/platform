@@ -4505,5 +4505,14 @@
   "assistantMemoryExport": "Xuất ký ức",
   "assistantPersonalSettingsError": "Không thể hoàn tất thay đổi. Hãy thử lại.",
   "assistantRenameLabel": "Tên trợ lý",
-  "assistantRenameError": "Không thể cập nhật tên. Bản nháp vẫn được giữ; hãy thử lại."
+  "assistantRenameError": "Không thể cập nhật tên. Bản nháp vẫn được giữ; hãy thử lại.",
+  "assistantMemoryEditTitle": "Chỉnh sửa bộ nhớ",
+  "assistantMemoryEditText": "Nội dung bộ nhớ",
+  "assistantMemoryLatest": "Phiên bản đang lưu",
+  "assistantMemoryEditConflict": "Bộ nhớ này đã thay đổi. Xem phiên bản mới nhất trước khi lưu thay đổi của bạn.",
+  "assistantMemoryEditDenied": "Bạn không còn quyền truy cập bộ nhớ này.",
+  "assistantMemoryEditMissing": "Bộ nhớ này không còn khả dụng.",
+  "assistantMemoryEditAuditWarning": "Thay đổi đã được lưu, nhưng chưa thể xác nhận bản ghi hoạt động. Không cần lưu lại.",
+  "assistantMemoryReviewLatest": "Xem phiên bản mới nhất",
+  "assistantMemorySaveChanges": "Lưu thay đổi của tôi"
 }
