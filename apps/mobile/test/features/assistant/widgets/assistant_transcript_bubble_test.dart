@@ -9,6 +9,42 @@ import 'package:mobile/features/assistant/widgets/assistant_transcript_bubble.da
 import '../../../helpers/helpers.dart';
 
 void main() {
+  testWidgets('tool summary stays transparent and opens inspectable output', (
+    tester,
+  ) async {
+    await tester.pumpApp(
+      const Scaffold(
+        body: AssistantToolResultsSection(
+          parts: [
+            AssistantMessagePart(
+              type: 'dynamic-tool',
+              toolName: 'read_tasks',
+              toolCallId: 'transparent-tool',
+              state: 'output-available',
+              output: {'count': 1},
+            ),
+          ],
+        ),
+      ),
+    );
+    final summary = find.byType(AssistantToolResultsSection);
+    final material = find.descendant(
+      of: summary,
+      matching: find.byType(Material),
+    );
+    expect(material, findsOneWidget);
+    expect(tester.widget<Material>(material).color, Colors.transparent);
+    expect(tester.getSize(summary).height, lessThanOrEqualTo(32));
+    await tester.tap(summary);
+    await tester.pumpAndSettle();
+    expect(find.text('read_tasks'), findsOneWidget);
+    await tester.tap(find.text('read_tasks'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('count'), findsWidgets);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('restored assistant text and tool parts retain source ordering', (
     tester,
   ) async {

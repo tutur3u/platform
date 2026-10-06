@@ -394,10 +394,42 @@ extension _AssistantPageLayout on _AssistantPageState {
                                                 liveState,
                                               )
                                             : _isComposerVisible
-                                            ? AssistantNavigationToggle(
+                                            ? AssistantComposerPrimaryAction(
+                                                controller: _inputController,
                                                 focusNode: _inputFocusNode,
-                                                onToggle:
+                                                onToggleNavigation:
                                                     _toggleComposerNavigation,
+                                                onSend: () => _handleSend(
+                                                  currentWorkspace.id,
+                                                  shellState,
+                                                  chatState,
+                                                  liveState,
+                                                ),
+                                                voiceCapture: localLane
+                                                    ? null
+                                                    : _voiceCapture,
+                                                onSendVoice: () =>
+                                                    _finishVoiceRecording(
+                                                      sendNow: true,
+                                                    ),
+                                                hasAttachments: chatState
+                                                    .composerAttachments
+                                                    .isNotEmpty,
+                                                blocked:
+                                                    (localLane &&
+                                                        (!local.ready ||
+                                                            local.phase !=
+                                                                LocalChatPhase
+                                                                    .idle)) ||
+                                                    chatState.status ==
+                                                        AssistantChatStatus
+                                                            .restoring,
+                                                localGenerating:
+                                                    localLane &&
+                                                    local.phase ==
+                                                        LocalChatPhase
+                                                            .generating,
+                                                onStopLocal: _localCubit.stop,
                                               )
                                             : AssistantComposerFab(
                                                 label: context

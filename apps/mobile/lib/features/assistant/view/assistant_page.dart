@@ -46,6 +46,7 @@ import 'package:mobile/features/assistant/widgets/assistant_capture_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
+import 'package:mobile/features/assistant/widgets/assistant_composer_primary_action.dart';
 import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_history_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
@@ -575,9 +576,10 @@ class _AssistantPageState extends State<AssistantPage>
     BuildContext context, {
     required bool isComposerVisible,
   }) {
-    return assistantComposerHeight(context) +
-        24 +
-        assistantBottomSafeArea(context);
+    return assistantTranscriptBottomClearance(
+      context,
+      composerVisible: isComposerVisible,
+    );
   }
 
   void _maybeResetEmptyStateScroll({
