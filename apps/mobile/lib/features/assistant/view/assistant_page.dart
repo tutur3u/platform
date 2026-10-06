@@ -117,6 +117,8 @@ class _AssistantPageState extends State<AssistantPage>
   int? _voiceScopeVersion;
   int? _voiceLocalVersion;
   int _voiceActorScopeEpoch = 0;
+  Object? _chromeActionsKey;
+  List<ShellActionSpec>? _chromeActions;
   final _inputController = TextEditingController();
   final _inputFocusNode = FocusNode();
   final _scrollController = ScrollController();
