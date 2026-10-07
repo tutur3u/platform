@@ -181,7 +181,8 @@ function CallShellContent({
     meetingId,
     transcriptionSources,
     !left && Object.keys(state.participants).length > 1,
-    canReadNotes
+    canReadNotes,
+    accountId
   );
   const recording = useRoomRecording(room, meetingId, audioStreams);
   const telemetry = useQuery({

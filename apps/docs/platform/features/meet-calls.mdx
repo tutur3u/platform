@@ -1334,3 +1334,32 @@ storage error or a thrown unknown-commit error, and covers equal output/usage/co
 same attempt predicates, exhausted recovery, safe errors and immediate conflict.
 These source fixtures do not identify the original incident's provider status or
 establish deployed database/provider delivery.
+
+## Transcription capture scope
+
+Transcription capture and its pending uploads belong to one verified actor,
+workspace and meeting lifetime. Admission changes only when that lifetime commits;
+a suspended or abandoned render cannot revoke the still-committed capture. A
+cleanup epoch also rejects operations held across lifecycle cleanup/replay.
+Queued overflow finalizers and duration callbacks check their captured epoch before
+calling the current finalizer, so an old callback cannot end a replacement capture. Departing that scope disposes local audio and
+aborts recovery. Returning to the same IDs creates a new lifetime; delayed old
+responses cannot install capture, alter current state, finalize an old session or
+refetch into the current view. The call shell also binds its account ID to the
+verified actor. Requests already admitted by the server are not promised to be
+cancelled or rolled back.
+
+A delayed start allocation received after departure does not issue an
+authenticated finalizer from the new scope. That server session remains subject
+to existing reservation expiry and authorized recovery. Same-scope finishing still
+waits for the final worklet flush, batch drain and queued uploads before generating
+notes. Explicit retries of ended sessions remain available to the current actor.
+
+`use-meeting-ai-scope.test.tsx` exercises held start/upload responses across actor,
+workspace and meeting departures, including switches away and back, new capture
+survival, retained callbacks, missing/mismatched actor admission, suspended
+transitions, held preparation across cleanup/replay and old overflow/duration
+callbacks after an Activity hide/show effect replay. Existing
+capture, batching and recovery tests retain final-audio ordering coverage. This
+does not establish the original incident's reconnect/provider cause or real
+Radix workspace-selector interaction; those runtime checks remain separate.
