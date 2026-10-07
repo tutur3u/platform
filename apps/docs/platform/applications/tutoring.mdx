@@ -275,3 +275,19 @@ This changes neither the temporary archive date policy nor enrollment history,
 and does not repair earlier customer records. Regression coverage exercises the
 actual student form, calendar, switch and mutation transport in
 `form-archive.test.tsx`.
+
+
+### Legacy absence credit matching
+
+The support queue matches eligible absence dates and DONE/PENDING absent-recovery
+session dates chronologically within the configured lookback, independently for
+each group/student. A reservation consumes at most one absence on or before its
+session date; earlier make-ups cannot consume later absences. Remaining dates
+are returned with the same deficit and drive the make-up handoff.
+
+This is a fallback for records without a persisted source-attendance link. It
+does not prove which historical absence staff intended to cover, repair prior
+records, or alter custom eligibility/exclusion policy. Explicit attendance-row
+linkage remains separate work, including multiple sessions on the same date.
+Web queue regressions and the Rust queue parity tests cover the chronological
+boundary, ordering, same-day multiplicity and group/student isolation.
