@@ -1,4 +1,8 @@
 import { getContactVerificationStatuses } from '@tuturuuu/users-core/routes/topic-announcements';
+import {
+  hasUnavailableTopicAnnouncementRecipient,
+  isTopicAnnouncementSendingEnabled,
+} from '@/lib/topic-announcement-send-admission';
 
 export { getContactVerificationStatuses } from '@tuturuuu/users-core/routes/topic-announcements';
 
@@ -125,12 +129,24 @@ export async function sendTopicAnnouncement({
     return { error: 'ALREADY_SENT', status: 409 };
   }
 
+  if (!(await isTopicAnnouncementSendingEnabled(normalizedWsId))) {
+    return { error: 'TOPIC_ANNOUNCEMENTS_DISABLED', status: 409 };
+  }
+
   const { data: recipientRows, error: recipientsError } = await sbAdmin
     .from('topic_announcement_recipients')
     .select('contact_id, contact:topic_announcement_contacts(*)')
     .eq('announcement_id', announcementId);
 
   if (recipientsError) throw recipientsError;
+  if (
+    hasUnavailableTopicAnnouncementRecipient(
+      recipientRows ?? [],
+      normalizedWsId
+    )
+  ) {
+    return { error: 'RECIPIENTS_UNAVAILABLE', status: 409 };
+  }
 
   const contacts = (recipientRows ?? [])
     .map((row: any) => row.contact)
