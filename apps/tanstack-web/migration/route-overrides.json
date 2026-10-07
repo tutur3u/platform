@@ -1351,7 +1351,7 @@
         "POST": {
           "status": "legacy-next",
           "targetOwner": "rust-backend",
-          "note": "The Rust handler intentionally falls through for POST. The live Next.js mutation delivers externally bound staff replies, and its Assistant requests enable Mira tools before native persistence. Durable native assistant receipts survive supplementary shadow-cleanup failures."
+          "note": "The Rust handler intentionally falls through for POST. The live Next.js mutation delivers externally bound staff replies, and its Assistant requests enable Mira tools before native persistence. Durable native assistant receipts survive supplementary shadow-cleanup failures. Upstream SSE errors use a fixed sanitized unavailable message only when authoritative request-scoped history contains no saved assistant; readback failure remains distinct, with no generation retry."
         }
       }
     },
