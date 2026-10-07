@@ -5,7 +5,9 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/assistant/data/assistant_soul_receipts.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/models/assistant_soul_snapshot.dart';
 
 /// Captures one personal name intent through cache, queue, and HTTP admission.
 class AssistantSoulNameWriter {
@@ -22,21 +24,26 @@ class AssistantSoulNameWriter {
   final CacheStore store;
   final OfflineMutationQueue queue;
   final String? Function() currentUserId;
-  CacheKey get key => CacheKey(
-    namespace: 'assistant.soul',
-    userId: currentUserId(),
-    locale: currentCacheLocaleTag(),
-  );
+  CacheKey get key {
+    final actor = currentUserId();
+    if (actor == null) throw StateError('Assistant owner unavailable');
+    return verifiedSoulKey(actor);
+  }
+
   static AssistantSoul decode(Object? json) {
-    if (json is! Map) {
-      throw const FormatException('Invalid assistant soul cache payload.');
+    if (json is! Map || json['ownerId'] is! String) {
+      throw const FormatException('Invalid verified assistant soul cache');
     }
-    return AssistantSoul.fromJson(Map<String, dynamic>.from(json));
+    return decodeVerifiedSoul(json, json['ownerId'] as String);
   }
 
   static final _intents = Expando<Map<String, int>>();
 
-  Future<AssistantSoul> rename(String name) async {
+  /// Compatibility display result; pending names are never presented confirmed.
+  Future<AssistantSoul> rename(String name) async =>
+      (await renameSnapshot(name)).displaySoul;
+
+  Future<AssistantSoulSnapshot> renameSnapshot(String name) async {
     final capturedKey = key;
     final actor = capturedKey.userId;
     if (actor == null) throw StateError('Assistant owner unavailable');
@@ -58,10 +65,10 @@ class AssistantSoulNameWriter {
 
     final current = await store.read<AssistantSoul>(
       key: capturedKey,
-      decode: decode,
+      decode: (json) => decodeVerifiedSoul(json, actor),
     );
     checkScope();
-    final soul = await queueOrSendValue<AssistantSoul>(
+    final soul = await queueOrSendValue<AssistantSoul?>(
       feature: 'assistant',
       method: 'PATCH',
       path: '/api/v1/mira/soul',
@@ -71,8 +78,7 @@ class AssistantSoulNameWriter {
       expectedUserId: actor,
       checkScope: checkScope,
       queue: queue,
-      pendingValue: (_) =>
-          (current.data ?? const AssistantSoul()).copyWith(name: value),
+      pendingValue: (_) => null,
       send: () async {
         checkScope();
         final response = await ApiClient.runForUser(
@@ -80,36 +86,29 @@ class AssistantSoulNameWriter {
           () => apiClient.patchJson('/api/v1/mira/soul', {'name': value}),
         );
         checkScope();
-        final receipt = response['soul'];
-        if (receipt is! Map<String, dynamic> ||
-            receipt['name'] is! String ||
-            (receipt['name'] as String).trim().isEmpty ||
-            (receipt['name'] as String).length > 50 ||
-            (receipt['user_id'] != null && receipt['user_id'] != actor) ||
-            const [
-              'tone',
-              'personality',
-              'boundaries',
-              'vibe',
-              'push_tone',
-              'chat_tone',
-            ].any(
-              (field) => receipt[field] != null && receipt[field] is! String,
-            )) {
+        final receipt = decodeSoulReceipt(response['soul'], actor);
+        if (receipt.name.trim().isEmpty) {
           throw const FormatException('Assistant name update not confirmed');
         }
-        return AssistantSoul.fromJson(receipt);
+        return receipt;
       },
     );
-    await store.write(
-      key: capturedKey,
-      checkScope: checkScope,
-      requirePublication: true,
-      policy: CachePolicies.metadata,
-      payload: soul.toJson(),
-      tags: ['assistant:metadata', 'module:assistant'],
-    );
+    if (soul != null) {
+      await store.write(
+        key: capturedKey,
+        checkScope: checkScope,
+        requirePublication: true,
+        policy: CachePolicies.metadata,
+        payload: verifiedSoulPayload(soul, actor),
+        tags: ['assistant:metadata', 'module:assistant'],
+      );
+    }
     checkScope();
-    return soul;
+    final pending = await readAssistantNameIntents(queue, actor, checkScope);
+    checkScope();
+    return AssistantSoulSnapshot(
+      verifiedSoul: soul ?? current.data,
+      pendingIntents: pending,
+    );
   }
 }

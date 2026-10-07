@@ -9,6 +9,7 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/data/assistant_soul_name_writer.dart';
+import 'package:mobile/features/assistant/data/assistant_soul_receipts.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -130,7 +131,10 @@ void main() {
     await store.write(
       key: writer.key,
       policy: CachePolicies.metadata,
-      payload: const AssistantSoul(name: 'Current').toJson(),
+      payload: verifiedSoulPayload(
+        const AssistantSoul(name: 'Current'),
+        'actor-a',
+      ),
     );
     api.response.complete({
       'soul': {'name': 'Old'},
@@ -253,7 +257,10 @@ void main() {
     await queue.synchronize();
     connectivityGate = Completer<List<ConnectivityResult>>()
       ..complete([ConnectivityResult.none]);
-    expect((await writer.rename('Nova')).name, 'Nova');
+    final snapshot = await writer.renameSnapshot('Nova');
+    expect(snapshot.verifiedSoul, isNull);
+    expect(snapshot.displaySoul.name, 'Mira');
+    expect(snapshot.pendingIntents.single.name, 'Nova');
     final records = await store.listPendingMutations();
     expect(records.single.userId, 'actor-a');
     expect(records.single.payload, {'name': 'Nova'});

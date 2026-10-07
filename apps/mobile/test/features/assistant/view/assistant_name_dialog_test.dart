@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/models/assistant_soul_snapshot.dart';
 import 'package:mobile/features/assistant/widgets/assistant_mode_title.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -23,12 +24,14 @@ class _Repository extends ReplyRepository {
   Future<AssistantSoul> fetchSoul({bool forceRefresh = false}) async =>
       AssistantSoul(name: name);
   @override
-  Future<AssistantSoul> updateSoulName(String value) async {
+  Future<AssistantSoulSnapshot> updateSoulNameSnapshot(String value) async {
     writes.add(value);
-    if (held != null) return await held!.future;
+    if (held != null) {
+      return AssistantSoulSnapshot(verifiedSoul: await held!.future);
+    }
     if (failure != null) throw failure!;
     name = value;
-    return AssistantSoul(name: name);
+    return AssistantSoulSnapshot(verifiedSoul: AssistantSoul(name: name));
   }
 }
 
