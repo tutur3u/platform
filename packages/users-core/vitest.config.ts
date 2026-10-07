@@ -4,6 +4,20 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   resolve: {
     alias: [
+      {
+        find: '@/lib/post-email-queue',
+        replacement: resolve(
+          __dirname,
+          '../../apps/web/src/lib/post-email-queue.ts'
+        ),
+      },
+      {
+        find: '@/features/reports/report-limits',
+        replacement: resolve(
+          __dirname,
+          '../../apps/web/src/features/reports/report-limits.ts'
+        ),
+      },
       { find: '@', replacement: resolve(__dirname, './src') },
       {
         find: /^@tuturuuu\/storage-core\/profile-upload-budget$/,
