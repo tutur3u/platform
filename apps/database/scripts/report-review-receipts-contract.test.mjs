@@ -176,3 +176,26 @@ test('both SQL and race actor fixtures use the actual workspace user display col
     );
   }
 });
+
+test('period mutation controls satisfy the actual historical paired-date constraint', () => {
+  const historical = read(
+    '../supabase/migrations/20260723172309_first_class_periodic_reports.sql'
+  );
+  assert.match(
+    historical,
+    /period_start is not null and period_end is not null and period_end >= period_start/u
+  );
+  assert.ok(
+    fixture.includes(
+      '{"cadence":"weekly","period_start":"2026-10-01","period_end":"2026-10-07"}'
+    )
+  );
+  assert.ok(fixture.includes('{"period_start":"2026-10-02"}'));
+  assert.ok(fixture.includes('{"period_end":"2026-10-08"}'));
+  for (const control of [
+    'one-sided period rejected by actual constraint',
+    'reversed period rejected by actual constraint',
+    'invalid periods leave revision unchanged',
+  ])
+    assert.ok(fixture.includes(control));
+});

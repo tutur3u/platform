@@ -106,8 +106,8 @@ select pg_temp.assert_patch(p) from (values
   ('{"creator_id":null}'::jsonb),
   (jsonb_build_object('group_id',pg_temp.fid(97302))),
   ('{"feedback":"Changed"}'::jsonb),('{"score":4}'::jsonb),('{"scores":[2,4]}'::jsonb),
-  ('{"scores":null}'::jsonb),('{"cadence":"weekly"}'::jsonb),('{"period_start":"2026-10-01"}'::jsonb),
-  ('{"period_end":"2026-10-07"}'::jsonb),('{"manager_instruction":"Human review"}'::jsonb),
+  ('{"scores":null}'::jsonb),('{"cadence":"weekly","period_start":"2026-10-01","period_end":"2026-10-07"}'::jsonb),('{"period_start":"2026-10-02"}'::jsonb),
+  ('{"period_end":"2026-10-08"}'::jsonb),('{"manager_instruction":"Human review"}'::jsonb),
   ('{"manager_instruction":null}'::jsonb),('{"generation_mode":"ai"}'::jsonb),
   ('{"generation_status":"generating"}'::jsonb),('{"source_context":{"evidence":"synthetic"}}'::jsonb),
   ('{"report_approval_status":"APPROVED"}'::jsonb),('{"approved_at":"2026-10-07T00:00:00Z"}'::jsonb),
@@ -116,6 +116,12 @@ select pg_temp.assert_patch(p) from (values
   ('{"rejected_at":"2026-10-07T01:00:00Z"}'::jsonb),
   ('{"rejection_reason":"Review again"}'::jsonb)
 ) changes(p);
+-- Retain the actual historical period constraint while testing revision changes.
+create temp table pre_invalid_period_revision as select review_revision from private.external_user_monthly_reports where id=pg_temp.fid(97401);
+select throws_ok($q$select pg_temp.patch_report('{"period_end":null}'::jsonb)$q$,'23514',null,'one-sided period rejected by actual constraint');
+select throws_ok($q$select pg_temp.patch_report('{"period_end":"2026-10-01"}'::jsonb)$q$,'23514',null,'reversed period rejected by actual constraint');
+select is((select review_revision from private.external_user_monthly_reports where id=pg_temp.fid(97401)),(select review_revision from pre_invalid_period_revision),'invalid periods leave revision unchanged');
+
 create temp table pre_service_revision as select review_revision from private.external_user_monthly_reports where id=pg_temp.fid(97401);
 set local role service_role;
 update private.external_user_monthly_reports set review_revision=777,last_delivery_error='Trusted server bookkeeping'
