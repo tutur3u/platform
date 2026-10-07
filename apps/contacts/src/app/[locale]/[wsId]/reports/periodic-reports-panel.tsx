@@ -24,12 +24,16 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
+import { useWorkspaceActor } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useQueryStates } from 'nuqs';
 import { useState } from 'react';
 import GroupReportsSelector from '../users/reports/group-reports-selector';
-import { PeriodicDeliveryConfirmation } from './periodic-delivery-confirmation';
+import {
+  PeriodicDeliveryConfirmation,
+  type PeriodicDeliveryIntent,
+} from './periodic-delivery-confirmation';
 import { PeriodicEmailReadiness } from './periodic-email-readiness';
 import {
   normalizePeriodicReportPeriod,
@@ -98,10 +102,9 @@ export default function PeriodicReportsPanel({
   );
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [debouncedQuery] = useDebounce(query.trim(), 300);
-  const [deliveryIntent, setDeliveryIntent] = useState<{
-    action: PeriodicDeliveryAction;
-    report: PeriodicReport;
-  } | null>(null);
+  const actor = useWorkspaceActor();
+  const [deliveryIntent, setDeliveryIntent] =
+    useState<PeriodicDeliveryIntent | null>(null);
   const [previewSelection, setPreviewSelection] = useState<{
     emailPreview?: PeriodicEmailPreview | null;
     report: PeriodicReport;
@@ -389,7 +392,7 @@ export default function PeriodicReportsPanel({
                 })
               }
               onDeliveryIntent={(action) =>
-                setDeliveryIntent({ action, report })
+                actor && setDeliveryIntent({ action, report, wsId, actor })
               }
             />
           ))
@@ -418,6 +421,8 @@ export default function PeriodicReportsPanel({
 
       <PeriodicDeliveryConfirmation
         intent={deliveryIntent}
+        wsId={wsId}
+        canSend={permissions.canSendReports}
         isPending={deliveryMutation.isPending}
         onCancel={() => setDeliveryIntent(null)}
         onConfirm={() => {

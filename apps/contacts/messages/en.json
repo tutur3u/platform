@@ -3540,6 +3540,7 @@
     "confirm_send_title": "Queue this report for email delivery?",
     "confirm_test_description": "Queue a test delivery only to the subject profile email: {email}. It will not mark the report as delivered.",
     "confirm_test_title": "Queue a controlled test delivery?",
+    "confirm_uncertain_retry_warning": "The previous delivery outcome is unknown. Retrying may send a duplicate email. Check provider logs and confirm the intended recipient before retrying.",
     "create_manage_reports": "Create and manage reports",
     "daily": "Daily",
     "delivered": "Delivered",
