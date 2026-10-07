@@ -310,6 +310,7 @@
                   "build/devops/critical-app-rollout",
                   "build/devops/github-actions-runbook",
                   "build/devops/e2e-proof-reuse",
+                  "build/devops/employee-validation-driver",
                   "build/devops/vercel-cost-controls",
                   "build/devops/cloudflare-cron-control",
                   "build/devops/mobile-store-deployment",
