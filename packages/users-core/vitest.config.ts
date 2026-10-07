@@ -20,6 +20,10 @@ export default defineConfig({
       },
       { find: '@', replacement: resolve(__dirname, './src') },
       {
+        find: /^@tuturuuu\/satellite\/auth$/,
+        replacement: resolve(__dirname, '../satellite/src/auth.ts'),
+      },
+      {
         find: /^@tuturuuu\/storage-core\/profile-upload-budget$/,
         replacement: resolve(
           __dirname,
