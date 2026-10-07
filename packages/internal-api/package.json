@@ -47,6 +47,11 @@
       "import": "./dist/ai-studio.js",
       "require": "./dist/ai-studio.js"
     },
+    "./mira-soul": {
+      "types": "./dist/mira-soul.d.ts",
+      "import": "./dist/mira-soul.js",
+      "require": "./dist/mira-soul.js"
+    },
     "./ai-memory": {
       "types": "./dist/ai-memory.d.ts",
       "import": "./dist/ai-memory.js",

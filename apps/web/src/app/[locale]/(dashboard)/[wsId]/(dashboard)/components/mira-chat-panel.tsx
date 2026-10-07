@@ -347,6 +347,7 @@ export default function MiraChatPanel({
   const isBusy = status === 'submitted' || isStreaming;
 
   useMiraChatEffects({
+    chatId: stableChatId,
     isFullscreen,
     messageAttachmentsRef,
     messages,
