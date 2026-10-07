@@ -406,3 +406,24 @@ than omitting a charge or substituting an arbitrary unit. Preserve cancellation,
 coverage and historical records. Exercise the real internal-api mapper and form
 admission in regressions; application builds and customer runtime verification
 remain separate delivery evidence.
+
+## Connected Mail provider boundaries
+
+Personal Gmail/Outlook accounts remain separate from managed Mail domains and
+shared mailbox roles. Bind every credential read to actor + workspace; consent
+must use browser-bound, expiring, atomically consumed state and PKCE. Keep tokens
+encrypted with owner-associated data and compare credential revisions on refresh.
+After a successful refresh, update every coalesced request account snapshot so
+message metadata fan-out does not repeatedly refresh an obsolete revision. Clear
+the OAuth state cookie using its original callback path.
+Provider mail actions must update provider state, not only a local projection.
+Preserve To/Cc roles and Reply-To multiplicity, omit Bcc from replies, and resolve
+forwarded attachments from the authorized provider account. Use persisted send
+claims; never automatically replay an ambiguous provider mutation. Graph MIME
+draft edits require a confirmed replacement before deleting an unchanged original
+with an ETag fence. Record partial replacement failures truthfully.
+
+Task previews must preserve external Google/Outlook meetings even when local
+copies are unlocked. Keep Web, Calendar and Tasks on the shared blocked-event
+policy. See the Mail and Tasks application docs and connected-provider regression
+suite for setup, behavior scope and real-account delivery evidence.

@@ -339,6 +339,7 @@ export {
   withForwardedInternalApiAuth,
   withPayApiBaseUrl,
 } from './client';
+export * from './connected-mail';
 export {
   createWorkspaceCronJob,
   deleteWorkspaceCronJob,

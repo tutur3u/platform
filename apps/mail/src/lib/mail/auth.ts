@@ -68,7 +68,8 @@ async function resolveMailAuth(
 
 export async function resolveMailRouteContext(
   request: NextRequest,
-  wsId: string
+  wsId: string,
+  connectedAccount = false
 ): Promise<
   | {
       ok: true;
@@ -86,7 +87,11 @@ export async function resolveMailRouteContext(
   }
 
   const isStaff = isExactTuturuuuDotComEmail(auth.user.email);
-  if (!isStaff && !(await isManagedMailReviewer(auth.user))) {
+  if (
+    !connectedAccount &&
+    !isStaff &&
+    !(await isManagedMailReviewer(auth.user))
+  ) {
     return {
       ok: false,
       response: NextResponse.json(
@@ -131,7 +136,7 @@ export async function resolveMailRouteContext(
     };
   }
 
-  if (!isStaff) {
+  if (connectedAccount || !isStaff) {
     const workspace = await getWorkspace(normalizedWsId, {
       useAdmin: true,
       user: auth.user,

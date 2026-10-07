@@ -21,7 +21,6 @@ import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
 import { MailActorProvider } from '@/components/mail-actor-provider';
-import { isManagedMailReviewer } from '@/lib/mail/reviewer-access';
 import { DEFAULT_MAIL_FOLDER, getMailFolderHref } from './mail-folders';
 import { MailWorkspace } from './mail-workspace';
 import { getNavigationLinks } from './navigation';
@@ -44,10 +43,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   if (!user?.id) redirect('/login');
   const workspace = await getWorkspace(id, { useAdmin: true, user });
 
-  if (
-    !isExactTuturuuuDotComEmail(user.email) &&
-    !(workspace?.personal && (await isManagedMailReviewer(user)))
-  ) {
+  if (!workspace?.personal && !isExactTuturuuuDotComEmail(user.email)) {
     redirect('/not-available');
   }
 
@@ -119,7 +115,10 @@ export default async function Layout({ children, params }: LayoutProps) {
         <RealtimeLogProvider wsId={wsId}>
           <div data-workspace-slug={workspaceSlug}>
             <MailActorProvider actorId={user.id}>
-              <MailWorkspace workspaceId={workspaceSlug}>
+              <MailWorkspace
+                workspaceId={workspaceSlug}
+                connectedByDefault={!isExactTuturuuuDotComEmail(user.email)}
+              >
                 {children}
               </MailWorkspace>
             </MailActorProvider>

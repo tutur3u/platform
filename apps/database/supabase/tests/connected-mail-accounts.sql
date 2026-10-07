@@ -1,0 +1,14 @@
+begin;
+select plan(10);
+select has_table('private', 'mail_connected_accounts', 'private.mail_connected_accounts exists');
+select has_table('private', 'mail_oauth_requests', 'private.mail_oauth_requests exists');
+select has_table('private', 'mail_connected_sends', 'private.mail_connected_sends exists');
+select ok((select relrowsecurity from pg_class where oid = 'private.mail_connected_accounts'::regclass), 'Connected credentials have RLS');
+select ok((select relrowsecurity from pg_class where oid = 'private.mail_oauth_requests'::regclass), 'OAuth state has RLS');
+select ok((select relrowsecurity from pg_class where oid = 'private.mail_connected_sends'::regclass), 'Send claims have RLS');
+select ok(not has_table_privilege('authenticated', 'private.mail_connected_accounts', 'SELECT'), 'Browser sessions cannot read tokens');
+select ok(not has_table_privilege('anon', 'private.mail_oauth_requests', 'SELECT'), 'Anonymous sessions cannot read OAuth verifiers');
+select ok(not has_table_privilege('authenticated', 'private.mail_connected_sends', 'INSERT'), 'Browser sessions cannot forge send receipts');
+select ok(has_table_privilege('service_role', 'private.mail_connected_accounts', 'SELECT,INSERT,UPDATE,DELETE'), 'Server service role can manage connections');
+select * from finish();
+rollback;

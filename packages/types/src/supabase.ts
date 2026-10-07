@@ -10274,6 +10274,86 @@ export type Database = {
           },
         ];
       };
+      mail_connected_accounts: {
+        Row: {
+          address: string;
+          created_at: string;
+          credentials: string;
+          id: string;
+          provider: string;
+          provider_account_id: string;
+          revision: number;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          address: string;
+          created_at?: string;
+          credentials: string;
+          id?: string;
+          provider: string;
+          provider_account_id: string;
+          revision?: number;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          address?: string;
+          created_at?: string;
+          credentials?: string;
+          id?: string;
+          provider?: string;
+          provider_account_id?: string;
+          revision?: number;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_connected_accounts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'mail_connected_accounts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      mail_connected_sends: {
+        Row: {
+          account_id: string;
+          payload_hash: string;
+          request_id: string;
+          status: string;
+        };
+        Insert: {
+          account_id: string;
+          payload_hash: string;
+          request_id: string;
+          status: string;
+        };
+        Update: {
+          account_id?: string;
+          payload_hash?: string;
+          request_id?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_connected_sends_account_id_fkey';
+            columns: ['account_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_connected_accounts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       mail_domains: {
         Row: {
           canonical_domain_id: string | null;
@@ -11168,6 +11248,48 @@ export type Database = {
           },
           {
             foreignKeyName: 'mail_notification_receipts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      mail_oauth_requests: {
+        Row: {
+          expires_at: string;
+          provider: string;
+          state_hash: string;
+          user_id: string;
+          verifier: string;
+          ws_id: string;
+        };
+        Insert: {
+          expires_at: string;
+          provider: string;
+          state_hash: string;
+          user_id: string;
+          verifier: string;
+          ws_id: string;
+        };
+        Update: {
+          expires_at?: string;
+          provider?: string;
+          state_hash?: string;
+          user_id?: string;
+          verifier?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_oauth_requests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'mail_oauth_requests_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'nova_user_leaderboard';
@@ -14510,6 +14632,66 @@ export type Database = {
           {
             foreignKeyName: 'project_members_user_id_fkey';
             columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      time_tracker_controls: {
+        Row: {
+          actor_id: string;
+          config: Json;
+          created_at: string;
+          deadline_at: string | null;
+          last_command_id: string;
+          last_command_payload: Json;
+          mode: string;
+          phase: string;
+          prepared_session_id: string | null;
+          revision: number;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          config: Json;
+          created_at?: string;
+          deadline_at?: string | null;
+          last_command_id: string;
+          last_command_payload: Json;
+          mode?: string;
+          phase?: string;
+          prepared_session_id?: string | null;
+          revision?: number;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          config?: Json;
+          created_at?: string;
+          deadline_at?: string | null;
+          last_command_id?: string;
+          last_command_payload?: Json;
+          mode?: string;
+          phase?: string;
+          prepared_session_id?: string | null;
+          revision?: number;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'time_tracker_controls_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'time_tracker_controls_actor_id_fkey';
+            columns: ['actor_id'];
             isOneToOne: false;
             referencedRelation: 'nova_user_leaderboard';
             referencedColumns: ['user_id'];
@@ -18683,6 +18865,17 @@ export type Database = {
         };
         Returns: number;
       };
+      configure_time_tracker_control: {
+        Args: {
+          p_actor_id: string;
+          p_command_id: string;
+          p_config: Json;
+          p_expected_revision: number;
+          p_prepared_session_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       consolidate_user_group_manager_link: {
         Args: { p_workspace_user_id: string; p_ws_id: string };
         Returns: string;
@@ -21061,6 +21254,10 @@ export type Database = {
         Returns: Json;
       };
       read_meeting_document: { Args: { p_meeting_id: string }; Returns: Json };
+      read_time_tracker_control: {
+        Args: { p_actor_id: string; p_ws_id: string };
+        Returns: Json;
+      };
       reconcile_creator_handle_owners: { Args: never; Returns: undefined };
       reconcile_orphaned_approved_post_email_queue: {
         Args: {
@@ -21764,6 +21961,10 @@ export type Database = {
       };
       valid_subscription_months: {
         Args: { months: string[] };
+        Returns: boolean;
+      };
+      valid_time_tracker_control_config: {
+        Args: { p_config: Json };
         Returns: boolean;
       };
       wallet_interest_calculation_result: {

@@ -954,3 +954,88 @@ cancel the editor, including a switch away and back.
 Retained sender image and gradient backgrounds in Original view keep their
 foreground colors, because a background-color alone does not establish the
 painted contrast. An opaque solid child resumes contrast correction.
+
+## Personal Gmail and Outlook accounts
+
+Mail also offers **Connected accounts** in a personal workspace. Any authenticated
+Tuturuuu user with access to that personal workspace may connect Gmail or Outlook;
+managed Tuturuuu mailboxes retain their existing staff/reviewer and mailbox-role
+checks. Connections belong to the authorizing user, not to workspace members or
+shared mailbox delegates. Account discovery and every provider operation bind both
+user and workspace before decrypting credentials.
+
+The connected view reads provider mail directly. Inbox, Sent, Drafts, Archive,
+Trash and Spam, provider search, pagination, read state, stars, archive, trash and
+restore therefore operate on Gmail/Outlook rather than a separate local mirror.
+Mailbox operations use immutable Outlook IDs. Refresh retrieves current provider
+state; this view does not implement push notifications, offline mail storage,
+custom-folder/label management, or Google Tasks/Microsoft To Do synchronization.
+Calendar account consent remains separate from Mail consent.
+
+Compose, Reply, Reply All and Forward send through the connected provider. Reply-To
+can contain multiple addresses; Reply All retains To/Cc roles, removes the user's
+address and deduplicates case-insensitively. Replies to sent messages target the
+original recipients. Bcc is never copied into a reply. Forwarding copies selected
+original attachments from authorized source bytes and starts without recipients.
+MIME carries Unicode subjects, threading headers and calendar scheduling types.
+Attachments are limited to 10 MiB in the browser and outbound MIME to 20 MiB.
+Message preview and JSON request reads have bounded server-side limits.
+
+Drafts are saved in the provider mailbox and can be opened, edited, and sent from
+Drafts. Gmail edits update the existing draft. Graph does not support updating a
+draft with raw MIME, so an edit first creates a confirmed replacement and deletes
+the unchanged original with an ETag fence. A deletion conflict retains both drafts
+and reports that partial outcome. Untouched draft HTML and attachment bytes are
+preserved. Save edited drafts before using the native Drafts send action.
+
+HTML previews use a script-disabled sandbox and a restrictive CSP; remote images
+are blocked. Original attachments download as files with `nosniff`. Personal
+calendar invitations use the same bounded iTIP parser as managed Mail. Accept,
+Decline and Tentative send a single-attendee `METHOD:REPLY` to the stored organizer,
+retaining UID, sequence and recurrence identity. No calendar event is copied into
+Tuturuuu, and ambiguous/delegated/cancelled requests do not expose RSVP controls.
+
+### OAuth setup and delivery verification
+
+Configure these server-only variables for the Mail deployment:
+
+- `MAIL_CONNECTED_ACCOUNTS_KEY`: a dedicated 32-byte encryption key encoded as
+  64 hexadecimal characters. Credentials and PKCE verifiers use AES-256-GCM
+  with the authenticated user ID as associated data. Keep the key stable; changing
+  it requires reconnecting accounts.
+- `MAIL_GOOGLE_CLIENT_ID`, `MAIL_GOOGLE_CLIENT_SECRET`,
+  `MAIL_GOOGLE_REDIRECT_URI`.
+- `MAIL_MICROSOFT_CLIENT_ID`, `MAIL_MICROSOFT_CLIENT_SECRET`,
+  `MAIL_MICROSOFT_REDIRECT_URI`.
+
+Both registered callback URLs point to the Mail origin's
+`/api/v1/mail/connected/callback`. Enable the Gmail API and grant
+`https://www.googleapis.com/auth/gmail.modify`. This is a restricted Google scope;
+complete the provider's required consent verification before public rollout.
+Register the Microsoft app for organizational and personal Microsoft accounts
+when both are intended. Delegated scopes are `User.Read`, `Mail.ReadWrite`,
+`Mail.Send`, and `offline_access`. No Calendar scopes are requested by Mail.
+
+OAuth uses PKCE, random hashed state, an HttpOnly SameSite browser cookie, a
+10-minute expiry, atomic state consumption, and renewed personal-workspace access
+checks during the callback. Private connection, OAuth and send-claim tables have
+RLS and no `anon`/`authenticated` grants. Expired tokens refresh on the server;
+refresh writes compare credential revisions so reconnect/disconnect wins races.
+An unauthorized read can refresh and retry once; mutations are not automatically
+replayed. Disconnect removes local access and encrypted credentials without
+changing provider messages. Provider-side application consent can be revoked in
+Google/Microsoft account settings.
+
+Sends reserve a persisted account/request claim. Provider acceptance records a
+receipt; repeated completed requests acknowledge it without resending. An in-flight
+or uncertain result requires checking provider Sent rather than automatic replay.
+Provider acceptance is not a delivery receipt. Test only with disposable mail and
+meeting fixtures unless real-account actions have been explicitly authorized.
+
+Regression coverage: `apps/mail/src/lib/mail/connected/*.test.ts`, connected
+composer/reply tests, managed `mail-reply-actions.test.ts`, and the private-table
+checks in `apps/database/supabase/tests/connected-mail-accounts.sql`. Require the
+Mail and affected workspace CI type-check, lint, tests and real app builds for the
+exact authored commit. Synthetic tests do not establish Google/Microsoft app
+consent, real mailbox delivery, or organizer-side RSVP processing; verify those
+with configured test accounts after deployment.
