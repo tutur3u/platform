@@ -158,6 +158,11 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
       }
     }
     _syncingHorizontalScroll = false;
+    _rebuildDateViewport();
+  }
+
+  void _rebuildDateViewport() {
+    if (mounted) setState(() {});
   }
 
   void _autoScroll() {
@@ -274,7 +279,6 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
       visibleDates: visibleDates,
       events: allDayEvents,
     );
-    final hasCollapsedAllDayRows = allDayLayout.maxRow >= 2;
     final hourHeight = _baseHourHeight(context) * zoom;
     final gutterWidth = _timeGutterWidth(context);
 
@@ -287,6 +291,24 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
         );
         final dayColumnWidth = viewportDayWidth / widget.visibleDayCount;
         final dayAreaWidth = dayColumnWidth * _windowDays;
+        final offset = _allDayController.hasClients
+            ? _allDayController.offset
+            : _bufferDays * dayColumnWidth;
+        final viewportEnd = offset + viewportWidth - gutterWidth;
+        final visibleSpans = allDayLayout.spans.where(
+          (span) =>
+              (span.endIndex + 1) * dayColumnWidth > offset &&
+              span.startIndex * dayColumnWidth < viewportEnd,
+        );
+        final visibleMaxRow = visibleSpans.fold<int>(
+          -1,
+          (row, span) => math.max(row, span.row),
+        );
+        final viewportLayout = AllDayLayoutResult(
+          spans: allDayLayout.spans,
+          maxRow: visibleMaxRow,
+        );
+        final hasCollapsedAllDayRows = visibleMaxRow >= 2;
         if (_dayWidth != dayColumnWidth) {
           _dayWidth = dayColumnWidth;
           _scheduleDatePosition();
@@ -374,7 +396,7 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                               child: AnimatedBuilder(
                                 animation: _allDayController,
                                 builder: (context, _) => _MultiDayAllDayRow(
-                                  layout: allDayLayout,
+                                  layout: viewportLayout,
                                   scope: widget.zoomScope,
                                   timeGutterWidth: gutterWidth,
                                   dayColumnWidth: dayColumnWidth,

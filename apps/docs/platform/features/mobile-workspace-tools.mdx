@@ -1677,3 +1677,27 @@ captured lifetime before writing, and disposal closes initialization/navigation
 admission. Already dispatched transport writes cannot be undone by this boundary.
 `push_service_session_lifetime_test.dart` exercises actual service methods and the
 actual registration helper with injected platform/token/device transport.
+
+### Calendar viewport and adjacent timed-card geometry
+
+Mobile Day, Three-day and Week timelines keep isolated back-to-back events at
+full available width. Half-open timestamp components identify genuine overlap;
+an isolated card's readable minimum is capped at the next disjoint start, and
+paint and column assignment use that same extent. Tiny capped cards clip their
+visual content, retain full title/time button semantics and do not extend their
+hit area into the next event. Genuine simultaneous/transitive overlap clusters
+retain readable minimum heights and physical conflict columns; a timestamp-
+disjoint successor can still share columns with that readable cluster.
+
+The expanded all-day bar reserves rows only for spans intersecting the current
+viewport, including partially visible dates. Buffered offscreen events cannot
+reserve rows or expose an expand toggle. A zero-row strip keeps its horizontal
+controller attached while traversing the continuous date window. Stable event
+keys and label clamps remain; coordinated recenter/reset positions rebuild the
+viewport-derived height. User week-start, date reselect and data scope are unchanged.
+
+Rendered regressions cover viewport growth/shrink/empty states, offscreen async
+updates without first-column height shifts, scaled/fractional/short overlap,
+back-to-back card widths and distinct tiny-card taps/accessibility. Device
+TestFlight0.23.4's reported flicker is not confirmed fixed by these widget tests;
+exact CI and recorded version/build/runtime verification remain required.
