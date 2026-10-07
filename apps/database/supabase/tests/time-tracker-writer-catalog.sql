@@ -80,7 +80,7 @@ select is((select array_agg(c.conrelid::regclass::text||':'||
  (select string_agg(a.attname,',' order by k.ordinality) from unnest(c.conkey) with ordinality k(attnum,ordinality) join pg_attribute a on a.attrelid=c.conrelid and a.attnum=k.attnum)
  ||'->'||c.confrelid::regclass::text||':'||
  (select string_agg(a.attname,',' order by k.ordinality) from unnest(c.confkey) with ordinality k(attnum,ordinality) join pg_attribute a on a.attrelid=c.confrelid and a.attnum=k.attnum)
- ||':'||c.confdeltype||':'||c.confupdtype order by c.conrelid::regclass::text,
+ ||':'||c.confdeltype::text||':'||c.confupdtype::text order by c.conrelid::regclass::text,
  (select string_agg(a.attname,',' order by k.ordinality) from unnest(c.conkey) with ordinality k(attnum,ordinality) join pg_attribute a on a.attrelid=c.conrelid and a.attnum=k.attnum))
  from pg_constraint c where c.contype='f' and (c.conrelid='public.time_tracking_sessions'::regclass or c.confrelid='public.time_tracking_sessions'::regclass)),
  array['private.time_tracking_requests:linked_session_id->time_tracking_sessions:id:n:a',
