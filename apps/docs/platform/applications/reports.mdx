@@ -103,6 +103,16 @@ delivery. It is discoverable by platform admins in **Settings → Secrets**, whe
 the readiness card shows both gates and sender state and offers a prefilled
 action for the periodic gate.
 
+Contacts Automations also offers an explicit, confirmed periodic-report gate
+control to actors with **both** `manage_workspace_secrets` and
+`send_user_group_report_emails` in that workspace. Its satellite-aware endpoint
+accepts only the allowlisted report flag and literal boolean strings; it never
+reads credentials, changes the global email gate, or grants access to platform
+Secrets. The default remains disabled. Enabling allows explicitly queued reports
+to pass this one safeguard, rather than queueing all approved or skipped reports.
+Route admission and confirmation/cancellation regressions cover the control.
+Actual parent-address mapping and provider/inbox delivery require runtime proof.
+
 Contacts shows each missing global gate, periodic gate, and sender separately,
 with an administrator action. Platform Secrets remains root-permission gated;
 Contacts does not grant access to it or invent a sender setup route. Approved

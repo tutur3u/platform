@@ -37,6 +37,8 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
 
+import { ReportEmailGateControl } from './report-email-gate-control';
+
 const cadences: PeriodicReportCadence[] = [
   'weekly',
   'monthly',
@@ -172,6 +174,14 @@ export default function AutomationsPanel({
           <ReadinessItem
             label={t('periodic_email_gate')}
             ready={data.emailDelivery.periodicGateEnabled}
+          />
+          <ReportEmailGateControl
+            key={`${wsId}:${Boolean(data.emailDelivery.canConfigureReportEmailGate)}:${data.emailDelivery.periodicGateEnabled}`}
+            wsId={wsId}
+            enabled={data.emailDelivery.periodicGateEnabled}
+            canConfigure={
+              data.emailDelivery.canConfigureReportEmailGate === true
+            }
           />
           <ReadinessItem
             label={t('sender_ready')}
