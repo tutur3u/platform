@@ -6,6 +6,19 @@ import { isEmailBlacklisted } from '@/lib/email-blacklist';
 import { createEmailUnsubscribeUrl } from '@/lib/email-unsubscribe';
 import { resolvePeriodicReportEmailAccess } from './access';
 import { loadScopedReportContext } from './context';
+import {
+  conditionalReportWrite,
+  failedGenerationSource,
+  GenerationWriteError,
+  nextGenerationRevision,
+  REPORT_GENERATION_FIELDS,
+  reportIdentityFromRow,
+  requireGenerationWrite,
+  type ScheduleOrigin,
+  successfulGenerationSource,
+  validAutomationScope,
+} from './feedback-consumer';
+import type { HumanFeedbackEvidence } from './feedback-evidence';
 import { generatePeriodicReportNarrative } from './generation';
 import { reconcilePeriodicReportSchedules } from './schedule-reconciliation';
 
@@ -115,11 +128,16 @@ async function processAutomationRun(sbAdmin: AdminClient, run: AutomationRun) {
   const privateDb = getPrivateDb(sbAdmin);
   try {
     if (!run.group_id) throw new Error('Automation run has no group scope');
+    if (!validAutomationScope(run)) throw new Error('Invalid automation scope');
     const [scheduleResult, membershipsResult, groupResult] = await Promise.all([
       privateDb
         .from('user_report_schedules')
-        .select('created_by, manager_instruction')
+        .select(
+          'id, ws_id, group_id, cadence, timezone, created_by, manager_instruction'
+        )
         .eq('id', run.schedule_id)
+        .eq('ws_id', run.ws_id)
+        .eq('cadence', run.cadence)
         .single(),
       sbAdmin
         .from('workspace_user_groups_users')
@@ -127,14 +145,30 @@ async function processAutomationRun(sbAdmin: AdminClient, run: AutomationRun) {
         .eq('group_id', run.group_id),
       sbAdmin
         .from('workspace_user_groups')
-        .select('name')
+        .select('name, ws_id')
         .eq('id', run.group_id)
+        .eq('ws_id', run.ws_id)
         .single(),
     ]);
     if (scheduleResult.error) throw scheduleResult.error;
     if (membershipsResult.error) throw membershipsResult.error;
     if (groupResult.error) throw groupResult.error;
-
+    if (
+      groupResult.data.ws_id !== run.ws_id ||
+      scheduleResult.data.ws_id !== run.ws_id ||
+      scheduleResult.data.id !== run.schedule_id ||
+      scheduleResult.data.cadence !== run.cadence ||
+      (scheduleResult.data.group_id !== null &&
+        scheduleResult.data.group_id !== run.group_id)
+    )
+      throw new Error('Automation scope mismatch');
+    // A null schedule group is the workspace default expanded by reconciliation.
+    const scheduleOrigin: ScheduleOrigin = {
+      status: 'verified-automation',
+      automationRunId: run.id,
+      scheduleId: run.schedule_id,
+      scheduleTimezone: scheduleResult.data.timezone,
+    };
     const userIds = (membershipsResult.data ?? []).map(
       (membership) => membership.user_id
     );
@@ -148,12 +182,11 @@ async function processAutomationRun(sbAdmin: AdminClient, run: AutomationRun) {
             .eq('archived', false)
         : { data: [], error: null };
     if (usersResult.error) throw usersResult.error;
-
     let createdReports = 0;
     for (const user of usersResult.data ?? []) {
       const existing = await privateDb
         .from('external_user_monthly_reports')
-        .select('id, generation_status')
+        .select(REPORT_GENERATION_FIELDS)
         .eq('user_id', user.id)
         .eq('group_id', run.group_id)
         .eq('cadence', run.cadence)
@@ -167,107 +200,147 @@ async function processAutomationRun(sbAdmin: AdminClient, run: AutomationRun) {
           !['failed', 'generating'].includes(existing.data.generation_status))
       )
         continue;
-
       const userName = user.display_name ?? user.full_name ?? 'Member';
       const title = `${run.cadence[0]?.toUpperCase()}${run.cadence.slice(1)} report · ${userName}`;
-      const created = existing.data
-        ? await privateDb
-            .from('external_user_monthly_reports')
-            .update({
-              generation_status: 'generating',
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', existing.data.id)
-            .eq('generation_status', existing.data.generation_status)
-            .select('id')
-            .maybeSingle()
-        : await privateDb
-            .from('external_user_monthly_reports')
-            .insert({
-              cadence: run.cadence,
-              content: '',
-              creator_id: scheduleResult.data.created_by,
-              feedback: '',
-              generation_mode: run.generation_mode,
-              generation_status:
-                run.generation_mode === 'ai' ? 'generating' : 'draft',
-              group_id: run.group_id,
-              manager_instruction: scheduleResult.data.manager_instruction,
-              period_end: run.period_end,
-              period_start: run.period_start,
-              report_approval_status: 'PENDING',
-              source_context: { automation_run_id: run.id, metrics: {} },
-              title,
-              updated_at: new Date().toISOString(),
-              updated_by: scheduleResult.data.created_by,
-              user_id: user.id,
-            })
-            .select('id')
-            .single();
-      if (created.error) throw created.error;
-      if (!created.data) continue;
-      if (!existing.data) createdReports++;
-
+      const original = existing.data;
+      const originalIdentity = original
+        ? reportIdentityFromRow(run.ws_id, original)
+        : null;
+      const created =
+        original && originalIdentity
+          ? await conditionalReportWrite(
+              sbAdmin,
+              originalIdentity,
+              original.manager_instruction,
+              original.updated_at,
+              original.generation_status,
+              {
+                generation_status: 'generating',
+                updated_at: nextGenerationRevision(original.updated_at),
+              }
+            )
+          : await privateDb
+              .from('external_user_monthly_reports')
+              .insert({
+                cadence: run.cadence,
+                content: '',
+                creator_id: scheduleResult.data.created_by,
+                feedback: '',
+                generation_mode: run.generation_mode,
+                generation_status:
+                  run.generation_mode === 'ai' ? 'generating' : 'draft',
+                group_id: run.group_id,
+                manager_instruction: scheduleResult.data.manager_instruction,
+                period_end: run.period_end,
+                period_start: run.period_start,
+                report_approval_status: 'PENDING',
+                source_context: { automation_run_id: run.id, metrics: {} },
+                title,
+                updated_at: new Date().toISOString(),
+                updated_by: scheduleResult.data.created_by,
+                user_id: user.id,
+              })
+              .select(REPORT_GENERATION_FIELDS)
+              .single();
+      const revision = requireGenerationWrite(created);
+      const admitted = created.data;
+      if (!admitted) throw new GenerationWriteError('conflict');
+      if (!original) createdReports++;
+      const identity = reportIdentityFromRow(run.ws_id, admitted);
+      if (
+        identity.userId !== user.id ||
+        identity.groupId !== run.group_id ||
+        admitted.cadence !== run.cadence ||
+        identity.periodStart !== run.period_start ||
+        identity.periodEnd !== run.period_end ||
+        (original &&
+          admitted.manager_instruction !== original.manager_instruction)
+      )
+        throw new Error('Report acknowledgement mismatch');
+      const managerInstruction = admitted.manager_instruction;
       if (run.generation_mode === 'ai') {
+        let evidence: HumanFeedbackEvidence | null = null;
+        let failureReason = 'context_unavailable';
         try {
           const scopedContext = await loadScopedReportContext(sbAdmin, {
-            cadence: run.cadence,
-            groupId: run.group_id,
-            periodEnd: run.period_end,
-            periodStart: run.period_start,
-            reportId: created.data.id,
-            userId: user.id,
-            wsId: run.ws_id,
+            ...identity,
+            scheduleOrigin,
           });
+          evidence = scopedContext.humanFeedbackEvidence;
+          if (evidence.status === 'unavailable') {
+            failureReason = 'human_feedback_unavailable';
+            throw new Error(failureReason);
+          }
+          failureReason = 'model_failed';
           const narrative = await generatePeriodicReportNarrative({
-            cadence: run.cadence,
-            deterministicMetrics: scopedContext.deterministicMetrics,
-            group: { id: run.group_id, name: groupResult.data.name },
-            managerInstruction: scheduleResult.data.manager_instruction,
-            periodEnd: run.period_end,
-            periodStart: run.period_start,
-            previousReport: scopedContext.previousReport,
+            ...scopedContext,
+            cadence: identity.cadence,
+            group: { id: identity.groupId, name: groupResult.data.name },
+            managerInstruction,
+            periodEnd: identity.periodEnd,
+            periodStart: identity.periodStart,
             subject: {
               displayName: user.display_name,
               fullName: user.full_name,
               note: user.note,
             },
           });
-          const generated = await privateDb
-            .from('external_user_monthly_reports')
-            .update({
+          failureReason = 'save_unacknowledged';
+          const generated = await conditionalReportWrite(
+            sbAdmin,
+            identity,
+            managerInstruction,
+            revision,
+            'generating',
+            {
               content: narrative.content,
               feedback: narrative.feedback,
               generation_status: 'ready',
               report_approval_status: 'PENDING',
-              source_context: {
-                automation_run_id: run.id,
-                metrics: scopedContext.deterministicMetrics,
-              },
               title: narrative.title,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', created.data.id);
-          if (generated.error) throw generated.error;
+              updated_at: nextGenerationRevision(revision),
+              source_context: successfulGenerationSource(
+                admitted.source_context,
+                identity,
+                scheduleOrigin,
+                evidence,
+                scopedContext.deterministicMetrics,
+                revision
+              ),
+            }
+          );
+          requireGenerationWrite(generated);
         } catch (error) {
-          const failed = await privateDb
-            .from('external_user_monthly_reports')
-            .update({
+          // A stale/uncertain save is never followed by an unconditional failure write.
+          if (
+            error instanceof GenerationWriteError &&
+            error.outcome === 'conflict'
+          )
+            throw error;
+          const failed = await conditionalReportWrite(
+            sbAdmin,
+            identity,
+            managerInstruction,
+            revision,
+            'generating',
+            {
               generation_status: 'failed',
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', created.data.id);
-          if (failed.error)
-            console.error('periodic_report.generation_status_write_failed', {
-              reportId: created.data.id,
-              runId: run.id,
-              error: failed.error,
-            });
+              updated_at: nextGenerationRevision(revision),
+              source_context: failedGenerationSource(
+                admitted.source_context,
+                identity,
+                scheduleOrigin,
+                evidence,
+                revision,
+                failureReason
+              ),
+            }
+          );
+          requireGenerationWrite(failed);
           throw error;
         }
       }
     }
-
     const completed = await privateDb
       .from('user_report_automation_runs')
       .update({
@@ -285,7 +358,6 @@ async function processAutomationRun(sbAdmin: AdminClient, run: AutomationRun) {
     await markRunFailure(privateDb, run, error);
   }
 }
-
 async function recordEmailAttempt(
   privateDb: PrivateClient,
   row: EmailQueueRow,
