@@ -75,8 +75,8 @@ delete from auth.users where id=pg_temp.fid(97005);
 select ok(not pg_temp.can_review(97005),'deleted actor cannot acquire new admission');
 
 insert into public.workspace_user_groups(id,ws_id,name) values(pg_temp.fid(97301),pg_temp.fid(97011),'Synthetic group'),(pg_temp.fid(97302),pg_temp.fid(97011),'Synthetic second group');
-insert into private.external_user_monthly_reports(id,user_id,group_id,title,content,feedback,review_revision)
- values(pg_temp.fid(97401),pg_temp.fid(97107),pg_temp.fid(97301),'Initial','Observed','Next step',99);
+insert into private.external_user_monthly_reports(id,user_id,group_id,title,content,feedback,updated_at,review_revision)
+ values(pg_temp.fid(97401),pg_temp.fid(97107),pg_temp.fid(97301),'Initial','Observed','Next step',now(),99);
 select is((select review_revision from private.external_user_monthly_reports where id=pg_temp.fid(97401)),1::bigint,'INSERT ignores forged version');
 update private.external_user_monthly_reports set review_revision=900,delivery_status='draft' where id=pg_temp.fid(97401);
 select is((select review_revision from private.external_user_monthly_reports where id=pg_temp.fid(97401)),1::bigint,'bookkeeping-only UPDATE cannot forge version');
@@ -85,7 +85,7 @@ declare r private.external_user_monthly_reports;
 begin
   select (jsonb_populate_record(x,p)).* into r from private.external_user_monthly_reports x where x.id=pg_temp.fid(97401);
   update private.external_user_monthly_reports set title=r.title,content=r.content,feedback=r.feedback,
-    user_id=r.user_id,group_id=r.group_id,score=r.score,scores=r.scores,cadence=r.cadence,period_start=r.period_start,period_end=r.period_end,
+    user_id=r.user_id,group_id=r.group_id,creator_id=r.creator_id,score=r.score,scores=r.scores,cadence=r.cadence,period_start=r.period_start,period_end=r.period_end,
     manager_instruction=r.manager_instruction,generation_mode=r.generation_mode,generation_status=r.generation_status,
     source_context=r.source_context,report_approval_status=r.report_approval_status,approved_at=r.approved_at,
     approved_by=r.approved_by,rejected_at=r.rejected_at,rejected_by=r.rejected_by,rejection_reason=r.rejection_reason,
@@ -101,6 +101,9 @@ end; $$;
 select pg_temp.assert_patch(p) from (values
   ('{"title":"Changed","content":"Changed"}'::jsonb),
   (jsonb_build_object('user_id',pg_temp.fid(97106))),
+  (jsonb_build_object('creator_id',pg_temp.fid(97101))),
+  (jsonb_build_object('creator_id',pg_temp.fid(97106))),
+  ('{"creator_id":null}'::jsonb),
   (jsonb_build_object('group_id',pg_temp.fid(97302))),
   ('{"feedback":"Changed"}'::jsonb),('{"score":4}'::jsonb),('{"scores":[2,4]}'::jsonb),
   ('{"scores":null}'::jsonb),('{"cadence":"weekly"}'::jsonb),('{"period_start":"2026-10-01"}'::jsonb),

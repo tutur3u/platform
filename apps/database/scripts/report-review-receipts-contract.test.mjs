@@ -63,6 +63,12 @@ test('workflow fails closed on disabled gate and selects exact head/schema paths
     w.on.pull_request.paths.includes('apps/database/supabase/migrations/**')
   );
   assert.deepEqual(w.on.push.branches, ['main', 'production']);
+  for (const event of ['pull_request', 'push'])
+    assert.ok(
+      w.on[event].paths.includes(
+        'apps/database/scripts/time-tracker-control-concurrency.mjs'
+      )
+    );
   const steps = w.jobs.contract.steps;
   assert.equal(steps[0].run, 'test "$CONTRACT_ENABLED" = true');
   assert.equal(
@@ -124,4 +130,36 @@ test('real SQL controls include permission truth table, versions, overflow, tear
   assert.ok(fixture.includes('select no_plan();'));
   assert.ok(fixture.includes('select * from finish();'));
   assert.ok(fixture.trimEnd().endsWith('rollback;'));
+});
+
+test('fixtures provide historically required updated_at and review creator rewrite/clear', () => {
+  for (const source of [fixture, race])
+    assert.match(
+      source,
+      /insert into private\.external_user_monthly_reports\([^)]*updated_at[^)]*\)/u
+    );
+  assert.match(fixture, /creator_id=r\.creator_id/u);
+  assert.match(
+    fixture,
+    /jsonb_build_object\('creator_id',pg_temp\.fid\(97101\)\)/u
+  );
+  assert.match(
+    fixture,
+    /jsonb_build_object\('creator_id',pg_temp\.fid\(97106\)\)/u
+  );
+  assert.ok(fixture.includes('{"creator_id":null}'));
+  assert.match(migration, /'creator_id'/u);
+});
+test('row serialization is cached once after caller revision reset and before field loop', () => {
+  assert.equal((migration.match(/to_jsonb\(NEW\)/gu) || []).length, 1);
+  assert.equal((migration.match(/to_jsonb\(OLD\)/gu) || []).length, 1);
+  assert.ok(
+    migration.indexOf('NEW.review_revision := OLD.review_revision;') <
+      migration.indexOf('new_row := to_jsonb(NEW);')
+  );
+  assert.ok(
+    migration.indexOf('old_row := to_jsonb(OLD);') <
+      migration.indexOf('FOREACH field_name')
+  );
+  assert.match(migration, /NEW\.review_revision := OLD\.review_revision \+ 1/u);
 });

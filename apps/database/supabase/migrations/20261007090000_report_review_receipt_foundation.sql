@@ -13,6 +13,8 @@ CREATE FUNCTION private.advance_report_review_revision()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path = '' AS $$
 DECLARE
   field_name text;
+  new_row jsonb;
+  old_row jsonb;
 BEGIN
   IF TG_OP = 'INSERT' THEN
     NEW.review_revision := 1;
@@ -20,9 +22,11 @@ BEGIN
   END IF;
   -- Ignore caller-supplied versions, including bookkeeping-only writes.
   NEW.review_revision := OLD.review_revision;
+  new_row := to_jsonb(NEW);
+  old_row := to_jsonb(OLD);
   FOREACH field_name IN ARRAY TG_ARGV LOOP
-    IF (to_jsonb(NEW) -> field_name) IS DISTINCT FROM
-       (to_jsonb(OLD) -> field_name) THEN
+    IF (new_row -> field_name) IS DISTINCT FROM
+       (old_row -> field_name) THEN
       -- Native bigint overflow aborts the entire mutation, never wraps/reset.
       NEW.review_revision := OLD.review_revision + 1;
       EXIT;
@@ -38,7 +42,7 @@ CREATE TRIGGER zz_report_review_revision BEFORE INSERT OR UPDATE
 ON private.external_user_monthly_reports FOR EACH ROW
 EXECUTE FUNCTION private.advance_report_review_revision(
   'title', 'content', 'feedback', 'score', 'scores', 'cadence', 'period_start',
-  'period_end', 'group_id', 'user_id', 'manager_instruction', 'generation_mode',
+  'period_end', 'group_id', 'user_id', 'creator_id', 'manager_instruction', 'generation_mode',
   'generation_status', 'source_context', 'report_approval_status', 'approved_by',
   'approved_at', 'rejected_by', 'rejected_at', 'rejection_reason');
 CREATE TRIGGER zz_report_review_revision BEFORE INSERT OR UPDATE
