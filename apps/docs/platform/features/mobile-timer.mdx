@@ -65,3 +65,32 @@ apps/database/scripts/programming-database-tap.test.mjs`. The full SQL verifier
 starts a disposable database and belongs in exact-head CI or an explicitly
 admitted host; it must not be run under a no-local-setup restriction. Local
 script tests alone are not schema, SQL concurrency, device, or production proof.
+
+### Unwired OFF-only replacement boundary
+
+A private service-only operation can atomically close the expected running
+session and start its replacement while the existing control is OFF and idle.
+No mobile, web, quick-start or AI caller uses it. It carries a separate operation
+revision and retained input-bound command receipt; configuration revision is
+unchanged. A receipt reports its **applied** result, including an older replay,
+and does not claim to describe the latest session.
+
+The operation acquires the existing actor/workspace advisory key before control,
+linked requests, session and break rows. One database timestamp captured after
+contention closes and starts work. Existing accounting and policy triggers remain
+in force; a future-starting running row is rejected without work credit. Any
+failure rolls back session writes, operation revision and receipt. Browser roles
+cannot call the operation, and even the service role cannot directly mutate its
+private bookkeeping tables.
+
+Full-schema catalog assertions retain an explicit baseline of legacy writers,
+RLS policies, triggers and FK actions, including the task-workspace guard and
+approval activity/notification effects. Unexpected drift fails validation. This
+baseline intentionally leaves writer closure **open**: the new operation cannot
+become authoritative until legacy direct writes, bypass RPCs and every lifecycle
+caller use a consistent boundary. CI executes real pgTAP and two-connection CAS,
+replay and shared-scope contention tests with actual type generation and cleanup.
+
+Shared phase/settings, pause/resume/skip, deadline reconciliation, cross-client
+realtime and background notification behavior remain separate prerequisites.
+This unwired boundary provides no all-clients-closed completion or device proof.
