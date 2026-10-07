@@ -9099,6 +9099,7 @@
     "marked": "Đã cập nhật trạng thái buổi học",
     "minutes_short": "{count} phút",
     "missed_class_date": "Ngày nghỉ học",
+    "missed_class_date_default_hint": "Gợi ý từ danh sách bắt đầu với buổi nghỉ sớm nhất được liệt kê. Hãy kiểm tra hoặc đổi ngày.",
     "missing_required": "Nhóm, học viên và ít nhất một buổi hợp lệ là bắt buộc",
     "more_filters": "Thêm bộ lọc",
     "no_access_description": "Bạn cần quyền xem nhóm người dùng để mở phụ đạo. Hãy nhờ quản trị viên cấp quyền.",

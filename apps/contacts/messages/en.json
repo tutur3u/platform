@@ -9099,6 +9099,7 @@
     "marked": "Session status updated",
     "minutes_short": "{count} min",
     "missed_class_date": "Missed class date",
+    "missed_class_date_default_hint": "Queue suggestions start with the oldest listed missed class. Review or change the date.",
     "missing_required": "Group, student, and at least one valid session are required",
     "more_filters": "More filters",
     "no_access_description": "You need permission to view user groups to open tutoring. Ask a workspace admin to grant it.",

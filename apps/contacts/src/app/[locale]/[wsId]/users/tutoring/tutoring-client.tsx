@@ -24,7 +24,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useLocale, useTranslations } from 'next-intl';
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { getMissedLessonContent } from './tutoring-content';
 import {
   addDaysToIsoDate,
@@ -45,6 +45,7 @@ import {
   findSessionSlotConflicts,
   type TutoringFormValues,
 } from './tutoring-types';
+import { oldestMissedDate, useTutoringHandoff } from './use-tutoring-handoff';
 
 interface Props {
   wsId: string;
@@ -152,9 +153,27 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
     'queuePageSize',
     parseAsInteger.withDefault(20).withOptions({ shallow: true })
   );
+  const handoff = useTutoringHandoff(wsId, canManage);
   const [form, setForm] = useState<TutoringFormValues>(DEFAULT_FORM);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [schedulingKey, setSchedulingKey] = useState<string | null>(null);
+  const handoffScope = handoff.scope;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scope changes must clear private drafts even when the reset value is identical.
+  useLayoutEffect(() => {
+    setForm(DEFAULT_FORM);
+    setCreateDialogOpen(false);
+    setSchedulingKey(null);
+  }, [handoffScope]);
+  const changeForm = (next: TutoringFormValues) => {
+    handoff.cancel();
+    setSchedulingKey(null);
+    setForm(next);
+  };
+  const changeDialogOpen = (open: boolean) => {
+    handoff.cancel();
+    setSchedulingKey(null);
+    setCreateDialogOpen(open);
+  };
   const policyQuery = useQuery({
     queryKey: ['tutoring-policy', wsId],
     queryFn: () => getTutoringPolicy(wsId),
@@ -303,6 +322,8 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
   const sessions = sessionsQuery.data?.data ?? [];
 
   const prefillFromQueue = async (item: TutoringQueueItem) => {
+    const current = handoff.begin();
+    if (!current()) return;
     const key = `${item.group_id}:${item.student_user_id}`;
     setSchedulingKey(key);
     // The tutoring teacher is independent of the class's homeroom teacher.
@@ -353,6 +374,7 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
           })
         : Promise.resolve(null),
     ]);
+    if (!current()) return;
     if (futureSchedule.status === 'fulfilled') {
       suggestions = suggestTutoringSlots(
         futureSchedule.value.data ?? [],
@@ -375,6 +397,7 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
           ? item.feedback_content
           : makeupContent,
       groupId: item.group_id,
+      missedClassDate: oldestMissedDate(item.missed_class_dates),
       reasonDetail: item.feedback_content,
       reasonType:
         item.reason_type === 'WEAK_SUPPORT'
@@ -442,8 +465,8 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
           <TutoringSessionsCard
             actions={{
               onCreate: () => createMutation.mutate(),
-              onCreateDialogOpenChange: setCreateDialogOpen,
-              onCreateFormChange: setForm,
+              onCreateDialogOpenChange: changeDialogOpen,
+              onCreateFormChange: changeForm,
               onFiltersChange: (next) => {
                 if (next.dateRange !== undefined)
                   void setDateRange(next.dateRange);
