@@ -1,15 +1,16 @@
 -- Inert foundation: no API/UI activation and no historical credit backfill.
 create table private.tutoring_absence_credits (
   id uuid primary key default gen_random_uuid(),
-  ws_id uuid not null references public.workspaces(id) on delete cascade,
-  group_id uuid not null references public.workspace_user_groups(id) on delete cascade,
-  student_user_id uuid not null references public.workspace_users(id) on delete cascade,
-  session_id uuid references private.workspace_tutoring_sessions(id) on delete set null,
+  ws_id uuid not null references public.workspaces(id) on update cascade on delete cascade,
+  group_id uuid not null references public.workspace_user_groups(id) on update cascade on delete cascade,
+  student_user_id uuid not null references public.workspace_users(id) on update cascade on delete cascade,
+  session_id uuid references private.workspace_tutoring_sessions(id) on update cascade on delete set null,
   original_session_id uuid not null unique,
-  attendance_id uuid references public.user_group_attendance(id) on delete set null,
+  attendance_id uuid references public.user_group_attendance(id) on update cascade on delete set null,
   original_attendance_id uuid not null,
   absence_date date not null,
   original_class_session_id uuid,
+  class_session_id uuid references private.workspace_user_group_sessions(id) on update cascade on delete set null,
   state text not null check(state in ('RESERVED','CREDITED','RELEASED')),
   revision bigint not null default 1 check(revision > 0),
   created_by uuid not null,
@@ -20,8 +21,16 @@ create table private.tutoring_absence_credits (
 );
 create unique index tutoring_absence_active_credit on private.tutoring_absence_credits(original_attendance_id)
   where state in ('RESERVED','CREDITED');
+-- Full-history trigger lookup and every nullable/cascading FK need indexes.
+create index tutoring_absence_original_attendance on private.tutoring_absence_credits(original_attendance_id);
+create index tutoring_absence_workspace on private.tutoring_absence_credits(ws_id);
+create index tutoring_absence_group on private.tutoring_absence_credits(group_id);
+create index tutoring_absence_student on private.tutoring_absence_credits(student_user_id);
+create index tutoring_absence_session on private.tutoring_absence_credits(session_id);
+create index tutoring_absence_attendance on private.tutoring_absence_credits(attendance_id);
+create index tutoring_absence_class_session on private.tutoring_absence_credits(class_session_id);
 create table private.tutoring_absence_commands (
-  ws_id uuid not null references public.workspaces(id) on delete cascade,
+  ws_id uuid not null references public.workspaces(id) on update cascade on delete cascade,
   actor_id uuid not null,
   command_id uuid not null,
   input jsonb not null,
@@ -60,7 +69,7 @@ $$;
 
 create function private.guard_tutoring_absence_session() returns trigger
 language plpgsql security definer set search_path='' as $$
-declare c private.tutoring_absence_credits; r jsonb; projection jsonb;
+declare c private.tutoring_absence_credits; r jsonb; projection jsonb; prior jsonb; fk_keys text[];
 begin
   r:=case when tg_op='DELETE' then to_jsonb(old) else to_jsonb(new) end;
   select * into c from private.tutoring_absence_credits where original_session_id=
@@ -73,7 +82,30 @@ begin
     or not exists(select 1 from public.workspace_users where id=c.student_user_id and ws_id=c.ws_id)
   ) then return old; end if;
   projection:=private.tutoring_absence_projection(r,'SESSION');
-  if tg_op='UPDATE' and projection=private.tutoring_absence_projection(to_jsonb(old),'SESSION') then return new; end if;
+  if tg_op='UPDATE' then
+    prior:=private.tutoring_absence_projection(to_jsonb(old),'SESSION');
+    if projection=prior then return new; end if;
+    fk_keys:='{}';
+    -- RI actions run after the old parent disappears. Admit only the exact FK
+    -- field change, with a valid replacement (or its declared SET NULL action).
+    if old.teacher_user_id is distinct from new.teacher_user_id and old.teacher_user_id is not null
+      and not exists(select 1 from public.workspace_users where id=old.teacher_user_id)
+      and (new.teacher_user_id is null or exists(select 1 from public.workspace_users where id=new.teacher_user_id and ws_id=new.ws_id)) then
+      fk_keys:=array_append(fk_keys,'teacher_user_id'); end if;
+    if old.created_by is distinct from new.created_by and old.created_by is not null
+      and not exists(select 1 from public.users where id=old.created_by)
+      and (new.created_by is null or exists(select 1 from public.users where id=new.created_by)) then
+      fk_keys:=array_append(fk_keys,'created_by'); end if;
+    if old.ws_id<>new.ws_id and not exists(select 1 from public.workspaces where id=old.ws_id)
+      and exists(select 1 from public.workspaces where id=new.ws_id) then fk_keys:=array_append(fk_keys,'ws_id'); end if;
+    if old.group_id<>new.group_id and not exists(select 1 from public.workspace_user_groups where id=old.group_id)
+      and exists(select 1 from public.workspace_user_groups where id=new.group_id and ws_id=new.ws_id) then
+      fk_keys:=array_append(fk_keys,'group_id'); end if;
+    if old.student_user_id<>new.student_user_id and not exists(select 1 from public.workspace_users where id=old.student_user_id)
+      and exists(select 1 from public.workspace_users where id=new.student_user_id and ws_id=new.ws_id) then
+      fk_keys:=array_append(fk_keys,'student_user_id'); end if;
+    if cardinality(fk_keys)>0 and (projection-fk_keys)=(prior-fk_keys) then return new; end if;
+  end if;
   if exists(select 1 from private.tutoring_absence_write_permits p
     where p.backend_pid=pg_backend_pid() and p.transaction_id=txid_current()
       and p.object_kind='SESSION' and p.object_id=c.original_session_id
@@ -97,7 +129,8 @@ begin
     parent_removed:=not exists(select 1 from public.workspaces where id=c.ws_id)
       or not exists(select 1 from public.workspace_user_groups where id=c.group_id and ws_id=c.ws_id)
       or not exists(select 1 from public.workspace_users where id=c.student_user_id and ws_id=c.ws_id)
-      or not exists(select 1 from public.workspace_user_groups_users where group_id=c.group_id and user_id=c.student_user_id);
+      or not exists(select 1 from public.workspace_user_groups_users where group_id=c.group_id and user_id=c.student_user_id)
+      or (old.session_id is not null and not exists(select 1 from private.workspace_user_group_sessions where id=old.session_id));
     if tg_op='DELETE' and parent_removed then
       if c.state='RESERVED' then
         update private.tutoring_absence_credits set state='RELEASED',revision=revision+1,
@@ -105,6 +138,11 @@ begin
       end if;
       continue;
     end if;
+    if tg_op='UPDATE' and old.session_id is distinct from new.session_id and old.session_id is not null
+      and not exists(select 1 from private.workspace_user_group_sessions where id=old.session_id)
+      and exists(select 1 from private.workspace_user_group_sessions where id=new.session_id and group_id=new.group_id)
+      and (private.tutoring_absence_projection(to_jsonb(old),'ATTENDANCE')-'session_id')
+        =(private.tutoring_absence_projection(to_jsonb(new),'ATTENDANCE')-'session_id') then continue; end if;
     if tg_op='UPDATE' and old.id=new.id and old.group_id=new.group_id and old.user_id=new.user_id
       and old.date=new.date and old.session_id is not distinct from new.session_id
       and (c.state='RELEASED' or lower(old.status)=lower(new.status)) then continue; end if;
@@ -162,6 +200,12 @@ begin
     raise exception 'Invalid tutoring credit input' using errcode='22023'; end if;
   perform private.assert_tutoring_absence_actor(p_ws,p_actor);
   perform pg_advisory_xact_lock(hashtextextended('tutoring-absence-command:'||p_ws||':'||p_actor||':'||p_command,0));
+  select * into previous from private.tutoring_absence_commands
+    where ws_id=p_ws and actor_id=p_actor and command_id=p_command;
+  if found then
+    if previous.input is distinct from p_input then raise exception 'Tutoring credit command conflict' using errcode='40001'; end if;
+    return previous.receipt;
+  end if;
   if v_action='CREATE' then
     v_group:=(p_input->>'groupId')::uuid; v_student:=(p_input->>'studentUserId')::uuid;
   else
@@ -173,15 +217,16 @@ begin
   perform pg_advisory_xact_lock(hashtextextended('tutoring-absence-credit:'||p_ws||':'||v_group||':'||v_student,0));
   perform 1 from public.workspace_user_groups where id=v_group and ws_id=p_ws for share;
   if not found then raise exception 'Tutoring credit scope unavailable' using errcode='22023'; end if;
-  perform 1 from public.workspace_users where id=v_student and ws_id=p_ws and not archived for share;
+  perform 1 from public.workspace_users where id=v_student and ws_id=p_ws for share;
   if not found then raise exception 'Tutoring credit scope unavailable' using errcode='22023'; end if;
-  perform 1 from public.workspace_user_groups_users where group_id=v_group and user_id=v_student for share;
-  if not found then raise exception 'Tutoring credit scope unavailable' using errcode='22023'; end if;
-  select * into previous from private.tutoring_absence_commands
-    where ws_id=p_ws and actor_id=p_actor and command_id=p_command;
-  if found then
-    if previous.input is distinct from p_input then raise exception 'Tutoring credit command conflict' using errcode='40001'; end if;
-    return previous.receipt;
+  -- Release/delete/resolve require tenant ownership, not continued enrollment.
+  -- CREATE and transitions making an active claim additionally require enrollment.
+  if v_action='CREATE' or (v_action='TRANSITION' and p_input->>'reasonType'='ABSENT_RECOVERY'
+    and p_input->>'attendanceStatus' in ('PENDING','DONE') and c.state<>'CREDITED') then
+    perform 1 from public.workspace_users where id=v_student and ws_id=p_ws and not archived for share;
+    if not found then raise exception 'Tutoring credit scope unavailable' using errcode='22023'; end if;
+    perform 1 from public.workspace_user_groups_users where group_id=v_group and user_id=v_student for share;
+    if not found then raise exception 'Tutoring credit scope unavailable' using errcode='22023'; end if;
   end if;
   if v_action='CREATE' then
     if jsonb_typeof(p_input->'slots') is distinct from 'array' or jsonb_array_length(p_input->'slots') not between 1 and 50 then
@@ -224,8 +269,8 @@ begin
         (v_slot->>'startTime')::time,(v_slot->>'durationMinutes')::integer,'ABSENT_RECOVERY',
         coalesce(v_slot->>'reasonDetail',''),coalesce(v_slot->>'content',''),p_actor);
       insert into private.tutoring_absence_credits(ws_id,group_id,student_user_id,session_id,original_session_id,
-        attendance_id,original_attendance_id,absence_date,original_class_session_id,state,created_by,updated_by,history)
-      values(p_ws,v_group,v_student,v_id,v_id,a.id,a.id,a.date,a.session_id,'RESERVED',p_actor,p_actor,
+        attendance_id,original_attendance_id,absence_date,original_class_session_id,class_session_id,state,created_by,updated_by,history)
+      values(p_ws,v_group,v_student,v_id,v_id,a.id,a.id,a.date,a.session_id,a.session_id,'RESERVED',p_actor,p_actor,
         jsonb_build_array(jsonb_build_object('operation','CREATE','actorId',p_actor,'at',v_now)));
       v_ids:=array_append(v_ids,v_id);
     end loop;
@@ -272,7 +317,7 @@ begin
       if v_state in ('RESERVED','CREDITED') and c.state<>'CREDITED' then
         select * into a from public.user_group_attendance where id=c.attendance_id;
         if not found or lower(a.status)<>'absent' or a.group_id<>c.group_id or a.user_id<>c.student_user_id
-          or a.date<>c.absence_date or a.session_id is distinct from c.original_class_session_id then
+          or a.date<>c.absence_date or a.session_id is distinct from c.class_session_id then
           raise exception 'Source absence unavailable' using errcode='22023'; end if;
         if exists(select 1 from private.tutoring_absence_credits where original_attendance_id=c.original_attendance_id
           and id<>c.id and state in ('RESERVED','CREDITED')) then raise exception 'Source absence already credited' using errcode='40001'; end if;

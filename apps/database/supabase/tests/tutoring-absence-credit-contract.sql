@@ -47,6 +47,10 @@ create function pg_temp.change_credit(n integer,command integer,revision text,st
       'expectedRevision',revision,'attendanceStatus',status,'reasonType',reason));
 $$;
 
+select ok(not exists(select 1 from unnest(array['original_attendance_id','ws_id','group_id','student_user_id','session_id','attendance_id','class_session_id']) field
+ where not exists(select 1 from pg_index i join pg_attribute a on a.attrelid=i.indrelid and a.attnum=i.indkey[0]
+ where i.indrelid='private.tutoring_absence_credits'::regclass and i.indisvalid and i.indpred is null and a.attname=field)),
+ 'full-history lookup and every credit FK have a valid leading unfiltered index');
 select ok(not has_table_privilege('service_role','private.tutoring_absence_write_permits','SELECT,INSERT,UPDATE,DELETE'),'server cannot forge private permit');
 select ok(not has_table_privilege('service_role','private.tutoring_absence_credits','SELECT,INSERT,UPDATE,DELETE'),'server cannot bypass canonical credit writer');
 select ok(not has_function_privilege('authenticated','private.manage_tutoring_absence_credit(uuid,uuid,uuid,jsonb)','EXECUTE'),'browser cannot invoke canonical writer');

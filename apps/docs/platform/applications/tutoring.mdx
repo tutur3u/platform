@@ -386,7 +386,14 @@ Correcting active source attendance to PRESENT requires an explicit staff-manage
 resolution. Silent correction or standalone deletion is rejected. A credited source
 keeps its history after explicit resolution. Existing workspace/group/student or
 membership teardown uses narrowly scoped FK cleanup; immutable original IDs/date
-remain available for retained records. No generic trigger-depth or caller-writable
+remain available for retained records. Deleting an actual class occurrence releases
+pending reservations while preserving DONE credit and immutable occurrence snapshots.
+Declared teacher/creator SET NULL and parent rekey cascades may change only their
+live FK fields after the old parent disappears; arbitrary direct rewrites stay denied.
+Tenant-authorized release is possible after learner archive or enrollment departure;
+new reservations still require an active enrolled learner. Input-bound replay returns
+its original receipt before mutable learner/source checks, but only after rechecking
+the current actor's permission. Revoked actors cannot replay. No generic trigger-depth or caller-writable
 session flag authorizes a protected write.
 
 Only a verified backend actor may call the canonical service-only operations, which
