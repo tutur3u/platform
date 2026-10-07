@@ -487,3 +487,6 @@ and the actual `subscription-invoice.test.tsx` form. These source checks do not
 prove a customer's create/open/export incident or production storage behavior.
 
 Invoice browser preferences are optional: a blocked storage getter or read uses the existing default values and completes initialization, so opening an invoice and reaching print/image export does not depend on persistent storage. Valid saved preferences and in-memory updates remain supported. Regression coverage uses the real shared hook and InvoiceCard with synthetic storage denial; this reproducible restriction failure is not proof of the original customer crash, browser export completion, or deployed behavior.
+
+
+Invoice schedule previews use the workspace billing timezone for both projected recurring classes and materialized sessions. A class keeps the same invoice civil day and month when materialized, including midnight and daylight-saving boundaries; multiple classes on one billing day remain one date. Recurrence identity and cancellation use the original series timezone, and previewing never writes schedules. `planned-session-dates.test.ts` covers projected/materialized parity and cancellation controls. This source regression does not establish the cause of a customer screenshot or deployed invoice behavior.
