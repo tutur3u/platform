@@ -635,3 +635,20 @@ regressions in `invoice-history-error.test.tsx` cover initial 403/503 failures,
 genuine empty success, pending recovery, retained rows, page continuation and
 queued observer callbacks in both languages. These source tests do not establish
 the original customer incident or authenticated production behavior.
+
+
+### Invoice PNG export lifetime
+
+PNG export belongs to the admitted signed-in actor lifetime, verified invoice
+workspace, and current printable card. Replacing the actor, workspace, invoice,
+or any rendered invoice input invalidates a pending capture permanently, including
+leaving and returning to the same actor. Render inputs include confidential amount
+visibility, language, currency, invoice content, products, promotions, configuration,
+and compact/dark preview choices. Unchanged semantic rerenders remain exportable.
+
+Stale renderer/import/blob completions cannot download, notify, clear a newer
+export's pending state, or consume a newer automatic-image URL intent. Missing
+actor or workspace admission fails closed. The existing print path is unchanged.
+`invoice-png-lifetime.test.tsx` exercises actual card/templates/provider lifetime
+with synthetic held renderer boundaries; this is bounded source evidence, not
+proof of the original customer incident or a live customer export.
