@@ -666,3 +666,16 @@ actor or workspace admission fails closed. The existing print path is unchanged.
 `invoice-png-lifetime.test.tsx` exercises actual card/templates/provider lifetime
 with synthetic held renderer boundaries; this is bounded source evidence, not
 proof of the original customer incident or a live customer export.
+
+### Invoice template dates
+
+Full and compact invoice cards omit a date that cannot be rendered as a finite
+JavaScript date, following the existing missing-date omission. Valid dates retain
+the same English/Vietnamese locale formatting and preview, print, and PNG surfaces.
+This is a rendering boundary only: invoice timestamps, accounting, recurrence,
+and API date authority are unchanged. The original customer's crash cause and
+presence of malformed customer timestamps remain unproven.
+
+`invoice-card-date.test.tsx` covers actual card/template transitions in both
+locales and preview modes, malformed date boundaries, missing dates, and valid
+formatting. Source checks do not establish a live customer export or deployment.
