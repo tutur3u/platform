@@ -1,7 +1,19 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { WorkspaceVisibilityProvider } from '../../../../../hooks/use-workspace-visibility';
 import InvoiceCard from './invoice-card';
+
+function renderCard(card: ReactNode) {
+  return render(
+    <QueryClientProvider client={new QueryClient()}>
+      <WorkspaceVisibilityProvider actorId="synthetic-account">
+        {card}
+      </WorkspaceVisibilityProvider>
+    </QueryClientProvider>
+  );
+}
 
 const capture = vi.hoisted(() => vi.fn());
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
@@ -61,8 +73,9 @@ for (const kind of ['getItem', 'getter'])
       });
     window.history.replaceState({}, '', '/?image=true');
     try {
-      render(
+      renderCard(
         <InvoiceCard
+          wsId="synthetic-workspace"
           lang="en"
           configs={[]}
           invoice={invoice}
@@ -90,8 +103,9 @@ for (const kind of ['getItem', 'getter'])
   });
 it('retains a valid saved compact preference in the actual invoice', async () => {
   window.localStorage.setItem('invoice-compact-view', 'true');
-  render(
+  renderCard(
     <InvoiceCard
+      wsId="synthetic-workspace"
       lang="en"
       configs={[]}
       invoice={invoice}

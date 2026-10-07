@@ -18,6 +18,7 @@ import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
+import 'package:mobile/data/repositories/workspace_secrets_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
@@ -39,6 +40,7 @@ import 'package:mobile/features/settings/view/settings_route_frame.dart';
 import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/settings/view/settings_workspace_page.dart';
+import 'package:mobile/features/settings/view/settings_workspace_secrets_page.dart';
 import 'package:mobile/features/settings/view/timezone_settings_tile.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
@@ -66,6 +68,7 @@ part 'settings_detail_shell_checks.dart';
 part 'settings_product_editor_checks.dart';
 part 'settings_design_checks.dart';
 part 'settings_assistant_shell_checks.dart';
+part 'settings_secrets_shell_checks.dart';
 
 void main() {
   tearDown(() => GoRouter.optionURLReflectsImperativeAPIs = false);
@@ -74,6 +77,7 @@ void main() {
   registerProductEditorChecks();
   registerSettingsDesignChecks();
   registerSettingsAssistantShellChecks();
+  registerSettingsSecretsShellChecks();
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await supa.Supabase.initialize(
