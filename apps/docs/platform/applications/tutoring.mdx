@@ -326,3 +326,35 @@ The next teacher-hours foundation is intended to support staff-defined defaults
 and explicit per-teacher overrides, with the teacher override taking precedence.
 Those hours are not yet implemented or consulted by this first draft packet; absence
 of a recorded tutoring conflict must never be treated as availability consent.
+
+## Teacher-hours domain contract
+
+The pure `@tuturuuu/utils/tutoring-teacher-hours` model defines staff defaults
+and per-teacher weekday overrides; it does not yet read or write hours, change
+Contacts UI, constrain Create, or send notices. Existing custom tutoring policy
+and staff confirmation remain unchanged. Calendar's automatically created
+07:00–23:00 defaults are not teacher-hours authority.
+
+An absent staff weekday is **unknown**; an explicit empty array is **closed**.
+An absent override weekday inherits the current default. Custom teacher windows
+replace that weekday, rather than widening it by union. Override reset retains
+an empty, revisioned row; future storage must atomically reject stale revisions,
+including absent→create→reset races. The model preserves opaque revision strings
+without numeric/date conversion and rejects unchanged write receipts, but does
+not itself prove database CAS, role admission or same-content revision advancement.
+
+Hours require an explicitly confirmed IANA timezone. Overrides cannot establish
+availability without that staff frame. Windows are sorted, disjoint, half-open
+civil times; midnight endings use `24:00`. Overnight windows must be explicitly
+split across weekdays. Candidate inputs are in the confirmed staff frame, never
+silently in the browser/class timezone. Gap/fold endpoints and slots crossing
+DST transitions are conservatively rejected rather than assigned an offset.
+Unknown coverage stays unknown; any known closed portion denies coverage.
+
+Regression coverage in `tutoring-teacher-hours.test.ts` exercises the actual
+Calendar default factory and Temporal compatible gap conversion as unsuitable
+inputs, inheritance/replacement, lossless reset receipts, adjacency, midnight,
+weekly wrapping and DST. This is pure source evidence, not persisted availability
+or production scheduling proof. API/schema/authenticated editor, atomic revision
+storage, staff-default/teacher-role permissions, outside-hours exceptions and
+planner consumption remain separate reviewed packets.
