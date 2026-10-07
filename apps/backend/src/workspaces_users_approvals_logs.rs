@@ -127,6 +127,7 @@ async fn approvals_logs_response(
                 ("select", REPORT_LOG_COLUMNS.to_owned()),
                 ("report_id", format!("eq.{report_id}")),
                 ("user_ws_id", format!("eq.{resolved_ws_id}")),
+                ("group_ws_id", format!("eq.{resolved_ws_id}")),
                 ("report_approval_status", "eq.APPROVED".to_owned()),
                 ("order", "created_at.desc".to_owned()),
                 ("limit", "1".to_owned()),

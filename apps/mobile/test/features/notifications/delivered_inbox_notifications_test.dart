@@ -20,6 +20,19 @@ String capsule(Object? ws) =>
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('web excludes cleanup even when the browser platform is mobile', () {
+    for (final platform in TargetPlatform.values) {
+      expect(
+        deliveredInboxCleanupSupported(isWeb: true, platform: platform),
+        isFalse,
+      );
+      expect(
+        deliveredInboxCleanupSupported(isWeb: false, platform: platform),
+        platform == TargetPlatform.android || platform == TargetPlatform.iOS,
+      );
+    }
+  });
+
   group('persisted inbox metadata', () {
     test(
       'canonical workspace and personal capsules retain actual inbox scope',

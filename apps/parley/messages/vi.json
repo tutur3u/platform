@@ -7837,6 +7837,7 @@
       "wallet_id": "Ví",
       "warehouse_id": "Kho"
     },
+    "history_load_failed": "Không thể tải lịch sử hóa đơn. Vui lòng thử lại.",
     "invalid_subscription_inventory": "Sản phẩm hoặc đơn vị tính liên kết không khả dụng. Kiểm tra sản phẩm liên kết của lớp trước khi tạo hóa đơn.",
     "inventory_fallback_used": "Kho lưu trữ không được chỉ định nên một kho mặc định đã được chọn",
     "invoice_configuration": "Thông tin hóa đơn",

@@ -28,17 +28,31 @@ void main() {
       expect(repository.writes, 0);
       await tester.tap(find.text(locale == 'en' ? 'Personality' : 'Tính cách'));
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextFormField).first, 'Nova');
-      await tester.enterText(
-        find.byType(TextFormField).at(1),
-        'Synthetic kind style',
+      await tester.tap(
+        find.byKey(const ValueKey('assistant-personality-name')),
       );
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField), 'Nova');
+
       final save = find.text(locale == 'en' ? 'Save' : 'Lưu');
       await tester.ensureVisible(save);
       await tester.tap(save);
       await tester.pumpAndSettle();
       expect(find.text('Nova'), findsOneWidget);
       expect(repository.writes, 1);
+      await tester.tap(
+        find.byKey(const ValueKey('assistant-personality-personality')),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byType(TextFormField),
+        'Synthetic kind style',
+      );
+      await tester.ensureVisible(save);
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+      expect(find.text('Synthetic kind style'), findsOneWidget);
+      expect(repository.writes, 2);
       await tester.pumpWidget(const SizedBox.shrink());
     });
   }
@@ -126,6 +140,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Personality'));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('assistant-personality-name')));
+    await tester.pumpAndSettle();
     tester.view.viewInsets = const FakeViewPadding(bottom: 250);
     addTearDown(tester.view.resetViewInsets);
     await tester.tap(find.byType(TextFormField).first);
@@ -166,6 +182,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('gentle'), findsOneWidget);
     expect(find.text('compact'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('assistant-personality-tone')));
+    await tester.pumpAndSettle();
     final save = find.text('Save');
     await tester.ensureVisible(save);
     await tester.tap(save);

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -5,6 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
+import 'package:mobile/features/security/data/app_lock_settings_store.dart';
+import 'package:mobile/features/security/data/local_auth_service.dart';
 import 'package:mobile/features/security/view/app_lock_boundary.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mocktail/mocktail.dart';
@@ -17,6 +21,10 @@ class _MockAuthCubit extends MockCubit<AuthState> implements AuthCubit {}
 class _MockAppLockCubit extends MockCubit<AppLockState>
     implements AppLockCubit {}
 
+class _Store extends Mock implements AppLockSettingsStore {}
+
+class _LocalAuth extends Mock implements LocalAuthService {}
+
 void main() {
   group('AppLockBoundary', () {
     testWidgets('covers authenticated content while lock state is loading', (
@@ -28,8 +36,88 @@ void main() {
         appLockState: const AppLockState(status: AppLockStatus.loading),
       );
 
-      expect(find.byType(NovaLoadingIndicator), findsOneWidget);
+      expect(find.byType(NovaLoadingIndicator), findsNothing);
+      expect(find.byKey(const ValueKey('app-splash-logo')), findsOneWidget);
       expect(find.text('Sensitive workspace'), findsNothing);
+    });
+
+    testWidgets('held settings hydration keeps splash until lock entry', (
+      tester,
+    ) async {
+      final store = _Store();
+      final auth = _LocalAuth();
+      final held = Completer<bool>();
+      when(store.isEnabled).thenAnswer((_) => held.future);
+      when(store.readDelay).thenAnswer((_) async => AppLockDelay.immediately);
+      when(
+        () => auth.authenticate(reason: any(named: 'reason')),
+      ).thenAnswer((_) async => false);
+      final lock = AppLockCubit(localAuthService: auth, settingsStore: store);
+      final account = _MockAuthCubit();
+      whenListen(
+        account,
+        const Stream<AuthState>.empty(),
+        initialState: _authenticatedState(),
+      );
+      final loading = lock.load(lockIfEnabled: true);
+      await tester.pumpApp(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<AuthCubit>.value(value: account),
+            BlocProvider<AppLockCubit>.value(value: lock),
+          ],
+          child: const AppLockBoundary(child: Text('Sensitive workspace')),
+        ),
+      );
+      await tester.pump(const Duration(seconds: 6));
+      expect(find.byKey(const ValueKey('app-splash-logo')), findsOneWidget);
+      expect(
+        tester.getSize(find.byKey(const ValueKey('app-splash-logo'))),
+        const Size(104, 104),
+      );
+      expect(find.byType(NovaLoadingIndicator), findsNothing);
+      expect(find.text('Sensitive workspace'), findsNothing);
+      expect(
+        find.byKey(const ValueKey('app-lock-unlock-button')),
+        findsNothing,
+      );
+      held.complete(true);
+      await loading;
+      await tester.pump();
+      await tester.pump();
+      expect(find.byKey(const ValueKey('app-splash-logo')), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 4999));
+      expect(
+        find.byKey(const ValueKey('app-lock-unlock-button')),
+        findsNothing,
+      );
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(
+        find.byKey(const ValueKey('app-lock-unlock-button')),
+        findsOneWidget,
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+      await lock.close();
+    });
+
+    testWidgets('locked content is excluded from accessibility', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+
+      await _pumpBoundary(
+        tester,
+        authState: _authenticatedState(),
+        appLockState: const AppLockState(
+          enabled: true,
+          locked: true,
+          hasLoaded: true,
+          status: AppLockStatus.authenticating,
+        ),
+      );
+      expect(find.bySemanticsLabel('Sensitive workspace'), findsNothing);
+      semantics.dispose();
+      await tester.pumpWidget(const SizedBox.shrink());
     });
 
     testWidgets('shows content after lock state loads disabled', (
@@ -83,25 +171,17 @@ void main() {
           appLockCubit: appLockCubit,
         );
 
-        expect(find.text('Tuturuuu is locked'), findsOneWidget);
+        expect(find.bySemanticsLabel('Tuturuuu is locked'), findsOneWidget);
         expect(find.text('Protected on this device'), findsNothing);
-        expect(find.byIcon(Icons.lock_outline_rounded), findsOneWidget);
+        expect(find.byKey(const ValueKey('app-splash-logo')), findsOneWidget);
+        expect(find.text('Unlock'), findsNothing);
         expect(tester.takeException(), isNull);
 
-        final cardRect = tester.getRect(
-          find.byKey(const ValueKey('app-lock-card')),
+        final logoRect = tester.getRect(
+          find.byKey(const ValueKey('app-splash-logo')),
         );
-        final buttonRect = tester.getRect(
-          find.byKey(const ValueKey('app-lock-unlock-button')),
-        );
-        final buttonContentRect = tester.getRect(
-          find.byKey(const ValueKey('app-lock-unlock-content')),
-        );
-
-        expect(cardRect.center.dx, closeTo(195, 0.1));
-        expect(cardRect.center.dy, closeTo(422, 0.1));
-        expect(buttonRect.center.dx, closeTo(195, 0.1));
-        expect(buttonContentRect.center.dx, closeTo(buttonRect.center.dx, 0.1));
+        expect(logoRect.center, const Offset(195, 422));
+        await tester.pumpWidget(const SizedBox.shrink());
 
         verify(() => appLockCubit.unlock(reason: 'Unlock Tuturuuu.')).called(1);
       },
@@ -134,11 +214,13 @@ void main() {
       expect(tester.takeException(), isNull);
       verify(() => appLockCubit.unlock(reason: 'Unlock Tuturuuu.')).called(1);
       clearInteractions(appLockCubit);
+      await tester.pump(const Duration(seconds: 5));
       await tester.ensureVisible(find.text('Unlock'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Unlock'));
 
       verify(() => appLockCubit.unlock(reason: 'Unlock Tuturuuu.')).called(1);
+      await tester.pumpWidget(const SizedBox.shrink());
     });
 
     testWidgets('shows a centered authenticating state', (tester) async {
@@ -153,8 +235,11 @@ void main() {
         ),
       );
 
+      expect(find.text('Unlocking...'), findsNothing);
+      await tester.pump(const Duration(seconds: 5));
       expect(find.text('Unlocking...'), findsOneWidget);
-      expect(find.byType(NovaLoadingIndicator), findsOneWidget);
+      expect(find.byType(NovaLoadingIndicator), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
       expect(tester.takeException(), isNull);
     });
   });

@@ -27,9 +27,7 @@ test('singleton keeps the Type Check context, event surface and runner with a re
   assert.deepEqual(Object.keys(workflow.jobs), ['type-check']);
   assert.equal(job.name, 'Type Check');
   assert.equal(job['runs-on'], 'ubuntu-latest');
-  for (const object of [workflow, job]) {
-    assert.equal(object.concurrency, undefined);
-  }
+  assert.equal(job.concurrency, undefined);
   assert.equal(workflow.permissions, undefined);
   assert.deepEqual(job.permissions, { contents: 'read' });
   assert.equal(job.needs, undefined);
@@ -333,4 +331,70 @@ test('disabled configuration skips release detection even when its script is una
   assert.equal(result.failure, null);
   assert.equal(result.heavy, false);
   assert.deepEqual(result.outputs.release_relevance, {});
+});
+
+function evaluateConcurrency(value, github) {
+  const evaluate = (body) =>
+    Function(
+      'github',
+      'startsWith',
+      'format',
+      `return (${body});`
+    )(
+      github,
+      (text, prefix) => text.startsWith(prefix),
+      (pattern, ...args) =>
+        pattern.replace(/\{(\d+)\}/g, (_, index) => args[Number(index)])
+    );
+  const expressions = [...value.matchAll(/\$\{\{(.*?)\}\}/g)];
+  if (expressions.length === 1 && expressions[0][0] === value)
+    return evaluate(expressions[0][1]);
+  return value.replace(/\$\{\{(.*?)\}\}/g, (_, body) => String(evaluate(body)));
+}
+
+test('obsolete branch pushes supersede while protected and manual attempts stay independent', () => {
+  assert.ok(
+    workflow.concurrency,
+    'Type Check needs bounded branch supersession'
+  );
+  const context = {
+    workflow: 'TypeScript Type Check',
+    ref: 'refs/heads/fix/example',
+    sha: 'old',
+    event_name: 'push',
+    run_id: 1,
+  };
+  const group = (extra) =>
+    evaluateConcurrency(workflow.concurrency.group, { ...context, ...extra });
+  const cancel = (extra) =>
+    evaluateConcurrency(workflow.concurrency['cancel-in-progress'], {
+      ...context,
+      ...extra,
+    });
+  assert.equal(group({}), group({ sha: 'latest', run_id: 2 }));
+  assert.equal(cancel({}), true);
+  for (const ref of [
+    'refs/heads/main',
+    'refs/heads/production',
+    'refs/heads/release-please--branches--production',
+  ]) {
+    assert.equal(cancel({ ref }), false, ref);
+    assert.notEqual(
+      group({ ref }),
+      group({ ref, sha: 'latest', run_id: 2 }),
+      ref
+    );
+    assert.notEqual(
+      group({ ref }),
+      group({ ref, run_id: 2 }),
+      'same-SHA attempts stay independent'
+    );
+  }
+  assert.equal(cancel({ event_name: 'workflow_dispatch' }), false);
+  assert.notEqual(
+    group({ event_name: 'workflow_dispatch' }),
+    group({ event_name: 'workflow_dispatch', run_id: 2 })
+  );
+  assert.notEqual(group({}), group({ event_name: 'workflow_dispatch' }));
+  assert.notEqual(group({}), group({ ref: 'refs/heads/fix/other' }));
 });

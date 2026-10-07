@@ -9,6 +9,7 @@ import { formatCurrency } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { FinanceDisplayAmount } from '../../shared/finance-display-amount';
 import { getSavedInvoiceDiscount } from '../invoice-discount';
+import { formatInvoiceTemplateDate } from './format-invoice-template-date';
 
 export function FullInvoiceTemplate({
   invoice,
@@ -43,13 +44,7 @@ export function FullInvoiceTemplate({
   const brandLogoAlt = brandName
     ? t('invoices.brand_logo_alt', { brand: brandName })
     : t('invoices.logo_alt');
-  const invoiceDate = invoice.created_at
-    ? new Intl.DateTimeFormat(lang, {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      }).format(new Date(invoice.created_at))
-    : null;
+  const invoiceDate = formatInvoiceTemplateDate(invoice.created_at, lang);
 
   const subtotal = products.reduce((total, product) => {
     return total + product.price * product.amount;

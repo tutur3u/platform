@@ -189,3 +189,26 @@ Regression coverage: `assistant_soul_name_writer_test.dart`,
 `offline_queue_disposal_regression_test.dart` cover held cache/queue/network
 admission, actor and workspace departure, same-actor logout restoration,
 superseding writes/refreshes, malformed receipts, and admitted ACK cleanup.
+
+
+## Assistant reply error and save receipts
+
+Native Chat and mobile Mira use the canonical messages POST adapter. By default,
+an upstream SSE error produces the fixed public message `AI response unavailable`
+when request-scoped server history contains no saved assistant reply. Upstream
+error text, provider bodies, credentials, URLs, and model diagnostics are never
+used as public error messages. Unknown error payloads use the same fixed fallback.
+This applies to streaming and ordinary JSON requests.
+
+A saved partial assistant reply remains authoritative even when the upstream
+stream fails. Failed history readback retains the separate send failure response.
+Without an upstream error, missing saved history retains `AI response was not saved`.
+Replaying a saved client request returns its existing messages without generating
+or charging again. This error mapping does not establish the cause of any
+customer save incident or repair database persistence.
+
+Regression coverage: `ai-stream-error-regression.test.ts` beside the canonical
+`apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.ts`.
+The migration backend owns GET only; POST remains tracked Next.js backlog until
+mutation parity is implemented. Live native build and save/reopen verification
+remain separate delivery requirements.

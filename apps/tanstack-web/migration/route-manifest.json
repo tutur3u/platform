@@ -6,12 +6,12 @@
         "acceptedRemoval": 12,
         "key": "api",
         "label": "api",
-        "legacyNext": 556,
-        "migrated": 63,
-        "percentComplete": 11.89,
-        "remaining": 556,
-        "terminal": 75,
-        "total": 631,
+        "legacyNext": 555,
+        "migrated": 66,
+        "percentComplete": 12.32,
+        "remaining": 555,
+        "terminal": 78,
+        "total": 633,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 12,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 566,
-        "migrated": 68,
-        "percentComplete": 12.38,
-        "remaining": 566,
-        "terminal": 80,
-        "total": 646,
+        "legacyNext": 565,
+        "migrated": 71,
+        "percentComplete": 12.81,
+        "remaining": 565,
+        "terminal": 83,
+        "total": 648,
         "unknownStatus": 0
       },
       {
@@ -363,12 +363,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 644,
-      "migrated": 216,
-      "percentComplete": 26.32,
-      "remaining": 644,
-      "terminal": 230,
-      "total": 874,
+      "legacyNext": 643,
+      "migrated": 219,
+      "percentComplete": 26.6,
+      "remaining": 643,
+      "terminal": 233,
+      "total": 876,
       "unknownStatus": 0
     }
   },
@@ -5528,14 +5528,15 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/settings/approvals/pending-summary:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/settings/approvals/pending-summary/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/settings/approvals/pending-summary:apps/web/src/app/api/v1/workspaces/[wsId]/settings/approvals/pending-summary/route.ts",
       "kind": "api",
       "methods": [
-        "GET"
+        "GET",
+        "HEAD"
       ],
       "routePath": "/api/v1/workspaces/:wsId/settings/approvals/pending-summary",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/settings/approvals/pending-summary/route.ts",
-      "status": "legacy-next",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/settings/approvals/pending-summary/route.ts",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
@@ -6902,26 +6903,54 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/users/approvals:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/approvals/route.ts",
-      "kind": "api",
-      "methods": [
-        "GET",
-        "PUT"
-      ],
-      "routePath": "/api/v1/workspaces/:wsId/users/approvals",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/approvals/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/users/approvals/logs:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/approvals/logs/route.ts",
+      "id": "api:GET:/api/v1/workspaces/:wsId/users/approvals:apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/route.ts",
       "kind": "api",
       "methods": [
         "GET"
       ],
-      "routePath": "/api/v1/workspaces/:wsId/users/approvals/logs",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/approvals/logs/route.ts",
+      "routePath": "/api/v1/workspaces/:wsId/users/approvals",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/workspaces/:wsId/users/approvals:apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/route.ts"
+    },
+    {
+      "id": "api:HEAD:/api/v1/workspaces/:wsId/users/approvals:apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/route.ts",
+      "kind": "api",
+      "methods": [
+        "HEAD"
+      ],
+      "routePath": "/api/v1/workspaces/:wsId/users/approvals",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/route.ts",
       "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "method": "HEAD",
+      "parentId": "api:/api/v1/workspaces/:wsId/users/approvals:apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/route.ts"
+    },
+    {
+      "id": "api:PUT:/api/v1/workspaces/:wsId/users/approvals:apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/route.ts",
+      "kind": "api",
+      "methods": [
+        "PUT"
+      ],
+      "routePath": "/api/v1/workspaces/:wsId/users/approvals",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "method": "PUT",
+      "parentId": "api:/api/v1/workspaces/:wsId/users/approvals:apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/route.ts"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/users/approvals/logs:apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/logs/route.ts",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "routePath": "/api/v1/workspaces/:wsId/users/approvals/logs",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/logs/route.ts",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
@@ -9917,20 +9946,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 631,
+    "apiRoutes": 633,
     "cronRoutes": 10,
     "layouts": 68,
     "pages": 156,
-    "routeHandlers": 646,
+    "routeHandlers": 648,
     "methodCounts": {
       "GET": 327,
-      "HEAD": 15,
+      "HEAD": 18,
       "POST": 320,
       "PUT": 60,
       "PATCH": 65,
       "DELETE": 102,
       "OPTIONS": 24
     },
-    "total": 874
+    "total": 876
   }
 }
