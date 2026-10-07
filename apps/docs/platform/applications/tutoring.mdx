@@ -262,3 +262,16 @@ Regression coverage: `tutoring-handoff.test.tsx` mounts the actual Contacts clie
 and create card with a real QueryClient and synthetic transport responses. Its
 table/dialog presentation harness is bounded component evidence, not customer
 roster, production provider, or end-to-end dialog proof.
+
+
+### Archive intent when editing students
+
+Contacts student edits preserve the stored `archived` intent when an existing
+archive-until date is loaded. An unrelated field edit or repeated open/save must
+not archive an explicitly active student. Selecting a temporary archive date
+explicitly still marks the student archived; clearing the date and switching to
+active retains the existing server contract that clears the archive-until value.
+This changes neither the temporary archive date policy nor enrollment history,
+and does not repair earlier customer records. Regression coverage exercises the
+actual student form, calendar, switch and mutation transport in
+`form-archive.test.tsx`.

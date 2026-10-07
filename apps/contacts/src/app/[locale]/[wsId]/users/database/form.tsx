@@ -32,7 +32,7 @@ import { useUserStatusLabels } from '@tuturuuu/users-ui/hooks/use-user-status-la
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import * as z from 'zod';
 
 interface Props {
@@ -149,13 +149,8 @@ export default function UserForm({
     },
   });
 
-  // Watch archived_until to auto-set archived status
+  // Existing dates must not override the stored archive intent on form load.
   const archivedUntilValue = form.watch('archived_until');
-  React.useEffect(() => {
-    if (archivedUntilValue) {
-      form.setValue('archived', true);
-    }
-  }, [archivedUntilValue, form]);
 
   const compressAndResizeImage = (blob: Blob): Promise<Blob> => {
     return new Promise((resolve, reject) => {
@@ -762,7 +757,10 @@ export default function UserForm({
                               ? dayjs(field.value).toDate()
                               : undefined
                           }
-                          onValueChange={field.onChange}
+                          onValueChange={(date) => {
+                            field.onChange(date);
+                            if (date) form.setValue('archived', true);
+                          }}
                           className="w-full"
                         />
                       </FormControl>

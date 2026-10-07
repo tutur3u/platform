@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, Calculator, Loader2, Plus } from '@tuturuuu/icons';
+import { AlertTriangle, Calculator, Plus } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -34,6 +34,7 @@ import {
   isPermissionRequestError,
 } from './components/invoice-products-permission-warning';
 import { SubscriptionAttendanceSummary } from './components/subscription-attendance-summary';
+import { SubscriptionCreateAction } from './components/subscription-create-action';
 import { SubscriptionGroupSelector } from './components/subscription-group-selector';
 import { SubscriptionInvoiceProposal } from './components/subscription-invoice-proposal';
 import { SubscriptionPrepaidControls } from './components/subscription-prepaid-controls';
@@ -62,7 +63,14 @@ import { createSubscriptionInvoiceWithInternalApi } from './internal-api';
 import { formatInvoiceRecalculationDescription } from './invoice-visibility-format';
 import { ProductSelection } from './product-selection';
 import { invalidateInvoiceMutationQueries } from './query-invalidation';
-import { useSubscriptionBillingGroups } from './subscription-billing-groups';
+import {
+  getSubscriptionBlockReason,
+  isSelectedSubscriptionRangePaid,
+} from './subscription-admission';
+import {
+  getBillingScheduleWindow,
+  useSubscriptionBillingGroups,
+} from './subscription-billing-groups';
 import type { SubscriptionInvoiceProps } from './subscription-invoice-props';
 import type { SelectedProductItem } from './types';
 import {
@@ -78,7 +86,6 @@ import {
   getGroupsDateRange,
   getMonthStartDate,
   getSubscriptionAttendanceDisplayData,
-  isSubscriptionRangeFullyPaidForGroups,
   PREPAID_MONTH_OPTION_HORIZON,
   resolveSubscriptionInvoiceCategoryId,
 } from './utils';
@@ -334,10 +341,15 @@ export function SubscriptionInvoice({
   const userAttendance = subscriptionInvoiceContext?.attendance ?? [];
   const latestSubscriptionInvoices =
     subscriptionInvoiceContext?.latestInvoices ?? [];
+  const scheduleWindow = useMemo(
+    () => getBillingScheduleWindow(effectiveSelectedMonth, prepaidMonthCount),
+    [effectiveSelectedMonth, prepaidMonthCount]
+  );
   const { billingUserGroups, groupsWithScheduleIds } =
     useSubscriptionBillingGroups(
       userGroups,
-      subscriptionInvoiceContext?.scheduledSessionsByGroupId
+      subscriptionInvoiceContext?.scheduledSessionsByGroupId,
+      scheduleWindow
     );
   const userAttendanceError =
     subscriptionInvoiceContextError instanceof Error
@@ -365,27 +377,12 @@ export function SubscriptionInvoice({
     [effectiveSelectedMonth, locale, prepaidMonthCount]
   );
 
-  const isSelectedRangePaid = useMemo(() => {
-    if (selectedGroupIds.length === 0 || !effectiveSelectedMonth) return false;
-
-    const selectedMonthStart = getMonthStartDate(effectiveSelectedMonth);
-
-    // A range is paid only if all selected groups have coverage for every month.
-    // If any selected group has an unpaid month, invoice creation stays enabled.
-    if (Number.isNaN(selectedMonthStart.getTime())) return false;
-
-    return isSubscriptionRangeFullyPaidForGroups(
-      selectedGroupIds,
-      effectiveSelectedMonth,
-      prepaidMonthCount,
-      latestSubscriptionInvoices
-    );
-  }, [
-    effectiveSelectedMonth,
-    latestSubscriptionInvoices,
-    prepaidMonthCount,
+  const isSelectedRangePaid = isSelectedSubscriptionRangePaid(
     selectedGroupIds,
-  ]);
+    effectiveSelectedMonth,
+    prepaidMonthCount,
+    latestSubscriptionInvoices
+  );
 
   const billableAttendance = useMemo(
     () =>
@@ -539,7 +536,7 @@ export function SubscriptionInvoice({
     return map;
   }, [referralDiscountRows]);
 
-  useSubscriptionAutoSelection({
+  const autoSelection = useSubscriptionAutoSelection({
     enabled: true,
     selectedGroupIds,
     selectedMonth: effectiveSelectedMonth,
@@ -770,14 +767,32 @@ export function SubscriptionInvoice({
       : currentIndex < availableMonths.length - 1;
   };
 
+  const blockedReason = getSubscriptionBlockReason(
+    autoSelection?.blocked ?? false,
+    !!scheduleWindow,
+    isLoadingSubscriptionData || productsLoading,
+    [
+      subscriptionInvoiceContextError,
+      groupProductsError,
+      productsError,
+      userGroupsError,
+    ],
+    selectedGroupIds,
+    subscriptionInvoiceContext?.scheduledSessionsByGroupId
+  );
+  const checkoutReady = !!(
+    selectedUser &&
+    selectedGroupIdsForCreate.length &&
+    subscriptionSelectedProducts.length &&
+    selectedWalletId &&
+    selectedCategoryId
+  );
   const handleCreateSubscriptionInvoice = async () => {
-    if (
-      !selectedUser ||
-      selectedGroupIdsForCreate.length === 0 ||
-      subscriptionSelectedProducts.length === 0 ||
-      !selectedWalletId ||
-      !selectedCategoryId
-    ) {
+    if (blockedReason) {
+      toast(t(`ws-invoices.${blockedReason}`));
+      return;
+    }
+    if (!checkoutReady) {
       toast(t('ws-invoices.create_subscription_invoice_validation'));
       return;
     }
@@ -1158,28 +1173,12 @@ export function SubscriptionInvoice({
                         currency={defaultCurrency}
                       />
 
-                      <Button
-                        className="w-full"
-                        onClick={handleCreateSubscriptionInvoice}
-                        disabled={
-                          !selectedUser ||
-                          selectedGroupIds.length === 0 ||
-                          subscriptionSelectedProducts.length === 0 ||
-                          !selectedWalletId ||
-                          !selectedCategoryId ||
-                          isCreating ||
-                          isSelectedRangePaid
-                        }
-                      >
-                        {isCreating ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            {t('ws-invoices.creating_subscription_invoice')}
-                          </>
-                        ) : (
-                          t('ws-invoices.create_subscription_invoice')
-                        )}
-                      </Button>
+                      <SubscriptionCreateAction
+                        onCreate={handleCreateSubscriptionInvoice}
+                        blockedReason={blockedReason}
+                        creating={isCreating}
+                        disabled={!checkoutReady || isSelectedRangePaid}
+                      />
                     </div>
                   </CardContent>
                 </Card>

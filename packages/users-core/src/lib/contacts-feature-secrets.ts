@@ -9,8 +9,11 @@ import { TOPIC_ANNOUNCEMENTS_SECRET } from '@tuturuuu/utils/topic-announcements'
  * literal strings `true` and `false` may be written. Anything else belongs in
  * the platform Settings → Secrets screen, which is permission-gated separately.
  */
+export const REPORT_EMAIL_SENDING_SECRET = 'ENABLE_REPORT_EMAIL_SENDING';
+
 export const CONTACTS_FEATURE_SECRET_NAMES = new Set<string>([
   TOPIC_ANNOUNCEMENTS_SECRET,
+  REPORT_EMAIL_SENDING_SECRET,
 ]);
 
 export function isContactsFeatureSecretName(name: string) {
