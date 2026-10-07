@@ -29,12 +29,14 @@ class AgendaView extends StatefulWidget {
     required this.onEventTap,
     required this.onDaySelected,
     this.onLoadMore,
+    this.resetGeneration = 0,
     this.contentTopPadding = 0,
     this.scrollHeader,
     this.isLoadingMore = false,
     super.key,
   });
 
+  final int resetGeneration;
   final double contentTopPadding;
   final Widget? scrollHeader;
   final DateTime selectedDate;
@@ -69,7 +71,8 @@ class _AgendaViewState extends State<AgendaView> {
   @override
   void didUpdateWidget(AgendaView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.selectedDate != widget.selectedDate) {
+    if (oldWidget.selectedDate != widget.selectedDate ||
+        oldWidget.resetGeneration != widget.resetGeneration) {
       _didAutoScroll = false;
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToNow());
     }
@@ -82,7 +85,7 @@ class _AgendaViewState extends State<AgendaView> {
   }
 
   void _scrollToNow() {
-    if (_didAutoScroll || !_scrollController.hasClients) return;
+    if (!mounted || _didAutoScroll || !_scrollController.hasClients) return;
     _didAutoScroll = true;
 
     final items = _buildItems(widget.events, widget.selectedDate);
@@ -96,6 +99,10 @@ class _AgendaViewState extends State<AgendaView> {
       _scrollController.position.maxScrollExtent,
     );
 
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _scrollController.jumpTo(offset);
+      return;
+    }
     unawaited(
       _scrollController.animateTo(
         offset,
