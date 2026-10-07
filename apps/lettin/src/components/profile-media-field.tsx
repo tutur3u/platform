@@ -7,7 +7,7 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 
 export function ProfileMediaField({
   kind,
@@ -23,6 +23,7 @@ export function ProfileMediaField({
   onChange: (url: string) => void;
 }) {
   const t = useTranslations('lettin');
+  const hintId = useId();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<
     'invalidProfileImage' | 'profileUploadLimit' | 'requestFailed' | null
@@ -33,6 +34,7 @@ export function ProfileMediaField({
         {t(kind === 'avatar' ? 'profileavatar_url' : 'profilebanner_url')}
         <Input
           type="file"
+          aria-describedby={hintId}
           disabled={disabled}
           accept="image/png,image/jpeg,image/webp,image/gif"
           onChange={async (event) => {
@@ -66,10 +68,10 @@ export function ProfileMediaField({
             }
           }}
         />
-        <small className="text-muted-foreground">
-          {t(kind === 'avatar' ? 'avatarUploadHint' : 'bannerUploadHint')}
-        </small>
       </label>
+      <small id={hintId} className="text-muted-foreground">
+        {t(kind === 'avatar' ? 'avatarUploadHint' : 'bannerUploadHint')}
+      </small>
       {hasImage && (
         <Button
           type="button"
