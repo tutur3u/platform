@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createBuildInfoHandler } from '../../../packages/utils/src/build-info-route';
 import { proxy } from './proxy';
 
 const mocks = vi.hoisted(() => {
@@ -323,4 +324,78 @@ describe('Meet proxy auth handoff', () => {
       expect(response.headers.get('Location')).toBeNull();
     }
   );
+});
+
+// Exercise the actual public handler after the real proxy boundary admits it.
+describe('Meet public build identity boundary', () => {
+  beforeEach(() => {
+    mocks.refreshAppSessionForRequest.mockReset();
+    mocks.refreshAppSessionForRequest.mockResolvedValue({
+      ok: false,
+      error: 'Invalid app session',
+    });
+    mocks.guardApiProxyRequest.mockReset();
+    mocks.guardApiProxyRequest.mockResolvedValue(null);
+  });
+  it.each([undefined, 'ttr_app_session=synthetic-stale'])(
+    'admits only public GET without refreshing absent/stale session %s',
+    async (cookie) => {
+      const response = await proxy(
+        new NextRequest('https://meet.tuturuuu.com/api/build-info', {
+          headers: cookie ? { cookie } : undefined,
+        })
+      );
+      expect(response.headers.get('x-middleware-next')).toBe('1');
+      expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+      expect(mocks.guardApiProxyRequest).toHaveBeenCalledOnce();
+      const identity = createBuildInfoHandler('meet')();
+      expect(identity.status).toBe(200);
+      expect(identity.headers.get('cache-control')).toBe('no-store, max-age=0');
+      expect((await identity.json()).appName).toBe('meet');
+    }
+  );
+  it.each([
+    ['POST', '/api/build-info'],
+    ['HEAD', '/api/build-info'],
+    ['GET', '/api/build-info/'],
+    ['GET', '/api/build-info-extra'],
+    ['GET', '/api/build-info/private'],
+    ['GET', '/api/meet-ai/private'],
+  ])('retains session admission for %s %s', async (method, path) => {
+    const response = await proxy(
+      new NextRequest(`https://meet.tuturuuu.com${path}`, { method })
+    );
+    expect(response.status).toBe(401);
+    expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledOnce();
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+  });
+  it.each([
+    ['MFA_REQUIRED', 403],
+    ['rate-limited', 429],
+  ])(
+    'preserves API guard denial %s on the public identity route',
+    async (code, status) => {
+      mocks.guardApiProxyRequest.mockResolvedValue(
+        NextResponse.json({ code }, { status })
+      );
+      const response = await proxy(
+        new NextRequest('https://meet.tuturuuu.com/api/build-info')
+      );
+      expect(response.status).toBe(status);
+      expect(await response.json()).toEqual({ code });
+      expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+    }
+  );
+  it('retains private API MFA failure instead of reaching the route', async () => {
+    mocks.refreshAppSessionForRequest.mockResolvedValue({
+      ok: false,
+      error: 'MFA required',
+    });
+    const response = await proxy(
+      new NextRequest('https://meet.tuturuuu.com/api/meet-ai/private')
+    );
+    expect(response.status).toBe(403);
+    expect((await response.json()).code).toBe('MFA_REQUIRED');
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+  });
 });

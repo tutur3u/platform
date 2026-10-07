@@ -156,12 +156,16 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
-    const appSessionRefresh = isLocalAuthApi
-      ? null
-      : await refreshAppSessionForRequest(req, {
-          sessionMode: 'supabase-first',
-          targetApp: 'meet',
-        });
+    // Build identity is public metadata; all other API admission is unchanged.
+    const isPublicBuildInfo =
+      req.method === 'GET' && req.nextUrl.pathname === '/api/build-info';
+    const appSessionRefresh =
+      isLocalAuthApi || isPublicBuildInfo
+        ? null
+        : await refreshAppSessionForRequest(req, {
+            sessionMode: 'supabase-first',
+            targetApp: 'meet',
+          });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return appSessionFailureResponse(
