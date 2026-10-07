@@ -291,3 +291,70 @@ records, or alter custom eligibility/exclusion policy. Explicit attendance-row
 linkage remains separate work, including multiple sessions on the same date.
 Web queue regressions and the Rust queue parity tests cover the chronological
 boundary, ordering, same-day multiplicity and group/student isolation.
+
+## Staff-reviewed draft planning
+
+Contacts offers compact per-session date/time and eligible teacher choices alongside
+the existing manual editor. Choices use the workspace policy, scheduled group classes,
+and a complete bounded read of workspace teacher memberships and tutoring sessions
+within the policy horizon (including the prior date for overnight conflicts).
+Date/time ranking is chronological; teacher ties are stable by ID. Staff explicitly
+select a teacher to apply a choice. Nothing is created until the existing Create action.
+The planner never fills an unsupported time with an invented 18:00 fallback.
+
+Each teacher/session catalog is capped at 20 pages of 100 records. Errors, inconsistent
+counts, duplicate or truncated pages prevent suggestions and expose Retry. Missing
+teachers and schedules have distinct feedback. Configured but unmaterialized class
+occurrences are shown as a schedule-review exception, not confirmed classes.
+The displayed horizon follows the configured policy rather than a fixed four weeks.
+
+Choices exclude recorded learner/teacher tutoring conflicts and other slots in the
+current draft, with half-open intervals and overnight overlap. Cancellation records
+are conservatively included to match the existing creation conflict check. These are
+**no recorded tutoring conflict** choices, not confirmed teacher availability: other
+classes, rooms, capacity and contractual availability are not modeled. Reads are not
+an atomic reservation. The server rechecks at Create, but concurrent creation remains
+a separate unresolved frontier. Existing custom policy, consent, staff edits and
+actor/workspace lifetimes remain authoritative. A late read never applies choices.
+
+Regression coverage: `tutoring-draft-plan.test.ts`, `tutoring-plan-data.test.ts`,
+`tutoring-draft-choices.test.tsx`, and the actual queue handoff regression. Source tests
+are not customer runtime or production-data repair evidence. Original absence linkage
+and automatic planning/teacher notices remain outside this packet.
+
+The next teacher-hours foundation is intended to support staff-defined defaults
+and explicit per-teacher overrides, with the teacher override taking precedence.
+Those hours are not yet implemented or consulted by this first draft packet; absence
+of a recorded tutoring conflict must never be treated as availability consent.
+
+## Teacher-hours domain contract
+
+The pure `@tuturuuu/utils/tutoring-teacher-hours` model defines staff defaults
+and per-teacher weekday overrides; it does not yet read or write hours, change
+Contacts UI, constrain Create, or send notices. Existing custom tutoring policy
+and staff confirmation remain unchanged. Calendar's automatically created
+07:00–23:00 defaults are not teacher-hours authority.
+
+An absent staff weekday is **unknown**; an explicit empty array is **closed**.
+An absent override weekday inherits the current default. Custom teacher windows
+replace that weekday, rather than widening it by union. Override reset retains
+an empty, revisioned row; future storage must atomically reject stale revisions,
+including absent→create→reset races. The model preserves opaque revision strings
+without numeric/date conversion and rejects unchanged write receipts, but does
+not itself prove database CAS, role admission or same-content revision advancement.
+
+Hours require an explicitly confirmed IANA timezone. Overrides cannot establish
+availability without that staff frame. Windows are sorted, disjoint, half-open
+civil times; midnight endings use `24:00`. Overnight windows must be explicitly
+split across weekdays. Candidate inputs are in the confirmed staff frame, never
+silently in the browser/class timezone. Gap/fold endpoints and slots crossing
+DST transitions are conservatively rejected rather than assigned an offset.
+Unknown coverage stays unknown; any known closed portion denies coverage.
+
+Regression coverage in `tutoring-teacher-hours.test.ts` exercises the actual
+Calendar default factory and Temporal compatible gap conversion as unsuitable
+inputs, inheritance/replacement, lossless reset receipts, adjacency, midnight,
+weekly wrapping and DST. This is pure source evidence, not persisted availability
+or production scheduling proof. API/schema/authenticated editor, atomic revision
+storage, staff-default/teacher-role permissions, outside-hours exceptions and
+planner consumption remain separate reviewed packets.
