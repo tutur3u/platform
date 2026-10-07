@@ -87,7 +87,7 @@ export async function runPeriodicReportDeliveryConcurrency(metadata) {
   const state = () =>
     JSON.parse(
       execute(
-        `select jsonb_build_object('queue',to_jsonb(q),'report',to_jsonb(r)) from private.user_report_email_queue q join private.external_user_monthly_reports r on r.id=q.report_id where r.id='${report}';`
+        `select jsonb_build_object('queue',to_jsonb(q),'report',to_jsonb(r),'attempts',coalesce((select jsonb_agg(to_jsonb(a) order by a.id) from private.user_report_email_attempts a where a.queue_id=q.id),'[]'::jsonb)) from private.user_report_email_queue q join private.external_user_monthly_reports r on r.id=q.report_id where r.id='${report}';`
       )
     );
   const claim = (worker) =>
@@ -169,6 +169,12 @@ export async function runPeriodicReportDeliveryConcurrency(metadata) {
         't'
       );
       assert.equal(execute(request('retry')), '200');
+      const beforeRevocation = state();
+      assert.equal(
+        beforeRevocation.queue.attempt_count,
+        0,
+        'Explicit Retry resets the attempt counter'
+      );
       const revoked = await contend(
         `select id from private.external_user_monthly_reports where id='${report}' for update;
       update private.external_user_monthly_reports set report_approval_status='PENDING',approved_by=null,approved_at=null where id='${report}';`,
@@ -177,7 +183,16 @@ export async function runPeriodicReportDeliveryConcurrency(metadata) {
       assert.match(revoked, /^409$/mu);
       snapshot = state();
       assert.equal(snapshot.queue.status, 'cancelled');
-      assert.equal(snapshot.queue.attempt_count, 1);
+      assert.equal(
+        snapshot.queue.attempt_count,
+        beforeRevocation.queue.attempt_count,
+        'Denied waiting request preserves post-Retry counter'
+      );
+      assert.deepEqual(
+        snapshot.attempts,
+        beforeRevocation.attempts,
+        'Denied waiting request preserves attempt history'
+      );
       assert.equal(snapshot.report.report_approval_status, 'PENDING');
       execute(
         `update private.external_user_monthly_reports set report_approval_status='APPROVED',approved_by='${subject}',approved_at=now() where id='${report}';`

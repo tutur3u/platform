@@ -147,3 +147,19 @@ test('teardown is attributable to the newly admitted synthetic actor and include
   assert.match(trigger, /values \('PERSONAL', true, new\.id\)/u);
   assert.match(trigger, /values \(new_ws_id, new\.id\)/u);
 });
+
+test('revocation compares the post-Retry counter and preserves actual attempt history', () => {
+  const migration = read(
+    '../supabase/migrations/20261007040000_periodic_report_unknown_outcomes.sql'
+  );
+  assert.match(
+    migration,
+    /on conflict \(report_id\) do update[\s\S]*?attempt_count = 0/u
+  );
+  assert.ok(race.includes('Explicit Retry resets the attempt counter'));
+  assert.ok(race.includes('beforeRevocation.queue.attempt_count'));
+  assert.ok(
+    race.includes('snapshot.attempts,\n        beforeRevocation.attempts')
+  );
+  assert.match(race, /jsonb_agg\(to_jsonb\(a\) order by a\.id\)/u);
+});
