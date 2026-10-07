@@ -10,6 +10,9 @@ import 'package:mobile/data/models/app_notification.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/notifications_repository.dart';
 
+import 'package:mobile/features/notifications/data/notification_read_cleanup.dart';
+import 'package:mobile/features/notifications/push/delivered_inbox_notifications.dart';
+
 part 'notifications_state.dart';
 
 class NotificationsCubit extends Cubit<NotificationsState> {
@@ -290,31 +293,114 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     }
   }
 
-  Future<void> toggleRead(AppNotification notification) async {
-    await _runPending(notification.id, () async {
-      await _notificationsRepository.markRead(
-        id: notification.id,
-        read: notification.isUnread,
-      );
-      await _refreshLoadedTabs(
-        preferredTab: notification.isUnread
-            ? NotificationsTab.inbox
-            : NotificationsTab.archive,
-      );
-    });
+  /// Capture before awaiting a read, including native session ABA.
+  bool Function() captureReadFeedbackGuard() {
+    if (!isClosed) _syncActorScope();
+    final epoch = _scopeEpoch;
+    final actor = _currentUserId();
+    final bridge = DeliveredInboxNotifications.instance;
+    final session = actor == null ? null : bridge.captureSession(actor);
+    return () =>
+        _isCurrentScope(epoch, actor) &&
+        session != null &&
+        bridge.isCurrentSession(session);
   }
 
-  Future<void> markAllRead() async {
-    if (isClosed || state.isArchivingAll) {
-      return;
+  Future<NotificationReadResult> toggleRead(
+    AppNotification notification,
+  ) async {
+    if (isClosed) return NotificationReadResult.notAdmitted;
+    _syncActorScope();
+    final epoch = _scopeEpoch;
+    final actor = _scopeUserId;
+    final workspaceId = state.scopeWorkspaceId;
+    final feedbackCurrent = captureReadFeedbackGuard();
+    bool current() => _isCurrentScope(epoch, actor) && feedbackCurrent();
+    if (!current() || state.isPending(notification.id)) {
+      return NotificationReadResult.notAdmitted;
     }
+    emit(
+      state.copyWith(
+        pendingIds: _sortedPendingIds({...state.pendingIds, notification.id}),
+      ),
+    );
+    try {
+      final result = await readWithDeliveredCleanup(
+        actor: actor,
+        workspaceId: workspaceId,
+        notificationId: notification.id,
+        dismiss: notification.isUnread,
+        isCurrent: current,
+        read: () => _notificationsRepository.markRead(
+          id: notification.id,
+          read: notification.isUnread,
+        ),
+      );
+      if (result == NotificationReadResult.notAdmitted) return result;
+      if (!current()) return NotificationReadResult.acceptedScopeChanged;
+      if (result == NotificationReadResult.notAdmitted ||
+          result == NotificationReadResult.acceptedScopeChanged) {
+        return result;
+      }
+      try {
+        await _refreshLoadedTabs(
+          preferredTab: notification.isUnread
+              ? NotificationsTab.inbox
+              : NotificationsTab.archive,
+          isCurrent: current,
+        );
+      } on Object {
+        return current()
+            ? NotificationReadResult.acceptedRefreshUnavailable
+            : NotificationReadResult.acceptedScopeChanged;
+      }
+      return current() ? result : NotificationReadResult.acceptedScopeChanged;
+    } finally {
+      if (_isCurrentScope(epoch, actor)) {
+        final pending = [...state.pendingIds]..remove(notification.id);
+        emit(state.copyWith(pendingIds: _sortedPendingIds(pending.toSet())));
+      }
+    }
+  }
 
+  Future<NotificationReadResult> markAllRead() async {
+    if (isClosed) return NotificationReadResult.notAdmitted;
+    _syncActorScope();
+    if (isClosed || state.isArchivingAll) {
+      return NotificationReadResult.notAdmitted;
+    }
+    final epoch = _scopeEpoch;
+    final actor = _scopeUserId;
+    final workspaceId = state.scopeWorkspaceId;
+    final feedbackCurrent = captureReadFeedbackGuard();
+    bool current() => _isCurrentScope(epoch, actor) && feedbackCurrent();
     emit(state.copyWith(isArchivingAll: true));
     try {
-      await _notificationsRepository.markAllRead(wsId: state.scopeWorkspaceId);
-      await _refreshLoadedTabs(preferredTab: NotificationsTab.inbox);
+      final result = await readWithDeliveredCleanup(
+        actor: actor,
+        workspaceId: workspaceId,
+        isCurrent: current,
+        read: () => _notificationsRepository.markAllRead(wsId: workspaceId),
+      );
+      if (result == NotificationReadResult.notAdmitted) return result;
+      if (!current()) return NotificationReadResult.acceptedScopeChanged;
+      if (result == NotificationReadResult.notAdmitted ||
+          result == NotificationReadResult.acceptedScopeChanged) {
+        return result;
+      }
+      try {
+        await _refreshLoadedTabs(
+          preferredTab: NotificationsTab.inbox,
+          isCurrent: current,
+        );
+      } on Object {
+        return current()
+            ? NotificationReadResult.acceptedRefreshUnavailable
+            : NotificationReadResult.acceptedScopeChanged;
+      }
+      return current() ? result : NotificationReadResult.acceptedScopeChanged;
     } finally {
-      if (!isClosed) {
+      if (_isCurrentScope(epoch, actor)) {
         emit(state.copyWith(isArchivingAll: false));
       }
     }
@@ -384,13 +470,15 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     }
   }
 
-  Future<void> _refreshLoadedTabs({NotificationsTab? preferredTab}) async {
+  Future<void> _refreshLoadedTabs({
+    NotificationsTab? preferredTab,
+    bool Function()? isCurrent,
+  }) async {
     // A completed mutation needs a count requested after the write.
     await _unreadRefresh;
+    if (isCurrent?.call() == false) return;
     await refreshUnreadCount();
-    if (isClosed) {
-      return;
-    }
+    if (isClosed || isCurrent?.call() == false) return;
 
     final inboxLoaded = state.inbox.hasLoadedOnce;
     final archiveLoaded = state.archive.hasLoadedOnce;
@@ -398,6 +486,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     if (inboxLoaded) {
       await loadTab(NotificationsTab.inbox, refresh: true);
     }
+    if (isCurrent?.call() == false) return;
     if (archiveLoaded) {
       await loadTab(NotificationsTab.archive, refresh: true);
     }

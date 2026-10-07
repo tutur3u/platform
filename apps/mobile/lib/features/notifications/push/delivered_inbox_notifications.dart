@@ -1,5 +1,13 @@
 import 'package:flutter/services.dart';
 
+/// Opaque lifetime fence, also valid while native cleanup is unavailable.
+class DeliveredInboxSession {
+  const DeliveredInboxSession._(this.actor, this.boundActor, this.epoch);
+  final String actor;
+  final String? boundActor;
+  final int epoch;
+}
+
 class DeliveredInboxSnapshot {
   const DeliveredInboxSnapshot._(
     this.token,
@@ -24,6 +32,14 @@ class DeliveredInboxNotifications {
   String? _actor;
   int _epoch = 0;
   bool _ready = false;
+
+  DeliveredInboxSession? captureSession(String actor) {
+    if (_actor != null && _actor != actor) return null;
+    return DeliveredInboxSession._(actor, _actor, _epoch);
+  }
+
+  bool isCurrentSession(DeliveredInboxSession session) =>
+      _actor == session.boundActor && _epoch == session.epoch;
 
   Future<bool> bindSession(String? actor) async {
     final epoch = ++_epoch;

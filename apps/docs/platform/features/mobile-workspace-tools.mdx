@@ -1677,3 +1677,35 @@ captured lifetime before writing, and disposal closes initialization/navigation
 admission. Already dispatched transport writes cannot be undone by this boundary.
 `push_service_session_lifetime_test.dart` exercises actual service methods and the
 actual registration helper with injected platform/token/device transport.
+
+### Reading inbox notifications and the system tray
+
+Mobile reads capture a bounded snapshot of actual delivered notifications before
+accepting the read. Single reads match the current actor and notification ID;
+workspace bulk reads match that workspace, while the personal/all-workspaces
+inbox follows the existing API's actor-wide bulk scope. This is independent of
+the visible 20-row feed. Unread transitions never dismiss notifications.
+
+Only the captured, still-current session can request delivered-item removal.
+Mounted read controls suppress stale cleanup and refresh after account/workspace
+changes or route disposal. The opened-item helper follows its actor-bound ID
+across intentional navigation and rechecks that actor/native lifetime before
+publishing a refresh; logout/relogin invalidates both paths. Captured native
+tags/identifiers and delivery timestamps
+retain later arrivals and replacements. Pending scheduled reminders are never
+cancelled. Legacy deliveries without trusted identity remain untouched.
+
+A repository read may be a durable offline intent, rather than a confirmed server
+write. Cleanup failure preserves that acceptance and shows a localized warning;
+it does not retry the read. Failed reads discard their snapshot without removing
+OS items. A later inbox refresh failure similarly preserves accepted read state.
+The platform APIs still cannot atomically compare and delete an OS item; the
+previously documented last-moment replacement race remains.
+
+Regression evidence uses actual mounted inbox actions, the real Cubit and opened
+notification helper with fake repository/platform transports, including scope
+ABA and rejection controls. It is not device evidence. Delivery requires exact
+native CI and a recorded TestFlight version/build/source SHA: foreground and
+background single/bulk reads must clear only matching delivered tray items while
+other actors, out-of-scope workspaces, later deliveries and future reminders
+survive.
