@@ -1,6 +1,6 @@
 import 'server-only';
 import { MEET_AUDIO_REQUEST_MAX_BYTES } from '@tuturuuu/ai/meetings/audio-contract';
-import { Effect, Either } from '@tuturuuu/utils/effect';
+import { Effect, Either, Schedule } from '@tuturuuu/utils/effect';
 import { z } from 'zod';
 import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
 import { generateBilledMeetArtifact } from './artifact-billing';
@@ -141,28 +141,44 @@ export async function transcribeMeetChunk(
       ? segments.map((segment) => segment.transcript).join('\n')
       : result.text;
     const speaker = speakers[0];
-    const save = () => {
-      let write = db
-        .from('meet_ai_chunks')
-        .update({
-          status: 'completed',
-          transcript,
-          usage: {
-            ...result.usage,
-            ...(segments ? { segments } : speaker ? { speaker } : {}),
-          },
-          cost_usd: result.costUsd,
-        })
-        .eq('id', id);
-      if (inserted.data.attempt_id)
-        write = write.eq('attempt_id', inserted.data.attempt_id);
-      return write.select('*').single();
+    // Preserve the settled provider output across persistence-only retries.
+    const payload = {
+      status: 'completed',
+      transcript,
+      usage: {
+        ...result.usage,
+        ...(segments ? { segments } : speaker ? { speaker } : {}),
+      },
+      cost_usd: result.costUsd,
     };
-    // Retry persistence, never the billable provider request.
-    let saved = await save();
-    if (saved.error) saved = await save();
-    if (saved.error) throw new MeetAiError(500, 'Could not save transcript');
-    return saved.data;
+    const persisted = await Effect.runPromise(
+      Effect.tryPromise({
+        try: async () => {
+          let write = db.from('meet_ai_chunks').update(payload).eq('id', id);
+          if (inserted.data.attempt_id)
+            write = write.eq('attempt_id', inserted.data.attempt_id);
+          const saved = await write.select('*').maybeSingle();
+          if (saved.error)
+            throw new MeetAiError(500, 'Could not save transcript');
+          if (!saved.data)
+            throw new MeetAiError(409, 'Transcription attempt changed');
+          return saved.data;
+        },
+        catch: (error) =>
+          error instanceof MeetAiError
+            ? error
+            : new MeetAiError(500, 'Could not save transcript'),
+      }).pipe(
+        Effect.retry({
+          times: 2,
+          schedule: Schedule.exponential('100 millis'),
+          while: (error) => error.status === 500,
+        }),
+        Effect.either
+      )
+    );
+    if (persisted._tag === 'Left') throw persisted.left;
+    return persisted.right;
   } catch (error) {
     let failure = db
       .from('meet_ai_chunks')
