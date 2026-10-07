@@ -34,7 +34,7 @@ type ResolvedMailAuth =
       user: SupabaseUser;
     };
 
-async function resolveMailAuth(
+export async function resolveMailAuth(
   request: NextRequest
 ): Promise<ResolvedMailAuth> {
   const supabase = await createClient(request);

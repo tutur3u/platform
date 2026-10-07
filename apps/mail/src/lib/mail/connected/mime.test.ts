@@ -70,3 +70,27 @@ describe('Gmail and Outlook MIME transport', () => {
     ).toBe(false);
   });
 });
+
+it('rejects inline attachment identity header injection', () => {
+  expect(() =>
+    buildMime('sender@example.test', payload, [
+      {
+        filename: 'inline.png',
+        contentType: 'image/png',
+        content: new Uint8Array(),
+        contentId: '<x>\r\nBcc: bad@example.test',
+      },
+    ])
+  ).toThrow('Invalid attachment content identity');
+});
+
+it('bounds combined forwarded attachment bytes before allocating encoded MIME', () => {
+  const file = {
+    filename: 'large.bin',
+    contentType: 'application/octet-stream',
+    content: new Uint8Array(11 * 1024 * 1024),
+  };
+  expect(() => buildMime('sender@example.test', payload, [file, file])).toThrow(
+    expect.objectContaining({ status: 413 })
+  );
+});

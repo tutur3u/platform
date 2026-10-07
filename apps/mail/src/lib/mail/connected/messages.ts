@@ -1,4 +1,5 @@
 import PostalMime, { type Address } from 'postal-mime';
+import { z } from 'zod';
 import { parseCalendarInvitation } from '../calendar-invitation';
 import { sanitizeMailHtml } from '../html';
 import { attachmentBytes } from './attachment-bytes';
@@ -113,7 +114,13 @@ export async function listMessages(
   if (cursor) {
     let paging: { skip?: string; skiptoken?: string };
     try {
-      paging = JSON.parse(Buffer.from(cursor, 'base64url').toString());
+      paging = z
+        .object({
+          skip: z.string().regex(/^\d+$/u).max(20).optional(),
+          skiptoken: z.string().min(1).max(3000).optional(),
+        })
+        .strict()
+        .parse(JSON.parse(Buffer.from(cursor, 'base64url').toString()));
     } catch {
       throw new ConnectedMailError(400, 'Invalid paging cursor');
     }
@@ -177,9 +184,11 @@ export async function readMessage(
 ) {
   const path = `/${draft && account.provider === 'google' ? 'drafts' : 'messages'}/${encodeURIComponent(id)}`;
   let bytes: Buffer;
+  let providerThreadId: string | undefined;
   if (account.provider === 'google') {
     const response = await providerRequest(account, `${path}?format=raw`);
     const data = JSON.parse((await boundedBytes(response)).toString());
+    providerThreadId = draft ? data.message?.threadId : data.threadId;
     bytes = Buffer.from(
       (draft ? data.message?.raw : data.raw) ?? '',
       'base64url'
@@ -222,7 +231,13 @@ export async function readMessage(
         ? parseCalendarInvitation(unique[0]!, account.address)
         : null,
   };
-  return { detail, files: parsed.attachments };
+  return {
+    detail,
+    files: parsed.attachments,
+    originalHtml: parsed.html,
+    providerThreadId,
+    originalInReplyTo: parsed.inReplyTo,
+  };
 }
 export type MessageAction =
   | 'mark_read'

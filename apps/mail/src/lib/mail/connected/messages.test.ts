@@ -100,3 +100,22 @@ describe('provider mailbox actions', () => {
     ).rejects.toMatchObject({ status: 413 });
   });
 });
+
+it.each([
+  null,
+  { skip: {} },
+  { skip: 'not-a-number' },
+  { skiptoken: 'x', unexpected: 'url' },
+])(
+  'rejects malformed Outlook cursors before contacting the provider',
+  async (value) => {
+    await expect(
+      listMessages(
+        { ...account, provider: 'microsoft' },
+        'inbox',
+        Buffer.from(JSON.stringify(value)).toString('base64url')
+      )
+    ).rejects.toMatchObject({ status: 400 });
+    expect(mocks.json).not.toHaveBeenCalled();
+  }
+);

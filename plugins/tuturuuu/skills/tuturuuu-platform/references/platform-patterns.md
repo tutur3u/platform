@@ -425,10 +425,15 @@ message metadata fan-out does not repeatedly refresh an obsolete revision. Clear
 the OAuth state cookie using its original callback path.
 Provider mail actions must update provider state, not only a local projection.
 Preserve To/Cc roles and Reply-To multiplicity, omit Bcc from replies, and resolve
-forwarded attachments from the authorized provider account. Use persisted send
+forwarded attachments from the authorized provider account. Gmail reply sends
+and drafts need the source thread ID as well as References/In-Reply-To and a
+matching subject; forwards and changed subjects should not force that thread. Use persisted send
 claims; never automatically replay an ambiguous provider mutation. Graph MIME
 draft edits require a confirmed replacement before deleting an unchanged original
-with an ETag fence. Record partial replacement failures truthfully.
+with an ETag fence. Preserve original draft HTML, inline content IDs and threading
+from authorized source bytes, rather than copying the sanitized preview as the
+new source. Bound aggregate attachment bytes before base64 allocation. Record
+partial replacement failures truthfully.
 
 Task previews must preserve external Google/Outlook meetings even when local
 copies are unlocked. Keep Web, Calendar and Tasks on the shared blocked-event

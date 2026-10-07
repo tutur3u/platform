@@ -1,3 +1,4 @@
+import PostalMime from 'postal-mime';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -225,5 +226,123 @@ it('Outlook creates the replacement before fenced deletion of the original draft
     expect.anything(),
     '/messages/original',
     { method: 'DELETE', headers: { 'If-Match': 'version' } }
+  );
+});
+
+it('editing a provider draft preserves original HTML, inline image identity, and threading', async () => {
+  const { saveDraft } = await import('./send');
+  const html =
+    '<p style="color:red">Original</p><img src="cid:logo@example.test">';
+  mocks.read.mockResolvedValue({
+    detail: { text: 'Test', references: ['<parent@example.test>'] },
+    originalHtml: html,
+    originalInReplyTo: '<parent@example.test>',
+    files: [
+      {
+        filename: 'logo.png',
+        mimeType: 'image/png',
+        contentId: '<logo@example.test>',
+        content: new Uint8Array([1, 2, 3]),
+      },
+    ],
+  });
+  await saveDraft(account, {
+    ...payload,
+    draftId: 'draft',
+    html: '<p>sanitized preview</p>',
+    attachmentIds: ['0'],
+  });
+  const body = JSON.parse(mocks.json.mock.calls[0]![2].body);
+  const parsed = await PostalMime.parse(
+    Buffer.from(body.message.raw, 'base64url')
+  );
+  expect(parsed.html?.trim()).toBe(html);
+  expect(parsed.inReplyTo).toBe('<parent@example.test>');
+  expect(parsed.references).toBe('<parent@example.test>');
+  expect(parsed.attachments[0]?.contentId).toBe('<logo@example.test>');
+});
+it('editing the draft body replaces HTML rather than retaining stale original content', async () => {
+  const { saveDraft } = await import('./send');
+  mocks.read.mockResolvedValue({
+    detail: { text: 'old' },
+    originalHtml: '<p>old</p>',
+    files: [],
+  });
+  await saveDraft(account, { ...payload, draftId: 'draft' });
+  const body = JSON.parse(mocks.json.mock.calls[0]![2].body);
+  const parsed = await PostalMime.parse(
+    Buffer.from(body.message.raw, 'base64url')
+  );
+  expect(parsed.html).toBeUndefined();
+  expect(parsed.text?.trim()).toBe('Test');
+});
+
+it.each(['reply', 'reply_all'] as const)(
+  'Gmail %s includes the authorized source thread ID alongside MIME headers',
+  async (mode) => {
+    mocks.read.mockResolvedValue({
+      detail: {
+        subject: 'Hello',
+        internetMessageId: '<source@example.test>',
+        references: [],
+      },
+      providerThreadId: 'provider-thread',
+      files: [],
+    });
+    await sendConnectedMessage(account, {
+      ...payload,
+      subject: 'Re: Hello',
+      sourceId: 'source',
+      mode,
+    });
+    const body = JSON.parse(mocks.json.mock.calls[0]![2].body);
+    expect(body.threadId).toBe('provider-thread');
+    expect(Buffer.from(body.raw, 'base64url').toString()).toContain(
+      'In-Reply-To: <source@example.test>'
+    );
+  }
+);
+it.each(['forward', 'changed subject'] as const)(
+  'Gmail %s starts a new conversation instead of forcing the old thread',
+  async (kind) => {
+    mocks.read.mockResolvedValue({
+      detail: {
+        subject: 'Hello',
+        internetMessageId: '<source@example.test>',
+        references: [],
+      },
+      providerThreadId: 'provider-thread',
+      files: [],
+    });
+    await sendConnectedMessage(account, {
+      ...payload,
+      sourceId: 'source',
+      mode: kind === 'forward' ? 'forward' : 'reply',
+      subject: 'New subject',
+    });
+    expect(
+      JSON.parse(mocks.json.mock.calls[0]![2].body).threadId
+    ).toBeUndefined();
+  }
+);
+it('saving a Gmail reply draft retains the source conversation', async () => {
+  const { saveDraft } = await import('./send');
+  mocks.read.mockResolvedValue({
+    detail: {
+      subject: 'Hello',
+      internetMessageId: '<source@example.test>',
+      references: [],
+    },
+    providerThreadId: 'provider-thread',
+    files: [],
+  });
+  await saveDraft(account, {
+    ...payload,
+    sourceId: 'source',
+    mode: 'reply',
+    subject: 'Re: Hello',
+  });
+  expect(JSON.parse(mocks.json.mock.calls[0]![2].body).message.threadId).toBe(
+    'provider-thread'
   );
 });

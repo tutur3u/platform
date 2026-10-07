@@ -978,15 +978,20 @@ address and deduplicates case-insensitively. Replies to sent messages target the
 original recipients. Bcc is never copied into a reply. Forwarding copies selected
 original attachments from authorized source bytes and starts without recipients.
 MIME carries Unicode subjects, threading headers and calendar scheduling types.
+Gmail replies and reply drafts additionally retain the authorized provider thread
+ID when the subject is unchanged apart from reply prefixes; forwards and changed
+subjects start a new conversation.
 Attachments are limited to 10 MiB in the browser and outbound MIME to 20 MiB.
-Message preview and JSON request reads have bounded server-side limits.
+Message preview and JSON request reads have bounded server-side limits. Aggregate
+attachment bytes are checked before MIME encoding, including forwarded copies.
 
 Drafts are saved in the provider mailbox and can be opened, edited, and sent from
 Drafts. Gmail edits update the existing draft. Graph does not support updating a
 draft with raw MIME, so an edit first creates a confirmed replacement and deletes
 the unchanged original with an ETag fence. A deletion conflict retains both drafts
-and reports that partial outcome. Untouched draft HTML and attachment bytes are
-preserved. Save edited drafts before using the native Drafts send action.
+and reports that partial outcome. Untouched draft HTML, inline image content IDs, threading headers and attachment
+bytes are preserved. Original HTML is recovered from the authorized provider
+source for saving; previews still use sanitized content. Save edited drafts before using the native Drafts send action.
 
 HTML previews use a script-disabled sandbox and a restrictive CSP; remote images
 are blocked. Original attachments download as files with `nosniff`. Personal

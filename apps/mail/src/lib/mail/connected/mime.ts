@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
+import { ConnectedMailError } from './config';
 
 const address = z.email().max(320);
 const messageId = z
@@ -90,6 +91,12 @@ export function buildMime(
   // Revalidate even server-derived data at the transport boundary.
   address.parse(from);
   composeSchema.parse(payload);
+  const decodedSize = attachments.reduce(
+    (size, file) => size + file.content.byteLength,
+    Buffer.byteLength(payload.html ?? payload.text)
+  );
+  if (decodedSize > 20 * 1024 * 1024)
+    throw new ConnectedMailError(413, 'Message exceeds send limit');
   const boundary = `mail-${randomUUID()}`;
   const headers = [
     `From: ${from}`,
@@ -120,11 +127,15 @@ export function buildMime(
       )
     )
       throw new Error('Invalid attachment headers');
+    const contentId = file.contentId?.replace(/^<|>$/gu, '');
+    if (contentId !== undefined && !/^[^\s<>]+$/u.test(contentId))
+      throw new Error('Invalid attachment content identity');
     headers.push(
       `--${boundary}`,
       `Content-Type: ${file.contentType}`,
       'Content-Transfer-Encoding: base64',
-      `Content-Disposition: attachment; filename*=UTF-8''${encodeURIComponent(file.filename)}`,
+      ...(contentId ? [`Content-ID: <${contentId}>`] : []),
+      `Content-Disposition: ${contentId ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(file.filename)}`,
       '',
       base64Lines(file.content)
     );
@@ -132,6 +143,6 @@ export function buildMime(
   headers.push(`--${boundary}--`, '');
   const raw = Buffer.from(headers.join('\r\n'));
   if (raw.byteLength > 20 * 1024 * 1024)
-    throw new Error('Message exceeds send limit');
+    throw new ConnectedMailError(413, 'Message exceeds send limit');
   return raw;
 }

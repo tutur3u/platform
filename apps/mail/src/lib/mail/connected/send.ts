@@ -9,6 +9,7 @@ import { jsonBody, providerJson, providerRequest } from './transport';
 
 async function composeMime(account: ConnectedAccount, input: ComposePayload) {
   const payload = { ...input };
+  let threadId: string | undefined;
   const attachments: MimeAttachment[] = payload.attachments.map((file) => ({
     filename: file.filename,
     contentType: file.contentType,
@@ -20,6 +21,23 @@ async function composeMime(account: ConnectedAccount, input: ComposePayload) {
       payload.draftId ?? payload.sourceId!,
       !!payload.draftId
     );
+    const subjectIdentity = (value: string) =>
+      value.trim().replace(/^(?:re:\s*)+/iu, '');
+    if (
+      account.provider === 'google' &&
+      (payload.draftId ||
+        payload.mode === 'reply' ||
+        payload.mode === 'reply_all') &&
+      subjectIdentity(payload.subject) ===
+        subjectIdentity(source.detail.subject ?? '')
+    )
+      threadId = source.providerThreadId;
+    if (payload.draftId) {
+      payload.inReplyTo = source.originalInReplyTo;
+      payload.references = source.detail.references ?? [];
+      if (payload.html !== undefined && payload.text === source.detail.text)
+        payload.html = source.originalHtml;
+    }
     if (payload.mode === 'reply' || payload.mode === 'reply_all') {
       payload.inReplyTo = source.detail.internetMessageId;
       payload.references = [
@@ -37,11 +55,12 @@ async function composeMime(account: ConnectedAccount, input: ComposePayload) {
         filename: file.filename || 'attachment',
         contentType: file.mimeType,
         content: attachmentBytes(file.content),
+        contentId: file.contentId,
       });
     }
   } else if (payload.attachmentIds.length)
     throw new ConnectedMailError(400, 'Attachment source required');
-  return buildMime(account.address, payload, attachments);
+  return { raw: buildMime(account.address, payload, attachments), threadId };
 }
 
 export async function saveDraft(
@@ -57,7 +76,7 @@ export async function saveDraft(
     if (!original?.isDraft || !original['@odata.etag'])
       throw new ConnectedMailError(409, 'Draft changed; reload before editing');
   }
-  const raw = await composeMime(account, payload);
+  const { raw, threadId } = await composeMime(account, payload);
   if (account.provider === 'google')
     return providerJson(
       account,
@@ -65,7 +84,7 @@ export async function saveDraft(
         ? `/drafts/${encodeURIComponent(payload.draftId)}`
         : '/drafts',
       jsonBody(
-        { message: { raw: raw.toString('base64url') } },
+        { message: { raw: raw.toString('base64url'), threadId } },
         payload.draftId ? 'PUT' : 'POST'
       )
     );
@@ -108,7 +127,7 @@ export async function sendConnectedMessage(
       400,
       'Save draft changes before sending from Drafts'
     );
-  const raw = await composeMime(account, payload);
+  const { raw, threadId } = await composeMime(account, payload);
   const payloadHash = createHash('sha256')
     .update(semanticHash ?? JSON.stringify(payload))
     .digest('hex');
@@ -117,7 +136,7 @@ export async function sendConnectedMessage(
       await providerJson(
         account,
         '/messages/send',
-        jsonBody({ raw: raw.toString('base64url') })
+        jsonBody({ raw: raw.toString('base64url'), threadId })
       );
     else
       await providerRequest(account, '/sendMail', {
