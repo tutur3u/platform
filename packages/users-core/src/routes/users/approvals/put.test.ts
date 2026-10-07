@@ -170,4 +170,110 @@ describe('Contacts approval mutation handler', () => {
     expect(response.status).toBe(403);
     expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
+
+  function reportRequest() {
+    return new Request(
+      'https://contacts.tuturuuu.com/api/v1/workspaces/workspace-alias/users/approvals',
+      {
+        method: 'PUT',
+        body: JSON.stringify({
+          action: 'approve',
+          kind: 'reports',
+          itemId: 'report-1',
+        }),
+      }
+    );
+  }
+
+  function reportStore(found = true) {
+    const select = {
+      eq: vi.fn(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: found ? { id: 'report-1' } : null,
+        error: null,
+      }),
+    };
+    select.eq.mockReturnValue(select);
+    const eq = vi.fn().mockResolvedValue({ error: null });
+    const update = vi.fn().mockReturnValue({ eq });
+    mocks.privateFrom.mockImplementation((table: string) => {
+      if (table === 'external_user_monthly_reports_workspace_view')
+        return { select: vi.fn().mockReturnValue(select) };
+      if (table === 'external_user_monthly_reports') return { update };
+      throw new Error(`Unexpected report table ${table}`);
+    });
+    return { select, update, eq };
+  }
+
+  it('approves a report with approval permission alone, using the linked actor and scoped report', async () => {
+    mocks.getPermissions.mockResolvedValue({
+      containsPermission: (permission: string) =>
+        permission === 'approve_reports',
+    });
+    const store = reportStore();
+    const request = reportRequest();
+    const response = await handlePutApprovalsRequest(request, context, actor);
+    expect(response.status).toBe(200);
+    expect(store.select.eq).toHaveBeenCalledWith('user_ws_id', 'workspace-1');
+    expect(store.select.eq).toHaveBeenCalledWith('id', 'report-1');
+    expect(store.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        report_approval_status: 'APPROVED',
+        approved_by: 'workspace-user-1',
+      })
+    );
+    expect(store.eq).toHaveBeenCalledWith('id', 'report-1');
+    expect(mocks.getPermissions).toHaveBeenCalledWith({
+      request,
+      user: actor,
+      wsId: 'workspace-1',
+    });
+    expect(mocks.verifySecret).not.toHaveBeenCalled();
+    expect(mocks.privateRpc).not.toHaveBeenCalled();
+  });
+
+  it('does not grant report approval to a content editor without approval authority', async () => {
+    mocks.getPermissions.mockResolvedValue({
+      containsPermission: (permission: string) =>
+        permission === 'update_user_groups_reports',
+    });
+    const response = await handlePutApprovalsRequest(
+      reportRequest(),
+      context,
+      actor
+    );
+    expect(response.status).toBe(403);
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it('does not mutate a report outside the current workspace', async () => {
+    mocks.getPermissions.mockResolvedValue({
+      containsPermission: (permission: string) =>
+        permission === 'approve_reports',
+    });
+    const store = reportStore(false);
+    const response = await handlePutApprovalsRequest(
+      reportRequest(),
+      context,
+      actor
+    );
+    expect(response.status).toBe(404);
+    expect(store.select.eq).toHaveBeenCalledWith('user_ws_id', 'workspace-1');
+    expect(store.update).not.toHaveBeenCalled();
+  });
+
+  it('requires an actor linked to the workspace before report approval', async () => {
+    mocks.getPermissions.mockResolvedValue({
+      containsPermission: (permission: string) =>
+        permission === 'approve_reports',
+    });
+    mocks.getWorkspaceUserLinkForUser.mockResolvedValue(null);
+    const response = await handlePutApprovalsRequest(
+      reportRequest(),
+      context,
+      actor
+    );
+    expect(response.status).toBe(403);
+    expect(mocks.privateFrom).not.toHaveBeenCalled();
+  });
 });

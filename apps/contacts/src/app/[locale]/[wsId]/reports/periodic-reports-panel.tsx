@@ -13,8 +13,8 @@ import {
   type PeriodicReport,
   requestPeriodicReportDelivery,
   requestPeriodicReportGeneration,
-  updatePeriodicReport,
 } from '@tuturuuu/internal-api/reports';
+import { updateWorkspaceUserApproval } from '@tuturuuu/internal-api/users';
 import {
   Accordion,
   AccordionContent,
@@ -173,8 +173,10 @@ export default function PeriodicReportsPanel({
   });
   const approvalMutation = useMutation({
     mutationFn: (reportId: string) =>
-      updatePeriodicReport(wsId, reportId, {
-        report_approval_status: 'APPROVED',
+      updateWorkspaceUserApproval(wsId, {
+        action: 'approve',
+        kind: 'reports',
+        itemId: reportId,
       }),
     onSuccess: async () => {
       toast.success(t('approved'));
