@@ -346,3 +346,28 @@ controller, conflicting refreshes, intentionally cleared fields, save
 acknowledgments, and all four scope boundaries.
 
 Explicit Retry for either uncertainty marker shows a localized possible-duplicate warning in Contacts, requiring provider-log and intended-recipient verification before confirmation. Ordinary definitive rejection retains its normal retry copy. Confirmation is invalidated across actor/workspace or send-capability changes and suppresses duplicate submissions while pending; this does not verify provider acceptance or inbox delivery.
+
+
+### Unwired report presentation envelope
+
+The shared server presentation helper constructs a normalized recipient, transport
+subject, HTML and SHA-256 digest from one copied input snapshot. It uses the
+existing email renderer, saved representative score, student/group/teacher names
+and complete allowlisted branding/report configuration. Recipient normalization
+matches the current periodic worker (`trim().toLowerCase()`). The transport title
+and HTML heading share the renderer's configured or localized fallback. Explicit
+null values and intentionally cleared feedback remain distinct from missing input;
+missing fields, malformed revisions and incomplete configuration fail closed.
+
+This unit is unwired: it does not read a database, store presentation content,
+issue an approval receipt, change current preview or delivery callers, or authorize
+an email. Its presentation digest is not a complete review certificate: full
+reviewed fields, current permissions, canonical approval actions, revision locks
+and dispatch validation remain separate requirements. Existing status-only
+delivery and legacy approval paths must not be treated as covered by this helper.
+
+Regression coverage: `reviewed-email-envelope.test.ts` uses the actual renderer
+for names, score, branding, escaping, multiline and cleared text, immutable copies,
+canonical key ordering, recipient normalization and missing-input rejection.
+These synthetic source tests do not prove a consistent database snapshot, provider
+acceptance or recipient delivery.
