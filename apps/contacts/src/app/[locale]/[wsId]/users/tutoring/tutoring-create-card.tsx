@@ -55,7 +55,7 @@ export function TutoringCreateCard({
   wsId,
 }: Props) {
   const t = useTranslations('ws-tutoring');
-  const [missedDate, setMissedDate] = useState('');
+  const missedDate = form.missedClassDate ?? '';
   const [scheduleMessage, setScheduleMessage] = useState('');
   const today = toIsoDate(new Date());
   const classSchedule = useQuery({
@@ -186,6 +186,7 @@ export function TutoringCreateCard({
               onChange({
                 ...form,
                 groupId: nextGroupId,
+                missedClassDate: '',
                 sourceFeedbackId: null,
               });
             }}
@@ -207,6 +208,7 @@ export function TutoringCreateCard({
                 sourceFeedbackId: null,
                 studentLabel: option?.label || form.studentLabel,
                 studentUserId: value,
+                missedClassDate: '',
               })
             }
             placeholder={t('select_student')}
@@ -261,12 +263,15 @@ export function TutoringCreateCard({
                   id="missed-class-date"
                   max={today}
                   onChange={(event) => {
-                    setMissedDate(event.target.value);
+                    onChange({ ...form, missedClassDate: event.target.value });
                     setScheduleMessage('');
                   }}
                   type="date"
                   value={missedDate}
                 />
+                <p className="text-muted-foreground text-xs">
+                  {t('missed_class_date_default_hint')}
+                </p>
               </div>
             ) : null}
             <Button
