@@ -26,11 +26,11 @@ select is((select array_agg(n.nspname||'.'||p.proname||'('||oidvectortypes(p.pro
 select is((select array_agg(c.relname||':'||t.tgname order by c.relname,t.tgname)
  from pg_trigger t join pg_class c on c.oid=t.tgrelid
  where not t.tgisinternal and t.tgrelid in('public.time_tracking_sessions'::regclass,'public.time_tracking_breaks'::regclass,'private.time_tracking_requests'::regclass)),
- array['time_tracking_breaks:time_tracking_breaks_duration_trigger','time_tracking_breaks:time_tracking_breaks_updated_at_trigger',
- 'time_tracking_requests:enforce_time_tracking_request_update','time_tracking_requests:trg_notify_time_tracking_request_status_change',
+ array['time_tracking_breaks:enforce_strict_text_field_limits','time_tracking_breaks:time_tracking_breaks_duration_trigger','time_tracking_breaks:time_tracking_breaks_updated_at_trigger',
+ 'time_tracking_requests:enforce_strict_text_field_limits','time_tracking_requests:enforce_time_tracking_request_update','time_tracking_requests:trg_notify_time_tracking_request_status_change',
  'time_tracking_requests:trg_notify_time_tracking_request_submitted','time_tracking_requests:trigger_handle_request_status_change',
  'time_tracking_requests:trigger_log_request_creation','time_tracking_requests:trigger_log_request_update',
- 'time_tracking_sessions:enforce_time_tracking_insert','time_tracking_sessions:enforce_time_tracking_session_task_workspace_trigger',
+ 'time_tracking_sessions:enforce_strict_text_field_limits','time_tracking_sessions:enforce_time_tracking_insert','time_tracking_sessions:enforce_time_tracking_session_task_workspace_trigger',
  'time_tracking_sessions:enforce_time_tracking_update','time_tracking_sessions:stop_other_running_sessions_trigger',
  'time_tracking_sessions:update_productivity_score_trigger','time_tracking_sessions:update_session_duration_trigger']::text[],
  'trigger allowlist includes task guard, accounting, request activity and notifications');
@@ -39,14 +39,17 @@ select is((select array_agg(c.relname||':'||t.tgname||':'||t.tgtype||':'||n.nspn
  from pg_trigger t join pg_class c on c.oid=t.tgrelid join pg_proc p on p.oid=t.tgfoid join pg_namespace n on n.oid=p.pronamespace
  where not t.tgisinternal and t.tgrelid in('public.time_tracking_sessions'::regclass,'public.time_tracking_breaks'::regclass,'private.time_tracking_requests'::regclass)),
  array[
+ 'time_tracking_breaks:enforce_strict_text_field_limits:23:public.enforce_strict_text_field_limits()',
  'time_tracking_breaks:time_tracking_breaks_duration_trigger:23:public.calculate_time_tracking_break_duration()',
  'time_tracking_breaks:time_tracking_breaks_updated_at_trigger:19:public.update_time_tracking_breaks_updated_at()',
+ 'time_tracking_requests:enforce_strict_text_field_limits:23:public.enforce_strict_text_field_limits()',
  'time_tracking_requests:enforce_time_tracking_request_update:19:private.check_time_tracking_request_update()',
  'time_tracking_requests:trg_notify_time_tracking_request_status_change:17:private.notify_time_tracking_request_status_change()',
  'time_tracking_requests:trg_notify_time_tracking_request_submitted:5:private.notify_time_tracking_request_submitted()',
  'time_tracking_requests:trigger_handle_request_status_change:19:private.handle_request_status_change()',
  'time_tracking_requests:trigger_log_request_creation:5:private.log_time_tracking_request_creation()',
  'time_tracking_requests:trigger_log_request_update:17:private.log_time_tracking_request_update()',
+ 'time_tracking_sessions:enforce_strict_text_field_limits:23:public.enforce_strict_text_field_limits()',
  'time_tracking_sessions:enforce_time_tracking_insert:7:public.check_time_tracking_session_insert()',
  'time_tracking_sessions:enforce_time_tracking_session_task_workspace_trigger:23:public.enforce_time_tracking_session_task_workspace()',
  'time_tracking_sessions:enforce_time_tracking_update:19:public.check_time_tracking_session_update()',
@@ -70,7 +73,7 @@ select is((select regexp_replace(split_part(split_part(pg_get_triggerdef(oid),' 
  'old.approval_statusISDISTINCTFROMnew.approval_status','notification status-change predicate is exact');
 select ok(not exists(select 1 from pg_trigger where tgrelid in('public.time_tracking_sessions'::regclass,'public.time_tracking_breaks'::regclass,'private.time_tracking_requests'::regclass) and not tgisinternal and tgenabled<>'O'),'legacy triggers remain enabled');
 select is((select array_agg(tgname::text order by tgname) from pg_trigger where tgrelid='public.time_tracking_sessions'::regclass and not tgisinternal and (tgtype&2)=2),
- array['enforce_time_tracking_insert','enforce_time_tracking_session_task_workspace_trigger','enforce_time_tracking_update','update_productivity_score_trigger','update_session_duration_trigger']::text[],
+ array['enforce_strict_text_field_limits','enforce_time_tracking_insert','enforce_time_tracking_session_task_workspace_trigger','enforce_time_tracking_update','update_productivity_score_trigger','update_session_duration_trigger']::text[],
  'effective BEFORE order is explicit, not silently changed');
 select is((select count(*) from pg_constraint where contype='f' and confrelid='public.time_tracking_sessions'::regclass),3::bigint,'session referencing FK inventory is closed to unknown additions');
 select is((select confdeltype::text from pg_constraint where contype='f' and conrelid='public.time_tracking_sessions'::regclass and confrelid='public.time_tracking_sessions'::regclass),'n','child chain is SET NULL');
@@ -104,8 +107,10 @@ select ok((select prosrc like '%time_tracking.override_auth_uid%' and prosrc lik
 select ok((select lower(prosrc) like '%update public.time_tracking_sessions%' and lower(prosrc) like '%delete from public.time_tracking_sessions%' from pg_proc where oid='private.handle_request_status_change()'::regprocedure),'request status still mutates linked sessions');
 select ok((select lower(prosrc) like '%insert into private.time_tracking_request_activity%' from pg_proc where oid='private.log_time_tracking_request_update()'::regprocedure),'approval activity nested writer remains present');
 select ok((select lower(prosrc) like '%perform public.create_notification%' from pg_proc where oid='private.notify_time_tracking_request_status_change()'::regprocedure),'approval notification nested writer remains present');
-select is((select polcmd::text from pg_policy where polrelid='public.time_tracking_sessions'::regclass and polname='Allow users to delete their own sessions'),'*','legacy delete-named policy actually applies to ALL commands; closure remains open');
-select is((select polroles from pg_policy where polrelid='public.time_tracking_sessions'::regclass and polname='Allow users to delete their own sessions'),array[0::oid],'legacy delete-named policy applies to PUBLIC subject to grants and predicates');
+-- Description-table hardening removes the old PUBLIC ALL policy and every
+-- browser policy; do not restore legacy access to satisfy the catalog.
+select ok(not exists(select 1 from pg_policy where polrelid='public.time_tracking_sessions'::regclass and polname='Allow users to delete their own sessions'),'legacy delete-named PUBLIC ALL policy remains absent');
+select is((select count(*) from pg_policy where polrelid='public.time_tracking_sessions'::regclass),0::bigint,'description-table hardening leaves session policy inventory empty');
 select ok(not exists(select 1 from pg_policy where polrelid='public.time_tracking_sessions'::regclass and polname='Allow users to manage their own sessions'),'original manage-all policy absent');
 select ok(to_regprocedure('public.update_time_tracking_request(uuid,text,uuid,text,text)') is null,'public approval predecessor absent');
 select ok(not has_function_privilege('authenticated','private.update_time_tracking_request(uuid,text,uuid,uuid,text,text)','EXECUTE'),'private approval is not browser-callable');
@@ -122,7 +127,10 @@ select throws_ok($q$set local role authenticated; select * from private.time_tra
 select throws_ok($q$set local role service_role; insert into private.time_tracker_operation_scopes(ws_id,actor_id) values(gen_random_uuid(),gen_random_uuid())$q$,'42501',null,'actual service role cannot bypass function with DML');
 select ok(has_function_privilege('authenticated','public.pause_session_for_break(uuid,timestamptz,integer,boolean)','EXECUTE'),'legacy public pause reachability is explicit; closure OPEN');
 select ok(has_function_privilege('authenticated','public.update_time_tracking_session_with_bypass(uuid,jsonb)','EXECUTE'),'legacy public update bypass reachability is explicit; closure OPEN');
-select ok((select bool_and(has_table_privilege('authenticated','public.time_tracking_sessions',privilege)) from unnest(array['INSERT','UPDATE','DELETE']) privilege),'every legacy browser session DML grant remains explicit; closure OPEN');
+select ok((select bool_and(not has_table_privilege(browser_role,'public.time_tracking_sessions',privilege))
+ from unnest(array['anon','authenticated']) browser_role
+ cross join unnest(array['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER']) privilege),
+ 'description-table hardening denies every browser session table privilege; definer closure remains OPEN');
 select ok((select bool_and(has_table_privilege('authenticated','public.time_tracking_breaks',privilege)) from unnest(array['INSERT','UPDATE','DELETE']) privilege),'every legacy browser break DML grant remains explicit; closure OPEN');
 select is((select count(*) from pg_constraint where conrelid='public.time_tracking_sessions'::regclass and contype='u' and pg_get_constraintdef(oid) like '%is_running%'),0::bigint,'running uniqueness is a partial index rather than a fabricated constraint');
 select ok(exists(select 1 from pg_index i where i.indrelid='public.time_tracking_sessions'::regclass and i.indisunique and pg_get_indexdef(i.indexrelid) like '%ws_id, user_id%' and pg_get_expr(i.indpred,i.indrelid) like '%is_running%'),'actual actor/workspace partial running uniqueness exists');
