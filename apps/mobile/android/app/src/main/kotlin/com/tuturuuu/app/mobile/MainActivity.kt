@@ -36,6 +36,7 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        flutterEngine.plugins.add(com.tuturuuu.app.mobile.notifications.DeliveredInboxNotificationsPlugin())
         flutterEngine.plugins.add(com.tuturuuu.app.mobile.live.LiveScreenCapturePlugin())
         flutterEngine.plugins.add(com.tuturuuu.app.mobile.meet.MeetScreenSharePlugin())
 
