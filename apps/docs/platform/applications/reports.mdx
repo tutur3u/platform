@@ -298,7 +298,7 @@ Worker logs use `periodic_report.delivery_sent`, `periodic_report.delivery_faile
 Correlate by `queueId`, `reportId`, `workspaceId`, and provider message ID; recipient
 addresses and report content are omitted from these structured events. If the
 provider accepted an email but tracking failed, the worker blocks automatic retry.
-Check provider logs before requesting another delivery to avoid duplicates.
+Check provider logs before requesting another delivery to avoid duplicates. SES dispatch uses one SDK attempt, while quota validation retains its existing retries. A delivery is accepted only with HTTP 200 and a valid provider message ID. Missing receipts, transport failures, and ambiguous server responses are blocked as unknown outcomes and require provider verification before a manual retry. Definitive rejection responses retain the existing retry policy. Both the historical worker-timeout and provider-unknown warnings survive reapproval and Send/Test requests; only an explicit Retry after provider verification can clear them, and a disabled gate preserves the warning. A service-only readiness probe stops claims during the app-before-migration window. Other providers without this optional classification retain their existing behavior. These source safeguards do not prove inbox receipt or exactly-once delivery; actual SES-adapter/worker regression tests cover the boundary.
 
 Local verification: run the Contacts schedule tests, the web
 `src/lib/user-report-automation` suite, the users-core report route tests, and the
@@ -372,8 +372,19 @@ Regression coverage: `use-report-draft-sync.test.tsx` exercises the real form
 controller, conflicting refreshes, intentionally cleared fields, save
 acknowledgments, and all four scope boundaries.
 
+### Periodic delivery database contract
+
+The `periodic-report-delivery-contract.yaml` CI workflow replays the complete historical schema in an isolated disposable database, runs the approval, stage and provider-outcome pgTAP fixtures with strict assertion accounting, generates actual schema types, and cleans up its owned database. The source-only runner and mocked adapter tests are not database or provider delivery proof. Require this workflow for the exact repair head before merging the migration. Production applies it through the gated migration workflow after authorized promotion; do not enable flags or send reports merely because source tests pass.
+
 Explicit Retry for either uncertainty marker shows a localized possible-duplicate warning in Contacts, requiring provider-log and intended-recipient verification before confirmation. Ordinary definitive rejection retains its normal retry copy. Confirmation is invalidated across actor/workspace or send-capability changes and suppresses duplicate submissions while pending; this does not verify provider acceptance or inbox delivery.
 
+
+The periodic delivery database contract also checks real two-connection claim
+exclusion, approval revocation versus a waiting delivery request, and stale
+completion versus a successor lease. Generated types are strictly compiled from
+the complete historical schema after those checks. These checks cover database
+lease behavior; they do not make legacy approvals canonical review receipts,
+authorize provider dispatch, or prove recipient delivery.
 
 ### Unwired report presentation envelope
 
