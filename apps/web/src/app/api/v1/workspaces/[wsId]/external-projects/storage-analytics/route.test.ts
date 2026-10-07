@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  connection: vi.fn(),
   checkRateLimit: vi.fn(),
   getCachedProjectStorageAnalytics: vi.fn(),
   getWorkspaceStorageOverview: vi.fn(),
@@ -12,6 +13,11 @@ const mocks = vi.hoisted(() => ({
 }));
 
 const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/server')>()),
+  connection: mocks.connection,
+}));
 
 vi.mock('@/lib/external-projects/access', () => ({
   requireWorkspaceExternalProjectAccess: (
@@ -77,8 +83,27 @@ async function getStorageAnalytics() {
 }
 
 describe('external project storage analytics route', () => {
+  it('keeps HEAD authorization status and headers without a response body', async () => {
+    mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
+      ok: false,
+      response: new Response('Forbidden', {
+        status: 403,
+        headers: { 'x-access-denial': 'workspace' },
+      }),
+    });
+    const { HEAD } = await import('./route');
+    const response = await HEAD(createRequest(), {
+      params: Promise.resolve({ wsId: 'workspace-1' }),
+    });
+    expect(response.status).toBe(403);
+    expect(response.headers.get('x-access-denial')).toBe('workspace');
+    expect(await response.text()).toBe('');
+    expect(mocks.connection).toHaveBeenCalled();
+  });
+
   beforeEach(() => {
     vi.resetModules();
+    mocks.connection.mockReset();
     mocks.requireWorkspaceExternalProjectAccess.mockReset();
     mocks.checkRateLimit.mockReset();
     mocks.getCachedProjectStorageAnalytics.mockReset();

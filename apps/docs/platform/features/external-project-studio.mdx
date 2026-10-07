@@ -172,6 +172,12 @@ rollout also uses that scan; other database failures remain visible. Production
 activation requires the normal gated Supabase migration workflow. No cache
 backfill is required.
 
+The first-class Next handler preserves bodyless `HEAD` responses and request-time
+authorization. Its future Rust port mirrors the Supabase cache response with live
+quota and falls through to Next for fully configured R2 providers and unported
+methods. Rust is not deployed; satellite-session and rate-limit parity remain
+tracked prerequisites for a future cutover.
+
 ## Team Guidance
 
 - Link into the CMS-native route map directly.

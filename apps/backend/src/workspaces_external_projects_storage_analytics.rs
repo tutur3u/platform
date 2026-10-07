@@ -1,9 +1,19 @@
+mod access;
+mod cache;
+mod storage;
+
+use access::{
+    canonical_project_row, effective_permissions, normalize_workspace_id, permission_set_allows,
+    read_binding_state,
+};
+use storage::{RawObject, list_raw_objects, storage_limit};
+
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact, json_response,
-    method_not_allowed, no_store_response,
+    no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest, OutboundResponse},
     supabase_auth,
 };
@@ -176,10 +186,16 @@ pub(crate) async fn handle_workspaces_external_projects_storage_analytics_route(
 ) -> Option<BackendResponse> {
     let raw_ws_id = analytics_ws_id(request.path)?;
 
-    Some(match request.method {
-        "GET" => analytics_response(config, request, raw_ws_id, outbound).await,
-        method => no_store_response(method_not_allowed(method, "GET")),
-    })
+    if !matches!(request.method, "GET" | "HEAD") {
+        return None;
+    }
+    let mut response = analytics_response(config, request, raw_ws_id, outbound).await?;
+    if request.method == "HEAD" {
+        response.body_empty = true;
+        response.body = serde_json::Value::Null;
+        response.body_text = None;
+    }
+    Some(response)
 }
 
 fn analytics_ws_id(path: &str) -> Option<&str> {
@@ -192,25 +208,25 @@ async fn analytics_response(
     request: BackendRequest<'_>,
     raw_ws_id: &str,
     outbound: &impl OutboundHttpClient,
-) -> BackendResponse {
+) -> Option<BackendResponse> {
     let contact_data = &config.contact_data;
 
     if !contact_data.configured() {
-        return error_response(500, FAILED_MESSAGE);
+        return Some(error_response(500, FAILED_MESSAGE));
     }
 
     // Auth: Supabase user session (cookie or bearer). App-session /
     // app-coordination token flows from the legacy route are not supported here
     // (see notes).
     let Some(access_token) = supabase_auth::request_access_token(request) else {
-        return error_response(401, UNAUTHORIZED_MESSAGE);
+        return Some(error_response(401, UNAUTHORIZED_MESSAGE));
     };
     let Some(user_id) =
         supabase_auth::fetch_supabase_auth_user(contact_data, &access_token, outbound)
             .await
             .and_then(|user| user.id.filter(|id| !id.trim().is_empty()))
     else {
-        return error_response(401, UNAUTHORIZED_MESSAGE);
+        return Some(error_response(401, UNAUTHORIZED_MESSAGE));
     };
 
     // normalizeWorkspaceId (handle/personal/internal resolution).
@@ -221,19 +237,19 @@ async fn analytics_response(
             Ok(ws_id) => ws_id,
             // Legacy `normalizeWorkspaceId` failure surfaces as a 401 from the
             // surrounding access check (Unauthorized).
-            Err(()) => return error_response(401, UNAUTHORIZED_MESSAGE),
+            Err(()) => return Some(error_response(401, UNAUTHORIZED_MESSAGE)),
         };
 
     // Resolve external-project binding (dual-read: bindings table then secrets).
     let (canonical_id, enabled) =
         match read_binding_state(contact_data, outbound, &normalized_ws_id).await {
             Ok(state) => state,
-            Err(()) => return error_response(500, FAILED_MESSAGE),
+            Err(()) => return Some(error_response(500, FAILED_MESSAGE)),
         };
     let canonical_project = match canonical_id.as_deref() {
         Some(id) => match canonical_project_row(contact_data, outbound, id).await {
             Ok(project) => project,
-            Err(()) => return error_response(500, FAILED_MESSAGE),
+            Err(()) => return Some(error_response(500, FAILED_MESSAGE)),
         },
         None => None,
     };
@@ -253,7 +269,7 @@ async fn analytics_response(
     // enabled with an active canonical project (404) before the permission
     // denial (403) surfaces.
     if !binding_enabled {
-        return error_response(404, UNAVAILABLE_MESSAGE);
+        return Some(error_response(404, UNAVAILABLE_MESSAGE));
     }
 
     // Permission: manage mode allowed when the workspace grants
@@ -269,7 +285,7 @@ async fn analytics_response(
     .await
     {
         Ok(permissions) => permissions,
-        Err(()) => return error_response(500, FAILED_MESSAGE),
+        Err(()) => return Some(error_response(500, FAILED_MESSAGE)),
     };
     let workspace_allowed =
         permission_set_allows(&workspace_permissions, &["manage_external_projects"]);
@@ -286,7 +302,7 @@ async fn analytics_response(
         .await
         {
             Ok(permissions) => permissions,
-            Err(()) => return error_response(500, FAILED_MESSAGE),
+            Err(()) => return Some(error_response(500, FAILED_MESSAGE)),
         };
         permission_set_allows(
             &root_permissions,
@@ -295,11 +311,36 @@ async fn analytics_response(
     };
 
     if !allowed {
-        return error_response(403, FORBIDDEN_MESSAGE);
+        return Some(error_response(403, FORBIDDEN_MESSAGE));
     }
 
-    // getWorkspaceStorageOverview -> storage limit (used for usagePercentage).
+    // R2 signing remains in the live Next handler. Never return Supabase cache
+    // totals for a fully configured R2 workspace.
+    match cache::is_r2_active(contact_data, outbound, &normalized_ws_id).await {
+        Ok(true) => return None,
+        Ok(false) => {}
+        Err(()) => return Some(error_response(500, FAILED_MESSAGE)),
+    }
+    // Quota is always fresh, even when the analytics snapshot is cached.
     let storage_limit = storage_limit(contact_data, outbound, &normalized_ws_id).await;
+    match cache::cached_analytics(
+        contact_data,
+        outbound,
+        &normalized_ws_id,
+        &adapter,
+        storage_limit,
+    )
+    .await
+    {
+        Ok(Some(data)) => {
+            return Some(no_store_response(json_response(
+                200,
+                json!({ "data": data }),
+            )));
+        }
+        Ok(None) => {}
+        Err(()) => return Some(error_response(500, FAILED_MESSAGE)),
+    }
 
     // listWorkspaceStorageRawObjectsForProvider scoped to
     // external-projects/<adapter>, scanning up to OBJECT_LIMIT + 1 objects.
@@ -314,7 +355,7 @@ async fn analytics_response(
     .await
     {
         Ok(objects) => objects,
-        Err(()) => return error_response(500, FAILED_MESSAGE),
+        Err(()) => return Some(error_response(500, FAILED_MESSAGE)),
     };
 
     let truncated = raw_objects.len() > OBJECT_LIMIT;
@@ -364,7 +405,7 @@ async fn analytics_response(
 
     let usage_percentage = compute_usage_percentage(total_size, storage_limit);
 
-    no_store_response(json_response(
+    Some(no_store_response(json_response(
         200,
         AnalyticsEnvelope {
             data: AnalyticsData {
@@ -378,7 +419,7 @@ async fn analytics_response(
                 smallest_file,
             },
         },
-    ))
+    )))
 }
 
 /// Mirrors getFileName: posix.basename(path) || path.
@@ -409,594 +450,6 @@ fn compute_usage_percentage(total_size: i64, storage_limit: i64) -> f64 {
 // ---------------------------------------------------------------------------
 // Storage object listing (listWorkspaceStorageRawObjectsForProvider, Supabase).
 // ---------------------------------------------------------------------------
-
-struct RawObject {
-    /// Path relative to the workspace root (legacy `object.path`).
-    path: String,
-    size: i64,
-    updated_at: Option<String>,
-    is_folder_placeholder: bool,
-}
-
-/// Mirrors the Supabase path of `listWorkspaceStorageRawObjectsForProvider`:
-/// recursively walk `<wsId>/<prefix>` via the Storage list API, collecting raw
-/// objects up to `limit`, skipping reserved mobile-deployment vault files.
-///
-/// NOTE: When the active provider is a fully-configured R2 backend, the legacy
-/// code lists the R2 bucket through S3 ListObjectsV2 (SigV4-signed). That
-/// signing path is not implemented in the Workers backend, so this always reads
-/// the Supabase `workspaces` bucket. For Supabase-backed workspaces (the
-/// default) this is an exact match. See notes / integrator verification.
-async fn list_raw_objects(
-    contact_data: &contact::ContactDataConfig,
-    outbound: &impl OutboundHttpClient,
-    ws_id: &str,
-    relative_prefix: &str,
-    limit: usize,
-) -> Result<Vec<RawObject>, ()> {
-    let mut objects: Vec<RawObject> = Vec::new();
-
-    // Depth-first walk; the storage prefix is `<wsId>/<relative_prefix>`. The
-    // legacy `buildWorkspaceStoragePrefix` joins with `/` and strips a trailing
-    // slash before listing.
-    let root = if relative_prefix.is_empty() {
-        ws_id.to_owned()
-    } else {
-        format!("{ws_id}/{relative_prefix}")
-    };
-
-    let workspace_prefix = format!("{ws_id}/");
-
-    // Stack ordering: process entries in list order, so use a queue-like stack
-    // pushing children to preserve a stable (best-effort) traversal. Exact
-    // ordering does not affect aggregate totals; it only affects which subset is
-    // retained when truncated, which the legacy code also leaves implementation
-    // defined within the page scan.
-    let mut pending: Vec<String> = vec![root];
-
-    while let Some(current_path) = pending.pop() {
-        let mut offset: u32 = 0;
-        loop {
-            if objects.len() >= limit {
-                return Ok(objects);
-            }
-
-            let entries = storage_list(contact_data, outbound, &current_path, offset).await?;
-            let page_len = entries.len();
-
-            let mut child_folders: Vec<String> = Vec::new();
-
-            for entry in entries {
-                let Some(name) = entry.name.filter(|name| !name.is_empty()) else {
-                    continue;
-                };
-                let entry_path = if current_path.is_empty() {
-                    name.clone()
-                } else {
-                    format!("{current_path}/{name}")
-                };
-
-                if entry.id.is_some() {
-                    // File entry.
-                    let relative_path = entry_path
-                        .strip_prefix(&workspace_prefix)
-                        .unwrap_or(&entry_path)
-                        .to_owned();
-
-                    // filterReservedWorkspaceStorageObjects: drop reserved
-                    // mobile-deployment vault files (relative to the workspace).
-                    if is_reserved_mobile_deployment_drive_path(&relative_path) {
-                        continue;
-                    }
-
-                    let size = entry.metadata.and_then(|meta| meta.size).unwrap_or(0);
-                    objects.push(RawObject {
-                        path: relative_path,
-                        size,
-                        updated_at: entry.updated_at,
-                        is_folder_placeholder: entry_path.ends_with(EMPTY_FOLDER_PLACEHOLDER_NAME),
-                    });
-
-                    if objects.len() >= limit {
-                        return Ok(objects);
-                    }
-                } else {
-                    // Folder entry: recurse.
-                    child_folders.push(entry_path);
-                }
-            }
-
-            // Push children so they are processed after the rest of this folder's
-            // pages, mirroring the recursive descent.
-            for folder in child_folders.into_iter().rev() {
-                pending.push(folder);
-            }
-
-            if (page_len as u32) < STORAGE_LIST_PAGE_SIZE {
-                break;
-            }
-            offset += page_len as u32;
-        }
-    }
-
-    Ok(objects)
-}
-
-/// Mirrors isReservedMobileDeploymentDrivePath: a relative path is reserved when
-/// it is exactly the reserved prefix or sits beneath it.
-fn is_reserved_mobile_deployment_drive_path(relative_path: &str) -> bool {
-    let normalized = relative_path.trim_start_matches('/');
-    normalized == RESERVED_MOBILE_DEPLOYMENT_PREFIX
-        || normalized.starts_with(&format!("{RESERVED_MOBILE_DEPLOYMENT_PREFIX}/"))
-}
-
-async fn storage_list(
-    contact_data: &contact::ContactDataConfig,
-    outbound: &impl OutboundHttpClient,
-    prefix: &str,
-    offset: u32,
-) -> Result<Vec<StorageListEntry>, ()> {
-    let Some(url) = storage_list_url(contact_data) else {
-        return Err(());
-    };
-    let Some(service_role_key) = contact_data.service_role_key() else {
-        return Err(());
-    };
-    let authorization = format!("Bearer {service_role_key}");
-    let body = json!({
-        "prefix": prefix,
-        "limit": STORAGE_LIST_PAGE_SIZE,
-        "offset": offset,
-        "sortBy": { "column": "name", "order": "asc" },
-    })
-    .to_string();
-
-    let response = outbound
-        .send(
-            OutboundRequest::new(OutboundMethod::Post, &url)
-                .with_header("Accept", APPLICATION_JSON)
-                .with_header("Content-Type", APPLICATION_JSON)
-                .with_header("Authorization", &authorization)
-                .with_header("apikey", service_role_key)
-                .with_body(&body),
-        )
-        .await
-        .map_err(|_| ())?;
-
-    if !is_success(response.status) {
-        return Err(());
-    }
-
-    response.json::<Vec<StorageListEntry>>().map_err(|_| ())
-}
-
-/// Derive the Supabase Storage list endpoint from the REST base URL. The
-/// `ContactDataConfig` exposes no raw origin accessor, so we reuse `rest_url`
-/// and rewrite the `/rest/v1/...` segment to `/storage/v1/object/list/...`.
-fn storage_list_url(contact_data: &contact::ContactDataConfig) -> Option<String> {
-    let rest_url = contact_data.rest_url("__origin__", &[])?;
-    let origin = rest_url.split("/rest/v1/").next()?;
-    if origin.is_empty() {
-        return None;
-    }
-    Some(format!("{origin}/storage/v1/object/list/{STORAGE_BUCKET}"))
-}
-
-async fn storage_limit(
-    contact_data: &contact::ContactDataConfig,
-    outbound: &impl OutboundHttpClient,
-    ws_id: &str,
-) -> i64 {
-    let Some(url) = contact_data.rpc_url(STORAGE_LIMIT_RPC) else {
-        return STORAGE_LIMIT_FALLBACK_BYTES;
-    };
-    let Some(service_role_key) = contact_data.service_role_key() else {
-        return STORAGE_LIMIT_FALLBACK_BYTES;
-    };
-    let authorization = format!("Bearer {service_role_key}");
-    let body = json!({ "p_ws_id": ws_id }).to_string();
-
-    let response = outbound
-        .send(
-            OutboundRequest::new(OutboundMethod::Post, &url)
-                .with_header("Accept", APPLICATION_JSON)
-                .with_header("Content-Type", APPLICATION_JSON)
-                .with_header("Authorization", &authorization)
-                .with_header("apikey", service_role_key)
-                .with_body(&body),
-        )
-        .await;
-
-    match response {
-        Ok(response) if is_success(response.status) => {
-            serde_json::from_str::<i64>(response.body_text.trim())
-                .unwrap_or(STORAGE_LIMIT_FALLBACK_BYTES)
-        }
-        _ => STORAGE_LIMIT_FALLBACK_BYTES,
-    }
-}
-
-// ---------------------------------------------------------------------------
-// External-project binding resolution (mirrors
-// resolveWorkspaceExternalProjectBinding dual-read).
-// ---------------------------------------------------------------------------
-
-async fn read_binding_state(
-    contact_data: &contact::ContactDataConfig,
-    outbound: &impl OutboundHttpClient,
-    ws_id: &str,
-) -> Result<(Option<String>, bool), ()> {
-    // Prefer the first-class bindings table.
-    if let Some(url) = contact_data.rest_url(
-        "workspace_external_project_bindings",
-        &[
-            ("select", "canonical_project_id,is_enabled".to_owned()),
-            ("ws_id", format!("eq.{ws_id}")),
-            ("limit", "1".to_owned()),
-        ],
-    ) && let Ok(response) = service_role_get(contact_data, outbound, &url).await
-        && is_success(response.status)
-        && let Ok(Some(row)) = decode_first_row::<BindingRow>(&response)
-    {
-        return Ok((row.canonical_project_id, row.is_enabled == Some(true)));
-    }
-    // Any binding-table failure falls through to the secrets dual-read.
-
-    let Some(url) = contact_data.rest_url(
-        "workspace_secrets",
-        &[
-            ("select", "name,value".to_owned()),
-            ("ws_id", format!("eq.{ws_id}")),
-            (
-                "name",
-                format!(
-                    "in.({EXTERNAL_PROJECT_ENABLED_SECRET},{EXTERNAL_PROJECT_CANONICAL_ID_SECRET})"
-                ),
-            ),
-        ],
-    ) else {
-        return Err(());
-    };
-    let response = service_role_get(contact_data, outbound, &url).await?;
-    if !is_success(response.status) {
-        return Err(());
-    }
-
-    let rows = response.json::<Vec<SecretRow>>().map_err(|_| ())?;
-    let canonical_id = rows
-        .iter()
-        .find(|row| row.name.as_deref() == Some(EXTERNAL_PROJECT_CANONICAL_ID_SECRET))
-        .and_then(|row| row.value.clone());
-    let enabled = rows.iter().any(|row| {
-        row.name.as_deref() == Some(EXTERNAL_PROJECT_ENABLED_SECRET)
-            && row.value.as_deref() == Some("true")
-    });
-
-    Ok((canonical_id, enabled))
-}
-
-async fn canonical_project_row(
-    contact_data: &contact::ContactDataConfig,
-    outbound: &impl OutboundHttpClient,
-    canonical_id: &str,
-) -> Result<Option<CanonicalProjectRow>, ()> {
-    let Some(url) = contact_data.rest_url(
-        "canonical_external_projects",
-        &[
-            ("select", "adapter,is_active".to_owned()),
-            ("id", format!("eq.{canonical_id}")),
-            ("limit", "1".to_owned()),
-        ],
-    ) else {
-        return Err(());
-    };
-    let response = service_role_get(contact_data, outbound, &url).await?;
-    if !is_success(response.status) {
-        return Err(());
-    }
-    decode_first_row::<CanonicalProjectRow>(&response)
-}
-
-// ---------------------------------------------------------------------------
-// Permission resolution (mirrors getPermissions composition used by access.ts).
-// ---------------------------------------------------------------------------
-
-struct EffectivePermissions {
-    has_all_permissions: bool,
-    permissions: Vec<String>,
-}
-
-fn permission_set_allows(permissions: &EffectivePermissions, wanted: &[&str]) -> bool {
-    permissions.has_all_permissions
-        || wanted
-            .iter()
-            .any(|wanted| permissions.permissions.iter().any(|value| value == wanted))
-}
-
-async fn effective_permissions(
-    contact_data: &contact::ContactDataConfig,
-    outbound: &impl OutboundHttpClient,
-    ws_id: &str,
-    user_id: &str,
-    access_token: &str,
-) -> Result<EffectivePermissions, ()> {
-    let Some(membership_type) =
-        workspace_membership_type(contact_data, outbound, ws_id, user_id, access_token).await?
-    else {
-        // No membership -> getPermissions returns null (no permissions).
-        return Ok(EffectivePermissions {
-            has_all_permissions: false,
-            permissions: Vec::new(),
-        });
-    };
-
-    let creator_id = workspace_creator_id(contact_data, outbound, ws_id).await?;
-    let is_creator = membership_type == "MEMBER" && creator_id.as_deref() == Some(user_id);
-
-    let role_permissions = if membership_type == "MEMBER" {
-        role_permissions(contact_data, outbound, ws_id, user_id).await?
-    } else {
-        Vec::new()
-    };
-    let default_permissions =
-        default_permissions(contact_data, outbound, ws_id, &membership_type).await?;
-
-    let mut permissions = Vec::new();
-    extend_unique(&mut permissions, role_permissions);
-    extend_unique(&mut permissions, default_permissions);
-
-    Ok(EffectivePermissions {
-        has_all_permissions: is_creator
-            || permissions.iter().any(|value| value == ADMIN_PERMISSION),
-        permissions,
-    })
-}
-
-async fn workspace_membership_type(
-    contact_data: &contact::ContactDataConfig,
-    outbound: &impl OutboundHttpClient,
-    ws_id: &str,
-    user_id: &str,
-    access_token: &str,
-) -> Result<Option<String>, ()> {
-    let Some(url) = contact_data.rest_url(
-        "workspace_members",
-        &[
-            ("select", "type".to_owned()),
-            ("ws_id", format!("eq.{ws_id}")),
-            ("user_id", format!("eq.{user_id}")),
-            ("limit", "1".to_owned()),
-        ],
-    ) else {
-        return Err(());
-    };
-    let response = caller_get(contact_data, outbound, &url, access_token).await?;
-    if !is_success(response.status) {
-        return Ok(None);
-    }
-    Ok(decode_first_row::<WorkspaceMembershipRow>(&response)?
-        .map(|row| row.membership_type.unwrap_or_else(|| "MEMBER".to_owned())))
-}
-
-async fn workspace_creator_id(
-    contact_data: &contact::ContactDataConfig,
-    outbound: &impl OutboundHttpClient,
-    ws_id: &str,
-) -> Result<Option<String>, ()> {
-    let Some(url) = contact_data.rest_url(
-        "workspaces",
-        &[
-            ("select", "creator_id".to_owned()),
-            ("id", format!("eq.{ws_id}")),
-            ("limit", "1".to_owned()),
-        ],
-    ) else {
-        return Err(());
-    };
-    let response = service_role_get(contact_data, outbound, &url).await?;
-    if !is_success(response.status) {
-        return Ok(None);
-    }
-    Ok(decode_first_row::<WorkspaceCreatorRow>(&response)?.and_then(|row| row.creator_id))
-}
-
-async fn role_permissions(
-    contact_data: &contact::ContactDataConfig,
-    outbound: &impl OutboundHttpClient,
-    ws_id: &str,
-    user_id: &str,
-) -> Result<Vec<String>, ()> {
-    let Some(url) = contact_data.rest_url(
-        "workspace_role_members",
-        &[
-            (
-                "select",
-                "workspace_roles!inner(workspace_role_permissions(permission))".to_owned(),
-            ),
-            ("user_id", format!("eq.{user_id}")),
-            ("workspace_roles.ws_id", format!("eq.{ws_id}")),
-            (
-                "workspace_roles.workspace_role_permissions.enabled",
-                "eq.true".to_owned(),
-            ),
-        ],
-    ) else {
-        return Err(());
-    };
-    let response = service_role_get(contact_data, outbound, &url).await?;
-    if !is_success(response.status) {
-        return Ok(Vec::new());
-    }
-
-    Ok(response
-        .json::<Vec<RoleMemberRow>>()
-        .map_err(|_| ())?
-        .into_iter()
-        .flat_map(|member| member.workspace_roles)
-        .flat_map(|role| role.workspace_role_permissions)
-        .filter_map(|permission| permission.permission)
-        .collect())
-}
-
-async fn default_permissions(
-    contact_data: &contact::ContactDataConfig,
-    outbound: &impl OutboundHttpClient,
-    ws_id: &str,
-    membership_type: &str,
-) -> Result<Vec<String>, ()> {
-    let Some(url) = contact_data.rest_url(
-        "workspace_default_permissions",
-        &[
-            ("select", "permission".to_owned()),
-            ("ws_id", format!("eq.{ws_id}")),
-            ("member_type", format!("eq.{membership_type}")),
-            ("enabled", "eq.true".to_owned()),
-        ],
-    ) else {
-        return Err(());
-    };
-    let response = service_role_get(contact_data, outbound, &url).await?;
-    if !is_success(response.status) {
-        return Ok(Vec::new());
-    }
-    Ok(response
-        .json::<Vec<RolePermissionRow>>()
-        .map_err(|_| ())?
-        .into_iter()
-        .filter_map(|row| row.permission)
-        .collect())
-}
-
-fn extend_unique(permissions: &mut Vec<String>, values: Vec<String>) {
-    for permission in values {
-        if !permissions.iter().any(|value| value == &permission) {
-            permissions.push(permission);
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Workspace identifier normalization (normalizeWorkspaceId).
-// ---------------------------------------------------------------------------
-
-async fn normalize_workspace_id(
-    contact_data: &contact::ContactDataConfig,
-    outbound: &impl OutboundHttpClient,
-    raw_ws_id: &str,
-    user_id: &str,
-    access_token: &str,
-) -> Result<String, ()> {
-    let resolved_ws_id = resolve_workspace_id(raw_ws_id);
-
-    if resolved_ws_id == ROOT_WORKSPACE_ID {
-        return Ok(ROOT_WORKSPACE_ID.to_owned());
-    }
-
-    if raw_ws_id
-        .trim()
-        .eq_ignore_ascii_case(PERSONAL_WORKSPACE_SLUG)
-    {
-        return personal_workspace_id(contact_data, outbound, user_id, access_token).await;
-    }
-
-    if !is_workspace_uuid_literal(&resolved_ws_id) {
-        let handle = raw_ws_id.trim().to_lowercase();
-        if !is_workspace_handle_candidate(&handle) {
-            return Ok(resolved_ws_id);
-        }
-
-        if let Some(workspace_id) = workspace_id_by_handle(contact_data, outbound, &handle).await? {
-            return Ok(workspace_id);
-        }
-    }
-
-    Ok(resolved_ws_id)
-}
-
-async fn personal_workspace_id(
-    contact_data: &contact::ContactDataConfig,
-    outbound: &impl OutboundHttpClient,
-    user_id: &str,
-    access_token: &str,
-) -> Result<String, ()> {
-    let Some(url) = contact_data.rest_url(
-        "workspaces",
-        &[
-            (
-                "select",
-                "id,workspace_members!inner(user_id,type)".to_owned(),
-            ),
-            ("personal", "eq.true".to_owned()),
-            ("workspace_members.user_id", format!("eq.{user_id}")),
-            ("workspace_members.type", "eq.MEMBER".to_owned()),
-            ("limit", "1".to_owned()),
-        ],
-    ) else {
-        return Err(());
-    };
-    let response = caller_get(contact_data, outbound, &url, access_token).await?;
-    if !is_success(response.status) {
-        return Err(());
-    }
-    decode_first_row::<WorkspaceIdRow>(&response)?
-        .and_then(|row| row.id)
-        .ok_or(())
-}
-
-async fn workspace_id_by_handle(
-    contact_data: &contact::ContactDataConfig,
-    outbound: &impl OutboundHttpClient,
-    handle: &str,
-) -> Result<Option<String>, ()> {
-    let Some(url) = contact_data.rest_url(
-        "workspaces",
-        &[
-            ("select", "id".to_owned()),
-            ("handle", format!("eq.{handle}")),
-            ("limit", "1".to_owned()),
-        ],
-    ) else {
-        return Err(());
-    };
-    let response = service_role_get(contact_data, outbound, &url).await?;
-    if !is_success(response.status) {
-        return Ok(None);
-    }
-    Ok(decode_first_row::<WorkspaceIdRow>(&response)?.and_then(|row| row.id))
-}
-
-fn resolve_workspace_id(identifier: &str) -> String {
-    if identifier.eq_ignore_ascii_case(INTERNAL_WORKSPACE_SLUG) {
-        ROOT_WORKSPACE_ID.to_owned()
-    } else {
-        identifier.to_owned()
-    }
-}
-
-fn is_workspace_uuid_literal(value: &str) -> bool {
-    value.trim().len() == 36
-        && value
-            .trim()
-            .chars()
-            .enumerate()
-            .all(|(index, value)| match index {
-                8 | 13 | 18 | 23 => value == '-',
-                _ => value.is_ascii_hexdigit(),
-            })
-}
-
-fn is_workspace_handle_candidate(value: &str) -> bool {
-    let length = value.len();
-    if length == 0 || length > 64 {
-        return false;
-    }
-    value.chars().enumerate().all(|(index, character)| {
-        let is_edge = index == 0 || index + 1 == length;
-        character.is_ascii_lowercase()
-            || character.is_ascii_digit()
-            || (!is_edge && matches!(character, '_' | '-'))
-    })
-}
 
 // ---------------------------------------------------------------------------
 // HTTP helpers.
