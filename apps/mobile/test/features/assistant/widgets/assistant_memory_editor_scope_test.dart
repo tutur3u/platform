@@ -35,7 +35,7 @@ WorkspaceState _workspace(String id) => WorkspaceState(
 void main() {
   for (final scope in ['actor', 'logout', 'workspace']) {
     for (final operation in ['load', 'save', 'review']) {
-      testWidgets('actual $scope change cancels modal during held '
+      testWidgets('actual $scope change cancels route during held '
           '$operation, ABA cannot revive', (tester) async {
         final accounts = StreamController<AuthState>.broadcast();
         final scopes = StreamController<WorkspaceState>.broadcast();

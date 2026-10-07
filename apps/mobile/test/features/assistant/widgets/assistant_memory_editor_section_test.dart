@@ -92,7 +92,14 @@ void main() {
         findsOneWidget,
       );
       expect(
-        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(
+                FilledButton,
+                locale == 'en' ? 'Save' : 'Lưu',
+              ),
+            )
+            .onPressed,
         isNull,
       );
       expect(repository.edits, 1);
@@ -118,7 +125,9 @@ void main() {
       'Unsaved draft',
     );
     expect(
-      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, 'Save'))
+          .onPressed,
       isNull,
     );
     repository.readEdit = () async => const EditableAssistantMemory(
