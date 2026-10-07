@@ -459,3 +459,30 @@ explicit selected-batch intent, canonical receipts and locked permission/tenant
 validation remain required before enabling report emails. The independent Web
 legacy mutation path is not changed by this Contacts packet; its faithful parity
 move is a separate prerequisite. Daily-report behavior is unchanged here.
+
+
+### Unwired explicit periodic approval protocol
+
+The pure shared protocol accepts a nonempty selection of at most 50 unique
+periodic report IDs with observed revisions as canonical positive decimal text.
+It rejects filter-based blanket selectors, caller-supplied actor fields, daily
+entries and numeric revisions. Decimal text preserves signed-bigint revisions
+above JavaScript's safe integer limit. Returned request and result snapshots are
+independent and frozen.
+
+A complete result must match the explicit action, workspace, supplied actor
+comparison context and every selected entry, with unique receipt identities and
+advancing revisions. Original and replay results use the same validation; replay
+still needs current permission and revision admission by the future backend.
+Full review-input digest, presentation digest and renderer version remain separate
+fields. Format validation does not prove either digest's canonical encoding,
+rendered payload consistency or a receipt's authenticity.
+
+This unit is unwired. Its comparison context is unauthenticated pure input;
+future trusted backend admission, authoritative subject and group tenancy,
+workspace provenance for both role and grant, atomic batch locks and canonical
+receipt creation remain mandatory. It performs no SQL, RPC, queue mutation,
+provider call or readiness activation. Legacy approvals remain insufficient for
+canonical dispatch. `approval-protocol.test.ts` covers selection bounds, exact
+large revisions, foreign identities, incomplete and replay results, distinct
+digests, immutable snapshots and fail-closed malformed input.
