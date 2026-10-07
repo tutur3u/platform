@@ -41,7 +41,6 @@ import {
   useDeferredValue,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
 import * as z from 'zod';
@@ -50,6 +49,7 @@ import { ReportBasicInfoDialog } from './basic-info-dialog';
 import { DeleteReportDialog } from './components/delete-report-dialog';
 import { ReportActions } from './components/report-actions';
 import { ReportHistory } from './components/report-history';
+import { useReportDraftSync } from './hooks/use-report-draft-sync';
 import { useReportDynamicText } from './hooks/use-report-dynamic-text';
 import { useReportExport } from './hooks/use-report-export';
 import { useReportHistory } from './hooks/use-report-history';
@@ -180,20 +180,11 @@ export default function EditableReportPreview({
     defaultValues: formValues,
   });
 
-  const lastResetSignatureRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    const nextSignature = JSON.stringify({
-      reportId: report.id ?? null,
-      formValues,
-    });
-    if (lastResetSignatureRef.current === nextSignature) {
-      return;
-    }
-
-    lastResetSignatureRef.current = nextSignature;
-    form.reset(formValues);
-  }, [form, formValues, report.id]);
+  useReportDraftSync(
+    form,
+    [wsId, report.id, report.user_id, report.group_id],
+    formValues
+  );
 
   const title = useWatch({ control: form.control, name: 'title' });
   const content = useWatch({ control: form.control, name: 'content' });
