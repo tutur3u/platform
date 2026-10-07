@@ -1612,3 +1612,29 @@ shell dock and API-backed workspace chat behavior. The actual host account-switc
 and delayed-cancellation regressions are in `chat_actor_lifetime_test.dart`.
 
 Chat rejects retained-cubit API dispatch after its actor lifetime ends. A send waiting for previous stream cancellation rechecks actor, workspace and selected conversation before starting a new request; stale conversation creation results do not trigger selection reads or return a navigable result. Already dispatched server writes are not cancelled by this client boundary. Deferred cancellation and creation regressions cover these rules.
+
+
+### Delivered inbox identity foundation
+
+Standard persisted notification pushes carry a versioned `inboxIdentity` capsule
+from the recipient account, actual inbox workspace column (explicit null for
+personal), and notification row ID. Android receives the same full identity as
+its notification tag. This is an encoded identity, not encryption or an action
+authorization token. Display/navigation metadata cannot change its owner or scope;
+a personal inbox invite can still navigate to a shared workspace.
+
+Custom/MFA pushes strip the reserved `inboxIdentity` data field and receive no
+owned inbox tag; other custom metadata remains unchanged. Legacy rows
+without valid recipient/workspace/notification identity remain unqualified; they
+must not be bulk dismissed by guessing their owner. Existing Mail navigation is
+preserved without promoting its legacy metadata into trusted inbox identity.
+`push-inbox-identity.test.ts` covers the actual payload constructor and outgoing
+transport with a fake Firebase client, including same-ID foreign scopes,
+personal/navigation separation and legacy/custom exclusions.
+
+This packet provides identity only. Mobile delivered-only removal and read-action
+integration remain separate; it does not clear an OS tray or cancel future task
+and calendar reminders. Source tests are not device proof. A future delivery
+receipt must record the actual TestFlight version/build and verify foreground
+and background single/all-read dismissal while foreign scopes, later arrivals,
+and pending reminders survive. The reported 0.23.4 build number remains unknown.
