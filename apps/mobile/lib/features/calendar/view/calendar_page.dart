@@ -37,6 +37,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'calendar_page_actions.dart';
 part 'calendar_zoom_page.dart';
+part 'calendar_page_reselect.dart';
 
 CalendarViewMode _defaultCalendarMode(BuildContext context) =>
     MediaQuery.sizeOf(context).width >= Breakpoints.mediumMin
@@ -87,6 +88,9 @@ class _CalendarView extends StatefulWidget {
 
 class _CalendarViewState extends State<_CalendarView> {
   late final AppLifecycleListener _lifecycle;
+  int _resetGeneration = 0;
+
+  void _advanceResetGeneration() => setState(() => _resetGeneration++);
 
   @override
   void initState() {
@@ -314,14 +318,7 @@ class _CalendarViewState extends State<_CalendarView> {
                     icon: Icons.today,
                     tooltip: l10n.calendarToday,
                     enabled: wsId != null && wsId.isNotEmpty,
-                    onPressed: () {
-                      final cubit = context.read<CalendarCubit>()..goToToday();
-                      if (wsId != null && wsId.isNotEmpty) {
-                        unawaited(
-                          cubit.ensureRangeLoaded(wsId, DateTime.now()),
-                        );
-                      }
-                    },
+                    onPressed: () => _resetCurrentCalendarView(context),
                   ),
                 ],
               );
@@ -412,6 +409,7 @@ class _CalendarViewState extends State<_CalendarView> {
     switch (state.viewMode) {
       case CalendarViewMode.day:
         return MultiDayScheduleView(
+          resetGeneration: _resetGeneration,
           timelineZoom: state.timelineZoom,
           zoomScope: context.read<CalendarCubit>().timelineZoomScope,
           onTimelineZoomEnd: _zoomHandler(context),
@@ -426,6 +424,7 @@ class _CalendarViewState extends State<_CalendarView> {
         );
       case CalendarViewMode.threeDays:
         return ThreeDayView(
+          resetGeneration: _resetGeneration,
           timelineZoom: state.timelineZoom,
           zoomScope: context.read<CalendarCubit>().timelineZoomScope,
           onTimelineZoomEnd: _zoomHandler(context),
@@ -441,6 +440,7 @@ class _CalendarViewState extends State<_CalendarView> {
         );
       case CalendarViewMode.week:
         return WeekView(
+          resetGeneration: _resetGeneration,
           timelineZoom: state.timelineZoom,
           zoomScope: context.read<CalendarCubit>().timelineZoomScope,
           onTimelineZoomEnd: _zoomHandler(context),
@@ -468,6 +468,7 @@ class _CalendarViewState extends State<_CalendarView> {
         );
       case CalendarViewMode.agenda:
         return AgendaView(
+          resetGeneration: _resetGeneration,
           selectedDate: state.effectiveSelectedDate,
           events: state.displayEvents,
           isLoadingMore: state.isLoadingMore,
@@ -489,6 +490,7 @@ class _CalendarViewState extends State<_CalendarView> {
         );
       case CalendarViewMode.year:
         return YearView(
+          key: ValueKey(_resetGeneration),
           selectedDate: state.effectiveSelectedDate,
           focusedMonth: state.effectiveFocusedMonth,
           events: state.displayEvents,
@@ -528,33 +530,6 @@ class _CalendarViewState extends State<_CalendarView> {
         cubit.ensureRangeLoaded(wsId, cubit.state.effectiveSelectedDate),
       );
     }
-  }
-
-  ShellMiniNavItemSpec _buildMiniNavItem(
-    BuildContext context, {
-    required String id,
-    required String label,
-    required IconData icon,
-    required bool selected,
-    required CalendarViewMode mode,
-  }) {
-    return ShellMiniNavItemSpec(
-      id: id,
-      icon: icon,
-      label: label,
-      selected: selected,
-      callbackToken: '$id-${selected ? 'selected-' : ''}${mode.name}',
-      onPressed: () {
-        final cubit = context.read<CalendarCubit>();
-        unawaited(cubit.setViewMode(mode));
-        final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-        if (wsId != null) {
-          unawaited(
-            cubit.ensureRangeLoaded(wsId, cubit.state.effectiveSelectedDate),
-          );
-        }
-      },
-    );
   }
 
   void _showCalendarModeMenu(BuildContext context, CalendarState state) {

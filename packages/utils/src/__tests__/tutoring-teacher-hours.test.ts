@@ -26,7 +26,7 @@ const decide = (slot: HoursSlot, hours = defaults) =>
   assessTeacherHoursSlot(hours, null, slot).state;
 
 describe('teacher-hours authority and per-day inheritance', () => {
-  it('keeps missing staff hours unknown without teacher consent', () => {
+  it('keeps teacher availability unknown without confirmed staff hours', () => {
     expect(
       resolveTeacherHours(null, null).every((day) => day.state === 'unknown')
     ).toBe(true);

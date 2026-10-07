@@ -63,7 +63,9 @@ export async function listPlannedUserGroupSessionDatesByGroupIds({
     )
   );
   for (const missing of missingByGroup.flat()) {
-    dates.get(missing.groupId)?.add(missing.date);
+    dates
+      .get(missing.groupId)
+      ?.add(dayjs(missing.startsAt).tz(timezone).format('YYYY-MM-DD'));
   }
 
   return new Map(
