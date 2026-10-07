@@ -226,7 +226,7 @@ export function useMeetingAi(
       if (!runtime.autoFinishRequested.current) {
         runtime.autoFinishRequested.current = true;
         void runtime.queue.current
-          .then(() => runtime.finishRef.current?.())
+          .then(() => (current() ? runtime.finishRef.current?.() : undefined))
           .catch(() => {
             // Keep the partial session recoverable when finalization fails.
             if (current()) setCaptureError(true);
@@ -330,6 +330,7 @@ export function useMeetingAi(
       // Flush before the database's three-hour reservation expiry.
       runtime.durationTimer.current = setTimeout(
         () => {
+          if (!current()) return;
           void runtime.finishRef.current?.().catch(() => {
             if (current()) runtime.errorRef.current = true;
             if (current() && runtime.mounted.current) setCaptureError(true);

@@ -2,6 +2,7 @@
 import { act, render, renderHook, waitFor } from '@testing-library/react';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import {
+  Activity,
   type ReactNode,
   Suspense,
   useEffect,
@@ -314,3 +315,65 @@ it('does not resurrect a held preparation across Strict Mode cleanup/replay', as
   expect(current.capturing).toBe(true);
   tree.unmount();
 });
+
+for (const automatic of ['overflow', 'duration']) {
+  it(`does not let an old ${automatic} finalizer end new capture after effect replay`, async () => {
+    let release!: (value: { status: string }) => void;
+    mocks.upload.mockReturnValueOnce(
+      new Promise((resolve) => {
+        release = resolve;
+      })
+    );
+    const timer = vi.spyOn(globalThis, 'setTimeout');
+    let current!: ReturnType<typeof useMeetingAi>;
+    let setMode!: (mode: 'visible' | 'hidden') => void;
+    function Capture() {
+      current = useMeetingAi('workspace-a', 'meeting-a');
+      return null;
+    }
+    function Fixture() {
+      const [mode, update] = useState<'visible' | 'hidden'>('visible');
+      setMode = update;
+      return (
+        <Activity mode={mode}>
+          <Capture />
+        </Activity>
+      );
+    }
+    const tree = render(wrapper({ children: <Fixture /> }));
+    try {
+      await act(() => current.start());
+      const oldTimer = timer.mock.calls.find(
+        ([, delay]) => delay === 3 * 60 * 60 * 1000 - 15_000
+      )?.[0];
+      expect(typeof oldTimer).toBe('function');
+      if (automatic === 'overflow') {
+        await act(async () => {
+          for (let index = 0; index < 61; index++)
+            mocks.chunk?.(new Blob(['Synthetic audio']), index * 10);
+        });
+        await waitFor(() => expect(mocks.upload).toHaveBeenCalledTimes(1));
+      }
+      await act(async () => {
+        setMode('hidden');
+      });
+      await act(async () => {
+        setMode('visible');
+      });
+      await act(() => current.start());
+      expect(current.capturing).toBe(true);
+      expect(mocks.update).toHaveBeenCalledTimes(2);
+      await act(async () => {
+        if (automatic === 'overflow') release({ status: 'completed' });
+        else if (typeof oldTimer === 'function') oldTimer();
+        await Promise.resolve();
+      });
+      expect(mocks.update).toHaveBeenCalledTimes(2);
+      expect(current.capturing).toBe(true);
+      expect(current.ownsSession).toBe(true);
+    } finally {
+      tree.unmount();
+      timer.mockRestore();
+    }
+  });
+}
