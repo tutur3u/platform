@@ -158,3 +158,8 @@ export function suggestTutoringSlots(
 
   return suggestions;
 }
+
+export {
+  rankTutoringDraftChoices,
+  type TutoringDraftChoice,
+} from './tutoring-draft-plan';

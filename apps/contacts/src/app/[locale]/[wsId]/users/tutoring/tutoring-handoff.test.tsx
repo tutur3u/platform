@@ -205,6 +205,17 @@ beforeEach(() => {
   schedule.mockResolvedValue({ data: [] });
 });
 describe('actual tutoring queue handoff', () => {
+  it('never presents an invented fallback time when no policy slot exists', async () => {
+    mount();
+    fireEvent.click(screen.getByText('queue A'));
+    await screen.findByRole('dialog');
+    const slots = JSON.parse(
+      screen.getByLabelText('suggested slots').textContent!
+    );
+    expect(slots[0].sessionDate).toBe('');
+    expect(slots[0].startTime).toBe('');
+  });
+
   it('prefills the oldest supplied missed date in the actual create card', async () => {
     mount();
     fireEvent.click(screen.getByText('queue A'));

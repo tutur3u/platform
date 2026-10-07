@@ -5,6 +5,12 @@ import { expect, it, vi } from 'vitest';
 import { TutoringCreateCard } from './tutoring-create-card';
 import { DEFAULT_FORM } from './tutoring-types';
 
+vi.mock('@tuturuuu/ui/hooks/use-workspace-visibility', () => ({
+  useWorkspaceActor: () => ({
+    actorId: 'synthetic-actor',
+    assertActive: () => {},
+  }),
+}));
 vi.mock('@tanstack/react-query', () => ({
   useQuery: () => ({ isSuccess: true, data: { data: [] } }),
 }));
@@ -14,6 +20,9 @@ vi.mock('@tuturuuu/internal-api', () => ({
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 vi.mock('./tutoring-people-picker', () => ({
   WorkspacePersonPicker: () => <span>Learner picker</span>,
+}));
+vi.mock('./tutoring-draft-choices', () => ({
+  TutoringDraftChoices: () => null,
 }));
 vi.mock('./tutoring-create-slots', () => ({
   TutoringCreateSlots: () => <span>Teacher per session</span>,
