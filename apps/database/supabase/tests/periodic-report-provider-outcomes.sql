@@ -16,7 +16,7 @@ select ok(not has_function_privilege('authenticated','private.request_periodic_r
 
 -- Both historical and provider uncertainty survive every implicit requeue path.
 insert into private.external_user_monthly_reports(id,user_id,group_id,title,content,feedback,report_approval_status,updated_at)
- values('81000000-0000-4000-8000-000000000005','81000000-0000-4000-8000-000000000003','81000000-0000-4000-8000-000000000004','Synthetic monthly','Synthetic progress','','PENDING',now());
+ values('81000000-0000-4000-8000-000000000005','81000000-0000-4000-8000-000000000003','81000000-0000-4000-8000-000000000004','Synthetic historical uncertainty','Synthetic progress','','PENDING',now());
 update private.external_user_monthly_reports set report_approval_status='APPROVED',approved_by='81000000-0000-4000-8000-000000000003',approved_at=now() where id='81000000-0000-4000-8000-000000000005';
 update private.user_report_email_queue set status='blocked',last_error='Delivery worker timed out. Delivery outcome is unknown; check provider logs before retrying.',attempt_count=2 where report_id='81000000-0000-4000-8000-000000000005';
 update private.external_user_monthly_reports set delivery_status='blocked',last_delivery_error='Delivery worker timed out. Delivery outcome is unknown; check provider logs before retrying.' where id='81000000-0000-4000-8000-000000000005';
@@ -43,7 +43,7 @@ select private.request_periodic_report_delivery('81000000-0000-4000-8000-0000000
 
 -- Both historical and provider uncertainty survive every implicit requeue path.
 insert into private.external_user_monthly_reports(id,user_id,group_id,title,content,feedback,report_approval_status,updated_at)
- values('81000000-0000-4000-8000-000000000006','81000000-0000-4000-8000-000000000003','81000000-0000-4000-8000-000000000004','Synthetic monthly','Synthetic progress','','PENDING',now());
+ values('81000000-0000-4000-8000-000000000006','81000000-0000-4000-8000-000000000003','81000000-0000-4000-8000-000000000004','Synthetic provider uncertainty','Synthetic progress','','PENDING',now());
 update private.external_user_monthly_reports set report_approval_status='APPROVED',approved_by='81000000-0000-4000-8000-000000000003',approved_at=now() where id='81000000-0000-4000-8000-000000000006';
 update private.user_report_email_queue set status='blocked',last_error='Email delivery outcome is unknown. Check provider logs before retrying.',attempt_count=2 where report_id='81000000-0000-4000-8000-000000000006';
 update private.external_user_monthly_reports set delivery_status='blocked',last_delivery_error='Email delivery outcome is unknown. Check provider logs before retrying.' where id='81000000-0000-4000-8000-000000000006';
