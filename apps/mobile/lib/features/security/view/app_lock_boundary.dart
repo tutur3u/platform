@@ -7,8 +7,7 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
 import 'package:mobile/features/security/view/app_lock_gate.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:mobile/widgets/app_splash_surface.dart';
 
 class AppLockBoundary extends StatefulWidget {
   const AppLockBoundary({
@@ -82,7 +81,9 @@ class _AppLockBoundaryState extends State<AppLockBoundary> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        widget.child,
+        ExcludeSemantics(
+          child: ExcludeFocus(child: IgnorePointer(child: widget.child)),
+        ),
         AppLockGate(
           authenticating: appLockState.status == AppLockStatus.authenticating,
           onUnlock: () => _unlock(l10n),
@@ -96,12 +97,5 @@ class _AppLockLoadingGate extends StatelessWidget {
   const _AppLockLoadingGate();
 
   @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return ColoredBox(
-      color: theme.colorScheme.background,
-      child: const SafeArea(child: Center(child: NovaLoadingIndicator())),
-    );
-  }
+  Widget build(BuildContext context) => const AppSplashSurface();
 }

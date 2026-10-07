@@ -22,6 +22,7 @@
   "dependencies": {
     "@tuturuuu/apis": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
+    "@tuturuuu/email-service": "workspace:*",
     "@tuturuuu/finance-core": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/inventory-core": "workspace:*",

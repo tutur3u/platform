@@ -25,7 +25,7 @@ jobs:
   duplicate-validation:
     name: Check completed validation
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release-please--branches--') && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 3
     permissions:

@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { PropsWithChildren } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { WorkspaceVisibilityProvider } from '../../../../../hooks/use-workspace-visibility';
 import { useInvoiceCustomerSearch } from './use-invoice-customer-search';
 
 const api = vi.hoisted(() => ({ list: vi.fn(), get: vi.fn() }));
@@ -19,7 +20,11 @@ function renderSearch(selectedUserId = '') {
   const client = new QueryClient();
   function Wrapper({ children }: PropsWithChildren) {
     return (
-      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      <QueryClientProvider client={client}>
+        <WorkspaceVisibilityProvider actorId="synthetic-account">
+          {children}
+        </WorkspaceVisibilityProvider>
+      </QueryClientProvider>
     );
   }
   return renderHook(

@@ -129,7 +129,14 @@ export async function PUT(request: Request, context: Params) {
       parsed.data.title !== undefined ||
       parsed.data.content !== undefined ||
       parsed.data.feedback !== undefined ||
-      parsed.data.generation_status === 'ready';
+      parsed.data.manager_instruction !== undefined ||
+      parsed.data.score !== undefined ||
+      parsed.data.scores !== undefined ||
+      parsed.data.cadence !== undefined ||
+      parsed.data.period_start !== undefined ||
+      parsed.data.period_end !== undefined ||
+      parsed.data.generation_mode !== undefined ||
+      parsed.data.generation_status !== undefined;
     const isAiReport =
       parsed.data.generation_mode === 'ai' ||
       existing.data.generation_mode === 'ai';
@@ -152,7 +159,7 @@ export async function PUT(request: Request, context: Params) {
       });
     }
     let reviewActorId: string | null = null;
-    if (approvalTouched || reviewTransition === 'approved') {
+    if (approvalTouched) {
       const actorAuthUid = await resolveRequestActorAuthUid(request);
       const actorLink = actorAuthUid
         ? await getWorkspaceUserLinkForUser(wsId, actorAuthUid, {
@@ -166,16 +173,6 @@ export async function PUT(request: Request, context: Params) {
         );
       }
       reviewActorId = actorLink.virtual_user_id;
-      if (reviewTransition === 'approved') {
-        Object.assign(updatePayload, {
-          report_approval_status: 'APPROVED',
-          approved_by: reviewActorId,
-          approved_at: new Date().toISOString(),
-          rejected_by: null,
-          rejected_at: null,
-          rejection_reason: null,
-        });
-      }
     }
     if (approvalTouched) {
       if (
@@ -191,7 +188,7 @@ export async function PUT(request: Request, context: Params) {
       if (parsed.data.report_approval_status === 'APPROVED') {
         Object.assign(updatePayload, {
           approved_by: reviewActorId,
-          approved_at: parsed.data.approved_at ?? now,
+          approved_at: now,
           rejected_by: null,
           rejected_at: null,
           rejection_reason: null,
@@ -199,7 +196,7 @@ export async function PUT(request: Request, context: Params) {
       } else if (parsed.data.report_approval_status === 'REJECTED') {
         Object.assign(updatePayload, {
           rejected_by: reviewActorId,
-          rejected_at: parsed.data.rejected_at ?? now,
+          rejected_at: now,
           approved_by: null,
           approved_at: null,
         });

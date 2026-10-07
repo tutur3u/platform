@@ -10,7 +10,7 @@ const snapshot = AssistantPersonalSettingsSnapshot(
 );
 
 class SettingsRepository extends AssistantPersonalSettingsRepository {
-  SettingsRepository() : super(ownerId: 'actor-a');
+  SettingsRepository({super.ownerId = 'actor-a'});
   Future<AssistantPersonalSettingsSnapshot> Function()? read;
   Future<AssistantSoul> Function(AssistantSoul)? write;
   Future<bool> Function({required bool enabled})? consent;

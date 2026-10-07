@@ -7,6 +7,8 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:mobile/core/observability/mobile_observability.dart';
+import 'package:mobile/core/observability/operational_error_reporter.dart';
 import 'package:mobile/data/sources/safe_error_diagnostics.dart';
 
 import '../data/assistant_preferences.dart';
@@ -32,7 +34,11 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     required void Function(bool isImmersive) onImmersiveModeChanged,
     required Future<void> Function(String? modelId) onChatRestored,
     void Function(SafeErrorDiagnostics diagnostics)? onSoulRefreshFailed,
-  }) : _repository = repository,
+    OperationalErrorReporter? operationalReporter,
+  }) : _operationalReporter =
+           operationalReporter ??
+           MobileObservability.instance.operationalReporter,
+       _repository = repository,
        _preferences = preferences,
        _onWorkspaceContextChanged = onWorkspaceContextChanged,
        _onSoulRefreshRequested = onSoulRefreshRequested,
@@ -41,6 +47,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
        _onChatRestored = onChatRestored,
        super(AssistantChatState(fallbackChatId: repository.generateUuid()));
 
+  final OperationalErrorReporter _operationalReporter;
   final AssistantRepository _repository;
   final AssistantPreferences _preferences;
   final Future<void> Function(String workspaceContextId)

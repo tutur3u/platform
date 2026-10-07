@@ -70,6 +70,36 @@ generated narrative. Every AI-generated report starts in a reviewable state and
 must be explicitly approved before delivery can be queued. Regeneration never
 bypasses that approval boundary.
 
+In the Contacts monthly report editor, approval is available only while reviewing
+saved current content. Unsaved title, narrative, or feedback changes, a pending
+save, and a selected historical revision block approval with compact save or
+return-to-current guidance. Failed saves retain human edits, including multiline
+feedback and intentionally cleared fields. A matching authoritative refresh is
+required before approving the edited report; an unrelated or stale refresh does
+not acknowledge the draft. This is a frontend review safeguard, not an atomic
+cross-client revision lock, and it does not queue or send email. Regression
+coverage: `monthly-report-review-safety.test.tsx` exercises the actual editor,
+form, save/approval hooks, and synthetic HTTP responses.
+
+Ordinary manual report creation and edits through the shared report API remain
+pending even when the legacy approval setting is disabled or the author can
+approve reports. Contacts Save and score recalculation do not submit approval
+markers; an explicit permitted approval action remains separate. Narrative,
+feedback, title, score, cadence, period, manager instruction and generation changes invalidate the API
+review state. Subject and group cannot be changed through this update API.
+Approval timestamps and actor attribution are server-owned.
+
+This API/client safeguard alone does not establish dispatch authorization:
+legacy database approval triggers and configuration transitions can still produce
+approved statuses without per-entry review. Existing status, approver and time
+fields do not distinguish those paths from explicit human approval. Keep email
+gates off until canonical revision-bound approval receipts, database mutation
+closure and delivery consumers enforce explicit permitted review for each entry.
+Do not infer consent for a backlog from its approved count. Coverage:
+`explicit-approval.test.ts`, `report-review-transition.test.ts` and
+`report-save-explicit-approval.test.tsx`; these source tests do not prove the
+remaining database or provider boundaries.
+
 The principal permissions are:
 
 - `view_user_groups_reports` — view daily and periodic reporting.
@@ -124,6 +154,33 @@ Delivery goes exclusively to the subject workspace-profile email. The system
 does not infer an alternate address. Preview never queues an email. Test send,
 send, retry, and cancel are explicit actions, and each transition remains
 auditable.
+
+## Inert explicit-review provenance foundation
+
+Report, daily-post and per-subject daily-check rows have server-controlled review
+versions. Review content, creator attribution, generation inputs and approval provenance changes advance
+the version; delivery bookkeeping does not. Caller-supplied versions are ignored,
+and integer overflow rejects the mutation. Daily approval must eventually bind
+both the parent post and its individual recipient check.
+
+Private immutable receipt snapshots use canonical lowercase SHA-256 payload and
+recipient digests. They store identifiers and digests, not raw report content or
+recipient addresses. Snapshot identifiers intentionally have no live parent foreign
+keys: authorized parent or workspace teardown preserves audit history without being
+blocked by receipt immutability. Customers have no receipt access; trusted service
+audit reads do not restore access or establish current permission. Product-managed
+retention, export and deletion policy remains unfinished.
+
+This foundation has no receipt-minting API, legacy approval backfill or delivery
+caller activation. Its delivery-readiness function always returns false. The narrow
+future admission predicate follows current application creator, MEMBER-role/default
+and GUEST-default permissions, and requires an exact live workspace actor link.
+Deleted or revoked actors cannot gain admission from retained history. Existing
+legacy approval/configuration/dispatch paths still need complete closure before
+email gates can be enabled. CI verifies the full historical schema, strict SQL/TAP
+controls, two-connection version/lock behavior and actual generated types through
+`report-review-receipts-contract.yaml`; source review or static tests alone do not
+prove those database controls or customer delivery.
 
 ## Automation processor
 
@@ -241,7 +298,7 @@ Worker logs use `periodic_report.delivery_sent`, `periodic_report.delivery_faile
 Correlate by `queueId`, `reportId`, `workspaceId`, and provider message ID; recipient
 addresses and report content are omitted from these structured events. If the
 provider accepted an email but tracking failed, the worker blocks automatic retry.
-Check provider logs before requesting another delivery to avoid duplicates.
+Check provider logs before requesting another delivery to avoid duplicates. SES dispatch uses one SDK attempt, while quota validation retains its existing retries. A delivery is accepted only with HTTP 200 and a valid provider message ID. Missing receipts, transport failures, and ambiguous server responses are blocked as unknown outcomes and require provider verification before a manual retry. Definitive rejection responses retain the existing retry policy. Both the historical worker-timeout and provider-unknown warnings survive reapproval and Send/Test requests; only an explicit Retry after provider verification can clear them, and a disabled gate preserves the warning. A service-only readiness probe stops claims during the app-before-migration window. Other providers without this optional classification retain their existing behavior. These source safeguards do not prove inbox receipt or exactly-once delivery; actual SES-adapter/worker regression tests cover the boundary.
 
 Local verification: run the Contacts schedule tests, the web
 `src/lib/user-report-automation` suite, the users-core report route tests, and the
@@ -315,4 +372,128 @@ Regression coverage: `use-report-draft-sync.test.tsx` exercises the real form
 controller, conflicting refreshes, intentionally cleared fields, save
 acknowledgments, and all four scope boundaries.
 
+### Periodic delivery database contract
+
+The `periodic-report-delivery-contract.yaml` CI workflow replays the complete historical schema in an isolated disposable database, runs the approval, stage and provider-outcome pgTAP fixtures with strict assertion accounting, generates actual schema types, and cleans up its owned database. The source-only runner and mocked adapter tests are not database or provider delivery proof. Require this workflow for the exact repair head before merging the migration. Production applies it through the gated migration workflow after authorized promotion; do not enable flags or send reports merely because source tests pass.
+
 Explicit Retry for either uncertainty marker shows a localized possible-duplicate warning in Contacts, requiring provider-log and intended-recipient verification before confirmation. Ordinary definitive rejection retains its normal retry copy. Confirmation is invalidated across actor/workspace or send-capability changes and suppresses duplicate submissions while pending; this does not verify provider acceptance or inbox delivery.
+
+
+The periodic delivery database contract also checks real two-connection claim
+exclusion, approval revocation versus a waiting delivery request, and stale
+completion versus a successor lease. Generated types are strictly compiled from
+the complete historical schema after those checks. These checks cover database
+lease behavior; they do not make legacy approvals canonical review receipts,
+authorize provider dispatch, or prove recipient delivery.
+
+### Unwired report presentation envelope
+
+The shared server presentation helper constructs a normalized recipient, transport
+subject, HTML and SHA-256 digest from one copied input snapshot. It uses the
+existing email renderer, saved representative score, student/group/teacher names
+and complete allowlisted branding/report configuration. Recipient normalization
+matches the current periodic worker (`trim().toLowerCase()`). The transport title
+and HTML heading share the renderer's configured or localized fallback. Configured
+title parts are trimmed before joining; whitespace-only parts use the localized
+fallback. Before rendering or hashing, the helper applies the shared transport
+address and subject schemas, including the 254-character address and 200-character
+subject limits. Invalid input fails without truncating reviewed human text. The
+pure validation subpath imports no provider or service initialization. Explicit
+null values and intentionally cleared feedback remain distinct from missing input;
+missing fields, malformed revisions and incomplete configuration fail closed.
+
+This unit is unwired: it does not read a database, store presentation content,
+issue an approval receipt, change current preview or delivery callers, or authorize
+an email. Its presentation digest is not a complete review certificate: full
+reviewed fields, current permissions, canonical approval actions, revision locks
+and dispatch validation remain separate requirements. Existing status-only
+delivery and legacy approval paths must not be treated as covered by this helper.
+
+Regression coverage: `reviewed-email-envelope.test.ts` uses the actual renderer
+for names, score, branding, escaping, multiline and cleared text, immutable copies,
+canonical key ordering, recipient normalization and missing-input rejection.
+These synthetic source tests do not prove a consistent database snapshot, provider
+acceptance or recipient delivery.
+
+### Web periodic approval tenant boundary
+
+Web's initial periodic-report approval and rejection checks require both the
+report subject and group to belong to the requested workspace. Batch selection
+uses the same two filters. Foreign-group reports cannot enter these mutations
+through a subject that belongs to the workspace. Existing permission denials,
+Web daily-post approval and email-enqueue behavior remain unchanged.
+
+The live Web handler is first-class and split into focused GET, PUT and shared
+validation modules. Its GET still enters request-time rendering and HEAD retains
+status and headers without a body. Rust continues to implement GET only; PUT
+falls through to Web. This source migration does not indicate a traffic cutover.
+
+These initial checks are not an atomic permission or review certificate: linked
+records can change after lookup. Canonical revision locks, explicit approval
+receipts and delivery validation remain required before enabling status-only
+report delivery. This change does not authorize approval, gate changes or email.
+
+Regression coverage: Web's `tenant-boundary.test.ts` exercises foreign subject,
+foreign group, single approval/rejection, batch selection and permission denials;
+`route.test.ts` retains the original daily-post permission controls and
+`facade.test.ts` checks request-time GET, bodyless HEAD and the original PUT
+binding. These synthetic handlers do not prove database concurrency or delivery.
+
+### Approval read consistency
+
+Periodic approval lists and their exact pagination counts require both subject
+and group workspace membership in Contacts and Web. Pending-summary counts and
+latest approved-report history use the same boundary. Contacts' standalone
+report page rejects foreign or missing groups and excludes those reports from
+sibling history. Daily-post behavior, permission checks and saved history remain
+unchanged. Existing Rust GET implementations carry the same query filters;
+this is source parity, not a backend traffic cutover.
+
+Coverage: `get-tenant-boundary.test.ts`, `review-reads-tenant-boundary.test.ts`
+and the actual Contacts `page-tenant-boundary.test.tsx` exercise foreign subjects,
+foreign/missing groups, own reports, pagination, counts, history and permission
+denials. These checks remain initial reads, not atomic review or permission
+certificates. Canonical approval and delivery closure are still required; no
+gate or email is enabled by this consistency rule.
+### Contacts periodic approval tenant admission
+
+Contacts requires both the report subject and its group to belong to the current
+workspace before single-entry approval or rejection. The existing batch selection
+uses the same two workspace filters, excluding an entry whose subject belongs to
+the workspace but whose group does not. Approval permission and the current actor
+link remain required. The dedicated `put-tenant-boundary.test.ts` covers single
+actions, mixed-tenant batches and permitted/denied controls.
+
+This is an initial query admission check, not an atomic review certificate. A
+later content or scope change can race the separate update. Observed revisions,
+explicit selected-batch intent, canonical receipts and locked permission/tenant
+validation remain required before enabling report emails. The independent Web
+legacy mutation path is not changed by this Contacts packet; its faithful parity
+move is a separate prerequisite. Daily-report behavior is unchanged here.
+
+
+### Unwired explicit periodic approval protocol
+
+The pure shared protocol accepts a nonempty selection of at most 50 unique
+periodic report IDs with observed revisions as canonical positive decimal text.
+It rejects filter-based blanket selectors, caller-supplied actor fields, daily
+entries and numeric revisions. Decimal text preserves signed-bigint revisions
+above JavaScript's safe integer limit. Returned request and result snapshots are
+independent and frozen.
+
+A complete result must match the explicit action, workspace, supplied actor
+comparison context and every selected entry, with unique receipt identities and
+advancing revisions. Original and replay results use the same validation; replay
+still needs current permission and revision admission by the future backend.
+Full review-input digest, presentation digest and renderer version remain separate
+fields. Format validation does not prove either digest's canonical encoding,
+rendered payload consistency or a receipt's authenticity.
+
+This unit is unwired. Its comparison context is unauthenticated pure input;
+future trusted backend admission, authoritative subject and group tenancy,
+workspace provenance for both role and grant, atomic batch locks and canonical
+receipt creation remain mandatory. It performs no SQL, RPC, queue mutation,
+provider call or readiness activation. Legacy approvals remain insufficient for
+canonical dispatch. `approval-protocol.test.ts` covers selection bounds, exact
+large revisions, foreign identities, incomplete and replay results, distinct
+digests, immutable snapshots and fail-closed malformed input.

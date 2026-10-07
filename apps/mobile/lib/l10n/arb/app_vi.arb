@@ -1210,7 +1210,7 @@
   "appLockDelayTitle": "Khóa sau khi rời ứng dụng",
   "appLockDisableReason": "Xác thực để tắt khóa ứng dụng.",
   "appLockEnableReason": "Xác thực để bật khóa ứng dụng.",
-  "appLockLockedDescription": "Dùng mã PIN thiết bị, vân tay hoặc Face ID để tiếp tục.",
+  "appLockLockedDescription": "Dùng sinh trắc học hoặc mật mã thiết bị trong lời nhắc của hệ thống để tiếp tục.",
   "appLockLockedTitle": "Tuturuuu đang bị khóa",
   "appLockProtectedDevice": "Được bảo vệ trên thiết bị này",
   "appLockSettingsDescription": "Yêu cầu Face ID, vân tay hoặc mã PIN thiết bị trước khi dùng ứng dụng.",
@@ -4515,5 +4515,8 @@
   "assistantMemoryEditMissing": "Bộ nhớ này không còn khả dụng.",
   "assistantMemoryEditAuditWarning": "Thay đổi đã được lưu, nhưng chưa thể xác nhận bản ghi hoạt động. Không cần lưu lại.",
   "assistantMemoryReviewLatest": "Xem phiên bản mới nhất",
-  "assistantMemorySaveChanges": "Lưu thay đổi của tôi"
+  "assistantMemorySaveChanges": "Lưu thay đổi của tôi",
+  "notificationsReadCleanupUnavailable": "Đã tiếp nhận thao tác đọc. Không thể xóa một số thông báo hệ thống.",
+  "notificationsReadRefreshUnavailable": "Đã tiếp nhận thao tác đọc. Không thể làm mới hộp thư. Kéo để làm mới.",
+  "notificationsReadError": "Không thể tiếp nhận thao tác đọc. Vui lòng thử lại."
 }

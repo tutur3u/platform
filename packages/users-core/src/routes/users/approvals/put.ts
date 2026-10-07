@@ -70,6 +70,7 @@ async function assertReportInWorkspace(
     .select('id')
     .eq('id', reportId)
     .eq('user_ws_id', wsId)
+    .eq('group_ws_id', wsId)
     .maybeSingle();
   if (error) throw error;
   return Boolean(data);
@@ -268,6 +269,7 @@ export async function handlePutApprovalsRequest(
           .from('external_user_monthly_reports_workspace_view')
           .select('id')
           .eq('user_ws_id', wsId)
+          .eq('group_ws_id', wsId)
           .eq('report_approval_status', 'PENDING');
         if (filters?.groupId) query = query.eq('group_id', filters.groupId);
         if (filters?.userId) query = query.eq('user_id', filters.userId);

@@ -105,7 +105,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appLockEnableReason => 'Xác thực để bật khóa ứng dụng.';
 
   @override
-  String get appLockLockedDescription => 'Dùng mã PIN thiết bị, vân tay hoặc Face ID để tiếp tục.';
+  String get appLockLockedDescription => 'Dùng sinh trắc học hoặc mật mã thiết bị trong lời nhắc của hệ thống để tiếp tục.';
 
   @override
   String get appLockLockedTitle => 'Tuturuuu đang bị khóa';
@@ -10468,4 +10468,13 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantMemorySaveChanges => 'Lưu thay đổi của tôi';
+
+  @override
+  String get notificationsReadCleanupUnavailable => 'Đã tiếp nhận thao tác đọc. Không thể xóa một số thông báo hệ thống.';
+
+  @override
+  String get notificationsReadRefreshUnavailable => 'Đã tiếp nhận thao tác đọc. Không thể làm mới hộp thư. Kéo để làm mới.';
+
+  @override
+  String get notificationsReadError => 'Không thể tiếp nhận thao tác đọc. Vui lòng thử lại.';
 }

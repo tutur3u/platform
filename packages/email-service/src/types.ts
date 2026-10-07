@@ -95,7 +95,11 @@ export interface EmailSource {
 // Result Types
 // =============================================================================
 
+export type DeliveryOutcome = 'accepted' | 'rejected' | 'unknown';
+
 export interface SendEmailResult {
+  /** Optional for providers without explicit dispatch outcome classification. */
+  deliveryOutcome?: DeliveryOutcome;
   success: boolean;
   /** Provider message ID (for tracking) */
   messageId?: string;
@@ -161,6 +165,7 @@ export interface ProviderSendParams {
 }
 
 export interface ProviderSendResult {
+  deliveryOutcome?: DeliveryOutcome;
   success: boolean;
   /** Provider-specific message ID */
   messageId?: string;

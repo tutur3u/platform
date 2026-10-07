@@ -119,10 +119,27 @@ inventing an enabled or disabled state.
 Memory viewing, confirmed deletion, and explicit export use the existing internal
 API. A row disappears only after the server confirms deletion. Export is shared
 only after the request completes within the same authorized settings scope. These
-controls create no offline privacy replay or separate memory store. Editing a
-saved memory is not yet supported by this API and remains a separate backend
-feature; the app must not approximate editing by deleting and recreating a memory.
-Meet's separate opt-in memory remains independent.
+controls create no offline privacy replay or separate memory store. Meet's
+separate opt-in memory remains independent.
+
+Central Settings and the Assistant settings action open the same settings hub.
+Personality opens a dedicated page listing Assistant name, Tone, Response length,
+Personality, and Boundaries. Each row opens its own settings editor; saving updates
+that field against the latest confirmed personal soul and returns to Personality.
+Failed saves retain the draft for an explicit retry. Existing custom tone and
+response-detail values remain selectable. These pages and individual memory
+editors share the hub's single title and floating back action, with scrollable
+content and the frame kept above the keyboard. System back and dock back return
+one level without submitting an edit.
+
+Opening a memory row reads its canonical content and revision through the existing
+Mira memory API. Saving uses that revision; a conflict retains the draft and
+requires reviewing the latest version before explicitly saving again. A confirmed
+receipt updates the list. An audit warning keeps the editor open, says the change
+is saved, and disables resubmitting the same content. Editors cancel on account or
+workspace transitions, including switching away and back during a pending read,
+review, or save. They never approximate editing by deleting and recreating a
+memory, and do not change collection consent.
 
 Settings retain prior confirmed values when a write fails and expose a localized
 retryable error. Account or workspace changes invalidate delayed reads, writes,
@@ -131,8 +148,10 @@ request generations and the page's actor epoch prevent older responses and
 account/workspace ABA transitions from replacing the current assistant identity.
 Regression coverage lives in `assistant_personal_settings_repository_test.dart`,
 `assistant_personal_settings_cubit_test.dart`,
-`assistant_personal_settings_section_test.dart`, and
-`assistant_soul_refresh_test.dart`. These tests cover API receipts, product
+`assistant_personal_settings_section_test.dart`,
+`assistant_routed_editors_test.dart`, `assistant_personality_route_scope_test.dart`,
+`assistant_memory_editor_section_test.dart`, `assistant_memory_editor_scope_test.dart`,
+`settings_assistant_entrypoint_checks.dart`, and `assistant_soul_refresh_test.dart`. These tests cover API receipts, product
 preservation, delayed scope changes, English/Vietnamese controls, and large text
 with a visible keyboard; they do not establish native-device or deployed runtime
 proof.
@@ -245,7 +264,8 @@ and web build remain required; the mobile editor is a separate dependent packet.
 
 ### Mobile memory editor
 
-Mira's Assistant Settings memory list opens a compact, keyboard-aware editor.
+Mira's Assistant Settings memory list opens a dedicated settings page with
+keyboard-safe scrollable content and the shared title and floating back action.
 Opening an item reads canonical content and its current opaque revision; the list
 preview is not the mutation source of truth. Editing preserves the original ID
 and uses the scoped PATCH route, without delete-and-create replacement. Manual
@@ -258,7 +278,7 @@ warning and does not resubmit the unchanged content. Text typed while a save is
 pending remains editable against the returned revision. Closing the editor does
 not promise cancellation of an already admitted server write.
 
-Account/workspace changes cancel the modal, including a switch away and back.
+Account/workspace changes cancel the route, including a switch away and back.
 Once its route is dismissed, a late response cannot update the list or pop the
 underlying page. Confirmed list updates preserve newer consent/personality state
 and fence older list reads. Regression tests cover these held-response boundaries,

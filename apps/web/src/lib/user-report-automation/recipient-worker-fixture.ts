@@ -6,6 +6,7 @@ export function recipientWorkerFixture(
     profileWorkspace?: string;
     completion?: 'error' | 'lost';
     auditFailure?: boolean;
+    readiness?: { data: boolean | null; error: unknown };
   } = {}
 ) {
   const queue: Row = {
@@ -47,6 +48,7 @@ export function recipientWorkerFixture(
     },
   ];
   const calls: { table: string; filters: [string, unknown][] }[] = [];
+  const rpcCalls: string[] = [];
   const attempts: Row[] = [];
   const completions: Row[] = [];
   const query = (table: string) => {
@@ -111,10 +113,22 @@ export function recipientWorkerFixture(
   const db = {
     from: query,
     rpc: async (name: string, args: Row) => {
+      rpcCalls.push(name);
+      if (name === 'periodic_report_delivery_contract_ready')
+        return options.readiness ?? { data: true, error: null };
       if (name === 'claim_periodic_report_runs')
         return { data: [], error: null };
       if (name === 'claim_periodic_report_emails') {
-        if (queue.status !== 'queued') return { data: [], error: null };
+        if (
+          !['queued', 'failed'].includes(String(queue.status)) ||
+          (queue.next_attempt_at &&
+            new Date(String(queue.next_attempt_at)).getTime() >
+              new Date(String(args.p_now)).getTime())
+        )
+          return { data: [], error: null };
+        queue.locked_at = args.p_now;
+        queue.locked_by = args.p_worker_id;
+        queue.attempt_count = Number(queue.attempt_count) + 1;
         queue.status = 'processing';
         report.delivery_status = 'processing';
         return { data: [{ ...queue }], error: null };
@@ -133,6 +147,7 @@ export function recipientWorkerFixture(
         queue.recipient_email = args.p_recipient_email;
         queue.provider_message_id = args.p_provider_message_id;
         queue.sent_at = args.p_sent_at;
+        queue.next_attempt_at = args.p_next_attempt_at;
         report.delivery_status = args.p_status;
         return { data: true, error: null };
       }
@@ -147,5 +162,6 @@ export function recipientWorkerFixture(
     calls,
     attempts,
     completions,
+    rpcCalls,
   };
 }

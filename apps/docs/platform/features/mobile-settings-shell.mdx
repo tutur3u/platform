@@ -229,3 +229,23 @@ use the same shell and row vocabulary.
 production localization fallback and explicit theme/locale. Widget renders are
 bounded evidence; exact-build device safe-area, keyboard and visual checks remain
 required.
+
+## Handled timezone operational failures
+
+Mobile timezone diagnostics distinguish preference load (`timezoneRead`), API
+write (`timezoneWrite`) and unresolved native timezone after a successful write
+(`timezoneResolve`). A genuine handled HTTP 429 records its status and bounded
+Retry-After bucket once, while preserving the existing cooldown, failed edit and
+explicit retry. A cooldown-blocked tap, logout, closed cubit or superseded ABA
+request does not create an incident. Native lookup that is unnecessary for a
+named preference also creates no incident.
+
+The production Crashlytics boundary follows the fixed-field privacy and bounded
+dedup defaults documented in [mobile chat](/platform/features/mobile-chat#handled-assistant-operational-failures).
+It excludes timezone values and actor/workspace identifiers. Tests can inject a
+sink without Firebase. Sink rejection leaves existing UI failure and retry
+behavior intact. `timezone_operational_reporting_test.dart` exercises genuine
+HTTP 429 responses through the authenticated API client and repository with
+synthetic credentials, separate read/write phases, cooldown/recovery, stale
+requests and sink failure. Native authenticated provider/device evidence remains
+pending; this does not identify the cause of any customer's 429.
