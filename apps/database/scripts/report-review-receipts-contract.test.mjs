@@ -225,3 +225,22 @@ test('approval mutation supplies historically required actor and timestamp toget
   ])
     assert.ok(fixture.includes(control));
 });
+
+test('readiness has a generated argument name while retaining inert identity and explicit strict flags', () => {
+  assert.match(
+    migration,
+    /CREATE FUNCTION private\.report_review_delivery_ready\(p_report_id uuid\)\s*RETURNS boolean[\s\S]*?SELECT false;/u
+  );
+  assert.match(
+    migration,
+    /GRANT EXECUTE ON FUNCTION private\.report_review_delivery_ready\(uuid\) TO service_role/u
+  );
+  const workflow = readWorkflow('report-review-receipts-contract.yaml');
+  const command = workflow.jobs.contract.steps.find(
+    (step) => step.name === 'Strictly check actual generated review types'
+  ).run;
+  assert.match(
+    command,
+    /tsc --ignoreConfig --noEmit --strict --skipLibCheck --target esnext --module nodenext --moduleResolution nodenext/u
+  );
+});

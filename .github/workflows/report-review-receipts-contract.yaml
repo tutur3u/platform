@@ -73,7 +73,7 @@ jobs:
       - name: Apply complete schema, run strict pgTAP, generate actual schema types
         run: node apps/database/scripts/verify-report-review-receipts-contract.mjs
       - name: Strictly check actual generated review types
-        run: bun x tsc --noEmit --strict --skipLibCheck --target esnext --module nodenext --moduleResolution nodenext apps/database/scripts/report-review-receipts-types.ts
+        run: bun x tsc --ignoreConfig --noEmit --strict --skipLibCheck --target esnext --module nodenext --moduleResolution nodenext apps/database/scripts/report-review-receipts-types.ts
       - uses: actions/upload-artifact@v7
         with:
           name: report-review-receipts-types-${{ github.event.pull_request.head.sha || github.sha }}

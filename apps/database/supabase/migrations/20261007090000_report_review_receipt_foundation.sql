@@ -158,7 +158,7 @@ REVOKE ALL ON FUNCTION private.can_review_report_entry(uuid, uuid, uuid, text)
 GRANT EXECUTE ON FUNCTION private.can_review_report_entry(uuid, uuid, uuid, text)
   TO service_role;
 
-CREATE FUNCTION private.report_review_delivery_ready(uuid)
+CREATE FUNCTION private.report_review_delivery_ready(p_report_id uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path = '' AS $$
   SELECT false;
 $$;
