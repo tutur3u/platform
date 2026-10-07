@@ -407,7 +407,7 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
         durationMinutes:
           suggestions[index]?.durationMinutes ?? policy.durationMinutes,
         sessionDate: suggestions[index]?.sessionDate ?? '',
-        startTime: suggestions[index]?.startTime ?? '18:00',
+        startTime: suggestions[index]?.startTime ?? '',
         teacherUserId,
       })),
       sourceFeedbackId: item.source_feedback_id,
