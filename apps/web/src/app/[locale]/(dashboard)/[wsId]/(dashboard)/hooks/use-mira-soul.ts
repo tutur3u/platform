@@ -1,80 +1,200 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-
-interface MiraSoul {
-  id?: string;
-  user_id?: string;
-  name: string;
-  tone?: string | null;
-  personality?: string | null;
-  boundaries?: string | null;
-  vibe?: string | null;
-  push_tone?: string | null;
-  chat_tone?: string | null;
-}
-
-interface MiraSoulResponse {
-  soul: MiraSoul;
-}
-
-const miraSoulKeys = {
-  all: ['mira-soul'] as const,
-  detail: () => [...miraSoulKeys.all, 'detail'] as const,
-};
-
-async function fetchMiraSoul(): Promise<MiraSoulResponse> {
-  const res = await fetch('/api/v1/mira/soul', { cache: 'no-store' });
-  if (!res.ok) throw new Error('Failed to fetch soul');
-  return res.json();
-}
-
-async function updateMiraSoul(
-  data: Partial<MiraSoul>
-): Promise<MiraSoulResponse> {
-  const res = await fetch('/api/v1/mira/soul', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Failed to update soul');
-  return res.json();
-}
+import {
+  getMiraSoul,
+  type MiraSoulResponse,
+  type MiraSoulUpdate,
+  updateMiraSoul,
+} from '@tuturuuu/internal-api/mira-soul';
+import { miraSoulKeys, useMiraSoulScope } from '@/components/mira-soul-scope';
 
 export function useMiraSoul() {
+  const scope = useMiraSoulScope();
   return useQuery({
-    queryKey: miraSoulKeys.detail(),
-    queryFn: fetchMiraSoul,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    queryKey: miraSoulKeys.detail(scope?.actorId ?? null),
+    enabled: !!scope?.actorId,
+    queryFn: async ({ signal }) => {
+      if (!scope?.actorId)
+        throw new Error('Assistant settings owner unavailable');
+      const epoch = scope.epoch;
+      const intent = scope.intent;
+      scope.check(epoch);
+      const result = await getMiraSoul(scope.actorId, {
+        signal: AbortSignal.any([signal, scope.controller.signal]),
+      });
+      scope.check(epoch);
+      if (scope.intent !== intent)
+        throw new Error('Assistant settings publication changed');
+      return result;
+    },
+    staleTime: 1000 * 60 * 5,
     select: (data) => data.soul,
   });
 }
 
 export function useUpdateMiraSoul() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: updateMiraSoul,
-    onMutate: async (newData) => {
-      await queryClient.cancelQueries({ queryKey: miraSoulKeys.detail() });
-      const previous = queryClient.getQueryData<MiraSoulResponse>(
-        miraSoulKeys.detail()
-      );
-
-      queryClient.setQueryData<MiraSoulResponse>(
-        miraSoulKeys.detail(),
-        (old) => (old ? { soul: { ...old.soul, ...newData } } : old)
-      );
-
-      return { previous };
+  const client = useQueryClient();
+  const scope = useMiraSoulScope();
+  const mutation = useMutation({
+    mutationFn: async ({
+      data,
+      epoch,
+      intent,
+    }: {
+      data: MiraSoulUpdate;
+      epoch: number;
+      intent: number;
+    }) => {
+      if (!scope?.actorId)
+        throw new Error('Assistant settings owner unavailable');
+      scope.check(epoch);
+      if (scope.intent !== intent)
+        throw new Error('Assistant settings intent changed');
+      const receipt = await updateMiraSoul(scope.actorId, data, {
+        signal: scope.controller.signal,
+      });
+      scope.check(epoch);
+      if (scope.intent !== intent)
+        throw new Error('Assistant settings intent changed');
+      return receipt;
     },
-    onError: (_err, _newData, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(miraSoulKeys.detail(), context.previous);
-      }
+    onMutate: async ({ data, epoch, intent }) => {
+      if (!scope?.actorId)
+        throw new Error('Assistant settings owner unavailable');
+      const key = miraSoulKeys.detail(scope.actorId);
+      scope.check(epoch);
+      await client.cancelQueries({ queryKey: key, exact: true });
+      scope.check(epoch);
+      if (scope.intent !== intent)
+        throw new Error('Assistant settings intent changed');
+      const previous = client.getQueryData<MiraSoulResponse>(key);
+      const optimistic = previous
+        ? { soul: { ...previous.soul, ...data } }
+        : undefined;
+      if (optimistic) client.setQueryData(key, optimistic);
+      return {
+        key,
+        previous,
+        query: client.getQueryCache().find({ queryKey: key, exact: true }),
+        updateCount: client.getQueryState(key)?.dataUpdateCount,
+      };
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: miraSoulKeys.detail() });
+    onSuccess: (receipt, variables, context) => {
+      if (
+        context &&
+        scope?.active &&
+        scope.epoch === variables.epoch &&
+        scope.intent === variables.intent &&
+        client.getQueryCache().find({ queryKey: context.key, exact: true }) ===
+          context.query &&
+        client.getQueryState(context.key)?.dataUpdateCount ===
+          context.updateCount
+      )
+        client.setQueryData(context.key, receipt);
+    },
+    onError: (_error, variables, context) => {
+      if (
+        context?.previous &&
+        scope?.active &&
+        scope.epoch === variables.epoch &&
+        scope.intent === variables.intent &&
+        client.getQueryCache().find({ queryKey: context.key, exact: true }) ===
+          context.query &&
+        client.getQueryState(context.key)?.dataUpdateCount ===
+          context.updateCount
+      )
+        client.setQueryData(context.key, context.previous);
+    },
+    onSettled: (_receipt, _error, variables, context) => {
+      if (
+        context &&
+        scope?.active &&
+        scope.epoch === variables.epoch &&
+        scope.intent === variables.intent
+      )
+        void client.invalidateQueries({ queryKey: context.key, exact: true });
     },
   });
+  const prepare = (data: MiraSoulUpdate) => {
+    if (!scope) throw new Error('Assistant settings owner unavailable');
+    scope.check(scope.epoch);
+    return { data, epoch: scope.epoch, intent: ++scope.intent };
+  };
+  type InternalOptions = NonNullable<Parameters<typeof mutation.mutate>[1]>;
+  type ReplaceVariables<Args extends unknown[]> = Args extends [
+    infer First,
+    unknown,
+    ...infer Tail,
+  ]
+    ? [First, MiraSoulUpdate, ...Tail]
+    : Args;
+  type PublicOptions = {
+    onSuccess?: (
+      ...args: ReplaceVariables<
+        Parameters<NonNullable<InternalOptions['onSuccess']>>
+      >
+    ) => void;
+    onError?: (
+      ...args: ReplaceVariables<
+        Parameters<NonNullable<InternalOptions['onError']>>
+      >
+    ) => void;
+    onSettled?: (
+      data: MiraSoulResponse | undefined,
+      error: Error | null,
+      variables: MiraSoulUpdate,
+      ...tail: Parameters<NonNullable<InternalOptions['onSettled']>> extends [
+        unknown,
+        unknown,
+        unknown,
+        ...infer Tail,
+      ]
+        ? Tail
+        : never
+    ) => void;
+  };
+  const admittedOptions = (
+    options: PublicOptions | undefined,
+    variables: ReturnType<typeof prepare>
+  ): InternalOptions => {
+    const current = () =>
+      scope?.active &&
+      scope.epoch === variables.epoch &&
+      scope.intent === variables.intent;
+    return {
+      onSuccess: (...args) => {
+        if (current())
+          options?.onSuccess?.(args[0], variables.data, args[2], args[3]);
+      },
+      onError: (...args) => {
+        if (current())
+          options?.onError?.(args[0], variables.data, args[2], args[3]);
+      },
+      onSettled: (...args) => {
+        if (current())
+          options?.onSettled?.(
+            args[0],
+            args[1],
+            variables.data,
+            args[3],
+            args[4]
+          );
+      },
+    };
+  };
+  return {
+    ...mutation,
+    mutate: (data: MiraSoulUpdate, options?: PublicOptions) => {
+      const variables = prepare(data);
+      return mutation.mutate(variables, admittedOptions(options, variables));
+    },
+    mutateAsync: (data: MiraSoulUpdate, options?: PublicOptions) => {
+      const variables = prepare(data);
+      return mutation.mutateAsync(
+        variables,
+        admittedOptions(options, variables)
+      );
+    },
+  };
 }

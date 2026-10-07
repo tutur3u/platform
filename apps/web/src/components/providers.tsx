@@ -5,6 +5,7 @@ import { type AbstractIntlMessages, NextIntlClientProvider } from 'next-intl';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
 import type { ReactNode } from 'react';
 import { ClientProviders } from './client-providers';
+import { MiraSoulScopeProvider } from './mira-soul-scope';
 import { QueryProvider } from './query-provider';
 
 export function AppThemeProvider({ children }: { children: ReactNode }) {
@@ -39,15 +40,21 @@ export async function Providers({
   const content = <ClientProviders>{children}</ClientProviders>;
   return (
     <QueryProvider>
-      <NextIntlClientProvider messages={messages as AbstractIntlMessages}>
-        {user?.id ? (
-          <WorkspaceVisibilityProvider actorId={user.id}>
-            {content}
-          </WorkspaceVisibilityProvider>
-        ) : (
-          content
-        )}
-      </NextIntlClientProvider>
+      <MiraSoulScopeProvider
+        key={`${user?.id ?? 'signed-out'}:${user?.last_sign_in_at ?? 'unknown-session'}`}
+        actorId={user?.id ?? null}
+        sessionRevision={user?.last_sign_in_at}
+      >
+        <NextIntlClientProvider messages={messages as AbstractIntlMessages}>
+          {user?.id ? (
+            <WorkspaceVisibilityProvider actorId={user.id}>
+              {content}
+            </WorkspaceVisibilityProvider>
+          ) : (
+            content
+          )}
+        </NextIntlClientProvider>
+      </MiraSoulScopeProvider>
     </QueryProvider>
   );
 }

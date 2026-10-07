@@ -87,7 +87,8 @@ export default function MiraDashboardClientImpl({
   wsId,
 }: MiraDashboardClientProps) {
   const { data: soul } = useMiraSoul();
-  const assistantName = soul?.name ?? initialAssistantName;
+  const assistantName =
+    soul?.name?.trim() || initialAssistantName?.trim() || 'Mira';
   const MiraChatPanel = useMiraChatPanelComponent();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [chatPanelResetKey, setChatPanelResetKey] = useState(0);
