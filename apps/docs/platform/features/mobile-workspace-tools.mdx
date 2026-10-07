@@ -1719,3 +1719,15 @@ native CI and a recorded TestFlight version/build/source SHA: foreground and
 background single/bulk reads must clear only matching delivered tray items while
 other actors, out-of-scope workspaces, later deliveries and future reminders
 survive.
+
+### Notification post-write feed refresh
+
+Notification read actions invalidate any pre-write feed response before awaiting
+its completion, then request a fresh feed after the accepted write. Loading is
+not treated as a failed refresh. Queued continuations retain actor/workspace
+lifecycle admission. Held pre-write pagination is fenced by the same tab
+generation on both success and error, so it cannot restore captured unread items.
+An abandoned scope cannot publish or start a replacement
+request. Ordinary background requests coalesce without throwing; a failed fresh
+request reports the existing safe refresh warning and can be retried without
+resubmitting the accepted read. Regression coverage: `notification_read_held_feed_test.dart`.

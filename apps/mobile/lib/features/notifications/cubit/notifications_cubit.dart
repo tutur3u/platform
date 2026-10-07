@@ -34,6 +34,8 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   bool _scopeInitialized = false;
   int _scopeEpoch = 0;
   Future<bool>? _unreadRefresh;
+  final _tabRefreshes = <NotificationsTab, Future<bool>>{};
+  final _tabGenerations = <NotificationsTab, int>{};
 
   bool _isCurrentScope(int epoch, String? userId) =>
       !isClosed && epoch == _scopeEpoch && userId == _currentUserId();
@@ -45,6 +47,8 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     _scopeInitialized = false;
     _scopeEpoch++;
     _unreadRefresh = null;
+    _tabRefreshes.clear();
+    _tabGenerations.clear();
     emit(NotificationsState(scopeWorkspaceId: state.scopeWorkspaceId));
   }
 
@@ -83,6 +87,8 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     _scopeInitialized = true;
     _scopeEpoch++;
     _unreadRefresh = null;
+    _tabRefreshes.clear();
+    _tabGenerations.clear();
     final isSeededState =
         state.scopeWorkspaceId == nextScopeWorkspaceId &&
         (state.inbox.hasLoadedOnce ||
@@ -167,24 +173,31 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     await _loadTabResult(tab, refresh: refresh);
   }
 
-  Future<bool> _loadTabResult(
-    NotificationsTab tab, {
-    bool refresh = false,
-  }) async {
-    if (isClosed) {
-      return false;
-    }
+  Future<bool> _loadTabResult(NotificationsTab tab, {bool refresh = false}) {
+    if (isClosed) return Future.value(false);
+    _syncActorScope();
+    if (!refresh && state.feedFor(tab).hasLoadedOnce) return Future.value(true);
+    final existing = _tabRefreshes[tab];
+    if (existing != null) return existing;
+    late final Future<bool> running;
+    running = _fetchTabResult(tab).whenComplete(() {
+      if (identical(_tabRefreshes[tab], running)) {
+        _tabRefreshes.removeWhere((key, _) => key == tab);
+      }
+    });
+    _tabRefreshes[tab] = running;
+    return running;
+  }
 
+  Future<bool> _fetchTabResult(NotificationsTab tab) async {
     final epoch = _scopeEpoch;
     final userId = _currentUserId();
     final workspaceId = state.scopeWorkspaceId;
+    final generation = _tabGenerations[tab] ?? 0;
+    bool current() =>
+        _isCurrentScope(epoch, userId) &&
+        generation == (_tabGenerations[tab] ?? 0);
     final feed = state.feedFor(tab);
-    if (!refresh && feed.hasLoadedOnce) {
-      return true;
-    }
-    if (feed.status == NotificationFeedStatus.loading) {
-      return false;
-    }
 
     emit(
       state.copyWith(
@@ -202,7 +215,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         readOnly: tab == NotificationsTab.archive,
         limit: feed.pageSize,
       );
-      if (!_isCurrentScope(epoch, userId)) {
+      if (!current()) {
         return false;
       }
       emit(
@@ -217,9 +230,9 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         ),
       );
       await _persistCurrentState();
-      return _isCurrentScope(epoch, userId);
+      return current();
     } on Exception catch (error) {
-      if (!_isCurrentScope(epoch, userId)) {
+      if (!current()) {
         return false;
       }
       emit(
@@ -245,6 +258,10 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     final epoch = _scopeEpoch;
     final userId = _currentUserId();
     final workspaceId = state.scopeWorkspaceId;
+    final generation = _tabGenerations[tab] ?? 0;
+    bool current() =>
+        _isCurrentScope(epoch, userId) &&
+        generation == (_tabGenerations[tab] ?? 0);
     final feed = state.feedFor(tab);
     if (!feed.hasLoadedOnce ||
         !feed.hasMore ||
@@ -268,7 +285,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         limit: feed.pageSize,
         offset: feed.items.length,
       );
-      if (!_isCurrentScope(epoch, userId)) {
+      if (!current()) {
         return;
       }
       final merged = _dedupeNotifications([
@@ -290,7 +307,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
       );
       await _persistCurrentState();
     } on Exception catch (error) {
-      if (!_isCurrentScope(epoch, userId)) {
+      if (!current()) {
         return;
       }
       emit(
@@ -500,11 +517,29 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     NotificationsTab? preferredTab,
     bool Function()? isCurrent,
   }) async {
+    final epoch = _scopeEpoch;
+    final actor = _currentUserId();
+    bool current() =>
+        _isCurrentScope(epoch, actor) && isCurrent?.call() != false;
+    if (!current()) return false;
+    // Invalidate pre-write publication before awaiting either count or feed.
+    final previousTabs = Map<NotificationsTab, Future<bool>>.of(_tabRefreshes);
+    for (final tab in NotificationsTab.values) {
+      _tabGenerations[tab] = (_tabGenerations[tab] ?? 0) + 1;
+    }
+    for (final previous in previousTabs.values) {
+      try {
+        await previous;
+      } on Object {
+        // The receipt is the fresh post-write request, not the old flight.
+      }
+      if (!current()) return false;
+    }
     // A completed mutation needs a count requested after the write.
     await _unreadRefresh;
-    if (isCurrent?.call() == false) return false;
+    if (!current()) return false;
     var succeeded = await _refreshUnreadCountResult();
-    if (isClosed || isCurrent?.call() == false) return false;
+    if (!current()) return false;
 
     final inboxLoaded = state.inbox.hasLoadedOnce;
     final archiveLoaded = state.archive.hasLoadedOnce;
@@ -514,7 +549,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
           await _loadTabResult(NotificationsTab.inbox, refresh: true) &&
           succeeded;
     }
-    if (isCurrent?.call() == false) return false;
+    if (!current()) return false;
     if (archiveLoaded) {
       succeeded =
           await _loadTabResult(NotificationsTab.archive, refresh: true) &&
