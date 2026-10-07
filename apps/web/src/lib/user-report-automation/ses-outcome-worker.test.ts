@@ -1,14 +1,25 @@
+import { createRequire } from 'node:module';
+import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SESEmailProvider } from '../../../../../packages/email-service/src/providers/ses';
 import type { ProviderSendParams } from '../../../../../packages/email-service/src/types';
 import { recipientWorkerFixture } from './recipient-worker-fixture';
 
 const transport = vi.hoisted(() => ({
   send: vi.fn(),
+  networkDeny: vi.fn(() => {
+    throw new Error('Synthetic SES test forbids real network dispatch');
+  }),
   serviceSend: vi.fn(),
   configs: [] as Record<string, unknown>[],
 }));
-vi.mock('@aws-sdk/client-ses', () => ({
+// Resolve from the provider, not the web app's dependency graph.
+const providerRequire = createRequire(
+  resolve(
+    __dirname,
+    '../../../../../packages/email-service/src/providers/ses.ts'
+  )
+);
+vi.doMock(providerRequire.resolve('@aws-sdk/client-ses'), () => ({
   SESClient: class {
     constructor(config: Record<string, unknown>) {
       transport.configs.push(config);
@@ -51,13 +62,28 @@ vi.mock('./schedule-reconciliation', () => ({
 
 import { processPeriodicReportAutomation } from './processor';
 
+const { SESEmailProvider } = await import(
+  '../../../../../packages/email-service/src/providers/ses'
+);
+
+function forbidNetwork<T>(provider: T): T {
+  // If module interception ever misses, the real SDK cannot issue an HTTP request.
+  const client = (
+    provider as { sendClient: { config?: { requestHandler: unknown } } }
+  ).sendClient;
+  if (client.config)
+    client.config.requestHandler = { handle: transport.networkDeny };
+  return provider;
+}
 function syntheticProvider() {
-  return new SESEmailProvider({
-    type: 'ses',
-    accessKeyId: 'synthetic-key',
-    secretAccessKey: 'synthetic-secret',
-    region: 'us-east-1',
-  });
+  return forbidNetwork(
+    new SESEmailProvider({
+      type: 'ses',
+      accessKeyId: 'synthetic-key',
+      secretAccessKey: 'synthetic-secret',
+      region: 'us-east-1',
+    })
+  );
 }
 const params: ProviderSendParams = {
   source: 'Synthetic <sender@example.com>',
@@ -76,6 +102,7 @@ describe('actual SES adapter and monthly worker unknown delivery outcome', () =>
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-01-15T12:00:00Z'));
     transport.configs.length = 0;
+    transport.networkDeny.mockClear();
     transport.send.mockReset();
     transport.serviceSend.mockReset();
     const provider = syntheticProvider();
@@ -84,7 +111,13 @@ describe('actual SES adapter and monthly worker unknown delivery outcome', () =>
       provider.send({ ...value, source: params.source })
     );
   });
-  afterEach(() => vi.useRealTimers());
+  afterEach(() => {
+    try {
+      expect(transport.networkDeny).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it.each([
     { data: null, error: { code: 'PGRST202' } },
     { data: null, error: { code: '42883' } },
@@ -160,12 +193,14 @@ describe('actual SES adapter and monthly worker unknown delivery outcome', () =>
         throw new Error('Private synthetic validation detail');
       }
     }
-    const provider = new InvalidContentProvider({
-      type: 'ses',
-      accessKeyId: 'synthetic-key',
-      secretAccessKey: 'synthetic-secret',
-      region: 'us-east-1',
-    });
+    const provider = forbidNetwork(
+      new InvalidContentProvider({
+        type: 'ses',
+        accessKeyId: 'synthetic-key',
+        secretAccessKey: 'synthetic-secret',
+        region: 'us-east-1',
+      })
+    );
     const result = await provider.send(params);
     expect(transport.send).not.toHaveBeenCalled();
     expect(result).toMatchObject({

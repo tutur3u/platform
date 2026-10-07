@@ -1086,3 +1086,23 @@ interaction, previews and pending optimistic writes remain exceptions. Mobile
 keeps its existing past-event presentation. Regression coverage is
 `calendar_day_identity_test.dart`, `calendar_viewport_test.dart`,
 `all-day-event-layout.test.ts` and `past-event-treatment.test.ts`.
+
+## Mobile selected-view reset
+
+Tapping the selected floating Calendar view item resets its date and scroll
+position without changing the exact view mode. Day and three-day views start at
+today. Week starts at the current week's boundary using the effective first-day
+preference (personal, workspace, then locale); it does not force today into the
+first column. Timed views restore the current-time viewport. Agenda returns to
+today, month to the current month, and year to the current year.
+
+The reset and Today action use Calendar's projected timezone clock for both date
+selection and range loading. Repeated taps while already at today still reset
+scroll position. Reduced-motion settings use immediate scroll positioning.
+Other apps retain the shell's existing scroll-first and section-reset behavior;
+Calendar's existing explicit section reset still restores its default view.
+
+Coverage: `calendar_view_reselect_test.dart` exercises the real Calendar page and
+shared floating shell; `calendar_scroll_reset_test.dart` covers repeated resets,
+week preferences, timezone/year boundaries, reduced motion, and disposal. These
+source checks do not establish native-device or deployed runtime verification.

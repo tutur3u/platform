@@ -8,6 +8,7 @@ class ShellMiniNavItemSpec extends Equatable {
     required this.icon,
     required this.label,
     this.onPressed,
+    this.onReselect,
     this.callbackToken,
     this.selected = false,
     this.enabled = true,
@@ -18,6 +19,9 @@ class ShellMiniNavItemSpec extends Equatable {
   final IconData icon;
   final String label;
   final VoidCallback? onPressed;
+
+  /// Optional selected-item presentation reset; null keeps shell defaults.
+  final VoidCallback? onReselect;
   final Object? callbackToken;
   final bool selected;
   final bool enabled;
@@ -32,6 +36,7 @@ class ShellMiniNavItemSpec extends Equatable {
     icon.matchTextDirection,
     label,
     onPressed,
+    onReselect,
     callbackToken,
     dropdown,
     selected,

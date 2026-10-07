@@ -319,6 +319,8 @@ acknowledgments, and all four scope boundaries.
 
 The `periodic-report-delivery-contract.yaml` CI workflow replays the complete historical schema in an isolated disposable database, runs the approval, stage and provider-outcome pgTAP fixtures with strict assertion accounting, generates actual schema types, and cleans up its owned database. The source-only runner and mocked adapter tests are not database or provider delivery proof. Require this workflow for the exact repair head before merging the migration. Production applies it through the gated migration workflow after authorized promotion; do not enable flags or send reports merely because source tests pass.
 
+Explicit Retry for either uncertainty marker shows a localized possible-duplicate warning in Contacts, requiring provider-log and intended-recipient verification before confirmation. Ordinary definitive rejection retains its normal retry copy. Confirmation is invalidated across actor/workspace or send-capability changes and suppresses duplicate submissions while pending; this does not verify provider acceptance or inbox delivery.
+
 ## Cloudflare dispatch outcomes
 
 Cloudflare sends expose a dispatch outcome separately from the existing success
