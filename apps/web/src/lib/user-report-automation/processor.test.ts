@@ -134,6 +134,8 @@ function createAdminClientStub(
   const privateSchema = {
     from: (table: string) => makeBuilder(table),
     rpc: (name: string, args: Record<string, unknown>) => {
+      if (name === 'periodic_report_delivery_contract_ready')
+        return Promise.resolve({ data: true, error: null });
       if (name === 'finish_periodic_report_email') {
         if (reads.finish_periodic_report_email)
           return Promise.resolve(reads.finish_periodic_report_email);

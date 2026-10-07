@@ -719,6 +719,25 @@ setting is stored in secure storage and uses the OS local authentication prompt
 with device PIN/passcode fallback allowed. When enabled, the app locks on an
 authenticated cold launch and after at least 30 seconds in the background.
 
+The locked surface uses the native splash background and logo without showing
+protected content to touch, keyboard focus, or accessibility. Recovery controls
+appear five seconds after entering the lock, including when authentication fails
+or remains pending; retrying does not restart that deadline. Unlocking still uses
+the OS biometric/device-passcode prompt, not a separately stored application PIN.
+A failed or cancelled prompt leaves the app locked. Authentication completions
+from a reset account lifetime or disposed lock are ignored. A physical
+in-flight authentication guard also survives settings reloads until the OS
+prompt settles. Delay saves run sequentially; a completed current-lifetime save
+preserves the locked state, and only the latest intent updates the visible delay.
+Reset/disposal prevents queued stale writes from starting. An already-started
+secure-storage write cannot be cancelled by resetting the UI lifetime.
+
+Regression coverage is in `app_lock_splash_timing_test.dart`,
+`app_lock_boundary_test.dart`, `app_lock_auth_lifetime_test.dart`, and
+`app_lock_review_races_test.dart`. Widget
+checks cover entry timing, compact English/Vietnamese recovery, large text and
+reduced motion; they do not prove native biometric or TestFlight behavior.
+
 ### Device authenticators and trusted registrations
 
 Home suggests registering the current device when local authentication is

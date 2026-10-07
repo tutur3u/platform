@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EmailService } from '../email-service';
 
+const providerSend = vi.hoisted(() => vi.fn());
+
 // Mocks
 vi.mock('@tuturuuu/utils/abuse-protection', () => ({
   isIPBlocked: vi.fn(async () => null),
@@ -28,7 +30,7 @@ vi.mock('../providers/ses', () => ({
   SESEmailProvider: class {
     name = 'ses';
     validateCredentials = vi.fn(async () => true);
-    send = vi.fn(async () => ({ success: true, messageId: 'sent-123' }));
+    send = providerSend;
   },
 }));
 
@@ -56,6 +58,9 @@ describe('EmailService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    providerSend
+      .mockReset()
+      .mockResolvedValue({ success: true, messageId: 'sent-123' });
     if (originalSendProductionEmail === undefined) {
       delete process.env.SEND_PRODUCTION_EMAIL;
     } else {
@@ -99,6 +104,38 @@ describe('EmailService', () => {
       }).toThrow('Unknown credentials type');
     });
   });
+
+  it.each(['send', 'sendInternal'] as const)(
+    'propagates classified unknown provider outcome through %s',
+    async (method) => {
+      Reflect.set(service, 'blacklistChecker', {
+        checkEmails: async (emails: string[]) => ({
+          allowed: emails,
+          blocked: [],
+        }),
+      });
+      providerSend.mockResolvedValue({
+        success: false,
+        deliveryOutcome: 'unknown',
+        error:
+          'Email delivery outcome is unknown. Check provider logs before retrying.',
+      });
+      const result = await service[method]({
+        recipients: { to: ['synthetic@example.com'] },
+        content: {
+          html: '<p>Synthetic report</p>',
+          subject: 'Synthetic report',
+        },
+        metadata: defaultMetadata,
+      });
+      expect(result).toMatchObject({
+        success: false,
+        deliveryOutcome: 'unknown',
+      });
+      expect(result.messageId).toBeUndefined();
+      expect(providerSend).toHaveBeenCalledOnce();
+    }
+  );
 
   describe('send()', () => {
     it('should fail if no recipients', async () => {

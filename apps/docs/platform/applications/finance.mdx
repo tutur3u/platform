@@ -635,3 +635,18 @@ regressions in `invoice-history-error.test.tsx` cover initial 403/503 failures,
 genuine empty success, pending recovery, retained rows, page continuation and
 queued observer callbacks in both languages. These source tests do not establish
 the original customer incident or authenticated production behavior.
+
+
+### Invoice history keeps rows with an unrenderable timestamp
+
+The shared invoice-history accordion parses each nonempty creation timestamp once
+and checks for a finite JavaScript date before formatting it. A timestamp that
+cannot be displayed uses the existing localized No date label instead of causing
+a render exception. Valid dates retain their existing locale formatting; missing
+dates, customer links, query admission, filters and invoice accounting are
+unchanged. This display fallback does not repair or rewrite stored dates.
+
+The real mounted EN/VI cases in `invoice-history-date.test.tsx` reproduce render
+exceptions for synthetic malformed and infinite timestamps and cover valid, null,
+missing and empty controls. These are rendering-boundary regressions, not proof
+of a malformed production row or the cause of the original customer complaint.
