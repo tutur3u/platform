@@ -11,8 +11,13 @@ insert into public.workspaces(id,name,personal,creator_id) values
  (pg_temp.fid(90711),'Synthetic replacement scope',false,pg_temp.fid(90701)),
  (pg_temp.fid(90712),'Synthetic foreign scope',false,pg_temp.fid(90702));
 insert into public.workspace_members(ws_id,user_id,type) values
- (pg_temp.fid(90711),pg_temp.fid(90701),'MEMBER'),
  (pg_temp.fid(90711),pg_temp.fid(90702),'GUEST');
+-- Workspace insertion creates each creator membership through add_ws_creator.
+-- Assert that admission roles exist rather than masking duplicate fixture rows.
+select is((select type::text from public.workspace_members where ws_id=pg_temp.fid(90711) and user_id=pg_temp.fid(90701)),'MEMBER','replacement scope creator is a member');
+select is((select type::text from public.workspace_members where ws_id=pg_temp.fid(90712) and user_id=pg_temp.fid(90702)),'MEMBER','foreign scope creator is a member');
+select is((select type::text from public.workspace_members where ws_id=pg_temp.fid(90711) and user_id=pg_temp.fid(90702)),'GUEST','foreign creator remains a guest in replacement scope');
+select is((select count(*) from public.workspace_members where user_id=pg_temp.fid(90703)),0::bigint,'nonmember has no workspace membership before admission tests');
 create function pg_temp.config() returns jsonb language sql as $$ select
  '{"focus_minutes":25,"short_break_minutes":5,"long_break_minutes":15,"sessions_until_long_break":4,"auto_start_breaks":false,"auto_start_focus":false}'::jsonb;
 $$;
