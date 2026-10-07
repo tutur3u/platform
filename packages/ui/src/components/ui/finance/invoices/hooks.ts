@@ -1,6 +1,5 @@
 import {
   keepPreviousData,
-  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
@@ -32,6 +31,7 @@ import {
   listWorkspaceUsersWithInternalApi,
 } from './internal-api';
 
+export { useInfiniteUserInvoices } from './hooks/use-infinite-user-invoices';
 export { useInvoiceCustomerSearch } from './hooks/use-invoice-customer-search';
 export { useSubscriptionInvoiceContext } from './hooks/use-subscription-invoice-context';
 export { useUserGroups } from './hooks/use-user-groups';
@@ -338,36 +338,6 @@ export const useUserInvoices = (wsId: string, userId: string) => {
       });
       return payload.data || [];
     },
-    enabled: !!userId,
-  });
-};
-
-export const useInfiniteUserInvoices = (
-  wsId: string,
-  userId: string,
-  pageSize = 10
-) => {
-  return useInfiniteQuery({
-    queryKey: ['infinite-user-invoices', wsId, userId],
-    queryFn: async ({ pageParam = 1 }: { pageParam: number }) => {
-      const payload = await listFinanceInvoices(wsId, {
-        customerIds: [userId],
-        page: String(pageParam),
-        pageSize: String(pageSize),
-      });
-      const data = payload.data || [];
-      const count = payload.count ?? 0;
-      const fetchedCount = pageParam * pageSize;
-
-      return {
-        data,
-        count,
-        nextPage: fetchedCount < count ? pageParam + 1 : null,
-        hasMore: fetchedCount < count,
-      };
-    },
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => lastPage.nextPage,
     enabled: !!userId,
   });
 };

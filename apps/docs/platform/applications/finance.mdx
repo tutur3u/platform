@@ -594,3 +594,26 @@ and errors, workspace placeholders, old page callbacks, missing actor admission
 and recovery. Existing customer-search tests retain their behavior assertions.
 This is source regression evidence, not verification of the original customer
 incident or a production invoice mutation.
+
+
+### Invoice history follows the verified account lifetime
+
+The active paginated invoice-history query follows the verified account and
+permanent account lifetime as well as workspace and customer. Replacement
+accounts, including departure and return to the same account, require a new
+authorized read. Expired responses and retained page callbacks cannot publish
+history or dispatch requests after their account lifetime ends. Missing-account
+automatic, manual and paged reads fail closed.
+
+The default ten-row page size, count-based continuation, inherited query-provider
+freshness, garbage collection and retry policy remain unchanged. Workspace invoice
+mutation invalidation still refreshes active history. Current transport errors
+remain available on the query and explicit retry remains usable; this change does
+not add an error presentation to the history accordion or alter other queries.
+
+`invoice-history-actor.test.tsx` uses the real mounted accordion, actor provider,
+hook, API adapter/client and synthetic transport to cover replacement, account
+return, held success/error responses, missing account, old page callbacks, cache
+reuse, pagination, invalidation and current-error recovery. This is source
+regression evidence, not proof of the original customer incident or deployed
+invoice behavior.
