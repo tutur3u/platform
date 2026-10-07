@@ -10468,4 +10468,13 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantMemorySaveChanges => 'Lưu thay đổi của tôi';
+
+  @override
+  String get notificationsReadCleanupUnavailable => 'Đã tiếp nhận thao tác đọc. Không thể xóa một số thông báo hệ thống.';
+
+  @override
+  String get notificationsReadRefreshUnavailable => 'Đã tiếp nhận thao tác đọc. Không thể làm mới hộp thư. Kéo để làm mới.';
+
+  @override
+  String get notificationsReadError => 'Không thể tiếp nhận thao tác đọc. Vui lòng thử lại.';
 }

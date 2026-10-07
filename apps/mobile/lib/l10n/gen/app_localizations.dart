@@ -20076,6 +20076,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save my changes'**
   String get assistantMemorySaveChanges;
+
+  /// No description provided for @notificationsReadCleanupUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Read accepted. Some system notifications could not be dismissed.'**
+  String get notificationsReadCleanupUnavailable;
+
+  /// No description provided for @notificationsReadRefreshUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Read accepted. The inbox could not refresh. Pull to refresh.'**
+  String get notificationsReadRefreshUnavailable;
+
+  /// No description provided for @notificationsReadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not accept the read action. Try again.'**
+  String get notificationsReadError;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

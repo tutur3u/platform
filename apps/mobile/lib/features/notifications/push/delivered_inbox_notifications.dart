@@ -1,4 +1,21 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+
+/// Only these native runners register the delivered-inbox channel.
+bool deliveredInboxCleanupSupported({
+  required bool isWeb,
+  required TargetPlatform platform,
+}) =>
+    !isWeb &&
+    (platform == TargetPlatform.android || platform == TargetPlatform.iOS);
+
+/// Opaque lifetime fence, also valid while native cleanup is unavailable.
+class DeliveredInboxSession {
+  const DeliveredInboxSession._(this.actor, this.boundActor, this.epoch);
+  final String actor;
+  final String? boundActor;
+  final int epoch;
+}
 
 class DeliveredInboxSnapshot {
   const DeliveredInboxSnapshot._(
@@ -25,10 +42,24 @@ class DeliveredInboxNotifications {
   int _epoch = 0;
   bool _ready = false;
 
+  bool get supportsCleanup => deliveredInboxCleanupSupported(
+    isWeb: kIsWeb,
+    platform: defaultTargetPlatform,
+  );
+
+  DeliveredInboxSession? captureSession(String actor) {
+    if (_actor != null && _actor != actor) return null;
+    return DeliveredInboxSession._(actor, _actor, _epoch);
+  }
+
+  bool isCurrentSession(DeliveredInboxSession session) =>
+      _actor == session.boundActor && _epoch == session.epoch;
+
   Future<bool> bindSession(String? actor) async {
     final epoch = ++_epoch;
     _actor = actor;
     _ready = false;
+    if (!supportsCleanup) return false;
     try {
       final bound = await _channel.invokeMethod<bool>('bindSession', {
         'actor': actor,
