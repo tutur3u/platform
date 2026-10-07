@@ -1778,3 +1778,13 @@ An abandoned scope cannot publish or start a replacement
 request. Ordinary background requests coalesce without throwing; a failed fresh
 request reports the existing safe refresh warning and can be retried without
 resubmitting the accepted read. Regression coverage: `notification_read_held_feed_test.dart`.
+
+### Workspace Secrets Settings Heading
+
+The mobile workspace Secrets detail uses the shared shell title and Back action.
+Its summary panel retains the workspace description, icon, status counts and
+explicit create action without repeating the page heading. Permission checks and
+content/dock padding are unchanged. Actual-shell regression coverage in
+`settings_secrets_shell_checks.dart` checks English/Vietnamese, narrow layouts and
+large text, including denial visibility and dock Back. This scoped correction
+does not establish the cause of the reported Assistant Settings TestFlight issue.
