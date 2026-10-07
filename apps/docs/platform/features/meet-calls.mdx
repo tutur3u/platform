@@ -1392,3 +1392,19 @@ anonymous and stale-session GET admission, the real metadata handler's no-store
 response, protected API/method/lookalike denial, and preserved MFA/rate guard
 failures. A 403 without an app-assurance or challenge marker remains unclassified;
 these source fixtures do not establish the blocking layer or deployment identity.
+
+
+### Assistant workspace choices
+
+Meet and Parley's shared assistant picker shows compact loading, lookup-failure,
+and empty states in English and Vietnamese. Choices stay disabled until private
+visibility and workspace data are available; guest and hidden workspaces remain
+excluded. Lookup failures expose a safe localized message and an explicit retry
+through the existing actor-scoped visibility and workspace queries. They never
+expose a raw transport/provider error or grant membership.
+
+Actual Live dialog regressions cover Radix pointer selection, personal/member
+context, focus retention, loading/error/empty feedback, explicit retry, and a
+held account A→B→A lookup. Pointer selection passes this fixture; the demonstrated
+repair is missing state feedback, not proof of the reported production portal
+failure. Browser/provider runtime verification remains separate.
