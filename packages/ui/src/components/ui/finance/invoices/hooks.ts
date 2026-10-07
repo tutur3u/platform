@@ -7,7 +7,6 @@ import {
 } from '@tanstack/react-query';
 import {
   getPendingFinanceInvoicesCount,
-  getSubscriptionInvoiceContext,
   listFinanceInvoices,
   listPendingFinanceInvoices,
   listTransactionCategories,
@@ -36,6 +35,7 @@ import {
 import type { UserGroup } from './utils';
 
 export { useInvoiceCustomerSearch } from './hooks/use-invoice-customer-search';
+export { useSubscriptionInvoiceContext } from './hooks/use-subscription-invoice-context';
 
 const invoiceSchema = z.object({
   id: z.string(),
@@ -386,54 +386,6 @@ export const useUserGroups = (wsId: string, userId: string) => {
     enabled: !!wsId && !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnWindowFocus: false,
-    retry: false,
-  });
-};
-
-export const useSubscriptionInvoiceContext = (
-  wsId: string,
-  userId: string,
-  groupIds: string[],
-  month: string,
-  monthCount = 1
-) => {
-  return useQuery({
-    queryKey: [
-      'subscription-invoice-context',
-      wsId,
-      userId,
-      groupIds,
-      month,
-      monthCount,
-    ],
-    queryFn: async () => {
-      if (!wsId || !userId || groupIds.length === 0 || !month) {
-        return {
-          attendance: [] as Array<{
-            status: string;
-            date: string;
-            group_id?: string;
-          }>,
-          latestInvoices: [] as Array<{
-            group_id?: string;
-            valid_until?: string | null;
-            created_at?: string | null;
-          }>,
-          scheduledSessionsByGroupId: {} as Record<string, string[]>,
-        };
-      }
-
-      return getSubscriptionInvoiceContext(wsId, {
-        groupIds,
-        month,
-        monthCount,
-        userId,
-      });
-    },
-    enabled: !!wsId && !!userId && groupIds.length > 0 && !!month,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
     retry: false,
   });
