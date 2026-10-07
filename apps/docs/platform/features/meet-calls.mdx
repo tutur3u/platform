@@ -1375,3 +1375,20 @@ callbacks after an Activity hide/show effect replay. Existing
 capture, batching and recovery tests retain final-audio ordering coverage. This
 does not establish the original incident's reconnect/provider cause or real
 Radix workspace-selector interaction; those runtime checks remain separate.
+
+
+### Public deployment identity
+
+Only exact `GET /api/build-info` skips Meet app-session refresh so a
+credential-free deployment probe can read the bundled production identity. The
+shared API guard still applies, including security and abuse controls. Other
+methods, trailing-slash or prefix lookalikes, and private APIs keep their existing
+session admission; this exception grants no meeting or workspace access.
+
+The production verifier requires the exact app, full source SHA, production
+ref, and environment. HTTP failures report only a validated numeric status,
+never response bodies or raw transport diagnostics. Proxy regressions cover
+anonymous and stale-session GET admission, the real metadata handler's no-store
+response, protected API/method/lookalike denial, and preserved MFA/rate guard
+failures. A 403 without an app-assurance or challenge marker remains unclassified;
+these source fixtures do not establish the blocking layer or deployment identity.

@@ -92,3 +92,28 @@ test('canonical probe is bounded, credential-free and preserves HTTP status', ()
     /^Error: Meet canonical build identity probe could not complete$/
   );
 });
+
+test('reports only a validated numeric failure status without private response content', () => {
+  for (const status of [401, 403, 429, 503]) {
+    assert.throws(
+      () =>
+        verifyMeetBuildInfo({
+          sha,
+          status,
+          body: 'synthetic private response',
+        }),
+      { message: `Meet build identity HTTP probe failed (status ${status})` }
+    );
+  }
+  for (const status of ['403 synthetic-private', NaN, 0, 999, {}, undefined]) {
+    assert.throws(
+      () =>
+        verifyMeetBuildInfo({
+          sha,
+          status,
+          body: 'synthetic private response',
+        }),
+      /^Error: Meet build identity HTTP probe failed \(status unavailable\)$/
+    );
+  }
+});
