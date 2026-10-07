@@ -3540,6 +3540,7 @@
     "confirm_send_title": "Xếp báo cáo này vào hàng đợi gửi email?",
     "confirm_test_description": "Xếp một lần gửi thử chỉ đến email hồ sơ của đối tượng: {email}. Báo cáo sẽ không bị đánh dấu là đã gửi.",
     "confirm_test_title": "Xếp một lần gửi thử có kiểm soát?",
+    "confirm_uncertain_retry_warning": "Kết quả gửi trước đó chưa xác định. Thử lại có thể gửi email trùng lặp. Kiểm tra nhật ký nhà cung cấp và xác nhận người nhận dự kiến trước khi thử lại.",
     "create_manage_reports": "Tạo và quản lý báo cáo",
     "daily": "Hằng ngày",
     "delivered": "Đã gửi",
