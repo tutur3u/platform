@@ -490,3 +490,28 @@ Invoice browser preferences are optional: a blocked storage getter or read uses 
 
 
 Invoice schedule previews use the workspace billing timezone for both projected recurring classes and materialized sessions. A class keeps the same invoice civil day and month when materialized, including midnight and daylight-saving boundaries; multiple classes on one billing day remain one date. Recurrence identity and cancellation use the original series timezone, and previewing never writes schedules. `planned-session-dates.test.ts` covers projected/materialized parity and cancellation controls. This source regression does not establish the cause of a customer screenshot or deployed invoice behavior.
+
+
+### Complete schedule reads for subscription preview
+
+Subscription previews retain the workspace/group and requested instant-period
+filters and never reconcile or write schedules. Materialized dates and recurring
+occurrence suppression use complete reads rather than treating a capped first page
+as authority: cancelled tail occurrences must not reappear as projected classes.
+
+These reads use UUID keyset order, 500-row pages, exact counts and a maximum of
+10,000 rows/20 pages per query. Missing or changing counts, early short pages,
+invalid/repeated/non-advancing IDs, database errors or an exceeded budget fail the
+preview with a fixed error. The existing invoice-context failure and checkout
+blocking paths handle that failure; they never receive a partial successful date
+map. A deployed row cap below 500 also fails closed. Larger datasets need a
+separately reviewed bounded query strategy rather than unlimited pagination.
+
+This is statement-level validation, not a transaction snapshot. Concurrent writes
+can make a read fail; count checks do not prove every same-count mutation was
+observed. The composed regressions in `planned-session-paging.test.ts` model
+PostgREST filters, ordering, inclusive ranges and caps, including cancelled tail
+instances, tied starts, tenant/date scope, late errors and budget failures. They
+are source evidence, not the original customer's deployed incident or a billing
+write. Invoice quantities, stock, historical coverage and schedule policy are
+unchanged.
