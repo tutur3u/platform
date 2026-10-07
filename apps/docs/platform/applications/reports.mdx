@@ -497,3 +497,24 @@ provider call or readiness activation. Legacy approvals remain insufficient for
 canonical dispatch. `approval-protocol.test.ts` covers selection bounds, exact
 large revisions, foreign identities, incomplete and replay results, distinct
 digests, immutable snapshots and fail-closed malformed input.
+
+## Cloudflare dispatch outcomes
+
+Cloudflare sends expose a dispatch outcome separately from the existing success
+boolean. Positive message-ID, delivered-recipient, or queued-recipient evidence
+means `accepted`: the provider accepted at least part of the dispatch. It does
+not prove delivery to every recipient. A partial permanent bounce still retains
+`success: false` and its existing error while reporting `accepted`.
+
+Local recipient, attachment, and message-size limits or preparation failures
+before the provider request report `rejected`. Once the request is handed off,
+transport loss, malformed or incomplete responses, and all-bounce responses
+without acceptance evidence report `unknown`. Neither `accepted` nor `unknown`
+is proof that automatically retrying the whole dispatch is safe. This adapter
+change adds no automatic retry, caller activation, or delivery reconciliation.
+
+Coverage: the actual adapter's synthetic-response tests in
+`cloudflare-delivery-outcome.test.ts` retain legacy success/error behavior and
+assert zero provider requests for rejected local preparation. Existing
+`cloudflare.test.ts` request and attachment controls remain unchanged. Synthetic
+checks are not evidence of customer email delivery or live provider behavior.
