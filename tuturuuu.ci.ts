@@ -13,6 +13,7 @@ export const ci = {
   'programming-database-contract.yaml': true,
   'time-tracker-control-contract.yaml': true,
   'programming-app-builds.yaml': true,
+  'mail-calendar-tasks-builds.yaml': true,
   'playground-runtime-acceptance.yaml': true,
   'codecov.yaml': true,
   'colab-cloudflare.yaml': true,

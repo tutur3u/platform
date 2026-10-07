@@ -38,6 +38,15 @@ formatting behavior, or repo-wide verification.
 - If `bun ff -- <files>` still triggers repo-wide Biome behavior, use exact-file Biome commands and keep fixes scoped to owned
   files; require the applicable lint workflow in exact-commit CI.
 
+## Satellite build evidence
+
+Automatic platform builds do not establish satellite build compatibility.
+Mail/Calendar/Tasks changes use `mail-calendar-tasks-builds.yaml` for exact PR-head
+and main-SHA builds without deployment or production credentials. Keep the
+separate tests/type-check/lint gates; a skipped manual preview is not build
+evidence. Build-only workflows use placeholder public configuration and
+read-only permissions. Live provider consent/delivery remains a separate check.
+
 ## Root Scripts
 
 - Root script tests belong in `node --test scripts/*.test.js` and should be

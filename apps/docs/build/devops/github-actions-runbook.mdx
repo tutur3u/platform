@@ -8,6 +8,15 @@ GitHub Actions is the primary automation plane for Tuturuuu.
 
 ## Validation and Delivery Evidence
 
+`mail-calendar-tasks-builds.yaml` builds Mail, Calendar and Tasks, including
+their shared dependencies, on relevant PRs and `main` commits. These hosted CI
+jobs check out the immutable PR head (or exact push SHA), use placeholder public
+Supabase configuration, and do not deploy or access production credentials.
+Require all three matrix builds when changes affect these applications or their
+shared packages; type-check results and preview skip statuses do not replace
+real app-build evidence. Mail provider OAuth and real delivery/RSVP acceptance
+still require separately configured test accounts.
+
 Focused source-only TypeScript checks must use the source entry corresponding to
 its package `exports` artifact and retain the repository compiler flags,
 including `noUncheckedIndexedAccess`. When a package contains both a same-named
