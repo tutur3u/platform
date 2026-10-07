@@ -84,13 +84,15 @@ export async function handleGetApprovalsRequest(
       let countQuery = privateDb
         .from('external_user_monthly_reports_workspace_view')
         .select('id', { count: 'exact', head: true })
-        .eq('user_ws_id', wsId);
+        .eq('user_ws_id', wsId)
+        .eq('group_ws_id', wsId);
       let dataQuery = privateDb
         .from('external_user_monthly_reports_workspace_view')
         .select(
           'id, title, content, feedback, score, scores, created_at, updated_by, user_id, group_id, creator_id, report_approval_status, rejection_reason, approved_at, rejected_at, modifier_display_name, modifier_full_name, modifier_email, creator_full_name, creator_display_name, creator_email, user_full_name, user_display_name, user_email, group_name'
         )
-        .eq('user_ws_id', wsId);
+        .eq('user_ws_id', wsId)
+        .eq('group_ws_id', wsId);
 
       if (groupId) {
         countQuery = countQuery.eq('group_id', groupId);
