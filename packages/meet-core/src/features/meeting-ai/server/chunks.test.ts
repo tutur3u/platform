@@ -131,6 +131,129 @@ describe('Meet chunk idempotency', () => {
       expect.objectContaining({ usage: { speaker } })
     );
   });
+  function persistenceFixture(
+    outcomes: Array<'throw' | 'error' | 'missing' | 'saved'>
+  ) {
+    const payload = {
+      text: 'Synthetic saved speech',
+      usage: { tokens: 7 },
+      costUsd: 0.001,
+    };
+    const attemptId = 'synthetic-attempt';
+    const saved = { id, status: 'completed', transcript: payload.text };
+    const writes = outcomes.map((outcome) => {
+      const write = query({
+        data: outcome === 'missing' ? null : saved,
+        error:
+          outcome === 'error' ? { message: 'Synthetic storage error' } : null,
+      });
+      if (outcome === 'throw')
+        write.maybeSingle.mockRejectedValue(
+          new Error('Synthetic unknown commit')
+        );
+      return write;
+    });
+    const cleanup = query({ data: null, error: null });
+    const from = vi
+      .fn()
+      .mockReturnValueOnce(
+        query({
+          data: { id, created_at: new Date().toISOString() },
+          error: null,
+        })
+      )
+      .mockReturnValueOnce(query({ data: null, error: null }))
+      .mockReturnValueOnce(query({ data: { ended_at: null }, error: null }));
+    for (const write of writes) from.mockReturnValueOnce(write);
+    from.mockReturnValue(cleanup);
+    mocks.access.mockResolvedValue({
+      db: {
+        from,
+        rpc: vi.fn().mockResolvedValue({
+          data: { id, attempt_id: attemptId },
+          error: null,
+        }),
+      },
+      meetingId: id,
+      user: { id },
+    });
+    mocks.generate.mockResolvedValue(payload);
+    return { payload, saved, writes, cleanup, attemptId };
+  }
+  it('recovers a thrown persistence response using the same settled output', async () => {
+    const f = persistenceFixture(['throw', 'saved']);
+    expect(await transcribeMeetChunk(request(), params)).toEqual(f.saved);
+    expect(mocks.generate).toHaveBeenCalledTimes(1);
+    for (const write of f.writes) {
+      expect(write.update).toHaveBeenCalledWith({
+        status: 'completed',
+        transcript: f.payload.text,
+        usage: f.payload.usage,
+        cost_usd: f.payload.costUsd,
+      });
+      expect(write.eq).toHaveBeenCalledWith('id', id);
+      expect(write.eq).toHaveBeenCalledWith('attempt_id', f.attemptId);
+    }
+    expect(f.writes[0]!.update.mock.calls[0]![0]).toBe(
+      f.writes[1]!.update.mock.calls[0]![0]
+    );
+    expect(f.cleanup.update).not.toHaveBeenCalled();
+  });
+  it('bounds mixed returned and thrown storage failures to three persistence attempts', async () => {
+    const f = persistenceFixture(['error', 'throw', 'saved']);
+    expect(await transcribeMeetChunk(request(), params)).toEqual(f.saved);
+    expect(mocks.generate).toHaveBeenCalledTimes(1);
+    expect(
+      f.writes.every((write) => write.maybeSingle.mock.calls.length === 1)
+    ).toBe(true);
+  });
+  it('treats a missing same-attempt CAS row as conflict without retrying', async () => {
+    const f = persistenceFixture(['missing']);
+    const response = await meetAiResponse(() =>
+      transcribeMeetChunk(request(), params)
+    );
+    expect(response.status).toBe(409);
+    expect(mocks.generate).toHaveBeenCalledTimes(1);
+    expect(f.writes[0]!.maybeSingle).toHaveBeenCalledTimes(1);
+    expect(f.cleanup.eq).toHaveBeenCalledWith('status', 'processing');
+  });
+  it('reports exhaustion safely and fences cleanup against an uncertain completed row', async () => {
+    const f = persistenceFixture(['throw', 'error', 'throw']);
+    let status = 'processing';
+    f.writes[0]!.maybeSingle.mockImplementation(async () => {
+      status = 'completed'; // Commit happened before the response was lost.
+      throw new Error('Synthetic unknown commit');
+    });
+    const predicates: Record<string, unknown> = {};
+    f.cleanup.eq.mockImplementation((key: string, value: unknown) => {
+      predicates[key] = value;
+      return f.cleanup;
+    });
+    Object.assign(f.cleanup, {
+      // biome-ignore lint/suspicious/noThenProperty: Model the awaited Supabase cleanup query and its CAS predicate.
+      then: (resolve: (value: unknown) => void) => {
+        if (predicates.status === status) status = 'failed';
+        resolve({ data: null, error: null });
+      },
+    });
+    const response = await meetAiResponse(() =>
+      transcribeMeetChunk(request(), params)
+    );
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      error: 'Could not save transcript',
+    });
+    expect(status).toBe('completed');
+    expect(predicates).toEqual({
+      id,
+      status: 'processing',
+      attempt_id: f.attemptId,
+    });
+    expect(mocks.generate).toHaveBeenCalledTimes(1);
+    expect(
+      f.writes.every((write) => write.maybeSingle.mock.calls.length === 1)
+    ).toBe(true);
+  });
   it.each([
     { ended: true, elapsed: 0, lookupError: false, status: 409 },
     { ended: false, elapsed: 31_000, lookupError: false, status: 409 },

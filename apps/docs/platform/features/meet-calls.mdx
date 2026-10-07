@@ -468,6 +468,18 @@ this can incur another provider charge and the earlier unknown usage remains
 visible in statistics. Notes are AI generated and should be reviewed.
 
 Only text, notes, and provider usage are retained in Supabase, not audio files.
+After a transcription provider result has been generated and settled, the server
+retries only its same-attempt transcript write up to three total times, including
+returned storage errors and rejected save promises. The transcript, structured
+speaker usage, and cost stay identical; this retry does not regenerate audio or
+repeat settlement. A missing attempt row is a conflict, and failed-attempt cleanup
+only changes a still-processing row, protecting an uncertain completed commit.
+Exhaustion returns a safe failure, not a completed receipt. This is request-local
+persistence recovery: a later request may reserve a new failed attempt and incur
+another provider charge; there is no cross-request charging guarantee. Synthetic
+chunk regressions cover thrown/returned errors, CAS conflict, exhaustion, and the
+completed-row cleanup predicate; they do not prove live database or provider behavior.
+
 The capture queue holds up to 60 chunks in browser memory and retries each stable
 chunk ID for up to five minutes. A recovery status shows pending chunks. Tab closure
 still loses buffered audio; keep the page open until uploads finish. Overload and
