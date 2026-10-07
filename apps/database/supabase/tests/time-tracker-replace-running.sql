@@ -230,5 +230,41 @@ select is(current_setting('time_tracking.bypass_update_limit',true),'on','failed
 drop trigger synthetic_close_failure on public.time_tracking_sessions;
 drop trigger synthetic_insert_setting on public.time_tracking_sessions;
 select set_config('time_tracking.bypass_update_limit','off',true);
+-- Exercise the real invoker triggers through an empty-path caller, with no
+-- replacement RPC or trigger disabling hiding their table/function bindings.
+create function pg_temp.empty_path_trigger_controls() returns jsonb
+language plpgsql set search_path='' as $$
+declare
+ v_first public.time_tracking_sessions%rowtype;
+ v_second public.time_tracking_sessions%rowtype;
+ v_end timestamptz;
+begin
+ insert into public.time_tracking_sessions(id,ws_id,user_id,title,category_id,start_time,is_running)
+ values(pg_temp.fid(90795),pg_temp.fid(90711),pg_temp.fid(90703),'Synthetic empty-path scored work',pg_temp.fid(90722),clock_timestamp()-interval '10 minutes',true);
+ v_end:=clock_timestamp();
+ update public.time_tracking_sessions
+ set end_time=v_end,is_running=false,duration_seconds=extract(epoch from(v_end-start_time))::integer
+ where id=pg_temp.fid(90795);
+ insert into public.time_tracking_sessions(id,ws_id,user_id,title,start_time,is_running)
+ values(pg_temp.fid(90796),pg_temp.fid(90711),pg_temp.fid(90703),'Synthetic empty-path next work',clock_timestamp(),true);
+ select * into v_first from public.time_tracking_sessions where id=pg_temp.fid(90795);
+ select * into v_second from public.time_tracking_sessions where id=pg_temp.fid(90796);
+ update public.time_tracking_sessions set end_time=clock_timestamp(),is_running=false
+ where id=v_second.id;
+ return jsonb_build_object(
+  'first_closed',not v_first.is_running and v_first.end_time is not null,
+  'canonical_duration',v_first.duration_seconds=extract(epoch from(v_first.end_time-v_first.start_time))::integer,
+  'score',v_first.productivity_score,
+  'canonical_score',public.calculate_productivity_score(v_first.duration_seconds,'BLUE'),
+  'next_started',v_second.is_running,
+  'next_stopped',(select not is_running and end_time is not null from public.time_tracking_sessions where id=v_second.id));
+end;
+$$;
+create temp table empty_path_trigger_result as select pg_temp.empty_path_trigger_controls() result;
+select ok((select (result->>'first_closed')::boolean from empty_path_trigger_result),'empty-path real session stop completes');
+select ok((select (result->>'canonical_duration')::boolean from empty_path_trigger_result),'empty-path duration accounting remains canonical');
+select cmp_ok((select (result->>'score')::integer from empty_path_trigger_result),'>',0,'empty-path categorized work has real productivity');
+select is((select result->>'score' from empty_path_trigger_result),(select result->>'canonical_score' from empty_path_trigger_result),'empty-path productivity uses the canonical public calculator');
+select ok((select (result->>'next_started')::boolean and (result->>'next_stopped')::boolean from empty_path_trigger_result),'empty-path subsequent real session starts and stops');
 select * from finish();
 rollback;

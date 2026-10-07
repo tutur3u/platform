@@ -145,5 +145,11 @@ select ok((select bool_and(not has_table_privilege(browser_role,'public.time_tra
 select ok((select bool_and(has_table_privilege('authenticated','public.time_tracking_breaks',privilege)) from unnest(array['INSERT','UPDATE','DELETE']) privilege),'every legacy browser break DML grant remains explicit; closure OPEN');
 select is((select count(*) from pg_constraint where conrelid='public.time_tracking_sessions'::regclass and contype='u' and pg_get_constraintdef(oid) like '%is_running%'),0::bigint,'running uniqueness is a partial index rather than a fabricated constraint');
 select ok(exists(select 1 from pg_index i where i.indrelid='public.time_tracking_sessions'::regclass and i.indisunique and pg_get_indexdef(i.indexrelid) like '%ws_id, user_id%' and pg_get_expr(i.indpred,i.indrelid) like '%is_running%'),'actual actor/workspace partial running uniqueness exists');
+select is((select count(*) from pg_proc where oid in(
+ 'public.stop_other_running_sessions()'::regprocedure,
+ 'public.update_productivity_score()'::regprocedure)
+ and not prosecdef and proconfig = array['search_path=""']),2::bigint,'reachable session triggers retain invoker security and empty fixed paths');
+select ok((select prosrc like '%update public.time_tracking_sessions%' from pg_proc where oid='public.stop_other_running_sessions()'::regprocedure),'running-session trigger binds the canonical public table');
+select ok((select prosrc like '%public.calculate_productivity_score(%' and prosrc like '%from public.time_tracking_categories%' from pg_proc where oid='public.update_productivity_score()'::regprocedure),'productivity trigger binds the canonical public calculator and categories');
 select * from finish();
 rollback;
