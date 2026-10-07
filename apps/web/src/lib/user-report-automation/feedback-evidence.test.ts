@@ -382,10 +382,10 @@ describe('actual loader query and runtime projection', () => {
     expect(fixture.requests).toHaveLength(1);
   });
   it('failures emit no raw error/data logs', async () => {
+    const fixture = clientFixture([], 'UTC', 'feedback');
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
-      const fixture = clientFixture([], 'UTC', 'feedback');
       const result = await load(fixture);
       expect(JSON.stringify(result)).not.toContain(
         'PRIVATE_SYNTHETIC_SENTINEL'
