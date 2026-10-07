@@ -152,6 +152,26 @@ bun run test -- src/lib/external-projects/email-policy.test.ts \
 - Before apply, upload those files through the external-project asset app-server upload route. Abort the apply if a local public asset is missing so CMS never receives storage paths for objects that were not uploaded.
 - Asset `storagePath`/`storage_path` values must stay under `external-projects/`. Do not point CMS assets at Drive, finance, or other workspace storage namespaces; delivery and admin cleanup only operate on assets that satisfy the CMS namespace invariant.
 
+## Storage analytics cache
+
+The authenticated external-project storage analytics endpoint reads Supabase project
+statistics from a private Postgres snapshot keyed by workspace and adapter. It
+calculates file totals and highlights from `storage.objects` metadata, with a
+1,000-object cap and an explicit `truncated` flag. Archived versions and folder
+placeholders do not contribute to file totals.
+
+Snapshots expire after five minutes. Storage inserts, updates, deletes, and moves
+invalidate workspace snapshots in the same transaction, including direct uploads.
+A shared workspace lock serializes refresh and invalidation so a concurrent file
+change cannot leave a newly stored stale snapshot. Workspace quota is read live.
+The cache is available only through a service-role RPC, after endpoint access and
+rate-limit checks.
+
+R2 uses the bounded provider scan. A missing RPC during an additive migration
+rollout also uses that scan; other database failures remain visible. Production
+activation requires the normal gated Supabase migration workflow. No cache
+backfill is required.
+
 ## Team Guidance
 
 - Link into the CMS-native route map directly.

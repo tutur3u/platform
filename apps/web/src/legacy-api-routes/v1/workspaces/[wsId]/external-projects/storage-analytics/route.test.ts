@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   checkRateLimit: vi.fn(),
+  getCachedProjectStorageAnalytics: vi.fn(),
   getWorkspaceStorageOverview: vi.fn(),
   getStorageLimit: vi.fn(),
   resolveWorkspaceStorageProvider: vi.fn(),
@@ -23,6 +24,12 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
     error: (...args: Parameters<typeof mocks.serverLoggerError>) =>
       mocks.serverLoggerError(...args),
   },
+}));
+
+vi.mock('@/lib/external-projects/storage-analytics-cache', () => ({
+  getCachedProjectStorageAnalytics: (
+    ...args: Parameters<typeof mocks.getCachedProjectStorageAnalytics>
+  ) => mocks.getCachedProjectStorageAnalytics(...args),
 }));
 
 vi.mock('@/lib/rate-limit', () => ({
@@ -74,6 +81,8 @@ describe('external project storage analytics route', () => {
     vi.resetModules();
     mocks.requireWorkspaceExternalProjectAccess.mockReset();
     mocks.checkRateLimit.mockReset();
+    mocks.getCachedProjectStorageAnalytics.mockReset();
+    mocks.getCachedProjectStorageAnalytics.mockResolvedValue(null);
     mocks.getWorkspaceStorageOverview.mockReset();
     mocks.getStorageLimit.mockReset();
     mocks.resolveWorkspaceStorageProvider.mockReset();
@@ -173,6 +182,53 @@ describe('external project storage analytics route', () => {
     expect(
       mocks.listWorkspaceStorageRawObjectsForProvider
     ).toHaveBeenCalledWith('workspace-1', 'supabase', {
+      limit: 1001,
+      pathPrefix: 'external-projects/kendra',
+    });
+  });
+
+  it('serves persisted totals without listing objects and reads the current quota', async () => {
+    mocks.getCachedProjectStorageAnalytics.mockResolvedValueOnce({
+      totalSize: 5120,
+      fileCount: 3,
+      scannedObjectLimit: 1000,
+      truncated: false,
+      largestFile: null,
+      smallestFile: null,
+    });
+    const response = await getStorageAnalytics();
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      data: {
+        totalSize: 5120,
+        fileCount: 3,
+        scannedObjectLimit: 1000,
+        truncated: false,
+        largestFile: null,
+        smallestFile: null,
+        storageLimit: 10240,
+        usagePercentage: 50,
+      },
+    });
+    expect(
+      mocks.listWorkspaceStorageRawObjectsForProvider
+    ).not.toHaveBeenCalled();
+    expect(mocks.getCachedProjectStorageAnalytics).toHaveBeenCalledWith(
+      'workspace-1',
+      'kendra'
+    );
+  });
+
+  it('keeps R2 on the bounded provider scan', async () => {
+    mocks.resolveWorkspaceStorageProvider.mockResolvedValueOnce({
+      provider: 'r2',
+      misconfigured: false,
+    });
+    expect((await getStorageAnalytics()).status).toBe(200);
+    expect(mocks.getCachedProjectStorageAnalytics).not.toHaveBeenCalled();
+    expect(
+      mocks.listWorkspaceStorageRawObjectsForProvider
+    ).toHaveBeenCalledWith('workspace-1', 'r2', {
       limit: 1001,
       pathPrefix: 'external-projects/kendra',
     });

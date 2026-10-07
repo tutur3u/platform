@@ -9,6 +9,7 @@ import {
 } from '@tuturuuu/storage-core/workspace-storage-provider';
 import { NextResponse } from 'next/server';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
+import { getCachedProjectStorageAnalytics } from '@/lib/external-projects/storage-analytics-cache';
 import { checkRateLimit } from '@/lib/rate-limit';
 
 const EXTERNAL_PROJECT_STORAGE_ANALYTICS_OBJECT_LIMIT = 1000;
@@ -86,6 +87,29 @@ export async function GET(
       resolveWorkspaceStorageProvider(access.normalizedWorkspaceId),
       getStorageLimit(access.normalizedWorkspaceId),
     ]);
+
+    const cached =
+      storage.provider === 'supabase'
+        ? await getCachedProjectStorageAnalytics(
+            access.normalizedWorkspaceId,
+            adapter
+          )
+        : null;
+    if (cached) {
+      return NextResponse.json(
+        {
+          data: {
+            ...cached,
+            storageLimit,
+            usagePercentage: calculateUsagePercentage(
+              cached.totalSize,
+              storageLimit
+            ),
+          },
+        },
+        { headers: rateLimit.headers }
+      );
+    }
 
     const prefix = posix.join('external-projects', adapter);
     const rawObjects = await listWorkspaceStorageRawObjectsForProvider(
