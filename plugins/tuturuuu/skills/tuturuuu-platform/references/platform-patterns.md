@@ -399,6 +399,10 @@ system on every change:
   elsewhere instead of squeezing gallery and detail preview columns together.
 - Keep repeated action labels scoped in tests with `within(...)` when multiple
   zones intentionally expose the same command.
+- Give form controls concise labels and attach help with `aria-describedby`.
+  Hint text nested inside a wrapping label becomes part of the accessible name
+  and breaks exact-label browser selectors. Cover names and descriptions in
+  both supported languages; diagnose a missing input before waiting on its API.
 
 
 ## Bounded billing projections

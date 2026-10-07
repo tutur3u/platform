@@ -324,6 +324,13 @@ the central API rather than granting raw Storage writes.
 Mobile Profile settings supports both avatar and banner selection. Banner removal
 and replacement use the same actor-scoped, retry-safe lifecycle as web profiles.
 
+Tulletin's avatar and banner upload inputs use concise translated labels, with
+size and optimization hints attached through `aria-describedby`. A browser test
+waiting for an upload ticket can time out before any request when an exact-label
+selector cannot find the input; inspect the input's accessible name first.
+`profile-media-field.test.tsx` checks exact labels and separate descriptions in
+English and Vietnamese, distinct input identities, and the upload callback.
+
 The server independently decodes, applies EXIF orientation, strips metadata,
 resizes without enlarging (avatars within 1024 x 1024; banners within 2560 x 1440),
 and encodes WebP. Quality then dimensions are reduced as needed; output is checked
