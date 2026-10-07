@@ -400,3 +400,20 @@ foreign group, single approval/rejection, batch selection and permission denials
 `route.test.ts` retains the original daily-post permission controls and
 `facade.test.ts` checks request-time GET, bodyless HEAD and the original PUT
 binding. These synthetic handlers do not prove database concurrency or delivery.
+
+### Approval read consistency
+
+Periodic approval lists and their exact pagination counts require both subject
+and group workspace membership in Contacts and Web. Pending-summary counts and
+latest approved-report history use the same boundary. Contacts' standalone
+report page rejects foreign or missing groups and excludes those reports from
+sibling history. Daily-post behavior, permission checks and saved history remain
+unchanged. Existing Rust GET implementations carry the same query filters;
+this is source parity, not a backend traffic cutover.
+
+Coverage: `get-tenant-boundary.test.ts`, `review-reads-tenant-boundary.test.ts`
+and the actual Contacts `page-tenant-boundary.test.tsx` exercise foreign subjects,
+foreign/missing groups, own reports, pagination, counts, history and permission
+denials. These checks remain initial reads, not atomic review or permission
+certificates. Canonical approval and delivery closure are still required; no
+gate or email is enabled by this consistency rule.
