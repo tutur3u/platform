@@ -351,10 +351,12 @@ silently in the browser/class timezone. Gap/fold endpoints and slots crossing
 DST transitions are conservatively rejected rather than assigned an offset.
 Unknown coverage stays unknown; any known closed portion denies coverage.
 
-Regression coverage in `tutoring-teacher-hours.test.ts` exercises the actual
-Calendar default factory and Temporal compatible gap conversion as unsuitable
-inputs, inheritance/replacement, lossless reset receipts, adjacency, midnight,
-weekly wrapping and DST. This is pure source evidence, not persisted availability
+Regression coverage in `tutoring-teacher-hours.test.ts` keeps unconfirmed teacher
+hours unknown and exercises Temporal compatible gap conversion as an unsuitable
+input, inheritance/replacement, lossless reset receipts, adjacency, midnight,
+weekly wrapping and DST. The actual Calendar default factory is tested separately
+in Calendar’s `hour-settings-shared.test.ts`; utils tests stay within their package
+source boundary. This is pure source evidence, not persisted availability
 or production scheduling proof. API/schema/authenticated editor, atomic revision
 storage, staff-default/teacher-role permissions, outside-hours exceptions and
 planner consumption remain separate reviewed packets.
