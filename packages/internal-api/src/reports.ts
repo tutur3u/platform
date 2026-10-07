@@ -223,6 +223,7 @@ export interface PeriodicReportSchedulesResponse {
   emailDelivery: {
     autoSendAfterApproval?: boolean;
     canConfigureAutoSend?: boolean;
+    canConfigureReportEmailGate?: boolean;
     globalGateEnabled: boolean;
     periodicGateEnabled: boolean;
     ready: boolean;

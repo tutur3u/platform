@@ -140,7 +140,7 @@ export async function updateWorkspaceConfig(
 
 /**
  * Flip a module on/off switch that lives in `workspace_secrets` rather than
- * `workspace_configs` (currently only topic announcements). Restricted
+ * `workspace_configs` (topic announcements and periodic report email). Restricted
  * server-side to an allowlist of toggle names and boolean values.
  */
 export async function updateWorkspaceFeatureSecret(

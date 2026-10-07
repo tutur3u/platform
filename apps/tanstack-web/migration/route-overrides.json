@@ -1749,7 +1749,7 @@
     "api:/api/v1/workspaces/:wsId/users/reports/schedules:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/schedules/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Periodic report approval auto-send configuration and workspace-scoped delivery diagnostics. Preserve view/manage/send permission checks, private no-store diagnostics, approval gates, queue lifecycle, and idempotency. Rust port pending."
+      "note": "Periodic report approval auto-send configuration and workspace-scoped delivery diagnostics. Preserve view/manage/send permission checks, private no-store diagnostics, approval gates, queue lifecycle, and idempotency. Rust port pending. Report gate administration capability is server-computed from both manage_workspace_secrets and send_user_group_report_emails; flag defaults off and explicit boolean-only satellite configuration preserves global gates and sender checks."
     },
     "api:/api/v1/workspaces/:wsId/users/reports:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/route.ts": {
       "status": "legacy-next",

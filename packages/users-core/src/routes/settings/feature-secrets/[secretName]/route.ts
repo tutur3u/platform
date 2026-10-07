@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   isContactsFeatureSecretName,
   isContactsFeatureSecretValue,
+  REPORT_EMAIL_SENDING_SECRET,
 } from '@tuturuuu/users-core/lib/contacts-feature-secrets';
 import { getUserGroupRoutePermissions } from '@tuturuuu/users-core/lib/user-groups/route-auth';
 import { resolveUserGroupRouteWorkspaceId } from '@tuturuuu/users-core/lib/user-groups/route-helpers';
@@ -32,11 +33,16 @@ export async function PUT(request: Request, { params }: Params) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
-    const permissions = await getUserGroupRoutePermissions(rawWsId, request);
+    const wsId = await resolveUserGroupRouteWorkspaceId(rawWsId, request);
+    const permissions = await getUserGroupRoutePermissions(wsId, request);
     if (!permissions) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
-    if (permissions.withoutPermission('manage_workspace_secrets')) {
+    if (
+      permissions.withoutPermission('manage_workspace_secrets') ||
+      (secretName === REPORT_EMAIL_SENDING_SECRET &&
+        permissions.withoutPermission('send_user_group_report_emails'))
+    ) {
       return NextResponse.json(
         { error: 'Insufficient permissions to update workspace secret' },
         { status: 403 }
@@ -63,7 +69,6 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    const wsId = await resolveUserGroupRouteWorkspaceId(rawWsId, request);
     const admin = await createAdminClient({ noCookie: true });
 
     // `workspace_secrets` has no unique index on (ws_id, name), so an upsert
