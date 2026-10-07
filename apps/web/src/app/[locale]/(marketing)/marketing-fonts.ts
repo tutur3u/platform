@@ -1,4 +1,5 @@
-import { Be_Vietnam_Pro, JetBrains_Mono } from 'next/font/google';
+import { Be_Vietnam_Pro } from 'next/font/google';
+import localFont from 'next/font/local';
 
 /**
  * Display face for marketing headlines.
@@ -18,9 +19,10 @@ export const displayFont = Be_Vietnam_Pro({
  * Micro-label / numeric face: section eyebrows, indices, stat values.
  * Also covers Vietnamese so translated eyebrows stay in the same voice.
  */
-export const monoFont = JetBrains_Mono({
-  subsets: ['latin', 'vietnamese'],
-  weight: ['400', '500', '600'],
+export const monoFont = localFont({
+  src: './fonts/jetbrains-mono-variable.woff2',
+  weight: '100 800',
+  style: 'normal',
   display: 'swap',
   variable: '--font-jetbrains-mono',
 });
