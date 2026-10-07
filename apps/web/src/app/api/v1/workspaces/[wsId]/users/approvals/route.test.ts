@@ -55,7 +55,8 @@ vi.mock('@/lib/post-email-queue', () => ({
   ) => mocks.summarizePostEmailQueue(...args),
 }));
 
-import { GET, PUT } from './route';
+import { GET } from './get';
+import { PUT } from './put';
 
 type QueryResult = {
   count?: number | null;

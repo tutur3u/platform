@@ -376,3 +376,27 @@ for names, score, branding, escaping, multiline and cleared text, immutable copi
 canonical key ordering, recipient normalization and missing-input rejection.
 These synthetic source tests do not prove a consistent database snapshot, provider
 acceptance or recipient delivery.
+
+### Web periodic approval tenant boundary
+
+Web's initial periodic-report approval and rejection checks require both the
+report subject and group to belong to the requested workspace. Batch selection
+uses the same two filters. Foreign-group reports cannot enter these mutations
+through a subject that belongs to the workspace. Existing permission denials,
+Web daily-post approval and email-enqueue behavior remain unchanged.
+
+The live Web handler is first-class and split into focused GET, PUT and shared
+validation modules. Its GET still enters request-time rendering and HEAD retains
+status and headers without a body. Rust continues to implement GET only; PUT
+falls through to Web. This source migration does not indicate a traffic cutover.
+
+These initial checks are not an atomic permission or review certificate: linked
+records can change after lookup. Canonical revision locks, explicit approval
+receipts and delivery validation remain required before enabling status-only
+report delivery. This change does not authorize approval, gate changes or email.
+
+Regression coverage: Web's `tenant-boundary.test.ts` exercises foreign subject,
+foreign group, single approval/rejection, batch selection and permission denials;
+`route.test.ts` retains the original daily-post permission controls and
+`facade.test.ts` checks request-time GET, bodyless HEAD and the original PUT
+binding. These synthetic handlers do not prove database concurrency or delivery.
