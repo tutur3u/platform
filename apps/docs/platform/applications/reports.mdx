@@ -285,6 +285,8 @@ sending a simplified report. Delivery diagnostics show the actual recipient,
 acceptance timestamp, retries, and attempt history; successful test sends remain
 explicitly labelled tests and do not mark the report as sent to its real audience.
 
+Before rendering or sending a periodic report, the worker verifies that the current report subject matches the retained queue subject. A subject change while a delivery was waiting, including during a workspace-user merge, blocks that delivery instead of sending the current report to the previous subject's address. Request a new delivery after confirming the current subject profile; gates, approval, and workspace permissions still apply. The worker re-reads the matching subject's workspace profile email. This safeguard is covered by the actual-worker recipient boundary regressions.
+
 An active delivery locks the report content and approval until the worker finishes. Edits, deletion, or approval changes during that window return a conflict; retry once delivery has finished. This prevents an approved report from changing between the final approval check and sending.
 
 ### Review filters and test delivery

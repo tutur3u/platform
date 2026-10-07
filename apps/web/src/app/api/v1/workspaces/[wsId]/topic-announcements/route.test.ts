@@ -22,97 +22,102 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: vi.fn(),
 }));
 
-vi.mock('./shared', () => {
-  return {
-    attachTopicAnnouncementGroups: vi.fn(async (_sbAdmin, rows) => rows),
-    insertTopicAnnouncementAttachmentDrafts: vi.fn(
-      async ({
-        actorUserId,
-        announcementId,
-        attachmentDrafts,
-        normalizedWsId,
-        sbAdmin,
-      }: any) => {
-        if (attachmentDrafts.length === 0) return;
-        const { error } = await sbAdmin
-          .from('topic_announcement_attachments')
-          .insert(
-            attachmentDrafts.map((attachment: any) => ({
-              announcement_id: announcementId,
-              content_type: attachment.contentType,
-              created_by: actorUserId,
-              file_name: attachment.fileName,
-              size_bytes: attachment.sizeBytes,
-              storage_path: attachment.storagePath,
-              storage_provider: attachment.storageProvider,
-              ws_id: normalizedWsId,
-            }))
-          );
-        if (error) throw error;
-      }
-    ),
-    mapTopicAnnouncementRow: vi.fn((announcement: any) => ({
-      ...announcement,
-      attachments: (announcement.attachments ?? []).map((attachment: any) => ({
-        contentType: attachment.content_type,
-        createdAt: attachment.created_at,
-        fileName: attachment.file_name,
-        id: attachment.id,
-        sizeBytes: Number(attachment.size_bytes),
-        storagePath: attachment.storage_path,
-        storageProvider: attachment.storage_provider,
+vi.mock(
+  '@/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/shared',
+  () => {
+    return {
+      attachTopicAnnouncementGroups: vi.fn(async (_sbAdmin, rows) => rows),
+      insertTopicAnnouncementAttachmentDrafts: vi.fn(
+        async ({
+          actorUserId,
+          announcementId,
+          attachmentDrafts,
+          normalizedWsId,
+          sbAdmin,
+        }: any) => {
+          if (attachmentDrafts.length === 0) return;
+          const { error } = await sbAdmin
+            .from('topic_announcement_attachments')
+            .insert(
+              attachmentDrafts.map((attachment: any) => ({
+                announcement_id: announcementId,
+                content_type: attachment.contentType,
+                created_by: actorUserId,
+                file_name: attachment.fileName,
+                size_bytes: attachment.sizeBytes,
+                storage_path: attachment.storagePath,
+                storage_provider: attachment.storageProvider,
+                ws_id: normalizedWsId,
+              }))
+            );
+          if (error) throw error;
+        }
+      ),
+      mapTopicAnnouncementRow: vi.fn((announcement: any) => ({
+        ...announcement,
+        attachments: (announcement.attachments ?? []).map(
+          (attachment: any) => ({
+            contentType: attachment.content_type,
+            createdAt: attachment.created_at,
+            fileName: attachment.file_name,
+            id: attachment.id,
+            sizeBytes: Number(attachment.size_bytes),
+            storagePath: attachment.storage_path,
+            storageProvider: attachment.storage_provider,
+          })
+        ),
       })),
-    })),
-    resolveTopicAnnouncementsAccess: mocks.resolveTopicAnnouncementsAccess,
-    serializeTopicAnnouncementContacts: vi.fn(async (_sbAdmin, contacts) =>
-      contacts.map((contact: any) => ({
-        ...contact,
-        createdAt: contact.created_at,
-        workspaceUserId: contact.workspace_user_id,
-      }))
-    ),
-    TopicAnnouncementListQuerySchema: {
-      safeParse: vi.fn((input: Record<string, string>) => ({
-        data: {
-          contactId: input.contactId,
-          page: input.page ? Number(input.page) : 1,
-          pageSize: input.pageSize ? Number(input.pageSize) : 20,
-          q: input.q ?? '',
-          status: input.status ?? 'active',
-        },
-        success: true,
-      })),
-    },
-    TopicAnnouncementPayloadSchema: {
-      safeParse: vi.fn((input: any) => ({
-        data: {
-          attachmentDrafts: input.attachmentDrafts ?? [],
-          body: input.body ?? '',
-          classLabel: input.classLabel ?? null,
-          contactIds: input.contactIds,
-          dayLabel: input.dayLabel ?? null,
-          endTime: input.endTime ?? null,
-          groupId: input.groupId ?? null,
-          place: input.place ?? null,
-          room: input.room ?? null,
-          sessionDate: input.sessionDate ?? null,
-          sourceType: input.sourceType ?? 'manual',
-          startTime: input.startTime ?? null,
-          status: input.status,
-          title: input.title,
-          topic: input.topic,
-        },
-        success: true,
-      })),
-    },
-    topicAnnouncementAttachmentValidationResponse: vi.fn((result: any) =>
-      Response.json({ message: result.message }, { status: result.status })
-    ),
-    validateTopicAnnouncementAttachmentDraftObjects:
-      mocks.validateTopicAnnouncementAttachmentDraftObjects,
-    validateTopicAnnouncementGroupId: vi.fn(async () => null),
-  };
-});
+      resolveTopicAnnouncementsAccess: mocks.resolveTopicAnnouncementsAccess,
+      serializeTopicAnnouncementContacts: vi.fn(async (_sbAdmin, contacts) =>
+        contacts.map((contact: any) => ({
+          ...contact,
+          createdAt: contact.created_at,
+          workspaceUserId: contact.workspace_user_id,
+        }))
+      ),
+      TopicAnnouncementListQuerySchema: {
+        safeParse: vi.fn((input: Record<string, string>) => ({
+          data: {
+            contactId: input.contactId,
+            page: input.page ? Number(input.page) : 1,
+            pageSize: input.pageSize ? Number(input.pageSize) : 20,
+            q: input.q ?? '',
+            status: input.status ?? 'active',
+          },
+          success: true,
+        })),
+      },
+      TopicAnnouncementPayloadSchema: {
+        safeParse: vi.fn((input: any) => ({
+          data: {
+            attachmentDrafts: input.attachmentDrafts ?? [],
+            body: input.body ?? '',
+            classLabel: input.classLabel ?? null,
+            contactIds: input.contactIds,
+            dayLabel: input.dayLabel ?? null,
+            endTime: input.endTime ?? null,
+            groupId: input.groupId ?? null,
+            place: input.place ?? null,
+            room: input.room ?? null,
+            sessionDate: input.sessionDate ?? null,
+            sourceType: input.sourceType ?? 'manual',
+            startTime: input.startTime ?? null,
+            status: input.status,
+            title: input.title,
+            topic: input.topic,
+          },
+          success: true,
+        })),
+      },
+      topicAnnouncementAttachmentValidationResponse: vi.fn((result: any) =>
+        Response.json({ message: result.message }, { status: result.status })
+      ),
+      validateTopicAnnouncementAttachmentDraftObjects:
+        mocks.validateTopicAnnouncementAttachmentDraftObjects,
+      validateTopicAnnouncementGroupId: vi.fn(async () => null),
+    };
+  }
+);
 
 function createListQueryChain() {
   const chain: {
@@ -405,3 +410,18 @@ describe('topic announcements POST route', () => {
     expect(insertAnnouncement).not.toHaveBeenCalled();
   });
 });
+
+vi.mock(
+  '@tuturuuu/users-core/routes/topic-announcements/read-helpers',
+  async () =>
+    await vi.importMock(
+      '@/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/shared'
+    )
+);
+vi.mock(
+  '@tuturuuu/users-core/routes/topic-announcements/schemas',
+  async () =>
+    await vi.importMock(
+      '@/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/shared'
+    )
+);

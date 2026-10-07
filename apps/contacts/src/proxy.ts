@@ -186,6 +186,17 @@ function getSharedUserProfileRedirect(request: NextRequest) {
   );
 }
 
+function shouldForwardTopicAnnouncementMutation(
+  pathname: string,
+  method: string
+) {
+  return (
+    /^\/api\/v1\/workspaces\/[^/]+\/topic-announcements\/?$/u.test(pathname) &&
+    method !== 'GET' &&
+    method !== 'HEAD'
+  );
+}
+
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (request.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = request.nextUrl.pathname.startsWith(
@@ -216,6 +227,28 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
         propagateAuthCookies(appSessionRefresh.response, guardResponse);
       }
       return preserveMfaRecoveryCookies(request, guardResponse);
+    }
+
+    // The collection GET is local. Preserve the existing Web mutation route;
+    // Next fallback rewrites do not run for an unsupported local route method.
+    if (
+      shouldForwardTopicAnnouncementMutation(
+        request.nextUrl.pathname,
+        request.method
+      )
+    ) {
+      const response = NextResponse.rewrite(
+        new URL(
+          `${request.nextUrl.pathname}${request.nextUrl.search}`,
+          WEB_APP_URL
+        )
+      );
+      if (appSessionRefresh)
+        propagateAuthCookies(appSessionRefresh.response, response);
+      return preserveMfaRecoveryCookies(
+        request,
+        clearSupabaseAuthCookies(request, response)
+      );
     }
 
     return (
