@@ -2894,6 +2894,16 @@
           "note": "Rust returns None for PUT, preserving live Next.js mutation ownership. Canonical locked revision/receipt/bounded explicit approval closure remains pending."
         }
       }
+    },
+    "api:/api/v1/workspaces/:wsId/settings/approvals/pending-summary:apps/web/src/app/api/v1/workspaces/[wsId]/settings/approvals/pending-summary/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "First-class Web GET/HEAD retains existing admission and daily behavior; periodic report reads require both subject and group workspace. Existing Rust GET source kept faithful; no traffic cutover or canonical approval activation."
+    },
+    "api:/api/v1/workspaces/:wsId/users/approvals/logs:apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/logs/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "First-class Web GET/HEAD retains existing admission and daily behavior; periodic report reads require both subject and group workspace. Existing Rust GET source kept faithful; no traffic cutover or canonical approval activation."
     }
   }
 }

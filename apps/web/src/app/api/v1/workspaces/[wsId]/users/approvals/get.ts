@@ -64,7 +64,8 @@ export async function GET(request: Request, { params }: Params) {
           count: 'exact',
           head: true,
         })
-        .eq('user_ws_id', wsId);
+        .eq('user_ws_id', wsId)
+        .eq('group_ws_id', wsId);
 
       if (groupId) countQuery = countQuery.eq('group_id', groupId);
       if (userId) countQuery = countQuery.eq('user_id', userId);
@@ -84,7 +85,8 @@ export async function GET(request: Request, { params }: Params) {
         .select(
           'id, title, content, feedback, score, scores, created_at, updated_by, user_id, group_id, creator_id, report_approval_status, rejection_reason, approved_at, rejected_at, modifier_display_name, modifier_full_name, modifier_email, creator_full_name, user_full_name, group_name'
         )
-        .eq('user_ws_id', wsId);
+        .eq('user_ws_id', wsId)
+        .eq('group_ws_id', wsId);
 
       if (groupId) dataQuery = dataQuery.eq('group_id', groupId);
       if (userId) dataQuery = dataQuery.eq('user_id', userId);

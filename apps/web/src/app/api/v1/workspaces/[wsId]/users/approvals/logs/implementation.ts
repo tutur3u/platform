@@ -68,6 +68,7 @@ export async function GET(request: Request, { params }: Params) {
         )
         .eq('report_id', reportId)
         .eq('user_ws_id', wsId)
+        .eq('group_ws_id', wsId)
         .eq('report_approval_status', 'APPROVED')
         .order('created_at', { ascending: false })
         .limit(1)
