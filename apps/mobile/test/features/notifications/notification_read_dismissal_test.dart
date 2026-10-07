@@ -329,6 +329,53 @@ void main() {
     expect(nativeCalls.any((c) => c.method == 'dismissSnapshot'), isFalse);
   });
 
+  for (final bulk in [false, true]) {
+    for (final badgeFailure in [false, true]) {
+      test('accepted read warns on normal refresh Exception '
+          '$bulk/$badgeFailure', () async {
+        if (badgeFailure) {
+          when(
+            () => repository.fetchUnreadCount(wsId: any(named: 'wsId')),
+          ).thenThrow(Exception('Synthetic refresh unavailable'));
+        } else {
+          when(
+            () => repository.fetchNotifications(
+              wsId: any(named: 'wsId'),
+              unreadOnly: any(named: 'unreadOnly'),
+              readOnly: any(named: 'readOnly'),
+              limit: any(named: 'limit'),
+              offset: any(named: 'offset'),
+            ),
+          ).thenThrow(Exception('Synthetic feed unavailable'));
+        }
+        final result = bulk
+            ? await cubit.markAllRead()
+            : await cubit.toggleRead(item());
+        expect(result, NotificationReadResult.acceptedRefreshUnavailable);
+        expect(nativeCalls.map((call) => call.method), [
+          'snapshot',
+          'dismissSnapshot',
+        ]);
+        if (bulk) {
+          verify(() => repository.markAllRead()).called(1);
+        } else {
+          verify(() => repository.markRead(id: id, read: true)).called(1);
+        }
+      });
+    }
+  }
+
+  test(
+    'public badge refresh remains nonthrowing on normal Exception',
+    () async {
+      when(
+        () => repository.fetchUnreadCount(wsId: any(named: 'wsId')),
+      ).thenThrow(Exception('Synthetic background refresh unavailable'));
+      await cubit.refreshUnreadCount();
+      expect(cubit.state.isUnreadCountLoading, isFalse);
+    },
+  );
+
   test(
     'rejected read discards captured token without removing OS items',
     () async {

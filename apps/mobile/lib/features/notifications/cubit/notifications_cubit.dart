@@ -33,7 +33,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
 
   bool _scopeInitialized = false;
   int _scopeEpoch = 0;
-  Future<void>? _unreadRefresh;
+  Future<bool>? _unreadRefresh;
 
   bool _isCurrentScope(int epoch, String? userId) =>
       !isClosed && epoch == _scopeEpoch && userId == _currentUserId();
@@ -121,22 +121,25 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     await refreshUnreadCount();
   }
 
-  Future<void> refreshUnreadCount() {
-    if (isClosed) return Future<void>.value();
+  Future<void> refreshUnreadCount() => _refreshUnreadCountResult();
+
+  Future<bool> _refreshUnreadCountResult() {
+    if (isClosed) return Future<bool>.value(false);
     _syncActorScope();
     final running = _unreadRefresh;
     if (running != null) return running;
 
-    final completion = Completer<void>();
+    final completion = Completer<bool>();
     _unreadRefresh = completion.future;
     unawaited(_fetchUnreadCount(completion));
     return completion.future;
   }
 
-  Future<void> _fetchUnreadCount(Completer<void> completion) async {
+  Future<void> _fetchUnreadCount(Completer<bool> completion) async {
     final epoch = _scopeEpoch;
     final userId = _currentUserId();
     final workspaceId = state.scopeWorkspaceId;
+    var succeeded = false;
     emit(state.copyWith(isUnreadCountLoading: true));
     try {
       final unreadCount = await _notificationsRepository.fetchUnreadCount(
@@ -149,19 +152,27 @@ class NotificationsCubit extends Cubit<NotificationsState> {
       );
       // A badge refresh must not serialize the entire feed when unchanged.
       if (changed) await _persistCurrentState();
+      succeeded = _isCurrentScope(epoch, userId);
     } on Exception {
       if (_isCurrentScope(epoch, userId)) {
         emit(state.copyWith(isUnreadCountLoading: false));
       }
     } finally {
       if (identical(_unreadRefresh, completion.future)) _unreadRefresh = null;
-      completion.complete();
+      completion.complete(succeeded);
     }
   }
 
   Future<void> loadTab(NotificationsTab tab, {bool refresh = false}) async {
+    await _loadTabResult(tab, refresh: refresh);
+  }
+
+  Future<bool> _loadTabResult(
+    NotificationsTab tab, {
+    bool refresh = false,
+  }) async {
     if (isClosed) {
-      return;
+      return false;
     }
 
     final epoch = _scopeEpoch;
@@ -169,10 +180,10 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     final workspaceId = state.scopeWorkspaceId;
     final feed = state.feedFor(tab);
     if (!refresh && feed.hasLoadedOnce) {
-      return;
+      return true;
     }
     if (feed.status == NotificationFeedStatus.loading) {
-      return;
+      return false;
     }
 
     emit(
@@ -192,7 +203,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         limit: feed.pageSize,
       );
       if (!_isCurrentScope(epoch, userId)) {
-        return;
+        return false;
       }
       emit(
         state.copyWith(
@@ -206,9 +217,10 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         ),
       );
       await _persistCurrentState();
+      return _isCurrentScope(epoch, userId);
     } on Exception catch (error) {
       if (!_isCurrentScope(epoch, userId)) {
-        return;
+        return false;
       }
       emit(
         state.copyWith(
@@ -222,6 +234,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         ),
       );
     }
+    return false;
   }
 
   Future<void> loadMore(NotificationsTab tab) async {
@@ -343,12 +356,17 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         return result;
       }
       try {
-        await _refreshLoadedTabs(
+        final refreshed = await _refreshLoadedTabs(
           preferredTab: notification.isUnread
               ? NotificationsTab.inbox
               : NotificationsTab.archive,
           isCurrent: current,
         );
+        if (!refreshed) {
+          return current()
+              ? NotificationReadResult.acceptedRefreshUnavailable
+              : NotificationReadResult.acceptedScopeChanged;
+        }
       } on Object {
         return current()
             ? NotificationReadResult.acceptedRefreshUnavailable
@@ -389,10 +407,15 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         return result;
       }
       try {
-        await _refreshLoadedTabs(
+        final refreshed = await _refreshLoadedTabs(
           preferredTab: NotificationsTab.inbox,
           isCurrent: current,
         );
+        if (!refreshed) {
+          return current()
+              ? NotificationReadResult.acceptedRefreshUnavailable
+              : NotificationReadResult.acceptedScopeChanged;
+        }
       } on Object {
         return current()
             ? NotificationReadResult.acceptedRefreshUnavailable
@@ -470,29 +493,35 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     }
   }
 
-  Future<void> _refreshLoadedTabs({
+  Future<bool> _refreshLoadedTabs({
     NotificationsTab? preferredTab,
     bool Function()? isCurrent,
   }) async {
     // A completed mutation needs a count requested after the write.
     await _unreadRefresh;
-    if (isCurrent?.call() == false) return;
-    await refreshUnreadCount();
-    if (isClosed || isCurrent?.call() == false) return;
+    if (isCurrent?.call() == false) return false;
+    var succeeded = await _refreshUnreadCountResult();
+    if (isClosed || isCurrent?.call() == false) return false;
 
     final inboxLoaded = state.inbox.hasLoadedOnce;
     final archiveLoaded = state.archive.hasLoadedOnce;
 
     if (inboxLoaded) {
-      await loadTab(NotificationsTab.inbox, refresh: true);
+      succeeded =
+          await _loadTabResult(NotificationsTab.inbox, refresh: true) &&
+          succeeded;
     }
-    if (isCurrent?.call() == false) return;
+    if (isCurrent?.call() == false) return false;
     if (archiveLoaded) {
-      await loadTab(NotificationsTab.archive, refresh: true);
+      succeeded =
+          await _loadTabResult(NotificationsTab.archive, refresh: true) &&
+          succeeded;
     }
     if (!inboxLoaded && !archiveLoaded && preferredTab != null) {
-      await loadTab(preferredTab, refresh: true);
+      succeeded =
+          await _loadTabResult(preferredTab, refresh: true) && succeeded;
     }
+    return succeeded;
   }
 
   Future<void> _persistCurrentState() async {

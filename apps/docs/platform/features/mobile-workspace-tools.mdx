@@ -1698,7 +1698,11 @@ cancelled. Legacy deliveries without trusted identity remain untouched.
 A repository read may be a durable offline intent, rather than a confirmed server
 write. Cleanup failure preserves that acceptance and shows a localized warning;
 it does not retry the read. Failed reads discard their snapshot without removing
-OS items. A later inbox refresh failure similarly preserves accepted read state.
+OS items. A later inbox or badge refresh failure similarly preserves accepted
+read state and shows the localized refresh warning. Mutation refreshes consume
+explicit per-operation success receipts, including ordinary transport exceptions;
+background badge/feed helpers retain their nonthrowing behavior and badge calls
+still share one in-flight request.
 The platform APIs still cannot atomically compare and delete an OS item; the
 previously documented last-moment replacement race remains.
 
