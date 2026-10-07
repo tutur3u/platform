@@ -1,4 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  recoveryEvidence,
+  recoveryReport,
+  recoveryRun,
+  recoverySchedule,
+  recoveryUser,
+} from './processor-recovery.fixture';
 
 const loadEmailPreview = vi.hoisted(() => vi.fn());
 vi.mock('@tuturuuu/users-core/reports/email-preview', () => ({
@@ -35,6 +42,7 @@ vi.mock('./context', () => ({
   loadScopedReportContext: async () => ({
     deterministicMetrics: {},
     previousReport: null,
+    humanFeedbackEvidence: recoveryEvidence,
   }),
 }));
 vi.mock('./generation', () => ({
@@ -568,42 +576,28 @@ describe('periodic report email delivery', () => {
 });
 
 describe('monthly AI generation recovery', () => {
-  const run = {
-    id: 'run-1',
-    attempt_count: 2,
-    cadence: 'monthly',
-    generation_mode: 'ai',
-    group_id: 'group-1',
-    period_start: '2026-08-01',
-    period_end: '2026-08-31',
-    schedule_id: 'schedule-1',
-    ws_id: 'ws-1',
-  };
+  const run = recoveryRun;
   function fixture(status: string, writeResults: Record<string, Result> = {}) {
     return createAdminClientStub(
       {
         user_report_schedules: {
-          data: { created_by: 'teacher-1', manager_instruction: '' },
+          data: recoverySchedule,
           error: null,
         },
         workspace_user_groups_users: {
-          data: [{ user_id: 'user-1' }],
+          data: [{ user_id: recoveryUser.id }],
           error: null,
         },
-        workspace_user_groups: { data: { name: 'Class' }, error: null },
+        workspace_user_groups: {
+          data: { name: 'Class', ws_id: run.ws_id },
+          error: null,
+        },
         workspace_users: {
-          data: [
-            {
-              id: 'user-1',
-              display_name: 'Learner',
-              full_name: null,
-              note: null,
-            },
-          ],
+          data: [recoveryUser],
           error: null,
         },
         external_user_monthly_reports: {
-          data: { id: 'report-1', generation_status: status },
+          data: { ...recoveryReport, generation_status: status },
           error: null,
         },
       },
