@@ -363,14 +363,10 @@ class NotificationsCubit extends Cubit<NotificationsState> {
           isCurrent: current,
         );
         if (!refreshed) {
-          return current()
-              ? NotificationReadResult.acceptedRefreshUnavailable
-              : NotificationReadResult.acceptedScopeChanged;
+          return _failedReadRefreshResult(result, current());
         }
       } on Object {
-        return current()
-            ? NotificationReadResult.acceptedRefreshUnavailable
-            : NotificationReadResult.acceptedScopeChanged;
+        return _failedReadRefreshResult(result, current());
       }
       return current() ? result : NotificationReadResult.acceptedScopeChanged;
     } finally {
@@ -379,6 +375,17 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         emit(state.copyWith(pendingIds: _sortedPendingIds(pending.toSet())));
       }
     }
+  }
+
+  NotificationReadResult _failedReadRefreshResult(
+    NotificationReadResult cleanupResult,
+    bool current,
+  ) {
+    if (!current) return NotificationReadResult.acceptedScopeChanged;
+    // The tray cleanup warning remains actionable even if the feed also fails.
+    return cleanupResult == NotificationReadResult.acceptedCleanupUnavailable
+        ? cleanupResult
+        : NotificationReadResult.acceptedRefreshUnavailable;
   }
 
   Future<NotificationReadResult> markAllRead() async {
@@ -412,14 +419,10 @@ class NotificationsCubit extends Cubit<NotificationsState> {
           isCurrent: current,
         );
         if (!refreshed) {
-          return current()
-              ? NotificationReadResult.acceptedRefreshUnavailable
-              : NotificationReadResult.acceptedScopeChanged;
+          return _failedReadRefreshResult(result, current());
         }
       } on Object {
-        return current()
-            ? NotificationReadResult.acceptedRefreshUnavailable
-            : NotificationReadResult.acceptedScopeChanged;
+        return _failedReadRefreshResult(result, current());
       }
       return current() ? result : NotificationReadResult.acceptedScopeChanged;
     } finally {

@@ -26,7 +26,7 @@ Future<NotificationReadResult> readWithDeliveredCleanup({
   bool current() => isCurrent() && bridge.isCurrentSession(session);
   DeliveredInboxSnapshot? snapshot;
   var cleanupUnavailable = false;
-  if (dismiss) {
+  if (dismiss && bridge.supportsCleanup) {
     try {
       snapshot = await bridge.snapshot(
         actor: actor,

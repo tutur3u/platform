@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -328,6 +329,88 @@ void main() {
     );
     expect(nativeCalls.any((c) => c.method == 'dismissSnapshot'), isFalse);
   });
+
+  for (final bulk in [false, true]) {
+    for (final snapshotFailure in [false, true]) {
+      test('cleanup warning survives normal refresh Exception '
+          '$bulk/$snapshotFailure', () async {
+        platformOverride = (call) async {
+          if (call.method == 'snapshot' && !snapshotFailure) {
+            return {'token': 'captured', 'count': 1};
+          }
+          throw PlatformException(code: 'synthetic-unavailable');
+        };
+        when(
+          () => repository.fetchUnreadCount(wsId: any(named: 'wsId')),
+        ).thenThrow(Exception('Synthetic refresh unavailable'));
+        expect(
+          bulk ? await cubit.markAllRead() : await cubit.toggleRead(item()),
+          NotificationReadResult.acceptedCleanupUnavailable,
+        );
+        if (bulk) {
+          verify(() => repository.markAllRead()).called(1);
+        } else {
+          verify(() => repository.markRead(id: id, read: true)).called(1);
+        }
+      });
+    }
+  }
+
+  for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {
+    test(
+      'supported platform $platform still warns when native bind fails',
+      () async {
+        debugDefaultTargetPlatformOverride = platform;
+        try {
+          platformOverride = (_) async => throw MissingPluginException();
+          expect(
+            await DeliveredInboxNotifications.instance.bindSession(actor),
+            isFalse,
+          );
+          nativeCalls.clear();
+          expect(
+            await cubit.markAllRead(),
+            NotificationReadResult.acceptedCleanupUnavailable,
+          );
+          verify(() => repository.markAllRead()).called(1);
+        } finally {
+          debugDefaultTargetPlatformOverride = null;
+        }
+      },
+    );
+  }
+
+  for (final platform in [
+    TargetPlatform.windows,
+    TargetPlatform.linux,
+    TargetPlatform.macOS,
+  ]) {
+    for (final bulk in [false, true]) {
+      test(
+        'unsupported platform $platform/$bulk accepts without cleanup warning',
+        () async {
+          debugDefaultTargetPlatformOverride = platform;
+          try {
+            platformOverride = (_) async => throw MissingPluginException();
+            await DeliveredInboxNotifications.instance.bindSession(actor);
+            nativeCalls.clear();
+            expect(
+              bulk ? await cubit.markAllRead() : await cubit.toggleRead(item()),
+              NotificationReadResult.accepted,
+            );
+            if (bulk) {
+              verify(() => repository.markAllRead()).called(1);
+            } else {
+              verify(() => repository.markRead(id: id, read: true)).called(1);
+            }
+            expect(nativeCalls, isEmpty);
+          } finally {
+            debugDefaultTargetPlatformOverride = null;
+          }
+        },
+      );
+    }
+  }
 
   for (final bulk in [false, true]) {
     for (final badgeFailure in [false, true]) {

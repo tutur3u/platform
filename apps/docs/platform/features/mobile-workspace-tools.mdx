@@ -1702,7 +1702,13 @@ OS items. A later inbox or badge refresh failure similarly preserves accepted
 read state and shows the localized refresh warning. Mutation refreshes consume
 explicit per-operation success receipts, including ordinary transport exceptions;
 background badge/feed helpers retain their nonthrowing behavior and badge calls
-still share one in-flight request.
+still share one in-flight request. When cleanup and refresh both fail, the tray
+cleanup warning takes precedence; the accepted read is never resubmitted.
+The delivered-only bridge is applicable to native Android and iOS. Web, Windows,
+Linux and macOS retain actor/session fencing but do not attempt this unregistered
+channel or show an unavailable-cleanup warning solely for its absence. Failed
+binding or a missing channel on Android/iOS still produces that warning. Web
+capability-policy tests are not browser compilation or OS runtime evidence.
 The platform APIs still cannot atomically compare and delete an OS item; the
 previously documented last-moment replacement race remains.
 
