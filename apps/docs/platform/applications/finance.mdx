@@ -515,3 +515,23 @@ instances, tied starts, tenant/date scope, late errors and budget failures. They
 are source evidence, not the original customer's deployed incident or a billing
 write. Invoice quantities, stock, historical coverage and schedule policy are
 unchanged.
+
+
+### Subscription context cache follows the verified account lifetime
+
+The shared subscription invoice context query uses its workspace, customer,
+selected groups and period together with the verified account and permanent
+account lifetime. Changing accounts or leaving and returning to the same account
+requires a new authorized context read. A pending response from an expired
+account lifetime cannot publish successful data for the new account lifetime.
+Without the verified account provider, the query does not admit requests.
+
+Fresh context is still reusable within the same account lifetime, and workspace
+invoice invalidation still refreshes it. Existing five-minute freshness and
+ten-minute garbage collection bounds remain. This rule covers this context
+query; other Finance caches are outside this change. The real hook, actor provider,
+API adapter/client and synthetic transport regressions in
+`subscription-context-actor.test.tsx` cover account switches, held success/error
+responses, account return, cache reuse, missing actor admission and invalidation.
+These tests do not prove the cause of the original customer incident or deployed
+customer invoice behavior.
