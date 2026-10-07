@@ -417,3 +417,18 @@ foreign/missing groups, own reports, pagination, counts, history and permission
 denials. These checks remain initial reads, not atomic review or permission
 certificates. Canonical approval and delivery closure are still required; no
 gate or email is enabled by this consistency rule.
+### Contacts periodic approval tenant admission
+
+Contacts requires both the report subject and its group to belong to the current
+workspace before single-entry approval or rejection. The existing batch selection
+uses the same two workspace filters, excluding an entry whose subject belongs to
+the workspace but whose group does not. Approval permission and the current actor
+link remain required. The dedicated `put-tenant-boundary.test.ts` covers single
+actions, mixed-tenant batches and permitted/denied controls.
+
+This is an initial query admission check, not an atomic review certificate. A
+later content or scope change can race the separate update. Observed revisions,
+explicit selected-batch intent, canonical receipts and locked permission/tenant
+validation remain required before enabling report emails. The independent Web
+legacy mutation path is not changed by this Contacts packet; its faithful parity
+move is a separate prerequisite. Daily-report behavior is unchanged here.

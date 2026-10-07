@@ -13,6 +13,7 @@ import 'package:mobile/features/notifications/data/archive_opened_notification.d
 import 'package:mobile/features/notifications/notification_display_copy.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/notifications/widgets/notification_destination.dart';
+import 'package:mobile/features/notifications/widgets/notification_read_feedback.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -144,7 +145,12 @@ class _NotificationsViewState extends State<NotificationsView> {
             isPending: state.isPending(notification.id),
             openLabel: _openActionLabel(context, notification),
             onToggleRead: () => unawaited(
-              context.read<NotificationsCubit>().toggleRead(notification),
+              performNotificationRead(
+                context,
+                context.read<NotificationsCubit>(),
+                () =>
+                    context.read<NotificationsCubit>().toggleRead(notification),
+              ),
             ),
             onAcceptInvite:
                 notification.type == 'workspace_invite' &&
@@ -306,17 +312,9 @@ class _NotificationsViewState extends State<NotificationsView> {
     };
   }
 
-  Future<void> _archiveAll(BuildContext context) async {
-    final notificationsCubit = context.read<NotificationsCubit>();
-    final archiveAllError = context.l10n.notificationsArchiveAllError;
-    try {
-      await notificationsCubit.markAllRead();
-    } on Exception {
-      if (!context.mounted) {
-        return;
-      }
-      _showToast(context, archiveAllError, destructive: true);
-    }
+  Future<void> _archiveAll(BuildContext context) {
+    final cubit = context.read<NotificationsCubit>();
+    return performNotificationRead(context, cubit, cubit.markAllRead);
   }
 
   Future<void> _acceptInvite(
