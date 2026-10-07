@@ -1210,7 +1210,7 @@
   "appLockDelayTitle": "Khóa sau khi rời ứng dụng",
   "appLockDisableReason": "Xác thực để tắt khóa ứng dụng.",
   "appLockEnableReason": "Xác thực để bật khóa ứng dụng.",
-  "appLockLockedDescription": "Dùng mã PIN thiết bị, vân tay hoặc Face ID để tiếp tục.",
+  "appLockLockedDescription": "Dùng sinh trắc học hoặc mật mã thiết bị trong lời nhắc của hệ thống để tiếp tục.",
   "appLockLockedTitle": "Tuturuuu đang bị khóa",
   "appLockProtectedDevice": "Được bảo vệ trên thiết bị này",
   "appLockSettingsDescription": "Yêu cầu Face ID, vân tay hoặc mã PIN thiết bị trước khi dùng ứng dụng.",

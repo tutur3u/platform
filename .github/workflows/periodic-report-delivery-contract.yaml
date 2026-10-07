@@ -1,0 +1,81 @@
+name: Periodic report delivery database contract
+on:
+  pull_request:
+    paths:
+      - 'apps/database/supabase/migrations/**'
+      - 'apps/database/supabase/tests/periodic-report-*.sql'
+      - 'packages/email-service/**'
+      - 'apps/web/src/lib/user-report-automation/**'
+      - 'tuturuuu.ci.ts'
+      - 'apps/database/scripts/verify-periodic-report-delivery-contract.mjs'
+      - 'apps/database/scripts/periodic-report-delivery-*.mjs'
+      - 'apps/database/scripts/periodic-report-delivery-types.ts'
+      - 'apps/database/scripts/time-tracker-control-concurrency.mjs'
+      - 'apps/database/scripts/run-supabase*.js'
+      - 'apps/database/scripts/programming-database-tap.mjs'
+      - '.github/workflows/periodic-report-delivery-contract.yaml'
+  push:
+    branches: [main, production]
+    paths:
+      - 'apps/database/supabase/**'
+      - 'packages/email-service/**'
+      - 'apps/web/src/lib/user-report-automation/**'
+      - 'apps/database/scripts/verify-periodic-report-delivery-contract.mjs'
+      - 'apps/database/scripts/periodic-report-delivery-*.mjs'
+      - 'apps/database/scripts/periodic-report-delivery-types.ts'
+      - 'apps/database/scripts/time-tracker-control-concurrency.mjs'
+      - 'apps/database/scripts/run-supabase*.js'
+      - 'apps/database/scripts/programming-database-tap.mjs'
+      - '.github/workflows/periodic-report-delivery-contract.yaml'
+      - 'tuturuuu.ci.ts'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')) && format('{0}-{1}-{2}', github.sha, github.event_name, github.run_id) || 'latest' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--') }}
+jobs:
+  check-ci:
+    permissions:
+      contents: read
+      deployments: read
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: periodic-report-delivery-contract.yaml
+  contract:
+    needs: check-ci
+    if: always() && needs.check-ci.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
+    steps:
+      - name: Require an enabled contract gate
+        env:
+          CONTRACT_ENABLED: ${{ needs.check-ci.outputs.should_run }}
+        run: test "$CONTRACT_ENABLED" = true
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Check bounded race and workflow wiring
+        run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/periodic-report-delivery-contract.test.mjs
+      - name: Apply complete schema, run strict pgTAP, generate actual schema types
+        run: node apps/database/scripts/verify-periodic-report-delivery-contract.mjs
+      - name: Strictly check actual generated periodic delivery types
+        run: bun x tsc --ignoreConfig --noEmit --strict --skipLibCheck --target esnext --module nodenext --moduleResolution nodenext apps/database/scripts/periodic-report-delivery-types.ts
+      - uses: actions/upload-artifact@v7
+        with:
+          name: periodic-report-delivery-types-${{ github.event.pull_request.head.sha || github.sha }}
+          path: packages/types/src/supabase.ts
+          if-no-files-found: error
+          retention-days: 3
