@@ -915,6 +915,14 @@ branch push supersession; Type Check manual attempts remain independent. Cancell
 successful validation or a valid duplicate skip. Resource-owning E2E and database
 workflows retain their own lifecycle policies.
 
+The duplicate-proof runner job is scheduled only for generated Release Please
+branch pushes. Ordinary feature, main, production and manual runs proceed directly
+from preflight to validation, avoiding three extra runner allocations and checkout/
+Node setup stages across Test, Coverage and Biome. A skipped proof job is not a
+validation receipt; downstream gates still require the actual checks.
+Regression coverage: `scripts/ci/generated-proof-scheduling.test.js` executes the
+real workflow conditions, including skipped/failed proof and successful reuse.
+
 Generated duplicate pushes can cleanly skip these three workflows' validation
 jobs only after `scripts/ci/check-completed-validation.js` proves a completed
 successful main or production push at the exact same SHA. It selects the newest
