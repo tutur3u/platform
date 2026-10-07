@@ -29,7 +29,11 @@ extension _ShellPageInteractions on _ShellPageState {
       return;
     }
     if (selected.selected && !selected.dropdown) {
-      _reselectPage(widget.matchedLocation);
+      if (selected.onReselect case final reset?) {
+        reset();
+      } else {
+        _reselectPage(widget.matchedLocation);
+      }
       return;
     }
     selected.onPressed?.call();

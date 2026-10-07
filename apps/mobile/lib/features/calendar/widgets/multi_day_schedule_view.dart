@@ -29,6 +29,7 @@ class MultiDayScheduleView extends StatefulWidget {
     required this.onSwipe,
     required this.visibleDayCount,
     super.key,
+    this.resetGeneration = 0,
     this.timelineZoom = 1,
     this.zoomScope,
     this.onTimelineZoomEnd,
@@ -36,6 +37,7 @@ class MultiDayScheduleView extends StatefulWidget {
     this.firstDayOfWeek = 0,
   });
 
+  final int resetGeneration;
   final double timelineZoom;
   final Object? zoomScope;
   final ValueChanged<double>? onTimelineZoomEnd;
@@ -100,6 +102,13 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
   @override
   void didUpdateWidget(covariant MultiDayScheduleView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.resetGeneration != widget.resetGeneration) {
+      _scrollSelection = null;
+      _resetDateWindow();
+      _scheduleDatePosition();
+      _didAutoScroll = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _autoScroll());
+    }
     if (oldWidget.selectedDate != widget.selectedDate) {
       final fromScroll = widget.selectedDate == _scrollSelection;
       _scrollSelection = null;
@@ -152,7 +161,7 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
   }
 
   void _autoScroll() {
-    if (_didAutoScroll || !_verticalController.hasClients) {
+    if (!mounted || _didAutoScroll || !_verticalController.hasClients) {
       return;
     }
 
@@ -174,6 +183,12 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
         : ((earliestEventHour ?? 8) - 1).clamp(0, 20);
     final targetOffset = targetHour * hourHeight;
 
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _verticalController.jumpTo(
+        targetOffset.clamp(0, _verticalController.position.maxScrollExtent),
+      );
+      return;
+    }
     unawaited(
       _verticalController.animateTo(
         targetOffset.clamp(0, _verticalController.position.maxScrollExtent),
