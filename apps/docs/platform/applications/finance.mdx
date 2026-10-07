@@ -619,6 +619,24 @@ regression evidence, not proof of the original customer incident or deployed
 invoice behavior.
 
 
+### Invoice history failures require explicit recovery
+
+The shared invoice-history accordion distinguishes failed reads from successful
+empty history. English and Vietnamese surfaces show a fixed accessible failure
+notice and Retry action without exposing transport diagnostics. Initial failure
+recovery rereads history; later-page recovery retries the failed page while
+retaining loaded rows. Pending recovery disables duplicate actions. Automatic
+scroll loading and queued disconnected observer callbacks do not retry failures.
+
+The query's account-lifetime admission, provider retry policy, pagination and
+workspace invalidation remain unchanged. This behavior covers the mounted history
+accordion, not other Finance queries or server authorization. Real mounted
+regressions in `invoice-history-error.test.tsx` cover initial 403/503 failures,
+genuine empty success, pending recovery, retained rows, page continuation and
+queued observer callbacks in both languages. These source tests do not establish
+the original customer incident or authenticated production behavior.
+
+
 ### Invoice history keeps rows with an unrenderable timestamp
 
 The shared invoice-history accordion parses each nonempty creation timestamp once

@@ -36,6 +36,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
       .from('external_user_monthly_reports_workspace_view')
       .select('id', { count: 'exact', head: true })
       .eq('user_ws_id', permissions.wsId)
+      .eq('group_ws_id', permissions.wsId)
       .eq('report_approval_status', 'PENDING'),
     privateDb
       .from('user_group_post_checks')

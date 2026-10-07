@@ -1678,6 +1678,34 @@ admission. Already dispatched transport writes cannot be undone by this boundary
 `push_service_session_lifetime_test.dart` exercises actual service methods and the
 actual registration helper with injected platform/token/device transport.
 
+### Calendar viewport and adjacent timed-card geometry
+
+Mobile Day, Three-day and Week timelines keep isolated back-to-back events at
+full available width. Half-open timestamp components identify genuine overlap;
+an isolated card's readable minimum is capped at the next disjoint start, and
+paint and column assignment use that same extent. Tiny capped cards clip their
+visual content, retain full title/time button semantics and do not extend their
+hit area into the next event. Genuine simultaneous/transitive overlap clusters
+retain readable minimum heights and physical conflict columns; a timestamp-
+disjoint successor can still share columns with that readable cluster.
+
+The expanded all-day bar reserves rows only for spans intersecting the current
+viewport using the same four-pixel chip inset as painting, including partially
+visible chips. An inset-only edge cannot reserve rows. Buffered offscreen events cannot
+reserve rows or expose an expand toggle. A zero-row strip keeps its horizontal
+controller attached while traversing the continuous date window. Stable event
+keys and label clamps remain. Before controller attachment, sizing and chip
+painting use the same selected-date offset. Horizontal pixel scrolling rebuilds
+only the all-day strip, rather than the buffered timed columns; actual date-window
+recenter/reset still updates the parent and coordinated positions. User week-start,
+date reselect and data scope are unchanged.
+
+Rendered regressions cover viewport growth/shrink/empty states, offscreen async
+updates without first-column height shifts, initial attachment and inset-only
+edges, unchanged timed-column model reads on pixel scroll, scaled/fractional/short overlap,
+back-to-back card widths and distinct tiny-card taps/accessibility. Device
+TestFlight0.23.4's reported flicker is not confirmed fixed by these widget tests;
+exact CI and recorded version/build/runtime verification remain required.
 ### Reading inbox notifications and the system tray
 
 Mobile reads capture a bounded snapshot of actual delivered notifications before
