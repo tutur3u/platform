@@ -32,7 +32,10 @@ WorkspaceState _workspace(String id) => WorkspaceState(
 );
 
 class _SettingsHarness {
-  _SettingsHarness({String initial = Routes.settings}) {
+  _SettingsHarness({
+    String initial = Routes.settings,
+    GoRouterWidgetBuilder? settingsBuilder,
+  }) {
     whenListen(auth, accounts.stream, initialState: _account('user'));
     whenListen(workspaces, scopes.stream, initialState: _workspace('ws'));
     whenListen(
@@ -89,8 +92,9 @@ class _SettingsHarness {
           routes: [
             GoRoute(
               path: Routes.settings,
-              builder: (_, _) =>
-                  SettingsPage(permissionsRepository: permissions),
+              builder:
+                  settingsBuilder ??
+                  (_, _) => SettingsPage(permissionsRepository: permissions),
             ),
             GoRoute(
               path: Routes.settingsPreferences,
