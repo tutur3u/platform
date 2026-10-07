@@ -42,8 +42,11 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: vi.fn(),
-  getSecret: vi.fn(),
-  getSecrets: vi.fn(),
+  getSecret: (name: string, secrets: Array<{ name: string }>) =>
+    secrets.find((secret) => secret.name === name),
+  getSecrets: async () => [
+    { name: 'ENABLE_TOPIC_ANNOUNCEMENTS', value: 'true' },
+  ],
   normalizeWorkspaceId: vi.fn(),
 }));
 
@@ -278,6 +281,8 @@ describe('topic announcement email helpers', () => {
       topic: 'Practice speaking about weekend plans.',
     };
     const contact = {
+      archived: false,
+      ws_id: 'workspace-1',
       email: 'teacher@example.com',
       id: 'contact-1',
     };
@@ -411,6 +416,8 @@ describe('topic announcement email helpers', () => {
       topic: 'Practice speaking about weekend plans.',
     };
     const contact = {
+      archived: false,
+      ws_id: 'workspace-1',
       email: 'teacher@example.com',
       id: 'contact-1',
     };

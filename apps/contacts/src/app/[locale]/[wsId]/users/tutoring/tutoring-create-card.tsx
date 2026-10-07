@@ -18,6 +18,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { TutoringCreateSlots } from './tutoring-create-slots';
+import { TutoringDraftChoices } from './tutoring-draft-choices';
 import { addDaysToIsoDate, toIsoDate } from './tutoring-filters';
 import { WorkspacePersonPicker } from './tutoring-people-picker';
 import {
@@ -26,6 +27,7 @@ import {
   getDisplayName,
   type TutoringFormValues,
 } from './tutoring-types';
+import { useTutoringHandoff } from './use-tutoring-handoff';
 
 const REASON_TYPES: TutoringReasonType[] = [
   'ABSENT_RECOVERY',
@@ -58,25 +60,36 @@ export function TutoringCreateCard({
   const missedDate = form.missedClassDate ?? '';
   const [scheduleMessage, setScheduleMessage] = useState('');
   const today = toIsoDate(new Date());
+  const scopeLease = useTutoringHandoff(wsId, true);
+  const scheduleScope = useMemo(
+    () => ({ scope: scopeLease.scope, id: crypto.randomUUID() }),
+    [scopeLease.scope]
+  ).id;
   const classSchedule = useQuery({
-    enabled: Boolean(
-      form.groupId &&
-        (form.reasonType === 'WEAK_SUPPORT' ||
-          (form.reasonType === 'ABSENT_RECOVERY' && missedDate))
-    ),
+    enabled: Boolean(scopeLease.scope.actor && form.groupId),
     queryKey: [
       'tutoring-class-schedule',
       wsId,
       form.groupId,
+      'with-missing',
+      scopeLease.scope.actor?.actorId,
+      scheduleScope,
       today,
       policy.schedulingHorizonDays,
     ],
-    queryFn: () =>
-      listWorkspaceUserGroupSessions(wsId, {
+    queryFn: async () => {
+      const current = scopeLease.begin();
+      if (!current()) throw new Error('Scope expired');
+      const result = await listWorkspaceUserGroupSessions(wsId, {
         from: today,
         groupId: form.groupId,
+        includeMissing: true,
         to: addDaysToIsoDate(today, policy.schedulingHorizonDays),
-      }),
+      });
+      if (!current()) throw new Error('Scope expired');
+      return result;
+    },
+    gcTime: 0,
     staleTime: 5 * 60_000,
   });
 
@@ -298,7 +311,11 @@ export function TutoringCreateCard({
                     : 'separate'
                 );
                 if (suggestions.length !== form.sessionSlots.length) {
-                  setScheduleMessage(t('suggestion_unavailable'));
+                  setScheduleMessage(
+                    t('suggestion_unavailable', {
+                      days: policy.schedulingHorizonDays,
+                    })
+                  );
                   return;
                 }
                 onChange({
@@ -339,6 +356,19 @@ export function TutoringCreateCard({
           ) : null}
         </div>
       ) : null}
+
+      <TutoringDraftChoices
+        wsId={wsId}
+        form={form}
+        policy={policy}
+        today={today}
+        schedule={classSchedule.data?.data ?? []}
+        missingCount={classSchedule.data?.missing?.length ?? 0}
+        scheduleLoading={classSchedule.isFetching}
+        scheduleError={classSchedule.isError}
+        onRetrySchedule={() => void classSchedule.refetch()}
+        onChange={onChange}
+      />
 
       <TutoringCreateSlots
         conflictingIndexes={conflictingIndexes}
