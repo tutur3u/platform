@@ -1744,7 +1744,7 @@
     "api:/api/v1/workspaces/:wsId/users/reports/:reportId:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Report edit and delete return 409 while the delivery snapshot is locked by an active worker. First-class Next.js route; Rust parity pending."
+      "note": "Ordinary draft PUT binds the original report/user/group tuple and requires exactly one matching returned identity; missing or malformed acknowledgements return 409, and query errors retain existing error handling. Explicit approve/reject behavior is unchanged. Report edit and delete return 409 while the delivery snapshot is locked by an active worker. First-class Next.js route; Rust parity pending."
     },
     "api:/api/v1/workspaces/:wsId/users/reports/schedules:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/schedules/route.ts": {
       "status": "legacy-next",
