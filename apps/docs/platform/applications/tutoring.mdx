@@ -360,3 +360,41 @@ source boundary. This is pure source evidence, not persisted availability
 or production scheduling proof. API/schema/authenticated editor, atomic revision
 storage, staff-default/teacher-role permissions, outside-hours exceptions and
 planner consumption remain separate reviewed packets.
+
+
+### Selected-absence identity foundation (unwired)
+
+The additive foundation is service-only and has no Contacts/API activation. Existing
+historical sessions remain unlinked and use the chronological fallback above; no
+migration guesses which absence an old make-up covered. The selected date in the
+current form is still suggestion context, not proof of saved attribution.
+
+The new contract identifies an absence by its attendance UUID, including separate
+class occurrences on the same date. Each linked make-up slot requires a distinct
+eligible source UUID. PENDING reserves one source; DONE permanently credits it.
+Cancel, no-show, or a pending reason change releases the reservation while retaining
+its original identity and history. Reactivation uses revision CAS and must reclaim
+the same eligible source; another reservation causes a conflict. Allowed deletion
+retains attribution; DONE credit cannot be released by deletion or a reason/status
+edit. Ordinary content and parent-message metadata edits preserve credit identity. Linked
+date/time/duration/teacher and creation actor/timestamp rewrites require an exact
+canonical permit. Direct schedule edits are rejected until a future validated PATCH
+operation exists, including moving a make-up before its source absence. No client is wired to these
+operations in this foundation packet.
+
+Correcting active source attendance to PRESENT requires an explicit staff-managed
+resolution. Silent correction or standalone deletion is rejected. A credited source
+keeps its history after explicit resolution. Existing workspace/group/student or
+membership teardown uses narrowly scoped FK cleanup; immutable original IDs/date
+remain available for retained records. No generic trigger-depth or caller-writable
+session flag authorizes a protected write.
+
+Only a verified backend actor may call the canonical service-only operations, which
+also check current MEMBER membership and the existing tutoring permission. Private,
+ungranted permits exist only during an exact transaction/session/revision/mutation;
+success removes them and failure rolls them back. Linked status/reason/delete writes
+outside that boundary are rejected. Full historical schema replay, strict pgTAP,
+two-connection claim-versus-correction/replay races, and generated types must pass
+on the exact head before foundation merge. Fixtures and source checks are not live
+customer proof. Queue/API/UI integration and selected-card-to-transport regression
+are separate dependent packets; historical customer data is not repaired here.
