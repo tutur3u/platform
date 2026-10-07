@@ -1,7 +1,7 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET LOCAL search_path = public, extensions;
-SELECT plan(12);
+SELECT plan(15);
 SELECT set_config('request.jwt.claims', '{"role":"service_role"}', true);
 INSERT INTO public.users(id) VALUES ('73007000-0000-4000-8000-000000000002');
 INSERT INTO public.workspaces(id, name, personal, creator_id) VALUES ('73007000-0000-4000-8000-000000000001', 'Storage analytics cache test', false, '73007000-0000-4000-8000-000000000002');
@@ -29,6 +29,11 @@ INSERT INTO storage.objects(bucket_id, name, metadata) VALUES ('workspaces', '73
 SELECT is((public.get_external_project_storage_analytics('73007000-0000-4000-8000-000000000001', 'exocorpse')->>'totalSize')::bigint, 50::bigint, 'direct uploads invalidate cached totals');
 UPDATE private.external_project_storage_analytics_cache SET computed_at=now()-interval '6 minutes', payload='{"totalSize":999}' WHERE ws_id='73007000-0000-4000-8000-000000000001' AND adapter='exocorpse';
 SELECT is((public.get_external_project_storage_analytics('73007000-0000-4000-8000-000000000001', 'exocorpse')->>'totalSize')::bigint, 50::bigint, 'expired snapshots are recalculated');
+-- Legacy non-UUID prefixes must not make the AFTER trigger cast fail or evict UUID caches.
+CREATE TEMP TABLE before_legacy_mutation AS SELECT computed_at FROM private.external_project_storage_analytics_cache WHERE ws_id='73007000-0000-4000-8000-000000000001' AND adapter='exocorpse';
+SELECT lives_ok($$INSERT INTO storage.objects(bucket_id, name, metadata) VALUES ('workspaces', 'legacy-cache-test/external-projects/exocorpse/a.png', '{"size":1}')$$, 'legacy non-UUID insertion does not fail invalidation');
+SELECT lives_ok($$DELETE FROM storage.objects WHERE bucket_id='workspaces' AND name='legacy-cache-test/external-projects/exocorpse/a.png'$$, 'legacy non-UUID deletion does not fail invalidation');
+SELECT is((SELECT computed_at FROM private.external_project_storage_analytics_cache WHERE ws_id='73007000-0000-4000-8000-000000000001' AND adapter='exocorpse'), (SELECT computed_at FROM before_legacy_mutation), 'legacy prefix mutations preserve unrelated UUID cache');
 SELECT ok(NOT has_function_privilege('authenticated', 'public.get_external_project_storage_analytics(uuid,text)', 'EXECUTE'), 'authenticated clients cannot bypass project access checks');
 SELECT ok(NOT has_table_privilege('anon', 'private.external_project_storage_analytics_cache', 'SELECT'), 'cache is private');
 SELECT set_config('request.jwt.claims', '{"role":"authenticated"}', true);

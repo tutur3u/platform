@@ -92,12 +92,7 @@ fn cache_response(
     if !cached.valid() {
         return Err(());
     }
-    let percentage = if quota <= 0 {
-        0.0
-    } else {
-        (((cached.total_size / quota as f64 * 100.0 + f64::EPSILON) * 100.0).round() / 100.0)
-            .min(100.0)
-    };
+    let percentage = super::compute_usage_percentage(cached.total_size, quota as f64);
     let mut result = serde_json::to_value(cached).map_err(|_| ())?;
     let object = result.as_object_mut().ok_or(())?;
     object.insert("storageLimit".to_owned(), json!(quota));

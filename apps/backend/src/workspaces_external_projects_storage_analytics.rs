@@ -403,7 +403,7 @@ async fn analytics_response(
         }
     }
 
-    let usage_percentage = compute_usage_percentage(total_size, storage_limit);
+    let usage_percentage = compute_usage_percentage(total_size as f64, storage_limit as f64);
 
     Some(no_store_response(json_response(
         200,
@@ -437,11 +437,11 @@ fn file_name(path: &str) -> String {
 ///   storageLimit > 0
 ///     ? Math.min(100, Math.round(((totalSize/storageLimit*100) + EPSILON)*100)/100)
 ///     : 0
-fn compute_usage_percentage(total_size: i64, storage_limit: i64) -> f64 {
-    if storage_limit <= 0 {
+fn compute_usage_percentage(total_size: f64, storage_limit: f64) -> f64 {
+    if storage_limit <= 0.0 {
         return 0.0;
     }
-    let raw = (total_size as f64 / storage_limit as f64) * 100.0;
+    let raw = (total_size / storage_limit) * 100.0;
     let epsilon = f64::EPSILON;
     let rounded = ((raw + epsilon) * 100.0).round() / 100.0;
     rounded.min(100.0)

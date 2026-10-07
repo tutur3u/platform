@@ -24,8 +24,10 @@ BEGIN
   FOR workspace_path IN SELECT DISTINCT p FROM unnest(paths) p ORDER BY p LOOP
     -- Share the refresh lock even when the first cache row has not been inserted.
     PERFORM pg_advisory_xact_lock(hashtextextended(workspace_path, 73007));
-    UPDATE private.external_project_storage_analytics_cache
-      SET payload = NULL, computed_at = NULL WHERE ws_id::text = workspace_path;
+    IF workspace_path ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN
+      UPDATE private.external_project_storage_analytics_cache
+        SET payload = NULL, computed_at = NULL WHERE ws_id = workspace_path::uuid;
+    END IF;
   END LOOP;
   RETURN NULL;
 END;
