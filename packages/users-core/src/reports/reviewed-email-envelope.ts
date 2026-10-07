@@ -1,4 +1,8 @@
 import { createHash } from 'node:crypto';
+import {
+  emailAddressSchema,
+  emailContentSchema,
+} from '@tuturuuu/email-service/validation';
 import { reportConfigs } from '@tuturuuu/utils/configs/reports';
 import {
   type ReportEmailData,
@@ -70,7 +74,7 @@ export function buildReviewedEmailEnvelope(
   )
     return { ok: false, reason: 'missing-input' };
   if (
-    ['workspaceId', 'reportId', 'subjectId', 'groupId'].some(
+    (['workspaceId', 'reportId', 'subjectId', 'groupId'] as const).some(
       (key) => typeof input[key] !== 'string' || !uuid.test(input[key])
     ) ||
     (input.creatorId !== null &&
@@ -79,7 +83,6 @@ export function buildReviewedEmailEnvelope(
     !/^[1-9][0-9]{0,18}$/.test(input.revision) ||
     BigInt(input.revision) > 9223372036854775807n ||
     typeof input.recipient !== 'string' ||
-    !/^[^\s@]+@[^\s@]+$/.test(input.recipient.trim()) ||
     textKeys.some(
       (key) =>
         input.report[key] !== null && typeof input.report[key] !== 'string'
@@ -104,7 +107,10 @@ export function buildReviewedEmailEnvelope(
   const configs = Object.fromEntries(
     configKeys.map((key) => [key, input.configs[key]!])
   );
-  const recipient = input.recipient.trim().toLowerCase();
+  // Mirror the worker's trim-first admission and the shared transport schema.
+  const address = emailAddressSchema.safeParse(input.recipient.trim());
+  if (!address.success) return { ok: false, reason: 'invalid-input' };
+  const recipient = address.data;
   const snapshot = Object.freeze({
     workspaceId: input.workspaceId,
     reportId: input.reportId,
@@ -116,7 +122,11 @@ export function buildReviewedEmailEnvelope(
     report: Object.freeze(report),
     configs: Object.freeze(configs),
   });
-  const subject = resolveReportEmailTitle(report, configs);
+  const transportSubject = emailContentSchema.shape.subject.safeParse(
+    resolveReportEmailTitle(report, configs)
+  );
+  if (!transportSubject.success) return { ok: false, reason: 'invalid-input' };
+  const subject = transportSubject.data;
   const html = renderReportEmail(report, configs);
   const digest = createHash('sha256')
     .update(

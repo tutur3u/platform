@@ -39,6 +39,7 @@ export function resolveReportEmailTitle(
   return (
     report.title?.trim() ||
     [configs.REPORT_TITLE_PREFIX, configs.REPORT_TITLE_SUFFIX]
+      .map((part) => part?.trim())
       .filter(Boolean)
       .join(' ') ||
     (vietnamese ? 'Báo cáo học tập' : 'Progress report')

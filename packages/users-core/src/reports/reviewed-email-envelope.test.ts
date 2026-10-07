@@ -196,3 +196,90 @@ describe('unwired reviewed report presentation envelope', () => {
     });
   });
 });
+
+describe('actual transport admission boundaries', () => {
+  it.each(['', 'Học viên'])(
+    'falls back when both configured title parts are whitespace (%s)',
+    (intro) => {
+      const value = input();
+      value.configs = {
+        ...value.configs,
+        REPORT_TITLE_PREFIX: '  ',
+        REPORT_TITLE_SUFFIX: '\t',
+        REPORT_INTRO: intro,
+      };
+      const result = envelope(value);
+      const expected = intro ? 'Báo cáo học tập' : 'Progress report';
+      expect(result.subject).toBe(expected);
+      expect(result.html).toContain(`<title>${expected}</title>`);
+    }
+  );
+  it('trims valid configured parts before joining without rewriting original snapshot text', () => {
+    const value = input();
+    value.configs = {
+      ...value.configs,
+      REPORT_TITLE_PREFIX: '  Progress  ',
+      REPORT_TITLE_SUFFIX: ' August ',
+    };
+    const result = envelope(value);
+    expect(result.subject).toBe('Progress August');
+    expect(result.html).toContain('<title>Progress August</title>');
+    expect(result.snapshot.configs.REPORT_TITLE_PREFIX).toBe('  Progress  ');
+  });
+  it.each([
+    'learner@localhost',
+    'learner@-example.com',
+    'learner@example-.com',
+    `learner@${'a'.repeat(64)}.com`,
+    `${'a'.repeat(243)}@example.com`,
+  ])(
+    'rejects recipient disallowed by actual transport validation: %s',
+    (recipient) => {
+      expect(buildReviewedEmailEnvelope({ ...input(), recipient })).toEqual({
+        ok: false,
+        reason: 'invalid-input',
+      });
+    }
+  );
+  it.each([
+    'learner+review@example.com',
+    `${'a'.repeat(242)}@example.com`,
+    '  LEARNER@example.com  ',
+  ])('preserves transport-valid recipient control: %s', (recipient) => {
+    expect(envelope({ ...input(), recipient }).recipient).toBe(
+      recipient.trim().toLowerCase()
+    );
+  });
+  it.each([false, true])(
+    'accepts exactly200 resolved subject characters, config fallback=%s',
+    (fallback) => {
+      const value = input();
+      if (fallback)
+        value.configs = {
+          ...value.configs,
+          REPORT_TITLE_PREFIX: 'x'.repeat(198),
+          REPORT_TITLE_SUFFIX: 'y',
+        };
+      else value.report.title = 'x'.repeat(200);
+      expect(envelope(value).subject).toHaveLength(200);
+    }
+  );
+  it.each([false, true])(
+    'rejects201 resolved subject characters without truncation, config fallback=%s',
+    (fallback) => {
+      const value = input();
+      if (fallback)
+        value.configs = {
+          ...value.configs,
+          REPORT_TITLE_PREFIX: 'x'.repeat(199),
+          REPORT_TITLE_SUFFIX: 'y',
+        };
+      else value.report.title = 'x'.repeat(201);
+      expect(buildReviewedEmailEnvelope(value)).toEqual({
+        ok: false,
+        reason: 'invalid-input',
+      });
+      if (!fallback) expect(value.report.title).toHaveLength(201);
+    }
+  );
+});

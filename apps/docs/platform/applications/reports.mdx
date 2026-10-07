@@ -355,7 +355,12 @@ subject, HTML and SHA-256 digest from one copied input snapshot. It uses the
 existing email renderer, saved representative score, student/group/teacher names
 and complete allowlisted branding/report configuration. Recipient normalization
 matches the current periodic worker (`trim().toLowerCase()`). The transport title
-and HTML heading share the renderer's configured or localized fallback. Explicit
+and HTML heading share the renderer's configured or localized fallback. Configured
+title parts are trimmed before joining; whitespace-only parts use the localized
+fallback. Before rendering or hashing, the helper applies the shared transport
+address and subject schemas, including the 254-character address and 200-character
+subject limits. Invalid input fails without truncating reviewed human text. The
+pure validation subpath imports no provider or service initialization. Explicit
 null values and intentionally cleared feedback remain distinct from missing input;
 missing fields, malformed revisions and incomplete configuration fail closed.
 
