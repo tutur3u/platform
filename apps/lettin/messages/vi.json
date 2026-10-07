@@ -1283,6 +1283,7 @@
       "wallet_id": "Ví",
       "warehouse_id": "Kho"
     },
+    "invalid_subscription_inventory": "Sản phẩm hoặc đơn vị tính liên kết không khả dụng. Kiểm tra sản phẩm liên kết của lớp trước khi tạo hóa đơn.",
     "loading": "Đang tải hóa đơn…",
     "recovery_cancel": "Hủy",
     "recovery_confirmation": "Khôi phục hóa đơn này cùng các mặt hàng và khoản thanh toán ban đầu? Số dư ví, tồn kho và tổng hóa đơn sẽ được cập nhật. Nếu dữ liệu liên quan không còn hợp lệ, thao tác sẽ dừng và không khôi phục dữ liệu nào.",
@@ -1295,7 +1296,8 @@
     "recovery_success": "Đã khôi phục hóa đơn",
     "recovery_unavailable": "Lần xóa này chưa có bản dữ liệu khôi phục khả dụng. Hãy xem nhật ký; bộ phận hỗ trợ cần xác minh giao dịch thanh toán và các dữ liệu liên quan trước khi có thể khôi phục.",
     "recovery_undo": "Hoàn tác",
-    "restore_invoice": "Khôi phục hóa đơn"
+    "restore_invoice": "Khôi phục hóa đơn",
+    "subscription_context_not_ready": "Dữ liệu thanh toán chưa sẵn sàng. Chờ tải xong hoặc tải lại trước khi tạo hóa đơn."
   },
   "ws-roles": {
     "manage_desktop_deployment_vault": "Quản lý kho triển khai máy tính",

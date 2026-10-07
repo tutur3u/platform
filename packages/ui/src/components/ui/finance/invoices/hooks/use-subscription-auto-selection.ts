@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
 } from 'react';
+import { hasInvalidSubscriptionLinks } from '../subscription-admission';
 import type {
   Product,
   ProductInventory,
@@ -37,7 +38,7 @@ interface UseSubscriptionAutoSelectionProps {
   workspaceTimezone?: string | null;
 }
 
-export type UseSubscriptionAutoSelectionResult = undefined;
+export type UseSubscriptionAutoSelectionResult = { blocked: boolean };
 
 const buildAutoSelectedProductsForGroup = (
   groupLinked: UserGroupProducts[],
@@ -58,7 +59,8 @@ const buildAutoSelectedProductsForGroup = (
         ? groupAttendanceDaysMap[groupId]
         : attendanceDays;
 
-    const desiredUnitId = linkItem.inventory_units.id;
+    const desiredUnitId = linkItem.inventory_units?.id;
+    if (!desiredUnitId) continue;
     const desiredWarehouseId = linkItem.warehouse_id;
 
     const product = allProducts.find((p) => p.id === productId);
@@ -223,6 +225,7 @@ export function useSubscriptionAutoSelection({
   workspaceTimezone,
 }: UseSubscriptionAutoSelectionProps): UseSubscriptionAutoSelectionResult {
   const t = useTranslations();
+  const blocked = hasInvalidSubscriptionLinks(groupProducts, products);
   const previousGroupIdRef = useRef<string>('');
   const fallbackToastShownRef = useRef<boolean>(false);
   const initialPrefillUsedRef = useRef<boolean>(false);
@@ -291,6 +294,7 @@ export function useSubscriptionAutoSelection({
   useEffect(() => {
     if (
       !enabled ||
+      blocked ||
       sortedSelectedGroupIds.length === 0 ||
       groupProducts.length === 0
     ) {
@@ -330,6 +334,7 @@ export function useSubscriptionAutoSelection({
     }
   }, [
     enabled,
+    blocked,
     sortedSelectedGroupIds,
     selectedMonth,
     prefillAmount,
@@ -342,4 +347,5 @@ export function useSubscriptionAutoSelection({
     groupAttendanceDaysMap,
     prepaidMonthCount,
   ]);
+  return { blocked };
 }

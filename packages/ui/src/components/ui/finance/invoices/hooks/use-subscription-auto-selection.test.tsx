@@ -1,9 +1,16 @@
 import { renderHook } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { listMultiGroupProductsWithInternalApi } from '../internal-api';
 import type { Product, SelectedProductItem, UserGroupProducts } from '../types';
 import type { UserGroup } from '../utils';
 import { useSubscriptionAutoSelection } from './use-subscription-auto-selection';
+
+const api = vi.hoisted(() => ({ json: vi.fn() }));
+vi.mock('@tuturuuu/internal-api/client', () => ({
+  encodePathSegment: encodeURIComponent,
+  getInternalApiClient: () => ({ json: api.json }),
+}));
 
 const translate = (key: string) => key;
 vi.mock('next-intl', () => ({ useTranslations: () => translate }));
@@ -251,5 +258,32 @@ describe('prefilled subscription quantities', () => {
     expect(result.current).toEqual([]);
     rerender(props);
     expect(result.current.map((row) => row.quantity)).toEqual([2]);
+  });
+});
+
+describe('RPC-shaped linked inventory admission', () => {
+  it('does not crash or choose an arbitrary unit for a mapped null inventory unit', async () => {
+    // The scoped RPC uses a LEFT JOIN and explicitly returns null for a
+    // missing inventory unit. Exercise the real internal-api mapping.
+    api.json.mockResolvedValueOnce({
+      items: [{ ...groupProducts[0], inventory_units: null }],
+    });
+    const mapped = await listMultiGroupProductsWithInternalApi('ws', [
+      'class-a',
+    ]);
+    expect(mapped[0]?.inventory_units).toBeNull();
+    const onSelectedProductsChange = vi.fn();
+    expect(() =>
+      renderHook(() =>
+        useSubscriptionAutoSelection({
+          ...baseProps,
+          groupProducts: mapped,
+          onSelectedProductsChange,
+        })
+      )
+    ).not.toThrow();
+    // A submission-blocking validation result is required; silently dropping
+    // this charge or selecting an unrelated unit is not a safe correction.
+    expect(onSelectedProductsChange).not.toHaveBeenCalled();
   });
 });

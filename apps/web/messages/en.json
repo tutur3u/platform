@@ -22807,6 +22807,7 @@
       "wallet_id": "Wallet",
       "warehouse_id": "Warehouse"
     },
+    "invalid_subscription_inventory": "A linked product or billing unit is unavailable. Review the class’s linked products before creating this invoice.",
     "inventory_fallback_used": "A warehouse was not specified so a default one has been selected",
     "invoice_configuration": "Invoice Information",
     "invoice_created_recalculated": "Invoice created successfully! Values were recalculated on the server.",
@@ -22914,6 +22915,7 @@
     "status_expired": "Expired",
     "status_expiring_soon": "Expiring soon",
     "subscription": "Subscription invoice",
+    "subscription_context_not_ready": "Billing data is not ready. Wait for loading to finish or reload it before creating this invoice.",
     "subscription_customer_selection_description": "Select the customer for this subscription invoice.",
     "subscription_invoice": "Subscription Invoice",
     "subscription_invoice_combined_title": "Subscription invoice for multiple groups:",

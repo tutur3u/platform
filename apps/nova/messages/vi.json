@@ -4555,6 +4555,7 @@
       "wallet_id": "Ví",
       "warehouse_id": "Kho"
     },
+    "invalid_subscription_inventory": "Sản phẩm hoặc đơn vị tính liên kết không khả dụng. Kiểm tra sản phẩm liên kết của lớp trước khi tạo hóa đơn.",
     "loading": "Đang tải hóa đơn…",
     "new_invoice": "Hóa đơn mới",
     "plural": "Hóa đơn",
@@ -4572,7 +4573,8 @@
     "restore_invoice": "Khôi phục hóa đơn",
     "singular": "Hóa đơn",
     "standard": "Hóa đơn tiêu chuẩn",
-    "subscription": "Hóa đơn định kỳ"
+    "subscription": "Hóa đơn định kỳ",
+    "subscription_context_not_ready": "Dữ liệu thanh toán chưa sẵn sàng. Chờ tải xong hoặc tải lại trước khi tạo hóa đơn."
   },
   "ws-members": {
     "admin": "Quản trị viên",

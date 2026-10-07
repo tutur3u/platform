@@ -83,11 +83,11 @@ export interface UserGroupProducts {
     name: string | null;
     product_categories: {
       name: string | null;
-    };
-  };
+    } | null;
+  } | null;
   inventory_units: {
     name: string | null;
     id: string;
-  };
+  } | null;
   warehouse_id: string | null;
 }
