@@ -249,3 +249,53 @@ it('admits fresh verified same-owner session while the previous session receipt 
   await act(async () => held.resolve(receipt('Old session receipt')));
   expect(screen.getByText('Fresh verified session')).toBeInTheDocument();
 });
+
+it.each(['mutate', 'mutateAsync'] as const)(
+  'a mounted revoked consumer keeps the %s asynchronous contract without requests or stale callbacks',
+  async (method) => {
+    const cache = client();
+    const fetch = vi.fn();
+    const success = vi.fn();
+    const failure = vi.fn();
+    const settled = vi.fn();
+    vi.stubGlobal('fetch', fetch);
+    let rename!: ReturnType<typeof useUpdateMiraSoul>;
+    function Write() {
+      rename = useUpdateMiraSoul();
+      return <span>mounted editor</span>;
+    }
+    render(
+      <QueryClientProvider client={cache}>
+        <MiraSoulScopeProvider actorId="actor-a">
+          <Write />
+        </MiraSoulScopeProvider>
+      </QueryClientProvider>
+    );
+    act(() => {
+      for (const callback of auth.listeners) callback('SIGNED_OUT', null);
+    });
+    expect(screen.getByText('mounted editor')).toBeInTheDocument();
+    let returned: unknown;
+    expect(() => {
+      returned = rename[method](
+        { name: 'Revoked edit' },
+        { onSuccess: success, onError: failure, onSettled: settled }
+      );
+    }).not.toThrow();
+    if (method === 'mutateAsync') {
+      expect(returned).toBeInstanceOf(Promise);
+      await expect(returned).rejects.toThrow(
+        'Assistant settings scope changed'
+      );
+    } else {
+      expect(returned).toBeUndefined();
+    }
+    expect(fetch).not.toHaveBeenCalled();
+    expect(success).not.toHaveBeenCalled();
+    expect(failure).not.toHaveBeenCalled();
+    expect(settled).not.toHaveBeenCalled();
+    expect(
+      cache.getQueryData(['mira-soul', 'detail', 'actor-a'])
+    ).toBeUndefined();
+  }
+);

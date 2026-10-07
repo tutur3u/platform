@@ -186,11 +186,21 @@ export function useUpdateMiraSoul() {
   return {
     ...mutation,
     mutate: (data: MiraSoulUpdate, options?: PublicOptions) => {
-      const variables = prepare(data);
+      let variables: ReturnType<typeof prepare>;
+      try {
+        variables = prepare(data);
+      } catch {
+        return;
+      }
       return mutation.mutate(variables, admittedOptions(options, variables));
     },
     mutateAsync: (data: MiraSoulUpdate, options?: PublicOptions) => {
-      const variables = prepare(data);
+      let variables: ReturnType<typeof prepare>;
+      try {
+        variables = prepare(data);
+      } catch (error) {
+        return Promise.reject(error);
+      }
       return mutation.mutateAsync(
         variables,
         admittedOptions(options, variables)
