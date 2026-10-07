@@ -2,9 +2,9 @@
 import { act, type ComponentProps } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, it, vi } from 'vitest';
-import en from '../../../lettin/messages/en.json';
-import vietnamese from '../../../lettin/messages/vi.json';
-import { ProfileMediaField } from '../../../lettin/src/components/profile-media-field';
+import en from '../../messages/en.json';
+import vietnamese from '../../messages/vi.json';
+import { ProfileMediaField } from './profile-media-field';
 
 const state = vi.hoisted(() => ({ locale: 'en' }));
 vi.mock('@tuturuuu/internal-api/profile-media', () => ({
