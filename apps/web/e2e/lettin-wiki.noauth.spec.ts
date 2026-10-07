@@ -395,6 +395,12 @@ test.describe
                 response.url().endsWith('/api/v1/users/me/banner/upload-url') &&
                 response.request().method() === 'POST'
             );
+            const bannerFinalizationResponse = page.waitForResponse(
+              (response) =>
+                response.url().endsWith('/api/v1/users/me/banner') &&
+                response.request().method() === 'POST' &&
+                response.request().postDataJSON()?.action === 'finalize'
+            );
             await page
               .getByLabel('Banner image', { exact: true })
               .setInputFiles({
@@ -412,6 +418,11 @@ test.describe
               bucket: 'banners',
               path: bannerTicket.filePath,
             });
+            const finalizedBanner = await bannerFinalizationResponse;
+            expect(finalizedBanner.status()).toBe(200);
+            expect(finalizedBanner.request().postDataJSON().operationId).toBe(
+              bannerTicket.operationId
+            );
             const storedBanner = await page.request.get(bannerTicket.publicUrl);
             expect(storedBanner.status()).toBe(200);
             expect((await storedBanner.body()).length).toBeLessThanOrEqual(
