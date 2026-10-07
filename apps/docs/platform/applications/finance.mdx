@@ -571,3 +571,26 @@ continues to exclude groups. Other Finance caches are outside this change.
 API adapter/client, held synthetic responses, current error recovery and both
 queries sharing a lifetime token. These source regressions do not verify the
 original customer incident or authenticated deployed invoice behavior.
+
+
+### Invoice customer search retains placeholders only within its scope
+
+Customer-list and selected-customer reads in the shared invoice form follow the
+verified account and permanent account lifetime. Replacement accounts, including
+departure and return to the same account, require new reads; expired list, detail
+or page callbacks cannot dispatch or publish for a new account lifetime. Without
+the verified account provider, automatic, manual and paged reads fail closed.
+
+Previous list rows remain useful while changing search text within the same
+account lifetime and workspace. They are not placeholders in another workspace
+or account, and cannot suppress the new scope's selected-customer lookup. Current
+errors and explicit recovery retain their existing behavior. Normalized search,
+25-row inclusive paging, count-based continuation, selected-detail fallback,
+30-second freshness and five-minute garbage collection remain unchanged.
+
+The real provider, query, API adapter/client and synthetic transport cases in
+`customer-search-scope.test.tsx` cover replacements, account return, held success
+and errors, workspace placeholders, old page callbacks, missing actor admission
+and recovery. Existing customer-search tests retain their behavior assertions.
+This is source regression evidence, not verification of the original customer
+incident or a production invoice mutation.
