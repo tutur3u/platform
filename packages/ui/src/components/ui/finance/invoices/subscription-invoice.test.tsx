@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ComponentProps, PropsWithChildren } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SubscriptionInvoice } from './subscription-invoice';
+import type { UserGroupProducts } from './types';
 
 const testState = vi.hoisted(() => {
   const inventory = {
@@ -41,6 +42,13 @@ const testState = vi.hoisted(() => {
     userGroupsError: null as Error | null,
     groupProductsError: null as Error | null,
     contextError: null as Error | null,
+    actualAutoSelection: false,
+    groupProducts: [] as UserGroupProducts[],
+    contextLoading: false,
+    scheduleMap: { 'group-1': ['2026-07-05'] } as
+      | Record<string, string[]>
+      | undefined,
+    createInvoice: vi.fn(),
     refetchUserGroups: vi.fn(),
     refetchGroupProducts: vi.fn(),
     refetchContext: vi.fn(),
@@ -69,6 +77,10 @@ const testState = vi.hoisted(() => {
     }>,
   };
 });
+
+vi.mock('./internal-api', () => ({
+  createSubscriptionInvoiceWithInternalApi: testState.createInvoice,
+}));
 
 vi.mock('next-intl', () => ({
   useLocale: () => 'en-US',
@@ -189,7 +201,7 @@ vi.mock('./hooks', () => ({
     selectedUser: { id: testState.userId, display_name: 'Customer' },
   }),
   useMultiGroupProducts: () => ({
-    data: [],
+    data: testState.groupProducts,
     error: testState.groupProductsError,
     refetch: testState.refetchGroupProducts,
     isLoading: false,
@@ -201,10 +213,14 @@ vi.mock('./hooks', () => ({
     isLoading: false,
   }),
   useSubscriptionInvoiceContext: () => ({
-    data: { attendance: [], latestInvoices: [] },
+    data: {
+      attendance: [],
+      latestInvoices: [],
+      scheduledSessionsByGroupId: testState.scheduleMap,
+    },
     error: testState.contextError,
     refetch: testState.refetchContext,
-    isLoading: false,
+    isLoading: testState.contextLoading,
   }),
   useUserGroups: () => ({
     data: testState.userGroups,
@@ -237,9 +253,21 @@ vi.mock('./hooks/use-invoice-subtotal', () => ({
   useInvoiceSubtotal: () => 100,
 }));
 
-vi.mock('./hooks/use-subscription-auto-selection', () => ({
-  useSubscriptionAutoSelection: () => undefined,
-}));
+vi.mock('./hooks/use-subscription-auto-selection', async (importOriginal) => {
+  const original =
+    await importOriginal<
+      typeof import('./hooks/use-subscription-auto-selection')
+    >();
+  return {
+    useSubscriptionAutoSelection: (
+      props: Parameters<typeof original.useSubscriptionAutoSelection>[0]
+    ) =>
+      original.useSubscriptionAutoSelection({
+        ...props,
+        enabled: testState.actualAutoSelection,
+      }),
+  };
+});
 
 vi.mock('./hooks/use-subscription-invoice-content', () => ({
   useSubscriptionInvoiceContent: () => undefined,
@@ -291,6 +319,11 @@ describe('SubscriptionInvoice checkout defaults', () => {
     testState.userGroupsError = null;
     testState.groupProductsError = null;
     testState.contextError = null;
+    testState.contextLoading = false;
+    testState.scheduleMap = { 'group-1': ['2026-07-05'] };
+    testState.actualAutoSelection = false;
+    testState.groupProducts = [];
+    testState.createInvoice.mockReset();
     testState.refetchUserGroups.mockClear();
     testState.refetchGroupProducts.mockClear();
     testState.refetchContext.mockClear();
@@ -304,6 +337,55 @@ describe('SubscriptionInvoice checkout defaults', () => {
     testState.wallets = [];
     testState.categories = [];
   });
+
+  it('blocks the real invoice form for a null linked billing unit despite manually selected charges', async () => {
+    testState.actualAutoSelection = true;
+    testState.groupProducts = [
+      {
+        group_id: 'group-1',
+        workspace_products: {
+          id: 'product-1',
+          name: 'Seat',
+          product_categories: null,
+        },
+        inventory_units: null,
+        warehouse_id: 'warehouse-1',
+      },
+    ];
+    renderSubscriptionInvoice();
+    expect(
+      await screen.findByText('ws-invoices.invalid_subscription_inventory')
+    ).toBeInTheDocument();
+    const create = screen.getByRole('button', {
+      name: 'ws-invoices.create_subscription_invoice',
+    });
+    expect(create).toBeDisabled();
+    fireEvent.click(create);
+    expect(testState.createInvoice).not.toHaveBeenCalled();
+  });
+
+  it.each(['pending', 'missing', 'missing-group'] as const)(
+    'blocks creation for %s schedule authority instead of treating it as empty',
+    async (state) => {
+      testState.contextLoading = state === 'pending';
+      testState.scheduleMap =
+        state === 'missing'
+          ? undefined
+          : state === 'missing-group'
+            ? {}
+            : { 'group-1': [] };
+      renderSubscriptionInvoice();
+      expect(
+        await screen.findByText('ws-invoices.subscription_context_not_ready')
+      ).toBeInTheDocument();
+      const create = screen.getByRole('button', {
+        name: 'ws-invoices.create_subscription_invoice',
+      });
+      expect(create).toBeDisabled();
+      fireEvent.click(create);
+      expect(testState.createInvoice).not.toHaveBeenCalled();
+    }
+  );
 
   it('shows a retry when product loading fails and reopens the form after recovery', async () => {
     testState.productsError = new Error('Timed out');

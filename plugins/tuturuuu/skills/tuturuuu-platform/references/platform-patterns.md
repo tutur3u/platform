@@ -392,3 +392,17 @@ system on every change:
   elsewhere instead of squeezing gallery and detail preview columns together.
 - Keep repeated action labels scoped in tests with `within(...)` when multiple
   zones intentionally expose the same command.
+
+
+## Bounded billing projections
+
+Treat a schedule response as authoritative only within its explicit civil-date
+window. Replace legacy dates inside that window, including for a present empty
+group list; retain dates outside it. Missing keys, pending reads and failed or
+malformed receipts cannot authorize invoice creation. Validate nullable linked
+inventory relations from the actual RPC/route shape before rendering or billing:
+block the full create action and handler with an actionable instruction rather
+than omitting a charge or substituting an arbitrary unit. Preserve cancellation,
+coverage and historical records. Exercise the real internal-api mapper and form
+admission in regressions; application builds and customer runtime verification
+remain separate delivery evidence.
