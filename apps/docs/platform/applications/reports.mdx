@@ -80,6 +80,13 @@ The principal permissions are:
 
 Existing group-post permissions continue to govern Daily reports.
 
+The periodic hub's Approve action uses the same dedicated approval operation as
+report details and Daily review. `approve_reports` permits review without
+`update_user_groups_reports`; approving never grants content-edit authority.
+Approval-only supervisor and workspace/actor isolation regressions cover this
+boundary in `periodic-reports-approval.test.tsx` and the shared approval handler
+`put.test.ts`.
+
 ## Email safety
 
 Periodic report email requires all of the following:
@@ -95,6 +102,13 @@ The dedicated report gate defaults to disabled and does not change Daily report
 delivery. It is discoverable by platform admins in **Settings → Secrets**, where
 the readiness card shows both gates and sender state and offers a prefilled
 action for the periodic gate.
+
+Contacts shows each missing global gate, periodic gate, and sender separately,
+with an administrator action. Platform Secrets remains root-permission gated;
+Contacts does not grant access to it or invent a sender setup route. Approved
+counts are report stages, not delivery queue claims or evidence of parent receipt.
+The legacy skipped stage remains excluded from automatic approval-triggered
+sending; enabling gates does not resend historical reports.
 
 Delivery goes exclusively to the subject workspace-profile email. The system
 does not infer an alternate address. Preview never queues an email. Test send,
