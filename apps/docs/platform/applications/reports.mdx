@@ -155,6 +155,33 @@ does not infer an alternate address. Preview never queues an email. Test send,
 send, retry, and cancel are explicit actions, and each transition remains
 auditable.
 
+## Inert explicit-review provenance foundation
+
+Report, daily-post and per-subject daily-check rows have server-controlled review
+versions. Review content, creator attribution, generation inputs and approval provenance changes advance
+the version; delivery bookkeeping does not. Caller-supplied versions are ignored,
+and integer overflow rejects the mutation. Daily approval must eventually bind
+both the parent post and its individual recipient check.
+
+Private immutable receipt snapshots use canonical lowercase SHA-256 payload and
+recipient digests. They store identifiers and digests, not raw report content or
+recipient addresses. Snapshot identifiers intentionally have no live parent foreign
+keys: authorized parent or workspace teardown preserves audit history without being
+blocked by receipt immutability. Customers have no receipt access; trusted service
+audit reads do not restore access or establish current permission. Product-managed
+retention, export and deletion policy remains unfinished.
+
+This foundation has no receipt-minting API, legacy approval backfill or delivery
+caller activation. Its delivery-readiness function always returns false. The narrow
+future admission predicate follows current application creator, MEMBER-role/default
+and GUEST-default permissions, and requires an exact live workspace actor link.
+Deleted or revoked actors cannot gain admission from retained history. Existing
+legacy approval/configuration/dispatch paths still need complete closure before
+email gates can be enabled. CI verifies the full historical schema, strict SQL/TAP
+controls, two-connection version/lock behavior and actual generated types through
+`report-review-receipts-contract.yaml`; source review or static tests alone do not
+prove those database controls or customer delivery.
+
 ## Automation processor
 
 Vercel calls `/api/cron/process-report-automation` every 15 minutes. Private
