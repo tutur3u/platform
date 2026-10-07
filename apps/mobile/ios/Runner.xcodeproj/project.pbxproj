@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DE1100010000000000000001 /* DeliveredInboxNotificationsPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE1100010000000000000002 /* DeliveredInboxNotificationsPlugin.swift */; };
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
 		1E3FC0D9F09D51E98AFEEC0C /* LiveScreenSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74E106669B9E6A865BCC11EA /* LiveScreenSession.swift */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
@@ -68,6 +69,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		DE1100010000000000000002 /* DeliveredInboxNotificationsPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeliveredInboxNotificationsPlugin.swift; sourceTree = "<group>"; };
 		008724D24D58C9DDDA817FFE /* Pods-Runner.release-staging.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release-staging.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release-staging.xcconfig"; sourceTree = "<group>"; };
 		0B881A1C071E2177030889D1 /* Pods-Runner.debug-development.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug-development.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug-development.xcconfig"; sourceTree = "<group>"; };
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
@@ -235,6 +237,7 @@
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				C73A09E54185340E167D49B3 /* LiveScreenCapturePlugin.swift */,
+				DE1100010000000000000002 /* DeliveredInboxNotificationsPlugin.swift */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -588,6 +591,7 @@
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				E6E79E6687FB6C866E0BC4D6 /* LiveScreenCapturePlugin.swift in Sources */,
+				DE1100010000000000000001 /* DeliveredInboxNotificationsPlugin.swift in Sources */,
 				1E3FC0D9F09D51E98AFEEC0C /* LiveScreenSession.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
