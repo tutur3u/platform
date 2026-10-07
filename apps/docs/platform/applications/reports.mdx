@@ -70,6 +70,17 @@ generated narrative. Every AI-generated report starts in a reviewable state and
 must be explicitly approved before delivery can be queued. Regeneration never
 bypasses that approval boundary.
 
+In the Contacts monthly report editor, approval is available only while reviewing
+saved current content. Unsaved title, narrative, or feedback changes, a pending
+save, and a selected historical revision block approval with compact save or
+return-to-current guidance. Failed saves retain human edits, including multiline
+feedback and intentionally cleared fields. A matching authoritative refresh is
+required before approving the edited report; an unrelated or stale refresh does
+not acknowledge the draft. This is a frontend review safeguard, not an atomic
+cross-client revision lock, and it does not queue or send email. Regression
+coverage: `monthly-report-review-safety.test.tsx` exercises the actual editor,
+form, save/approval hooks, and synthetic HTTP responses.
+
 The principal permissions are:
 
 - `view_user_groups_reports` — view daily and periodic reporting.

@@ -7637,7 +7637,10 @@
   },
   "ws-reports": {
     "all_changes_saved": "Đã lưu mọi thay đổi",
+    "approval_save_changes": "Lưu thay đổi trước khi phê duyệt báo cáo.",
     "approval_status": "Trạng thái phê duyệt",
+    "approval_view_current": "Quay lại báo cáo hiện tại trước khi phê duyệt.",
+    "approval_wait_save": "Chờ báo cáo lưu xong.",
     "approve": "Phê duyệt",
     "approved": "Đã phê duyệt",
     "archived_until_user_notice_description": "Người dùng này đang được lưu trữ tạm thời đến {date}. Báo cáo vẫn được giữ lại để theo dõi và xem lại lịch sử.",

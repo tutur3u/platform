@@ -7637,7 +7637,10 @@
   },
   "ws-reports": {
     "all_changes_saved": "All changes saved",
+    "approval_save_changes": "Save your changes before approving the report.",
     "approval_status": "Approval status",
+    "approval_view_current": "Return to the current report before approving.",
+    "approval_wait_save": "Wait for the report to finish saving.",
     "approve": "Approve",
     "approved": "Approved",
     "archived_until_user_notice_description": "This user is temporarily archived until {date}. Reports remain visible for follow-up and historical review.",
