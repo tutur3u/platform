@@ -12,6 +12,7 @@ import {
   WORKSPACE_CONTEXT_STORAGE_KEY_PREFIX,
 } from './mira-chat-constants';
 import { getMiraToolCallId, getMiraToolName } from './mira-tool-part-utils';
+import { useMiraSettingsReceipts } from './use-mira-settings-receipts';
 
 const TASK_MUTATION_TOOL_NAMES = new Set([
   'create_task',
@@ -48,6 +49,7 @@ const TASK_PROJECT_MUTATION_TOOL_NAMES = new Set([
 ]);
 
 interface UseMiraChatEffectsParams {
+  chatId?: string;
   isFullscreen?: boolean;
   messageAttachmentsRef: MutableRefObject<Map<string, MessageFileAttachment[]>>;
   messages: UIMessage[];
@@ -145,6 +147,7 @@ function getTaskRefreshScope(toolName: string) {
 }
 
 export function useMiraChatEffects({
+  chatId,
   isFullscreen,
   messageAttachmentsRef,
   messages,
@@ -157,6 +160,7 @@ export function useMiraChatEffects({
   taskBoardId,
   wsId,
 }: UseMiraChatEffectsParams) {
+  useMiraSettingsReceipts({ messages, status, wsId, chatId, queryClient });
   const prevStatusRef = useRef(status);
   useEffect(() => {
     const prev = prevStatusRef.current;
@@ -201,11 +205,6 @@ export function useMiraChatEffects({
               ...taskRefreshScope,
             });
           }
-        } else if (toolName === 'update_my_settings') {
-          handledToolOutputs.current.add(key);
-          queryClient.invalidateQueries({
-            queryKey: ['mira-soul', 'detail'],
-          });
         } else if (toolName === 'set_immersive_mode') {
           handledToolOutputs.current.add(key);
           const output = (part as { output?: unknown }).output;

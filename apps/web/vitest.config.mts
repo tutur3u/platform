@@ -48,6 +48,13 @@ export default defineConfig({
         ),
       },
       {
+        find: '@tuturuuu/supabase/next/client',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/client.ts'
+        ),
+      },
+      {
         find: '@tuturuuu/supabase/next/auth-session-user',
         replacement: resolve(
           __dirname,

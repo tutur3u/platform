@@ -571,3 +571,32 @@ curl -X POST http://localhost:3000/api/ai/flashcards \
 - [Zod Documentation](https://zod.dev/)
 - [Supabase Documentation](https://supabase.com/docs)
 - [Google Generative AI Documentation](https://ai.google.dev/docs)
+
+
+### Dashboard assistant settings receipts
+
+Dashboard Soul metadata belongs to the verified account, independently of the
+selected workspace. Reads and edits use the shared internal API adapter, an
+account-specific query key, and a committed session lease. Account departure
+cancels requests and removes that account's cached Soul; a later same-account
+session must receive fresh server admission. An abandoned React render does not
+revoke the currently committed lease.
+
+A failed optimistic edit may restore its previous value only while its intent,
+query instance and publication revision are still current. It must preserve a
+newer confirmed tool or settings publication. Malformed or foreign-owner Soul
+receipts are errors, rather than successful default values. Displayed names use
+the trimmed custom name, with Mira as the fallback for an empty name; this does
+not change the server's existing name contract.
+
+Only definitive successful `update_my_settings` outputs in the current submitted
+conversation invalidate the current account's Soul metadata. Failed,
+preliminary, duplicate, restored-history and departed account/workspace/chat
+outputs do not trigger a settings refresh. This read-side admission leaves real
+transport and persistence errors intact. It adds no server compare-and-swap or
+offline reconciliation guarantee; mobile pending-name policy is separate.
+
+Regression coverage lives in the dashboard `use-mira-soul` and
+`use-mira-soul-scope` hook tests, `mira-settings-receipts` tests, and the shared
+`mira-soul` adapter tests. These source regressions do not establish production
+or authenticated browser delivery.
