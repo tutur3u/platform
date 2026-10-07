@@ -36,6 +36,7 @@ class _SettingsHarness {
     String initial = Routes.settings,
     GoRouterWidgetBuilder? settingsBuilder,
     this.assistantPageBuilder,
+    this.assistantSettingsRepository,
     GoRouterWidgetBuilder? workspaceSecretsBuilder,
   }) {
     whenListen(auth, accounts.stream, initialState: _account('user'));
@@ -150,6 +151,7 @@ class _SettingsHarness {
     );
   }
   final Widget Function(int)? assistantPageBuilder;
+  final AssistantPersonalSettingsRepository? assistantSettingsRepository;
   bool allowed = false;
   final auth = _Auth();
   final workspaces = _Workspaces();
@@ -192,26 +194,29 @@ class _SettingsHarness {
           BlocProvider(create: (_) => ShellTitleOverrideCubit()),
           BlocProvider(create: (_) => AssistantChromeCubit()),
         ],
-        child: shad.ShadcnApp.router(
-          theme: MobileShadTheme.light,
-          darkTheme: MobileShadTheme.dark,
-          themeMode: theme.state.themeMode,
-          locale: locale.state.locale,
-          localizationsDelegates: const [
-            ...AppLocalizations.localizationsDelegates,
-            AppShadcnLocalizationsDelegate(),
-          ],
-          supportedLocales: AppLocalizations.supportedLocales,
-          routerConfig: router,
-          builder: (context, child) => ShadcnMaterialBridge.appBuilder(
-            context,
-            MediaQuery(
-              data: MediaQuery.of(
-                context,
-              ).copyWith(textScaler: TextScaler.linear(scale)),
-              child: RepaintBoundary(
-                key: const ValueKey('synthetic-settings-render'),
-                child: child,
+        child: RepositoryProvider<AssistantPersonalSettingsRepository?>.value(
+          value: assistantSettingsRepository,
+          child: shad.ShadcnApp.router(
+            theme: MobileShadTheme.light,
+            darkTheme: MobileShadTheme.dark,
+            themeMode: theme.state.themeMode,
+            locale: locale.state.locale,
+            localizationsDelegates: const [
+              ...AppLocalizations.localizationsDelegates,
+              AppShadcnLocalizationsDelegate(),
+            ],
+            supportedLocales: AppLocalizations.supportedLocales,
+            routerConfig: router,
+            builder: (context, child) => ShadcnMaterialBridge.appBuilder(
+              context,
+              MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: TextScaler.linear(scale)),
+                child: RepaintBoundary(
+                  key: const ValueKey('synthetic-settings-render'),
+                  child: child,
+                ),
               ),
             ),
           ),

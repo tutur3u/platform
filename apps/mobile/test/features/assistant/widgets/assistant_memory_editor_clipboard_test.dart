@@ -14,7 +14,7 @@ import '../assistant_personal_settings_harness.dart';
 void main() {
   for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {
     for (final locale in ['en', 'vi']) {
-      testWidgets('$platform $locale actual memory modal pastes '
+      testWidgets('$platform $locale actual memory route pastes '
           'selected text with IME/global dismissal', (tester) async {
         debugDefaultTargetPlatformOverride = platform;
         addTearDown(() => debugDefaultTargetPlatformOverride = null);
@@ -81,7 +81,11 @@ void main() {
         await tester.ensureVisible(field);
         await tester.tap(field);
         await tester.pumpAndSettle();
-        await tester.longPress(find.byType(EditableText));
+        await tester.ensureVisible(find.byType(EditableText));
+        await tester.pumpAndSettle();
+        await tester.longPressAt(
+          tester.getTopLeft(find.byType(EditableText)) + const Offset(20, 12),
+        );
         await tester.pumpAndSettle();
         final controller = tester.widget<TextFormField>(field).controller!;
         controller.selection = TextSelection(

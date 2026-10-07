@@ -56,7 +56,7 @@ Future<void> pushScopedSettingsPage(
   }
   try {
     route = MaterialPageRoute<void>(
-      builder: (context) => rootNavigator
+      builder: (context) => rootNavigator && (auth != null || workspace != null)
           ? MultiBlocProvider(
               providers: [
                 if (auth != null) BlocProvider<AuthCubit>.value(value: auth),

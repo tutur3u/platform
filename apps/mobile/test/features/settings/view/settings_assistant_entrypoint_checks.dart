@@ -12,8 +12,10 @@ void registerSettingsAssistantEntrypointChecks() {
       ) async {
         _viewport(tester, const Size(390, 844));
         final repository = ReplyRepository();
+        final settingsRepository = personal.SettingsRepository(ownerId: 'user');
         late final _SettingsHarness h;
         h = _SettingsHarness(
+          assistantSettingsRepository: settingsRepository,
           initial: entrypoint.endsWith('live menu')
               ? Routes.assistant
               : Routes.settings,
@@ -118,6 +120,52 @@ void registerSettingsAssistantEntrypointChecks() {
         expect(tester.element(hub).read<AuthCubit>(), same(h.auth));
         expect(tester.element(hub).read<WorkspaceCubit>(), same(h.workspaces));
         expect(tester.widget<AssistantSettingsHub>(hub).workspaceId, 'ws');
+        // Continue through the actual caller and hub into both routed editors.
+        final personality = find.widgetWithText(
+          ListTile,
+          l10n.assistantPersonalityTitle,
+        );
+        await tester.ensureVisible(personality);
+        await tester.tap(personality);
+        await _settle(tester);
+        expect(find.byType(MobileSectionAppBar), findsOneWidget);
+        expect(find.bySemanticsLabel(l10n.navBack), findsOneWidget);
+        expect(find.byType(ShellPage), findsNothing);
+        await tester.tap(
+          find.byKey(const ValueKey('assistant-personality-name')),
+        );
+        await _settle(tester);
+        expect(find.byType(AssistantPersonalityFieldEditor), findsOneWidget);
+        expect(find.byType(MobileSectionAppBar), findsOneWidget);
+        await tester.enterText(find.byType(TextFormField), 'Routed Nova');
+        await tester.tap(find.widgetWithText(FilledButton, l10n.commonSave));
+        await _settle(tester);
+        expect(find.text('Routed Nova'), findsOneWidget);
+        expect(settingsRepository.writes, 1);
+        await tester.tap(find.byType(ShellDockActionButton));
+        await _settle(tester);
+        final memory = find.widgetWithText(
+          ExpansionTile,
+          l10n.assistantMemoryTitle,
+        );
+        await tester.ensureVisible(memory);
+        await tester.tap(find.text(l10n.assistantMemoryTitle));
+        await _settle(tester);
+        final memoryRow = find.text('Synthetic preference');
+        await tester.ensureVisible(memoryRow);
+        await tester.tap(memoryRow);
+        await _settle(tester);
+        expect(find.byType(AssistantMemoryEditor), findsOneWidget);
+        expect(find.byType(MobileSectionAppBar), findsOneWidget);
+        expect(find.bySemanticsLabel(l10n.navBack), findsOneWidget);
+        await tester.enterText(find.byType(TextFormField), 'Routed memory');
+        await _settle(tester);
+        final memorySave = find.widgetWithText(FilledButton, l10n.commonSave);
+        await tester.ensureVisible(memorySave);
+        await tester.tap(memorySave);
+        await _settle(tester);
+        expect(find.text('Routed memory'), findsOneWidget);
+        expect(settingsRepository.edits, 1);
         await tester.tap(find.byType(ShellDockActionButton));
         await _settle(tester);
         expect(hub, findsNothing);
