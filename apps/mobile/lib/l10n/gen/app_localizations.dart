@@ -286,7 +286,7 @@ abstract class AppLocalizations {
   /// No description provided for @appLockLockedDescription.
   ///
   /// In en, this message translates to:
-  /// **'Use your device PIN, fingerprint, or Face ID to continue.'**
+  /// **'Use biometrics or your device passcode in the system prompt to continue.'**
   String get appLockLockedDescription;
 
   /// No description provided for @appLockLockedTitle.

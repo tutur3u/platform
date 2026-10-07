@@ -105,7 +105,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appLockEnableReason => 'Authenticate to turn on app lock.';
 
   @override
-  String get appLockLockedDescription => 'Use your device PIN, fingerprint, or Face ID to continue.';
+  String get appLockLockedDescription => 'Use biometrics or your device passcode in the system prompt to continue.';
 
   @override
   String get appLockLockedTitle => 'Tuturuuu is locked';
