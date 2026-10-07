@@ -32,7 +32,10 @@ WorkspaceState _workspace(String id) => WorkspaceState(
 );
 
 class _SettingsHarness {
-  _SettingsHarness({String initial = Routes.settings}) {
+  _SettingsHarness({
+    String initial = Routes.settings,
+    GoRouterWidgetBuilder? workspaceSecretsBuilder,
+  }) {
     whenListen(auth, accounts.stream, initialState: _account('user'));
     whenListen(workspaces, scopes.stream, initialState: _workspace('ws'));
     whenListen(
@@ -97,12 +100,20 @@ class _SettingsHarness {
               redirect: (_, _) => Routes.settings,
             ),
             ...settingsRoutes().where(
-              (route) => !{
-                Routes.settingsPreferences,
-                Routes.settingsWorkspace,
-                Routes.settingsAbout,
-              }.contains((route as GoRoute).path),
+              (route) =>
+                  !{
+                    Routes.settingsPreferences,
+                    Routes.settingsWorkspace,
+                    Routes.settingsAbout,
+                  }.contains((route as GoRoute).path) &&
+                  (workspaceSecretsBuilder == null ||
+                      route.path != Routes.settingsWorkspaceSecrets),
             ),
+            if (workspaceSecretsBuilder != null)
+              GoRoute(
+                path: Routes.settingsWorkspaceSecrets,
+                builder: workspaceSecretsBuilder,
+              ),
             GoRoute(
               path: Routes.settingsWorkspace,
               builder: (_, _) => const SettingsWorkspacePage(),
