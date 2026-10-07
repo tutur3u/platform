@@ -101,6 +101,101 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe('tutoring support queue', () => {
+  it.each(['DONE', 'PENDING'])(
+    'does not let an earlier %s make-up consume a later absence',
+    async (status) => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-09-27T12:00:00Z'));
+      attendanceRows = [
+        { group_id: 'group', user_id: 'student', date: '2026-07-01' },
+        { group_id: 'group', user_id: 'student', date: '2026-09-20' },
+      ];
+      reservedRows = [
+        {
+          group_id: 'group',
+          student_user_id: 'student',
+          reason_type: 'ABSENT_RECOVERY',
+          attendance_status: status,
+          session_date: '2026-09-10',
+        },
+      ];
+      const body = await (await listQueue()).json();
+      expect(body.data).toMatchObject([
+        {
+          absence_deficit: 1,
+          missed_class_dates: ['2026-09-20'],
+          reason_type: 'ABSENT_RECOVERY',
+        },
+      ]);
+    }
+  );
+  it('a make-up after the eligible absence still reserves its credit', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-27T12:00:00Z'));
+    attendanceRows = [
+      { group_id: 'group', user_id: 'student', date: '2026-09-20' },
+    ];
+    reservedRows = [
+      {
+        group_id: 'group',
+        student_user_id: 'student',
+        reason_type: 'ABSENT_RECOVERY',
+        attendance_status: 'PENDING',
+        session_date: '2026-09-25',
+      },
+    ];
+    expect((await (await listQueue()).json()).data).toEqual([]);
+  });
+
+  it('matches unsorted reservations once and preserves same-day absence multiplicity', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-27T12:00:00Z'));
+    attendanceRows = [
+      '2026-09-25',
+      '2026-09-20',
+      '2026-09-10',
+      '2026-09-20',
+    ].map((date) => ({ group_id: 'group', user_id: 'student', date }));
+    reservedRows = ['2026-09-21', '2026-09-05', '2026-09-12'].map(
+      (session_date) => ({
+        group_id: 'group',
+        student_user_id: 'student',
+        reason_type: 'ABSENT_RECOVERY',
+        attendance_status: 'PENDING',
+        session_date,
+      })
+    );
+    const body = await (await listQueue()).json();
+    expect(body.data).toMatchObject([
+      { absence_deficit: 2, missed_class_dates: ['2026-09-20', '2026-09-25'] },
+    ]);
+  });
+  it('never shares chronological reservation credits across groups or students', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-27T12:00:00Z'));
+    attendanceRows = [
+      { group_id: 'group', user_id: 'student', date: '2026-09-20' },
+    ];
+    reservedRows = [
+      {
+        group_id: 'other-group',
+        student_user_id: 'student',
+        reason_type: 'ABSENT_RECOVERY',
+        attendance_status: 'DONE',
+        session_date: '2026-09-25',
+      },
+      {
+        group_id: 'group',
+        student_user_id: 'other-student',
+        reason_type: 'ABSENT_RECOVERY',
+        attendance_status: 'PENDING',
+        session_date: '2026-09-25',
+      },
+    ];
+    expect((await (await listQueue()).json()).data).toMatchObject([
+      { absence_deficit: 1, missed_class_dates: ['2026-09-20'] },
+    ]);
+  });
   it('limits make-up deficits and completed credits to the recent attendance window', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-09-27T12:00:00Z'));
