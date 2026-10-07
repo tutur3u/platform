@@ -32,8 +32,12 @@ export function InvoiceUserHistoryAccordion({
   const t = useTranslations();
   const locale = useLocale();
   const financeHref = useFinanceHref();
-  const formatDate = (value: string) =>
-    new Intl.DateTimeFormat(locale).format(new Date(value));
+  const formatDate = (value: string) => {
+    const date = new Date(value);
+    return Number.isFinite(date.getTime())
+      ? new Intl.DateTimeFormat(locale).format(date)
+      : t('ws-invoices.no_date');
+  };
 
   const {
     data: userInvoicesData,
