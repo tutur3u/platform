@@ -1,0 +1,127 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import test from 'node:test';
+import { reviewRaceScripts } from './report-review-receipt-concurrency.mjs';
+
+const require = createRequire(import.meta.url);
+const {
+  readWorkflow,
+} = require('../../../scripts/ci/workflow-yaml-test-helper.js');
+const read = (file) => readFileSync(new URL(file, import.meta.url), 'utf8');
+const migration = read(
+  '../supabase/migrations/20261007090000_report_review_receipt_foundation.sql'
+);
+const fixture = read('../supabase/tests/report-review-receipts.sql');
+const runner = read('./verify-report-review-receipts-contract.mjs');
+const race = read('./report-review-receipt-concurrency.mjs');
+
+test('two-connection scripts emit actual psql commands/newlines and target real row', () => {
+  for (const readOnly of [false, true]) {
+    const scripts = reviewRaceScripts({ readOnly });
+    assert.match(
+      scripts.holder,
+      /begin;[\s\S]*update private\.external_user_monthly_reports/u
+    );
+    assert.ok(scripts.holder.includes('\n\\echo FIXTURE_READY\n'));
+    assert.ok(scripts.competitor.startsWith('\\set VERBOSITY verbose\n'));
+    assert.ok(!scripts.holder.includes('\\n'));
+    assert.match(scripts.competitor, /statement_timeout='5s'/u);
+    if (readOnly) assert.match(scripts.competitor, /for update; commit;/u);
+    else assert.match(scripts.competitor, /review_revision=999/u);
+  }
+});
+test('actual race proves lock wait before release, validates owned metadata and final versions', () => {
+  assert.match(race, /wait_event_type='Lock'/u);
+  assert.match(race, /Review competitor did not wait/u);
+  assert.match(race, /admitted\.repositoryRoot, metadata\.repositoryRoot/u);
+  assert.match(race, /admitted\.status, 'testing'/u);
+  assert.match(
+    race,
+    /Two edits increment twice without caller-forged version/u
+  );
+  assert.match(race, /Locked read sees committed current version/u);
+  assert.match(race, /finally[\s\S]*delete from public\.workspaces/u);
+});
+test('CI runner snapshots full schema, enforces strict TAP and real concurrency before type generation', () => {
+  assert.match(runner, /git[\s\S]*ls-files[\s\S]*apps\/database\/supabase/u);
+  assert.match(runner, /Isolated source snapshot mismatch/u);
+  assert.match(runner, /assertStrictTap\(tap\)/u);
+  assert.match(runner, /await runReportReviewConcurrency\(metadata\)/u);
+  assert.match(runner, /typegenOutput = 'packages\/types\/src\/supabase\.ts'/u);
+  assert.match(runner, /runIsolatedLifecycle/u);
+});
+test('workflow fails closed on disabled gate and selects exact head/schema paths', () => {
+  const w = readWorkflow('report-review-receipts-contract.yaml');
+  assert.equal(w.jobs['check-ci'].uses, './.github/workflows/ci-check.yml');
+  assert.equal(
+    w.jobs['check-ci'].with.workflow_name,
+    'report-review-receipts-contract.yaml'
+  );
+  assert.equal(w.permissions.contents, 'read');
+  assert.ok(
+    w.on.pull_request.paths.includes('apps/database/supabase/migrations/**')
+  );
+  assert.deepEqual(w.on.push.branches, ['main', 'production']);
+  const steps = w.jobs.contract.steps;
+  assert.equal(steps[0].run, 'test "$CONTRACT_ENABLED" = true');
+  assert.equal(
+    steps.find((s) => s.uses === 'actions/checkout@v7').with.ref,
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: compare the literal GitHub workflow expression.
+    '${{ github.event.pull_request.head.sha || github.sha }}'
+  );
+  assert.equal(steps.at(-1).with['if-no-files-found'], 'error');
+  assert.ok(
+    steps.findIndex(
+      (s) => s.name === 'Strictly check actual generated review types'
+    ) >
+      steps.findIndex(
+        (s) =>
+          s.name ===
+          'Apply complete schema, run strict pgTAP, generate actual schema types'
+      )
+  );
+  assert.match(
+    steps.find((s) => s.name === 'Strictly check actual generated review types')
+      .run,
+    /--strict[\s\S]*report-review-receipts-types\.ts/u
+  );
+  assert.match(
+    read('../../../tuturuuu.ci.ts'),
+    /'report-review-receipts-contract.yaml': true/u
+  );
+});
+test('receipt storage stays inert and schema snapshot retention cannot silently cascade', () => {
+  assert.match(migration, /SELECT false;/u);
+  assert.match(
+    migration,
+    /GRANT SELECT ON TABLE private\.report_review_receipts TO service_role/u
+  );
+  assert.ok(
+    !/GRANT (?:INSERT|UPDATE|DELETE|ALL) ON TABLE private\.report_review_receipts/u.test(
+      migration
+    )
+  );
+  assert.ok(!/REFERENCES/u.test(migration));
+  assert.match(migration, /BEFORE TRUNCATE/u);
+  assert.equal((migration.match(/\^\[0-9a-f\]\{64\}\$/gu) || []).length, 2);
+  assert.match(migration, /parent_review_revision IS NOT NULL/u);
+});
+test('real SQL controls include permission truth table, versions, overflow, teardown and no minting', () => {
+  for (const expected of [
+    'GUEST cannot borrow role grants',
+    'MEMBER typed explicit default admitted',
+    'same claimed link with foreign virtual workspace denied',
+    'deleted actor cannot acquire new admission',
+    'bookkeeping-only UPDATE cannot forge version',
+    'bigint overflow fails closed',
+    'daily parent revision runs after existing BEFORE triggers',
+    'same action and entry cannot duplicate receipt',
+    'tenant teardown is unblocked and preserves history',
+    'ordinary source mutations minted no receipts',
+  ])
+    assert.ok(fixture.includes(expected), expected);
+  assert.ok(fixture.includes('select no_plan();'));
+  assert.ok(fixture.includes('select * from finish();'));
+  assert.ok(fixture.trimEnd().endsWith('rollback;'));
+});
