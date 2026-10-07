@@ -10,7 +10,8 @@
     ".": "./src/index.ts",
     "./types": "./src/types.ts",
     "./constants": "./src/constants.ts",
-    "./providers/ses": "./src/providers/ses.ts"
+    "./providers/ses": "./src/providers/ses.ts",
+    "./validation": "./src/validation.ts"
   },
   "scripts": {
     "type-check": "tsc --project tsconfig.typecheck.json",
