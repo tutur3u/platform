@@ -462,3 +462,26 @@ covers unique ordering, insertion between pages, the optional default, and actor
 visibility. Schema application, pgTAP execution, and generated Supabase types
 require the exact-commit CI migration/typegen gate; source inspection and route
 unit tests do not prove that a deployed RPC accepts the new parameter.
+
+
+### Subscription invoice schedule and inventory admission
+
+Subscription invoice previews in the shared web and Finance UI use the
+subscription context's schedule as authority only for the selected civil month
+and prepaid range. A returned empty group schedule means no scheduled charges
+in that range; removed or cancelled dates from the older group-session list do
+not become extra charges. Dates outside the fetched range remain unchanged.
+Missing, loading, failed, or malformed context is not an authoritative empty
+schedule and blocks creation until billing data is available. Completed invoice
+coverage, attendance rules, recurrence cancellation and stored history retain
+their existing behavior.
+
+A selected class link with a missing product, missing billing unit or unit that
+is absent from the current product inventory blocks the entire invoice with a
+review instruction. The UI does not silently drop that charge or select another
+unit. Existing valid warehouse fallback and finite-stock quantity rules remain.
+The create action and its handler both enforce these admissions. Regression
+coverage lives in `subscription-billing-groups.test.ts`,
+`subscription-admission.test.ts`, `use-subscription-auto-selection.test.tsx`
+and the actual `subscription-invoice.test.tsx` form. These source checks do not
+prove a customer's create/open/export incident or production storage behavior.

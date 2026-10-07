@@ -4555,6 +4555,7 @@
       "wallet_id": "Wallet",
       "warehouse_id": "Warehouse"
     },
+    "invalid_subscription_inventory": "A linked product or billing unit is unavailable. Review the class’s linked products before creating this invoice.",
     "loading": "Loading invoices…",
     "new_invoice": "New invoice",
     "plural": "Invoices",
@@ -4572,7 +4573,8 @@
     "restore_invoice": "Restore invoice",
     "singular": "Invoice",
     "standard": "Standard invoice",
-    "subscription": "Subscription invoice"
+    "subscription": "Subscription invoice",
+    "subscription_context_not_ready": "Billing data is not ready. Wait for loading to finish or reload it before creating this invoice."
   },
   "ws-members": {
     "admin": "Administrator",

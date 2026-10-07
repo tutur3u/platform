@@ -12450,6 +12450,7 @@
       "wallet_id": "Ví",
       "warehouse_id": "Kho"
     },
+    "invalid_subscription_inventory": "Sản phẩm hoặc đơn vị tính liên kết không khả dụng. Kiểm tra sản phẩm liên kết của lớp trước khi tạo hóa đơn.",
     "inventory_fallback_used": "Kho lưu trữ không được chỉ định nên một kho mặc định đã được chọn",
     "invoice_configuration": "Thông tin hóa đơn",
     "invoice_created_recalculated": "Hóa đơn đã được tạo thành công! Các giá trị đã được tính toán lại trên máy chủ.",
@@ -12556,6 +12557,7 @@
     "status_expired": "Đã hết hạn",
     "status_expiring_soon": "Sắp hết hạn",
     "subscription": "Hóa đơn định kỳ",
+    "subscription_context_not_ready": "Dữ liệu thanh toán chưa sẵn sàng. Chờ tải xong hoặc tải lại trước khi tạo hóa đơn.",
     "subscription_customer_selection_description": "Chọn khách hàng cho hóa đơn đăng ký này.",
     "subscription_invoice": "Hóa đơn đăng ký",
     "subscription_invoice_combined_title": "Hóa đơn đăng ký cho nhiều nhóm:",

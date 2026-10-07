@@ -1283,6 +1283,7 @@
       "wallet_id": "Wallet",
       "warehouse_id": "Warehouse"
     },
+    "invalid_subscription_inventory": "A linked product or billing unit is unavailable. Review the class’s linked products before creating this invoice.",
     "loading": "Loading invoices…",
     "recovery_cancel": "Cancel",
     "recovery_confirmation": "Restore this invoice with its original items and payment? This affects wallet balances, inventory, and invoice totals. Nothing will be restored if its references are no longer valid.",
@@ -1295,7 +1296,8 @@
     "recovery_success": "Invoice restored",
     "recovery_unavailable": "This deletion has no active recovery snapshot. Review its audit details; support must verify the original payment and related records before restoration is available.",
     "recovery_undo": "Undo",
-    "restore_invoice": "Restore invoice"
+    "restore_invoice": "Restore invoice",
+    "subscription_context_not_ready": "Billing data is not ready. Wait for loading to finish or reload it before creating this invoice."
   },
   "ws-roles": {
     "manage_desktop_deployment_vault": "Manage desktop deployment vault",
