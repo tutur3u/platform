@@ -27,6 +27,29 @@ export function periodicRaceScripts(holder, competitor) {
   };
 }
 
+export async function withFixtureCleanup(body, cleanup) {
+  let result, primaryFailure;
+  let failed = false;
+  try {
+    result = await body();
+  } catch (error) {
+    failed = true;
+    primaryFailure = error;
+  }
+  try {
+    await cleanup();
+  } catch (cleanupFailure) {
+    if (failed)
+      throw new AggregateError(
+        [primaryFailure, cleanupFailure],
+        'Periodic fixture and cleanup both failed'
+      );
+    throw cleanupFailure;
+  }
+  if (failed) throw primaryFailure;
+  return result;
+}
+
 export async function runPeriodicReportDeliveryConcurrency(metadata) {
   const admitted = await readLifecycleMetadata(metadata.disposableRoot);
   const identity = deriveIsolatedIdentity({
@@ -95,116 +118,125 @@ export async function runPeriodicReportDeliveryConcurrency(metadata) {
       await Promise.allSettled(b ? [a.done, b.done] : [a.done]);
     }
   }
-  try {
-    execute(`insert into public.users(id) values('${actor}');
+  assert.equal(
+    execute(`select count(*) from public.users where id='${actor}';`),
+    '0',
+    'Synthetic actor must not preexist in admitted disposable database'
+  );
+  await withFixtureCleanup(
+    async () => {
+      execute(`insert into public.users(id) values('${actor}');
       insert into public.workspaces(id,name,personal,creator_id) values('${ws}','Synthetic periodic proof',false,'${actor}');
       insert into public.workspace_users(id,ws_id,full_name,email) values('${subject}','${ws}','Synthetic subject','${recipient}');
       insert into public.workspace_user_groups(id,ws_id,name) values('${group}','${ws}','Synthetic group');
       insert into private.external_user_monthly_reports(id,user_id,group_id,title,content,feedback,updated_at)
         values('${report}','${subject}','${group}','Synthetic','Observed','Human',now());
       update private.external_user_monthly_reports set report_approval_status='APPROVED',approved_by='${subject}',approved_at=now() where id='${report}';`);
-    assert.equal(execute(request('send')), '200');
-    // The second real connection must skip the row held by the first connection.
-    const holder = openFixtureSession(
-      spawn('docker', args, { stdio: ['pipe', 'pipe', 'pipe'] })
-    );
-    try {
-      holder.write(
-        `begin; select id from private.external_user_monthly_reports where id='${report}' for update;${marker}`
+      assert.equal(execute(request('send')), '200');
+      // The second real connection must skip the row held by the first connection.
+      const holder = openFixtureSession(
+        spawn('docker', args, { stdio: ['pipe', 'pipe', 'pipe'] })
       );
-      await holder.marker;
-      assert.equal(execute(claim('skipped-worker')), '0');
-      assert.equal(state().queue.attempt_count, 0);
-      holder.end('commit;');
-      assert.equal((await holder.done).code, 0);
-    } finally {
-      holder.end('rollback;');
-      await Promise.allSettled([holder.done]);
-    }
-    assert.equal(execute(claim('first-worker')), '1');
-    assert.equal(execute(claim('duplicate-worker')), '0');
-    let snapshot = state();
-    assert.equal(snapshot.queue.locked_by, 'first-worker');
-    assert.equal(snapshot.queue.attempt_count, 1);
-    assert.equal(snapshot.queue.status, 'processing');
-    assert.equal(snapshot.report.delivery_status, 'processing');
-    assert.equal(
-      execute(
-        finish(
-          snapshot.queue.id,
-          'first-worker',
-          snapshot.queue.locked_at,
-          'failed'
-        )
-      ),
-      't'
-    );
-    assert.equal(execute(request('retry')), '200');
-    const revoked = await contend(
-      `select id from private.external_user_monthly_reports where id='${report}' for update;
+      try {
+        holder.write(
+          `begin; select id from private.external_user_monthly_reports where id='${report}' for update;${marker}`
+        );
+        await holder.marker;
+        assert.equal(execute(claim('skipped-worker')), '0');
+        assert.equal(state().queue.attempt_count, 0);
+        holder.end('commit;');
+        assert.equal((await holder.done).code, 0);
+      } finally {
+        holder.end('rollback;');
+        await Promise.allSettled([holder.done]);
+      }
+      assert.equal(execute(claim('first-worker')), '1');
+      assert.equal(execute(claim('duplicate-worker')), '0');
+      let snapshot = state();
+      assert.equal(snapshot.queue.locked_by, 'first-worker');
+      assert.equal(snapshot.queue.attempt_count, 1);
+      assert.equal(snapshot.queue.status, 'processing');
+      assert.equal(snapshot.report.delivery_status, 'processing');
+      assert.equal(
+        execute(
+          finish(
+            snapshot.queue.id,
+            'first-worker',
+            snapshot.queue.locked_at,
+            'failed'
+          )
+        ),
+        't'
+      );
+      assert.equal(execute(request('retry')), '200');
+      const revoked = await contend(
+        `select id from private.external_user_monthly_reports where id='${report}' for update;
       update private.external_user_monthly_reports set report_approval_status='PENDING',approved_by=null,approved_at=null where id='${report}';`,
-      request('send')
-    );
-    assert.match(revoked, /^409$/mu);
-    snapshot = state();
-    assert.equal(snapshot.queue.status, 'cancelled');
-    assert.equal(snapshot.queue.attempt_count, 1);
-    assert.equal(snapshot.report.report_approval_status, 'PENDING');
-    execute(
-      `update private.external_user_monthly_reports set report_approval_status='APPROVED',approved_by='${subject}',approved_at=now() where id='${report}';`
-    );
-    assert.equal(execute(request('send')), '200');
-    assert.equal(execute(claim('old-worker')), '1');
-    snapshot = state();
-    const stale = await contend(
-      `select id from private.external_user_monthly_reports where id='${report}' for update;
+        request('send')
+      );
+      assert.match(revoked, /^409$/mu);
+      snapshot = state();
+      assert.equal(snapshot.queue.status, 'cancelled');
+      assert.equal(snapshot.queue.attempt_count, 1);
+      assert.equal(snapshot.report.report_approval_status, 'PENDING');
+      execute(
+        `update private.external_user_monthly_reports set report_approval_status='APPROVED',approved_by='${subject}',approved_at=now() where id='${report}';`
+      );
+      assert.equal(execute(request('send')), '200');
+      assert.equal(execute(claim('old-worker')), '1');
+      snapshot = state();
+      const stale = await contend(
+        `select id from private.external_user_monthly_reports where id='${report}' for update;
       update private.user_report_email_queue set locked_by='successor-worker',locked_at=clock_timestamp()+interval '1 second' where id='${snapshot.queue.id}';`,
-      finish(
-        snapshot.queue.id,
-        'old-worker',
-        snapshot.queue.locked_at,
-        'sent',
-        true
-      )
-    );
-    assert.match(stale, /^f$/mu);
-    const successor = state();
-    assert.equal(successor.queue.locked_by, 'successor-worker');
-    assert.equal(successor.queue.status, 'processing');
-    assert.equal(successor.report.delivery_status, 'processing');
-    assert.equal(successor.queue.sent_at, null);
-    assert.equal(
-      execute(
-        finish(
-          successor.queue.id,
-          'successor-worker',
-          successor.queue.locked_at,
-          'sent',
-          true
-        )
-      ),
-      't'
-    );
-    const completed = state();
-    assert.equal(completed.queue.status, 'sent');
-    assert.equal(completed.report.delivery_status, 'sent');
-    assert.equal(
-      execute(
         finish(
           snapshot.queue.id,
           'old-worker',
           snapshot.queue.locked_at,
-          'failed'
+          'sent',
+          true
         )
-      ),
-      'f'
-    );
-    assert.deepEqual(state(), completed);
-  } finally {
-    execute(
-      `delete from public.workspaces where id='${ws}'; delete from public.users where id='${actor}';`
-    );
-  }
+      );
+      assert.match(stale, /^f$/mu);
+      const successor = state();
+      assert.equal(successor.queue.locked_by, 'successor-worker');
+      assert.equal(successor.queue.status, 'processing');
+      assert.equal(successor.report.delivery_status, 'processing');
+      assert.equal(successor.queue.sent_at, null);
+      assert.equal(
+        execute(
+          finish(
+            successor.queue.id,
+            'successor-worker',
+            successor.queue.locked_at,
+            'sent',
+            true
+          )
+        ),
+        't'
+      );
+      const completed = state();
+      assert.equal(completed.queue.status, 'sent');
+      assert.equal(completed.report.delivery_status, 'sent');
+      assert.equal(
+        execute(
+          finish(
+            snapshot.queue.id,
+            'old-worker',
+            snapshot.queue.locked_at,
+            'failed'
+          )
+        ),
+        'f'
+      );
+      assert.deepEqual(state(), completed);
+    },
+    () =>
+      execute(`begin;
+    delete from public.workspaces where creator_id='${actor}';
+    delete from public.workspace_members where user_id='${actor}';
+    delete from public.users where id='${actor}';
+    commit;`)
+  );
   console.log(
     'Actual periodic two-connection SKIP LOCKED, revocation/request and successor-lease completion controls passed; no provider dispatched'
   );

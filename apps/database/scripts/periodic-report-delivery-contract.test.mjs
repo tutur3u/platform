@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import test from 'node:test';
-import { periodicRaceScripts } from './periodic-report-delivery-concurrency.mjs';
+import {
+  periodicRaceScripts,
+  withFixtureCleanup,
+} from './periodic-report-delivery-concurrency.mjs';
 
 const require = createRequire(import.meta.url);
 const {
@@ -34,7 +37,10 @@ test('race admits exact owned metadata and retains cleanup and real RPC outcomes
     'assert.deepEqual(state(), completed)',
   ])
     assert.ok(race.includes(assertion), assertion);
-  assert.match(race, /finally[\s\S]*delete from public\.workspaces/u);
+  assert.match(
+    race,
+    /delete from public\.workspaces where creator_id='\$\{actor\}'/u
+  );
   assert.match(race, /finally[\s\S]*Promise\.allSettled/u);
 });
 test('runner retains all historical fixtures and runs race before actual type generation', () => {
@@ -86,4 +92,58 @@ test('workflow tracks helper dependencies on PR/push and strict generated types 
       step.run?.includes('periodic-report-delivery-contract.test.mjs')
     )
   );
+});
+
+test('cleanup preserves the original failure and surfaces independent teardown failure', async () => {
+  const primary = new Error('synthetic assertion');
+  const cleanup = new Error('synthetic cleanup');
+  await assert.rejects(
+    withFixtureCleanup(
+      async () => {
+        throw primary;
+      },
+      async () => {
+        throw cleanup;
+      }
+    ),
+    (error) =>
+      error instanceof AggregateError &&
+      error.errors[0] === primary &&
+      error.errors[1] === cleanup
+  );
+  await assert.rejects(
+    withFixtureCleanup(
+      async () => {
+        throw primary;
+      },
+      async () => {}
+    ),
+    (error) => error === primary
+  );
+  await assert.rejects(
+    withFixtureCleanup(
+      async () => {},
+      async () => {
+        throw cleanup;
+      }
+    ),
+    (error) => error === cleanup
+  );
+});
+test('teardown is attributable to the newly admitted synthetic actor and includes trigger-created members', () => {
+  assert.ok(
+    race.includes(
+      'Synthetic actor must not preexist in admitted disposable database'
+    )
+  );
+  assert.match(
+    race,
+    /delete from public\.workspace_members where user_id='\$\{actor\}'/u
+  );
+  assert.match(race, /delete from public\.users where id='\$\{actor\}'/u);
+  const trigger = read(
+    '../supabase/migrations/20260504102000_guard_personal_workspace_member_insert.sql'
+  );
+  assert.match(trigger, /values \('PERSONAL', true, new\.id\)/u);
+  assert.match(trigger, /values \(new_ws_id, new\.id\)/u);
 });
