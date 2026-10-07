@@ -7,14 +7,17 @@ const mocks = vi.hoisted(() => ({
   validateTopicAnnouncementGroupId: vi.fn(),
 }));
 
-vi.mock('../shared', () => ({
-  getPublicSchemaClient: vi.fn((client) => client),
-  resolveTopicAnnouncementsAccess: mocks.resolveTopicAnnouncementsAccess,
-  TopicAnnouncementPayloadSchema: {
-    safeParse: mocks.safeParse,
-  },
-  validateTopicAnnouncementGroupId: mocks.validateTopicAnnouncementGroupId,
-}));
+vi.mock(
+  '@/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/shared',
+  () => ({
+    getPublicSchemaClient: vi.fn((client) => client),
+    resolveTopicAnnouncementsAccess: mocks.resolveTopicAnnouncementsAccess,
+    TopicAnnouncementPayloadSchema: {
+      safeParse: mocks.safeParse,
+    },
+    validateTopicAnnouncementGroupId: mocks.validateTopicAnnouncementGroupId,
+  })
+);
 
 function params() {
   return {
@@ -145,3 +148,18 @@ describe('topic announcement preview route', () => {
     expect(response.status).toBe(400);
   });
 });
+
+vi.mock(
+  '@tuturuuu/users-core/routes/topic-announcements/read-helpers',
+  async () =>
+    await vi.importMock(
+      '@/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/shared'
+    )
+);
+vi.mock(
+  '@tuturuuu/users-core/routes/topic-announcements/schemas',
+  async () =>
+    await vi.importMock(
+      '@/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/shared'
+    )
+);

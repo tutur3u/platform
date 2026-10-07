@@ -22,6 +22,13 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: '@', replacement: resolve(__dirname, './src') },
+      {
+        find: '@tuturuuu/supabase/next/server',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/server.ts'
+        ),
+      },
       // Exercise tutoring's authored shared policy without requiring local package builds.
       {
         find: '@tuturuuu/internal-api/workspace-configs',
