@@ -21,7 +21,7 @@ vi.mock('../../../lib/user-groups/route-helpers', () => ({
   resolveRequestActorAuthUid: vi.fn(),
 }));
 
-import { PUT } from './schedules/route';
+import { GET, PUT } from './schedules/route';
 
 const context = { params: Promise.resolve({ wsId: 'personal' }) };
 function request(value: unknown) {
@@ -117,5 +117,51 @@ describe('monthly report automatic sending configuration', () => {
     expect(
       (await PUT(request({ autoSendAfterApproval: true }), context)).status
     ).toBe(500);
+  });
+});
+
+describe('server-computed report email gate capability', () => {
+  it.each([
+    ['manage_workspace_secrets', false],
+    ['send_user_group_report_emails', false],
+    ['none', true],
+  ])('requires both permissions (%s)', async (missing, expected) => {
+    mocks.permissions.mockResolvedValue({
+      containsPermission: (name: string) => name !== missing,
+    });
+    const rows: Record<string, unknown> = {
+      user_report_schedules: [],
+      workspaces: { timezone: 'UTC' },
+      workspace_email_credentials: { id: 'sender-1' },
+      user_report_automation_runs: [],
+      user_report_email_attempts: [],
+      workspace_configs: { value: 'false' },
+    };
+    function from(table: string) {
+      const result = { data: rows[table], error: null };
+      const builder = Object.assign(
+        Promise.resolve(result),
+        {} as Record<string, unknown>
+      );
+      for (const method of [
+        'select',
+        'eq',
+        'order',
+        'limit',
+        'single',
+        'maybeSingle',
+      ])
+        builder[method] = () => builder;
+      return builder;
+    }
+    mocks.admin.mockResolvedValue({ from, schema: () => ({ from }) });
+    const response = await GET(
+      new Request('https://contacts.example/schedules'),
+      context
+    );
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.emailDelivery.canConfigureReportEmailGate).toBe(expected);
+    expect(JSON.stringify(body)).not.toContain('sender-1');
   });
 });

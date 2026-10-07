@@ -125,6 +125,9 @@ export async function GET(request: Request, { params }: Params) {
       ),
       defaults: schedules.filter((schedule) => !schedule.group_id),
       emailDelivery: {
+        canConfigureReportEmailGate:
+          permissions.containsPermission('manage_workspace_secrets') &&
+          permissions.containsPermission('send_user_group_report_emails'),
         canConfigureAutoSend:
           permissions.containsPermission('manage_user_report_automation') &&
           permissions.containsPermission('send_user_group_report_emails'),
