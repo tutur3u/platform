@@ -199,3 +199,29 @@ test('period mutation controls satisfy the actual historical paired-date constra
   ])
     assert.ok(fixture.includes(control));
 });
+
+test('approval mutation supplies historically required actor and timestamp together', () => {
+  const historical = read(
+    '../supabase/migrations/20260202104019_report_post_approval_system.sql'
+  );
+  assert.match(
+    historical,
+    /report_approval_status = 'APPROVED' AND approved_by IS NOT NULL AND approved_at IS NOT NULL/u
+  );
+  assert.ok(
+    fixture.includes(
+      "jsonb_build_object('report_approval_status','APPROVED','approved_by',pg_temp.fid(97106),'approved_at','2026-10-06T00:00:00Z')"
+    )
+  );
+  assert.doesNotMatch(
+    fixture,
+    /\('\{"report_approval_status":"APPROVED"\}'::jsonb\)/u
+  );
+  for (const control of [
+    'approved status requires actor',
+    'approved status requires timestamp',
+    'pending status rejects leftover approval metadata',
+    'invalid approval metadata leaves revision unchanged',
+  ])
+    assert.ok(fixture.includes(control));
+});

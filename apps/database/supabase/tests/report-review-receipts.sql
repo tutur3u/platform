@@ -110,7 +110,7 @@ select pg_temp.assert_patch(p) from (values
   ('{"period_end":"2026-10-08"}'::jsonb),('{"manager_instruction":"Human review"}'::jsonb),
   ('{"manager_instruction":null}'::jsonb),('{"generation_mode":"ai"}'::jsonb),
   ('{"generation_status":"generating"}'::jsonb),('{"source_context":{"evidence":"synthetic"}}'::jsonb),
-  ('{"report_approval_status":"APPROVED"}'::jsonb),('{"approved_at":"2026-10-07T00:00:00Z"}'::jsonb),
+  (jsonb_build_object('report_approval_status','APPROVED','approved_by',pg_temp.fid(97106),'approved_at','2026-10-06T00:00:00Z')),('{"approved_at":"2026-10-07T00:00:00Z"}'::jsonb),
   (jsonb_build_object('approved_by',pg_temp.fid(97101))),
   (jsonb_build_object('rejected_by',pg_temp.fid(97101))),
   ('{"rejected_at":"2026-10-07T01:00:00Z"}'::jsonb),
@@ -122,6 +122,12 @@ select throws_ok($q$select pg_temp.patch_report('{"period_end":null}'::jsonb)$q$
 select throws_ok($q$select pg_temp.patch_report('{"period_end":"2026-10-01"}'::jsonb)$q$,'23514',null,'reversed period rejected by actual constraint');
 select is((select review_revision from private.external_user_monthly_reports where id=pg_temp.fid(97401)),(select review_revision from pre_invalid_period_revision),'invalid periods leave revision unchanged');
 
+-- Approval consistency is a historical constraint, not a receipt admission rule.
+create temp table pre_invalid_approval_revision as select review_revision from private.external_user_monthly_reports where id=pg_temp.fid(97401);
+select throws_ok($q$select pg_temp.patch_report('{"approved_by":null}'::jsonb)$q$,'23514',null,'approved status requires actor');
+select throws_ok($q$select pg_temp.patch_report('{"approved_at":null}'::jsonb)$q$,'23514',null,'approved status requires timestamp');
+select throws_ok($q$select pg_temp.patch_report('{"report_approval_status":"PENDING"}'::jsonb)$q$,'23514',null,'pending status rejects leftover approval metadata');
+select is((select review_revision from private.external_user_monthly_reports where id=pg_temp.fid(97401)),(select review_revision from pre_invalid_approval_revision),'invalid approval metadata leaves revision unchanged');
 create temp table pre_service_revision as select review_revision from private.external_user_monthly_reports where id=pg_temp.fid(97401);
 set local role service_role;
 update private.external_user_monthly_reports set review_revision=777,last_delivery_error='Trusted server bookkeeping'
