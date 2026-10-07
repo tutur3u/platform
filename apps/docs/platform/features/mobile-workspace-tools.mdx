@@ -1779,6 +1779,24 @@ request. Ordinary background requests coalesce without throwing; a failed fresh
 request reports the existing safe refresh warning and can be retried without
 resubmitting the accepted read. Regression coverage: `notification_read_held_feed_test.dart`.
 
+### Assistant Settings Above the Shell
+
+The central Assistant settings entry and Mira quick settings open the same framed
+editor above the shell. Its single heading and Back action cover the underlying
+shell chrome; other scoped settings routes retain their existing routing. Captured
+account/workspace providers and sticky scope invalidation remain in force, so a
+held preference load cannot restore an editor after an account/workspace switch,
+including switching away and back. Large-text content scrolls above the frame's
+Back action. Real shell regressions cover English/Vietnamese, narrow screens,
+large text, Back restoration, actionable switch clearance and held-load scope
+transitions. Both current-route cancellation and removal below an unrelated
+covering route are exercised, with sticky rejection after account/workspace ABA
+and after the held preference completes. Regression coverage:
+`settings_assistant_shell_checks.dart`, registered by
+`settings_compact_navigation_test.dart`. This source fix
+does not claim native TestFlight delivery or establish the original screenshot's
+exact installed build.
+
 ### Workspace Secrets Settings Heading
 
 The mobile workspace Secrets detail uses the shared shell title and Back action.

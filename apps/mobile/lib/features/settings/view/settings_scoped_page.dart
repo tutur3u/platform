@@ -11,6 +11,7 @@ Future<void> pushScopedSettingsPage(
   BuildContext context, {
   required Widget Function(BuildContext context, bool Function() isCurrent)
   builder,
+  bool rootNavigator = false,
 }) async {
   final auth = context.read<AuthCubit?>();
   final workspace = context.read<WorkspaceCubit?>();
@@ -55,9 +56,18 @@ Future<void> pushScopedSettingsPage(
   }
   try {
     route = MaterialPageRoute<void>(
-      builder: (context) => builder(context, isCurrent),
+      builder: (context) => rootNavigator
+          ? MultiBlocProvider(
+              providers: [
+                if (auth != null) BlocProvider<AuthCubit>.value(value: auth),
+                if (workspace != null)
+                  BlocProvider<WorkspaceCubit>.value(value: workspace),
+              ],
+              child: Builder(builder: (context) => builder(context, isCurrent)),
+            )
+          : builder(context, isCurrent),
     );
-    await Navigator.of(context).push<void>(route);
+    await Navigator.of(context, rootNavigator: rootNavigator).push<void>(route);
   } finally {
     for (final subscription in subscriptions) {
       await subscription.cancel();

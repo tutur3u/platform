@@ -165,6 +165,7 @@ extension _AssistantPageLiveActions on _AssistantPageState {
     final location = GoRouterState.of(context).matchedLocation;
     await pushScopedSettingsPage(
       context,
+      rootNavigator: true,
       builder: (_, isCurrent) => AssistantSettingsHub(
         workspaceId: wsId,
         locations: {location},
