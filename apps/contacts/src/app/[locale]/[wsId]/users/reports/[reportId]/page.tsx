@@ -238,6 +238,7 @@ async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
     .select('*', { count: 'exact' })
     .eq('id', reportId)
     .eq('user_ws_id', wsId)
+    .eq('group_ws_id', wsId)
     .order('created_at', { ascending: false })
     .maybeSingle();
 
@@ -327,6 +328,7 @@ async function getReports(
     .select('*', { count: 'exact' })
     .eq('user_id', userId)
     .eq('user_ws_id', wsId)
+    .eq('group_ws_id', wsId)
     .order('created_at', { ascending: false });
 
   const { data: rawData, error, count } = await queryBuilder;

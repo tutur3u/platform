@@ -44,10 +44,18 @@ class EventCard extends StatelessWidget {
           Theme.of(context).textTheme.labelSmall?.fontSize ?? 12,
         ) *
         1.1;
-    final height = math.max(
+    final naturalHeight = math.max(
       (durationMinutes / 60) * hourHeight,
       timedEventMinimumHeight(hourHeight, labelHeight + 6),
     );
+    final height = layoutInfo.paintDuration == null
+        ? naturalHeight
+        : layoutInfo.paintDuration!.inMicroseconds.clamp(
+                0,
+                Duration.microsecondsPerDay,
+              ) /
+              Duration.microsecondsPerHour *
+              hourHeight;
     final showTime = height >= labelHeight + textScaler.scale(10) * 1.1 + 6;
 
     final columnWidth = timelineWidth / layoutInfo.totalColumns;
@@ -62,42 +70,55 @@ class EventCard extends StatelessWidget {
       left: left,
       width: width,
       height: height,
-      child: GestureDetector(
+      child: Semantics(
+        button: true,
+        label: '${event.title ?? ''}, $startTime – $endTime',
         onTap: onTap,
-        child: Container(
-          margin: const EdgeInsets.only(right: 1, bottom: 1),
-          decoration: BoxDecoration(
-            color: EventColors.inContext(event, context).background,
-            borderRadius: BorderRadius.circular(6),
-            border: Border(left: BorderSide(color: accentColor, width: 3)),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                event.title ?? '',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  height: 1.1,
-                  color: titleColor,
+        excludeSemantics: true,
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            margin: const EdgeInsets.only(right: 1, bottom: 1),
+            decoration: BoxDecoration(
+              color: EventColors.inContext(event, context).background,
+              borderRadius: BorderRadius.circular(6),
+              border: Border(left: BorderSide(color: accentColor, width: 3)),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            child: ClipRect(
+              child: OverflowBox(
+                alignment: Alignment.topLeft,
+                minHeight: 0,
+                maxHeight: double.infinity,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      event.title ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        height: 1.1,
+                        color: titleColor,
+                      ),
+                    ),
+                    if (showTime)
+                      Text(
+                        '$startTime – $endTime',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          fontSize: 10,
+                          height: 1.1,
+                          color: titleColor,
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              if (showTime)
-                Text(
-                  '$startTime – $endTime',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontSize: 10,
-                    height: 1.1,
-                    color: titleColor,
-                  ),
-                ),
-            ],
+            ),
           ),
         ),
       ),

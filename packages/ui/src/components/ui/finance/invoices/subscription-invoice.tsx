@@ -5,10 +5,8 @@ import { AlertTriangle, Calculator, Plus } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
-import { toast } from '@tuturuuu/ui/sonner';
 import { resolveSupportedCurrency } from '@tuturuuu/utils/currencies';
 import { shouldLockFinanceWalletSelectionOnCreate } from '@tuturuuu/utils/finance';
-import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import {
@@ -20,7 +18,6 @@ import {
   useState,
 } from 'react';
 import { useDebounce } from '../../../../hooks/use-debounce';
-import { useFinanceHref } from '../finance-route-context';
 import { FinancePermissionWarningDialog } from '../shared/finance-permission-warning-dialog';
 import { useFinanceConfidentialVisibility } from '../shared/use-finance-confidential-visibility';
 import { InvoiceBlockedState } from './components/invoice-blocked-state';
@@ -58,11 +55,9 @@ import { useBestPromotionSelection } from './hooks/use-best-promotion-selection'
 import { useInvoiceRounding } from './hooks/use-invoice-rounding';
 import { useInvoiceSubtotal } from './hooks/use-invoice-subtotal';
 import { useSubscriptionAutoSelection } from './hooks/use-subscription-auto-selection';
+import { useSubscriptionCreate } from './hooks/use-subscription-create';
 import { useSubscriptionInvoiceContent } from './hooks/use-subscription-invoice-content';
-import { createSubscriptionInvoiceWithInternalApi } from './internal-api';
-import { formatInvoiceRecalculationDescription } from './invoice-visibility-format';
 import { ProductSelection } from './product-selection';
-import { invalidateInvoiceMutationQueries } from './query-invalidation';
 import {
   getSubscriptionBlockReason,
   isSelectedSubscriptionRangePaid,
@@ -110,12 +105,10 @@ export function SubscriptionInvoice({
 }: SubscriptionInvoiceProps) {
   const t = useTranslations();
   const locale = useLocale();
+  const queryClient = useQueryClient();
   const defaultCurrency = resolveSupportedCurrency(rawDefaultCurrency);
   const { isConfidential: areNumbersHidden } =
     useFinanceConfidentialVisibility();
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const financeHref = useFinanceHref();
 
   const [selectedUserId, setSelectedUserId] = useQueryState('user_id', {
     defaultValue: '',
@@ -249,7 +242,6 @@ export function SubscriptionInvoice({
 
   const [invoiceContent, setInvoiceContent] = useState<string>('');
   const [invoiceNotes, setInvoiceNotes] = useState<string>('');
-  const [isCreating, setIsCreating] = useState(false);
   const [createPromotionOpen, setCreatePromotionOpen] = useState(false);
 
   const prevUserIdRef = useRef<string | null>(null);
@@ -787,35 +779,10 @@ export function SubscriptionInvoice({
     selectedWalletId &&
     selectedCategoryId
   );
-  const handleCreateSubscriptionInvoice = async () => {
-    if (blockedReason) {
-      toast(t(`ws-invoices.${blockedReason}`));
-      return;
-    }
-    if (!checkoutReady) {
-      toast(t('ws-invoices.create_subscription_invoice_validation'));
-      return;
-    }
-
-    const productsPayload = subscriptionSelectedProducts
-      .filter((item) => item.quantity > 0)
-      .map((item) => ({
-        product_id: item.product.id,
-        unit_id: item.inventory.unit_id,
-        warehouse_id: item.inventory.warehouse_id,
-        quantity: item.quantity,
-        price: item.inventory.price,
-        category_id: item.product.category_id,
-      }));
-
-    if (productsPayload.length === 0) {
-      toast(t('ws-invoices.no_products_to_invoice'));
-      return;
-    }
-
-    setIsCreating(true);
-    try {
-      const result = await createSubscriptionInvoiceWithInternalApi(wsId, {
+  const { submit: handleCreateSubscriptionInvoice, creating: isCreating } =
+    useSubscriptionCreate({
+      wsId,
+      payload: {
         customer_id: selectedUserId,
         group_ids: selectedGroupIdsForCreate,
         selected_month: effectiveSelectedMonth,
@@ -824,45 +791,32 @@ export function SubscriptionInvoice({
         wallet_id: selectedWalletId,
         promotion_id:
           selectedPromotionId !== 'none' ? selectedPromotionId : undefined,
-        products: productsPayload,
+        products: subscriptionSelectedProducts
+          .filter((item) => item.quantity > 0)
+          .map((item) => ({
+            product_id: item.product.id,
+            unit_id: item.inventory.unit_id,
+            warehouse_id: item.inventory.warehouse_id,
+            quantity: item.quantity,
+            price: item.inventory.price,
+            category_id: item.product.category_id,
+          })),
         category_id: selectedCategoryId,
         frontend_subtotal: subtotal,
         frontend_discount_amount: discountAmount,
         frontend_total: subscriptionRoundedTotal,
         prepaid_month_count: prepaidMonthCount,
-      });
-      void invalidateInvoiceMutationQueries(queryClient, wsId);
-
-      if (result.data?.values_recalculated) {
-        const { calculated_values, frontend_values } = result.data;
-
-        toast(t('ws-invoices.subscription_invoice_created_recalculated'), {
-          description: formatInvoiceRecalculationDescription({
-            areNumbersHidden,
-            calculatedTotal: calculated_values.total,
-            currency: defaultCurrency,
-            frontendTotal: frontend_values?.total || 0,
-            roundingApplied: calculated_values.rounding_applied,
-            t,
-          }),
-          duration: 5000,
-        });
-      } else {
-        toast(
-          t('ws-invoices.subscription_invoice_created_success', {
-            invoiceId: result.invoice_id,
-          })
-        );
-      }
-
-      if (!createMultipleInvoices) {
-        const queryParams = new URLSearchParams();
-        if (printAfterCreate) queryParams.set('print', 'true');
-        if (downloadImageAfterCreate) queryParams.set('image', 'true');
-        router.push(
-          `/${wsId}${financeHref(`/invoices/${result.invoice_id}`)}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
-        );
-      } else {
+      },
+      options: {
+        createMultipleInvoices,
+        printAfterCreate,
+        downloadImageAfterCreate,
+      },
+      blockedReason,
+      checkoutReady,
+      areNumbersHidden,
+      currency: defaultCurrency,
+      onReset: () => {
         setSubscriptionSelectedProducts([]);
         setSelectedPromotionId('none');
         setInvoiceContent('');
@@ -874,20 +828,8 @@ export function SubscriptionInvoice({
         setSelectedGroupIds(null);
         setPrepaidMonthCount(1);
         setCustomerSearch('');
-      }
-    } catch (error) {
-      toast(
-        t('ws-invoices.error_creating_subscription_invoice', {
-          error:
-            error instanceof Error
-              ? error.message
-              : t('ws-invoices.failed_to_create_subscription_invoice'),
-        })
-      );
-    } finally {
-      setIsCreating(false);
-    }
-  };
+      },
+    });
 
   if (
     isLoadingData ||

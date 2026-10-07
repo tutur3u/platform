@@ -4512,5 +4512,8 @@
   "assistantMemoryEditMissing": "This memory is no longer available.",
   "assistantMemoryEditAuditWarning": "Your changes are saved, but the activity record could not be confirmed. Do not save them again.",
   "assistantMemoryReviewLatest": "Review latest version",
-  "assistantMemorySaveChanges": "Save my changes"
+  "assistantMemorySaveChanges": "Save my changes",
+  "notificationsReadCleanupUnavailable": "Read accepted. Some system notifications could not be dismissed.",
+  "notificationsReadRefreshUnavailable": "Read accepted. The inbox could not refresh. Pull to refresh.",
+  "notificationsReadError": "Could not accept the read action. Try again."
 }

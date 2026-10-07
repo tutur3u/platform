@@ -74,6 +74,7 @@ export async function GET(request: Request, { params }: Params) {
           head: true,
         })
         .eq('user_ws_id', wsId)
+        .eq('group_ws_id', wsId)
         .eq('report_approval_status', 'PENDING'),
       sbAdmin
         .schema('private')

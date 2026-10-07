@@ -1,13 +1,11 @@
 import {
   keepPreviousData,
-  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import {
   getPendingFinanceInvoicesCount,
-  getSubscriptionInvoiceContext,
   listFinanceInvoices,
   listPendingFinanceInvoices,
   listTransactionCategories,
@@ -28,14 +26,15 @@ import {
   listMultiGroupProductsWithInternalApi,
   listPromotionsWithInternalApi,
   listUserGroupProductsWithInternalApi,
-  listUserGroupsWithInternalApi,
   listUserLinkedPromotionsWithInternalApi,
   listUserReferralDiscountsWithInternalApi,
   listWorkspaceUsersWithInternalApi,
 } from './internal-api';
-import type { UserGroup } from './utils';
 
+export { useInfiniteUserInvoices } from './hooks/use-infinite-user-invoices';
 export { useInvoiceCustomerSearch } from './hooks/use-invoice-customer-search';
+export { useSubscriptionInvoiceContext } from './hooks/use-subscription-invoice-context';
+export { useUserGroups } from './hooks/use-user-groups';
 
 const invoiceSchema = z.object({
   id: z.string(),
@@ -340,102 +339,6 @@ export const useUserInvoices = (wsId: string, userId: string) => {
       return payload.data || [];
     },
     enabled: !!userId,
-  });
-};
-
-export const useInfiniteUserInvoices = (
-  wsId: string,
-  userId: string,
-  pageSize = 10
-) => {
-  return useInfiniteQuery({
-    queryKey: ['infinite-user-invoices', wsId, userId],
-    queryFn: async ({ pageParam = 1 }: { pageParam: number }) => {
-      const payload = await listFinanceInvoices(wsId, {
-        customerIds: [userId],
-        page: String(pageParam),
-        pageSize: String(pageSize),
-      });
-      const data = payload.data || [];
-      const count = payload.count ?? 0;
-      const fetchedCount = pageParam * pageSize;
-
-      return {
-        data,
-        count,
-        nextPage: fetchedCount < count ? pageParam + 1 : null,
-        hasMore: fetchedCount < count,
-      };
-    },
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => lastPage.nextPage,
-    enabled: !!userId,
-  });
-};
-
-export const useUserGroups = (wsId: string, userId: string) => {
-  return useQuery({
-    queryKey: ['user-groups', wsId, userId],
-    queryFn: async (): Promise<UserGroup[]> => {
-      if (!userId) return [];
-      const groups = await listUserGroupsWithInternalApi(wsId, userId);
-      return (groups || []).map((group) => ({
-        workspace_user_groups: group.workspace_user_groups ?? null,
-      }));
-    },
-    enabled: !!wsId && !!userId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnWindowFocus: false,
-    retry: false,
-  });
-};
-
-export const useSubscriptionInvoiceContext = (
-  wsId: string,
-  userId: string,
-  groupIds: string[],
-  month: string,
-  monthCount = 1
-) => {
-  return useQuery({
-    queryKey: [
-      'subscription-invoice-context',
-      wsId,
-      userId,
-      groupIds,
-      month,
-      monthCount,
-    ],
-    queryFn: async () => {
-      if (!wsId || !userId || groupIds.length === 0 || !month) {
-        return {
-          attendance: [] as Array<{
-            status: string;
-            date: string;
-            group_id?: string;
-          }>,
-          latestInvoices: [] as Array<{
-            group_id?: string;
-            valid_until?: string | null;
-            created_at?: string | null;
-          }>,
-          scheduledSessionsByGroupId: {} as Record<string, string[]>,
-        };
-      }
-
-      return getSubscriptionInvoiceContext(wsId, {
-        groupIds,
-        month,
-        monthCount,
-        userId,
-      });
-    },
-    enabled: !!wsId && !!userId && groupIds.length > 0 && !!month,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    retry: false,
   });
 };
 

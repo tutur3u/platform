@@ -1612,3 +1612,150 @@ shell dock and API-backed workspace chat behavior. The actual host account-switc
 and delayed-cancellation regressions are in `chat_actor_lifetime_test.dart`.
 
 Chat rejects retained-cubit API dispatch after its actor lifetime ends. A send waiting for previous stream cancellation rechecks actor, workspace and selected conversation before starting a new request; stale conversation creation results do not trigger selection reads or return a navigable result. Already dispatched server writes are not cancelled by this client boundary. Deferred cancellation and creation regressions cover these rules.
+
+
+### Delivered inbox identity foundation
+
+Standard persisted notification pushes carry a versioned `inboxIdentity` capsule
+from the recipient account, actual inbox workspace column (explicit null for
+personal), and notification row ID. Android receives the same full identity as
+its notification tag. This is an encoded identity, not encryption or an action
+authorization token. Display/navigation metadata cannot change its owner or scope;
+a personal inbox invite can still navigate to a shared workspace.
+
+Custom/MFA pushes strip the reserved `inboxIdentity` data field and receive no
+owned inbox tag; other custom metadata remains unchanged. Legacy rows
+without valid recipient/workspace/notification identity remain unqualified; they
+must not be bulk dismissed by guessing their owner. Existing Mail navigation is
+preserved without promoting its legacy metadata into trusted inbox identity.
+`push-inbox-identity.test.ts` covers the actual payload constructor and outgoing
+transport with a fake Firebase client, including same-ID foreign scopes,
+personal/navigation separation and legacy/custom exclusions.
+
+This packet provides identity only. Mobile delivered-only removal and read-action
+integration remain separate; it does not clear an OS tray or cancel future task
+and calendar reminders. Source tests are not device proof. A future delivery
+receipt must record the actual TestFlight version/build and verify foreground
+and background single/all-read dismissal while foreign scopes, later arrivals,
+and pending reminders survive. The reported 0.23.4 build number remains unknown.
+
+### Delivered-only native bridge
+
+The mobile bridge binds to the current account session, snapshots delivered inbox
+notifications, and removes only still-matching captured deliveries. A null inbox
+workspace selector means all inbox scopes available to that actor, matching the
+existing bulk-read API; an explicit workspace selector is narrower. Missing or
+malformed ownership capsules remain untouched. Foreground and data-only background
+local notifications preserve the same capsule as standard remote pushes.
+
+Android uses app-owned active notification tag/ID/post time; iOS uses delivered
+request identifier/delivery date and remote or local capsule metadata. Account
+session changes invalidate outstanding snapshots, including logout/relogin ABA.
+Enumeration beyond 512 delivered records or eight retained snapshots fails closed.
+A discard operation releases a snapshot without removing notifications. Neither
+platform bridge calls pending-notification or alarm cancellation APIs.
+
+The native platforms offer no atomic timestamp-conditioned removal. Rechecking
+captured identity and delivery time protects replacements already visible during
+the recheck, but a replacement racing between recheck and OS removal remains a
+platform limitation. Returned counts mean matched removal requests submitted,
+not verified tray disappearance. Read-action integration is a separate packet;
+this bridge alone does not dismiss notifications when marking them read.
+
+Dart MethodChannel tests cover actor/session ABA, held callbacks, strict receipts,
+scope selection, malformed capsules and metadata round trips using fake native
+transport. Native compilation and actual TestFlight foreground/background tray
+behavior remain separate required evidence. Future scheduled task/calendar
+reminders must survive single/all-read cleanup. Record the actual version and
+build number for device feedback; source tests do not identify a delivered build.
+
+Push-service session start/stop/dispose also invalidate a sticky lifetime epoch.
+A start held in native binding, initialization, token lookup or device-ID lookup
+cannot continue into registration or pending-navigation dispatch after departure,
+including a same-account logout/relogin. The registration helper rechecks its
+captured lifetime before writing, and disposal closes initialization/navigation
+admission. Already dispatched transport writes cannot be undone by this boundary.
+`push_service_session_lifetime_test.dart` exercises actual service methods and the
+actual registration helper with injected platform/token/device transport.
+
+### Calendar viewport and adjacent timed-card geometry
+
+Mobile Day, Three-day and Week timelines keep isolated back-to-back events at
+full available width. Half-open timestamp components identify genuine overlap;
+an isolated card's readable minimum is capped at the next disjoint start, and
+paint and column assignment use that same extent. Tiny capped cards clip their
+visual content, retain full title/time button semantics and do not extend their
+hit area into the next event. Genuine simultaneous/transitive overlap clusters
+retain readable minimum heights and physical conflict columns; a timestamp-
+disjoint successor can still share columns with that readable cluster.
+
+The expanded all-day bar reserves rows only for spans intersecting the current
+viewport using the same four-pixel chip inset as painting, including partially
+visible chips. An inset-only edge cannot reserve rows. Buffered offscreen events cannot
+reserve rows or expose an expand toggle. A zero-row strip keeps its horizontal
+controller attached while traversing the continuous date window. Stable event
+keys and label clamps remain. Before controller attachment, sizing and chip
+painting use the same selected-date offset. Horizontal pixel scrolling rebuilds
+only the all-day strip, rather than the buffered timed columns; actual date-window
+recenter/reset still updates the parent and coordinated positions. User week-start,
+date reselect and data scope are unchanged.
+
+Rendered regressions cover viewport growth/shrink/empty states, offscreen async
+updates without first-column height shifts, initial attachment and inset-only
+edges, unchanged timed-column model reads on pixel scroll, scaled/fractional/short overlap,
+back-to-back card widths and distinct tiny-card taps/accessibility. Device
+TestFlight0.23.4's reported flicker is not confirmed fixed by these widget tests;
+exact CI and recorded version/build/runtime verification remain required.
+### Reading inbox notifications and the system tray
+
+Mobile reads capture a bounded snapshot of actual delivered notifications before
+accepting the read. Single reads match the current actor and notification ID;
+workspace bulk reads match that workspace, while the personal/all-workspaces
+inbox follows the existing API's actor-wide bulk scope. This is independent of
+the visible 20-row feed. Unread transitions never dismiss notifications.
+
+Only the captured, still-current session can request delivered-item removal.
+Mounted read controls suppress stale cleanup and refresh after account/workspace
+changes or route disposal. The opened-item helper follows its actor-bound ID
+across intentional navigation and rechecks that actor/native lifetime before
+publishing a refresh; logout/relogin invalidates both paths. Captured native
+tags/identifiers and delivery timestamps
+retain later arrivals and replacements. Pending scheduled reminders are never
+cancelled. Legacy deliveries without trusted identity remain untouched.
+
+A repository read may be a durable offline intent, rather than a confirmed server
+write. Cleanup failure preserves that acceptance and shows a localized warning;
+it does not retry the read. Failed reads discard their snapshot without removing
+OS items. A later inbox or badge refresh failure similarly preserves accepted
+read state and shows the localized refresh warning. Mutation refreshes consume
+explicit per-operation success receipts, including ordinary transport exceptions;
+background badge/feed helpers retain their nonthrowing behavior and badge calls
+still share one in-flight request. When cleanup and refresh both fail, the tray
+cleanup warning takes precedence; the accepted read is never resubmitted.
+The delivered-only bridge is applicable to native Android and iOS. Web, Windows,
+Linux and macOS retain actor/session fencing but do not attempt this unregistered
+channel or show an unavailable-cleanup warning solely for its absence. Failed
+binding or a missing channel on Android/iOS still produces that warning. Web
+capability-policy tests are not browser compilation or OS runtime evidence.
+The platform APIs still cannot atomically compare and delete an OS item; the
+previously documented last-moment replacement race remains.
+
+Regression evidence uses actual mounted inbox actions, the real Cubit and opened
+notification helper with fake repository/platform transports, including scope
+ABA and rejection controls. It is not device evidence. Delivery requires exact
+native CI and a recorded TestFlight version/build/source SHA: foreground and
+background single/bulk reads must clear only matching delivered tray items while
+other actors, out-of-scope workspaces, later deliveries and future reminders
+survive.
+
+### Notification post-write feed refresh
+
+Notification read actions invalidate any pre-write feed response before awaiting
+its completion, then request a fresh feed after the accepted write. Loading is
+not treated as a failed refresh. Queued continuations retain actor/workspace
+lifecycle admission. Held pre-write pagination is fenced by the same tab
+generation on both success and error, so it cannot restore captured unread items.
+An abandoned scope cannot publish or start a replacement
+request. Ordinary background requests coalesce without throwing; a failed fresh
+request reports the existing safe refresh warning and can be retried without
+resubmitting the accepted read. Regression coverage: `notification_read_held_feed_test.dart`.

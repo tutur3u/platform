@@ -2877,6 +2877,33 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "First-class live Web handler with canonical shared topic read/preview policy. Contacts supplies independently verified app-session workspace admission. Preview POST remains migration backlog; no provider send or feature-gate change."
+    },
+    "api:/api/v1/workspaces/:wsId/users/approvals:apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Next.js approvals facade preserves existing GET/HEAD adapters and independent Web PUT auth/daily enqueue. Periodic single approve/reject and batch selection require both subject and group workspace. Initial scope check is not atomic canonical approval.",
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Existing Rust GET-only approvals source remains unchanged; runtime cutover is not claimed."
+        },
+        "PUT": {
+          "status": "legacy-next",
+          "targetOwner": "rust-backend",
+          "note": "Rust returns None for PUT, preserving live Next.js mutation ownership. Canonical locked revision/receipt/bounded explicit approval closure remains pending."
+        }
+      }
+    },
+    "api:/api/v1/workspaces/:wsId/settings/approvals/pending-summary:apps/web/src/app/api/v1/workspaces/[wsId]/settings/approvals/pending-summary/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "First-class Web GET/HEAD retains existing admission and daily behavior; periodic report reads require both subject and group workspace. Existing Rust GET source kept faithful; no traffic cutover or canonical approval activation."
+    },
+    "api:/api/v1/workspaces/:wsId/users/approvals/logs:apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/logs/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "First-class Web GET/HEAD retains existing admission and daily behavior; periodic report reads require both subject and group workspace. Existing Rust GET source kept faithful; no traffic cutover or canonical approval activation."
     }
   }
 }
