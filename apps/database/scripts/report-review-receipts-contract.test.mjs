@@ -163,3 +163,16 @@ test('row serialization is cached once after caller revision reset and before fi
   );
   assert.match(migration, /NEW\.review_revision := OLD\.review_revision \+ 1/u);
 });
+
+test('both SQL and race actor fixtures use the actual workspace user display column', () => {
+  for (const source of [fixture, race]) {
+    assert.match(
+      source,
+      /insert into public\.workspace_users\(id,ws_id,full_name\)/u
+    );
+    assert.doesNotMatch(
+      source,
+      /insert into public\.workspace_users\([^)]*\bname\b[^)]*\)/u
+    );
+  }
+});

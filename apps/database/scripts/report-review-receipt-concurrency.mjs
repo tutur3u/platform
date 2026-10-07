@@ -60,7 +60,7 @@ export async function runReportReviewConcurrency(metadata) {
   execute(`insert into auth.users(id) values('${actor}');
     insert into public.users(id) values('${actor}') on conflict do nothing;
     insert into public.workspaces(id,name,personal,creator_id) values('${ws}','Synthetic review race',false,'${actor}');
-    insert into public.workspace_users(id,ws_id,name) values('${subject}','${ws}','Synthetic subject');
+    insert into public.workspace_users(id,ws_id,full_name) values('${subject}','${ws}','Synthetic subject');
     insert into public.workspace_user_groups(id,ws_id,name) values('${group}','${ws}','Synthetic group');
     insert into private.external_user_monthly_reports(id,user_id,group_id,title,content,feedback,updated_at)
       values('${report}','${subject}','${group}','Initial','Observed','Next step',now());`);

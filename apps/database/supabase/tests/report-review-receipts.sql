@@ -17,9 +17,9 @@ insert into public.workspace_members(ws_id,user_id,type) values
   (pg_temp.fid(97011),pg_temp.fid(97005),'GUEST');
 update public.workspace_default_permissions set enabled=false
   where ws_id in(pg_temp.fid(97011),pg_temp.fid(97012));
-insert into public.workspace_users(id,ws_id,name) select pg_temp.fid(n),pg_temp.fid(97011),'Synthetic actor'
+insert into public.workspace_users(id,ws_id,full_name) select pg_temp.fid(n),pg_temp.fid(97011),'Synthetic actor'
   from generate_series(97101,97107) n;
-insert into public.workspace_users(id,ws_id,name) values(pg_temp.fid(97108),pg_temp.fid(97012),'Foreign actor');
+insert into public.workspace_users(id,ws_id,full_name) values(pg_temp.fid(97108),pg_temp.fid(97012),'Foreign actor');
 insert into public.workspace_user_linked_users(platform_user_id,virtual_user_id,ws_id)
   select pg_temp.fid(97000+n),pg_temp.fid(97100+n),pg_temp.fid(97011) from generate_series(1,6) n
   on conflict(platform_user_id,ws_id) do update set virtual_user_id=excluded.virtual_user_id;
