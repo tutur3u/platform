@@ -37,6 +37,7 @@ declare
   v_now timestamptz;
   v_id uuid;
   v_result jsonb;
+  v_update_limit text;
 begin
   if p_ws_id is null or p_actor_id is null or p_command_id is null
     or p_expected_revision is null or p_expected_revision<0
@@ -110,9 +111,17 @@ begin
     raise exception 'Running session starts in the future' using errcode='55000';
   end if;
   if v_previous.id is not null then
-    update public.time_tracking_sessions set end_time=v_now,is_running=false,
-      duration_seconds=extract(epoch from(v_now-v_previous.start_time))::integer
-      where id=v_previous.id and ws_id=p_ws_id and user_id=p_actor_id;
+    v_update_limit:=coalesce(nullif(current_setting('time_tracking.bypass_update_limit',true),''),'off');
+    begin
+      perform set_config('time_tracking.bypass_update_limit','on',true);
+      update public.time_tracking_sessions set end_time=v_now,is_running=false,
+        duration_seconds=extract(epoch from(v_now-v_previous.start_time))::integer
+        where id=v_previous.id and ws_id=p_ws_id and user_id=p_actor_id;
+    exception when others then
+      perform set_config('time_tracking.bypass_update_limit',v_update_limit,true);
+      raise;
+    end;
+    perform set_config('time_tracking.bypass_update_limit',v_update_limit,true);
   end if;
   insert into public.time_tracking_sessions(ws_id,user_id,title,description,
     category_id,task_id,start_time,is_running,created_at,updated_at)

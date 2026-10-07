@@ -79,7 +79,11 @@ The operation acquires the existing actor/workspace advisory key before control,
 linked requests, session and break rows. One database timestamp captured after
 contention closes and starts work. Existing accounting and policy triggers remain
 in force; closing work supplies canonical integer elapsed seconds from that same
-clock before the existing productivity trigger executes. A future-starting running
+clock before the existing productivity trigger executes. To close already-running
+work older than a positive edit threshold, only that canonical close update uses
+a transaction-local update-limit bypass; the prior value is restored before the
+new insert and on close failure. Other policy guards and legacy triggers remain
+unchanged. A future-starting running
 row or any open break for that actor/workspace, including a paused session's
 break, is rejected without mutation or work credit. Historical breaks must already
 be completed; this operation never closes them automatically. Any

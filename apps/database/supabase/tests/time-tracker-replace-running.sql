@@ -174,5 +174,56 @@ select is((select revision from private.time_tracker_operation_scopes where ws_i
 -- Removed admission denies even an immutable historical replay.
 delete from public.workspace_members where ws_id=pg_temp.fid(90711) and user_id=pg_temp.fid(90701);
 select throws_ok($q$select pg_temp.replace(0,null,90733)$q$,'42501','Insufficient permissions','membership removal denies old replay');
+-- Positive edit threshold must not prevent closing already-running work.
+insert into public.workspace_members(ws_id,user_id,type) values(pg_temp.fid(90712),pg_temp.fid(90702),'MEMBER');
+select private.configure_time_tracker_control(pg_temp.fid(90712),pg_temp.fid(90702),0,pg_temp.fid(90790),pg_temp.config());
+insert into public.workspace_settings(ws_id,missed_entry_date_threshold) values(pg_temp.fid(90712),null)
+ on conflict(ws_id) do update set missed_entry_date_threshold=null;
+insert into public.time_tracking_sessions(id,ws_id,user_id,title,start_time,is_running)
+ values(pg_temp.fid(90791),pg_temp.fid(90712),pg_temp.fid(90702),'Synthetic long-running work',clock_timestamp()-interval '2 days',true);
+insert into public.workspace_settings(ws_id,missed_entry_date_threshold) values(pg_temp.fid(90712),1)
+ on conflict(ws_id) do update set missed_entry_date_threshold=1;
+create function pg_temp.long_replace(rev bigint,expected uuid,cmd integer) returns jsonb language sql as $$
+ select private.replace_running_time_tracker_session(pg_temp.fid(90712),pg_temp.fid(90702),rev,expected,pg_temp.fid(cmd),'Synthetic replacement',null,null,null);
+$$;
+create temp table expected_insert_setting(value text);
+insert into expected_insert_setting values('off');
+create function pg_temp.check_insert_setting() returns trigger language plpgsql as $$ begin
+ if new.ws_id=pg_temp.fid(90712) and current_setting('time_tracking.bypass_update_limit',true)
+   is distinct from (select value from expected_insert_setting) then
+   raise exception 'Close bypass leaked to insert' using errcode='P0002';
+ end if;
+ return new;
+end; $$;
+create trigger synthetic_insert_setting before insert on public.time_tracking_sessions
+ for each row execute function pg_temp.check_insert_setting();
+select set_config('time_tracking.bypass_update_limit','off',true);
+insert into applied values(4,pg_temp.long_replace(0,pg_temp.fid(90791),90792));
+select is(current_setting('time_tracking.bypass_update_limit',true),'off','long-running close restores prior off before new insert');
+select ok((select not is_running and duration_seconds>=172800 from public.time_tracking_sessions where id=pg_temp.fid(90791)),'positive threshold permits canonical close of existing long-running work');
+select set_config('time_tracking.bypass_update_limit','on',true);
+update public.time_tracking_sessions set start_time=clock_timestamp()-interval '2 days'
+ where id=(select (result->>'session_id')::uuid from applied where n=4);
+update expected_insert_setting set value='on';
+insert into applied values(5,pg_temp.long_replace(1,(select (result->>'session_id')::uuid from applied where n=4),90793));
+select is(current_setting('time_tracking.bypass_update_limit',true),'on','close restores a caller prior on setting');
+create function pg_temp.long_effects() returns jsonb language sql as $$ select jsonb_build_object(
+ 'sessions',(select jsonb_agg(to_jsonb(s) order by id) from public.time_tracking_sessions s where ws_id=pg_temp.fid(90712)),
+ 'scope',(select to_jsonb(s) from private.time_tracker_operation_scopes s where ws_id=pg_temp.fid(90712)),
+ 'receipts',(select jsonb_agg(to_jsonb(r) order by command_id) from private.time_tracker_operation_receipts r where ws_id=pg_temp.fid(90712)));
+$$;
+create temp table before_close_failure as select pg_temp.long_effects() snapshot;
+create trigger synthetic_close_failure before update on public.time_tracking_sessions
+ for each row execute function pg_temp.fail_write();
+select set_config('time_tracking.bypass_update_limit','off',true);
+select throws_ok($q$select pg_temp.long_replace(2,(select (result->>'session_id')::uuid from applied where n=5),90794)$q$,'P0001','Synthetic boundary failure','close failure propagates its original error');
+select is(current_setting('time_tracking.bypass_update_limit',true),'off','caught failed close cannot leak temporary on to caller');
+select is(pg_temp.long_effects(),(select snapshot from before_close_failure),'failed close restores sessions accounting revision and receipts');
+select set_config('time_tracking.bypass_update_limit','on',true);
+select throws_ok($q$select pg_temp.long_replace(2,(select (result->>'session_id')::uuid from applied where n=5),90794)$q$,'P0001','Synthetic boundary failure','failed close also propagates with prior on');
+select is(current_setting('time_tracking.bypass_update_limit',true),'on','failed close preserves caller prior on');
+drop trigger synthetic_close_failure on public.time_tracking_sessions;
+drop trigger synthetic_insert_setting on public.time_tracking_sessions;
+select set_config('time_tracking.bypass_update_limit','off',true);
 select * from finish();
 rollback;
