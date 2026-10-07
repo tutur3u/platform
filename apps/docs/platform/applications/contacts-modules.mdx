@@ -101,3 +101,12 @@ access helper, denied sessions and membership/capabilities, shared recipient
 serialization, and exact-method forwarding. Web route and renderer regressions
 preserve its existing behavior. These adapter-level checks require exact-app CI
 build and authenticated runtime verification before delivery is confirmed.
+
+Before dispatch preparation, the topic sender rechecks the current workspace
+`ENABLE_TOPIC_ANNOUNCEMENTS` secret. Missing or non-`true` values deny sending.
+Every linked recipient must still exist, belong to that workspace, and be active;
+a missing, archived, or moved recipient blocks the entire intended batch. It does
+not silently send to fewer recipients. Database read errors remain failures.
+This prerequisite does not change announcement history, statuses, or queue leases.
+Provider acceptance, durable receipt publication, and safe recovery from ambiguous
+processing remain separate delivery requirements.
