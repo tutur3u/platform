@@ -107,10 +107,21 @@ select ok((select prosrc like '%time_tracking.override_auth_uid%' and prosrc lik
 select ok((select lower(prosrc) like '%update public.time_tracking_sessions%' and lower(prosrc) like '%delete from public.time_tracking_sessions%' from pg_proc where oid='private.handle_request_status_change()'::regprocedure),'request status still mutates linked sessions');
 select ok((select lower(prosrc) like '%insert into private.time_tracking_request_activity%' from pg_proc where oid='private.log_time_tracking_request_update()'::regprocedure),'approval activity nested writer remains present');
 select ok((select lower(prosrc) like '%perform public.create_notification%' from pg_proc where oid='private.notify_time_tracking_request_status_change()'::regprocedure),'approval notification nested writer remains present');
--- Description-table hardening removes the old PUBLIC ALL policy and every
--- browser policy; do not restore legacy access to satisfy the catalog.
+-- March hardening removes legacy browser access; September adds only the
+-- restrictive MFA guard. Parse its exact declaration as a rollback-only reference.
+create temporary table expected_session_policy (id integer) on commit drop;
+create policy account_required_mfa on expected_session_policy
+ as restrictive for all to authenticated
+ using ((select public.account_required_mfa_satisfied()))
+ with check ((select public.account_required_mfa_satisfied()));
 select ok(not exists(select 1 from pg_policy where polrelid='public.time_tracking_sessions'::regclass and polname='Allow users to delete their own sessions'),'legacy delete-named PUBLIC ALL policy remains absent');
-select is((select count(*) from pg_policy where polrelid='public.time_tracking_sessions'::regclass),0::bigint,'description-table hardening leaves session policy inventory empty');
+select is((select jsonb_agg(jsonb_build_array(polname,polroles::text,polpermissive,polcmd::text,
+ pg_get_expr(polqual,polrelid),pg_get_expr(polwithcheck,polrelid)) order by polname)::text
+ from pg_policy where polrelid='public.time_tracking_sessions'::regclass),
+ (select jsonb_agg(jsonb_build_array(polname,polroles::text,polpermissive,polcmd::text,
+ pg_get_expr(polqual,polrelid),pg_get_expr(polwithcheck,polrelid)) order by polname)::text
+ from pg_policy where polrelid='pg_temp.expected_session_policy'::regclass),
+ 'session policy inventory is exactly the restrictive authenticated MFA guard');
 select ok(not exists(select 1 from pg_policy where polrelid='public.time_tracking_sessions'::regclass and polname='Allow users to manage their own sessions'),'original manage-all policy absent');
 select ok(to_regprocedure('public.update_time_tracking_request(uuid,text,uuid,text,text)') is null,'public approval predecessor absent');
 select ok(not has_function_privilege('authenticated','private.update_time_tracking_request(uuid,text,uuid,uuid,text,text)','EXECUTE'),'private approval is not browser-callable');
