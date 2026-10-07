@@ -83,36 +83,12 @@ Future<void> toggleAssistantModelFavorite(
 Future<AssistantSoul> fetchAssistantSoul(
   AssistantRepository repository, {
   bool forceRefresh = false,
-}) async {
-  final result = await CacheStore.instance.prefetch<AssistantSoul>(
-    key: AssistantRepository._assistantMetadataCacheKey(
-      namespace: 'assistant.soul',
-    ),
-    policy: AssistantRepository._assistantMetadataCachePolicy,
-    decode: AssistantSoulNameWriter.decode,
-    forceRefresh: forceRefresh,
-    tags: [AssistantRepository._assistantMetadataCacheTag, 'module:assistant'],
-    fetch: () async {
-      final response = await repository._apiClient.getJson('/api/v1/mira/soul');
-      return AssistantSoul.fromJson(
-        response['soul'] as Map<String, dynamic>?,
-      ).toJson();
-    },
-  );
-  var soul = result.data ?? const AssistantSoul();
-  for (final item in await OfflineMutationQueue.instance.listPending()) {
-    if (item.feature == 'assistant' &&
-        item.workspaceId == 'personal' &&
-        item.path == '/api/v1/mira/soul' &&
-        item.userId == currentCacheUserId()) {
-      final name = item.payload?['name'] as String?;
-      if (name != null) soul = soul.copyWith(name: name);
-    }
-  }
-  return soul;
-}
-
-Future<AssistantSoul> updateAssistantSoulName(
-  AssistantRepository repository,
-  String name,
-) => AssistantSoulNameWriter(apiClient: repository._apiClient).rename(name);
+  CacheStore? store,
+  OfflineMutationQueue? queue,
+  String? Function()? currentUserId,
+}) async => (await AssistantSoulReader(
+  apiClient: repository._apiClient,
+  store: store,
+  queue: queue,
+  currentUserId: currentUserId,
+).read(forceRefresh: forceRefresh)).displaySoul;

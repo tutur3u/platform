@@ -5,7 +5,15 @@ const BUILD_INFO_URL = 'https://meet.tuturuuu.com/api/build-info';
 function verifyMeetBuildInfo({ sha, status, body }) {
   if (!/^[a-f0-9]{40}$/.test(sha ?? ''))
     throw new Error('A full source SHA is required');
-  if (status !== 200) throw new Error('Meet build identity HTTP probe failed');
+  if (status !== 200) {
+    const diagnostic =
+      Number.isInteger(status) && status >= 100 && status <= 599
+        ? String(status)
+        : 'unavailable';
+    throw new Error(
+      `Meet build identity HTTP probe failed (status ${diagnostic})`
+    );
+  }
   let metadata;
   try {
     metadata = JSON.parse(body);

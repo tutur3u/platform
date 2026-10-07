@@ -9,6 +9,7 @@ class AssistantShellState extends Equatable {
     this.status = AssistantShellStatus.initial,
     this.workspace,
     this.soul = const AssistantSoul(),
+    this.soulSnapshot,
     this.personalWorkspaceId,
     this.tasksInsight = const AssistantTasksInsight(),
     this.calendarInsight = const AssistantCalendarInsight(),
@@ -30,6 +31,7 @@ class AssistantShellState extends Equatable {
   final AssistantShellStatus status;
   final Workspace? workspace;
   final AssistantSoul soul;
+  final AssistantSoulSnapshot? soulSnapshot;
   final String? personalWorkspaceId;
   final AssistantTasksInsight tasksInsight;
   final AssistantCalendarInsight calendarInsight;
@@ -53,6 +55,7 @@ class AssistantShellState extends Equatable {
     AssistantShellStatus? status,
     Object? workspace = _assistantShellSentinel,
     AssistantSoul? soul,
+    AssistantSoulSnapshot? soulSnapshot,
     Object? personalWorkspaceId = _assistantShellSentinel,
     AssistantTasksInsight? tasksInsight,
     AssistantCalendarInsight? calendarInsight,
@@ -77,6 +80,7 @@ class AssistantShellState extends Equatable {
           ? this.workspace
           : workspace as Workspace?,
       soul: soul ?? this.soul,
+      soulSnapshot: soulSnapshot ?? this.soulSnapshot,
       personalWorkspaceId: personalWorkspaceId == _assistantShellSentinel
           ? this.personalWorkspaceId
           : personalWorkspaceId as String?,
@@ -109,6 +113,7 @@ class AssistantShellState extends Equatable {
     status,
     workspace,
     soul,
+    soulSnapshot,
     personalWorkspaceId,
     tasksInsight,
     calendarInsight,

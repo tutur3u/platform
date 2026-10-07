@@ -11,6 +11,7 @@ import 'package:mobile/data/models/workspace.dart';
 import '../data/assistant_preferences.dart';
 import '../data/assistant_repository.dart';
 import '../models/assistant_models.dart';
+import '../models/assistant_soul_snapshot.dart';
 
 part 'assistant_shell_state.dart';
 
@@ -183,14 +184,14 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
     final generation = ++_soulRefreshGeneration;
     final workspaceVersion = _requestVersion;
     final scopeToken = _currentScopeToken?.call();
-    final soul = await _repository.updateSoulName(name);
+    final snapshot = await _repository.updateSoulNameSnapshot(name);
     if (isClosed ||
         generation != _soulRefreshGeneration ||
         workspaceVersion != _requestVersion ||
         scopeToken != _currentScopeToken?.call()) {
       return;
     }
-    emit(state.copyWith(soul: soul));
+    emit(state.copyWith(soul: snapshot.displaySoul, soulSnapshot: snapshot));
   }
 
   Future<void> refreshSoul() async {
