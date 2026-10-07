@@ -1638,3 +1638,42 @@ and calendar reminders. Source tests are not device proof. A future delivery
 receipt must record the actual TestFlight version/build and verify foreground
 and background single/all-read dismissal while foreign scopes, later arrivals,
 and pending reminders survive. The reported 0.23.4 build number remains unknown.
+
+### Delivered-only native bridge
+
+The mobile bridge binds to the current account session, snapshots delivered inbox
+notifications, and removes only still-matching captured deliveries. A null inbox
+workspace selector means all inbox scopes available to that actor, matching the
+existing bulk-read API; an explicit workspace selector is narrower. Missing or
+malformed ownership capsules remain untouched. Foreground and data-only background
+local notifications preserve the same capsule as standard remote pushes.
+
+Android uses app-owned active notification tag/ID/post time; iOS uses delivered
+request identifier/delivery date and remote or local capsule metadata. Account
+session changes invalidate outstanding snapshots, including logout/relogin ABA.
+Enumeration beyond 512 delivered records or eight retained snapshots fails closed.
+A discard operation releases a snapshot without removing notifications. Neither
+platform bridge calls pending-notification or alarm cancellation APIs.
+
+The native platforms offer no atomic timestamp-conditioned removal. Rechecking
+captured identity and delivery time protects replacements already visible during
+the recheck, but a replacement racing between recheck and OS removal remains a
+platform limitation. Returned counts mean matched removal requests submitted,
+not verified tray disappearance. Read-action integration is a separate packet;
+this bridge alone does not dismiss notifications when marking them read.
+
+Dart MethodChannel tests cover actor/session ABA, held callbacks, strict receipts,
+scope selection, malformed capsules and metadata round trips using fake native
+transport. Native compilation and actual TestFlight foreground/background tray
+behavior remain separate required evidence. Future scheduled task/calendar
+reminders must survive single/all-read cleanup. Record the actual version and
+build number for device feedback; source tests do not identify a delivered build.
+
+Push-service session start/stop/dispose also invalidate a sticky lifetime epoch.
+A start held in native binding, initialization, token lookup or device-ID lookup
+cannot continue into registration or pending-navigation dispatch after departure,
+including a same-account logout/relogin. The registration helper rechecks its
+captured lifetime before writing, and disposal closes initialization/navigation
+admission. Already dispatched transport writes cannot be undone by this boundary.
+`push_service_session_lifetime_test.dart` exercises actual service methods and the
+actual registration helper with injected platform/token/device transport.

@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io' show Platform;
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:mobile/features/notifications/push/inbox_push_identity.dart';
 import 'package:mobile/features/notifications/push/login_notification_actions.dart';
 
 const _pushNotificationChannelId = 'tuturuuu_notifications';
@@ -33,6 +35,8 @@ String? _payloadFromMessageData(Map<String, dynamic> data) {
     'boardId': boardId,
     'userId': data['userId'],
     'expiresAt': data['expiresAt'],
+    if (InboxPushIdentity.parse(data['inboxIdentity']) case final identity?)
+      'inboxIdentity': identity.capsule,
   });
 }
 
@@ -114,6 +118,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
         channelDescription: _pushNotificationChannelDescription,
         importance: Importance.high,
         priority: Priority.high,
+        tag: InboxPushIdentity.parse(message.data['inboxIdentity'])?.capsule,
         actions: message.data['openTarget'] == 'mfa_approval'
             ? loginNotificationActions()
             : null,
