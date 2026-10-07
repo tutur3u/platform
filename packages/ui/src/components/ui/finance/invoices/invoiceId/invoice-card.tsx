@@ -26,10 +26,13 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useFinanceConfidentialVisibility } from '../../shared/use-finance-confidential-visibility';
 import { CompactInvoiceTemplate } from './compact-invoice-template';
 import { FullInvoiceTemplate } from './full-invoice-template';
+import { useInvoicePngExport } from './use-invoice-png-export';
 
 export default function InvoiceCard({
+  wsId,
   lang,
   configs,
   invoice,
@@ -37,6 +40,7 @@ export default function InvoiceCard({
   promotions,
   currency = 'VND',
 }: {
+  wsId: string;
   lang: string;
   configs: WorkspaceConfig[];
   invoice: Invoice & {
@@ -56,13 +60,32 @@ export default function InvoiceCard({
 }) {
   const t = useTranslations();
 
+  const { isConfidential } = useFinanceConfidentialVisibility();
   const printableRef = useRef<HTMLDivElement>(null);
   const [isDarkPreview, setIsDarkPreview] = useState(false);
   const [isCompact, setIsCompact, isCompactInitialized] = useLocalStorage(
     'invoice-compact-view',
     false
   );
-  const [isExporting, setIsExporting] = useState(false);
+  const { isExporting, handlePngExport } = useInvoicePngExport({
+    wsId,
+    invoice,
+    printableRef,
+    isDarkPreview,
+    ready: isCompactInitialized,
+    renderInputs: [
+      lang,
+      currency,
+      invoice,
+      configs,
+      products,
+      promotions,
+      isDarkPreview,
+      isCompact,
+      isCompactInitialized,
+      isConfidential,
+    ],
+  });
 
   const handlePrintExport = useCallback(() => {
     const printableArea = document.getElementById('printable-area');
@@ -155,66 +178,6 @@ export default function InvoiceCard({
     document.body.appendChild(iframe);
   }, [invoice.id, t]);
 
-  const handlePngExport = useCallback(async () => {
-    setIsExporting(true);
-    try {
-      const html2canvas = (await import('html2canvas-pro')).default;
-      const element = document.getElementById('printable-area');
-      if (!element) throw new Error('Printable area not found');
-
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: isDarkPreview ? '#1a1a1a' : '#ffffff',
-        width: element.scrollWidth,
-        height: element.scrollHeight,
-      });
-
-      await new Promise<void>((resolve, reject) => {
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              reject(new Error('Failed to create image'));
-              return;
-            }
-
-            try {
-              const url = URL.createObjectURL(blob);
-              const link = document.createElement('a');
-              link.href = url;
-
-              const sanitizedId = invoice.id
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .replace(/đ/g, 'd')
-                .replace(/Đ/g, 'D')
-                .replace(/[^a-z0-9]/gi, '_')
-                .toLowerCase()
-                .replace(/_+/g, '_')
-                .replace(/^_|_$/g, '');
-
-              link.download = `invoice-${sanitizedId}.png`;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              URL.revokeObjectURL(url);
-              resolve();
-            } catch (error) {
-              reject(error);
-            }
-          },
-          'image/png',
-          1.0
-        );
-      });
-      toast.success(t('common.export-success'));
-    } catch {
-      toast.error(t('common.export-error'));
-    } finally {
-      setIsExporting(false);
-    }
-  }, [invoice.id, isDarkPreview, t]);
-
   // Auto trigger print or image download when URL contains ?print=true or ?image=true
   useEffect(() => {
     if (!isCompactInitialized) return;
@@ -232,7 +195,7 @@ export default function InvoiceCard({
             }
 
             if (shouldDownloadImage) {
-              await handlePngExport();
+              if (!(await handlePngExport())) return;
             }
           } catch {
             toast.error(t('common.export-error'));
