@@ -29,6 +29,20 @@ export default defineConfig({
           '../../packages/supabase/src/next/server.ts'
         ),
       },
+      {
+        find: '@tuturuuu/internal-api/users',
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/users.ts'
+        ),
+      },
+      {
+        find: '@tuturuuu/internal-api/profile-media',
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/profile-media.ts'
+        ),
+      },
       // Exercise tutoring's authored shared policy without requiring local package builds.
       {
         find: '@tuturuuu/internal-api/workspace-configs',
