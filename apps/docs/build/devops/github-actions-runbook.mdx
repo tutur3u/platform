@@ -907,11 +907,11 @@ uses required-file behavior, one-day retention, and compression level 0 because
 through root Turbo first, then calls `npm pack --ignore-scripts` so `prepack`
 cannot bypass the shared cache wrapper.
 
-Test, Coverage, and Biome preserve separate immutable `workflow + ref + SHA`
-concurrency groups for main, production, and all generated Release Please refs.
+Test, Coverage, Biome, and Type Check preserve immutable protected concurrency
+groups for main, production, and all generated Release Please refs.
 A rapid generated branch reset followed by its metadata commit must not cancel
 checks for a SHA also used by main or production. Ordinary feature refs retain
-branch supersession for obsolete source commits; that cancellation is not a
+branch push supersession; Type Check manual attempts remain independent. Cancellation is not a
 successful validation or a valid duplicate skip. Resource-owning E2E and database
 workflows retain their own lifecycle policies.
 
