@@ -1,12 +1,12 @@
 //! Handler for `GET /api/v1/workspaces/:wsId/topic-announcements`.
 //!
-//! Migrates ONLY the GET method of the legacy Next.js route at
+//! Migrates ONLY the GET method of the first-class Next.js route at
 //! `apps/web/src/app/api/v1/workspaces/[wsId]/topic-announcements/route.ts`.
-//! The legacy route also defines POST; that (and any future verb) is left to the
+//! The live route also defines POST; that (and any future verb) is left to the
 //! still-active Next.js route by returning `None` for every non-GET method so
 //! the Cloudflare worker falls through.
 //!
-//! The legacy GET resolves access via `resolveTopicAnnouncementsAccess(request,
+//! The live GET resolves access via `resolveTopicAnnouncementsAccess(request,
 //! wsId, { requireManage: true })`, which:
 //!   1. normalizes the workspace id (slug / `personal` / `internal` handling),
 //!   2. requires `getPermissions(...)` to be non-null (else 404 "Not found"),
@@ -20,6 +20,10 @@
 //!      enriches each row with its recipients (serialized contacts, including
 //!      verification status), attachments, and `workspace_user_groups` group, and
 //!      returns `{ count, data, page, pageSize, totalPages }`.
+//!
+//! The Web GET now delegates unchanged query/serialization to the shared
+//! users-core topic read handler. Contacts supplies its own verified satellite
+//! access adapter; this Rust module remains a future Web migration target.
 //!
 //! BEHAVIOR NOTES / GAPS:
 //!   * The auth machinery is a file-local copy of the equivalent private fns in

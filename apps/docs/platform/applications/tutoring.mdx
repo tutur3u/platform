@@ -262,3 +262,32 @@ Regression coverage: `tutoring-handoff.test.tsx` mounts the actual Contacts clie
 and create card with a real QueryClient and synthetic transport responses. Its
 table/dialog presentation harness is bounded component evidence, not customer
 roster, production provider, or end-to-end dialog proof.
+
+
+### Archive intent when editing students
+
+Contacts student edits preserve the stored `archived` intent when an existing
+archive-until date is loaded. An unrelated field edit or repeated open/save must
+not archive an explicitly active student. Selecting a temporary archive date
+explicitly still marks the student archived; clearing the date and switching to
+active retains the existing server contract that clears the archive-until value.
+This changes neither the temporary archive date policy nor enrollment history,
+and does not repair earlier customer records. Regression coverage exercises the
+actual student form, calendar, switch and mutation transport in
+`form-archive.test.tsx`.
+
+
+### Legacy absence credit matching
+
+The support queue matches eligible absence dates and DONE/PENDING absent-recovery
+session dates chronologically within the configured lookback, independently for
+each group/student. A reservation consumes at most one absence on or before its
+session date; earlier make-ups cannot consume later absences. Remaining dates
+are returned with the same deficit and drive the make-up handoff.
+
+This is a fallback for records without a persisted source-attendance link. It
+does not prove which historical absence staff intended to cover, repair prior
+records, or alter custom eligibility/exclusion policy. Explicit attendance-row
+linkage remains separate work, including multiple sessions on the same date.
+Web queue regressions and the Rust queue parity tests cover the chronological
+boundary, ordering, same-day multiplicity and group/student isolation.

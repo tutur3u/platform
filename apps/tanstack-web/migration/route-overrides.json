@@ -1254,7 +1254,7 @@
     "api:/api/v1/users/me/banner/upload-url:apps/web/src/app/api/v1/users/me/banner/upload-url/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Native/offline PUT compatibility retained. Rust parity pending."
+      "note": "First-class actor-derived banner tickets preserve existing quotas, stable immutable operation paths and committed replay receipts. Signed non-upsert tokens are returned only after durable expiry lease recording. Rust endpoint parity pending."
     },
     "api:/api/v1/users/me/banner/upload:apps/web/src/app/api/v1/users/me/banner/upload/route.ts": {
       "status": "legacy-next",
@@ -2828,11 +2828,6 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles GET/POST browser-state recovery with no-store HTML, same-origin POST protection, Clear-Site-Data, redirect, and Supabase auth cookie clearing behavior."
     },
-    "api:/api/v1/users/me/banner/upload-url:apps/web/src/app/api/v1/users/me/banner/upload-url/route.ts": {
-      "status": "legacy-next",
-      "targetOwner": "rust-backend",
-      "note": "First-class actor-derived banner tickets preserve existing quotas, stable immutable operation paths and committed replay receipts. Signed non-upsert tokens are returned only after durable expiry lease recording. Rust endpoint parity pending."
-    },
     "api:/api/v1/users/me/banner:apps/web/src/app/api/v1/users/me/banner/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
@@ -2872,6 +2867,16 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "First-class live Next handler forwards Bearer or cookie credentials and retains MEMBER/user-workspace authorization. Existing Rust GET settings/items retain token admission, but complete service/method parity remains backlog; Next remains the live API owner."
+    },
+    "api:/api/v1/workspaces/:wsId/topic-announcements:apps/web/src/app/api/v1/workspaces/[wsId]/topic-announcements/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class live Web handler with canonical shared topic read/preview policy. Contacts supplies independently verified app-session workspace admission. Rust GET preserves unchanged Web query/serialization; POST remains live Next-only and falls through Rust."
+    },
+    "api:/api/v1/workspaces/:wsId/topic-announcements/preview:apps/web/src/app/api/v1/workspaces/[wsId]/topic-announcements/preview/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class live Web handler with canonical shared topic read/preview policy. Contacts supplies independently verified app-session workspace admission. Preview POST remains migration backlog; no provider send or feature-gate change."
     }
   }
 }

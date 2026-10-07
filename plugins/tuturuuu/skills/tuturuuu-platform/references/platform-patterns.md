@@ -284,6 +284,13 @@ Rules:
   while the member list, roles, and invite links all worked, because those had been
   migrated and `members/invite` had not. When you fix one route, audit its whole
   surface: `grep -L 'resolveWorkspaceRouteAccess\|allowAppSessionAuth' <route dir>`.
+- When moving a read/preview API into a satellite, inject its verified workspace
+  access into a shared service rather than importing another app's route or
+  trusting forwarded actor headers. Keep the central app's existing access policy
+  explicit. A local collection GET also captures unsupported methods: Next returns
+  405 before fallback rewrites. Preserve intentionally central collection mutations
+  with an exact-method rewrite after the satellite's unchanged session and API
+  guards, and test local GET/preview POST, forwarded POST, and denied sessions.
 - **The same trap bites satellite API routes, not just pages.** A route that does
   `const supabase = await createClient()` and then passes that client to
   `verifyWorkspaceMembershipType` (or any RLS-scoped authorization query) denies

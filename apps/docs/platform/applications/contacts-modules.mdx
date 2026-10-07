@@ -79,3 +79,25 @@ body, including long category lists. Failed creation keeps the draft open and
 shows an inline error so the user can retry. Repeated taps during a pending save
 submit once. Creation still requires `create_user_groups_scores`; members with
 that permission use the same path as administrators.
+
+## Topic announcement list and preview admission
+
+Contacts owns the collection GET and preview POST locally. Both resolve the
+verified Contacts app-session actor and workspace membership before reading topic
+content, then require `ENABLE_TOPIC_ANNOUNCEMENTS` to equal `true`, a non-personal
+workspace, and `manage_users`. The module remains off by default; listing or
+previewing does not enable it or send email. Preview uses only contacts in the
+requested workspace that are not archived.
+
+Web retains its Supabase-session admission. Both apps use the same users-core
+query, payload validation, recipient verification status, attachment filename
+normalization, and preview renderer. Contacts forwards collection mutations to
+Web after its existing session and API edge guards; other topic mutation routes
+and the delivery worker retain their current ownership. This read/preview repair
+does not establish satellite mutation or provider-delivery readiness.
+
+Regression coverage exercises the local Contacts routes with the actual workspace
+access helper, denied sessions and membership/capabilities, shared recipient
+serialization, and exact-method forwarding. Web route and renderer regressions
+preserve its existing behavior. These adapter-level checks require exact-app CI
+build and authenticated runtime verification before delivery is confirmed.

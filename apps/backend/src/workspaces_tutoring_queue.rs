@@ -1,3 +1,4 @@
+mod absence_credits;
 mod policy;
 mod query;
 mod response;
@@ -361,7 +362,7 @@ fn build_queue_response(
         }
     }
 
-    let mut reserved_count: BTreeMap<String, u32> = BTreeMap::new();
+    let mut reserved_dates: BTreeMap<String, Vec<String>> = BTreeMap::new();
     let mut scheduled_feedback_ids: BTreeSet<String> = BTreeSet::new();
     let mut completed_feedback_dates: BTreeMap<String, String> = BTreeMap::new();
     for row in &reserved_rows {
@@ -379,7 +380,9 @@ fn build_queue_response(
                 .and_then(iso_day)
                 .is_some_and(|day| day >= absence_cutoff)
         {
-            *reserved_count.entry(key).or_insert(0) += 1;
+            if let Some(date) = &row.session_date {
+                reserved_dates.entry(key).or_default().push(date.clone());
+            }
         }
         if row.attendance_status.as_deref() == Some("PENDING")
             && let Some(id) = &row.source_feedback_id
@@ -451,11 +454,11 @@ fn build_queue_response(
             continue;
         }
 
-        let deficit = absence_count
-            .get(key)
-            .copied()
-            .unwrap_or(0)
-            .saturating_sub(reserved_count.get(key).copied().unwrap_or(0));
+        let remaining_dates = absence_credits::unmatched_dates(
+            missed_class_dates.get(key).cloned().unwrap_or_default(),
+            reserved_dates.get(key).cloned().unwrap_or_default(),
+        );
+        let deficit = remaining_dates.len() as u32;
         let feedback = latest_feedback.get(key);
         let group_label = group_name
             .get(group_id)
@@ -510,21 +513,10 @@ fn build_queue_response(
                 .unwrap_or_else(|| student_id.to_owned()),
             reason_type: reason_type.to_owned(),
             absence_deficit: if has_absent { deficit } else { 0 },
-            missed_class_dates: {
-                if has_absent {
-                    let mut dates = missed_class_dates.get(key).cloned().unwrap_or_default();
-                    dates.sort();
-                    dates
-                        .into_iter()
-                        .rev()
-                        .take(deficit as usize)
-                        .collect::<Vec<_>>()
-                        .into_iter()
-                        .rev()
-                        .collect()
-                } else {
-                    Vec::new()
-                }
+            missed_class_dates: if has_absent {
+                remaining_dates
+            } else {
+                Vec::new()
             },
             feedback_content: if has_weak || review_due {
                 feedback
