@@ -33,7 +33,6 @@ extension _ContinuousDateScroll on _MultiDayScheduleViewState {
       }
     }
     _syncingHorizontalScroll = false;
-    _rebuildDateViewport();
   }
 
   bool _settleDateScroll(ScrollEndNotification notification) {

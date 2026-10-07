@@ -17,6 +17,7 @@ import 'package:mobile/features/calendar/widgets/timeline_zoom_viewport.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 part 'multi_day_schedule_components.dart';
+part 'multi_day_all_day_bar.dart';
 part 'multi_day_schedule_scroll.dart';
 
 class MultiDayScheduleView extends StatefulWidget {
@@ -158,11 +159,6 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
       }
     }
     _syncingHorizontalScroll = false;
-    _rebuildDateViewport();
-  }
-
-  void _rebuildDateViewport() {
-    if (mounted) setState(() {});
   }
 
   void _autoScroll() {
@@ -291,24 +287,6 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
         );
         final dayColumnWidth = viewportDayWidth / widget.visibleDayCount;
         final dayAreaWidth = dayColumnWidth * _windowDays;
-        final offset = _allDayController.hasClients
-            ? _allDayController.offset
-            : _bufferDays * dayColumnWidth;
-        final viewportEnd = offset + viewportWidth - gutterWidth;
-        final visibleSpans = allDayLayout.spans.where(
-          (span) =>
-              (span.endIndex + 1) * dayColumnWidth > offset &&
-              span.startIndex * dayColumnWidth < viewportEnd,
-        );
-        final visibleMaxRow = visibleSpans.fold<int>(
-          -1,
-          (row, span) => math.max(row, span.row),
-        );
-        final viewportLayout = AllDayLayoutResult(
-          spans: allDayLayout.spans,
-          maxRow: visibleMaxRow,
-        );
-        final hasCollapsedAllDayRows = visibleMaxRow >= 2;
         if (_dayWidth != dayColumnWidth) {
           _dayWidth = dayColumnWidth;
           _scheduleDatePosition();
@@ -370,94 +348,21 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                 ),
               ),
               if (allDayLayout.spans.isNotEmpty)
-                Container(
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerLow,
-                    border: Border(
-                      bottom: BorderSide(
-                        color: colorScheme.outlineVariant,
-                        width: 0.6,
-                      ),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Stack(
-                        children: [
-                          SingleChildScrollView(
-                            controller: _allDayController,
-                            scrollDirection: Axis.horizontal,
-                            physics: DateSnapScrollPhysics(
-                              dayWidth: dayColumnWidth,
-                            ),
-                            child: SizedBox(
-                              width: gutterWidth + dayAreaWidth,
-                              child: AnimatedBuilder(
-                                animation: _allDayController,
-                                builder: (context, _) => _MultiDayAllDayRow(
-                                  layout: viewportLayout,
-                                  scope: widget.zoomScope,
-                                  timeGutterWidth: gutterWidth,
-                                  dayColumnWidth: dayColumnWidth,
-                                  viewportStart:
-                                      (_allDayController.hasClients
-                                          ? _allDayController.offset
-                                          : 0) +
-                                      gutterWidth,
-                                  viewportWidth: viewportWidth - gutterWidth,
-                                  maxVisibleRows: _allDayExpanded ? null : 2,
-                                  onEventTap: (event) {
-                                    if (!_zoomBlocked()) {
-                                      widget.onEventTap(event);
-                                    }
-                                  },
-                                ),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            left: 0,
-                            top: 0,
-                            bottom: 0,
-                            child: Container(
-                              width: gutterWidth,
-                              color: colorScheme.surfaceContainerLow,
-                              padding: const EdgeInsets.only(top: 10, right: 8),
-                              child: Text(
-                                context.l10n.calendarAllDay,
-                                maxLines: 1,
-                                softWrap: false,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.right,
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (hasCollapsedAllDayRows)
-                        TextButton.icon(
-                          onPressed: () => setState(
-                            () => _allDayExpanded = !_allDayExpanded,
-                          ),
-                          icon: Icon(
-                            _allDayExpanded
-                                ? Icons.expand_less_rounded
-                                : Icons.expand_more_rounded,
-                            size: 18,
-                          ),
-                          label: Text(
-                            _allDayExpanded
-                                ? context.l10n.commonShowLess
-                                : context.l10n.commonShowMore,
-                          ),
-                        ),
-                    ],
-                  ),
+                _MultiDayAllDayBar(
+                  layout: allDayLayout,
+                  controller: _allDayController,
+                  scope: widget.zoomScope,
+                  gutterWidth: gutterWidth,
+                  dayColumnWidth: dayColumnWidth,
+                  contentWidth: dayAreaWidth,
+                  viewportWidth: viewportWidth,
+                  fallbackOffset: _bufferDays * dayColumnWidth,
+                  expanded: _allDayExpanded,
+                  onToggle: () =>
+                      setState(() => _allDayExpanded = !_allDayExpanded),
+                  onEventTap: (event) {
+                    if (!_zoomBlocked()) widget.onEventTap(event);
+                  },
                 ),
               Expanded(
                 child: SingleChildScrollView(

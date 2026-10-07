@@ -414,12 +414,13 @@ class _MultiDayAllDayRow extends StatelessWidget {
           for (final span in layout.spans.where(
             (span) =>
                 span.row < rows &&
-                timeGutterWidth +
-                        (span.startIndex + span.span) * dayColumnWidth -
-                        4 >
-                    viewportStart &&
-                timeGutterWidth + span.startIndex * dayColumnWidth + 4 <
-                    viewportStart + viewportWidth,
+                _allDaySpanVisible(
+                  span,
+                  gutterWidth: timeGutterWidth,
+                  dayColumnWidth: dayColumnWidth,
+                  viewportStart: viewportStart,
+                  viewportWidth: viewportWidth,
+                ),
           ))
             Positioned(
               key: ValueKey((

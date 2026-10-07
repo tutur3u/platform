@@ -37,6 +37,7 @@ Future<void> _pumpCalendar(
   double scale = 1,
   double zoom = 1,
   ValueChanged<CalendarEvent>? onTap,
+  bool settle = true,
 }) async {
   await tester.pumpApp(
     Builder(
@@ -67,7 +68,7 @@ Future<void> _pumpCalendar(
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  if (settle) await tester.pumpAndSettle();
 }
 
 Rect _card(WidgetTester tester, String title) => tester.getRect(
@@ -88,7 +89,74 @@ List<ScrollController> _horizontalControllers(WidgetTester tester) => tester
     .map((view) => view.controller!)
     .toList();
 
+class _CountingEvent extends CalendarEvent {
+  _CountingEvent(this.onRead)
+    : super(
+        id: 'counted',
+        title: 'counted',
+        startAt: _day.add(const Duration(hours: 9)),
+        endAt: _day.add(const Duration(hours: 10)),
+      );
+  final VoidCallback onRead;
+  @override
+  bool get isAllDay {
+    onRead();
+    return super.isAllDay;
+  }
+}
+
 void main() {
+  testWidgets('first-frame strip uses selected viewport before attachment', (
+    tester,
+  ) async {
+    _setViewport(tester);
+    await _pumpCalendar(tester, [_allDay('initial-visible', 0)], settle: false);
+    expect(find.text('initial-visible'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.text('initial-visible'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'horizontal pixel scroll does not recompute buffered timed columns',
+    (tester) async {
+      _setViewport(tester);
+      var reads = 0;
+      final event = _CountingEvent(() => reads++);
+      await _pumpCalendar(tester, [event]);
+      final before = reads;
+      final horizontal = _horizontalControllers(tester).first;
+      horizontal.jumpTo(horizontal.offset + 13);
+      await tester.pump();
+      expect(reads, before);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  for (final leadingEdge in [false, true]) {
+    testWidgets('chip inset-only viewport does not reserve rows $leadingEdge', (
+      tester,
+    ) async {
+      _setViewport(tester);
+      await _pumpCalendar(tester, [
+        for (var i = 0; i < 6; i++) _allDay('edge$i', 0),
+      ]);
+      final dayWidth = _card(tester, 'edge0').width + 8;
+      final allDay = _horizontalControllers(tester)[1];
+      final selectedOffset = allDay.offset;
+      allDay.jumpTo(
+        leadingEdge
+            ? selectedOffset - (390 - 52 - 3)
+            : selectedOffset + dayWidth - 3,
+      );
+      await tester.pump();
+      expect(find.text('Show more'), findsNothing);
+      expect(_barHeight(tester), lessThan(30));
+      expect(find.text('edge0'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   for (final scale in [1.0, 2.0]) {
     testWidgets('expanded all-day height follows viewport rows $scale', (
       tester,
