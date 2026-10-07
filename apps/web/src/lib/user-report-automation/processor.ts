@@ -470,6 +470,14 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
       },
       recipients: { to: [recipient] },
     });
+    if (sendResult.deliveryOutcome === 'unknown') {
+      await fail(
+        'blocked',
+        'Email delivery outcome is unknown. Check provider logs before retrying.',
+        true
+      );
+      return;
+    }
     if (!sendResult.success) {
       const blocked = Boolean(sendResult.blockedRecipients?.length);
       await fail(
@@ -552,6 +560,17 @@ export async function processPeriodicReportAutomation(
 ) {
   const reconciliation = await reconcilePeriodicReportSchedules(sbAdmin);
   const privateDb = getPrivateDb(sbAdmin);
+  // New app deployments must not emit markers before the database guards exist.
+  const contract = await (
+    privateDb.rpc as unknown as (name: string) => Promise<{
+      data: boolean | null;
+      error: { code?: string } | null;
+    }>
+  )('periodic_report_delivery_contract_ready');
+  if (contract.error || contract.data !== true) {
+    console.warn('periodic_report.delivery_contract_unavailable');
+    return { ...reconciliation, processedEmails: 0, processedRuns: 0 };
+  }
   // Probe with a nonexistent queue before claiming anything: app deployment may
   // precede the migration that supplies atomic, lease-fenced completion.
   const readiness = await privateDb.rpc('finish_periodic_report_email', {

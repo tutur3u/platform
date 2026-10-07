@@ -3,6 +3,7 @@ export const ci = {
   'biome-check.yaml': true,
   'branch-name-check.yaml': true,
   'calendar-generation-contract.yaml': true,
+  'periodic-report-delivery-contract.yaml': true,
   'security-egress-contract.yaml': true,
   'creator-identity-contract.yaml': true,
   'cancel-pr-runs-on-close.yaml': true,
