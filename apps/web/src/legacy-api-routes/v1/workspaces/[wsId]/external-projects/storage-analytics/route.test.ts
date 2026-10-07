@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   checkRateLimit: vi.fn(),
   getWorkspaceStorageOverview: vi.fn(),
+  getStorageLimit: vi.fn(),
+  resolveWorkspaceStorageProvider: vi.fn(),
   listWorkspaceStorageRawObjectsForProvider: vi.fn(),
   requireWorkspaceExternalProjectAccess: vi.fn(),
   serverLoggerError: vi.fn(),
@@ -28,6 +30,11 @@ vi.mock('@/lib/rate-limit', () => ({
     mocks.checkRateLimit(...args),
 }));
 
+vi.mock('@tuturuuu/storage-core/storage-quota-reader', () => ({
+  getStorageLimit: (...args: Parameters<typeof mocks.getStorageLimit>) =>
+    mocks.getStorageLimit(...args),
+}));
+
 vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   WorkspaceStorageError: class WorkspaceStorageError extends Error {
     constructor(
@@ -37,6 +44,9 @@ vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
       super(message);
     }
   },
+  resolveWorkspaceStorageProvider: (
+    ...args: Parameters<typeof mocks.resolveWorkspaceStorageProvider>
+  ) => mocks.resolveWorkspaceStorageProvider(...args),
   getWorkspaceStorageOverview: (
     ...args: Parameters<typeof mocks.getWorkspaceStorageOverview>
   ) => mocks.getWorkspaceStorageOverview(...args),
@@ -65,6 +75,13 @@ describe('external project storage analytics route', () => {
     mocks.requireWorkspaceExternalProjectAccess.mockReset();
     mocks.checkRateLimit.mockReset();
     mocks.getWorkspaceStorageOverview.mockReset();
+    mocks.getStorageLimit.mockReset();
+    mocks.resolveWorkspaceStorageProvider.mockReset();
+    mocks.getStorageLimit.mockResolvedValue(10_240);
+    mocks.resolveWorkspaceStorageProvider.mockResolvedValue({
+      provider: 'supabase',
+      misconfigured: false,
+    });
     mocks.listWorkspaceStorageRawObjectsForProvider.mockReset();
     consoleErrorSpy.mockReset();
     mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
@@ -120,6 +137,7 @@ describe('external project storage analytics route', () => {
   it('returns external-project storage analytics for the linked adapter prefix', async () => {
     const response = await getStorageAnalytics();
 
+    expect(mocks.getWorkspaceStorageOverview).not.toHaveBeenCalled();
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
       data: {

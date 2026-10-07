@@ -1,7 +1,8 @@
 import { posix } from 'node:path';
+import { getStorageLimit } from '@tuturuuu/storage-core/storage-quota-reader';
 import {
-  getWorkspaceStorageOverview,
   listWorkspaceStorageRawObjectsForProvider,
+  resolveWorkspaceStorageProvider,
   WorkspaceStorageError,
   type WorkspaceStorageOverview,
   type WorkspaceStorageRawObject,
@@ -70,9 +71,6 @@ export async function GET(
   }
 
   try {
-    const overview = await getWorkspaceStorageOverview(
-      access.normalizedWorkspaceId
-    );
     const adapter = access.binding.adapter ?? 'shared';
     const rateLimit = await checkRateLimit(
       `external-projects:storage-analytics:${access.normalizedWorkspaceId}:${adapter}`,
@@ -84,10 +82,15 @@ export async function GET(
       return rateLimit;
     }
 
+    const [storage, storageLimit] = await Promise.all([
+      resolveWorkspaceStorageProvider(access.normalizedWorkspaceId),
+      getStorageLimit(access.normalizedWorkspaceId),
+    ]);
+
     const prefix = posix.join('external-projects', adapter);
     const rawObjects = await listWorkspaceStorageRawObjectsForProvider(
       access.normalizedWorkspaceId,
-      overview.provider,
+      storage.provider,
       {
         limit: EXTERNAL_PROJECT_STORAGE_ANALYTICS_OBJECT_LIMIT + 1,
         pathPrefix: prefix,
@@ -123,11 +126,8 @@ export async function GET(
         data: {
           totalSize,
           fileCount,
-          storageLimit: overview.storageLimit,
-          usagePercentage: calculateUsagePercentage(
-            totalSize,
-            overview.storageLimit
-          ),
+          storageLimit: storageLimit,
+          usagePercentage: calculateUsagePercentage(totalSize, storageLimit),
           scannedObjectLimit: EXTERNAL_PROJECT_STORAGE_ANALYTICS_OBJECT_LIMIT,
           truncated,
           largestFile: highlights.largestFile,
