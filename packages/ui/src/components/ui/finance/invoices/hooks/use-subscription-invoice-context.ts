@@ -5,17 +5,7 @@ import {
 } from '@tuturuuu/internal-api/finance';
 import { useWorkspaceActor } from '../../../../../hooks/use-workspace-visibility';
 
-// The weak key follows the verified provider lifetime, including actor ABA.
-const lifetimes = new WeakMap<object, number>();
-let nextLifetime = 0;
-function lifetimeKey(lifetime: object) {
-  let key = lifetimes.get(lifetime);
-  if (key === undefined) {
-    key = ++nextLifetime;
-    lifetimes.set(lifetime, key);
-  }
-  return key;
-}
+import { invoiceActorLifetimeKey } from './invoice-actor-lifetime-key';
 
 export function useSubscriptionInvoiceContext(
   wsId: string,
@@ -34,7 +24,7 @@ export function useSubscriptionInvoiceContext(
       month,
       monthCount,
       actor?.actorId ?? null,
-      actor ? lifetimeKey(actor.lifetime) : null,
+      actor ? invoiceActorLifetimeKey(actor.lifetime) : null,
     ],
     queryFn: async (): Promise<SubscriptionInvoiceContextResponse> => {
       if (!actor) throw new Error('Workspace account unavailable');
