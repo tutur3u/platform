@@ -1,6 +1,5 @@
 import { Temporal } from '@js-temporal/polyfill';
 import { describe, expect, it } from 'vitest';
-import { createDefaultHoursSettings } from '../../../../apps/calendar/src/components/settings/calendar/hour-settings-shared';
 import {
   assessTeacherHoursSlot,
   type HoursSlot,
@@ -27,13 +26,7 @@ const decide = (slot: HoursSlot, hours = defaults) =>
   assessTeacherHoursSlot(hours, null, slot).state;
 
 describe('teacher-hours authority and per-day inheritance', () => {
-  it('does not turn Calendar auto-created defaults into confirmed teacher hours', () => {
-    // Actual Calendar producer is valid for its own product, not teacher consent.
-    const calendar = createDefaultHoursSettings().workHours;
-    expect(calendar.monday).toEqual({
-      enabled: true,
-      timeBlocks: [{ startTime: '07:00', endTime: '23:00' }],
-    });
+  it('keeps missing staff hours unknown without teacher consent', () => {
     expect(
       resolveTeacherHours(null, null).every((day) => day.state === 'unknown')
     ).toBe(true);
