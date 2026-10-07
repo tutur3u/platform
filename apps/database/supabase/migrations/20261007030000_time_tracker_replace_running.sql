@@ -89,10 +89,17 @@ begin
     on s.id=r.linked_session_id where s.ws_id=p_ws_id and s.user_id=p_actor_id
     and s.is_running order by r.id for update of r;
   perform s.id from public.time_tracking_sessions s where s.ws_id=p_ws_id
-    and s.user_id=p_actor_id and s.is_running order by s.id for update;
+    and s.user_id=p_actor_id and (s.is_running or exists(
+      select 1 from public.time_tracking_breaks b where b.session_id=s.id
+        and b.break_end is null)) order by s.id for update;
   perform b.id from public.time_tracking_breaks b join public.time_tracking_sessions s
     on s.id=b.session_id where s.ws_id=p_ws_id and s.user_id=p_actor_id
-    and s.is_running order by b.id for update of b;
+    and (s.is_running or b.break_end is null) order by b.id for update of b;
+  if exists(select 1 from public.time_tracking_breaks b
+    join public.time_tracking_sessions s on s.id=b.session_id
+    where s.ws_id=p_ws_id and s.user_id=p_actor_id and b.break_end is null) then
+    raise exception 'Open break must be resolved' using errcode='55000';
+  end if;
   select * into v_previous from public.time_tracking_sessions
     where ws_id=p_ws_id and user_id=p_actor_id and is_running;
   if v_previous.id is distinct from p_expected_running_session_id then
@@ -103,7 +110,8 @@ begin
     raise exception 'Running session starts in the future' using errcode='55000';
   end if;
   if v_previous.id is not null then
-    update public.time_tracking_sessions set end_time=v_now,is_running=false
+    update public.time_tracking_sessions set end_time=v_now,is_running=false,
+      duration_seconds=extract(epoch from(v_now-v_previous.start_time))::integer
       where id=v_previous.id and ws_id=p_ws_id and user_id=p_actor_id;
   end if;
   insert into public.time_tracking_sessions(ws_id,user_id,title,description,

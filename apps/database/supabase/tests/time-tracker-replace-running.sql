@@ -30,7 +30,9 @@ select throws_ok($q$select private.replace_running_time_tracker_session(pg_temp.
 select throws_ok($q$select private.replace_running_time_tracker_session(pg_temp.fid(90712),pg_temp.fid(90701),0,null,pg_temp.fid(90732),'Synthetic',null,null,null)$q$,'42501','Insufficient permissions','wrong workspace denied');
 select throws_ok($q$select pg_temp.replace(-1,null,90732)$q$,'22023','Invalid timer operation','negative CAS denied');
 select throws_ok($q$select private.replace_running_time_tracker_session(pg_temp.fid(90711),pg_temp.fid(90701),0,null,pg_temp.fid(90732),'Synthetic',null,null,pg_temp.fid(90799))$q$,'22023','Task unavailable','unavailable task denied');
-insert into public.time_tracking_categories(id,ws_id,name) values(pg_temp.fid(90721),pg_temp.fid(90712),'Synthetic foreign category');
+insert into public.time_tracking_categories(id,ws_id,name,color) values
+ (pg_temp.fid(90721),pg_temp.fid(90712),'Synthetic foreign category','GRAY'),
+ (pg_temp.fid(90722),pg_temp.fid(90711),'Synthetic scored category','BLUE');
 select throws_ok($q$select private.replace_running_time_tracker_session(pg_temp.fid(90711),pg_temp.fid(90701),0,null,pg_temp.fid(90732),'Synthetic',null,pg_temp.fid(90721),null)$q$,'22023','Category unavailable','foreign category denied');
 insert into public.workspace_boards(id,ws_id,name) values
  (pg_temp.fid(90761),pg_temp.fid(90711),'Synthetic own board'),
@@ -53,10 +55,13 @@ select throws_ok($q$select pg_temp.replace(0,null,90733,'Changed')$q$,'40001','T
 select throws_ok($q$select pg_temp.replace(0,null,90734)$q$,'40001','Timer revision conflict','stale revision rejected');
 select throws_ok($q$select pg_temp.replace(1,null,90734)$q$,'40001','Timer running session conflict','explicit no-session CAS cannot replace a current row');
 -- Make a real nonzero work interval without disabling accounting triggers.
-update public.time_tracking_sessions set start_time=clock_timestamp()-interval '10 seconds'
+update public.time_tracking_sessions set start_time=clock_timestamp()-interval '10 minutes',category_id=pg_temp.fid(90722)
  where id=(select (result->>'session_id')::uuid from applied where n=1);
 insert into public.time_tracking_breaks(id,session_id,break_start,created_by) values
  (pg_temp.fid(90751),(select (result->>'session_id')::uuid from applied where n=1),clock_timestamp()-interval '2 seconds',pg_temp.fid(90701));
+select throws_ok($q$select pg_temp.replace(1,(select (result->>'session_id')::uuid from applied where n=1),90734)$q$,'55000','Open break must be resolved','running-session open break cannot be bypassed');
+-- Canonically completed historical break is admissible; no RPC auto-close.
+update public.time_tracking_breaks set break_end=clock_timestamp() where id=pg_temp.fid(90751);
 insert into private.time_tracking_requests(id,workspace_id,user_id,title,start_time,end_time,linked_session_id) values
  (pg_temp.fid(90752),pg_temp.fid(90711),pg_temp.fid(90701),'Synthetic linked request',clock_timestamp()-interval '10 seconds',clock_timestamp(),(select (result->>'session_id')::uuid from applied where n=1));
 create temp table untouched as select
@@ -72,12 +77,15 @@ select is((select s.end_time from public.time_tracking_sessions s where id=(sele
  (select s.start_time from public.time_tracking_sessions s where id=(select (result->>'session_id')::uuid from applied where n=2)),'one DB transition timestamp closes and starts');
 select is((select duration_seconds from public.time_tracking_sessions where id=(select (result->>'session_id')::uuid from applied where n=1)),
  (select extract(epoch from(end_time-start_time))::integer from public.time_tracking_sessions where id=(select (result->>'session_id')::uuid from applied where n=1)),'resolved duration trigger is canonical');
+select cmp_ok((select productivity_score from public.time_tracking_sessions where id=(select (result->>'session_id')::uuid from applied where n=1)),'>',0,'categorized completed work retains nonzero productivity');
+select is((select productivity_score from public.time_tracking_sessions where id=(select (result->>'session_id')::uuid from applied where n=1)),
+ (select public.calculate_productivity_score(extract(epoch from(end_time-start_time))::integer,'BLUE') from public.time_tracking_sessions where id=(select (result->>'session_id')::uuid from applied where n=1)),'productivity trigger observes same-clock canonical duration despite legacy trigger ordering');
 select is((select revision from private.time_tracker_controls where ws_id=pg_temp.fid(90711)),1::bigint,'config revision unchanged');
 select is((select mode||'/'||phase from private.time_tracker_controls where ws_id=pg_temp.fid(90711)),'off/idle','no phase activation');
 select is((select coalesce(jsonb_agg(to_jsonb(n) order by id),'[]') from public.notifications n),(select notifications from untouched),'ordinary replacement emits no notifications');
 select is((select coalesce(jsonb_agg(to_jsonb(a) order by id),'[]') from private.time_tracking_request_activity a),(select activity from untouched),'ordinary replacement emits no approval activity');
 select is((select coalesce(jsonb_agg(to_jsonb(r) order by id),'[]') from private.time_tracking_requests r where workspace_id=pg_temp.fid(90711)),(select requests from untouched),'replacement leaves linked request state untouched');
-select is((select coalesce(jsonb_agg(to_jsonb(b) order by id),'[]') from public.time_tracking_breaks b where session_id=(select (result->>'session_id')::uuid from applied where n=1)),(select breaks from untouched),'replacement leaves historical open break accounting untouched');
+select is((select coalesce(jsonb_agg(to_jsonb(b) order by id),'[]') from public.time_tracking_breaks b where session_id=(select (result->>'session_id')::uuid from applied where n=1)),(select breaks from untouched),'replacement leaves completed historical break accounting untouched');
 insert into public.workspace_roles(id,ws_id,name) values(pg_temp.fid(90771),pg_temp.fid(90711),'Synthetic reviewer');
 insert into public.workspace_role_members(role_id,user_id) values(pg_temp.fid(90771),pg_temp.fid(90703));
 insert into public.workspace_role_permissions(ws_id,role_id,permission,enabled)
@@ -115,6 +123,28 @@ create function pg_temp.all_effects() returns jsonb language sql as $$ select js
  'receipts',(select coalesce(jsonb_agg(to_jsonb(r) order by command_id),'[]') from private.time_tracker_operation_receipts r where ws_id=pg_temp.fid(90711)),
  'config',(select to_jsonb(c) from private.time_tracker_controls c where ws_id=pg_temp.fid(90711)));
 $$;
+-- Paused sessions are not running, but their active breaks still block replacement.
+insert into public.time_tracking_sessions(id,ws_id,user_id,title,start_time,end_time,is_running)
+ values(pg_temp.fid(90782),pg_temp.fid(90711),pg_temp.fid(90701),'Synthetic paused work',clock_timestamp()-interval '2 minutes',clock_timestamp()-interval '1 minute',false);
+insert into public.time_tracking_breaks(id,session_id,break_start,created_by)
+ values(pg_temp.fid(90783),pg_temp.fid(90782),clock_timestamp()-interval '30 seconds',pg_temp.fid(90701));
+create temp table before_open_break as select pg_temp.all_effects() snapshot;
+select throws_ok($q$select pg_temp.replace(2,(select (result->>'session_id')::uuid from applied where n=2),90735)$q$,'55000','Open break must be resolved','paused-session open break cannot admit replacement');
+select is(pg_temp.all_effects(),(select snapshot from before_open_break),'open-break rejection preserves all session/chain/break/request/activity/notification/control/receipt fields and credits');
+-- Rollback-contained reported case: paused break, no running row, expected NULL.
+create function pg_temp.replace_paused_only() returns void language plpgsql as $$ begin
+ update public.time_tracking_sessions set is_running=false,end_time=clock_timestamp()
+   where ws_id=pg_temp.fid(90711) and user_id=pg_temp.fid(90701) and is_running;
+ if exists(select 1 from public.time_tracking_sessions where ws_id=pg_temp.fid(90711)
+   and user_id=pg_temp.fid(90701) and is_running) then
+   raise exception 'Synthetic paused-only fixture still running' using errcode='P0002';
+ end if;
+ perform pg_temp.replace(2,null,90735);
+end; $$;
+select throws_ok($q$select pg_temp.replace_paused_only()$q$,'55000','Open break must be resolved','paused-only break rejects expected NULL when no session is running');
+select is(pg_temp.all_effects(),(select snapshot from before_open_break),'paused-only rejection rolls back fixture transition and every scoped effect');
+delete from public.time_tracking_breaks where id=pg_temp.fid(90783);
+delete from public.time_tracking_sessions where id=pg_temp.fid(90782);
 create temp table all_before_failure as select pg_temp.all_effects() snapshot;
 create trigger synthetic_replacement_failure before insert on public.time_tracking_sessions
  for each row execute function pg_temp.fail_write();

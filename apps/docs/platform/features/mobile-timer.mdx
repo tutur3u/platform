@@ -78,7 +78,11 @@ and does not claim to describe the latest session.
 The operation acquires the existing actor/workspace advisory key before control,
 linked requests, session and break rows. One database timestamp captured after
 contention closes and starts work. Existing accounting and policy triggers remain
-in force; a future-starting running row is rejected without work credit. Any
+in force; closing work supplies canonical integer elapsed seconds from that same
+clock before the existing productivity trigger executes. A future-starting running
+row or any open break for that actor/workspace, including a paused session's
+break, is rejected without mutation or work credit. Historical breaks must already
+be completed; this operation never closes them automatically. Any
 failure rolls back session writes, operation revision and receipt. Browser roles
 cannot call the operation, and even the service role cannot directly mutate its
 private bookkeeping tables.
