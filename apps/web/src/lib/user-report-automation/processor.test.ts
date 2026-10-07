@@ -64,6 +64,7 @@ const QUEUE_ROW = {
 };
 
 const APPROVED_REPORT = {
+  user_id: 'user-1',
   content: 'Steady progress this month.',
   feedback: 'Keep practising past papers.',
   id: 'report-1',

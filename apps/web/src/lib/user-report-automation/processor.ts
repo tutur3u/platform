@@ -385,7 +385,9 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
       await Promise.all([
         privateDb
           .from('external_user_monthly_reports')
-          .select('id, title, content, feedback, report_approval_status')
+          .select(
+            'id, user_id, title, content, feedback, report_approval_status'
+          )
           .eq('id', row.report_id)
           .single(),
         sbAdmin
@@ -409,6 +411,14 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
     if (userResult.error) throw userResult.error;
     if (workspaceResult.error) throw workspaceResult.error;
     if (sourceResult.error) throw sourceResult.error;
+    if (reportResult.data.user_id !== row.user_id) {
+      await fail(
+        'blocked',
+        'Report subject changed. Request a new delivery.',
+        true
+      );
+      return;
+    }
     if (reportResult.data.report_approval_status !== 'APPROVED') {
       await fail('blocked', 'Report is not approved.', true);
       return;
