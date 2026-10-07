@@ -195,6 +195,12 @@ select throws_ok($q$select pg_temp.receipt(repeat('a',64),'daily',null)$q$,'2351
 select throws_ok($q$select pg_temp.receipt(repeat('a',64),'periodic',null,'invalid')$q$,'23514',null,'invalid recipient digest rejected');
 select pg_temp.receipt();
 select pg_temp.receipt(repeat('c',64),'daily',2);
+update private.user_group_posts set creator_id=pg_temp.fid(97101) where id=pg_temp.fid(97501);
+select is((select review_revision from private.user_group_posts where id=pg_temp.fid(97501)),3::bigint,'daily creator reassignment invalidates parent revision');
+select ok((select receipt.parent_review_revision <> post.review_revision from private.report_review_receipts receipt join private.user_group_posts post on post.id=receipt.post_id where receipt.kind='daily'),'daily creator reassignment makes prior parent receipt stale');
+update private.user_group_posts set creator_id=null where id=pg_temp.fid(97501);
+select is((select review_revision from private.user_group_posts where id=pg_temp.fid(97501)),4::bigint,'daily creator clear invalidates parent revision');
+
 select throws_ok($q$insert into private.report_review_receipts(kind,ws_id,subject_user_id,group_id,report_id,review_revision,
  reviewed_payload_sha256,recipient_sha256,actor_auth_uid,actor_workspace_user_id,required_permission,action_id)
  select kind,ws_id,subject_user_id,group_id,report_id,review_revision,reviewed_payload_sha256,recipient_sha256,

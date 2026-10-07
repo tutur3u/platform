@@ -244,3 +244,20 @@ test('readiness has a generated argument name while retaining inert identity and
     /tsc --ignoreConfig --noEmit --strict --skipLibCheck --target esnext --module nodenext --moduleResolution nodenext/u
   );
 });
+
+test('daily creator reassignment and clear invalidate parent version and prior receipt', () => {
+  assert.match(
+    migration,
+    /ON private\.user_group_posts FOR EACH ROW[\s\S]*?'group_id', 'creator_id', 'post_approval_status'/u
+  );
+  for (const control of [
+    'daily creator reassignment invalidates parent revision',
+    'daily creator reassignment makes prior parent receipt stale',
+    'daily creator clear invalidates parent revision',
+  ])
+    assert.ok(fixture.includes(control));
+  assert.match(
+    fixture,
+    /receipt\.parent_review_revision <> post\.review_revision/u
+  );
+});

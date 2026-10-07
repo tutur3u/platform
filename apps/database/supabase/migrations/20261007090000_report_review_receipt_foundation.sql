@@ -48,7 +48,7 @@ EXECUTE FUNCTION private.advance_report_review_revision(
 CREATE TRIGGER zz_report_review_revision BEFORE INSERT OR UPDATE
 ON private.user_group_posts FOR EACH ROW
 EXECUTE FUNCTION private.advance_report_review_revision(
-  'title', 'content', 'notes', 'group_id', 'post_approval_status', 'approved_by',
+  'title', 'content', 'notes', 'group_id', 'creator_id', 'post_approval_status', 'approved_by',
   'approved_at', 'rejected_by', 'rejected_at', 'rejection_reason');
 CREATE TRIGGER zz_report_review_revision BEFORE INSERT OR UPDATE
 ON private.user_group_post_checks FOR EACH ROW
