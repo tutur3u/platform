@@ -318,3 +318,24 @@ acknowledgments, and all four scope boundaries.
 ### Periodic delivery database contract
 
 The `periodic-report-delivery-contract.yaml` CI workflow replays the complete historical schema in an isolated disposable database, runs the approval, stage and provider-outcome pgTAP fixtures with strict assertion accounting, generates actual schema types, and cleans up its owned database. The source-only runner and mocked adapter tests are not database or provider delivery proof. Require this workflow for the exact repair head before merging the migration. Production applies it through the gated migration workflow after authorized promotion; do not enable flags or send reports merely because source tests pass.
+
+## Cloudflare dispatch outcomes
+
+Cloudflare sends expose a dispatch outcome separately from the existing success
+boolean. Positive message-ID, delivered-recipient, or queued-recipient evidence
+means `accepted`: the provider accepted at least part of the dispatch. It does
+not prove delivery to every recipient. A partial permanent bounce still retains
+`success: false` and its existing error while reporting `accepted`.
+
+Local recipient, attachment, and message-size limits or preparation failures
+before the provider request report `rejected`. Once the request is handed off,
+transport loss, malformed or incomplete responses, and all-bounce responses
+without acceptance evidence report `unknown`. Neither `accepted` nor `unknown`
+is proof that automatically retrying the whole dispatch is safe. This adapter
+change adds no automatic retry, caller activation, or delivery reconciliation.
+
+Coverage: the actual adapter's synthetic-response tests in
+`cloudflare-delivery-outcome.test.ts` retain legacy success/error behavior and
+assert zero provider requests for rejected local preparation. Existing
+`cloudflare.test.ts` request and attachment controls remain unchanged. Synthetic
+checks are not evidence of customer email delivery or live provider behavior.
