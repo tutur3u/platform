@@ -114,6 +114,7 @@ for (const stalledPhase of [
     };
     const page = {
       goto: vi.fn().mockResolvedValue(undefined),
+      waitForResponse: vi.fn().mockResolvedValue({ status: () => 200 }),
       getByRole: (role: string) => (role === 'dialog' ? dialog : control),
       locator: () => control,
       url: () => 'https://synthetic.test/wiki/synthetic-world/overview',
@@ -177,6 +178,7 @@ test.each([200, 401, 403, 500])(
     };
     const page = {
       goto: async () => {},
+      waitForResponse: vi.fn().mockResolvedValue({ status: () => 200 }),
       getByRole: (role: string) => (role === 'dialog' ? dialog : control),
       locator: () => control,
       url: () => 'https://synthetic.test/wiki/synthetic-world/overview',
