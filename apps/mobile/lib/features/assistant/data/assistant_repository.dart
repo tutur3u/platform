@@ -19,15 +19,18 @@ import 'package:mobile/features/chat/models/chat_models.dart';
 
 import '../models/assistant_chat_identity.dart';
 import '../models/assistant_models.dart';
+import '../models/assistant_soul_snapshot.dart';
 import 'assistant_calendar_insight.dart';
 import 'assistant_history_message.dart';
 import 'assistant_history_parts.dart';
 import 'assistant_soul_name_writer.dart';
+import 'assistant_soul_reader.dart';
 import 'assistant_stream_parser.dart';
 
 part 'assistant_repository_preferences.dart';
+part 'assistant_repository_soul.dart';
 
-class AssistantRepository {
+class AssistantRepository with _AssistantSoulRepository {
   AssistantRepository({
     ApiClient? apiClient,
     ApiClient? tasksApiClient,
@@ -49,6 +52,7 @@ class AssistantRepository {
           chatRepository ??
           ChatRepository(apiClient: _apiClient, httpClient: _httpClient);
 
+  @override
   final ApiClient _apiClient;
   final ApiClient _tasksApiClient;
   final http.Client _httpClient;
@@ -199,14 +203,6 @@ class AssistantRepository {
     );
     final workspaceId = result.data;
     return workspaceId == null || workspaceId.isEmpty ? null : workspaceId;
-  }
-
-  Future<AssistantSoul> fetchSoul({bool forceRefresh = false}) async {
-    return await fetchAssistantSoul(this, forceRefresh: forceRefresh);
-  }
-
-  Future<AssistantSoul> updateSoulName(String name) async {
-    return await updateAssistantSoulName(this, name);
   }
 
   Future<AssistantTasksInsight> fetchTasksInsight({

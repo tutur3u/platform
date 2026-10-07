@@ -5,6 +5,7 @@ import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/models/assistant_soul_snapshot.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -49,9 +50,9 @@ void main() {
   tearDown(() => cubit.close());
   test('rename reply is fenced after workspace A B A reselection', () async {
     final reply = Completer<AssistantSoul>();
-    when(
-      () => repository.updateSoulName('Old'),
-    ).thenAnswer((_) => reply.future);
+    when(() => repository.updateSoulNameSnapshot('Old')).thenAnswer(
+      (_) async => AssistantSoulSnapshot(verifiedSoul: await reply.future),
+    );
     final pending = cubit.renameAssistant('Old');
     await cubit.loadWorkspace(const Workspace(id: 'other'));
     await cubit.loadWorkspace(const Workspace(id: 'ws'));
@@ -61,9 +62,9 @@ void main() {
   });
   test('rename reply is fenced after same actor scope departure', () async {
     final reply = Completer<AssistantSoul>();
-    when(
-      () => repository.updateSoulName('Old'),
-    ).thenAnswer((_) => reply.future);
+    when(() => repository.updateSoulNameSnapshot('Old')).thenAnswer(
+      (_) async => AssistantSoulSnapshot(verifiedSoul: await reply.future),
+    );
     final pending = cubit.renameAssistant('Old');
     epoch++;
     reply.complete(const AssistantSoul(name: 'Old'));
@@ -72,9 +73,9 @@ void main() {
   });
   test('new refresh supersedes earlier rename publication', () async {
     final reply = Completer<AssistantSoul>();
-    when(
-      () => repository.updateSoulName('Old'),
-    ).thenAnswer((_) => reply.future);
+    when(() => repository.updateSoulNameSnapshot('Old')).thenAnswer(
+      (_) async => AssistantSoulSnapshot(verifiedSoul: await reply.future),
+    );
     when(
       () => repository.fetchSoul(forceRefresh: true),
     ).thenAnswer((_) async => const AssistantSoul(name: 'Current'));
@@ -89,9 +90,11 @@ void main() {
     when(
       () => repository.fetchSoul(forceRefresh: true),
     ).thenAnswer((_) => reply.future);
-    when(
-      () => repository.updateSoulName('Current'),
-    ).thenAnswer((_) async => const AssistantSoul(name: 'Current'));
+    when(() => repository.updateSoulNameSnapshot('Current')).thenAnswer(
+      (_) async => AssistantSoulSnapshot(
+        verifiedSoul: const AssistantSoul(name: 'Current'),
+      ),
+    );
     final pending = cubit.refreshSoul();
     await cubit.renameAssistant('Current');
     reply.complete(const AssistantSoul(name: 'Old'));

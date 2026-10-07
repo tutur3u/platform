@@ -682,3 +682,24 @@ before the newest local choice activates. Synthetic bytes and native factories
 prove persistence and configuration wiring only; they do not prove device
 format compatibility or successful inference. Failed local prompts remain local
 with visible recovery and never silently fall back to a remote provider.
+
+### Mobile name confirmation and offline intent
+
+The mobile header uses the confirmed assistant name, with Mira as its display
+default when no verified snapshot exists. An offline rename keeps the confirmed
+header and records a separate local name intent. Queued, conflicted and failed
+intents remain available through the existing offline changes sheet; they are
+never automatically discarded or promoted to confirmed names. Explicit pending
+name presentation is a separate UI step.
+
+Verified Soul snapshots use an account-owned cache envelope. Legacy optimistic
+name caches are not evidence of server confirmation, and disappearance of a queue
+record alone does not confirm its value. A validated server receipt establishes
+confirmation. Account departure and cache-clear epochs fence held reads and
+writes, including same-account restoration. Genuine permission and transport
+errors remain errors on explicit refresh.
+
+`assistant_soul_provenance_test.dart` exercises real encrypted cache and queue
+restart, all three pending statuses, held account/clear boundaries, malformed and
+foreign receipts, permission failure, and the Shell header's offline rename.
+These tests establish source behavior, not device or deployed-runtime proof.
