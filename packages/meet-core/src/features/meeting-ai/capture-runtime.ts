@@ -1,4 +1,4 @@
-import type { MeetAudioCapture } from './audio';
+import type { MeetAudioCapture, MeetAudioSource } from './audio';
 import type { MeetAudioBatcher } from './audio-batches';
 
 const slot = <T>(current: T) => ({ current });
@@ -13,7 +13,9 @@ export function createMeetCaptureRuntime(scope: {
 }) {
   return {
     scope,
-    active: true,
+    active: false,
+    epoch: 0,
+    streams: slot<MeetAudioSource[]>([]),
     busyRef: slot(false),
     mounted: slot(false),
     starting: slot<Promise<void> | null>(null),

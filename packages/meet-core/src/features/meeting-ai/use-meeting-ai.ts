@@ -11,7 +11,14 @@ import {
   uploadMeetAiChunk,
 } from '@tuturuuu/internal-api';
 import { useWorkspaceActor } from '@tuturuuu/ui/hooks/use-workspace-visibility';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { MeetAudioCapture, type MeetAudioSource } from './audio';
 import { MeetAudioBatcher } from './audio-batches';
 import { createMeetCaptureRuntime } from './capture-runtime';
@@ -38,28 +45,38 @@ export function useMeetingAi(
     [actor, wsId, meetingId, enabled, expectedActorId]
   );
   const currentRuntime = useRef(runtime);
-  if (currentRuntime.current !== runtime) {
+  useLayoutEffect(() => {
     currentRuntime.current.active = false;
     currentRuntime.current = runtime;
-  }
-  const admitted = useCallback(() => {
-    if (
-      !runtime.active ||
-      !enabled ||
-      !actor ||
-      (expectedActorId !== undefined && actor.actorId !== expectedActorId)
-    )
-      return false;
-    try {
-      actor.assertActive();
-      return true;
-    } catch {
+    runtime.active = true;
+    return () => {
       runtime.active = false;
-      return false;
-    }
-  }, [runtime, enabled, actor, expectedActorId]);
-  const assertScope = () => {
-    if (!admitted())
+      runtime.epoch++;
+    };
+  }, [runtime]);
+  const admitted = useCallback(
+    (epoch = runtime.epoch) => {
+      if (
+        currentRuntime.current !== runtime ||
+        epoch !== runtime.epoch ||
+        !runtime.active ||
+        !enabled ||
+        !actor ||
+        (expectedActorId !== undefined && actor.actorId !== expectedActorId)
+      )
+        return false;
+      try {
+        actor.assertActive();
+        return true;
+      } catch {
+        runtime.active = false;
+        return false;
+      }
+    },
+    [runtime, enabled, actor, expectedActorId]
+  );
+  const assertScope = (epoch = runtime.epoch) => {
+    if (!admitted(epoch))
       throw new DOMException('Meeting scope changed', 'AbortError');
   };
   const query = useQuery({
@@ -69,9 +86,10 @@ export function useMeetingAi(
       actor != null &&
       (expectedActorId === undefined || actor.actorId === expectedActorId),
     queryFn: async () => {
-      assertScope();
+      const epoch = runtime.epoch;
+      assertScope(epoch);
       const result = await getMeetAiState(wsId, meetingId);
-      assertScope();
+      assertScope(epoch);
       return result;
     },
     refetchInterval: (current) =>
@@ -88,22 +106,36 @@ export function useMeetingAi(
     retry: false,
   });
   const { mutateAsync: startSession } = useMutation({
-    mutationFn: () => {
-      assertScope();
+    mutationFn: (epoch: number) => {
+      assertScope(epoch);
       return updateMeetAiSession(wsId, meetingId, { action: 'start' });
     },
     retry: false,
   });
   const { mutateAsync: finishSession } = useMutation({
-    mutationFn: (payload: Parameters<typeof updateMeetAiSession>[2]) => {
-      assertScope();
+    mutationFn: ({
+      payload,
+      epoch,
+    }: {
+      payload: Parameters<typeof updateMeetAiSession>[2];
+      epoch: number;
+    }) => {
+      assertScope(epoch);
       return updateMeetAiSession(wsId, meetingId, payload);
     },
     retry: false,
   });
   const { mutateAsync: uploadChunk } = useMutation({
-    mutationFn: ({ data, signal }: { data: FormData; signal: AbortSignal }) => {
-      assertScope();
+    mutationFn: ({
+      data,
+      signal,
+      epoch,
+    }: {
+      data: FormData;
+      signal: AbortSignal;
+      epoch: number;
+    }) => {
+      assertScope(epoch);
       return uploadMeetAiChunk(wsId, meetingId, data, undefined, signal);
     },
     retry: false,
@@ -114,10 +146,8 @@ export function useMeetingAi(
   const [captureError, setCaptureError] = useState(false);
   const [recovering, setRecovering] = useState(false);
   const [pendingChunks, setPendingChunks] = useState(0);
-  const streamsRef = useRef(streams);
-  streamsRef.current = streams;
-
-  useEffect(() => {
+  useLayoutEffect(() => {
+    runtime.streams.current = streams;
     runtime.capture.current?.update(streams);
   }, [streams, runtime]);
   useEffect(() => {
@@ -151,16 +181,27 @@ export function useMeetingAi(
       runtime.active = false;
       runtime.mounted.current = false;
       runtime.preparing.current?.dispose();
+      runtime.preparing.current = null;
+      runtime.busyRef.current = false;
+      runtime.starting.current = null;
+      runtime.session.current = null;
+      runtime.pending.current = 0;
+      runtime.pendingBytes.current = 0;
+      runtime.queue.current = Promise.resolve();
       runtime.recovery.current.abort();
       runtime.capture.current?.dispose();
+      runtime.capture.current = null;
       runtime.batches.current?.dispose();
+      runtime.batches.current = null;
       if (runtime.durationTimer.current)
         clearTimeout(runtime.durationTimer.current);
     };
   }, [runtime]);
 
   const start = useCallback(async () => {
-    if (!admitted() || runtime.capture.current || runtime.busyRef.current)
+    const epoch = runtime.epoch;
+    const current = () => admitted(epoch);
+    if (!current() || runtime.capture.current || runtime.busyRef.current)
       return;
     if (runtime.pending.current)
       throw new Error('Previous transcription is still finishing');
@@ -175,7 +216,7 @@ export function useMeetingAi(
     runtime.errorRef.current = false;
     runtime.autoFinishRequested.current = false;
     const overflow = () => {
-      if (!admitted()) return;
+      if (!current()) return;
       recorder.dispose();
       batcher.dispose();
       runtime.capture.current = null;
@@ -188,13 +229,13 @@ export function useMeetingAi(
           .then(() => runtime.finishRef.current?.())
           .catch(() => {
             // Keep the partial session recoverable when finalization fails.
-            if (admitted()) setCaptureError(true);
+            if (current()) setCaptureError(true);
           });
       }
     };
     const batcher = new MeetAudioBatcher((clips) => {
       const sessionId = runtime.session.current;
-      if (!admitted() || !sessionId) return;
+      if (!current() || !sessionId) return;
       const bytes = clips.reduce((sum, clip) => sum + clip.audio.size, 0);
       if (
         runtime.pendingBytes.current + bytes > MEET_AUDIO_PENDING_MAX_BYTES ||
@@ -230,22 +271,27 @@ export function useMeetingAi(
       const recoverySignal = runtime.recovery.current.signal;
       runtime.queue.current = runtime.queue.current.then(async () => {
         try {
-          if (!admitted()) return;
-          await recoverMeetChunk((signal) => uploadChunk({ data, signal }), {
-            // Queued clips must get their own recovery window when uploaded.
-            deadline: Date.now() + 5 * 60_000,
-            signal: recoverySignal,
-            onRetry: () => {
-              if (admitted() && runtime.mounted.current) setRecovering(true);
-            },
-          });
+          if (!current()) return;
+          await recoverMeetChunk(
+            (signal) => uploadChunk({ data, signal, epoch }),
+            {
+              // Queued clips must get their own recovery window when uploaded.
+              deadline: Date.now() + 5 * 60_000,
+              signal: recoverySignal,
+              onRetry: () => {
+                if (current() && runtime.mounted.current) setRecovering(true);
+              },
+            }
+          );
         } catch {
-          if (admitted() && runtime.mounted.current) setCaptureError(true);
-          if (admitted()) runtime.errorRef.current = true;
+          if (current() && runtime.mounted.current) setCaptureError(true);
+          if (current()) runtime.errorRef.current = true;
         } finally {
-          runtime.pending.current--;
-          runtime.pendingBytes.current -= bytes;
-          if (admitted() && runtime.mounted.current) {
+          if (current()) {
+            runtime.pending.current--;
+            runtime.pendingBytes.current -= bytes;
+          }
+          if (current() && runtime.mounted.current) {
             setPendingChunks(runtime.pending.current);
             setRecovering(false);
           }
@@ -253,7 +299,7 @@ export function useMeetingAi(
       });
     }, overflow);
     const recorder = new MeetAudioCapture((audio, startSeconds, source) => {
-      if (!admitted()) return;
+      if (!current()) return;
       batcher.add({
         audio,
         startSeconds,
@@ -265,12 +311,12 @@ export function useMeetingAi(
     try {
       // Establish browser support before allocating the server session.
       await recorder.start();
-      if (!admitted() || !runtime.mounted.current) {
+      if (!current() || !runtime.mounted.current) {
         recorder.dispose();
         return;
       }
-      const result = await startSession();
-      if (!admitted() || !runtime.mounted.current) {
+      const result = await startSession(epoch);
+      if (!current() || !runtime.mounted.current) {
         recorder.dispose();
         return;
       }
@@ -285,32 +331,36 @@ export function useMeetingAi(
       runtime.durationTimer.current = setTimeout(
         () => {
           void runtime.finishRef.current?.().catch(() => {
-            if (admitted()) runtime.errorRef.current = true;
-            if (admitted() && runtime.mounted.current) setCaptureError(true);
+            if (current()) runtime.errorRef.current = true;
+            if (current() && runtime.mounted.current) setCaptureError(true);
           });
         },
         3 * 60 * 60 * 1000 - 15_000
       );
-      recorder.update(streamsRef.current);
+      recorder.update(runtime.streams.current);
       setCapturing(true);
-      if (admitted()) await query.refetch();
+      if (current()) await query.refetch();
     } catch (error) {
       recorder.dispose();
       batcher.dispose();
-      if (admitted()) throw error;
+      if (current()) throw error;
     } finally {
-      runtime.busyRef.current = false;
-      runtime.starting.current = null;
+      if (current()) {
+        runtime.busyRef.current = false;
+        runtime.starting.current = null;
+      }
       finishStarting();
-      if (admitted() && runtime.mounted.current) setBusy(false);
+      if (current() && runtime.mounted.current) setBusy(false);
     }
   }, [query.refetch, startSession, uploadChunk, runtime, admitted]);
 
   const finish = useCallback(
     async (sessionId?: string) => {
-      if (!admitted()) return;
+      const epoch = runtime.epoch;
+      const current = () => admitted(epoch);
+      if (!current()) return;
       await runtime.starting.current;
-      if (!admitted()) return;
+      if (!current()) return;
       const target = sessionId ?? runtime.session.current;
       if (!target) return;
       if (runtime.busyRef.current)
@@ -325,9 +375,9 @@ export function useMeetingAi(
           runtime.batches.current?.flush();
           const flushed =
             !runtime.capture.current || (await runtime.capture.current.stop());
-          if (!admitted()) return;
+          if (!current()) return;
           if (!flushed) {
-            if (admitted()) runtime.errorRef.current = true;
+            if (current()) runtime.errorRef.current = true;
             setCaptureError(true);
           }
           runtime.capture.current = null;
@@ -335,37 +385,42 @@ export function useMeetingAi(
           runtime.batches.current = null;
           setCapturing(false);
           await runtime.queue.current;
-          if (!admitted()) return;
+          if (!current()) return;
         }
         await finishSession({
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          action: 'finish',
-          sessionId: target,
-          expectedChunks:
-            target === runtime.session.current
-              ? runtime.sequence.current
-              : undefined,
-          captureIncomplete:
-            target === runtime.session.current
-              ? runtime.errorRef.current
-              : true,
+          epoch,
+          payload: {
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            action: 'finish',
+            sessionId: target,
+            expectedChunks:
+              target === runtime.session.current
+                ? runtime.sequence.current
+                : undefined,
+            captureIncomplete:
+              target === runtime.session.current
+                ? runtime.errorRef.current
+                : true,
+          },
         });
-        if (!admitted()) return;
+        if (!current()) return;
         if (target === runtime.session.current) {
           runtime.session.current = null;
           setOwnsSession(false);
         }
-        if (admitted()) await query.refetch();
+        if (current()) await query.refetch();
       } catch (error) {
-        if (admitted()) throw error;
+        if (current()) throw error;
       } finally {
-        runtime.busyRef.current = false;
-        if (admitted()) setBusy(false);
+        if (current()) runtime.busyRef.current = false;
+        if (current()) setBusy(false);
       }
     },
     [query.refetch, finishSession, runtime, admitted]
   );
-  runtime.finishRef.current = finish;
+  useLayoutEffect(() => {
+    runtime.finishRef.current = finish;
+  }, [runtime, finish]);
   return {
     meetingId,
     wsId,

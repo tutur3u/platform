@@ -1,7 +1,13 @@
 // @vitest-environment jsdom
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, render, renderHook, waitFor } from '@testing-library/react';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
-import type { ReactNode } from 'react';
+import {
+  type ReactNode,
+  Suspense,
+  useEffect,
+  useState,
+  useTransition,
+} from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -10,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   upload: vi.fn(),
   refetch: vi.fn(),
   dispose: vi.fn(),
+  support: vi.fn(),
   client: { removeQueries: vi.fn() },
   chunk: null as null | ((audio: Blob, seconds: number) => void),
 }));
@@ -34,7 +41,9 @@ vi.mock('./audio', () => ({
     constructor(callback: typeof mocks.chunk) {
       mocks.chunk = callback;
     }
-    async start() {}
+    async start() {
+      await mocks.support();
+    }
     update() {}
     dispose = mocks.dispose;
     async stop() {
@@ -55,6 +64,7 @@ function wrapper({ children }: { children: ReactNode }) {
 beforeEach(() => {
   vi.resetAllMocks();
   mocks.actorId = 'actor-a';
+  mocks.support.mockResolvedValue(undefined);
   mocks.update.mockResolvedValue({ sessionId: 'session-a' });
   mocks.upload.mockResolvedValue({ status: 'completed' });
 });
@@ -225,4 +235,82 @@ it('admits the current verified actor after Strict Mode effect replay', async ()
   expect(hook.result.current.capturing).toBe(true);
   expect(mocks.update).toHaveBeenCalledTimes(1);
   hook.unmount();
+});
+
+it('keeps committed A admitted while a suspended B render is abandoned', async () => {
+  const hold = new Promise<never>(() => {});
+  const handles: Record<string, ReturnType<typeof useMeetingAi>> = {};
+  let transition!: () => void;
+  let abandon!: () => void;
+  function Fixture() {
+    const [workspace, setWorkspace] = useState('workspace-a');
+    const [, startTransition] = useTransition();
+    handles[workspace] = useMeetingAi(workspace, 'meeting-a');
+    transition = () => startTransition(() => setWorkspace('workspace-b'));
+    abandon = () => setWorkspace('workspace-a');
+    if (workspace === 'workspace-b') throw hold;
+    return <div>Committed A</div>;
+  }
+  const tree = render(
+    wrapper({
+      children: (
+        <Suspense fallback={<div>Pending</div>}>
+          <Fixture />
+        </Suspense>
+      ),
+    })
+  );
+  await act(() => handles['workspace-a']!.start());
+  const committed = handles['workspace-a']!;
+  await act(async () => {
+    transition();
+  });
+  expect(handles['workspace-b']).toBeDefined();
+  expect(tree.getByText('Committed A')).toBeDefined();
+  await act(() => committed.finish());
+  expect(mocks.update).toHaveBeenCalledTimes(2);
+  await act(async () => {
+    await handles['workspace-b']!.start();
+    await handles['workspace-b']!.finish('session-a');
+  });
+  expect(mocks.update).toHaveBeenCalledTimes(2);
+  await act(async () => {
+    abandon();
+  });
+  await act(() => handles['workspace-a']!.start());
+  expect(mocks.update).toHaveBeenCalledTimes(3);
+  tree.unmount();
+});
+
+it('does not resurrect a held preparation across Strict Mode cleanup/replay', async () => {
+  let release!: () => void;
+  mocks.support.mockReturnValueOnce(
+    new Promise<void>((resolve) => {
+      release = resolve;
+    })
+  );
+  let first!: Promise<void>;
+  let current!: ReturnType<typeof useMeetingAi>;
+  function Fixture() {
+    const ai = useMeetingAi('workspace-a', 'meeting-a');
+    current = ai;
+    useEffect(() => {
+      if (!first) first = ai.start();
+    }, [ai.start]);
+    return null;
+  }
+  const tree = render(wrapper({ children: <Fixture /> }), {
+    reactStrictMode: true,
+  });
+  await waitFor(() => expect(mocks.support).toHaveBeenCalledTimes(1));
+  await act(async () => {
+    release();
+    await first;
+  });
+  expect(mocks.update).not.toHaveBeenCalled();
+  expect(current.capturing).toBe(false);
+  await act(() => current.start());
+  expect(mocks.update).toHaveBeenCalledTimes(1);
+  expect(current.capturing).toBe(true);
+  tree.unmount();
 });
