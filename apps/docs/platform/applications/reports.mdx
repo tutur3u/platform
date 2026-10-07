@@ -81,6 +81,25 @@ cross-client revision lock, and it does not queue or send email. Regression
 coverage: `monthly-report-review-safety.test.tsx` exercises the actual editor,
 form, save/approval hooks, and synthetic HTTP responses.
 
+Ordinary manual report creation and edits through the shared report API remain
+pending even when the legacy approval setting is disabled or the author can
+approve reports. Contacts Save and score recalculation do not submit approval
+markers; an explicit permitted approval action remains separate. Narrative,
+feedback, title, score, cadence, period, manager instruction and generation changes invalidate the API
+review state. Subject and group cannot be changed through this update API.
+Approval timestamps and actor attribution are server-owned.
+
+This API/client safeguard alone does not establish dispatch authorization:
+legacy database approval triggers and configuration transitions can still produce
+approved statuses without per-entry review. Existing status, approver and time
+fields do not distinguish those paths from explicit human approval. Keep email
+gates off until canonical revision-bound approval receipts, database mutation
+closure and delivery consumers enforce explicit permitted review for each entry.
+Do not infer consent for a backlog from its approved count. Coverage:
+`explicit-approval.test.ts`, `report-review-transition.test.ts` and
+`report-save-explicit-approval.test.tsx`; these source tests do not prove the
+remaining database or provider boundaries.
+
 The principal permissions are:
 
 - `view_user_groups_reports` — view daily and periodic reporting.

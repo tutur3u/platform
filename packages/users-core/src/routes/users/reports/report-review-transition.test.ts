@@ -26,7 +26,7 @@ describe('resolveReportReviewTransition', () => {
     ).toBeNull();
   });
 
-  it('approves manual revisions when report approval is disabled', () => {
+  it('requires explicit review even when legacy report approval is disabled', () => {
     expect(
       resolveReportReviewTransition({
         approvalEnabled: false,
@@ -35,7 +35,7 @@ describe('resolveReportReviewTransition', () => {
         isAiReport: false,
         reviewableFieldsChanged: true,
       })
-    ).toBe('approved');
+    ).toBe('pending');
   });
 
   it('does not change review state for unrelated updates', () => {
