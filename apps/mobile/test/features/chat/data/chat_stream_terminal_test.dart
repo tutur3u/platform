@@ -61,33 +61,86 @@ void main() {
       }
     }, onDone: finished.complete);
     body.add(utf8.encode('{"type":"assistant_delta","delta":"Partial"}\n'));
+    var phase = 'first-event';
     try {
       await firstEvent.future.timeout(
         const Duration(milliseconds: 250),
         onTimeout: () => throw StateError('First event was not delivered'),
       );
       body.add(utf8.encode('{"type":"assistant_delta","delta":" next"}\n'));
+      phase = 'source-pause';
       await paused.future.timeout(
         const Duration(milliseconds: 250),
         onTimeout: () => throw StateError('Source was not paused'),
       );
       expect(events, hasLength(1));
       subscription.resume();
+      phase = 'source-resume';
       await resumed.future.timeout(
         const Duration(milliseconds: 250),
         onTimeout: () => throw StateError('Source was not resumed'),
       );
       body.add(utf8.encode('$receipt{"type":"done"}\n'));
+      phase = 'completion';
       await finished.future.timeout(
         const Duration(milliseconds: 250),
         onTimeout: () => throw StateError('Response was not completed'),
       );
       expect(events.last, isA<ChatStreamDoneEvent>());
     } finally {
-      await subscription.cancel();
-      await body.close();
+      final evidence =
+          'phase=$phase first=${firstEvent.isCompleted} '
+          'paused=${paused.isCompleted} resumed=${resumed.isCompleted} '
+          'finished=${finished.isCompleted}';
+      await subscription.cancel().timeout(
+        const Duration(milliseconds: 250),
+        onTimeout: () => throw StateError('Cancellation stalled: $evidence'),
+      );
+      await body.close().timeout(
+        const Duration(milliseconds: 250),
+        onTimeout: () => throw StateError('Fixture close stalled: $evidence'),
+      );
     }
   });
+  test('early phase failure survives paused fixture cleanup', () async {
+    final first = Completer<void>();
+    final cleanup = Completer<void>();
+    final body = StreamController<List<int>>(onCancel: () => cleanup.future);
+    late StreamSubscription<ChatMessageStreamEvent> subscription;
+    subscription = send(body.stream).listen((_) {
+      if (!first.isCompleted) {
+        subscription.pause();
+        first.complete();
+      }
+    });
+    body.add(utf8.encode('{"type":"assistant_delta","delta":"Partial"}\n'));
+    Object? observed;
+    try {
+      try {
+        await first.future.timeout(const Duration(milliseconds: 250));
+        throw StateError('Synthetic phase failure');
+      } finally {
+        await subscription.cancel().timeout(const Duration(milliseconds: 250));
+        await body.close().timeout(const Duration(milliseconds: 250));
+      }
+    } on Object catch (error) {
+      observed = error;
+    } finally {
+      cleanup.complete();
+      subscription.resume();
+      await subscription.cancel().timeout(const Duration(milliseconds: 250));
+      await body.close().timeout(const Duration(milliseconds: 250));
+    }
+    expect(
+      observed,
+      isA<StateError>().having(
+        (error) => error.message,
+        'original phase error',
+        'Synthetic phase failure',
+      ),
+    );
+  });
+
   test('saved reply and done cancel an open response body', () async {
     var canceled = false;
     final body = StreamController<List<int>>(

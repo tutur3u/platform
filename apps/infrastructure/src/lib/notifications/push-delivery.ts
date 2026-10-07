@@ -121,9 +121,12 @@ export async function sendCustomPushMessageBatch({
     };
   }
 
+  // Custom diagnostic pushes must never impersonate persisted inbox ownership.
+  const data = message.data ? { ...message.data } : undefined;
+  if (data) delete data.inboxIdentity;
   const payload: MulticastMessage = {
     tokens,
-    data: message.data,
+    data,
     android: {
       priority: 'high',
       notification: message.dataOnly

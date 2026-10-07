@@ -7208,6 +7208,7 @@
       "wallet_id": "Wallet",
       "warehouse_id": "Warehouse"
     },
+    "history_load_failed": "Invoice history could not be loaded. Try again.",
     "invalid_subscription_inventory": "A linked product or billing unit is unavailable. Review the class’s linked products before creating this invoice.",
     "inventory_fallback_used": "A warehouse was not specified so a default one has been selected",
     "invoice_configuration": "Invoice Information",
@@ -7637,7 +7638,10 @@
   },
   "ws-reports": {
     "all_changes_saved": "All changes saved",
+    "approval_save_changes": "Save your changes before approving the report.",
     "approval_status": "Approval status",
+    "approval_view_current": "Return to the current report before approving.",
+    "approval_wait_save": "Wait for the report to finish saving.",
     "approve": "Approve",
     "approved": "Approved",
     "archived_until_user_notice_description": "This user is temporarily archived until {date}. Reports remain visible for follow-up and historical review.",

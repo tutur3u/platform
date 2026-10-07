@@ -3,6 +3,7 @@ import 'server-only';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import dayjs from 'dayjs';
 import '../dayjs-setup';
+import { completeSessionRead } from './session-complete-read';
 import { listMissingUserGroupSessionOccurrences } from './session-schedule';
 import { DEFAULT_TIMEZONE, privateClient } from './session-schedule-data';
 import type { SessionRow } from './session-schedule-types';
@@ -30,21 +31,20 @@ export async function listPlannedUserGroupSessionDatesByGroupIds({
   );
   if (uniqueGroupIds.length === 0) return new Map<string, string[]>();
 
-  const { data, error } = await privateClient(supabase)
-    .from('workspace_user_group_sessions')
-    .select('group_id, starts_at')
-    .eq('ws_id', wsId)
-    .in('group_id', uniqueGroupIds)
-    .eq('status', 'scheduled')
-    .gte('starts_at', from)
-    .lte('starts_at', to)
-    .order('starts_at');
-  if (error) throw error;
+  const { data } = await completeSessionRead<
+    Pick<SessionRow, 'id' | 'group_id' | 'starts_at'>
+  >(() =>
+    privateClient(supabase)
+      .from('workspace_user_group_sessions')
+      .select('id, group_id, starts_at', { count: 'exact' })
+      .eq('ws_id', wsId)
+      .in('group_id', uniqueGroupIds)
+      .eq('status', 'scheduled')
+      .gte('starts_at', from)
+      .lte('starts_at', to)
+  );
 
-  for (const session of (data ?? []) as Pick<
-    SessionRow,
-    'group_id' | 'starts_at'
-  >[]) {
+  for (const session of data) {
     dates
       .get(session.group_id)
       ?.add(dayjs(session.starts_at).tz(timezone).format('YYYY-MM-DD'));
@@ -63,7 +63,9 @@ export async function listPlannedUserGroupSessionDatesByGroupIds({
     )
   );
   for (const missing of missingByGroup.flat()) {
-    dates.get(missing.groupId)?.add(missing.date);
+    dates
+      .get(missing.groupId)
+      ?.add(dayjs(missing.startsAt).tz(timezone).format('YYYY-MM-DD'));
   }
 
   return new Map(

@@ -1,10 +1,8 @@
-export type ReportReviewTransition = 'approved' | 'pending' | null;
+export type ReportReviewTransition = 'pending' | null;
 
+/** Legacy approval settings never turn an ordinary edit into human review. */
 export function resolveReportReviewTransition({
-  approvalEnabled,
   approvalTouched,
-  canApproveReports,
-  isAiReport,
   reviewableFieldsChanged,
 }: {
   approvalEnabled: boolean;
@@ -13,17 +11,5 @@ export function resolveReportReviewTransition({
   isAiReport: boolean;
   reviewableFieldsChanged: boolean;
 }): ReportReviewTransition {
-  if (approvalTouched || !reviewableFieldsChanged) {
-    return null;
-  }
-
-  if (isAiReport || (approvalEnabled && !canApproveReports)) {
-    return 'pending';
-  }
-
-  if (!approvalEnabled) {
-    return 'approved';
-  }
-
-  return null;
+  return !approvalTouched && reviewableFieldsChanged ? 'pending' : null;
 }

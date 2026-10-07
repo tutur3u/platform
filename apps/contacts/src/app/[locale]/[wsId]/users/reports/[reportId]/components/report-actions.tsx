@@ -44,6 +44,7 @@ interface ReportActionsProps {
   canApproveReports?: boolean;
   isNew?: boolean;
   approvalStatus?: ApprovalStatus | null;
+  approvalBlockedReason?: string;
   onApprove?: () => void;
   onReject?: () => void;
   isApproving?: boolean;
@@ -67,6 +68,7 @@ export function ReportActions({
   canApproveReports = false,
   isNew = false,
   approvalStatus,
+  approvalBlockedReason,
   onApprove,
   onReject,
   isApproving = false,
@@ -124,7 +126,9 @@ export function ReportActions({
               variant="outline"
               className="gap-1 border-dynamic-green/30 text-dynamic-green hover:bg-dynamic-green/10"
               onClick={onApprove}
-              disabled={isApproving || isRejecting}
+              disabled={
+                isApproving || isRejecting || Boolean(approvalBlockedReason)
+              }
             >
               {isApproving ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -133,6 +137,14 @@ export function ReportActions({
               )}
               {t('ws-reports.approve')}
             </Button>
+          )}
+          {showApprovalActions && approvalBlockedReason && (
+            <p
+              role="status"
+              className="basis-full text-muted-foreground text-xs"
+            >
+              {t(`ws-reports.${approvalBlockedReason}`)}
+            </p>
           )}
           {showApprovalActions && approvalStatus !== 'REJECTED' && (
             <Button

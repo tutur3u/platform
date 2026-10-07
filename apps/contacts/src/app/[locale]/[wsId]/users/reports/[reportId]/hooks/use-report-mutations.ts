@@ -6,7 +6,6 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
-  buildApproveFields,
   createReportQueryInvalidator,
   useReportApproval,
 } from './use-report-approval';
@@ -33,7 +32,6 @@ export function useReportMutations({
   userGroupMetrics = [],
   factorEnabled = false,
   scoreCalculationMethod = 'LATEST',
-  canApproveReports = false,
 }: {
   wsId: string;
   report: UserReport;
@@ -213,11 +211,6 @@ export function useReportMutations({
             content: payload.content,
             feedback: payload.feedback,
             score: payload.score,
-            // Auto-approve when user with approval permission saves
-            ...(canApproveReports &&
-            report.report_approval_status !== 'APPROVED'
-              ? buildApproveFields()
-              : {}),
           }),
         }
       );
@@ -377,20 +370,6 @@ export function useReportMutations({
           body: JSON.stringify({
             scores: scores.length > 0 ? scores : null,
             score: calculatedScore,
-            // Auto-approve when user with approval permission saves
-            ...(canApproveReports &&
-            report.report_approval_status !== 'APPROVED'
-              ? buildApproveFields()
-              : // If user cannot approve and report was REJECTED, reset to PENDING so they can resubmit
-                !canApproveReports &&
-                  report.report_approval_status === 'REJECTED'
-                ? {
-                    report_approval_status: 'PENDING',
-                    rejected_at: null,
-                    rejection_reason: null,
-                    rejected_by: null,
-                  }
-                : {}),
           }),
         }
       );

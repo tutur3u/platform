@@ -2,6 +2,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { runPeriodicReportDeliveryConcurrency } from './periodic-report-delivery-concurrency.mjs';
 import { assertStrictTap } from './programming-database-tap.mjs';
 import { ensureSupabaseBinary, runCommand } from './run-supabase.js';
 import {
@@ -112,6 +113,7 @@ const runner = async (command, args, cwd) => {
       console.log(`SQL fixture: ${fixture}\n${tap}`);
       assertStrictTap(tap);
     }
+    await runPeriodicReportDeliveryConcurrency(metadata);
     return { code: 0 };
   }
   return runCommand(

@@ -10,10 +10,14 @@ class AssistantMemoryEditor extends StatefulWidget {
   const AssistantMemoryEditor({
     required this.settings,
     required this.memoryId,
+    this.showTitle = true,
+    this.isScopeCurrent,
     super.key,
   });
   final AssistantPersonalSettingsCubit settings;
   final String memoryId;
+  final bool showTitle;
+  final bool Function()? isScopeCurrent;
   @override
   State<AssistantMemoryEditor> createState() => _AssistantMemoryEditorState();
 }
@@ -25,7 +29,10 @@ class _AssistantMemoryEditorState extends State<AssistantMemoryEditor> {
     workspaceId: widget.settings.workspaceId,
     memoryId: widget.memoryId,
     isScopeCurrent: () =>
-        mounted && _route?.isActive == true && widget.settings.admitted,
+        mounted &&
+        _route?.isActive == true &&
+        (widget.isScopeCurrent?.call() ?? true) &&
+        widget.settings.admitted,
     onConfirmed: widget.settings.applyConfirmedMemoryEdit,
   );
   bool _initialized = false;
@@ -77,11 +84,13 @@ class _AssistantMemoryEditorState extends State<AssistantMemoryEditor> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                l.assistantMemoryEditTitle,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 12),
+              if (widget.showTitle) ...[
+                Text(
+                  l.assistantMemoryEditTitle,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+              ],
               if (state.loading && state.memory == null)
                 Semantics(
                   label: l.commonLoading,

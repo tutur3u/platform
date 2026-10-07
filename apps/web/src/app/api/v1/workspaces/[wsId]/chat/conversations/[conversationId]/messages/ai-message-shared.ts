@@ -20,6 +20,7 @@ import {
   callPrivateChatRpc,
 } from '@/lib/chat/private-rpc';
 import { publishChatRealtimeEvent } from '@/lib/chat/realtime';
+import { AiStreamError } from './ai-stream-error';
 import {
   attachmentSourceDownloadPath,
   authorizeAttachmentSource,
@@ -401,30 +402,41 @@ export async function consumeAiResponseTextDeltas(
   const reader = response.body.getReader();
   let buffer = '';
   let text = '';
+  let upstreamError: AiStreamError | undefined;
+  const onError = () => {
+    upstreamError = new AiStreamError();
+  };
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (value) {
-      buffer += decoder.decode(value, { stream: !done });
-      const events = buffer.split(/\r?\n\r?\n/u);
-      buffer = events.pop() ?? '';
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (value) {
+        buffer += decoder.decode(value, { stream: !done });
+        const events = buffer.split(/\r?\n\r?\n/u);
+        buffer = events.pop() ?? '';
 
-      for (const event of events) {
-        text += emitAiTextDeltaFromSseEvent(event, onDelta, onPart);
+        for (const event of events) {
+          text += emitAiTextDeltaFromSseEvent(event, onDelta, onPart, onError);
+        }
       }
+
+      if (done) break;
     }
 
-    if (done) break;
+    text += emitAiTextDeltaFromSseEvent(buffer, onDelta, onPart, onError);
+  } finally {
+    reader.releaseLock();
   }
-
-  text += emitAiTextDeltaFromSseEvent(buffer, onDelta, onPart);
+  // Drain the stream before checking authoritative persisted history.
+  if (upstreamError) throw upstreamError;
   return text;
 }
 
 function emitAiTextDeltaFromSseEvent(
   event: string,
   onDelta?: (delta: string) => void,
-  onPart?: (part: Record<string, unknown>) => void
+  onPart?: (part: Record<string, unknown>) => void,
+  onError?: () => void
 ) {
   if (!event.trim()) return '';
 
@@ -438,7 +450,12 @@ function emitAiTextDeltaFromSseEvent(
   if (!data || data === '[DONE]') return '';
 
   try {
-    const chunk = JSON.parse(data) as Record<string, unknown>;
+    const chunk = readRecord(JSON.parse(data));
+    if (!chunk) return '';
+    if (chunk.type === 'error') {
+      onError?.();
+      return '';
+    }
     if (chunk.type === 'text-delta' && typeof chunk.delta === 'string') {
       onDelta?.(chunk.delta);
       return chunk.delta;

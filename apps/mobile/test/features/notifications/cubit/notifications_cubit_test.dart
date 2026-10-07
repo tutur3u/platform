@@ -48,7 +48,10 @@ void main() {
 
     setUp(() {
       repository = _MockNotificationsRepository();
-      cubit = NotificationsCubit(notificationsRepository: repository);
+      cubit = NotificationsCubit(
+        notificationsRepository: repository,
+        currentUserId: () => 'user_1',
+      );
     });
 
     tearDown(() async {

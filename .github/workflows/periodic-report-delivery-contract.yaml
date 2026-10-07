@@ -8,9 +8,26 @@ on:
       - 'apps/web/src/lib/user-report-automation/**'
       - 'tuturuuu.ci.ts'
       - 'apps/database/scripts/verify-periodic-report-delivery-contract.mjs'
+      - 'apps/database/scripts/periodic-report-delivery-*.mjs'
+      - 'apps/database/scripts/periodic-report-delivery-types.ts'
+      - 'apps/database/scripts/time-tracker-control-concurrency.mjs'
       - 'apps/database/scripts/run-supabase*.js'
       - 'apps/database/scripts/programming-database-tap.mjs'
       - '.github/workflows/periodic-report-delivery-contract.yaml'
+  push:
+    branches: [main, production]
+    paths:
+      - 'apps/database/supabase/**'
+      - 'packages/email-service/**'
+      - 'apps/web/src/lib/user-report-automation/**'
+      - 'apps/database/scripts/verify-periodic-report-delivery-contract.mjs'
+      - 'apps/database/scripts/periodic-report-delivery-*.mjs'
+      - 'apps/database/scripts/periodic-report-delivery-types.ts'
+      - 'apps/database/scripts/time-tracker-control-concurrency.mjs'
+      - 'apps/database/scripts/run-supabase*.js'
+      - 'apps/database/scripts/programming-database-tap.mjs'
+      - '.github/workflows/periodic-report-delivery-contract.yaml'
+      - 'tuturuuu.ci.ts'
   workflow_dispatch:
 permissions:
   contents: read
@@ -50,8 +67,12 @@ jobs:
           package-manager-cache: false
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Check bounded race and workflow wiring
+        run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/periodic-report-delivery-contract.test.mjs
       - name: Apply complete schema, run strict pgTAP, generate actual schema types
         run: node apps/database/scripts/verify-periodic-report-delivery-contract.mjs
+      - name: Strictly check actual generated periodic delivery types
+        run: bun x tsc --ignoreConfig --noEmit --strict --skipLibCheck --target esnext --module nodenext --moduleResolution nodenext apps/database/scripts/periodic-report-delivery-types.ts
       - uses: actions/upload-artifact@v7
         with:
           name: periodic-report-delivery-types-${{ github.event.pull_request.head.sha || github.sha }}

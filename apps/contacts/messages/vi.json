@@ -7208,6 +7208,7 @@
       "wallet_id": "Ví",
       "warehouse_id": "Kho"
     },
+    "history_load_failed": "Không thể tải lịch sử hóa đơn. Vui lòng thử lại.",
     "invalid_subscription_inventory": "Sản phẩm hoặc đơn vị tính liên kết không khả dụng. Kiểm tra sản phẩm liên kết của lớp trước khi tạo hóa đơn.",
     "inventory_fallback_used": "Kho lưu trữ không được chỉ định nên một kho mặc định đã được chọn",
     "invoice_configuration": "Thông tin hóa đơn",
@@ -7637,7 +7638,10 @@
   },
   "ws-reports": {
     "all_changes_saved": "Đã lưu mọi thay đổi",
+    "approval_save_changes": "Lưu thay đổi trước khi phê duyệt báo cáo.",
     "approval_status": "Trạng thái phê duyệt",
+    "approval_view_current": "Quay lại báo cáo hiện tại trước khi phê duyệt.",
+    "approval_wait_save": "Chờ báo cáo lưu xong.",
     "approve": "Phê duyệt",
     "approved": "Đã phê duyệt",
     "archived_until_user_notice_description": "Người dùng này đang được lưu trữ tạm thời đến {date}. Báo cáo vẫn được giữ lại để theo dõi và xem lại lịch sử.",

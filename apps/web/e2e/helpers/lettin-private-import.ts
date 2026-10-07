@@ -63,9 +63,22 @@ export async function verifyLettinPrivateImport(
           ),
         })
     );
-    await importPhase('review canonical export', () =>
-      dialog.getByRole('button', { name: 'Review import', exact: true }).click()
-    );
+    await importPhase('review canonical export', async () => {
+      const [response] = await Promise.all([
+        page.waitForResponse(
+          (response) =>
+            response
+              .url()
+              .endsWith(`/api/v1/workspaces/${workspaceId}/lettin/exocorpse`) &&
+            response.request().method() === 'POST',
+          { timeout: 45_000 }
+        ),
+        dialog
+          .getByRole('button', { name: 'Review import', exact: true })
+          .click(),
+      ]);
+      expect(response.status()).toBe(200);
+    });
     await importPhase('confirm canonical preview', async () => {
       await expect(
         dialog.getByText('Synthetic imported hero', { exact: true })
