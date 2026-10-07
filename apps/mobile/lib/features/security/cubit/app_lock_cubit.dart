@@ -55,10 +55,18 @@ class AppLockCubit extends Cubit<AppLockState> {
   final LocalAuthService _localAuthService;
   final AppLockSettingsStore _settingsStore;
 
+  int _generation = 0;
+
+  bool _current(int generation) => !isClosed && generation == _generation;
+
   Future<void> load({bool lockIfEnabled = false}) async {
+    if (isClosed) return;
+    final generation = ++_generation;
     emit(state.copyWith(status: AppLockStatus.loading));
     final enabled = await _settingsStore.isEnabled();
+    if (!_current(generation)) return;
     final delay = await _settingsStore.readDelay();
+    if (!_current(generation)) return;
     emit(
       AppLockState(
         enabled: enabled,
@@ -73,15 +81,18 @@ class AppLockCubit extends Cubit<AppLockState> {
     required bool enabled,
     required String reason,
   }) async {
+    if (isClosed || state.status == AppLockStatus.authenticating) return;
     if (state.hasLoaded && enabled == state.enabled) {
       return;
     }
 
+    final generation = ++_generation;
     if (enabled || state.enabled) {
       emit(state.copyWith(status: AppLockStatus.authenticating));
       final authenticated = await _localAuthService.authenticate(
         reason: reason,
       );
+      if (!_current(generation)) return;
       if (!authenticated) {
         emit(
           state.copyWith(
@@ -94,24 +105,30 @@ class AppLockCubit extends Cubit<AppLockState> {
     }
 
     await _settingsStore.setEnabled(enabled: enabled);
+    if (!_current(generation)) return;
     emit(AppLockState(enabled: enabled, hasLoaded: true, delay: state.delay));
   }
 
   Future<void> setDelay(AppLockDelay delay) async {
-    if (delay == state.delay) return;
+    if (isClosed || delay == state.delay) return;
+    final generation = _generation;
     await _settingsStore.setDelay(delay);
+    if (!_current(generation)) return;
     emit(state.copyWith(delay: delay));
   }
 
   void lock() {
-    if (!state.hasLoaded || !state.enabled || state.locked) {
+    if (isClosed || !state.hasLoaded || !state.enabled || state.locked) {
       return;
     }
 
+    ++_generation;
     emit(state.copyWith(locked: true));
   }
 
   void resetLockState() {
+    ++_generation;
+    if (isClosed) return;
     if (state == const AppLockState()) {
       return;
     }
@@ -120,7 +137,9 @@ class AppLockCubit extends Cubit<AppLockState> {
   }
 
   Future<bool> unlock({required String reason}) async {
-    if (!state.hasLoaded) {
+    if (isClosed ||
+        !state.hasLoaded ||
+        state.status == AppLockStatus.authenticating) {
       return false;
     }
 
@@ -128,14 +147,22 @@ class AppLockCubit extends Cubit<AppLockState> {
       return true;
     }
 
+    final generation = ++_generation;
     emit(state.copyWith(status: AppLockStatus.authenticating));
     final authenticated = await _localAuthService.authenticate(reason: reason);
+    if (!_current(generation)) return false;
     emit(
       authenticated
           ? state.copyWith(locked: false, status: AppLockStatus.idle)
           : state.copyWith(status: AppLockStatus.idle),
     );
     return authenticated;
+  }
+
+  @override
+  Future<void> close() {
+    ++_generation;
+    return super.close();
   }
 
   Future<bool> authenticateForQrLogin({required String reason}) async {

@@ -1207,7 +1207,7 @@
   "appLockDelayTitle": "Lock after leaving",
   "appLockDisableReason": "Authenticate to turn off app lock.",
   "appLockEnableReason": "Authenticate to turn on app lock.",
-  "appLockLockedDescription": "Use your device PIN, fingerprint, or Face ID to continue.",
+  "appLockLockedDescription": "Use biometrics or your device passcode in the system prompt to continue.",
   "appLockLockedTitle": "Tuturuuu is locked",
   "appLockProtectedDevice": "Protected on this device",
   "appLockSettingsDescription": "Require Face ID, fingerprint, or device PIN before using the app.",
