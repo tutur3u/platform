@@ -241,3 +241,24 @@ Regression coverage: `apps/web/src/lib/tutoring/teachers.test.ts`,
 `apps/web/src/lib/tutoring/teacher-assignment-routes.test.ts`, and the tutoring
 teacher catalog's colocated `route.test.ts` cover workspace boundaries, teacher
 eligibility, permission denial, error handling, pagination, and session writes.
+
+
+### Queue handoff and missed-date defaults
+
+In Contacts, scheduling an absence-recovery queue row selects the oldest supplied
+outstanding missed-class date in the editable form. This is a suggestion anchor,
+not a persisted link between an absence and a make-up session. Staff can change
+it; custom tutoring policy and sequential slot suggestions remain unchanged.
+Manual creation still starts with no missed date. Changing the learner or group
+clears that date so another learner's absence is not carried into the new draft.
+
+A queue lookup belongs to its committed actor/workspace and current draft
+interaction. A newer queue selection, form edit, dialog open/close, scope change,
+or unmount invalidates the older handoff. Late results cannot overwrite a newer
+draft or reopen a closed dialog. Failed schedule reads retain the existing
+editable fallback; they do not create sessions automatically.
+
+Regression coverage: `tutoring-handoff.test.tsx` mounts the actual Contacts client
+and create card with a real QueryClient and synthetic transport responses. Its
+table/dialog presentation harness is bounded component evidence, not customer
+roster, production provider, or end-to-end dialog proof.

@@ -80,6 +80,13 @@ The principal permissions are:
 
 Existing group-post permissions continue to govern Daily reports.
 
+The periodic hub's Approve action uses the same dedicated approval operation as
+report details and Daily review. `approve_reports` permits review without
+`update_user_groups_reports`; approving never grants content-edit authority.
+Approval-only supervisor and workspace/actor isolation regressions cover this
+boundary in `periodic-reports-approval.test.tsx` and the shared approval handler
+`put.test.ts`.
+
 ## Email safety
 
 Periodic report email requires all of the following:
@@ -95,6 +102,13 @@ The dedicated report gate defaults to disabled and does not change Daily report
 delivery. It is discoverable by platform admins in **Settings → Secrets**, where
 the readiness card shows both gates and sender state and offers a prefilled
 action for the periodic gate.
+
+Contacts shows each missing global gate, periodic gate, and sender separately,
+with an administrator action. Platform Secrets remains root-permission gated;
+Contacts does not grant access to it or invent a sender setup route. Approved
+counts are report stages, not delivery queue claims or evidence of parent receipt.
+The legacy skipped stage remains excluded from automatic approval-triggered
+sending; enabling gates does not resend historical reports.
 
 Delivery goes exclusively to the subject workspace-profile email. The system
 does not infer an alternate address. Preview never queues an email. Test send,
@@ -274,3 +288,17 @@ Report delivery and Test send are separate statuses. A successful test does not 
 Weekly, monthly, quarterly, and yearly reports use ten exclusive stages: Drafts, Pending approval, Approved awaiting delivery, Undeliverable, Queued, Processing, Sent, Failed, Skipped, and Rejected. The default view shows Pending approval. Select a status to filter or Show all reports to include terminal states. Counts respect the cadence and period range. Skipped reports are preserved and do not send automatically after approval.
 
 The September 12, 2026 cleanup marks Easy Center reports created strictly before `2026-09-11T17:00:00Z` as Skipped when their delivery status is still Not sent. It covers all periodic cadences and generation states, preserves content/approval/history, and excludes active queues, accepted real deliveries, and unknown delivery outcomes. Any stale retryable queue entry on a skipped report is cancelled. The migration logs the affected row count and is safe to rerun.
+
+
+### Monthly report editor draft refresh
+
+Contacts retains independently edited title, lesson observations, and next-step
+feedback when the same report refreshes in the background. Untouched fields use
+the latest saved values. An exact saved draft acknowledgment clears dirty state;
+switching workspace, report, student, or group resets the prior draft. This is
+in-memory draft protection, not cross-device conflict resolution or automatic
+generation of teacher observations. It does not change approval or email gates.
+
+Regression coverage: `use-report-draft-sync.test.tsx` exercises the real form
+controller, conflicting refreshes, intentionally cleared fields, save
+acknowledgments, and all four scope boundaries.

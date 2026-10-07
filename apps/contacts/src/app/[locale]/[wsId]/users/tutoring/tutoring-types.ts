@@ -7,6 +7,7 @@ export interface TutoringFormValues {
   groupId: string;
   studentUserId: string;
   studentLabel?: string;
+  missedClassDate?: string;
   sessionSlots: {
     sessionDate: string;
     startTime: string;
