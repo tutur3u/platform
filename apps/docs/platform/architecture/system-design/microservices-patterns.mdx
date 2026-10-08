@@ -1,7 +1,7 @@
 ---
 title: "Microservices Patterns"
 description: "Service boundaries, communication patterns, and deployment strategies in Tuturuuu's monorepo architecture"
-updatedAt: "2026-06-21"
+updatedAt: '2026-10-08'
 ---
 
 Tuturuuu uses a **monorepo of conventional Next.js App Router apps** that share one
@@ -9,28 +9,23 @@ Supabase project plus a growing set of workspace packages. We describe this as a
 "microservices-within-a-monorepo" style: each app deploys independently and owns a
 product surface, but they are not isolated services with private databases or an
 inter-service token mesh. This page documents the patterns we actually use today,
-and flags where the platform is mid-migration.
+and distinguishes active services from paused runtime designs.
 
-<Note>
-  **Active migration.** The legacy `apps/web` Next.js runtime (port `7803`) is being
-  replaced by `apps/tanstack-web` (TanStack Start) for the frontend and
-  `apps/backend` (Rust) for the API layer. See
-  [TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration)
-  for the migration contract and
-  `apps/tanstack-web/migration/route-manifest.json` for live route-by-route
-  progress. Treat the tRPC and Next.js REST sections below as the *legacy*
-  `apps/web` path; new read/write endpoints increasingly land in the Rust backend.
-</Note>
+The maintained runtime is Next.js Web and its satellite apps. Rust
+(`apps/backend`) and TanStack Start (`apps/tanstack-web`) are paused and not in
+use. Docker setup is inactive and the Docker cron runner is retired. Retained
+migration designs describe a possible future, not live traffic or a current
+setup requirement. See the [active runtime map](/build/devops/active-runtime).
 
 ## Service Boundaries
 
-### Current Services
+### Active services and retained targets
 
 | Service | Location | Purpose | Database | Tech Stack |
 |---------|----------|---------|----------|------------|
-| **web** (legacy) | `apps/web` | Main platform application (port `7803`) | Supabase (PostgreSQL) | Next.js (App Router), React 19 |
-| **tanstack-web** | `apps/tanstack-web` | Replacement frontend for `apps/web` | Supabase (shared) | TanStack Start + Router + Query, Vite, React 19 |
-| **backend** | `apps/backend` | Dedicated Rust API runtime (port `7820`) | Supabase (shared) | Rust (Axum), Cloudflare Workers-ready |
+| **web** (active) | `apps/web` | Main platform application (port `7803`) | Supabase (PostgreSQL) | Next.js (App Router), React 19 |
+| **tanstack-web** (paused) | `apps/tanstack-web` | Not in use; retained frontend design | Supabase (shared) | TanStack Start + Router + Query, Vite, React 19 |
+| **backend** (paused) | `apps/backend` | Not in use or deployed; retained Rust source | Supabase (shared) | Rust (Axum), Cloudflare Workers-ready |
 | **rewise** | `apps/rewise` | AI-powered chatbot | Supabase (shared) | Next.js, AI SDK |
 | **nova** | `apps/nova` | Prompt engineering platform | Supabase (shared) | Next.js, AI SDK |
 | **calendar** | `apps/calendar` | Calendar & scheduling | Supabase (shared) | Next.js, React |
@@ -553,10 +548,10 @@ export async function POST(request: Request) {
 **Current:** A monorepo of Next.js apps over one shared Supabase project, with
 background work on Trigger.dev v4.
 
-**In progress:** The frontend is migrating from `apps/web` (Next.js) to
-`apps/tanstack-web` (TanStack Start), and the API layer to `apps/backend` (Rust).
-This is the concrete, active migration — see
-[TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration).
+**Paused:** Rust (`apps/backend`) and TanStack Start (`apps/tanstack-web`) are not
+in use. Their source, tests, dependency updates, and migration CI remain inactive
+until further notice. Web remains the live central API, alongside satellite-owned
+routes. See the [active runtime map](/build/devops/active-runtime).
 
 **Longer-term options (not committed):**
 

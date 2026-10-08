@@ -1,4 +1,4 @@
-import { ProfileUploadError } from '@tuturuuu/storage-core/profile-upload-budget';
+import { ProfileUploadError } from '@tuturuuu/storage-core/profile-upload-error';
 export function publicStorageUrl(value: string) {
   const origin = process.env.SUPABASE_PUBLIC_STORAGE_ORIGIN;
   const original = new URL(value);

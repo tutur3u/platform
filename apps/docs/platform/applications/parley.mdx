@@ -1,0 +1,39 @@
+---
+title: "Parley"
+description: "Controlled scenario training, sessions, and research access."
+updatedAt: '2026-10-08'
+---
+
+Parley (`parley.tuturuuu.com`, `apps/parley`) is a controlled multiplayer
+scenario-training and reflective-research surface. It is not a generally public
+catalog of workspace or session data.
+
+## Studio destinations
+
+| Destination | Route |
+| --- | --- |
+| Studio | `/` |
+| Sessions | `/sessions` |
+| New session | `/sessions/new` |
+| Session details | `/sessions/{meetingId}` |
+| Scenario | `/scenarios/{scenarioId}` |
+| Scenario management | `/manage/scenarios` |
+| Room entry | `/r/{code}` |
+
+Central login, app-session handling, and Parley's access gate govern entry.
+Access-denied and login views are separate from a missing scenario/session.
+A room code is a session entry point, not permission to administer scenarios or
+read unrelated participant records.
+
+## Research and operational boundaries
+
+Availability is controlled by the actual deployment and access policy. Do not
+promise unrestricted simulation, validated training outcomes, or production
+readiness from retained source routes. Realtime/session behavior depends on its
+owning services and shared meeting boundaries.
+
+All Parley application routes, rooms, and session records are noindex. Explain
+research purpose in public documentation without exposing scenario/session
+content or participant data. Use the [Parley source reference](/reference/repository/routes/parley)
+for current entry points and the [active runtime map](/build/devops/active-runtime)
+for the distinction between deployed services and retained tooling.

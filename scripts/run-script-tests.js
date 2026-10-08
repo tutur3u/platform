@@ -3,6 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { isPausedImplementationTest } = require('./paused-runtimes.js');
 
 const DEFAULT_ROOTS = ['scripts'];
 const DEFAULT_SUPPLEMENTAL_PATHS = [
@@ -97,7 +98,9 @@ function discoverScriptTests({
     addConfiguredPath(supplementalPath, options, selected);
   }
 
-  const files = [...selected].sort((left, right) => left.localeCompare(right));
+  const files = [...selected]
+    .filter((file) => !isPausedImplementationTest(file))
+    .sort((left, right) => left.localeCompare(right));
   if (files.length === 0) {
     throw new Error(
       `Script-test discovery returned zero files for roots: ${roots.join(', ')}`

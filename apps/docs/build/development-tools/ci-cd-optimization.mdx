@@ -1,7 +1,7 @@
 ---
 title: "CI/CD Pipeline Optimization"
 description: "Centralized affected-path gating and smart caching to minimize unnecessary CI/CD runs."
-updatedAt: "2026-07-21"
+updatedAt: '2026-10-08'
 ---
 
 <Info>
@@ -21,14 +21,11 @@ runner when the decision can be made inside an already-required job.
 This page documents how that gate works, how the per-app Vercel workflows are
 wired, and how to debug skip decisions.
 
-<Note>
-  The platform is mid-migration from `apps/web` (Next.js, port `7803`) to
-  `apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust, port `7820`).
-  See [TanStack + Rust
-  migration](/platform/architecture/tanstack-rust-migration). The optimization
-  model below applies to both stacks: every Vercel app target is gated the same
-  way, regardless of framework.
-</Note>
+The maintained runtime is Next.js Web and its satellite apps. Rust
+(`apps/backend`) and TanStack Start (`apps/tanstack-web`) are paused and not in
+use. Docker setup is inactive and the Docker cron runner is retired. Retained
+migration designs describe a possible future, not live traffic or a current
+setup requirement. See the [active runtime map](/build/devops/active-runtime).
 
 ## Parallel test validation
 
