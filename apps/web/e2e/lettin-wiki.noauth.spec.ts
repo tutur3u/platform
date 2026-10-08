@@ -16,7 +16,10 @@ import {
 import { verifyLettinMarkdownPersistence } from './helpers/lettin-markdown-persistence';
 import { verifyLettinPrivateImport } from './helpers/lettin-private-import';
 import { assertLettinProfileLimits } from './helpers/lettin-profile-limits';
-import { createLettinBrowserContext } from './helpers/lettin-session';
+import {
+  createLettinBrowserContext,
+  createLettinSessionRequestOptions,
+} from './helpers/lettin-session';
 import { syntheticProfileImage } from './helpers/profile-media-fixture';
 import {
   deleteRestRows,
@@ -350,22 +353,29 @@ test.describe
       browser,
     }) => {
       test.setTimeout(180000);
+      const session = token();
       const context = await createLettinBrowserContext(
         browser,
         origin!,
-        token()
+        session
       );
-      await verifyLettinPrivateImport(context, origin!, workspaceId);
+      await verifyLettinPrivateImport(
+        context,
+        origin!,
+        workspaceId,
+        createLettinSessionRequestOptions(origin!, session)
+      );
     });
 
     test('saves canonical identity and a rich About profile with reload persistence', async ({
       browser,
     }) => {
       test.setTimeout(180000);
+      const session = token();
       const context = await createLettinBrowserContext(
         browser,
         origin!,
-        token()
+        session
       );
       await withLettinContextCleanup(
         context,
@@ -395,6 +405,12 @@ test.describe
                 response.url().endsWith('/api/v1/users/me/banner/upload-url') &&
                 response.request().method() === 'POST'
             );
+            const bannerFinalizationResponse = page.waitForResponse(
+              (response) =>
+                response.url().endsWith('/api/v1/users/me/banner') &&
+                response.request().method() === 'POST' &&
+                response.request().postDataJSON()?.action === 'finalize'
+            );
             await page
               .getByLabel('Banner image', { exact: true })
               .setInputFiles({
@@ -412,6 +428,44 @@ test.describe
               bucket: 'banners',
               path: bannerTicket.filePath,
             });
+            const finalizedBanner = await bannerFinalizationResponse;
+            const finalizationStatus = finalizedBanner.status();
+            const finalizationDiagnostic: {
+              status: number;
+              message: string;
+              committed?: boolean;
+            } = { status: finalizationStatus, message: 'unclassified' };
+            if (finalizationStatus !== 200) {
+              const body: unknown = await finalizedBanner
+                .json()
+                .catch(() => null);
+              if (body !== null && typeof body === 'object') {
+                const payload = body as Record<string, unknown>;
+                const allowedMessages = [
+                  'Unable to verify upload',
+                  'Upload is not ready',
+                  'Unable to save banner',
+                  'Banner saved; cleanup is pending',
+                  'Unable to update banner',
+                ];
+                if (
+                  typeof payload.message === 'string' &&
+                  allowedMessages.includes(payload.message)
+                ) {
+                  finalizationDiagnostic.message = payload.message;
+                }
+                if (typeof payload.committed === 'boolean') {
+                  finalizationDiagnostic.committed = payload.committed;
+                }
+              }
+            }
+            expect(
+              finalizationStatus,
+              JSON.stringify(finalizationDiagnostic)
+            ).toBe(200);
+            expect(finalizedBanner.request().postDataJSON().operationId).toBe(
+              bannerTicket.operationId
+            );
             const storedBanner = await page.request.get(bannerTicket.publicUrl);
             expect(storedBanner.status()).toBe(200);
             expect((await storedBanner.body()).length).toBeLessThanOrEqual(
@@ -432,7 +486,11 @@ test.describe
               page.getByText('Profile saved', { exact: true })
             ).toBeVisible();
             const response = await context.request.get(
-              `${origin}/api/v1/users/me/profile`
+              `${origin}/api/v1/users/me/profile`,
+              createLettinSessionRequestOptions(
+                origin!,
+                session
+              )(`${origin}/api/v1/users/me/profile`)
             );
             expect(response.status(), await response.text()).toBe(200);
             expect(await response.json()).toMatchObject({
@@ -463,6 +521,7 @@ test.describe
               context.request,
               origin!,
               username,
+              createLettinSessionRequestOptions(origin!, session),
               (ticket) => profileMediaPaths.push(ticket)
             );
           });
@@ -608,6 +667,10 @@ test.describe
                 ],
               },
             },
+            ...createLettinSessionRequestOptions(
+              origin!,
+              session
+            )(`${origin}/api/v1/workspaces/${workspaceId}/lettin/exocorpse`),
           }
         );
         expect(response.status()).toBe(403);

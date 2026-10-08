@@ -302,12 +302,6 @@ const checks = [
     parseOutput: () => 'Only apps/web carries the multi-account vault',
   },
   {
-    name: 'tanstack-api-access',
-    command: 'node',
-    args: ['scripts/check-tanstack-api-access.js'],
-    parseOutput: () => 'TanStack app uses server-owned API facades',
-  },
-  {
     name: 'legacy-api-route-wrappers',
     command: 'node',
     args: ['scripts/generate-web-api-route-wrappers.js', '--check'],

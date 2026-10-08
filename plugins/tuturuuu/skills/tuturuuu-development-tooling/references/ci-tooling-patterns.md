@@ -3,6 +3,20 @@
 Load this reference when changing root scripts, CI workflows, plugin validation,
 formatting behavior, or repo-wide verification.
 
+## Inactive runtimes until further notice
+
+Docker setup, Rust, and TanStack Start are paused; the Docker cron runner is
+retired. Keep `docker-setup-check.yaml`, Docker-backed E2E jobs, Rust/TanStack
+workflows and direct deploy jobs disabled, including manual dispatch. Retain
+policy tests but exclude inactive implementation suites from default discovery.
+Root commands fail visibly rather than starting or refreshing those runtimes.
+`bun update-all` explicitly targets maintained workspaces; Renovate ignores
+paused app/Docker sources and broad lockfile maintenance stays disabled.
+Shared lock resolutions still need review when active dependencies change.
+Do not regenerate migration manifests as a condition of live Next.js work.
+Resumption must restore commands, tests, CI, dependency policy and docs together.
+See `apps/docs/build/devops/active-runtime.mdx`.
+
 ## File Size Ceiling
 
 - Keep every new authored source file at or below the hard **700-LOC ceiling** in
@@ -428,3 +442,9 @@ formatting behavior, or repo-wide verification.
   not from the platform checkout, so the install telemetry indexes the public
   source without rewriting local project skills.
 - Run `python3 plugins/tuturuuu/scripts/validate_plugin.py` after plugin edits.
+
+Release Please excludes the inactive TanStack Start package from release generation;
+its historical manifest version remains frozen. Renovate also ignores the inactive
+runtime and Docker workflow files, in addition to the paused source/Dockerfiles.
+Policy tests guard these exclusions. Do not reactivate them indirectly during
+ordinary active-package release maintenance.

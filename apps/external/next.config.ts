@@ -6,6 +6,7 @@ import {
 const WEB_APP_URL = resolveTuturuuuWebAppUrl();
 
 const nextConfig = createTuturuuuNextConfig({
+  seoApp: 'external',
   images: {
     remotePatterns: [
       {
