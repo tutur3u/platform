@@ -4,10 +4,34 @@ import { Brand } from '@/components/brand';
 import { CreatorAboutView } from '@/components/creator-about-view';
 import { CreatorProfileHeader } from '@/components/creator-profile-header';
 import { PublicExplorer } from '@/components/public-explorer';
+import { createLettinPageMetadata } from '@/lib/page-metadata';
 import { publicWorlds } from '@/lib/public-worlds';
 import { bindings } from '@/server/bindings';
 import { readCreatorAbout } from '@/server/creator-about';
 import { readCreatorIdentity } from '@/server/creator-profile';
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; creatorId: string }>;
+}) {
+  const { locale, creatorId } = await params;
+  await connection();
+  const identity = await readCreatorIdentity(creatorId);
+  if (
+    !identity ||
+    !(await publicWorlds(undefined, { creatorId: identity.id, page: 1 })).length
+  ) {
+    notFound();
+  }
+  return createLettinPageMetadata({
+    title: identity.display_name || identity.handle || 'Tulletin',
+    description: identity.bio || '',
+    image: identity.banner_url || identity.avatar_url || undefined,
+    locale,
+    pathname: `/creators/${identity.id}`,
+  });
+}
+
 export default async function Page({
   params,
   searchParams,
