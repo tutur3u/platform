@@ -216,8 +216,10 @@ async function postAccountMutation<T>(
         !Array.isArray(body) &&
         'diagnosticCode' in body &&
         typeof body.diagnosticCode === 'string' &&
-        body.diagnosticCode.length === 22 &&
-        /^AUTH-ACC-SWITCH-[0-9a-fA-F]{6}$/.test(body.diagnosticCode)
+        ((body.diagnosticCode.length === 20 &&
+          /^AUTH-ACC-SAVE-[0-9a-fA-F]{6}$/.test(body.diagnosticCode)) ||
+          (body.diagnosticCode.length === 22 &&
+            /^AUTH-ACC-SWITCH-[0-9a-fA-F]{6}$/.test(body.diagnosticCode)))
       ) {
         diagnosticCode = body.diagnosticCode;
       }
