@@ -3,6 +3,22 @@ import { getTranslations } from 'next-intl/server';
 import { Brand } from '@/components/brand';
 import { CreativeSpaces } from '@/components/creative-spaces';
 import { Link } from '@/i18n/navigation';
+import { createLettinPageMetadata } from '@/lib/page-metadata';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'lettin' });
+  return createLettinPageMetadata({
+    title: t('spacesDirectoryTitle'),
+    description: t('spacesDirectoryHint'),
+    locale,
+    pathname: '/spaces',
+  });
+}
 
 export default async function Page() {
   const t = await getTranslations('lettin');

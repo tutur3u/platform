@@ -4,6 +4,15 @@ description: "How the repository’s automation is organized, gated, and operate
 updatedAt: "2026-10-03"
 ---
 
+<Note>
+Current runtime policy: Docker setup and Docker-backed E2E/image CI are paused;
+the Docker cron runner is retired. Rust and TanStack Start are not in use and
+must not be run, tested, or updated until further notice. Retained Docker and
+migration sections below are historical procedures. Current hosted Next.js,
+package, Worker, database, and mobile workflows retain their own gates. See the
+[active runtime map](/build/devops/active-runtime).
+</Note>
+
 GitHub Actions is the primary automation plane for Tuturuuu.
 
 ## Validation and Delivery Evidence
@@ -1390,7 +1399,7 @@ full Xcode before claiming the iOS archive has been verified locally.
    Vercel workflow and branch.
 6. Check path filters to confirm GitHub should have started the lightweight workflow.
 7. For database workflows, inspect the prerequisite evaluation job before the deploy job.
-8. For Docker changes, verify `docker-setup-check.yaml` specifically.
+8. Docker setup CI is paused; retained Docker steps are not current release gates.
 
 ## When You Add New Automation
 
