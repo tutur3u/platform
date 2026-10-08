@@ -6,7 +6,7 @@ import {
   render,
   screen,
 } from '@testing-library/react';
-import type { MailMailbox } from '@tuturuuu/internal-api';
+import type { MailAttachment, MailMailbox } from '@tuturuuu/internal-api';
 import { createElement as h, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FloatingComposer } from './floating-composer';
@@ -15,13 +15,14 @@ const api = vi.hoisted(() => ({
   create: vi.fn(),
   update: vi.fn(),
   send: vi.fn(),
+  remove: vi.fn(),
   toast: vi.fn(),
 }));
 vi.mock('@tuturuuu/internal-api', () => ({
   createMailDraft: api.create,
   updateMailDraft: api.update,
   copyMailDraftAttachments: vi.fn(),
-  deleteMailDraftAttachment: vi.fn(),
+  deleteMailDraftAttachment: api.remove,
   uploadMailDraftAttachment: vi.fn(),
 }));
 vi.mock('@tuturuuu/ui/sonner', () => ({ toast: { error: api.toast } }));
@@ -41,14 +42,44 @@ vi.mock('./mail-composer-editor', () => ({
 }));
 vi.mock('./mail-composer-footer', () => ({ MailComposerFooter: () => null }));
 vi.mock('./mail-composer-attachments', () => ({
-  MailComposerAttachments: () => null,
+  MailComposerAttachments: (props: {
+    attachments: MailAttachment[];
+    onRemove: (attachment: MailAttachment) => Promise<void>;
+  }) =>
+    h(
+      'div',
+      null,
+      props.attachments.map((attachment) =>
+        h(
+          'button',
+          {
+            key: attachment.id,
+            type: 'button',
+            onClick: () => void props.onRemove(attachment),
+          },
+          `Remove ${attachment.filename}`
+        )
+      )
+    ),
 }));
 vi.mock('./mail-composer-send-review', () => ({
   MailComposerSendReview: () => null,
 }));
 vi.mock('./recipient-field', () => ({ RecipientField: () => null }));
 vi.mock('@tuturuuu/ui/select', () => ({
-  Select: () => null,
+  Select: (props: {
+    disabled: boolean;
+    onValueChange: (value: string) => void;
+  }) =>
+    h(
+      'button',
+      {
+        disabled: props.disabled,
+        type: 'button',
+        onClick: () => props.onValueChange('mailbox-next'),
+      },
+      'Use alternate mailbox'
+    ),
   SelectContent: () => null,
   SelectItem: () => null,
   SelectTrigger: () => null,
@@ -72,14 +103,25 @@ const initialDraft = {
 };
 const frames = new Map<number, FrameRequestCallback>();
 let nextFrame = 0;
-function mount() {
+function mount(withAttachment = false) {
   function App() {
     const [open, setOpen] = useState(true);
     return open
       ? h(FloatingComposer, {
           open,
-          initialDraft,
-          mailboxes: [mailbox],
+          initialDraft: withAttachment
+            ? {
+                ...initialDraft,
+                attachments: [
+                  {
+                    id: 'attachment',
+                    filename: 'notes.txt',
+                    sizeBytes: 4,
+                  } as MailAttachment,
+                ],
+              }
+            : initialDraft,
+          mailboxes: [mailbox, { ...mailbox, id: 'mailbox-next' }],
           selectedMailboxId: mailbox.id,
           sending: false,
           workspaceId: 'personal',
@@ -131,6 +173,8 @@ beforeEach(() => {
   vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id));
   api.update.mockResolvedValue({ message: { id: 'draft' } });
   api.send.mockResolvedValue(undefined);
+  api.create.mockResolvedValue({ message: { id: 'draft-next' } });
+  api.remove.mockResolvedValue(undefined);
 });
 afterEach(() => {
   cleanup();
@@ -201,5 +245,77 @@ describe('composer Send while saving a draft', () => {
     expect(api.toast).toHaveBeenCalledWith('save_failed');
     expect(api.send).not.toHaveBeenCalled();
     expect(screen.queryByText('Composer closed')).toBeNull();
+  });
+
+  it('keeps a mailbox change during a held save open until explicit Send', async () => {
+    const save = holdSave();
+    mount();
+    edit('Before mailbox change');
+    await sendShortcut();
+    expect(api.update.mock.calls[0]?.[3].bodyHtml).toBe(
+      'Before mailbox change'
+    );
+    fireEvent.click(screen.getByText('Use alternate mailbox'));
+    await act(async () => save.resolve());
+    expect(api.send).not.toHaveBeenCalled();
+    expect(screen.queryByText('Composer closed')).toBeNull();
+    expect(body().value).toBe('Before mailbox change');
+    expect(screen.getByRole('dialog', { name: 'new_message' })).not.toBeNull();
+    await sendShortcut();
+    expect(api.create).toHaveBeenCalledExactlyOnceWith(
+      'personal',
+      'mailbox-next',
+      expect.objectContaining({ bodyHtml: 'Before mailbox change' })
+    );
+    expect(api.send).toHaveBeenCalledExactlyOnceWith(
+      'mailbox-next',
+      expect.objectContaining({
+        draftId: 'draft-next',
+        bodyHtml: 'Before mailbox change',
+      })
+    );
+    expect(screen.getByText('Composer closed').textContent).toBe(
+      'Composer closed'
+    );
+  });
+  it('invalidates a pending Send before attachment deletion completes', async () => {
+    let finishRemoval!: () => void;
+    api.remove.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishRemoval = resolve;
+        })
+    );
+    const save = holdSave();
+    mount(true);
+    edit('Before removal');
+    await sendShortcut();
+    expect(api.update.mock.calls[0]?.[3].bodyHtml).toBe('Before removal');
+    fireEvent.click(screen.getByText('Remove notes.txt'));
+    expect(api.remove).toHaveBeenCalledExactlyOnceWith(
+      'personal',
+      'mailbox',
+      'draft',
+      'attachment'
+    );
+    await act(async () => save.resolve());
+    expect(api.send).not.toHaveBeenCalled();
+    expect(screen.queryByText('Composer closed')).toBeNull();
+    expect(screen.getByText('Remove notes.txt')).not.toBeNull();
+    await act(async () => finishRemoval());
+    expect(screen.queryByText('Remove notes.txt')).toBeNull();
+    expect(body().value).toBe('Before removal');
+    expect(api.send).not.toHaveBeenCalled();
+    await sendShortcut();
+    expect(api.send).toHaveBeenCalledExactlyOnceWith(
+      'mailbox',
+      expect.objectContaining({
+        draftId: 'draft',
+        bodyHtml: 'Before removal',
+      })
+    );
+    expect(screen.getByText('Composer closed').textContent).toBe(
+      'Composer closed'
+    );
   });
 });
