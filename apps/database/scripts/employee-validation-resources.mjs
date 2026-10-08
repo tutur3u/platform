@@ -5,8 +5,8 @@ import path from 'node:path';
 import { requireCommand, safeFailure } from './employee-validation-command.mjs';
 import {
   containerInventory,
-  dockerPrefix,
   daemonArguments,
+  dockerPrefix,
   verifyBaseline,
 } from './employee-validation-host.mjs';
 
@@ -399,3 +399,9 @@ export async function proveCleanup(
     protectedBaselineUnchanged: true,
   };
 }
+
+export {
+  getNativeLedgerFailure,
+  MAX_NATIVE_LEDGER_RECORD_BYTES,
+  persistNativeLedgerRecord,
+} from './employee-validation-native-ledger.mjs';
