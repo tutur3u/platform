@@ -25,10 +25,10 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: mocks.verifyWorkspaceMembershipType,
 }));
 
-import { GET as contactsSummary } from '../../../../../../apps/contacts/src/app/api/v1/workspaces/[wsId]/settings/approvals/pending-summary/route';
-import { GET as webSummary } from '../../../../../../apps/web/src/app/api/v1/workspaces/[wsId]/settings/approvals/pending-summary/implementation';
-import { GET as webLogs } from '../../../../../../apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/logs/implementation';
-import { handleGetApprovalLogsRequest } from './logs';
+import { GET as contactsSummary } from '../../../../apps/contacts/src/app/api/v1/workspaces/[wsId]/settings/approvals/pending-summary/route';
+import { GET as webSummary } from '../../../../apps/web/src/app/api/v1/workspaces/[wsId]/settings/approvals/pending-summary/implementation';
+import { GET as webLogs } from '../../../../apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/logs/implementation';
+import { handleGetApprovalLogsRequest } from '../../src/routes/users/approvals/logs';
 
 const ws = 'workspace-1';
 const actor = { id: 'actor-1', email: 'approver@example.test' };
