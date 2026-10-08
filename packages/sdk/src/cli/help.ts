@@ -1,6 +1,6 @@
 import { feedbackHelp } from './feedback';
-import { formatHelp, type HelpTopic } from './help-format';
 import { boxHelp } from './help-devbox';
+import { formatHelp, type HelpTopic } from './help-format';
 import { getGlobalHelp } from './help-global';
 import { resourcesHelp } from './resources';
 

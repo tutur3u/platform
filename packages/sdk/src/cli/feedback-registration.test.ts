@@ -200,7 +200,9 @@ describe('feedback CLI registration', () => {
   });
 
   it('retains actual calendar CLI routing with the selected workspace', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'feedback-registration-calendar-'));
+    const dir = await mkdtemp(
+      join(tmpdir(), 'feedback-registration-calendar-')
+    );
     const config = join(dir, 'config.json');
     await writeFile(
       config,
@@ -217,7 +219,13 @@ describe('feedback CLI registration', () => {
     const fetch = vi.fn().mockResolvedValue(Response.json(calendarResponse));
     vi.stubGlobal('fetch', fetch);
     stdout();
-    await runCli(['calendar', 'sources', 'list', '--json', '--no-update-check']);
+    await runCli([
+      'calendar',
+      'sources',
+      'list',
+      '--json',
+      '--no-update-check',
+    ]);
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(String(fetch.mock.calls[0]?.[0])).toContain(
       `/workspaces/${id}/calendar/default-source`
@@ -231,7 +239,10 @@ describe('feedback CLI registration', () => {
     ['--version'],
   ])('answers help/version before config or network: %j', async (...argv) => {
     const readConfig = vi.spyOn(cliConfig, 'readCliConfig');
-    vi.stubEnv('TUTURUUU_CONFIG', '/nonexistent/feedback-registration-help.json');
+    vi.stubEnv(
+      'TUTURUUU_CONFIG',
+      '/nonexistent/feedback-registration-help.json'
+    );
     const fetch = vi.fn();
     vi.stubGlobal('fetch', fetch);
     const write = stdout();
