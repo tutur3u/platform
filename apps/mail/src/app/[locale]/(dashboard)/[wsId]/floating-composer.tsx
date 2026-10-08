@@ -344,18 +344,18 @@ export function FloatingComposer({
       setUploading(false);
     }
   };
-
   const performSend = async () => {
     if (!canSend || uploading) return;
+    const sendingVersion = dirtyVersionRef.current;
     const savedDraftId = await persist();
     if (dirty && !savedDraftId) {
       toast.error(t('save_failed'));
       return;
     }
+    if (dirtyVersionRef.current !== sendingVersion) return;
     await onSend(mailboxId, { ...snapshot, draftId: savedDraftId });
     onOpenChange(false);
   };
-
   const requestSend = async () => {
     if (!canSend) return;
     const warnings = getComposerWarnings({
