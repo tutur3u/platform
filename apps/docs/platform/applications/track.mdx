@@ -1,0 +1,42 @@
+---
+title: "Track"
+description: "Timers, session history, time requests, management, and analytics."
+updatedAt: '2026-10-08'
+---
+
+Track (`track.tuturuuu.com`, `apps/track`) is the private workspace time-tracking
+app. Its timer, session history, requests, and management areas share workspace
+identity and permissions with the platform.
+
+| Destination | Route | Use |
+| --- | --- | --- |
+| Overview | `/{wsId}` | Review time summaries and the overview timer |
+| Timer | `/{wsId}/timer` | Work with running time sessions |
+| History | `/{wsId}/history` | Review and manage recorded sessions |
+| Requests | `/{wsId}/requests` | Time-entry/request workflow |
+| Management | `/{wsId}/management` | Permission-gated management workflow |
+
+## A reliable tracking workflow
+
+Start the session in the intended workspace, verify the running state, and
+review the saved session after stopping. History and analytics describe stored
+records; the live elapsed display is a local presentation of running state.
+A request or edit can have its own approval/access constraints. An app's summary
+is not evidence that a pending mutation or offline edit has synchronized.
+
+The native timer has additional device behavior documented under
+[Mobile timer](/platform/features/mobile-timer). Web and mobile share domain
+concepts, but background execution, offline recovery, and shell navigation are
+platform-specific. [Calendar](/platform/applications/calendar) scheduling and
+[Tasks](/platform/applications/tasks) progress remain distinct from recorded
+actual work time.
+
+## Access and maintenance
+
+Track resolves the actor through its app session, then checks workspace access
+and permissions. Time histories, requests, and management pages are noindex.
+The public Track description is served by Web's product page.
+
+Use the [Track route reference](/reference/repository/routes/track) to locate
+handlers, and [Data fetching](/platform/architecture/data-fetching) to extend a
+shared client contract rather than adding app-local raw browser API calls.

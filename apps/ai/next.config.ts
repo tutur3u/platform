@@ -10,6 +10,7 @@ const webAppUrl = resolveTuturuuuWebAppUrl();
 
 export default withNextIntl(
   createTuturuuuNextConfig({
+    seoApp: 'ai',
     async rewrites() {
       return {
         beforeFiles: createTuturuuuWebWorkspaceApiRewrites(webAppUrl),

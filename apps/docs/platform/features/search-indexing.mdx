@@ -1,0 +1,76 @@
+---
+title: "Search indexing and private routes"
+description: "Explicit public discovery, private-route defaults, shared links, storefront transactions, and inactive runtimes."
+updatedAt: '2026-10-08'
+---
+
+## Product decision
+
+Search indexing is opt-in at the app route boundary. The maintained Next.js apps
+use the shared policy in `packages/utils/src/seo-policy.json` and the header
+builder in `packages/utils/src/seo.ts`. Private routes receive
+`X-Robots-Tag: noindex, nofollow, nosnippet` even when an inherited layout has
+public metadata. Authentication, authorization, RLS, and private storage still
+control access; search directives do not protect data from a caller.
+
+This applies across Web, satellites, internal example apps, and redirect hosts.
+Private app metadata continues to use `NO_INDEX_ROBOTS`. The Flutter browser bootstrap is noindex. The paused TanStack Start runtime
+is not deployed or refreshed by this policy. Before any explicitly authorized
+resumption, establish preview noindex and canonical ownership; do not expose an
+indexed duplicate of the live Next.js platform.
+
+## Public exceptions
+
+| Surface | Eligible content | Private or unlisted content |
+| --- | --- | --- |
+| Web | Generated public page manifest and published changelog entries | Workspaces, documents/shares, AI chats, invites, auth, onboarding, pitch, and utility/internal routes |
+| Apps | Public directory | App redirect aliases and private targets |
+| Tools | `/`, `/qr`, `/random` | API and undeclared utility paths |
+| Learn/Teach | Product landing page | Workspaces, courses, assignments, marks, parent records, and auth |
+| Nova | Declared marketing/learning routes | Challenges, submissions, sessions, profile/admin/dashboard routes |
+| Git | Public repository browser | `/-/` workspace integration routes, auth, and API |
+| Tulletin | Landing, spaces, explorer, published worlds, and public creators | Workspace studio, drafts, invitations, and moderation |
+| Forms | Landing page and `/f/{shareCode}`, subject to author and access-aware page metadata | Studio, responses, protected/unavailable pages, and embed wrappers |
+| Storefront | Published store and product pages, subject to availability metadata | Cart, checkout, success/cancel, order lists/tokens, and legacy aliases |
+| Other Next apps | No application routes by default | Private workspace products, rooms, share codes, admin, developer examples, and short redirects |
+
+Forms retains its existing author-controlled indexing opt-out: this policy does
+not force every public form to noindex or reverse an author's `noIndex` choice.
+Eligible does not mean included in a sitemap. Dynamic forms, shops, worlds, and
+repository pages are not crawled from privileged workspace tables merely to
+populate discovery feeds.
+
+## Crawling, canonical URLs, and previews
+
+`robots.txt` permits crawlers to observe redirects and noindex responses.
+Blocking a URL in robots.txt can prevent a crawler from seeing its noindex
+instruction. Public pages use page-specific canonicals and social metadata.
+Language alternates are emitted only when distinct stable language URLs exist;
+apps with `localePrefix: never` do not invent indexed locale duplicates.
+
+Preview and development Next deployments are excluded by the HTTP policy when
+`VERCEL_ENV` is `preview`/`development` or `NODE_ENV` is `development`.
+Set `TUTURUUU_NOINDEX=1` for a non-Vercel staging host and rebuild/redeploy its
+configuration. Production public routes remain eligible unless that explicit
+flag is set. A production-domain canonical is not a replacement for preview
+noindex.
+
+## Regression evidence
+
+`packages/utils/src/seo.test.ts` verifies parsed Next header patterns against
+private workspaces, auth/API routes, form/embed boundaries, buyer transactions,
+public education/tool pages, Git integration paths, Tulletin drafts, the generated
+Web allowlist, and preview behavior. `scripts/generate-app-seo.test.js` checks
+sitemap host ownership, truthful locale alternates, and the absence of private
+sitemaps. Deployment HTML/header inspection and Search Console URL Inspection
+remain required to establish the served/indexed result.
+
+References: [Google noindex guidance](https://developers.google.com/search/docs/crawling-indexing/block-indexing)
+and [content access controls](https://developers.google.com/search/docs/crawling-indexing/control-what-you-share).
+The [SEO runbook](/build/development-tools/public-seo) explains maintenance.
+
+Public Forms metadata explicitly overrides its private root layout for accessible
+anonymous snapshots when `noIndex` is false. Protected, unavailable, and opted-out
+forms retain noindex; embeds and workspace pages always do. Regression coverage:
+`apps/forms/src/features/forms/shared-form-data.test.ts` and
+`shared-form-loader.test.ts`. This changes discovery metadata, not response access.
