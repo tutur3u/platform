@@ -118,7 +118,10 @@ describe('registered board-template background GET authorization', () => {
     mocks.normalizeWorkspaceId.mockResolvedValue(WORKSPACE);
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
     mocks.createAdminClient.mockResolvedValue(createTemplateDatastore());
-    mocks.sign.mockResolvedValue({ data: { signedUrl: SIGNED_URL }, error: null });
+    mocks.sign.mockResolvedValue({
+      data: { signedUrl: SIGNED_URL },
+      error: null,
+    });
     mocks.createDynamicAdminClient.mockResolvedValue({
       storage: {
         from(bucket: string) {
