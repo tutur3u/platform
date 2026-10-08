@@ -429,7 +429,40 @@ test.describe
               path: bannerTicket.filePath,
             });
             const finalizedBanner = await bannerFinalizationResponse;
-            expect(finalizedBanner.status()).toBe(200);
+            const finalizationStatus = finalizedBanner.status();
+            const finalizationDiagnostic: {
+              status: number;
+              message: string;
+              committed?: boolean;
+            } = { status: finalizationStatus, message: 'unclassified' };
+            if (finalizationStatus !== 200) {
+              const body: unknown = await finalizedBanner
+                .json()
+                .catch(() => null);
+              if (body !== null && typeof body === 'object') {
+                const payload = body as Record<string, unknown>;
+                const allowedMessages = [
+                  'Unable to verify upload',
+                  'Upload is not ready',
+                  'Unable to save banner',
+                  'Banner saved; cleanup is pending',
+                  'Unable to update banner',
+                ];
+                if (
+                  typeof payload.message === 'string' &&
+                  allowedMessages.includes(payload.message)
+                ) {
+                  finalizationDiagnostic.message = payload.message;
+                }
+                if (typeof payload.committed === 'boolean') {
+                  finalizationDiagnostic.committed = payload.committed;
+                }
+              }
+            }
+            expect(
+              finalizationStatus,
+              JSON.stringify(finalizationDiagnostic)
+            ).toBe(200);
             expect(finalizedBanner.request().postDataJSON().operationId).toBe(
               bannerTicket.operationId
             );
