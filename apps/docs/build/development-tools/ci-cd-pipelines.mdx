@@ -4,6 +4,15 @@ description: "High-level CI/CD overview, with current operational runbooks linke
 updatedAt: "2026-09-29"
 ---
 
+<Note>
+Current runtime policy: Docker setup and Docker-backed E2E/image CI are paused;
+the Docker cron runner is retired. Rust and TanStack Start are not in use and
+must not be run, tested, or updated until further notice. Retained Docker and
+migration sections below are historical procedures. Current hosted Next.js,
+package, Worker, database, and mobile workflows retain their own gates. See the
+[active runtime map](/build/devops/active-runtime).
+</Note>
+
 This page is the entry point for CI/CD. The day-to-day operational detail now lives
 in the dedicated DevOps pages below so the docs stay current as workflows change.
 
@@ -46,7 +55,7 @@ Tuturuuu currently automates:
   active production deployment.
 - The external-app internal-package build uses the same cancel-superseded policy, so rapid pushes cannot finish as green no-op builds.
 - Database migrations are not treated the same as app deploys; staging and production each have explicit prerequisite logic, with staging now sourced from `main`.
-- Docker changes are guarded by `docker-setup-check.yaml`, including dev and production image builds.
+- Docker setup and image-build CI (`docker-setup-check.yaml`) are disabled, including manual dispatch, until explicitly resumed.
 
 ## When To Use This Page
 

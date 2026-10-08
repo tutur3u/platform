@@ -1,6 +1,23 @@
+import { getTranslations } from 'next-intl/server';
 import { Brand } from '@/components/brand';
 import { PublicExplorer } from '@/components/public-explorer';
+import { createLettinPageMetadata } from '@/lib/page-metadata';
 import { publicWorlds } from '@/lib/public-worlds';
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'lettin' });
+  return createLettinPageMetadata({
+    title: t('exploreWorlds'),
+    description: t('heroDescription'),
+    locale,
+    pathname: '/worlds',
+  });
+}
+
 export default async function Page({
   searchParams,
 }: {
