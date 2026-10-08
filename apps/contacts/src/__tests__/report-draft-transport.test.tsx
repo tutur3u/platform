@@ -21,7 +21,12 @@ import { useReportMutations } from '@/app/[locale]/[wsId]/users/reports/[reportI
 const fetchMock = vi.fn<typeof fetch>();
 const wsId = 'workspace/one';
 const reportId = 'report?one';
-const draft = { title: '', content: ' \nObservation\n', feedback: '', score: null };
+const draft = {
+  title: '',
+  content: ' \nObservation\n',
+  feedback: '',
+  score: null,
+};
 const failedSave = 'ws-reports.failed_save_report';
 const clients: QueryClient[] = [];
 
@@ -95,33 +100,42 @@ async function failed(response: Response | Error) {
 it.each([
   draft,
   { title: ' ', content: '', feedback: 'Line one\nLine two\n', score: null },
-])('sends only four exact draft fields, then saves and invalidates: %j', async (payload) => {
-  fetchMock.mockResolvedValueOnce(json({ success: true }));
-  const { result, invalidate } = hook();
-  await act(async () => {
-    await result.current.updateMutation.mutateAsync(payload);
-  });
-  expect(fetchMock).toHaveBeenCalledOnce();
-  const [url, init] = fetchMock.mock.calls[0]!;
-  expect(url).toBe('/api/v1/workspaces/workspace%2Fone/users/reports/report%3Fone');
-  expect(init).toMatchObject({ method: 'PUT', cache: 'no-store' });
-  expect(new Headers(init?.headers).get('Content-Type')).toBe('application/json');
-  expect(JSON.parse(String(init?.body))).toEqual(payload);
-  expect(toast.success).toHaveBeenCalledWith('ws-reports.report_saved');
-  expect(toast.error).not.toHaveBeenCalled();
-  expect(invalidate.mock.calls.map(([options]) => options?.queryKey)).toEqual([
-    ['ws', wsId, 'report', reportId, 'logs'],
-    ['ws', wsId, 'approvals', 'reports'],
-    ['ws', wsId, 'group-report-status-summary'],
-    ['ws', wsId, 'group', 'group', 'reports-dashboard'],
-    ['ws', wsId, 'group', 'group', 'user-report-status-summary'],
-    ['ws', wsId, 'group', 'group', 'user', 'student', 'report', reportId],
-    ['ws', wsId, 'group', 'group', 'user', 'student', 'reports'],
-  ]);
-  expect(vi.mocked(toast.success).mock.invocationCallOrder[0]).toBeLessThan(
-    invalidate.mock.invocationCallOrder[0]!
-  );
-});
+])(
+  'sends only four exact draft fields, then saves and invalidates: %j',
+  async (payload) => {
+    fetchMock.mockResolvedValueOnce(json({ success: true }));
+    const { result, invalidate } = hook();
+    await act(async () => {
+      await result.current.updateMutation.mutateAsync(payload);
+    });
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe(
+      '/api/v1/workspaces/workspace%2Fone/users/reports/report%3Fone'
+    );
+    expect(init).toMatchObject({ method: 'PUT', cache: 'no-store' });
+    expect(new Headers(init?.headers).get('Content-Type')).toBe(
+      'application/json'
+    );
+    expect(JSON.parse(String(init?.body))).toEqual(payload);
+    expect(toast.success).toHaveBeenCalledWith('ws-reports.report_saved');
+    expect(toast.error).not.toHaveBeenCalled();
+    expect(invalidate.mock.calls.map(([options]) => options?.queryKey)).toEqual(
+      [
+        ['ws', wsId, 'report', reportId, 'logs'],
+        ['ws', wsId, 'approvals', 'reports'],
+        ['ws', wsId, 'group-report-status-summary'],
+        ['ws', wsId, 'group', 'group', 'reports-dashboard'],
+        ['ws', wsId, 'group', 'group', 'user-report-status-summary'],
+        ['ws', wsId, 'group', 'group', 'user', 'student', 'report', reportId],
+        ['ws', wsId, 'group', 'group', 'user', 'student', 'reports'],
+      ]
+    );
+    expect(vi.mocked(toast.success).mock.invocationCallOrder[0]).toBeLessThan(
+      invalidate.mock.invocationCallOrder[0]!
+    );
+  }
+);
 
 it.each([false, undefined, null, 'true', 1])(
   'rejects a non-Boolean acknowledgement %s',
@@ -131,10 +145,13 @@ it.each([false, undefined, null, 'true', 1])(
   }
 );
 
-it.each([null, [], 'saved'])('rejects a non-object acknowledgement %s', async (body) => {
-  await failed(json(body));
-  expect(toast.error).toHaveBeenCalledWith(failedSave);
-});
+it.each([null, [], 'saved'])(
+  'rejects a non-object acknowledgement %s',
+  async (body) => {
+    await failed(json(body));
+    expect(toast.error).toHaveBeenCalledWith(failedSave);
+  }
+);
 
 it('rejects a bodyless 204', async () => {
   await failed(new Response(null, { status: 204 }));
@@ -165,21 +182,31 @@ it('preserves the parser error-field message', async () => {
   expect(toast.error).toHaveBeenCalledWith('Access refused');
 });
 
-it.each([403, 409, 500])('localizes only the exact generic %s fallback', async (status) => {
-  const error = await failed(new Response('upstream unavailable', { status }));
-  expect(error).toMatchObject({
-    status,
-    message: `Internal API request failed: ${status}`,
-  });
-  expect(toast.error).toHaveBeenCalledWith(failedSave);
-});
+it.each([403, 409, 500])(
+  'localizes only the exact generic %s fallback',
+  async (status) => {
+    const error = await failed(
+      new Response('upstream unavailable', { status })
+    );
+    expect(error).toMatchObject({
+      status,
+      message: `Internal API request failed: ${status}`,
+    });
+    expect(toast.error).toHaveBeenCalledWith(failedSave);
+  }
+);
 
 it('preserves challenge explanation and code', async () => {
   const error = await failed(
     json({ code: 'ABUSE_CHALLENGE_REQUIRED', message: 'Verify first' }, 403)
   );
-  expect(error).toMatchObject({ status: 403, code: 'ABUSE_CHALLENGE_REQUIRED' });
-  expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('Verify first'));
+  expect(error).toMatchObject({
+    status: 403,
+    code: 'ABUSE_CHALLENGE_REQUIRED',
+  });
+  expect(toast.error).toHaveBeenCalledWith(
+    expect.stringContaining('Verify first')
+  );
   expect(toast.error).toHaveBeenCalledWith(
     expect.stringContaining('browser verification challenge')
   );
@@ -191,7 +218,8 @@ it('retains the real MFA parser reload and explicit message', async () => {
     'window',
     new Proxy(window, {
       get(target, key) {
-        if (key === 'location') return { pathname: '/workspace/reports', reload };
+        if (key === 'location')
+          return { pathname: '/workspace/reports', reload };
         return Reflect.get(target, key, target);
       },
     })
