@@ -1,12 +1,12 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createStaffEligibilityHandler } from './eligibility/handler';
 import {
   createStaffActorResolver,
   resolveStaffActor,
   type StaffAuthDependencies,
   StaffReadError,
 } from './staff-access';
-import { createStaffEligibilityHandler } from './eligibility/handler';
 import {
   openStaffOperation,
   type StaffOperationPolicy,
