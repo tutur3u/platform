@@ -3,16 +3,16 @@ import { Cause, Effect } from '@tuturuuu/utils/effect';
 import { describe, expect, it, vi } from 'vitest';
 import { StaffReadError } from './staff-access';
 import {
-  createStaffListHandler,
-  createStaffDetailHandler,
-  type StaffReadDependencies,
-} from './staff-read';
-import {
   openStaffOperation,
   type StaffOperationContext,
   type StaffOperationPolicy,
   type StaffOperationRuntime,
 } from './staff-operation';
+import {
+  createStaffDetailHandler,
+  createStaffListHandler,
+  type StaffReadDependencies,
+} from './staff-read';
 
 const policy: StaffOperationPolicy = {
   durationMs: 10,
@@ -406,15 +406,29 @@ describe('actual Effect invocation owner, prospective unexecuted controls', () =
     ).toBe(200);
     expect(a.remove).toHaveBeenCalled();
     expect(b.remove).toHaveBeenCalled();
-    const phaseCallbacks = add.mock.calls.filter(
-      ([event, listener]) =>
-        event === 'abort' &&
-        typeof listener === 'function' &&
-        listener.name === 'abort'
+    // Request owns once-only bridges on the incoming controller signals.
+    const phaseCallbacks = add.mock.calls.flatMap(
+      ([event, listener], index) => {
+        const signal = add.mock.contexts[index];
+        return event === 'abort' &&
+          typeof listener === 'function' &&
+          listener.name === 'abort' &&
+          signal !== a.controller.signal &&
+          signal !== b.controller.signal
+          ? [{ signal, listener }]
+          : [];
+      }
     );
     expect(phaseCallbacks.length).toBeGreaterThan(0);
-    for (const [, listener] of phaseCallbacks)
-      expect(remove).toHaveBeenCalledWith('abort', listener);
+    for (const { signal, listener } of phaseCallbacks)
+      expect(
+        remove.mock.calls.some(
+          ([event, removed], index) =>
+            event === 'abort' &&
+            removed === listener &&
+            remove.mock.contexts[index] === signal
+        )
+      ).toBe(true);
     add.mockRestore();
     remove.mockRestore();
   });
