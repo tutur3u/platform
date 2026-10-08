@@ -427,7 +427,7 @@ pub(super) async fn current_user_profile_patch_data_response(
     };
     let mut payload = json!({ "p_user_id": actor.claims.sub, "p_patch": updates });
     if banner_change {
-        let Some(origin) = url_origin(&config.contact_data.supabase_url) else {
+        let Some(origin) = super::profile_banner::public_banner_origin(&config.contact_data) else {
             return contact_data_layer_not_ready_response(request);
         };
         payload["p_storage_origin"] = json!(origin);
