@@ -1,7 +1,7 @@
 ---
 title: "tRPC Scaffold"
 description: "What the tRPC layer in apps/web actually is today: a minimal, intentional stub kept alive during the TanStack/Rust migration"
-updatedAt: "2026-06-21"
+updatedAt: '2026-10-08'
 ---
 
 <Warning>
@@ -16,10 +16,11 @@ updatedAt: "2026-06-21"
 
 ## Why a stub?
 
-The `apps/web` Next.js app (port `7803`) is being replaced by `apps/tanstack-web`
-(TanStack Start) and `apps/backend` (Rust, port `7820`). See the
-[TanStack + Rust migration](/platform/architecture/tanstack-rust-migration) for
-the full plan.
+The maintained runtime is Next.js Web and its satellite apps. Rust
+(`apps/backend`) and TanStack Start (`apps/tanstack-web`) are paused and not in
+use. Docker setup is inactive and the Docker cron runner is retired. Retained
+migration designs describe a possible future, not live traffic or a current
+setup requirement. See the [active runtime map](/build/devops/active-runtime).
 
 Rather than build out a tRPC API surface that would be thrown away, the team
 keeps a minimal tRPC scaffold wired end-to-end so the type system and client
@@ -352,5 +353,3 @@ growing this scaffold during the migration.
 - [tRPC Official Docs](https://trpc.io/)
 - [TanStack Query Docs](https://tanstack.com/query/latest)
 - [superjson](https://github.com/flightcontrol/superjson)
-</content>
-</invoke>
