@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { InternalApiError, updatePeriodicReport } from '@tuturuuu/internal-api';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
 import { toast } from '@tuturuuu/ui/sonner';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -201,23 +202,15 @@ export function useReportMutations({
     }) => {
       if (!report.id) throw new Error('Missing report id');
 
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users/reports/${report.id}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: payload.title,
-            content: payload.content,
-            feedback: payload.feedback,
-            score: payload.score,
-          }),
-        }
-      );
+      const response = await updatePeriodicReport(wsId, report.id, {
+        title: payload.title,
+        content: payload.content,
+        feedback: payload.feedback,
+        score: payload.score,
+      });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || t('ws-reports.failed_save_report'));
+      if (!response || response.success !== true) {
+        throw new Error(t('ws-reports.failed_save_report'));
       }
     },
     onSuccess: async () => {
@@ -225,8 +218,13 @@ export function useReportMutations({
       await invalidateReportQueries();
     },
     onError: (err) => {
+      const isGenericStatusError =
+        err instanceof InternalApiError &&
+        err.message === `Internal API request failed: ${err.status}`;
       toast.error(
-        err instanceof Error ? err.message : t('ws-reports.failed_save_report')
+        err instanceof Error && !isGenericStatusError
+          ? err.message
+          : t('ws-reports.failed_save_report')
       );
     },
   });
