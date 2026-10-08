@@ -338,7 +338,7 @@ describe('unwired restoration, prospective runtime regressions', () => {
     'target %s fails closed before inspection',
     async (mode) => {
       const original = f.getUserById.getMockImplementation()!;
-      f.getUserById.mockImplementation(async function (target) {
+      f.getUserById.mockImplementation(async (target) => {
         if (target === actor) return original.call(f.provider, target);
         if (mode === 'throw') throw Error('private target transport');
         return providerError();
@@ -357,7 +357,7 @@ describe('unwired restoration, prospective runtime regressions', () => {
     'genuine absent provider %s/%s and no registry/intent is pre-effect 404',
     async (status, code) => {
       const original = f.getUserById.getMockImplementation()!;
-      f.getUserById.mockImplementation(async function (target) {
+      f.getUserById.mockImplementation(async (target) => {
         return target === actor
           ? original.call(f.provider, target)
           : providerError(status, code);
@@ -550,7 +550,7 @@ describe('unwired restoration, prospective runtime regressions', () => {
     'fresh read %s stops confirmation',
     async (mode) => {
       const original = f.getUserById.getMockImplementation()!;
-      f.getUserById.mockImplementation(async function (target) {
+      f.getUserById.mockImplementation(async (target) => {
         if (target === id && f.updateUserById.mock.calls.length) {
           if (mode === 'throw') throw Error('private fresh read');
           return providerError(

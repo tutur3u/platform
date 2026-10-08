@@ -53,7 +53,7 @@ const active = () => {
 };
 function targetFailure(mode: 'throw' | 'error' | 'missing') {
   const original = f.getUserById.getMockImplementation()!;
-  f.getUserById.mockImplementation(async function (target) {
+  f.getUserById.mockImplementation(async (target) => {
     if (target === actor) return original.call(f.provider, target);
     if (mode === 'throw') throw Error('synthetic private lost read');
     return providerError(
