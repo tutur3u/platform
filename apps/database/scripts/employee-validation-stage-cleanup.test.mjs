@@ -1,5 +1,14 @@
 import assert from 'node:assert/strict';
-import { access, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import {
+  access,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  stat,
+  writeFile,
+} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -30,16 +39,23 @@ async function inventory(root) {
   await visit(root);
   assert.ok(bytes <= 4096, `Fixture bytes exceeded bound: ${bytes}`);
   assert.ok(files <= 2, `Fixture files exceeded bound: ${files}`);
-  assert.ok(directories <= 12, `Fixture directories exceeded bound: ${directories}`);
+  assert.ok(
+    directories <= 12,
+    `Fixture directories exceeded bound: ${directories}`
+  );
   return { bytes, files, directories };
 }
 
 async function withFixture(run) {
-  const root = await mkdtemp(path.join(os.tmpdir(), 'employee-stage-cleanup-v54-'));
+  const root = await mkdtemp(
+    path.join(os.tmpdir(), 'employee-stage-cleanup-v54-')
+  );
   const repositoryRoot = path.join(root, 'synthetic-repository');
   const temporaryRoot = path.join(root, 'synthetic-staging');
   try {
-    await mkdir(path.dirname(path.join(repositoryRoot, fixtureFile)), { recursive: true });
+    await mkdir(path.dirname(path.join(repositoryRoot, fixtureFile)), {
+      recursive: true,
+    });
     await mkdir(temporaryRoot);
     await writeFile(path.join(repositoryRoot, fixtureFile), payload);
     await run({
@@ -61,7 +77,9 @@ async function withFixture(run) {
     const measured = await inventory(root);
     await rm(root, { recursive: true, force: true });
     await assert.rejects(access(root), { code: 'ENOENT' });
-    console.log(JSON.stringify({ fixtureCleanup: 'owned-root-absent', ...measured }));
+    console.log(
+      JSON.stringify({ fixtureCleanup: 'owned-root-absent', ...measured })
+    );
   }
 }
 
@@ -82,7 +100,10 @@ async function stagingFailure(options, repositoryRoot) {
 async function assertRetained(root, temporaryRoot) {
   assert.equal(path.dirname(root), temporaryRoot);
   assert.ok(path.basename(root).startsWith('tuturuuu-supabase-'));
-  assert.equal(await readFile(path.join(root, 'supabase/fixture.txt'), 'utf8'), payload);
+  assert.equal(
+    await readFile(path.join(root, 'supabase/fixture.txt'), 'utf8'),
+    payload
+  );
   assert.deepEqual(await readdir(temporaryRoot), [path.basename(root)]);
 }
 
@@ -90,7 +111,10 @@ test('default staging cleanup removes only its partial synthetic root', async ()
   await withFixture(async ({ options, repositoryRoot, temporaryRoot }) => {
     await stagingFailure(options, repositoryRoot);
     assert.deepEqual(await readdir(temporaryRoot), []);
-    assert.equal(await readFile(path.join(repositoryRoot, fixtureFile), 'utf8'), payload);
+    assert.equal(
+      await readFile(path.join(repositoryRoot, fixtureFile), 'utf8'),
+      payload
+    );
   });
 });
 
@@ -98,11 +122,18 @@ test('custom retain callback receives guarded root and leaves partial fixture in
   await withFixture(async ({ options, repositoryRoot, temporaryRoot }) => {
     const calls = [];
     const diagnostics = [];
-    await stagingFailure({
-      ...options,
-      removeStagedRoot: async (...args) => { calls.push(args); },
-      diagnostic: message => { diagnostics.push(message); },
-    }, repositoryRoot);
+    await stagingFailure(
+      {
+        ...options,
+        removeStagedRoot: async (...args) => {
+          calls.push(args);
+        },
+        diagnostic: (message) => {
+          diagnostics.push(message);
+        },
+      },
+      repositoryRoot
+    );
     assert.equal(calls.length, 1);
     assert.deepEqual(calls[0][1], { force: true, recursive: true });
     await assertRetained(calls[0][0], temporaryRoot);
@@ -115,17 +146,24 @@ test('cleanup failure is secondary while original copy failure remains primary',
     const cleanupError = new Error('synthetic cleanup failure');
     const diagnostics = [];
     let retainedRoot;
-    const primary = await stagingFailure({
-      ...options,
-      removeStagedRoot: async (root, removalOptions) => {
-        retainedRoot = root;
-        assert.deepEqual(removalOptions, { force: true, recursive: true });
-        throw cleanupError;
+    const primary = await stagingFailure(
+      {
+        ...options,
+        removeStagedRoot: async (root, removalOptions) => {
+          retainedRoot = root;
+          assert.deepEqual(removalOptions, { force: true, recursive: true });
+          throw cleanupError;
+        },
+        diagnostic: (message) => {
+          diagnostics.push(message);
+        },
       },
-      diagnostic: message => { diagnostics.push(message); },
-    }, repositoryRoot);
+      repositoryRoot
+    );
     assert.notEqual(primary, cleanupError);
-    assert.deepEqual(diagnostics, ['Secondary staging cleanup failure: synthetic cleanup failure']);
+    assert.deepEqual(diagnostics, [
+      'Secondary staging cleanup failure: synthetic cleanup failure',
+    ]);
     await assertRetained(retainedRoot, temporaryRoot);
   });
 });

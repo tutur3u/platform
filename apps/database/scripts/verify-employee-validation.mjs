@@ -472,16 +472,19 @@ export async function runEmployeeGate(argv, injected = {}) {
     cleanupReceipt = null,
     typegenReceipt = null;
   const dbCapsReceipts = [];
-  const workerLedger = (receipts) => writeFileAtomically(
-    path.join(metadata.disposableRoot, 'employee-producers.json'),
-    `${JSON.stringify(receipts, null, 2)}\n`,
-    { writeOptions: { flag: 'wx', mode: 0o600 } }
-  );
+  const workerLedger = (receipts) =>
+    writeFileAtomically(
+      path.join(metadata.disposableRoot, 'employee-producers.json'),
+      `${JSON.stringify(receipts, null, 2)}\n`,
+      { writeOptions: { flag: 'wx', mode: 0o600 } }
+    );
   const tracker = createProducerTracker({
     persist: async (receipts) => {
       if (!context) return workerLedger(receipts);
       await context.persist('producer-ledger', receipts);
-      return context.step('worker-producer-ledger', () => workerLedger(receipts));
+      return context.step('worker-producer-ledger', () =>
+        workerLedger(receipts)
+      );
     },
   });
   const runner = createEmployeeRunner({
@@ -526,16 +529,27 @@ export async function runEmployeeGate(argv, injected = {}) {
         try {
           if (context)
             await context.removeRoot(ownedRoot, async (root, options) => {
-              await (injected.removeRoot ?? removeDisposableRoot)(root, options);
+              await (injected.removeRoot ?? removeDisposableRoot)(
+                root,
+                options
+              );
               assert.equal(existsSync(root), false, 'Disposable root remains');
               rootRemoved = true;
             });
           else {
             await removeDisposableRoot(ownedRoot);
-            assert.equal(existsSync(ownedRoot), false, 'Disposable root remains');
+            assert.equal(
+              existsSync(ownedRoot),
+              false,
+              'Disposable root remains'
+            );
             rootRemoved = true;
           }
-          cleanupReceipt = { ...cleanupReceipt, rootRemoved, finalPersistenceAcknowledged: context ? true : null };
+          cleanupReceipt = {
+            ...cleanupReceipt,
+            rootRemoved,
+            finalPersistenceAcknowledged: context ? true : null,
+          };
         } catch (error) {
           cleanupReceipt = {
             ...cleanupReceipt,
@@ -603,7 +617,10 @@ if (
     })
     .catch((error) => {
       console.error(
-        JSON.stringify({ ...safeFailure(error, 'admission-or-execution'), recovery: getAttemptRecovery(error) })
+        JSON.stringify({
+          ...safeFailure(error, 'admission-or-execution'),
+          recovery: getAttemptRecovery(error),
+        })
       );
       process.exitCode = 1;
     });
