@@ -11,7 +11,10 @@ export type EmployeeCreationAuthorization =
   | { authorized: false; status: 401 | 403 | 503 }
   | {
       authorized: true;
-      input: Pick<EmployeeCreationInput, 'actorUserId' | 'provider' | 'operations'>;
+      input: Pick<
+        EmployeeCreationInput,
+        'actorUserId' | 'provider' | 'operations'
+      >;
     };
 
 export type EmployeeCreationAuthorizer = (
@@ -47,22 +50,28 @@ function reply(status: number, body: object) {
 function denial(status: number) {
   switch (status) {
     case 400:
-      return reply(400, { code: 'invalid_request', message: 'Invalid request' });
+      return reply(400, {
+        code: 'invalid_request',
+        message: 'Invalid request',
+      });
     case 401:
       return reply(401, { code: 'unauthorized', message: 'Unauthorized' });
     case 403:
       return reply(403, { code: 'forbidden', message: 'Forbidden' });
     case 405:
       return reply(405, {
-        code: 'method_not_allowed', message: 'Method not allowed',
+        code: 'method_not_allowed',
+        message: 'Method not allowed',
       });
     case 415:
       return reply(415, {
-        code: 'unsupported_media_type', message: 'Expected application/json',
+        code: 'unsupported_media_type',
+        message: 'Expected application/json',
       });
     default:
       return reply(503, {
-        code: 'employee_creation_unavailable', message: unavailableMessage,
+        code: 'employee_creation_unavailable',
+        message: unavailableMessage,
       });
   }
 }
@@ -86,7 +95,9 @@ function serviceFailure(error: unknown) {
 }
 
 /** Unwired boundary. The injected authorizer must authenticate and authorize anew. */
-export function makeEmployeeCreationHandler(authorize: EmployeeCreationAuthorizer) {
+export function makeEmployeeCreationHandler(
+  authorize: EmployeeCreationAuthorizer
+) {
   return async (request: Request): Promise<Response> => {
     try {
       if (request.method !== 'POST') return denial(405);
@@ -104,9 +115,13 @@ export function makeEmployeeCreationHandler(authorize: EmployeeCreationAuthorize
       if (
         (origin !== null && origin !== new URL(request.url).origin) ||
         (site !== null && site !== 'same-origin')
-      ) return denial(403);
-      const media = request.headers.get('content-type')
-        ?.split(';')[0]?.trim().toLowerCase();
+      )
+        return denial(403);
+      const media = request.headers
+        .get('content-type')
+        ?.split(';')[0]
+        ?.trim()
+        .toLowerCase();
       if (media !== 'application/json') return denial(415);
 
       let body: unknown;
@@ -144,7 +159,9 @@ export function makeEmployeeCreationHandler(authorize: EmployeeCreationAuthorize
           result.code === 'employee_provisioning_pending')
       ) {
         return reply(202, {
-          status: 'pending', code: result.code, message: pendingMessage,
+          status: 'pending',
+          code: result.code,
+          message: pendingMessage,
         });
       }
       return denial(503);
