@@ -19,8 +19,8 @@ vi.mock('@/lib/post-email-queue', () => ({
   summarizePostEmailQueue: mocks.summarizePostEmailQueue,
 }));
 
-import { GET as webGet } from '../../../../../../apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/get';
-import { handleGetApprovalsRequest } from './get';
+import { GET as webGet } from '../../../../apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/get';
+import { handleGetApprovalsRequest } from '../../src/routes/users/approvals/get';
 
 const ws = 'workspace-1';
 const actor = { id: 'actor-1', email: 'approver@example.test' };

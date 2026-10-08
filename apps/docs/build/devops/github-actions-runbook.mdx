@@ -25,6 +25,11 @@ exports. Regression tests for shared helpers should import through the shipped
 entry; the Infrastructure desktop public-entry test covers this boundary. Resolve source fixtures relative to `import.meta.dirname`,
 so workspace-owned test runs read the same files as root runs.
 
+- Keep cross-app integration tests outside a package's `src` directory when its
+  type-check project uses `rootDir: "src"`. The users-core tenant-boundary tests
+  live in `tests/approvals`; Vitest discovers them separately from the package
+  source type check. Its config maps the two web-specific aliases explicitly
+  while retaining the package's default `@` alias.
 - Run tests from the owning workspace with its actual config, dependencies and
   providers. Root-hoisted packages or aliases can conceal undeclared dependencies
   and invalid test boundaries. If a narrow source-alias fixture is needed, record
