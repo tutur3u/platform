@@ -246,3 +246,30 @@ metadata removal. Signed uploads and server storage quotas remain authoritative.
 files above the old pre-compression limits for both targets, file/byte output
 parity, bounded results and oversized-input rejection. Actor-race and failure
 contract tests cover the surrounding repository path.
+
+
+### Browser profile capability uploads
+
+The central avatar and banner upload endpoints expose credential-free CORS for
+literal registered internal app origins, including Lettin and approved Portless
+origins and ports, and exact configured external app origins. External matching
+uses the configured protocol, host and port; it does not query database
+registration or enabled state. Production HTTPS registrations do not admit HTTP
+downgrades. Arbitrary host suffixes, localhost ports and forwarded hosts do not
+grant access.
+
+Explicit OPTIONS permits only PUT and Content-Type. It does not verify or consume
+the upload capability, read a body or access Auth, lifecycle, optimizer or storage
+services. Responses are not cached and vary on Origin and preflight method/header
+names. Trusted-origin PUT success and errors expose the exact requesting origin
+and retain existing Vary values. No credentials, Authorization or private network
+access grant is added.
+
+CORS controls browser response visibility. Upload authority still comes from the
+short-lived, atomically consumed capability and its actor, kind and scope checks.
+Untrusted origins receive no CORS grant; native requests without Origin retain
+existing behavior. Banner issued-state checks, immutable storage and separate
+finalization/replay rules remain in force. Transport unit regressions live in
+`apps/web/src/lib/profile-media-upload-cors.test.ts` and
+`apps/web/src/lib/profile-media-upload-put.test.ts`. These source checks do not
+prove deployed browser preflight, persistence or finalization behavior.
