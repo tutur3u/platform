@@ -55,7 +55,9 @@ export type EmployeeRestorationProvider = Pick<
   'getUserById' | 'updateUserById'
 >;
 export type EmployeeProviderUser = NonNullable<
-  Awaited<ReturnType<EmployeeRestorationProvider['getUserById']>>['data']['user']
+  Awaited<
+    ReturnType<EmployeeRestorationProvider['getUserById']>
+  >['data']['user']
 >;
 export type EmployeeInspectionTuple = {
   actorUserId: string;
@@ -111,17 +113,21 @@ export async function employeeAcknowledgement(
   const value = await employeeStep(operation);
   const parsed = await employeeStep(async () => {
     if (
-      typeof value !== 'object' || value === null || Array.isArray(value) ||
-      !Object.hasOwn(value, 'data') || !Object.hasOwn(value, 'error') ||
-      !('error' in value) || !('data' in value)
+      typeof value !== 'object' ||
+      value === null ||
+      Array.isArray(value) ||
+      !Object.hasOwn(value, 'data') ||
+      !Object.hasOwn(value, 'error') ||
+      !('error' in value) ||
+      !('data' in value)
     )
       throw new EmployeeManagementError('employee_management_unavailable');
     const error = value.error;
     if (
-      error !== null && (
-        typeof error !== 'object' || Array.isArray(error) ||
-        !Object.hasOwn(error, 'code')
-      )
+      error !== null &&
+      (typeof error !== 'object' ||
+        Array.isArray(error) ||
+        !Object.hasOwn(error, 'code'))
     )
       throw new EmployeeManagementError('employee_management_unavailable');
     return EnvelopeSchema.safeParse({ data: value.data, error });
@@ -133,9 +139,13 @@ export async function employeeAcknowledgement(
     const code = result.error.code;
     const conflict = ['23505', '23514', '40001'].includes(code);
     throw new EmployeeManagementError(
-      code === '42501' ? 'employee_management_forbidden'
-        : code === 'P0002' ? 'employee_not_found'
-        : conflict ? 'employee_management_conflict' : 'employee_management_unavailable',
+      code === '42501'
+        ? 'employee_management_forbidden'
+        : code === 'P0002'
+          ? 'employee_not_found'
+          : conflict
+            ? 'employee_management_conflict'
+            : 'employee_management_unavailable',
       code === '42501' ? 403 : code === 'P0002' ? 404 : conflict ? 409 : 503
     );
   }
@@ -193,7 +203,9 @@ export async function inspectEmployeeManagement(
       email: user?.email ?? null,
     })
   );
-  const parsed = await employeeStep(async () => InspectionSchema.safeParse(value));
+  const parsed = await employeeStep(async () =>
+    InspectionSchema.safeParse(value)
+  );
   if (
     !parsed.success ||
     parsed.data.id !== input.targetUserId ||
