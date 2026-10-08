@@ -212,7 +212,9 @@ describe('unscoped admin controls', () => {
       expect(
         cookieAdapter.setAll([{ name: 'ignored', value: 'ignored' }])
       ).toBeUndefined();
-      expect(mocks.cookies.mock.results[0]?.value.getAll).not.toHaveBeenCalled();
+      expect(
+        mocks.cookies.mock.results[0]?.value.getAll
+      ).not.toHaveBeenCalled();
       expect(mocks.cookies.mock.results[0]?.value.set).not.toHaveBeenCalled();
     }
   );
