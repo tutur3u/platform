@@ -3,8 +3,11 @@ import {
   getAppSessionUserFromRequest,
 } from '@tuturuuu/auth/app-session';
 import { resolveSupabaseSessionRequest } from '@tuturuuu/auth/supabase-session-user';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { createRequestClient } from '@tuturuuu/supabase/request/server';
 import { z } from 'zod';
+import { createStaffAuthTransport } from './staff-auth-transport';
 import type { StaffOperationContext } from './staff-operation';
 
 export class StaffReadError extends Error {
@@ -145,8 +148,28 @@ export const resolveStaffActor = createStaffActorResolver({
     };
     check();
     try {
-      // The shared helper's second argument is a supplied client, never context.
-      const result = await resolveSupabaseSessionRequest(request);
+      if (!operation) {
+        // The shared helper's second argument remains a supplied client.
+        const result = await resolveSupabaseSessionRequest(request);
+        check();
+        return result;
+      }
+      const fetch = createStaffAuthTransport(operation);
+      let client: Parameters<typeof resolveAuthenticatedSessionUser>[0];
+      try {
+        client = await createRequestClient(request, { fetch });
+      } catch (error) {
+        check();
+        throw error;
+      }
+      check();
+      let result: Awaited<ReturnType<typeof resolveAuthenticatedSessionUser>>;
+      try {
+        result = await resolveAuthenticatedSessionUser(client, { check });
+      } catch (error) {
+        check();
+        throw error;
+      }
       check();
       return result;
     } catch (error) {
@@ -160,10 +183,21 @@ export const resolveStaffActor = createStaffActorResolver({
   current: async (id, operation) => {
     operation?.check();
     try {
-      const admin = await createAdminClient({ noCookie: true });
+      let admin: Parameters<typeof resolveAuthenticatedSessionUser>[0];
+      try {
+        admin = await createAdminClient(
+          operation
+            ? { noCookie: true, fetch: createStaffAuthTransport(operation) }
+            : { noCookie: true }
+        );
+      } catch (error) {
+        operation?.check();
+        throw error;
+      }
       operation?.check();
-      const { data, error } = await admin.auth.admin.getUserById(id);
+      const result = await admin.auth.admin.getUserById(id);
       operation?.check();
+      const { data, error } = result;
       return { user: data.user, error };
     } catch (error) {
       operation?.check();
