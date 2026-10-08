@@ -149,39 +149,24 @@ merge, or production evidence only when that delivery is authorized.
   UI and run `bun i18n:sort`.
 - Add new dashboard routes to the relevant `navigation.tsx` aliases, children,
   icons, and permissions.
-- Migration-aware changes (the `apps/web` → `apps/backend` (Rust) + `apps/web` →
-  `apps/tanstack-web` switch is in progress — do not add debt while it is
-  pending): treat `apps/web`, `apps/backend`, and `apps/tanstack-web` as one
-  system, not three independent apps.
-  `apps/backend` is a future migration target only: it is not deployed and does
-  not serve current production traffic. `apps/web` remains the live API source
-  of truth until an explicitly approved cutover.
-  - When you ADD or CHANGE an `apps/web` API route (any method), also keep the
-    Rust port in step: if `apps/backend` already owns that path, update the Rust
-    handler in the same change; if it does not yet, register/refresh the route in
-    `apps/tanstack-web/migration/route-overrides.json` and run
-    `bun migration:tanstack:manifest` so the route is tracked as backlog instead
-    of becoming invisible debt. Never silently diverge web behavior from a route
-    Rust already serves.
-  - Web API routes you add or substantially rework must be FIRST-CLASS route
-    handlers under `apps/web/src/app/api/**`, never new or reworked
-    implementations inside `apps/web/src/legacy-api-routes/**` (that tree is being
-    drained; only untouched routes stay behind its generated wrappers). When you
-    move a route out, `git mv` its colocated test too, delete the legacy file so
-    `bun web:api-routes:check` stops generating a wrapper for it, update the
-    matching key in `apps/tanstack-web/migration/route-overrides.json` (the
-    override id embeds `sourceFile`), and re-run
-    `bun migration:tanstack:manifest`.
-  - When you ADD or CHANGE a dashboard page/route, mirror the same registration
-    so `apps/tanstack-web` migration tracking stays accurate, and route shared
-    data access through `packages/internal-api` (which both frontends use)
-    rather than app-local fetchers.
-  - When porting a backend route to Rust, migrate GET first if mutations are not
-    ready, return `None` (not `405`) for un-ported methods so they fall through
-    to the still-live Next.js route, and verify with the runtime coverage probe
-    documented in `apps/backend/AGENTS.md`. Keep behavior, status codes, and
-    cache headers faithful to the legacy route. A Rust handler being marked
-    migrated means source parity is implemented, not that traffic has moved.
+- Active runtime policy: Docker setup, `apps/backend` (Rust), and
+  `apps/tanstack-web` (TanStack Start) are not in use until explicitly resumed.
+  The Docker cron runner is retired. Do not run, update dependencies for, or
+  require implementation tests/builds/CI for these inactive runtimes. Do not
+  refresh their route trees, migration manifests, or runtime/version docs during
+  ordinary active-app work. Preserve their retained source. The pause is enforced
+  by root command guards, test discovery, CI job/switchboard gates, and dependency
+  policy; see `apps/docs/build/devops/active-runtime.mdx`.
+  - Live API/page behavior belongs to `apps/web` and the owning Next.js satellite.
+    Keep shared data access in `packages/internal-api` and preserve active app
+    contracts; TanStack Query remains the active client library.
+  - New or substantially reworked Web API handlers belong under
+    `apps/web/src/app/api/**`, not `legacy-api-routes/**`. Move colocated tests
+    with the implementation and remove obsolete generated wrappers. Inactive
+    Rust/TanStack tracking does not block the active change.
+  - Use the local Mintlify CLI for docs (`bun dev:docs`); routine setup and
+    focused validation must not require a Docker stack. Database/container
+    integration fixtures need a separately appropriate isolated environment.
 - Keep every new authored source file at or below the hard 700-LOC ceiling.
   Already-oversized authored files are grandfathered only while they do not grow
   and should shrink when substantially edited. Tests and migrations are authored

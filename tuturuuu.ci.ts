@@ -21,7 +21,9 @@ export const ci = {
   'coordination-cloudflare.yaml': true,
   'codex-plugin.yaml': true,
   'discord-python-ci.yml': true,
-  'docker-setup-check.yaml': true,
+  'docker-setup-check.yaml': false,
+  'docs-seo-check.yaml': true,
+  'rust-verify.yml': false,
   // TanStack Start and Rust migration work is paused. Keep its combined CI and
   // Cloudflare deployment workflow disabled until active maintenance resumes.
   'rust-backend.yml': false,
