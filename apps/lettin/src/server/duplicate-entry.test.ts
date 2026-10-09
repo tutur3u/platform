@@ -378,3 +378,113 @@ it('fences gallery retirement between reading the source and inserting a copy', 
   ).rejects.toMatchObject({ status: 409 });
   expect((await readWorld(db, owner, worldId)).entries).toHaveLength(1);
 });
+
+it('adds only an explicitly requested source reference to a new private copy', async () => {
+  const target = (
+    await mutate(db, owner, { action: 'createEntry', worldId, draft })
+  ).id;
+  await mutate(db, owner, {
+    action: 'saveEntry',
+    worldId,
+    entryId,
+    version: 1,
+    draft: {
+      ...draft,
+      links: [target],
+      wiki: {
+        ...draft.wiki!,
+        relationships: [
+          { targetId: target, kind: 'related', label: 'Existing relation' },
+        ],
+      },
+    },
+  });
+  const before = (await readWorld(db, owner, worldId)).entries.find(
+    (e) => e.id === entryId
+  );
+  const result = await mutate(db, editor, {
+    action: 'duplicateEntry',
+    worldId,
+    entryId,
+    version: 2,
+    title: 'Variant',
+    linkSource: true,
+  });
+  const after = await readWorld(db, owner, worldId);
+  const clone = after.entries.find((e) => e.id === result.id)!;
+  expect(clone.draft.links).toEqual([entryId]);
+  expect(clone.draft.wiki?.relationships).toEqual([]);
+  expect(clone).toMatchObject({
+    version: 1,
+    published: null,
+    published_at: null,
+  });
+  expect(after.entries.find((e) => e.id === entryId)).toEqual(before);
+  await expect(
+    mutate(db, editor, {
+      action: 'publishEntry',
+      worldId,
+      entryId: result.id,
+      version: 1,
+    })
+  ).rejects.toMatchObject({ status: 403 });
+  await mutate(db, owner, { action: 'publishWorld', worldId, version: 1 });
+  expect((await readPublic(db, worldId))[0]!.entries).toEqual([]);
+  await mutate(db, owner, {
+    action: 'publishEntry',
+    worldId,
+    entryId: result.id,
+    version: 1,
+  });
+  const publicEntries = (await readPublic(db, worldId))[0]!.entries;
+  expect(publicEntries.map((e) => e.id)).toEqual([result.id]);
+  expect(publicEntries[0]!.published.links).toEqual([entryId]);
+  expect(
+    (await readWorld(db, owner, worldId)).entries.find((e) => e.id === entryId)
+  ).toEqual(before);
+});
+
+it('keeps source revision and workspace fences when a source reference is requested', async () => {
+  const command = {
+    action: 'duplicateEntry' as const,
+    worldId,
+    entryId,
+    version: 1,
+    title: 'Linked',
+    linkSource: true,
+  };
+  await expect(
+    mutate(db, { ...owner, wsId: 'other' }, command)
+  ).rejects.toMatchObject({ status: 404 });
+  await mutate(db, owner, {
+    action: 'saveEntry',
+    worldId,
+    entryId,
+    version: 1,
+    draft,
+  });
+  await expect(mutate(db, owner, command)).rejects.toMatchObject({
+    status: 409,
+  });
+  expect((await readWorld(db, owner, worldId)).entries).toHaveLength(1);
+});
+
+it('accepts source linking only as an explicit boolean and retains the legacy default', () => {
+  const command = {
+    action: 'duplicateEntry',
+    worldId,
+    entryId,
+    version: 1,
+    title: 'Linked',
+  };
+  expect(lettinCommandSchema.parse(command)).not.toHaveProperty('linkSource');
+  expect(
+    lettinCommandSchema.parse({ ...command, linkSource: false })
+  ).toMatchObject({ linkSource: false });
+  expect(
+    lettinCommandSchema.parse({ ...command, linkSource: true })
+  ).toMatchObject({ linkSource: true });
+  expect(
+    lettinCommandSchema.safeParse({ ...command, linkSource: 'true' }).success
+  ).toBe(false);
+});

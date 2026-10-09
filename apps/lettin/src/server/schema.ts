@@ -69,6 +69,7 @@ export const lettinCommandSchema = z.discriminatedUnion('action', [
     entryId: id,
     version,
     title: z.string().trim().min(1).max(160),
+    linkSource: z.boolean().optional(),
   }),
   z.object({
     action: z.literal('saveWorld'),

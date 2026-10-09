@@ -639,6 +639,8 @@
     "content": "Page content",
     "contentNotice": "Content notice",
     "contentNoticeHint": "Optional reader guidance (up to 500 characters), such as sensitive themes or spoilers. Appears before artwork and reading content when published. Save and republish to update the public notice.",
+    "copyLinkSource": "Link this copy to the source entry",
+    "copyLinkSourceHint": "Off by default. Adds only a source reference within this notebook. Publishing the copy includes that reference; it does not publish the source or grant access to it.",
     "create": "Create project",
     "createEntryCopy": "Create unpublished copy",
     "createImport": "Create private copy",

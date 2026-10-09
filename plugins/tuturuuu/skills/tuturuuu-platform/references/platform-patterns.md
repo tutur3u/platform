@@ -679,3 +679,13 @@ fence prevents duplicate clicks before mutation state rerenders. Reset controls
 on context changes. Recipient acceptance is a distinct workflow; do not claim
 an owner confirmation establishes recipient consent. Lettin's collaborator DOM
 and D1 role/revocation regressions cover these boundaries.
+
+### Explicit source references on copies
+
+Keep source references optional when copying saved creative records. Derive the
+source ID from the already-authorized, revision-fenced record instead of accepting
+an arbitrary target. Default the choice off, clear it on reopening, and explain
+that later publishing the copy can expose the reference ID without publishing
+source content or granting source access. Clear inherited graph references and
+retain the existing same-notebook, artwork and atomic write fences. Test the
+private copy and later published projection independently with real local D1.
