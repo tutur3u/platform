@@ -148,6 +148,17 @@ not an independent stop fence for this background work. The nominal one-minute
 retry interval is not a hard operation or spending cap: billing retries, duplicate
 invocations and restarts must be counted separately.
 
+Active-session registry renewal has a separate privacy lease. It starts at the
+12-hour boundary, and retryable failure is tolerated until 23 hours since the last
+recorded renewal; at that boundary the helper throws after attempting registration.
+These age checks do not reserve attempts: repeated reconstructed calls before the
+boundary still each perform a registry RPC. Successful renewal suppresses later
+calls only when its timestamp survives persistence. A future recorded timestamp
+can also suppress renewal past the original lease, so a replacement must validate
+clock state and finite future deadlines rather than trusting timestamp subtraction.
+If Stop arrives during registration, the helper attempts compensating removal;
+removal failure must remain recoverable without authorizing an unlimited retry job.
+
 Context erasure separately lists at most 128 archived turns per wake and deletes
 those keys in a batch; each deleted key remains part of the storage envelope.
 A full batch schedules a confirmation wake to discover any remaining turns.

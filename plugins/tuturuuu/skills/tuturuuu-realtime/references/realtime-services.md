@@ -179,3 +179,12 @@ wake budget. Count retry-scheduler calls separately from delivered alarms. Verif
 quota progress survives usage failures, and successful reporting followed by a
 failed final write remains recoverable across reconstruction. A page limit needs
 a durable cursor and per-record progress; never truncate outstanding obligations.
+
+For active Live registry renewal, test the exact 12-hour renewal and 23-hour failure
+boundaries, duplicate/reconstructed calls, future persisted timestamps and Stop
+while registration is in flight. The existing age check is a privacy lease guard,
+not a finite attempt reservation. A future timestamp can suppress renewal beyond
+the original lease; require validated clock state and bounded future deadlines.
+Count registration and compensating removal RPCs separately, and retain failed
+removal obligations. Controlled helper tests do not prove hosted discoverability,
+real durable timestamp persistence or authenticated stop/reschedule fencing.
