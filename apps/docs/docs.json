@@ -315,6 +315,7 @@
             "group": "Build",
             "pages": [
               "build/overview",
+              "build/mail/report-email-replies",
               {
                 "group": "DevOps & Deployment",
                 "pages": [
