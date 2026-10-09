@@ -24,6 +24,7 @@ vi.mock('@/i18n/navigation', () => ({
 vi.mock('./navigation-guard', () => ({
   useNavigationGuard: () => ({ dirty: false, setDirty: () => {} }),
 }));
+vi.mock('./duplicate-entry', () => ({ DuplicateEntry: () => null }));
 vi.mock('./quick-note', () => ({ QuickNote: () => null }));
 vi.mock('./entry-editor', () => ({ EntryEditor: () => null }));
 vi.mock('./wiki-browser', () => ({ WikiBrowser: () => null }));
