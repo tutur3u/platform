@@ -126,11 +126,16 @@ jobs:
             "$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-empty-lifecycle.test.ts" \
             "$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-lifecycle-race.test.ts" \
             "$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-recovery.test.ts" \
-            "$GITHUB_WORKSPACE/apps/meet-realtime/src/collaboration-retry-budget.test.ts"
+            "$GITHUB_WORKSPACE/apps/meet-realtime/src/collaboration-retry-budget.test.ts" \
+            "$GITHUB_WORKSPACE/apps/meet-realtime/src/channel-retry-budget.test.ts"
       - name: Verify offline checkpoint retry budget in real SQLite
         timeout-minutes: 2
         run: node --test verify.mjs
         working-directory: apps/meet-realtime/test-fixtures/collaboration-retry
+      - name: Verify channel retry reservations in real SQLite
+        timeout-minutes: 2
+        run: node --test verify.mjs
+        working-directory: apps/meet-realtime/test-fixtures/channel-retry
       - name: Verify completed Live finalization in real SQLite
         timeout-minutes: 2
         run: node --test verify.mjs
