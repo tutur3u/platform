@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { Collaborators } from './collaborators';
+import { DuplicateEntry } from './duplicate-entry';
 import { EntryEditor } from './entry-editor';
 import { useNavigationGuard } from './navigation-guard';
 import { initialWikiFilters } from './wiki-browse-model';
@@ -135,6 +136,16 @@ export function WorldStudio({
                 <ArrowLeft size={16} />
                 {t(`section${section}`)}
               </Button>
+              {record.id !== worldId && (
+                <DuplicateEntry
+                  key={record.id}
+                  wsId={wsId}
+                  worldId={worldId}
+                  record={record}
+                  disabled={dirty}
+                  onCreated={select}
+                />
+              )}
               <EntryEditor
                 key={record.id}
                 record={record}

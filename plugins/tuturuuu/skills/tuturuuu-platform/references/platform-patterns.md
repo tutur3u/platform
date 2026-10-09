@@ -428,6 +428,17 @@ checked with `--check`; inactive Rust/TanStack sources are excluded. Product
 guides explain actual behavior and access, while generated routes locate source.
 Use `node scripts/docs-audit.js` for navigation, internal links, and assets.
 
+## Duplicating creator drafts
+
+Duplicate from a server-owned saved revision, with explicit destination scope and
+a user-supplied title. Recheck source revision, creator/collaborator permission
+and artwork ownership in the insert, rather than trusting an earlier read. Keep
+copies unpublished and clear structured references whose semantics should not
+transfer. A completion callback must not navigate away from edits made while the
+request was pending: offer a separate guarded open action. Fence double submits
+synchronously and avoid automatic retries for non-idempotent creation.
+Lettin's duplicate-entry D1 and component tests exercise these boundaries.
+
 ## Notification email admission
 
 Immediate and batched notification email share `notifications/cron-helpers.ts`
@@ -456,3 +467,77 @@ values rather than serialization key order. Apply relationship facets to both
 endpoints before edge text search, and preserve semantic timeline ordering when
 adding card sorts. Keep dirty-editor navigation guards and clear-filter recovery
 in real component regression coverage.
+
+### Local reference pickers
+
+When a creator edits references among already-authorized notebook records, derive
+search results from the supplied collection rather than adding broader source
+reads. Keep search/kind filters transient, batch large lists, and require an
+explicit target action. Fence self references, duplicate target/type pairs and
+collection limits both in options and the update helper. Do not silently drop
+unavailable references: retain their labels until explicit removal. Preserve
+other draft fields and use the existing Save permission/revision boundary.
+Lettin's `relationship-authoring-model.test.ts` and
+`wiki-relationships-editor.test.tsx` exercise this contract; local DOM acceptance
+remains distinct from hosted browser and publication verification.
+
+## Private reader references
+
+Social saves must not silently become public profile data or popularity signals.
+Store actor-owned source IDs instead of private document copies; project live
+published card fields when reading and return unavailable references after
+unpublishing. Bound insertion quotas atomically, make explicit save/remove
+idempotent, and bind both reads and writes to the expected app-session actor.
+Include the actor in client cache keys. Standalone library routes must be excluded
+from workspace-alias probes and use request-time suspended auth boundaries.
+Lettin's bookmark D1 and route regressions cover these contracts.
+
+## Derived reader document navigation
+
+Derive reader outlines from the selected published projection, not workspace
+queries or editor buffers. Match the renderer's tree paths, depth cutoff and
+ignored leaf children when assigning bounded navigation targets. Plain labels
+must escape markup and exclude author IDs/link/image metadata. Scope targets per
+document and keep duplicate heading titles distinct. Open enclosing folds before
+focusing/scrolling, respect native modified clicks, and avoid forced motion or
+history churn. Record that tree-position targets can change after republishing;
+DOM fixtures verify actions and boundaries, while real layout/focus remains a
+hosted browser gate.
+
+## Creator-authored guidance
+
+Keep advisory creation metadata separate from access grants and profile sharing.
+Bound plain-text fields in the server draft schema and validate enumerated
+preferences; no choice should mutate collaboration roles. Save and publish through
+existing revision/permission fences, exclude long guidance from catalogue
+projections, and test later edits/clearing against older published snapshots with
+real local D1. Source copies can retain authored metadata only within their
+explicit private-copy scope. Review portability allowlists independently.
+
+## Reports dashboard totals
+
+Contacts shares Daily semantic report status cards with Periodic. Daily totals count
+recipient rows; Periodic totals count report records. All periodic excludes Daily
+because these units differ. Preserve legacy view/report filter URLs and independent
+Daily/Periodic date/status scopes. Server totals and categories must use the same
+complete active predicate as rows, before pagination. Never display loaded-row
+category counts or stale/unknown totals as zero. Ordered scans must reject incomplete
+count receipts and duplicate IDs; scopes above their explicit read bound require
+narrowing instead of truncated totals. Preserve 100-report delivery selection and
+actor/scope epochs. See `apps/docs/platform/applications/reports.mdx` and the focused
+report-list/query and panel-counts regressions.
+
+
+## Parley practice and Meet handoff
+
+Parley shares the Meet runtime but owns discovery, scenario selection and private
+facilitator review. A review link must resolve the `meet` app origin explicitly:
+the shared runtime’s `BASE_URL` points at Parley when running there. Participant
+invitations must instead remain on the current Parley origin at `/r/<code>`,
+never `/sessions/<id>`. Codes do not confer authorization.
+
+Reset participation acknowledgement when switching the selected scenario. Keep
+the selection visible when search filters hide its option. Load saved private
+rubrics only after both session-owner and meeting-host checks; render the session
+snapshot rather than the current scenario revision. See the Parley product guide
+and studio setup, invitation, review-route and Meet-link regression tests.

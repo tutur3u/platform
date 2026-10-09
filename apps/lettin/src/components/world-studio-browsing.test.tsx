@@ -45,6 +45,13 @@ const data = {
 };
 vi.mock('@tanstack/react-query', () => ({
   useQuery: () => ({ isPending: false, isError: false, data }),
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+  useMutation: () => ({
+    isPending: false,
+    error: null,
+    reset: vi.fn(),
+    mutateAsync: vi.fn(),
+  }),
 }));
 vi.mock('@tuturuuu/internal-api/lettin', () => ({ getLettinWorld: vi.fn() }));
 vi.mock('next-intl', () => ({
@@ -94,6 +101,7 @@ it('retains selected facets across opening an entry and returning to browsing', 
     (container.querySelector('.wiki-entry-card') as HTMLButtonElement).click()
   );
   expect(container.textContent).toContain('entry-editor');
+  expect(container.textContent).toContain('duplicateEntry');
   await act(() =>
     [...container.querySelectorAll('button')]
       .find((button) => button.textContent === 'sectionoverview')!

@@ -485,3 +485,79 @@ test('pending migration selection leaves Contacts on its own deployment range', 
   assert.equal(decisions[1].changeResult.baseSha, platformBase);
   assert.equal(decisions[1].migrationChangeResult, undefined);
 });
+
+const toolsTarget = [
+  {
+    app: 'tools',
+    appPath: 'apps/tools',
+    packageName: '@tuturuuu/tools',
+    previewWorkflow: 'vercel-preview-tools.yaml',
+    productionWorkflow: 'vercel-production-tools.yaml',
+  },
+];
+
+test('production planner skips verified tests since the deployment marker', () => {
+  const rootDir = createFixtureRoot();
+  const baseSha = initializeGitRepo(rootDir);
+  const headSha = commitFile(
+    rootDir,
+    'apps/tools/src/app/[locale]/random/page.test.ts',
+    '// test only\n',
+    'test-only change'
+  );
+  const decisions = resolveFixtureTargets({
+    baseSha,
+    headSha,
+    rootDir,
+    targets: toolsTarget,
+  });
+  assert.deepEqual(decisions, [
+    { shouldRun: false, workflowName: 'vercel-production-tools.yaml' },
+  ]);
+});
+
+test('test-only head does not hide earlier undeployed runtime changes', () => {
+  const rootDir = createFixtureRoot();
+  const baseSha = initializeGitRepo(rootDir);
+  commitFile(
+    rootDir,
+    'apps/tools/src/app/[locale]/random/page.tsx',
+    'export default function Page() { return null; }\n',
+    'pending runtime'
+  );
+  const headSha = commitFile(
+    rootDir,
+    'apps/tools/src/app/[locale]/random/page.test.ts',
+    '// test only\n',
+    'test-only head'
+  );
+  const decisions = resolveFixtureTargets({
+    baseSha,
+    headSha,
+    rootDir,
+    targets: toolsTarget,
+  });
+  assert.deepEqual(decisions, [
+    { shouldRun: true, workflowName: 'vercel-production-tools.yaml' },
+  ]);
+});
+
+test('test-only changes cannot close a missing production baseline', () => {
+  const rootDir = createFixtureRoot();
+  initializeGitRepo(rootDir);
+  const headSha = commitFile(
+    rootDir,
+    'apps/tools/src/app/[locale]/random/page.test.ts',
+    '// test only\n',
+    'test-only change without marker'
+  );
+  const decisions = resolveFixtureTargets({
+    baseSha: '',
+    headSha,
+    rootDir,
+    targets: toolsTarget,
+  });
+  assert.deepEqual(decisions, [
+    { shouldRun: true, workflowName: 'vercel-production-tools.yaml' },
+  ]);
+});

@@ -46,7 +46,14 @@ export type LettinTheme = {
   typography: 'editorial' | 'clean';
   motion: 'full' | 'reduced';
 };
+export type LettinCreationGuidance = {
+  credits: string;
+  usageNotes: string;
+  collaboration: 'unspecified' | 'ask-first' | 'open' | 'closed';
+};
 export type LettinDraft = {
+  creationGuidance?: LettinCreationGuidance;
+  contentNotice?: string;
   theme?: LettinTheme;
   title: string;
   description: string;
@@ -101,6 +108,13 @@ export type LettinPublicWorld = {
 export type LettinCommand =
   | { action: 'createWorld'; draft: LettinDraft }
   | { action: 'createEntry'; worldId: string; draft: LettinDraft }
+  | {
+      action: 'duplicateEntry';
+      worldId: string;
+      entryId: string;
+      version: number;
+      title: string;
+    }
   | {
       action: 'saveWorld';
       worldId: string;
@@ -230,6 +244,40 @@ export function applyLettinExocorpseImport(wsId: string, previewId: string) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'apply', previewId }),
+  });
+}
+
+export type LettinSavedNotebook = {
+  worldId: string;
+  savedAt: string;
+  notebook: {
+    title: string;
+    description: string;
+    image: string;
+    credit: string;
+  } | null;
+};
+export function getLettinSavedNotebooks(expectedActor: string) {
+  return client().json<LettinSavedNotebook[]>('/api/v1/lettin/bookmarks', {
+    query: { expectedActor },
+    cache: 'no-store',
+  });
+}
+export function getLettinNotebookSaved(worldId: string, expectedActor: string) {
+  return client().json<{ saved: boolean }>('/api/v1/lettin/bookmarks', {
+    cache: 'no-store',
+    query: { worldId, expectedActor },
+  });
+}
+export function setLettinNotebookSaved(
+  worldId: string,
+  saved: boolean,
+  expectedActor: string
+) {
+  return client().json<{ saved: boolean }>('/api/v1/lettin/bookmarks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ worldId, saved, expectedActor }),
   });
 }
 

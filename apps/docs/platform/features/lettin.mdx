@@ -616,3 +616,159 @@ No profile sharing rules change. Regression evidence: `wiki-browse-model.test.ts
 composed facets, ordering, endpoint fences, saved/public text boundaries, empty
 result recovery and dirty-state interaction. Hosted browser acceptance and
 exact-head CI remain separate delivery gates.
+
+### Searchable relationship authoring
+
+The creator entry editor searches relationship targets by title and alias and
+filters them by entry kind. It uses only the notebook records already loaded
+through the creator's authorized workspace session; it does not discover records
+from another notebook or workspace. Search and filters are local UI state.
+Creators choose a relationship type before explicitly clicking a target. The
+current entry and an existing target/type pair are excluded, while another type
+for the same target remains available. Changing an existing relationship type
+also prevents a conflicting pair. The existing 100-relationship limit applies to
+addition; removal remains available at the limit. Results render in batches of
+50, with explicit expansion and reset on filter changes. Type changes retain
+the focused row control; legacy repeated target/type rows remain independently
+editable until explicitly removed. Target counts follow each locale’s plural rules.
+
+These actions update the editor draft only. Existing labels, facts, aliases and
+chronology are preserved. A missing target is shown as unavailable and retained
+until explicitly removed; search does not silently repair or delete references.
+The normal explicit Save action, permission checks and expected revision still
+control persistence. Publishing remains a separate action. No profile fields,
+source text, consent or access grants are transferred. This workflow applies to
+creator editing, not the public reader or relationship graph.
+
+Regression coverage: `relationship-authoring-model.test.ts` checks target/type
+fences, bounds and source preservation; `wiki-relationships-editor.test.tsx`
+checks explicit draft actions, search, kind filters, bounded rendering,
+unavailable references, focused control identity, legacy repeated rows and
+integration with the surrounding wiki details editor.
+`relationship-count.test.ts` formats the actual English and Vietnamese messages
+for zero, one and multiple targets.
+The existing `entry-editor.test.tsx` covers dirty drafts during pending saves.
+DOM fixtures do not prove hosted keyboard, layout or account-switch acceptance.
+
+### Private saved notebooks
+
+Any signed-in Lettin reader can explicitly save a published notebook from its
+public reading page and manage the private library at `/saved`. Creator approval
+and workspace document permissions are not required because saves grant no
+source access. Each actor may save up to 500 notebook references. Saves and
+removals are idempotent; the actor comes from the Lettin app session, and both
+reads and writes require the expected actor to prevent account-switch crossover.
+Client query keys also include the actor.
+
+Saves are private to the reader: they never appear on public profiles, in creator
+notifications, or in public popularity counts. No copy of the draft, document,
+gallery or profile is retained. Library cards read only title, description, cover
+and credit from the source's current published snapshot. Unpublishing hides
+those details and leaves a removable unavailable reference; deleting a notebook
+cascades its saved references. Saving a new unpublished notebook is rejected.
+A save never permits publishing, editing or accessing private artwork.
+
+The additive local D1 migration `0005_reader_bookmarks.sql` must be present
+before enabling the API. Local migration application and consent boundaries are
+covered by `reader-bookmarks.test.ts`, with session/input/cache fencing in the
+bookmark route tests and reader controls. Exact-head app build, hosted
+session/account-switch behavior and authorized migration delivery remain separate
+gates; no production application is claimed by local tests.
+
+### Published document heading outlines
+
+Public notebook and published-entry readers display an “On this page” outline
+when the selected document has at least two nonempty rendered headings. The
+outline uses only the currently rendered published document, never an editor
+buffer, private draft, unavailable entry or another workspace. Content notices
+remain before artwork and heading navigation in the combined reader. Creator editor
+previews keep outlines disabled by default. No document or publication state is
+written and no reader interactions or preferences are recorded.
+
+Heading labels are plain escaped text with whitespace collapsed; markup, author
+IDs, image metadata and link targets are not interpreted as navigation targets.
+Targets use document scope and tree positions so repeated titles remain distinct.
+The outline follows the renderer's depth and leaf-node rules, shows at most the
+first 100 headings, and reports truncation. Long labels are capped at 160
+characters; full heading text remains in the document. Sources are unchanged.
+
+An ordinary outline click opens enclosing collapsed sections, focuses the heading
+and scrolls within the same article. It uses automatic movement and heading focus
+styling, avoiding forced animation. The explicit jump does not add browser-history
+entries. Modified link clicks retain native anchor behavior. Selected-entry
+changes replace outline labels and targets. These are local reading targets, not
+stable section-permalink or immutable-snapshot guarantees: future publication can
+change heading positions. A copied public link still observes source publication
+and retirement boundaries.
+
+Regression evidence: `document-outline-model.test.ts` and `document-outline.test.tsx`
+cover repeated/empty/nested headings, bounds and escaping,
+matching renderer IDs, fold opening/focus, article isolation, private preview and
+published selection boundaries. Exact-head CI and hosted scrolling/focus/browser
+acceptance remain separate gates; DOM fixtures do not prove browser layout.
+### Saved entry duplication
+
+In the Lettin notebook studio, a creator with notebook editing access can explicitly
+duplicate a saved entry and supply a new title. The copy belongs to the same
+notebook, starts at revision one, and is always unpublished. It retains saved
+rich text (including ordinary document hyperlinks), artwork, credit, tags, kind,
+aliases, facts and chronology; structured links and wiki relationships are cleared.
+There is no cross-notebook copy or automatic publication. Unsaved editor changes
+block the action; saving or discarding them comes first. After success, an explicit
+Open copy action selects the new draft and remains blocked while edits are unsaved.
+Mutations are not automatically retried after an ambiguous response.
+
+The server reads the saved draft, validates it, and fences the insert against the
+source revision, current creator/collaborator access and notebook artwork ownership.
+A stale revision, revoked permission or retired artwork cannot create a copy.
+Source drafts and published snapshots remain unchanged. Editors can duplicate
+without acquiring publishing permission. Regression evidence lives in
+`duplicate-entry.test.ts` and `duplicate-entry.test.tsx`; actual app build and
+hosted interaction require exact-head CI and browser acceptance.
+
+## Content notices
+
+Notebook and wiki entry editors support an optional creator-authored content
+notice of up to 500 characters. The default is empty, including historical
+content. Notices appear before artwork and reading content in document previews,
+public notebook reading, public discovery cards, private notebook shelves and
+wiki entry cards. Labels are available in English and Vietnamese.
+
+Notices are advisory and do not hide content, replace moderation, grant access or
+publish a draft. A saved notice belongs to the private draft until a publisher
+republishes that notebook or entry; readers receive the notice from its published
+snapshot. Clearing and republishing removes it publicly. Profile identity fields
+and consent to share creator details are unaffected. Titles and metadata remain
+visible under existing publication rules.
+
+Regression coverage: `content-notice.test.tsx` checks reading/card placement and
+legacy empty notices; `content-notice-schema.test.ts` checks limits and command
+validation; the entry editor test checks saving notice edits.
+`storage.test.ts` exercises the real local D1 mutation and catalogue queries to
+confirm later edits and clearing remain private until republished.
+
+### Creation attribution and collaboration guidance
+
+Notebook and entry creators can write creation credits and usage notes of up to
+1,000 characters each, and explicitly choose an unspecified, ask-first, open-to-
+proposals or closed collaboration preference. The default is unspecified with no
+notes; historical documents display no guidance. These fields are separate from
+cover-art credit and from profile sharing settings.
+
+Editing changes the local draft. Explicit Save uses the existing revision and
+permission checks; only publishing the notebook or entry exposes its guidance.
+Later edits and clearing stay private until republished. Public entries also
+require a published notebook. Catalogue summaries omit this longer guidance.
+Saved-entry copies retain authored guidance in a new unpublished draft.
+
+Reader guidance renders escaped plain text and explains its advisory scope. It
+creates no access grant, invitation, ownership verification or automatic usage
+permission. Collaboration preferences do not alter notebook roles. Public
+profiles retain their separate avatar/banner/name/biography default; no identity
+fields are copied into creation guidance. Portability integrations must explicitly
+review new fields rather than infer permission to transfer them.
+
+Regression evidence: `creation-guidance.test.ts` exercises real local D1 snapshot,
+copy and authorization boundaries; `creation-guidance.test.tsx` checks escaping,
+empty defaults, draft controls and content-notice placement. Exact-head app builds
+and hosted interaction remain independent delivery gates.

@@ -154,3 +154,81 @@ it('preserves local content and revision when a save conflicts', async () => {
   expect(mutateAsync.mock.calls[1]?.[0].version).toBe(1);
   expect(mutateAsync.mock.calls[1]?.[0].draft.content.text).toBe('New typing');
 });
+
+it('saves a notice through the private draft command without publishing it', async () => {
+  mutateAsync.mockResolvedValueOnce({ id: 'world' });
+  await act(async () =>
+    root.render(
+      <EntryEditor
+        wsId="workspace"
+        worldId="world"
+        record={record}
+        worldRole="owner"
+        isWorld
+        entries={[]}
+        onDirty={() => {}}
+      />
+    )
+  );
+  const input = [...container.querySelectorAll('label')]
+    .find((label) => label.textContent?.startsWith('contentNotice'))
+    ?.querySelector('textarea');
+  expect(input).toBeDefined();
+  expect(input?.maxLength).toBe(500);
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(
+      HTMLTextAreaElement.prototype,
+      'value'
+    )?.set?.call(input, 'Spoilers for chapter two');
+    input?.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await click('saveDraft');
+  expect(mutateAsync).toHaveBeenCalledTimes(1);
+  expect(mutateAsync.mock.calls[0]?.[0]).toMatchObject({
+    action: 'saveWorld',
+    draft: { contentNotice: 'Spoilers for chapter two' },
+  });
+});
+
+it('saves creation guidance through the private draft command and marks edits dirty', async () => {
+  mutateAsync.mockResolvedValueOnce({ id: 'world' });
+  const onDirty = vi.fn();
+  await act(async () =>
+    root.render(
+      <EntryEditor
+        wsId="workspace"
+        worldId="world"
+        record={record}
+        worldRole="owner"
+        isWorld
+        entries={[]}
+        onDirty={onDirty}
+      />
+    )
+  );
+  expect(mutateAsync).not.toHaveBeenCalled();
+  const input = [...container.querySelectorAll('label')]
+    .find((label) => label.textContent?.startsWith('creationUsageNotes'))!
+    .querySelector('textarea')!;
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(
+      HTMLTextAreaElement.prototype,
+      'value'
+    )!.set!.call(input, 'Ask before adaptations');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  expect(onDirty).toHaveBeenLastCalledWith(true);
+  await click('saveDraft');
+  expect(mutateAsync).toHaveBeenCalledTimes(1);
+  expect(mutateAsync.mock.calls[0]?.[0]).toMatchObject({
+    action: 'saveWorld',
+    version: 1,
+    draft: {
+      creationGuidance: {
+        credits: '',
+        usageNotes: 'Ask before adaptations',
+        collaboration: 'unspecified',
+      },
+    },
+  });
+});

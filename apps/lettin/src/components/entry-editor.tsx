@@ -19,6 +19,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
+import { CreationGuidanceEditor } from './creation-guidance-editor';
 import { DocumentView } from './document-view';
 import { RichEditor } from './rich-editor';
 import { useLettinMutation } from './use-lettin';
@@ -149,6 +150,17 @@ export function EntryEditor({
           onChange={(e) => update({ description: e.target.value })}
         />
       </label>
+      <label className="block space-y-2 text-sm">
+        {t('contentNotice')}
+        <Textarea
+          value={draft.contentNotice ?? ''}
+          maxLength={500}
+          onChange={(e) => update({ contentNotice: e.target.value })}
+        />
+        <span className="text-muted-foreground text-xs">
+          {t('contentNoticeHint')}
+        </span>
+      </label>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block space-y-2 text-sm">
           {t('imageUrl')}
@@ -168,6 +180,10 @@ export function EntryEditor({
           />
         </label>
       </div>
+      <CreationGuidanceEditor
+        value={draft.creationGuidance}
+        onChange={(creationGuidance) => update({ creationGuidance })}
+      />
       {!isWorld && (
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block space-y-2 text-sm">
