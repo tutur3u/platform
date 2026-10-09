@@ -672,3 +672,13 @@ permissions before response. On the client, reuse the server-verified workspace
 actor lifetime and an intent lease to suppress stale downloads after account
 change, dialog closure or unmount. State clearly when URLs rather than asset bytes
 are exported and when saved reads do not form an atomic database snapshot.
+
+
+For portable file imports, treat source IDs and export provenance as untrusted
+context. Use a schema-projected, actor/workspace-bound expiring preview followed
+by explicit apply; allocate fresh IDs and remap only included references. Source
+consent never grants access to referenced media. If asset bytes and transfer
+permission are absent, remove image and hyperlink targets and explain the loss
+before apply. Reuse the private D1 import transaction and fence preview source so
+one importer cannot apply another importer's privileged plan. Keep consent,
+publication and creator revocation regression evidence separate from hosted CI.
