@@ -655,3 +655,29 @@ legacy empty notices; `content-notice-schema.test.ts` checks limits and command
 validation; the entry editor test checks saving notice edits.
 `storage.test.ts` exercises the real local D1 mutation and catalogue queries to
 confirm later edits and clearing remain private until republished.
+
+### Creation attribution and collaboration guidance
+
+Notebook and entry creators can write creation credits and usage notes of up to
+1,000 characters each, and explicitly choose an unspecified, ask-first, open-to-
+proposals or closed collaboration preference. The default is unspecified with no
+notes; historical documents display no guidance. These fields are separate from
+cover-art credit and from profile sharing settings.
+
+Editing changes the local draft. Explicit Save uses the existing revision and
+permission checks; only publishing the notebook or entry exposes its guidance.
+Later edits and clearing stay private until republished. Public entries also
+require a published notebook. Catalogue summaries omit this longer guidance.
+Saved-entry copies retain authored guidance in a new unpublished draft.
+
+Reader guidance renders escaped plain text and explains its advisory scope. It
+creates no access grant, invitation, ownership verification or automatic usage
+permission. Collaboration preferences do not alter notebook roles. Public
+profiles retain their separate avatar/banner/name/biography default; no identity
+fields are copied into creation guidance. Portability integrations must explicitly
+review new fields rather than infer permission to transfer them.
+
+Regression evidence: `creation-guidance.test.ts` exercises real local D1 snapshot,
+copy and authorization boundaries; `creation-guidance.test.tsx` checks escaping,
+empty defaults, draft controls and content-notice placement. Exact-head app builds
+and hosted interaction remain independent delivery gates.

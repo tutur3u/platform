@@ -1,6 +1,7 @@
 import type { LettinDraft } from '@tuturuuu/internal-api/lettin';
 import { useTranslations } from 'next-intl';
 import { ContentNotice } from './content-notice';
+import { CreationGuidance } from './creation-guidance';
 import { renderDocumentNode } from './document-nodes';
 import { DocumentOutline } from './document-outline';
 import { buildDocumentOutline } from './document-outline-model';
@@ -40,6 +41,7 @@ export function DocumentView({
       {draft.credit && (
         <p className="text-muted-foreground text-sm">{draft.credit}</p>
       )}
+      <CreationGuidance value={draft.creationGuidance} />
       <p className="text-lg text-muted-foreground">{draft.description}</p>
       <div className="flex flex-wrap gap-2">
         {(draft.tags ?? []).map((tag) => (
