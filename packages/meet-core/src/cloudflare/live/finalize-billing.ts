@@ -6,6 +6,7 @@ import type { SavedSession } from './session-state';
 import type { LiveEnvironment } from './storage';
 import { reportLiveUsage } from './usage-report';
 
+/** Checks local obligations only; skipping I/O also requires a matching durable receipt. */
 function completed(saved: SavedSession | undefined): saved is SavedSession {
   if (
     saved?.ended !== true ||
@@ -70,6 +71,7 @@ export async function finalizeSessionBilling(
   await persist();
 }
 
+/** Retains each public reservation until settlement, share completion and usage reporting succeed. */
 export async function settlePublicBillings(
   env: LiveEnvironment,
   saved: SavedSession,
