@@ -35,6 +35,16 @@ acceptance remain required. Do not run global migration or deployment as part of
 planning. Follow the phased plan in the adoption guidance above and recheck
 [upstream coverage](https://blog.cloudflare.com/cloudflare-cf-cli-launch/) before edits.
 
+Execute cf with Node22.18+ even when Bun installs dependencies; typed-config
+commands are not supported on Bun. Discover a reviewed exact version from private
+scratch outside app config/.env ancestry before adding it to a workspace. Use
+anonymous operation-only search queries, then focused command help/schema.
+Require `cf auth whoami` JSON `authenticated === true`, not process exit0:
+unauthenticated results can exit successfully. cf credentials are separate from
+Wrangler. Stop authenticated parity work when access is absent; do not copy tokens
+or login files. Account selection may write project cache, so verify identity and
+local files. See [cf prerequisites](https://developers.cloudflare.com/cf/get-started/).
+
 ## Cloudflare runaway-work review
 
 For added or amplified background work, review alarm/queue/cron feedback paths and

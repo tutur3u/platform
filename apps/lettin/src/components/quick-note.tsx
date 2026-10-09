@@ -1,4 +1,5 @@
 'use client';
+import type { LettinKind } from '@tuturuuu/internal-api/lettin';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -14,6 +15,7 @@ import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { quickNoteDraft } from './quick-note-model';
 import { useLettinMutation } from './use-lettin';
+import { entryKinds } from './wiki-model';
 
 export function QuickNote({
   wsId,
@@ -31,11 +33,12 @@ export function QuickNote({
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  const [kind, setKind] = useState<LettinKind>('page');
   const [busy, setBusy] = useState(false);
   const [createdId, setCreatedId] = useState<string | null>(null);
   const submitting = useRef(false);
   const blocked = disabled || busy || mutation.isPending;
-  const draft = quickNoteDraft(title, body);
+  const draft = quickNoteDraft(title, body, kind);
   return (
     <>
       <Dialog
@@ -72,6 +75,7 @@ export function QuickNote({
                 setCreatedId(result.id);
                 setTitle('');
                 setBody('');
+                setKind('page');
                 setOpen(false);
               } catch {
                 /* Preserve the note; the mutation displays its error. */
@@ -89,6 +93,18 @@ export function QuickNote({
               disabled={blocked}
               onChange={(event) => setTitle(event.target.value)}
             />
+            <select
+              aria-label={t('kind')}
+              value={kind}
+              disabled={blocked}
+              onChange={(event) => setKind(event.target.value as LettinKind)}
+            >
+              {entryKinds.map((value) => (
+                <option key={value} value={value}>
+                  {t(`kind${value}`)}
+                </option>
+              ))}
+            </select>
             <Textarea
               aria-label={t('quickNoteBody')}
               required
