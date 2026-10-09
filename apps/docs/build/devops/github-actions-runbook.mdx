@@ -1546,3 +1546,36 @@ This scope is scheduling summaries, not the whole Calendar startup waterfall.
 Regression coverage lives in `task-schedule-batch.test.ts` and
 `tasks-scheduling-batch.test.ts`. Measure authenticated navigation and meaningful
 content after the exact source is deployed; local checks alone are not latency proof.
+
+### Devbox Control Vite-native artifact
+
+Devbox Control owns a private workspace with Vite+ and scoped Oxlint/Oxfmt
+configuration. The workspace pins Wrangler 4.149.0 so local runtime checks
+support the retained compatibility date; root Wrangler is not the runtime oracle
+for this scope. The Cloudflare Vite plugin emits `apps/devbox-control/dist/worker`
+from the existing Wrangler configuration; Worker name, account, compatibility,
+RunnerWake class/binding/migration and required secret names remain the source
+configuration's authority. No Supabase auth, runner membership, lease, heartbeat,
+notification or WebSocket policy changes accompany tooling adoption.
+
+CI generates Worker types, checks TypeScript and scoped Oxc rules, and runs the
+existing 13 authorization/protocol tests through Vite+. Before and after the
+real Vite build, `node --test apps/devbox-control/scripts/verify-worker-runtime.mjs`
+checks complete health JSON and rejects unauthenticated runner/internal requests
+in a loopback Worker with disposable secrets. Set `DEVBOX_TEST_CONFIG` to an
+absolute emitted `dist/worker/wrangler.json` path for artifact verification.
+Dry-run bundling and the authorized production job consume that emitted config;
+secret provisioning still uses the unchanged source target identity.
+
+The fixture closes its temporary runtime and does not contact Supabase or hosted
+runners. It proves Worker startup and denial-before-remote-access, not successful
+real-account authentication, RunnerWake WebSocket delivery or hosted lease
+transitions. Those remain separate acceptance evidence before canonical migration.
+Release builds run only in exact-commit CI. Locally, queue lint/types/unit/runtime
+checks with `ttr resources run`; use a private writable TMPDIR when shared temporary
+storage rejects writes. The format command checks only owned source and remains
+read-only; existing Biome gates remain authoritative until formatter/rule parity.
+
+This tooling unit adds no alarm, queue, retry chain, storage operation or scheduler.
+Review background-work and operation-cost bounds separately when those paths change;
+health and build success do not establish a spending cap or production promotion.

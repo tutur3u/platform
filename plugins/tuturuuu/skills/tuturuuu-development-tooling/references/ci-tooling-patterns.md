@@ -466,3 +466,18 @@ its historical manifest version remains frozen. Renovate also ignores the inacti
 runtime and Docker workflow files, in addition to the paused source/Dockerfiles.
 Policy tests guard these exclusions. Do not reactivate them indirectly during
 ordinary active-package release maintenance.
+
+## Vite+ native service Worker boundary
+
+Give an adopted native Worker an owning private workspace, pinned Vite+/Cloudflare
+plugin and a matching `vite` core alias when plugin peer types require it. Keep
+Cloudflare dev/build configuration separate from unit-test configuration so root
+Vitest discovery does not start Worker development servers. Use explicit scoped
+JSON Oxc configuration; retain existing Biome gates during parity work. Generate
+Worker types before checking source/config TypeScript. Build only in exact-commit
+CI and test the emitted Wrangler configuration in addition to source fixtures;
+dry-run and authorized deployment consume that same emitted target. Preserve
+bindings, migrations, routes, secret names and active identity/protocol policies.
+Devbox Control's runtime script demonstrates disposable-credential denial tests;
+those do not prove hosted Supabase, runner or WebSocket success. Follow the owning
+runbook for commands and remaining acceptance, and keep local validation serialized.
