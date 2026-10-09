@@ -32,10 +32,15 @@ it('shows all ten stages and selects each independently', () => {
     screen.getByRole('button', { name: 'status_pending 2' })
   ).toHaveAttribute('aria-pressed', 'true');
   for (const [stage, label] of PERIODIC_STAGES) {
-    fireEvent.click(screen.getByRole('button', { name: `${label} 2` }));
+    const hint = ['approved', 'queued', 'sent', 'blocked'].includes(stage)
+      ? ` pipeline_${stage}_hint`
+      : '';
+    const button = screen.getByRole('button', { name: `${label} 2${hint}` });
+    expect(button).toHaveAttribute('aria-pressed', String(stage === 'pending'));
+    fireEvent.click(button);
     expect(change).toHaveBeenLastCalledWith(stage);
   }
-  fireEvent.click(screen.getByRole('button', { name: 'show_all_reports' }));
+  fireEvent.click(screen.getByRole('button', { name: 'total_reports 20' }));
   expect(change).toHaveBeenLastCalledWith('all');
 });
 it('restores pending and keeps the toolbar accessible without counts', () => {
@@ -50,8 +55,19 @@ it('restores pending and keeps the toolbar accessible without counts', () => {
   expect(
     screen.getByRole('region', { name: 'report_status' })
   ).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: 'status_pending' }));
+  fireEvent.click(screen.getByRole('button', { name: 'status_pending —' }));
   expect(change).toHaveBeenCalledWith('pending');
+  expect(
+    screen.getByRole('button', { name: 'total_reports —' })
+  ).toBeInTheDocument();
+  for (const [stage, label] of PERIODIC_STAGES) {
+    const hint = ['approved', 'queued', 'sent', 'blocked'].includes(stage)
+      ? ` pipeline_${stage}_hint`
+      : '';
+    expect(
+      screen.getByRole('button', { name: `${label} —${hint}` })
+    ).toBeInTheDocument();
+  }
   expect(
     screen.getByRole('button', { name: 'Date range' })
   ).toBeInTheDocument();

@@ -383,6 +383,17 @@ unpublished entries. Dates order the timeline; undated entries remain accessible
 The satellite Structure shell shares workspace navigation, notifications, and
 account controls with other Tuturuuu apps.
 
+Wiki entry creation defaults to a blank document. Creators can opt into a guided
+outline for any of the nine entry kinds. The selected kind determines three
+localized headings and editable prompts; changing the kind before creation uses
+the newly selected outline. Prompts are saved as ordinary rich text in the current
+UI language, so later locale changes do not translate existing content. Starters
+add no tags, links, relationships, dates, or permissions and never publish content.
+They apply only to newly created wiki entries; existing entries, notebook starters,
+and imports keep their content. Regression coverage: `entry-starters.test.ts`
+validates every kind in English and Vietnamese against the live draft schema;
+`wiki-create-entry.test.tsx` covers opt-in creation, kind changes, and blocked submits.
+
 The in-house editor accepts rich text and Markdown source, including headings,
 lists, task lists, tables, links, images, and inline formatting. Applying Markdown
 is explicit; saving is disabled until source edits are applied or cancelled.
@@ -571,3 +582,24 @@ technology users can locate the field without treating the help as its name.
 English and Vietnamese rendered regressions in
 `apps/lettin/src/components/creator-profile-labels.test.tsx` cover the exact labels,
 help association, and reserved-name validation.
+
+## Content notices
+
+Notebook and wiki entry editors support an optional creator-authored content
+notice of up to 500 characters. The default is empty, including historical
+content. Notices appear before artwork and reading content in document previews,
+public notebook reading, public discovery cards, private notebook shelves and
+wiki entry cards. Labels are available in English and Vietnamese.
+
+Notices are advisory and do not hide content, replace moderation, grant access or
+publish a draft. A saved notice belongs to the private draft until a publisher
+republishes that notebook or entry; readers receive the notice from its published
+snapshot. Clearing and republishing removes it publicly. Profile identity fields
+and consent to share creator details are unaffected. Titles and metadata remain
+visible under existing publication rules.
+
+Regression coverage: `content-notice.test.tsx` checks reading/card placement and
+legacy empty notices; `content-notice-schema.test.ts` checks limits and command
+validation; the entry editor test checks saving notice edits.
+`storage.test.ts` exercises the real local D1 mutation and catalogue queries to
+confirm later edits and clearing remain private until republished.

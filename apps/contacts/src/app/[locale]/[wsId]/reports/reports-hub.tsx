@@ -36,6 +36,7 @@ export default function ReportsHub({
     canDeleteReports: boolean;
     canSendReports: boolean;
     canUpdateReports: boolean;
+    canUpdateUsers?: boolean;
   };
   postSearchParams: PostsSearchParams;
   wsId: string;

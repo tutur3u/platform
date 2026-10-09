@@ -1,7 +1,7 @@
 ---
 title: "Architectural Patterns Comparison"
 description: "Comprehensive comparison of architectural patterns with design justifications, pros, cons, and usage guidance"
-updatedAt: "2026-06-21"
+updatedAt: '2026-10-08'
 ---
 
 This document provides a comprehensive comparison of all major architectural patterns, including their design justifications, advantages, disadvantages, and practical guidance on when to use each pattern.
@@ -10,9 +10,11 @@ This document provides a comprehensive comparison of all major architectural pat
 **Key Insight**: Different architectural patterns solve different problems. Understanding the trade-offs is essential for making informed architectural decisions.
 </Note>
 
-<Warning>
-**How to read the "In Tuturuuu" notes**: This page is primarily a pattern-education reference. The Tuturuuu apps (`apps/web`, `apps/finance`, `apps/calendar`, etc.) are conventional Next.js App Router apps organized as `app/`, `components/`, `lib/`, and `utils/` — they do **not** implement formal hexagonal/clean/onion layering, and they share a single Supabase project rather than per-service databases. Where an "In Tuturuuu" note describes a pattern as adopted, treat it as **aspirational/illustrative** unless it is explicitly grounded in real code. The platform is also mid-migration from `apps/web` (Next.js) to `apps/tanstack-web` (TanStack Start) plus a Rust backend (`apps/backend`); see [TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration).
-</Warning>
+The maintained runtime is Next.js Web and its satellite apps. Rust
+(`apps/backend`) and TanStack Start (`apps/tanstack-web`) are paused and not in
+use. Docker setup is inactive and the Docker cron runner is retired. Retained
+migration designs describe a possible future, not live traffic or a current
+setup requirement. See the [active runtime map](/build/devops/active-runtime).
 
 ## Pattern Categories
 
@@ -1172,9 +1174,11 @@ graph TD
 
 Tuturuuu uses a **combination of patterns**, applying each where it provides the most value. The descriptions below reflect the real codebase as of mid-2026; the patterns are applied pragmatically, not dogmatically.
 
-<Note>
-**Active migration**: The frontend and backend architecture is mid-transition. `apps/web` (Next.js, port `7803`) is being replaced by `apps/tanstack-web` (TanStack Start) plus a dedicated Rust backend, `apps/backend` (port `7820`). Decisions described here as current truth are subject to that migration — see [TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration) for the authoritative contract.
-</Note>
+The maintained runtime is Next.js Web and its satellite apps. Rust
+(`apps/backend`) and TanStack Start (`apps/tanstack-web`) are paused and not in
+use. Docker setup is inactive and the Docker cron runner is retired. Retained
+migration designs describe a possible future, not live traffic or a current
+setup requirement. See the [active runtime map](/build/devops/active-runtime).
 
 ### Deployment: Many Independently Deployable Apps
 

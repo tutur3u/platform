@@ -1,51 +1,43 @@
 ---
 title: 'Documenting'
 description: 'Learn how to contribute to our documentation.'
-updatedAt: '2026-10-05'
+updatedAt: '2026-10-08'
 ---
 
-<Info>
-  **Prerequisite**: You should have [Docker](https://www.docker.com/) and Bun
-  installed, and the [Tuturuuu
-  Monorepo](https://github.com/tutur3u/platform) cloned locally.
-</Info>
+## Preview and validate
 
-Step 1. Start the docs site from the repo root:
+Install the pinned Bun/Node toolchain and clone the repository. Docker, Rust,
+and TanStack Start are paused and are not prerequisites for writing docs.
 
 ```bash
 bun dev:docs
+bun dev:docs --port 3333
 ```
 
-This uses the repo-managed Docker docs stack, which runs Mintlify inside a
-Node.js 24 container instead of relying on a globally installed CLI.
+The local wrapper runs the version pinned in `apps/docs/mintlify-version.json`
+through `npx` from `apps/docs`. Preview at `http://localhost:3000` (or the selected
+port), and stop with Ctrl+C. It does not start containers or other apps.
 
-The documentation website is now available at `http://localhost:3000`.
-
-To stop the stack:
+Run finite source checks from the repository root:
 
 ```bash
-bun dev:docs:down
+node scripts/generate-docs-inventory.js
+node scripts/generate-app-seo.js
+node scripts/docs-audit.js
+node scripts/generate-docs-inventory.js --check
+node scripts/generate-app-seo.js --check
+node scripts/local-docs.js broken-links
 ```
 
-### Custom Ports
+The inventory covers maintained app routes, packages, toolchains, and declared
+and locked dependencies. Do not hand-edit generated reference pages. It excludes
+paused Rust/TanStack source and dependency refreshes. Version references describe
+checked-in versions, not the newest upstream release or a deployment claim.
 
-The docs stack exposes port `3000` by default through `${DOCS_PORT:-3000}` in
-`docker-compose.docs.yml`. You can use the `--port` flag to customize the
-host-side port binding. For example:
-
-```bash
-bun dev:docs -- --port 3333
-```
-
-If the chosen port is already taken, Docker will fail to bind the host port.
-
-## Runtime Details
-
-- The docs image is defined in `apps/docs/Dockerfile`.
-- The development stack is defined in `docker-compose.docs.yml`.
-- The root command wrapper lives in `scripts/docker-docs.js`.
-- The container pins the runtime to Node.js 24 and installs Mintlify inside the
-  image.
+`docs-seo-check.yaml` runs inventory, navigation/link, SEO-policy tests, and strict
+Mintlify validation in CI. Strict validation compiles docs; do not run it or app
+builds on this machine. Require relevant lint, type-check, unit-test, and real
+Next build workflows for the exact commit when implementation changes.
 
 ## Writing Documentation
 
@@ -185,3 +177,8 @@ When including code examples:
 - **Keep examples current** with latest versions
 - **Review documentation regularly** for accuracy
 - **Ask for feedback** from other developers
+
+The docs wrapper runs with Node 24. When the host uses another Node major,
+`npx` supplies an isolated Node 24 executable alongside the pinned Mintlify CLI;
+it does not replace the host Node installation. The initial download needs
+network access. CI installs Node 24 directly.
