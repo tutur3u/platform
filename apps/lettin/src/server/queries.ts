@@ -157,6 +157,7 @@ export type PublicFilters = {
   creatorId?: string;
   page?: number;
   search?: string;
+  tag?: string;
 };
 export async function readPublic(
   db: Store,
@@ -173,6 +174,12 @@ export async function readPublic(
     conditions.push('owner_id=?');
     values.push(filters.creatorId);
   }
+  if (filters.tag) {
+    conditions.push(
+      "EXISTS(SELECT 1 FROM json_each(worlds.published,'$.tags') tag WHERE tag.value=?)"
+    );
+    values.push(filters.tag);
+  }
   if (filters.search) {
     conditions.push(
       "(json_extract(published,'$.title') LIKE ? OR json_extract(published,'$.description') LIKE ? OR json_extract(published,'$.credit') LIKE ?)"
@@ -182,7 +189,7 @@ export async function readPublic(
   // Catalogue pages contain only card fields; documents are loaded for one world.
   const projection = worldId
     ? 'published'
-    : "json_remove(published,'$.content','$.links','$.tags','$.wiki') AS published";
+    : "json_remove(published,'$.content','$.links','$.wiki') AS published";
   const rows = await db
     .prepare(
       `SELECT id,owner_id,${projection} FROM worlds WHERE ${conditions.join(' AND ')} ORDER BY published_at DESC,id LIMIT ? OFFSET ?`
