@@ -5,7 +5,16 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, expect, it, vi } from 'vitest';
 import { EntryEditor } from './entry-editor';
 
-const { mutateAsync } = vi.hoisted(() => ({ mutateAsync: vi.fn() }));
+const { mutateAsync, preview } = vi.hoisted(() => ({
+  mutateAsync: vi.fn(),
+  preview: vi.fn(),
+}));
+vi.mock('./publication-preview', () => ({
+  PublicationPreview: (props: unknown) => {
+    preview(props);
+    return null;
+  },
+}));
 vi.mock('./use-lettin', () => ({
   useLettinMutation: () => ({ mutateAsync, isPending: false }),
 }));
@@ -310,3 +319,32 @@ it('saves creation guidance through the private draft command and marks edits di
     },
   });
 });
+
+it.each([true, false])(
+  'passes only an active published snapshot into preview: %s',
+  async (active) => {
+    const snapshot = { ...record.draft, title: 'Saved published title' };
+    await act(async () =>
+      root.render(
+        <EntryEditor
+          wsId="workspace"
+          worldId="world"
+          record={{
+            ...record,
+            published: snapshot,
+            published_at: active ? '2026-10-10T00:00:00Z' : null,
+          }}
+          worldRole="owner"
+          isWorld
+          entries={[]}
+          onDirty={vi.fn()}
+        />
+      )
+    );
+    expect(preview).toHaveBeenLastCalledWith({
+      draft: record.draft,
+      published: active ? snapshot : null,
+    });
+    expect(mutateAsync).not.toHaveBeenCalled();
+  }
+);

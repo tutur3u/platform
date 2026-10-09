@@ -12,6 +12,13 @@ shared-package changes.
   changes, while preserving actor-scoped query and mutation keys. See
   [Lettin saved libraries](../../../../../apps/docs/platform/features/lettin.mdx).
 
+- Private creative previews must distinguish local edits from saved publication
+  snapshots. Render only the selected authorized snapshot, reset to the draft on
+  reopening, and disable the published choice after unpublishing. A stored
+  snapshot does not establish live reader access; retain parent publication and
+  media permission checks. Preview controls must not implicitly save or publish.
+  See [Lettin previews](../../../../../apps/docs/platform/features/lettin.mdx).
+
 - For public catalogue facets, filter the published snapshot in the authoritative
   query before applying pagination and its next-page sentinel. Keep URL filters
   through search and paging, and share bounded validation between the page and

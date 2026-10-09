@@ -21,8 +21,8 @@ import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { ArtworkGalleryEditor } from './artwork-gallery-editor';
 import { CreationGuidanceEditor } from './creation-guidance-editor';
-import { DocumentView } from './document-view';
 import { validGallery } from './gallery-model';
+import { PublicationPreview } from './publication-preview';
 import { RichEditor } from './rich-editor';
 import { useLettinMutation } from './use-lettin';
 import { WikiDetailsEditor } from './wiki-details-editor';
@@ -124,18 +124,10 @@ export function EntryEditor({
           {t(isWorld ? 'worldDetails' : 'entry')} ·{' '}
           {t(record.published_at ? 'published' : 'draft')}
         </p>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline">{t('preview')}</Button>
-          </DialogTrigger>
-          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>{t('privatePreview')}</DialogTitle>
-              <DialogDescription>{t('previewHint')}</DialogDescription>
-            </DialogHeader>
-            <DocumentView draft={draft} />
-          </DialogContent>
-        </Dialog>
+        <PublicationPreview
+          draft={draft}
+          published={record.published_at ? record.published : null}
+        />
       </div>
       <label className="block space-y-2 text-sm">
         {t('title')}
