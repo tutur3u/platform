@@ -6,6 +6,13 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- For public catalogue facets, filter the published snapshot in the authoritative
+  query before applying pagination and its next-page sentinel. Keep URL filters
+  through search and paging, and share bounded validation between the page and
+  API. Expanding a summary projection must still exclude unpublished drafts and
+  entry documents. Cover exact matching and snapshot isolation with the local
+  store fixture; see [Lettin discovery](../../../../../apps/docs/platform/features/lettin.mdx).
+
 - For a customer-facing behavior fix that spans apps, trace the setting from its
   writer through server-prefetched and client-only views, summary counts, and
   exports. Share the decision logic when possible, and record the scope, default,
