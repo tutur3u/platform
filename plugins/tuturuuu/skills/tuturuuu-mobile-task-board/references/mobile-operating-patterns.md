@@ -199,3 +199,5 @@ provider/device operation or production delivery.
   cancellation-only fixtures do not prove recovery. Surface scoped upload
   failures at the active controls from current state so superseded operations
   cannot report a newer operation's failure.
+
+- **Assistant settings gutters**: Keep embedded live preferences and local-model sections aligned with personal settings at 16px horizontal padding. Preserve standalone sheet padding. Reuse SettingsRouteFrame for the existing branded title, physical safe area and floating Back boundary; do not add feature chrome. The settings layout matrix covers 320/390/430px and 1x/2x text plus final-control scroll clearance; widget geometry does not prove an authenticated installed artifact.
