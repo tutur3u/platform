@@ -72,3 +72,7 @@ authenticated delivery, redirect rejection and failure short-circuiting with
 mocked downstream calls. A successful hosted schedule and terminal batch status,
 persistent attempt/age limits, independent stop and alert evidence remain separate
 acceptance work. The five-minute cadence and a delivery timeout are not total-spend caps.
+
+Keep pool/worker defaults in the unit config and the package script as `vp test`.
+Shared sharded CI appends its worker limit; validate `bun run test --maxWorkers=2`
+under Node 24 to ensure the script accepts that override without duplicate options.
