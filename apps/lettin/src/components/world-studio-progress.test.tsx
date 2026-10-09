@@ -65,6 +65,7 @@ vi.mock('./navigation-guard', () => ({
   useNavigationGuard: () => ({ dirty: false, setDirty: () => {} }),
 }));
 vi.mock('./wiki-sidebar', () => ({ WikiSidebar: () => null }));
+vi.mock('./quick-note', () => ({ QuickNote: () => null }));
 vi.mock('./wiki-create-entry', () => ({ WikiCreateEntry: () => null }));
 vi.mock('./wiki-browser', () => ({
   WikiBrowser: ({
