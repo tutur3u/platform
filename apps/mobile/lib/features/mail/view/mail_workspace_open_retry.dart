@@ -69,6 +69,7 @@ extension _MailWorkspaceOpenRetry on _MailWorkspaceState {
           rethrow;
         }
         await Future<void>.delayed(const Duration(milliseconds: 350));
+        if (!mounted || mailboxId != _mailboxId) rethrow;
       }
     }
   }
