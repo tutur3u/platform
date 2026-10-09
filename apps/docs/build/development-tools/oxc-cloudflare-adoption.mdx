@@ -21,6 +21,36 @@ architecture milestone is a Vite-native runtime preserving existing contracts.
 React Router Framework Mode with the Cloudflare Vite plugin is a candidate requiring
 a scoped compatibility proof. The retained `apps/tanstack-web` remains paused.
 
+## Complete Worker migration scope
+
+The migration includes every active Worker-backed app/service, not only Lettin
+and Parley. Framework replacement applies to Next/OpenNext web apps; native
+Workers retain their fetch/email/scheduled/RPC entrypoints while adopting Vite+
+and Oxc tooling. A backend service does not need React or a router to qualify.
+
+| Active surface | Current boundary | Migration acceptance |
+| --- | --- | --- |
+| Meet | Next/OpenNext web Worker and shared Meet services | Vite-native web routes; preserve meeting/session APIs, AI entrypoints, media and Durable Object classes |
+| Parley | Next/OpenNext web Worker | Vite-native studio and participant routes; preserve private reviews, snapshots and Meet bindings |
+| Lettin | Next/OpenNext web Worker with D1/R2 | Vite-native routes; preserve publication, ownership, D1 session and R2 contracts |
+| Colab | Vite React assets plus native Worker | Adopt Vite+ without changing auth, sponsorship, room Durable Objects or SPA routing |
+| Meet realtime | Native Worker and Durable Objects | Adopt shared tooling; preserve signalling, TURN/SFU contracts and realtime health checks |
+| Coordination | Native Worker service | Preserve coordination protocol, authentication, object identity and storage |
+| Devbox control | Native Worker service | Preserve control authentication, lease/state transitions and deployment identity |
+| Cron control | Scheduled/native Worker | Preserve scheduler ownership, deduplication, recovery RPC and authenticated forwarding |
+| Mail email routing | Native email Worker within Mail | Preserve MIME ingestion, R2 permissions and the owning Mail webhook contract |
+
+This inventory follows active checked-in Wrangler configurations. Existing
+`apps/backend` and `apps/tanstack-web` Wrangler files are retained paused artifacts,
+not migration targets. New active Worker configurations must join the inventory.
+Deployment existence and canonical health still require live evidence.
+
+Begin with the portable session core and the already Vite-native Colab toolchain,
+then use the same verified conventions for native service workers. Meet, Parley
+and Lettin require the shared framework-adapter work before full web replacement.
+Each app retains its own exact-commit test/type/lint/build and Worker acceptance
+receipts; one green app cannot establish another app's readiness.
+
 ## Use the tooling foundation
 
 From the repository root, pass **explicit files you own**:
