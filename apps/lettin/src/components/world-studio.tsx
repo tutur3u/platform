@@ -10,6 +10,7 @@ import { Collaborators } from './collaborators';
 import { DuplicateEntry } from './duplicate-entry';
 import { EntryEditor } from './entry-editor';
 import { useNavigationGuard } from './navigation-guard';
+import { QuickNote } from './quick-note';
 import { initialWikiFilters } from './wiki-browse-model';
 import { WikiBrowsingPanel } from './wiki-browsing-panel';
 import { WikiCreateEntry } from './wiki-create-entry';
@@ -115,6 +116,13 @@ export function WorldStudio({
             section={section}
             disabled={dirty}
             onOverview={() => select(worldId)}
+          />
+          <QuickNote
+            key={`${wsId}:${worldId}`}
+            wsId={wsId}
+            worldId={worldId}
+            disabled={dirty}
+            onCreated={select}
           />
           <WikiCreateEntry
             key={section}

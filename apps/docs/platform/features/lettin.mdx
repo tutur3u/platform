@@ -617,6 +617,34 @@ composed facets, ordering, endpoint fences, saved/public text boundaries, empty
 result recovery and dirty-state interaction. Hosted browser acceptance and
 exact-head CI remain separate delivery gates.
 
+## Discover notebooks by published tags
+
+The public notebook catalogue displays creator-authored tags from the published
+notebook snapshot. Clicking a tag opens the global catalogue with an exact tag
+filter. Creator catalogue cards also link to this global tag view; their ordinary
+search and pagination keep the current creator scope. The catalogue search form
+and previous/next links preserve an active tag filter, and clearing only the tag
+retains the text search. An empty filtered result offers a clear-filter action.
+
+Tag matching is case-sensitive and exact, including Unicode and punctuation;
+it uses the stored published tag, rather than a partial text match. Server-side
+filtering runs before the 24-card page limit and its one-row next-page sentinel.
+Catalogue cards now retain published tags, while entry documents, wiki facts and
+private draft revisions and longer creation guidance remain excluded from catalogue summaries. Private draft
+changes only affect discovery after the creator republishes the notebook.
+
+The `tag` query accepts one nonempty trimmed value of at most 40 characters,
+matching the notebook editor limit. Malformed tag/text filters on the catalogue page return not found;
+malformed API filters return 400. API and page share the tag validation schema.
+No profile field or sharing setting is changed. Publishing a notebook already
+makes its tags public in the reading view; this decision extends those same tags
+to discovery cards. English and Vietnamese labels cover filtering controls.
+
+Regression coverage: `public-tag-discovery.test.tsx` checks independent tag links,
+filter preservation and empty results; `public-catalogue-filters.test.ts` checks
+bounds; the public worlds API tests cover rejected filters; `public-catalogue-storage.test.ts`
+checks actual local D1 filtering, pagination and published snapshot isolation.
+
 ### Searchable relationship authoring
 
 The creator entry editor searches relationship targets by title and alias and
@@ -772,3 +800,24 @@ Regression evidence: `creation-guidance.test.ts` exercises real local D1 snapsho
 copy and authorization boundaries; `creation-guidance.test.tsx` checks escaping,
 empty defaults, draft controls and content-notice placement. Exact-head app builds
 and hosted interaction remain independent delivery gates.
+
+### Private quick-note capture
+
+The authorized notebook studio offers explicit plain text quick-note capture.
+A title of up to 160 characters and text of up to 10,000 characters and 100 lines
+create an unpublished page through the existing entry command. Empty input or
+values beyond these bounds cannot be submitted; text is never silently truncated.
+Internal blank lines are preserved. URLs and markup remain plain text without
+importing remote content or creating references, permissions or publication.
+
+Pending capture locks the form and blocks repeated submission. Failure preserves
+the input for an explicit retry. A successful save clears the capture fields and
+offers a separate Open action; opening remains disabled while the current editor
+has unsaved changes. Notebook/workspace context replacement resets local capture.
+Publishing still requires the existing separate role and revision checks.
+
+Regression evidence: `quick-note-model.test.ts` validates bounds and actual draft
+schema; `quick-note.test.tsx` covers commands, failure, repeated submits, pending
+and dirty-navigation fences and context resets. `storage.test.ts` uses local D1
+to verify saved private notes, public omission and workspace/revocation boundaries.
+These fixtures do not establish hosted dialog or keyboard acceptance.
