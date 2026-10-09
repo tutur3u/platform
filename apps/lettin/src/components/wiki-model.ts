@@ -2,7 +2,9 @@ import type {
   LettinDraft,
   LettinKind,
   LettinRecord,
+  LettinRelationshipKind,
 } from '@tuturuuu/internal-api/lettin';
+import { searchableWikiText } from './wiki-browse-model';
 export const entryKinds: LettinKind[] = [
   'character',
   'location',
@@ -59,6 +61,7 @@ export function filterWiki(
       [
         draft.title,
         draft.description,
+        searchableWikiText(draft),
         ...draft.tags,
         ...wikiOf(draft).aliases,
         ...wikiOf(draft).facts.map((fact) => `${fact.label} ${fact.value}`),
@@ -84,6 +87,25 @@ export function relationshipEdges(entries: LettinRecord[]) {
       const target = known.get(relation.targetId);
       return target ? [{ source, target, ...relation }] : [];
     })
+  );
+}
+
+export function matchingRelationshipEdges(
+  entries: LettinRecord[],
+  search: string,
+  label: (kind: LettinRelationshipKind) => string
+) {
+  const term = search.trim().toLocaleLowerCase();
+  return relationshipEdges(entries).filter((edge) =>
+    [
+      edge.source.draft.title,
+      edge.target.draft.title,
+      edge.label,
+      label(edge.kind),
+    ]
+      .join(' ')
+      .toLocaleLowerCase()
+      .includes(term)
   );
 }
 

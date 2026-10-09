@@ -35,6 +35,16 @@ acceptance remain required. Do not run global migration or deployment as part of
 planning. Follow the phased plan in the adoption guidance above and recheck
 [upstream coverage](https://blog.cloudflare.com/cloudflare-cf-cli-launch/) before edits.
 
+Execute cf with Node22.18+ even when Bun installs dependencies; typed-config
+commands are not supported on Bun. Discover a reviewed exact version from private
+scratch outside app config/.env ancestry before adding it to a workspace. Use
+anonymous operation-only search queries, then focused command help/schema.
+Require `cf auth whoami` JSON `authenticated === true`, not process exit0:
+unauthenticated results can exit successfully. cf credentials are separate from
+Wrangler. Stop authenticated parity work when access is absent; do not copy tokens
+or login files. Account selection may write project cache, so verify identity and
+local files. See [cf prerequisites](https://developers.cloudflare.com/cf/get-started/).
+
 ## Cloudflare runaway-work review
 
 For added or amplified background work, review alarm/queue/cron feedback paths and
@@ -513,3 +523,14 @@ its historical manifest version remains frozen. Renovate also ignores the inacti
 runtime and Docker workflow files, in addition to the paused source/Dockerfiles.
 Policy tests guard these exclusions. Do not reactivate them indirectly during
 ordinary active-package release maintenance.
+
+## Cron Control native Worker toolchain
+
+Use the owning Cron Control workspace and Node 24 for Vite+/Oxc commands.
+Its independent unit config must not start the Cloudflare Vite development plugin.
+Runtime health fixtures do not dispatch scheduled work or contact production;
+repeat them against the CI-emitted configuration and verify identity, compatibility,
+trigger, vars and secret names. Deploy only the immutable artifact qualified by
+that CI run, using its emitted Wrangler config; preserve source config for named
+secret provisioning. See `apps/docs/build/devops/cloudflare-cron-control.mdx` for
+commands and the distinct downstream delivery/cost/stop acceptance boundaries.
