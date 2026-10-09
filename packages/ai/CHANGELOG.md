@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.18.0](https://github.com/tutur3u/platform/compare/ai-v0.17.0...ai-v0.18.0) (2026-10-09)
+
+
+### Features
+
+* **ai:** add scoped in-place memory edit foundation ([d0eeb51](https://github.com/tutur3u/platform/commit/d0eeb512065f5bfbc349ae2df1ceebc10b6cdfba)) ([#5968](https://github.com/tutur3u/platform/issues/5968)) ([5f432e3](https://github.com/tutur3u/platform/commit/5f432e386bd7acbb440fd7bacbf7861c8a3e9fce))
+
+
+### Bug Fixes
+
+* **ai:** deny memory admission after consent lookup failure ([ba5e32c](https://github.com/tutur3u/platform/commit/ba5e32cdfe5be031c95f5ff9f1fc4a4608934b63)) ([#5966](https://github.com/tutur3u/platform/issues/5966)) ([18878ce](https://github.com/tutur3u/platform/commit/18878ce3f52ced15c599cb70ae9b6909fdbbee39))
+* **ai:** preserve memories until merge persistence is confirmed ([aaf7789](https://github.com/tutur3u/platform/commit/aaf7789dae4b62765aed23fbb06d274969a69412))
+* **ai:** preserve originals until memory merge persistence is confirmed ([#5954](https://github.com/tutur3u/platform/issues/5954)) ([25e4f5e](https://github.com/tutur3u/platform/commit/25e4f5e9235ff0e190f3d5f9c616cd4dd062a195))
+
 ## [0.17.0](https://github.com/tutur3u/platform/compare/ai-v0.16.1...ai-v0.17.0) (2026-10-04)
 
 

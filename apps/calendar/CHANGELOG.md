@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.34.0](https://github.com/tutur3u/platform/compare/calendar-v0.33.0...calendar-v0.34.0) (2026-10-09)
+
+
+### Features
+
+* **docs:** expand platform guides and enforce app SEO and runtime pause ([e79cb7e](https://github.com/tutur3u/platform/commit/e79cb7e96c7db4d1baedb09b7420ca41b75e367f))
+* **docs:** expand platform guides, enforce SEO, and pause inactive runtimes ([#6085](https://github.com/tutur3u/platform/issues/6085)) ([df7a159](https://github.com/tutur3u/platform/commit/df7a159e9c657fee4f6e0b593c776d6887b2ae11))
+
+
+### Bug Fixes
+
+* **calendar:** admit scoped Meet personal reads ([c7c1b4e](https://github.com/tutur3u/platform/commit/c7c1b4e3dc430f409ce2600e1933a21455071216)) ([#5921](https://github.com/tutur3u/platform/issues/5921)) ([ce467e3](https://github.com/tutur3u/platform/commit/ce467e341ab8a067997fdbaddb05a7701be838e0))
+* **calendar:** classify local timezone rate rejections ([3c17915](https://github.com/tutur3u/platform/commit/3c179151d508827e89e90a6fcb3da2fd3463f5fb)) ([#5959](https://github.com/tutur3u/platform/issues/5959)) ([d911357](https://github.com/tutur3u/platform/commit/d9113578cc30e5d26797492a1b79ffc380cd649f))
+* **finance:** bound subscription schedules and block invalid inventory ([f4163bf](https://github.com/tutur3u/platform/commit/f4163bf6697316a06a8b2d3922d9664937dd6940)) ([#5990](https://github.com/tutur3u/platform/issues/5990)) ([f2096f6](https://github.com/tutur3u/platform/commit/f2096f6e20d27dd998a03d11c7b0769d7f06bb2e))
+* **finance:** expose safe invoice history recovery ([8a53d36](https://github.com/tutur3u/platform/commit/8a53d367d6888e592a0d64f760d47234d858bd73)) ([#6034](https://github.com/tutur3u/platform/issues/6034)) ([fd65a3d](https://github.com/tutur3u/platform/commit/fd65a3db6f7472771374192ab07f5a97c6fcaee8))
+* **finance:** reconcile attendance summary with current main ([fb00e6e](https://github.com/tutur3u/platform/commit/fb00e6ef4373adc1b6b9107f9bba883c101c3438))
+* **utils:** keep teacher-hours tests within package boundary ([bf55e46](https://github.com/tutur3u/platform/commit/bf55e46d5a842d70ea87c03b9b0e40c65c14f60d)) ([#6006](https://github.com/tutur3u/platform/issues/6006)) ([1039959](https://github.com/tutur3u/platform/commit/1039959d7258ed9fc612c0871ae575a71f3e4fe8))
+
 ## [0.33.0](https://github.com/tutur3u/platform/compare/calendar-v0.32.1...calendar-v0.33.0) (2026-10-04)
 
 

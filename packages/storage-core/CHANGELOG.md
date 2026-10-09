@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/tutur3u/platform/compare/storage-core-v0.3.0...storage-core-v0.3.1) (2026-10-09)
+
+
+### Bug Fixes
+
+* **storage:** allow empty playground checkpoints within quota ([889bf0d](https://github.com/tutur3u/platform/commit/889bf0d388e69c85f206d4aaf2cef82519b42097)) ([#5927](https://github.com/tutur3u/platform/issues/5927)) ([c6b9b79](https://github.com/tutur3u/platform/commit/c6b9b798edfa8b8f1a769a3b6dd8a8071265536d))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/storage-core-v0.2.1...storage-core-v0.3.0) (2026-10-04)
 
 
