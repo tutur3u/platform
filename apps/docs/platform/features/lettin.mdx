@@ -941,7 +941,6 @@ selection, explicit commands, reset, failure and blocked controls, and the local
 `storage.test.ts` covers page, character and story privacy, cross-workspace denial
 and revoked collaborator access. Exact-head builds and hosted dialog acceptance
 remain independent delivery gates.
-
 ## Private saved-library filters
 
 The authenticated saved-library page lets readers filter their saved notebook
@@ -1037,3 +1036,25 @@ review, cancel, failed retry, duplicate/pending suppression and context/eligibil
 changes. `server/storage.test.ts` exercises local D1 editor/publisher boundaries,
 workspace eligibility and access revocation. Hosted app-session/browser acceptance
 and exact-head CI remain separate delivery gates.
+
+### Published entry collection browsing
+
+In the public notebook reader, choosing an entry kind opens its published entry
+cards in the main reading area. Cards retain the existing title, kind, aliases and
+content notice; selecting a card opens its published document with the existing
+entry deep link. The overview still opens the notebook introduction. Returning to
+the notebook while a collection is selected retains that collection and search.
+
+The sidebar reports matching entry counts and offers an empty-search hint. Clear
+reading filters resets the search, collection and selected entry to the notebook
+overview. The relationship view keeps its existing label/endpoint search and does
+not show an entry count as a connection count. Timeline ordering remains unchanged.
+These controls operate only on the existing published payload. Private saved text,
+profile details and creator publication facets are excluded; no extra query or
+access grant is introduced. Draft edits become visible only after publication.
+
+Regression evidence: `public-entry-collections.test.tsx` covers English/Vietnamese
+cards and counts, notice/alias context, empty recovery, entry links, snapshot
+isolation, chronology and relationship endpoints. `storage.test.ts` retains actual
+D1 private/public and workspace/revocation coverage. Exact-head app builds and
+hosted browser acceptance remain separate delivery gates.

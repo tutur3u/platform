@@ -621,6 +621,7 @@
     "chronology": "Place in time",
     "chronologyHint": "Use your own calendar. The order controls where this entry appears on the timeline.",
     "clearFilters": "Clear filters",
+    "clearReadingFilters": "Clear reading filters",
     "clearTag": "Clear tag filter",
     "closeArtwork": "Close artwork",
 
@@ -833,6 +834,7 @@
     "newRelationshipType": "Type for new relationships",
     "newWorld": "Start a project",
     "nextPage": "Next page",
+    "noReadingMatches": "Try another search or clear the filters to return to the notebook.",
     "noRelationships": "Add relationships inside an entry to begin connecting your world.",
     "noResults": "No worlds match your search.",
     "noSavedCreators": "No saved creators yet.",
@@ -908,6 +910,7 @@
     "quickNoteHint": "Save a plain text idea as a private notebook entry. Choose its kind; publishing remains a separate action.",
     "quickNoteSaved": "Private note saved. Open it when your current editor has no unsaved changes.",
     "quote": "Quote",
+    "readingEntryCount": "{count, plural, =0 {No matching entries} one {# matching entry} other {# matching entries}}",
     "redo": "Redo",
     "relationshipappears": "Appears in",
     "relationshipAuthoringHint": "Choose a relationship type, then add an entry from this notebook. Changes stay in your draft until you save.",
