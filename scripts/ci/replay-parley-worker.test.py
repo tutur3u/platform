@@ -1,5 +1,6 @@
 """Focused offline tests: no Worker, namespace, service, or network is started."""
 
+import hashlib
 import importlib.util
 import io
 import json
@@ -116,6 +117,79 @@ class Safeguards(unittest.TestCase):
                     "esbuild": __file__})):
                 with self.assertRaisesRegex(RuntimeError, "outside immutable checkout"):
                     REPLAY.resolve_tools(root, shutil.which("node"))
+
+    def asset_fixture(self, root):
+        hashes = {}
+        for name in REPLAY.ASSET_HASHES:
+            target = root / ("server-functions/default/" + REPLAY.NEXT_OG + name)
+            target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+            target.write_bytes(name.encode())
+            target.chmod(0o600)
+            hashes[name] = hashlib.sha256(name.encode()).hexdigest()
+        for relative, names, prefix in [
+            ("middleware/handler.mjs", ["resvg.wasm", "yoga.wasm"], REPLAY.PRODUCER_ROOT),
+            ("server-functions/default/apps/parley/handler.mjs", ["Geist-Regular.ttf.bin"], REPLAY.PRODUCER_ROOT + "apps/parley/.open-next/server-functions/default/"),
+            ("server-functions/default/apps/parley/.next/server/chunks/[turbopack]_runtime.js", ["resvg.wasm", "yoga.wasm"], REPLAY.PRODUCER_ROOT + "apps/parley/.open-next/server-functions/default/"),
+        ]:
+            target = root / relative
+            target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+            target.write_text("\n".join(json.dumps(prefix + REPLAY.NEXT_OG + name) for name in names))
+            target.chmod(0o600)
+        for directory in root.rglob("*"):
+            if directory.is_dir(): directory.chmod(0o700)
+        return hashes
+
+    def test_asset_bindings_preserve_originals_and_are_exclusive(self):
+        with tempfile.TemporaryDirectory() as parent:
+            root = Path(parent)
+            hashes = self.asset_fixture(root)
+            before = {str(p.relative_to(root)): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+            with patch.object(REPLAY, "ASSET_HASHES", hashes):
+                records = REPLAY.bind_retained_assets(root)
+                self.assertEqual(len(records), 15)
+                with self.assertRaises(FileExistsError):
+                    REPLAY.bind_retained_assets(root)
+            self.assertTrue(all((root / name).read_bytes() == data for name, data in before.items()))
+            self.assertTrue(all(Path(r["path"]).is_relative_to(root.resolve()) for r in records))
+
+    def test_asset_path_traversal_and_symlink_rejected(self):
+        with tempfile.TemporaryDirectory() as parent:
+            root = Path(parent)
+            for relative in ("../escape", "/outside", "a/../b", "a\\b", "a//b"):
+                with self.assertRaises(RuntimeError):
+                    REPLAY.private_path(root, relative, True)
+            (root / "link").symlink_to(Path(parent).parent)
+            with self.assertRaises(RuntimeError):
+                REPLAY.private_path(root, "link/outside", True)
+
+    def test_asset_hash_import_and_mode_fail_before_aliases(self):
+        for error in ("hash", "import", "mode", "symlink", "missing"):
+            with self.subTest(error=error), tempfile.TemporaryDirectory() as parent:
+                root = Path(parent)
+                hashes = self.asset_fixture(root)
+                asset = root / ("server-functions/default/" + REPLAY.NEXT_OG + "resvg.wasm")
+                if error == "hash": asset.write_bytes(b"wrong")
+                elif error == "import": (root / "middleware/handler.mjs").write_text("unrelated")
+                elif error == "mode": asset.chmod(0o644)
+                elif error == "symlink":
+                    asset.unlink()
+                    asset.symlink_to(root / "middleware/handler.mjs")
+                else: asset.unlink()
+                with patch.object(REPLAY, "ASSET_HASHES", hashes), self.assertRaises((RuntimeError, FileNotFoundError)):
+                    REPLAY.bind_retained_assets(root)
+                self.assertFalse((root / "middleware/home").exists())
+
+    def test_request_failures_cannot_qualify_but_http500_is_captured(self):
+        for error in (TimeoutError(), ConnectionError()):
+            connection = Mock()
+            connection.getresponse.side_effect = error
+            result = {}
+            with patch.object(REPLAY.http.client, "HTTPConnection", return_value=connection):
+                REPLAY.request_once(result)
+            self.assertFalse(REPLAY.response_complete(result))
+            self.assertTrue(result["done"])
+        self.assertFalse(REPLAY.response_complete({"done": True}))
+        self.assertTrue(REPLAY.response_complete({"done": True, "httpStatus": 500}))
 
     def test_environment_drops_tokens_and_caller_home(self):
         with patch.dict(os.environ, {"GH_TOKEN": "private", "CLOUDFLARE_API_TOKEN": "private"}):
