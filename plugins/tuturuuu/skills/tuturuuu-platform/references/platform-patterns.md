@@ -660,3 +660,15 @@ fence prevents duplicate clicks before mutation state rerenders. Reset controls
 on context changes. Recipient acceptance is a distinct workflow; do not claim
 an owner confirmation establishes recipient consent. Lettin's collaborator DOM
 and D1 role/revocation regressions cover these boundaries.
+
+## Scoped document export
+
+Use explicit publication scope and affirmative owner consent for bulk private
+exports, rather than assuming ordinary collaborator reading permission implies
+private portability consent. Project through the active document schema, omit
+identity/grant metadata, and filter structured references against included IDs.
+Bound entry counts and encoded bytes before large reads, then recheck notebook
+permissions before response. On the client, reuse the server-verified workspace
+actor lifetime and an intent lease to suppress stale downloads after account
+change, dialog closure or unmount. State clearly when URLs rather than asset bytes
+are exported and when saved reads do not form an atomic database snapshot.
