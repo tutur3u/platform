@@ -1,7 +1,7 @@
 ---
 title: "Active runtime and scheduler ownership"
 description: "The live Next.js path, retired Docker cron runner, inactive migration targets, and current scheduling evidence."
-updatedAt: '2026-10-08'
+updatedAt: '2026-10-09'
 ---
 
 ## Current operating decision
@@ -23,6 +23,13 @@ TanStack **Query** remains in use for client fetching/caching. It is independent
 of the inactive TanStack **Start** runtime. Migration-specific source refreshes, tests, dependency updates, and CI are
 paused until further notice. Shared contracts still belong in reusable packages;
 do not require updates to the inactive trees for a live Next.js change.
+
+Gradual Cloudflare adoption is the target direction, with scoped Vite-native
+Lettin/Parley candidates first. Their existing Next.js/OpenNext Worker hosting
+remains current. Portable first-party libraries and thin framework adapters must
+preserve identity, storage, localization and API contracts before canonical traffic
+changes. This does not resume the retained TanStack Start app or authorize cutover.
+See [Oxc and Cloudflare adoption](/build/development-tools/oxc-cloudflare-adoption).
 
 ## Runtime map
 
