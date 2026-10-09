@@ -462,3 +462,39 @@ marketing opt-out accidentally. The source matrix and sender fixtures live in
 `email-eligibility.test.ts` and the notification route tests. See the recipient
 policy in `apps/docs/platform/architecture/authorization.mdx`; focused fixture
 success is separate from exact-head CI and actual provider/inbox delivery.
+
+## Private reader references
+
+Social saves must not silently become public profile data or popularity signals.
+Store actor-owned source IDs instead of private document copies; project live
+published card fields when reading and return unavailable references after
+unpublishing. Bound insertion quotas atomically, make explicit save/remove
+idempotent, and bind both reads and writes to the expected app-session actor.
+Include the actor in client cache keys. Standalone library routes must be excluded
+from workspace-alias probes and use request-time suspended auth boundaries.
+Lettin's bookmark D1 and route regressions cover these contracts.
+
+## Derived reader document navigation
+
+Derive reader outlines from the selected published projection, not workspace
+queries or editor buffers. Match the renderer's tree paths, depth cutoff and
+ignored leaf children when assigning bounded navigation targets. Plain labels
+must escape markup and exclude author IDs/link/image metadata. Scope targets per
+document and keep duplicate heading titles distinct. Open enclosing folds before
+focusing/scrolling, respect native modified clicks, and avoid forced motion or
+history churn. Record that tree-position targets can change after republishing;
+DOM fixtures verify actions and boundaries, while real layout/focus remains a
+hosted browser gate.
+
+## Reports dashboard totals
+
+Contacts shares Daily semantic report status cards with Periodic. Daily totals count
+recipient rows; Periodic totals count report records. All periodic excludes Daily
+because these units differ. Preserve legacy view/report filter URLs and independent
+Daily/Periodic date/status scopes. Server totals and categories must use the same
+complete active predicate as rows, before pagination. Never display loaded-row
+category counts or stale/unknown totals as zero. Ordered scans must reject incomplete
+count receipts and duplicate IDs; scopes above their explicit read bound require
+narrowing instead of truncated totals. Preserve 100-report delivery selection and
+actor/scope epochs. See `apps/docs/platform/applications/reports.mdx` and the focused
+report-list/query and panel-counts regressions.

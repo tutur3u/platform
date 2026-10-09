@@ -1,6 +1,7 @@
 'use client';
 
 import { BarChart3, CalendarDays, Settings2 } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { parseAsStringEnum, useQueryState } from 'nuqs';
@@ -8,6 +9,11 @@ import PostsClient from '../posts/client';
 import type { PostsSearchParams } from '../posts/types';
 import AutomationsPanel from './automations-panel';
 import PeriodicReportsPanel from './periodic-reports-panel';
+import {
+  type DashboardCadence,
+  dashboardCadences,
+  resolveDashboardCadence,
+} from './report-dashboard-cadence';
 import {
   type ReportView,
   reportViews,
@@ -52,33 +58,83 @@ export default function ReportsHub({
     parseAsStringEnum<ReportView>([...reportViews]).withDefault(defaultView)
   );
 
+  const [periodicCadence, setPeriodicCadence] = useQueryState(
+    'reportCadence',
+    parseAsStringEnum<Exclude<DashboardCadence, 'daily'>>([
+      'all',
+      'weekly',
+      'monthly',
+      'quarterly',
+      'yearly',
+    ]).withDefault('monthly')
+  );
+  const activeView = resolveDefaultReportView({
+    canViewDaily,
+    canViewPeriodic,
+    initialView: view,
+  });
+  const worklistView =
+    activeView === 'automations'
+      ? canViewDaily
+        ? 'daily'
+        : 'periodic'
+      : activeView;
+  const cadence = resolveDashboardCadence(activeView, periodicCadence);
+  const selectCadence = (next: DashboardCadence) => {
+    if (next === 'daily') void setView('daily');
+    else {
+      void setPeriodicCadence(next);
+      void setView('periodic');
+    }
+  };
+
   return (
     <main className="min-w-0 space-y-4 p-2 md:space-y-6 md:p-6">
       <h1 className="font-semibold text-2xl tracking-tight">{t('title')}</h1>
       <Tabs
-        value={view}
+        value={activeView}
         onValueChange={(next) => void setView(next as ReportView)}
       >
-        <TabsList className="inline-flex h-auto max-w-full flex-wrap">
-          {canViewDaily && (
-            <TabsTrigger value="daily" className="h-full gap-2">
-              <CalendarDays className="h-4 w-4" />
-              <span>{t('daily')}</span>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <TabsList className="inline-flex h-auto max-w-full flex-wrap">
+            <TabsTrigger value={worklistView} className="gap-2">
+              <BarChart3 className="size-4" aria-hidden="true" />
+              <span>{t('worklist')}</span>
             </TabsTrigger>
+            {canViewPeriodic && (
+              <TabsTrigger value="automations" className="gap-2">
+                <Settings2 className="size-4" aria-hidden="true" />
+                <span>{t('automations')}</span>
+              </TabsTrigger>
+            )}
+          </TabsList>
+          {activeView !== 'automations' && (
+            <fieldset
+              aria-label={t('cadence')}
+              className="flex max-w-full flex-wrap gap-1 rounded-lg bg-muted p-1"
+            >
+              {dashboardCadences
+                .filter((value) =>
+                  value === 'daily' ? canViewDaily : canViewPeriodic
+                )
+                .map((value) => (
+                  <Button
+                    key={value}
+                    size="sm"
+                    variant={cadence === value ? 'secondary' : 'ghost'}
+                    aria-pressed={cadence === value}
+                    onClick={() => selectCadence(value)}
+                    className="h-8 gap-1.5 px-2.5 text-xs sm:px-3"
+                  >
+                    {value === 'daily' && (
+                      <CalendarDays className="size-3.5" aria-hidden="true" />
+                    )}
+                    {t(value === 'all' ? 'all_periodic' : value)}
+                  </Button>
+                ))}
+            </fieldset>
           )}
-          {canViewPeriodic && (
-            <TabsTrigger value="periodic" className="h-full gap-2">
-              <BarChart3 className="h-4 w-4" />
-              <span>{t('periodic')}</span>
-            </TabsTrigger>
-          )}
-          {canViewPeriodic && (
-            <TabsTrigger value="automations" className="h-full gap-2">
-              <Settings2 className="h-4 w-4" />
-              <span>{t('automations')}</span>
-            </TabsTrigger>
-          )}
-        </TabsList>
+        </div>
         {canViewDaily && (
           <TabsContent value="daily" className="mt-4 min-w-0">
             <PostsClient
@@ -92,6 +148,7 @@ export default function ReportsHub({
         {canViewPeriodic && (
           <TabsContent value="periodic" className="mt-4 min-w-0">
             <PeriodicReportsPanel
+              cadence={periodicCadence}
               permissions={periodicPermissions}
               wsId={wsId}
             />

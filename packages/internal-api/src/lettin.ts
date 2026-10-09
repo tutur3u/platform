@@ -241,6 +241,40 @@ export function applyLettinExocorpseImport(wsId: string, previewId: string) {
   });
 }
 
+export type LettinSavedNotebook = {
+  worldId: string;
+  savedAt: string;
+  notebook: {
+    title: string;
+    description: string;
+    image: string;
+    credit: string;
+  } | null;
+};
+export function getLettinSavedNotebooks(expectedActor: string) {
+  return client().json<LettinSavedNotebook[]>('/api/v1/lettin/bookmarks', {
+    query: { expectedActor },
+    cache: 'no-store',
+  });
+}
+export function getLettinNotebookSaved(worldId: string, expectedActor: string) {
+  return client().json<{ saved: boolean }>('/api/v1/lettin/bookmarks', {
+    cache: 'no-store',
+    query: { worldId, expectedActor },
+  });
+}
+export function setLettinNotebookSaved(
+  worldId: string,
+  saved: boolean,
+  expectedActor: string
+) {
+  return client().json<{ saved: boolean }>('/api/v1/lettin/bookmarks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ worldId, saved, expectedActor }),
+  });
+}
+
 export const EXOCORPSE_WORKSPACE_ID = '3385bd92-3d5e-42f6-b3ad-0d1394af3509';
 export const exocorpseWikiCollections = [
   'stories',
