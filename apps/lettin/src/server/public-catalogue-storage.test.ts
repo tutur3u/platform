@@ -63,7 +63,16 @@ it('uses exact published tags and keeps later draft revisions out of summaries a
   const worldId = (
     await mutate(db, actor, {
       action: 'createWorld',
-      draft: { ...draft, tags, contentNotice: 'Published guidance' },
+      draft: {
+        ...draft,
+        tags,
+        contentNotice: 'Published guidance',
+        creationGuidance: {
+          credits: 'Published credits',
+          usageNotes: 'Ask before copying',
+          collaboration: 'ask-first',
+        },
+      },
     })
   ).id;
   await mutate(db, actor, { action: 'publishWorld', worldId, version: 1 });
@@ -80,6 +89,14 @@ it('uses exact published tags and keeps later draft revisions out of summaries a
   const result = await readPublic(db, undefined, { tag: tags[0] });
   expect(result).toHaveLength(1);
   expect(result[0]?.published.tags).toEqual(tags);
+  expect(result[0]?.published.creationGuidance).toBeUndefined();
+  expect(
+    (await readPublic(db, worldId))[0]?.published.creationGuidance
+  ).toEqual({
+    credits: 'Published credits',
+    usageNotes: 'Ask before copying',
+    collaboration: 'ask-first',
+  });
   expect(result[0]?.published.contentNotice).toBe('Published guidance');
   expect(result[0]?.entries).toEqual([]);
   expect(result[0]?.published.content.content).toEqual([]);

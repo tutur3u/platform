@@ -596,7 +596,7 @@ Tag matching is case-sensitive and exact, including Unicode and punctuation;
 it uses the stored published tag, rather than a partial text match. Server-side
 filtering runs before the 24-card page limit and its one-row next-page sentinel.
 Catalogue cards now retain published tags, while entry documents, wiki facts and
-private draft revisions remain excluded from catalogue summaries. Private draft
+private draft revisions and longer creation guidance remain excluded from catalogue summaries. Private draft
 changes only affect discovery after the creator republishes the notebook.
 
 The `tag` query accepts one nonempty trimmed value of at most 40 characters,
@@ -610,6 +610,39 @@ Regression coverage: `public-tag-discovery.test.tsx` checks independent tag link
 filter preservation and empty results; `public-catalogue-filters.test.ts` checks
 bounds; the public worlds API tests cover rejected filters; `public-catalogue-storage.test.ts`
 checks actual local D1 filtering, pagination and published snapshot isolation.
+
+### Searchable relationship authoring
+
+The creator entry editor searches relationship targets by title and alias and
+filters them by entry kind. It uses only the notebook records already loaded
+through the creator's authorized workspace session; it does not discover records
+from another notebook or workspace. Search and filters are local UI state.
+Creators choose a relationship type before explicitly clicking a target. The
+current entry and an existing target/type pair are excluded, while another type
+for the same target remains available. Changing an existing relationship type
+also prevents a conflicting pair. The existing 100-relationship limit applies to
+addition; removal remains available at the limit. Results render in batches of
+50, with explicit expansion and reset on filter changes. Type changes retain
+the focused row control; legacy repeated target/type rows remain independently
+editable until explicitly removed. Target counts follow each locale’s plural rules.
+
+These actions update the editor draft only. Existing labels, facts, aliases and
+chronology are preserved. A missing target is shown as unavailable and retained
+until explicitly removed; search does not silently repair or delete references.
+The normal explicit Save action, permission checks and expected revision still
+control persistence. Publishing remains a separate action. No profile fields,
+source text, consent or access grants are transferred. This workflow applies to
+creator editing, not the public reader or relationship graph.
+
+Regression coverage: `relationship-authoring-model.test.ts` checks target/type
+fences, bounds and source preservation; `wiki-relationships-editor.test.tsx`
+checks explicit draft actions, search, kind filters, bounded rendering,
+unavailable references, focused control identity, legacy repeated rows and
+integration with the surrounding wiki details editor.
+`relationship-count.test.ts` formats the actual English and Vietnamese messages
+for zero, one and multiple targets.
+The existing `entry-editor.test.tsx` covers dirty drafts during pending saves.
+DOM fixtures do not prove hosted keyboard, layout or account-switch acceptance.
 
 ### Private saved notebooks
 
@@ -707,3 +740,29 @@ legacy empty notices; `content-notice-schema.test.ts` checks limits and command
 validation; the entry editor test checks saving notice edits.
 `storage.test.ts` exercises the real local D1 mutation and catalogue queries to
 confirm later edits and clearing remain private until republished.
+
+### Creation attribution and collaboration guidance
+
+Notebook and entry creators can write creation credits and usage notes of up to
+1,000 characters each, and explicitly choose an unspecified, ask-first, open-to-
+proposals or closed collaboration preference. The default is unspecified with no
+notes; historical documents display no guidance. These fields are separate from
+cover-art credit and from profile sharing settings.
+
+Editing changes the local draft. Explicit Save uses the existing revision and
+permission checks; only publishing the notebook or entry exposes its guidance.
+Later edits and clearing stay private until republished. Public entries also
+require a published notebook. Catalogue summaries omit this longer guidance.
+Saved-entry copies retain authored guidance in a new unpublished draft.
+
+Reader guidance renders escaped plain text and explains its advisory scope. It
+creates no access grant, invitation, ownership verification or automatic usage
+permission. Collaboration preferences do not alter notebook roles. Public
+profiles retain their separate avatar/banner/name/biography default; no identity
+fields are copied into creation guidance. Portability integrations must explicitly
+review new fields rather than infer permission to transfer them.
+
+Regression evidence: `creation-guidance.test.ts` exercises real local D1 snapshot,
+copy and authorization boundaries; `creation-guidance.test.tsx` checks escaping,
+empty defaults, draft controls and content-notice placement. Exact-head app builds
+and hosted interaction remain independent delivery gates.

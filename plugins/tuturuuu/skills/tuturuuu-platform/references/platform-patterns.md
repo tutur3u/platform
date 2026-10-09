@@ -463,6 +463,19 @@ marketing opt-out accidentally. The source matrix and sender fixtures live in
 policy in `apps/docs/platform/architecture/authorization.mdx`; focused fixture
 success is separate from exact-head CI and actual provider/inbox delivery.
 
+### Local reference pickers
+
+When a creator edits references among already-authorized notebook records, derive
+search results from the supplied collection rather than adding broader source
+reads. Keep search/kind filters transient, batch large lists, and require an
+explicit target action. Fence self references, duplicate target/type pairs and
+collection limits both in options and the update helper. Do not silently drop
+unavailable references: retain their labels until explicit removal. Preserve
+other draft fields and use the existing Save permission/revision boundary.
+Lettin's `relationship-authoring-model.test.ts` and
+`wiki-relationships-editor.test.tsx` exercise this contract; local DOM acceptance
+remains distinct from hosted browser and publication verification.
+
 ## Private reader references
 
 Social saves must not silently become public profile data or popularity signals.
@@ -486,6 +499,16 @@ history churn. Record that tree-position targets can change after republishing;
 DOM fixtures verify actions and boundaries, while real layout/focus remains a
 hosted browser gate.
 
+## Creator-authored guidance
+
+Keep advisory creation metadata separate from access grants and profile sharing.
+Bound plain-text fields in the server draft schema and validate enumerated
+preferences; no choice should mutate collaboration roles. Save and publish through
+existing revision/permission fences, exclude long guidance from catalogue
+projections, and test later edits/clearing against older published snapshots with
+real local D1. Source copies can retain authored metadata only within their
+explicit private-copy scope. Review portability allowlists independently.
+
 ## Reports dashboard totals
 
 Contacts shares Daily semantic report status cards with Periodic. Daily totals count
@@ -498,3 +521,18 @@ count receipts and duplicate IDs; scopes above their explicit read bound require
 narrowing instead of truncated totals. Preserve 100-report delivery selection and
 actor/scope epochs. See `apps/docs/platform/applications/reports.mdx` and the focused
 report-list/query and panel-counts regressions.
+
+
+## Parley practice and Meet handoff
+
+Parley shares the Meet runtime but owns discovery, scenario selection and private
+facilitator review. A review link must resolve the `meet` app origin explicitly:
+the shared runtime’s `BASE_URL` points at Parley when running there. Participant
+invitations must instead remain on the current Parley origin at `/r/<code>`,
+never `/sessions/<id>`. Codes do not confer authorization.
+
+Reset participation acknowledgement when switching the selected scenario. Keep
+the selection visible when search filters hide its option. Load saved private
+rubrics only after both session-owner and meeting-host checks; render the session
+snapshot rather than the current scenario revision. See the Parley product guide
+and studio setup, invitation, review-route and Meet-link regression tests.

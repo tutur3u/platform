@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { collaborationPreferences } from '../creation-guidance';
 
 const id = z.guid();
 const version = z.number().int().positive();
@@ -7,6 +8,13 @@ import { richTextNodeSchema, safeImage } from './rich-text-schema';
 import { wikiKinds, wikiSchema } from './wiki-schema';
 
 export const lettinDraftSchema = z.object({
+  creationGuidance: z
+    .object({
+      credits: z.string().trim().max(1000),
+      usageNotes: z.string().trim().max(1000),
+      collaboration: z.enum(collaborationPreferences),
+    })
+    .optional(),
   contentNotice: z.string().trim().max(500).optional(),
   theme: z
     .object({

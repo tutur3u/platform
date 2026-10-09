@@ -30,6 +30,7 @@ vi.mock('@tuturuuu/users-core/lib/user-referrals', () => ({
 
 import {
   getGroupData,
+  getReportData,
   getUserDetailData,
   loadOptionalUserDetailResource,
 } from './data';
@@ -138,6 +139,67 @@ describe('user detail data loaders', () => {
     expect(groupQuery.order).toHaveBeenCalledWith('name', {
       ascending: true,
     });
+  });
+
+  it('returns workspace-view reports without inventing a table revision or exposing joined identities', async () => {
+    const report = {
+      id: 'report-1',
+      title: 'Monthly report',
+      approved_at: null,
+      approved_by: null,
+      report_approval_status: 'PENDING',
+    };
+    const joinedFields = {
+      creator_display_name: 'Creator',
+      creator_email: 'creator@example.com',
+      creator_full_name: 'Creator Name',
+      group_name: 'Group',
+      group_ws_id: 'ws-1',
+      modifier_display_name: 'Modifier',
+      modifier_email: 'modifier@example.com',
+      modifier_full_name: 'Modifier Name',
+      user_archived: false,
+      user_archived_until: null,
+      user_display_name: 'User',
+      user_email: 'user@example.com',
+      user_full_name: 'User Name',
+      user_note: 'Private note',
+      user_ws_id: 'ws-1',
+    };
+    const query = createGroupQuery({
+      data: [{ ...report, ...joinedFields }],
+      count: 1,
+      error: null,
+    });
+    const from = vi.fn(() => query);
+    const schema = vi.fn(() => ({ from }));
+    createAdminClientMock.mockResolvedValue({ schema });
+
+    await expect(
+      getReportData({ wsId: 'ws-1', userId: 'user-1' })
+    ).resolves.toEqual({ data: [report], count: 1 });
+    expect(schema).toHaveBeenCalledWith('private');
+    expect(from).toHaveBeenCalledWith(
+      'external_user_monthly_reports_workspace_view'
+    );
+    expect(query.eq.mock.calls).toEqual([
+      ['user_id', 'user-1'],
+      ['user_ws_id', 'ws-1'],
+    ]);
+    expect(query.order).toHaveBeenCalledWith('created_at', {
+      ascending: false,
+    });
+  });
+
+  it('propagates report view errors rather than returning unverified reports', async () => {
+    const error = new Error('view unavailable');
+    const query = createGroupQuery({ data: [], count: null, error });
+    createAdminClientMock.mockResolvedValue({
+      schema: vi.fn(() => ({ from: vi.fn(() => query) })),
+    });
+    await expect(
+      getReportData({ wsId: 'ws-1', userId: 'user-1' })
+    ).rejects.toBe(error);
   });
 
   it('keeps primary user details loadable when require-attention lookup fails', async () => {

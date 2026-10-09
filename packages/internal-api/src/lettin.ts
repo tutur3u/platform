@@ -46,7 +46,13 @@ export type LettinTheme = {
   typography: 'editorial' | 'clean';
   motion: 'full' | 'reduced';
 };
+export type LettinCreationGuidance = {
+  credits: string;
+  usageNotes: string;
+  collaboration: 'unspecified' | 'ask-first' | 'open' | 'closed';
+};
 export type LettinDraft = {
+  creationGuidance?: LettinCreationGuidance;
   contentNotice?: string;
   theme?: LettinTheme;
   title: string;
