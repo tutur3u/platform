@@ -524,6 +524,19 @@ runtime and Docker workflow files, in addition to the paused source/Dockerfiles.
 Policy tests guard these exclusions. Do not reactivate them indirectly during
 ordinary active-package release maintenance.
 
+## Cron Control native Worker toolchain
+
+Use the owning Cron Control workspace and Node 24 for Vite+/Oxc commands.
+Its independent unit config must not start the Cloudflare Vite development plugin.
+Runtime health fixtures do not dispatch scheduled work or contact production;
+repeat them against the CI-emitted configuration and verify identity, compatibility,
+trigger, vars and secret names. Deploy only the immutable artifact qualified by
+that CI run, using its emitted Wrangler config; preserve source config for named
+secret provisioning. See `apps/docs/build/devops/cloudflare-cron-control.mdx` for
+commands and the distinct downstream delivery/cost/stop acceptance boundaries.
+
+## Native Meet realtime toolchain
+
 For the native Meet realtime Vite+ workspace, keep the original production Wrangler
 entry and migration history intact while CI qualifies `dist/worker/wrangler.json`.
 Run emitted-config identity/binding checks and real SQLite routing probes after the
