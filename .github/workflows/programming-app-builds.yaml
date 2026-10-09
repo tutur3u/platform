@@ -5,6 +5,7 @@ on:
       - 'apps/learn/**'
       - 'apps/infrastructure/**'
       - 'apps/web/**'
+      - 'apps/mail/**'
       - 'apps/contacts/**'
       - 'packages/**'
       - 'bun.lock'
@@ -33,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [web, learn, infrastructure, contacts]
+        app: [web, learn, infrastructure, mail, contacts]
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://programming-ci.supabase.invalid
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_programming_ci_placeholder
