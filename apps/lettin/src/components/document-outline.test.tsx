@@ -271,3 +271,21 @@ it('replaces outline labels and targets when the selected published entry change
     container.querySelector('article nav a')!.getAttribute('href')
   ).toContain('lettin-world-entry-');
 });
+
+it('keeps escaped content guidance before artwork and heading navigation', () => {
+  const html = renderToStaticMarkup(
+    <DocumentView
+      draft={{
+        ...draft,
+        image: 'https://example.com/art.png',
+        contentNotice: '<script>reader guidance</script>',
+      }}
+      showOutline
+    />
+  );
+  expect(html).toContain('&lt;script&gt;reader guidance&lt;/script&gt;');
+  expect(html).not.toContain('<script>');
+  expect(html).toContain('<nav');
+  expect(html.indexOf('contentNotice')).toBeLessThan(html.indexOf('<img'));
+  expect(html.indexOf('contentNotice')).toBeLessThan(html.indexOf('<nav'));
+});
