@@ -1579,3 +1579,13 @@ read-only; existing Biome gates remain authoritative until formatter/rule parity
 This tooling unit adds no alarm, queue, retry chain, storage operation or scheduler.
 Review background-work and operation-cost bounds separately when those paths change;
 health and build success do not establish a spending cap or production promotion.
+
+### Native Vite+ test and coverage version alignment
+
+Vite+ 1.1.0 requires Vitest and coverage-v8 5.0.3 together. Pin the root dependency,
+root `vitest` override and provider with Bun; an older root override replaces
+Vite+'s declared runner even when ordinary tests pass. The coverage guard rejects
+that mismatch rather than producing unreliable coverage. Shared CI forwards
+`--maxWorkers=2` and optionally `--coverage`: keep worker/pool defaults in the
+unit config, not a duplicate CLI flag in package scripts. Validate both forwarded
+commands under Node 24 in the owning workspace through `ttr resources`.

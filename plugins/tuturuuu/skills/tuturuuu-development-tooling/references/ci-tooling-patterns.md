@@ -486,3 +486,9 @@ Put native Worker test worker/pool defaults in `vitest.config.ts`, not the packa
 script. Shared sharded CI appends `--maxWorkers=2`; repeating that option in a
 `vp test` script fails CLI parsing before collection. Validate new workspace test
 scripts with `bun run test --maxWorkers=2` under Node 24 as well as their owning CI.
+
+Vite+ 1.1.0 bundles Vitest 5.0.3. Align the root Vitest dependency, its override,
+and coverage-v8 provider to that exact version with Bun commands. Updating only
+the provider while a root override forces an older runner still mixes versions.
+Validate the forwarded coverage command too: `bun run test --maxWorkers=2 --coverage`
+under Node 24. Do not disable Vite+'s provider-version guard to unblock CI.
