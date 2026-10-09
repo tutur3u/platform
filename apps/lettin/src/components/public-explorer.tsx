@@ -3,8 +3,8 @@ import { ArrowRight, BookOpen } from '@tuturuuu/icons';
 import type { LettinPublicWorld } from '@tuturuuu/internal-api/lettin';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
-
 import { Link } from '@/i18n/navigation';
+import { ContentNotice } from './content-notice';
 import { catalogueQuery } from './public-catalogue-links';
 import { PublishedTagLinks } from './published-tag-links';
 export function PublicExplorer({
@@ -69,6 +69,7 @@ export function PublicExplorer({
               href={`/worlds/${world.id}`}
               className="block focus-visible:outline-2 focus-visible:outline-ring"
             >
+              <ContentNotice notice={world.published.contentNotice} />
               <div className="studio-world-art relative flex h-52 items-center justify-center overflow-hidden">
                 {world.published.image ? (
                   // biome-ignore lint/performance/noImgElement: Artwork must bypass optimizer caching so private media access can be revoked.

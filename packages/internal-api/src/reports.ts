@@ -9,6 +9,18 @@ import {
   getInternalApiClient,
   type InternalApiClientOptions,
 } from './client';
+import {
+  type PeriodicReportDeliveryBatchControls,
+  queuePeriodicReportDeliveryBatch,
+} from './reports-delivery-batch';
+
+export {
+  MAX_PERIODIC_DELIVERY_BATCH_SIZE,
+  type PeriodicReportDeliveryBatchControls,
+  type PeriodicReportDeliveryBatchItem,
+  type PeriodicReportDeliveryBatchProgress,
+  type PeriodicReportDeliveryBatchResult,
+} from './reports-delivery-batch';
 
 export interface CreateReportUploadUrlPayload {
   filename: string;
@@ -483,6 +495,21 @@ export async function requestPeriodicReportDelivery(
       body: JSON.stringify({ action }),
       cache: 'no-store',
     }
+  );
+}
+
+export function requestPeriodicReportDeliveryBatch(
+  workspaceId: string,
+  reportIds: readonly string[],
+  controls: PeriodicReportDeliveryBatchControls,
+  options?: InternalApiClientOptions
+) {
+  return queuePeriodicReportDeliveryBatch(
+    workspaceId,
+    reportIds,
+    controls,
+    (reportId) =>
+      requestPeriodicReportDelivery(workspaceId, reportId, 'send', options)
   );
 }
 
