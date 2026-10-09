@@ -1,6 +1,8 @@
 import type { LettinDraft } from '@tuturuuu/internal-api/lettin';
 import { useTranslations } from 'next-intl';
 import { ArtworkGallery } from './artwork-gallery';
+
+import { ContentNotice } from './content-notice';
 import { renderDocumentNode } from './document-nodes';
 import { wikiOf } from './wiki-model';
 
@@ -13,6 +15,7 @@ export function DocumentView({ draft }: { draft: LettinDraft }) {
       data-wiki-type={draft.theme?.typography}
       data-wiki-motion={draft.theme?.motion}
     >
+      <ContentNotice notice={draft.contentNotice} />
       {draft.image && (
         // biome-ignore lint/performance/noImgElement: Artwork must bypass optimizer caching so private media access can be revoked.
         <img

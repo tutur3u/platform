@@ -8,6 +8,7 @@ import { richTextNodeSchema } from './rich-text-schema';
 import { wikiKinds, wikiSchema } from './wiki-schema';
 
 export const lettinDraftSchema = z.object({
+  contentNotice: z.string().trim().max(500).optional(),
   theme: z
     .object({
       palette: z.enum(['paper', 'forest', 'midnight', 'rose']),

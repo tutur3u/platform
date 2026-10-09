@@ -437,3 +437,20 @@ retain the same permissions without a new storage policy. Exclude collection
 payloads from discovery projections and test draft edits against older published
 snapshots with real local D1/R2. Keep upload operations tied to the editor lease,
 block save/discard/publish while pending, and reject stale results after unmount.
+
+## Notification email admission
+
+Immediate and batched notification email share `notifications/cron-helpers.ts`
+and `email-eligibility.ts`. Keep recipient-domain admission separate from the
+intentional root-workspace rollout. External account destinations require a
+matching confirmed Auth email; never infer verification from a queued or profile
+address alone. Recheck current email preferences for each queued event through
+`should_send_notification`, including account channel/category opt-outs, before
+rendering a digest. Lookup failures must stop admission.
+
+Keep EmailService suppression authoritative and do not request a blacklist bypass.
+Transactional account updates and dedicated auth/recovery mail must not inherit a
+marketing opt-out accidentally. The source matrix and sender fixtures live in
+`email-eligibility.test.ts` and the notification route tests. See the recipient
+policy in `apps/docs/platform/architecture/authorization.mdx`; focused fixture
+success is separate from exact-head CI and actual provider/inbox delivery.

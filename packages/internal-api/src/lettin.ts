@@ -54,6 +54,8 @@ export type LettinArtwork = {
 };
 export type LettinDraft = {
   gallery?: LettinArtwork[];
+
+  contentNotice?: string;
   theme?: LettinTheme;
   title: string;
   description: string;

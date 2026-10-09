@@ -232,3 +232,38 @@ it('blocks save and discard while gallery artwork uploads, then saves the comple
   );
   expect(onDirty).toHaveBeenLastCalledWith(false);
 });
+
+it('saves a notice through the private draft command without publishing it', async () => {
+  mutateAsync.mockResolvedValueOnce({ id: 'world' });
+  await act(async () =>
+    root.render(
+      <EntryEditor
+        wsId="workspace"
+        worldId="world"
+        record={record}
+        worldRole="owner"
+        isWorld
+        entries={[]}
+        onDirty={() => {}}
+      />
+    )
+  );
+  const input = [...container.querySelectorAll('label')]
+    .find((label) => label.textContent?.startsWith('contentNotice'))
+    ?.querySelector('textarea');
+  expect(input).toBeDefined();
+  expect(input?.maxLength).toBe(500);
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(
+      HTMLTextAreaElement.prototype,
+      'value'
+    )?.set?.call(input, 'Spoilers for chapter two');
+    input?.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await click('saveDraft');
+  expect(mutateAsync).toHaveBeenCalledTimes(1);
+  expect(mutateAsync.mock.calls[0]?.[0]).toMatchObject({
+    action: 'saveWorld',
+    draft: { contentNotice: 'Spoilers for chapter two' },
+  });
+});

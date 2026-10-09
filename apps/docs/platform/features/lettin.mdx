@@ -609,3 +609,24 @@ documents with no gallery continue to render normally. Regression evidence:
 `artwork-gallery.test.ts`, `artwork-gallery.test.tsx`, and
 `gallery-storage.test.ts`; hosted interaction and exact-head app CI remain
 independent acceptance gates.
+
+## Content notices
+
+Notebook and wiki entry editors support an optional creator-authored content
+notice of up to 500 characters. The default is empty, including historical
+content. Notices appear before artwork and reading content in document previews,
+public notebook reading, public discovery cards, private notebook shelves and
+wiki entry cards. Labels are available in English and Vietnamese.
+
+Notices are advisory and do not hide content, replace moderation, grant access or
+publish a draft. A saved notice belongs to the private draft until a publisher
+republishes that notebook or entry; readers receive the notice from its published
+snapshot. Clearing and republishing removes it publicly. Profile identity fields
+and consent to share creator details are unaffected. Titles and metadata remain
+visible under existing publication rules.
+
+Regression coverage: `content-notice.test.tsx` checks reading/card placement and
+legacy empty notices; `content-notice-schema.test.ts` checks limits and command
+validation; the entry editor test checks saving notice edits.
+`storage.test.ts` exercises the real local D1 mutation and catalogue queries to
+confirm later edits and clearing remain private until republished.
