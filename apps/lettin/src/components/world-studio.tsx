@@ -8,6 +8,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { Collaborators } from './collaborators';
+import { CreatorCalendarPlan } from './creator-calendar-plan';
 import { DuplicateEntry } from './duplicate-entry';
 import { EntryEditor } from './entry-editor';
 import { useNavigationGuard } from './navigation-guard';
@@ -141,6 +142,11 @@ export function WorldStudio({
             worldId={worldId}
             disabled={dirty}
             onCreated={select}
+          />
+          <CreatorCalendarPlan
+            key={`${wsId}:${worldId}`}
+            wsId={wsId}
+            disabled={dirty}
           />
           <WikiCreateEntry
             key={section}

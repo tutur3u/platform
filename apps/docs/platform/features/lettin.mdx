@@ -992,3 +992,26 @@ access or source ownership. English and Vietnamese controls cover both surfaces.
 Regression coverage: `lettin-task-reference.test.ts`, `task-plan-composer.test.tsx`
 and the Tasks composer page tests cover safe links, explicit sharing and session
 and workspace boundaries.
+
+### Plan creator work in Calendar
+
+The authorized notebook studio lets creators choose a calendar day and explicitly
+open Calendar for the same workspace. Only the day is included in the query;
+notebook and entry identifiers, titles, draft text and profile details are never
+copied. The link uses Calendar's canonical production origin or its registered
+Portless origin in development. No event is created by this action.
+
+Calendar independently authenticates the actor, resolves the workspace and checks
+`manage_calendar`; the link grants no access. Creators plan or create events in
+Calendar through its normal controls. Invalid dates/workspaces/locales produce no
+link. Unsaved studio edits block day selection and navigation until resolved;
+the selected day remains available afterward. Workspace/notebook context changes
+reset the local day selection. This workflow is day navigation, with no calendar
+sync or transfer of source content.
+
+Regression evidence: `calendar-day-url.test.ts` checks exact date-only URLs,
+production/Portless origins, leap days and rejected input; bilingual rendered
+`creator-calendar-plan.test.tsx` covers explicit selection, source-free queries,
+dirty blocking and context resets. Calendar's existing workspace route retains
+its session and permission checks. Exact-head Lettin builds and authenticated
+cross-app browser acceptance remain independent delivery gates.
