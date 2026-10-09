@@ -428,4 +428,5 @@ It never logs response bodies, exception text, request URLs, or version-tag valu
 Twelve attempts retain the 15-second request timeout and five-second delay,
 including the final delay. Exhaustion still fails deployment verification; these
 diagnostics identify a failed boundary without proving a provider-side cause.
-The colocated verifier fixtures cover those boundaries without live requests.
+The colocated verifier fixtures run through Lettin’s owning Vitest configuration
+and cover those boundaries without live requests.

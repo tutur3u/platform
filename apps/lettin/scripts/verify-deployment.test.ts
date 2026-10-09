@@ -1,4 +1,4 @@
-import { describe, expect, it, mock, spyOn } from 'bun:test';
+import { describe, expect, it, vi } from 'vitest';
 import {
   runVerifierCli,
   type VerificationDiagnostic,
@@ -25,16 +25,16 @@ function fixture(
     logs,
     delays,
     dependencies: {
-      fetch: mock(async (url: string, init: { signal: AbortSignal }) => {
+      fetch: vi.fn(async (url: string, init: { signal: AbortSignal }) => {
         const path = new URL(url).pathname;
         paths.push(path);
         signals.push(init.signal);
         return handler(path, paths.length);
       }),
-      sleep: mock(async (milliseconds: number) => {
+      sleep: vi.fn(async (milliseconds: number) => {
         delays.push(milliseconds);
       }),
-      log: mock((diagnostic: VerificationDiagnostic) => {
+      log: vi.fn((diagnostic: VerificationDiagnostic) => {
         logs.push({ ...diagnostic });
       }),
     },
@@ -53,7 +53,7 @@ async function exhausted(f: ReturnType<typeof fixture>) {
 }
 describe('actual Lettin deployment verifier', () => {
   it('checks health then both pages, with 15-second signals and no success delay', async () => {
-    const timeout = spyOn(AbortSignal, 'timeout');
+    const timeout = vi.spyOn(AbortSignal, 'timeout');
     try {
       const f = fixture((path) =>
         path.endsWith('/health') ? json(healthy()) : new Response()
