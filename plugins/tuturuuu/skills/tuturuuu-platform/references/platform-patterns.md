@@ -435,6 +435,17 @@ checked with `--check`; inactive Rust/TanStack sources are excluded. Product
 guides explain actual behavior and access, while generated routes locate source.
 Use `node scripts/docs-audit.js` for navigation, internal links, and assets.
 
+## Managed artwork collections
+
+Adding artwork outside rich text requires updating the atomic draft artwork guard
+and auditing media publication and retention together. Lettin gallery items use
+the existing `image` JSON key, so published media lookup and recursive cleanup
+retain the same permissions without a new storage policy. Exclude collection
+payloads from discovery projections and test draft edits against older published
+snapshots with real local D1/R2. Keep upload operations tied to the editor lease,
+block save/discard/publish while pending, and reject stale results after unmount.
+When integrating saved-draft duplication, exercise collection artwork ownership
+inside its insert fence, including retirement between the source read and insert.
 ## Duplicating creator drafts
 
 Duplicate from a server-owned saved revision, with explicit destination scope and
@@ -462,6 +473,18 @@ marketing opt-out accidentally. The source matrix and sender fixtures live in
 `email-eligibility.test.ts` and the notification route tests. See the recipient
 policy in `apps/docs/platform/architecture/authorization.mdx`; focused fixture
 success is separate from exact-head CI and actual provider/inbox delivery.
+
+
+## Saved versus published browsing
+
+Creator search/filter controls operate on authorized saved drafts; public search
+must operate on the published-only projection. Never pass private search indexes
+or draft-change indicators to reader surfaces. “Published” and “saved changes”
+are overlapping states, not mutually exclusive. Compare structured document
+values rather than serialization key order. Apply relationship facets to both
+endpoints before edge text search, and preserve semantic timeline ordering when
+adding card sorts. Keep dirty-editor navigation guards and clear-filter recovery
+in real component regression coverage.
 
 ### Local reference pickers
 
@@ -536,6 +559,17 @@ the selection visible when search filters hide its option. Load saved private
 rubrics only after both session-owner and meeting-host checks; render the session
 snapshot rather than the current scenario revision. See the Parley product guide
 and studio setup, invitation, review-route and Meet-link regression tests.
+
+## Typed quick capture
+
+Reuse the existing notebook entry-kind list and authorized create command for
+plain text capture. Default to a page, retain the selected kind on failure, and
+reset it only after successful capture or context replacement. Keep pending and
+dirty-editor fences on every input, including kind selection. Do not inject
+structured starter metadata or publish captured entries implicitly. Cover the
+supported kinds against the draft schema, translated rendered labels and actual
+D1 publication/workspace/revocation boundaries; local fixtures do not establish
+hosted dialog acceptance. See the Lettin feature decision and quick-note tests.
 
 ### Local D1 quota fixtures
 

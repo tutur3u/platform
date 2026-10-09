@@ -189,7 +189,7 @@ export async function readPublic(
   // Catalogue pages contain only card fields; documents are loaded for one world.
   const projection = worldId
     ? 'published'
-    : "json_remove(published,'$.content','$.links','$.wiki','$.creationGuidance') AS published";
+    : "json_remove(published,'$.content','$.links','$.wiki','$.gallery','$.creationGuidance') AS published";
   const rows = await db
     .prepare(
       `SELECT id,owner_id,${projection} FROM worlds WHERE ${conditions.join(' AND ')} ORDER BY published_at DESC,id LIMIT ? OFFSET ?`

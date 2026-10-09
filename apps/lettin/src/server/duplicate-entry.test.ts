@@ -296,3 +296,85 @@ it('requires source identity and positive revision, strips client-supplied conte
     lettinCommandSchema.safeParse({ ...value, entryId: 'other' }).success
   ).toBe(false);
 });
+
+async function galleryMedia(world = worldId) {
+  const id = crypto.randomUUID();
+  await db
+    .prepare(
+      'INSERT INTO media(id,ws_id,world_id,object_path,created_by) VALUES (?,?,?,?,?)'
+    )
+    .bind(id, owner.wsId, world, `fixture/${id}`, owner.id)
+    .run();
+  return {
+    image: `/api/v1/lettin/media/${id}`,
+    alt: 'Portrait',
+    caption: 'Private caption',
+    credit: 'Artist',
+  };
+}
+it('copies saved gallery metadata and content notices into an unpublished draft', async () => {
+  const gallery = [await galleryMedia()];
+  await mutate(db, owner, {
+    action: 'saveEntry',
+    worldId,
+    entryId,
+    version: 1,
+    draft: { ...draft, gallery, contentNotice: 'Reader guidance' },
+  });
+  const result = await copy(owner, 2);
+  const clone = (await readWorld(db, owner, worldId)).entries.find(
+    (e) => e.id === result.id
+  )!;
+  expect(clone).toMatchObject({
+    version: 1,
+    published: null,
+    published_at: null,
+    draft: { gallery, contentNotice: 'Reader guidance' },
+  });
+  expect(await readPublic(db, worldId)).toEqual([]);
+});
+it.each(['missing', 'foreign', 'retiring'])(
+  'rejects %s gallery artwork when duplicating',
+  async (state) => {
+    const other = (await mutate(db, owner, { action: 'createWorld', draft }))
+      .id;
+    const item = await galleryMedia(state === 'foreign' ? other : worldId);
+    const id = item.image.split('/').at(-1)!;
+    if (state === 'missing')
+      await db.prepare('DELETE FROM media WHERE id=?').bind(id).run();
+    if (state === 'retiring')
+      await db.prepare('UPDATE media SET deleting=1 WHERE id=?').bind(id).run();
+    await db
+      .prepare('UPDATE entries SET draft=? WHERE id=?')
+      .bind(JSON.stringify({ ...draft, gallery: [item] }), entryId)
+      .run();
+    await expect(copy()).rejects.toMatchObject({ status: 409 });
+    expect((await readWorld(db, owner, worldId)).entries).toHaveLength(1);
+  }
+);
+it('fences gallery retirement between reading the source and inserting a copy', async () => {
+  const item = await galleryMedia();
+  await mutate(db, owner, {
+    action: 'saveEntry',
+    worldId,
+    entryId,
+    version: 1,
+    draft: { ...draft, gallery: [item] },
+  });
+  const wrapped = beforeInsert(() =>
+    db
+      .prepare('UPDATE media SET deleting=1 WHERE id=?')
+      .bind(item.image.split('/').at(-1)!)
+      .run()
+  );
+  await expect(
+    mutate(wrapped, owner, {
+      action: 'duplicateEntry',
+      worldId,
+      entryId,
+      version: 2,
+      title: 'Copy',
+    })
+  ).rejects.toMatchObject({ status: 409 });
+  expect((await readWorld(db, owner, worldId)).entries).toHaveLength(1);
+});

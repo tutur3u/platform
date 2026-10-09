@@ -106,6 +106,31 @@ implementing a scope; the announcement is not evidence of repository compatibili
    commands change only with separately authorized promotion, bounded scope and
    verified rollback. Keep paused runtimes excluded.
 
+### Discovery runtime and authentication
+
+Use Node.js 22.18 or later to execute cf. Installing a dependency with Bun does
+not mean the CLI should run on Bun: Cloudflare documents that commands loading
+`cloudflare.config.ts` fail on the Bun runtime. Verify the executor separately
+from the package manager. See [installation and authentication](https://developers.cloudflare.com/cf/get-started/).
+
+For capability discovery before project adoption, run a reviewed, exact cf version
+through `npm exec --yes --package=cf@<reviewed-version> -- cf --help` from a private
+scratch directory outside app configuration and `.env` ancestry. This avoids a
+global install or repository dependency change. Use an anonymous `cf cli search`
+query describing the operation, then inspect that command's help/schema. Discovery
+proves command availability, not authenticated operation or Worker artifact parity.
+
+Parse `cf auth whoami` JSON and require `authenticated === true`; exit status zero
+alone does not establish authentication. An unauthenticated result can return
+`authenticated: false` and an error with a successful process exit. Preserve that
+failure instead of proceeding to API calls. cf uses separate credentials from
+Wrangler; do not copy credential files or assume a prior Wrangler login applies.
+
+API commands can remember selected accounts in project-local cache files. Use
+explicit target identity and isolate discovery before touching app worktrees;
+review any resulting local files. Neither command discovery nor `--dry-run`
+authorizes migration, configuration mutation, resource creation or deployment.
+
 The current foundation does not install cf or convert Worker configurations.
 Track CLI capability gaps independently from app migration so an unsupported
 operation does not block portable libraries or Oxc adoption.
