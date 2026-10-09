@@ -47,7 +47,8 @@ for (const [locale, messages] of [
       expect(container.textContent).toContain(
         messages.lettin.writingSourcePending
       );
-      expect(container.querySelector('a, button, input')).toBeNull();
+      expect(container.querySelector('input')?.value).toBe('');
+      expect(container.querySelector('progress, a, button')).toBeNull();
     } finally {
       await act(() => root.unmount());
     }

@@ -689,3 +689,11 @@ and grapheme segmentation and state the whitespace rule. Label bounded partial
 results and unapplied source-mode exclusions explicitly. Memoize against the
 content object so metadata edits do not traverse the document again. Lettin's
 writing-statistics model and bilingual DOM regressions cover these boundaries.
+
+## Session writing aids
+
+Keep optional session targets separate from authored drafts and public projections.
+Use the existing keyed editor lifetime to reset local state on source changes.
+Count current body content through the bounded Unicode statistics helper; withhold
+completion claims while source edits are unapplied or traversal is partial.
+Document session-only retention and avoid interpreting a reached target as a save.
