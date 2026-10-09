@@ -1249,7 +1249,7 @@
     "api:/api/v1/users/me/avatar/upload:apps/web/src/app/api/v1/users/me/avatar/upload/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Native/offline PUT compatibility retained. Rust parity pending."
+      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Explicit side-effect-free OPTIONS permits PUT/Content-Type for literal registered internal and exact configured external origins without credentials. Every trusted-origin PUT response varies on Origin; native/offline capability behavior retained. Rust parity pending."
     },
     "api:/api/v1/users/me/banner/upload-url:apps/web/src/app/api/v1/users/me/banner/upload-url/route.ts": {
       "status": "legacy-next",
@@ -1259,7 +1259,7 @@
     "api:/api/v1/users/me/banner/upload:apps/web/src/app/api/v1/users/me/banner/upload/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Native/offline PUT compatibility retained. Rust parity pending."
+      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Explicit side-effect-free OPTIONS permits PUT/Content-Type for literal registered internal and exact configured external origins without credentials. Every trusted-origin PUT response varies on Origin; native/offline capability behavior retained. Rust parity pending."
     },
     "api:/api/v1/users/me/default-workspace:apps/web/src/legacy-api-routes/v1/users/me/default-workspace/route.ts": {
       "status": "migrated",

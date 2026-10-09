@@ -396,8 +396,9 @@ Then classify each external dependency:
 </Steps>
 
 Finish with: `connection()` on data pages, the owned-routes list, removing the
-origin app's nav entry, an i18n backfill, the TanStack page-override + manifest +
-doc counts, then `bun check` **and** a real `next build`.
+origin app's nav entry, an i18n backfill, active docs inventory, focused local
+non-build checks, and exact-commit CI type/lint/test and real Next build evidence.
+Rust/TanStack migration manifests remain frozen until explicitly resumed.
 
 <Note>
 Deleting pages from `apps/web` leaves `apps/web/.next/types/validator.ts` stale,

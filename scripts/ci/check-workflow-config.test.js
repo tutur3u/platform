@@ -11,29 +11,9 @@ const {
 } = require('./workflow-config-test-helpers.js');
 const ciConfig = fs.readFileSync(path.join(repoRoot, 'tuturuuu.ci.ts'), 'utf8');
 
-function readWorkflowYaml(workflowName) {
-  const workflowPath = path.join(
-    repoRoot,
-    '.github',
-    'workflows',
-    workflowName
-  );
-  const workflowJson = execFileSync(
-    'ruby',
-    [
-      '-e',
-      "require 'yaml'; require 'json'; puts JSON.generate(YAML.load_file(ARGV.fetch(0)))",
-      workflowPath,
-    ],
-    {
-      cwd: repoRoot,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    }
-  );
-
-  return JSON.parse(workflowJson);
-}
+const {
+  readWorkflow: readWorkflowYaml,
+} = require('./workflow-yaml-test-helper');
 
 test('mobile Apple workflows use stable generic build destinations', () => {
   const iosSource = fs.readFileSync(
@@ -841,12 +821,12 @@ test('paused TanStack migration E2E retains its restartable matrix', () => {
   assert.match(cleanupStep.run || '', /bun sb:stop \|\| true/);
 });
 
-test('Inventory and Storefront cache invalidation stays protected by E2E', () => {
+test('Inventory and Storefront retain their paused E2E contract', () => {
   const workflow = readWorkflowYaml('e2e-tests.yaml');
   const job = workflow.jobs?.['inventory-storefront-cache-e2e'];
   assert.ok(job, 'e2e-tests.yaml must define the cross-app cache E2E job');
   assert.equal(job.needs, 'relevance');
-  assert.match(job.if, /production'.*needs\.relevance\.outputs\.run_e2e/u);
+  assert.equal(job.if, githubExpression('false'));
   assert.equal(job['timeout-minutes'], 30);
   assert.equal(job.permissions?.contents, 'read');
   const steps = job.steps || [];
@@ -910,10 +890,10 @@ test('E2E image bundle completes before private, bounded, optional consumers', (
   const cleanup = workflow.jobs?.['cleanup-e2e-images'];
   assert.ok(producer && e2e && migration && cleanup);
   assert.equal(producer.needs, 'relevance');
-  assert.match(producer.if, /needs\.relevance\.outputs\.run_e2e/u);
+  assert.equal(producer.if, githubExpression('false'));
   assert.deepEqual(e2e.needs, ['relevance', 'prepare-e2e-images']);
   assert.deepEqual(migration.needs, ['prepare-e2e-images']);
-  assert.match(e2e.if, /always\(\)/u);
+  assert.equal(e2e.if, githubExpression('false'));
   assert.equal(migration.if, githubExpression('false'));
   assert.equal(producer['continue-on-error'], true);
   assert.equal(producer.permissions?.contents, 'read');
@@ -932,7 +912,7 @@ test('E2E image bundle completes before private, bounded, optional consumers', (
     githubExpression("inputs.supabase_image_transport || 'cache'")
   );
   assert.deepEqual(
-    workflow.true?.workflow_dispatch?.inputs?.supabase_image_transport?.options,
+    workflow.on?.workflow_dispatch?.inputs?.supabase_image_transport?.options,
     ['cache', 'registry']
   );
   assert.equal(
@@ -967,8 +947,7 @@ test('E2E image bundle completes before private, bounded, optional consumers', (
     'e2e',
     'migration-e2e',
   ]);
-  assert.match(cleanup.if, /always\(\)/u);
-  assert.match(cleanup.if, /needs\.relevance\.outputs\.run_e2e/u);
+  assert.equal(cleanup.if, githubExpression('false'));
   assert.ok(
     cleanup.steps.some(
       (step) =>
