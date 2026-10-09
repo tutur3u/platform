@@ -444,3 +444,16 @@ marketing opt-out accidentally. The source matrix and sender fixtures live in
 `email-eligibility.test.ts` and the notification route tests. See the recipient
 policy in `apps/docs/platform/architecture/authorization.mdx`; focused fixture
 success is separate from exact-head CI and actual provider/inbox delivery.
+
+### Local reference pickers
+
+When a creator edits references among already-authorized notebook records, derive
+search results from the supplied collection rather than adding broader source
+reads. Keep search/kind filters transient, batch large lists, and require an
+explicit target action. Fence self references, duplicate target/type pairs and
+collection limits both in options and the update helper. Do not silently drop
+unavailable references: retain their labels until explicit removal. Preserve
+other draft fields and use the existing Save permission/revision boundary.
+Lettin's `relationship-authoring-model.test.ts` and
+`wiki-relationships-editor.test.tsx` exercise this contract; local DOM acceptance
+remains distinct from hosted browser and publication verification.
