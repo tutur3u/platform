@@ -69,7 +69,8 @@ void main() {
       expect(find.textContaining('Visible first detail.'), findsNothing);
       expect(find.textContaining('Visible later detail.'), findsNothing);
       expect(find.byType(AssistantToolSummary), findsOneWidget);
-      expect(find.text('read_calendar · 2'), findsOneWidget);
+      expect(find.text('read_calendar ·'), findsOneWidget);
+      expect(find.text('2'), findsOneWidget);
       final before = find.byKey(const ValueKey('assistant-text-part-1'));
       final tools = find.byKey(const ValueKey('assistant-tool-part-3'));
       final after = find.byKey(const ValueKey('assistant-text-part-5'));
@@ -107,7 +108,8 @@ void main() {
     );
     await tester.pumpApp(_bubble(restored.parts));
     expect(find.byType(AssistantToolSummary), findsOneWidget);
-    expect(find.text('read_calendar · 2'), findsOneWidget);
+    expect(find.text('read_calendar ·'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
     expect(find.text('read_tasks'), findsNothing);
     await tester.tap(find.byKey(const ValueKey('assistant-tools-toggle')));
     await tester.pumpAndSettle();
