@@ -369,6 +369,14 @@ it.each([true, false])(
       ...record.draft,
       title: 'Public version',
       tags: ['public-tag'],
+      gallery: [
+        {
+          image: 'https://example.test/public.png',
+          alt: 'Public artwork',
+          caption: 'Published',
+          credit: 'Artist',
+        },
+      ],
     };
     const initial = {
       ...record,
@@ -377,6 +385,14 @@ it.each([true, false])(
       draft: {
         ...record.draft,
         tags: ['private-tag'],
+        gallery: [
+          {
+            image: 'https://example.test/private.png',
+            alt: 'Private artwork',
+            caption: 'Unsaved',
+            credit: 'Artist',
+          },
+        ],
         contentNotice: 'Private new notice',
       },
     };
@@ -463,7 +479,7 @@ it('can discard the staged snapshot back to the saved private draft', async () =
   expect(mutateAsync).not.toHaveBeenCalled();
 });
 
-it('blocks staging until all overlapping inline artwork uploads settle', async () => {
+it('blocks staging until all overlapping inline and gallery artwork uploads settle', async () => {
   let finishFirst!: (value: { image: string }) => void;
   let failSecond!: (error: Error) => void;
   uploadArtwork
@@ -499,6 +515,7 @@ it('blocks staging until all overlapping inline artwork uploads settle', async (
   );
   await click('inline-upload');
   await click('inline-upload');
+  await click('start-gallery-upload');
   const restore = () =>
     [...container.querySelectorAll('button')].find(
       (b) => b.textContent === 'stagePublishedDraft'
@@ -507,6 +524,10 @@ it('blocks staging until all overlapping inline artwork uploads settle', async (
   await act(() => finishFirst({ image: 'image' }));
   expect(restore().disabled).toBe(true);
   await act(() => failSecond(new Error('Upload failed')));
+  expect(restore().disabled).toBe(true);
+  await click('stagePublishedDraft');
+  expect(container.querySelector('input')?.value).toBe(record.draft.title);
+  await click('finish-gallery-upload');
   expect(restore().disabled).toBe(false);
   expect(mutateAsync).not.toHaveBeenCalled();
 });

@@ -322,6 +322,7 @@ export function EntryEditor({
             disabled={
               mutation.isPending ||
               upload.isPending ||
+              galleryUploading ||
               inlineUploads > 0 ||
               markdownEditing
             }

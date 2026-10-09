@@ -695,8 +695,8 @@ and D1 role/revocation regressions cover these boundaries.
 Keep snapshot restoration separate from persistence and publication. Confirm the
 local replacement, clone the available published value, replace the whole draft
 rather than merging optional fields, and reset tag/rich-text buffers together.
-Preserve the last saved draft for local discard. Pending mutation/upload and
-source editing must block restoration, including confirmation after availability
+Preserve the last saved draft for local discard. Pending mutations and every cover, inline or gallery upload, together with
+source editing, must block restoration, including confirmation after availability
 changes. Use existing save commands and actor/workspace/revision/target fences;
 staging a snapshot does not revive unavailable references or grant publication.
 See the Lettin decision and restore/editor/local D1 regression coverage.
