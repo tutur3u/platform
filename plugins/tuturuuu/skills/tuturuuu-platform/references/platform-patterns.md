@@ -444,3 +444,16 @@ marketing opt-out accidentally. The source matrix and sender fixtures live in
 `email-eligibility.test.ts` and the notification route tests. See the recipient
 policy in `apps/docs/platform/architecture/authorization.mdx`; focused fixture
 success is separate from exact-head CI and actual provider/inbox delivery.
+
+## Reports dashboard totals
+
+Contacts shares Daily semantic report status cards with Periodic. Daily totals count
+recipient rows; Periodic totals count report records. All periodic excludes Daily
+because these units differ. Preserve legacy view/report filter URLs and independent
+Daily/Periodic date/status scopes. Server totals and categories must use the same
+complete active predicate as rows, before pagination. Never display loaded-row
+category counts or stale/unknown totals as zero. Ordered scans must reject incomplete
+count receipts and duplicate IDs; scopes above their explicit read bound require
+narrowing instead of truncated totals. Preserve 100-report delivery selection and
+actor/scope epochs. See `apps/docs/platform/applications/reports.mdx` and the focused
+report-list/query and panel-counts regressions.
