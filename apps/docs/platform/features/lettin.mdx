@@ -833,7 +833,7 @@ acceptance remain separate delivery evidence.
 
 The authorized notebook studio offers explicit plain text quick-note capture.
 A title of up to 160 characters and text of up to 10,000 characters and 100 lines
-create an unpublished page through the existing entry command. Empty input or
+create an unpublished entry through the existing entry command, defaulting to a page. Empty input or
 values beyond these bounds cannot be submitted; text is never silently truncated.
 Internal blank lines are preserved. URLs and markup remain plain text without
 importing remote content or creating references, permissions or publication.
@@ -849,3 +849,24 @@ schema; `quick-note.test.tsx` covers commands, failure, repeated submits, pendin
 and dirty-navigation fences and context resets. `storage.test.ts` uses local D1
 to verify saved private notes, public omission and workspace/revocation boundaries.
 These fixtures do not establish hosted dialog or keyboard acceptance.
+
+### Typed private quick capture
+
+Quick capture defaults to a page and lets creators explicitly choose any supported
+notebook entry kind before saving, including character, location, story and event.
+The selected kind persists on a failed save; successful capture and notebook context
+replacement restore the page default. Pending requests and unsaved editor changes
+block the selector together with the existing capture controls. Text limits and
+plain text treatment remain the same. Capture adds no structured starter facts,
+relationships, source links, profile details or publication metadata. The normal
+notebook editor can enrich the saved entry afterward.
+
+This rule applies only to the authenticated Lettin notebook studio. Every kind
+uses the existing authorized `createEntry` command and remains unpublished until
+an explicit publication action. Publishing the notebook alone does not publish
+captured entries. Regression evidence: `quick-note-model.test.ts` checks all kinds
+against the shared draft schema, `quick-note.test.tsx` checks English/Vietnamese
+selection, explicit commands, reset, failure and blocked controls, and the local D1
+`storage.test.ts` covers page, character and story privacy, cross-workspace denial
+and revoked collaborator access. Exact-head builds and hosted dialog acceptance
+remain independent delivery gates.

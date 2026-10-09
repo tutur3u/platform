@@ -548,6 +548,17 @@ rubrics only after both session-owner and meeting-host checks; render the sessio
 snapshot rather than the current scenario revision. See the Parley product guide
 and studio setup, invitation, review-route and Meet-link regression tests.
 
+## Typed quick capture
+
+Reuse the existing notebook entry-kind list and authorized create command for
+plain text capture. Default to a page, retain the selected kind on failure, and
+reset it only after successful capture or context replacement. Keep pending and
+dirty-editor fences on every input, including kind selection. Do not inject
+structured starter metadata or publish captured entries implicitly. Cover the
+supported kinds against the draft schema, translated rendered labels and actual
+D1 publication/workspace/revocation boundaries; local fixtures do not establish
+hosted dialog acceptance. See the Lettin feature decision and quick-note tests.
+
 ### Local D1 quota fixtures
 
 Seed large boundary datasets with a set-based SQL statement and assert the exact

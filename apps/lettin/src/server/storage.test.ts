@@ -663,30 +663,33 @@ describe('Wiki graph and inline artwork', () => {
   });
 });
 
-it('keeps quick-captured notes unpublished with live notebook and workspace access checks', async () => {
-  const note = quickNoteDraft('Idea', 'Private thought')!;
-  const entryId = (
-    await mutate(db, editor, { action: 'createEntry', worldId, draft: note })
-  ).id;
-  const entry = (await readWorld(db, owner, worldId)).entries.find(
-    (e) => e.id === entryId
-  )!;
-  expect(entry.draft).toEqual(note);
-  expect(entry.published).toBeNull();
-  await mutate(db, owner, { action: 'publishWorld', worldId, version: 1 });
-  expect((await readPublic(db, worldId))[0]!.entries).toEqual([]);
-  await expect(
-    mutate(
-      db,
-      { ...owner, wsId: 'other' },
-      { action: 'createEntry', worldId, draft: note }
-    )
-  ).rejects.toMatchObject({ status: 403 });
-  await db
-    .prepare('DELETE FROM collaborators WHERE world_id = ? AND user_id = ?')
-    .bind(worldId, editor.id)
-    .run();
-  await expect(
-    mutate(db, editor, { action: 'createEntry', worldId, draft: note })
-  ).rejects.toMatchObject({ status: 403 });
-});
+it.each(['page', 'character', 'story'] as const)(
+  'keeps quick-captured %s entries unpublished with live notebook and workspace access checks',
+  async (kind) => {
+    const note = quickNoteDraft('Idea', 'Private thought', kind)!;
+    const entryId = (
+      await mutate(db, editor, { action: 'createEntry', worldId, draft: note })
+    ).id;
+    const entry = (await readWorld(db, owner, worldId)).entries.find(
+      (e) => e.id === entryId
+    )!;
+    expect(entry.draft).toEqual(note);
+    expect(entry.published).toBeNull();
+    await mutate(db, owner, { action: 'publishWorld', worldId, version: 1 });
+    expect((await readPublic(db, worldId))[0]!.entries).toEqual([]);
+    await expect(
+      mutate(
+        db,
+        { ...owner, wsId: 'other' },
+        { action: 'createEntry', worldId, draft: note }
+      )
+    ).rejects.toMatchObject({ status: 403 });
+    await db
+      .prepare('DELETE FROM collaborators WHERE world_id = ? AND user_id = ?')
+      .bind(worldId, editor.id)
+      .run();
+    await expect(
+      mutate(db, editor, { action: 'createEntry', worldId, draft: note })
+    ).rejects.toMatchObject({ status: 403 });
+  }
+);
