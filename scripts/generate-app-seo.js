@@ -24,6 +24,80 @@ function localizedUrl(origin, pathname, locale, localePrefix) {
     .href;
 }
 
+function hasWhitespaceOrControl(value) {
+  return Array.from(value).some((character) => {
+    const code = character.codePointAt(0);
+    return /\s/u.test(character) || code < 32 || code === 127;
+  });
+}
+
+function validateConfig(app, config) {
+  const origin = new URL(config.origin);
+  if (
+    origin.protocol !== 'https:' ||
+    origin.username ||
+    origin.password ||
+    origin.search ||
+    origin.hash ||
+    origin.pathname !== '/' ||
+    config.origin !== origin.origin
+  )
+    throw new Error(`Invalid canonical origin for ${app}`);
+  if (!['never', 'as-needed'].includes(config.localePrefix))
+    throw new Error(`Invalid locale policy for ${app}`);
+  const seen = new Set();
+  const urls = new Set();
+  const locales = config.localePrefix === 'never' ? ['en'] : ['en', 'vi'];
+  const privatePath =
+    /(?:^|\/)(?:api|auth|login|logout|signup|verify-token|auth-error|add-account|dashboard|onboarding|invite|shared|share|embed|orders|cart|checkout|account|no-access|access-denied|not-whitelisted|not-available|-)(?:\/|$)/;
+  for (const pathname of config.publicPaths) {
+    let decoded;
+    try {
+      decoded = decodeURIComponent(pathname);
+    } catch {
+      throw new Error(
+        `Invalid public sitemap encoding for ${app}: ${pathname}`
+      );
+    }
+    if (
+      typeof pathname !== 'string' ||
+      hasWhitespaceOrControl(pathname) ||
+      hasWhitespaceOrControl(decoded) ||
+      decoded.startsWith('/') ||
+      (pathname.endsWith('/') && pathname !== '') ||
+      /[?#\\]/.test(decoded) ||
+      decoded
+        .split('/')
+        .some((segment) => segment === '.' || segment === '..') ||
+      privatePath.test(decoded) ||
+      seen.has(pathname)
+    )
+      throw new Error(
+        `Invalid or duplicate public sitemap path for ${app}: ${pathname}`
+      );
+    seen.add(pathname);
+    for (const locale of locales) {
+      const url = localizedUrl(
+        config.origin,
+        pathname,
+        locale,
+        config.localePrefix
+      );
+      if (
+        privatePath.test(decodeURIComponent(new URL(url).pathname)) ||
+        url.length > 2048 ||
+        urls.has(url)
+      )
+        throw new Error(
+          `Invalid or duplicate localized sitemap URL for ${app}: ${url}`
+        );
+      urls.add(url);
+    }
+  }
+  if (urls.size > 50000)
+    throw new Error(`Sitemap capacity exceeded for ${app}; split the sitemap`);
+}
+
 function sitemap(config) {
   const locales = config.localePrefix === 'never' ? ['en'] : ['en', 'vi'];
   const entries = config.publicPaths.flatMap((pathname) =>
@@ -52,6 +126,7 @@ function sitemap(config) {
 function outputs() {
   const files = new Map();
   for (const [app, config] of Object.entries(policy)) {
+    validateConfig(app, config);
     // The platform uses its publication-aware Next metadata routes.
     if (app === 'web') continue;
     const base = `apps/${app}/public`;
@@ -67,7 +142,8 @@ function outputs() {
 
 function generate({ check = false, root = ROOT } = {}) {
   const stale = [];
-  for (const [file, source] of outputs()) {
+  const expected = outputs();
+  for (const [file, source] of expected) {
     const target = path.join(root, file);
     if (fs.existsSync(target) && fs.readFileSync(target, 'utf8') === source)
       continue;
@@ -77,12 +153,20 @@ function generate({ check = false, root = ROOT } = {}) {
       fs.writeFileSync(target, source);
     }
   }
+  // A private app must not retain an old public sitemap when its policy changes.
+  // Only this generator's exact static sitemap paths are owned here.
+  for (const app of Object.keys(policy)) {
+    const file = `apps/${app}/public/sitemap.xml`;
+    if (expected.has(file) || !fs.existsSync(path.join(root, file))) continue;
+    stale.push(file);
+    if (!check) fs.unlinkSync(path.join(root, file));
+  }
   if (check && stale.length)
     throw new Error(`Stale app SEO assets:\n${stale.join('\n')}`);
   return stale;
 }
 
-module.exports = { generate, localizedUrl, outputs, sitemap };
+module.exports = { generate, localizedUrl, outputs, sitemap, validateConfig };
 if (require.main === module) {
   const changed = generate({ check: process.argv.includes('--check') });
   console.log(
