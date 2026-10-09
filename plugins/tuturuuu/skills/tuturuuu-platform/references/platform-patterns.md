@@ -427,3 +427,20 @@ Docs inventory refreshes with `node scripts/generate-docs-inventory.js` and is
 checked with `--check`; inactive Rust/TanStack sources are excluded. Product
 guides explain actual behavior and access, while generated routes locate source.
 Use `node scripts/docs-audit.js` for navigation, internal links, and assets.
+
+## Notification email admission
+
+Immediate and batched notification email share `notifications/cron-helpers.ts`
+and `email-eligibility.ts`. Keep recipient-domain admission separate from the
+intentional root-workspace rollout. External account destinations require a
+matching confirmed Auth email; never infer verification from a queued or profile
+address alone. Recheck current email preferences for each queued event through
+`should_send_notification`, including account channel/category opt-outs, before
+rendering a digest. Lookup failures must stop admission.
+
+Keep EmailService suppression authoritative and do not request a blacklist bypass.
+Transactional account updates and dedicated auth/recovery mail must not inherit a
+marketing opt-out accidentally. The source matrix and sender fixtures live in
+`email-eligibility.test.ts` and the notification route tests. See the recipient
+policy in `apps/docs/platform/architecture/authorization.mdx`; focused fixture
+success is separate from exact-head CI and actual provider/inbox delivery.
