@@ -540,6 +540,10 @@ and studio setup, invitation, review-route and Meet-link regression tests.
 
 ## Immediate notification selection
 
+Read immediate request bodies after authentication with the256KiB/4096chunk
+stream bound before JSON parsing, cancel overflow and return413 before database
+work. Preserve400 malformedJSON and original transport errors. Count empty-chunk
+no-progress reads as operations; byte limits alone do not bound chunk loops.
 Explicit immediate batch_ids requests accept at most100 IDs with existing
 single-ID length bounds; select deduplicated IDs using one capped private-schema
 query. Unrequested batches remain pending. Preserve complete logs and atomic

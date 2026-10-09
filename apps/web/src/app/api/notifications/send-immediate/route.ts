@@ -31,6 +31,10 @@ import {
   RequestBodySchema,
   renderEmailTemplate,
 } from '@/lib/notifications/immediate-helpers';
+import {
+  ImmediateRequestTooLargeError,
+  readImmediateRequestBody,
+} from '@/lib/notifications/immediate-request-body';
 import { getMailPushSkipReason } from '@/lib/notifications/mail-push';
 import { sendPushNotificationBatch } from '@/lib/notifications/push-delivery';
 export async function POST(req: NextRequest) {
@@ -50,7 +54,18 @@ export async function POST(req: NextRequest) {
 
     let batchIds: string[] = [];
 
-    const bodyText = await req.text();
+    let bodyText: string;
+    try {
+      bodyText = await readImmediateRequestBody(req);
+    } catch (error) {
+      if (error instanceof ImmediateRequestTooLargeError) {
+        return NextResponse.json(
+          { error: 'Payload too large' },
+          { status: 413 }
+        );
+      }
+      throw error;
+    }
     if (bodyText) {
       let parsedBody: unknown;
       try {

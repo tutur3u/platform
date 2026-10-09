@@ -1,0 +1,79 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { MAX_IMMEDIATE_REQUEST_BYTES } from '@/lib/notifications/immediate-request-body';
+
+const mocks = vi.hoisted(() => ({
+  createAdminClient: vi.fn(() => {
+    throw new Error('Database must not be reached');
+  }),
+  sendSystemEmail: vi.fn(),
+  sendPushNotificationBatch: vi.fn(),
+}));
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: mocks.createAdminClient,
+}));
+vi.mock('@tuturuuu/email-service', () => ({
+  sendSystemEmail: mocks.sendSystemEmail,
+}));
+vi.mock('@/lib/notifications/push-delivery', () => ({
+  sendPushNotificationBatch: mocks.sendPushNotificationBatch,
+}));
+
+import { POST } from './route';
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.clearAllMocks();
+});
+function req(body: string, authorized = true) {
+  vi.stubEnv('CRON_SECRET', 'disposable-body-budget-token');
+  return new Request('http://localhost/api/notifications/send-immediate', {
+    method: 'POST',
+    headers: authorized
+      ? { authorization: 'Bearer disposable-body-budget-token' }
+      : {},
+    body,
+  });
+}
+function assertNoDeliveryWork() {
+  expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  expect(mocks.sendSystemEmail).not.toHaveBeenCalled();
+  expect(mocks.sendPushNotificationBatch).not.toHaveBeenCalled();
+}
+
+describe('immediate route body and ID boundaries', () => {
+  it('rejects oversized authenticated bodies before JSON or database work', async () => {
+    const response = await POST(
+      req('x'.repeat(MAX_IMMEDIATE_REQUEST_BYTES + 1)) as Parameters<
+        typeof POST
+      >[0]
+    );
+    expect(response.status).toBe(413);
+    assertNoDeliveryWork();
+  });
+
+  it('authenticates before reading even an oversized body', async () => {
+    const request = req('x'.repeat(MAX_IMMEDIATE_REQUEST_BYTES + 1), false);
+    expect((await POST(request as Parameters<typeof POST>[0])).status).toBe(
+      401
+    );
+    expect(request.bodyUsed).toBe(false);
+    assertNoDeliveryWork();
+  });
+
+  it('retains malformed JSON rejection before database work', async () => {
+    expect(
+      (await POST(req('{broken') as Parameters<typeof POST>[0])).status
+    ).toBe(400);
+    assertNoDeliveryWork();
+  });
+
+  it('rejects too many IDs before database or provider work', async () => {
+    const request = req(
+      JSON.stringify({ batch_ids: Array(101).fill('batch') })
+    );
+    expect((await POST(request as Parameters<typeof POST>[0])).status).toBe(
+      400
+    );
+    assertNoDeliveryWork();
+  });
+});
