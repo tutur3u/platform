@@ -81,6 +81,72 @@ def extract(archive, destination):
                 fd = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
                 with os.fdopen(fd, "wb") as file:
                     file.write(bundle.read(item))
+        for directory in destination.rglob("*"):
+            if directory.is_dir():
+                directory.chmod(0o700)
+
+
+
+# These bytes and legacy import roots belong only to the fixed DIGEST archive.
+NEXT_OG = "node_modules/.bun/next@16.4.0+2b4ce28f5e5f730b/node_modules/next/dist/compiled/@vercel/og/"
+PRODUCER_ROOT = "/home/runner/work/platform/platform/"
+ASSET_HASHES = {
+    "resvg.wasm": "9c1f8f54b842fcda3b72b06eba94a20b907958c443d73178da32b21ccb57b9bb",
+    "yoga.wasm": "7ba9c9483c8c38a468e9aef4a95ed72fad8a43594be8e5123eb3bdb6479edf5b",
+    "Geist-Regular.ttf.bin": "bde046ddd9f20be35b0bd56cc79eb752b967fb6661a3fe76cb067bb09f871d76",
+}
+
+
+def private_path(root, relative, create_parents=False):
+    require(relative and not relative.startswith("/") and "\\" not in relative
+            and all(part not in ("", ".", "..") for part in relative.split("/")), "Unsafe binding path")
+    require(not root.is_symlink() and root.is_dir() and stat.S_IMODE(root.stat().st_mode) == 0o700, "Private extraction root required")
+    current = root
+    parts = relative.split("/")
+    for part in parts[:-1]:
+        current = current / part
+        if create_parents and not os.path.lexists(current):
+            current.mkdir(mode=0o700)
+        require(not current.is_symlink() and current.is_dir()
+                and stat.S_IMODE(current.stat().st_mode) == 0o700, "Unsafe binding ancestor")
+    require(current.resolve(strict=True).is_relative_to(root.resolve(strict=True)), "Binding escaped extraction")
+    return current / parts[-1]
+
+
+def bind_retained_assets(root):
+    records = []
+    specs = [("middleware/handler.mjs", "middleware", PRODUCER_ROOT, name) for name in ("resvg.wasm", "yoga.wasm")]
+    server = "server-functions/default/apps/parley"
+    specs += [(server + ("/handler.mjs" if name.endswith("bin") else "/.next/server/chunks/[turbopack]_runtime.js"),
+               server, PRODUCER_ROOT + "apps/parley/.open-next/server-functions/default/", name) for name in ASSET_HASHES]
+    # Validate every source/import before creating any alias; arbitrary literals never choose paths.
+    prepared = []
+    for importer, base, prefix, name in specs:
+        source = private_path(root, "server-functions/default/" + NEXT_OG + name)
+        require(not source.is_symlink() and source.is_file() and stat.S_IMODE(source.stat().st_mode) == 0o600, "Unsafe asset source")
+        data = source.read_bytes()
+        require(hashlib.sha256(data).hexdigest() == ASSET_HASHES[name], "Retained asset hash mismatch")
+        js = private_path(root, importer)
+        require(not js.is_symlink() and js.is_file() and stat.S_IMODE(js.stat().st_mode) == 0o600, "Unsafe importer")
+        literal = prefix + NEXT_OG + name
+        require(literal in js.read_text(), "Exact retained legacy import missing")
+        relative = base + "/" + literal.lstrip("/")
+        prepared.append((relative, data))
+        records.extend([identity(source), identity(js)])
+    for relative, data in prepared:
+        destination = private_path(root, relative, create_parents=True)
+        fd = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+        with os.fdopen(fd, "wb") as file:
+            file.write(data)
+            file.flush()
+            os.fsync(file.fileno())
+        require(destination.read_bytes() == data, "Asset alias readback mismatch")
+        records.append(identity(destination))
+    return records
+
+
+def response_complete(result):
+    return not result.get("requestError") and isinstance(result.get("httpStatus"), int)
 
 
 def resolve_tools(source, node):
@@ -120,6 +186,7 @@ def prepare(root, source, node):
     require(read_json(tools["wranglerManifest"]["path"])["version"] == "4.131.1", "Wrangler mismatch")
     require(read_json(tools["workerdManifest"]["path"])["version"] == "1.20260911.1", "workerd mismatch")
     extract(root / "worker.zip", root / "artifact")
+    asset_bindings = bind_retained_assets(root / "artifact")
     (root / "state").mkdir(mode=0o700)
     config = {
         "name": "parley-offline-diagnostic", "main": str(root / "artifact/worker.js"),
@@ -135,7 +202,7 @@ def prepare(root, source, node):
     }
     save(root / "wrangler.json", config)
     save(root / "plan.json", {"tools": tools, "archive": archive, "worker": identity(root / "artifact/worker.js"),
-                              "config": identity(root / "wrangler.json"), "outerNet": os.readlink("/proc/self/ns/net"),
+                              "config": identity(root / "wrangler.json"), "assetBindings": asset_bindings, "outerNet": os.readlink("/proc/self/ns/net"),
                               "outerMount": os.readlink("/proc/self/ns/mnt")})
 
 
@@ -233,7 +300,7 @@ def run(root):
     started = time.monotonic()
     work_deadline, overall_deadline = started + 50, started + 60
     plan = read_json(root / "plan.json")
-    for record in [*plan["tools"].values(), plan["archive"], plan["worker"], plan["config"]]:
+    for record in [*plan["tools"].values(), plan["archive"], plan["worker"], plan["config"], *plan.get("assetBindings", [])]:
         require(identity(record["path"]) == record, "Prepared input changed")
     caps = isolation(plan)
     subprocess.run(["/usr/bin/mount", "-t", "tmpfs", "-o", f"size={STATE_LIMIT},nodev,nosuid", "tmpfs", str(root / "state")], check=True)
@@ -315,7 +382,7 @@ def run(root):
         save(root / "diagnostic-result.json", result)
         os.chown(root / "diagnostic-result.json", root.stat().st_uid, root.stat().st_gid)
     return 1 if (result.get("primaryError") or result.get("cleanupError") or result.get("logOverflow")
-                 or result["deadlineExceeded"] or not result["streamsComplete"]) else 0
+                 or result["deadlineExceeded"] or not result["streamsComplete"] or not response_complete(result)) else 0
 
 
 def main():
