@@ -38,3 +38,26 @@ An `Immediate batch delivery failed: 400` log may mean the web proxy rejected
 the request before the processor ran. Check the proxy response source and the
 Worker user agent, body, and content type. A `401` points to the web and Worker
 delivery tokens being out of sync.
+
+
+## Explicit immediate selection budget
+
+Authenticated explicit batch selection accepts at most 100 `batch_ids`, with the
+existing single-ID length bound applied to every ID. Oversized requests fail
+validation before database access; split manual requests instead of silently
+dropping IDs. Selection deduplicates IDs and uses one read capped at 100 rows.
+Unrequested batches stay pending; selected batches retain complete delivery logs
+and the existing atomic claims and ambiguous-send reconciliation fence.
+
+Automatic recovery (empty body) retains complete pagination. Capping its oldest
+window before root-workspace email filtering can repeatedly select ineligible
+batches and starve later eligible deliveries. Further automatic selection bounds
+require rollout-aware durable progress; do not silently truncate shared fetchAll
+results or mark partial delivery logs as a completed batch.
+
+The counted immediate-selection regressions cover explicit requests against
+1,001 queued batches, duplicates, no progress, database failures and complete
+automatic pagination. Request-budget and existing send-immediate route tests cover
+validation and provider replay safeguards. The bound does not cap logs per batch,
+devices, provider messages, automatic prefetch or recurring spend. Hosted delivery,
+row accounting, durable cancellation and independent-stop evidence remain follow-up.

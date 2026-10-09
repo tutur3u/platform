@@ -536,3 +536,15 @@ the selection visible when search filters hide its option. Load saved private
 rubrics only after both session-owner and meeting-host checks; render the session
 snapshot rather than the current scenario revision. See the Parley product guide
 and studio setup, invitation, review-route and Meet-link regression tests.
+
+
+## Immediate notification selection
+
+Explicit immediate batch_ids requests accept at most100 IDs with existing
+single-ID length bounds; select deduplicated IDs using one capped private-schema
+query. Unrequested batches remain pending. Preserve complete logs and atomic
+provider-in-flight reconciliation. Empty-body automatic draining retains complete
+pagination: capping its oldest window before rollout filtering can starve later
+eligible deliveries. Add durable rollout-aware progress before bounding that path.
+A request bound does not cap logs, devices, automatic prefetch or total spend.
+See the Cron Control runbook and immediate-selection/request-budget regressions.
