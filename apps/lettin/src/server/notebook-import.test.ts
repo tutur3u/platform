@@ -14,6 +14,12 @@ const worldId = '00000000-0000-4000-8000-000000000001',
   entryId = '00000000-0000-4000-8000-000000000002',
   missingId = '00000000-0000-4000-8000-000000000003';
 const document = {
+  contentNotice: 'Source notice',
+  creationGuidance: {
+    credits: 'Source author',
+    usageNotes: 'Ask before reuse',
+    collaboration: 'ask-first',
+  },
   title: 'Source',
   description: 'Saved text',
   image: '/api/v1/lettin/media/00000000-0000-4000-8000-000000000004',
@@ -69,6 +75,11 @@ it('remaps only included structured links and retains safe text, credits and pro
   );
   expect(result.world.wiki!.relationships).toHaveLength(1);
   expect(result.world.credit).toBe('Artist');
+  expect(result.world.contentNotice).toBe(document.contentNotice);
+  expect(result.world.creationGuidance).toEqual(document.creationGuidance);
+  expect(result.entries[0]!.draft.creationGuidance).toEqual(
+    document.creationGuidance
+  );
   expect(JSON.stringify(result.world)).not.toContain('owner_id');
   expect(result.provenance).toEqual({
     worldId,
