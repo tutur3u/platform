@@ -291,6 +291,7 @@ extension _AssistantPageLayout on _AssistantPageState {
                                       if (hasTranscript)
                                         AssistantScrollToBottomOverlay(
                                           composerVisible: _isComposerVisible,
+                                          composerHeight: _composerHeight,
                                           isFullscreen: isFullscreen,
                                           navigationExpanded:
                                               chrome.navigationExpanded,
@@ -318,6 +319,8 @@ extension _AssistantPageLayout on _AssistantPageState {
                                                   : const SizedBox.shrink()
                                             : AssistantComposerDock(
                                                 embedded: true,
+                                                onHeightChanged:
+                                                    _setComposerHeight,
                                                 localOnly: localLane,
                                                 localBlocked:
                                                     localLane &&
