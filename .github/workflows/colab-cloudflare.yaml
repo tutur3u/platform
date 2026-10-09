@@ -15,6 +15,19 @@ on:
       - 'tuturuuu.ci.ts'
       - 'tuturuuu.ts'
       - '.github/workflows/colab-cloudflare.yaml'
+  pull_request:
+    paths:
+      - 'apps/colab/**'
+      - 'packages/multiplayer/**'
+      - 'packages/internal-api/**'
+      - 'packages/ui/**'
+      - 'packages/icons/**'
+      - 'packages/utils/**'
+      - 'bun.lock'
+      - 'package.json'
+      - 'tuturuuu.ci.ts'
+      - 'tuturuuu.ts'
+      - '.github/workflows/colab-cloudflare.yaml'
   workflow_dispatch:
   workflow_call:
 
