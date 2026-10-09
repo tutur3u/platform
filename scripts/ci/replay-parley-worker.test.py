@@ -258,7 +258,7 @@ class Safeguards(unittest.TestCase):
         self.assertEqual(result["httpStatus"], 302)
         connection.close.assert_called_once()
 
-    def run_isolation_step(self, state, status=0, timeout_status=0):
+    def run_isolation_step(self, capability_status=0, timeout_status=0, environment="github-hosted"):
         workflow = Path(__file__).parents[2] / ".github/workflows/parley-offline-diagnostic.yaml"
         text = workflow.read_text().split("      - name: Check ephemeral runner isolation\n", 1)[1]
         block = text.split("        run: |\n", 1)[1].split("      - name:", 1)[0]
@@ -266,32 +266,45 @@ class Safeguards(unittest.TestCase):
         with tempfile.TemporaryDirectory() as parent:
             root = Path(parent)
             stubs = {
-                "sudo": '#!/bin/bash\n[[ "$*" == "-n unshare --mount --net --propagation private true" ]]\n',
-                "timeout": '#!/bin/bash\n[[ "$1 $2 $3" == "--signal=TERM --kill-after=2s 20s" ]] || exit 97\n[[ "$MOCK_TIMEOUT_STATUS" == 0 ]] || exit "$MOCK_TIMEOUT_STATUS"\nshift 3\nexec "$@"\n',
-                "systemctl": '#!/bin/bash\nif [[ "$*" == "--wait is-system-running" ]]; then printf "%s\\n" "$MOCK_STATE"; exit "$MOCK_STATUS"; fi\nprintf "starting\\n"\nexit 1\n',
+                "sudo": '''#!/bin/bash
+[[ "$*" == "-n unshare --mount --net --propagation private true" ]] && exit 0
+if [[ "$*" == "-n systemctl stop parley-capability-123-1" ]]; then printf "capability cleanup\\n"; exit 0; fi
+[[ "$1 $2 $3" == "-n systemd-run --unit=parley-capability-123-1" ]] || exit 97
+for flag in --wait --collect --pipe MemoryMax=17179869184 CPUQuota=1000% TasksMax=256 PrivateNetwork=yes RuntimeMaxSec=20 TimeoutStopSec=2 KillMode=control-group; do
+  [[ " $* " == *" $flag "* ]] || exit 98
+done
+[[ "$*" == *"/usr/bin/unshare --mount --net --propagation private /usr/bin/python3 -B -c"* ]] || exit 99
+[[ "$*" == *'m.isolation({"outerNet":sys.argv[2],"outerMount":sys.argv[3]})'* ]] || exit 96
+[[ "$*" == *"/control/scripts/ci/replay-parley-worker.py net:[fixture] mnt:[fixture]" ]] || exit 95
+exit "$MOCK_CAPABILITY_STATUS"
+''',
+                "readlink": '#!/bin/bash\nprintf "%s:[fixture]\\n" "${1##*/}"\n',
+                "timeout": '#!/bin/bash\n[[ "$1 $2" == "--signal=TERM --kill-after=2s" ]] || exit 97\nif [[ "$3" == 27s ]]; then [[ "$MOCK_TIMEOUT_STATUS" == 0 ]] || exit "$MOCK_TIMEOUT_STATUS"; else [[ "$3" == 5s ]] || exit 97; fi\nshift 3\nexec "$@"\n',
+                "systemctl": '#!/bin/bash\nexit 94\n',
             }
             for name, source in stubs.items():
                 path = root / name
                 path.write_text(source)
                 path.chmod(0o700)
             return subprocess.run(["/bin/bash", "-e", "-c", script], capture_output=True, text=True,
-                                  env={"PATH": f"{root}:/usr/bin:/bin", "RUNNER_ENVIRONMENT": "github-hosted",
-                                       "MOCK_STATE": state, "MOCK_STATUS": str(status),
+                                  env={"PATH": f"{root}:/usr/bin:/bin", "RUNNER_ENVIRONMENT": environment,
+                                       "GITHUB_RUN_ID": "123", "GITHUB_RUN_ATTEMPT": "1", "GITHUB_WORKSPACE": "/fixture",
+                                       "MOCK_CAPABILITY_STATUS": str(capability_status),
                                        "MOCK_TIMEOUT_STATUS": str(timeout_status)})
 
-    def test_ephemeral_starting_manager_waits_for_running(self):
-        result = self.run_isolation_step("running")
+    def test_ephemeral_capability_does_not_wait_for_whole_host_boot(self):
+        result = self.run_isolation_step()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("systemd state: running", result.stdout)
 
-    def test_ephemeral_degraded_manager_preserves_supported_state(self):
-        self.assertEqual(self.run_isolation_step("degraded", 1).returncode, 0)
+    def test_ephemeral_capability_failure_and_timeout_stop(self):
+        for capability, timeout in ((1, 0), (0, 124), (0, 137)):
+            with self.subTest(capability=capability, timeout=timeout):
+                result = self.run_isolation_step(capability, timeout)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("capability cleanup", result.stdout)
 
-    def test_ephemeral_unready_timeout_and_malformed_state_stop(self):
-        for state, status, timeout_status in (("starting", 1, 0), ("offline", 1, 0),
-                                               ("running", 1, 0), ("running", 0, 124)):
-            with self.subTest(state=state, status=status, timeout=timeout_status):
-                self.assertNotEqual(self.run_isolation_step(state, status, timeout_status).returncode, 0)
+    def test_self_hosted_runner_stops_before_capability(self):
+        self.assertNotEqual(self.run_isolation_step(environment="self-hosted").returncode, 0)
 
     def test_source_workflow_has_no_automatic_or_deploy_entry(self):
         workflow = Path(__file__).parents[2] / ".github/workflows/parley-offline-diagnostic.yaml"

@@ -604,9 +604,9 @@ one anonymous `/access-denied` request inside private mount/network namespaces w
 loopback only, local assets/R2/self bindings, dummy credentials and no remote services.
 The unit caps aggregate memory/CPU, local state and logs; active work gets 50 seconds
 plus 10 seconds for owned process-group cleanup. Missing isolation/caps stop launch.
-Only an allowlisted diagnostic result is retained for one day; no bundle or raw logs
-are uploaded. Offline binding/network failures are local gaps, not production causes.
-The earlier SSH runner refused namespaces; it was not retried with an online fallback.
+Only an allowlisted result is retained for one day, without bundles or raw logs.
+Before retrieval, a finite unit checks memory/CPU/PID caps and private namespaces,
+not whole-host boot readiness. Offline failures are local gaps; no online fallback.
 
 ### TanStack/Rust Cloudflare deployment
 
