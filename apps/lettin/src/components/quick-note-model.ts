@@ -1,13 +1,16 @@
-import type { LettinDraft } from '@tuturuuu/internal-api/lettin';
+import type { LettinDraft, LettinKind } from '@tuturuuu/internal-api/lettin';
+import { entryKinds } from './wiki-model';
 
 export function quickNoteDraft(
   title: string,
-  body: string
+  body: string,
+  kind: LettinKind = 'page'
 ): LettinDraft | null {
   const name = title.trim();
   const text = body.trim().replace(/\r\n?/g, '\n');
   const lines = text.split('\n');
   if (
+    !entryKinds.includes(kind) ||
     !name ||
     name.length > 160 ||
     !text ||
@@ -20,7 +23,7 @@ export function quickNoteDraft(
     description: '',
     image: '',
     credit: '',
-    kind: 'page',
+    kind,
     tags: [],
     links: [],
     content: {

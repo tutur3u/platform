@@ -195,8 +195,11 @@ checkpoint endpoint is a fixture, not a real database write.
 Cloudflare fetch supports `redirect: 'manual'`, rather than `redirect: 'error'`.
 Checkpoint callbacks reject non-success responses without following redirects.
 Document checkpoints use monotonic versions captured with their state, skip
-unchanged hashes, and back off failed callbacks up to 60 seconds. An empty room
-stops after three failures and resumes when a participant reconnects. Durable
+unchanged hashes, and back off failed callbacks up to 60 seconds. Without a valid editor connection, a room reserves at most three checkpoint
+attempts within two minutes, durably before callback I/O. Reservation failure
+spends no callback; failed completion writes cannot replenish attempts. Attempts
+are separated by at least 30 seconds. A stopped room resumes only when an
+authorized editor reconnects; viewers cannot restart checkpoint work. Durable
 state remains available even when the workspace Document checkpoint fails.
 
 The mobile channel regression uses actual loopback WebSockets and verifies
@@ -417,3 +420,32 @@ nothing. These logical operation counts are regression evidence, not a billed
 price estimate or account-wide cap. Storage failures, active sessions, provider
 media cleanup, external alerting and independent operator stop controls require
 separate acceptance evidence.
+
+
+### Channel offline retry reservation verification
+
+Run Bun from a private directory outside the repository Bun preload ancestry,
+as the CI lifecycle step does, and pass the absolute checkout test path:
+`ttr resources run -- bun test <checkout>/apps/meet-realtime/src/channel-retry-budget.test.ts`.
+Running the same command from the repository root can redirect to the workspace
+runner. The focused suite counts reservations, completion writes, callbacks and
+alarm writes through duplicate delivery, reconstruction, reservation/completion
+failures, exact age boundaries and viewer/editor recovery. The join fixture models
+an already-authorized ticket and WebSocket acceptance; it does not bypass or certify
+the public ticket verifier.
+
+Run `node --test verify.mjs` from
+`apps/meet-realtime/test-fixtures/channel-retry` through the same queue, with a
+private writable `TMPDIR`. Wrangler creates disposable SQLite-backed objects;
+the fixture invokes production alarm logic, stubs a failing callback, and injects
+completion-write failures. Three reservations allow at most three callback attempts
+per offline job even when completion persistence fails. Each confirmed attempt
+uses one metadata reservation and one two-key completion write: at most nine
+written keys across three attempts, plus initial document persistence and reads.
+Batching those keys does not remove their billing. Reconstructed instances still
+read two keys; duplicate invocation volume is not an account spending cap.
+
+The harness closes its Worker and clears its own scheduled alarms. Hosted alarm
+redelivery, actual workspace saves, live editor lease renewal and an independent
+operational stop remain separate acceptance boundaries. Do not deploy this fixture
+or claim a platform-wide cost cap from these tests.
