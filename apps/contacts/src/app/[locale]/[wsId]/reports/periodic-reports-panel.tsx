@@ -11,6 +11,7 @@ import { InternalApiError } from '@tuturuuu/internal-api';
 import {
   listPeriodicReports,
   type PeriodicReport,
+  type PeriodicReportCadence,
   requestPeriodicReportDelivery,
   requestPeriodicReportGeneration,
 } from '@tuturuuu/internal-api/reports';
@@ -34,10 +35,7 @@ import {
   type PeriodicBatchIntent,
   PeriodicDeliveryBatchDialog,
 } from './periodic-delivery-batch-dialog';
-import {
-  type DeliveryCategory,
-  periodicDeliveryCategory,
-} from './periodic-delivery-category';
+import type { DeliveryCategory } from './periodic-delivery-category';
 import {
   PeriodicDeliveryConfirmation,
   type PeriodicDeliveryIntent,
@@ -78,6 +76,7 @@ import {
 export default function PeriodicReportsPanel({
   permissions,
   wsId,
+  cadence: controlledCadence,
 }: {
   permissions: {
     canApproveReports: boolean;
@@ -89,6 +88,7 @@ export default function PeriodicReportsPanel({
     canUpdateUsers?: boolean;
   };
   wsId: string;
+  cadence?: PeriodicReportCadence | 'all';
 }) {
   const t = useTranslations('reports-hub');
   const queryClient = useQueryClient();
@@ -98,7 +98,7 @@ export default function PeriodicReportsPanel({
   });
   const {
     stage: requestedStage,
-    cadence,
+    cadence: urlCadence,
     query,
     approval: approvalStatus,
     delivery: deliveryStatus,
@@ -108,6 +108,7 @@ export default function PeriodicReportsPanel({
     start: rawPeriodStart,
     end: rawPeriodEnd,
   } = filters;
+  const cadence = controlledCadence ?? urlCadence;
   const stage =
     approvalStatus !== 'all' ||
     deliveryStatus !== 'all' ||
@@ -142,6 +143,7 @@ export default function PeriodicReportsPanel({
   const scope = JSON.stringify([
     wsId,
     filters,
+    cadence,
     categoryFilter,
     permissions.canSendReports,
     permissions.canUpdateUsers,
@@ -181,6 +183,7 @@ export default function PeriodicReportsPanel({
     queryKey: [
       ...privateQueryKey,
       stage,
+      categoryFilter,
       generationStatus,
       cadence,
       debouncedQuery,
@@ -197,6 +200,7 @@ export default function PeriodicReportsPanel({
       if (!actor) throw new Error('Workspace account unavailable');
       const page = await listPeriodicReports(wsId, {
         stage: stage === 'all' ? undefined : stage,
+        category: categoryFilter ?? undefined,
         approvalStatus: approvalStatus === 'all' ? undefined : approvalStatus,
         cadence,
         periodStart: periodStart || undefined,
@@ -237,18 +241,15 @@ export default function PeriodicReportsPanel({
     reportsQuery.data?.pages.every((page) => page.queryScope === queryScope)
       ? reportsQuery.data
       : undefined;
-  const reports = actor
-    ? (ownedData?.pages.flatMap((page) => page.data) ?? [])
-    : [];
-  const visibleReports = categoryFilter
-    ? reports.filter(
-        (report) => periodicDeliveryCategory(report) === categoryFilter
-      )
-    : reports;
   const currentRows =
+    Boolean(ownedData) &&
     !reportsQuery.isPlaceholderData &&
     !reportsQuery.isError &&
     query.trim() === debouncedQuery;
+  const reports = currentRows
+    ? (ownedData?.pages.flatMap((page) => page.data) ?? [])
+    : [];
+  const visibleReports = reports;
   const eligible =
     permissions.canSendReports && actor && currentRows
       ? visibleReports.filter(canSelectPeriodicDelivery)
@@ -268,8 +269,11 @@ export default function PeriodicReportsPanel({
           : ids,
     });
   };
-  const counts = ownedData?.pages[0]?.counts;
-  const totalReports = ownedData?.pages[0]?.total ?? 0;
+  const counts = currentRows ? ownedData?.pages[0]?.counts : undefined;
+  const categoryCounts = currentRows
+    ? ownedData?.pages[0]?.categoryCounts
+    : undefined;
+  const totalReports = currentRows ? ownedData?.pages[0]?.total : undefined;
   const numberFormatter = new Intl.NumberFormat();
   const invalidate = () =>
     Promise.all([
@@ -386,8 +390,11 @@ export default function PeriodicReportsPanel({
                   : t('all_periods')}
               </p>
               <Button
-                size="sm"
+                size="icon"
+                className="size-8"
                 variant="ghost"
+                aria-label={t('refresh')}
+                title={t('refresh')}
                 disabled={isRefreshing}
                 onClick={async () => {
                   setIsRefreshing(true);
@@ -401,7 +408,6 @@ export default function PeriodicReportsPanel({
                 <RefreshCw
                   className={`size-3.5 ${isRefreshing ? 'animate-spin' : ''}`}
                 />
-                {t('refresh')}
               </Button>
             </div>
 
@@ -415,6 +421,7 @@ export default function PeriodicReportsPanel({
               generationStatus={generationStatus}
               approvalStatus={approvalStatus}
               cadence={cadence}
+              hideCadence={controlledCadence !== undefined}
               deliveryStatus={deliveryStatus}
               onApprovalStatusChange={(approval) =>
                 void setFilters({ approval, stage: 'all' })
@@ -474,6 +481,8 @@ export default function PeriodicReportsPanel({
 
       <PeriodicDeliveryWorklist
         reports={reports}
+        total={totalReports}
+        categoryCounts={categoryCounts}
         eligibleCount={eligible.length}
         selectedCount={selected.length}
         canSend={permissions.canSendReports}
@@ -514,7 +523,14 @@ export default function PeriodicReportsPanel({
         {reportsQuery.isError ? (
           <Card>
             <CardContent className="flex min-h-36 flex-col items-center justify-center gap-3 p-4 text-center">
-              <p>{t('load_error')}</p>
+              <p>
+                {t(
+                  reportsQuery.error instanceof InternalApiError &&
+                    reportsQuery.error.status === 422
+                    ? 'narrow_scope'
+                    : 'load_error'
+                )}
+              </p>
               <Button
                 variant="outline"
                 onClick={() => void reportsQuery.refetch()}
@@ -523,6 +539,8 @@ export default function PeriodicReportsPanel({
               </Button>
             </CardContent>
           </Card>
+        ) : !currentRows ? (
+          <PeriodicReportsRowsLoading />
         ) : visibleReports.length === 0 ? (
           <Card>
             <CardContent className="flex min-h-40 flex-col items-center justify-center gap-2 p-4 text-center">
@@ -594,7 +612,7 @@ export default function PeriodicReportsPanel({
 
       {reportsQuery.isFetchingNextPage ? (
         <PeriodicReportsRowsLoading />
-      ) : reportsQuery.hasNextPage ? (
+      ) : currentRows && reportsQuery.hasNextPage ? (
         <Button
           className="w-full"
           variant="outline"
@@ -603,7 +621,7 @@ export default function PeriodicReportsPanel({
           {t('load_more')}
         </Button>
       ) : null}
-      {reports.length > 0 ? (
+      {reports.length > 0 && totalReports !== undefined ? (
         <p className="text-center text-muted-foreground text-xs">
           {t('showing_periodic', {
             loaded: numberFormatter.format(reports.length),
@@ -641,11 +659,12 @@ export default function PeriodicReportsPanel({
       <PeriodicDeliveryConfirmation
         intent={deliveryIntent}
         wsId={wsId}
-        canSend={permissions.canSendReports}
+        canSend={permissions.canSendReports && currentRows}
         isPending={deliveryMutation.isPending}
         onCancel={() => setDeliveryIntent(null)}
         onConfirm={() => {
-          if (deliveryIntent) {
+          if (deliveryIntent && currentRows) {
+            actor?.assertActive();
             deliveryMutation.mutate({
               action: deliveryIntent.action,
               reportId: deliveryIntent.report.id,

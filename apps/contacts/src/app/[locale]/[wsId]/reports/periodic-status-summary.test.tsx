@@ -27,20 +27,17 @@ it('shows all ten stages and selects each independently', () => {
       }}
     />
   );
-  expect(screen.getAllByRole('button', { pressed: false })).toHaveLength(9);
+  expect(screen.getAllByRole('button', { pressed: false })).toHaveLength(10);
   expect(
     screen.getByRole('button', { name: 'status_pending 2' })
   ).toHaveAttribute('aria-pressed', 'true');
   for (const [stage, label] of PERIODIC_STAGES) {
-    const hint = ['approved', 'queued', 'sent', 'blocked'].includes(stage)
-      ? ` pipeline_${stage}_hint`
-      : '';
-    const button = screen.getByRole('button', { name: `${label} 2${hint}` });
+    const button = screen.getByRole('button', { name: `${label} 2` });
     expect(button).toHaveAttribute('aria-pressed', String(stage === 'pending'));
     fireEvent.click(button);
     expect(change).toHaveBeenLastCalledWith(stage);
   }
-  fireEvent.click(screen.getByRole('button', { name: 'total_reports 20' }));
+  fireEvent.click(screen.getByRole('button', { name: 'all' }));
   expect(change).toHaveBeenLastCalledWith('all');
 });
 it('restores pending and keeps the toolbar accessible without counts', () => {
@@ -57,19 +54,15 @@ it('restores pending and keeps the toolbar accessible without counts', () => {
   ).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'status_pending —' }));
   expect(change).toHaveBeenCalledWith('pending');
-  expect(
-    screen.getByRole('button', { name: 'total_reports —' })
-  ).toBeInTheDocument();
-  for (const [stage, label] of PERIODIC_STAGES) {
-    const hint = ['approved', 'queued', 'sent', 'blocked'].includes(stage)
-      ? ` pipeline_${stage}_hint`
-      : '';
+  expect(screen.getByRole('button', { name: 'all' })).toBeInTheDocument();
+  for (const [, label] of PERIODIC_STAGES) {
     expect(
-      screen.getByRole('button', { name: `${label} —${hint}` })
+      screen.getByRole('button', { name: `${label} —` })
     ).toBeInTheDocument();
   }
   expect(
     screen.getByRole('button', { name: 'Date range' })
   ).toBeInTheDocument();
+  expect(screen.getAllByText('—')).toHaveLength(11);
   expect(screen.queryByText(/NaN|Infinity/)).not.toBeInTheDocument();
 });
