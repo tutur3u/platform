@@ -149,6 +149,17 @@ export function EntryEditor({
           onChange={(e) => update({ description: e.target.value })}
         />
       </label>
+      <label className="block space-y-2 text-sm">
+        {t('contentNotice')}
+        <Textarea
+          value={draft.contentNotice ?? ''}
+          maxLength={500}
+          onChange={(e) => update({ contentNotice: e.target.value })}
+        />
+        <span className="text-muted-foreground text-xs">
+          {t('contentNoticeHint')}
+        </span>
+      </label>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block space-y-2 text-sm">
           {t('imageUrl')}
