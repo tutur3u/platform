@@ -679,3 +679,13 @@ fence prevents duplicate clicks before mutation state rerenders. Reset controls
 on context changes. Recipient acceptance is a distinct workflow; do not claim
 an owner confirmation establishes recipient consent. Lettin's collaborator DOM
 and D1 role/revocation regressions cover these boundaries.
+
+## Private document statistics
+
+Derive writing metrics from the current authorized editor buffer without storing
+new fields or enriching public projections. Join adjacent inline text but preserve
+block boundaries; exclude attributes and ignored leaf children. Use Unicode word
+and grapheme segmentation and state the whitespace rule. Label bounded partial
+results and unapplied source-mode exclusions explicitly. Memoize against the
+content object so metadata edits do not traverse the document again. Lettin's
+writing-statistics model and bilingual DOM regressions cover these boundaries.

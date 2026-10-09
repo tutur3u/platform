@@ -15,7 +15,10 @@ vi.mock('@tanstack/react-query', () => ({
 vi.mock('@tuturuuu/internal-api/lettin', () => ({
   uploadLettinArtwork: vi.fn(),
 }));
-vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string, values?: { count: number }) =>
+    key === 'writingCount' ? String(values?.count) : key,
+}));
 vi.mock('@tuturuuu/ui/button', () => ({
   Button: ({
     variant: _variant,
@@ -309,4 +312,30 @@ it('saves creation guidance through the private draft command and marks edits di
       },
     },
   });
+});
+
+it('updates private writing counts from unsaved body changes without a save or publication', async () => {
+  await act(() =>
+    root.render(
+      <EntryEditor
+        wsId="workspace"
+        worldId="world"
+        record={record}
+        worldRole="owner"
+        isWorld
+        entries={[]}
+        onDirty={vi.fn()}
+      />
+    )
+  );
+  const counts = () =>
+    [
+      ...container.querySelectorAll(
+        'section[aria-label="writingStatistics"] dd'
+      ),
+    ].map((node) => node.textContent);
+  expect(counts()).toEqual(['0', '0']);
+  await click('type');
+  expect(counts()).toEqual(['2', '9']);
+  expect(mutateAsync).not.toHaveBeenCalled();
 });
