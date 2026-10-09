@@ -73,9 +73,11 @@ export function PeriodicDeliveryBatchDialog({
   latest.current = { intent, reports, wsId, epoch, canSend, actor };
   const safety = useRef({ intent, invalid: false });
   const confirmed = useRef(new Set<string>());
+  const admitted = useRef(new Set<string>());
   if (safety.current.intent !== intent) {
     safety.current = { intent, invalid: false };
     confirmed.current = new Set();
+    admitted.current = new Set();
   }
   if (
     !intent ||
@@ -118,6 +120,7 @@ export function PeriodicDeliveryBatchDialog({
       !intent.reports.every(
         (selected) =>
           confirmed.current.has(selected.id) ||
+          admitted.current.has(selected.id) ||
           now.reports.some((report) => samePeriodicRecipient(selected, report))
       )
     )
@@ -143,6 +146,8 @@ export function PeriodicDeliveryBatchDialog({
           assertActive,
           onProgress: (next) => {
             assertScope();
+            if (next.currentReportId)
+              admitted.current.add(next.currentReportId);
             for (const item of next.items)
               if (item.queued) confirmed.current.add(item.reportId);
             setProgress(next);

@@ -17,6 +17,7 @@ import {
 } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { NextIntlClientProvider } from 'next-intl';
 import { beforeEach, expect, it, vi } from 'vitest';
+import { queuePeriodicReportDeliveryBatch } from '../../../../../../../packages/internal-api/src/reports-delivery-batch';
 import en from '../../../../../messages/en.json';
 import {
   type PeriodicBatchIntent,
@@ -51,7 +52,7 @@ const complete: PeriodicReportDeliveryBatchResult = {
   stopReason: 'complete',
   remainingReportIds: [],
 };
-function show() {
+function show(selected = reports) {
   const client = new QueryClient();
   let intent: PeriodicBatchIntent | null = null;
   const close = vi.fn();
@@ -67,7 +68,7 @@ function show() {
   }) {
     const actor = useWorkspaceActor();
     if (!intent && actor)
-      intent = { actor, wsId: 'workspace-a', epoch: 0, reports };
+      intent = { actor, wsId: 'workspace-a', epoch: 0, reports: selected };
     return (
       <PeriodicDeliveryBatchDialog
         intent={intent}
@@ -83,7 +84,7 @@ function show() {
   const view = (
     epoch = 0,
     canSend = true,
-    current = reports,
+    current = selected,
     actorId = 'actor-a'
   ) => (
     <QueryClientProvider client={client}>
@@ -178,3 +179,105 @@ it.each(['actor', 'unmount'] as const)(
     expect(result.queued).not.toHaveBeenCalled();
   }
 );
+
+const queuedReports = [
+  { ...reports[0]!, id: '00000000-0000-4000-8000-000000000001' },
+  {
+    ...reports[0]!,
+    id: '00000000-0000-4000-8000-000000000002',
+    user_id: 'second-user',
+    user_email: 'second@example.com',
+  },
+] as PeriodicReport[];
+
+function deferFirstRequest() {
+  let finish!: (value: { queued: boolean; status: 'queued' }) => void;
+  const first = new Promise<{ queued: boolean; status: 'queued' }>(
+    (resolve) => {
+      finish = resolve;
+    }
+  );
+  const request = vi.fn().mockReturnValueOnce(first).mockResolvedValue({
+    queued: true,
+    status: 'queued',
+  });
+  batch.mockImplementation(
+    (
+      _ws: string,
+      ids: string[],
+      controls: PeriodicReportDeliveryBatchControls
+    ) =>
+      queuePeriodicReportDeliveryBatch(
+        '00000000-0000-4000-8000-000000000003',
+        ids,
+        controls,
+        request
+      )
+  );
+  return { request, finish };
+}
+
+it('continues after a queued refetch for an already admitted request', async () => {
+  const deferred = deferFirstRequest();
+  const result = show(queuedReports);
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Queue reviewed reports' })
+  );
+  expect(deferred.request).toHaveBeenCalledExactlyOnceWith(
+    queuedReports[0]!.id
+  );
+  result.rerender(
+    result.view(0, true, [
+      {
+        ...queuedReports[0]!,
+        delivery_status: 'queued',
+        report_stage: 'queued',
+      },
+      queuedReports[1]!,
+    ])
+  );
+  await act(async () => deferred.finish({ queued: true, status: 'queued' }));
+  await waitFor(() => expect(result.queued).toHaveBeenCalledOnce());
+  expect(await batch.mock.results[0]!.value).toMatchObject({
+    stopped: false,
+    stopReason: 'complete',
+    remainingReportIds: [],
+  });
+  expect(deferred.request).toHaveBeenCalledTimes(2);
+  expect(deferred.request).toHaveBeenNthCalledWith(2, queuedReports[1]!.id);
+  expect(screen.getByRole('status')).toHaveTextContent('2');
+  expect(
+    screen.queryByText(en['reports-hub'].queue_stopped)
+  ).not.toBeInTheDocument();
+});
+
+it('stops before the next request when its recipient changes during an admitted request', async () => {
+  const deferred = deferFirstRequest();
+  const result = show(queuedReports);
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Queue reviewed reports' })
+  );
+  expect(deferred.request).toHaveBeenCalledOnce();
+  result.rerender(
+    result.view(0, true, [
+      {
+        ...queuedReports[0]!,
+        delivery_status: 'queued',
+        report_stage: 'queued',
+      },
+      { ...queuedReports[1]!, user_email: 'changed@example.com' },
+    ])
+  );
+  await act(async () => deferred.finish({ queued: true, status: 'queued' }));
+  await waitFor(() => expect(result.queued).toHaveBeenCalledOnce());
+  expect(deferred.request).toHaveBeenCalledExactlyOnceWith(
+    queuedReports[0]!.id
+  );
+  expect(await batch.mock.results[0]!.value).toMatchObject({
+    stopped: true,
+    stopReason: 'cancelled',
+    items: [{ reportId: queuedReports[0]!.id, queued: true }],
+    remainingReportIds: [queuedReports[1]!.id],
+  });
+  expect(screen.getByText(en['reports-hub'].queue_stopped)).toBeInTheDocument();
+});
