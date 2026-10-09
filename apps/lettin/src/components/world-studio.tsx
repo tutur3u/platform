@@ -231,7 +231,13 @@ export function WorldStudio({
               onSelect={select}
             />
           )}
-          {data.role === 'owner' && <Collaborators wsId={wsId} data={data} />}
+          {data.role === 'owner' && (
+            <Collaborators
+              key={`${wsId}:${data.world.id}`}
+              wsId={wsId}
+              data={data}
+            />
+          )}
         </div>
       </div>
     </main>

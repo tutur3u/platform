@@ -1015,3 +1015,25 @@ production/Portless origins, leap days and rejected input; bilingual rendered
 dirty blocking and context resets. Calendar's existing workspace route retains
 its session and permission checks. Exact-head Lettin builds and authenticated
 cross-app browser acceptance remain independent delivery gates.
+
+## Explicit collaborator access review
+
+Notebook owners review the selected member and capabilities before adding or
+changing an editor/publisher role or removing collaborator access. Editors can
+read and edit private drafts; publishers can additionally publish and unpublish
+content. Existing workspace membership, creator eligibility, document permission
+and owner-only server checks still apply. This step is an owner confirmation,
+not a new recipient invitation or acceptance system.
+
+Cancel sends no command. Failed requests retain the selected action for retry,
+and pending submissions suppress duplicates. Staged actions bind the workspace,
+notebook and member ID; changed context, lost owner status or unavailable members
+disable confirmation. Switching notebook/workspace resets the owner controls.
+Removing collaborator access does not remove workspace membership or unpublish
+existing content. The existing server remains authoritative for access.
+
+Regression coverage: `collaborators.test.tsx` covers English/Vietnamese capability
+review, cancel, failed retry, duplicate/pending suppression and context/eligibility
+changes. `server/storage.test.ts` exercises local D1 editor/publisher boundaries,
+workspace eligibility and access revocation. Hosted app-session/browser acceptance
+and exact-head CI remain separate delivery gates.
