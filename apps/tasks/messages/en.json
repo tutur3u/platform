@@ -8417,6 +8417,31 @@
     },
     "unnamed_board": "Untitled Board"
   },
+  "task-plan": {
+    "attachSource": "Attach the private Lettin notebook reference",
+    "board": "Board",
+    "chooseBoard": "Choose a board",
+    "chooseList": "Choose a list",
+    "create": "Create task",
+    "created": "Task created.",
+    "createFailed": "Unable to create the task. Check your destination permissions before trying again. Your form is preserved.",
+    "creating": "Creating…",
+    "destinationConsent": "The task name and any attached reference will be visible under the selected board’s existing access rules. Creating a task does not publish your notebook.",
+    "hint": "Plan your next creative step in this workspace. Choose the destination and review what you share before creating it.",
+    "list": "List",
+    "loadFailed": "Unable to load task boards.",
+    "loading": "Loading boards…",
+    "name": "Task name",
+    "noBoards": "No boards are available in this workspace.",
+    "openBoards": "Open task boards",
+    "openTask": "Open task",
+    "retry": "Retry",
+    "reviewSource": "Review the notebook reference",
+    "sourceConsent": "This copies only the notebook link into the task description for people who can access this task. It does not grant notebook access or copy its content. Leave unchecked to create a task without a source link.",
+    "title": "Create a task",
+    "untitledBoard": "Untitled board",
+    "untitledList": "Untitled list"
+  },
   "task-progress": {
     "actions": {
       "add_entry": "Add entry",

@@ -18,6 +18,13 @@ shared-package changes.
   API. Expanding a summary projection must still exclude unpublished drafts and
   entry documents. Cover exact matching and snapshot isolation with the local
   store fixture; see [Lettin discovery](../../../../../apps/docs/platform/features/lettin.mdx).
+- For cross-app creative handoffs, prefer canonical source IDs over embedding
+  private draft text in navigation URLs. Authenticate with the destination app's
+  own session and retain its API permission checks. Persisting even a private
+  source link into a shared destination needs explicit, initially unchecked
+  consent and a clear statement that the link grants no source access. Keep
+  source-reading and publication operations separate. See the
+  [Lettin product decision](../../../../../apps/docs/platform/features/lettin.mdx).
 
 - For a customer-facing behavior fix that spans apps, trace the setting from its
   writer through server-prefetched and client-only views, summary counts, and
