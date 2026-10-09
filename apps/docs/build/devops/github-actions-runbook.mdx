@@ -595,16 +595,22 @@ Workflow contracts use Bun's built-in YAML parser via `workflow-yaml-test-helper
 not undeclared transitive YAML packages. The dependency-free snapshot checks ordering,
 identity and caching. Run `node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js`.
 
-Parley temporarily pins the immutable OpenNext PR 1318 preview at
-`6b783939aefa8f9a19d4f002f68bc57c62879098` (package version label `1.20.2`).
-The upstream build patches replace the incompatible Cache Components scheduler
-and scope module-loading signals to the Cloudflare request context. Bun's URL-keyed
-patch preserves the existing component-name and preview-manifest fixes and preserves
-Next 16.4's `CacheSignal(null)` constructor arguments in the upstream AST rule. The stable
-adapter patch and dependencies of Meet and Lettin remain separate. Prepare the URL
-with `bun patch '@opennextjs/cloudflare@https://pkg.pr.new/@opennextjs/cloudflare@6b783939aefa8f9a19d4f002f68bc57c62879098'`
-and commit using that same specifier: committing the suggested node_modules path
-fails package lookup for this URL dependency. Keep the pinned integrity in `bun.lock`.
+Parley's candidate pins the official OpenNext `1.20.6` registry tarball as a
+Parley-only URL dependency. Its URL-keyed Bun patch backports the Cache Components
+scheduler and request-scoped module-loading changes from upstream PR 1318 at
+`6b783939aefa8f9a19d4f002f68bc57c62879098`. The older upstream preview rejects Node
+middleware; removing that guard does not supply a middleware bundler. Retain the
+stable adapter's real `bundleNodeMiddleware` path and apply the Cache Components
+middleware patch after that bundle. Preserve component names, preview manifests,
+and Next 16.4's `CacheSignal(null)` constructor arguments.
+
+Keep the registry integrity in `bun.lock`; Meet and Lettin retain their separate
+stable-version patch. Bun's path-based patch command can select the package version
+instead of the URL: verify the generated `patchedDependencies` key and restore the
+stable patch before installing. Set the URL-keyed entry through `bun pm pkg set`
+with JSON input, then verify a frozen install and installed package isolation.
+A prepared directory left by `bun patch` can shadow dependency symlinks; preserve
+that owned directory outside the resolver and reinstall before testing.
 
 Run `node --test apps/parley/scripts/opennext-candidate.test.mjs` for actual installed
 Next CJS/ESM AST-patch compatibility and fail-closed source-shape checks. After the

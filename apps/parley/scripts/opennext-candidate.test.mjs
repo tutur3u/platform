@@ -69,7 +69,7 @@ test('pinned adapter transforms the installed Next production scheduler', () => 
   );
 });
 
-test('preview preserves both repository PPR resume and manifest fixes', () => {
+test('candidate preserves both repository PPR resume and manifest fixes', () => {
   assert.match(
     readAdapter('dist/cli/build/bundle-server.js'),
     /keepNames:\s*true/
@@ -148,5 +148,38 @@ test('transformed Next signal retains constructor arguments and isolates request
   assert.equal(
     second.__openNextModuleLoadingRegistry.pendingModuleLoads.size,
     0
+  );
+});
+
+test('candidate retains stable Node middleware bundling and isolates the backport', () => {
+  const build = readAdapter('dist/cli/build/build.js');
+  assert.match(build, /import \{ bundleNodeMiddleware \}/);
+  assert.match(build, /await bundleNodeMiddleware\(options\)/);
+  assert.ok(
+    build.indexOf('await bundleNodeMiddleware(options)') <
+      build.indexOf('await patchMiddlewareCacheComponents(options)')
+  );
+  assert.doesNotMatch(build, /Node.js middleware is not currently supported/);
+  assert.ok(
+    readAdapter('dist/cli/build/open-next/bundle-node-middleware.js').length >
+      1000
+  );
+  const bundle = readAdapter('dist/cli/build/bundle-server.js');
+  assert.match(
+    bundle,
+    /patchCacheComponents\(updater, buildOpts, nextConfig\)/
+  );
+  assert.match(bundle, /import "\$\{cacheComponentsSchedulerModule\}"/);
+  const rootRequire = createRequire(
+    new URL('../../meet/package.json', import.meta.url)
+  );
+  const stable = resolve(
+    dirname(rootRequire.resolve('@opennextjs/cloudflare')),
+    '../..'
+  );
+  assert.notEqual(adapter, stable);
+  assert.doesNotMatch(
+    readFileSync(resolve(stable, 'dist/cli/build/bundle-server.js'), 'utf8'),
+    /patchCacheComponents/
   );
 });

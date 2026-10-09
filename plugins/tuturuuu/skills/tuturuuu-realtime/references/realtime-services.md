@@ -116,9 +116,12 @@ artifact. Use T3 Device so verification remains visible to the user.
 
 ### Parley Cache Components candidate acceptance
 
-Parley's pinned upstream adapter candidate must preserve both the scheduler and
+Parley's isolated stable-tarball adapter candidate backports upstream PR 1318 and
+must retain the real Node middleware bundler alongside both the scheduler and
 request-scoped module-loading patches, plus the repository's PPR name and preview
-manifest fixes. Run the actual installed Next AST compatibility tests before the
+manifest fixes. Verify URL-keyed Bun patch isolation from Meet/Lettin; a preview
+that rejects Node middleware cannot be repaired by simply removing its guard.
+Run the actual installed Next AST compatibility tests before the
 CI build; moved source shapes must fail closed. After CI builds, use the isolated
 `apps/parley/test-fixtures/built-worker` harness with canonical URL/Host, local
 bindings and blocked outbound fetch. Require exact source SHA and complete bilingual
