@@ -688,3 +688,13 @@ controls; disable boundary moves and keep keyboard focus with the moved item.
 Saving and publishing remain distinct existing revision/permission operations.
 Lettin's fact editor DOM and real D1 snapshot tests cover order persistence and
 private revisions without introducing storage fields or access grants.
+
+
+### Optional localized fact labels
+
+Keep creative fact starters explicit and append-only. Do not replace matching
+labels or values, infer personal profile data, or store hidden template metadata.
+A localized label becomes ordinary authored text at addition time; changing the
+interface locale must not rewrite it. Preserve existing collection limits and
+save/publication fences. Lettin's character fact starter, ordering and local D1
+regressions cover this behavior.
