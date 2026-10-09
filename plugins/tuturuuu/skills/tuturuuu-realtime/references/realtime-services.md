@@ -148,3 +148,10 @@ Stop/revocation races and real Worker/SQLite persistence. Do not truncate retrie
 by dropping quota reservations, private deletion obligations or billing receipts.
 `session-cleanup.test.ts` covers independent compensation and confirmed completion,
 not a finite job budget or hosted shutdown guarantee. Keep that limitation visible.
+
+For Live context erasure, count the128-key page ceiling and each deleted archive
+key rather than treating a batch delete as one billed key. Full pages schedule a
+confirmation wake; failed deletion preserves the archive and can retry. Finalization
+also writes session state in its public-settlement and final steps after erasure
+completes. Count duplicate completion writes and require durable completion proof
+before optimizing them away; memory-only flags may follow a failed durable write.
