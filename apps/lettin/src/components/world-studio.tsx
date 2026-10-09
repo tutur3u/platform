@@ -1,9 +1,8 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, ArrowUpRight, BookOpen, Search } from '@tuturuuu/icons';
+import { ArrowLeft, ArrowUpRight } from '@tuturuuu/icons';
 import { getLettinWorld } from '@tuturuuu/internal-api/lettin';
 import { Button } from '@tuturuuu/ui/button';
-import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { Link } from '@/i18n/navigation';
@@ -12,14 +11,10 @@ import { DuplicateEntry } from './duplicate-entry';
 import { EntryEditor } from './entry-editor';
 import { useNavigationGuard } from './navigation-guard';
 import { QuickNote } from './quick-note';
-import { WikiBrowser } from './wiki-browser';
+import { initialWikiFilters } from './wiki-browse-model';
+import { WikiBrowsingPanel } from './wiki-browsing-panel';
 import { WikiCreateEntry } from './wiki-create-entry';
-import {
-  filterWiki,
-  sectionKind,
-  type WikiSection,
-  wikiOf,
-} from './wiki-model';
+import { sectionKind, type WikiSection, wikiOf } from './wiki-model';
 import { WikiSidebar } from './wiki-sidebar';
 export function WorldStudio({
   wsId,
@@ -34,7 +29,7 @@ export function WorldStudio({
 }) {
   const t = useTranslations('lettin');
   const [selected, setSelected] = useState<string | null>(initialEntry ?? null);
-  const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState(initialWikiFilters);
   const { dirty, setDirty } = useNavigationGuard();
   useEffect(() => () => setDirty(false), [setDirty]);
   const query = useQuery({
@@ -68,7 +63,6 @@ export function WorldStudio({
     selected === worldId
       ? data.world
       : data.entries.find((entry) => entry.id === selected);
-  const filtered = filterWiki(data.entries, section, search);
   const related = record ? wikiOf(record.draft).relationships : [];
   const backlinks = record
     ? data.entries.filter(
@@ -203,44 +197,15 @@ export function WorldStudio({
               )}
             </>
           ) : (
-            <>
-              <div className="wiki-browser-header">
-                <div>
-                  <h2>{t(`section${section}`)}</h2>
-                  <p>{t('wikiEntryCount', { count: filtered.length })}</p>
-                </div>
-                <label>
-                  <span className="sr-only">{t('searchWiki')}</span>
-                  <Search size={16} />
-                  <Input
-                    placeholder={t('searchWiki')}
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
-                </label>
-              </div>
-              {section === 'overview' && (
-                <button
-                  type="button"
-                  className="wiki-world-summary"
-                  onClick={() => select(worldId)}
-                >
-                  <BookOpen size={24} />
-                  <div>
-                    <h3>{t('worldDetails')}</h3>
-                    <p>{t('worldDetailsHint')}</p>
-                  </div>
-                  <ArrowUpRight size={18} />
-                </button>
-              )}
-              <WikiBrowser
-                entries={section === 'relationships' ? data.entries : filtered}
-                search={search}
-                section={section}
-                onSelect={select}
-                disabled={dirty}
-              />
-            </>
+            <WikiBrowsingPanel
+              entries={data.entries}
+              worldId={worldId}
+              section={section}
+              disabled={dirty}
+              filters={filters}
+              onChange={setFilters}
+              onSelect={select}
+            />
           )}
           {data.role === 'owner' && <Collaborators wsId={wsId} data={data} />}
         </div>

@@ -149,6 +149,24 @@ failure/recovery coverage and the isolated Worker/SQLite fixture documented in
 stubbed provider failures from hosted alarm delivery and actual Drive saves.
 This offline bound does not certify live retry, media cleanup or account spending.
 
+## Offline channel checkpoint reservations
+
+Channel rooms persist a finite three-attempt, two-minute offline job before
+callback I/O. Failed reservation writes must spend zero callbacks; failed completion
+writes must not replenish persisted attempts. Keep 30-second minimum future
+reservation deadlines, terminal-state stops and retained document bytes. Only an
+authorized editor rejoin may reset a stopped job; viewer sockets and expired editor
+tickets do not establish recurring checkpoint authority.
+
+Use `channel-retry-budget.test.ts` for counted failures, duplicates, reconstruction,
+clock boundaries and recovery. The isolated `test-fixtures/channel-retry` Worker
+uses real SQLite and controlled callback/completion failures. Record written keys,
+not just batched put calls. This finite offline budget does not certify hosted alarm
+delivery, live lease renewal, independent stop or total account spend. Follow the
+channel reservation verification section in the programming realtime runbook.
+
+## Failed Parley candidate evidence
+
 Retain successful CI-built Parley artifacts even when subsequent fixture validation
 fails, with bounded error-body diagnostics. A failed identity probe blocks page
 acceptance; retained artifacts are diagnostic evidence, not qualified releases.
