@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { DocumentView } from './document-view';
+import { ReadingSequence } from './reading-sequence';
 import { WikiBrowser } from './wiki-browser';
 import {
   filterWiki,
@@ -149,6 +150,16 @@ export function PublicWorld({
             draft={draft}
             showOutline
             outlineScope={`lettin-${world.id}-${entry?.id ?? 'notebook'}`}
+          />
+        )}
+        {entry && (
+          <ReadingSequence
+            entries={visible.map(({ id, draft }) => ({
+              id,
+              title: draft.title,
+            }))}
+            selected={entry.id}
+            onSelect={select}
           />
         )}
         {relationships.length > 0 && !browse && (

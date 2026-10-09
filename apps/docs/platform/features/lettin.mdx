@@ -1058,3 +1058,19 @@ cards and counts, notice/alias context, empty recovery, entry links, snapshot
 isolation, chronology and relationship endpoints. `storage.test.ts` retains actual
 D1 private/public and workspace/revocation coverage. Exact-head app builds and
 hosted browser acceptance remain separate delivery gates.
+
+### Published reading order
+
+The public notebook reader offers explicit Previous entry and Next entry controls
+when the selected entry belongs to a filtered sidebar list with at least two
+entries. Navigation follows that list's order, respects the current search and
+kind filters, and stops at either end. A selected entry excluded by the filters
+remains readable but has no sequence controls; clearing filters restores the
+ordinary list. The notebook overview has no sequence controls.
+
+Only already projected published entries supply titles and destinations. These
+controls do not fetch private drafts, change publication, or grant access, and
+use the reader's existing entry URL update. English and Vietnamese controls
+share these rules. Regression evidence: `reading-sequence.test.tsx` exercises
+ends, excluded selections, bilingual labels and escaped titles;
+`public-world.test.tsx` covers selection URL and filtered reader integration.

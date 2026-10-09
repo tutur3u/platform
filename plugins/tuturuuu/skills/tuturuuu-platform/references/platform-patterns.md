@@ -689,3 +689,11 @@ matches the displayed collection; do not present entry counts as connection
 counts. Empty-filter recovery should reset the visible controls together. Reuse
 cards so content notices and published context remain visible before entry
 selection. See the Lettin decision and public-entry collection regression.
+
+## Published reader sequences
+
+Derive previous/next destinations from the same filtered public projection used
+by the reader sidebar. Hide the controls for an excluded selection or a list
+with fewer than two entries; never wrap to another notebook or resolve missing
+IDs through private APIs. Reuse the public reader's entry selection/URL handler.
+Cover filter changes and both list ends alongside localized accessible labels.
