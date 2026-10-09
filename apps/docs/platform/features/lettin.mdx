@@ -582,3 +582,30 @@ technology users can locate the field without treating the help as its name.
 English and Vietnamese rendered regressions in
 `apps/lettin/src/components/creator-profile-labels.test.tsx` cover the exact labels,
 help association, and reserved-name validation.
+
+### Ordered artwork galleries
+
+Lettin notebooks and wiki entries may include an optional ordered gallery of up to
+12 images, separate from the cover and inline document images. Each gallery image
+requires alt text and may include a caption (up to 1,000 characters) and credit
+(up to 200 characters). Creators can add HTTPS URLs or upload artwork through the
+existing notebook media service, reorder images, edit metadata and remove images
+from the draft. Blank alt text or invalid image URLs block saving.
+
+Gallery changes use the existing explicit save and publish controls. Public
+readers receive only the published snapshot; catalogue summaries omit galleries.
+Uploading alone does not make artwork public. Every managed gallery image is
+checked against the notebook's live media ownership in the same atomic draft
+write as existing artwork. Draft and published gallery references participate in
+existing cleanup retention; a removed image remains retained while its published
+snapshot still references it. Unpublishing the notebook revokes anonymous access
+to its managed media. External HTTPS images remain controlled by their host.
+
+Uploads block save, discard and publish until settled; failed uploads preserve
+the existing gallery. Deferred results after leaving the editor cannot mutate
+the next document. Read-only galleries render escaped captions and credits,
+explicit alt text and revocable media URLs without optimizer caching. Legacy
+documents with no gallery continue to render normally. Regression evidence:
+`artwork-gallery.test.ts`, `artwork-gallery.test.tsx`, and
+`gallery-storage.test.ts`; hosted interaction and exact-head app CI remain
+independent acceptance gates.

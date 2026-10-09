@@ -1,5 +1,6 @@
 import type { LettinDraft } from '@tuturuuu/internal-api/lettin';
 import { useTranslations } from 'next-intl';
+import { ArtworkGallery } from './artwork-gallery';
 import { renderDocumentNode } from './document-nodes';
 import { wikiOf } from './wiki-model';
 
@@ -56,6 +57,7 @@ export function DocumentView({ draft }: { draft: LettinDraft }) {
           {wikiOf(draft).chronology?.era} · {wikiOf(draft).chronology?.label}
         </p>
       )}
+      <ArtworkGallery items={draft.gallery} />
       {renderDocumentNode(draft.content, 0, {
         completed: t('completedTask'),
         incomplete: t('incompleteTask'),

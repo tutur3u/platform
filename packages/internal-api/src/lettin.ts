@@ -46,7 +46,14 @@ export type LettinTheme = {
   typography: 'editorial' | 'clean';
   motion: 'full' | 'reduced';
 };
+export type LettinArtwork = {
+  image: string;
+  alt: string;
+  caption: string;
+  credit: string;
+};
 export type LettinDraft = {
+  gallery?: LettinArtwork[];
   theme?: LettinTheme;
   title: string;
   description: string;
