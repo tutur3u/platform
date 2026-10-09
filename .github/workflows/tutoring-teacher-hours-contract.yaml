@@ -74,7 +74,7 @@ jobs:
         run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/tutoring-teacher-hours-contract.test.mjs
       - name: Verify pure hours window parity
         working-directory: packages/utils
-        run: bunx vitest run src/__tests__/tutoring-teacher-hours.test.ts --maxWorkers=2
+        run: bun x vitest run src/__tests__/tutoring-teacher-hours.test.ts --maxWorkers=2
       - name: Apply complete schema, run strict pgTAP, generate actual schema types
         run: node apps/database/scripts/verify-tutoring-teacher-hours-contract.mjs
       - uses: actions/upload-artifact@v7
