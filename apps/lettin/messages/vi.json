@@ -913,6 +913,8 @@
     "quickNoteSaved": "Đã lưu ghi chú riêng tư. Mở ghi chú khi trình soạn thảo hiện tại không còn thay đổi chưa lưu.",
     "quote": "Trích dẫn",
     "readingEntryCount": "{count} mục phù hợp",
+    "readingEntryTag": "Thẻ của mục",
+    "readingEntryTagHint": "Khớp chính xác với một thẻ của mục đã xuất bản, hoặc để trống để xem tất cả các thẻ.",
     "readingSequence": "Thứ tự đọc",
     "redo": "Làm lại",
     "relationshipappears": "Xuất hiện trong",

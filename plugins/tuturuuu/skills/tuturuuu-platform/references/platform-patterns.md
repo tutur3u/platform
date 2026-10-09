@@ -697,3 +697,11 @@ by the reader sidebar. Hide the controls for an excluded selection or a list
 with fewer than two entries; never wrap to another notebook or resolve missing
 IDs through private APIs. Reuse the public reader's entry selection/URL handler.
 Cover filter changes and both list ends alongside localized accessible labels.
+
+## Published entry tag discovery
+
+Build tag suggestions from projected published entry metadata, not notebook tags
+or private studio drafts. Keep suggestions bounded while permitting exact manual
+input. Apply tag admission before sidebar/collection/sequence and relationship
+endpoint filtering; retain selected-document reading without stale neighbor links.
+Clear all local reader filters together and test combined search/kind/tag behavior.

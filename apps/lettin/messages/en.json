@@ -913,6 +913,8 @@
     "quickNoteSaved": "Private note saved. Open it when your current editor has no unsaved changes.",
     "quote": "Quote",
     "readingEntryCount": "{count, plural, =0 {No matching entries} one {# matching entry} other {# matching entries}}",
+    "readingEntryTag": "Entry tag",
+    "readingEntryTagHint": "Match a published entry tag exactly, or leave blank for all tags.",
     "readingSequence": "Reading order",
     "redo": "Redo",
     "relationshipappears": "Appears in",
