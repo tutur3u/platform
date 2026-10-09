@@ -76,3 +76,8 @@ acceptance work. The five-minute cadence and a delivery timeout are not total-sp
 Keep pool/worker defaults in the unit config and the package script as `vp test`.
 Shared sharded CI appends its worker limit; validate `bun run test --maxWorkers=2`
 under Node 24 to ensure the script accepts that override without duplicate options.
+
+Vite+ 1.1.0 requires matching Vitest/coverage-v8 5.0.3. The root runner dependency,
+root override and provider are pinned together; test the coverage override with
+`bun run test --maxWorkers=2 --coverage` under Node 24. Ordinary tests alone do not
+exercise the coverage version guard. Keep that guard enabled.
