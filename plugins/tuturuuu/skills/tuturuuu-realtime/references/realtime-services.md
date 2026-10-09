@@ -148,3 +148,8 @@ failure/recovery coverage and the isolated Worker/SQLite fixture documented in
 `programming-realtime-runbook.mdx`. Distinguish explicit handler invocation and
 stubbed provider failures from hosted alarm delivery and actual Drive saves.
 This offline bound does not certify live retry, media cleanup or account spending.
+
+Retain successful CI-built Parley artifacts even when subsequent fixture validation
+fails, with bounded error-body diagnostics. A failed identity probe blocks page
+acceptance; retained artifacts are diagnostic evidence, not qualified releases.
+See the programming realtime runbook for pinned replay and delivery boundaries.

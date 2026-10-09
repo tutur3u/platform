@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { createTestHarness } from 'wrangler';
+import { failureSummary } from './diagnostic.mjs';
 
 const sha = process.env.GITHUB_SHA;
 assert.match(
@@ -27,7 +28,13 @@ test('CI-built Parley completes sequential and concurrent bilingual pages', {
     const response = await harness.fetch(path, {
       signal: AbortSignal.timeout(20_000),
     });
-    assert.equal(response.status, 200, path);
+    assert.equal(
+      response.status,
+      200,
+      response.status === 200
+        ? path
+        : `${path}: ${await failureSummary(response)}`
+    );
     assert.match(response.headers.get('content-type') ?? '', /text\/html/);
     const reader = response.body.getReader();
     let timer;
@@ -78,7 +85,13 @@ test('CI-built Parley completes sequential and concurrent bilingual pages', {
     const identity = await harness.fetch('/api/build-info', {
       signal: AbortSignal.timeout(20_000),
     });
-    assert.equal(identity.status, 200);
+    assert.equal(
+      identity.status,
+      200,
+      identity.status === 200
+        ? '/api/build-info'
+        : `/api/build-info: ${await failureSummary(identity)}`
+    );
     const metadata = await identity.json();
     assert.equal(metadata.appName, 'parley');
     assert.equal(
