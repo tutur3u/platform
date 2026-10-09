@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.42.0](https://github.com/tutur3u/platform/compare/nova-v0.41.0...nova-v0.42.0) (2026-10-09)
+
+
+### Features
+
+* **docs:** expand platform guides and enforce app SEO and runtime pause ([e79cb7e](https://github.com/tutur3u/platform/commit/e79cb7e96c7db4d1baedb09b7420ca41b75e367f))
+* **docs:** expand platform guides, enforce SEO, and pause inactive runtimes ([#6085](https://github.com/tutur3u/platform/issues/6085)) ([df7a159](https://github.com/tutur3u/platform/commit/df7a159e9c657fee4f6e0b593c776d6887b2ae11))
+
+
+### Bug Fixes
+
+* **finance:** bound subscription schedules and block invalid inventory ([f4163bf](https://github.com/tutur3u/platform/commit/f4163bf6697316a06a8b2d3922d9664937dd6940)) ([#5990](https://github.com/tutur3u/platform/issues/5990)) ([f2096f6](https://github.com/tutur3u/platform/commit/f2096f6e20d27dd998a03d11c7b0769d7f06bb2e))
+* **finance:** expose safe invoice history recovery ([8a53d36](https://github.com/tutur3u/platform/commit/8a53d367d6888e592a0d64f760d47234d858bd73)) ([#6034](https://github.com/tutur3u/platform/issues/6034)) ([fd65a3d](https://github.com/tutur3u/platform/commit/fd65a3db6f7472771374192ab07f5a97c6fcaee8))
+* **finance:** reconcile attendance summary with current main ([fb00e6e](https://github.com/tutur3u/platform/commit/fb00e6ef4373adc1b6b9107f9bba883c101c3438))
+
 ## [0.41.0](https://github.com/tutur3u/platform/compare/nova-v0.40.0...nova-v0.41.0) (2026-10-04)
 
 

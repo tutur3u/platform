@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.1](https://github.com/tutur3u/platform/compare/tasks-ui-v0.17.0...tasks-ui-v0.17.1) (2026-10-09)
+
+
+### Bug Fixes
+
+* **tasks:** stabilize dialog loading and description reconciliation ([3895179](https://github.com/tutur3u/platform/commit/389517922e065109b859f016b456dec2ff5be0ed)) ([#6111](https://github.com/tutur3u/platform/issues/6111)) ([1ccbcf6](https://github.com/tutur3u/platform/commit/1ccbcf6bbb071cfd45fb07ac65ac450ce7d4ca29))
+
 ## [0.17.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.16.3...tasks-ui-v0.17.0) (2026-10-04)
 
 

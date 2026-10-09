@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/external-v0.5.2...external-v0.6.0) (2026-10-09)
+
+
+### Features
+
+* **docs:** expand platform guides and enforce app SEO and runtime pause ([e79cb7e](https://github.com/tutur3u/platform/commit/e79cb7e96c7db4d1baedb09b7420ca41b75e367f))
+* **docs:** expand platform guides, enforce SEO, and pause inactive runtimes ([#6085](https://github.com/tutur3u/platform/issues/6085)) ([df7a159](https://github.com/tutur3u/platform/commit/df7a159e9c657fee4f6e0b593c776d6887b2ae11))
+
+
+### Bug Fixes
+
+* **finance:** reconcile attendance summary with current main ([fb00e6e](https://github.com/tutur3u/platform/commit/fb00e6ef4373adc1b6b9107f9bba883c101c3438))
+
 ## [0.5.2](https://github.com/tutur3u/platform/compare/external-v0.5.1...external-v0.5.2) (2026-09-20)
 
 
