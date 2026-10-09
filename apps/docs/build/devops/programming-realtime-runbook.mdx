@@ -451,3 +451,9 @@ These checks do not validate hosted SFU/TURN media, authenticated product admiss
 background-work cost limits or production cutover. Keep those acceptance gates
 separate. Do not deploy the candidate or change migration tags merely because the
 native bundle or a health probe succeeds. Release builds belong in exact-commit CI.
+
+The Meet workspace has a separate `vitest.config.ts` with no Vitest test files.
+Root Vitest discovery otherwise loads `vite.config.ts` and starts the Cloudflare
+plugin even when selecting another app’s tests, requiring unrelated Worker imports
+and secrets before collection. Keep protocol and Worker/SQLite tests in the explicit
+Node commands above and in Meet CI; the empty Vitest scope does not replace them.

@@ -521,3 +521,9 @@ native CI build, alongside the existing lifecycle/protocol integration gates. Th
 initial configuration type-check and entry lint scope do not certify all retained
 service source. See the programming realtime runbook for fixture commands and
 hosted-media/cost/cutover boundaries.
+
+For native Worker workspaces tested with explicit Node scripts, provide a separate
+Vitest config with an empty include list. Root Vitest discovers all project configs
+before file filtering; loading the Cloudflare Vite plugin can start an unrelated
+Worker and fail collection on unbuilt imports or missing secrets. Preserve the
+explicit protocol and real Worker gates in the owning CI workflow.
