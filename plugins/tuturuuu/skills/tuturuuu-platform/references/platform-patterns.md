@@ -49,6 +49,16 @@ shared-package changes.
 - Do not mount a collaborative editor against a placeholder record. Render a
   skeleton until the real row has hydrated, so the editor is created once with its
   final binding (`isHydratingTask` in the task dialog is the reference).
+- Task-description recovery compares documents through the active editor schema,
+  with a lossless check for supported nodes, marks and attributes before schema
+  normalization. JSON key order and filled defaults are not a recovery conflict.
+  Reconcile banner metadata when history matches both saved content and the
+  initial hydrated editor baseline, or a causally confirmed same-opening save;
+  never auto-restore history into a live Yjs document. Keep pre-clear history and
+  genuine divergence available for explicit restore. The task-dialog loading
+  shell hides/inerts pending content while preserving the mounted editor binding.
+  Browser layout checks must include delayed hydration, a short description,
+  long-content scrolling and reopening; fixtures do not prove live transport.
 - **A fixed-height `DialogContent` needs its content column to declare
   `min-h-0`.** The shared default variant is `display: grid`; a grid item defaults
   to `min-height: auto`, so a `flex-1` column inside it grows to its content
