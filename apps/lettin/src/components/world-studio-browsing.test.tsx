@@ -91,7 +91,11 @@ it('retains selected facets across opening an entry and returning to browsing', 
   await act(() =>
     root.render(<WorldStudio wsId="workspace" worldId="world" />)
   );
-  const select = container.querySelector('select')!;
+  const publicationControl = () =>
+    [...container.querySelectorAll('select')].find((control) =>
+      control.parentElement?.textContent?.startsWith('wikiPublication')
+    )!;
+  const select = publicationControl();
   await act(() => {
     select.value = 'private';
     select.dispatchEvent(new Event('change', { bubbles: true }));
@@ -107,7 +111,7 @@ it('retains selected facets across opening an entry and returning to browsing', 
       .find((button) => button.textContent === 'sectionoverview')!
       .click()
   );
-  expect(container.querySelector('select')!.value).toBe('private');
+  expect(publicationControl().value).toBe('private');
   expect(container.querySelectorAll('.wiki-entry-card')).toHaveLength(1);
   expect(container.querySelector('.wiki-entry-card')!.textContent).toContain(
     'Private entry'
