@@ -19,6 +19,7 @@ vi.mock('next-intl/server', () => ({
 vi.mock('@/i18n/navigation', () => ({ Link: () => null }));
 vi.mock('./notebook-bookmark', () => ({ NotebookBookmark: () => null }));
 vi.mock('./saved-notebooks', () => ({ SavedNotebooks: () => null }));
+vi.mock('./saved-creators', () => ({ SavedCreators: () => null }));
 vi.mock('./brand', () => ({ Brand: () => null }));
 
 import SavedPage from '../app/[locale]/saved/page';
@@ -49,6 +50,8 @@ it('suspends request-time private library and preserves login destination', asyn
   );
   mocks.user.mockResolvedValue({ id: 'actor-b' });
   const library = await boundary.props.children.type();
-  expect(library.props.actorId).toBe('actor-b');
-  expect(library.key).toBe('actor-b');
+  expect(library.props.children[0].props.actorId).toBe('actor-b');
+  expect(library.props.children[0].key).toBe('actor-b');
+  expect(library.props.children[1].props.actorId).toBe('actor-b');
+  expect(library.props.children[1].key).toBe('creators-actor-b');
 });

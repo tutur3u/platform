@@ -368,3 +368,35 @@ export function saveLettinCreatorAbout(
     body: JSON.stringify(details),
   });
 }
+
+export type LettinSavedCreator = {
+  creatorId: string;
+  savedAt: string;
+  notebookTitle: string | null;
+};
+export function getLettinSavedCreators(expectedActor: string) {
+  return client().json<LettinSavedCreator[]>(
+    `/api/v1/lettin/creator-bookmarks?${new URLSearchParams({ expectedActor })}`,
+    { cache: 'no-store' }
+  );
+}
+export function getLettinCreatorSaved(
+  creatorId: string,
+  expectedActor: string
+) {
+  return client().json<{ saved: boolean }>(
+    `/api/v1/lettin/creator-bookmarks?${new URLSearchParams({ creatorId, expectedActor })}`,
+    { cache: 'no-store' }
+  );
+}
+export function setLettinCreatorSaved(
+  creatorId: string,
+  saved: boolean,
+  expectedActor: string
+) {
+  return client().json<{ saved: boolean }>('/api/v1/lettin/creator-bookmarks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ creatorId, saved, expectedActor }),
+  });
+}
