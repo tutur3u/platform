@@ -700,3 +700,14 @@ source editing, must block restoration, including confirmation after availabilit
 changes. Use existing save commands and actor/workspace/revision/target fences;
 staging a snapshot does not revive unavailable references or grant publication.
 See the Lettin decision and restore/editor/local D1 regression coverage.
+
+
+### Creator reference availability previews
+
+Review reference availability from authorized notebook records only. Deduplicate
+links and relationship targets; render no raw ID or guessed title for an unavailable
+target. Treat a current published target snapshot as availability information,
+not reader authorization or an immutable historical version. Keep notebook
+publication and server-side reference filtering authoritative. A private preview
+must not publish targets, copy private text to readers or grant access. Lettin's
+reference review and version-switch regressions cover this boundary.

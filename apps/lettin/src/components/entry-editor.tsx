@@ -127,6 +127,7 @@ export function EntryEditor({
           {t(record.published_at ? 'published' : 'draft')}
         </p>
         <PublicationPreview
+          entries={entries}
           draft={draft}
           published={record.published_at ? record.published : null}
         />

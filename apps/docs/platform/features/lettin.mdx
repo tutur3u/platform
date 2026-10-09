@@ -1097,3 +1097,27 @@ local-only staging, gallery replacement, discard and overlapping upload fences. 
 workspace/stale-revision denial, metadata preservation and unchanged public reads
 after an explicit restored-draft save. Exact-head builds and hosted editor/dialog
 acceptance remain independent delivery gates.
+
+
+### Private reference publication review
+
+The creator preview lists each distinct linked entry or relationship target from
+its selected local draft or saved published version. It labels the current target
+as having a published snapshot, a private draft only, or being unavailable. Titles
+come only from the already-authorized notebook records; unavailable IDs are not
+rendered. Repeated targets appear once, and empty reference sets omit the review.
+
+This panel is private to the creator editor. Availability reflects the current
+records, not an access promise or an immutable historical target version. The
+notebook must also be published before readers can see its published entries.
+Publishing the source does not publish linked targets or grant access. Anonymous
+reads continue to filter links and relationships using `publishedReferences`;
+private or unavailable targets remain hidden. Profile sharing defaults are
+unaffected.
+
+Regression evidence: `reference-publication-review.test.tsx` covers bilingual
+labels, relationship-only targets, deduplication, revoked publication, missing-ID
+concealment, escaped titles and non-mutating review. `publication-preview.test.tsx`
+covers version switching and current target refresh. Existing local D1 storage
+coverage verifies the public projection; exact-head CI and hosted dialog acceptance
+remain separate delivery gates.
