@@ -582,3 +582,17 @@ alongside Web, Learn, Infrastructure, Mail and Contacts. Keep placeholder build
 environment values, bounded Turbo concurrency, exact-source checkout and
 read-only permissions; preview or production dispatch is not a substitute for
 this PR gate.
+
+### Vitest temporary module collection failures
+
+If a Vitest 5 suite fails collection with `ENOENT` for a temporary transformed
+module under `/tmp/.../ssr` or `/tmp/.../client`, retain the failed log and distinguish
+collection from failed assertions. Focused auth and Colab suites reproduced this
+in the fork pool on 5.0.0 and 5.0.3 and passed with `--pool=threads`, retaining
+per-file isolation and every test. Run that comparison through the resource broker
+with at most two workers before changing configuration. `--no-cache` disables
+result caching; it does not prevent the fork pool from using temporary module
+files. A single worker and Node 24 alone did not resolve the observed failure.
+Apply a pool change only to a validated scope; packages using native or runtime
+fixtures need their own compatibility evidence. Do not rewrite global runner
+configuration or claim a universal cause from these focused results.
