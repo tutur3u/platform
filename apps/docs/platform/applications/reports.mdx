@@ -1,12 +1,12 @@
 ---
 title: 'Daily and Periodic Reports'
 description: 'Configure, approve, deliver, and troubleshoot daily, weekly, monthly, quarterly, and yearly workspace reports.'
-updated: '2026-09-11'
+updated: '2026-10-09'
 ---
 
 The Contacts Reports hub at `/{wsId}/reports` is the canonical workspace surface
 for operational reporting. It keeps two established data models separate while
-giving managers one consistent workflow:
+giving managers one worklist with a shared cadence selector:
 
 - **Daily reports** are existing user-group posts. Their permissions and email
   behavior remain unchanged.
@@ -16,9 +16,48 @@ giving managers one consistent workflow:
   generation runs, sender readiness, and delivery history.
 
 Legacy `/posts` and `/users/reports` links redirect into the corresponding hub
-tab and preserve their filters. The canonical hub opens **Daily** by default
+cadence and preserve their filters. The canonical hub opens **Daily** by default
 when the actor can view daily reports; explicit Periodic and Automations links
-still open their requested tab.
+still open their requested cadence or Automations view.
+
+## Central dashboard
+
+The Reports worklist offers Daily, Weekly, Monthly, Quarterly, Yearly and All
+periodic. Automations stays a separate view. All periodic spans the four periodic
+cadences; Daily uses recipient rows and is intentionally excluded from this total.
+Daily defaults and existing `view=daily`, `view=periodic`, `view=automations` and
+`report*` filter URLs remain compatible. Daily and periodic date/status filters
+retain separate URL state so switching cadence does not reinterpret an old filter.
+
+Every displayed count is a server total over the same active result predicate,
+including stage, statuses, search, dates, category and access scope. Daily counts
+recipient rows; periodic counts report records, including category counts. Changing
+a filter resets actionable selection and hides previous-scope totals while the new
+request is pending. Loading and failed reads show unknown counts rather than zero.
+Selection totals describe the current loaded selection and retain the 100-report
+limit; they are not filter totals.
+
+Recipient suppression and infrastructure blockers are distinct categories.
+Suppression includes recorded blocking/suppression evidence and does not imply a
+confirmed unsubscribe. Missing profile email, changed approval, unknown provider
+outcome and other recorded failures have separate categories. Selecting a category
+filters the complete server result before pagination. Existing approval, recipient,
+authorization and delivery confirmation checks still apply; this dashboard adds no
+bulk unsuppression or automatic sending/retry action.
+
+The current periodic reader walks ordered server chunks to classify recorded
+errors consistently without changing database schema. It refuses scopes over
+20,000 reports with an instruction to narrow dates or search, and rejects missing
+or incomplete count receipts. Reads scale with the scoped dataset. Daily stage
+counts use the existing rows RPC across complete scoped chunks. Neither reader
+presents a partial page as a dashboard total.
+
+Regression coverage includes `report-list-query.test.ts`, `search-pagination.test.ts`,
+`report-filters.test.ts`, `reports-list.test.ts`, Daily `lib/posts/data.test.ts`,
+`periodic-reports-panel-counts.test.tsx` and `reports-hub.test.tsx` for scope changes,
+pagination, category intersections, route compatibility and retained action guards.
+Component fixture screenshots exercise synthetic data; they do not qualify database
+or customer delivery.
 
 ```mermaid
 flowchart LR
