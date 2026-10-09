@@ -612,6 +612,11 @@ with JSON input, then verify a frozen install and installed package isolation.
 A prepared directory left by `bun patch` can shadow dependency symlinks; preserve
 that owned directory outside the resolver and reinstall before testing.
 
+When changing the candidate dependency, update both workflow path filters and
+`tuturuuu.ts` selection to its active patch. Selection regressions must derive the
+patch from the app manifest and root patchedDependencies rather than an obsolete
+filename copied into the test.
+
 Run `node --test apps/parley/scripts/opennext-candidate.test.mjs` for actual installed
 Next CJS/ESM AST-patch compatibility and fail-closed source-shape checks. After the
 real CI OpenNext build, Parley runs `node --test verify.mjs` from

@@ -121,6 +121,11 @@ must retain the real Node middleware bundler alongside both the scheduler and
 request-scoped module-loading patches, plus the repository's PPR name and preview
 manifest fixes. Verify URL-keyed Bun patch isolation from Meet/Lettin; a preview
 that rejects Node middleware cannot be repaired by simply removing its guard.
+When changing the candidate dependency, update both workflow path filters and
+`tuturuuu.ts` selection to its active patch. Selection regressions must derive the
+patch from the app manifest and root patchedDependencies rather than an obsolete
+filename copied into the test.
+
 Run the actual installed Next AST compatibility tests before the
 CI build; moved source shapes must fail closed. After CI builds, use the isolated
 `apps/parley/test-fixtures/built-worker` harness with canonical URL/Host, local

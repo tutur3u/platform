@@ -31,3 +31,25 @@ test('Parley generates exact source identity before dependency and Worker builds
     steps.findIndex((step) => step.run === 'node --test verify.mjs') > built
   );
 });
+
+test('Parley push and PR triggers include the patch installed by its manifest', () => {
+  const candidateSpec = require('../../apps/parley/package.json')
+    .devDependencies['@opennextjs/cloudflare'];
+  const patch =
+    require('../../package.json').patchedDependencies[
+      `@opennextjs/cloudflare@${candidateSpec}`
+    ];
+  assert.equal(typeof patch, 'string');
+  assert.ok(
+    require('node:fs').existsSync(
+      require('node:path').resolve(__dirname, '../..', patch)
+    )
+  );
+  const workflow = readWorkflow('parley-cloudflare.yaml');
+  for (const event of ['push', 'pull_request']) {
+    assert.ok(
+      workflow.on[event].paths.includes(patch),
+      `${event} must select the installed candidate patch`
+    );
+  }
+});

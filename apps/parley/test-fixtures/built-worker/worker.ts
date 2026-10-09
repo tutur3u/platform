@@ -6,6 +6,7 @@ globalThis.fetch = async () => {
 };
 
 export default {
+  /** Forward through the production entry with a canonical host and local bindings. */
   fetch(
     request: Request,
     env: Parameters<typeof app.fetch>[1],

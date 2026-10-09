@@ -577,7 +577,7 @@ export function getWorkflowDecision({
       ).has(filePath) ||
       (isCloudflareTarget &&
         ((filePath ===
-          'patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fpkg.pr.new%2F@opennextjs%2Fcloudflare@6b783939aefa8f9a19d4f002f68bc57c62879098.patch' &&
+          'patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch' &&
           target.app === 'parley') ||
           (filePath === 'patches/@opennextjs%2Fcloudflare@1.20.6.patch' &&
             ['meet', 'lettin', 'parley'].includes(target.app))))

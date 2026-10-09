@@ -22,6 +22,7 @@ test('CI-built Parley completes sequential and concurrent bilingual pages', {
     ],
   });
   const receipts = [];
+  /** Require bounded, complete rendered HTML rather than accepting status alone. */
   async function probe(path, title) {
     const response = await harness.fetch(path, {
       signal: AbortSignal.timeout(20_000),
