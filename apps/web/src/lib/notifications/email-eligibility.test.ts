@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { getNotificationSkipReason } from './cron-helpers';
-import { getEmailPreferenceSkipReason } from './email-eligibility';
+import {
+  getEmailPreferenceSkipReason,
+  getEmailRecipientSkipDetail,
+} from './email-eligibility';
 
 const notification = {
   id: 'notification-1',
@@ -240,6 +243,46 @@ describe('notification email eligibility matrix', () => {
     await expect(
       getEmailPreferenceSkipReason(admin, notification)
     ).rejects.toThrow('Failed to verify');
+  });
+
+  it.each([undefined, {}])(
+    'fails closed when the preference RPC is unavailable: %s',
+    async (rpc) => {
+      const admin = { ...client(), rpc };
+      await expect(getNotificationSkipReason(admin, options())).rejects.toThrow(
+        'Notification email preference lookup unavailable'
+      );
+      expect(admin.auth.admin.getUserById).not.toHaveBeenCalled();
+    }
+  );
+
+  it('fails closed when the queued event has no preference key', async () => {
+    const admin = client();
+    await expect(
+      getNotificationSkipReason(admin, {
+        ...options(),
+        notification: { ...notification, type: undefined },
+      })
+    ).rejects.toThrow('Notification email preference lookup unavailable');
+    expect(admin.rpc).not.toHaveBeenCalled();
+    expect(admin.auth.admin.getUserById).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when the Auth verification client is unavailable', async () => {
+    const configured = client();
+    const admin = { from: configured.from, rpc: configured.rpc };
+    await expect(getNotificationSkipReason(admin, options())).rejects.toThrow(
+      'Notification email verification unavailable'
+    );
+    expect(configured.auth.admin.getUserById).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed destinations before an Auth lookup', async () => {
+    const admin = client();
+    expect(
+      await getEmailRecipientSkipDetail(admin, notification, 'invalid-email')
+    ).toBe('invalid_recipient_email');
+    expect(admin.auth.admin.getUserById).not.toHaveBeenCalled();
   });
 
   it('retains stale membership denial before verification', async () => {
