@@ -58,7 +58,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.13",
     "@cloudflare/workers-types": "^5.20260914.1",
-    "@opennextjs/cloudflare": "^1.20.6",
+    "@opennextjs/cloudflare": "https://pkg.pr.new/@opennextjs/cloudflare@6b783939aefa8f9a19d4f002f68bc57c62879098",
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/react": "^16.3.3",
     "@tuturuuu/typescript-config": "workspace:*",

@@ -595,6 +595,31 @@ Workflow contracts use Bun's built-in YAML parser via `workflow-yaml-test-helper
 not undeclared transitive YAML packages. The dependency-free snapshot checks ordering,
 identity and caching. Run `node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js`.
 
+Parley temporarily pins the immutable OpenNext PR 1318 preview at
+`6b783939aefa8f9a19d4f002f68bc57c62879098` (package version label `1.20.2`).
+The upstream build patches replace the incompatible Cache Components scheduler
+and scope module-loading signals to the Cloudflare request context. Bun's URL-keyed
+patch preserves the existing component-name and preview-manifest fixes and preserves
+Next 16.4's `CacheSignal(null)` constructor arguments in the upstream AST rule. The stable
+adapter patch and dependencies of Meet and Lettin remain separate. Prepare the URL
+with `bun patch '@opennextjs/cloudflare@https://pkg.pr.new/@opennextjs/cloudflare@6b783939aefa8f9a19d4f002f68bc57c62879098'`
+and commit using that same specifier: committing the suggested node_modules path
+fails package lookup for this URL dependency. Keep the pinned integrity in `bun.lock`.
+
+Run `node --test apps/parley/scripts/opennext-candidate.test.mjs` for actual installed
+Next CJS/ESM AST-patch compatibility and fail-closed source-shape checks. After the
+real CI OpenNext build, Parley runs `node --test verify.mjs` from
+`apps/parley/test-fixtures/built-worker`. The fixture preserves production compatibility
+flags and forwards through the production entry with canonical URL/Host, local assets,
+local R2/self bindings and dummy credentials. Global outbound fetch throws; no provider,
+production Durable Object or account binding is configured. It requires exact build-info
+SHA plus four sequential and four concurrent English/Vietnamese invitation pages,
+translated content and complete HTML within bounded deadlines, then closes the harness.
+Only hashes and lengths are logged. No release build runs locally. A green fixture
+qualifies the anonymous built-page boundary only: authenticated invitation, session,
+Live/provider and hosted concurrency acceptance remain required before recovery claims.
+Never ship private minified diagnostic patches or infer recovery from HTTP 200 alone.
+
 `parley-offline-diagnostic.yaml` is manual-only from trusted `main`, with no deployment
 or production secrets. It replays retained artifact 11583133658 from run 37853687763,
 fixed to SHA `387caf4872a59cc4944b16324a2554062393d7d1` and its published archive digest.

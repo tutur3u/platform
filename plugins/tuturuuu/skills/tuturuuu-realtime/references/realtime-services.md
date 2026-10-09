@@ -113,3 +113,15 @@ decoded frame counts, Stop/revoke cleanup and repeated-start evidence; a returne
 track is insufficient. The fixture neither tests hosted SFU nor replaces native
 WebView acceptance. See the runbook before installing/driving its exact-commit
 artifact. Use T3 Device so verification remains visible to the user.
+
+### Parley Cache Components candidate acceptance
+
+Parley's pinned upstream adapter candidate must preserve both the scheduler and
+request-scoped module-loading patches, plus the repository's PPR name and preview
+manifest fixes. Run the actual installed Next AST compatibility tests before the
+CI build; moved source shapes must fail closed. After CI builds, use the isolated
+`apps/parley/test-fixtures/built-worker` harness with canonical URL/Host, local
+bindings and blocked outbound fetch. Require exact source SHA and complete bilingual
+pages across sequential and concurrent requests. This tests the anonymous built-page
+boundary, not authenticated product flows or hosted recovery. See the
+[Cloudflare validation runbook](/build/devops/github-actions-runbook#meet-lettin-and-parley-cloudflare-validation).
