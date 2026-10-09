@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import signal
+import shutil
 import stat
 import subprocess
 import tempfile
@@ -62,6 +63,59 @@ class Safeguards(unittest.TestCase):
                 with self.assertRaises(RuntimeError):
                     REPLAY.extract(self.archive(name, mode), destination)
                 self.assertFalse(destination.exists())
+
+    def tool_fixture(self, root):
+        app = root / "apps/parley"
+        wrangler = app / "node_modules/wrangler"
+        workerd = wrangler / "node_modules/workerd"
+        esbuild = wrangler / "node_modules/esbuild"
+        files = {
+            app / "package.json": '{"name":"@tuturuuu/parley"}',
+            wrangler / "package.json": '{"name":"wrangler","version":"4.131.1","exports":{"./package.json":"./package.json"}}',
+            wrangler / "bin/wrangler.js": "throw new Error('must not execute wrapper');",
+            workerd / "package.json": '{"name":"workerd","version":"1.20260911.1","main":"index.js"}',
+            workerd / "index.js": "throw new Error('must not import workerd');",
+            esbuild / "package.json": '{"name":"esbuild","main":"index.js"}',
+            esbuild / "index.js": "throw new Error('must not import esbuild');",
+            workerd / "node_modules/@cloudflare/workerd-linux-64/bin/workerd": "native fixture",
+            esbuild / "node_modules/@esbuild/linux-x64/bin/esbuild": "native fixture",
+        }
+        for path, value in files.items():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(value)
+        return files
+
+    def test_filtered_workspace_resolves_nested_tools_without_imports(self):
+        with tempfile.TemporaryDirectory() as parent:
+            root = Path(parent)
+            self.tool_fixture(root)
+            tools = REPLAY.resolve_tools(root, shutil.which("node"))
+            self.assertFalse((root / "node_modules/wrangler").exists())
+            self.assertIn("apps/parley/node_modules/wrangler", tools["wrangler"]["path"])
+            self.assertIn("node_modules/workerd/node_modules/@cloudflare", tools["workerd"]["path"])
+            self.assertIn("node_modules/esbuild/node_modules/@esbuild", tools["esbuild"]["path"])
+            self.assertEqual(set(tools), {"node", "parleyManifest", "wranglerManifest", "workerdManifest",
+                                          "esbuildManifest", "wrangler", "workerd", "esbuild"})
+
+    def test_missing_native_dependency_stops_without_tool_fallback(self):
+        with tempfile.TemporaryDirectory() as parent:
+            root = Path(parent)
+            files = self.tool_fixture(root)
+            next(path for path in files if "@cloudflare" in str(path)).unlink()
+            with self.assertRaises(subprocess.CalledProcessError):
+                REPLAY.resolve_tools(root, shutil.which("node"))
+
+    def test_resolved_tool_cannot_escape_immutable_checkout(self):
+        with tempfile.TemporaryDirectory() as parent:
+            root = Path(parent) / "checkout"
+            self.tool_fixture(root)
+            app = root / "apps/parley/package.json"
+            with patch.object(REPLAY.subprocess, "check_output", return_value=json.dumps({
+                    "parleyManifest": str(app), "wranglerManifest": str(app), "workerdManifest": str(app),
+                    "esbuildManifest": str(app), "wrangler": str(app), "workerd": str(app),
+                    "esbuild": __file__})):
+                with self.assertRaisesRegex(RuntimeError, "outside immutable checkout"):
+                    REPLAY.resolve_tools(root, shutil.which("node"))
 
     def test_environment_drops_tokens_and_caller_home(self):
         with patch.dict(os.environ, {"GH_TOKEN": "private", "CLOUDFLARE_API_TOKEN": "private"}):

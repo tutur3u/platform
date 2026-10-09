@@ -83,6 +83,30 @@ def extract(archive, destination):
                     file.write(bundle.read(item))
 
 
+def resolve_tools(source, node):
+    source = source.resolve(strict=True)
+    manifest = source / "apps/parley/package.json"
+    script = """
+const {createRequire} = require("node:module");
+const {dirname, join} = require("node:path");
+const app = process.argv[1];
+const wrangler = createRequire(app).resolve("wrangler/package.json");
+const fromWrangler = createRequire(wrangler);
+const workerd = fromWrangler.resolve("workerd/package.json");
+const esbuild = fromWrangler.resolve("esbuild/package.json");
+console.log(JSON.stringify({parleyManifest: app, wranglerManifest: wrangler,
+  workerdManifest: workerd, esbuildManifest: esbuild,
+  wrangler: join(dirname(wrangler), "bin/wrangler.js"),
+  workerd: createRequire(workerd).resolve("@cloudflare/workerd-linux-64/bin/workerd"),
+  esbuild: createRequire(esbuild).resolve("@esbuild/linux-x64/bin/esbuild")}));
+"""
+    paths = json.loads(subprocess.check_output([node, "--input-type=commonjs", "--eval", script, str(manifest)], text=True))
+    require(set(paths) == {"parleyManifest", "wranglerManifest", "workerdManifest", "esbuildManifest",
+                           "wrangler", "workerd", "esbuild"}, "Unexpected tool resolution")
+    require(all(Path(path).resolve(strict=True).is_relative_to(source) for path in paths.values()), "Tool resolved outside immutable checkout")
+    return {"node": identity(node), **{name: identity(path) for name, path in paths.items()}}
+
+
 def prepare(root, source, node):
     require(root.is_dir() and not root.is_symlink() and stat.S_IMODE(root.stat().st_mode) == 0o700, "Private root required")
     require(platform.system() == "Linux" and platform.machine() == "x86_64", "Linux x64 required")
@@ -90,16 +114,11 @@ def prepare(root, source, node):
     validate_metadata(read_json(root / "metadata.json"))
     archive = identity(root / "worker.zip")
     require(archive["sha256"] == DIGEST, "Downloaded archive digest mismatch")
-    tools = {
-        "node": identity(node),
-        "wrangler": identity(source / "node_modules/wrangler/bin/wrangler.js"),
-        "workerd": identity(source / "node_modules/@cloudflare/workerd-linux-64/bin/workerd"),
-        "esbuild": identity(source / "node_modules/@esbuild/linux-x64/bin/esbuild"),
-    }
+    tools = resolve_tools(source, node)
     require(all(os.access(tools[name]["path"], os.X_OK) for name in ("node", "workerd", "esbuild")), "Native tool is not executable")
     require(subprocess.check_output([node, "--version"], text=True).startswith("v24."), "Node 24 required")
-    require(read_json(source / "node_modules/wrangler/package.json")["version"] == "4.131.1", "Wrangler mismatch")
-    require(read_json(source / "node_modules/workerd/package.json")["version"] == "1.20260911.1", "workerd mismatch")
+    require(read_json(tools["wranglerManifest"]["path"])["version"] == "4.131.1", "Wrangler mismatch")
+    require(read_json(tools["workerdManifest"]["path"])["version"] == "1.20260911.1", "workerd mismatch")
     extract(root / "worker.zip", root / "artifact")
     (root / "state").mkdir(mode=0o700)
     config = {
