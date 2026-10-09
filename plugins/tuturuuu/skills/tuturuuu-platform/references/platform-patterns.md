@@ -547,3 +547,13 @@ structured starter metadata or publish captured entries implicitly. Cover the
 supported kinds against the draft schema, translated rendered labels and actual
 D1 publication/workspace/revocation boundaries; local fixtures do not establish
 hosted dialog acceptance. See the Lettin feature decision and quick-note tests.
+
+### Local D1 quota fixtures
+
+Seed large boundary datasets with a set-based SQL statement and assert the exact
+seed count before testing concurrent production mutations. Hundreds of separate
+prepared statements in a fixture batch can exhaust the per-test timeout under CI
+load without exercising more application behavior. Preserve the real mutation,
+quota race and cross-actor assertions; do not raise global timeouts or replace D1
+with mocks. Lettin's creator-bookmark quota regression uses 499 seeded references
+and two concurrent saves to verify the 500-reference boundary.

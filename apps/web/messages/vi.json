@@ -11559,6 +11559,7 @@
     "types": {
       "account_update": "Cập nhật tài khoản",
       "deadline_reminder": "Nhắc nhở hạn chót",
+      "mail_received": "Nhận được thư",
       "security_alert": "Cảnh báo bảo mật",
       "system_announcement": "Thông báo hệ thống",
       "task_assigned": "Nhiệm vụ được giao",

@@ -39,6 +39,31 @@ Mintlify validation in CI. Strict validation compiles docs; do not run it or app
 builds on this machine. Require relevant lint, type-check, unit-test, and real
 Next build workflows for the exact commit when implementation changes.
 
+## Sitemap ownership and Search Console
+
+`packages/utils/src/seo-policy.json` is the canonical app-domain and public-page
+allowlist. Generate satellite assets with `node scripts/generate-app-seo.js` and
+verify them with `--check`. The generator removes obsolete static sitemaps for
+private apps and the platform; it leaves unrelated public files untouched.
+Authenticated workspace pages, login flows, private share links, and checkout
+pages are not sitemap candidates. A private app needs no sitemap until it has
+explicitly indexable public content; do not copy the platform sitemap into it.
+
+The platform owns `src/app/sitemap.ts` and `src/app/robots.ts`; static files with
+those names conflict with its publication-aware metadata routes. Satellite
+sitemaps advertise their own canonical origin, including Nova
+(`nova.tuturuuu.com`) and Rewise (`rewise.tuturuuu.com`) production domains. The retired `rewise.me` and
+noncanonical `nova.ai.vn` hosts must not appear in generated discovery links. Do not invent `lastmod` values
+from build time or add language URLs that redirect to the same canonical page.
+Dynamic publication paths need an anonymous, publication-aware reader before
+being enumerated; public route patterns alone do not expose a content catalog.
+
+After deployment, verify each advertised sitemap returns XML with successful
+HTTP status and canonical URLs before submitting it under its matching Search
+Console property. Repository checks do not prove deployment or crawlability.
+The invite-only Colab SPA also declares `noindex`; its authenticated workshop
+URLs are not a public sitemap catalog. Docs hosting generates its own `https://docs.tuturuuu.com/sitemap.xml`.
+
 ## Writing Documentation
 
 ### File Structure

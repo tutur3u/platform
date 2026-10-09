@@ -767,6 +767,31 @@ copy and authorization boundaries; `creation-guidance.test.tsx` checks escaping,
 empty defaults, draft controls and content-notice placement. Exact-head app builds
 and hosted interaction remain independent delivery gates.
 
+### Private saved creators
+
+Signed-in readers can explicitly bookmark a creator with a published notebook
+from the Lettin creator page and manage up to 500 creator references in `/saved`.
+The choice is private to the initiating reader. It sends no notification,
+creates no public follower count or list, changes no profile fields, and grants
+no source access. Notification subscriptions remain a separate workflow.
+
+Only creator IDs and save timestamps are retained. The library reads a current
+published notebook title for navigation; it never copies a profile or draft.
+A creator without published notebooks is unavailable but remains removable.
+Reads and writes require the expected app-session actor; cache keys include that
+actor. Removal is idempotent, failed mutations preserve the confirmed state, and
+ambiguous writes are not automatically retried. Anonymous readers receive a
+sign-in link with a canonical creator return path. Public profile defaults remain
+avatar, banner, display name and biography; no bookmark choices are exposed there.
+
+Regression evidence: `creator-bookmarks.test.ts` applies the additive D1 migration
+and checks private actor scope, published-only projection, quota and withdrawal.
+The quota fixture seeds 499 references with one SQL operation, verifies the seed
+count, then races two real save operations against the remaining slot;
+creator bookmark route and rendered reader-library tests cover session/command
+fences and explicit UI actions. Exact-head CI and hosted keyboard/account-switch
+acceptance remain separate delivery evidence.
+
 ### Private quick-note capture
 
 The authorized notebook studio offers explicit plain text quick-note capture.
