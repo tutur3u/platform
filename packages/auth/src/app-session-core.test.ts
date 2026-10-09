@@ -27,8 +27,8 @@ describe('framework-independent session entrypoint', () => {
   it('reads standard Request cookies and bearer credentials without Next.js', () => {
     const token = pair().access.token;
     for (const headers of [
-      { cookie: `${APP_SESSION_COOKIE_NAME}=${token}` },
-      { authorization: `Bearer ${token}` },
+      new Headers({ cookie: `${APP_SESSION_COOKIE_NAME}=${token}` }),
+      new Headers({ authorization: `Bearer ${token}` }),
     ]) {
       const request = new Request('https://parley.example.test/', { headers });
       expect(
