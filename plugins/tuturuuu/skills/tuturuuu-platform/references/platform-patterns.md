@@ -428,6 +428,17 @@ checked with `--check`; inactive Rust/TanStack sources are excluded. Product
 guides explain actual behavior and access, while generated routes locate source.
 Use `node scripts/docs-audit.js` for navigation, internal links, and assets.
 
+## Duplicating creator drafts
+
+Duplicate from a server-owned saved revision, with explicit destination scope and
+a user-supplied title. Recheck source revision, creator/collaborator permission
+and artwork ownership in the insert, rather than trusting an earlier read. Keep
+copies unpublished and clear structured references whose semantics should not
+transfer. A completion callback must not navigate away from edits made while the
+request was pending: offer a separate guarded open action. Fence double submits
+synchronously and avoid automatic retries for non-idempotent creation.
+Lettin's duplicate-entry D1 and component tests exercise these boundaries.
+
 ## Notification email admission
 
 Immediate and batched notification email share `notifications/cron-helpers.ts`
@@ -455,3 +466,15 @@ idempotent, and bind both reads and writes to the expected app-session actor.
 Include the actor in client cache keys. Standalone library routes must be excluded
 from workspace-alias probes and use request-time suspended auth boundaries.
 Lettin's bookmark D1 and route regressions cover these contracts.
+
+## Derived reader document navigation
+
+Derive reader outlines from the selected published projection, not workspace
+queries or editor buffers. Match the renderer's tree paths, depth cutoff and
+ignored leaf children when assigning bounded navigation targets. Plain labels
+must escape markup and exclude author IDs/link/image metadata. Scope targets per
+document and keep duplicate heading titles distinct. Open enclosing folds before
+focusing/scrolling, respect native modified clicks, and avoid forced motion or
+history churn. Record that tree-position targets can change after republishing;
+DOM fixtures verify actions and boundaries, while real layout/focus remains a
+hosted browser gate.

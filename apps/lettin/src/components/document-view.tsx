@@ -1,10 +1,24 @@
 import type { LettinDraft } from '@tuturuuu/internal-api/lettin';
 import { useTranslations } from 'next-intl';
+import { ContentNotice } from './content-notice';
 import { renderDocumentNode } from './document-nodes';
+import { DocumentOutline } from './document-outline';
+import { buildDocumentOutline } from './document-outline-model';
 import { wikiOf } from './wiki-model';
 
-export function DocumentView({ draft }: { draft: LettinDraft }) {
+export function DocumentView({
+  draft,
+  showOutline = false,
+  outlineScope = 'lettin-document',
+}: {
+  draft: LettinDraft;
+  showOutline?: boolean;
+  outlineScope?: string;
+}) {
   const t = useTranslations('lettin');
+  const outline = showOutline
+    ? buildDocumentOutline(draft.content, outlineScope)
+    : undefined;
   return (
     <article
       className="lettin-prose wiki-theme"
@@ -12,6 +26,7 @@ export function DocumentView({ draft }: { draft: LettinDraft }) {
       data-wiki-type={draft.theme?.typography}
       data-wiki-motion={draft.theme?.motion}
     >
+      <ContentNotice notice={draft.contentNotice} />
       {draft.image && (
         // biome-ignore lint/performance/noImgElement: Artwork must bypass optimizer caching so private media access can be revoked.
         <img
@@ -56,10 +71,18 @@ export function DocumentView({ draft }: { draft: LettinDraft }) {
           {wikiOf(draft).chronology?.era} · {wikiOf(draft).chronology?.label}
         </p>
       )}
-      {renderDocumentNode(draft.content, 0, {
-        completed: t('completedTask'),
-        incomplete: t('incompleteTask'),
-      })}
+      {outline && (
+        <DocumentOutline items={outline.items} truncated={outline.truncated} />
+      )}
+      {renderDocumentNode(
+        draft.content,
+        0,
+        {
+          completed: t('completedTask'),
+          incomplete: t('incompleteTask'),
+        },
+        outline ? { ids: outline.ids, path: '0' } : undefined
+      )}
     </article>
   );
 }

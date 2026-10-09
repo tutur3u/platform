@@ -7,6 +7,7 @@ import { richTextNodeSchema, safeImage } from './rich-text-schema';
 import { wikiKinds, wikiSchema } from './wiki-schema';
 
 export const lettinDraftSchema = z.object({
+  contentNotice: z.string().trim().max(500).optional(),
   theme: z
     .object({
       palette: z.enum(['paper', 'forest', 'midnight', 'rose']),
@@ -65,6 +66,13 @@ export const lettinCommandSchema = z.discriminatedUnion('action', [
         .refine((wiki) => wiki.relationships.length === 0)
         .optional(),
     }),
+  }),
+  z.object({
+    action: z.literal('duplicateEntry'),
+    worldId: id,
+    entryId: id,
+    version,
+    title: z.string().trim().min(1).max(160),
   }),
   z.object({
     action: z.literal('saveWorld'),

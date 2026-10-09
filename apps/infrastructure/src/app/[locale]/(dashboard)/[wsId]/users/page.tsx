@@ -1,12 +1,16 @@
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { User } from '@tuturuuu/types/primitives/User';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { enforceInfrastructureRootWorkspace } from '../enforce-infrastructure-root';
 import { userColumns } from './columns';
+import { getInfrastructureUsers } from './queries';
 
 export const metadata: Metadata = {
   title: 'Users',
@@ -29,11 +33,35 @@ export default async function InfrastructureUsersPage({
   params,
   searchParams,
 }: Props) {
+  await connection();
   const { wsId } = await params;
-  await enforceInfrastructureRootWorkspace(wsId);
-
+  const { data: users, count } = await getInfrastructureUsers(
+    await searchParams,
+    {
+      authorize: async () => {
+        const user = await getSatelliteAppSessionUser('infra');
+        if (!user?.id) redirect('/login');
+        await enforceInfrastructureRootWorkspace(wsId);
+        const permissions = await getPermissions({
+          user,
+          wsId: ROOT_WORKSPACE_ID,
+        });
+        if (
+          !permissions ||
+          permissions.withoutPermission('view_infrastructure')
+        )
+          notFound();
+        const workspace = await getWorkspace(ROOT_WORKSPACE_ID, {
+          useAdmin: true,
+          user,
+        });
+        if (!workspace) notFound();
+        if (!workspace.joined) redirect('/');
+      },
+      createAdminClient: async () => createAdminClient(),
+    }
+  );
   const t = await getTranslations();
-  const { data: users, count } = await getUsers(await searchParams);
 
   return (
     <>
@@ -68,43 +96,4 @@ export default async function InfrastructureUsersPage({
       />
     </>
   );
-}
-
-async function getUsers({
-  q,
-  page = '1',
-  pageSize = '10',
-}: {
-  q?: string;
-  page?: string;
-  pageSize?: string;
-}) {
-  const supabaseAdmin = await createAdminClient();
-  if (!supabaseAdmin) notFound();
-
-  const queryBuilder = supabaseAdmin
-    .from('users')
-    .select('*', {
-      count: 'exact',
-    })
-    .order('created_at', { ascending: false });
-
-  if (q) {
-    queryBuilder.or(
-      `display_name.ilike.%${q}%,handle.ilike.%${q}%,email.ilike.%${q}%`
-    );
-  }
-
-  if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
-  }
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data: data as User[], count: count || 0 };
 }
