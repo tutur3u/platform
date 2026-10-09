@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { tryToParsePath } from 'next/dist/lib/try-to-parse-path';
 import { describe, expect, it } from 'vitest';
+import { PRODUCTION_INTERNAL_APP_DOMAINS } from './internal-domains';
 import { createTuturuuuNextConfig } from './next-config';
 import { APP_SEO_POLICY, createSeoHeaders, type SeoApp } from './seo';
 
@@ -21,6 +22,26 @@ function blocked(
 }
 
 describe('app indexing boundaries', () => {
+  it('uses registered canonical production domains including branded apps', () => {
+    const aliases: Record<string, string> = {
+      web: 'platform',
+      infrastructure: 'infra',
+    };
+    for (const [app, config] of Object.entries(APP_SEO_POLICY)) {
+      const registered = PRODUCTION_INTERNAL_APP_DOMAINS.filter(
+        (domain) => domain.name === (aliases[app] ?? app)
+      );
+      if (registered.length) {
+        expect(
+          registered.map((domain) => domain.url),
+          app
+        ).toContain(config.origin);
+      }
+    }
+    expect(APP_SEO_POLICY.nova.origin).toBe('https://nova.tuturuuu.com');
+    expect(APP_SEO_POLICY.rewise.origin).toBe('https://rewise.tuturuuu.com');
+  });
+
   it.each(Object.keys(APP_SEO_POLICY) as SeoApp[])(
     'protects auth and API paths in %s',
     (app) => {
