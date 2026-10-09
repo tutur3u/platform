@@ -1,0 +1,139 @@
+---
+title: "Oxc and Cloudflare adoption"
+description: "Incremental Oxlint/Oxfmt tooling, portable first-party libraries, and Vite-native Worker migration boundaries."
+updatedAt: '2026-10-09'
+---
+
+## Decision and current state
+
+Gradually adopt **Oxlint and Oxfmt over Biome**, and move application hosting
+toward **Cloudflare**. These are independent changes: Oxc can lint and format
+Next.js source without changing its runtime. Vite+ consolidates tooling; it does
+not translate Next.js routes, server components, or server actions.
+
+The foundation adds root-pinned Oxlint/Oxfmt, shared configuration and explicit-file
+commands. Existing Biome scripts, CI, editor defaults, import organization and
+release/generated-file formatting remain authoritative. No workspace has completed
+the switch merely because these tools are installed.
+
+Lettin and Parley already have Next.js/OpenNext Worker deployments. Their next
+architecture milestone is a Vite-native runtime preserving existing contracts.
+React Router Framework Mode with the Cloudflare Vite plugin is a candidate requiring
+a scoped compatibility proof. The retained `apps/tanstack-web` remains paused.
+
+## Use the tooling foundation
+
+From the repository root, pass **explicit files you own**:
+
+```bash
+bun oxc:lint scripts/oxc.js scripts/oxc.test.js
+bun oxc:format scripts/oxc.js scripts/oxc.test.js
+bun oxc:write scripts/oxc.js
+node --test scripts/oxc.test.js
+```
+
+Lint fails on warnings/errors. Format checks do not write; `oxc:write` explicitly
+applies formatting. The wrapper rejects empty selections, flags, globs, directories,
+symlinks resolving outside the permitted source, build/dependency trees and paused
+runtimes. Installed tools run with two threads, without Turbo or builds. Tests cover
+scope rejection, native-dialog linting, read-only formatting and idempotence.
+
+The baseline uses correctness rules, native-dialog prohibition, TypeScript/React/
+accessibility plugins, and two-space, 80-column, single-quote, semicolon, LF,
+ES5-trailing-comma formatting. This is **not Biome rule parity**. Manifest sorting
+is disabled; import and Tailwind sorting are not enabled.
+
+## Move one workspace at a time
+
+1. Inventory Biome rules/suppressions, file types, editors, Turbo/CI tasks and
+   generated-file producers. Compare read-only Oxc output on owned files.
+2. Map rules by behavior, including accessibility, hooks, unused imports and
+   intentional exceptions. Record gaps and compensating validators; preserve
+   CSS/Tailwind validation and import organization.
+3. Isolate formatting from product logic. Preserve generated/vendor ownership;
+   translate suppressions only when their semantics match.
+4. Select one formatter per migrated scope and update CI, editors, generators and
+   docs together. Require applicable exact-commit test/type/lint/build evidence.
+5. Remove Biome only once every remaining scope and release tool has equivalent
+   coverage. Preserve auth, i18n, source-size, import-boundary and runtime guards.
+
+Vite+'s monorepo migrator operates at the workspace root and rewrites shared
+catalogs/lockfiles. Do not run it for a single-app task. Review bounded dependency
+and configuration changes instead; use package-manager commands for dependencies.
+Verify Vite+/Vite/Vitest version compatibility before changing shared test runners.
+
+## First-party portability contract
+
+Maintain domain rules and application services as ordinary TypeScript modules.
+Reusable React components may depend on React and framework-independent UI
+primitives; they receive navigation, translated labels and data through typed
+props or a small explicitly scoped provider. React Server Components are an
+optional adapter surface, never a prerequisite for consuming the domain package.
+
+| Layer | Owns | Avoids |
+| --- | --- | --- |
+| Domain | Pure decisions, validation, immutable snapshots, permission predicates | Framework imports, request globals, storage drivers |
+| Service | Workflows with injected actor, clock, repositories and capabilities | Reading ambient cookies/env or assuming trusted clients |
+| Portable React UI | Semantic tokens, presentation, interaction state, accessibility | Next/router/translation hooks and server-only imports |
+| Framework adapter | Route loaders/actions, HTTP mapping, navigation, localization, request credentials | Duplicating domain rules or bypassing policy |
+| Runtime adapter | D1/R2/Supabase clients, Worker bindings and scheduling | Leaking credentials or runtime-specific types into portable exports |
+
+Prefer existing first-party packages and narrow public subpath exports over a new
+universal framework wrapper. Keep Next-specific compatibility entrypoints stable
+while adding portable ones. Do not call an entire package framework-agnostic just
+because one file is pure: consumers must resolve its entrypoint without transitively
+loading Next/OpenNext or Cloudflare. Validate import graphs and consumer builds in
+CI. Runtime-specific optional adapters must have explicit entrypoints/dependencies.
+
+Use standard `Request`, `Response`, `Headers`, URLs and `AbortSignal` at HTTP
+boundaries where appropriate. Pass request context per invocation; never store
+actors or bindings in process-wide mutable state. Inject verified identity rather
+than accepting browser-provided user IDs as authority. Preserve audience, expiry,
+MFA, consent, membership and revocation checks in reusable policy services.
+
+Current seams include Lettin's Actor/Store context and SQL permission fences,
+with bindings/identity/HTTP as framework adapters. Parley/Meet domain contracts can
+remain shared while routes, session lookup and meeting UI adapters are extracted.
+A package can support Next.js, React Router or other React hosts by implementing
+these small adapters; support for every framework is a goal requiring consumer
+verification, not an automatic guarantee.
+
+## Vite-native Worker acceptance gates
+
+| Boundary | Required preservation and evidence |
+| --- | --- |
+| Routes | Public/private/API inventory, bilingual paths, redirects/rewrites, metadata, noindex and deep links |
+| Identity | Satellite app-session audience/expiry, allowlists, MFA, workspace membership, owner consent and actor attribution |
+| API | Existing internal-api contracts and TanStack Query; injected request credentials |
+| UI | Navigation/translation/server adapters extracted without changing semantic tokens |
+| Lettin | D1 session behavior, R2 permissions, schemas/data, draft/publication snapshots and writeAccess fences |
+| Parley/Meet | Immutable scenarios, private facilitator reviews, participant invitations, signalling/media, Durable Objects and AI bindings |
+| Runtime | SSR, assets, auth denial/redirects, cache, errors, cancellation and bindings in real local Workers with isolated fixtures |
+| Delivery | Exact-commit CI build, staging runtime acceptance, then authorized canonical promotion with rollback and product checks |
+
+Prove a small authenticated vertical slice before replacing the complete app.
+Document fixture boundaries and hosted dependencies: local Durable Objects do not
+validate Cloudflare SFU/TURN. Hosting adoption does not imply migrating every store
+to D1 or replacing Supabase. Database changes, schedules, secrets and canonical
+traffic each need a bounded plan. Pin the promotion range, retain a rollback
+artifact and verify schema/binding compatibility and health before promotion.
+
+## Incident evidence
+
+Correlate scoped failing requests with authenticated Worker tail exceptions and
+the deployed revision. A hung-request cancellation establishes a runtime failure;
+nearby framework warnings are clues, not root-cause proof. Offline artifact replay
+can isolate middleware/server boundaries, but missing modules or post-build config
+patches do not establish a valid replacement release. Keep raw logs private.
+Build success alone does not establish request health.
+
+Follow [active runtime ownership](/build/devops/active-runtime) and the
+[delivery runbook](/build/devops/github-actions-runbook). Release builds remain in
+CI; a migration direction does not authorize production cutover.
+
+## Upstream references
+
+- [Oxlint configuration](https://oxc.rs/docs/guide/usage/linter/config.html)
+- [Oxfmt configuration](https://oxc.rs/docs/guide/usage/formatter/config.html)
+- [Vite+ migration](https://viteplus.dev/guide/migrate)
+- [React Router on Cloudflare](https://developers.cloudflare.com/workers/framework-guides/web-apps/react-router/)

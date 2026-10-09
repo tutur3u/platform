@@ -38,6 +38,16 @@ merge, or production evidence only when that delivery is authorized.
   Reference environment variables by name only.
 - Do not manually edit `package.json` to add or update dependencies. Use the
   package manager command for the owning workspace.
+- Gradually adopt Oxlint/Oxfmt through explicit owned-file paths with
+  `bun oxc:lint`, `bun oxc:format`, and `bun oxc:write`. Retain Biome gates until
+  each scope records rule/formatting parity and migrates CI, editors and generators
+  together. Do not run global formatters or Vite+ monorepo migrators for scoped
+  work. See [adoption guidance](apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx).
+- Maintain first-party domain/service libraries independently of React frameworks.
+  Inject request identity, storage, navigation and localization at framework
+  adapters; keep portable entrypoints free of Next.js/React Router/Cloudflare
+  runtime imports and request globals. Preserve public exports and enforce these
+  boundaries with focused tests when extracting shared modules.
 - Do not use native browser dialogs, emojis in UI code, hard-coded hue classes,
   client-side raw app API fetches, or `useEffect` for data fetching.
 - Do not add `export const dynamic` / `export const revalidate` route segment
@@ -160,6 +170,11 @@ merge, or production evidence only when that delivery is authorized.
   - Live API/page behavior belongs to `apps/web` and the owning Next.js satellite.
     Keep shared data access in `packages/internal-api` and preserve active app
     contracts; TanStack Query remains the active client library.
+  - Gradual Cloudflare adoption is the target direction, beginning with scoped
+    Vite-native Lettin/Parley candidates. Preserve satellite sessions, API ownership,
+    bilingual routes, storage and consent. This does not resume the paused TanStack
+    app or authorize canonical traffic changes. Require exact-commit CI, Worker
+    runtime acceptance and a scoped promotion/rollback plan before cutover.
   - New or substantially reworked Web API handlers belong under
     `apps/web/src/app/api/**`, not `legacy-api-routes/**`. Move colocated tests
     with the implementation and remove obsolete generated wrappers. Inactive

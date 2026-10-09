@@ -349,6 +349,7 @@
               "build/development-tools/codex-plugin",
               "build/development-tools/chatgpt-mcp",
               "build/development-tools/monorepo-architecture",
+              "build/development-tools/oxc-cloudflare-adoption",
               "build/development-tools/git-conventions",
               "build/development-tools/stacked-pull-requests",
               "build/development-tools/local-supabase-development",
