@@ -2,6 +2,7 @@ import { UserRound } from '@tuturuuu/icons';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
+import type { Locale } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import {
@@ -9,7 +10,7 @@ import {
   readPublicUserProfile,
 } from '@/lib/public-user-profile';
 
-type Props = { params: Promise<{ locale: string; username: string }> };
+type Props = { params: Promise<{ locale: Locale; username: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   await connection();

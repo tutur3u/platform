@@ -19,7 +19,7 @@ vi.mock('@/lib/public-user-profile', () => ({
 }));
 beforeEach(() => vi.clearAllMocks());
 const props = {
-  params: Promise.resolve({ locale: 'en', username: 'creator' }),
+  params: Promise.resolve({ locale: 'en' as const, username: 'creator' }),
 };
 it('renders only the default public identity and omits private profile values', async () => {
   mocks.read.mockResolvedValue({
