@@ -481,3 +481,8 @@ bindings, migrations, routes, secret names and active identity/protocol policies
 Devbox Control's runtime script demonstrates disposable-credential denial tests;
 those do not prove hosted Supabase, runner or WebSocket success. Follow the owning
 runbook for commands and remaining acceptance, and keep local validation serialized.
+
+Put native Worker test worker/pool defaults in `vitest.config.ts`, not the package
+script. Shared sharded CI appends `--maxWorkers=2`; repeating that option in a
+`vp test` script fails CLI parsing before collection. Validate new workspace test
+scripts with `bun run test --maxWorkers=2` under Node 24 as well as their owning CI.
