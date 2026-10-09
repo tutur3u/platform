@@ -691,3 +691,11 @@ Use explicit visitor intent, clipboard failure/manual selection recovery, duplic
 submission fences and keyed destination lifetimes to suppress stale completion.
 Shared components can receive localized labels from owning apps instead of adding
 implicit shared translation keys to unrelated app bundles.
+
+## Scoped public catalogue recovery
+
+Check public creator eligibility with an unfiltered published catalogue, separate
+from search/tag/page results. Empty filtered lists need scoped clear-filter links,
+not an identity 404 or a switch to global discovery. Reuse public filter validation
+and first-page results, preserve owner-sharing projection rules, and cover
+malformed parameters plus unpublished creators before accepting empty recovery.

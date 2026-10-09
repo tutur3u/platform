@@ -960,6 +960,26 @@ or records a reader interaction. Regression evidence: `public-world.test.tsx`,
 selection, route fences, explicit intent, failure recovery and stale completion.
 Exact-head CI and hosted browser clipboard acceptance remain separate gates.
 
+### Creator catalogue filter recovery
+
+A creator's public catalogue requires at least one currently published notebook
+in an unfiltered first-page read. Missing identities and creators without
+published notebooks still return not found. Once that publication requirement
+is met, a search, exact tag or later page with no results renders a recoverable
+empty catalogue instead of treating the creator as missing. The clear-filter
+action stays on that creator's canonical page. Paging and tag links preserve
+the creator scope and active query filters. The first unfiltered page reuses its
+publication check results rather than reading the same catalogue twice.
+
+Creator routes reuse the public catalogue's normalized bounded filter schema;
+malformed repeated query parameters are rejected. Public profile defaults remain
+avatar, banner, display name and biography; additional about details require
+explicit owner sharing. Filter recovery does not expose unpublished notebooks,
+private entry data or additional profile fields, and grants no source access.
+Existing English/Vietnamese empty-result controls are reused. Regression evidence:
+`creators/[creatorId]/page.test.tsx`, `public-tag-discovery.test.tsx` and the
+public publication filters in `server/catalogue.test.ts`.
+
 ## Private saved-library filters
 
 The authenticated saved-library page lets readers filter their saved notebook
