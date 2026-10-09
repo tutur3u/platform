@@ -111,6 +111,13 @@ export type LettinCommand =
   | { action: 'createWorld'; draft: LettinDraft }
   | { action: 'createEntry'; worldId: string; draft: LettinDraft }
   | {
+      action: 'duplicateEntry';
+      worldId: string;
+      entryId: string;
+      version: number;
+      title: string;
+    }
+  | {
       action: 'saveWorld';
       worldId: string;
       version: number;
