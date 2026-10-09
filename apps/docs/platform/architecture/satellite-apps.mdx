@@ -418,3 +418,15 @@ vercel logs <deployment-url> --scope tuturuuu --json
 Both contacts incidents above were diagnosed straight from those logs — the
 `workspaceId: 'v1'` in a `WorkspaceHelper` error is what exposed the catch-all
 shadowing the API proxy.
+
+### Lettin deployment verification diagnostics
+
+The Lettin deployment verifier retains its strict health, expected-version, D1,
+R2, login, and public-world route checks. Failed attempts record only an ordinal,
+fixed stage and failure category, HTTP status, and parse/match/timeout booleans.
+It never logs response bodies, exception text, request URLs, or version-tag values.
+Twelve attempts retain the 15-second request timeout and five-second delay,
+including the final delay. Exhaustion still fails deployment verification; these
+diagnostics identify a failed boundary without proving a provider-side cause.
+The colocated verifier fixtures run through Lettin’s owning Vitest configuration
+and cover those boundaries without live requests.
