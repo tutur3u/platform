@@ -30,13 +30,18 @@ beforeEach(() => {
   mocks.auth.mockReturnValue({ defaultHeaders: headers });
   mocks.status.mockResolvedValue({ status: 'member' });
 });
-it.each(['/', '/dashboard', '/login', '/spaces', '/worlds/id', '/creators/id'])(
-  'does not query workspace membership for %s',
-  async (path) => {
-    expect(await resolve(path)).toBeNull();
-    expect(mocks.status).not.toHaveBeenCalled();
-  }
-);
+it.each([
+  '/',
+  '/dashboard',
+  '/login',
+  '/spaces',
+  '/worlds/id',
+  '/creators/id',
+  '/saved',
+])('does not query workspace membership for %s', async (path) => {
+  expect(await resolve(path)).toBeNull();
+  expect(mocks.status).not.toHaveBeenCalled();
+});
 it.each(['workspace', 'personal', 'internal'])(
   'admits joined workspace alias %s',
   async (id) => {

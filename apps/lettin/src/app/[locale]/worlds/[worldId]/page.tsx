@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 import { z } from 'zod';
 import { Brand } from '@/components/brand';
 import { PublicWorld } from '@/components/public-world';
+import { ReaderBookmark } from '@/components/reader-bookmark';
 import { createLettinPageMetadata } from '@/lib/page-metadata';
 import { publicWorlds } from '@/lib/public-worlds';
 export async function generateMetadata({
@@ -36,6 +38,9 @@ export default async function Page({
   return (
     <div className="notebook-theme min-h-screen">
       <Brand />
+      <Suspense>
+        <ReaderBookmark worldId={worldId} />
+      </Suspense>
       <PublicWorld world={world} initialEntry={(await searchParams).entry} />
     </div>
   );
