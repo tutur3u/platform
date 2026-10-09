@@ -1,11 +1,43 @@
 use super::*;
 
+pub(super) fn public_banner_origin(config: &ContactDataConfig) -> Option<String> {
+    let internal = url::Url::parse(&config.supabase_url).ok()?;
+    if !matches!(internal.scheme(), "https" | "http")
+        || !internal.username().is_empty()
+        || internal.password().is_some()
+        || internal.path() != "/"
+        || internal.query().is_some()
+        || internal.fragment().is_some()
+    {
+        return None;
+    }
+    let value = config
+        .public_storage_origin
+        .as_ref()
+        .map(|origin| origin.0.as_str())
+        .unwrap_or(&config.supabase_url);
+    let parsed = url::Url::parse(value).ok()?;
+    if parsed.scheme() != "https"
+        || !parsed.username().is_empty()
+        || parsed.password().is_some()
+        || parsed.path() != "/"
+        || parsed.query().is_some()
+        || parsed.fragment().is_some()
+    {
+        return None;
+    }
+    Some(parsed.origin().ascii_serialization())
+}
+
 pub(super) async fn clean_retired_banners(
     config: &ContactDataConfig,
     actor: &str,
     outbound: &impl OutboundHttpClient,
 ) -> bool {
-    let Some(origin) = url_origin(&config.supabase_url) else {
+    let Some(origin) = public_banner_origin(config) else {
+        return false;
+    };
+    let Some(storage_origin) = url_origin(&config.supabase_url) else {
         return false;
     };
     let Some(expire_url) = config.rpc_url("expire_profile_banner_operations") else {
@@ -63,9 +95,9 @@ pub(super) async fn clean_retired_banners(
         }
         let deleted = row["delete_ready"].as_bool() == Some(true);
         let storage_url = if deleted {
-            format!("{origin}/storage/v1/object/banners")
+            format!("{storage_origin}/storage/v1/object/banners")
         } else {
-            format!("{origin}/storage/v1/object/banners/{path}")
+            format!("{storage_origin}/storage/v1/object/banners/{path}")
         };
         let Some(key) = config.service_role_key() else {
             return false;
@@ -173,6 +205,75 @@ fn owned_banner_path<'a>(value: &'a str, actor: &str, origin: &str) -> Option<&'
 mod tests {
     use super::*;
     #[test]
+    fn public_origin_override_keeps_internal_storage_connectivity() {
+        let config = ContactDataConfig::new("http://127.0.0.1:8001", "synthetic")
+            .with_public_storage_origin("https://storage.example.test");
+        let actor = "00000000-0000-4000-8000-000000000001";
+        let path = format!("{actor}/1234567890123.webp");
+        let public_url =
+            format!("https://storage.example.test/storage/v1/object/public/banners/{path}");
+        assert_eq!(
+            public_banner_origin(&config).as_deref(),
+            Some("https://storage.example.test")
+        );
+        assert_eq!(
+            url_origin(&config.supabase_url).as_deref(),
+            Some("http://127.0.0.1:8001")
+        );
+        assert!(canonical_profile_banner_patch(
+            &json!({"banner_url": public_url}),
+            actor,
+            &config
+        ));
+        assert!(!canonical_profile_banner_patch(
+            &json!({"banner_url": format!("{public_url}?alias=1")}),
+            actor,
+            &config
+        ));
+        assert!(
+            owned_banner_path(&public_url, "foreign", "https://storage.example.test").is_none()
+        );
+        assert!(!format!("{config:?}").contains("storage.example.test"));
+    }
+    #[test]
+    fn secure_public_origin_fallback_and_invalid_override_controls() {
+        let config = ContactDataConfig::new("https://storage.example.test", "synthetic");
+        assert_eq!(
+            public_banner_origin(&config).as_deref(),
+            Some("https://storage.example.test")
+        );
+        assert!(
+            public_banner_origin(&ContactDataConfig::new(
+                "http://127.0.0.1:8001",
+                "synthetic"
+            ))
+            .is_none()
+        );
+        for bad in [
+            " ",
+            "http://untrusted.example.test",
+            "https://user@storage.example.test",
+            "https://storage.example.test/path",
+            "https://storage.example.test?query=1",
+            "https://storage.example.test#fragment",
+        ] {
+            assert!(
+                public_banner_origin(&config.clone().with_public_storage_origin(bad)).is_none()
+            );
+        }
+        for bad in [
+            "file:///",
+            "https://user@storage.example.test",
+            "https://storage.example.test/path",
+            "https://storage.example.test?query=1",
+            "https://storage.example.test#fragment",
+        ] {
+            let config = ContactDataConfig::new(bad, "synthetic")
+                .with_public_storage_origin("https://storage.example.test");
+            assert!(public_banner_origin(&config).is_none());
+        }
+    }
+    #[test]
     fn retirement_scrub_uses_exact_webp_bytes_and_storage_metadata() {
         let request = retirement_storage_request(
             "https://example.test/object",
@@ -251,7 +352,7 @@ pub(super) fn canonical_profile_banner_patch(
     let Some(value) = updates.get("banner_url").and_then(|v| v.as_str()) else {
         return true;
     };
-    let Some(origin) = url_origin(&config.supabase_url) else {
+    let Some(origin) = public_banner_origin(config) else {
         return false;
     };
     let Ok(parsed) = url::Url::parse(value) else {

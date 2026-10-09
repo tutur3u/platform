@@ -6,6 +6,12 @@ import { isEmailBlacklisted } from '@/lib/email-blacklist';
 import { createEmailUnsubscribeUrl } from '@/lib/email-unsubscribe';
 import { resolvePeriodicReportEmailAccess } from './access';
 import { loadScopedReportContext } from './context';
+import {
+  drainEmailQueue,
+  EMAIL_CLAIM_SIZE,
+  EmailQueueDrainError,
+  processWithConcurrency,
+} from './email-queue-drain';
 import { generatePeriodicReportNarrative } from './generation';
 import { reconcilePeriodicReportSchedules } from './schedule-reconciliation';
 
@@ -57,24 +63,6 @@ function callPrivateRpc<T>(
       values: Record<string, unknown>
     ) => RpcResult<T>
   )(name, args);
-}
-
-async function processWithConcurrency<T>(
-  items: T[],
-  concurrency: number,
-  process: (item: T) => Promise<void>
-) {
-  const queue = [...items];
-  const workers = Array.from(
-    { length: Math.min(concurrency, queue.length) },
-    async () => {
-      while (queue.length > 0) {
-        const item = queue.shift();
-        if (item) await process(item);
-      }
-    }
-  );
-  await Promise.all(workers);
 }
 
 function getRetryAt(attemptCount: number) {
@@ -586,39 +574,60 @@ export async function processPeriodicReportAutomation(
     throw new Error(readiness.error.message);
   if (migrationPending)
     console.warn('periodic_report.delivery_migration_pending');
-  const [runsResult, emailsResult] = await Promise.all([
-    callPrivateRpc<AutomationRun>(privateDb, 'claim_periodic_report_runs', {
+  const emailDrain = migrationPending
+    ? {
+        processedEmails: 0,
+        emailBatches: 0,
+        emailDrainStopReason: 'migration_pending' as const,
+      }
+    : await drainEmailQueue<EmailQueueRow>({
+        claim: async () => {
+          const result = await callPrivateRpc<EmailQueueRow>(
+            privateDb,
+            'claim_periodic_report_emails',
+            {
+              p_limit: EMAIL_CLAIM_SIZE,
+              p_now: new Date().toISOString(),
+              p_worker_id: workerId,
+            }
+          );
+          if (result.error) throw new Error(result.error.message);
+          return result.data ?? [];
+        },
+        processBatch: (rows) =>
+          processWithConcurrency(rows, 4, (row) =>
+            processEmailQueueRow(sbAdmin, row)
+          ),
+      }).catch((error: unknown) => {
+        if (error instanceof EmailQueueDrainError) {
+          console.error('periodic_report.email_drain_failed', {
+            processedEmails: error.processedEmails,
+            emailBatches: error.emailBatches,
+            stage: error.stage,
+          });
+        }
+        throw error;
+      });
+  // Do not reserve email leases while generation (including AI) is running.
+  // Generation claims remain one batch per invocation and settle as before.
+  const runsResult = await callPrivateRpc<AutomationRun>(
+    privateDb,
+    'claim_periodic_report_runs',
+    {
       p_limit: 8,
       p_now: new Date().toISOString(),
       p_worker_id: workerId,
-    }),
-    migrationPending
-      ? Promise.resolve({ data: [] as EmailQueueRow[], error: null })
-      : callPrivateRpc<EmailQueueRow>(
-          privateDb,
-          'claim_periodic_report_emails',
-          {
-            p_limit: 12,
-            p_now: new Date().toISOString(),
-            p_worker_id: workerId,
-          }
-        ),
-  ]);
+    }
+  );
   if (runsResult.error) throw new Error(runsResult.error.message);
-  if (emailsResult.error) throw new Error(emailsResult.error.message);
   const runs = runsResult.data ?? [];
-  const emails = emailsResult.data ?? [];
-
   await processWithConcurrency(runs, 3, (run) =>
     processAutomationRun(sbAdmin, run)
-  );
-  await processWithConcurrency(emails, 4, (row) =>
-    processEmailQueueRow(sbAdmin, row)
   );
 
   return {
     ...reconciliation,
-    processedEmails: emails.length,
+    ...emailDrain,
     processedRuns: runs.length,
   };
 }

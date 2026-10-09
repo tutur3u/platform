@@ -52,7 +52,7 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
     'E2E must exercise the shared-cookie localhost domain on the unprivileged Portless port'
   );
   assert.match(e2eJob, /PORTLESS_PORT: "1355"/u);
-  assert.match(e2eJob, /github\.ref != 'refs\/heads\/production'/);
+  assert.match(e2eJob, /if: \$\{\{ false \}\}/);
   assert.match(
     e2eJob,
     /package-manager-cache: false/u,
@@ -296,21 +296,19 @@ test('E2E workflow retains the paused migration restart contract', () => {
   assert.match(migrationJob, /\/usr\/local\/share\/boost/u);
   assert.match(migrationJob, /\/opt\/az/u);
 });
-test('E2E proof reuse gates allocation and publishes only trusted successful counts', () => {
+test('paused E2E jobs retain trusted proof rules without allocating runners', () => {
   const workflow = readWorkflow('e2e-tests.yaml');
   assert.equal(workflow.permissions.actions, 'read');
   assert.ok(workflow.on.push.paths.includes('**'));
   assert.ok(workflow.on.push.paths.includes('!apps/docs/**'));
-  assert.match(
-    workflow.jobs['prepare-e2e-images'].if,
-    /outputs\.run_web == 'true'/u
-  );
-  assert.match(workflow.jobs.e2e.if, /outputs\.run_web == 'true'/u);
-  assert.match(workflow.jobs.e2e.if, /!cancelled\(\)/u);
-  assert.match(
-    workflow.jobs['inventory-storefront-cache-e2e'].if,
-    /outputs\.run_inventory == 'true'/u
-  );
+  for (const id of [
+    'prepare-e2e-images',
+    'e2e',
+    'inventory-storefront-cache-e2e',
+    'cleanup-e2e-images',
+  ]) {
+    assert.match(workflow.jobs[id].if, /^\$\{\{ false \}\}$/u);
+  }
   for (const id of ['e2e', 'inventory-storefront-cache-e2e']) {
     const steps = workflow.jobs[id].steps;
     const proof = steps.find((step) => step.id === 'proof');

@@ -17,19 +17,22 @@ function readWorkflow(workflowName) {
 }
 
 function assertJobPaused(workflow, jobName) {
-  assert.match(
-    workflow,
-    new RegExp(
-      `^  ${jobName}:\\n(?:    #.*\\n)*    if: \\$\\{\\{ false \\}\\}`,
-      'mu'
-    )
+  const start = workflow.indexOf(`  ${jobName}:\n`);
+  assert.notEqual(start, -1, `Missing job ${jobName}`);
+  const rest = workflow.slice(start + jobName.length + 4);
+  const next = rest.search(/^ {2}[\w-]+:\n/m);
+  const block = next < 0 ? rest : rest.slice(0, next);
+  assert.ok(
+    /^ {4}if: \$\{\{ false \}\}/m.test(block),
+    `${jobName} must be unconditionally paused`
   );
 }
 
-test('paused TanStack and Rust workflows remain disabled', () => {
+test('paused Docker, TanStack and Rust workflows remain disabled', () => {
   const rootDir = createFixtureRoot();
 
   for (const [workflowName, changedFiles] of [
+    ['docker-setup-check.yaml', ['apps/web/Dockerfile']],
     ['rust-backend.yml', ['apps/backend/src/main.rs']],
     [
       'tanstack-route-manifest.yaml',
@@ -101,8 +104,10 @@ test('Biome CI excludes both paused migration source trees', () => {
   assert.ok(biomeConfig.files.includes.includes('!apps/tanstack-web'));
 });
 
-test('Docker CI keeps migration-only execution skipped', () => {
+test('Docker setup CI is paused even for manual dispatch', () => {
   const workflow = readWorkflow('docker-setup-check.yaml');
+  assertJobPaused(workflow, 'verify');
+  assertJobPaused(workflow, 'release-relevance');
 
   for (const stepName of [
     'Render paused TanStack dual-stack config',
@@ -129,8 +134,18 @@ test('Docker CI keeps migration-only execution skipped', () => {
   );
 });
 
-test('maintained E2E runs omit Rust while migration E2E remains skipped', () => {
+test('Docker-backed E2E and migration E2E stay paused', () => {
   const workflow = readWorkflow('e2e-tests.yaml');
+  for (const job of [
+    'relevance',
+    'prepare-e2e-images',
+    'e2e',
+    'inventory-storefront-cache-e2e',
+    'migration-e2e',
+    'cleanup-e2e-images',
+  ]) {
+    assertJobPaused(workflow, job);
+  }
 
   assert.match(workflow, /^ {2}DOCKER_BACKEND_ENABLED: "0"$/mu);
   assert.match(workflow, /publish --frontend next/u);
@@ -141,5 +156,14 @@ test('maintained E2E runs omit Rust while migration E2E remains skipped', () => 
   assert.doesNotMatch(
     workflow.slice(0, workflow.indexOf('  migration-e2e:')),
     /DOCKER_WEB_CACHE_BACKEND_FROM/u
+  );
+});
+
+test('manual Rust verification and nested Rust parity cannot bypass the pause', () => {
+  for (const job of ['verify', 'worker-bundle'])
+    assertJobPaused(readWorkflow('rust-verify.yml'), job);
+  assertJobPaused(
+    readWorkflow('creator-identity-contract.yaml'),
+    'rust-profile-parity'
   );
 });
