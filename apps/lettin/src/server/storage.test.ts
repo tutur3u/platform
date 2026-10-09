@@ -2,11 +2,12 @@ import { readFile } from 'node:fs/promises';
 import type { LettinDraft } from '@tuturuuu/internal-api/lettin';
 import { convertV4MiniflareOptions, Miniflare } from 'miniflare';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { quickNoteDraft } from '../components/quick-note-model';
 import { type Actor, LettinError, type Store, worldRole } from './context';
 import { getMedia, uploadMedia } from './media';
 import { cleanupMedia } from './media-cleanup';
 import { mutate } from './mutations';
-import { readOverview, readPublic } from './queries';
+import { readOverview, readPublic, readWorld } from './queries';
 
 let mf: Miniflare;
 let db: Store;
@@ -660,4 +661,32 @@ describe('Wiki graph and inline artwork', () => {
       getMedia(db, bucket, id, async () => owner)
     ).rejects.toMatchObject({ status: 404 });
   });
+});
+
+it('keeps quick-captured notes unpublished with live notebook and workspace access checks', async () => {
+  const note = quickNoteDraft('Idea', 'Private thought')!;
+  const entryId = (
+    await mutate(db, editor, { action: 'createEntry', worldId, draft: note })
+  ).id;
+  const entry = (await readWorld(db, owner, worldId)).entries.find(
+    (e) => e.id === entryId
+  )!;
+  expect(entry.draft).toEqual(note);
+  expect(entry.published).toBeNull();
+  await mutate(db, owner, { action: 'publishWorld', worldId, version: 1 });
+  expect((await readPublic(db, worldId))[0]!.entries).toEqual([]);
+  await expect(
+    mutate(
+      db,
+      { ...owner, wsId: 'other' },
+      { action: 'createEntry', worldId, draft: note }
+    )
+  ).rejects.toMatchObject({ status: 403 });
+  await db
+    .prepare('DELETE FROM collaborators WHERE world_id = ? AND user_id = ?')
+    .bind(worldId, editor.id)
+    .run();
+  await expect(
+    mutate(db, editor, { action: 'createEntry', worldId, draft: note })
+  ).rejects.toMatchObject({ status: 403 });
 });

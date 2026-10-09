@@ -114,15 +114,22 @@ it('projects only a current published notebook title and retains withdrawal as r
   expect(await savedCreators(db, 'reader')).toEqual([]);
 });
 it('fences the 500-reference quota atomically and preserves existing saves at the limit', async () => {
-  await db.batch(
-    Array.from({ length: 499 }, (_, i) =>
-      db
-        .prepare(
-          'INSERT INTO creator_bookmarks(user_id,creator_id) VALUES (?,?)'
-        )
-        .bind('reader', `fixture-${i}`)
-    )
-  );
+  // Seed the same boundary in one SQL operation rather than 499 D1 statements.
+  await db
+    .prepare(`WITH RECURSIVE fixture(n) AS (
+      SELECT 0 UNION ALL SELECT n+1 FROM fixture WHERE n<498
+    ) INSERT INTO creator_bookmarks(user_id,creator_id)
+      SELECT ?, 'fixture-' || n FROM fixture`)
+    .bind('reader')
+    .run();
+  expect(
+    await db
+      .prepare(
+        'SELECT count(*) AS count FROM creator_bookmarks WHERE user_id=?'
+      )
+      .bind('reader')
+      .first<{ count: number }>()
+  ).toEqual({ count: 499 });
   await db
     .prepare(
       'INSERT INTO worlds(id,ws_id,owner_id,draft,published) SELECT ?,ws_id,?,draft,published FROM worlds WHERE id=?'
