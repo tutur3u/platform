@@ -28,6 +28,7 @@ import { useLettinMutation } from './use-lettin';
 import { WikiDetailsEditor } from './wiki-details-editor';
 import { entryKinds, validWiki } from './wiki-model';
 import { WikiThemeEditor } from './wiki-theme-editor';
+import { WorkProgressControl } from './work-progress-control';
 export function EntryEditor({
   wsId,
   worldId,
@@ -254,6 +255,10 @@ export function EntryEditor({
           onChange={(theme) => update({ theme })}
         />
       )}
+      <WorkProgressControl
+        value={draft.workProgress ?? 'unstarted'}
+        onChange={(workProgress) => update({ workProgress })}
+      />
       <WikiDetailsEditor
         draft={draft}
         entries={entries}

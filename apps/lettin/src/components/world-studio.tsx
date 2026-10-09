@@ -1,12 +1,14 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, ArrowUpRight } from '@tuturuuu/icons';
+import type { LettinWorkProgress } from '@tuturuuu/internal-api/lettin';
 import { getLettinWorld } from '@tuturuuu/internal-api/lettin';
 import { Button } from '@tuturuuu/ui/button';
 import { getLettinTaskPlanUrl } from '@tuturuuu/utils/lettin-task-reference';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { Link } from '@/i18n/navigation';
+import { filterWorkProgress } from '../work-progress';
 import { Collaborators } from './collaborators';
 import { CreatorCalendarPlan } from './creator-calendar-plan';
 import { DuplicateEntry } from './duplicate-entry';
@@ -18,6 +20,7 @@ import { WikiBrowsingPanel } from './wiki-browsing-panel';
 import { WikiCreateEntry } from './wiki-create-entry';
 import { sectionKind, type WikiSection, wikiOf } from './wiki-model';
 import { WikiSidebar } from './wiki-sidebar';
+import { WorkProgressControl } from './work-progress-control';
 export function WorldStudio({
   wsId,
   worldId,
@@ -33,6 +36,7 @@ export function WorldStudio({
   const locale = useLocale();
   const [selected, setSelected] = useState<string | null>(initialEntry ?? null);
   const [filters, setFilters] = useState(initialWikiFilters);
+  const [progress, setProgress] = useState<LettinWorkProgress | 'all'>('all');
   const { dirty, setDirty } = useNavigationGuard();
   useEffect(() => () => setDirty(false), [setDirty]);
   const query = useQuery({
@@ -72,6 +76,7 @@ export function WorldStudio({
     locale,
     entryId: record && record.id !== worldId ? record.id : undefined,
   });
+  const progressEntries = filterWorkProgress(data.entries, progress);
   const related = record ? wikiOf(record.draft).relationships : [];
   const backlinks = record
     ? data.entries.filter(
@@ -221,15 +226,23 @@ export function WorldStudio({
               )}
             </>
           ) : (
-            <WikiBrowsingPanel
-              entries={data.entries}
-              worldId={worldId}
-              section={section}
-              disabled={dirty}
-              filters={filters}
-              onChange={setFilters}
-              onSelect={select}
-            />
+            <>
+              <WorkProgressControl
+                value={progress}
+                includeAll
+                disabled={dirty}
+                onChange={setProgress}
+              />
+              <WikiBrowsingPanel
+                entries={progressEntries}
+                worldId={worldId}
+                section={section}
+                disabled={dirty}
+                filters={filters}
+                onChange={setFilters}
+                onSelect={select}
+              />
+            </>
           )}
           {data.role === 'owner' && (
             <Collaborators

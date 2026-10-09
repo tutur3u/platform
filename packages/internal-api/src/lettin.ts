@@ -57,7 +57,13 @@ export type LettinCreationGuidance = {
   usageNotes: string;
   collaboration: 'unspecified' | 'ask-first' | 'open' | 'closed';
 };
+export type LettinWorkProgress =
+  | 'unstarted'
+  | 'drafting'
+  | 'revising'
+  | 'ready';
 export type LettinDraft = {
+  workProgress?: LettinWorkProgress;
   gallery?: LettinArtwork[];
   creationGuidance?: LettinCreationGuidance;
   contentNotice?: string;

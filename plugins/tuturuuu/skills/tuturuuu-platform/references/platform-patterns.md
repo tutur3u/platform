@@ -684,3 +684,14 @@ Context-reset keys must include the control's identity when stateful components
 share a parent. Workspace/notebook IDs alone collide between sibling quick-note
 and Calendar controls. Lettin's Studio browsing regression checks key warnings,
 state retention across section changes and reset on notebook changes.
+
+## Private creator workflow metadata
+
+Treat internal drafting labels as distinct from publication status and access
+roles. Exclude private metadata in the atomic publication write and again in all
+public projection reads, including historical snapshots and nested entries.
+Retain the saved draft and existing permission/revision checks. Test real D1
+publication plus historical JSON, revocation and workspace fences. Compose studio
+filters over saved authorized records, preserve search, and explicitly document
+whether relationship filters require both endpoints. Never infer publication from
+a readiness label or add it to public profiles.
