@@ -43,6 +43,11 @@ merge, or production evidence only when that delivery is authorized.
   each scope records rule/formatting parity and migrates CI, editors and generators
   together. Do not run global formatters or Vite+ monorepo migrators for scoped
   work. See [adoption guidance](apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx).
+- Plan cf CLI adoption over Wrangler per verified operation. Preserve existing
+  commands/configuration until authentication, target identity, bindings/migrations,
+  emitted artifacts and rollback parity are established; retain Wrangler for gaps.
+  Do not run global configuration migration or infer production authorization from
+  CLI adoption. See the adoption guidance linked above.
 - Maintain first-party domain/service libraries independently of React frameworks.
   Inject request identity, storage, navigation and localization at framework
   adapters; keep portable entrypoints free of Next.js/React Router/Cloudflare

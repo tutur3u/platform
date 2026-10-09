@@ -21,6 +21,20 @@ Vite+ tooling does not convert Next.js routes/actions; paused TanStack Start rem
 paused. See [adoption guidance](../../../../../apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx)
 for parity and Worker acceptance gates; builds stay in exact-commit CI.
 
+## cf CLI migration boundaries
+
+Prefer cf for operations with demonstrated parity, beginning with bounded read-only
+inventory/observability and a Vite-native Worker pilot. Pin dependencies through
+package-manager commands; verify cf authentication/account independently of Wrangler.
+Review typed configuration and Vite mode resolution against existing resource
+identities, routes, bindings, Durable Object migrations, triggers and secret names.
+Keep one authoritative configuration per scope. Replace development, type generation,
+CI artifact production, tail/version inspection and release/rollback separately;
+retain Wrangler for unsupported operations. Exact-commit CI and real emitted-artifact
+acceptance remain required. Do not run global migration or deployment as part of
+planning. Follow the phased plan in the adoption guidance above and recheck
+[upstream coverage](https://blog.cloudflare.com/cloudflare-cf-cli-launch/) before edits.
+
 ## Codex plugin native parallel pilot
 
 `codex-plugin.yaml` has one native `parallel` group containing only the MCP and

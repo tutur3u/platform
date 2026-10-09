@@ -1,7 +1,7 @@
 ---
 title: "Oxc and Cloudflare adoption"
 description: "Incremental Oxlint/Oxfmt tooling, portable first-party libraries, and Vite-native Worker migration boundaries."
-updatedAt: '2026-10-09'
+updatedAt: '2026-10-10'
 ---
 
 ## Decision and current state
@@ -66,6 +66,49 @@ then use the same verified conventions for native service workers. Meet, Parley
 and Lettin require the shared framework-adapter work before full web replacement.
 Each app retains its own exact-commit test/type/lint/build and Worker acceptance
 receipts; one green app cannot establish another app's readiness.
+
+## cf CLI adoption alongside Vite+
+
+Prefer Cloudflare's **cf CLI** over Wrangler as each operation proves compatible.
+This is a phased tooling decision, separate from framework migration and production
+promotion. Existing Wrangler commands/configurations remain authoritative until
+that scope passes its replacement gates.
+
+[Cloudflare's launch announcement](https://blog.cloudflare.com/cloudflare-cf-cli-launch/)
+introduces cf in open beta, with JSON output and a generated API command surface.
+Vite-built Workers can migrate to typed `cloudflare.config.ts`; configuration uses
+Vite modes, whose semantics differ from Wrangler environments. cf still delegates
+some development/deployment paths to Wrangler. Recheck upstream support before
+implementing a scope; the announcement is not evidence of repository compatibility.
+
+1. **Read-only discovery first.** Pin a reviewed cf version through the owning
+   workspace's package manager. Verify help/schema, authentication and selected
+   account independently; existing Wrangler login does not establish cf access.
+   Exercise bounded inventory/observability queries and record supported command
+   mappings. Filter JSON to required fields and keep raw logs/credentials private.
+2. **Pilot a Vite-native Worker.** Coordination or Colab is a candidate after its
+   Vite+ artifact gates pass. Review migration output in an isolated worktree;
+   do not run a repository-wide migrator. Verify compatibility with the pinned
+   Vite+ core, Cloudflare plugin and test runner before adopting typed configuration.
+3. **Prove configuration and artifact parity.** Compare resolved settings for
+   every used mode: account/name, routes/domains, compatibility date/flags, assets,
+   service bindings, Durable Object names/classes/migrations, storage identifiers,
+   triggers, secrets and observability. Preserve resource identity; never infer
+   that a similarly named mode selects the same deployed environment. Select one
+   authoritative configuration per scope, with an explicit fallback procedure.
+4. **Replace operations separately.** Map local development, type generation,
+   tests, CI bundling, validation upload, tail, version inspection, deployment and
+   rollback individually. Unsupported or unverified operations retain Wrangler.
+   CI must exercise the final emitted artifact and preserve exact-SHA and target
+   identity checks; a CLI rename or dry run alone cannot establish runtime health.
+5. **Roll out per owner.** Update scripts, workflow permissions, runbooks and skill
+   references together after focused tests and exact-commit CI pass. Production
+   commands change only with separately authorized promotion, bounded scope and
+   verified rollback. Keep paused runtimes excluded.
+
+The current foundation does not install cf or convert Worker configurations.
+Track CLI capability gaps independently from app migration so an unsupported
+operation does not block portable libraries or Oxc adoption.
 
 ## Use the tooling foundation
 
