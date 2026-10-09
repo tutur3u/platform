@@ -164,12 +164,19 @@ String? payloadFromPushRequest(PushNavigationRequest request) {
 
 class PushNotificationService {
   PushNotificationService({
+    Stream<RemoteMessage>? foregroundMessages,
+    FirebaseMessaging? messaging,
+    FlutterLocalNotificationsPlugin? localNotifications,
     DeliveredInboxNotifications? delivered,
     NotificationPushRepository? repository,
     Future<void> Function()? initializeNotifications,
     Future<String?> Function()? registrationToken,
     Future<String?> Function()? deviceId,
-  }) : _delivered = delivered ?? DeliveredInboxNotifications.instance,
+  }) : _foregroundMessages = foregroundMessages,
+       _messagingOverride = messaging,
+       _localNotifications =
+           localNotifications ?? FlutterLocalNotificationsPlugin(),
+       _delivered = delivered ?? DeliveredInboxNotifications.instance,
        _repository =
            repository ?? NotificationPushRepository(ownsApiClient: true),
        _initializeNotifications = initializeNotifications,
@@ -178,8 +185,9 @@ class PushNotificationService {
 
   static final PushNotificationService instance = PushNotificationService();
 
-  final FlutterLocalNotificationsPlugin _localNotifications =
-      FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _localNotifications;
+  final FirebaseMessaging? _messagingOverride;
+  final Stream<RemoteMessage>? _foregroundMessages;
   final NotificationPushRepository _repository;
   final DeliveredInboxNotifications _delivered;
   final Future<void> Function()? _initializeNotifications;
@@ -213,10 +221,12 @@ class PushNotificationService {
   PushNavigationRequest? _pendingReminder;
   String? _cachedDeviceId;
   bool _initialized = false;
+  Future<void>? _initialization;
   Future<void>? _reminderTimezoneSetup;
   bool _isDisposed = false;
 
-  FirebaseMessaging get _messaging => FirebaseMessaging.instance;
+  FirebaseMessaging get _messaging =>
+      _messagingOverride ?? FirebaseMessaging.instance;
 
   void configure({
     required AppFlavor appFlavor,
@@ -376,12 +386,25 @@ class PushNotificationService {
   }
 
   Future<void> _ensureInitialized() async {
-    if (_isDisposed) return;
-    if (_initializeNotifications != null) {
-      await _initializeNotifications();
+    if (_isDisposed || _initialized) return;
+    final pending = _initialization;
+    if (pending != null) {
+      await pending;
       return;
     }
-    if (_initialized) {
+    final initialization = _initialize();
+    _initialization = initialization;
+    try {
+      await initialization;
+    } finally {
+      _initialization = null;
+    }
+  }
+
+  Future<void> _initialize() async {
+    if (_initializeNotifications != null) {
+      await _initializeNotifications();
+      _initialized = true;
       return;
     }
 
@@ -430,9 +453,12 @@ class PushNotificationService {
     await _createAndroidChannel();
     if (_isDisposed) return;
 
-    _messageSubscription = FirebaseMessaging.onMessage.listen((message) {
-      unawaited(_handleForegroundMessage(message));
-    });
+    final initialMessage = await _messaging.getInitialMessage();
+    if (_isDisposed) return;
+    _messageSubscription = (_foregroundMessages ?? FirebaseMessaging.onMessage)
+        .listen((message) {
+          unawaited(_handleForegroundMessage(message));
+        });
     _messageOpenedSubscription = FirebaseMessaging.onMessageOpenedApp.listen((
       message,
     ) {
@@ -442,8 +468,6 @@ class PushNotificationService {
       unawaited(_registerDeviceToken(token));
     });
 
-    final initialMessage = await _messaging.getInitialMessage();
-    if (_isDisposed) return;
     if (initialMessage != null) {
       unawaited(_handleRemoteMessageOpened(initialMessage));
     }
@@ -475,7 +499,7 @@ class PushNotificationService {
   }
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
-    final request = _requestFromData(message.data);
+    final request = requestFromPushData(message.data);
     if (request.openTarget == 'mail' &&
         (request.mailDestination == null || request.userId != _currentUserId)) {
       return;
@@ -529,7 +553,7 @@ class PushNotificationService {
   }
 
   Future<void> _handleRemoteMessageOpened(RemoteMessage message) async {
-    final request = _requestFromData(message.data);
+    final request = requestFromPushData(message.data);
     if (!request.hasNavigationMetadata) {
       return;
     }
@@ -591,10 +615,6 @@ class PushNotificationService {
       ),
       payload: payloadFromPushRequest(request),
     );
-  }
-
-  PushNavigationRequest _requestFromData(Map<String, dynamic> data) {
-    return requestFromPushData(data);
   }
 
   Future<void> _syncRegistrationIfAuthorized() async {
