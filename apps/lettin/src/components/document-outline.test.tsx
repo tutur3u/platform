@@ -257,7 +257,7 @@ it('replaces outline labels and targets when the selected published entry change
     'Opening'
   );
   await act(() =>
-    [...container.querySelectorAll('aside button')]
+    [...container.querySelectorAll<HTMLButtonElement>('aside button')]
       .find((b) => b.textContent === 'Entry')!
       .click()
   );
