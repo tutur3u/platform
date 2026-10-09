@@ -582,3 +582,23 @@ technology users can locate the field without treating the help as its name.
 English and Vietnamese rendered regressions in
 `apps/lettin/src/components/creator-profile-labels.test.tsx` cover the exact labels,
 help association, and reserved-name validation.
+
+### Saved entry duplication
+
+In the Lettin notebook studio, a creator with notebook editing access can explicitly
+duplicate a saved entry and supply a new title. The copy belongs to the same
+notebook, starts at revision one, and is always unpublished. It retains saved
+rich text (including ordinary document hyperlinks), artwork, credit, tags, kind,
+aliases, facts and chronology; structured links and wiki relationships are cleared.
+There is no cross-notebook copy or automatic publication. Unsaved editor changes
+block the action; saving or discarding them comes first. After success, an explicit
+Open copy action selects the new draft and remains blocked while edits are unsaved.
+Mutations are not automatically retried after an ambiguous response.
+
+The server reads the saved draft, validates it, and fences the insert against the
+source revision, current creator/collaborator access and notebook artwork ownership.
+A stale revision, revoked permission or retired artwork cannot create a copy.
+Source drafts and published snapshots remain unchanged. Editors can duplicate
+without acquiring publishing permission. Regression evidence lives in
+`duplicate-entry.test.ts` and `duplicate-entry.test.tsx`; actual app build and
+hosted interaction require exact-head CI and browser acceptance.
