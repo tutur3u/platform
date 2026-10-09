@@ -31,6 +31,21 @@ new keeps its description and installed version without repeating the shell
 heading. Account removal confirmations and queued profile writes are unchanged.
 These defaults apply to both languages, light/dark themes and enlarged text.
 
+Avatar removal in Settings → You captures the authenticated account when its
+confirmation opens. An account switch or logout invalidates that confirmation,
+even if the original account returns before confirmation. Removal uses the
+existing avatar DELETE and offline queue contracts, with the original actor
+bound through queue admission and HTTP dispatch. Denied removals show localized
+media recovery; only an explicit Remove avatar action retries. A confirmed
+removal reloads the profile and persists the returned avatar state. Banner
+upload/removal and storage policy retain their existing contracts.
+
+`profile_avatar_removal_test.dart` covers confirmation lifetime, cleared-avatar
+reload/persistence, and EN/VI recovery. `profile_media_actor_race_test.dart`
+covers queue/cache actor changes and HTTP failures without automatic retry.
+These tests use synthetic actors and storage; authenticated device and real
+storage verification remain separate gates.
+
 Licenses, onboarding replay and explicit admin edit forms intentionally open
 above the shell on the root navigator with their own full-screen chrome. Sheet
 editors retain their existing modal presentation. They never stack a second
