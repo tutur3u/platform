@@ -150,6 +150,24 @@ Mail's nested editor uses the shell title, bottom navigation/actions and inherit
 background. A scoped route is cancelled on any account/workspace transition;
 request completion cannot replace an editor opened for another scope.
 
+### Assistant settings layout
+
+Mira quick settings and the central Assistant settings editor retain one branded
+header with the localized Assistant settings title and floating bottom Back
+control. Embedded live preferences, personal settings and local-model settings
+use consistent 16px horizontal gutters; the standalone quick-settings sheet
+keeps its modal padding. The route frame consumes the physical safe area and
+reserves the navigation boundary, while the settings list remains scrollable.
+This applies to English and Vietnamese, including enlarged text. Preference
+writes, memory consent, model selection, downloads and Live calls retain their
+existing semantics.
+
+`assistant_settings_layout_test.dart` covers 320px, 390px and 430px widths at
+normal and 200% text scale, header/safe-area geometry and scrolling the final
+model control above the floating navigation. `assistant_settings_hub_test.dart`
+retains save confirmation and retry coverage. Native acceptance requires an
+authenticated device running the exact CI-built artifact.
+
 ## Native text editing and keyboard dismissal
 
 Across mobile routes and modal forms, editable fields keep their native copy,
