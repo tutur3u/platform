@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest';
 import { lettinDraftSchema } from '../server/schema';
 import { quickNoteDraft } from './quick-note-model';
+import { entryKinds } from './wiki-model';
 
 it('creates a schema-valid plain page preserving lines without interpreting links or markup', () => {
   const note = quickNoteDraft(
@@ -37,3 +38,14 @@ it('rejects missing text and out-of-bound input instead of silently truncating n
     quickNoteDraft('Name', Array(100).fill('line').join('\n'))
   ).not.toBeNull();
 });
+
+it.each(entryKinds)(
+  'captures a schema-valid %s without adding relationships or publication metadata',
+  (kind) => {
+    const note = quickNoteDraft('Idea', 'Private thought', kind);
+    expect(lettinDraftSchema.parse(note)).toEqual(note);
+    expect(note).toMatchObject({ kind, links: [], tags: [] });
+    expect(note).not.toHaveProperty('wiki');
+    expect(note).not.toHaveProperty('published');
+  }
+);

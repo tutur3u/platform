@@ -2,6 +2,8 @@
 import { act, type ComponentProps } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, expect, it, vi } from 'vitest';
+import en from '../../messages/en.json';
+import viMessages from '../../messages/vi.json';
 import { QuickNote } from './quick-note';
 
 const state = vi.hoisted(() => ({
@@ -9,9 +11,17 @@ const state = vi.hoisted(() => ({
   reset: vi.fn(),
   isPending: false,
   errorMessage: null as string | null,
+  locale: null as 'en' | 'vi' | null,
 }));
 vi.mock('./use-lettin', () => ({ useLettinMutation: () => state }));
-vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) =>
+    state.locale
+      ? (state.locale === 'en' ? en : viMessages).lettin[
+          key as keyof typeof en.lettin
+        ]
+      : key,
+}));
 vi.mock('@tuturuuu/ui/button', () => ({
   Button: ({
     variant: _variant,
@@ -47,6 +57,7 @@ afterEach(async () => {
   vi.clearAllMocks();
   state.isPending = false;
   state.errorMessage = null;
+  state.locale = null;
 });
 async function render(
   disabled = false,
@@ -80,6 +91,13 @@ async function fill(title = 'Idea', body = 'Private text') {
       'value'
     )!.set!.call(area, body);
     area.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+}
+async function selectKind(kind: string) {
+  await act(async () => {
+    const select = container.querySelector('select')!;
+    select.value = kind;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
   });
 }
 async function submit() {
@@ -117,8 +135,10 @@ it('preserves failed input and leaves retries explicit', async () => {
   });
   await render();
   await fill();
+  await selectKind('character');
   await submit();
   expect(state.mutateAsync).toHaveBeenCalledTimes(1);
+  expect(container.querySelector('select')!.value).toBe('character');
   expect(container.querySelector('input')!.value).toBe('Idea');
   expect(container.querySelector('textarea')!.value).toBe('Private text');
   expect(container.querySelector('[role=alert]')?.textContent).toBe('Failure');
@@ -142,6 +162,7 @@ it('fences rapid repeated submit and preserves dirty-navigation blocking after c
   });
   expect(state.mutateAsync).toHaveBeenCalledTimes(1);
   expect(container.querySelector('textarea')!.disabled).toBe(true);
+  expect(container.querySelector('select')!.disabled).toBe(true);
   await render(true, onCreated);
   await act(async () => resolve({ id: 'note' }));
   const open = [...container.querySelectorAll('button')].find(
@@ -160,7 +181,42 @@ it('blocks invalid or dirty commands and resets local capture on notebook-contex
   await fill();
   await submit();
   expect(state.mutateAsync).not.toHaveBeenCalled();
+  await selectKind('story');
+  expect(container.querySelector('select')!.disabled).toBe(true);
   await render(false, vi.fn(), 'other-notebook');
+  expect(container.querySelector('select')!.value).toBe('page');
   expect(container.querySelector('input')!.value).toBe('');
   expect(container.querySelector('textarea')!.value).toBe('');
 });
+
+it.each(['en', 'vi'] as const)(
+  'labels and submits explicit typed capture in %s, then restores the page default',
+  async (locale) => {
+    state.locale = locale;
+    state.mutateAsync.mockResolvedValueOnce({ id: 'typed-note' });
+    await render();
+    const messages = locale === 'en' ? en.lettin : viMessages.lettin;
+    const select = container.querySelector('select')!;
+    expect(select.getAttribute('aria-label')).toBe(messages.kind);
+    expect(select.value).toBe('page');
+    expect(
+      [...select.options].find((o) => o.value === 'character')!.textContent
+    ).toBe(messages.kindcharacter);
+    await selectKind('character');
+    await fill();
+    expect(state.mutateAsync).not.toHaveBeenCalled();
+    await submit();
+    expect(state.mutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'createEntry',
+        worldId: 'notebook',
+        draft: expect.objectContaining({
+          kind: 'character',
+          links: [],
+          tags: [],
+        }),
+      })
+    );
+    expect(container.querySelector('select')!.value).toBe('page');
+  }
+);
