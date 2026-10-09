@@ -383,6 +383,17 @@ unpublished entries. Dates order the timeline; undated entries remain accessible
 The satellite Structure shell shares workspace navigation, notifications, and
 account controls with other Tuturuuu apps.
 
+Wiki entry creation defaults to a blank document. Creators can opt into a guided
+outline for any of the nine entry kinds. The selected kind determines three
+localized headings and editable prompts; changing the kind before creation uses
+the newly selected outline. Prompts are saved as ordinary rich text in the current
+UI language, so later locale changes do not translate existing content. Starters
+add no tags, links, relationships, dates, or permissions and never publish content.
+They apply only to newly created wiki entries; existing entries, notebook starters,
+and imports keep their content. Regression coverage: `entry-starters.test.ts`
+validates every kind in English and Vietnamese against the live draft schema;
+`wiki-create-entry.test.tsx` covers opt-in creation, kind changes, and blocked submits.
+
 The in-house editor accepts rich text and Markdown source, including headings,
 lists, task lists, tables, links, images, and inline formatting. Applying Markdown
 is explicit; saving is disabled until source edits are applied or cancelled.
