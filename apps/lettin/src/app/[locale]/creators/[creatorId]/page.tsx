@@ -1,9 +1,11 @@
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
+import { Suspense } from 'react';
 import { Brand } from '@/components/brand';
 import { CreatorAboutView } from '@/components/creator-about-view';
 import { CreatorProfileHeader } from '@/components/creator-profile-header';
 import { PublicExplorer } from '@/components/public-explorer';
+import { ReaderCreatorBookmark } from '@/components/reader-creator-bookmark';
 import { createLettinPageMetadata } from '@/lib/page-metadata';
 import { publicWorlds } from '@/lib/public-worlds';
 import { bindings } from '@/server/bindings';
@@ -67,6 +69,9 @@ export default async function Page({
         <CreatorProfileHeader profile={identity} />
         <CreatorAboutView details={about} />
       </div>
+      <Suspense>
+        <ReaderCreatorBookmark creatorId={identity.id} />
+      </Suspense>
       <PublicExplorer worlds={worlds} page={page} search={query.q} />
     </div>
   );
