@@ -16,6 +16,9 @@ export async function Brand() {
           <Link className="lettin-nav-link" href="/worlds">
             {t('explore')}
           </Link>
+          <Link className="lettin-nav-link" href="/saved">
+            {t('savedNotebooks')}
+          </Link>
           <Link className="lettin-nav-link lettin-nav-studio" href="/dashboard">
             {t('studio')}
           </Link>
