@@ -435,6 +435,17 @@ checked with `--check`; inactive Rust/TanStack sources are excluded. Product
 guides explain actual behavior and access, while generated routes locate source.
 Use `node scripts/docs-audit.js` for navigation, internal links, and assets.
 
+## Managed artwork collections
+
+Adding artwork outside rich text requires updating the atomic draft artwork guard
+and auditing media publication and retention together. Lettin gallery items use
+the existing `image` JSON key, so published media lookup and recursive cleanup
+retain the same permissions without a new storage policy. Exclude collection
+payloads from discovery projections and test draft edits against older published
+snapshots with real local D1/R2. Keep upload operations tied to the editor lease,
+block save/discard/publish while pending, and reject stale results after unmount.
+When integrating saved-draft duplication, exercise collection artwork ownership
+inside its insert fence, including retirement between the source read and insert.
 ## Duplicating creator drafts
 
 Duplicate from a server-owned saved revision, with explicit destination scope and
@@ -536,3 +547,13 @@ the selection visible when search filters hide its option. Load saved private
 rubrics only after both session-owner and meeting-host checks; render the session
 snapshot rather than the current scenario revision. See the Parley product guide
 and studio setup, invitation, review-route and Meet-link regression tests.
+
+### Local D1 quota fixtures
+
+Seed large boundary datasets with a set-based SQL statement and assert the exact
+seed count before testing concurrent production mutations. Hundreds of separate
+prepared statements in a fixture batch can exhaust the per-test timeout under CI
+load without exercising more application behavior. Preserve the real mutation,
+quota race and cross-actor assertions; do not raise global timeouts or replace D1
+with mocks. Lettin's creator-bookmark quota regression uses 499 seeded references
+and two concurrent saves to verify the 500-reference boundary.

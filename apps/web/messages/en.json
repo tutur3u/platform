@@ -11559,6 +11559,7 @@
     "types": {
       "account_update": "Account Update",
       "deadline_reminder": "Deadline Reminder",
+      "mail_received": "Mail received",
       "security_alert": "Security Alert",
       "system_announcement": "System Announcement",
       "task_assigned": "Task Assigned",

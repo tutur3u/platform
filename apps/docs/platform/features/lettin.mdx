@@ -583,6 +583,38 @@ English and Vietnamese rendered regressions in
 `apps/lettin/src/components/creator-profile-labels.test.tsx` cover the exact labels,
 help association, and reserved-name validation.
 
+### Ordered artwork galleries
+
+Lettin notebooks and wiki entries may include an optional ordered gallery of up to
+12 images, separate from the cover and inline document images. Each gallery image
+requires alt text and may include a caption (up to 1,000 characters) and credit
+(up to 200 characters). Creators can add HTTPS URLs or upload artwork through the
+existing notebook media service, reorder images, edit metadata and remove images
+from the draft. Blank alt text or invalid image URLs block saving.
+
+Content notices remain before cover and gallery artwork. Published document
+heading outlines remain available alongside the gallery and target rich document
+headings, rather than artwork captions or credits. The combined reader regression
+in `document-outline.test.tsx` covers this ordering and scoped heading targets.
+
+Gallery changes use the existing explicit save and publish controls. Public
+readers receive only the published snapshot; catalogue summaries omit galleries.
+Uploading alone does not make artwork public. Every managed gallery image is
+checked against the notebook's live media ownership in the same atomic draft
+write as existing artwork. Draft and published gallery references participate in
+existing cleanup retention; a removed image remains retained while its published
+snapshot still references it. Unpublishing the notebook revokes anonymous access
+to its managed media. External HTTPS images remain controlled by their host.
+
+Uploads block save, discard and publish until settled; failed uploads preserve
+the existing gallery. Deferred results after leaving the editor cannot mutate
+the next document. Read-only galleries render escaped captions and credits,
+explicit alt text and revocable media URLs without optimizer caching. Legacy
+documents with no gallery continue to render normally. Regression evidence:
+`artwork-gallery.test.ts`, `artwork-gallery.test.tsx`, and
+`gallery-storage.test.ts`; hosted interaction and exact-head app CI remain
+independent acceptance gates.
+
 ## Discover notebooks by published tags
 
 The public notebook catalogue displays creator-authored tags from the published
@@ -705,7 +737,8 @@ acceptance remain separate gates; DOM fixtures do not prove browser layout.
 In the Lettin notebook studio, a creator with notebook editing access can explicitly
 duplicate a saved entry and supply a new title. The copy belongs to the same
 notebook, starts at revision one, and is always unpublished. It retains saved
-rich text (including ordinary document hyperlinks), artwork, credit, tags, kind,
+rich text (including ordinary document hyperlinks), artwork, ordered galleries,
+content notices, credit, tags, kind,
 aliases, facts and chronology; structured links and wiki relationships are cleared.
 There is no cross-notebook copy or automatic publication. Unsaved editor changes
 block the action; saving or discarding them comes first. After success, an explicit
@@ -714,6 +747,7 @@ Mutations are not automatically retried after an ambiguous response.
 
 The server reads the saved draft, validates it, and fences the insert against the
 source revision, current creator/collaborator access and notebook artwork ownership.
+Every managed gallery image is checked by the same atomic ownership fence.
 A stale revision, revoked permission or retired artwork cannot create a copy.
 Source drafts and published snapshots remain unchanged. Editors can duplicate
 without acquiring publishing permission. Regression evidence lives in
@@ -765,7 +799,35 @@ review new fields rather than infer permission to transfer them.
 Regression evidence: `creation-guidance.test.ts` exercises real local D1 snapshot,
 copy and authorization boundaries; `creation-guidance.test.tsx` checks escaping,
 empty defaults, draft controls and content-notice placement. Exact-head app builds
-and hosted interaction remain independent delivery gates.
+and hosted interaction remain independent delivery gates. Gallery integration
+coverage also publishes guidance and artwork together while omitting both from
+catalogue cards; the document regression retains notices, artwork credits and
+heading navigation alongside advisory guidance.
+
+### Private saved creators
+
+Signed-in readers can explicitly bookmark a creator with a published notebook
+from the Lettin creator page and manage up to 500 creator references in `/saved`.
+The choice is private to the initiating reader. It sends no notification,
+creates no public follower count or list, changes no profile fields, and grants
+no source access. Notification subscriptions remain a separate workflow.
+
+Only creator IDs and save timestamps are retained. The library reads a current
+published notebook title for navigation; it never copies a profile or draft.
+A creator without published notebooks is unavailable but remains removable.
+Reads and writes require the expected app-session actor; cache keys include that
+actor. Removal is idempotent, failed mutations preserve the confirmed state, and
+ambiguous writes are not automatically retried. Anonymous readers receive a
+sign-in link with a canonical creator return path. Public profile defaults remain
+avatar, banner, display name and biography; no bookmark choices are exposed there.
+
+Regression evidence: `creator-bookmarks.test.ts` applies the additive D1 migration
+and checks private actor scope, published-only projection, quota and withdrawal.
+The quota fixture seeds 499 references with one SQL operation, verifies the seed
+count, then races two real save operations against the remaining slot;
+creator bookmark route and rendered reader-library tests cover session/command
+fences and explicit UI actions. Exact-head CI and hosted keyboard/account-switch
+acceptance remain separate delivery evidence.
 
 ### Private quick-note capture
 

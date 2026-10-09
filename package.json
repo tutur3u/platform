@@ -9,6 +9,8 @@
     "@vitest/coverage-v8": "^5.0.0",
     "acorn": "8.18.0",
     "lucide-static": "^1.45.0",
+    "oxfmt": "0.72.0",
+    "oxlint": "1.87.0",
     "portless": "^0.15.6",
     "turbo": "^2.10.12",
     "typescript": "7.0.2",
@@ -269,7 +271,10 @@
     "redis:stop": "cd apps/redis && bun redis:stop",
     "ui:add": "bun --filter ui ui:add",
     "ui:diff": "bun --filter ui ui:diff",
-    "update-all": "bun ./scripts/package-update.js"
+    "update-all": "bun ./scripts/package-update.js",
+    "oxc:lint": "node scripts/oxc.js lint",
+    "oxc:format": "node scripts/oxc.js format",
+    "oxc:write": "node scripts/oxc.js write"
   },
   "trustedDependencies": [
     "@tailwindcss/oxide",

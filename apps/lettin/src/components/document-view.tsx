@@ -1,5 +1,7 @@
 import type { LettinDraft } from '@tuturuuu/internal-api/lettin';
 import { useTranslations } from 'next-intl';
+import { ArtworkGallery } from './artwork-gallery';
+
 import { ContentNotice } from './content-notice';
 import { CreationGuidance } from './creation-guidance';
 import { renderDocumentNode } from './document-nodes';
@@ -73,6 +75,7 @@ export function DocumentView({
           {wikiOf(draft).chronology?.era} · {wikiOf(draft).chronology?.label}
         </p>
       )}
+      <ArtworkGallery items={draft.gallery} />
       {outline && (
         <DocumentOutline items={outline.items} truncated={outline.truncated} />
       )}

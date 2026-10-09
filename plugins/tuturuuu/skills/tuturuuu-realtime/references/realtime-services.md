@@ -114,7 +114,7 @@ track is insufficient. The fixture neither tests hosted SFU nor replaces native
 WebView acceptance. See the runbook before installing/driving its exact-commit
 artifact. Use T3 Device so verification remains visible to the user.
 
-### Parley Cache Components candidate acceptance
+## Parley Cache Components candidate acceptance
 
 Parley's isolated stable-tarball adapter candidate backports upstream PR 1318 and
 must retain the real Node middleware bundler alongside both the scheduler and
@@ -133,3 +133,18 @@ bindings and blocked outbound fetch. Require exact source SHA and complete bilin
 pages across sequential and concurrent requests. This tests the anonymous built-page
 boundary, not authenticated product flows or hosted recovery. See the
 [Cloudflare validation runbook](/build/devops/github-actions-runbook#meet-lettin-and-parley-cloudflare-validation).
+
+## Offline programming checkpoint retries
+
+Persist the offline retry reservation before checkpoint I/O; never keep its
+attempt count only in memory. Programming rooms allow three automatic offline
+attempts within two minutes, separated by 30 seconds, retaining unresolved
+documents on expiry/exhaustion. Successful owner-authorized checkpoints clear
+the budget; viewer recovery remains forbidden. Recheck active connections after
+awaited provider work so a concurrent join retains its expiry sweep.
+
+Use `collaboration-retry-budget.test.ts` for counted duplicate/restart/deadline/
+failure/recovery coverage and the isolated Worker/SQLite fixture documented in
+`programming-realtime-runbook.mdx`. Distinguish explicit handler invocation and
+stubbed provider failures from hosted alarm delivery and actual Drive saves.
+This offline bound does not certify live retry, media cleanup or account spending.

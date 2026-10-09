@@ -38,6 +38,26 @@ merge, or production evidence only when that delivery is authorized.
   Reference environment variables by name only.
 - Do not manually edit `package.json` to add or update dependencies. Use the
   package manager command for the owning workspace.
+- Gradually adopt Oxlint/Oxfmt through explicit owned-file paths with
+  `bun oxc:lint`, `bun oxc:format`, and `bun oxc:write`. Retain Biome gates until
+  each scope records rule/formatting parity and migrates CI, editors and generators
+  together. Do not run global formatters or Vite+ monorepo migrators for scoped
+  work. See [adoption guidance](apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx).
+- Plan cf CLI adoption over Wrangler per verified operation. Preserve existing
+  commands/configuration until authentication, target identity, bindings/migrations,
+  emitted artifacts and rollback parity are established; retain Wrangler for gaps.
+  Do not run global configuration migration or infer production authorization from
+  CLI adoption. See the adoption guidance linked above.
+- For Cloudflare work that adds or amplifies billable operations, require bounded
+  work/retries, idempotent progress, terminal-state scheduling and a tested durable
+  stop fence. Verify operation-count and failure/restart regressions; ingress rate
+  limits, billing alerts and per-invocation CPU caps are not total-spend caps.
+  Record service-specific cost/stop evidence in the adoption guidance.
+- Maintain first-party domain/service libraries independently of React frameworks.
+  Inject request identity, storage, navigation and localization at framework
+  adapters; keep portable entrypoints free of Next.js/React Router/Cloudflare
+  runtime imports and request globals. Preserve public exports and enforce these
+  boundaries with focused tests when extracting shared modules.
 - Do not use native browser dialogs, emojis in UI code, hard-coded hue classes,
   client-side raw app API fetches, or `useEffect` for data fetching.
 - Do not add `export const dynamic` / `export const revalidate` route segment
@@ -160,6 +180,13 @@ merge, or production evidence only when that delivery is authorized.
   - Live API/page behavior belongs to `apps/web` and the owning Next.js satellite.
     Keep shared data access in `packages/internal-api` and preserve active app
     contracts; TanStack Query remains the active client library.
+  - The long-term target is Vite+ + Cloudflare hosting + Oxc for every active app,
+    delivered incrementally alongside the product backlog. The first wave covers
+    every active Worker-backed
+    app and service, including Meet, Parley, Lettin and native service Workers. Preserve satellite sessions, API ownership,
+    bilingual routes, storage and consent. This does not resume the paused TanStack
+    app or authorize canonical traffic changes. Require exact-commit CI, Worker
+    runtime acceptance and a scoped promotion/rollback plan before cutover.
   - New or substantially reworked Web API handlers belong under
     `apps/web/src/app/api/**`, not `legacy-api-routes/**`. Move colocated tests
     with the implementation and remove obsolete generated wrappers. Inactive
