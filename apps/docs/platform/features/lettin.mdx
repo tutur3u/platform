@@ -685,6 +685,10 @@ Regression coverage: `public-tag-discovery.test.tsx` checks independent tag link
 filter preservation and empty results; `public-catalogue-filters.test.ts` checks
 bounds; the public worlds API tests cover rejected filters; `public-catalogue-storage.test.ts`
 checks actual local D1 filtering, pagination and published snapshot isolation.
+The pagination dataset uses one set-based D1 seed with an asserted 30-row count;
+separate real create/save/publish mutations retain snapshot-boundary coverage.
+Keep fixture setup bounded so timed-out sequential writes cannot contaminate the
+next regression.
 
 ### Searchable relationship authoring
 

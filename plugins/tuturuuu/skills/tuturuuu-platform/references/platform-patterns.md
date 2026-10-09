@@ -631,7 +631,10 @@ seed count before testing concurrent production mutations. Hundreds of separate
 prepared statements in a fixture batch can exhaust the per-test timeout under CI
 load without exercising more application behavior. Preserve the real mutation,
 quota race and cross-actor assertions; do not raise global timeouts or replace D1
-with mocks. Lettin's creator-bookmark quota regression uses 499 seeded references
+with mocks. Catalogue pagination fixtures should seed published snapshots in one
+set-based write; preserve separate real publish/save mutation tests and assert the
+row count before queries. A timed-out sequential seed can keep running and contaminate
+the next test even when its cleanup hook ran. Lettin's creator-bookmark quota regression uses 499 seeded references
 and two concurrent saves to verify the 500-reference boundary.
 
 ## Scoped artwork reading dialogs
