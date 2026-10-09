@@ -37,13 +37,18 @@ jobs:
         run: |
           test "$RUNNER_ENVIRONMENT" = github-hosted
           sudo -n unshare --mount --net --propagation private true
-          manager_status=0
-          manager_state="$(timeout --signal=TERM --kill-after=2s 20s systemctl --wait is-system-running)" || manager_status=$?
-          printf 'systemd state: %s\n' "$manager_state"
-          case "$manager_state:$manager_status" in
-            running:0|degraded:1) ;;
-            *) exit 1 ;;
-          esac
+          outer_net=$(readlink /proc/self/ns/net)
+          outer_mount=$(readlink /proc/self/ns/mnt)
+          capability_unit="parley-capability-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          trap 'status=$?; if [ "$status" -ne 0 ]; then timeout --signal=TERM --kill-after=2s 5s sudo -n systemctl stop "$capability_unit" || true; fi; exit "$status"' EXIT
+          timeout --signal=TERM --kill-after=2s 27s sudo -n systemd-run \
+            --unit="$capability_unit" \
+            --wait --collect --pipe -p MemoryMax=17179869184 -p CPUQuota=1000% \
+            -p TasksMax=256 -p PrivateNetwork=yes -p RuntimeMaxSec=20 \
+            -p TimeoutStopSec=2 -p KillMode=control-group \
+            /usr/bin/unshare --mount --net --propagation private \
+            /usr/bin/python3 -B -c 'import importlib.util,sys; s=importlib.util.spec_from_file_location("replay",sys.argv[1]); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); m.isolation({"outerNet":sys.argv[2],"outerMount":sys.argv[3]})' \
+            "$GITHUB_WORKSPACE/control/scripts/ci/replay-parley-worker.py" "$outer_net" "$outer_mount"
       - name: Check out immutable tooling manifest
         if: steps.gate.outputs.should_run == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
