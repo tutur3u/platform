@@ -27,6 +27,7 @@ function fixture() {
   doc.destroy();
   const operations = { reads: 0, writes: 0, alarms: 0, provider: 0 };
   let failReservation = false;
+  let failDocument = false;
   let now = 1_800_000_000_000;
   const storage = {
     get: async (key: string) => {
@@ -35,6 +36,8 @@ function fixture() {
     },
     put: async (key: string, value: unknown) => {
       operations.writes++;
+      if (failDocument && key === 'programming-document')
+        throw new Error('document storage unavailable');
       if (failReservation && key === 'metadata')
         throw new Error('storage unavailable');
       values.set(key, structuredClone(value));
@@ -84,6 +87,9 @@ function fixture() {
       }),
     advance: (ms: number) => {
       now += ms;
+    },
+    failDocument: () => {
+      failDocument = true;
     },
     failReservation: () => {
       failReservation = true;
@@ -257,6 +263,27 @@ test('a slow failed provider call never reschedules into the past', async () => 
     await f.room().alarm();
     assert.equal(f.operations.provider, 1);
     assert.equal(f.operations.alarms, 1);
+  } finally {
+    f.restore();
+  }
+});
+
+test('Learn problem persistence failures retain the same finite offline bound', async () => {
+  const f = fixture();
+  try {
+    f.values.set('metadata', { ...metadata, resource: 'problem' });
+    f.failDocument();
+    for (let i = 0; i < 3; i++) {
+      await f.room().alarm();
+      f.advance(30_000);
+    }
+    const writes = f.operations.writes;
+    await f.room().alarm();
+    assert.equal(f.operations.provider, 0);
+    assert.equal(writes, 6);
+    assert.equal(f.operations.writes, writes);
+    assert.equal(f.operations.alarms, 2);
+    assert.ok(f.values.get('programming-document'));
   } finally {
     f.restore();
   }

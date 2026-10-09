@@ -466,7 +466,7 @@ export class CollaborationRoomDurableObject implements DurableObject {
           (socket.deserializeAttachment() as Attachment).ticket.exp * 1000 >
           Date.now()
       );
-    if (this.dirty && !connected && this.metadata?.resource === 'playground') {
+    if (this.dirty && !connected && this.metadata) {
       const now = Date.now();
       const retry = this.metadata.checkpointRetry ?? {
         attempts: 0,
