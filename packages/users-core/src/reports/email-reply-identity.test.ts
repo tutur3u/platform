@@ -100,6 +100,48 @@ describe('opaque report reply identity', () => {
     ).toThrow();
   });
 
+  it.each(['\\x00', `\\x${'zz'.repeat(76)}`])(
+    'rejects malformed stored ciphertext before reconstructing an address',
+    (token_ciphertext) => {
+      expect(() =>
+        reconstructReportReplyAddress({ ...identity(), token_ciphertext }, key)
+      ).toThrow('Invalid report reply ciphertext');
+    }
+  );
+
+  it.each([
+    { data: null, error: null },
+    { data: [], error: null },
+    { data: 'identity', error: null },
+    { data: {}, error: { code: 'lease_lost' } },
+  ])('rejects malformed or failed reservation receipts %j', async (result) => {
+    await expect(
+      reserveReportReplyIdentity(
+        vi.fn().mockResolvedValue(result),
+        lease,
+        { domain: scope.reply_domain, keyVersion: 1, key },
+        scope.content_sha256
+      )
+    ).rejects.toThrow('Report reply identity reservation failed');
+  });
+
+  it.each([{ key_version: 2 }, { reply_domain: 'other.example.com' }])(
+    'rejects retry identity key/domain rotation %j',
+    async (changed) => {
+      await expect(
+        reserveReportReplyIdentity(
+          vi.fn().mockResolvedValue({
+            data: { ...identity(), ...changed },
+            error: null,
+          }),
+          lease,
+          { domain: scope.reply_domain, keyVersion: 1, key },
+          scope.content_sha256
+        )
+      ).rejects.toThrow('Report reply identity key/domain changed');
+    }
+  );
+
   it.each([
     'A'.repeat(48),
     '0'.repeat(47),
@@ -288,6 +330,71 @@ describe('report send foundation admission', () => {
       sendResult: { success: true, messageId: 'accepted' },
       trackingError: true,
     });
+  });
+
+  it.each([undefined, 'invalid'])(
+    'does not submit without a valid identity key',
+    async (encodedKey) => {
+      const { rpc, send } = enabled({ success: true });
+      if (encodedKey === undefined)
+        vi.stubEnv('REPORT_EMAIL_REPLY_IDENTITY_KEY', undefined);
+      else vi.stubEnv('REPORT_EMAIL_REPLY_IDENTITY_KEY', encodedKey);
+      await expect(
+        sendReportEmail({ send } as never, options, rpc, lease)
+      ).rejects.toThrow('Report reply identity key is unavailable');
+      expect(send).not.toHaveBeenCalled();
+      expect(rpc.mock.calls.map(([name]) => name)).toEqual([
+        'report_email_reply_receiving_ready',
+      ]);
+    }
+  );
+
+  it.each(['rejected', 'outcome_unknown'])(
+    'keeps failed %s persistence unsafe to retry',
+    async (outcome) => {
+      const { rpc, send } = enabled(
+        {
+          success: false,
+          error: 'Rejected',
+          ...(outcome === 'outcome_unknown'
+            ? { deliveryOutcome: 'unknown' }
+            : {}),
+        },
+        outcome
+      );
+      const receipt = await sendReportEmail(
+        { send } as never,
+        options,
+        rpc,
+        lease
+      );
+      expect(receipt.sendResult).toMatchObject({
+        success: false,
+        deliveryOutcome: 'unknown',
+      });
+      expect(receipt.applicationSent).toBeUndefined();
+      expect(send).toHaveBeenCalledOnce();
+      expect(
+        rpc.mock.calls.map(([, args]) => args.p_outcome).filter(Boolean)
+      ).toEqual(['submitting', outcome]);
+    }
+  );
+
+  it('keeps thrown submission unknown even if its durable receipt fails', async () => {
+    const { rpc, send } = enabled({ success: false }, 'outcome_unknown');
+    send.mockRejectedValue(new Error('Transport interrupted'));
+    const receipt = await sendReportEmail(
+      { send } as never,
+      options,
+      rpc,
+      lease
+    );
+    expect(receipt.sendResult).toEqual({
+      success: false,
+      deliveryOutcome: 'unknown',
+    });
+    expect(send).toHaveBeenCalledOnce();
+    expect(rpc.mock.calls.at(-1)?.[1].p_outcome).toBe('outcome_unknown');
   });
 
   it.each(['provider-unknown', 'throw'])(
