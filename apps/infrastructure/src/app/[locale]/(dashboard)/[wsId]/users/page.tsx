@@ -58,7 +58,7 @@ export default async function InfrastructureUsersPage({
         if (!workspace) notFound();
         if (!workspace.joined) redirect('/');
       },
-      createAdminClient,
+      createAdminClient: async () => createAdminClient(),
     }
   );
   const t = await getTranslations();
