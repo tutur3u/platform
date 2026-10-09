@@ -252,4 +252,82 @@ void main() {
     expect(locales, beforeRelease);
     expect(f.service.userId, 'user');
   });
+
+  test(
+    'failed settings save drains stale refresh and preserves accepted IDs',
+    () async {
+      final scheduled = Completer<int>();
+      final releaseSchedule = Completer<void>();
+      final f = await fixture(
+        schedule: (id) async {
+          scheduled.complete(id);
+          await releaseSchedule.future;
+        },
+      );
+      final started = f.service.startSession('user', workspaces);
+      final accepted = await scheduled.future;
+      final entered = Completer<void>();
+      final releaseSave = Completer<void>();
+      final failure = StateError('Synthetic settings save failure');
+      final changed = f.service.updateSettings(
+        _HeldSettings(entered, releaseSave),
+      );
+      final observed = expectLater(changed, throwsA(same(failure)));
+      await entered.future;
+      releaseSave.completeError(failure);
+      releaseSchedule.complete();
+      await Future.wait([started, observed]);
+      expect(f.service.status.isRefreshing, isFalse);
+      expect(f.service.status.error, failure.toString());
+      expect(f.pending, contains(accepted));
+      final store = await SharedPreferences.getInstance();
+      expect(
+        store.getStringList('reminders.user.scheduledIds'),
+        contains('$accepted'),
+      );
+      await f.service.refresh();
+      expect(f.pending, isEmpty);
+    },
+  );
+
+  test(
+    'failed stale save does not clear replacement actor refresh status',
+    () async {
+      final enteredSave = Completer<void>();
+      final releaseSave = Completer<void>();
+      final enteredLocale = Completer<void>();
+      final releaseLocale = Completer<String?>();
+      var holdLocale = false;
+      final f = await fixture(
+        locale: () {
+          if (holdLocale) {
+            enteredLocale.complete();
+            return releaseLocale.future;
+          }
+          return Future.value('en');
+        },
+      );
+      await f.service.startSession('user', const []);
+      final failure = StateError('Synthetic stale save failure');
+      final changed = f.service.updateSettings(
+        _HeldSettings(enteredSave, releaseSave),
+      );
+      final observed = expectLater(changed, throwsA(same(failure)));
+      await enteredSave.future;
+      await f.service.stopSession();
+      final store = await SharedPreferences.getInstance();
+      await store.setBool('reminders.other.tasksEnabled', false);
+      holdLocale = true;
+      final replacement = f.service.startSession('other', workspaces);
+      await enteredLocale.future;
+      releaseSave.completeError(failure);
+      await observed;
+      expect(f.service.userId, 'other');
+      expect(f.service.status.isRefreshing, isTrue);
+      expect(f.service.status.error, isNull);
+      releaseLocale.complete('en');
+      await replacement;
+      expect(f.service.status.isRefreshing, isFalse);
+    },
+  );
 }
