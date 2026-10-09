@@ -38,3 +38,46 @@ An `Immediate batch delivery failed: 400` log may mean the web proxy rejected
 the request before the processor ran. Check the proxy response source and the
 Worker user agent, body, and content type. A `401` points to the web and Worker
 delivery tokens being out of sync.
+
+## Vite+ toolchain and validation
+
+Cron Control owns a private Bun workspace with pinned Vite+ 1.1.0, the matching
+Vite core alias, Cloudflare Vite plugin 1.63.1 and Wrangler 4.149.0. The owning
+Wrangler supports the existing September 28 compatibility date; do not substitute
+an older root runtime. The production Worker source, identity, five-minute trigger,
+secret names and delivery protocol remain the same. `vite.config.ts` disables
+remote bindings; the independent unit-test config does not start the Worker plugin.
+
+From `apps/cron-control`, use Node 24 for `bun run lint`, `bun run test`,
+`bun run type-check` and `node --test scripts/verify-worker-runtime.mjs`.
+Use `ttr resources run -- <command>` for heavy local checks and a private home
+`TMPDIR` if `/tmp` quota prevents runtime storage. Do not run release builds locally.
+CI builds with `bun run build`, repeats the real local Worker HTTP checks using
+`CRON_TEST_CONFIG=dist/worker/wrangler.json`, and checks emitted name/account,
+compatibility date, trigger, vars and required secret names against the source.
+CI retains `cron-control-worker-<full source SHA>`; the production-only job downloads
+that tested artifact rather than rebuilding it. Keep explicit deployment approval
+and exact-SHA production follow-through outside ordinary main integration.
+
+Oxlint correctness rules are scoped to source/config files; Oxfmt configuration
+and `format:check` are available for explicit parity review. Repository Biome
+remains authoritative until the scope's formatting/rule/editor/generator gates
+migrate together. No global formatting or framework migrator is needed.
+
+The runtime fixture uses dummy credentials and tests complete health JSON and
+rejection of HTTP invocation paths. It never dispatches a scheduled event and
+cannot certify database recovery, web delivery, fanout or total-spend bounds.
+The existing four unit regressions preserve RPC-before-lookup ordering, idle skip,
+authenticated delivery, redirect rejection and failure short-circuiting with
+mocked downstream calls. A successful hosted schedule and terminal batch status,
+persistent attempt/age limits, independent stop and alert evidence remain separate
+acceptance work. The five-minute cadence and a delivery timeout are not total-spend caps.
+
+Keep pool/worker defaults in the unit config and the package script as `vp test`.
+Shared sharded CI appends its worker limit; validate `bun run test --maxWorkers=2`
+under Node 24 to ensure the script accepts that override without duplicate options.
+
+Vite+ 1.1.0 requires matching Vitest/coverage-v8 5.0.3. The root runner dependency,
+root override and provider are pinned together; test the coverage override with
+`bun run test --maxWorkers=2 --coverage` under Node 24. Ordinary tests alone do not
+exercise the coverage version guard. Keep that guard enabled.
