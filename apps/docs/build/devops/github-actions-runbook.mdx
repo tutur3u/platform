@@ -1172,10 +1172,10 @@ production SHA. When related package releases are queued or running, the helper
 sets `packages_ready=false`; the platform build skips successfully instead of
 polling npm until the runner times out. npm publish authority remains isolated to
 package `publish-npm` jobs. A skipped package gate must not count as production
-deployment for database migrations. Database paths therefore select the
-platform deployment in the production planner, and `supabase-production.yaml`
-requires both the successful planner run and the `vercel-production-platform`
-deployment marker for the same SHA before it can run production migrations.
+deployment for database migrations. For commit-driven selection, the planner checks database-affecting changes against the independent last successful `supabase-production.yaml` migration baseline, not the Platform deployment baseline.
+When Platform lacks successful explicit coverage of the target SHA, pending migrations or unavailable migration coverage conservatively select enabled Platform for redeployment; disabled configuration remains authoritative. Ordinary manual dispatch still selects all enabled targets.
+Selection does not relax the successful planner, explicit Platform deployment marker, or completed successful staging migration requirements for the exact SHA. Verify the migration job and applied catalog; do not apply production SQL manually.
+A registered 15-minute report automation cron is not proof that delivery RPCs are available or email gates are enabled. Missing RPCs remain operational blockers; additive migrations and auto-send toggles do not backfill already-approved reports.
 The marker must explicitly name the platform workflow, deployment kind, and
 matching payload SHA, and its latest status must be successful. GitHub
 environment records with an empty payload only describe job completion; they
