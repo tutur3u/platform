@@ -4,7 +4,7 @@ import { Button } from '@tuturuuu/ui/button';
 import Link from 'next/link';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
-import { StartSession } from '@/features/studio/start-session';
+import { SessionSetup } from '@/features/studio/session-setup';
 
 export default async function NewSession() {
   await connection();
@@ -23,31 +23,7 @@ export default async function NewSession() {
         <p className="text-muted-foreground text-sm">{t('prepare_hint')}</p>
       </header>
       {scenarios.length ? (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {scenarios.map((scenario) => (
-            <section
-              key={scenario.id}
-              className="space-y-4 rounded-xl border bg-card p-5"
-            >
-              <div className="space-y-2">
-                <p className="text-muted-foreground text-sm">
-                  {scenario.category}
-                </p>
-                <h2 className="font-semibold text-xl">{scenario.title}</h2>
-                <p className="line-clamp-3 text-muted-foreground text-sm">
-                  {scenario.briefing}
-                </p>
-                <Link
-                  className="text-primary text-sm underline"
-                  href={`/scenarios/${scenario.id}`}
-                >
-                  {t('view_briefing')}
-                </Link>
-              </div>
-              <StartSession scenarioId={scenario.id} />
-            </section>
-          ))}
-        </div>
+        <SessionSetup scenarios={scenarios} />
       ) : (
         <div className="space-y-4 rounded-xl border border-dashed p-8">
           <p className="text-muted-foreground">{t('empty_hint')}</p>

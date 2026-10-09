@@ -615,6 +615,39 @@ documents with no gallery continue to render normally. Regression evidence:
 `gallery-storage.test.ts`; hosted interaction and exact-head app CI remain
 independent acceptance gates.
 
+### Searchable relationship authoring
+
+The creator entry editor searches relationship targets by title and alias and
+filters them by entry kind. It uses only the notebook records already loaded
+through the creator's authorized workspace session; it does not discover records
+from another notebook or workspace. Search and filters are local UI state.
+Creators choose a relationship type before explicitly clicking a target. The
+current entry and an existing target/type pair are excluded, while another type
+for the same target remains available. Changing an existing relationship type
+also prevents a conflicting pair. The existing 100-relationship limit applies to
+addition; removal remains available at the limit. Results render in batches of
+50, with explicit expansion and reset on filter changes. Type changes retain
+the focused row control; legacy repeated target/type rows remain independently
+editable until explicitly removed. Target counts follow each locale’s plural rules.
+
+These actions update the editor draft only. Existing labels, facts, aliases and
+chronology are preserved. A missing target is shown as unavailable and retained
+until explicitly removed; search does not silently repair or delete references.
+The normal explicit Save action, permission checks and expected revision still
+control persistence. Publishing remains a separate action. No profile fields,
+source text, consent or access grants are transferred. This workflow applies to
+creator editing, not the public reader or relationship graph.
+
+Regression coverage: `relationship-authoring-model.test.ts` checks target/type
+fences, bounds and source preservation; `wiki-relationships-editor.test.tsx`
+checks explicit draft actions, search, kind filters, bounded rendering,
+unavailable references, focused control identity, legacy repeated rows and
+integration with the surrounding wiki details editor.
+`relationship-count.test.ts` formats the actual English and Vietnamese messages
+for zero, one and multiple targets.
+The existing `entry-editor.test.tsx` covers dirty drafts during pending saves.
+DOM fixtures do not prove hosted keyboard, layout or account-switch acceptance.
+
 ### Private saved notebooks
 
 Any signed-in Lettin reader can explicitly save a published notebook from its
