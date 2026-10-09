@@ -529,3 +529,17 @@ the selection visible when search filters hide its option. Load saved private
 rubrics only after both session-owner and meeting-host checks; render the session
 snapshot rather than the current scenario revision. See the Parley product guide
 and studio setup, invitation, review-route and Meet-link regression tests.
+
+## Colab expiry runtime regression
+
+Colab stores its completed expiry deadline in private state row3, atomically with
+room/audit writes. Keep schedule extensions independent and preserve existing room
+modes/end events. Use `apps/colab/src/server/room-alarm.test.ts` for bounded-operation,
+duplicate/restart/deadline regressions and
+`node --test apps/colab/scripts/verify-expiry-runtime.mjs` for the real local Worker
+and SQLite transaction behavior. Queue local execution with `ttr resources run`;
+use a private writable TMPDIR when shared temporary storage rejects writes. The
+fixture uses isolated configuration, loopback requests and no production bindings;
+its harness closes after tests. RPC handler invocation does not prove hosted alarm
+delivery or automatic retry semantics. See the Colab feature page for cost units
+and remaining acceptance evidence; release builds stay in CI.

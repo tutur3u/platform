@@ -49,6 +49,12 @@ jobs:
         working-directory: packages/multiplayer
       - run: bun run test
         working-directory: apps/colab
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+      - name: Verify idempotent expiry in a local Worker
+        run: node --test scripts/verify-expiry-runtime.mjs
+        working-directory: apps/colab
       - run: bun run build
         working-directory: apps/colab
       - run: bun x --no-install wrangler deploy --dry-run
