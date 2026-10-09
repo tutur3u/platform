@@ -35,6 +35,21 @@ acceptance remain required. Do not run global migration or deployment as part of
 planning. Follow the phased plan in the adoption guidance above and recheck
 [upstream coverage](https://blog.cloudflare.com/cloudflare-cf-cli-launch/) before edits.
 
+## Cloudflare runaway-work review
+
+For added or amplified background work, review alarm/queue/cron feedback paths and
+cost units before migration acceptance. Require durable attempt/age or lease bounds,
+finite future deadlines, bounded operations per wake, no reschedule after terminal
+state, idempotent progress and an authenticated persisted stop fence that covers
+racing callbacks. Exercise duplicates, restart, no progress, repeated downstream
+failure and shutdown with operation-count assertions in fixtures and real local
+Workers; build and emitted-artifact checks stay in CI. Batch writes only with
+verified billing semantics. Record cost assumptions, applicable alert delivery and
+an independent operator response. Alerts and CPU limits do not cap total spend.
+Do not copy upstream examples that deliberately retry forever into finite jobs.
+See the adoption guidance's runaway-work acceptance table; live settings are
+separate evidence, never implied by documentation or build success.
+
 ## Codex plugin native parallel pilot
 
 `codex-plugin.yaml` has one native `parallel` group containing only the MCP and

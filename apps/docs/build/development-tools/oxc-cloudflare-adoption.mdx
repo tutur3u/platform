@@ -207,6 +207,49 @@ to D1 or replacing Supabase. Database changes, schedules, secrets and canonical
 traffic each need a bounded plan. Pin the promotion range, retain a rollback
 artifact and verify schema/binding compatibility and health before promotion.
 
+## Runaway-work and cost acceptance
+
+Every migration or change that adds or amplifies billable work must include a
+cost-safety review. The [reported runaway Durable Object alarm incident](https://serverlesshorrors.com/all/cloudflare-108k/)
+is a warning about self-sustaining work, not an independently verified account
+of provider usage. Do not rely on future refunds, billing notifications or a
+per-invocation CPU limit to cap total storage, requests, retries or downstream spend.
+
+[Durable Object alarms](https://developers.cloudflare.com/durable-objects/api/alarms/)
+are at-least-once and automatically retry thrown errors. Explicit rescheduling can
+create another chain beyond those retries. Ingress rate limits cannot stop work
+that an alarm, queue consumer or cron trigger already owns.
+
+| Control | Acceptance evidence |
+| --- | --- |
+| Work bounds | Bound operations, scanned rows/pages, payload size, fan-out and concurrency per wake; bound attempts and elapsed age for finite jobs. Persistent failures or no progress exhaust a durable budget rather than resetting on wake or restart. |
+| Scheduling | Empty/completed/expired/cancelled jobs do not reschedule. A valid next deadline is finite and in the future; retries use capped backoff. Recurring activity requires an explicit owner and renewable lease/expiry, with a documented stop path. |
+| Retry identity | Duplicate delivery and restarts preserve job identity, attempts, cursor and idempotency fences. A consumer cannot re-enter its own enqueue path indefinitely. Checkpoint progress without multiplying writes per item. |
+| Durable shutdown | Check a persisted stop/lease fence before expensive work and before rescheduling, including racing callbacks. Test a scoped authenticated stop path that preserves resumable data. Removing public routes or stopping ingress is insufficient. |
+| Storage amplification | Use indexed/bounded reads; avoid unbounded list/scan fallback in hot paths. Batch writes where useful, then measure the actual billing unit: batching does not necessarily reduce billed keys/rows/messages. |
+| Cost envelope | Record normal and failure-case operation counts per job/session and expected maximum admitted concurrency/volume. Include storage, queue retries, AI/media and logging; calculate with current product pricing and record assumptions. |
+| Detection and response | Verify which usage/anomaly alerts the account and products support, who receives them and how quickly they can react. Record sampled per-service rates, retry/no-progress counters and a tested independent operator stop procedure. |
+
+Require regressions for empty queues, expired state, duplicate execution, restart,
+clock/deadline boundaries, persistent downstream failure, no progress and stop-versus-
+reschedule races. Count storage/downstream calls as well as final return values;
+prove bounds under repeated wakes in isolated fixtures and the real local Worker.
+Exact-commit CI must exercise the emitted artifact. Keep live account settings,
+alert delivery and hosted shutdown verification as separate production evidence.
+
+CPU limits constrain an invocation, not the number of invocations or all billable
+services. Usage notifications are detection, not an automatic spending cutoff.
+Choose service-specific limits with measured workloads; do not silently apply an
+arbitrary global value that breaks realtime or recovery behavior. See current
+[Workers pricing and custom CPU limits](https://developers.cloudflare.com/workers/platform/pricing/)
+and [available billing alerts](https://developers.cloudflare.com/notifications/notification-available/).
+Any automatic circuit breaker must itself perform bounded work and fail safely
+without deleting original data or retrying indefinitely.
+
+Existing tests and code must be inspected per service; this foundation establishes
+review gates and does not assert that every deployed alarm is protected or that
+account alerts are configured.
+
 ## Incident evidence
 
 Correlate scoped failing requests with authenticated Worker tail exceptions and

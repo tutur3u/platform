@@ -48,6 +48,11 @@ merge, or production evidence only when that delivery is authorized.
   emitted artifacts and rollback parity are established; retain Wrangler for gaps.
   Do not run global configuration migration or infer production authorization from
   CLI adoption. See the adoption guidance linked above.
+- For Cloudflare work that adds or amplifies billable operations, require bounded
+  work/retries, idempotent progress, terminal-state scheduling and a tested durable
+  stop fence. Verify operation-count and failure/restart regressions; ingress rate
+  limits, billing alerts and per-invocation CPU caps are not total-spend caps.
+  Record service-specific cost/stop evidence in the adoption guidance.
 - Maintain first-party domain/service libraries independently of React frameworks.
   Inject request identity, storage, navigation and localization at framework
   adapters; keep portable entrypoints free of Next.js/React Router/Cloudflare
