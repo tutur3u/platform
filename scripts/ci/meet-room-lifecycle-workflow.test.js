@@ -61,6 +61,7 @@ test('actual lifecycle CI command runs only its explicit worker regressions outs
       'room-do-empty-lifecycle.test.ts',
       'room-do-lifecycle-race.test.ts',
       'room-do-recovery.test.ts',
+      'collaboration-retry-budget.test.ts',
     ].map((file) => `apps/meet-realtime/src/${file}`);
     assert.deepEqual(observed.argv, [
       'test',

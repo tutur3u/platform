@@ -64,6 +64,7 @@ import 'package:mobile/features/assistant/widgets/assistant_starter_prompts.dart
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
@@ -140,6 +141,18 @@ class _AssistantPageState extends State<AssistantPage>
     onWorkspaceContextChanged: (workspaceContextId) =>
         _shellCubit.setWorkspaceContextId(workspaceContextId),
     onSoulRefreshRequested: _shellCubit.refreshSoul,
+    onThemeRequested: (theme, isCurrent) async {
+      if (!mounted || !isCurrent()) return;
+      final mode = switch (theme) {
+        'light' => shad.ThemeMode.light,
+        'dark' => shad.ThemeMode.dark,
+        _ => shad.ThemeMode.system,
+      };
+      await context.read<ThemeCubit>().setThemeMode(
+        mode,
+        isCurrent: () => mounted && isCurrent(),
+      );
+    },
     onSoulRefreshFailed: (_) {
       if (!mounted) return;
       final message = context.l10n.assistantSettingsRefreshFailed;

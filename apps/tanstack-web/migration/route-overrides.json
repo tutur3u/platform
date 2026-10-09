@@ -1843,7 +1843,7 @@
     "cron:/api/cron/tasks/deadline-reminders:apps/web/src/app/api/cron/tasks/deadline-reminders/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Scheduled deadline reminders run in the deployed web app, honor each workspace's task reminder intervals and channel preferences, and queue mobile push across workspaces. Rust parity pending."
+      "note": "Scheduled deadline reminders run in the deployed web app, honor each workspace's task reminder intervals and channel preferences, normalize equivalent 24h/1d intervals while honoring both historical receipt keys, and queue mobile push across workspaces. Rust parity pending."
     },
     "error:/:locale:apps/web/src/app/[locale]/error.tsx": {
       "status": "migrated",

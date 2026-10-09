@@ -4,7 +4,8 @@ import { collaborationPreferences } from '../creation-guidance';
 const id = z.guid();
 const version = z.number().int().positive();
 
-import { richTextNodeSchema, safeImage } from './rich-text-schema';
+import { artworkGallerySchema, artworkImageSchema } from './artwork-schema';
+import { richTextNodeSchema } from './rich-text-schema';
 import { wikiKinds, wikiSchema } from './wiki-schema';
 
 export const lettinDraftSchema = z.object({
@@ -25,21 +26,8 @@ export const lettinDraftSchema = z.object({
     .optional(),
   title: z.string().trim().min(1).max(160),
   description: z.string().max(2000),
-  image: z.union([
-    z.literal(''),
-    z.string().regex(/^\/api\/v1\/lettin\/media\/[0-9a-f-]{36}$/),
-    z
-      .url()
-      .max(2000)
-      .refine((v) => v.startsWith('https://') && safeImage(v))
-      .transform((value) => {
-        const url = new URL(value);
-        return url.origin === 'https://lettin.tuturuuu.com' &&
-          /^\/api\/v1\/lettin\/media\/[0-9a-f-]{36}$/.test(url.pathname)
-          ? url.pathname
-          : value;
-      }),
-  ]),
+  image: artworkImageSchema,
+  gallery: artworkGallerySchema.optional(),
   credit: z.string().max(200),
   kind: z.enum(wikiKinds),
   wiki: wikiSchema.optional(),

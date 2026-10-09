@@ -12,8 +12,13 @@ import { DocumentView } from './document-view';
 import { PublicWorld } from './public-world';
 
 vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string, args?: { count: number }) =>
-    args ? `${key}:${args.count}` : key,
+  useTranslations:
+    () => (key: string, args?: { count?: number; credit?: string }) =>
+      args?.credit
+        ? `${key}:${args.credit}`
+        : args
+          ? `${key}:${args.count}`
+          : key,
 }));
 vi.mock('@/i18n/navigation', () => ({
   Link: (props: ComponentProps<'a'>) => <a {...props} />,
@@ -288,4 +293,44 @@ it('keeps escaped content guidance before artwork and heading navigation', () =>
   expect(html).toContain('<nav');
   expect(html.indexOf('contentNotice')).toBeLessThan(html.indexOf('<img'));
   expect(html.indexOf('contentNotice')).toBeLessThan(html.indexOf('<nav'));
+});
+
+it('retains gallery artwork and its credits while notice precedes artwork and outline', () => {
+  const html = renderToStaticMarkup(
+    <DocumentView
+      draft={{
+        ...draft,
+        creationGuidance: {
+          credits: 'Writer',
+          usageNotes: 'Ask before reuse',
+          collaboration: 'ask-first',
+        },
+        contentNotice: 'Read this first',
+        gallery: [
+          {
+            image: 'https://example.test/portrait.png',
+            alt: 'Portrait',
+            caption: 'Illustration',
+            credit: 'Artist',
+          },
+        ],
+      }}
+      showOutline
+      outlineScope="public-gallery"
+    />
+  );
+  const notice = html.indexOf('Read this first');
+  expect(notice).toBeGreaterThan(-1);
+  expect(html).toContain('Portrait');
+  expect(html).toContain('Illustration');
+  expect(html).toContain('Artist');
+  expect(notice).toBeLessThan(
+    html.indexOf('https://example.test/portrait.png')
+  );
+  expect(notice).toBeLessThan(html.indexOf('documentOutline'));
+  expect(html).toContain('public-gallery');
+  expect(html).toContain('Writer');
+  expect(html).toContain('Ask before reuse');
+  expect(html).toContain('creationGuidanceAdvisory');
+  expect(html).toContain('data-lettin-heading');
 });
