@@ -738,3 +738,24 @@ Regression evidence: `creation-guidance.test.ts` exercises real local D1 snapsho
 copy and authorization boundaries; `creation-guidance.test.tsx` checks escaping,
 empty defaults, draft controls and content-notice placement. Exact-head app builds
 and hosted interaction remain independent delivery gates.
+
+### Private quick-note capture
+
+The authorized notebook studio offers explicit plain text quick-note capture.
+A title of up to 160 characters and text of up to 10,000 characters and 100 lines
+create an unpublished page through the existing entry command. Empty input or
+values beyond these bounds cannot be submitted; text is never silently truncated.
+Internal blank lines are preserved. URLs and markup remain plain text without
+importing remote content or creating references, permissions or publication.
+
+Pending capture locks the form and blocks repeated submission. Failure preserves
+the input for an explicit retry. A successful save clears the capture fields and
+offers a separate Open action; opening remains disabled while the current editor
+has unsaved changes. Notebook/workspace context replacement resets local capture.
+Publishing still requires the existing separate role and revision checks.
+
+Regression evidence: `quick-note-model.test.ts` validates bounds and actual draft
+schema; `quick-note.test.tsx` covers commands, failure, repeated submits, pending
+and dirty-navigation fences and context resets. `storage.test.ts` uses local D1
+to verify saved private notes, public omission and workspace/revocation boundaries.
+These fixtures do not establish hosted dialog or keyboard acceptance.
