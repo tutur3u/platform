@@ -51,7 +51,15 @@ jobs:
       - run: bun x --no-install tsc --project apps/coordination/tsconfig.json
       - run: node --test apps/coordination/src/request-body.test.mjs
       - run: node --test apps/coordination/src/worker.test.mjs
-      - run: bun x --no-install wrangler deploy --dry-run -c apps/coordination/wrangler.jsonc
+      - run: bun run lint
+        working-directory: apps/coordination
+      - run: bun run build
+        working-directory: apps/coordination
+      - name: Verify the built Worker and Durable Object
+        run: node --test apps/coordination/src/worker.test.mjs
+        env:
+          COORDINATION_TEST_CONFIG: ${{ github.workspace }}/apps/coordination/dist/worker/wrangler.json
+      - run: bun x --no-install wrangler deploy --dry-run -c apps/coordination/dist/worker/wrangler.json
   deploy:
     needs: validate
     if: github.ref == 'refs/heads/production'
@@ -80,7 +88,9 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare deployment credential'; exit 1; }
           bun x --no-install wrangler secret list -c apps/coordination/wrangler.jsonc > "$RUNNER_TEMP/coordination-secrets.json"
           jq -e 'any(.[]; .name == "COORDINATION_TOKEN")' "$RUNNER_TEMP/coordination-secrets.json" > /dev/null
-      - run: bun x --no-install wrangler deploy -c apps/coordination/wrangler.jsonc --message "$GITHUB_SHA"
+      - run: bun run build
+        working-directory: apps/coordination
+      - run: bun x --no-install wrangler deploy -c apps/coordination/dist/worker/wrangler.json --message "$GITHUB_SHA"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
       - name: Record successful Cloudflare deployment
