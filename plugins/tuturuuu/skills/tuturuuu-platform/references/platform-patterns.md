@@ -444,3 +444,14 @@ marketing opt-out accidentally. The source matrix and sender fixtures live in
 `email-eligibility.test.ts` and the notification route tests. See the recipient
 policy in `apps/docs/platform/architecture/authorization.mdx`; focused fixture
 success is separate from exact-head CI and actual provider/inbox delivery.
+
+## Private reader references
+
+Social saves must not silently become public profile data or popularity signals.
+Store actor-owned source IDs instead of private document copies; project live
+published card fields when reading and return unavailable references after
+unpublishing. Bound insertion quotas atomically, make explicit save/remove
+idempotent, and bind both reads and writes to the expected app-session actor.
+Include the actor in client cache keys. Standalone library routes must be excluded
+from workspace-alias probes and use request-time suspended auth boundaries.
+Lettin's bookmark D1 and route regressions cover these contracts.

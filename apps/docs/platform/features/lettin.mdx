@@ -582,3 +582,28 @@ technology users can locate the field without treating the help as its name.
 English and Vietnamese rendered regressions in
 `apps/lettin/src/components/creator-profile-labels.test.tsx` cover the exact labels,
 help association, and reserved-name validation.
+
+### Private saved notebooks
+
+Any signed-in Lettin reader can explicitly save a published notebook from its
+public reading page and manage the private library at `/saved`. Creator approval
+and workspace document permissions are not required because saves grant no
+source access. Each actor may save up to 500 notebook references. Saves and
+removals are idempotent; the actor comes from the Lettin app session, and both
+reads and writes require the expected actor to prevent account-switch crossover.
+Client query keys also include the actor.
+
+Saves are private to the reader: they never appear on public profiles, in creator
+notifications, or in public popularity counts. No copy of the draft, document,
+gallery or profile is retained. Library cards read only title, description, cover
+and credit from the source's current published snapshot. Unpublishing hides
+those details and leaves a removable unavailable reference; deleting a notebook
+cascades its saved references. Saving a new unpublished notebook is rejected.
+A save never permits publishing, editing or accessing private artwork.
+
+The additive local D1 migration `0005_reader_bookmarks.sql` must be present
+before enabling the API. Local migration application and consent boundaries are
+covered by `reader-bookmarks.test.ts`, with session/input/cache fencing in the
+bookmark route tests and reader controls. Exact-head app build, hosted
+session/account-switch behavior and authorized migration delivery remain separate
+gates; no production application is claimed by local tests.

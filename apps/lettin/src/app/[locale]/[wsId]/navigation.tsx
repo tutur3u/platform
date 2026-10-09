@@ -1,4 +1,5 @@
 import {
+  Bookmark,
   BookOpen,
   Compass,
   Feather,
@@ -47,6 +48,14 @@ export async function getNavigationLinks(
       href: `/${wsId}/wiki`,
       icon: <Library className="size-4" />,
       aliases: [`/${wsId}/wiki`, `/${wsId}/worlds`],
+      children: [],
+    },
+    {
+      title: t('savedNotebooks'),
+      href: '/saved',
+      icon: <Bookmark className="size-4" />,
+      matchExact: true,
+      aliases: ['/saved'],
       children: [],
     },
     {
