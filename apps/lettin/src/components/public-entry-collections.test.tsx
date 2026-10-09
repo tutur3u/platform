@@ -178,7 +178,7 @@ it('composes published alias search and kind, then clears empty filters back to 
     en.lettin.noReadingMatches
   );
   await act(() =>
-    [...container.querySelectorAll('aside button')]
+    [...container.querySelectorAll<HTMLButtonElement>('aside button')]
       .find((b) => b.textContent === en.lettin.clearReadingFilters)!
       .click()
   );
