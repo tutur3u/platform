@@ -158,6 +158,17 @@ therefore write session state after context erasure has completed. Require a
 durable completion check before claiming duplicate wakes perform no work; an
 in-memory flag alone cannot establish that a prior progress write succeeded.
 
+Public-billing settlement currently iterates the entire saved billing map in one
+invocation. A record needing quota settlement, share completion and usage reporting
+can perform three downstream requests and two session-state writes, followed by
+one write for the map. Successful quota settlement is persisted before usage
+reporting, so a usage failure can retry reporting without re-settling quota.
+However, each failed record requests retry scheduling separately, and a failed
+final map write can replay reporting after reconstruction. Count those scheduler
+calls separately from delivered wakes: repeated scheduling can overwrite one alarm.
+A bounded replacement needs a durable cursor and per-record progress; truncating
+the map or dropping acknowledged-but-unpersisted obligations loses recovery state.
+
 This is an operating limitation, not permission to discard unresolved work.
 Approved memories, private-context deletion obligations, quota reservations and
 billing receipts must remain distinguishable and durable. Do not mark cleanup

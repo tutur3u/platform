@@ -155,3 +155,10 @@ confirmation wake; failed deletion preserves the archive and can retry. Finaliza
 also writes session state in its public-settlement and final steps after erasure
 completes. Count duplicate completion writes and require durable completion proof
 before optimizing them away; memory-only flags may follow a failed durable write.
+
+Public Live billing currently scans the complete saved map. Include quota settlement,
+share completion, usage reporting, per-record writes and the final map write in the
+wake budget. Count retry-scheduler calls separately from delivered alarms. Verify
+quota progress survives usage failures, and successful reporting followed by a
+failed final write remains recoverable across reconstruction. A page limit needs
+a durable cursor and per-record progress; never truncate outstanding obligations.
