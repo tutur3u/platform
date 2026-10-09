@@ -128,3 +128,10 @@ failure/recovery coverage and the isolated Worker/SQLite fixture documented in
 `programming-realtime-runbook.mdx`. Distinguish explicit handler invocation and
 stubbed provider failures from hosted alarm delivery and actual Drive saves.
 This offline bound does not certify live retry, media cleanup or account spending.
+
+
+Completed Live finalization must confirm its persisted session receipt and recheck
+current obligations after the read; in-memory completion does not acknowledge a
+failed write. Keep independent registry/room cleanup and incomplete billing/context
+retries. See the counted regressions and operation envelope in
+`apps/docs/build/devops/programming-realtime-runbook.mdx#completed-live-finalization-receipts`.

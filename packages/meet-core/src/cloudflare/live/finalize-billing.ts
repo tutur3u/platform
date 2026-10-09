@@ -6,6 +6,23 @@ import type { SavedSession } from './session-state';
 import type { LiveEnvironment } from './storage';
 import { reportLiveUsage } from './usage-report';
 
+function completed(saved: SavedSession | undefined): saved is SavedSession {
+  if (
+    saved?.ended !== true ||
+    saved.contextErased !== true ||
+    saved.pendingUsage ||
+    (saved.billing &&
+      (saved.billingFinalized !== true ||
+        saved.billing.settlementComplete !== true ||
+        saved.billing.pendingSettlement ||
+        saved.billing.pendingShareFinish))
+  )
+    return false;
+  // Stop at the first entry; do not allocate or scan a full billing map.
+  for (const _id in saved.publicBillings ?? {}) return false;
+  return true;
+}
+
 /** Keep unsettled reservations durable until both quota and meeting accounting acknowledge them. */
 export async function finalizeSessionBilling(
   env: LiveEnvironment,
@@ -14,6 +31,20 @@ export async function finalizeSessionBilling(
   retry: () => Promise<void>,
   storage: DurableObjectStorage
 ) {
+  if (completed(saved)) {
+    // In-memory flags can precede a failed final write. Confirm the durable
+    // receipt, then recheck after the await so new obligations cannot be skipped.
+    const durable = await storage.get<SavedSession>('session');
+    if (
+      completed(durable) &&
+      completed(saved) &&
+      typeof saved.claims?.sessionId === 'string' &&
+      typeof saved.claims.ownerId === 'string' &&
+      durable.claims?.sessionId === saved.claims.sessionId &&
+      durable.claims?.ownerId === saved.claims.ownerId
+    )
+      return;
+  }
   try {
     await eraseEndedLiveContext(storage, saved, retry);
   } catch {

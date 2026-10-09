@@ -417,3 +417,37 @@ nothing. These logical operation counts are regression evidence, not a billed
 price estimate or account-wide cap. Storage failures, active sessions, provider
 media cleanup, external alerting and independent operator stop controls require
 separate acceptance evidence.
+
+
+### Completed Live finalization receipts
+
+Duplicate ended-session finalization checks its persisted session receipt before
+skipping work. Both current and durable state must confirm context erasure, no
+remaining public billing and completed primary billing/accounting for the same
+session and owner; pending usage prevents the shortcut. Recheck current state
+after the receipt read so a newly added obligation is not skipped. In-memory
+completion flags alone cannot acknowledge a failed final write.
+
+A confirmed terminal invocation costs one session-key read and zero finalization
+writes, archive operations, downstream calls or alarms. Registry/room cleanup
+remains independent; unresolved billing and erasure retain their existing retries.
+This reduces completed duplicate work, without bounding failed compensation or
+certifying total spend. `finalize-terminal.test.ts` covers counted reconstruction,
+lost receipts, receipt-read failure, concurrent new obligations and incomplete
+context/billing; existing finalization and erasure regressions remain required.
+
+
+The disposable SQLite probe runs from its configuration directory:
+
+```sh
+cd packages/meet-core/test-fixtures/live-finalization
+ttr resources run -- node --test verify.mjs
+```
+
+It initializes one synthetic receipt, then reconstructs 24 snapshots from the
+real SQLite namespace. Counted work is 48 reads (24 reconstruction reads plus
+24 receipt checks), zero finalization writes/deletes/list operations/provider
+calls/alarms. Initial fixture seeding and the final evidence read are separate
+setup/inspection operations. The harness closes automatically, uses no remote
+credentials and rejects downstream fetches. It exercises the finalization helper
+against real storage, not the hosted Live provider or authenticated Stop flow.
