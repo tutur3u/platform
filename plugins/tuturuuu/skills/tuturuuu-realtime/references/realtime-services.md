@@ -136,3 +136,19 @@ and retains authorization and recovery. Invalid durable retry state stops withou
 resetting the job or deleting documents. See
 `apps/docs/build/devops/programming-realtime-runbook.mdx#portable-offline-retry-planning`
 for the adapter contract and planner, counted-handler and SQLite regressions.
+
+## Offline channel checkpoint reservations
+
+Channel rooms persist a finite three-attempt, two-minute offline job before
+callback I/O. Failed reservation writes must spend zero callbacks; failed completion
+writes must not replenish persisted attempts. Keep 30-second minimum future
+reservation deadlines, terminal-state stops and retained document bytes. Only an
+authorized editor rejoin may reset a stopped job; viewer sockets and expired editor
+tickets do not establish recurring checkpoint authority.
+
+Use `channel-retry-budget.test.ts` for counted failures, duplicates, reconstruction,
+clock boundaries and recovery. The isolated `test-fixtures/channel-retry` Worker
+uses real SQLite and controlled callback/completion failures. Record written keys,
+not just batched put calls. This finite offline budget does not certify hosted alarm
+delivery, live lease renewal, independent stop or total account spend. Follow the
+channel reservation verification section in the programming realtime runbook.
