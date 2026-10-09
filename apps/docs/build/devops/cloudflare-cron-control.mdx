@@ -45,8 +45,11 @@ delivery tokens being out of sync.
 After authentication, the web route reads at most 256 KiB in 4,096 stream chunks
 before parsing JSON. Exceeding either bound returns HTTP 413, cancels the stream
 and starts no database/provider work. The byte ceiling fits 100 maximum-length
-IDs even when JSON-escaped. Malformed JSON retains HTTP 400. These bounds do not
-provide a wall-clock deadline for a stalled incoming stream.
+IDs even when JSON-escaped. Malformed JSON retains HTTP 400. These request bounds do not
+cap automatic delivery work or account spending. A ten-second total body-read
+deadline returns HTTP 408 before database/provider work for stalled or slow
+streams; receiving a chunk does not renew it. Cancellation is best effort and
+cannot extend the deadline or replace an overflow/transport error.
 
 Authenticated explicit batch selection accepts at most 100 `batch_ids`, with the
 existing single-ID length bound applied to every ID. Oversized requests fail

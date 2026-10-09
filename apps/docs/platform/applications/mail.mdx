@@ -787,8 +787,11 @@ alone does not prove device receipt or navigation.
 
 The five-minute recovery timer runs in Cloudflare Cron Control; the authenticated
 web cron endpoint remains available for manual recovery. Explicit immediate
-requests read at most 256 KiB in 4,096 chunks after authentication, returning
-HTTP 413 on overflow before JSON parsing or database work. They accept at most
+requests read at most 256 KiB in 4,096 chunks after authentication, with a
+ten-second total read deadline. Stalled/slow bodies return HTTP 408 before any
+database/provider work; chunks do not renew the deadline and cancellation cannot
+extend it. Exceeding byte/chunk bounds returns
+HTTP 413 before JSON parsing or database work. They accept at most
 100 batch IDs and reject oversized or overlong IDs rather
 than silently truncating them. Unrequested batches remain pending; the empty-body
 automatic processor retains complete queue selection to preserve rollout filtering.

@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { MAX_IMMEDIATE_REQUEST_BYTES } from '@/lib/notifications/immediate-request-body';
+import {
+  MAX_IMMEDIATE_REQUEST_BYTES,
+  MAX_IMMEDIATE_REQUEST_DURATION_MS,
+} from '@/lib/notifications/immediate-request-body';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(() => {
@@ -21,6 +24,7 @@ vi.mock('@/lib/notifications/push-delivery', () => ({
 import { POST } from './route';
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllEnvs();
   vi.clearAllMocks();
 });
@@ -76,4 +80,27 @@ describe('immediate route body and ID boundaries', () => {
     );
     assertNoDeliveryWork();
   });
+});
+
+it('returns408 for a stalled authenticated body before any delivery work', async () => {
+  vi.useFakeTimers();
+  vi.stubEnv('CRON_SECRET', 'disposable-body-budget-token');
+  const cancel = vi.fn(() => new Promise<void>(() => {}));
+  const request = new Request(
+    'http://localhost/api/notifications/send-immediate',
+    {
+      method: 'POST',
+      headers: { authorization: 'Bearer disposable-body-budget-token' },
+      body: new ReadableStream({
+        pull: () => new Promise<void>(() => {}),
+        cancel,
+      }),
+      duplex: 'half',
+    } as RequestInit
+  );
+  const pending = POST(request as Parameters<typeof POST>[0]);
+  await vi.advanceTimersByTimeAsync(MAX_IMMEDIATE_REQUEST_DURATION_MS);
+  expect((await pending).status).toBe(408);
+  expect(cancel).toHaveBeenCalledTimes(1);
+  assertNoDeliveryWork();
 });

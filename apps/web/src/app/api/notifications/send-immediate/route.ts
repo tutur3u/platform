@@ -32,6 +32,7 @@ import {
   renderEmailTemplate,
 } from '@/lib/notifications/immediate-helpers';
 import {
+  ImmediateRequestTimeoutError,
   ImmediateRequestTooLargeError,
   readImmediateRequestBody,
 } from '@/lib/notifications/immediate-request-body';
@@ -58,6 +59,9 @@ export async function POST(req: NextRequest) {
     try {
       bodyText = await readImmediateRequestBody(req);
     } catch (error) {
+      if (error instanceof ImmediateRequestTimeoutError) {
+        return NextResponse.json({ error: 'Request timeout' }, { status: 408 });
+      }
       if (error instanceof ImmediateRequestTooLargeError) {
         return NextResponse.json(
           { error: 'Payload too large' },

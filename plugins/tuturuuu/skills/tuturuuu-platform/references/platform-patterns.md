@@ -544,6 +544,10 @@ Read immediate request bodies after authentication with the256KiB/4096chunk
 stream bound before JSON parsing, cancel overflow and return413 before database
 work. Preserve400 malformedJSON and original transport errors. Count empty-chunk
 no-progress reads as operations; byte limits alone do not bound chunk loops.
+Apply a10second total incoming-body deadline and return408 before deliverywork.
+Do not renew it on chunks or await an uncooperative cancellation; clear timers
+on every exit and retain original overflow/transport errors. Cover stalled/drip
+streams, exact deadlines, cancellation hangs and zero provider/database calls.
 Explicit immediate batch_ids requests accept at most100 IDs with existing
 single-ID length bounds; select deduplicated IDs using one capped private-schema
 query. Unrequested batches remain pending. Preserve complete logs and atomic
