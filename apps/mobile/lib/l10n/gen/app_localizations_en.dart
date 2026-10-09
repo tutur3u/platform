@@ -105,7 +105,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appLockEnableReason => 'Authenticate to turn on app lock.';
 
   @override
-  String get appLockLockedDescription => 'Use your device PIN, fingerprint, or Face ID to continue.';
+  String get appLockLockedDescription => 'Use biometrics or your device passcode in the system prompt to continue.';
 
   @override
   String get appLockLockedTitle => 'Tuturuuu is locked';
@@ -10595,4 +10595,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantMemorySaveChanges => 'Save my changes';
+
+  @override
+  String get notificationsReadCleanupUnavailable => 'Read accepted. Some system notifications could not be dismissed.';
+
+  @override
+  String get notificationsReadRefreshUnavailable => 'Read accepted. The inbox could not refresh. Pull to refresh.';
+
+  @override
+  String get notificationsReadError => 'Could not accept the read action. Try again.';
 }

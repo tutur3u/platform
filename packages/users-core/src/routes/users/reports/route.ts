@@ -331,19 +331,6 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     const privateDb = sbAdmin.schema('private');
-    const configResult = await sbAdmin
-      .from('workspace_configs')
-      .select('value')
-      .eq('ws_id', wsId)
-      .eq('id', 'ENABLE_REPORT_APPROVAL')
-      .maybeSingle();
-    if (configResult.error) {
-      return NextResponse.json(
-        { message: 'Error resolving report approval settings' },
-        { status: 500 }
-      );
-    }
-
     let existingQuery = privateDb
       .from('external_user_monthly_reports')
       .select('id')
@@ -365,9 +352,6 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     const now = new Date().toISOString();
-    const approvalEnabled = (configResult.data?.value ?? 'true') === 'true';
-    const requiresApproval =
-      approvalEnabled || parsed.data.generation_mode === 'ai';
     const result = await privateDb
       .from('external_user_monthly_reports')
       .insert({
@@ -378,13 +362,7 @@ export async function POST(request: Request, { params }: Params) {
         updated_by: actorLink.virtual_user_id,
         created_at: now,
         updated_at: now,
-        ...(requiresApproval
-          ? {}
-          : {
-              report_approval_status: 'APPROVED' as const,
-              approved_by: actorLink.virtual_user_id,
-              approved_at: now,
-            }),
+        report_approval_status: 'PENDING',
       })
       .select('id')
       .single();

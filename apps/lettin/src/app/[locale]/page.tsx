@@ -4,6 +4,22 @@ import { Brand } from '@/components/brand';
 import { CreativeAtlas } from '@/components/creative-atlas';
 import { CreativeSpaces } from '@/components/creative-spaces';
 import { Link } from '@/i18n/navigation';
+import { createLettinPageMetadata } from '@/lib/page-metadata';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'lettin' });
+  return createLettinPageMetadata({
+    title: t('homeTitle'),
+    description: t('heroDescription'),
+    locale,
+    pathname: '/',
+  });
+}
 
 export default async function Page() {
   const t = await getTranslations('lettin');

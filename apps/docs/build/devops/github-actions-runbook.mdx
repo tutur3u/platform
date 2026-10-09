@@ -4,6 +4,15 @@ description: "How the repository’s automation is organized, gated, and operate
 updatedAt: "2026-10-03"
 ---
 
+<Note>
+Current runtime policy: Docker setup and Docker-backed E2E/image CI are paused;
+the Docker cron runner is retired. Rust and TanStack Start are not in use and
+must not be run, tested, or updated until further notice. Retained Docker and
+migration sections below are historical procedures. Current hosted Next.js,
+package, Worker, database, and mobile workflows retain their own gates. See the
+[active runtime map](/build/devops/active-runtime).
+</Note>
+
 GitHub Actions is the primary automation plane for Tuturuuu.
 
 ## Validation and Delivery Evidence
@@ -16,6 +25,11 @@ exports. Regression tests for shared helpers should import through the shipped
 entry; the Infrastructure desktop public-entry test covers this boundary. Resolve source fixtures relative to `import.meta.dirname`,
 so workspace-owned test runs read the same files as root runs.
 
+- Keep cross-app integration tests outside a package's `src` directory when its
+  type-check project uses `rootDir: "src"`. The users-core tenant-boundary tests
+  live in `tests/approvals`; Vitest discovers them separately from the package
+  source type check. Its config maps the two web-specific aliases explicitly
+  while retaining the package's default `@` alias.
 - Run tests from the owning workspace with its actual config, dependencies and
   providers. Root-hoisted packages or aliases can conceal undeclared dependencies
   and invalid test boundaries. If a narrow source-alias fixture is needed, record
@@ -24,7 +38,7 @@ so workspace-owned test runs read the same files as root runs.
 - Record immutable head and tree, commands, results, and workflow/run/job IDs.
   A manual preview workflow may report the workflow branch SHA rather than its
   input: verify the decoded checkout matches the requested head. Predecessor green
-  builds do not prove a corrected head. New findings or commits require new gates.
+  builds do not prove a corrected head. New findings or commits require new gates. `programming-app-builds.yaml` runs nondeployment Next/Turbo builds for Web, Learn, Infrastructure, Mail and Contacts on relevant pull requests, including shared dependencies; each Mail/Contacts result must name the immutable checked-out head and does not authorize deployment or certify a different parent SHA.
 - Develop independent scopes in parallel, each with its own worktree and owner.
   Admit heavy local validation through the shared `ttr resources` FIFO after a
   resource preflight; serialize permitted local installs and tests. Require
@@ -567,32 +581,32 @@ failure outcomes, and timer cleanup. Exact-commit E2E remains runtime evidence.
 
 ### Meet, Lettin, and Parley Cloudflare validation
 
-The standalone Meet and Lettin Cloudflare validation jobs build
-`@tuturuuu/supabase` before running Vitest. Their proxy tests load the shared
-auth proxy, whose Supabase subpath exports resolve to `dist` under Node. A
-clean CI checkout has no package build output until that step runs.
-Meet, Lettin, and Parley also compare pull-request base and head commits with
-`scripts/ci/release-only-changes.js` before installing dependencies or building
-Workers. Release Please changes limited to version fields, changelogs, and
-release badges skip those builds. Source edits, dependency changes, and missing
-comparison history still run validation. Pushes and manual dispatches retain
-their normal validation and deployment behavior.
+Meet and Lettin build `@tuturuuu/supabase` before Vitest because proxy tests import
+its Node `dist` exports. Meet, Lettin and Parley use `scripts/ci/release-only-changes.js`
+to skip PR builds only for version fields, changelogs and release badges; source,
+dependencies and missing history still validate. Push/manual behavior is unchanged.
+Meet generates build metadata before Turbo/OpenNext: production refs embed
+`production`, other refs embed `preview` and the checked-out SHA/ref; these inputs
+participate in cache keys. Wrangler descriptions do not populate `/api/build-info`.
+Production `scripts/ci/verify-meet-build-info.js` requires HTTP 200, JSON, `appName: meet`,
+full candidate SHA and production environment/ref before recording success. Fallback,
+stale and preview bundles fail closed; main validation never probes production.
+Workflow contracts use Bun's built-in YAML parser via `workflow-yaml-test-helper.js`,
+not undeclared transitive YAML packages. The dependency-free snapshot checks ordering,
+identity and caching. Run `node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js`.
 
-Meet generates the shared build metadata before dependency Turbo builds and
-OpenNext Worker bundling. Production refs embed `production`; main and pull
-request validation embed `preview` with the checked-out ref and SHA. The generated
-source and build environment inputs participate in Turbo's existing cache keys.
-A Wrangler deployment description alone does not populate `/api/build-info`.
-The production-only deploy job runs `scripts/ci/verify-meet-build-info.js` against
-the canonical endpoint before recording its success marker. It requires HTTP 200,
-JSON, `appName: meet`, the full candidate SHA, and production environment/ref;
-local fallback, stale bundles, and preview metadata fail closed. Main validation
-never probes production as proof of its own artifact. Workflow contracts parse YAML
-through `scripts/ci/workflow-yaml-test-helper.js` using the installed Bun runtime's
-built-in parser. They must not import an undeclared transitive Node YAML package:
-local hoisting can hide a clean-runner resolution failure. A dependency-free
-snapshot runs the same ordering, identity, and cache assertions as a regression. Run the focused contracts
-with `node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js`.
+`parley-offline-diagnostic.yaml` is manual-only from trusted `main`, with no deployment
+or production secrets. It replays retained artifact 11583133658 from run 37853687763,
+fixed to SHA `387caf4872a59cc4944b16324a2554062393d7d1` and its published archive digest.
+Expiry, changed provenance, unsafe extraction or missing Linux tool binaries stop it.
+It installs frozen tools without lifecycle scripts, never rebuilds the app, and makes
+one anonymous `/access-denied` request inside private mount/network namespaces with
+loopback only, local assets/R2/self bindings, dummy credentials and no remote services.
+The unit caps aggregate memory/CPU, local state and logs; active work gets 50 seconds
+plus 10 seconds for owned process-group cleanup. Missing isolation/caps stop launch.
+Only an allowlisted result is retained for one day; request errors or missing HTTP status fail qualification, while a captured HTTP 500 is diagnostic evidence, not health success.
+Before retrieval, a finite unit checks memory/CPU/PID caps and private namespaces,
+not whole-host boot readiness. Exact digest-bound legacy asset aliases stay inside private extraction without changing ZIP/JS bytes; offline gaps never allow online fallback.
 
 ### TanStack/Rust Cloudflare deployment
 
@@ -907,13 +921,21 @@ uses required-file behavior, one-day retention, and compression level 0 because
 through root Turbo first, then calls `npm pack --ignore-scripts` so `prepack`
 cannot bypass the shared cache wrapper.
 
-Test, Coverage, and Biome preserve separate immutable `workflow + ref + SHA`
-concurrency groups for main, production, and all generated Release Please refs.
+Test, Coverage, Biome, and Type Check preserve immutable protected concurrency
+groups for main, production, and all generated Release Please refs.
 A rapid generated branch reset followed by its metadata commit must not cancel
 checks for a SHA also used by main or production. Ordinary feature refs retain
-branch supersession for obsolete source commits; that cancellation is not a
+branch push supersession; Type Check manual attempts remain independent. Cancellation is not a
 successful validation or a valid duplicate skip. Resource-owning E2E and database
 workflows retain their own lifecycle policies.
+
+The duplicate-proof runner job is scheduled only for generated Release Please
+branch pushes. Ordinary feature, main, production and manual runs proceed directly
+from preflight to validation, avoiding three extra runner allocations and checkout/
+Node setup stages across Test, Coverage and Biome. A skipped proof job is not a
+validation receipt; downstream gates still require the actual checks.
+Regression coverage: `scripts/ci/generated-proof-scheduling.test.js` executes the
+real workflow conditions, including skipped/failed proof and successful reuse.
 
 Generated duplicate pushes can cleanly skip these three workflows' validation
 jobs only after `scripts/ci/check-completed-validation.js` proves a completed
@@ -1150,10 +1172,10 @@ production SHA. When related package releases are queued or running, the helper
 sets `packages_ready=false`; the platform build skips successfully instead of
 polling npm until the runner times out. npm publish authority remains isolated to
 package `publish-npm` jobs. A skipped package gate must not count as production
-deployment for database migrations. Database paths therefore select the
-platform deployment in the production planner, and `supabase-production.yaml`
-requires both the successful planner run and the `vercel-production-platform`
-deployment marker for the same SHA before it can run production migrations.
+deployment for database migrations. For commit-driven selection, the planner checks database-affecting changes against the independent last successful `supabase-production.yaml` migration baseline, not the Platform deployment baseline.
+When Platform lacks successful explicit coverage of the target SHA, pending migrations or unavailable migration coverage conservatively select enabled Platform for redeployment; disabled configuration remains authoritative. Ordinary manual dispatch still selects all enabled targets.
+Selection retains the successful planner, explicit Platform deployment marker, and exact-SHA completed successful staging requirements. Manual production migration recovery may explicitly set `allow_cloudflare_verification_failures=true` with full matching `expected_sha` and secret-matched `expected_project_ref`: only completed planner failures in the three canonical Cloudflare verifier steps qualify, with all three validations and Platform deployment successful and every other job terminal acceptable. This default-off exception never applies to automatic triggers and never bypasses the current Platform marker, staging gate, normal project secrets or `supabase db push --include-all`; inspect actual application and catalog afterward, without manual SQL.
+A registered 15-minute report automation cron is not proof that delivery RPCs are available or email gates are enabled. Missing RPCs remain operational blockers; additive migrations and auto-send toggles do not backfill already-approved reports. Each ready run drains at most five email batches of 20 (100 handled rows) at concurrency four, admitting new batches only within a 30-second budget; already-claimed sends settle before returning, then one generation batch runs. `processedEmails` counts handled queue rows, not Sent or inbox deliveries; `emailBatches` and `emailDrainStopReason` distinguish empty queue, batch limit and admission budget (or missing completion migration). An empty/short claim describes currently eligible rows, not every deferred, locked, blocked or unknown-outcome report.
 The marker must explicitly name the platform workflow, deployment kind, and
 matching payload SHA, and its latest status must be successful. GitHub
 environment records with an empty payload only describe job completion; they
@@ -1382,7 +1404,7 @@ full Xcode before claiming the iOS archive has been verified locally.
    Vercel workflow and branch.
 6. Check path filters to confirm GitHub should have started the lightweight workflow.
 7. For database workflows, inspect the prerequisite evaluation job before the deploy job.
-8. For Docker changes, verify `docker-setup-check.yaml` specifically.
+8. Docker setup CI is paused; retained Docker steps are not current release gates.
 
 ## When You Add New Automation
 

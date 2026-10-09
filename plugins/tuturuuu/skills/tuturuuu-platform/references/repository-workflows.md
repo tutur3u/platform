@@ -4,15 +4,13 @@ Consult only the section relevant to the current task. Paths are repository-rela
 
 ## 4. Repository Map
 
-- `apps/web`: main Next.js App Router platform app on port `7803`. Current source
-  of truth; backend (API/route) logic is being migrated OUT of it into
-  `apps/backend`, and pages/frontend into `apps/tanstack-web`.
-- `apps/backend`: future Rust worker target (native Docker + Cloudflare Workers)
-  that backend API routes are being prepared for handler-by-handler. It is not
-  currently deployed or used for production traffic. See its nested `AGENTS.md`.
-- `apps/tanstack-web`: TanStack Start frontend migration target that consumes the
-  future Rust backend through Start server functions / `packages/internal-api`
-  facades after cutover.
+- `apps/web`: maintained Next.js platform on port `7803`; live route owner
+  alongside the owning Next.js satellites.
+- `apps/backend` and `apps/tanstack-web`: paused Rust/TanStack Start source,
+  not in use. Do not run, update, or refresh them during ordinary app work.
+- Docker setup is inactive and the Docker cron runner is retired. Use the local
+  Mintlify CLI for docs and hosted Vercel/Cloudflare scheduler ownership; see
+  `apps/docs/build/devops/active-runtime.mdx`.
 - `apps/contacts`: `contacts.tuturuuu.com` satellite (port `7827`) that now owns
   the entire `workspace_users` CRM surface (`/[wsId]/users/*` + `workforce`).
   `apps/web` no longer has a users section. Shared logic lives in

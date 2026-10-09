@@ -1207,7 +1207,7 @@
   "appLockDelayTitle": "Lock after leaving",
   "appLockDisableReason": "Authenticate to turn off app lock.",
   "appLockEnableReason": "Authenticate to turn on app lock.",
-  "appLockLockedDescription": "Use your device PIN, fingerprint, or Face ID to continue.",
+  "appLockLockedDescription": "Use biometrics or your device passcode in the system prompt to continue.",
   "appLockLockedTitle": "Tuturuuu is locked",
   "appLockProtectedDevice": "Protected on this device",
   "appLockSettingsDescription": "Require Face ID, fingerprint, or device PIN before using the app.",
@@ -4512,5 +4512,8 @@
   "assistantMemoryEditMissing": "This memory is no longer available.",
   "assistantMemoryEditAuditWarning": "Your changes are saved, but the activity record could not be confirmed. Do not save them again.",
   "assistantMemoryReviewLatest": "Review latest version",
-  "assistantMemorySaveChanges": "Save my changes"
+  "assistantMemorySaveChanges": "Save my changes",
+  "notificationsReadCleanupUnavailable": "Read accepted. Some system notifications could not be dismissed.",
+  "notificationsReadRefreshUnavailable": "Read accepted. The inbox could not refresh. Pull to refresh.",
+  "notificationsReadError": "Could not accept the read action. Try again."
 }

@@ -5,6 +5,7 @@ import {
 } from '@aws-sdk/client-ses';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SESEmailProvider } from '../ses';
+import { UNKNOWN_DELIVERY_ERROR } from '../ses-delivery-outcome';
 
 // Mock AWS SDK
 vi.mock('@aws-sdk/client-ses', () => {
@@ -41,6 +42,12 @@ describe('SESEmailProvider', () => {
   });
 
   describe('send', () => {
+    beforeEach(() => {
+      // Sends have one attempt; quota/credential reads retain the other client.
+      mockSend = (
+        provider as unknown as { sendClient: { send: typeof mockSend } }
+      ).sendClient.send;
+    });
     const defaultParams = {
       source: 'sender@example.com',
       recipients: {
@@ -104,25 +111,42 @@ describe('SESEmailProvider', () => {
     });
 
     it('should handle SES specific errors', async () => {
-      const error = new Error('Message rejected');
-      error.name = 'MessageRejected';
+      const error = Object.assign(new Error('Private synthetic rejection'), {
+        name: 'MessageRejected',
+        $metadata: { httpStatusCode: 400 },
+      });
       mockSend.mockRejectedValueOnce(error);
 
       const result = await provider.send(defaultParams);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Email rejected');
+      expect(result).toMatchObject({
+        deliveryOutcome: 'rejected',
+        httpStatus: 400,
+        error: 'Email provider rejected the delivery.',
+      });
+      expect(JSON.stringify(result)).not.toContain('Private synthetic');
     });
 
     it('should handle unverified domain errors', async () => {
-      const error = new Error('Domain not verified');
-      error.name = 'MailFromDomainNotVerifiedException';
+      const error = Object.assign(
+        new Error('Private synthetic domain detail'),
+        {
+          name: 'MailFromDomainNotVerifiedException',
+          $metadata: { httpStatusCode: 400 },
+        }
+      );
       mockSend.mockRejectedValueOnce(error);
 
       const result = await provider.send(defaultParams);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Sender domain not verified');
+      expect(result).toMatchObject({
+        deliveryOutcome: 'rejected',
+        httpStatus: 400,
+        error: 'Email provider rejected the delivery.',
+      });
+      expect(JSON.stringify(result)).not.toContain('Private synthetic');
     });
 
     it('should handle unknown errors', async () => {
@@ -131,7 +155,11 @@ describe('SESEmailProvider', () => {
       const result = await provider.send(defaultParams);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Unknown error');
+      expect(result).toMatchObject({
+        deliveryOutcome: 'unknown',
+        error: UNKNOWN_DELIVERY_ERROR,
+      });
+      expect(JSON.stringify(result)).not.toContain('Unknown error');
     });
 
     it('should handle CC and BCC recipients', async () => {

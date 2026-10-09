@@ -6,10 +6,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/features/assistant/cubit/assistant_personal_settings_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_personal_settings_repository.dart';
+import 'package:mobile/features/assistant/view/assistant_settings_editor_page.dart';
 import 'package:mobile/features/assistant/widgets/assistant_memory_editor.dart';
 import 'package:mobile/features/assistant/widgets/assistant_personality_editor.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
-import 'package:mobile/features/settings/view/settings_scoped_sheet.dart';
+import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:share_plus/share_plus.dart';
@@ -40,15 +42,20 @@ class _AssistantPersonalSettingsSectionState
   @override
   void initState() {
     super.initState();
-    final owner = widget.repository?.ownerId ?? currentCacheUserId();
+    final provided = context.read<AssistantPersonalSettingsRepository?>();
+    final repository = widget.repository ?? provided;
+    final owner = repository?.ownerId ?? currentCacheUserId();
     if (owner == null) return;
     _cubit = AssistantPersonalSettingsCubit(
       workspaceId: widget.workspaceId,
       repository:
-          widget.repository ??
-          AssistantPersonalSettingsRepository(ownerId: owner),
+          repository ?? AssistantPersonalSettingsRepository(ownerId: owner),
       isScopeCurrent: widget.isScopeCurrent,
-      currentUserId: widget.currentUserId,
+      currentUserId:
+          widget.currentUserId ??
+          (provided == null
+              ? null
+              : () => context.read<AuthCubit?>()?.state.user?.id),
     );
     unawaited(_cubit!.load());
   }
@@ -118,11 +125,15 @@ class _AssistantPersonalSettingsSectionState
                 subtitle: Text(snapshot.soul.name),
                 trailing: const Icon(Icons.chevron_right),
                 enabled: !state.busy,
-                onTap: () => showScopedSettingsSheet<void>(
-                  context: context,
-                  builder: (_) => AssistantPersonalityEditor(
-                    cubit: cubit,
-                    soul: snapshot.soul,
+                onTap: () => pushScopedSettingsPage(
+                  context,
+                  rootNavigator: true,
+                  builder: (_, isCurrent) => AssistantSettingsEditorPage(
+                    title: l.assistantPersonalityTitle,
+                    child: AssistantPersonalityEditor(
+                      cubit: cubit,
+                      isScopeCurrent: () => isCurrent() && cubit.admitted,
+                    ),
                   ),
                 ),
               ),
@@ -166,12 +177,19 @@ class _AssistantPersonalSettingsSectionState
                       ),
                       onTap: state.busy
                           ? null
-                          : () => showScopedSettingsSheet<void>(
-                              context: context,
-                              builder: (_) => AssistantMemoryEditor(
-                                settings: cubit,
-                                memoryId: item.id,
-                              ),
+                          : () => pushScopedSettingsPage(
+                              context,
+                              rootNavigator: true,
+                              builder: (_, isCurrent) =>
+                                  AssistantSettingsEditorPage(
+                                    title: l.assistantMemoryEditTitle,
+                                    child: AssistantMemoryEditor(
+                                      settings: cubit,
+                                      memoryId: item.id,
+                                      showTitle: false,
+                                      isScopeCurrent: isCurrent,
+                                    ),
+                                  ),
                             ),
                       trailing: IconButton(
                         tooltip: l.commonDelete,

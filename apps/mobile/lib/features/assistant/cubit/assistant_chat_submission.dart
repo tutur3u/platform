@@ -135,6 +135,14 @@ extension _AssistantChatSubmission on AssistantChatCubit {
         (isCurrent?.call() ?? true);
     if (!current() || _queue.isEmpty) return;
 
+    var phase = OperationalPhase.assistantCreate;
+    var reportedFailure = false;
+    void reportFailure(Object error) {
+      if (!current() || reportedFailure) return;
+      reportedFailure = true;
+      _operationalReporter.report(phase, error);
+    }
+
     try {
       final unique = <String>[];
       for (final item in _queue) {
@@ -168,6 +176,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
         if (!current()) return;
         chat = created;
         chatId = created.id;
+        phase = OperationalPhase.assistantPreferencePersist;
         await _preferences.saveChatId(wsId, chatId, shouldWrite: current);
         if (!current()) return;
         _emitIfOpen(state.copyWith(chat: created, storedChatId: chatId));
@@ -213,6 +222,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
       _activeReasoningBlockId = null;
 
       if (!current()) return;
+      phase = OperationalPhase.assistantReply;
       _streamSubscription = _repository
           .streamChat(
             chatId: chatId,
@@ -229,6 +239,14 @@ extension _AssistantChatSubmission on AssistantChatCubit {
           .listen(
             (event) {
               if (current()) {
+                // Protocol errors lack a trustworthy persistence/status code.
+                // Report the reply phase without interpreting server text.
+                if (!reportedFailure &&
+                    event is AssistantJsonStreamEvent &&
+                    event.payload['type'] == 'error') {
+                  reportedFailure = true;
+                  _operationalReporter.reportStreamFailure();
+                }
                 _handleStreamEvent(
                   event,
                   isCurrent: current,
@@ -238,6 +256,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
             },
             onError: (Object error, StackTrace stackTrace) {
               if (!current()) return;
+              reportFailure(error);
               _emitIfOpen(
                 state.copyWith(
                   messages: _withoutEmptyAssistantReply(
@@ -265,6 +284,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
           );
     } on Exception catch (error) {
       if (!current()) return;
+      reportFailure(error);
       _emitIfOpen(
         state.copyWith(
           messages: _withoutEmptyAssistantReply(

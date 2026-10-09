@@ -19,15 +19,9 @@ import {
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
 import ReportPreview from '@tuturuuu/ui/custom/report-preview';
-import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
-import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import {
-  MAX_MONTHLY_REPORT_TEXT_LENGTH,
-  MAX_MONTHLY_REPORT_TITLE_LENGTH,
-} from '@tuturuuu/users-core/features/reports/report-limits';
 import { getWorkspaceUserArchiveState } from '@tuturuuu/users-core/reports/user-archive';
 import { RejectDialog } from '@tuturuuu/users-ui/components/reject-dialog';
 import ScoreDisplay from '@tuturuuu/users-ui/components/score-display';
@@ -43,13 +37,15 @@ import {
   useMemo,
   useState,
 } from 'react';
-import * as z from 'zod';
 import UserFeedbackSection from '../../groups/[groupId]/reports/user-feedback-section';
 import { ReportBasicInfoDialog } from './basic-info-dialog';
 import { DeleteReportDialog } from './components/delete-report-dialog';
 import { ReportActions } from './components/report-actions';
 import { ReportHistory } from './components/report-history';
-import { useReportDraftSync } from './hooks/use-report-draft-sync';
+import { useReportReviewForm } from './hooks/use-report-review-form';
+
+export { UserReportFormSchema } from './hooks/use-report-review-form';
+
 import { useReportDynamicText } from './hooks/use-report-dynamic-text';
 import { useReportExport } from './hooks/use-report-export';
 import { useReportHistory } from './hooks/use-report-history';
@@ -62,12 +58,6 @@ import {
   shouldBlockReportExport,
   shouldShowPendingWatermark,
 } from './report-feature-flags';
-
-export const UserReportFormSchema = z.object({
-  title: z.string().max(MAX_MONTHLY_REPORT_TITLE_LENGTH),
-  content: z.string().max(MAX_MONTHLY_REPORT_TEXT_LENGTH),
-  feedback: z.string().max(MAX_MONTHLY_REPORT_TEXT_LENGTH),
-});
 
 export default function EditableReportPreview({
   wsId,
@@ -166,29 +156,14 @@ export default function EditableReportPreview({
 
   const defaultReportTitle = isNew ? getDefaultReportTitle() : '';
 
-  const formValues = useMemo(() => {
-    const reportTitle = report?.title || '';
-    return {
-      title: reportTitle || defaultReportTitle,
-      content: report?.content || '',
-      feedback: report?.feedback || '',
-    };
-  }, [report?.title, report?.content, report?.feedback, defaultReportTitle]);
-
-  const form = useForm({
-    resolver: zodResolver(UserReportFormSchema),
-    defaultValues: formValues,
-  });
-
-  useReportDraftSync(
-    form,
-    [wsId, report.id, report.user_id, report.group_id],
-    formValues
-  );
-
-  const title = useWatch({ control: form.control, name: 'title' });
-  const content = useWatch({ control: form.control, name: 'content' });
-  const feedback = useWatch({ control: form.control, name: 'feedback' });
+  const { form, title, content, feedback, approvalBlockedReason } =
+    useReportReviewForm({
+      wsId,
+      report,
+      defaultReportTitle,
+      historical: Boolean(selectedLog),
+      saving: createMutation.isPending || updateMutation.isPending,
+    });
 
   const parseDynamicText = useReportDynamicText({
     userName: report.user_name,
@@ -655,7 +630,10 @@ export default function EditableReportPreview({
             canApproveReports={canApproveReports}
             isNew={isNew}
             approvalStatus={report.report_approval_status}
-            onApprove={() => approveMutation.mutate()}
+            approvalBlockedReason={approvalBlockedReason()}
+            onApprove={() => {
+              if (!approvalBlockedReason()) approveMutation.mutate();
+            }}
             onReject={() => setShowRejectDialog(true)}
             isApproving={approveMutation.isPending}
             isRejecting={rejectMutation.isPending}

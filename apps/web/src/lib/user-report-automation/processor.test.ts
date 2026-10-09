@@ -78,6 +78,7 @@ function createAdminClientStub(
   writeResults: Record<string, Result> = {}
 ) {
   const writes: Write[] = [];
+  const rpcCalls: string[] = [];
   const reads: Record<string, Result> = {
     external_user_monthly_reports: { data: APPROVED_REPORT, error: null },
     sent_emails: { data: null, error: null },
@@ -131,9 +132,13 @@ function createAdminClientStub(
     return proxy;
   };
 
+  let emailClaimed = false;
   const privateSchema = {
     from: (table: string) => makeBuilder(table),
     rpc: (name: string, args: Record<string, unknown>) => {
+      rpcCalls.push(name);
+      if (name === 'periodic_report_delivery_contract_ready')
+        return Promise.resolve({ data: true, error: null });
       if (name === 'finish_periodic_report_email') {
         if (reads.finish_periodic_report_email)
           return Promise.resolve(reads.finish_periodic_report_email);
@@ -174,23 +179,12 @@ function createAdminClientStub(
         });
         return Promise.resolve({ data: true, error: null });
       }
-      return Promise.resolve(
-        name === 'claim_periodic_report_emails'
-          ? {
-              data:
-                runs.length ||
-                ['sent', 'blocked', 'cancelled'].includes(
-                  String(
-                    writesFor(writes, 'user_report_email_queue').at(-1)?.payload
-                      .status
-                  )
-                )
-                  ? []
-                  : [{ ...QUEUE_ROW }],
-              error: null,
-            }
-          : { data: runs, error: null }
-      );
+      if (name === 'claim_periodic_report_emails') {
+        const data = emailClaimed || runs.length ? [] : [{ ...QUEUE_ROW }];
+        emailClaimed = true;
+        return Promise.resolve({ data, error: null });
+      }
+      return Promise.resolve({ data: runs, error: null });
     },
   };
 
@@ -200,6 +194,7 @@ function createAdminClientStub(
       schema: () => privateSchema,
     },
     writes,
+    rpcCalls,
   };
 }
 
@@ -227,6 +222,26 @@ describe('periodic report email delivery', () => {
     isEmailBlacklisted.mockResolvedValue(false);
     fromWorkspace.mockResolvedValue({ send });
     send.mockResolvedValue({ messageId: 'provider-1', success: true });
+  });
+
+  it('settles email leases before claiming the single generation batch', async () => {
+    const { client, rpcCalls } = createAdminClientStub();
+    const result = await processPeriodicReportAutomation(
+      client as never,
+      'worker'
+    );
+    expect(result).toMatchObject({
+      processedEmails: 1,
+      emailBatches: 1,
+      emailDrainStopReason: 'queue_empty',
+      processedRuns: 0,
+    });
+    expect(rpcCalls.indexOf('claim_periodic_report_runs')).toBeGreaterThan(
+      rpcCalls.lastIndexOf('finish_periodic_report_email')
+    );
+    expect(
+      rpcCalls.filter((name) => name === 'claim_periodic_report_runs')
+    ).toHaveLength(1);
   });
 
   it('does not claim or send email before completion tracking is available', async () => {

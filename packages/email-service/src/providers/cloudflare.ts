@@ -105,6 +105,7 @@ export class CloudflareEmailProvider extends BaseEmailProvider {
     if (recipientCount > CLOUDFLARE_MAX_RECIPIENTS) {
       return {
         success: false,
+        deliveryOutcome: 'rejected',
         error: `Cloudflare supports at most ${CLOUDFLARE_MAX_RECIPIENTS} combined recipients`,
       };
     }
@@ -113,10 +114,12 @@ export class CloudflareEmailProvider extends BaseEmailProvider {
     if (attachments.length > CLOUDFLARE_MAX_ATTACHMENTS) {
       return {
         success: false,
+        deliveryOutcome: 'rejected',
         error: `Cloudflare supports at most ${CLOUDFLARE_MAX_ATTACHMENTS} attachments`,
       };
     }
 
+    let requestStarted = false;
     try {
       const sanitizedHtml = await this.sanitizeHtml(params.content.html);
       const sanitizedParams = {
@@ -126,33 +129,35 @@ export class CloudflareEmailProvider extends BaseEmailProvider {
       if (estimateMessageSize(sanitizedParams) > CLOUDFLARE_MAX_MESSAGE_BYTES) {
         return {
           success: false,
+          deliveryOutcome: 'rejected',
           error: 'Cloudflare message exceeds the 5 MiB outbound limit',
         };
       }
 
-      const response = await fetch(
-        `${this.apiBaseUrl}/accounts/${encodeURIComponent(this.accountId)}/email/sending/send`,
-        {
-          body: JSON.stringify({
-            attachments: attachments.map(encodeAttachment),
-            bcc: params.recipients.bcc,
-            cc: params.recipients.cc,
-            from: params.source,
-            headers: params.content.headers,
-            html: sanitizedHtml,
-            reply_to: params.content.replyTo,
-            subject: params.content.subject,
-            text:
-              params.content.text ?? this.htmlToPlainText(params.content.html),
-            to: params.recipients.to,
-          }),
-          headers: {
-            Authorization: `Bearer ${this.apiToken}`,
-            'Content-Type': 'application/json',
-          },
-          method: 'POST',
-        }
-      );
+      const requestUrl = `${this.apiBaseUrl}/accounts/${encodeURIComponent(this.accountId)}/email/sending/send`;
+      const request = {
+        body: JSON.stringify({
+          attachments: attachments.map(encodeAttachment),
+          bcc: params.recipients.bcc,
+          cc: params.recipients.cc,
+          from: params.source,
+          headers: params.content.headers,
+          html: sanitizedHtml,
+          reply_to: params.content.replyTo,
+          subject: params.content.subject,
+          text:
+            params.content.text ?? this.htmlToPlainText(params.content.html),
+          to: params.recipients.to,
+        }),
+        headers: {
+          Authorization: `Bearer ${this.apiToken}`,
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+      };
+      // A thrown fetch cannot establish whether the provider accepted the send.
+      requestStarted = true;
+      const response = await fetch(requestUrl, request);
       const payload = (await response
         .json()
         .catch(() => null)) as CloudflareSendResponse | null;
@@ -160,6 +165,7 @@ export class CloudflareEmailProvider extends BaseEmailProvider {
       if (!response.ok || !payload?.success || !payload.result) {
         return {
           success: false,
+          deliveryOutcome: 'unknown',
           error: formatApiErrors(payload?.errors),
           httpStatus: response.status,
           rawResponse: payload,
@@ -177,6 +183,7 @@ export class CloudflareEmailProvider extends BaseEmailProvider {
       if (permanentBounces.length > 0 || !providerAccepted) {
         return {
           success: false,
+          deliveryOutcome: providerAccepted ? 'accepted' : 'unknown',
           error:
             permanentBounces.length > 0
               ? `Cloudflare permanently bounced ${permanentBounces.length} recipient(s)`
@@ -188,6 +195,7 @@ export class CloudflareEmailProvider extends BaseEmailProvider {
 
       return {
         success: true,
+        deliveryOutcome: 'accepted',
         httpStatus: response.status,
         messageId: payload.result.message_id,
         rawResponse: payload,
@@ -195,6 +203,7 @@ export class CloudflareEmailProvider extends BaseEmailProvider {
     } catch (error) {
       return {
         success: false,
+        deliveryOutcome: requestStarted ? 'unknown' : 'rejected',
         error:
           error instanceof Error
             ? error.message

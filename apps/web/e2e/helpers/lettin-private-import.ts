@@ -1,11 +1,13 @@
 import { type BrowserContext, expect } from '@playwright/test';
 import { runLettinBrowserPhase as importPhase } from './lettin-browser-phase';
 import { withLettinContextCleanup } from './lettin-context-cleanup';
+import type { LettinSessionRequestOptions } from './lettin-session';
 
 export async function verifyLettinPrivateImport(
   context: BrowserContext,
   origin: string,
-  workspaceId: string
+  workspaceId: string,
+  sessionOptions: LettinSessionRequestOptions
 ) {
   return withLettinContextCleanup(context, async () => {
     context.setDefaultTimeout(15_000);
@@ -63,9 +65,22 @@ export async function verifyLettinPrivateImport(
           ),
         })
     );
-    await importPhase('review canonical export', () =>
-      dialog.getByRole('button', { name: 'Review import', exact: true }).click()
-    );
+    await importPhase('review canonical export', async () => {
+      const [response] = await Promise.all([
+        page.waitForResponse(
+          (response) =>
+            response
+              .url()
+              .endsWith(`/api/v1/workspaces/${workspaceId}/lettin/exocorpse`) &&
+            response.request().method() === 'POST',
+          { timeout: 45_000 }
+        ),
+        dialog
+          .getByRole('button', { name: 'Review import', exact: true })
+          .click(),
+      ]);
+      expect(response.status()).toBe(200);
+    });
     await importPhase('confirm canonical preview', async () => {
       await expect(
         dialog.getByText('Synthetic imported hero', { exact: true })
@@ -86,7 +101,10 @@ export async function verifyLettinPrivateImport(
       const id = new URL(page.url()).pathname.split('/').at(-2);
       const published = await context.request.get(
         `${origin}/api/v1/lettin/worlds?worldId=${id}`,
-        { timeout: 30_000 }
+        {
+          timeout: 30_000,
+          ...sessionOptions(`${origin}/api/v1/lettin/worlds?worldId=${id}`),
+        }
       );
       expect(published.status()).toBe(200);
       expect(await published.json()).toEqual([]);

@@ -5,6 +5,8 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/config/app_flavor.dart';
+import 'package:mobile/core/observability/operational_error_reporter.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 /// Distinguish native plugin failures without reporting sensitive messages.
 String mobileCrashSignature(Object error) {
@@ -23,13 +25,26 @@ class MobileObservability {
   static final instance = MobileObservability._();
 
   static final _safeSource = RegExp(r'^[a-z][a-z0-9_]{0,39}$');
-  final _lastNonFatal = <String, DateTime>{};
+  final _nonFatalDeduplicator = BoundedFailureDeduplicator();
+  OperationalErrorReporter? _operationalReporter;
+  OperationalErrorReporter get operationalReporter => _operationalReporter ??=
+      OperationalErrorReporter(sink: _recordOperational);
   bool _enabled = false;
 
   Future<void> initialize(AppFlavor flavor) async {
     final enabled = flavor == AppFlavor.production;
     await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(enabled);
     _enabled = enabled;
+    try {
+      final package = await PackageInfo.fromPlatform();
+      _operationalReporter = OperationalErrorReporter(
+        sink: _recordOperational,
+        appVersion: package.version,
+        appBuild: package.buildNumber,
+      );
+    } on Object catch (_) {
+      // Release metadata may be unavailable; never use plugin error contents.
+    }
     try {
       await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(enabled);
     } on Object catch (error) {
@@ -49,13 +64,7 @@ class MobileObservability {
     final code = _code(source);
     if (!_enabled) return;
     final key = '$code:${mobileCrashSignature(error)}';
-    final now = DateTime.now();
-    final previous = _lastNonFatal[key];
-    if (previous != null &&
-        now.difference(previous) < const Duration(minutes: 5)) {
-      return;
-    }
-    _lastNonFatal[key] = now;
+    if (!_nonFatalDeduplicator.admit(key)) return;
     unawaited(_record(code, error, stack, fatal: false));
   }
 
@@ -72,6 +81,25 @@ class MobileObservability {
       FirebaseAnalytics.instance
           .logEvent(name: event, parameters: {'media': safeMedia})
           .catchError((Object _) {}),
+    );
+  }
+
+  Future<void> _recordOperational(OperationalErrorEvent event) async {
+    if (!_enabled) return;
+    // The SDK replaces null/empty stacks with StackTrace.current. Supply one
+    // fixed synthetic frame instead; no captured stack or payload reaches it.
+    final stack = StackTrace.fromString(
+      '#0 MobileOperationalFailure.report '
+      '(package:mobile/core/observability/mobile_observability.dart:1:1)',
+    );
+    await FirebaseCrashlytics.instance.recordError(
+      StateError('mobile_operational:${event.phase.name}:${event.kind.name}'),
+      stack,
+      reason: 'mobile_operational',
+      information: event.fields.entries.map(
+        (entry) => '${entry.key}=${entry.value}',
+      ),
+      printDetails: false,
     );
   }
 
