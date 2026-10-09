@@ -33,6 +33,7 @@ export const ci = {
   'lettin-cloudflare.yaml': true,
   'meet-cloudflare.yaml': true,
   'parley-cloudflare.yaml': true,
+  'parley-offline-diagnostic.yaml': true,
   'mobile.yaml': true,
   'production-package-resume.yaml': true,
   'release-ai-package.yaml': true,
