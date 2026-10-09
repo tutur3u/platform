@@ -8418,10 +8418,12 @@
     "unnamed_board": "Untitled Board"
   },
   "task-plan": {
+    "attachProject": "Associate with an existing project",
     "attachSource": "Attach the private Lettin notebook reference",
     "board": "Board",
     "chooseBoard": "Choose a board",
     "chooseList": "Choose a list",
+    "chooseProject": "Choose a project",
     "create": "Create task",
     "created": "Task created.",
     "createFailed": "Task creation could not be confirmed. Your task may already exist. Check the selected board before starting another task. This form is preserved and cannot be submitted again.",
@@ -8433,6 +8435,7 @@
     "loading": "Loading boards…",
     "name": "Task name",
     "noBoards": "No boards are available in this workspace.",
+    "noProjects": "No projects are available. Leave project association unchecked to continue.",
     "openBoards": "Open task boards",
     "openTask": "Open task",
     "priority": "Priority",
@@ -8444,6 +8447,10 @@
       "normal": "Normal"
     },
     "priorityUnspecified": "No priority",
+    "project": "Project",
+    "projectConsent": "Optional. Choose a project in this workspace under its existing access rules. This does not share your notebook or create a project.",
+    "projectsFailed": "Unable to load projects. Retry or leave project association unchecked to create without a project.",
+    "projectsLoading": "Loading projects…",
     "retry": "Retry",
     "reviewSource": "Review the notebook reference",
     "sourceConsent": "This copies only the notebook link into the task description for people who can access this task. It does not grant notebook access or copy its content. Leave unchecked to create a task without a source link.",

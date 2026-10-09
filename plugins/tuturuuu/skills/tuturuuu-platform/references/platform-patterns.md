@@ -25,7 +25,10 @@ shared-package changes.
   consent and a clear statement that the link grants no source access. Keep
   source-reading and publication operations separate. Optional destination fields
   should use the canonical API enum and require a creator choice rather than
-  deriving values from private source content. See the
+  deriving values from private source content. Load optional destination choices
+  only after opt-in, validate selection against the current read, and let users
+  explicitly omit the optional association when that read fails. Canonical API
+  authorization remains the final write boundary. See the
   [Lettin product decision](../../../../../apps/docs/platform/features/lettin.mdx).
 
 - For a customer-facing behavior fix that spans apps, trace the setting from its
