@@ -3,6 +3,7 @@ import { ArrowUpRight, BookOpen, Network } from '@tuturuuu/icons';
 import type { LettinRecord } from '@tuturuuu/internal-api/lettin';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
+import { ContentNotice } from './content-notice';
 import {
   relationshipEdges,
   timelineEntries,
@@ -141,6 +142,7 @@ function EntryCards({
           disabled={disabled}
           onClick={() => onSelect(entry.id)}
         >
+          <ContentNotice notice={entry.draft.contentNotice} />
           {entry.draft.image && (
             // biome-ignore lint/performance/noImgElement: Artwork access is revocable.
             <img
