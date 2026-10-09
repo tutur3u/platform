@@ -36,7 +36,8 @@ vi.mock('@tanstack/react-query', () => ({
   useQuery: () => ({ data, isPending: false, isError: false }),
 }));
 vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string) => key,
+  useTranslations: () => (key: string, values?: { count?: number }) =>
+    values?.count === undefined ? key : `${key}:${values.count}`,
   useLocale: () => 'en',
 }));
 vi.mock('@tuturuuu/ui/button', () => ({
@@ -104,6 +105,19 @@ it('filters saved studio drafts, restores all and opens the matching record', as
       <WorldStudio wsId="workspace" worldId="notebook" section="characters" />
     )
   );
+  const summary = () =>
+    container.querySelector('[aria-label="workProgressSummary"]')!.textContent;
+  const initialSummary = summary();
+  expect(
+    [
+      ...container.querySelectorAll('[aria-label="workProgressSummary"] dd'),
+    ].map((dd) => dd.textContent)
+  ).toEqual([
+    'workProgressSummaryCount:1',
+    'workProgressSummaryCount:1',
+    'workProgressSummaryCount:0',
+    'workProgressSummaryCount:1',
+  ]);
   const results = () =>
     container.querySelector('[data-testid="results"]')!.textContent;
   expect(results()).toBe('OldAliceBob');
@@ -111,6 +125,7 @@ it('filters saved studio drafts, restores all and opens the matching record', as
   expect(results()).toBe('Old');
   await setProgress('ready');
   expect(results()).toBe('Bob');
+  expect(summary()).toBe(initialSummary);
   await setProgress('all');
   expect(results()).toBe('OldAliceBob');
   await setProgress('drafting');

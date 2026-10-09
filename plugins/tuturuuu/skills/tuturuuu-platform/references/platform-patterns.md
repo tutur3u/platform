@@ -695,3 +695,14 @@ publication plus historical JSON, revocation and workspace fences. Compose studi
 filters over saved authorized records, preserve search, and explicitly document
 whether relationship filters require both endpoints. Never infer publication from
 a readiness label or add it to public profiles.
+
+
+### Private saved-stage summaries
+
+Derive organization counts from the already-authorized saved notebook entries,
+not the editor buffer or published records. Keep the summary dataset separate
+from browsing facets, count historical missing stages using the documented
+Unstarted default, and show zero stages. Explain that Ready is authored progress
+rather than publication or completion evidence. Do not persist computed metrics
+or extend public projections. Lettin's bilingual summary and studio filter
+regressions preserve these boundaries.
