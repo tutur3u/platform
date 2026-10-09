@@ -69,3 +69,8 @@ workspace-scoped API work.
   reads.
 - For JSON columns, transform parsed Zod payloads into the repo `Json` shape so
   typed Supabase builders accept them.
+
+- Full-schema SQL fixtures must account for trigger-created rows. Workspace
+  insertion creates its creator membership through `add_ws_creator`; reuse and
+  assert that membership rather than inserting it again in later scenarios.
+  Keep an explicit assertion when membership is part of permission admission.

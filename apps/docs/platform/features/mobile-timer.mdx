@@ -98,6 +98,9 @@ baseline intentionally leaves writer closure **open**: the new operation cannot
 become authoritative until legacy direct writes, bypass RPCs and every lifecycle
 caller use a consistent boundary. CI executes real pgTAP and two-connection CAS,
 replay and shared-scope contention tests with actual type generation and cleanup.
+The replacement pgTAP fixture reuses the workspace creator membership inserted
+by `add_ws_creator`, and checks it again before the edit-threshold scenario.
+It must not insert that same membership a second time.
 
 Shared phase/settings, pause/resume/skip, deadline reconciliation, cross-client
 realtime and background notification behavior remain separate prerequisites.

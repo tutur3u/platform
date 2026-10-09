@@ -180,7 +180,8 @@ select is((select revision from private.time_tracker_operation_scopes where ws_i
 delete from public.workspace_members where ws_id=pg_temp.fid(90711) and user_id=pg_temp.fid(90701);
 select throws_ok($q$select pg_temp.replace(0,null,90733)$q$,'42501','Insufficient permissions','membership removal denies old replay');
 -- Positive edit threshold must not prevent closing already-running work.
-insert into public.workspace_members(ws_id,user_id,type) values(pg_temp.fid(90712),pg_temp.fid(90702),'MEMBER');
+-- Reuse the creator membership established and asserted during setup.
+select is((select type::text from public.workspace_members where ws_id=pg_temp.fid(90712) and user_id=pg_temp.fid(90702)),'MEMBER','edit-threshold scope retains its creator membership');
 select private.configure_time_tracker_control(pg_temp.fid(90712),pg_temp.fid(90702),0,pg_temp.fid(90790),pg_temp.config());
 insert into public.workspace_settings(ws_id,missed_entry_date_threshold) values(pg_temp.fid(90712),null)
  on conflict(ws_id) do update set missed_entry_date_threshold=null;
