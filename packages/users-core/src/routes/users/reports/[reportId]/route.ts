@@ -97,7 +97,7 @@ export async function PUT(request: Request, context: Params) {
     const [existing, configResult] = await Promise.all([
       privateDb
         .from('external_user_monthly_reports_workspace_view')
-        .select('id, generation_mode')
+        .select('id, user_id, group_id, generation_mode')
         .eq('id', reportId)
         .eq('user_ws_id', wsId)
         .maybeSingle(),
@@ -211,11 +211,48 @@ export async function PUT(request: Request, context: Params) {
       }
     }
 
-    const result = await privateDb
+    const mutation = privateDb
       .from('external_user_monthly_reports')
       .update(updatePayload)
       .eq('id', reportId);
-    if (result.error) throw result.error;
+    if (!approvalTouched) {
+      const { user_id: userId, group_id: groupId } = existing.data;
+      if (
+        existing.data.id !== reportId ||
+        typeof userId !== 'string' ||
+        !userId ||
+        typeof groupId !== 'string' ||
+        !groupId
+      ) {
+        return NextResponse.json(
+          { message: 'Report save was not acknowledged' },
+          { status: 409 }
+        );
+      }
+      const result = await mutation
+        .eq('user_id', userId)
+        .eq('group_id', groupId)
+        .select('id, user_id, group_id');
+      if (result.error) throw result.error;
+      const saved =
+        Array.isArray(result.data) && result.data.length === 1
+          ? result.data[0]
+          : null;
+      if (
+        !saved ||
+        saved.id !== reportId ||
+        saved.user_id !== userId ||
+        saved.group_id !== groupId
+      ) {
+        return NextResponse.json(
+          { message: 'Report save was not acknowledged' },
+          { status: 409 }
+        );
+      }
+    } else {
+      const result = await mutation;
+      if (result.error) throw result.error;
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     if (isReportDeliveryLocked(error))
