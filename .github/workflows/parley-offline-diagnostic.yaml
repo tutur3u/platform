@@ -37,7 +37,13 @@ jobs:
         run: |
           test "$RUNNER_ENVIRONMENT" = github-hosted
           sudo -n unshare --mount --net --propagation private true
-          systemctl is-system-running || test "$(systemctl is-system-running)" = degraded
+          manager_status=0
+          manager_state="$(timeout --signal=TERM --kill-after=2s 20s systemctl --wait is-system-running)" || manager_status=$?
+          printf 'systemd state: %s\n' "$manager_state"
+          case "$manager_state:$manager_status" in
+            running:0|degraded:1) ;;
+            *) exit 1 ;;
+          esac
       - name: Check out immutable tooling manifest
         if: steps.gate.outputs.should_run == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

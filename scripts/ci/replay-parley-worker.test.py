@@ -204,6 +204,41 @@ class Safeguards(unittest.TestCase):
         self.assertEqual(result["httpStatus"], 302)
         connection.close.assert_called_once()
 
+    def run_isolation_step(self, state, status=0, timeout_status=0):
+        workflow = Path(__file__).parents[2] / ".github/workflows/parley-offline-diagnostic.yaml"
+        text = workflow.read_text().split("      - name: Check ephemeral runner isolation\n", 1)[1]
+        block = text.split("        run: |\n", 1)[1].split("      - name:", 1)[0]
+        script = "\n".join(line[10:] for line in block.splitlines())
+        with tempfile.TemporaryDirectory() as parent:
+            root = Path(parent)
+            stubs = {
+                "sudo": '#!/bin/bash\n[[ "$*" == "-n unshare --mount --net --propagation private true" ]]\n',
+                "timeout": '#!/bin/bash\n[[ "$1 $2 $3" == "--signal=TERM --kill-after=2s 20s" ]] || exit 97\n[[ "$MOCK_TIMEOUT_STATUS" == 0 ]] || exit "$MOCK_TIMEOUT_STATUS"\nshift 3\nexec "$@"\n',
+                "systemctl": '#!/bin/bash\nif [[ "$*" == "--wait is-system-running" ]]; then printf "%s\\n" "$MOCK_STATE"; exit "$MOCK_STATUS"; fi\nprintf "starting\\n"\nexit 1\n',
+            }
+            for name, source in stubs.items():
+                path = root / name
+                path.write_text(source)
+                path.chmod(0o700)
+            return subprocess.run(["/bin/bash", "-e", "-c", script], capture_output=True, text=True,
+                                  env={"PATH": f"{root}:/usr/bin:/bin", "RUNNER_ENVIRONMENT": "github-hosted",
+                                       "MOCK_STATE": state, "MOCK_STATUS": str(status),
+                                       "MOCK_TIMEOUT_STATUS": str(timeout_status)})
+
+    def test_ephemeral_starting_manager_waits_for_running(self):
+        result = self.run_isolation_step("running")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("systemd state: running", result.stdout)
+
+    def test_ephemeral_degraded_manager_preserves_supported_state(self):
+        self.assertEqual(self.run_isolation_step("degraded", 1).returncode, 0)
+
+    def test_ephemeral_unready_timeout_and_malformed_state_stop(self):
+        for state, status, timeout_status in (("starting", 1, 0), ("offline", 1, 0),
+                                               ("running", 1, 0), ("running", 0, 124)):
+            with self.subTest(state=state, status=status, timeout=timeout_status):
+                self.assertNotEqual(self.run_isolation_step(state, status, timeout_status).returncode, 0)
+
     def test_source_workflow_has_no_automatic_or_deploy_entry(self):
         workflow = Path(__file__).parents[2] / ".github/workflows/parley-offline-diagnostic.yaml"
         text = workflow.read_text()
