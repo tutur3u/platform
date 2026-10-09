@@ -135,6 +135,21 @@ jobs:
         timeout-minutes: 5
         run: bun apps/meet-realtime/tests/local-check.ts
       - run: node --experimental-strip-types --test apps/meet-realtime/src/check-endpoint.test.ts apps/meet-realtime/src/check-socket.test.ts apps/meet-realtime/src/turn-credentials.test.ts
+      - name: Check scoped realtime Vite+ tooling
+        working-directory: apps/meet-realtime
+        run: |
+          bun run lint
+          bun run format:check
+          bun run type-check
+      - name: Build the native realtime Worker candidate
+        working-directory: apps/meet-realtime
+        run: bun run build
+      - name: Verify emitted realtime Worker and SQLite routing
+        timeout-minutes: 2
+        working-directory: apps/meet-realtime
+        env:
+          MEET_REALTIME_TEST_CONFIG: dist/worker/wrangler.json
+        run: bun run test:runtime
       - run: bun x --no-install turbo run build --filter='@tuturuuu/meet-core^...' --concurrency=2
       - run: bun run test
         working-directory: packages/meet-core

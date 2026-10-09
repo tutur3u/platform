@@ -513,3 +513,11 @@ its historical manifest version remains frozen. Renovate also ignores the inacti
 runtime and Docker workflow files, in addition to the paused source/Dockerfiles.
 Policy tests guard these exclusions. Do not reactivate them indirectly during
 ordinary active-package release maintenance.
+
+For the native Meet realtime Vite+ workspace, keep the original production Wrangler
+entry and migration history intact while CI qualifies `dist/worker/wrangler.json`.
+Run emitted-config identity/binding checks and real SQLite routing probes after the
+native CI build, alongside the existing lifecycle/protocol integration gates. The
+initial configuration type-check and entry lint scope do not certify all retained
+service source. See the programming realtime runbook for fixture commands and
+hosted-media/cost/cutover boundaries.
