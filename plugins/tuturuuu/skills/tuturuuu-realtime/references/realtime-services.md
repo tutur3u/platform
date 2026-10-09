@@ -128,3 +128,23 @@ failure/recovery coverage and the isolated Worker/SQLite fixture documented in
 `programming-realtime-runbook.mdx`. Distinguish explicit handler invocation and
 stubbed provider failures from hosted alarm delivery and actual Drive saves.
 This offline bound does not certify live retry, media cleanup or account spending.
+
+## Meet Live compensation after termination
+
+Read the ended-session compensation section in
+`apps/docs/platform/features/meet-live-assistants.mdx` before changing Live alarm
+budgets. `session.ts` dispatches registry/room compensation and billing/context
+finalization independently after `ended`; stopping provider output does not stop
+all background obligations. The current cleanup helper arms before I/O and writes
+completion flags afterward without a finite durable attempt reservation or expiry.
+Registry failure or an ambiguous successful call can continue across restarts.
+
+Require a joint operation envelope, pre-I/O durable reservation, finite deadline,
+terminal pending state retaining unresolved obligations, authenticated recovery
+and durable stop checks before dispatch/rescheduling. Count registry RPCs, room
+requests, quota/usage calls, context-erasure work and written keys separately.
+Test duplicate/restart/clock/no-progress cases, pre- and post-I/O write failures,
+Stop/revocation races and real Worker/SQLite persistence. Do not truncate retries
+by dropping quota reservations, private deletion obligations or billing receipts.
+`session-cleanup.test.ts` covers independent compensation and confirmed completion,
+not a finite job budget or hosted shutdown guarantee. Keep that limitation visible.

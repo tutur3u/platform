@@ -129,6 +129,53 @@ Project-wide free allowances and Cloudflare Live Worker duration, storage, and
 requests are not fully allocated to individual meetings. Missing usage stays
 marked incomplete; these estimates do not replace provider invoices.
 
+## Ended-session compensation and retry safety
+
+Ending Live stops capture and provider output, but unresolved server obligations
+can still require work. The session retains registry removal, room release,
+quota settlement, usage reporting and private-context erasure independently.
+`cleanupEndedLiveSession` handles registry/room compensation while
+`finalizeSessionBilling` handles billing and context. The session alarm can invoke
+both after `ended` is persisted. A completed flag for one obligation does not
+prove completion of the others.
+
+The current registry/room helper arms a future alarm before I/O and persists
+completion flags afterward. It does not reserve a finite attempt count or job
+expiry before the registry call. Repeated registry failure can therefore keep
+scheduling work; a successful external operation followed by a failed progress
+write can replay after reconstruction. Persisted session termination alone is
+not an independent stop fence for this background work. The nominal one-minute
+retry interval is not a hard operation or spending cap: billing retries, duplicate
+invocations and restarts must be counted separately.
+
+This is an operating limitation, not permission to discard unresolved work.
+Approved memories, private-context deletion obligations, quota reservations and
+billing receipts must remain distinguishable and durable. Do not mark cleanup
+complete, delete recovery state or settle unknown usage as zero to stop retries.
+
+Before changing this path, require a joint compensation contract:
+
+- Reserve attempts and a finite job deadline durably before downstream work.
+  Persist each obligation's idempotent progress and stop automatic scheduling on
+  terminal completion or exhaustion while retaining unresolved obligations.
+- Bound downstream calls, response consumption and storage keys/rows per wake.
+  Include registry/room cleanup and independently scheduled billing/context work
+  in the operation envelope; an outer alarm cap alone is insufficient.
+- Provide authenticated recovery for pending obligations and a durable stop fence
+  checked before dispatch and rescheduling. Concurrent Stop, privacy revocation,
+  queued callbacks and billing retries must not replenish or bypass the budget.
+- Test duplicate alarms, reconstruction, clock boundaries, no progress, repeated
+  downstream failure, reservation-write failure and successful downstream work
+  followed by failed persistence. Count actual downstream calls and written keys,
+  and exercise the corresponding real Worker/SQLite storage boundaries.
+
+`packages/meet-core/src/features/live-assistant/session-cleanup.test.ts` verifies
+that registry failure does not prevent independent room cleanup and that confirmed
+completion stops later helper work. It does not establish finite retries,
+reschedule-race safety, billing bounds or hosted alarm behavior. Keep those gates
+explicit until their implementation and evidence exist. Billing alerts and
+per-invocation CPU limits do not establish a total-spend cap.
+
 ## Deployment and verification
 
 Apply the additive `meet_private_ai_memory` migration through the repository's
