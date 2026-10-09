@@ -690,3 +690,13 @@ source content or granting source access. Preserve public projection filtering
 so unavailable source references remain omitted. Clear inherited graph references and
 retain the existing same-notebook, artwork and atomic write fences. Test the
 private copy and later published projection independently with real local D1.
+
+
+### Explicit context facts in private copies
+
+Append context metadata only when explicitly requested, validate its bounded
+label/value and entry-kind scope, and preserve existing facts rather than matching
+or replacing labels. Respect the original collection limit. Keep source-link
+consent separate, read the saved source revision, and repeat actor/workspace/media
+fences in the atomic copy. Context copies never transfer grants or publication.
+Lettin's context-copy D1/UI regressions cover these boundaries.

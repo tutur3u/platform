@@ -1063,3 +1063,28 @@ workspace fences, and separate editor/publisher permissions.
 `duplicate-entry.test.tsx` covers explicit consent, reopening, failure and both
 language labels. Cross-notebook variants and canonical-context management remain
 outside this same-notebook reference workflow.
+
+
+### Explicit character context copies
+
+The private copy dialog offers an optional context for character entries. The
+field starts empty. An explicitly entered context appends one ordinary fact with
+the localized Context label to the new saved copy; existing facts, aliases,
+content, attribution, tags and gallery remain intact. Matching fact labels are
+not overwritten. Other entry kinds cannot accept a context, and the existing
+40-fact limit applies. Clear the context to make an ordinary copy at that limit.
+
+Copies use the saved source revision in the same notebook and workspace, including
+its existing actor, collaborator and artwork checks. The source remains unchanged;
+the copy has no published snapshot or transferred grants. Linking to the source is
+a separate unchecked option and never publishes either item. Context labels and
+values are ordinary authored creative content, not account profile data. This
+workflow does not establish cross-notebook canon, transfer ownership or create
+public context indexes; broader context management remains separate.
+
+Regression evidence: `character-context-copies.test.ts` exercises real local D1
+source/publication/artwork preservation, revision/workspace/actor denial,
+character scope and fact limits. `duplicate-entry.test.tsx` covers bilingual
+explicit context commands, source-link separation, retry and reset. Existing copy
+regressions retain quota, collaborator and media-retirement races. Exact-head CI
+and hosted dialog acceptance remain separate delivery gates.

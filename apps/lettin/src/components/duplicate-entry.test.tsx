@@ -82,13 +82,13 @@ afterEach(async () => {
   state.isPending = false;
   state.errorMessage = null;
 });
-async function render(disabled = false, onCreated = vi.fn()) {
+async function render(disabled = false, onCreated = vi.fn(), source = record) {
   await act(async () =>
     root.render(
       <DuplicateEntry
         wsId="workspace"
         worldId="notebook"
-        record={record}
+        record={source}
         disabled={disabled}
         onCreated={onCreated}
       />
@@ -232,3 +232,83 @@ it.each([en.lettin, viMessages.lettin])(
     expect(state.mutateAsync).not.toHaveBeenCalled();
   }
 );
+
+async function contextInput(value: string) {
+  await act(() => {
+    const input = container.querySelectorAll('input')[1]!;
+    Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      'value'
+    )!.set!.call(input, value);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+}
+it.each([en.lettin, viMessages.lettin])(
+  'adds only an explicitly entered localized character context, without opting into source linking',
+  async (messages) => {
+    state.messages = messages;
+    state.mutateAsync.mockResolvedValue({ id: 'copy' });
+    await render(false, vi.fn(), {
+      ...record,
+      draft: { ...record.draft, kind: 'character' },
+    });
+    expect(container.querySelectorAll('input')[1]?.value).toBe('');
+    expect(container.textContent).toContain(messages.copyCharacterContextHint);
+    await title('Variant');
+    await contextInput('  Alternate era  ');
+    await act(() => send());
+    expect(state.mutateAsync).toHaveBeenCalledWith({
+      action: 'duplicateEntry',
+      worldId: 'notebook',
+      entryId: 'source',
+      version: 7,
+      title: 'Variant',
+      contextFact: {
+        label: messages.copyCharacterContextFact,
+        value: 'Alternate era',
+      },
+    });
+  }
+);
+it('preserves context after a failed copy and clears it on a new confirmation', async () => {
+  state.mutateAsync.mockRejectedValueOnce(new Error('Conflict'));
+  await render(false, vi.fn(), {
+    ...record,
+    draft: { ...record.draft, kind: 'character' },
+  });
+  await title('Variant');
+  await contextInput('Private context');
+  await act(() => send());
+  expect(container.querySelectorAll('input')[1]?.value).toBe('Private context');
+  await act(() => state.onOpenChange(false));
+  await act(() => state.onOpenChange(true));
+  expect(container.querySelectorAll('input')[1]?.value).toBe('');
+});
+it('blocks context at 40 facts but still allows a normal private copy after clearing it', async () => {
+  const facts = Array.from({ length: 40 }, (_, i) => ({
+    label: String(i),
+    value: '',
+  }));
+  state.mutateAsync.mockResolvedValue({ id: 'copy' });
+  await render(false, vi.fn(), {
+    ...record,
+    draft: {
+      ...record.draft,
+      kind: 'character',
+      wiki: { aliases: [], facts, relationships: [] },
+    },
+  });
+  await title('Copy');
+  await contextInput('Context');
+  await act(() => send());
+  expect(state.mutateAsync).not.toHaveBeenCalled();
+  expect(container.querySelector('[role="alert"]')?.textContent).toBe(
+    'copyCharacterContextLimit'
+  );
+  await contextInput('');
+  await act(() => send());
+  expect(state.mutateAsync.mock.lastCall?.[0]).not.toHaveProperty(
+    'contextFact'
+  );
+  expect(state.mutateAsync.mock.lastCall?.[0]).not.toHaveProperty('linkSource');
+});
