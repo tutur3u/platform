@@ -102,6 +102,8 @@ it.each([en.lettin, viMessages.lettin])(
     await act(async () =>
       root.render(<PublicationPreview draft={draft} published={published} />)
     );
+    expect(container.textContent).toContain(messages.previewVersionHint);
+    expect(container.textContent).not.toContain(messages.previewHint);
     expect(documentText()).toContain('Private revised body');
     expect(documentText()).not.toContain('Published body');
     expect(
@@ -109,6 +111,8 @@ it.each([en.lettin, viMessages.lettin])(
     ).toBe(messages.previewVersion);
     await act(async () => snapshotButton().click());
     expect(snapshotButton().getAttribute('aria-pressed')).toBe('true');
+    expect(container.textContent).toContain(messages.previewVersionHint);
+    expect(container.textContent).not.toContain(messages.previewHint);
     expect(documentText()).toContain('Published title');
     expect(documentText()).toContain('Published body');
     expect(documentText()).toContain('Published warning');

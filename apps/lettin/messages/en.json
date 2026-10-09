@@ -867,6 +867,7 @@
     "previewPublishedSnapshot": "Published snapshot",
     "previewUnpublishedHint": "This record has no published snapshot. Previewing does not save or publish your edits.",
     "previewVersion": "Preview version",
+    "previewVersionHint": "Private preview of the selected version. Switching versions does not save or publish anything.",
     "previousPage": "Previous page",
     "privateBlacklist": "Your private blacklist",
     "privatePreview": "Private preview",

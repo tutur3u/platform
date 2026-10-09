@@ -33,7 +33,7 @@ export function PublicationPreview({
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{t('privatePreview')}</DialogTitle>
-          <DialogDescription>{t('previewHint')}</DialogDescription>
+          <DialogDescription>{t('previewVersionHint')}</DialogDescription>
         </DialogHeader>
         <fieldset aria-label={t('previewVersion')} className="flex gap-2">
           <Button

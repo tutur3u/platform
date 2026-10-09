@@ -1059,3 +1059,8 @@ edits versus saved content, credits/notices, unpublished records, refreshed and
 revoked snapshots, accessible selection and reset on reopening. Existing
 `entry-editor.test.tsx` and local D1 `storage.test.ts` preserve pending-save,
 revision-conflict and publication isolation coverage.
+
+Preview version guidance describes the selected version neutrally in both English
+and Vietnamese. It must not identify the published snapshot as the draft. The
+bilingual `publication-preview.test.tsx` regression checks the dialog description
+before and after switching versions as well as the version-specific status.
