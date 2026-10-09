@@ -6,6 +6,13 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- For public catalogue facets, filter the published snapshot in the authoritative
+  query before applying pagination and its next-page sentinel. Keep URL filters
+  through search and paging, and share bounded validation between the page and
+  API. Expanding a summary projection must still exclude unpublished drafts and
+  entry documents. Cover exact matching and snapshot isolation with the local
+  store fixture; see [Lettin discovery](../../../../../apps/docs/platform/features/lettin.mdx).
+
 - For a customer-facing behavior fix that spans apps, trace the setting from its
   writer through server-prefetched and client-only views, summary counts, and
   exports. Share the decision logic when possible, and record the scope, default,
@@ -543,3 +550,13 @@ fixture uses isolated configuration, loopback requests and no production binding
 its harness closes after tests. RPC handler invocation does not prove hosted alarm
 delivery or automatic retry semantics. See the Colab feature page for cost units
 and remaining acceptance evidence; release builds stay in CI.
+
+## Local D1 quota fixtures
+
+Seed large boundary datasets with a set-based SQL statement and assert the exact
+seed count before testing concurrent production mutations. Hundreds of separate
+prepared statements in a fixture batch can exhaust the per-test timeout under CI
+load without exercising more application behavior. Preserve the real mutation,
+quota race and cross-actor assertions; do not raise global timeouts or replace D1
+with mocks. Lettin's creator-bookmark quota regression uses 499 seeded references
+and two concurrent saves to verify the 500-reference boundary.

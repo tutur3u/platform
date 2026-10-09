@@ -17,7 +17,7 @@ export async function Brand() {
             {t('explore')}
           </Link>
           <Link className="lettin-nav-link" href="/saved">
-            {t('savedNotebooks')}
+            {t('savedLibrary')}
           </Link>
           <Link className="lettin-nav-link lettin-nav-studio" href="/dashboard">
             {t('studio')}
