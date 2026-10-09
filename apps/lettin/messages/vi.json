@@ -649,6 +649,8 @@
     "discardDraft": "Bỏ thay đổi",
     "discardDraftHint": "Thay đổi chưa lưu sẽ được thay bằng bản nháp đã lưu gần nhất.",
     "displayNameLimit": "Bạn có thể đổi tên hiển thị hai lần mỗi 7 ngày.",
+    "documentOutline": "Trên trang này",
+    "documentOutlineLimit": "Hiển thị {count} phần đầu tiên.",
     "draft": "Bản nháp riêng tư",
     "draftHint": "Riêng tư cho đến khi bạn xuất bản.",
     "edit": "Chỉnh sửa",

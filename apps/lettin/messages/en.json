@@ -649,6 +649,8 @@
     "discardDraft": "Discard changes",
     "discardDraftHint": "Your unsaved changes will be replaced with the last saved draft.",
     "displayNameLimit": "You can change your display name twice every 7 days.",
+    "documentOutline": "On this page",
+    "documentOutlineLimit": "Showing the first {count} sections.",
     "draft": "Private draft",
     "draftHint": "Private until you choose to publish.",
     "edit": "Edit",

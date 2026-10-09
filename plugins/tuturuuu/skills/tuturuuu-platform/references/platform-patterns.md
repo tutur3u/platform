@@ -444,3 +444,16 @@ marketing opt-out accidentally. The source matrix and sender fixtures live in
 `email-eligibility.test.ts` and the notification route tests. See the recipient
 policy in `apps/docs/platform/architecture/authorization.mdx`; focused fixture
 success is separate from exact-head CI and actual provider/inbox delivery.
+
+
+## Derived reader document navigation
+
+Derive reader outlines from the selected published projection, not workspace
+queries or editor buffers. Match the renderer's tree paths, depth cutoff and
+ignored leaf children when assigning bounded navigation targets. Plain labels
+must escape markup and exclude author IDs/link/image metadata. Scope targets per
+document and keep duplicate heading titles distinct. Open enclosing folds before
+focusing/scrolling, respect native modified clicks, and avoid forced motion or
+history churn. Record that tree-position targets can change after republishing;
+DOM fixtures verify actions and boundaries, while real layout/focus remains a
+hosted browser gate.
