@@ -113,3 +113,18 @@ decoded frame counts, Stop/revoke cleanup and repeated-start evidence; a returne
 track is insufficient. The fixture neither tests hosted SFU nor replaces native
 WebView acceptance. See the runbook before installing/driving its exact-commit
 artifact. Use T3 Device so verification remains visible to the user.
+
+## Offline programming checkpoint retries
+
+Persist the offline retry reservation before checkpoint I/O; never keep its
+attempt count only in memory. Programming rooms allow three automatic offline
+attempts within two minutes, separated by 30 seconds, retaining unresolved
+documents on expiry/exhaustion. Successful owner-authorized checkpoints clear
+the budget; viewer recovery remains forbidden. Recheck active connections after
+awaited provider work so a concurrent join retains its expiry sweep.
+
+Use `collaboration-retry-budget.test.ts` for counted duplicate/restart/deadline/
+failure/recovery coverage and the isolated Worker/SQLite fixture documented in
+`programming-realtime-runbook.mdx`. Distinguish explicit handler invocation and
+stubbed provider failures from hosted alarm delivery and actual Drive saves.
+This offline bound does not certify live retry, media cleanup or account spending.

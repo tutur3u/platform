@@ -1,0 +1,5 @@
+{
+  "compilerOptions": {
+    "paths": { "@tuturuuu/types/*": ["../../../../packages/types/src/*"] }
+  }
+}

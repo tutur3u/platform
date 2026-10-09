@@ -8,7 +8,10 @@ export function referenceIds(draft: LettinDraft) {
   ];
 }
 export function draftArtwork(draft: LettinDraft, worldId: string) {
-  const images = new Set([draft.image]);
+  const images = new Set([
+    draft.image,
+    ...(draft.gallery?.map((item) => item.image) ?? []),
+  ]);
   const visit = (node: LettinNode) => {
     if (typeof node.attrs?.src === 'string') images.add(node.attrs.src);
     node.content?.forEach(visit);
