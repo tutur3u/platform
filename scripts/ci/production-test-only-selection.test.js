@@ -1,7 +1,59 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const { repoRoot } = require('./workflow-config-test-helpers.js');
+
+test('reusable CI checker executes with only its declared sparse checkout', (t) => {
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'ci-sparse-'));
+  t.after(() => fs.rmSync(temporary, { recursive: true, force: true }));
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github/workflows/ci-check.yml'),
+    'utf8'
+  );
+  const patterns = workflow
+    .split('sparse-checkout: |\n')[1]
+    .split('sparse-checkout-cone-mode:')[0]
+    .trim()
+    .split('\n')
+    .map((line) => line.trim());
+  for (const file of fs.globSync(patterns, { cwd: repoRoot })) {
+    const destination = path.join(temporary, file);
+    fs.mkdirSync(path.dirname(destination), { recursive: true });
+    fs.copyFileSync(path.join(repoRoot, file), destination);
+  }
+  for (const workflowName of [
+    'cron-control-cloudflare.yaml',
+    'devbox-control-cloudflare.yaml',
+    'rust-backend.yml',
+  ]) {
+    const output = execFileSync(
+      process.execPath,
+      [
+        '--experimental-strip-types',
+        'scripts/ci/check-workflow-config.ts',
+        '--workflow',
+        workflowName,
+        '--event-name',
+        'pull_request',
+        '--changed-files',
+        'tuturuuu.ts',
+      ],
+      {
+        cwd: temporary,
+        encoding: 'utf8',
+        timeout: 10000,
+        env: {
+          ...process.env,
+          GITHUB_OUTPUT: path.join(temporary, 'github-output'),
+        },
+      }
+    );
+    assert.match(output, /Should run: (true|false)/, workflowName);
+  }
+});
 
 const testPaths = [
   'apps/tools/src/app/[locale]/random/page.test.ts',
