@@ -9,6 +9,7 @@ const withNextIntl = createNextIntlPlugin();
 const WEB_APP_URL = resolveTuturuuuWebAppUrl();
 
 const nextConfig = createTuturuuuNextConfig({
+  seoApp: 'forms',
   // `/embed/<shareCode>` is the only route in this app meant to be framed by a
   // third-party site. Listing it here removes the platform-wide
   // `frame-ancestors 'none'` / `X-Frame-Options: DENY` headers for that path

@@ -650,9 +650,10 @@ export function getWorkflowDecision({
       shouldRun: true,
     };
   }
-
   if (target.app === 'platform') {
-    const databasePaths = normalizedChangedFiles.filter(isDatabaseSchemaPath);
+    const databasePaths = normalizedChangedFiles.filter(
+      isDatabaseMigrationAffectingPath
+    );
     if (databasePaths.length > 0) {
       return {
         matchedPaths: databasePaths,
@@ -662,7 +663,6 @@ export function getWorkflowDecision({
       };
     }
   }
-
   const dependencyClosure =
     'packageName' in target
       ? buildWorkspaceDependencyClosure(target.packageName, workspaceManifests)
@@ -682,20 +682,20 @@ export function getWorkflowDecision({
     if (scopedOwners) {
       return scopedOwners.has(target.app);
     }
-
     if (
       (isCloudflareTarget
         ? globalCloudflareAffectingPaths
         : globalVercelAffectingPaths
-      ).has(filePath)
+      ).has(filePath) ||
+      (isCloudflareTarget &&
+        filePath === 'patches/@opennextjs%2Fcloudflare@1.20.6.patch' &&
+        ['meet', 'lettin', 'parley'].includes(target.app))
     ) {
       return true;
     }
-
     if (isOwnWorkflowChange(filePath, workflowName)) {
       return true;
     }
-
     if (
       ('additionalPaths' in target &&
         target.additionalPaths.some((prefix) => filePath.startsWith(prefix))) ||

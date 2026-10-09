@@ -43,6 +43,9 @@ function resolveFixtureTargets({
   targets = testTargets,
   eventPath = '',
   markerPayload = 'explicit',
+  workflowMarkers,
+  platformEnabled,
+  includeEvidence = false,
 }) {
   const output = execFileSync(
     'bun',
@@ -50,11 +53,16 @@ function resolveFixtureTargets({
       '--eval',
       `
         import { resolveProductionVercelTargets } from './scripts/ci/resolve-production-vercel-targets.ts';
+        import { ci } from './tuturuuu.ts';
+        if (${JSON.stringify(platformEnabled)} !== undefined) {
+          ci['vercel-production-platform.yaml'] = ${JSON.stringify(platformEnabled)};
+        }
+        const markers = ${JSON.stringify(workflowMarkers)};
         globalThis.fetch = async (url) => {
           const parsed = new URL(url);
           const workflowName = parsed.searchParams.get('environment') + '.yaml';
-          const marker = ${JSON.stringify(baseSha)};
-          const payloadType = ${JSON.stringify(markerPayload)};
+          const marker = markers ? markers[workflowName]?.sha : ${JSON.stringify(baseSha)};
+          const payloadType = markers?.[workflowName]?.kind ?? ${JSON.stringify(markerPayload)};
           const payload = payloadType === 'explicit'
             ? { workflowName, markerKind: 'deployment', refName: 'production' }
             : payloadType === 'build'
@@ -74,18 +82,20 @@ function resolveFixtureTargets({
           rootDir: ${JSON.stringify(rootDir)},
           targets: ${JSON.stringify(targets)},
         });
-        console.log(JSON.stringify(decisions.map(({ shouldRun, workflowName }) => ({ shouldRun, workflowName }))));
+        console.log(JSON.stringify(${JSON.stringify(includeEvidence)} ? decisions : decisions.map(({ shouldRun, workflowName }) => ({ shouldRun, workflowName }))));
       `,
     ],
     {
       cwd: repoRoot,
       encoding: 'utf8',
+      timeout: 60000,
       env: {
         ...process.env,
         GITHUB_TOKEN: 'fixture-token',
         GITHUB_REPOSITORY: 'fixture/repo',
         GITHUB_EVENT_PATH: eventPath,
-        VERCEL_DEPLOYMENT_MARKER_SHA: baseSha,
+        DEPLOYMENT_MARKER_SHA: '',
+        VERCEL_DEPLOYMENT_MARKER_SHA: workflowMarkers ? '' : baseSha,
       },
     }
   );
@@ -331,3 +341,147 @@ for (const markerPayload of ['automatic', 'build']) {
     );
   });
 }
+
+const platformWorkflow = 'vercel-production-platform.yaml';
+const migrationWorkflow = 'supabase-production.yaml';
+
+function migrationFixture() {
+  const rootDir = createFixtureRoot();
+  const migrationBase = initializeGitRepo(rootDir);
+  const platformBase = commitFile(
+    rootDir,
+    'apps/database/supabase/migrations/20261007010000_pending.sql',
+    '-- fixture migration source only\n',
+    'migration source'
+  );
+  const headSha = commitFile(
+    rootDir,
+    'apps/docs/build/devops/notes.mdx',
+    'unrelated docs\n',
+    'later docs'
+  );
+  const resolve = (migrationSha, options = {}) =>
+    resolveFixtureTargets({
+      baseSha: headSha, // Must not override distinct per-workflow API baselines.
+      headSha,
+      rootDir,
+      targets: [{ productionWorkflow: platformWorkflow }, ...testTargets],
+      workflowMarkers: {
+        [platformWorkflow]: { sha: platformBase },
+        [migrationWorkflow]: { sha: migrationSha },
+        ...Object.fromEntries(
+          testTargets.map(({ productionWorkflow }) => [
+            productionWorkflow,
+            { sha: platformBase },
+          ])
+        ),
+      },
+      includeEvidence: true,
+      ...options,
+    });
+  return { rootDir, migrationBase, platformBase, headSha, resolve };
+}
+
+test('distinct migration marker selects platform despite its newer unaffected deployment range', () => {
+  const { migrationBase, platformBase, resolve } = migrationFixture();
+  const decisions = resolve(migrationBase);
+  assert.deepEqual(
+    decisions.map(({ shouldRun }) => shouldRun),
+    [true, false, false, false]
+  );
+  assert.equal(decisions[0].changeResult.baseSha, platformBase);
+  assert.equal(decisions[0].migrationChangeResult.baseSha, migrationBase);
+  assert.equal(decisions[0].migrationChangeResult.source, 'deployment-marker');
+  assert.match(decisions[0].reason, /production database migrations/);
+});
+
+test('covered migration range leaves unrelated platform and other targets skipped', () => {
+  const { platformBase, resolve } = migrationFixture();
+  const decisions = resolve(platformBase);
+  assert.deepEqual(
+    decisions.map(({ shouldRun }) => shouldRun),
+    [false, false, false, false]
+  );
+  assert.equal(decisions[0].migrationChangeResult.baseSha, platformBase);
+});
+
+for (const state of ['missing', 'nonancestor']) {
+  test(`${state} migration range conservatively requires platform`, () => {
+    const { rootDir, platformBase, resolve } = migrationFixture();
+    const migrationSha =
+      state === 'missing'
+        ? ''
+        : commitFile(
+            rootDir,
+            'apps/docs/future.mdx',
+            'future branch\n',
+            'future nonancestor'
+          );
+    const decisions = resolve(migrationSha);
+    assert.equal(decisions[0].shouldRun, true);
+    assert.equal(decisions[0].changeResult.baseSha, platformBase);
+    assert.equal(decisions[0].migrationChangeResult.available, false);
+  });
+}
+
+test('disabled platform and ordinary all-enabled dispatch retain configuration semantics', () => {
+  const { migrationBase, resolve } = migrationFixture();
+  assert.equal(
+    resolve(migrationBase, { platformEnabled: false })[0].shouldRun,
+    false
+  );
+  assert.deepEqual(
+    resolve(migrationBase, { eventName: 'workflow_dispatch' }).map(
+      ({ shouldRun }) => shouldRun
+    ),
+    [true, true, true, true]
+  );
+});
+
+for (const kind of ['explicit', 'build', 'automatic']) {
+  test(`exact ${kind} platform marker retains genuine prerequisite coverage semantics`, () => {
+    const { migrationBase, headSha, resolve } = migrationFixture();
+    const decisions = resolve(migrationBase, {
+      workflowMarkers: {
+        [platformWorkflow]: { sha: headSha, kind },
+        [migrationWorkflow]: { sha: migrationBase },
+      },
+      targets: [{ productionWorkflow: platformWorkflow }],
+    });
+    assert.equal(decisions[0].shouldRun, kind !== 'explicit');
+  });
+}
+
+test('package resume also consults independent pending migration range', () => {
+  const { migrationBase, headSha, resolve } = migrationFixture();
+  assert.equal(
+    resolve(migrationBase, {
+      eventName: 'workflow_dispatch',
+      packageResume: true,
+      expectedSha: headSha,
+    })[0].shouldRun,
+    true
+  );
+});
+
+test('pending migration selection leaves Contacts on its own deployment range', () => {
+  const { migrationBase, platformBase, resolve } = migrationFixture();
+  const contacts = 'vercel-production-contacts.yaml';
+  const decisions = resolve(migrationBase, {
+    targets: [
+      { productionWorkflow: platformWorkflow },
+      { productionWorkflow: contacts },
+    ],
+    workflowMarkers: {
+      [platformWorkflow]: { sha: platformBase },
+      [migrationWorkflow]: { sha: migrationBase },
+      [contacts]: { sha: platformBase },
+    },
+  });
+  assert.deepEqual(
+    decisions.map(({ shouldRun }) => shouldRun),
+    [true, false]
+  );
+  assert.equal(decisions[1].changeResult.baseSha, platformBase);
+  assert.equal(decisions[1].migrationChangeResult, undefined);
+});
