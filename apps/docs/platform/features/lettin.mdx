@@ -1037,3 +1037,18 @@ review, cancel, failed retry, duplicate/pending suppression and context/eligibil
 changes. `server/storage.test.ts` exercises local D1 editor/publisher boundaries,
 workspace eligibility and access revocation. Hosted app-session/browser acceptance
 and exact-head CI remain separate delivery gates.
+
+## Explicit task planning priority
+
+The Tasks `/{wsId}/tasks/new` composer, including the Lettin handoff, offers an
+optional priority choice: critical, high, normal, or low. It starts with no
+priority and omits the API field until the creator chooses one. Clearing a
+choice omits it again. No notebook content or metadata determines priority.
+Denied creation retains the choice for an explicit retry; mutation retries stay
+disabled. Source-reference sharing remains unchecked and independently consented,
+and the destination API retains workspace and task authorization.
+
+Regression coverage in `apps/tasks/src/components/task-plan-composer.test.tsx`
+checks each API priority, clearing, denied creation, and unchanged source consent.
+The composer fixtures render choices from both English and Vietnamese message bundles.
+Exact-head Tasks build and repository CI remain separate delivery gates.

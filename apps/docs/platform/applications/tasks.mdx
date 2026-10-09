@@ -1341,3 +1341,18 @@ cannot confirm creation, the form stays preserved and locked, with a link to the
 selected board. Check that board before starting another task: the server may have
 inserted it even when the response failed. This guard does not provide server-side
 idempotency across new forms or page reloads.
+
+## Explicit task planning priority
+
+The Tasks `/{wsId}/tasks/new` composer, including the Lettin handoff, offers an
+optional priority choice: critical, high, normal, or low. It starts with no
+priority and omits the API field until the creator chooses one. Clearing a
+choice omits it again. No notebook content or metadata determines priority.
+Failed creation preserves the choice in the locked single-use form; mutation
+retries stay disabled. Check the selected board before starting another form. Source-reference sharing remains unchecked and independently consented,
+and the destination API retains workspace and task authorization.
+
+Regression coverage in `apps/tasks/src/components/task-plan-composer.test.tsx`
+checks each API priority, clearing, preserved choices after failed creation, and unchanged source consent.
+The composer fixtures render choices from both English and Vietnamese message bundles.
+Exact-head Tasks build and repository CI remain separate delivery gates.

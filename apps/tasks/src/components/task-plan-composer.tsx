@@ -5,12 +5,14 @@ import {
   createWorkspaceTask,
   listWorkspaceBoardsWithLists,
 } from '@tuturuuu/internal-api';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { MAX_TASK_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { Link } from '@/i18n/routing';
+import { TaskPlanPriority } from './task-plan-priority';
 import { TaskPlanSource } from './task-plan-source';
 
 export function TaskPlanComposer({
@@ -27,6 +29,7 @@ export function TaskPlanComposer({
   const [name, setName] = useState('');
   const [boardId, setBoardId] = useState('');
   const [listId, setListId] = useState('');
+  const [priority, setPriority] = useState<TaskPriority | null>(null);
   const [attachSource, setAttachSource] = useState(false);
   const submitting = useRef(false);
   const [creationUnconfirmed, setCreationUnconfirmed] = useState(false);
@@ -46,6 +49,7 @@ export function TaskPlanComposer({
       return createWorkspaceTask(wsId, {
         name: name.trim(),
         listId: list.id,
+        ...(priority ? { priority } : {}),
         ...(attachSource && sourceUrl
           ? {
               description: JSON.stringify({
@@ -176,6 +180,7 @@ export function TaskPlanComposer({
               ))}
             </select>
           </label>
+          <TaskPlanPriority value={priority} onChange={setPriority} />
           {sourceUrl && (
             <TaskPlanSource
               sourceUrl={sourceUrl}

@@ -8435,6 +8435,15 @@
     "noBoards": "Không có bảng nào trong không gian làm việc này.",
     "openBoards": "Mở bảng công việc",
     "openTask": "Mở công việc",
+    "priority": "Mức độ ưu tiên",
+    "priorityHint": "Không bắt buộc. Chọn mức độ ưu tiên cho công việc này; nội dung sổ tay không được dùng để chọn mức độ ưu tiên.",
+    "priorityOptions": {
+      "critical": "Khẩn cấp",
+      "high": "Cao",
+      "low": "Thấp",
+      "normal": "Bình thường"
+    },
+    "priorityUnspecified": "Không đặt mức độ ưu tiên",
     "retry": "Thử lại",
     "reviewSource": "Kiểm tra liên kết sổ tay",
     "sourceConsent": "Chỉ sao chép liên kết sổ tay vào mô tả công việc cho những người có quyền truy cập công việc này. Liên kết không cấp quyền truy cập sổ tay hoặc sao chép nội dung. Không chọn để tạo công việc không kèm liên kết nguồn.",

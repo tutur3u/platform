@@ -23,7 +23,9 @@ shared-package changes.
   own session and retain its API permission checks. Persisting even a private
   source link into a shared destination needs explicit, initially unchecked
   consent and a clear statement that the link grants no source access. Keep
-  source-reading and publication operations separate. See the
+  source-reading and publication operations separate. Optional destination fields
+  should use the canonical API enum and require a creator choice rather than
+  deriving values from private source content. See the
   [Lettin product decision](../../../../../apps/docs/platform/features/lettin.mdx).
 
 - For a customer-facing behavior fix that spans apps, trace the setting from its
