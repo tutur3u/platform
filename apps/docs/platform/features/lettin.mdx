@@ -592,6 +592,11 @@ requires alt text and may include a caption (up to 1,000 characters) and credit
 existing notebook media service, reorder images, edit metadata and remove images
 from the draft. Blank alt text or invalid image URLs block saving.
 
+Content notices remain before cover and gallery artwork. Published document
+heading outlines remain available alongside the gallery and target rich document
+headings, rather than artwork captions or credits. The combined reader regression
+in `document-outline.test.tsx` covers this ordering and scoped heading targets.
+
 Gallery changes use the existing explicit save and publish controls. Public
 readers receive only the published snapshot; catalogue summaries omit galleries.
 Uploading alone does not make artwork public. Every managed gallery image is
@@ -609,6 +614,63 @@ documents with no gallery continue to render normally. Regression evidence:
 `artwork-gallery.test.ts`, `artwork-gallery.test.tsx`, and
 `gallery-storage.test.ts`; hosted interaction and exact-head app CI remain
 independent acceptance gates.
+
+### Private saved notebooks
+
+Any signed-in Lettin reader can explicitly save a published notebook from its
+public reading page and manage the private library at `/saved`. Creator approval
+and workspace document permissions are not required because saves grant no
+source access. Each actor may save up to 500 notebook references. Saves and
+removals are idempotent; the actor comes from the Lettin app session, and both
+reads and writes require the expected actor to prevent account-switch crossover.
+Client query keys also include the actor.
+
+Saves are private to the reader: they never appear on public profiles, in creator
+notifications, or in public popularity counts. No copy of the draft, document,
+gallery or profile is retained. Library cards read only title, description, cover
+and credit from the source's current published snapshot. Unpublishing hides
+those details and leaves a removable unavailable reference; deleting a notebook
+cascades its saved references. Saving a new unpublished notebook is rejected.
+A save never permits publishing, editing or accessing private artwork.
+
+The additive local D1 migration `0005_reader_bookmarks.sql` must be present
+before enabling the API. Local migration application and consent boundaries are
+covered by `reader-bookmarks.test.ts`, with session/input/cache fencing in the
+bookmark route tests and reader controls. Exact-head app build, hosted
+session/account-switch behavior and authorized migration delivery remain separate
+gates; no production application is claimed by local tests.
+
+### Published document heading outlines
+
+Public notebook and published-entry readers display an “On this page” outline
+when the selected document has at least two nonempty rendered headings. The
+outline uses only the currently rendered published document, never an editor
+buffer, private draft, unavailable entry or another workspace. Content notices
+remain before artwork and heading navigation in the combined reader. Creator editor
+previews keep outlines disabled by default. No document or publication state is
+written and no reader interactions or preferences are recorded.
+
+Heading labels are plain escaped text with whitespace collapsed; markup, author
+IDs, image metadata and link targets are not interpreted as navigation targets.
+Targets use document scope and tree positions so repeated titles remain distinct.
+The outline follows the renderer's depth and leaf-node rules, shows at most the
+first 100 headings, and reports truncation. Long labels are capped at 160
+characters; full heading text remains in the document. Sources are unchanged.
+
+An ordinary outline click opens enclosing collapsed sections, focuses the heading
+and scrolls within the same article. It uses automatic movement and heading focus
+styling, avoiding forced animation. The explicit jump does not add browser-history
+entries. Modified link clicks retain native anchor behavior. Selected-entry
+changes replace outline labels and targets. These are local reading targets, not
+stable section-permalink or immutable-snapshot guarantees: future publication can
+change heading positions. A copied public link still observes source publication
+and retirement boundaries.
+
+Regression evidence: `document-outline-model.test.ts` and `document-outline.test.tsx`
+cover repeated/empty/nested headings, bounds and escaping,
+matching renderer IDs, fold opening/focus, article isolation, private preview and
+published selection boundaries. Exact-head CI and hosted scrolling/focus/browser
+acceptance remain separate gates; DOM fixtures do not prove browser layout.
 ### Saved entry duplication
 
 In the Lettin notebook studio, a creator with notebook editing access can explicitly

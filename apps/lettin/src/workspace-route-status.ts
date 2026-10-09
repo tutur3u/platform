@@ -20,6 +20,7 @@ const standalonePages = new Set([
   'spaces',
   'worlds',
   'creators',
+  'saved',
 ]);
 
 export async function getWorkspaceRouteStatus(

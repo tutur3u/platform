@@ -68,3 +68,30 @@ it('does not count the default pending stage as a resettable filter', async () =
     await screen.findByRole('button', { name: 'common.reset' })
   ).toBeInTheDocument();
 });
+
+it('keeps unknown totals unknown and hides the duplicate controlled cadence selector', () => {
+  render(
+    <PeriodicReportsToolbar
+      approvalStatus="all"
+      cadence="all"
+      hideCadence
+      deliveryStatus="all"
+      onApprovalStatusChange={vi.fn()}
+      onCadenceChange={vi.fn()}
+      onDeliveryStatusChange={vi.fn()}
+      onQueryChange={vi.fn()}
+      onReset={vi.fn()}
+      onSortChange={vi.fn()}
+      query=""
+      isSearching={true}
+      sortBy="period"
+      sortDirection="desc"
+    />
+  );
+  expect(screen.getByText('—')).toBeInTheDocument();
+  expect(screen.queryByText('matching_reports')).not.toBeInTheDocument();
+  expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
+  expect(
+    screen.getByRole('textbox', { name: 'search_periodic' })
+  ).toBeInTheDocument();
+});

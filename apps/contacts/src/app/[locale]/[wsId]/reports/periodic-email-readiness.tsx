@@ -90,9 +90,6 @@ export function PeriodicEmailReadiness({ wsId }: { wsId: string }) {
           </>
         )}
       </div>
-      <p className="text-muted-foreground text-xs">
-        {t('readiness_not_delivery')}
-      </p>
       <Button asChild variant="ghost" size="sm">
         <Link href={`/${wsId}/reports?view=automations`}>
           <Settings2 className="size-3.5" />
