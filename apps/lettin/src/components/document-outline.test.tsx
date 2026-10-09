@@ -300,6 +300,11 @@ it('retains gallery artwork and its credits while notice precedes artwork and ou
     <DocumentView
       draft={{
         ...draft,
+        creationGuidance: {
+          credits: 'Writer',
+          usageNotes: 'Ask before reuse',
+          collaboration: 'ask-first',
+        },
         contentNotice: 'Read this first',
         gallery: [
           {
@@ -324,5 +329,8 @@ it('retains gallery artwork and its credits while notice precedes artwork and ou
   );
   expect(notice).toBeLessThan(html.indexOf('documentOutline'));
   expect(html).toContain('public-gallery');
+  expect(html).toContain('Writer');
+  expect(html).toContain('Ask before reuse');
+  expect(html).toContain('creationGuidanceAdvisory');
   expect(html).toContain('data-lettin-heading');
 });

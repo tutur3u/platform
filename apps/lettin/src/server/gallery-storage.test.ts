@@ -234,3 +234,28 @@ it('rejects media claimed for deletion before saving gallery references', async 
   ).rejects.toMatchObject({ status: 409 });
   expect((await readWorld(db, owner, worldId)).world.version).toBe(1);
 });
+
+it('publishes gallery and guidance together while omitting both from catalogue cards', async () => {
+  const image = await upload();
+  const creationGuidance = {
+    credits: 'Writer',
+    usageNotes: 'Ask before reuse',
+    collaboration: 'ask-first' as const,
+  };
+  await mutate(db, owner, {
+    action: 'saveWorld',
+    worldId,
+    version: 1,
+    draft: { ...draft, gallery: [art(image)], creationGuidance },
+  });
+  await mutate(db, owner, { action: 'publishWorld', worldId, version: 2 });
+  const published = (await readPublic(db, worldId))[0]!.published;
+  expect(published.gallery).toEqual([art(image)]);
+  expect(published.creationGuidance).toEqual(creationGuidance);
+  const card = (await readPublic(db))[0]!.published;
+  expect(card).not.toHaveProperty('gallery');
+  expect(card).not.toHaveProperty('creationGuidance');
+  expect((await getMedia(db, bucket, mediaId(image), anonymous)).status).toBe(
+    200
+  );
+});

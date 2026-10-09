@@ -20,6 +20,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { ArtworkGalleryEditor } from './artwork-gallery-editor';
+import { CreationGuidanceEditor } from './creation-guidance-editor';
 import { DocumentView } from './document-view';
 import { validGallery } from './gallery-model';
 import { RichEditor } from './rich-editor';
@@ -182,6 +183,10 @@ export function EntryEditor({
           />
         </label>
       </div>
+      <CreationGuidanceEditor
+        value={draft.creationGuidance}
+        onChange={(creationGuidance) => update({ creationGuidance })}
+      />
       {!isWorld && (
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block space-y-2 text-sm">

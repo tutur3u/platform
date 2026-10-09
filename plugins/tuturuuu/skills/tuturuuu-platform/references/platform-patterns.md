@@ -490,6 +490,16 @@ history churn. Record that tree-position targets can change after republishing;
 DOM fixtures verify actions and boundaries, while real layout/focus remains a
 hosted browser gate.
 
+## Creator-authored guidance
+
+Keep advisory creation metadata separate from access grants and profile sharing.
+Bound plain-text fields in the server draft schema and validate enumerated
+preferences; no choice should mutate collaboration roles. Save and publish through
+existing revision/permission fences, exclude long guidance from catalogue
+projections, and test later edits/clearing against older published snapshots with
+real local D1. Source copies can retain authored metadata only within their
+explicit private-copy scope. Review portability allowlists independently.
+
 ## Reports dashboard totals
 
 Contacts shares Daily semantic report status cards with Periodic. Daily totals count
