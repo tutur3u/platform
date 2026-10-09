@@ -679,3 +679,12 @@ fence prevents duplicate clicks before mutation state rerenders. Reset controls
 on context changes. Recipient acceptance is a distinct workflow; do not claim
 an owner confirmation establishes recipient consent. Lettin's collaborator DOM
 and D1 role/revocation regressions cover these boundaries.
+
+## Ordered creator properties
+
+Reorder authored array properties in the existing private editor buffer, preserving
+values and unrelated metadata. Duplicate labels need position-specific accessible
+controls; disable boundary moves and keep keyboard focus with the moved item.
+Saving and publishing remain distinct existing revision/permission operations.
+Lettin's fact editor DOM and real D1 snapshot tests cover order persistence and
+private revisions without introducing storage fields or access grants.
