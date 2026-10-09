@@ -621,6 +621,8 @@
     "connect": "Kết nối",
     "connections": "Kết nối với mục này",
     "content": "Nội dung trang",
+    "contentNotice": "Lưu ý nội dung",
+    "contentNoticeHint": "Hướng dẫn tùy chọn cho người đọc (tối đa 500 ký tự), chẳng hạn chủ đề nhạy cảm hoặc tiết lộ cốt truyện. Hiển thị trước hình ảnh và nội dung khi xuất bản. Lưu và xuất bản lại để cập nhật lưu ý công khai.",
     "create": "Tạo dự án",
     "createEntryCopy": "Tạo bản sao chưa xuất bản",
     "createImport": "Tạo bản sao riêng tư",

@@ -47,6 +47,7 @@ export type LettinTheme = {
   motion: 'full' | 'reduced';
 };
 export type LettinDraft = {
+  contentNotice?: string;
   theme?: LettinTheme;
   title: string;
   description: string;

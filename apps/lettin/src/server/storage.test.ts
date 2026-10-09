@@ -186,6 +186,38 @@ describe('D1 authorization and publishing', () => {
     await mutate(db, owner, { action: 'unpublishWorld', worldId, version: 3 });
     expect(await readPublic(db, worldId)).toEqual([]);
   });
+  it('keeps notice revisions private until republished, including catalogue cards', async () => {
+    await mutate(db, owner, {
+      action: 'saveWorld',
+      worldId,
+      version: 1,
+      draft: { ...draft, contentNotice: 'Published spoilers' },
+    });
+    await mutate(db, owner, { action: 'publishWorld', worldId, version: 2 });
+    await mutate(db, owner, {
+      action: 'saveWorld',
+      worldId,
+      version: 3,
+      draft: { ...draft, contentNotice: 'Private revision' },
+    });
+    expect((await readPublic(db, worldId))[0]?.published.contentNotice).toBe(
+      'Published spoilers'
+    );
+    expect((await readPublic(db))[0]?.published.contentNotice).toBe(
+      'Published spoilers'
+    );
+    await mutate(db, owner, {
+      action: 'saveWorld',
+      worldId,
+      version: 4,
+      draft: { ...draft, contentNotice: '' },
+    });
+    expect((await readPublic(db, worldId))[0]?.published.contentNotice).toBe(
+      'Published spoilers'
+    );
+    await mutate(db, owner, { action: 'publishWorld', worldId, version: 5 });
+    expect((await readPublic(db))[0]?.published.contentNotice).toBe('');
+  });
   it('filters unpublished relationships and rejects cross-world links', async () => {
     const a = (
       await mutate(db, owner, { action: 'createEntry', worldId, draft })

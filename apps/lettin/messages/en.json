@@ -621,6 +621,8 @@
     "connect": "Connect",
     "connections": "Connected to this entry",
     "content": "Page content",
+    "contentNotice": "Content notice",
+    "contentNoticeHint": "Optional reader guidance (up to 500 characters), such as sensitive themes or spoilers. Appears before artwork and reading content when published. Save and republish to update the public notice.",
     "create": "Create project",
     "createEntryCopy": "Create unpublished copy",
     "createImport": "Create private copy",
