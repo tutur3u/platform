@@ -7,6 +7,7 @@ on:
       - 'apps/web/**'
       - 'apps/mail/**'
       - 'apps/contacts/**'
+      - 'apps/tasks/**'
       - 'packages/**'
       - 'bun.lock'
       - 'turbo.json'
@@ -34,7 +35,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [web, learn, infrastructure, mail, contacts]
+        app: [web, learn, infrastructure, mail, contacts, tasks]
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://programming-ci.supabase.invalid
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_programming_ci_placeholder
