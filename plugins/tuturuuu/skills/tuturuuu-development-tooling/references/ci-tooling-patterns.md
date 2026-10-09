@@ -525,6 +525,8 @@ Worker types before checking source/config TypeScript. Build only in exact-commi
 CI and test the emitted Wrangler configuration in addition to source fixtures;
 dry-run and authorized deployment consume that same emitted target. Preserve
 bindings, migrations, routes, secret names and active identity/protocol policies.
+Assert each service's source compatibility flags rather than copying another
+Worker's flags; Devbox Control intentionally has none.
 Devbox Control's runtime script demonstrates disposable-credential denial tests;
 those do not prove hosted Supabase, runner or WebSocket success. Follow the owning
 runbook for commands and remaining acceptance, and keep local validation serialized.

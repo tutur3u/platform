@@ -14,7 +14,8 @@ if (process.env.DEVBOX_TEST_CONFIG) {
   assert.equal(config.name, 'tuturuuu-devbox-control');
   assert.equal(config.account_id, 'e8912e2867beecc673d171907bf09649');
   assert.equal(config.compatibility_date, '2026-09-28');
-  assert.ok(config.compatibility_flags.includes('nodejs_compat'));
+  // Devbox does not opt into Node compatibility; preserve that runtime contract.
+  assert.deepEqual(config.compatibility_flags ?? [], []);
   assert.deepEqual(config.durable_objects.bindings, [
     { name: 'RUNNER_WAKE', class_name: 'RunnerWake' },
   ]);

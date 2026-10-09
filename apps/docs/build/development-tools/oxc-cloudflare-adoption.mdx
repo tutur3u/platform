@@ -189,6 +189,10 @@ verification, not an automatic guarantee.
 
 ## Vite-native Worker acceptance gates
 
+Compare emitted compatibility flags against each service’s source configuration;
+Devbox Control currently has no flags, so its verifier must not require
+`nodejs_compat` simply because another Worker uses it.
+
 | Boundary | Required preservation and evidence |
 | --- | --- |
 | Routes | Public/private/API inventory, bilingual paths, redirects/rewrites, metadata, noindex and deep links |
