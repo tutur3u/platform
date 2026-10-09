@@ -20,6 +20,12 @@ const owner: Actor = {
 };
 const editor: Actor = { ...owner, id: 'editor', isAdmin: false };
 const draft: LettinDraft = {
+  contentNotice: 'Private notice',
+  creationGuidance: {
+    credits: 'Private credits',
+    usageNotes: '',
+    collaboration: 'ask-first',
+  },
   title: 'Private draft',
   description: 'Private description',
   image: '',
@@ -36,6 +42,12 @@ const draft: LettinDraft = {
 };
 const published = {
   ...draft,
+  contentNotice: 'Published notice',
+  creationGuidance: {
+    credits: 'Published credits',
+    usageNotes: 'Ask before reuse',
+    collaboration: 'closed',
+  },
   title: 'Published title',
   description: 'Public summary',
   links: [privateId, publicId],
@@ -152,6 +164,8 @@ it('exports only published documents and filters references to excluded entries'
     world: {
       id: worldId,
       document: {
+        contentNotice: 'Published notice',
+        creationGuidance: published.creationGuidance,
         title: 'Published title',
         links: [publicId],
         wiki: {
@@ -177,6 +191,10 @@ it('requires both ownership and explicit confirmation for saved draft export', a
   const result = await exportNotebook(db, owner, worldId, 'draft', true);
   expect(result.entries).toHaveLength(2);
   expect(result.world.document.title).toBe('Private draft');
+  expect(result.world.document.contentNotice).toBe('Private notice');
+  expect(result.world.document.creationGuidance).toEqual(
+    draft.creationGuidance
+  );
   expect(JSON.stringify(result)).not.toContain('actorSecret');
   expect(JSON.stringify(result)).not.toContain('must omit');
 });
