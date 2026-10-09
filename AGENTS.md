@@ -170,7 +170,9 @@ merge, or production evidence only when that delivery is authorized.
   - Live API/page behavior belongs to `apps/web` and the owning Next.js satellite.
     Keep shared data access in `packages/internal-api` and preserve active app
     contracts; TanStack Query remains the active client library.
-  - Gradual Cloudflare + Vite+ + Oxc adoption covers every active Worker-backed
+  - The long-term target is Vite+ + Cloudflare hosting + Oxc for every active app,
+    delivered incrementally alongside the product backlog. The first wave covers
+    every active Worker-backed
     app and service, including Meet, Parley, Lettin and native service Workers. Preserve satellite sessions, API ownership,
     bilingual routes, storage and consent. This does not resume the paused TanStack
     app or authorize canonical traffic changes. Require exact-commit CI, Worker

@@ -21,6 +21,22 @@ architecture milestone is a Vite-native runtime preserving existing contracts.
 React Router Framework Mode with the Cloudflare Vite plugin is a candidate requiring
 a scoped compatibility proof. The retained `apps/tanstack-web` remains paused.
 
+## Platform-wide target and daily checkpoints
+
+The ultimate target is **every active application using Vite+, hosted on
+Cloudflare, with Oxc linting/formatting**. Work proceeds incrementally alongside
+the product backlog; the initial Worker inventory below is the first wave, not a
+limit on the program. Retained paused applications remain excluded until resumed.
+Mobile continues to use its native Flutter toolchain; shared services and web
+surfaces follow the platform target without implying a rewrite of native UI.
+
+Keep per-app ownership, prerequisites and exact-head receipts in the private
+request backlog and coordination board. Checkpoint reviewable PRs as each unit
+finishes. Separate implemented, CI-verified, runtime-accepted and production-delivered
+states. A merge does not establish hosting cutover. Capture new Worker/app scope
+and compatibility findings before dispatching the next unit; avoid competing
+migration and product owners in the same files.
+
 ## Complete Worker migration scope
 
 The migration includes every active Worker-backed app/service, not only Lettin
