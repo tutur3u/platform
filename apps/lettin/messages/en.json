@@ -890,7 +890,7 @@
     "quickNote": "Quick note",
     "quickNoteBody": "Note text",
     "quickNoteBounds": "Up to 10,000 characters and 100 lines. Links and formatting are saved as plain text.",
-    "quickNoteHint": "Save a plain text idea as a private notebook page. Publishing remains a separate action.",
+    "quickNoteHint": "Save a plain text idea as a private notebook entry. Choose its kind; publishing remains a separate action.",
     "quickNoteSaved": "Private note saved. Open it when your current editor has no unsaved changes.",
     "quote": "Quote",
     "redo": "Redo",
