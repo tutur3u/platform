@@ -68,6 +68,13 @@ export const lettinCommandSchema = z.discriminatedUnion('action', [
     }),
   }),
   z.object({
+    action: z.literal('duplicateEntry'),
+    worldId: id,
+    entryId: id,
+    version,
+    title: z.string().trim().min(1).max(160),
+  }),
+  z.object({
     action: z.literal('saveWorld'),
     worldId: id,
     version,
