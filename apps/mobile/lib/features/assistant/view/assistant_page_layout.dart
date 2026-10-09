@@ -54,8 +54,11 @@ extension _AssistantPageLayout on _AssistantPageState {
               ),
               BlocListener<AssistantChromeCubit, AssistantChromeState>(
                 listenWhen: (previous, current) =>
-                    !previous.isLiveMode && current.isLiveMode,
-                listener: (_, _) => unawaited(_voiceCapture.cancel()),
+                    previous.isLiveMode != current.isLiveMode,
+                listener: (_, state) {
+                  _liveHaptics.onLiveModeChanged(isLiveMode: state.isLiveMode);
+                  if (state.isLiveMode) unawaited(_voiceCapture.cancel());
+                },
               ),
               BlocListener<AssistantChromeCubit, AssistantChromeState>(
                 listenWhen: (previous, current) =>
@@ -86,6 +89,25 @@ extension _AssistantPageLayout on _AssistantPageState {
                 listener: (context, state) {
                   _collapseComposerToFab();
                 },
+              ),
+              BlocListener<AssistantLiveCubit, AssistantLiveState>(
+                listener: (context, state) => _liveHaptics.observe(
+                  state,
+                  scope: (
+                    _currentActor(),
+                    _voiceActorScopeEpoch,
+                    _shellCubit.state.workspace?.id,
+                  ),
+                  isActive:
+                      mounted &&
+                      _appIsForeground &&
+                      WidgetsBinding.instance.lifecycleState ==
+                          AppLifecycleState.resumed &&
+                      TickerMode.valuesOf(context).enabled &&
+                      context.read<AssistantChromeCubit>().state.isLiveMode &&
+                      _currentActor() != null &&
+                      _shellCubit.state.workspace?.id == state.workspaceId,
+                ),
               ),
               BlocListener<AssistantLiveCubit, AssistantLiveState>(
                 listenWhen: (previous, current) =>
