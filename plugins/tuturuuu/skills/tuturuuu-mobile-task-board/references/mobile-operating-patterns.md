@@ -120,6 +120,7 @@ Read only the section relevant to the current feature; paths are repository-rela
 ## 5. Maintainability
 
 - **Module Boundaries**: When a file grows beyond roughly 500 LOC, split it by concern and keep the original entrypoint as a thin barrel re-export so dispatcher imports remain stable.
+- **Mira Composer Geometry**: Enter inserts a newline and only the side primary action sends typed text. Limit growth to five lines and report rendered composer height for transcript padding and scroll-to-bottom clearance. Validate the composer inside `PersistentShellDock` with wrapped drafts, text scale, IME, and safe-area variants; a fixed one-line estimate is insufficient.
 - **Atomic Assistant Widgets**: In `features/assistant`, default to reusable stateless widgets under `widgets/` before adding more `part` files or growing a page-level state class. Keep the page/view focused on orchestration only.
 - **Small File Bias**: Treat ~200 LOC for Flutter widgets and ~300 LOC for pages/views as guidance for identifying cohesive extractions. Extract shared badges, bubbles, banners, sheets, and cards into dedicated widget files early.
 

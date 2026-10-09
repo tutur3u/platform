@@ -120,6 +120,7 @@ class _AssistantPageState extends State<AssistantPage>
   Object? _chromeActionsKey;
   List<ShellActionSpec>? _chromeActions;
   final _inputController = TextEditingController();
+  double? _composerHeight;
   final _inputFocusNode = FocusNode();
   final _scrollController = ScrollController();
   static const _assistantScrollPhysics = AlwaysScrollableScrollPhysics(
@@ -552,7 +553,14 @@ class _AssistantPageState extends State<AssistantPage>
     return assistantTranscriptBottomClearance(
       context,
       composerVisible: isComposerVisible,
+      composerHeight: _composerHeight,
     );
+  }
+
+  void _setComposerHeight(double height) {
+    if (mounted && _composerHeight != height) {
+      setState(() => _composerHeight = height);
+    }
   }
 
   void _maybeResetEmptyStateScroll({
