@@ -10,8 +10,8 @@ shared-package changes.
   writer through server-prefetched and client-only views, summary counts, and
   exports. Share the decision logic when possible, and record the scope, default,
   and deliberate exceptions in the owning `apps/docs/platform` feature page.
-  Verify the live app and migration implementation against that decision before
-  delivery so an older copy of the behavior cannot return during an app switch.
+  Verify the maintained Next.js app surfaces against that decision. Rust and
+  TanStack Start are paused; do not update their implementations until resumed.
 - TanStack Query keys must identify the cached value's shape. A raw workspace
   config string and a parsed attendance boolean cannot share
   `['workspace-config', wsId, configId]`: navigating between settings and the
@@ -49,6 +49,16 @@ shared-package changes.
 - Do not mount a collaborative editor against a placeholder record. Render a
   skeleton until the real row has hydrated, so the editor is created once with its
   final binding (`isHydratingTask` in the task dialog is the reference).
+- Task-description recovery compares documents through the active editor schema,
+  with a lossless check for supported nodes, marks and attributes before schema
+  normalization. JSON key order and filled defaults are not a recovery conflict.
+  Reconcile banner metadata when history matches both saved content and the
+  initial hydrated editor baseline, or a causally confirmed same-opening save;
+  never auto-restore history into a live Yjs document. Keep pre-clear history and
+  genuine divergence available for explicit restore. The task-dialog loading
+  shell hides/inerts pending content while preserving the mounted editor binding.
+  Browser layout checks must include delayed hydration, a short description,
+  long-content scrolling and reopening; fixtures do not prove live transport.
 - **A fixed-height `DialogContent` needs its content column to declare
   `min-h-0`.** The shared default variant is `display: grid`; a grid item defaults
   to `min-height: auto`, so a `flex-1` column inside it grows to its content
@@ -127,8 +137,8 @@ shared-package changes.
   `apps/web/src/app/api/**`, not `apps/web/src/legacy-api-routes/**`. Moving one
   out means `git mv` route + colocated test, deleting the legacy file (so
   `bun web:api-routes:check` stops wanting a generated wrapper), re-keying the
-  entry in `apps/tanstack-web/migration/route-overrides.json` (the id embeds
-  `sourceFile`), and `bun migration:tanstack:manifest`. Validators that scan web
+  active live route references. Rust/TanStack migration manifests are frozen;
+  do not refresh them until explicitly resumed. Validators that scan web
   API routes must cover **both** trees — `check-workspace-member-type-guard`
   scanned only the legacy tree, so a moved route would have escaped it.
 - When using admin clients after access checks, re-apply explicit workspace,
@@ -174,6 +184,8 @@ shared-package changes.
   resource workspace, not through the embedded attribute alone.
 
 ## TanStack Start Migration (apps/tanstack-web)
+
+Retained inactive reference: do not execute or update this runtime until explicitly resumed.
 
 - Shared `@tuturuuu/ui` clients import Next-only framework APIs. apps/tanstack-web
   resolves them at runtime via three compat layers so ported routes keep the
@@ -346,34 +358,20 @@ Then classify each external dependency:
   their relative layout keeps every cross-import valid unchanged.
 
 Finish with: `connection()` on data pages, the owned-routes list, the origin app's
-nav entry, i18n backfill, the tanstack page-override + manifest + doc counts, then
-`bun check` **and** a real `next build`. Deleting pages from `apps/web` leaves
-`apps/web/.next/types/validator.ts` stale — `rm -rf apps/web/.next`.
+nav entry, i18n backfill, active docs inventory, focused non-build checks, and
+exact-commit CI type/lint/test and real Next build evidence. Do not update paused
+migration manifests. Deleted Web pages can leave generated `.next/types` stale;
+refresh generated type evidence through the owning supported CI path.
 
-## Migration Debt Avoidance (web + backend + tanstack-web)
+## Active runtime and paused implementations
 
-The `apps/web` → `apps/backend` (Rust) + `apps/web` → `apps/tanstack-web` switch
-is in progress. Do NOT add debt while it is pending — treat the three apps as one
-system on every change:
-
-- `apps/backend` is a future migration target only. It is not deployed and does
-  not serve current production traffic; `apps/web` remains the live API source
-  of truth. A Rust route marked migrated means source parity is ready, not that
-  production requests reach it.
-
-- Adding/changing an `apps/web` API route: if `apps/backend` already implements that
-  path, update the Rust handler in the same change (faithful status/body/cache;
-  GET first, `None` for un-ported methods). If not, register/refresh it in
-  `apps/tanstack-web/migration/route-overrides.json` and run
-  `bun migration:tanstack:manifest` so it is tracked, not invisible.
-- Adding/changing a dashboard page/route: keep the manifest accurate and route
-  shared data through `packages/internal-api` so the later TanStack port is a
-  move, not a rewrite.
-- Confirm backend route ownership with the runtime coverage probe in
-  `apps/backend/AGENTS.md`. Full reference + cache classes:
-  `apps/docs/platform/architecture/tanstack-rust-migration.mdx`
-  ("No New Debt While The Switch Is Pending"). The cheapest correct unit is GET
-  reads ported behind an `internal-api` facade.
+Web and satellite Next.js apps are maintained. Rust (`apps/backend`) and
+TanStack Start (`apps/tanstack-web`) are paused and not in use. Do not port
+changes, regenerate migration trees/manifests/version docs, run implementation
+checks/builds, or update their dependencies until explicitly resumed. Maintain
+live Web first-class API handlers and shared `packages/internal-api` boundaries.
+Docker setup is inactive and the Docker cron runner is retired; local docs use
+`bun dev:docs` without Docker. See `apps/docs/build/devops/active-runtime.mdx`.
 
 ## Translations And Navigation
 
@@ -413,3 +411,36 @@ than omitting a charge or substituting an arbitrary unit. Preserve cancellation,
 coverage and historical records. Exercise the real internal-api mapper and form
 admission in regressions; application builds and customer runtime verification
 remain separate delivery evidence.
+
+## Search and documentation ownership
+
+Every maintained Next app declares `seoApp` in the shared Next config. Public
+URL patterns are explicit; other paths receive HTTP noindex, including auth/API,
+workspace, embed, shared-link, and buyer transaction responses. Public forms keep
+their author/access-aware metadata controls. Keep robots crawlable so noindex
+and redirects can be observed. Regenerate static app assets with
+`node scripts/generate-app-seo.js`; Web retains its publication-aware sitemap.
+See `apps/docs/platform/features/search-indexing.mdx` and
+`apps/docs/build/development-tools/seo-strategy.mdx`.
+
+Docs inventory refreshes with `node scripts/generate-docs-inventory.js` and is
+checked with `--check`; inactive Rust/TanStack sources are excluded. Product
+guides explain actual behavior and access, while generated routes locate source.
+Use `node scripts/docs-audit.js` for navigation, internal links, and assets.
+
+## Notification email admission
+
+Immediate and batched notification email share `notifications/cron-helpers.ts`
+and `email-eligibility.ts`. Keep recipient-domain admission separate from the
+intentional root-workspace rollout. External account destinations require a
+matching confirmed Auth email; never infer verification from a queued or profile
+address alone. Recheck current email preferences for each queued event through
+`should_send_notification`, including account channel/category opt-outs, before
+rendering a digest. Lookup failures must stop admission.
+
+Keep EmailService suppression authoritative and do not request a blacklist bypass.
+Transactional account updates and dedicated auth/recovery mail must not inherit a
+marketing opt-out accidentally. The source matrix and sender fixtures live in
+`email-eligibility.test.ts` and the notification route tests. See the recipient
+policy in `apps/docs/platform/architecture/authorization.mdx`; focused fixture
+success is separate from exact-head CI and actual provider/inbox delivery.

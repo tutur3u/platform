@@ -414,6 +414,26 @@ fresh user edits. Persistence should serialize the description projection from
 the Yjs update being saved, keeping `description` and `description_yjs_state`
 from diverging under multi-user edit churn.
 
+Focused and fullscreen task dialogs in the shared Tasks UI show a title,
+details and description skeleton while the task and durable description hydrate.
+The editor stays mounted once its final task binding exists; settling hides its
+contents without recreating the Yjs binding or discarding local edits. Short
+descriptions use a bounded minimum editing area rather than a viewport-sized
+blank region. Compact creation and readonly shared views retain their existing
+presentation.
+
+Tracked description recovery reconciles equivalent content through the active
+editor schema, including editor-filled defaults and JSON key ordering. It also
+recognizes a tracked version that matches both the saved current description and
+the initial hydrated editor baseline, or a successful save from the same dialog
+opening, so
+unsaved edits do not create a recovery prompt for that same version. This changes
+recovery metadata only: it never writes history into the editor or replaces a
+valid collaborative document. Genuine differences in text, formatting, media,
+mentions or unsupported attributes remain available for explicit comparison and
+restore. Pre-clear history remains recoverable. Regression coverage lives in
+`description-reconciliation.test.ts` and `task-dialog-loading-shell.test.tsx`.
+
 The `ttr` CLI uses the same description endpoint and TipTap/Yjs codec as the web
 editor. Prefer first-class description commands over raw task update payloads:
 

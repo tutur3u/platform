@@ -218,6 +218,7 @@ export async function POST(req: NextRequest) {
             mailSkipReason ??
             (await getNotificationSkipReason(sbAdmin, {
               blockedEmailCache,
+              channel: batch.channel,
               membershipCache,
               notification: logNotification,
             }));
@@ -333,6 +334,7 @@ export async function POST(req: NextRequest) {
 
           const preSendSkipReason = await getNotificationSkipReason(sbAdmin, {
             blockedEmailCache,
+            channel: batch.channel,
             membershipCache,
             notification: deliverableNotification,
             recipientEmail: userEmail || null,

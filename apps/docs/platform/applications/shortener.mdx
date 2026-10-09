@@ -1,0 +1,36 @@
+---
+title: "Shortener"
+description: "Workspace link management and the separate redirect runtime."
+updatedAt: '2026-10-08'
+---
+
+Shortener (`shortener.tuturuuu.com`, `apps/shortener`) is the redirect runtime.
+Workspace link-management and analytics pages remain in Web under
+`/{wsId}/link-shortener` where registered. The service and the management UI
+have separate responsibilities.
+
+## Follow a short link
+
+A `/{slug}` request resolves through the configured redirect implementation.
+The destination and current access/validity checks determine the result.
+Do not assume a short link is a public content page, an authentication bypass,
+or a published copy of its target. Inspect the destination's own access rules.
+
+## Manage links
+
+Use the workspace management flow to create/manage supported links and inspect
+available analytics. Analytics represent the events the implementation records;
+they are not proof of unique people, conversions, or the destination's state.
+Workspace permissions still govern management and analytics.
+
+## Search policy
+
+The redirect host is noindex and advertises no sitemap. Public landing pages
+should be indexed on their canonical destination host instead of accumulating
+short-link copies in search. The HTTP noindex policy also applies to API and
+error responses.
+
+See [Shortener routes](/reference/repository/routes/shortener) and the
+[Web route inventory](/reference/repository/catalog) for the exact source entry
+points. [Search indexing](/platform/features/search-indexing) explains why
+redirect execution and public content discovery are separate concerns.

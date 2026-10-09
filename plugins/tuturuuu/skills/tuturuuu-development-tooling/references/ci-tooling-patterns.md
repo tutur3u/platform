@@ -3,6 +3,38 @@
 Load this reference when changing root scripts, CI workflows, plugin validation,
 formatting behavior, or repo-wide verification.
 
+## Codex plugin native parallel pilot
+
+`codex-plugin.yaml` has one native `parallel` group containing only the MCP and
+orchestration-evidence unittest suites after Python setup, plugin validation and
+the unchanged hash-locked dependency install. Preserve their discovery commands,
+five-minute timeouts, 1 GiB per-process virtual memory ceilings and the implicit
+failure-propagating wait. Keep docs JSON validation after the group and retain
+the fifteen-minute job limit, read-only permissions, triggers and switchboard.
+GitHub documents this syntax in its June 25, 2026 changelog and workflow syntax;
+see the linked sources in the Codex plugin docs' CI Coverage section.
+
+Run `node --test scripts/ci/codex-plugin-parallel-workflow.test.js` for structural
+regression coverage. Qualification also needs automatic exact-head hosted suite
+intervals proving overlap and completion. Local process concurrency is not proof
+of native runner semantics. Do not claim speed without comparable measurements,
+extend this pilot to deployment workflows, or replace the shared local resource
+broker with shell fan-out. Revert the group to sequential children for rollback.
+
+## Inactive runtimes until further notice
+
+Docker setup, Rust, and TanStack Start are paused; the Docker cron runner is
+retired. Keep `docker-setup-check.yaml`, Docker-backed E2E jobs, Rust/TanStack
+workflows and direct deploy jobs disabled, including manual dispatch. Retain
+policy tests but exclude inactive implementation suites from default discovery.
+Root commands fail visibly rather than starting or refreshing those runtimes.
+`bun update-all` explicitly targets maintained workspaces; Renovate ignores
+paused app/Docker sources and broad lockfile maintenance stays disabled.
+Shared lock resolutions still need review when active dependencies change.
+Do not regenerate migration manifests as a condition of live Next.js work.
+Resumption must restore commands, tests, CI, dependency policy and docs together.
+See `apps/docs/build/devops/active-runtime.mdx`.
+
 ## File Size Ceiling
 
 - Keep every new authored source file at or below the hard **700-LOC ceiling** in
@@ -428,3 +460,9 @@ formatting behavior, or repo-wide verification.
   not from the platform checkout, so the install telemetry indexes the public
   source without rewriting local project skills.
 - Run `python3 plugins/tuturuuu/scripts/validate_plugin.py` after plugin edits.
+
+Release Please excludes the inactive TanStack Start package from release generation;
+its historical manifest version remains frozen. Renovate also ignores the inactive
+runtime and Docker workflow files, in addition to the paused source/Dockerfiles.
+Policy tests guard these exclusions. Do not reactivate them indirectly during
+ordinary active-package release maintenance.
