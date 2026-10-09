@@ -15070,6 +15070,10 @@
     "name": "Name",
     "value": "Value"
   },
+  "public_profile": {
+    "description": "Public Tuturuuu profile.",
+    "title": "Tuturuuu profile"
+  },
   "qr": {
     "image_upload": {
       "browse": "browse files",
