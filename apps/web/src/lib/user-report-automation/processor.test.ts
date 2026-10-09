@@ -70,6 +70,7 @@ const APPROVED_REPORT = {
   id: 'report-1',
   report_approval_status: 'APPROVED',
   title: 'Monthly report · Mai',
+  review_revision: 1,
 };
 
 function createAdminClientStub(
@@ -204,6 +205,7 @@ function writesFor(writes: Write[], table: string) {
 
 describe('periodic report email delivery', () => {
   beforeEach(() => {
+    vi.stubEnv('REPORT_EMAIL_REPLY_IDENTITY_ENABLED', 'false');
     loadEmailPreview.mockReset().mockResolvedValue({
       html: '<html><body>Branded report preview</body></html>',
       approvalStatus: 'APPROVED',
