@@ -604,3 +604,11 @@ files. A single worker and Node 24 alone did not resolve the observed failure.
 Apply a pool change only to a validated scope; packages using native or runtime
 fixtures need their own compatibility evidence. Do not rewrite global runner
 configuration or claim a universal cause from these focused results.
+
+When temporary-file writes also fail with `Disk quota exceeded` despite free
+space reported by `df`, or Miniflare D1 startup reports `SQLITE_IOERR_WRITE`,
+repeat focused validation with `TMPDIR` pointing to a private writable directory
+under the owning program. Preserve unknown files and live queue owners. A thread
+pool alone passed focused module-loading suites but did not resolve the observed
+D1 fixture write failure; private temporary storage did. Record the tested
+boundary without claiming an unproven universal cause or changing global config.

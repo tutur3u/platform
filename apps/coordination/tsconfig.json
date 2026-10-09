@@ -8,5 +8,10 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["worker-configuration.d.ts", "src/**/*.ts"]
+  "include": [
+    "worker-configuration.d.ts",
+    "src/**/*.ts",
+    "vite.config.ts",
+    "vitest.config.ts"
+  ]
 }
