@@ -1,6 +1,3 @@
-diff --git a/node_modules/@tuturuuu/parley/node_modules/@opennextjs/cloudflare/.bun-tag-130a72b19a05eded b/.bun-tag-130a72b19a05eded
-new file mode 100644
-index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
 diff --git a/dist/cli/build/bundle-server.js b/dist/cli/build/bundle-server.js
 index 6d23a9dec4e605cb6c1061936a40c5c75bffa4ff..a2f462b3d0f2b7ed4b8900d555bdecbabff6cc9d 100644
 --- a/dist/cli/build/bundle-server.js
@@ -27,15 +24,13 @@ index 2c3ee99d8ebc2ac59abb0f77aa12cf355f1a89a4..ddaff99a58ca31721eccf6125ecd5a9d
  fix: |-
    function $FUNCTION() {
      if (!$SIGNAL) {
-@@ -182,7 +182,7 @@ fix: |-
+@@ -182,5 +182,5 @@ fix: |-
      const requestScope = globalThis[Symbol.for("__cloudflare-context__")] ?? globalThis;
      let requestModuleLoadingSignal = $SIGNAL.requestSignals.get(requestScope);
      if (!requestModuleLoadingSignal) {
 -      requestModuleLoadingSignal = new $CTOR();
 +      requestModuleLoadingSignal = new $CTOR($$$CTOR_ARGS);
        const trackedModuleLoads = new Set();
- 
-       requestModuleLoadingSignal.__openNextModuleLoadingRegistry = $SIGNAL;
 diff --git a/dist/cli/build/patches/plugins/load-manifest.js b/dist/cli/build/patches/plugins/load-manifest.js
 index b0616a9a1a2729c3bc1cf03dd88edde8afa09d08..78de2b802e6aa702d4fdf40da219489ac7abe1d8 100644
 --- a/dist/cli/build/patches/plugins/load-manifest.js
