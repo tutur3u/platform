@@ -1,6 +1,9 @@
 'use client';
 import { useTranslations } from 'next-intl';
-import type { DocumentOutlineItem } from './document-outline-model';
+import {
+  type DocumentOutlineItem,
+  outlineLimit,
+} from './document-outline-model';
 export function DocumentOutline({
   items,
   truncated,
@@ -58,7 +61,7 @@ export function DocumentOutline({
       </ol>
       {truncated && (
         <p className="mt-3 text-muted-foreground text-sm">
-          {t('documentOutlineLimit', { count: 100 })}
+          {t('documentOutlineLimit', { count: outlineLimit })}
         </p>
       )}
     </nav>
