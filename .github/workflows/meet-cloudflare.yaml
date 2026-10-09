@@ -210,9 +210,10 @@ jobs:
         working-directory: apps/meet
         run: bun run deploy:cloudflare -- --message "$GITHUB_SHA"
       - name: Verify canonical routes
+        timeout-minutes: 8
         run: |
-          curl --fail --retry 5 --retry-delay 5 https://meet-realtime.tuturuuu.com/health
-          curl --fail --retry 5 --retry-delay 5 --output /dev/null https://meet.tuturuuu.com/login
+          curl --fail --retry 5 --retry-delay 5 --connect-timeout 5 --max-time 20 --retry-max-time 150 https://meet-realtime.tuturuuu.com/health
+          curl --fail --retry 5 --retry-delay 5 --connect-timeout 5 --max-time 20 --retry-max-time 150 --output /dev/null https://meet.tuturuuu.com/login
       - name: Verify canonical frontend build identity
         run: node scripts/ci/verify-meet-build-info.js
       - name: Verify authenticated realtime and SFU behavior
