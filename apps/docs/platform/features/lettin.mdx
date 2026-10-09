@@ -583,6 +583,38 @@ English and Vietnamese rendered regressions in
 `apps/lettin/src/components/creator-profile-labels.test.tsx` cover the exact labels,
 help association, and reserved-name validation.
 
+
+### Published document heading outlines
+
+Public notebook and published-entry readers display an “On this page” outline
+when the selected document has at least two nonempty rendered headings. The
+outline uses only the currently rendered published document, never an editor
+buffer, private draft, unavailable entry or another workspace. Content notices
+remain before artwork and heading navigation in the combined reader. Creator editor
+previews keep outlines disabled by default. No document or publication state is
+written and no reader interactions or preferences are recorded.
+
+Heading labels are plain escaped text with whitespace collapsed; markup, author
+IDs, image metadata and link targets are not interpreted as navigation targets.
+Targets use document scope and tree positions so repeated titles remain distinct.
+The outline follows the renderer's depth and leaf-node rules, shows at most the
+first 100 headings, and reports truncation. Long labels are capped at 160
+characters; full heading text remains in the document. Sources are unchanged.
+
+An ordinary outline click opens enclosing collapsed sections, focuses the heading
+and scrolls within the same article. It uses automatic movement and heading focus
+styling, avoiding forced animation. The explicit jump does not add browser-history
+entries. Modified link clicks retain native anchor behavior. Selected-entry
+changes replace outline labels and targets. These are local reading targets, not
+stable section-permalink or immutable-snapshot guarantees: future publication can
+change heading positions. A copied public link still observes source publication
+and retirement boundaries.
+
+Regression evidence: `document-outline-model.test.ts` and `document-outline.test.tsx`
+cover repeated/empty/nested headings, bounds and escaping,
+matching renderer IDs, fold opening/focus, article isolation, private preview and
+published selection boundaries. Exact-head CI and hosted scrolling/focus/browser
+acceptance remain separate gates; DOM fixtures do not prove browser layout.
 ### Saved entry duplication
 
 In the Lettin notebook studio, a creator with notebook editing access can explicitly
