@@ -872,7 +872,7 @@
     "relationshiprole": "Has role",
     "relationships": "Relationships",
     "relationshipsHint": "Follow the connections between people, places, stories, and roles.",
-    "relationshipTargetCount": "{count} available targets",
+    "relationshipTargetCount": "{count, plural, one {# available target} other {# available targets}}",
     "relationshipTargetKind": "Target entry kind",
     "relationshipType": "Relationship type",
     "remove": "Remove",

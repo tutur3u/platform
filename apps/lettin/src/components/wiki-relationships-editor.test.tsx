@@ -253,3 +253,54 @@ it('integrates draft changes through WikiDetailsEditor without losing chronology
     ],
   });
 });
+
+it('keeps the focused type control mounted when changing a relationship kind', async () => {
+  await render();
+  const control = container.querySelector<HTMLSelectElement>(
+    '.wiki-relationship-row select'
+  )!;
+  control.focus();
+  expect(document.activeElement).toBe(control);
+  await select(0, 'rival');
+  expect(container.querySelector('.wiki-relationship-row select')).toBe(
+    control
+  );
+  expect(document.activeElement).toBe(control);
+  expect(control.value).toBe('rival');
+  expect(changes.mock.lastCall?.[0].relationships[0]).toMatchObject({
+    kind: 'rival',
+    label: 'Trusted label',
+  });
+});
+
+it('preserves independently controlled legacy duplicate rows without duplicate keys', async () => {
+  const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    await render({
+      ...initial,
+      relationships: [
+        ...initial.relationships,
+        { ...initial.relationships[0]!, label: 'Second label' },
+      ],
+    });
+    expect(container.querySelectorAll('.wiki-relationship-row')).toHaveLength(
+      2
+    );
+    expect(error.mock.calls.flat().join(' ')).not.toContain('same key');
+    const controls = container.querySelectorAll<HTMLSelectElement>(
+      '.wiki-relationship-row select'
+    );
+    controls[1]!.focus();
+    await select(1, 'family');
+    expect(container.querySelectorAll('.wiki-relationship-row select')[1]).toBe(
+      controls[1]
+    );
+    expect(document.activeElement).toBe(controls[1]);
+    expect(changes.mock.lastCall?.[0].relationships).toEqual([
+      { targetId: 'a', kind: 'friend', label: 'Trusted label' },
+      { targetId: 'a', kind: 'family', label: 'Second label' },
+    ]);
+  } finally {
+    error.mockRestore();
+  }
+});

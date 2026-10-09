@@ -872,7 +872,7 @@
     "relationshiprole": "Có vai trò",
     "relationships": "Mối quan hệ",
     "relationshipsHint": "Khám phá các kết nối giữa nhân vật, địa điểm, câu chuyện và vai trò.",
-    "relationshipTargetCount": "{count} mục khả dụng",
+    "relationshipTargetCount": "{count, plural, other {# mục khả dụng}}",
     "relationshipTargetKind": "Loại mục được liên kết",
     "relationshipType": "Loại quan hệ",
     "remove": "Xóa",

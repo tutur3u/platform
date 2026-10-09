@@ -51,10 +51,8 @@ export function WikiRelationshipsEditor({
     <fieldset className="wiki-fieldset">
       <legend>{t('relationships')}</legend>
       {wiki.relationships.map((relation, index) => (
-        <div
-          className="wiki-relationship-row"
-          key={`${relation.targetId}-${relation.kind}`}
-        >
+        // Legacy rows have no IDs; type edits must retain control identity.
+        <div className="wiki-relationship-row" key={index}>
           <select
             aria-label={t('relationshipType')}
             value={relation.kind}
