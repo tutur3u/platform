@@ -3,6 +3,53 @@
 Load this reference when changing root scripts, CI workflows, plugin validation,
 formatting behavior, or repo-wide verification.
 
+## Incremental Oxc and Worker adoption
+
+Use root-pinned Oxlint/Oxfmt through `bun oxc:lint`, `bun oxc:format` and
+`bun oxc:write` with explicit owned-file paths. Read-only commands are the default;
+format writes are intentional. Existing Biome CI/editor/generator ownership remains
+until a workspace records rule coverage, formatting deltas and compensating
+validators. Do not run global formatters or the root-wide Vite+ migrator for a
+single workspace. Run `node --test scripts/oxc.test.js` to exercise file scope,
+symlink rejection, dialog linting and read-only formatting behavior.
+
+Gradual Cloudflare adoption preserves request/session, API, storage, consent and
+localization contracts. Domain modules and portable React components use injected
+adapters rather than framework/runtime globals. Keep framework imports in explicit
+adapter entrypoints and protect portability with import-boundary regressions.
+Vite+ tooling does not convert Next.js routes/actions; paused TanStack Start remains
+paused. See [adoption guidance](../../../../../apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx)
+for parity and Worker acceptance gates; builds stay in exact-commit CI.
+
+## cf CLI migration boundaries
+
+Prefer cf for operations with demonstrated parity, beginning with bounded read-only
+inventory/observability and a Vite-native Worker pilot. Pin dependencies through
+package-manager commands; verify cf authentication/account independently of Wrangler.
+Review typed configuration and Vite mode resolution against existing resource
+identities, routes, bindings, Durable Object migrations, triggers and secret names.
+Keep one authoritative configuration per scope. Replace development, type generation,
+CI artifact production, tail/version inspection and release/rollback separately;
+retain Wrangler for unsupported operations. Exact-commit CI and real emitted-artifact
+acceptance remain required. Do not run global migration or deployment as part of
+planning. Follow the phased plan in the adoption guidance above and recheck
+[upstream coverage](https://blog.cloudflare.com/cloudflare-cf-cli-launch/) before edits.
+
+## Cloudflare runaway-work review
+
+For added or amplified background work, review alarm/queue/cron feedback paths and
+cost units before migration acceptance. Require durable attempt/age or lease bounds,
+finite future deadlines, bounded operations per wake, no reschedule after terminal
+state, idempotent progress and an authenticated persisted stop fence that covers
+racing callbacks. Exercise duplicates, restart, no progress, repeated downstream
+failure and shutdown with operation-count assertions in fixtures and real local
+Workers; build and emitted-artifact checks stay in CI. Batch writes only with
+verified billing semantics. Record cost assumptions, applicable alert delivery and
+an independent operator response. Alerts and CPU limits do not cap total spend.
+Do not copy upstream examples that deliberately retry forever into finite jobs.
+See the adoption guidance's runaway-work acceptance table; live settings are
+separate evidence, never implied by documentation or build success.
+
 ## Codex plugin native parallel pilot
 
 `codex-plugin.yaml` has one native `parallel` group containing only the MCP and

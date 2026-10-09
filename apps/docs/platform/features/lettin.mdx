@@ -583,6 +583,34 @@ English and Vietnamese rendered regressions in
 `apps/lettin/src/components/creator-profile-labels.test.tsx` cover the exact labels,
 help association, and reserved-name validation.
 
+## Discover notebooks by published tags
+
+The public notebook catalogue displays creator-authored tags from the published
+notebook snapshot. Clicking a tag opens the global catalogue with an exact tag
+filter. Creator catalogue cards also link to this global tag view; their ordinary
+search and pagination keep the current creator scope. The catalogue search form
+and previous/next links preserve an active tag filter, and clearing only the tag
+retains the text search. An empty filtered result offers a clear-filter action.
+
+Tag matching is case-sensitive and exact, including Unicode and punctuation;
+it uses the stored published tag, rather than a partial text match. Server-side
+filtering runs before the 24-card page limit and its one-row next-page sentinel.
+Catalogue cards now retain published tags, while entry documents, wiki facts and
+private draft revisions and longer creation guidance remain excluded from catalogue summaries. Private draft
+changes only affect discovery after the creator republishes the notebook.
+
+The `tag` query accepts one nonempty trimmed value of at most 40 characters,
+matching the notebook editor limit. Malformed tag/text filters on the catalogue page return not found;
+malformed API filters return 400. API and page share the tag validation schema.
+No profile field or sharing setting is changed. Publishing a notebook already
+makes its tags public in the reading view; this decision extends those same tags
+to discovery cards. English and Vietnamese labels cover filtering controls.
+
+Regression coverage: `public-tag-discovery.test.tsx` checks independent tag links,
+filter preservation and empty results; `public-catalogue-filters.test.ts` checks
+bounds; the public worlds API tests cover rejected filters; `public-catalogue-storage.test.ts`
+checks actual local D1 filtering, pagination and published snapshot isolation.
+
 ### Searchable relationship authoring
 
 The creator entry editor searches relationship targets by title and alias and
@@ -738,6 +766,31 @@ Regression evidence: `creation-guidance.test.ts` exercises real local D1 snapsho
 copy and authorization boundaries; `creation-guidance.test.tsx` checks escaping,
 empty defaults, draft controls and content-notice placement. Exact-head app builds
 and hosted interaction remain independent delivery gates.
+
+### Private saved creators
+
+Signed-in readers can explicitly bookmark a creator with a published notebook
+from the Lettin creator page and manage up to 500 creator references in `/saved`.
+The choice is private to the initiating reader. It sends no notification,
+creates no public follower count or list, changes no profile fields, and grants
+no source access. Notification subscriptions remain a separate workflow.
+
+Only creator IDs and save timestamps are retained. The library reads a current
+published notebook title for navigation; it never copies a profile or draft.
+A creator without published notebooks is unavailable but remains removable.
+Reads and writes require the expected app-session actor; cache keys include that
+actor. Removal is idempotent, failed mutations preserve the confirmed state, and
+ambiguous writes are not automatically retried. Anonymous readers receive a
+sign-in link with a canonical creator return path. Public profile defaults remain
+avatar, banner, display name and biography; no bookmark choices are exposed there.
+
+Regression evidence: `creator-bookmarks.test.ts` applies the additive D1 migration
+and checks private actor scope, published-only projection, quota and withdrawal.
+The quota fixture seeds 499 references with one SQL operation, verifies the seed
+count, then races two real save operations against the remaining slot;
+creator bookmark route and rendered reader-library tests cover session/command
+fences and explicit UI actions. Exact-head CI and hosted keyboard/account-switch
+acceptance remain separate delivery evidence.
 
 ### Private quick-note capture
 

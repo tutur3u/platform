@@ -16,6 +16,8 @@
         "@vitest/coverage-v8": "5.0.3",
         "acorn": "8.18.0",
         "lucide-static": "^1.45.0",
+        "oxfmt": "0.72.0",
+        "oxlint": "1.87.0",
         "portless": "^0.15.6",
         "turbo": "^2.10.12",
         "typescript": "7.0.2",
