@@ -10,11 +10,11 @@ const workflow = readFileSync(
   'utf8'
 );
 const step = workflow.match(
-  /^      - name: Verify canonical routes\n([\s\S]*?)(?=^      - name:|$(?![\s\S]))/m
+  /^ {6}- name: Verify canonical routes\n([\s\S]*?)(?=^ {6}- name:|$(?![\s\S]))/m
 );
 assert.ok(step, 'canonical-route verification step must exist');
-assert.match(step[1], /^        timeout-minutes: 8$/m);
-const run = step[1].match(/^        run: \|\n((?:          .+\n)+)/m);
+assert.match(step[1], /^ {8}timeout-minutes: 8$/m);
+const run = step[1].match(/^ {8}run: \|\n((?: {10}.+\n)+)/m);
 assert.ok(run, 'verification must retain its literal workflow run block');
 const commands = run[1]
   .trimEnd()
