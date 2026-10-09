@@ -640,7 +640,7 @@
     "contentNotice": "Lưu ý nội dung",
     "contentNoticeHint": "Hướng dẫn tùy chọn cho người đọc (tối đa 500 ký tự), chẳng hạn chủ đề nhạy cảm hoặc tiết lộ cốt truyện. Hiển thị trước hình ảnh và nội dung khi xuất bản. Lưu và xuất bản lại để cập nhật lưu ý công khai.",
     "copyLinkSource": "Liên kết bản sao này với mục gốc",
-    "copyLinkSourceHint": "Mặc định tắt. Chỉ thêm tham chiếu đến mục gốc trong sổ tay này. Xuất bản bản sao sẽ bao gồm tham chiếu đó; không xuất bản mục gốc hoặc cấp quyền truy cập mục gốc.",
+    "copyLinkSourceHint": "Mặc định tắt. Chỉ thêm tham chiếu đến mục gốc trong sổ tay này. Xuất bản bản sao sẽ lưu tham chiếu; người đọc chỉ thấy tham chiếu khi mục gốc cũng được xuất bản. Không xuất bản hoặc cấp quyền truy cập mục gốc.",
     "create": "Tạo dự án",
     "createEntryCopy": "Tạo bản sao chưa xuất bản",
     "createImport": "Tạo bản sao riêng tư",

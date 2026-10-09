@@ -438,10 +438,21 @@ it('adds only an explicitly requested source reference to a new private copy', a
   });
   const publicEntries = (await readPublic(db, worldId))[0]!.entries;
   expect(publicEntries.map((e) => e.id)).toEqual([result.id]);
-  expect(publicEntries[0]!.published.links).toEqual([entryId]);
+  expect(publicEntries[0]!.published.links).toEqual([]);
   expect(
     (await readWorld(db, owner, worldId)).entries.find((e) => e.id === entryId)
   ).toEqual(before);
+  // The public projection reveals the reference only after separate source publication.
+  await mutate(db, owner, {
+    action: 'publishEntry',
+    worldId,
+    entryId,
+    version: 2,
+  });
+  const readableCopy = (await readPublic(db, worldId))[0]!.entries.find(
+    (e) => e.id === result.id
+  )!;
+  expect(readableCopy.published.links).toEqual([entryId]);
 });
 
 it('keeps source revision and workspace fences when a source reference is requested', async () => {
@@ -455,7 +466,7 @@ it('keeps source revision and workspace fences when a source reference is reques
   };
   await expect(
     mutate(db, { ...owner, wsId: 'other' }, command)
-  ).rejects.toMatchObject({ status: 404 });
+  ).rejects.toMatchObject({ status: 403 });
   await mutate(db, owner, {
     action: 'saveEntry',
     worldId,
