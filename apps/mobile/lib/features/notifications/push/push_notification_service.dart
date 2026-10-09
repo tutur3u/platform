@@ -453,23 +453,32 @@ class PushNotificationService {
     await _createAndroidChannel();
     if (_isDisposed) return;
 
-    final initialMessage = await _messaging.getInitialMessage();
-    if (_isDisposed) return;
-    _messageSubscription = (_foregroundMessages ?? FirebaseMessaging.onMessage)
-        .listen((message) {
-          unawaited(_handleForegroundMessage(message));
-        });
-    _messageOpenedSubscription = FirebaseMessaging.onMessageOpenedApp.listen((
-      message,
-    ) {
-      unawaited(_handleRemoteMessageOpened(message));
-    });
-    _tokenRefreshSubscription = _messaging.onTokenRefresh.listen((token) {
-      unawaited(_registerDeviceToken(token));
-    });
+    try {
+      _messageSubscription =
+          (_foregroundMessages ?? FirebaseMessaging.onMessage).listen((
+            message,
+          ) {
+            unawaited(_handleForegroundMessage(message));
+          });
+      _messageOpenedSubscription = FirebaseMessaging.onMessageOpenedApp.listen((
+        message,
+      ) {
+        unawaited(_handleRemoteMessageOpened(message));
+      });
+      _tokenRefreshSubscription = _messaging.onTokenRefresh.listen((token) {
+        unawaited(_registerDeviceToken(token));
+      });
 
-    if (initialMessage != null) {
-      unawaited(_handleRemoteMessageOpened(initialMessage));
+      final initialMessage = await _messaging.getInitialMessage();
+      if (_isDisposed) return;
+      if (initialMessage != null) {
+        unawaited(_handleRemoteMessageOpened(initialMessage));
+      }
+    } catch (_) {
+      await _messageSubscription?.cancel();
+      await _messageOpenedSubscription?.cancel();
+      await _tokenRefreshSubscription?.cancel();
+      rethrow;
     }
 
     _initialized = true;

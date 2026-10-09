@@ -108,6 +108,37 @@ void main() {
     ).called(1);
   });
 
+  test(
+    'foreground delivery stays active while initial lookup is pending',
+    () async {
+      final lookup = Completer<RemoteMessage?>();
+      final entered = Completer<void>();
+      when(messaging.getInitialMessage).thenAnswer((_) {
+        entered.complete();
+        return lookup.future;
+      });
+      gate.complete();
+      final initializing = service.initialize();
+      await entered.future;
+      messages.add(
+        const RemoteMessage(
+          messageId: 'held-transport',
+          data: {
+            'notificationId': 'held-notification',
+            'title': 'During lookup',
+          },
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(shown, ['During lookup']);
+      expect(events.map((event) => event.request.notificationId), [
+        'held-notification',
+      ]);
+      lookup.complete();
+      await initializing;
+    },
+  );
+
   test('failed initial-message lookup retries without retaining '
       'a foreground receiver', () async {
     when(
@@ -115,6 +146,15 @@ void main() {
     ).thenThrow(StateError('synthetic failure'));
     gate.complete();
     await expectLater(service.initialize(), throwsStateError);
+    messages.add(
+      const RemoteMessage(
+        messageId: 'after-failure',
+        data: {'notificationId': 'after-failure', 'title': 'Must not deliver'},
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(shown, isEmpty);
+    expect(events, isEmpty);
     when(messaging.getInitialMessage).thenAnswer((_) async => null);
     await service.initialize();
     messages.add(
@@ -126,6 +166,30 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(shown, ['Synthetic']);
     expect(events, hasLength(1));
+  });
+
+  test('disposal during initial lookup cancels the active receiver', () async {
+    final lookup = Completer<RemoteMessage?>();
+    final entered = Completer<void>();
+    when(messaging.getInitialMessage).thenAnswer((_) {
+      entered.complete();
+      return lookup.future;
+    });
+    gate.complete();
+    final initializing = service.initialize();
+    await entered.future;
+    await service.dispose();
+    messages.add(
+      const RemoteMessage(
+        messageId: 'after-disposal',
+        data: {'notificationId': 'after-disposal', 'title': 'Must not deliver'},
+      ),
+    );
+    lookup.complete();
+    await initializing;
+    await Future<void>.delayed(Duration.zero);
+    expect(shown, isEmpty);
+    expect(events, isEmpty);
   });
 
   test('disposal during initialization never installs a receiver', () async {
