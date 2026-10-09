@@ -435,6 +435,17 @@ checked with `--check`; inactive Rust/TanStack sources are excluded. Product
 guides explain actual behavior and access, while generated routes locate source.
 Use `node scripts/docs-audit.js` for navigation, internal links, and assets.
 
+## Managed artwork collections
+
+Adding artwork outside rich text requires updating the atomic draft artwork guard
+and auditing media publication and retention together. Lettin gallery items use
+the existing `image` JSON key, so published media lookup and recursive cleanup
+retain the same permissions without a new storage policy. Exclude collection
+payloads from discovery projections and test draft edits against older published
+snapshots with real local D1/R2. Keep upload operations tied to the editor lease,
+block save/discard/publish while pending, and reject stale results after unmount.
+When integrating saved-draft duplication, exercise collection artwork ownership
+inside its insert fence, including retirement between the source read and insert.
 ## Duplicating creator drafts
 
 Duplicate from a server-owned saved revision, with explicit destination scope and
