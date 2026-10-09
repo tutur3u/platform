@@ -444,3 +444,15 @@ marketing opt-out accidentally. The source matrix and sender fixtures live in
 `email-eligibility.test.ts` and the notification route tests. See the recipient
 policy in `apps/docs/platform/architecture/authorization.mdx`; focused fixture
 success is separate from exact-head CI and actual provider/inbox delivery.
+
+
+## Saved versus published browsing
+
+Creator search/filter controls operate on authorized saved drafts; public search
+must operate on the published-only projection. Never pass private search indexes
+or draft-change indicators to reader surfaces. “Published” and “saved changes”
+are overlapping states, not mutually exclusive. Compare structured document
+values rather than serialization key order. Apply relationship facets to both
+endpoints before edge text search, and preserve semantic timeline ordering when
+adding card sorts. Keep dirty-editor navigation guards and clear-filter recovery
+in real component regression coverage.
