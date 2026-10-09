@@ -491,3 +491,18 @@ count receipts and duplicate IDs; scopes above their explicit read bound require
 narrowing instead of truncated totals. Preserve 100-report delivery selection and
 actor/scope epochs. See `apps/docs/platform/applications/reports.mdx` and the focused
 report-list/query and panel-counts regressions.
+
+
+## Parley practice and Meet handoff
+
+Parley shares the Meet runtime but owns discovery, scenario selection and private
+facilitator review. A review link must resolve the `meet` app origin explicitly:
+the shared runtime’s `BASE_URL` points at Parley when running there. Participant
+invitations must instead remain on the current Parley origin at `/r/<code>`,
+never `/sessions/<id>`. Codes do not confer authorization.
+
+Reset participation acknowledgement when switching the selected scenario. Keep
+the selection visible when search filters hide its option. Load saved private
+rubrics only after both session-owner and meeting-host checks; render the session
+snapshot rather than the current scenario revision. See the Parley product guide
+and studio setup, invitation, review-route and Meet-link regression tests.
