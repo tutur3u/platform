@@ -1235,8 +1235,11 @@ Ready is advisory and does not publish content or grant publishing permission.
 The editor marks changes unsaved until the creator explicitly saves. The studio
 progress filter composes with the existing saved-entry search and section. It
 filters saved records rather than unsaved editor buffers; relationship views
-require both endpoints to remain in the filtered set. Clearing the filter restores
-all saved entries. This is a scoped organizational workflow; dedicated quick-note
+require both endpoints to remain in the filtered set. The explicit Clear filters
+action resets work stage, search, publication, tag and sort together, restoring
+all saved entries in the current section. It preserves the full saved-stage
+summary and does not save drafts, navigate, change selection or write preferences.
+Dirty editing keeps this action disabled. This is a scoped organizational workflow; dedicated quick-note
 capture remains separate.
 
 Progress labels are always private from readers. Publication strips the label
@@ -1249,7 +1252,9 @@ is unaffected. No new migration or external transfer is required.
 
 Regression evidence: `work-progress.test.ts` uses local D1 for publication,
 historical projections, copies, revisions, workspace boundaries and revocation;
-`world-studio-progress.test.tsx` exercises real studio filtering and opening;
+`world-studio-progress.test.tsx` exercises real studio filtering and opening,
+targets search by its label alongside the Calendar date control, and verifies
+that changing the work stage retains search without changing the planning date;
 `entry-editor.test.tsx` verifies explicit save. These fixtures are separate from
 exact-head app builds and hosted browser acceptance.
 
@@ -1460,6 +1465,10 @@ visible list does not narrow summary counts. Existing `server/work-progress.test
 checks save/publication isolation and public stage omission. Exact-head CI and
 hosted studio acceptance remain independent delivery gates.
 
+Regression coverage for complete filter recovery: `world-studio-progress.test.tsx`
+checks empty-result recovery across stage/search/tag/publication/sort, unchanged
+summary and saved input, and disabled dirty-state controls. Existing standalone
+browsing controls retain their local reset when no composed reset is supplied.
 ## Explicit task planning priority
 
 The Tasks `/{wsId}/tasks/new` composer, including the Lettin handoff, offers an

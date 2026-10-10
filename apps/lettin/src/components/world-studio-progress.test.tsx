@@ -25,6 +25,7 @@ const entry = (
     workProgress,
   },
 });
+let dirty = false;
 const data: LettinWorld = {
   world: entry('notebook'),
   role: 'owner',
@@ -64,7 +65,7 @@ vi.mock('./entry-editor', () => ({
   ),
 }));
 vi.mock('./navigation-guard', () => ({
-  useNavigationGuard: () => ({ dirty: false, setDirty: () => {} }),
+  useNavigationGuard: () => ({ dirty, setDirty: () => {} }),
 }));
 vi.mock('./wiki-sidebar', () => ({ WikiSidebar: () => null }));
 vi.mock('./quick-note', () => ({ QuickNote: () => null }));
@@ -92,6 +93,7 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 afterEach(async () => {
   await act(async () => root.render(null));
   vi.clearAllMocks();
+  dirty = false;
 });
 const setProgress = async (value: string) => {
   const select = container.querySelector('select')!;
@@ -144,9 +146,7 @@ it('retains typed search when progress changes and provides an empty matching re
       <WorldStudio wsId="workspace" worldId="notebook" section="characters" />
     )
   );
-  const input = [...container.querySelectorAll('label')]
-    .find((label) => label.textContent === 'searchWiki')!
-    .querySelector('input')!;
+  const input = browseField('searchWiki') as HTMLInputElement;
   expect(input.type).toBe('text');
   await act(async () => {
     Object.getOwnPropertyDescriptor(
@@ -166,5 +166,125 @@ it('retains typed search when progress changes and provides an empty matching re
   await setProgress('drafting');
   expect(container.querySelector('[data-testid="results"]')!.textContent).toBe(
     'Alice'
+  );
+});
+
+function browseField(label: string) {
+  return [...container.querySelectorAll('label')]
+    .find((node) => node.textContent?.startsWith(label))!
+    .querySelector<HTMLInputElement | HTMLSelectElement>('input,select')!;
+}
+async function chooseFacet(label: string, value: string) {
+  await act(() => {
+    const input = browseField(label);
+    if (input instanceof HTMLInputElement) {
+      Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        'value'
+      )!.set!.call(input, value);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    } else {
+      input.value = value;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  });
+}
+const clearButton = () =>
+  [...container.querySelectorAll<HTMLButtonElement>('button')].find(
+    (button) => button.textContent === 'clearFilters'
+  )!;
+it('clears work stage and all standard facets together without changing saved records or summary', async () => {
+  const before = JSON.stringify(data);
+  await act(() =>
+    root.render(
+      <WorldStudio wsId="workspace" worldId="notebook" section="characters" />
+    )
+  );
+  const summary = container.querySelector(
+    '[aria-label="workProgressSummary"]'
+  )!.textContent;
+  const location = window.location.href;
+  await setProgress('ready');
+  await chooseFacet('searchWiki', 'Alice');
+  await chooseFacet('wikiPublicationFilter', 'published');
+  await chooseFacet('wikiSort', 'titleDesc');
+  expect(container.querySelector('[data-testid="results"]')!.textContent).toBe(
+    ''
+  );
+  await act(() => clearButton().click());
+  expect(container.querySelector('[data-testid="results"]')!.textContent).toBe(
+    'OldAliceBob'
+  );
+  expect(container.querySelector('select')!.value).toBe('all');
+  expect(browseField('searchWiki').value).toBe('');
+  expect(browseField('wikiPublicationFilter').value).toBe('all');
+  expect(browseField('wikiTagFilter').value).toBe('');
+  expect(browseField('wikiSort').value).toBe('original');
+  expect(
+    container.querySelector('[aria-label="workProgressSummary"]')!.textContent
+  ).toBe(summary);
+  expect(JSON.stringify(data)).toBe(before);
+  expect(window.location.href).toBe(location);
+  expect(container.textContent).not.toContain('Editing ');
+});
+it('clears an unavailable tag selection and stage after saved entries refresh', async () => {
+  const original = structuredClone(data.entries);
+  try {
+    data.entries[2]!.draft.tags = ['ready-only'];
+    await act(() =>
+      root.render(
+        <WorldStudio wsId="workspace" worldId="notebook" section="characters" />
+      )
+    );
+    await setProgress('ready');
+    await chooseFacet('wikiTagFilter', 'ready-only');
+    data.entries[2]!.draft.tags = [];
+    await act(() =>
+      root.render(
+        <WorldStudio wsId="workspace" worldId="notebook" section="characters" />
+      )
+    );
+    expect(browseField('wikiTagFilter').value).toBe('ready-only');
+    expect(
+      container.querySelector('[data-testid="results"]')!.textContent
+    ).toBe('');
+    await act(() => clearButton().click());
+    expect(
+      container.querySelector('[data-testid="results"]')!.textContent
+    ).toBe('OldAliceBob');
+    expect(browseField('wikiTagFilter').value).toBe('');
+    expect(container.querySelector('select')!.value).toBe('all');
+  } finally {
+    data.entries = original;
+  }
+});
+it('keeps composed reset disabled while dirty and recovers only after editing is unblocked', async () => {
+  await act(() =>
+    root.render(
+      <WorldStudio wsId="workspace" worldId="notebook" section="characters" />
+    )
+  );
+  await setProgress('ready');
+  dirty = true;
+  await act(() =>
+    root.render(
+      <WorldStudio wsId="workspace" worldId="notebook" section="characters" />
+    )
+  );
+  expect(clearButton().disabled).toBe(true);
+  await act(() => clearButton().click());
+  expect(container.querySelector('[data-testid="results"]')!.textContent).toBe(
+    'Bob'
+  );
+  expect(container.querySelector('select')!.value).toBe('ready');
+  dirty = false;
+  await act(() =>
+    root.render(
+      <WorldStudio wsId="workspace" worldId="notebook" section="characters" />
+    )
+  );
+  await act(() => clearButton().click());
+  expect(container.querySelector('[data-testid="results"]')!.textContent).toBe(
+    'OldAliceBob'
   );
 });
