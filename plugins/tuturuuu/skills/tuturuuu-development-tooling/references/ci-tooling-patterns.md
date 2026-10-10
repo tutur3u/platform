@@ -612,3 +612,15 @@ under the owning program. Preserve unknown files and live queue owners. A thread
 pool alone passed focused module-loading suites but did not resolve the observed
 D1 fixture write failure; private temporary storage did. Record the tested
 boundary without claiming an unproven universal cause or changing global config.
+
+### Coordination alarm qualification
+
+Use the App Coordination page's Worker operation envelope when qualifying the
+Coordination toolchain. Audit `object.ts` transactions, lease expiry, fingerprint
+retention and alarm rescheduling together. Count SQL statements, rows changed/read
+and set/delete alarm calls separately, including reconstruction's schema setup.
+Test early/duplicate/due callbacks, busy retries, lost alarm persistence and a
+release racing an outstanding reschedule. Local SQLite with mocked alarms can
+expose residual wake behavior but cannot certify hosted alarm retry/clock behavior
+or authenticated emergency-stop fencing. Preserve meeting fingerprint retention
+and owner/lease checks; finite per-row retention is not an ingress/account cap.
