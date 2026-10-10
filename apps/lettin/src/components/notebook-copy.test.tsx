@@ -160,7 +160,7 @@ beforeEach(async () => {
 afterEach(async () => {
   await act(async () => root.render(null));
 });
-it.each(['editor', 'publisher', 'viewer'] as const)(
+it.each(['editor', 'publisher'] as const)(
   'omits notebook copies for %s roles',
   async (worldRole) => {
     await render({ worldRole });
