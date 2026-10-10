@@ -679,3 +679,8 @@ fence prevents duplicate clicks before mutation state rerenders. Reset controls
 on context changes. Recipient acceptance is a distinct workflow; do not claim
 an owner confirmation establishes recipient consent. Lettin's collaborator DOM
 and D1 role/revocation regressions cover these boundaries.
+
+Context-reset keys must include the control's identity when stateful components
+share a parent. Workspace/notebook IDs alone collide between sibling quick-note
+and Calendar controls. Lettin's Studio browsing regression checks key warnings,
+state retention across section changes and reset on notebook changes.
