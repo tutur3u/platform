@@ -1137,7 +1137,14 @@
     "worldWaiting": "A world waiting to unfold.",
     "worldWiki": "World wiki",
     "worldWikiHint": "Give the people, places, and moments in your world a place of their own.",
-    "writeWiki": "Begin with a detail you want to remember…"
+    "writeWiki": "Begin with a detail you want to remember…",
+    "writingCharacters": "Characters without whitespace",
+    "writingCount": "{count, number}",
+    "writingSourcePending": "Unapplied Markdown is excluded. Apply Markdown to update these counts.",
+    "writingStatistics": "Writing statistics",
+    "writingStatisticsHint": "Current document body only. Counts update locally; titles, descriptions and image metadata are excluded.",
+    "writingStatisticsPartial": "Partial counts: this document exceeds the statistics traversal limit.",
+    "writingWords": "Words"
   },
   "nav-upgrade-dialog": {
     "contact_support": "If you require immediate access to this feature, please contact our support team.",

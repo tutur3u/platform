@@ -1137,7 +1137,14 @@
     "worldWaiting": "Một thế giới đang chờ hé mở.",
     "worldWiki": "Wiki thế giới",
     "worldWikiHint": "Dành một nơi riêng cho con người, địa điểm và khoảnh khắc trong thế giới của bạn.",
-    "writeWiki": "Bắt đầu với một chi tiết bạn muốn ghi nhớ…"
+    "writeWiki": "Bắt đầu với một chi tiết bạn muốn ghi nhớ…",
+    "writingCharacters": "Ký tự không tính khoảng trắng",
+    "writingCount": "{count, number}",
+    "writingSourcePending": "Không tính Markdown chưa áp dụng. Hãy áp dụng Markdown để cập nhật số liệu.",
+    "writingStatistics": "Thống kê bài viết",
+    "writingStatisticsHint": "Chỉ tính nội dung tài liệu hiện tại. Số liệu cập nhật cục bộ; không tính tiêu đề, mô tả và thông tin ảnh.",
+    "writingStatisticsPartial": "Số liệu một phần: tài liệu vượt quá giới hạn duyệt của thống kê.",
+    "writingWords": "Từ"
   },
   "nav-upgrade-dialog": {
     "contact_support": "Nếu bạn cần truy cập ngay vào tính năng này, vui lòng liên hệ với đội ngũ hỗ trợ của chúng tôi.",
