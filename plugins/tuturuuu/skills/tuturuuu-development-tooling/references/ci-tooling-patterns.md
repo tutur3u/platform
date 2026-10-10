@@ -535,6 +535,14 @@ that CI run, using its emitted Wrangler config; preserve source config for named
 secret provisioning. See `apps/docs/build/devops/cloudflare-cron-control.mdx` for
 commands and the distinct downstream delivery/cost/stop acceptance boundaries.
 
+For Cron recovery cost review, count the requeue RPC and pending lookup even when
+there is no delivery. Each database phase uses a 30-second signal; web delivery
+uses a separate 180-second signal. A one-row lookup parameter does not
+bound full response consumption or requeue database work. Count repeated failed
+invocations separately and require durable recurring authority/progress and stop
+fences before certifying the schedule. See the recovery request envelope in the
+Cron Control runbook; mocked HTTP counts are not billed-row or hosted-stop proof.
+
 Cron Control database recovery and lookup each carry a 30-second AbortSignal and
 reject redirects with `redirect: 'manual'`. Keep body consumption attached to the
 lookup signal and preserve failure short-circuiting before later phases. Timeouts
@@ -543,6 +551,22 @@ RPC behavior, without adding immediate re-enqueue feedback. These deadlines do
 not cap recurring invocation counts, billed rows, response bytes or total spend.
 See the database request deadline section in the Cron Control runbook for controlled
 unit evidence versus hosted scheduling and independent-stop release gates.
+
+## Native Meet realtime toolchain
+
+For the native Meet realtime Vite+ workspace, keep the original production Wrangler
+entry and migration history intact while CI qualifies `dist/worker/wrangler.json`.
+Run emitted-config identity/binding checks and real SQLite routing probes after the
+native CI build, alongside the existing lifecycle/protocol integration gates. The
+initial configuration type-check and entry lint scope do not certify all retained
+service source. See the programming realtime runbook for fixture commands and
+hosted-media/cost/cutover boundaries.
+
+For native Worker workspaces tested with explicit Node scripts, provide a separate
+Vitest config with an empty include list. Root Vitest discovers all project configs
+before file filtering; loading the Cloudflare Vite plugin can start an unrelated
+Worker and fail collection on unbuilt imports or missing secrets. Preserve the
+explicit protocol and real Worker gates in the owning CI workflow.
 
 ## Vite+ native service Worker boundary
 
@@ -582,3 +606,17 @@ alongside Web, Learn, Infrastructure, Mail and Contacts. Keep placeholder build
 environment values, bounded Turbo concurrency, exact-source checkout and
 read-only permissions; preview or production dispatch is not a substitute for
 this PR gate.
+
+### Vitest temporary module collection failures
+
+If a Vitest 5 suite fails collection with `ENOENT` for a temporary transformed
+module under `/tmp/.../ssr` or `/tmp/.../client`, retain the failed log and distinguish
+collection from failed assertions. Focused auth and Colab suites reproduced this
+in the fork pool on 5.0.0 and 5.0.3 and passed with `--pool=threads`, retaining
+per-file isolation and every test. Run that comparison through the resource broker
+with at most two workers before changing configuration. `--no-cache` disables
+result caching; it does not prevent the fork pool from using temporary module
+files. A single worker and Node 24 alone did not resolve the observed failure.
+Apply a pool change only to a validated scope; packages using native or runtime
+fixtures need their own compatibility evidence. Do not rewrite global runner
+configuration or claim a universal cause from these focused results.
