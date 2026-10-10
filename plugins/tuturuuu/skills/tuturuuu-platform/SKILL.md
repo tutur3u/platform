@@ -13,9 +13,10 @@ load only the reference section needed by the affected surface.
 - `references/repository-workflows.md`: app ownership, settings shells, package
   commands, task capture, and coordination metadata.
 - `references/platform-checklist.md`: follow-through for a substantial change across
-  translations, navigation, API migration tracking, or multiple packages.
+  translations, navigation, active route ownership, or multiple packages.
 
-Preserve the live Next API and Rust/TanStack migration parity. Shared client API
+Maintain the live Next.js API and shared contracts. Docker setup, Rust, and
+TanStack Start are paused; do not refresh or validate their inactive trees. Shared client API
 access belongs in `packages/internal-api`; satellite actors come from app sessions.
 Use `bun i18n:add` for translation key operations when possible and sort value-only
 message edits. Use `ttr` for requested task capture unless another tracker is chosen.
@@ -24,9 +25,8 @@ Schema/RLS changes use `$tuturuuu-database`; satellite shells use
 `$tuturuuu-satellite-app-ux`. Use the focused commit, coordination, or sync skill
 when that operation is part of the request. Do not load them for unrelated code edits.
 
-Run focused checks, then `bun check` for TS/JS or root-script/config changes.
-Build the affected app for route/page/dependency changes because `bun check` does
-not compile Next routes. Production schema pushes remain user-only.
+Run focused non-build checks locally and require relevant exact-commit CI
+tests, type-check, lint, and Next app builds. Do not run local builds or `bun check`. Production schema changes use the authorized gated migration workflow; never push directly from an agent checkout.
 
 For shared rooms, cursors, collaborative editing or realtime checkpoint services,
 use `$tuturuuu-realtime` and its focused implementation reference.

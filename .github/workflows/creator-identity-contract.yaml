@@ -64,6 +64,7 @@ jobs:
           if-no-files-found: error
           retention-days: 3
   rust-profile-parity:
+    if: ${{ false }} # Paused Rust target; live database contract remains enabled.
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Match the bounded backend test compilation policy in rust-verify.yml.

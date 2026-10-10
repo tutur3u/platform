@@ -6,6 +6,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { Link } from '@/i18n/navigation';
+import { ContentNotice } from './content-notice';
 export function WorldShelf({
   wsId,
   shelf,
@@ -101,6 +102,7 @@ export function WorldShelf({
             href={`/${wsId}/worlds/${world.id}`}
             className="notebook-cover block overflow-hidden focus-visible:outline-2 focus-visible:outline-ring"
           >
+            <ContentNotice notice={world.draft.contentNotice} />
             <div
               className={`studio-world-art studio-world-art-${index % 3} flex h-52 items-center justify-center overflow-hidden`}
             >

@@ -65,6 +65,12 @@ export function createStaffEligibilityHandler(
           try: () => deps.check(actor),
           catch: safeError,
         });
+        if (
+          raw === null ||
+          typeof raw !== 'object' ||
+          !Object.hasOwn(raw, 'eligible')
+        )
+          return failure(503);
         const parsed = eligibility.safeParse(raw);
         if (!parsed.success) return failure(503);
         return Response.json(parsed.data, { headers });
