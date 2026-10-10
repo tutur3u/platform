@@ -10477,4 +10477,40 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get notificationsReadError => 'Không thể tiếp nhận thao tác đọc. Vui lòng thử lại.';
+
+  @override
+  String get notesLocalAiTitle => 'Tóm tắt trên thiết bị';
+
+  @override
+  String get notesLocalAiDescription => 'Dùng mô hình đã cài để tóm tắt ngắn trên thiết bị. Xem lại trước khi thêm vào ghi chú. Nội dung không được gửi tới dịch vụ AI.';
+
+  @override
+  String get notesLocalAiModel => 'Mô hình đã cài';
+
+  @override
+  String get notesLocalAiMissingModel => 'Hãy cài hoặc nhập mô hình này trong cài đặt Mira trước.';
+
+  @override
+  String get notesLocalAiUnsupported => 'Thiết bị này không hỗ trợ suy luận tại chỗ.';
+
+  @override
+  String get notesLocalAiInput => 'Chọn ghi chú có nội dung và tối đa 5.000 ký tự.';
+
+  @override
+  String get notesLocalAiEngine => 'Không thể tạo tóm tắt tại chỗ. Không có dịch vụ từ xa nào được sử dụng.';
+
+  @override
+  String get notesLocalAiSaveError => 'Không thể xác nhận thêm tóm tắt. Kiểm tra ghi chú trước khi lưu lại.';
+
+  @override
+  String get notesLocalAiStop => 'Dừng';
+
+  @override
+  String get notesLocalAiGenerate => 'Tạo trên thiết bị';
+
+  @override
+  String get notesLocalAiAppend => 'Thêm tóm tắt';
+
+  @override
+  String get notesLocalAiDiscard => 'Bỏ bản xem trước';
 }
