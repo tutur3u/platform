@@ -212,3 +212,39 @@ That keeps permission IDs consistent across browser/session routes and external 
 - Do not assume `workspace_members.role` represents the effective permission model in `apps/web`.
 - Treat `admin` as a permission that short-circuits checks, not as a separate role system.
 - When adding new privileged features, update both the permission catalog and the UI/routes that consume it.
+
+## Notification email recipient eligibility
+
+The Web immediate and batched notification dispatchers admit confirmed external
+account destinations as well as existing internal destinations. A public account
+is not excluded because its address is outside `tuturuuu.com`. External admission
+requires the notification's user ID to resolve to a confirmed Auth email matching
+the selected destination. Missing confirmation, stale profile or batch addresses,
+and external email-only targets remain undeliverable. Existing internal email-only
+invitations retain their transactional behavior.
+
+The deliberate root-workspace email rollout remains in force. This recipient rule
+does not enable notification email for other workspaces, activate a provider,
+backfill old notifications, or retry previously skipped deliveries. Push keeps its
+existing workspace and personal Mail rules.
+
+At dispatch, each queued email event rechecks the current account email-channel
+preference, the account workspace-activity preference for workspace events, and
+the event's workspace preference with account-event fallback. Missing preferences
+retain the existing RPC default of enabled. Explicit opt-outs stop delivery;
+failed or malformed preference lookups fail closed. Queued `security_alert` events
+also respect the account `security_alerts` category. Transactional account updates
+and invitations do not acquire a marketing preference gate. Dedicated login,
+recovery, and security mail outside the notification queue keep their own policy.
+
+Age limits, current workspace membership, blacklist checks and the EmailService
+suppression boundary still apply. Notification senders never request a blacklist
+bypass. Unsubscribe, complaint, bounce and suppression-lookup failures remain
+owned by EmailService. Provider acceptance and application delivery status do not
+prove recipient inbox delivery.
+
+Regression coverage: `apps/web/src/lib/notifications/email-eligibility.test.ts`,
+`cron-helpers.test.ts`, and the immediate and batched notification route tests
+cover confirmed and unconfirmed external destinations, identity mismatch,
+account/workspace/event/channel opt-outs, suppression and transactional/security
+distinctions. These fixtures prove source behavior, not production delivery.

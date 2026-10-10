@@ -74,7 +74,7 @@ export function useFormDraft({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Save draft to localStorage when answers/section changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: answers triggers saves; the stable ref supplies the current snapshot
   useEffect(() => {
     if (mode !== 'public' || readOnly || submittedAt || isSubmitting) {
       return;
@@ -84,7 +84,7 @@ export function useFormDraft({
       localStorage.setItem(
         draftKey,
         JSON.stringify({
-          answers,
+          answers: answersRef.current,
           currentSectionId,
           sectionTrail,
         })

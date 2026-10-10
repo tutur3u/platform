@@ -46,6 +46,39 @@ vi.mock('@tuturuuu/ui/dialog', () => {
     ].map((name) => [name, Container])
   );
 });
+vi.mock('./artwork-gallery-editor', () => ({
+  ArtworkGalleryEditor: ({
+    onChange,
+    onPendingChange,
+  }: {
+    onChange: (
+      items: { image: string; alt: string; caption: string; credit: string }[]
+    ) => void;
+    onPendingChange: (pending: boolean) => void;
+  }) => (
+    <>
+      <button type="button" onClick={() => onPendingChange(true)}>
+        start-gallery-upload
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          onChange([
+            {
+              image: 'https://example.test/art.png',
+              alt: 'Portrait',
+              caption: 'Caption',
+              credit: 'Artist',
+            },
+          ]);
+          onPendingChange(false);
+        }}
+      >
+        finish-gallery-upload
+      </button>
+    </>
+  ),
+}));
 vi.mock('./document-view', () => ({ DocumentView: () => null }));
 vi.mock('./rich-editor', () => ({
   RichEditor: ({
@@ -153,4 +186,127 @@ it('preserves local content and revision when a save conflicts', async () => {
   await click('saveDraft');
   expect(mutateAsync.mock.calls[1]?.[0].version).toBe(1);
   expect(mutateAsync.mock.calls[1]?.[0].draft.content.text).toBe('New typing');
+});
+
+it('blocks save and discard while gallery artwork uploads, then saves the completed draft', async () => {
+  mutateAsync.mockResolvedValue({ id: 'world' });
+  const onDirty = vi.fn();
+  await act(async () =>
+    root.render(
+      <EntryEditor
+        wsId="workspace"
+        worldId="world"
+        record={record}
+        worldRole="owner"
+        isWorld
+        entries={[]}
+        onDirty={onDirty}
+      />
+    )
+  );
+  await click('start-gallery-upload');
+  const button = (text: string) =>
+    [...container.querySelectorAll('button')].find(
+      (el) => el.textContent === text
+    )!;
+  expect(button('saveDraft').disabled).toBe(true);
+  expect(button('discardDraft').disabled).toBe(true);
+  expect(button('publish').disabled).toBe(true);
+  expect(onDirty).toHaveBeenLastCalledWith(true);
+  await click('finish-gallery-upload');
+  expect(button('saveDraft').disabled).toBe(false);
+  await click('saveDraft');
+  expect(mutateAsync).toHaveBeenCalledWith(
+    expect.objectContaining({
+      draft: expect.objectContaining({
+        gallery: [
+          {
+            image: 'https://example.test/art.png',
+            alt: 'Portrait',
+            caption: 'Caption',
+            credit: 'Artist',
+          },
+        ],
+      }),
+    })
+  );
+  expect(onDirty).toHaveBeenLastCalledWith(false);
+});
+
+it('saves a notice through the private draft command without publishing it', async () => {
+  mutateAsync.mockResolvedValueOnce({ id: 'world' });
+  await act(async () =>
+    root.render(
+      <EntryEditor
+        wsId="workspace"
+        worldId="world"
+        record={record}
+        worldRole="owner"
+        isWorld
+        entries={[]}
+        onDirty={() => {}}
+      />
+    )
+  );
+  const input = [...container.querySelectorAll('label')]
+    .find((label) => label.textContent?.startsWith('contentNotice'))
+    ?.querySelector('textarea');
+  expect(input).toBeDefined();
+  expect(input?.maxLength).toBe(500);
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(
+      HTMLTextAreaElement.prototype,
+      'value'
+    )?.set?.call(input, 'Spoilers for chapter two');
+    input?.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await click('saveDraft');
+  expect(mutateAsync).toHaveBeenCalledTimes(1);
+  expect(mutateAsync.mock.calls[0]?.[0]).toMatchObject({
+    action: 'saveWorld',
+    draft: { contentNotice: 'Spoilers for chapter two' },
+  });
+});
+
+it('saves creation guidance through the private draft command and marks edits dirty', async () => {
+  mutateAsync.mockResolvedValueOnce({ id: 'world' });
+  const onDirty = vi.fn();
+  await act(async () =>
+    root.render(
+      <EntryEditor
+        wsId="workspace"
+        worldId="world"
+        record={record}
+        worldRole="owner"
+        isWorld
+        entries={[]}
+        onDirty={onDirty}
+      />
+    )
+  );
+  expect(mutateAsync).not.toHaveBeenCalled();
+  const input = [...container.querySelectorAll('label')]
+    .find((label) => label.textContent?.startsWith('creationUsageNotes'))!
+    .querySelector('textarea')!;
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(
+      HTMLTextAreaElement.prototype,
+      'value'
+    )!.set!.call(input, 'Ask before adaptations');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  expect(onDirty).toHaveBeenLastCalledWith(true);
+  await click('saveDraft');
+  expect(mutateAsync).toHaveBeenCalledTimes(1);
+  expect(mutateAsync.mock.calls[0]?.[0]).toMatchObject({
+    action: 'saveWorld',
+    version: 1,
+    draft: {
+      creationGuidance: {
+        credits: '',
+        usageNotes: 'Ask before adaptations',
+        collaboration: 'unspecified',
+      },
+    },
+  });
 });
