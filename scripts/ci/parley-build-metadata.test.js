@@ -28,7 +28,14 @@ test('Parley generates exact source identity before dependency and Worker builds
     step.with?.command?.includes('build:cloudflare')
   );
   assert.ok(
-    steps.findIndex((step) => step.run === 'node --test verify.mjs') > built
+    steps.findIndex((step) => {
+      const command = step.run?.split(/\s+/) ?? [];
+      return (
+        command[0] === 'node' &&
+        command[1] === '--test' &&
+        command.includes('verify.mjs')
+      );
+    }) > built
   );
 });
 
