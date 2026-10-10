@@ -3,6 +3,7 @@ import { ArrowUpRight, BookOpen, Network } from '@tuturuuu/icons';
 import type { LettinRecord } from '@tuturuuu/internal-api/lettin';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
+import { CharacterCardFacts } from './character-card-facts';
 import { ContentNotice } from './content-notice';
 import { hasSavedWikiChanges } from './wiki-browse-model';
 import {
@@ -171,6 +172,7 @@ function EntryCards({
             {wikiOf(entry.draft).aliases.length > 0 && (
               <small>{wikiOf(entry.draft).aliases.join(' · ')}</small>
             )}
+            <CharacterCardFacts draft={entry.draft} />
           </div>
         </button>
       ))}
