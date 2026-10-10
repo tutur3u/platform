@@ -87,3 +87,8 @@ review prove baseline equivalence. Existing migration history stays immutable.
 - Full-schema admission fixtures must assert membership in the target workspace.
   Auth bootstrap can independently create a personal workspace for a synthetic
   user; that membership does not admit them to another workspace.
+
+- Use distinct PL/pgSQL variable names and qualified table columns in trigger
+  permit lookups. A name shared by a variable and a column can raise SQLSTATE
+  `42702` before the intended admission error. Retain pgTAP assertions for the
+  rejected mutation's exact error and unchanged state.
