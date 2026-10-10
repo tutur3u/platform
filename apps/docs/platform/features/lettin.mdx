@@ -1279,6 +1279,22 @@ checks rich-text boundaries, metadata exclusion, Unicode and traversal limits;
 `writing-statistics.test.tsx` checks both languages and changing document buffers;
 `entry-editor.test.tsx` preserves save/discard behavior.
 
+## Creator fact ordering
+
+Notebook and entry editors, including characters, allow creators to move existing
+facts up or down. The displayed order is the stored fact-array order; labels and
+values are preserved, including duplicate labels. The first and last rows disable
+impossible moves, and keyboard focus follows the moved row to an available move
+control. Fact insertion remains limited to 40 rows.
+
+Reordering changes only the private editor buffer. Saving uses the existing
+permission and optimistic-revision checks. Public readers continue seeing the
+previous published order until the creator explicitly publishes the saved draft.
+No profile fields, collaboration permissions or public discovery projections are
+added. Regression coverage: `wiki-facts-editor.test.tsx` covers bilingual controls,
+duplicate labels, focus, unchanged metadata and limits; `server/fact-ordering.test.ts`
+covers real local D1 save/read/publish and stale-write rejection.
+
 ### Private reference publication review
 
 The creator preview lists each distinct linked entry or relationship target from
