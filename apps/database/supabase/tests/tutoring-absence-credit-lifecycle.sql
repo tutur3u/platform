@@ -191,7 +191,13 @@ delete from public.user_private_details where user_id=pg_temp.fid(92701);
 select lives_ok($q$update public.users set id=pg_temp.fid(92704) where id=pg_temp.fid(92701)$q$,'creator rekey preserves historical linked sessions');
 select ok(not exists(select 1 from private.workspace_tutoring_sessions where ws_id=pg_temp.fid(92711) and created_by=pg_temp.fid(92701)),
  'creator rekey cascades live attribution without rewriting credit history');
-update public.workspaces set creator_id=pg_temp.fid(92702) where creator_id=pg_temp.fid(92704);
+-- Every synthetic auth user already owns an auto-created personal workspace.
+-- Remove only this rekeyed actor's workspace; transferring it would collide with
+-- the surviving actor's existing personal workspace under the shared unique rule.
+select is((select count(*)::integer from public.workspaces
+ where personal and creator_id=pg_temp.fid(92704)),1,'creator rekey retains one synthetic personal workspace');
+select lives_ok($q$delete from public.workspaces where personal and creator_id=pg_temp.fid(92704)$q$,
+ 'synthetic actor personal workspace cleanup preserves shared uniqueness');
 select lives_ok($q$delete from public.users where id=pg_temp.fid(92704)$q$,'creator deletion uses declared SET NULL');
 select ok(not exists(select 1 from private.workspace_tutoring_sessions where ws_id=pg_temp.fid(92711) and created_by is not null),
  'creator deletion retains sessions and clears only live attribution');
