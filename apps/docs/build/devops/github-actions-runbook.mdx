@@ -4,6 +4,15 @@ description: "How the repository’s automation is organized, gated, and operate
 updatedAt: "2026-10-03"
 ---
 
+<Note>
+Current runtime policy: Docker setup and Docker-backed E2E/image CI are paused;
+the Docker cron runner is retired. Rust and TanStack Start are not in use and
+must not be run, tested, or updated until further notice. Retained Docker and
+migration sections below are historical procedures. Current hosted Next.js,
+package, Worker, database, and mobile workflows retain their own gates. See the
+[active runtime map](/build/devops/active-runtime).
+</Note>
+
 GitHub Actions is the primary automation plane for Tuturuuu.
 
 ## Validation and Delivery Evidence
@@ -16,6 +25,11 @@ exports. Regression tests for shared helpers should import through the shipped
 entry; the Infrastructure desktop public-entry test covers this boundary. Resolve source fixtures relative to `import.meta.dirname`,
 so workspace-owned test runs read the same files as root runs.
 
+- Keep cross-app integration tests outside a package's `src` directory when its
+  type-check project uses `rootDir: "src"`. The users-core tenant-boundary tests
+  live in `tests/approvals`; Vitest discovers them separately from the package
+  source type check. Its config maps the two web-specific aliases explicitly
+  while retaining the package's default `@` alias.
 - Run tests from the owning workspace with its actual config, dependencies and
   providers. Root-hoisted packages or aliases can conceal undeclared dependencies
   and invalid test boundaries. If a narrow source-alias fixture is needed, record
@@ -24,7 +38,7 @@ so workspace-owned test runs read the same files as root runs.
 - Record immutable head and tree, commands, results, and workflow/run/job IDs.
   A manual preview workflow may report the workflow branch SHA rather than its
   input: verify the decoded checkout matches the requested head. Predecessor green
-  builds do not prove a corrected head. New findings or commits require new gates.
+  builds do not prove a corrected head. New findings or commits require new gates. `programming-app-builds.yaml` runs nondeployment Next/Turbo builds for Web, Learn, Infrastructure, Mail, Contacts and Tasks on relevant pull requests, including shared dependencies; each app result must name the immutable checked-out head and does not authorize deployment or certify a different parent SHA.
 - Develop independent scopes in parallel, each with its own worktree and owner.
   Admit heavy local validation through the shared `ttr resources` FIFO after a
   resource preflight; serialize permitted local installs and tests. Require
@@ -138,29 +152,16 @@ commits and manual recovery dispatches must not cancel the active deployment.
 `bun.lock`-only changes intentionally run all Vercel app deploys because ownership
 is ambiguous without a manifest or source path.
 
-## Pull Request Close Cancellation
+## Pull Request Run Lifecycle
 
-`cancel-pr-runs-on-close.yaml` runs on the `pull_request_target` `closed` event
-and cancels active GitHub Actions runs that still belong to the closed pull
-request. It exists to stop queued or long-running checks after a PR is closed
-without adding `closed` triggers to every CI workflow.
+Closing or merging a pull request does not trigger a workflow that cancels its
+checks or deletes its caches. Existing workflow concurrency remains responsible
+for replacing superseded runs on the same branch. It does not cancel a run merely
+because the pull request closed.
 
-Because `pull_request_target` runs with base-repository privileges, keep this
-workflow narrow:
-
-- Do not checkout or execute pull request head code.
-- Checkout only the trusted default branch, with persisted credentials disabled.
-- Pin GitHub-owned actions to full commit SHAs.
-- Grant only `actions: write` and `contents: read` to the cancellation job.
-- Do not pass repository secrets other than the short-lived `GITHUB_TOKEN`.
-
-The cancellation script lists active runs by the closed PR head SHA. It cancels
-matching PR workflow runs and same-repository branch push runs for the PR branch,
-but never cancels `main` or `production` push runs. Runs in contributor forks are
-outside the base repository token's authority and are not cancelled by this
-workflow. The same trusted job paginates through Actions cache entries and
-deletes only entries whose ref equals the closed pull request's merge ref
-(`refs/pull/<number>/merge`). It never deletes default-branch cache entries.
+Inspect the actual conclusion of each run when reporting validation. A cancelled
+run is not a successful check and does not by itself establish a repository
+failure. Cache retention continues to follow GitHub Actions retention settings.
 
 ## Authorized CI Queue Cleanup
 
@@ -567,32 +568,32 @@ failure outcomes, and timer cleanup. Exact-commit E2E remains runtime evidence.
 
 ### Meet, Lettin, and Parley Cloudflare validation
 
-The standalone Meet and Lettin Cloudflare validation jobs build
-`@tuturuuu/supabase` before running Vitest. Their proxy tests load the shared
-auth proxy, whose Supabase subpath exports resolve to `dist` under Node. A
-clean CI checkout has no package build output until that step runs.
-Meet, Lettin, and Parley also compare pull-request base and head commits with
-`scripts/ci/release-only-changes.js` before installing dependencies or building
-Workers. Release Please changes limited to version fields, changelogs, and
-release badges skip those builds. Source edits, dependency changes, and missing
-comparison history still run validation. Pushes and manual dispatches retain
-their normal validation and deployment behavior.
+Meet and Lettin build `@tuturuuu/supabase` before Vitest because proxy tests import
+its Node `dist` exports. Meet, Lettin and Parley use `scripts/ci/release-only-changes.js`
+to skip PR builds only for version fields, changelogs and release badges; source,
+dependencies and missing history still validate. Push/manual behavior is unchanged.
+Meet generates build metadata before Turbo/OpenNext: production refs embed
+`production`, other refs embed `preview` and the checked-out SHA/ref; these inputs
+participate in cache keys. Wrangler descriptions do not populate `/api/build-info`.
+Production `scripts/ci/verify-meet-build-info.js` requires HTTP 200, JSON, `appName: meet`,
+full candidate SHA and production environment/ref before recording success. Fallback,
+stale and preview bundles fail closed; main validation never probes production.
+Workflow contracts use Bun's built-in YAML parser via `workflow-yaml-test-helper.js`,
+not undeclared transitive YAML packages. The dependency-free snapshot checks ordering,
+identity and caching. Run `node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js`.
 
-Meet generates the shared build metadata before dependency Turbo builds and
-OpenNext Worker bundling. Production refs embed `production`; main and pull
-request validation embed `preview` with the checked-out ref and SHA. The generated
-source and build environment inputs participate in Turbo's existing cache keys.
-A Wrangler deployment description alone does not populate `/api/build-info`.
-The production-only deploy job runs `scripts/ci/verify-meet-build-info.js` against
-the canonical endpoint before recording its success marker. It requires HTTP 200,
-JSON, `appName: meet`, the full candidate SHA, and production environment/ref;
-local fallback, stale bundles, and preview metadata fail closed. Main validation
-never probes production as proof of its own artifact. Workflow contracts parse YAML
-through `scripts/ci/workflow-yaml-test-helper.js` using the installed Bun runtime's
-built-in parser. They must not import an undeclared transitive Node YAML package:
-local hoisting can hide a clean-runner resolution failure. A dependency-free
-snapshot runs the same ordering, identity, and cache assertions as a regression. Run the focused contracts
-with `node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js`.
+`parley-offline-diagnostic.yaml` is manual-only from trusted `main`, with no deployment
+or production secrets. It replays retained artifact 11583133658 from run 37853687763,
+fixed to SHA `387caf4872a59cc4944b16324a2554062393d7d1` and its published archive digest.
+Expiry, changed provenance, unsafe extraction or missing Linux tool binaries stop it.
+It installs frozen tools without lifecycle scripts, never rebuilds the app, and makes
+one anonymous `/access-denied` request inside private mount/network namespaces with
+loopback only, local assets/R2/self bindings, dummy credentials and no remote services.
+The unit caps aggregate memory/CPU, local state and logs; active work gets 50 seconds
+plus 10 seconds for owned process-group cleanup. Missing isolation/caps stop launch.
+Only an allowlisted result is retained for one day; request errors or missing HTTP status fail qualification, while a captured HTTP 500 is diagnostic evidence, not health success.
+Before retrieval, a finite unit checks memory/CPU/PID caps and private namespaces,
+not whole-host boot readiness. Exact digest-bound legacy asset aliases stay inside private extraction without changing ZIP/JS bytes; offline gaps never allow online fallback.
 
 ### TanStack/Rust Cloudflare deployment
 
@@ -1158,10 +1159,10 @@ production SHA. When related package releases are queued or running, the helper
 sets `packages_ready=false`; the platform build skips successfully instead of
 polling npm until the runner times out. npm publish authority remains isolated to
 package `publish-npm` jobs. A skipped package gate must not count as production
-deployment for database migrations. Database paths therefore select the
-platform deployment in the production planner, and `supabase-production.yaml`
-requires both the successful planner run and the `vercel-production-platform`
-deployment marker for the same SHA before it can run production migrations.
+deployment for database migrations. For commit-driven selection, the planner checks database-affecting changes against the independent last successful `supabase-production.yaml` migration baseline, not the Platform deployment baseline.
+When Platform lacks successful explicit coverage of the target SHA, pending migrations or unavailable migration coverage conservatively select enabled Platform for redeployment; disabled configuration remains authoritative. Ordinary manual dispatch still selects all enabled targets.
+Selection retains the successful planner, explicit Platform deployment marker, and exact-SHA completed successful staging requirements. Manual production migration recovery may explicitly set `allow_cloudflare_verification_failures=true` with full matching `expected_sha` and secret-matched `expected_project_ref`: only completed planner failures in the three canonical Cloudflare verifier steps qualify, with all three validations and Platform deployment successful and every other job terminal acceptable. This default-off exception never applies to automatic triggers and never bypasses the current Platform marker, staging gate, normal project secrets or `supabase db push --include-all`; inspect actual application and catalog afterward, without manual SQL.
+A registered 15-minute report automation cron is not proof that delivery RPCs are available or email gates are enabled. Missing RPCs remain operational blockers; additive migrations and auto-send toggles do not backfill already-approved reports. Each ready run drains at most five email batches of 20 (100 handled rows) at concurrency four, admitting new batches only within a 30-second budget; already-claimed sends settle before returning, then one generation batch runs. `processedEmails` counts handled queue rows, not Sent or inbox deliveries; `emailBatches` and `emailDrainStopReason` distinguish empty queue, batch limit and admission budget (or missing completion migration). An empty/short claim describes currently eligible rows, not every deferred, locked, blocked or unknown-outcome report.
 The marker must explicitly name the platform workflow, deployment kind, and
 matching payload SHA, and its latest status must be successful. GitHub
 environment records with an empty payload only describe job completion; they
@@ -1390,7 +1391,7 @@ full Xcode before claiming the iOS archive has been verified locally.
    Vercel workflow and branch.
 6. Check path filters to confirm GitHub should have started the lightweight workflow.
 7. For database workflows, inspect the prerequisite evaluation job before the deploy job.
-8. For Docker changes, verify `docker-setup-check.yaml` specifically.
+8. Docker setup CI is paused; retained Docker steps are not current release gates.
 
 ## When You Add New Automation
 
@@ -1532,3 +1533,71 @@ This scope is scheduling summaries, not the whole Calendar startup waterfall.
 Regression coverage lives in `task-schedule-batch.test.ts` and
 `tasks-scheduling-batch.test.ts`. Measure authenticated navigation and meaningful
 content after the exact source is deployed; local checks alone are not latency proof.
+
+### Devbox Control Vite-native artifact
+
+Devbox Control owns a private workspace with Vite+ and scoped Oxlint/Oxfmt
+configuration. The workspace pins Wrangler 4.149.0 so local runtime checks
+support the retained compatibility date; root Wrangler is not the runtime oracle
+for this scope. The Cloudflare Vite plugin emits `apps/devbox-control/dist/worker`
+from the existing Wrangler configuration; Worker name, account, compatibility,
+RunnerWake class/binding/migration and required secret names remain the source
+configuration's authority. No Supabase auth, runner membership, lease, heartbeat,
+notification or WebSocket policy changes accompany tooling adoption.
+
+CI generates Worker types, checks TypeScript and scoped Oxc rules, and runs the
+existing 13 authorization/protocol tests through Vite+. Before and after the
+real Vite build, `node --test apps/devbox-control/scripts/verify-worker-runtime.mjs`
+checks complete health JSON and rejects unauthenticated runner/internal requests
+in a loopback Worker with disposable secrets. Set `DEVBOX_TEST_CONFIG` to an
+absolute emitted `dist/worker/wrangler.json` path for artifact verification.
+Dry-run bundling and the authorized production job consume that emitted config;
+secret provisioning still uses the unchanged source target identity.
+
+The fixture closes its temporary runtime and does not contact Supabase or hosted
+runners. It proves Worker startup and denial-before-remote-access, not successful
+real-account authentication, RunnerWake WebSocket delivery or hosted lease
+transitions. Those remain separate acceptance evidence before canonical migration.
+Release builds run only in exact-commit CI. Locally, queue lint/types/unit/runtime
+checks with `ttr resources run`; use a private writable TMPDIR when shared temporary
+storage rejects writes. The format command checks only owned source and remains
+read-only; existing Biome gates remain authoritative until formatter/rule parity.
+
+This tooling unit adds no alarm, queue, retry chain, storage operation or scheduler.
+Review background-work and operation-cost bounds separately when those paths change;
+health and build success do not establish a spending cap or production promotion.
+
+#### RunnerWake notification operation envelope
+
+The current RunnerWake class performs no alarm, queue or cron rescheduling. A
+successful internal POST enumerates all retained WebSockets and sends one wake to
+each. For `S` retained sockets and `N` duplicate notifications, count `N × S` send
+attempts; failed sends also attempt a close. No durable progress receipt suppresses
+later duplicate fanout. A throwing close aborts remaining delivery and propagates
+failure rather than returning a complete acknowledgement.
+
+The public notify route authenticates the internal token before one run lookup,
+an optional lease lookup and one Durable Object POST. Connect authenticates the
+runner before forwarding the WebSocket upgrade. The object trusts these forwarding
+boundaries; it does not establish an independent durable stop fence or socket lease.
+These per-request counts do not bound retained sockets, repeated ingress, billed
+messages, downstream query rows or total account spend.
+
+`apps/devbox-control/src/wake.test.ts` counts 98,304 sends for 4,096 synthetic sockets
+and 24 duplicate/reconstructed notifications, then checks failed-send closure and
+incomplete fanout on a throwing close. These tests use the actual class with a
+mocked Durable Object base and sockets. They do not verify hosted WebSocket delivery,
+provider billing, authenticated Stop or real persisted leases. Before amplifying
+this path, require bounded per-wake work, an expiring recurring authority and a
+durable authenticated stop fence, preserving recovery and notification semantics.
+
+
+### Native Vite+ test and coverage version alignment
+
+Vite+ 1.1.0 requires Vitest and coverage-v8 5.0.3 together. Pin the root dependency,
+root `vitest` override and provider with Bun; an older root override replaces
+Vite+'s declared runner even when ordinary tests pass. The coverage guard rejects
+that mismatch rather than producing unreliable coverage. Shared CI forwards
+`--maxWorkers=2` and optionally `--coverage`: keep worker/pool defaults in the
+unit config, not a duplicate CLI flag in package scripts. Validate both forwarded
+commands under Node 24 in the owning workspace through `ttr resources`.

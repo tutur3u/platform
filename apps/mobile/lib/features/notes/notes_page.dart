@@ -15,6 +15,8 @@ import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/features/notes/ai/notes_local_ai_cubit.dart';
+import 'package:mobile/features/notes/ai/notes_local_ai_host.dart';
 import 'package:mobile/features/notes/note_checklist_selection.dart';
 import 'package:mobile/features/notes/note_device_lock.dart';
 import 'package:mobile/features/notes/note_editor.dart';
@@ -41,6 +43,8 @@ import 'package:passkeys/authenticator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+part 'notes_page_ai.dart';
+part 'notes_page_save.dart';
 part 'notes_page_links.dart';
 part 'notes_page_lock.dart';
 part 'notes_page_selection.dart';
@@ -50,9 +54,18 @@ part 'notes_page_tasks.dart';
 enum NotesTab { inbox, archive }
 
 class NotesPage extends StatefulWidget {
-  const NotesPage({super.key, this.repository});
+  const NotesPage({
+    super.key,
+    this.repository,
+    this.localAiActor,
+    this.localAiFactory,
+    this.localAiAuthEvents,
+  });
 
   final NoteRepository? repository;
+  final String? Function()? localAiActor;
+  final NotesLocalAiCubit Function(NotesAiScope? Function())? localAiFactory;
+  final Stream<Object?>? localAiAuthEvents;
 
   @override
   State<NotesPage> createState() => NotesPageState();
@@ -287,112 +300,6 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
       const Duration(milliseconds: 700),
       () => unawaited(_save()),
     );
-  }
-
-  Future<bool> _save() async {
-    _saveTimer?.cancel();
-    final wsId = _selectedWsId;
-    final note = _selected;
-    if (!_dirty || wsId == null || note == null) return await _saveQueue;
-    if (_queuedRevision == _editRevision) return await _saveQueue;
-    final encoded = quillDocumentToTipTapJson(_editor.document);
-    var content = encoded == null
-        ? <String, dynamic>{'type': 'doc', 'content': <Object>[]}
-        : (jsonDecode(encoded) as Map).cast<String, dynamic>();
-    final title = _title.text.trim();
-    final revision = _editRevision;
-    _queuedRevision = revision;
-    if (note.locked) {
-      final passphrase = _selectedPassphrase;
-      if (passphrase == null) {
-        _queuedRevision = -1;
-        return false;
-      }
-      try {
-        content = await encryptNoteDocument(
-          content,
-          passphrase,
-          deviceOnly: isDeviceLockedNote(note.content),
-          recovery: lockedNoteEnvelope(note.content)?['recovery'] as String?,
-          lockId: lockedNoteEnvelope(note.content)?['lockId'] as String?,
-        );
-      } on Object {
-        _queuedRevision = -1;
-        if (mounted) setState(() => _error = context.l10n.notesSaveError);
-        return false;
-      }
-    }
-    final next = _saveQueue.then(
-      (_) => _performSave(wsId, note, title, content, revision),
-    );
-    _saveQueue = next.catchError((Object _) => false);
-    return await next;
-  }
-
-  Future<bool> _performSave(
-    String wsId,
-    NoteRecord note,
-    String title,
-    Map<String, dynamic> content,
-    int revision,
-  ) async {
-    if (title == note.title &&
-        jsonEncode(content) == jsonEncode(note.content)) {
-      if (mounted &&
-          _selectedWsId == wsId &&
-          _selected?.id == note.id &&
-          _editRevision == revision) {
-        _dirty = false;
-      }
-      return true;
-    }
-    if (mounted && _selectedWsId == wsId && _selected?.id == note.id) {
-      setState(() => _saving = true);
-    }
-    var savedSuccessfully = false;
-    try {
-      final saved = await _repository.update(
-        wsId,
-        note,
-        title: title,
-        content: content,
-      );
-      if (mounted &&
-          _wsId == wsId &&
-          _selectedWsId == wsId &&
-          _selected?.id == note.id) {
-        setState(() {
-          _selected = saved;
-          _notes = [
-            for (final item in _notes)
-              if (item.id == saved.id) saved else item,
-          ];
-          if (_editRevision == revision) _dirty = false;
-          _error = null;
-        });
-      }
-      savedSuccessfully = true;
-      return true;
-    } on Object {
-      if (_queuedRevision == revision) _queuedRevision = -1;
-      if (mounted &&
-          _wsId == wsId &&
-          _selectedWsId == wsId &&
-          _selected?.id == note.id) {
-        setState(() => _error = context.l10n.notesSaveError);
-      }
-      return false;
-    } finally {
-      if (mounted &&
-          _wsId == wsId &&
-          _selectedWsId == wsId &&
-          _selected?.id == note.id) {
-        setState(() => _saving = false);
-        if (savedSuccessfully && _dirty && _editRevision != revision) {
-          _armSaveTimer();
-        }
-      }
-    }
   }
 
   Future<bool> savePending() => _save();
@@ -659,19 +566,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
                                     ? Center(
                                         child: Text(context.l10n.notesEmpty),
                                       )
-                                    : NoteEditor(
-                                        editor: _editor,
-                                        editing: _editing,
-                                        saving: _saving,
-                                        onInsertLink: _insertLink,
-                                        onOpenLink: (href) =>
-                                            unawaited(_openLink(href)),
-                                        onOpenMention: (target) =>
-                                            unawaited(_openMention(target)),
-                                        onConvertToTask: () => unawaited(
-                                          _convertChecklistToTask(),
-                                        ),
-                                      ),
+                                    : _localAiEditor(),
                               ),
                           ],
                         ),

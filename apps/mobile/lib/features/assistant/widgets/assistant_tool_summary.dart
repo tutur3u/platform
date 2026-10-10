@@ -28,6 +28,20 @@ class _AssistantToolSummaryState extends State<AssistantToolSummary> {
     if (parts.isEmpty) return const SizedBox.shrink();
     final theme = Theme.of(context);
     final latest = parts.last.toolName ?? context.l10n.assistantToolLabel;
+    final countStyle = theme.textTheme.labelMedium?.copyWith(
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+    final count = parts.length.toString();
+    final countPainter = TextPainter(
+      text: TextSpan(
+        text: '0' * (count.length < 3 ? 3 : count.length),
+        style: countStyle,
+      ),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final countWidth = countPainter.width;
+    countPainter.dispose();
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,7 +63,6 @@ class _AssistantToolSummaryState extends State<AssistantToolSummary> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       Icons.handyman_outlined,
@@ -57,12 +70,22 @@ class _AssistantToolSummaryState extends State<AssistantToolSummary> {
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                     const SizedBox(width: 8),
-                    Flexible(
+                    Expanded(
                       child: Text(
-                        '$latest · ${parts.length}',
+                        '$latest ·',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.labelMedium,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      key: const ValueKey('assistant-tools-count-slot'),
+                      width: countWidth,
+                      child: Text(
+                        count,
+                        textAlign: TextAlign.end,
+                        style: countStyle,
                       ),
                     ),
                     const SizedBox(width: 4),

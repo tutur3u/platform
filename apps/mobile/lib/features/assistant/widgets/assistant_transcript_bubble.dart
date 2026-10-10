@@ -10,7 +10,7 @@ import 'package:mobile/features/assistant/widgets/assistant_tool_results_section
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 
-class AssistantTranscriptBubble extends StatelessWidget {
+class AssistantTranscriptBubble extends StatefulWidget {
   const AssistantTranscriptBubble({
     required this.label,
     required this.alignEnd,
@@ -39,12 +39,65 @@ class AssistantTranscriptBubble extends StatelessWidget {
   final bool activityActive;
 
   @override
+  State<AssistantTranscriptBubble> createState() =>
+      _AssistantTranscriptBubbleState();
+}
+
+class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
+  bool _selected = false;
+  String get label => widget.label;
+  bool get alignEnd => widget.alignEnd;
+  String get text => widget.text;
+  String get transcript => widget.transcript;
+  List<AssistantAttachment> get attachments => widget.attachments;
+  DateTime? get timestamp => widget.timestamp;
+  List<String> get toolNames => widget.toolNames;
+  List<AssistantMessagePart> get toolParts => widget.toolParts;
+  List<AssistantMessagePart> get orderedParts => widget.orderedParts;
+  bool get isDraft => widget.isDraft;
+  bool get activityActive => widget.activityActive;
+
+  Future<void> _openActions(String payload) async {
+    if (_selected) return;
+    setState(() => _selected = true);
+    try {
+      await _showMessageActions(context, payload);
+    } finally {
+      if (mounted) setState(() => _selected = false);
+    }
+  }
+
+  Widget _surface(BuildContext context, Widget child) {
+    final theme = Theme.of(context);
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final duration = reduceMotion
+        ? Duration.zero
+        : const Duration(milliseconds: 140);
+    return AnimatedScale(
+      scale: _selected && !reduceMotion ? 1.015 : 1,
+      duration: duration,
+      child: AnimatedContainer(
+        key: const ValueKey('assistant-message-content'),
+        duration: duration,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: alignEnd
+              ? theme.colorScheme.primaryContainer
+              : theme.colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: _selected ? theme.colorScheme.primary : Colors.transparent,
+          ),
+        ),
+        child: child,
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final inlineImageParts = assistantImageToolParts(toolParts);
-    final bubbleColor = alignEnd
-        ? theme.colorScheme.primaryContainer
-        : theme.colorScheme.surfaceContainerLow;
     final timestampLabel = timestamp == null
         ? null
         : DateFormat.Hm().format(timestamp!.toLocal());
@@ -57,21 +110,24 @@ class AssistantTranscriptBubble extends StatelessWidget {
       alignment: alignEnd ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.sizeOf(context).width < 420 ? 320 : 620,
+          maxWidth: (MediaQuery.sizeOf(context).width - 16)
+              .clamp(0, MediaQuery.sizeOf(context).width < 420 ? 320 : 620)
+              .toDouble(),
         ),
         child: Semantics(
           label: label,
+          selected: _selected,
           onLongPress: copyPayload.isEmpty
               ? null
-              : () => _showMessageActions(context, copyPayload),
+              : () => _openActions(copyPayload),
           child: GestureDetector(
             excludeFromSemantics: true,
             onLongPress: copyPayload.isEmpty
                 ? null
-                : () => _showMessageActions(context, copyPayload),
+                : () => _openActions(copyPayload),
             onSecondaryTap: copyPayload.isEmpty
                 ? null
-                : () => _showMessageActions(context, copyPayload),
+                : () => _openActions(copyPayload),
             child: Column(
               crossAxisAlignment: alignEnd
                   ? CrossAxisAlignment.end
@@ -79,18 +135,13 @@ class AssistantTranscriptBubble extends StatelessWidget {
               children: [
                 if (!alignEnd && orderedParts.isNotEmpty)
                   ..._orderedAssistantChildren(context)
-                else
-                  Container(
-                    padding: alignEnd
-                        ? const EdgeInsets.all(14)
-                        : const EdgeInsets.symmetric(vertical: 8),
-                    decoration: alignEnd
-                        ? BoxDecoration(
-                            color: bubbleColor,
-                            borderRadius: BorderRadius.circular(22),
-                          )
-                        : null,
-                    child: Column(
+                else if (text.trim().isNotEmpty ||
+                    transcript.trim().isNotEmpty ||
+                    inlineImageParts.isNotEmpty ||
+                    attachments.isNotEmpty)
+                  _surface(
+                    context,
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (text.trim().isNotEmpty)
@@ -159,7 +210,18 @@ class AssistantTranscriptBubble extends StatelessWidget {
   }
 
   List<Widget> _orderedAssistantChildren(BuildContext context) => [
-    ...assistantOrderedPartWidgets(orderedParts, active: activityActive),
+    for (final child in assistantOrderedPartWidgets(
+      orderedParts,
+      active: activityActive,
+    ))
+      if (child is Padding && child.child is AssistantMarkdownBody)
+        Padding(
+          key: child.key,
+          padding: child.padding,
+          child: _surface(context, child.child!),
+        )
+      else
+        child,
     if (attachments.isNotEmpty)
       Wrap(
         spacing: 8,

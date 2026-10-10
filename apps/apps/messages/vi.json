@@ -243,7 +243,8 @@
       "status": "Trạng thái mục",
       "unchecked": "Cần làm"
     },
-    "hide_sidebar": "Ẩn thanh bên"
+    "hide_sidebar": "Ẩn thanh bên",
+    "public_profile": "Hồ sơ công khai"
   },
   "finance": {
     "new_debt": "Khoản nợ mới",

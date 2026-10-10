@@ -2,6 +2,7 @@ import type { NextConfig } from 'next';
 import { resolveInternalAppUrl } from './app-url';
 import { getLocalInternalAppUrl } from './internal-domains';
 import { getTuturuuuPortlessAllowedDevOrigins } from './portless';
+import { createSeoHeaders, type SeoApp } from './seo';
 
 type Environment = Record<string, string | undefined>;
 
@@ -135,6 +136,10 @@ export function getTuturuuuNextOptimizePackageImports(
 }
 
 export interface TuturuuuNextConfigOptions extends NextConfig {
+  /** Explicit app policy; private routes receive an HTTP noindex directive. */
+  seoApp?: SeoApp;
+  /** Literal path regexes without a leading slash, for generated public pages. */
+  seoPublicPathPatterns?: readonly string[];
   /**
    * Path patterns (no leading slash, regex fragments) that this app allows to
    * be framed by third-party sites. Excluded from the platform-wide
@@ -150,7 +155,8 @@ export function createTuturuuuNextConfig(
 ): NextConfig {
   const experimentalConfig = config.experimental ?? {};
   const imageConfig = config.images ?? {};
-  const { framablePathPatterns, ...nextConfig } = config;
+  const { framablePathPatterns, seoApp, seoPublicPathPatterns, ...nextConfig } =
+    config;
   const antiFramingSource = buildAntiFramingSource([
     ...TUTURUUU_DEFAULT_FRAMABLE_PATTERNS,
     ...(framablePathPatterns ?? []),
@@ -204,6 +210,7 @@ export function createTuturuuuNextConfig(
           headers: TUTURUUU_ANTI_FRAMING_HEADERS,
         },
         ...((await nextConfig.headers?.()) ?? []),
+        ...(seoApp ? createSeoHeaders(seoApp, seoPublicPathPatterns) : []),
       ];
     },
   };

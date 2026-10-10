@@ -1,0 +1,196 @@
+{
+  "ai": {
+    "origin": "https://ai.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "apps": {
+    "origin": "https://apps.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [""],
+    "publicPatterns": []
+  },
+  "calendar": {
+    "origin": "https://calendar.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "chat": {
+    "origin": "https://chat.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "cms": {
+    "origin": "https://cms.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "contacts": {
+    "origin": "https://contacts.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "drive": {
+    "origin": "https://drive.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "external": {
+    "origin": "https://external.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "finance": {
+    "origin": "https://finance.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "forms": {
+    "origin": "https://forms.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [""],
+    "publicPatterns": ["f/[^/]+"]
+  },
+  "git": {
+    "origin": "https://git.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": ["tutur3u/platform"],
+    "publicPatterns": ["", "[^/]+/[^/]+(?:/.*)?"]
+  },
+  "hive": {
+    "origin": "https://hive.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "infrastructure": {
+    "origin": "https://infrastructure.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "inventory": {
+    "origin": "https://inventory.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "learn": {
+    "origin": "https://learn.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [""],
+    "publicPatterns": []
+  },
+  "lettin": {
+    "origin": "https://lettin.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": ["", "worlds", "spaces"],
+    "publicPatterns": ["worlds/[^/]+", "creators/[^/]+"]
+  },
+  "mail": {
+    "origin": "https://mail.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "meet": {
+    "origin": "https://meet.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "mind": {
+    "origin": "https://mind.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "nova": {
+    "origin": "https://nova.tuturuuu.com",
+    "localePrefix": "as-needed",
+    "publicPaths": [
+      "",
+      "learn",
+      "learn/introduction",
+      "learn/basic-techniques",
+      "learn/advanced-strategies",
+      "learn/best-practices",
+      "competitions/neo-league/prompt-the-future/about"
+    ],
+    "publicPatterns": []
+  },
+  "parley": {
+    "origin": "https://parley.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "pay": {
+    "origin": "https://pay.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "playground": {
+    "origin": "https://playground.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "rewise": {
+    "origin": "https://rewise.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "shortener": {
+    "origin": "https://shortener.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "storefront": {
+    "origin": "https://storefront.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": ["[^/]+", "[^/]+/products/[^/]+"]
+  },
+  "tasks": {
+    "origin": "https://tasks.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "teach": {
+    "origin": "https://teach.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [""],
+    "publicPatterns": []
+  },
+  "tools": {
+    "origin": "https://tools.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": ["", "qr", "random"],
+    "publicPatterns": []
+  },
+  "track": {
+    "origin": "https://track.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "web": {
+    "origin": "https://tuturuuu.com",
+    "localePrefix": "as-needed",
+    "publicPaths": [],
+    "publicPatterns": []
+  }
+}
