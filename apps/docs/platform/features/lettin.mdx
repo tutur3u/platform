@@ -685,6 +685,10 @@ Regression coverage: `public-tag-discovery.test.tsx` checks independent tag link
 filter preservation and empty results; `public-catalogue-filters.test.ts` checks
 bounds; the public worlds API tests cover rejected filters; `public-catalogue-storage.test.ts`
 checks actual local D1 filtering, pagination and published snapshot isolation.
+The pagination dataset uses one set-based D1 seed with an asserted 30-row count;
+separate real create/save/publish mutations retain snapshot-boundary coverage.
+Keep fixture setup bounded so timed-out sequential writes cannot contaminate the
+next regression.
 
 ### Searchable relationship authoring
 
@@ -1056,6 +1060,32 @@ changes. `server/storage.test.ts` exercises local D1 editor/publisher boundaries
 workspace eligibility and access revocation. Hosted app-session/browser acceptance
 and exact-head CI remain separate delivery gates.
 
+## Compare draft and published previews
+
+The private notebook and entry editors open **Preview** on the current local
+draft, including unsaved edits. The creator can switch to **Published snapshot**
+to inspect the saved publication with the same document renderer, notices,
+credits and creation guidance. These controls never save, publish, copy content
+to another app or change access. Closing and reopening starts on the current draft.
+
+The published choice is disabled when the record is unpublished. A saved snapshot
+is not proof that an entry is currently available to readers: its notebook must
+also be published, and existing reader and media permissions still apply. Saving
+draft edits leaves the published snapshot unchanged until explicit publication.
+The preview reads only the snapshots already authorized for the private editor;
+it does not fetch a public URL or broaden profile visibility.
+
+English and Vietnamese controls name the selected version and explain these
+boundaries. Regression coverage: `publication-preview.test.tsx` exercises local
+edits versus saved content, credits/notices, unpublished records, refreshed and
+revoked snapshots, accessible selection and reset on reopening. Existing
+`entry-editor.test.tsx` and local D1 `storage.test.ts` preserve pending-save,
+revision-conflict and publication isolation coverage.
+
+Preview version guidance describes the selected version neutrally in both English
+and Vietnamese. It must not identify the published snapshot as the draft. The
+bilingual `publication-preview.test.tsx` regression checks the dialog description
+before and after switching versions as well as the version-specific status.
 ### Scoped notebook JSON export
 
 The notebook studio offers an explicit JSON document export, using published
