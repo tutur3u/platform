@@ -46,6 +46,7 @@ export function WikiDetailsEditor({
         </span>
       </label>
       <WikiFactsEditor
+        kind={draft.kind}
         facts={wiki.facts}
         onChange={(facts) => patch({ facts })}
       />

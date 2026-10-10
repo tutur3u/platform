@@ -1,15 +1,18 @@
 'use client';
-import type { LettinWiki } from '@tuturuuu/internal-api/lettin';
+import type { LettinKind, LettinWiki } from '@tuturuuu/internal-api/lettin';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 import { useLayoutEffect, useRef, useState } from 'react';
+import { CharacterFactStarters } from './character-fact-starters';
 
 export function WikiFactsEditor({
   facts,
+  kind,
   onChange,
 }: {
   facts: LettinWiki['facts'];
+  kind?: LettinKind;
   onChange: (facts: LettinWiki['facts']) => void;
 }) {
   const t = useTranslations('lettin');
@@ -44,6 +47,14 @@ export function WikiFactsEditor({
     <fieldset ref={container} className="wiki-fieldset">
       <legend>{t('facts')}</legend>
       <p className="mb-3 text-muted-foreground text-xs">{t('factOrderHint')}</p>
+      {kind === 'character' && (
+        <CharacterFactStarters
+          disabled={facts.length >= 40}
+          onAdd={(label) => {
+            if (facts.length < 40) onChange([...facts, { label, value: '' }]);
+          }}
+        />
+      )}
       {facts.map((fact, index) => (
         <div className="wiki-property-row" key={index} data-fact-index={index}>
           <Input

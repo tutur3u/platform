@@ -1317,3 +1317,27 @@ concealment, escaped titles and non-mutating review. `publication-preview.test.t
 covers version switching and current target refresh. Existing local D1 storage
 coverage verifies the public projection; exact-head CI and hosted dialog acceptance
 remain separate delivery gates.
+
+
+### Optional character fact labels
+
+Character entries offer Appearance, Personality, Motivation and Abilities as
+optional fact labels in the private editor. The default selection is empty.
+Choosing a label alone makes no change; explicitly adding it appends one ordinary
+fact with an empty value. Existing labels, values, order, aliases and relationships
+remain unchanged, including an existing fact with the same label. The existing
+40-fact limit applies. Other entry kinds keep generic fact controls only.
+
+The chosen label is ordinary authored text in the interface language used when
+adding it. Changing the interface language does not rewrite saved labels. Creators
+may edit labels and values or remove the added fact using the existing controls.
+These are creative character details, not account profile fields. They stay in
+the private editor buffer until an explicit save and become visible to readers
+only through the existing publication flow; no access or profile-sharing rule
+changes. There is no template metadata or new schema.
+
+Regression evidence: `character-fact-starters.test.tsx` covers bilingual explicit
+addition, duplicate-label preservation, metadata isolation, locale switching,
+entry-kind scope and the fact limit. Existing `wiki-facts-editor.test.tsx` and
+local D1 `fact-ordering.test.ts` cover order and save/publication/revision fences.
+Exact-head CI and hosted editor acceptance remain separate delivery gates.

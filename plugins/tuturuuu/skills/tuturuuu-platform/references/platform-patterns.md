@@ -801,3 +801,13 @@ not reader authorization or an immutable historical version. Keep notebook
 publication and server-side reference filtering authoritative. A private preview
 must not publish targets, copy private text to readers or grant access. Lettin's
 reference review and version-switch regressions cover this boundary.
+
+
+### Optional localized fact labels
+
+Keep creative fact starters explicit and append-only. Do not replace matching
+labels or values, infer personal profile data, or store hidden template metadata.
+A localized label becomes ordinary authored text at addition time; changing the
+interface locale must not rewrite it. Preserve existing collection limits and
+save/publication fences. Lettin's character fact starter, ordering and local D1
+regressions cover this behavior.
