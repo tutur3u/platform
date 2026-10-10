@@ -649,3 +649,14 @@ private text out of a date-only Calendar handoff. Destination session/workspace
 permissions remain authoritative. Block navigation during unresolved editor
 changes and reset context-local selections together with their owning context.
 See the Lettin Calendar decision and URL/rendered regressions.
+
+## Reviewing collaborator capabilities
+
+Stage owner access changes with immutable member IDs and workspace/notebook
+context. Describe edit/publication capabilities explicitly before confirmation;
+recheck current eligibility and ownership without treating UI checks as authority.
+Cancel sends no command, failure preserves review, and a synchronous submission
+fence prevents duplicate clicks before mutation state rerenders. Reset controls
+on context changes. Recipient acceptance is a distinct workflow; do not claim
+an owner confirmation establishes recipient consent. Lettin's collaborator DOM
+and D1 role/revocation regressions cover these boundaries.
