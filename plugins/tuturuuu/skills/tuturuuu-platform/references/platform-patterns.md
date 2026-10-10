@@ -828,3 +828,11 @@ by the reader sidebar. Hide the controls for an excluded selection or a list
 with fewer than two entries; never wrap to another notebook or resolve missing
 IDs through private APIs. Reuse the public reader's entry selection/URL handler.
 Cover filter changes and both list ends alongside localized accessible labels.
+
+## Session writing aids
+
+Keep optional session targets separate from authored drafts and public projections.
+Use the existing keyed editor lifetime to reset local state on source changes.
+Count current body content through the bounded Unicode statistics helper; withhold
+completion claims while source edits are unapplied or traversal is partial.
+Document session-only retention and avoid interpreting a reached target as a save.

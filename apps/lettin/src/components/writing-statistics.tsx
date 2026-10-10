@@ -2,6 +2,7 @@
 import type { LettinNode } from '@tuturuuu/internal-api/lettin';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
+import { WritingGoal } from './writing-goal';
 import { documentWritingStatistics } from './writing-statistics-model';
 
 export function WritingStatistics({
@@ -28,6 +29,10 @@ export function WritingStatistics({
       <p className="text-muted-foreground text-xs">
         {t(sourcePending ? 'writingSourcePending' : 'writingStatisticsHint')}
       </p>
+      <WritingGoal
+        words={counts.words}
+        incomplete={sourcePending || counts.truncated}
+      />
       {counts.truncated && (
         <p className="text-xs">{t('writingStatisticsPartial')}</p>
       )}

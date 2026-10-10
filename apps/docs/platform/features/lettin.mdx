@@ -1381,3 +1381,20 @@ use the reader's existing entry URL update. English and Vietnamese controls
 share these rules. Regression evidence: `reading-sequence.test.tsx` exercises
 ends, excluded selections, bilingual labels and escaped titles;
 `public-world.test.tsx` covers selection URL and filtered reader integration.
+
+### Private session word targets
+
+The studio writing statistics include an optional word target from 1 to 100,000.
+It starts empty and applies only to the open entry editor. The target lives in
+local component state: it is not sent to an API, stored in a draft, published,
+or included in exports. Leaving the editor or selecting another entry clears
+it; Clear word target removes it explicitly. This is a session aid, not a saved
+project goal or a writing streak.
+
+Progress uses the existing current body word count, including unsaved edits.
+If Markdown is unapplied or bounded traversal yields partial counts, the target
+is retained but progress and completion are withheld until complete counts
+are available. Reaching a target does not save or publish the document. English
+and Vietnamese controls share the same bounds. Regression evidence:
+`writing-goal.test.tsx`, `writing-statistics.test.tsx` and the bounded Unicode
+counting cases in `writing-statistics-model.test.ts`.
