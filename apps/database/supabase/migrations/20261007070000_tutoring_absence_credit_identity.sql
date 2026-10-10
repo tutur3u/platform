@@ -69,7 +69,7 @@ $$;
 
 create function private.guard_tutoring_absence_session() returns trigger
 language plpgsql security definer set search_path='' as $$
-declare c private.tutoring_absence_credits; r jsonb; projection jsonb; prior jsonb; fk_keys text[];
+declare c private.tutoring_absence_credits; r jsonb; v_projection jsonb; prior jsonb; fk_keys text[];
 begin
   r:=case when tg_op='DELETE' then to_jsonb(old) else to_jsonb(new) end;
   select * into c from private.tutoring_absence_credits where original_session_id=
@@ -81,10 +81,10 @@ begin
     or not exists(select 1 from public.workspace_user_groups where id=c.group_id and ws_id=c.ws_id)
     or not exists(select 1 from public.workspace_users where id=c.student_user_id and ws_id=c.ws_id)
   ) then return old; end if;
-  projection:=private.tutoring_absence_projection(r,'SESSION');
+  v_projection:=private.tutoring_absence_projection(r,'SESSION');
   if tg_op='UPDATE' then
     prior:=private.tutoring_absence_projection(to_jsonb(old),'SESSION');
-    if projection=prior then return new; end if;
+    if v_projection=prior then return new; end if;
     fk_keys:='{}';
     -- RI actions run after the old parent disappears. Admit only the exact FK
     -- field change, with a valid replacement (or its declared SET NULL action).
@@ -104,13 +104,13 @@ begin
     if old.student_user_id<>new.student_user_id and not exists(select 1 from public.workspace_users where id=old.student_user_id)
       and exists(select 1 from public.workspace_users where id=new.student_user_id and ws_id=new.ws_id) then
       fk_keys:=array_append(fk_keys,'student_user_id'); end if;
-    if cardinality(fk_keys)>0 and (projection-fk_keys)=(prior-fk_keys) then return new; end if;
+    if cardinality(fk_keys)>0 and (v_projection-fk_keys)=(prior-fk_keys) then return new; end if;
   end if;
   if exists(select 1 from private.tutoring_absence_write_permits p
     where p.backend_pid=pg_backend_pid() and p.transaction_id=txid_current()
       and p.object_kind='SESSION' and p.object_id=c.original_session_id
       and p.credit_id=c.id and p.revision=c.revision and p.operation=tg_op
-      and p.projection=projection) then return case when tg_op='DELETE' then old else new end; end if;
+      and p.projection=v_projection) then return case when tg_op='DELETE' then old else new end; end if;
   raise exception 'Linked tutoring credit requires canonical operation' using errcode='40001';
 end; $$;
 create trigger tutoring_absence_session_guard before insert or update or delete
