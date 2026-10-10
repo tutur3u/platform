@@ -62,6 +62,7 @@ export function buildNotebookImportPlan(
   const draft = (value: LettinDraft): LettinDraft => ({
     ...value,
     image: '',
+    gallery: [],
     content: node(value.content),
     links: [
       ...new Set(

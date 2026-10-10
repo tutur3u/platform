@@ -198,7 +198,8 @@ function NotebookExportControls({
                 const copied = await copyNotebookToDrive(
                   wsId,
                   blob,
-                  assertCurrent
+                  assertCurrent,
+                  actor.actorId
                 );
                 assertCurrent();
                 setDriveConsent(false);

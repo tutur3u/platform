@@ -1,4 +1,4 @@
-import { uploadWorkspaceStorageFile } from '@tuturuuu/internal-api/storage';
+import { uploadLettinNotebookDriveCopy } from '@tuturuuu/internal-api/lettin';
 export const notebookCopyLimit = 10 * 1024 * 1024;
 export function notebookExportBlob(value: unknown) {
   const blob = new Blob([JSON.stringify(value)], { type: 'application/json' });
@@ -9,7 +9,8 @@ export function notebookExportBlob(value: unknown) {
 export async function copyNotebookToDrive(
   wsId: string,
   blob: Blob,
-  assertActive: () => void
+  assertActive: () => void,
+  expectedActor: string
 ) {
   assertActive();
   if (blob.size > notebookCopyLimit || blob.type !== 'application/json')
@@ -19,10 +20,10 @@ export async function copyNotebookToDrive(
   });
   const transport = globalThis.fetch.bind(globalThis);
   let putStarted = false;
-  const result = await uploadWorkspaceStorageFile(
+  const result = await uploadLettinNotebookDriveCopy(
     wsId,
+    expectedActor,
     file,
-    { path: 'Lettin', upsert: false },
     {
       fetch: async (input, init) => {
         assertActive();

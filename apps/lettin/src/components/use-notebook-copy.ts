@@ -9,6 +9,7 @@ import {
 } from '@tuturuuu/internal-api/lettin';
 import type { useWorkspaceActor } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { useEffect, useRef, useState } from 'react';
+import { clearExpiredCopyReceipt, copyReceiptKey, readCopyReceipt, writeCopyReceipt } from './notebook-copy-receipt';
 
 export function useNotebookCopy({
   wsId,
@@ -24,6 +25,7 @@ export function useNotebookCopy({
   disabled: boolean;
 }) {
   const client = useQueryClient();
+  const receiptKey = actor ? copyReceiptKey(actor.actorId, wsId, worldId) : undefined;
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(initialTitle.slice(0, 160));
   const [consent, setConsent] = useState(false);
@@ -31,9 +33,16 @@ export function useNotebookCopy({
   const [created, setCreated] = useState<string>();
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
-  const [uncertain, setUncertain] = useState(false);
+  const [uncertain, setUncertain] = useState(true);
   const epoch = useRef(0);
   const busy = useRef(false);
+  useEffect(() => {
+    const receipt = receiptKey ? readCopyReceipt(receiptKey) : undefined;
+    setCreated(receipt?.worldId);
+    setUncertain(receipt?.status === 'unknown');
+    setError(receipt?.status === 'unknown' ? 'notebookCopyUncertain' : '');
+  }, [receiptKey]);
+
   useEffect(
     () => () => {
       epoch.current++;
@@ -45,13 +54,16 @@ export function useNotebookCopy({
     setTitle(initialTitle.slice(0, 160));
     setConsent(false);
     setPreview(undefined);
-    setCreated(undefined);
-    setError('');
-    setUncertain(false);
+    const receipt = receiptKey ? readCopyReceipt(receiptKey) : undefined;
+    setCreated(receipt?.worldId);
+    setError(receipt?.status === 'unknown' ? 'notebookCopyUncertain' : '');
+    setUncertain(receipt?.status === 'unknown');
   }
   async function submit() {
     if (
       !actor ||
+      !receiptKey ||
+      !!readCopyReceipt(receiptKey) ||
       disabled ||
       busy.current ||
       !consent ||
@@ -88,14 +100,18 @@ export function useNotebookCopy({
         assertCurrent();
         setPreview(reviewed);
       } else {
+        writeCopyReceipt(receiptKey, { previewId: preview.id, status: 'unknown' });
+        setUncertain(true);
         applying = true;
         const result = await applyLettinNotebookImport(wsId, {
           previewId: preview.id,
           consent: true,
           expectedActor: actor.actorId,
         });
+        writeCopyReceipt(receiptKey, { previewId: preview.id, status: 'confirmed', worldId: result.id });
         assertCurrent();
         setCreated(result.id);
+        setUncertain(false);
         setPreview(undefined);
         try {
           await client.invalidateQueries({ queryKey: ['lettin', wsId] });
@@ -105,8 +121,14 @@ export function useNotebookCopy({
         }
       }
     } catch (failure) {
+      // Applied previews return their identity before the server checks expiry.
+      // Expiry only permits another intent when its matching receipt was removed.
+      const expiredReceiptCleared = applying && preview &&
+        failure instanceof InternalApiError && failure.status === 410 &&
+        clearExpiredCopyReceipt(receiptKey, preview.id);
       if (epoch.current === intent) {
-        if (failure instanceof InternalApiError && failure.status === 410) {
+        if (expiredReceiptCleared) {
+          setUncertain(false);
           setError('importExpired');
         } else if (applying) {
           setUncertain(true);

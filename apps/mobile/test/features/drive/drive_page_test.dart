@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/drive/drive_models.dart';
 import 'package:mobile/data/models/workspace.dart';
@@ -14,6 +15,7 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/drive/view/drive_page.dart';
+import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
@@ -110,6 +112,7 @@ void main() {
     WidgetTester tester, {
     bool canManageDrive = true,
     Size size = const Size(430, 844),
+    Locale locale = const Locale('en'),
   }) async {
     tester.view
       ..devicePixelRatio = 1
@@ -131,8 +134,9 @@ void main() {
           theme: const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
           localizationsDelegates: const [
             ...AppLocalizations.localizationsDelegates,
-            shad.ShadcnLocalizations.delegate,
+            AppShadcnLocalizationsDelegate(),
           ],
+          locale: locale,
           supportedLocales: AppLocalizations.supportedLocales,
           builder: ShadcnMaterialBridge.appBuilder,
           home: DrivePage(
@@ -241,6 +245,96 @@ void main() {
           }
         },
       );
+    }
+  }
+  for (final width in [320.0, 360.0, 430.0, 600.0, 1280.0]) {
+    for (final language in ['en', 'vi']) {
+      for (final scale in [1.0, 2.0]) {
+        for (final canManageDrive in [false, true]) {
+          testWidgets('grid fits $width $language text scale $scale '
+              'manage $canManageDrive', (tester) async {
+            const longName =
+                'A very long Vietnamese folder name – '
+                'Tài liệu dự án và kế hoạch';
+            const names = [longName, 'Second folder'];
+            repository.load = (ws, offset, query) async => DriveListResult(
+              entries: [
+                DriveEntry(name: names[0], isFolder: true),
+                DriveEntry(name: names[1], isFolder: false, size: 1536),
+              ],
+              total: 2,
+              limit: 50,
+              offset: 0,
+            );
+            await mount(
+              tester,
+              size: Size(width, 1200),
+              canManageDrive: canManageDrive,
+              locale: Locale(language),
+            );
+            actions.state
+                .resolveForLocation(Routes.drive)
+                .firstWhere((action) => action.id == 'drive-view')
+                .onPressed!();
+            await pump(tester);
+            tester.platformDispatcher.textScaleFactorTestValue = scale;
+            addTearDown(
+              tester.platformDispatcher.clearTextScaleFactorTestValue,
+            );
+            await pump(tester);
+            expect(tester.takeException(), isNull);
+            final boxes = find.byType(Checkbox);
+            expect(boxes, findsNWidgets(2));
+            final first = tester.getTopLeft(boxes.first);
+            final second = tester.getTopLeft(boxes.last);
+            expect(second.dy >= first.dy, isTrue);
+            if (width == 1280) {
+              expect(second.dy, first.dy);
+              expect(second.dx, greaterThan(first.dx));
+            }
+            await tester.ensureVisible(boxes.first);
+            await tester.tap(boxes.first);
+            await pump(tester);
+            expect(tester.widget<Checkbox>(boxes.first).value, isTrue);
+            expect(tester.widget<Checkbox>(boxes.last).value, isFalse);
+            final l10n = AppLocalizations.of(tester.element(boxes.first));
+            expect(find.text(l10n.driveDeleteSelected(1)), findsOneWidget);
+            expect(find.text('1.5 KB'), findsOneWidget);
+            expect(find.text(l10n.driveFolderLabel), findsOneWidget);
+            final label = tester.getRect(
+              find.text(l10n.driveDeleteSelected(1)),
+            );
+            expect(label.left, greaterThanOrEqualTo(0));
+            expect(label.right, lessThanOrEqualTo(width));
+            expect(tester.takeException(), isNull);
+            final menu = find.byType(PopupMenuButton<String>).first;
+            await tester.ensureVisible(menu);
+            final card = tester.getRect(
+              find
+                  .ancestor(of: menu, matching: find.byType(FinancePanel))
+                  .first,
+            );
+            for (final control in [boxes.first, menu]) {
+              final rect = tester.getRect(control);
+              expect(rect.left, greaterThanOrEqualTo(card.left));
+              expect(rect.right, lessThanOrEqualTo(card.right));
+              expect(rect.top, greaterThanOrEqualTo(card.top));
+              expect(rect.bottom, lessThanOrEqualTo(card.bottom));
+            }
+            await tester.tap(menu);
+            await pump(tester);
+            expect(
+              find.text(l10n.commonRename),
+              canManageDrive ? findsOneWidget : findsNothing,
+            );
+            expect(
+              find.text(l10n.commonDelete),
+              canManageDrive ? findsOneWidget : findsNothing,
+            );
+            expect(tester.takeException(), isNull);
+          });
+        }
+      }
     }
   }
   testWidgets('search is registered with the shared dock and closes cleanly', (
