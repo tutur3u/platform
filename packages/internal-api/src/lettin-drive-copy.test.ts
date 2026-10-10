@@ -10,7 +10,7 @@ const file = new File(
 it.each(['r2', 'supabase'] as const)(
   'retains %s signed provider and actor binding across copy stages',
   async (provider) => {
-    const fetch = vi.fn<typeof globalThis.fetch>(async (input, init) => {
+    const fetch = vi.fn<typeof globalThis.fetch>(async (input, _init) => {
       if (String(input).endsWith('/upload-url'))
         return Response.json({
           signedUrl: 'https://fixture.example/upload',
