@@ -171,8 +171,9 @@ production requests. The source and artifact runs must both pass on the exact he
 
 For focused local runtime verification, run `node --test
 apps/coordination/src/worker.test.mjs` from the root through `ttr resources run`.
-It also works as `bun run test` inside the app. Do not run `bun run build` on the
-shared machine; use CI. Vite+ development uses loopback port 8798 and disables
+It also works as `bun run test` inside the app. Run builds in CI or on an
+authorized verified devbox through the shared resource queue with aggregate
+memory, CPU and process caps. Vite+ development uses loopback port 8798 and disables
 remote bindings and the inspector by default. Only start it for requested
 runtime verification. Node 24 satisfies the pinned Vite+ runtime requirement.
 The root Vitest project discovers future TypeScript unit tests separately from
@@ -182,8 +183,11 @@ If temporary transformed modules fail collection or Miniflare reports
 `SQLITE_IOERR_WRITE`, check for actual temporary-file write failures before
 changing product tests. `df` can show free space while an individual `/tmp`
 write fails with `Disk quota exceeded`. A private writable `TMPDIR` under the
-owning program directory can isolate validation from that failure. Preserve
-unknown files and active jobs. Thread-pool retries passed focused Vitest suites,
+owning program directory can isolate direct validation from that failure. Set
+`TMPDIR` only in the child payload after resource-broker admission. Do not set it
+before `bun check`: its `os.tmpdir()`-based check queue would move shared state.
+Verify the destination quota and retain the original failure before one bounded
+validation attempt. Preserve unknown files and active jobs. Thread-pool retries passed focused Vitest suites,
 but a private `TMPDIR` was also needed for the observed D1 fixture failure;
 neither result establishes a universal runtime cause.
 

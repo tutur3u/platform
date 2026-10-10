@@ -607,8 +607,11 @@ configuration or claim a universal cause from these focused results.
 
 When temporary-file writes also fail with `Disk quota exceeded` despite free
 space reported by `df`, or Miniflare D1 startup reports `SQLITE_IOERR_WRITE`,
-repeat focused validation with `TMPDIR` pointing to a private writable directory
-under the owning program. Preserve unknown files and live queue owners. A thread
+use one bounded direct validation attempt, pointing the child payload
+`TMPDIR` to a verified private writable directory under the owning program only
+after resource-broker admission. Do not set `TMPDIR` before `bun check`: its
+`os.tmpdir()`-based check queue would relocate shared state. Verify the destination
+quota and preserve the original failure, unknown files and live queue owners. A thread
 pool alone passed focused module-loading suites but did not resolve the observed
 D1 fixture write failure; private temporary storage did. Record the tested
 boundary without claiming an unproven universal cause or changing global config.

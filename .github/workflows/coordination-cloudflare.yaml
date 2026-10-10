@@ -53,8 +53,12 @@ jobs:
       - run: node --test apps/coordination/src/worker.test.mjs
       - run: bun run lint
         working-directory: apps/coordination
-      - run: bun run build
-        working-directory: apps/coordination
+      - name: Build the Worker with scoped Turbo caching
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter=@tuturuuu/coordination --concurrency=1
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
       - name: Verify the built Worker and Durable Object
         run: node --test apps/coordination/src/worker.test.mjs
         env:
@@ -88,8 +92,12 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare deployment credential'; exit 1; }
           bun x --no-install wrangler secret list -c apps/coordination/wrangler.jsonc > "$RUNNER_TEMP/coordination-secrets.json"
           jq -e 'any(.[]; .name == "COORDINATION_TOKEN")' "$RUNNER_TEMP/coordination-secrets.json" > /dev/null
-      - run: bun run build
-        working-directory: apps/coordination
+      - name: Build the Worker with scoped Turbo caching
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter=@tuturuuu/coordination --concurrency=1
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
       - run: bun x --no-install wrangler deploy -c apps/coordination/dist/worker/wrangler.json --message "$GITHUB_SHA"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
