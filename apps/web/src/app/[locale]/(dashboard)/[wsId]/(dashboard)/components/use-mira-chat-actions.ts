@@ -71,6 +71,7 @@ export function useMiraChatActions({
   thinkingMode,
   wsId,
 }: UseMiraChatActionsParams) {
+  const pendingOwnerRef = useRef<{ workspace: string } | null>(null);
   const generationRef = useRef(0);
   const mountedRef = useRef(true);
   const workspaceRef = useRef(wsId);
@@ -81,8 +82,17 @@ export function useMiraChatActions({
     return () => {
       mountedRef.current = false;
       generationRef.current++;
+      pendingOwnerRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    const owner = pendingOwnerRef.current;
+    if (owner && owner.workspace !== wsId) {
+      pendingOwnerRef.current = null;
+      setPendingPrompt(null);
+    }
+  }, [wsId, setPendingPrompt]);
 
   const { mutateAsync: createChatMutation } = useMutation({
     retry: false,
@@ -147,16 +157,26 @@ export function useMiraChatActions({
       onChatCreated?: (chatId: string) => void
     ) => {
       const generation = generationRef.current;
-      const current = () =>
+      const live = () =>
         mountedRef.current &&
         generation === generationRef.current &&
-        workspaceRef.current === wsId &&
-        (isCurrent?.() ?? true);
-      if (!current()) return false;
+        workspaceRef.current === wsId;
+      if (!live() || !(isCurrent?.() ?? true)) return false;
       if (model.disabled) {
         setInput(userInput);
         return false;
       }
+      const owner = { workspace: wsId };
+      pendingOwnerRef.current = owner;
+      const current = () =>
+        live() && pendingOwnerRef.current === owner && (isCurrent?.() ?? true);
+      const clearOwnedPrompt = () => {
+        // Cancellation revokes dispatch, not cleanup of this attempt's prompt.
+        if (live() && pendingOwnerRef.current === owner) {
+          pendingOwnerRef.current = null;
+          setPendingPrompt(null);
+        }
+      };
       setPendingPrompt(userInput);
       try {
         const data = await createChatMutation({ userInput, current });
@@ -179,14 +199,14 @@ export function useMiraChatActions({
           parts: [{ type: 'text', text: userInput }],
         });
         if (!current()) return false;
-        setPendingPrompt(null);
         return accepted !== false;
       } catch {
         if (current()) {
           toast.error(t('error'));
-          setPendingPrompt(null);
         }
         return false;
+      } finally {
+        clearOwnedPrompt();
       }
     },
     [
@@ -205,6 +225,7 @@ export function useMiraChatActions({
 
   const resetConversationState = useCallback(() => {
     generationRef.current++;
+    pendingOwnerRef.current = null;
     localStorage.removeItem(`${STORAGE_KEY_PREFIX}${wsId}`);
     localStorage.setItem(
       `${WORKSPACE_CONTEXT_STORAGE_KEY_PREFIX}${wsId}`,
