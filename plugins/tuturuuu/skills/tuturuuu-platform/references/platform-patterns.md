@@ -696,6 +696,11 @@ filters over saved authorized records, preserve search, and explicitly document
 whether relationship filters require both endpoints. Never infer publication from
 a readiness label or add it to public profiles.
 
+Scope mounted studio regression selectors to the labeled control. Calendar date
+inputs and publication facets can precede search or work-stage controls; selecting
+the first input or select can exercise the wrong flow. Verify sibling controls
+remain unchanged when composing filters.
+
 
 ### Private saved-stage summaries
 

@@ -1065,7 +1065,9 @@ is unaffected. No new migration or external transfer is required.
 
 Regression evidence: `work-progress.test.ts` uses local D1 for publication,
 historical projections, copies, revisions, workspace boundaries and revocation;
-`world-studio-progress.test.tsx` exercises real studio filtering and opening;
+`world-studio-progress.test.tsx` exercises real studio filtering and opening,
+targets search by its label alongside the Calendar date control, and verifies
+that changing the work stage retains search without changing the planning date;
 `entry-editor.test.tsx` verifies explicit save. These fixtures are separate from
 exact-head app builds and hosted browser acceptance.
 
