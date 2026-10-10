@@ -1175,3 +1175,23 @@ creation, source/actor/version/dirty fences, closure, duplicate submissions and
 truthful refresh/uncertain outcomes. Existing export/import API and D1 tests
 retain server-boundary coverage. UI/transport fixtures are doubled; exact-head CI
 and hosted browser acceptance remain separate delivery gates.
+
+## Browsing reviewed notebook entries
+
+The private import and owner-copy review screens show up to 20 entry titles per
+page, in the server preview's original order. Creators can search the titles
+locally, ignoring letter case and combining accents, and clear the search to
+return to the first page. The result summary always states the total entries in
+the approved preview. No extra source read or network request is made.
+
+This is a review aid, not entry selection. Searching, paging or seeing no matches
+never changes the stored preview, consent, import limits or final creation scope:
+creation includes every entry approved by that preview. Replacing the preview
+resets search and page state. Pending creation disables the browsing controls;
+existing actor/workspace/owner consent and server permission gates remain in force.
+
+Regression evidence: `notebook-import-entries.test.tsx` exercises bounded pages,
+EN/VI labels, accent-aware title matching, empty matches, preview replacement,
+pending controls and unchanged apply behavior. Existing import/copy tests cover
+server-preview IDs and staged creation boundaries. Hosted browser acceptance and
+exact-head CI remain separate gates.
