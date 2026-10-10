@@ -153,6 +153,67 @@ not just batched put calls. This finite offline budget does not certify hosted a
 delivery, live lease renewal, independent stop or total account spend. Follow the
 channel reservation verification section in the programming realtime runbook.
 
+## Meet Live compensation after termination
+
+Read the ended-session compensation section in
+`apps/docs/platform/features/meet-live-assistants.mdx` before changing Live alarm
+budgets. `session.ts` dispatches registry/room compensation and billing/context
+finalization independently after `ended`; stopping provider output does not stop
+all background obligations. The current cleanup helper arms before I/O and writes
+completion flags afterward without a finite durable attempt reservation or expiry.
+Registry failure or an ambiguous successful call can continue across restarts.
+
+Require a joint operation envelope, pre-I/O durable reservation, finite deadline,
+terminal pending state retaining unresolved obligations, authenticated recovery
+and durable stop checks before dispatch/rescheduling. Count registry RPCs, room
+requests, quota/usage calls, context-erasure work and written keys separately.
+Test duplicate/restart/clock/no-progress cases, pre- and post-I/O write failures,
+Stop/revocation races and real Worker/SQLite persistence. Do not truncate retries
+by dropping quota reservations, private deletion obligations or billing receipts.
+`session-cleanup.test.ts` covers independent compensation and confirmed completion,
+not a finite job budget or hosted shutdown guarantee. Keep that limitation visible.
+
+For Live context erasure, count the128-key page ceiling and each deleted archive
+key rather than treating a batch delete as one billed key. Full pages schedule a
+confirmation wake; failed deletion preserves the archive and can retry. Finalization
+also writes session state in its public-settlement and final steps after erasure
+completes. Count duplicate completion writes and require durable completion proof
+before optimizing them away; memory-only flags may follow a failed durable write.
+
+Public Live billing currently scans the complete saved map. Include quota settlement,
+share completion, usage reporting, per-record writes and the final map write in the
+wake budget. Count retry-scheduler calls separately from delivered alarms. Verify
+quota progress survives usage failures, and successful reporting followed by a
+failed final write remains recoverable across reconstruction. A page limit needs
+a durable cursor and per-record progress; never truncate outstanding obligations.
+
+For active Live registry renewal, test the exact 12-hour renewal and 23-hour failure
+boundaries, duplicate/reconstructed calls, future persisted timestamps and Stop
+while registration is in flight. The existing age check is a privacy lease guard,
+not a finite attempt reservation. A future timestamp can suppress renewal beyond
+the original lease; require validated clock state and bounded future deadlines.
+Count registration and compensating removal RPCs separately, and retain failed
+removal obligations. Controlled helper tests do not prove hosted discoverability,
+real durable timestamp persistence or authenticated stop/reschedule fencing.
+
+For Meeting media compensation, read the operation envelope in the programming
+realtime runbook. Count legacy inventory, close and failed-close confirmation per
+provider session, each track and each progress write. The helper traverses the
+complete pending session set; repeated reconstruction and failed persistence can
+repeat successful provider work. Counter saturation at 32 and hourly backoff do
+not terminate the job, and new obligations can reset the delay. Preserve pending
+tracks and confirmed-progress recovery while introducing a durable finite job
+budget, bounded calls/body reads and authenticated stop/reschedule fences.
+The SFU client awaits fetch and full text/JSON bodies without explicit deadlines
+or byte bounds; trimming error details after `response.text()` does not bound the
+read. A stalled promise prevents failure deferral and keeps standalone-server
+cleanup marked in flight. Test stalled fetch/body, oversized response, clock
+boundaries and ambiguous completion before accepting a deadline repair. Preserve
+absence confirmation and fail-closed progress persistence; cancellation alone
+cannot establish remote media shutdown.
+Controlled helper counts exclude surrounding room storage/alarm operations and
+do not prove hosted SFU shutdown or account-wide billing safety.
+
 ## Live registry clock integrity
 
 Active Live renewal rejects nonfinite, negative, unsafe or future persisted clock

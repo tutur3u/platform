@@ -1,4 +1,10 @@
 {
+  "assistantDownloadPhasePending": "Đang chờ",
+  "assistantDownloadPhaseQueued": "Trong hàng đợi",
+  "assistantDownloadPhaseTransferring": "Đang tải xuống",
+  "assistantDownloadPhaseRetryWait": "Chờ thử lại",
+  "assistantDownloadPhasePaused": "Đã tạm dừng",
+  "assistantDownloadPhaseVerifying": "Đang xác minh bản tải",
   "@@locale": "vi",
   "@assistantCreditsSummary": {
     "placeholders": {
