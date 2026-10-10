@@ -1011,6 +1011,28 @@ Existing reader/creator library and bookmark API/D1 tests retain their boundary
 coverage. Fixture translations and APIs are doubled; exact-head Lettin builds
 and repository CI remain separate delivery evidence.
 
+### Private saved-library ordering
+
+Saved notebooks and creators default to most recently saved first. Readers can
+choose least recently saved first or current published title order. Ordering
+composes with the existing local search and availability filters, sorts a copy
+of the authorized response, and performs no additional source reads or writes.
+All controls remain ephemeral: changing actors or clearing library filters
+restores the default order together with search and availability.
+
+Date ordering places invalid or missing timestamps last in either direction.
+Title ordering uses Unicode NFKC normalization and case-insensitive deterministic
+lexical comparison. References without an authorized current title remain last;
+IDs and historical titles are never used as substitutes. Equal timestamps or
+titles preserve response order. This applies only to authenticated saved notebook
+and creator libraries; it does not reorder public catalogues or persisted entries.
+
+`saved-library-ordering.test.ts` covers stable ties, invalid dates, normalized
+current titles and source-array isolation. `saved-library-filters.test.tsx`
+covers both rendered libraries, sorting with filters, read/write counts, clear
+and actor resets, unavailable references and English/Vietnamese labels. Exact-head
+CI and Lettin builds remain separate delivery gates.
+
 ## Plan work in Tasks
 
 Private notebook and wiki studios offer **Plan a task**, opening the Tasks
