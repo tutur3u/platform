@@ -61,7 +61,7 @@ index f59e677181f1d0007993e36e05901f1f012689f9..d40eee1256e989527e909fcf45615ae6
              patchPagesRouterContext(buildOpts),
              inlineFindDir(updater, buildOpts),
              inlineLoadManifest(updater, buildOpts),
-diff --git a/apps/parley/node_modules/@opennextjs/cloudflare/dist/cli/build/patches/plugins/cache-components.d.ts b/dist/cli/build/patches/plugins/cache-components.d.ts
+diff --git a/node_modules/@tuturuuu/parley/node_modules/@opennextjs/cloudflare/dist/cli/build/patches/plugins/cache-components.d.ts b/dist/cli/build/patches/plugins/cache-components.d.ts
 new file mode 100644
 index 0000000000000000000000000000000000000000..2632e4f849758467ac40926288bec575a9c09c82
 --- /dev/null
@@ -129,7 +129,7 @@ index 0000000000000000000000000000000000000000..2632e4f849758467ac40926288bec575
 + */
 +export declare const bypassPprCacheInterceptionRule = "\nrule:\n  pattern: if (isISR) { $$$BODY }\n  inside:\n    pattern: async function cacheInterceptor($$$ARGS) { $$$FUNCTION_BODY }\n    stopBy: end\nfix: |-\n  if (isISR && !(\n    PrerenderManifest?.routes?.[localizedPath]?.renderingMode === \"PARTIALLY_STATIC\" ||\n    PrerenderManifest?.routes?.[localizedPath]?.experimentalPPR === true ||\n    Object.values(PrerenderManifest?.dynamicRoutes ?? {}).some((route) =>\n      new RegExp(route.routeRegex).test(localizedPath) &&\n      (route.renderingMode === \"PARTIALLY_STATIC\" || route.experimentalPPR === true)\n    )\n  )) { $$$BODY }\n";
 +export {};
-diff --git a/apps/parley/node_modules/@opennextjs/cloudflare/dist/cli/build/patches/plugins/cache-components.js b/dist/cli/build/patches/plugins/cache-components.js
+diff --git a/node_modules/@tuturuuu/parley/node_modules/@opennextjs/cloudflare/dist/cli/build/patches/plugins/cache-components.js b/dist/cli/build/patches/plugins/cache-components.js
 new file mode 100644
 index 0000000000000000000000000000000000000000..ddaff99a58ca31721eccf6125ecd5a9da5602134
 --- /dev/null
@@ -459,7 +459,21 @@ index b0616a9a1a2729c3bc1cf03dd88edde8afa09d08..78de2b802e6aa702d4fdf40da219489a
          windowsPathsNoEscape: true,
      });
      const returnManifests = (await Promise.all(manifests.map(async (manifest) => `
-diff --git a/apps/parley/node_modules/@opennextjs/cloudflare/dist/cli/templates/cache-components-scheduler.d.ts b/dist/cli/templates/cache-components-scheduler.d.ts
+diff --git a/dist/cli/build/patches/plugins/next-server.js b/dist/cli/build/patches/plugins/next-server.js
+index d816e838c1b2a23355161f0859ba9cd81f76d6d0..a4e5eed50c4946214883923171f8ef8481109a5e 100644
+--- a/dist/cli/build/patches/plugins/next-server.js
++++ b/dist/cli/build/patches/plugins/next-server.js
+@@ -104,6 +104,9 @@ fix: |-
+   globalThis[handlersMapSymbol].set("default", require('${normalizePath(handlerPath)}').default);
+   globalThis[handlersMapSymbol].set("remote", require('${normalizePath(handlerPath)}').default);
+   globalThis[handlersSetSymbol] = new Set(globalThis[handlersMapSymbol].values());
++  // The installed registry replaces Next's dynamic custom-handler loader.
++  // Stop before compiled runtimes reference the original minified aliases.
++  return;
+ `;
+ }
+ /**
+diff --git a/node_modules/@tuturuuu/parley/node_modules/@opennextjs/cloudflare/dist/cli/templates/cache-components-scheduler.d.ts b/dist/cli/templates/cache-components-scheduler.d.ts
 new file mode 100644
 index 0000000000000000000000000000000000000000..f7cd72dca9cf69ebe508860669d11cc58ad1cb3f
 --- /dev/null
@@ -477,7 +491,7 @@ index 0000000000000000000000000000000000000000..f7cd72dca9cf69ebe508860669d11cc5
 + */
 +/** Drop-in for Next's `runInSequentialTasks`: each callback gets its own settled task. */
 +export declare function runInSequentialTasks<T>(first: () => T, ...rest: Array<() => void>): Promise<T>;
-diff --git a/apps/parley/node_modules/@opennextjs/cloudflare/dist/cli/templates/cache-components-scheduler.js b/dist/cli/templates/cache-components-scheduler.js
+diff --git a/node_modules/@tuturuuu/parley/node_modules/@opennextjs/cloudflare/dist/cli/templates/cache-components-scheduler.js b/dist/cli/templates/cache-components-scheduler.js
 new file mode 100644
 index 0000000000000000000000000000000000000000..703c2fb001c60d16bbebba80f0144a978084e803
 --- /dev/null

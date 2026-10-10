@@ -119,7 +119,9 @@ artifact. Use T3 Device so verification remains visible to the user.
 Parley's isolated stable-tarball adapter candidate backports upstream PR 1318 and
 must retain the real Node middleware bundler alongside both the scheduler and
 request-scoped module-loading patches, plus the repository's PPR name and preview
-manifest fixes. Verify URL-keyed Bun patch isolation from Meet/Lettin; a preview
+manifest fixes. Its static default/remote cache-handler registration returns
+before the compiled Next custom-handler loader can reuse removed minified aliases.
+Verify URL-keyed Bun patch isolation from Meet/Lettin; a preview
 that rejects Node middleware cannot be repaired by simply removing its guard.
 When changing the candidate dependency, update both workflow path filters and
 `tuturuuu.ts` selection to its active patch. Selection regressions must derive the

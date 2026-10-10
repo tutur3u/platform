@@ -3,16 +3,22 @@ import type { LettinRecord } from '@tuturuuu/internal-api/lettin';
 import { act, type ComponentProps } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, expect, it, vi } from 'vitest';
+import en from '../../messages/en.json';
+import viMessages from '../../messages/vi.json';
 import { DuplicateEntry } from './duplicate-entry';
 
 const state = vi.hoisted(() => ({
   mutateAsync: vi.fn(),
+  messages: null as Record<string, string> | null,
+  onOpenChange: (_value: boolean) => {},
   reset: vi.fn(),
   isPending: false,
   errorMessage: null as string | null,
 }));
 vi.mock('./use-lettin', () => ({ useLettinMutation: () => state }));
-vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => state.messages?.[key] ?? key,
+}));
 vi.mock('@tuturuuu/ui/button', () => ({
   Button: ({
     variant: _variant,
@@ -26,7 +32,7 @@ vi.mock('@tuturuuu/ui/dialog', () => {
   const Container = ({ children }: ComponentProps<'div'>) => (
     <div>{children}</div>
   );
-  return Object.fromEntries(
+  const parts = Object.fromEntries(
     [
       'Dialog',
       'DialogContent',
@@ -36,6 +42,19 @@ vi.mock('@tuturuuu/ui/dialog', () => {
       'DialogTrigger',
     ].map((name) => [name, Container])
   );
+  return {
+    ...parts,
+    Dialog: ({
+      children,
+      onOpenChange,
+    }: {
+      children: React.ReactNode;
+      onOpenChange: (value: boolean) => void;
+    }) => {
+      state.onOpenChange = onOpenChange;
+      return <div>{children}</div>;
+    },
+  };
 });
 const record: LettinRecord = {
   id: 'source',
@@ -59,6 +78,7 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 afterEach(async () => {
   await act(async () => root.render(null));
   vi.clearAllMocks();
+  state.messages = null;
   state.isPending = false;
   state.errorMessage = null;
 });
@@ -155,3 +175,60 @@ it('retains title and exposes mutation errors after a failed request', async () 
     'conflict'
   );
 });
+
+it('links a source only after explicit consent and clears the choice on reopening', async () => {
+  state.mutateAsync.mockResolvedValue({ id: 'copy' });
+  await render();
+  const checkbox = () =>
+    container.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+  expect(checkbox().checked).toBe(false);
+  await title();
+  await act(async () => checkbox().click());
+  expect(checkbox().checked).toBe(true);
+  await act(async () => send());
+  expect(state.mutateAsync).toHaveBeenLastCalledWith(
+    expect.objectContaining({ linkSource: true })
+  );
+  await act(async () => state.onOpenChange(true));
+  expect(checkbox().checked).toBe(false);
+  await title('Another copy');
+  await act(async () => send());
+  expect(state.mutateAsync.mock.calls.at(-1)![0]).not.toHaveProperty(
+    'linkSource'
+  );
+});
+
+it('preserves consent after a failed request and disables it for dirty or pending copies', async () => {
+  state.mutateAsync.mockRejectedValue(new Error('conflict'));
+  await render();
+  await title();
+  const checkbox = () =>
+    container.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+  await act(async () => checkbox().click());
+  await act(async () => send());
+  expect(checkbox().checked).toBe(true);
+  await render(true);
+  expect(checkbox().disabled).toBe(true);
+  state.isPending = true;
+  await render(false);
+  expect(checkbox().disabled).toBe(true);
+});
+
+it.each([en.lettin, viMessages.lettin])(
+  'labels source-reference consent and publication boundaries in both languages',
+  async (messages) => {
+    state.messages = messages;
+    await render();
+    const checkbox = container.querySelector<HTMLInputElement>(
+      'input[type="checkbox"]'
+    )!;
+    expect(checkbox.checked).toBe(false);
+    expect(checkbox.closest('label')!.textContent).toContain(
+      messages.copyLinkSource
+    );
+    expect(checkbox.closest('label')!.textContent).toContain(
+      messages.copyLinkSourceHint
+    );
+    expect(state.mutateAsync).not.toHaveBeenCalled();
+  }
+);

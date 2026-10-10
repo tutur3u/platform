@@ -183,3 +183,72 @@ test('candidate retains stable Node middleware bundling and isolates the backpor
     /patchCacheComponents/
   );
 });
+
+// Exercise the actual minified production method rather than a renamed fixture.
+test('compiled Next cache-handler registration stops before the original dynamic loader', async () => {
+  const adapterRequire = createRequire(
+    pathToFileURL(resolve(adapter, 'package.json'))
+  );
+  const { patchCode } = await import(
+    pathToFileURL(
+      adapterRequire.resolve('@opennextjs/aws/build/patch/astCodePatcher.js')
+    )
+  );
+  const { createComposableCacheHandlersRule } = await import(
+    pathToFileURL(
+      resolve(adapter, 'dist/cli/build/patches/plugins/next-server.js')
+    )
+  );
+  for (const runtime of ['app-route-turbo', 'app-page-turbo']) {
+    const source = readFileSync(
+      require.resolve(
+        `next/dist/compiled/next-server/${runtime}.runtime.prod.js`
+      ),
+      'utf8'
+    );
+    const start = source.indexOf('async loadCustomCacheHandlers(');
+    const end = source.indexOf('async getIncrementalCache(', start);
+    assert.ok(start >= 0 && end > start, `${runtime} contains the real method`);
+    const method = source.slice(start, end);
+    const patched = patchCode(
+      `class Runtime { ${method} }`,
+      createComposableCacheHandlersRule('/fixture/composable-cache.cjs')
+    );
+    assert.notEqual(patched, `class Runtime { ${method} }`);
+    const handler = {};
+    const sandbox = {
+      Symbol,
+      Map,
+      Set,
+      require(path) {
+        assert.equal(path, '/fixture/composable-cache.cjs');
+        return { default: handler };
+      },
+    };
+    sandbox.globalThis = sandbox;
+    runInNewContext(`${patched}; globalThis.runtime = new Runtime();`, sandbox);
+    // No minified module globals exist in this sandbox: falling through fails.
+    await sandbox.runtime.loadCustomCacheHandlers(
+      {},
+      {
+        cacheMaxMemorySize: 0,
+        cacheHandlers: { default: 'None', remote: 'None' },
+      }
+    );
+    const handlers = runInNewContext(
+      "globalThis[Symbol.for('@next/cache-handlers-map')]",
+      sandbox
+    );
+    assert.equal(handlers.get('default'), handler);
+    assert.equal(handlers.get('remote'), handler);
+    assert.deepEqual(
+      [
+        ...runInNewContext(
+          "globalThis[Symbol.for('@next/cache-handlers-set')]",
+          sandbox
+        ),
+      ],
+      [handler]
+    );
+  }
+});
