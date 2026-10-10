@@ -321,3 +321,8 @@ not cap request volume, total spending or Durable Object alarms, and does not
 provide an independent durable authenticated stop fence. Applicable account alerts
 and an independent stop remain unverified; no production billing configuration is
 changed by this implementation.
+
+Parley uses `localePrefix: never`: built-Worker bilingual probes request the
+canonical `/access-denied` URL with an explicit `Accept-Language: en` or `vi`.
+A prefixed `/vi/access-denied` request redirects and sets a locale cookie; a
+fetch client without a cookie jar must not infer Vietnamese from that prefix.

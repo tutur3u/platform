@@ -659,3 +659,8 @@ returning from Next's custom-handler loader. The installed app-route and app-pag
 regression checks prevent the removed minified aliases from triggering a dynamic
 `None` handler import; a successful build still requires built-Worker identity and
 complete sequential/concurrent bilingual page acceptance.
+
+Parley uses `localePrefix: never`: built-Worker bilingual probes request the
+canonical `/access-denied` URL with an explicit `Accept-Language: en` or `vi`.
+A prefixed `/vi/access-denied` request redirects and sets a locale cookie; a
+fetch client without a cookie jar must not infer Vietnamese from that prefix.

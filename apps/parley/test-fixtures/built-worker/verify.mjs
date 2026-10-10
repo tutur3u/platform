@@ -24,8 +24,11 @@ test('CI-built Parley completes sequential and concurrent bilingual pages', {
   });
   const receipts = [];
   /** Require bounded, complete rendered HTML rather than accepting status alone. */
-  async function probe(path, title) {
+  async function probe(locale, title) {
+    // Parley uses localePrefix: never; select the locale on the canonical URL.
+    const path = '/access-denied';
     const response = await harness.fetch(path, {
+      headers: { 'Accept-Language': locale },
       signal: AbortSignal.timeout(20_000),
     });
     assert.equal(
@@ -69,6 +72,7 @@ test('CI-built Parley completes sequential and concurrent bilingual pages', {
       new RegExp(`<h1\\b[^>]*>${title}</h1>`),
       `${path} must render the translated heading`
     );
+    assert.match(body, new RegExp(`<html\\b[^>]*lang="${locale}"`));
     assert.ok(body.includes('</html>'), `${path} must finish the document`);
     assert.doesNotMatch(
       body,
@@ -76,6 +80,7 @@ test('CI-built Parley completes sequential and concurrent bilingual pages', {
     );
     receipts.push({
       path,
+      locale,
       bytes: Buffer.byteLength(body),
       sha256: createHash('sha256').update(body).digest('hex'),
     });
@@ -100,8 +105,8 @@ test('CI-built Parley completes sequential and concurrent bilingual pages', {
       'serve the exact CI-built candidate'
     );
     const pages = [
-      ['/en/access-denied', 'Access by invitation'],
-      ['/vi/access-denied', 'Truy cập theo lời mời'],
+      ['en', 'Access by invitation'],
+      ['vi', 'Truy cập theo lời mời'],
     ];
     for (let i = 0; i < 4; i++) await probe(...pages[i % 2]);
     await Promise.all(
