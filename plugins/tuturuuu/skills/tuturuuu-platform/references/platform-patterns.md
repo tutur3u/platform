@@ -573,6 +573,25 @@ rubrics only after both session-owner and meeting-host checks; render the sessio
 snapshot rather than the current scenario revision. See the Parley product guide
 and studio setup, invitation, review-route and Meet-link regression tests.
 
+
+## Immediate notification selection
+
+Read immediate request bodies after authentication with the256KiB/4096chunk
+stream bound before JSON parsing, cancel overflow and return413 before database
+work. Preserve400 malformedJSON and original transport errors. Count empty-chunk
+no-progress reads as operations; byte limits alone do not bound chunk loops.
+Apply a10second total incoming-body deadline and return408 before deliverywork.
+Do not renew it on chunks or await an uncooperative cancellation; clear timers
+on every exit and retain original overflow/transport errors. Cover stalled/drip
+streams, exact deadlines, cancellation hangs and zero provider/database calls.
+Explicit immediate batch_ids requests accept at most100 IDs with existing
+single-ID length bounds; select deduplicated IDs using one capped private-schema
+query. Unrequested batches remain pending. Preserve complete logs and atomic
+provider-in-flight reconciliation. Empty-body automatic draining retains complete
+pagination: capping its oldest window before rollout filtering can starve later
+eligible deliveries. Add durable rollout-aware progress before bounding that path.
+A request bound does not cap logs, devices, automatic prefetch or total spend.
+See the Cron Control runbook and immediate-selection/request-budget regressions.
 ## Colab expiry runtime regression
 
 Colab stores its completed expiry deadline in private state row3, atomically with
@@ -660,6 +679,11 @@ fence prevents duplicate clicks before mutation state rerenders. Reset controls
 on context changes. Recipient acceptance is a distinct workflow; do not claim
 an owner confirmation establishes recipient consent. Lettin's collaborator DOM
 and D1 role/revocation regressions cover these boundaries.
+
+Context-reset keys must include the control's identity when stateful components
+share a parent. Workspace/notebook IDs alone collide between sibling quick-note
+and Calendar controls. Lettin's Studio browsing regression checks key warnings,
+state retention across section changes and reset on notebook changes.
 
 ## Scoped document export
 

@@ -154,7 +154,7 @@ export function WorldStudio({
             onCreated={select}
           />
           <CreatorCalendarPlan
-            key={`${wsId}:${worldId}`}
+            key={`calendar:${wsId}:${worldId}`}
             wsId={wsId}
             disabled={dirty}
           />
