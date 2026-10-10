@@ -837,6 +837,14 @@ Count current body content through the bounded Unicode statistics helper; withho
 completion claims while source edits are unapplied or traversal is partial.
 Document session-only retention and avoid interpreting a reached target as a save.
 
+## Published entry tag discovery
+
+Build tag suggestions from projected published entry metadata, not notebook tags
+or private studio drafts. Keep suggestions bounded while permitting exact manual
+input. Apply tag admission before sidebar/collection/sequence and relationship
+endpoint filtering; retain selected-document reading without stale neighbor links.
+Clear all local reader filters together and test combined search/kind/tag behavior.
+
 ## Scoped public catalogue recovery
 
 Check public creator eligibility with an unfiltered published catalogue, separate

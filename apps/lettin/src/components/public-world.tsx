@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { DocumentView } from './document-view';
 import { ReadingSequence } from './reading-sequence';
+import { ReadingTagFilter } from './reading-tag-filter';
 import { WikiBrowser } from './wiki-browser';
 import {
   filterWiki,
@@ -33,6 +34,7 @@ export function PublicWorld({
     window.history.replaceState(null, '', url);
   };
   const [search, setSearch] = useState('');
+  const [tag, setTag] = useState('');
   const [section, setSection] = useState<WikiSection>('overview');
   const records = world.entries.map((entry) => ({
     ...entry,
@@ -40,7 +42,10 @@ export function PublicWorld({
     version: 1,
     published_at: 'published',
   }));
-  const visible = filterWiki(records, section, search);
+  const tagged = records.filter(
+    ({ draft }) => !tag.trim() || draft.tags.includes(tag.trim())
+  );
+  const visible = filterWiki(tagged, section, search);
   const entry = world.entries.find((e) => e.id === selected);
   const relationships = wikiOf(
     entry?.published ?? world.published
@@ -89,6 +94,11 @@ export function PublicWorld({
             ))}
           </select>
         </label>
+        <ReadingTagFilter
+          entries={world.entries}
+          value={tag}
+          onChange={setTag}
+        />
         {section !== 'relationships' && (
           <p role="status" className="text-muted-foreground text-sm">
             {t('readingEntryCount', { count: visible.length })}
@@ -99,11 +109,12 @@ export function PublicWorld({
             {t('noReadingMatches')}
           </p>
         )}
-        {(search || section !== 'overview') && (
+        {(search || tag || section !== 'overview') && (
           <Button
             variant="outline"
             onClick={() => {
               setSearch('');
+              setTag('');
               setSection('overview');
               select('');
             }}
@@ -153,7 +164,7 @@ export function PublicWorld({
               <h1 className="mb-6 text-3xl">{t(`section${section}`)}</h1>
             )}
             <WikiBrowser
-              entries={section === 'relationships' ? records : visible}
+              entries={section === 'relationships' ? tagged : visible}
               search={search}
               section={section}
               disabled={false}
