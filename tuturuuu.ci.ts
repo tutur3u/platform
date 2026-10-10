@@ -13,6 +13,7 @@ export const ci = {
   'check-migrations.yml': true,
   'programming-database-contract.yaml': true,
   'time-tracker-control-contract.yaml': true,
+  'topic-delivery-foundation-contract.yaml': true,
   'tutoring-teacher-hours-contract.yaml': true,
   'report-review-receipts-contract.yaml': true,
   'programming-app-builds.yaml': true,

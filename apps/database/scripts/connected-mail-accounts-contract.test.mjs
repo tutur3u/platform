@@ -51,7 +51,11 @@ test('fixture is tracked alongside its exact forward migration and complete conf
       validateConnectedMailTrackedFiles(files.filter((f) => f !== missing))
     );
   const sql = read(`../supabase/tests/${connectedMailFixture}`);
-  assert.match(sql, /select plan\(10\);/u);
+  assert.match(
+    sql,
+    /^begin;\ncreate extension if not exists pgtap with schema extensions;\nset local search_path=public,extensions;\nselect plan\(10\);/u
+  );
+  assert.match(sql, /select \* from finish\(\);\nrollback;\s*$/u);
   assert.match(sql, /select \* from finish\(\);/u);
   for (const table of [
     'mail_connected_accounts',

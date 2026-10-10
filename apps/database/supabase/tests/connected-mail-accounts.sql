@@ -1,4 +1,6 @@
 begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path=public,extensions;
 select plan(10);
 select has_table('private', 'mail_connected_accounts', 'private.mail_connected_accounts exists');
 select has_table('private', 'mail_oauth_requests', 'private.mail_oauth_requests exists');
