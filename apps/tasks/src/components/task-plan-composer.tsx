@@ -8,10 +8,15 @@ import {
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { MAX_TASK_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { Link } from '@/i18n/routing';
+import {
+  getTaskPlanDescription,
+  MAX_TASK_PLAN_NOTES_LENGTH,
+} from './task-plan-description';
 import { TaskPlanPriority } from './task-plan-priority';
 import { TaskPlanProject, useTaskPlanProject } from './task-plan-project';
 import { TaskPlanSource } from './task-plan-source';
@@ -28,6 +33,8 @@ export function TaskPlanComposer({
   const t = useTranslations('task-plan');
   const client = useQueryClient();
   const [name, setName] = useState('');
+  const [notes, setNotes] = useState('');
+  const notesValid = notes.length <= MAX_TASK_PLAN_NOTES_LENGTH;
   const [boardId, setBoardId] = useState('');
   const [listId, setListId] = useState('');
   const [priority, setPriority] = useState<TaskPriority | null>(null);
@@ -46,41 +53,18 @@ export function TaskPlanComposer({
   const mutation = useMutation({
     retry: false,
     mutationFn: () => {
-      if (!name.trim() || !board || !list || !project.canSubmit)
+      if (!name.trim() || !board || !list || !project.canSubmit || !notesValid)
         throw new Error('Invalid task destination');
+      const description = getTaskPlanDescription(
+        notes,
+        attachSource ? sourceUrl : undefined
+      );
       return createWorkspaceTask(wsId, {
         name: name.trim(),
         listId: list.id,
         ...(priority ? { priority } : {}),
         ...(project.selected ? { project_ids: [project.selected.id] } : {}),
-        ...(attachSource && sourceUrl
-          ? {
-              description: JSON.stringify({
-                type: 'doc',
-                content: [
-                  {
-                    type: 'paragraph',
-                    content: [
-                      {
-                        type: 'text',
-                        text: sourceUrl,
-                        marks: [
-                          {
-                            type: 'link',
-                            attrs: {
-                              href: sourceUrl,
-                              target: '_blank',
-                              rel: 'noopener noreferrer',
-                            },
-                          },
-                        ],
-                      },
-                    ],
-                  },
-                ],
-              }),
-            }
-          : {}),
+        ...(description ? { description } : {}),
       });
     },
     onError: () => {
@@ -137,7 +121,13 @@ export function TaskPlanComposer({
         className="space-y-5"
         onSubmit={(event) => {
           event.preventDefault();
-          if (submitting.current || !name.trim() || !list || !project.canSubmit)
+          if (
+            submitting.current ||
+            !name.trim() ||
+            !list ||
+            !project.canSubmit ||
+            !notesValid
+          )
             return;
           submitting.current = true;
           mutation.mutate();
@@ -155,6 +145,18 @@ export function TaskPlanComposer({
               value={name}
               onChange={(event) => setName(event.target.value)}
             />
+          </label>
+          <label className="block space-y-2">
+            {t('notes')}
+            <Textarea
+              value={notes}
+              maxLength={MAX_TASK_PLAN_NOTES_LENGTH}
+              rows={4}
+              onChange={(event) => setNotes(event.target.value)}
+            />
+            <span className="block text-muted-foreground text-sm">
+              {t('notesHint')}
+            </span>
           </label>
           <label className="block space-y-2">
             {t('board')}
@@ -211,6 +213,7 @@ export function TaskPlanComposer({
               !name.trim() ||
               !list ||
               !project.canSubmit ||
+              !notesValid ||
               mutation.isPending
             }
           >

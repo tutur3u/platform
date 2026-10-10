@@ -8437,6 +8437,8 @@
     "name": "Task name",
     "noBoards": "No boards are available in this workspace.",
     "noProjects": "No projects are available. Leave project association unchecked to continue.",
+    "notes": "Planning notes (optional)",
+    "notesHint": "Add up to 2,000 characters for people who can view the destination task. Sharing a notebook link is a separate choice.",
     "openBoards": "Open task boards",
     "openTask": "Open task",
     "priority": "Priority",

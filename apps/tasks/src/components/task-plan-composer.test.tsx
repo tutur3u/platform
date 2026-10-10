@@ -35,6 +35,9 @@ vi.mock('@/i18n/routing', () => ({
 vi.mock('@tuturuuu/ui/input', () => ({
   Input: (props: ComponentProps<'input'>) => <input {...props} />,
 }));
+vi.mock('@tuturuuu/ui/textarea', () => ({
+  Textarea: (props: ComponentProps<'textarea'>) => <textarea {...props} />,
+}));
 vi.mock('@tuturuuu/ui/button', () => ({
   Button: (props: ComponentProps<'button'>) => <button {...props} />,
 }));
@@ -96,14 +99,16 @@ async function mount(source: string | undefined = sourceUrl) {
   return container;
 }
 async function change(
-  input: HTMLInputElement | HTMLSelectElement,
+  input: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
   value: string
 ) {
   await act(async () => {
     Object.getOwnPropertyDescriptor(
       input instanceof HTMLSelectElement
         ? HTMLSelectElement.prototype
-        : HTMLInputElement.prototype,
+        : input instanceof HTMLTextAreaElement
+          ? HTMLTextAreaElement.prototype
+          : HTMLInputElement.prototype,
       'value'
     )?.set?.call(input, value);
     input.dispatchEvent(
@@ -502,4 +507,78 @@ it('rejects stale cached association after a background project read fails', asy
   expect(container.textContent).toContain(en['task-plan'].projectsFailed);
   await submit(container);
   expect(createTask).not.toHaveBeenCalled();
+});
+
+it.each([
+  ['en', en],
+  ['vi', vietnamese],
+] as const)(
+  'starts %s planning notes empty with the explicit destination sharing hint',
+  async (locale, messages) => {
+    translation.locale = locale;
+    const container = await mount();
+    const notes = container.querySelector('textarea')!;
+    expect(notes.value).toBe('');
+    expect(notes.maxLength).toBe(2000);
+    expect(container.textContent).toContain(messages['task-plan'].notes);
+    expect(container.textContent).toContain(messages['task-plan'].notesHint);
+    expect(createTask).not.toHaveBeenCalled();
+  }
+);
+it('saves authored notes without selecting source sharing or a project', async () => {
+  createTask.mockResolvedValue({ task: { id: 'created-task' } });
+  const container = await mount();
+  await fill(container);
+  await change(container.querySelector('textarea')!, 'Plan the first scene');
+  await submit(container);
+  const payload = createTask.mock.calls[0]?.[1];
+  expect(JSON.parse(payload.description)).toEqual({
+    type: 'doc',
+    content: [
+      {
+        type: 'paragraph',
+        content: [{ type: 'text', text: 'Plan the first scene' }],
+      },
+    ],
+  });
+  expect(JSON.stringify(payload)).not.toContain(sourceUrl);
+  expect(payload).not.toHaveProperty('project_ids');
+  expect(projects).not.toHaveBeenCalled();
+});
+it('retains notes while removing a previously selected source reference', async () => {
+  createTask.mockResolvedValue({ task: { id: 'created-task' } });
+  const container = await mount();
+  await fill(container);
+  await change(container.querySelector('textarea')!, 'My planning notes');
+  const sharing = container.querySelector<HTMLInputElement>(
+    'input[type=checkbox]'
+  )!;
+  await act(async () => sharing.click());
+  await act(async () => sharing.click());
+  await submit(container);
+  expect(createTask.mock.calls[0]?.[1].description).toContain(
+    'My planning notes'
+  );
+  expect(createTask.mock.calls[0]?.[1].description).not.toContain(sourceUrl);
+});
+it('preserves authored notes after an unconfirmed create and fences repeated submissions', async () => {
+  createTask.mockRejectedValue(new TypeError('Failed to fetch'));
+  const container = await mount();
+  await fill(container);
+  await change(container.querySelector('textarea')!, 'Keep this plan');
+  await submit(container);
+  expect(container.querySelector('textarea')?.value).toBe('Keep this plan');
+  expect(container.querySelector('fieldset')?.disabled).toBe(true);
+  await submit(container);
+  expect(createTask).toHaveBeenCalledTimes(1);
+});
+it('rejects an oversized programmatic note before sending a task command', async () => {
+  const container = await mount();
+  await fill(container);
+  await change(container.querySelector('textarea')!, 'x'.repeat(2001));
+  await submit(container);
+  expect(createTask).not.toHaveBeenCalled();
+  expect(
+    container.querySelector<HTMLButtonElement>('button[type=submit]')?.disabled
+  ).toBe(true);
 });
