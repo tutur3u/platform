@@ -414,6 +414,26 @@ fresh user edits. Persistence should serialize the description projection from
 the Yjs update being saved, keeping `description` and `description_yjs_state`
 from diverging under multi-user edit churn.
 
+Focused and fullscreen task dialogs in the shared Tasks UI show a title,
+details and description skeleton while the task and durable description hydrate.
+The editor stays mounted once its final task binding exists; settling hides its
+contents without recreating the Yjs binding or discarding local edits. Short
+descriptions use a bounded minimum editing area rather than a viewport-sized
+blank region. Compact creation and readonly shared views retain their existing
+presentation.
+
+Tracked description recovery reconciles equivalent content through the active
+editor schema, including editor-filled defaults and JSON key ordering. It also
+recognizes a tracked version that matches both the saved current description and
+the initial hydrated editor baseline, or a successful save from the same dialog
+opening, so
+unsaved edits do not create a recovery prompt for that same version. This changes
+recovery metadata only: it never writes history into the editor or replaces a
+valid collaborative document. Genuine differences in text, formatting, media,
+mentions or unsupported attributes remain available for explicit comparison and
+restore. Pre-clear history remains recoverable. Regression coverage lives in
+`description-reconciliation.test.ts` and `task-dialog-loading-shell.test.tsx`.
+
 The `ttr` CLI uses the same description endpoint and TipTap/Yjs codec as the web
 editor. Prefer first-class description commands over raw task update payloads:
 
@@ -1282,3 +1302,42 @@ Calendar's layout and page share this reader; shared Meet context retains its
 existing memoization. The wrapper's actor/mode isolation regression tests live in
 `packages/utils/src/__tests__/request-workspace.test.ts`. This reduces repeated
 server reads; it does not replace app build checks or production load measurements.
+
+## Create tasks with a private creative reference
+
+`/{wsId}/tasks/new` provides an explicit composer with a task name and board/list
+selection. Opening this route performs no task or board creation. It requires a
+Tasks app session and joined workspace; task creation retains the canonical
+API's destination authorization. A permission failure preserves the entered form.
+Mutation retries are disabled so this workflow does not automatically repeat a
+creation request.
+
+A Lettin studio handoff includes only source IDs and remains in the same workspace.
+An unchecked source-reference control lets the creator deliberately attach a
+canonical private notebook link to the task description. The form states the
+board visibility and source access boundaries before submission. It never reads
+source content or changes source permissions/publication. Invalid source IDs
+return not found, and no caller-provided URL is persisted. Creators can also use
+the composer without any source reference. See [Lettin](/platform/features/lettin)
+for the product decision and regression evidence.
+
+Focused composer validation can run without workspace builds:
+
+```sh
+bunx vitest run --config apps/tasks/vitest.config.mts \
+  apps/tasks/src/components/task-plan-composer.test.tsx \
+  'apps/tasks/src/app/[locale]/(dashboard)/[wsId]/tasks/new/page.test.tsx' \
+  packages/utils/src/__tests__/lettin-task-reference.test.ts --maxWorkers 1
+```
+
+The Tasks Vitest configuration lowers JSX with the automatic runtime and resolves
+its root internal API import to source. A preserved JSX transform otherwise fails
+Vite import analysis before mounted tests run. Other local suites may still need
+source aliases for unbuilt dependency subpaths; record those failures separately
+and use exact-head CI for application builds.
+
+Task planning keeps each creation form single-use after submission. If the response
+cannot confirm creation, the form stays preserved and locked, with a link to the
+selected board. Check that board before starting another task: the server may have
+inserted it even when the response failed. This guard does not provide server-side
+idempotency across new forms or page reloads.

@@ -2,6 +2,23 @@
 
 This directory contains utility scripts for the database package.
 
+## Declarative schema readiness
+
+From the repository root, run:
+
+```sh
+node apps/database/scripts/declarative-schema-readiness.js --json
+node --test apps/database/scripts/declarative-schema-readiness.test.js
+```
+
+This opt-in checker reads migration/schema byte hashes, config/lock identity,
+and the bundled workspace CLI version/help. It makes no database connections,
+installs nothing, and accepts no write or connection flags. Exit 2 is the expected
+preparation result; even a complete-looking schema tree cannot attest replay or
+no-op diff evidence. Exit 1 means inspection failed. Use `--help` for usage.
+See the [adoption procedure](../../../plugins/tuturuuu/skills/tuturuuu-database/references/declarative-schema-adoption.md)
+and the database migrations guide for the separate baseline/security gates.
+
 ## sort-types.js
 
 A Node.js script that ensures consistent key ordering in the generated Supabase types file.

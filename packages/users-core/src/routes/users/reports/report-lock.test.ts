@@ -25,7 +25,12 @@ describe('processing report conflict responses', () => {
       const result = {
         data:
           table === 'external_user_monthly_reports_workspace_view'
-            ? { id: 'report', generation_mode: 'manual' }
+            ? {
+                id: 'report',
+                user_id: 'subject',
+                group_id: 'group',
+                generation_mode: 'manual',
+              }
             : null,
         error:
           table === 'external_user_monthly_reports'

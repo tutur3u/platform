@@ -92,6 +92,56 @@ async function cancelPendingPostEmails(
   if (error) throw error;
 }
 
+export async function handleGetWorkspaceUserRequest(
+  request: Request,
+  { params }: WorkspaceUserMutationParams,
+  actor: WorkspaceUserMutationActor
+) {
+  const headers = { 'Cache-Control': 'no-store' };
+  const respond = (body: unknown, status: number) =>
+    NextResponse.json(body, { status, headers });
+
+  try {
+    if (!actor?.id) return respond({ error: 'Unauthorized' }, 401);
+    const { userId, wsId: rawWsId } = await params;
+    if (!userId?.trim() || !rawWsId?.trim()) {
+      return respond({ message: 'Invalid workspace or user ID' }, 400);
+    }
+    const wsId = await normalizeWorkspaceId(rawWsId);
+    if (!wsId) return respond({ message: 'Invalid workspace or user ID' }, 400);
+    const permissions = await getPermissions({ request, user: actor, wsId });
+    if (!permissions) return respond({ error: 'Not found' }, 404);
+    if (!permissions.containsPermission('update_users')) {
+      return respond(
+        { message: 'Insufficient permissions to update users' },
+        403
+      );
+    }
+
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    const { data, error } = await sbAdmin
+      .from('workspace_users')
+      .select('id, full_name, display_name, email')
+      .eq('ws_id', wsId)
+      .eq('id', userId)
+      .maybeSingle();
+    if (error)
+      return respond({ message: 'Error fetching workspace user' }, 500);
+    if (!data) return respond({ error: 'Not found' }, 404);
+    return respond(
+      {
+        id: data.id,
+        full_name: data.full_name,
+        display_name: data.display_name,
+        email: data.email,
+      },
+      200
+    );
+  } catch {
+    return respond({ message: 'Error fetching workspace user' }, 500);
+  }
+}
+
 export async function handleUpdateWorkspaceUserRequest(
   request: Request,
   { params }: WorkspaceUserMutationParams,

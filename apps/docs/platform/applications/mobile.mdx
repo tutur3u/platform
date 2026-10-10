@@ -1,0 +1,51 @@
+---
+title: "Mobile"
+description: "Native workspace products, defaults, account controls, and offline behavior."
+updatedAt: '2026-10-08'
+---
+
+The Flutter app (`apps/mobile`) brings eligible Tuturuuu workspace tools into a
+native shell. Its launcher, module availability, background behavior, and device
+permissions are separate from the web app's browser runtime.
+
+## Learn by surface
+
+| Topic | Guide |
+| --- | --- |
+| Launcher defaults and optional modules | [Workspace tools](/platform/features/mobile-workspace-tools) |
+| Timer, background behavior, and recovery | [Mobile timer](/platform/features/mobile-timer) |
+| Private messaging | [Mobile chat](/platform/features/mobile-chat) |
+| Account/settings navigation | [Settings shell](/platform/features/mobile-settings-shell) |
+| Inventory stock health | [Stock health](/platform/features/inventory-stock-health) |
+| Season pricing | [Season pricing](/platform/features/inventory-season-pricing-mobile) |
+| Voice note review | [Notes voice analysis](/platform/features/notes-voice-analysis) |
+| Distribution and release evidence | [Mobile deployment](/build/devops/mobile-store-deployment) |
+
+Tasks, Calendar, and Finance are default launcher modules. Meet, Mail, Chat,
+and Notes are opt-in experiments documented in the workspace-tools guide.
+Turning a module on exposes its eligible launch surfaces; it does not grant
+workspace or account privileges. Mail keeps its exact-domain eligibility rule.
+
+## Shell and offline expectations
+
+Screens inherit the app shell's background and single top title/actions bar.
+The floating bottom navbar owns in-app Back navigation and scroll clearance.
+Full-screen/system forms have their own shell rules. These conventions keep
+controls reachable and avoid duplicate headers.
+
+Offline availability is product-specific. Cached data is not proof that an
+edit reached the server. Review queued/sync states and recover through the
+owning product's documented flow. Optional products should not warm private
+endpoints until access is known to be enabled.
+
+## Versions and privacy
+
+The [toolchain reference](/reference/repository/versions) reads the Flutter and
+Dart constraints and mobile package version from `pubspec.yaml`. Distribution
+artifacts and build metadata establish what a device is running. The browser
+bootstrap for Flutter is noindex; it is not a duplicate public marketing site.
+
+Developers changing translations regenerate localization before analysis/tests.
+Native app work does not require the paused Rust/TanStack Start runtime or the
+retired Docker cron runner. Database-dependent test fixtures still need an
+appropriate isolated environment; see [Without Docker](/build/development-tools/without-docker).
