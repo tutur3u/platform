@@ -51,14 +51,38 @@ const notebook = (title: string) => ({
   credit: '',
 });
 const notebookData = [
-  { worldId: 'first', savedAt: '', notebook: notebook('ĐỒNG HỒ') },
-  { worldId: 'second', savedAt: '', notebook: notebook('River story') },
-  { worldId: 'SECRET_DRAFT_ID', savedAt: '', notebook: null },
+  {
+    worldId: 'first',
+    savedAt: '2026-01-03T00:00:00Z',
+    notebook: notebook('ĐỒNG HỒ'),
+  },
+  {
+    worldId: 'second',
+    savedAt: '2026-01-01T00:00:00Z',
+    notebook: notebook('River story'),
+  },
+  {
+    worldId: 'SECRET_DRAFT_ID',
+    savedAt: '2026-01-02T00:00:00Z',
+    notebook: null,
+  },
 ];
 const creatorData = [
-  { creatorId: 'first', savedAt: '', notebookTitle: 'ĐỒNG HỒ' },
-  { creatorId: 'second', savedAt: '', notebookTitle: 'River story' },
-  { creatorId: 'SECRET_DRAFT_ID', savedAt: '', notebookTitle: null },
+  {
+    creatorId: 'first',
+    savedAt: '2026-01-03T00:00:00Z',
+    notebookTitle: 'ĐỒNG HỒ',
+  },
+  {
+    creatorId: 'second',
+    savedAt: '2026-01-01T00:00:00Z',
+    notebookTitle: 'River story',
+  },
+  {
+    creatorId: 'SECRET_DRAFT_ID',
+    savedAt: '2026-01-02T00:00:00Z',
+    notebookTitle: null,
+  },
 ];
 type Kind = 'notebooks' | 'creators';
 const container = document.createElement('div');
@@ -206,6 +230,10 @@ it.each([
       messages.lettin.savedLibraryFilterHint
     );
     for (const key of [
+      'savedLibraryOrder',
+      'savedLibraryOrder_newest',
+      'savedLibraryOrder_oldest',
+      'savedLibraryOrder_title',
       'savedLibraryAvailability_all',
       'savedLibraryAvailability_available',
       'savedLibraryAvailability_unavailable',
@@ -219,9 +247,59 @@ it.each([
   }
 );
 it('matches normalized published titles without mutation or unavailable fallbacks', () => {
-  const filters = { search: 'e\u0301cole', availability: 'all' as const };
+  const filters = {
+    search: 'e\u0301cole',
+    availability: 'all' as const,
+    order: 'newest' as const,
+  };
   expect(matchesSavedLibrary(filters, 'ÉCOLE', true)).toBe(true);
   expect(matchesSavedLibrary(filters, 'ÉCOLE', false)).toBe(false);
   expect(matchesSavedLibrary(filters, null, false)).toBe(false);
   expect(filters.search).toBe('e\u0301cole');
 });
+
+async function ordering(value: string) {
+  await act(() => {
+    const select = container.querySelectorAll('select')[1]!;
+    select.value = value;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+}
+it.each(['notebooks', 'creators'] as const)(
+  'orders %s locally, composes with filters, and resets on clear and actor change',
+  async (kind) => {
+    await mount(kind);
+    const titles = () =>
+      [...container.querySelectorAll('li a')].map((node) =>
+        kind === 'creators'
+          ? node.textContent?.replace(/^Creator of /, '')
+          : node.textContent
+      );
+    expect(titles()).toEqual(['ĐỒNG HỒ', 'River story']);
+    await ordering('oldest');
+    expect(titles()).toEqual(['River story', 'ĐỒNG HỒ']);
+    await ordering('title');
+    expect(titles()).toEqual(['River story', 'ĐỒNG HỒ']);
+    expect(container.querySelector('li:last-child a')).toBeNull();
+    await availability('available');
+    await search('đồng');
+    expect(titles()).toEqual(['ĐỒNG HỒ']);
+    expect(
+      kind === 'notebooks' ? api.notebooks : api.creators
+    ).toHaveBeenCalledTimes(1);
+    expect(api.removeNotebook).not.toHaveBeenCalled();
+    expect(api.removeCreator).not.toHaveBeenCalled();
+    await act(() =>
+      [...container.querySelectorAll('button')]
+        .find(
+          (button) => button.textContent === en.lettin.savedLibraryClearFilters
+        )!
+        .click()
+    );
+    expect(container.querySelectorAll('select')[1]?.value).toBe('newest');
+    expect(container.querySelectorAll('li')).toHaveLength(3);
+    await ordering('oldest');
+    await render(kind, 'actor-b');
+    expect(container.querySelectorAll('select')[1]?.value).toBe('newest');
+  }
+);

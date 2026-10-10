@@ -11,6 +11,8 @@ shared-package changes.
   caches. Keep filters ephemeral and reset their component boundary on actor
   changes, while preserving actor-scoped query and mutation keys. See
   [Lettin saved libraries](../../../../../apps/docs/platform/features/lettin.mdx).
+  Sort a copy of the authorized projection, preserve ties, and explicitly handle
+  invalid timestamps and unavailable titles without identifier fallbacks.
 
 - Private creative previews must distinguish local edits from saved publication
   snapshots. Render only the selected authorized snapshot, reset to the draft on

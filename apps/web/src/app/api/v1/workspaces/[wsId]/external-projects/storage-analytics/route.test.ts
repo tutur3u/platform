@@ -1,14 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  connection: vi.fn(),
   checkRateLimit: vi.fn(),
+  getCachedProjectStorageAnalytics: vi.fn(),
   getWorkspaceStorageOverview: vi.fn(),
+  getStorageLimit: vi.fn(),
+  resolveWorkspaceStorageProvider: vi.fn(),
   listWorkspaceStorageRawObjectsForProvider: vi.fn(),
   requireWorkspaceExternalProjectAccess: vi.fn(),
   serverLoggerError: vi.fn(),
 }));
 
 const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/server')>()),
+  connection: mocks.connection,
+}));
 
 vi.mock('@/lib/external-projects/access', () => ({
   requireWorkspaceExternalProjectAccess: (
@@ -23,9 +32,20 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
+vi.mock('@/lib/external-projects/storage-analytics-cache', () => ({
+  getCachedProjectStorageAnalytics: (
+    ...args: Parameters<typeof mocks.getCachedProjectStorageAnalytics>
+  ) => mocks.getCachedProjectStorageAnalytics(...args),
+}));
+
 vi.mock('@/lib/rate-limit', () => ({
   checkRateLimit: (...args: Parameters<typeof mocks.checkRateLimit>) =>
     mocks.checkRateLimit(...args),
+}));
+
+vi.mock('@tuturuuu/storage-core/storage-quota-reader', () => ({
+  getStorageLimit: (...args: Parameters<typeof mocks.getStorageLimit>) =>
+    mocks.getStorageLimit(...args),
 }));
 
 vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
@@ -37,6 +57,9 @@ vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
       super(message);
     }
   },
+  resolveWorkspaceStorageProvider: (
+    ...args: Parameters<typeof mocks.resolveWorkspaceStorageProvider>
+  ) => mocks.resolveWorkspaceStorageProvider(...args),
   getWorkspaceStorageOverview: (
     ...args: Parameters<typeof mocks.getWorkspaceStorageOverview>
   ) => mocks.getWorkspaceStorageOverview(...args),
@@ -60,11 +83,39 @@ async function getStorageAnalytics() {
 }
 
 describe('external project storage analytics route', () => {
+  it('keeps HEAD authorization status and headers without a response body', async () => {
+    mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
+      ok: false,
+      response: new Response('Forbidden', {
+        status: 403,
+        headers: { 'x-access-denial': 'workspace' },
+      }),
+    });
+    const { HEAD } = await import('./route');
+    const response = await HEAD(createRequest(), {
+      params: Promise.resolve({ wsId: 'workspace-1' }),
+    });
+    expect(response.status).toBe(403);
+    expect(response.headers.get('x-access-denial')).toBe('workspace');
+    expect(await response.text()).toBe('');
+    expect(mocks.connection).toHaveBeenCalled();
+  });
+
   beforeEach(() => {
     vi.resetModules();
+    mocks.connection.mockReset();
     mocks.requireWorkspaceExternalProjectAccess.mockReset();
     mocks.checkRateLimit.mockReset();
+    mocks.getCachedProjectStorageAnalytics.mockReset();
+    mocks.getCachedProjectStorageAnalytics.mockResolvedValue(null);
     mocks.getWorkspaceStorageOverview.mockReset();
+    mocks.getStorageLimit.mockReset();
+    mocks.resolveWorkspaceStorageProvider.mockReset();
+    mocks.getStorageLimit.mockResolvedValue(10_240);
+    mocks.resolveWorkspaceStorageProvider.mockResolvedValue({
+      provider: 'supabase',
+      misconfigured: false,
+    });
     mocks.listWorkspaceStorageRawObjectsForProvider.mockReset();
     consoleErrorSpy.mockReset();
     mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
@@ -120,6 +171,7 @@ describe('external project storage analytics route', () => {
   it('returns external-project storage analytics for the linked adapter prefix', async () => {
     const response = await getStorageAnalytics();
 
+    expect(mocks.getWorkspaceStorageOverview).not.toHaveBeenCalled();
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
       data: {
@@ -155,6 +207,53 @@ describe('external project storage analytics route', () => {
     expect(
       mocks.listWorkspaceStorageRawObjectsForProvider
     ).toHaveBeenCalledWith('workspace-1', 'supabase', {
+      limit: 1001,
+      pathPrefix: 'external-projects/kendra',
+    });
+  });
+
+  it('serves persisted totals without listing objects and reads the current quota', async () => {
+    mocks.getCachedProjectStorageAnalytics.mockResolvedValueOnce({
+      totalSize: 5120,
+      fileCount: 3,
+      scannedObjectLimit: 1000,
+      truncated: false,
+      largestFile: null,
+      smallestFile: null,
+    });
+    const response = await getStorageAnalytics();
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      data: {
+        totalSize: 5120,
+        fileCount: 3,
+        scannedObjectLimit: 1000,
+        truncated: false,
+        largestFile: null,
+        smallestFile: null,
+        storageLimit: 10240,
+        usagePercentage: 50,
+      },
+    });
+    expect(
+      mocks.listWorkspaceStorageRawObjectsForProvider
+    ).not.toHaveBeenCalled();
+    expect(mocks.getCachedProjectStorageAnalytics).toHaveBeenCalledWith(
+      'workspace-1',
+      'kendra'
+    );
+  });
+
+  it('keeps R2 on the bounded provider scan', async () => {
+    mocks.resolveWorkspaceStorageProvider.mockResolvedValueOnce({
+      provider: 'r2',
+      misconfigured: false,
+    });
+    expect((await getStorageAnalytics()).status).toBe(200);
+    expect(mocks.getCachedProjectStorageAnalytics).not.toHaveBeenCalled();
+    expect(
+      mocks.listWorkspaceStorageRawObjectsForProvider
+    ).toHaveBeenCalledWith('workspace-1', 'r2', {
       limit: 1001,
       pathPrefix: 'external-projects/kendra',
     });

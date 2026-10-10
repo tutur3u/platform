@@ -1,5 +1,10 @@
 {
   "routes": {
+    "api:/api/v1/workspaces/:wsId/external-projects/storage-analytics:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/storage-analytics/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class GET/HEAD preserve private authorization and lazy Postgres analytics cache with uncached quota and provider fallback. Rust mirrors cache decoding and HEAD, falling through to Next for R2 and unported methods; existing satellite-session and rate-limit parity remain backlog. Rust is not deployed."
+    },
     "api:/api/v1/workspaces/:wsId/users/reports/:reportId/generate:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/generate/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
