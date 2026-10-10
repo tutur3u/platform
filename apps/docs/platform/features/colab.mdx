@@ -1,6 +1,6 @@
 ---
 title: Colab team prompt workshops
-updated: 2026-09-11
+updated: 2026-10-10
 description: Run invite-only AI learning workshops on Cloudflare with isolated mock tools.
 ---
 
@@ -395,3 +395,30 @@ payloads are not copied into audit entries. Host operations are admin-only;
 team work entries follow the current live-sharing policy, including immediate
 WebSocket removal when sharing is disabled. Old rooms begin with an empty log;
 this is a bounded workshop activity record, not a compliance archive.
+
+## Idempotent workshop expiry
+
+The room expiry alarm emits one `ended` audit entry per scheduled end timestamp.
+Open rooms become read-only; already read-only or private rooms keep their mode
+and still receive that single end event. A durable completion marker is committed
+atomically with the room and private audit state. Duplicate alarm delivery and
+object restart do not increment the revision, rewrite state or reschedule an
+already completed expiry. A host's later end timestamp can expire independently.
+Early delivery schedules the existing future deadline; open-ended rooms do no work.
+
+The first expiry performs three state writes (room, audit, completion marker).
+Each duplicate performs three bounded point reads and no writes or downstream
+calls. This prevents duplicate-write amplification, not all alarm-related billing.
+Storage failure rolls back the whole expiry transaction and remains visible to
+Cloudflare's bounded platform retry mechanism; the handler adds no retry chain.
+`apps/colab/src/server/room-alarm.test.ts` covers 100 repeated wakes, restart,
+all room modes, atomic failure recovery, schedule extension and early/no-end cases
+using SQLite with a Worker context fixture. `node --test apps/colab/scripts/verify-expiry-runtime.mjs` also invokes the actual
+expiry handler in a loopback Worker and SQLite Durable Object through Wrangler's
+test harness, including an aborting SQL trigger to verify rollback. The test-only
+configuration has a separate fixture identity and no production bindings, remote
+services or secrets; the harness closes its temporary runtime after the tests.
+Run it through `ttr resources run --` locally; CI runs it before the real app build.
+Use a private writable `TMPDIR` if the host's shared temporary directory rejects
+writes. This test invokes the handler through fixture RPC; hosted alarm scheduling,
+platform retries and production cost caps remain separate acceptance evidence.

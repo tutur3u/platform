@@ -8,7 +8,16 @@ import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
 import { Link } from '@/i18n/navigation';
+import {
+  matchesSavedLibrary,
+  SavedLibraryFilterControls,
+  useSavedLibraryFilters,
+} from './saved-library-filters';
 export function SavedCreators({ actorId }: { actorId: string }) {
+  return <SavedCreatorsList key={actorId} actorId={actorId} />;
+}
+function SavedCreatorsList({ actorId }: { actorId: string }) {
+  const [filters, setFilters] = useSavedLibraryFilters();
   const t = useTranslations('lettin'),
     client = useQueryClient();
   const fence = useRef(false);
@@ -27,6 +36,9 @@ export function SavedCreators({ actorId }: { actorId: string }) {
       });
     },
   });
+  const visible = query.data?.filter((item) =>
+    matchesSavedLibrary(filters, item.notebookTitle, !!item.notebookTitle)
+  );
   return (
     <section className="mx-auto max-w-5xl space-y-6 px-5 py-10">
       <h2 className="text-4xl">{t('savedCreators')}</h2>
@@ -39,8 +51,14 @@ export function SavedCreators({ actorId }: { actorId: string }) {
         </div>
       )}
       {query.data?.length === 0 && <p>{t('noSavedCreators')}</p>}
+      {query.data && query.data.length > 0 && (
+        <SavedLibraryFilterControls filters={filters} onChange={setFilters} />
+      )}
+      {query.data && query.data.length > 0 && visible?.length === 0 && (
+        <p role="status">{t('savedLibraryNoMatches')}</p>
+      )}
       <ul className="space-y-4">
-        {query.data?.map((item) => (
+        {visible?.map((item) => (
           <li
             key={item.creatorId}
             className="space-y-3 rounded-lg border border-border p-4"
