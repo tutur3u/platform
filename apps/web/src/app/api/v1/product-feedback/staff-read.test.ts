@@ -1,6 +1,10 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import { StaffReadError } from './staff-access';
+import type {
+  StaffOperationContext,
+  StaffOperationPolicy,
+} from './staff-operation';
 import {
   createStaffDetailHandler,
   createStaffListHandler,
@@ -9,6 +13,11 @@ import {
   type StaffReadDependencies,
 } from './staff-read';
 
+const policy: StaffOperationPolicy = {
+  durationMs: 10000,
+  scope: 'staff-list-detail-handler',
+  provenance: 'synthetic test-only allowance, not a runtime policy',
+};
 const actor = '91600000-0000-4000-8000-000000000001';
 const id = (n: number) =>
   `91600000-0000-4000-8000-${String(n).padStart(12, '0')}`;
@@ -49,11 +58,14 @@ describe('owned list and detail handlers', () => {
   it('returns only projected list fields; detail alone carries private plain text', async () => {
     const d = deps();
     expect(
-      await privateResponse(await createStaffListHandler(d)(request()), 200)
+      await privateResponse(
+        await createStaffListHandler(d, policy)(request()),
+        200
+      )
     ).toEqual({ items: [row()], nextCursor: null });
     expect(
       await privateResponse(
-        await createStaffDetailHandler(d)(request(), id(3)),
+        await createStaffDetailHandler(d, policy)(request(), id(3)),
         200
       )
     ).toEqual({
@@ -72,11 +84,11 @@ describe('owned list and detail handlers', () => {
         },
       });
       await privateResponse(
-        await createStaffListHandler(d)(request('?limit=bad')),
+        await createStaffListHandler(d, policy)(request('?limit=bad')),
         status
       );
       await privateResponse(
-        await createStaffDetailHandler(d)(request(), 'bad-id'),
+        await createStaffDetailHandler(d, policy)(request(), 'bad-id'),
         status
       );
       expect(d.list).not.toHaveBeenCalled();
@@ -85,9 +97,12 @@ describe('owned list and detail handlers', () => {
   );
   it('read flag OFF denies list/detail independently of intake state', async () => {
     const d = deps({ enabled: () => false });
-    await privateResponse(await createStaffListHandler(d)(request()), 503);
     await privateResponse(
-      await createStaffDetailHandler(d)(request(), id(3)),
+      await createStaffListHandler(d, policy)(request()),
+      503
+    );
+    await privateResponse(
+      await createStaffDetailHandler(d, policy)(request(), id(3)),
       503
     );
     expect(d.list).not.toHaveBeenCalled();
@@ -101,8 +116,8 @@ describe('owned list and detail handlers', () => {
     const d = deps({ enabled });
     try {
       for (const handler of [
-        () => createStaffListHandler(d)(request('?limit=bad')),
-        () => createStaffDetailHandler(d)(request(), 'bad-id'),
+        () => createStaffListHandler(d, policy)(request('?limit=bad')),
+        () => createStaffDetailHandler(d, policy)(request(), 'bad-id'),
       ]) {
         const body = await privateResponse(await handler(), 503);
         expect(body).toEqual({ error: { code: 'feedback_unavailable' } });
@@ -125,9 +140,12 @@ describe('owned list and detail handlers', () => {
         throw new StaffReadError(403);
       };
       const d = deps({ list: deny, detail: deny });
-      await privateResponse(await createStaffListHandler(d)(request()), 403);
       await privateResponse(
-        await createStaffDetailHandler(d)(request(), id(3)),
+        await createStaffListHandler(d, policy)(request()),
+        403
+      );
+      await privateResponse(
+        await createStaffDetailHandler(d, policy)(request(), id(3)),
         403
       );
     }
@@ -140,7 +158,7 @@ describe('owned list and detail handlers', () => {
   ])('malformed/private list output fails closed %j', async (raw) => {
     const d = deps({ list: async () => raw });
     const body = await privateResponse(
-      await createStaffListHandler(d)(request()),
+      await createStaffListHandler(d, policy)(request()),
       503
     );
     expect(JSON.stringify(body)).not.toContain('PRIVATE');
@@ -152,16 +170,19 @@ describe('owned list and detail handlers', () => {
         throw new Error('PRIVATE_BODY');
       },
     });
-    await privateResponse(await createStaffListHandler(d)(request()), 503);
+    await privateResponse(
+      await createStaffListHandler(d, policy)(request()),
+      503
+    );
     expect(log).not.toHaveBeenCalled();
     log.mockRestore();
   });
   it('eligible missing detail is404; ineligible missing stays403', async () => {
     await privateResponse(
-      await createStaffDetailHandler(deps({ detail: async () => null }))(
-        request(),
-        id(3)
-      ),
+      await createStaffDetailHandler(
+        deps({ detail: async () => null }),
+        policy
+      )(request(), id(3)),
       404
     );
     await privateResponse(
@@ -170,7 +191,8 @@ describe('owned list and detail handlers', () => {
           actor: async () => {
             throw new StaffReadError(403);
           },
-        })
+        }),
+        policy
       )(request(), id(3)),
       403
     );
@@ -180,7 +202,7 @@ describe('owned list and detail handlers', () => {
     async (value) => {
       const d = deps();
       await privateResponse(
-        await createStaffDetailHandler(d)(request(), value),
+        await createStaffDetailHandler(d, policy)(request(), value),
         400
       );
       expect(d.detail).not.toHaveBeenCalled();
@@ -202,7 +224,7 @@ describe('owned list and detail handlers', () => {
     },
   ])('rejects unauthorized detail output', async (raw) => {
     await privateResponse(
-      await createStaffDetailHandler(deps({ detail: async () => raw }))(
+      await createStaffDetailHandler(deps({ detail: async () => raw }), policy)(
         request(),
         id(3)
       ),
@@ -230,24 +252,39 @@ describe('owned list and detail handlers', () => {
     `?q=${'a'.repeat(161)}`,
   ])('rejects strict/bounded query %s', async (query) => {
     const d = deps();
-    await privateResponse(await createStaffListHandler(d)(request(query)), 400);
+    await privateResponse(
+      await createStaffListHandler(d, policy)(request(query)),
+      400
+    );
     expect(d.list).not.toHaveBeenCalled();
   });
   it('passes literal title query and bounded filter to store', async () => {
-    const d = deps({ list: vi.fn(async () => ({ items: [] })) });
+    let context!: StaffOperationContext;
+    const d = deps({
+      actor: async (_request, operation) => {
+        context = operation;
+        return actor;
+      },
+      list: vi.fn(async () => ({ items: [] })),
+    });
     await privateResponse(
-      await createStaffListHandler(d)(
-        request('?view=archive&status=resolved&q=%20%25_%5C%20&limit=50')
-      ),
+      await createStaffListHandler(
+        d,
+        policy
+      )(request('?view=archive&status=resolved&q=%20%25_%5C%20&limit=50')),
       200
     );
-    expect(d.list).toHaveBeenCalledWith(actor, {
-      view: 'archive',
-      status: 'resolved',
-      q: '%_\\',
-      limit: 50,
-      before: null,
-    });
+    expect(d.list).toHaveBeenCalledWith(
+      actor,
+      {
+        view: 'archive',
+        status: 'resolved',
+        q: '%_\\',
+        limit: 50,
+        before: null,
+      },
+      context
+    );
     expect(
       parseStaffQuery(request(`?q=${'😀'.repeat(160)}`).url).q
     ).toHaveLength(320);
@@ -259,7 +296,7 @@ describe('owned list and detail handlers', () => {
         .filter((r) => !query.before || r.id < query.before.id)
         .slice(0, query.limit + 1),
     }));
-    const handler = createStaffListHandler(deps({ list }));
+    const handler = createStaffListHandler(deps({ list }), policy);
     const first = await privateResponse(
       await handler(request('?limit=2&q=title')),
       200
@@ -309,14 +346,18 @@ describe('owned list and detail handlers', () => {
         JSON.stringify({ ...baseline, ...changed })
       ).toString('base64url');
       await privateResponse(
-        await createStaffListHandler(deps())(request(`?cursor=${cursor}`)),
+        await createStaffListHandler(
+          deps(),
+          policy
+        )(request(`?cursor=${cursor}`)),
         400
       );
     }
     await privateResponse(
-      await createStaffListHandler(deps())(
-        request(`?cursor=${'a'.repeat(1153)}`)
-      ),
+      await createStaffListHandler(
+        deps(),
+        policy
+      )(request(`?cursor=${'a'.repeat(1153)}`)),
       400
     );
   });
@@ -324,19 +365,22 @@ describe('owned list and detail handlers', () => {
     const newer = { ...row(1), createdAt: '2026-10-07T17:00:00.000002Z' };
     await privateResponse(
       await createStaffListHandler(
-        deps({ list: async () => ({ items: [newer, row(3)] }) })
+        deps({ list: async () => ({ items: [newer, row(3)] }) }),
+        policy
       )(request()),
       200
     );
     await privateResponse(
       await createStaffListHandler(
-        deps({ list: async () => ({ items: [row(1), row(3)] }) })
+        deps({ list: async () => ({ items: [row(1), row(3)] }) }),
+        policy
       )(request()),
       503
     );
     await privateResponse(
       await createStaffListHandler(
-        deps({ list: async () => ({ items: [row(3), row(3)] }) })
+        deps({ list: async () => ({ items: [row(3), row(3)] }) }),
+        policy
       )(request()),
       503
     );
@@ -348,7 +392,8 @@ describe('owned list and detail handlers', () => {
   ])('rejects store membership mismatch for %s', async (view, item) => {
     await privateResponse(
       await createStaffListHandler(
-        deps({ list: async () => ({ items: [item] }) })
+        deps({ list: async () => ({ items: [item] }) }),
+        policy
       )(request(`?view=${view}`)),
       503
     );
@@ -358,13 +403,19 @@ describe('owned list and detail handlers', () => {
     for (const query of ['?view=archive&status=resolved', '?view=all'])
       await privateResponse(
         await createStaffListHandler(
-          deps({ list: async () => ({ items: [archived] }) })
+          deps({ list: async () => ({ items: [archived] }) }),
+          policy
         )(request(query)),
         200
       );
   });
   it('continues a maximal Unicode query with the exact archive filters and position', async () => {
+    let context!: StaffOperationContext;
     const d = deps({
+      actor: async (_request, operation) => {
+        context = operation;
+        return actor;
+      },
       list: async () => ({
         items: [
           { ...row(3), archivedAt: time, status: 'resolved' },
@@ -374,7 +425,7 @@ describe('owned list and detail handlers', () => {
     });
     const query = `?view=archive&status=resolved&limit=1&q=${String.fromCodePoint(0x1f600).repeat(160)}`;
     const body = await privateResponse(
-      await createStaffListHandler(d)(request(query)),
+      await createStaffListHandler(d, policy)(request(query)),
       200
     );
     expect(Buffer.byteLength(body.nextCursor, 'utf8')).toBeGreaterThan(1024);
@@ -394,13 +445,67 @@ describe('owned list and detail handlers', () => {
       items: [{ ...row(2), archivedAt: time, status: 'resolved' }],
     });
     const next = await privateResponse(
-      await createStaffListHandler(d)(
-        request(`${query}&cursor=${body.nextCursor}`)
-      ),
+      await createStaffListHandler(
+        d,
+        policy
+      )(request(`${query}&cursor=${body.nextCursor}`)),
       200
     );
     expect(next.items).toHaveLength(1);
     expect(next.nextCursor).toBeNull();
-    expect(d.list).toHaveBeenCalledWith(actor, continuation);
+    expect(d.list).toHaveBeenCalledWith(actor, continuation, context);
   });
+});
+
+describe('new synchronous boundary controls, unexecuted', () => {
+  it.each(['parser', 'projection', 'cursor'] as const)(
+    'the same cutoff rejects expiry during %s',
+    async (boundary) => {
+      let time = 0;
+      const clock = { now: () => time, schedule: () => () => {} };
+      const input = request('?limit=1');
+      const d = deps({
+        list: vi.fn(async () => ({ items: [row(3), row(2)] })),
+      });
+      const restore: (() => void)[] = [];
+      if (boundary === 'parser') {
+        const url = input.url;
+        const getter = vi.spyOn(input, 'url', 'get').mockImplementation(() => {
+          time = policy.durationMs;
+          return url;
+        });
+        restore.push(() => getter.mockRestore());
+      }
+      if (boundary === 'projection') {
+        d.list = vi.fn(async () => ({
+          get items() {
+            time = policy.durationMs;
+            return [row()];
+          },
+        }));
+      }
+      if (boundary === 'cursor') {
+        const original = JSON.stringify;
+        const stringify = vi
+          .spyOn(JSON, 'stringify')
+          .mockImplementation((value, replacer, space) => {
+            const result = original(value, replacer, space);
+            if (value !== null && typeof value === 'object' && 'v' in value)
+              time = policy.durationMs;
+            return result;
+          });
+        restore.push(() => stringify.mockRestore());
+      }
+      try {
+        const response = await createStaffListHandler(d, policy, clock)(input);
+        expect(await privateResponse(response, 503)).toEqual({
+          error: { code: 'feedback_unavailable' },
+        });
+        if (boundary === 'parser') expect(d.list).not.toHaveBeenCalled();
+        else expect(d.list).toHaveBeenCalledOnce();
+      } finally {
+        for (const release of restore) release();
+      }
+    }
+  );
 });

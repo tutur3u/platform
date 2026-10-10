@@ -2,6 +2,13 @@ import { Buffer } from 'node:buffer';
 import { Effect } from '@tuturuuu/utils/effect';
 import { z } from 'zod';
 import { StaffReadError } from './staff-access';
+import {
+  openStaffOperation,
+  type StaffOperation,
+  type StaffOperationContext,
+  type StaffOperationPolicy,
+  type StaffOperationRuntime,
+} from './staff-operation';
 
 const uuid = z.uuid().transform((value) => value.toLowerCase());
 const timestamp = z.iso
@@ -63,10 +70,21 @@ const detailSchema = itemSchema
   .strict();
 const listSchema = z.object({ items: z.array(itemSchema).max(51) }).strict();
 export interface StaffReadDependencies {
-  actor: (request: Request) => Promise<string>;
+  actor: (
+    request: Request,
+    operation: StaffOperationContext
+  ) => Promise<string>;
   enabled: () => boolean;
-  list: (actor: string, query: StaffQuery) => Promise<unknown>;
-  detail: (actor: string, id: string) => Promise<unknown>;
+  list: (
+    actor: string,
+    query: StaffQuery,
+    operation: StaffOperationContext
+  ) => Promise<unknown>;
+  detail: (
+    actor: string,
+    id: string,
+    operation: StaffOperationContext
+  ) => Promise<unknown>;
 }
 const headers = {
   'Cache-Control': 'private, no-store',
@@ -137,108 +155,131 @@ export function parseStaffQuery(url: string): StaffQuery {
   }
   return { ...query, limit, before };
 }
-async function attempt<T>(run: () => Promise<T>) {
-  return Effect.runPromise(
-    Effect.tryPromise({ try: run, catch: (error) => error }).pipe(
-      Effect.match({
-        onFailure: (error) => ({ ok: false as const, error }),
-        onSuccess: (value) => ({ ok: true as const, value }),
-      })
-    )
-  );
-}
-async function admit(
+function admit(
   request: Request,
-  deps: StaffReadDependencies
-): Promise<{ response: Response } | { actor: string }> {
-  const result = await attempt(() => deps.actor(request));
-  if (!result.ok)
-    return {
-      response: failure(
-        result.error instanceof StaffReadError ? result.error.status : 503
-      ),
-    };
-  const flag = await attempt(async () => deps.enabled());
-  if (!flag.ok || !flag.value) return { response: failure(503) };
-  return { actor: result.value };
-}
-export function createStaffListHandler(deps: StaffReadDependencies) {
-  return async (request: Request) => {
-    const admission = await admit(request, deps);
-    if ('response' in admission) return admission.response;
-    let query: StaffQuery;
-    try {
-      query = parseStaffQuery(request.url);
-    } catch {
-      return failure(400);
-    }
-    const result = await attempt(async () =>
-      listSchema.parse(await deps.list(admission.actor, query))
+  deps: StaffReadDependencies,
+  operation: StaffOperation
+) {
+  return Effect.gen(function* () {
+    const actor = yield* operation.phase((context) =>
+      deps.actor(request, context)
     );
-    if (!result.ok)
-      return failure(
-        result.error instanceof StaffReadError ? result.error.status : 503
+    operation.check();
+    const enabled = deps.enabled();
+    operation.check();
+    if (!enabled) throw new StaffReadError(503);
+    return actor;
+  });
+}
+export function createStaffListHandler(
+  deps: StaffReadDependencies,
+  policy: StaffOperationPolicy,
+  runtime?: StaffOperationRuntime
+) {
+  return async (request: Request) => {
+    const operation = openStaffOperation(request, policy, runtime);
+    if (!operation) return failure(503);
+    const program = Effect.gen(function* () {
+      const actor = yield* admit(request, deps, operation);
+      operation.check();
+      let query: StaffQuery;
+      try {
+        query = parseStaffQuery(request.url);
+      } catch {
+        operation.check();
+        return { status: 400 as const };
+      }
+      operation.check();
+      const raw = yield* operation.phase((context) =>
+        deps.list(actor, query, context)
       );
-    const rows = result.value.items;
-    // Reject malformed store ordering/membership rather than producing a broken cursor.
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i]!;
-      const previous = rows[i - 1];
-      const before = previous ?? query.before;
+      operation.check();
+      const result = { value: listSchema.parse(raw) };
+      operation.check();
+      const rows = result.value.items;
+      // Reject malformed store ordering/membership rather than producing a broken cursor.
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i]!;
+        const previous = rows[i - 1];
+        const before = previous ?? query.before;
+        if (
+          (before &&
+            !(
+              micros(row.createdAt) < micros(before.createdAt) ||
+              (micros(row.createdAt) === micros(before.createdAt) &&
+                row.id < before.id)
+            )) ||
+          (query.view === 'inbox' &&
+            (row.status !== 'open' || row.archivedAt !== null)) ||
+          (query.view === 'resolved' &&
+            (row.status !== 'resolved' || row.archivedAt !== null)) ||
+          (query.view === 'archive' && row.archivedAt === null) ||
+          (query.status !== null && row.status !== query.status)
+        )
+          return { status: 503 as const };
+      }
+      operation.check();
+      if (rows.length > query.limit + 1) return { status: 503 as const };
+      const items = rows.slice(0, query.limit);
+      const last = items.at(-1);
+      const nextCursor =
+        rows.length > query.limit && last
+          ? encodeCursor(
+              { view: query.view, status: query.status, q: query.q },
+              { createdAt: last.createdAt, id: last.id }
+            )
+          : null;
+      // Never issue a cursor that the strict parser cannot accept.
       if (
-        (before &&
-          !(
-            micros(row.createdAt) < micros(before.createdAt) ||
-            (micros(row.createdAt) === micros(before.createdAt) &&
-              row.id < before.id)
-          )) ||
-        (query.view === 'inbox' &&
-          (row.status !== 'open' || row.archivedAt !== null)) ||
-        (query.view === 'resolved' &&
-          (row.status !== 'resolved' || row.archivedAt !== null)) ||
-        (query.view === 'archive' && row.archivedAt === null) ||
-        (query.status !== null && row.status !== query.status)
+        nextCursor !== null &&
+        Buffer.byteLength(nextCursor, 'utf8') > MAX_CURSOR_BYTES
       )
-        return failure(503);
-    }
-    if (rows.length > query.limit + 1) return failure(503);
-    const items = rows.slice(0, query.limit);
-    const last = items.at(-1);
-    const nextCursor =
-      rows.length > query.limit && last
-        ? encodeCursor(
-            { view: query.view, status: query.status, q: query.q },
-            { createdAt: last.createdAt, id: last.id }
-          )
-        : null;
-    // Never issue a cursor that the strict parser cannot accept.
-    if (
-      nextCursor !== null &&
-      Buffer.byteLength(nextCursor, 'utf8') > MAX_CURSOR_BYTES
-    )
-      return failure(503);
-    return Response.json({ items, nextCursor }, { headers });
+        return { status: 503 as const };
+      operation.check();
+      return { status: 200 as const, payload: { items, nextCursor } };
+    });
+    return operation.run(
+      program,
+      (result) =>
+        result.status === 200
+          ? Response.json(result.payload, { headers })
+          : failure(result.status),
+      failure
+    );
   };
 }
-export function createStaffDetailHandler(deps: StaffReadDependencies) {
+export function createStaffDetailHandler(
+  deps: StaffReadDependencies,
+  policy: StaffOperationPolicy,
+  runtime?: StaffOperationRuntime
+) {
   return async (request: Request, id: string) => {
-    const admission = await admit(request, deps);
-    if ('response' in admission) return admission.response;
-    const parsed = uuid.safeParse(id);
-    if (!parsed.success || new URL(request.url).search) return failure(400);
-    const result = await attempt(async () => {
-      const raw = await deps.detail(admission.actor, parsed.data);
-      if (raw === null) return null;
-      const detail = detailSchema.parse(raw);
-      if (detail.id !== parsed.data) throw new Error('invalid_detail_identity');
-      return detail;
-    });
-    if (!result.ok)
-      return failure(
-        result.error instanceof StaffReadError ? result.error.status : 503
+    const operation = openStaffOperation(request, policy, runtime);
+    if (!operation) return failure(503);
+    const program = Effect.gen(function* () {
+      const actor = yield* admit(request, deps, operation);
+      operation.check();
+      const parsed = uuid.safeParse(id);
+      const search = new URL(request.url).search;
+      operation.check();
+      if (!parsed.success || search) return { status: 400 as const };
+      const raw = yield* operation.phase((context) =>
+        deps.detail(actor, parsed.data, context)
       );
-    return result.value === null
-      ? failure(404)
-      : Response.json(result.value, { headers });
+      operation.check();
+      if (raw === null) return { status: 404 as const };
+      const detail = detailSchema.parse(raw);
+      operation.check();
+      if (detail.id !== parsed.data) throw new StaffReadError(503);
+      return { status: 200 as const, payload: detail };
+    });
+    return operation.run(
+      program,
+      (result) =>
+        result.status === 200
+          ? Response.json(result.payload, { headers })
+          : failure(result.status),
+      failure
+    );
   };
 }
