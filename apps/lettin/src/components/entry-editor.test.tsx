@@ -337,9 +337,16 @@ it('saves creation guidance through the private draft command and marks edits di
 });
 
 it.each([true, false])(
-  'passes only an active published snapshot into preview: %s',
+  'passes authorized entries and only an active published snapshot into preview: %s',
   async (active) => {
     const snapshot = { ...record.draft, title: 'Saved published title' };
+    const entries = [
+      {
+        ...record,
+        id: 'target',
+        draft: { ...record.draft, title: 'Private reference' },
+      },
+    ];
     await act(async () =>
       root.render(
         <EntryEditor
@@ -352,12 +359,13 @@ it.each([true, false])(
           }}
           worldRole="owner"
           isWorld
-          entries={[]}
+          entries={entries}
           onDirty={vi.fn()}
         />
       )
     );
     expect(preview).toHaveBeenLastCalledWith({
+      entries,
       draft: record.draft,
       published: active ? snapshot : null,
     });
