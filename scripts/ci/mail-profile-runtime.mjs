@@ -10,6 +10,12 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  assertHostedOwner,
+  profilePreflight,
+} from './mail-profile-runtime-preflight.mjs';
+
+export { assertHostedOwner, profilePreflight };
 
 export const PROFILE_TITLE =
   'saves canonical identity and a rich About profile with reload persistence';
@@ -21,20 +27,6 @@ const root = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '../..'
 );
-
-export function assertHostedOwner(env) {
-  assert.equal(
-    env.GITHUB_ACTIONS,
-    'true',
-    'Requires a disposable hosted runner'
-  );
-  assert.equal(env.RUNNER_ENVIRONMENT, 'github-hosted');
-  assert.match(env.GITHUB_RUN_ID ?? '', /^\d+$/u);
-  assert.match(env.GITHUB_SHA ?? '', /^[a-f0-9]{40}$/u);
-  assert.equal(env.NODE_TLS_REJECT_UNAUTHORIZED, undefined);
-  assert.equal(env.CLOUDFLARE_API_TOKEN, undefined);
-  assert.equal(env.SUPABASE_ACCESS_TOKEN, undefined);
-}
 
 export function playwrightConfig(directory, reports, playwrightPath) {
   return `const {defineConfig}=require(${JSON.stringify(playwrightPath)});
@@ -384,34 +376,29 @@ export async function main() {
   };
   process.once('SIGTERM', onSignal);
   process.once('SIGINT', onSignal);
-  assertHostedOwner(process.env);
-  assert.match(process.argv[2] ?? '', /^[a-f0-9]{40}$/u);
-  const sha = (
-    await command('git', ['rev-parse', 'HEAD'], { capture: true })
-  ).trim();
-  assert.equal(sha, process.argv[2]);
-  assert.equal(
-    (await command('git', ['status', '--porcelain'], { capture: true })).trim(),
-    ''
-  );
-  assert.equal(
-    (await command('docker', ['ps', '-aq'], { capture: true })).trim(),
-    '',
-    'Disposable runner already contains foreign containers'
-  );
-  for (const port of [
-    8000, 8001, 8002, 8003, 8004, 8005, 8006, 8007, 7803, 7833, 8443,
-  ])
-    await available(port);
-  const indexHash = createHash('sha256')
-    .update(await command('git', ['ls-files', '-s'], { capture: true }))
-    .digest('hex');
   assert.ok(process.env.RUNNER_TEMP, 'Missing hosted private scratch root');
+  assert.ok(
+    path.isAbsolute(process.env.RUNNER_TEMP),
+    'Scratch root must be absolute'
+  );
+  assert.match(process.env.GITHUB_RUN_ID ?? '', /^\d+$/u);
   const reports = path.join(
     process.env.RUNNER_TEMP,
     `mail-profile-${process.env.GITHUB_RUN_ID}`
   );
   await fs.mkdir(reports, { recursive: false, mode: 0o700 });
+  const { sha, indexHash } = await profilePreflight({
+    env: process.env,
+    expectedHead: process.argv[2],
+    run: (tool, args) => command(tool, args, { capture: true }),
+    checkPort: available,
+    record: (record) =>
+      fs.writeFile(
+        path.join(reports, 'terminal.json'),
+        `${JSON.stringify(record, null, 2)}\n`,
+        { flag: 'wx', mode: 0o600 }
+      ),
+  });
   const disposable = await fs.mkdtemp(
     path.join(os.tmpdir(), 'tuturuuu-profile-tls-')
   );

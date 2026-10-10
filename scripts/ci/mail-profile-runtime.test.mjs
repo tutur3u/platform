@@ -7,6 +7,7 @@ import {
   ownedCleanupOnce,
   PROFILE_TITLE,
   playwrightConfig,
+  profilePreflight,
   stopOwnedChildren,
   TRANSPORT_TITLE,
 } from './mail-profile-runtime.mjs';
@@ -136,4 +137,82 @@ test('fresh hosted setup queues through the lightweight resources entry before S
   );
   assert.match(entry, /from '\.\/resources'/u);
   assert.doesNotMatch(entry, /from '\.\/commands'|from '\.\.\/platform'/u);
+});
+
+test('preflight failure records only its stage once and preserves strict rejection', async () => {
+  for (const failedStage of [
+    'hosted-owner',
+    'expected-head',
+    'source-status',
+    'foreign-containers',
+    'port-availability',
+    'source-index',
+  ]) {
+    const records = [];
+    const failure = new Error('sensitive diagnostic must not be recorded');
+    const env =
+      failedStage === 'hosted-owner'
+        ? { ...hosted, CLOUDFLARE_API_TOKEN: 'secret' }
+        : hosted;
+    let calls = 0;
+    const run = async (tool, args) => {
+      calls++;
+      if (args[0] === 'rev-parse') return 'a'.repeat(40);
+      if (args[0] === 'status')
+        return failedStage === 'source-status' ? ' M private-file' : '';
+      if (tool === 'docker')
+        return failedStage === 'foreign-containers' ? 'private-container' : '';
+      if (failedStage === 'source-index') throw failure;
+      return 'private-index';
+    };
+    await assert.rejects(
+      profilePreflight({
+        env,
+        expectedHead:
+          failedStage === 'expected-head' ? 'b'.repeat(40) : 'a'.repeat(40),
+        run,
+        checkPort: async () => {
+          if (failedStage === 'port-availability') throw failure;
+        },
+        record: async (record) => records.push(record),
+      })
+    );
+    assert.deepEqual(records, [
+      {
+        phase: 'preflight',
+        stage: failedStage,
+        outcome: 'FAIL',
+        fixtureStarted: false,
+        deploymentProof: false,
+        productionProof: false,
+      },
+    ]);
+    assert.doesNotMatch(JSON.stringify(records), /secret|sensitive|private/u);
+    if (failedStage === 'hosted-owner') assert.equal(calls, 0);
+  }
+});
+
+test('receipt write failure retains the primary preflight failure without retry', async () => {
+  const primary = new Error('guard failure');
+  const receipt = new Error('write failure');
+  let attempts = 0;
+  await assert.rejects(
+    profilePreflight({
+      env: hosted,
+      expectedHead: 'a'.repeat(40),
+      run: async () => {
+        throw primary;
+      },
+      checkPort: async () => {},
+      record: async () => {
+        attempts++;
+        throw receipt;
+      },
+    }),
+    (error) =>
+      error instanceof AggregateError &&
+      error.errors[0] === primary &&
+      error.errors[1] === receipt
+  );
+  assert.equal(attempts, 1);
 });
