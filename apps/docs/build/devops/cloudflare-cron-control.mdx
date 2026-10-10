@@ -81,3 +81,25 @@ Vite+ 1.1.0 requires matching Vitest/coverage-v8 5.0.3. The root runner dependen
 root override and provider are pinned together; test the coverage override with
 `bun run test --maxWorkers=2 --coverage` under Node 24. Ordinary tests alone do not
 exercise the coverage version guard. Keep that guard enabled.
+
+## Database request deadlines and redirects
+
+Cron Control gives stale-batch recovery and pending-batch lookup separate
+30-second AbortSignals. Lookup JSON consumption uses the same request signal;
+headers arriving before the deadline do not restart it. A timeout propagates and
+prevents subsequent lookup or delivery phases from starting. Recovery remains
+before lookup, and the existing web-delivery deadline remains 180 seconds.
+
+Database requests use manual redirects and reject non-success statuses, so the
+Worker does not follow a redirect with its database credentials. A failed request
+can have an unknown server-side outcome; preserve pending batches and the existing
+idempotent database recovery contract. Do not add an immediate re-enqueue loop to
+compensate for a timeout. The recurring schedule may retry later.
+
+These per-request limits bound waiting when fetch honors cancellation, not the
+number of recurring invocations, database rows, response bytes or provider messages.
+They do not establish finite background jobs, authenticated independent Stop or a
+spending cap. Worker unit tests cover stalled first/second phases, a stalled lookup
+body and redirect short-circuiting with controlled fetch/abort behavior. Require
+exact-head CI lint, types, tests and real emitted Worker checks; hosted scheduled
+recovery and database/provider acceptance remain separate gates.
