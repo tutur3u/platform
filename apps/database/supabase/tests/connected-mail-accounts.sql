@@ -11,6 +11,12 @@ select ok((select relrowsecurity from pg_class where oid = 'private.mail_connect
 select ok(not has_table_privilege('authenticated', 'private.mail_connected_accounts', 'SELECT'), 'Browser sessions cannot read tokens');
 select ok(not has_table_privilege('anon', 'private.mail_oauth_requests', 'SELECT'), 'Anonymous sessions cannot read OAuth verifiers');
 select ok(not has_table_privilege('authenticated', 'private.mail_connected_sends', 'INSERT'), 'Browser sessions cannot forge send receipts');
-select ok(has_table_privilege('service_role', 'private.mail_connected_accounts', 'SELECT,INSERT,UPDATE,DELETE'), 'Server service role can manage connections');
+select ok(
+  has_table_privilege('service_role', 'private.mail_connected_accounts', 'SELECT')
+  and has_table_privilege('service_role', 'private.mail_connected_accounts', 'INSERT')
+  and has_table_privilege('service_role', 'private.mail_connected_accounts', 'UPDATE')
+  and has_table_privilege('service_role', 'private.mail_connected_accounts', 'DELETE'),
+  'Server service role can manage connections'
+);
 select * from finish();
 rollback;

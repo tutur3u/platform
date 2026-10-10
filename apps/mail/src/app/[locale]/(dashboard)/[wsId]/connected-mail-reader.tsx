@@ -89,7 +89,7 @@ export function ConnectedMailReader({
       {message.html ? (
         <iframe
           title={t('connected_body')}
-          sandbox=""
+          sandbox="allow-popups allow-popups-to-escape-sandbox"
           referrerPolicy="no-referrer"
           className="h-96 w-full rounded-lg border bg-background"
           srcDoc={`<!doctype html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline';"><style>body{font:14px/1.5 system-ui;overflow-wrap:anywhere}img{max-width:100%}</style></head><body>${message.html}</body></html>`}

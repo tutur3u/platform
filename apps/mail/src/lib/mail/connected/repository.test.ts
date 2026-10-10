@@ -15,6 +15,7 @@ import { seal, unseal } from './crypto';
 import {
   accessToken,
   type ConnectedAccount,
+  exchangeToken,
   getAccount,
   listAccounts,
 } from './repository';
@@ -163,4 +164,90 @@ describe('owner scoped connected accounts', () => {
     expect(await accessToken(account)).toBe('valid');
     expect(fetch).not.toHaveBeenCalled();
   });
+});
+
+it.each([
+  'User.Read Mail.ReadWrite Mail.Send',
+  'https://graph.microsoft.com/User.Read https://graph.microsoft.com/Mail.ReadWrite https://graph.microsoft.com/Mail.Send',
+  'HTTPS://GRAPH.MICROSOFT.COM/USER.READ\tMail.ReadWrite\nhttps://graph.microsoft.com/Mail.Send',
+])(
+  'accepts equivalent Microsoft Graph scopes without requiring URI spelling',
+  async (scope) => {
+    for (const [name, value] of [
+      ['MAIL_MICROSOFT_CLIENT_ID', 'id'],
+      ['MAIL_MICROSOFT_CLIENT_SECRET', 'synthetic'],
+      ['MAIL_MICROSOFT_REDIRECT_URI', 'https://mail.example.test/callback'],
+    ])
+      vi.stubEnv(name!, value!);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            access_token: 'token',
+            refresh_token: 'refresh',
+            expires_in: 3600,
+            scope,
+          })
+        )
+      )
+    );
+    expect(
+      await exchangeToken('microsoft', { grant_type: 'refresh_token' })
+    ).toMatchObject({ accessToken: 'token' });
+  }
+);
+it('does not accept a permission for a different Microsoft resource', async () => {
+  for (const [name, value] of [
+    ['MAIL_MICROSOFT_CLIENT_ID', 'id'],
+    ['MAIL_MICROSOFT_CLIENT_SECRET', 'synthetic'],
+    ['MAIL_MICROSOFT_REDIRECT_URI', 'https://mail.example.test/callback'],
+  ])
+    vi.stubEnv(name!, value!);
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          access_token: 'token',
+          refresh_token: 'refresh',
+          expires_in: 3600,
+          scope:
+            'https://outlook.office.com/User.Read Mail.ReadWrite Mail.Send',
+        })
+      )
+    )
+  );
+  await expect(
+    exchangeToken('microsoft', { grant_type: 'refresh_token' })
+  ).rejects.toMatchObject({ status: 409 });
+});
+it('preserves exact Google URI permission validation', async () => {
+  const fetch = vi.fn().mockResolvedValue(
+    new Response(
+      JSON.stringify({
+        access_token: 'token',
+        refresh_token: 'refresh',
+        expires_in: 3600,
+        scope: 'https://www.googleapis.com/auth/gmail.modify',
+      })
+    )
+  );
+  vi.stubGlobal('fetch', fetch);
+  expect(
+    await exchangeToken('google', { grant_type: 'refresh_token' })
+  ).toMatchObject({ accessToken: 'token' });
+  fetch.mockResolvedValue(
+    new Response(
+      JSON.stringify({
+        access_token: 'token',
+        refresh_token: 'refresh',
+        expires_in: 3600,
+        scope: 'gmail.modify',
+      })
+    )
+  );
+  await expect(
+    exchangeToken('google', { grant_type: 'refresh_token' })
+  ).rejects.toMatchObject({ status: 409 });
 });

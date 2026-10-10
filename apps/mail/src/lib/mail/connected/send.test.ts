@@ -9,18 +9,25 @@ const mocks = vi.hoisted(() => ({
   insert: vi.fn(),
   update: vi.fn(),
   receipt: vi.fn(),
+  delete: vi.fn(),
+  maybeSingle: vi.fn(),
+  eq: vi.fn(),
+  mutation: vi.fn(),
 }));
 vi.mock('./repository', () => ({ table: mocks.table }));
-vi.mock('./transport', () => ({
+vi.mock('./transport', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./transport')>()),
   providerJson: mocks.json,
   providerRequest: mocks.request,
   jsonBody: (body: unknown) => ({ method: 'POST', body: JSON.stringify(body) }),
 }));
 vi.mock('./messages', () => ({ readMessage: mocks.read }));
 
+import { ConnectedMailError } from './config';
 import { composeSchema } from './mime';
 import type { ConnectedAccount } from './repository';
 import { respondToConnectedInvitation, sendConnectedMessage } from './send';
+import { MailProviderResponseError } from './transport';
 
 const account = {
   id: 'account',
@@ -40,21 +47,40 @@ beforeEach(() => {
     insert: mocks.insert,
     update: mocks.update,
     select: vi.fn(),
-    eq: vi.fn(),
+    eq: mocks.eq,
+    delete: mocks.delete,
+    maybeSingle: mocks.maybeSingle,
     single: mocks.receipt,
     // biome-ignore lint/suspicious/noThenProperty: emulate the awaited PostgREST mutation builder
-    then: (resolve: (value: unknown) => void) => resolve({ error: null }),
+    then: (resolve: (value: unknown) => void) => resolve(mocks.mutation()),
   };
   chain.eq.mockReturnValue(chain);
   chain.select.mockReturnValue(chain);
   mocks.update.mockReturnValue(chain);
+  mocks.delete.mockReturnValue(chain);
+  mocks.maybeSingle.mockResolvedValue({
+    data: { request_id: payload.requestId },
+    error: null,
+  });
+  mocks.mutation.mockReturnValue({ error: null });
   mocks.table.mockResolvedValue({
     insert: mocks.insert,
     update: mocks.update,
     select: chain.select,
+    delete: mocks.delete,
   });
-  mocks.json.mockResolvedValue({ id: 'provider-message' });
-  mocks.request.mockResolvedValue(new Response(null, { status: 202 }));
+  mocks.json.mockImplementation(
+    async (_account, _path, _init, onSubmissionStarted?: () => void) => {
+      onSubmissionStarted?.();
+      return { id: 'provider-message' };
+    }
+  );
+  mocks.request.mockImplementation(
+    async (_account, _path, _init, onSubmissionStarted?: () => void) => {
+      onSubmissionStarted?.();
+      return new Response(null, { status: 202 });
+    }
+  );
 });
 describe('connected send claims', () => {
   it.each(['google', 'microsoft'] as const)(
@@ -90,7 +116,12 @@ describe('connected send claims', () => {
     expect(mocks.json).not.toHaveBeenCalled();
   });
   it('records uncertainty after a lost provider response without retry', async () => {
-    mocks.json.mockRejectedValue(new Error('Connection lost'));
+    mocks.json.mockImplementationOnce(
+      async (_account, _path, _init, onSubmissionStarted?: () => void) => {
+        onSubmissionStarted?.();
+        throw new Error('Connection lost');
+      }
+    );
     await expect(sendConnectedMessage(account, payload)).rejects.toThrow(
       'Connection lost'
     );
@@ -345,4 +376,164 @@ it('saving a Gmail reply draft retains the source conversation', async () => {
   expect(JSON.parse(mocks.json.mock.calls[0]![2].body).message.threadId).toBe(
     'provider-thread'
   );
+});
+
+it.each(['reply', 'draft'] as const)(
+  'normalizes only provider-derived %s threading IDs and bounds references',
+  async (kind) => {
+    const references = Array.from(
+      { length: 105 },
+      (_, index) => `<r${index}@example.test>`
+    );
+    mocks.read.mockResolvedValue({
+      detail: {
+        internetMessageId: '<invalid id>',
+        references: ['<invalid id>', ...references, `<${'x'.repeat(901)}>`],
+      },
+      originalInReplyTo: '<invalid id>',
+      files: [],
+    });
+    const { saveDraft } = await import('./send');
+    if (kind === 'draft')
+      await saveDraft(account, { ...payload, draftId: 'draft' });
+    else
+      await sendConnectedMessage(account, {
+        ...payload,
+        sourceId: 'source',
+        mode: 'reply',
+      });
+    const body = JSON.parse(mocks.json.mock.calls[0]![2].body);
+    const parsed = await PostalMime.parse(
+      Buffer.from(kind === 'draft' ? body.message.raw : body.raw, 'base64url')
+    );
+    expect(parsed.inReplyTo).toBeUndefined();
+    expect(parsed.references?.split(' ')).toEqual(references.slice(-100));
+  }
+);
+it('releases a claim after a proven pre-submission failure and permits an explicit user retry', async () => {
+  mocks.json.mockRejectedValueOnce(
+    new ConnectedMailError(409, 'Reconnect this mail account')
+  );
+  await expect(sendConnectedMessage(account, payload)).rejects.toMatchObject({
+    status: 409,
+  });
+  expect(mocks.json).toHaveBeenCalledTimes(1);
+  expect(mocks.delete).toHaveBeenCalledTimes(1);
+  expect(mocks.eq).toHaveBeenCalledWith('status', 'sending');
+  expect(mocks.eq).toHaveBeenCalledWith('payload_hash', expect.any(String));
+  expect(mocks.update).not.toHaveBeenCalledWith({ status: 'uncertain' });
+  expect(await sendConnectedMessage(account, payload)).toEqual({
+    status: 'sent',
+  });
+  expect(mocks.json).toHaveBeenCalledTimes(2);
+});
+it.each([401, 429])(
+  'releases only its exact sending claim after actual provider rejection %s',
+  async (responseStatus) => {
+    mocks.json.mockImplementationOnce(
+      async (_account, _path, _init, started?: () => void) => {
+        started?.();
+        throw new MailProviderResponseError(responseStatus);
+      }
+    );
+    await expect(sendConnectedMessage(account, payload)).rejects.toMatchObject({
+      responseStatus,
+    });
+    expect(mocks.delete).toHaveBeenCalledTimes(1);
+    expect(mocks.eq).toHaveBeenCalledWith('account_id', account.id);
+    expect(mocks.eq).toHaveBeenCalledWith('request_id', payload.requestId);
+    expect(mocks.eq).toHaveBeenCalledWith('status', 'sending');
+    expect(mocks.json).toHaveBeenCalledTimes(1);
+  }
+);
+it.each([408, 499, 500])(
+  'retains an uncertain send fence for provider timeout/unknown response %s',
+  async (responseStatus) => {
+    mocks.json.mockImplementationOnce(
+      async (_account, _path, _init, started?: () => void) => {
+        started?.();
+        throw new MailProviderResponseError(responseStatus);
+      }
+    );
+    await expect(sendConnectedMessage(account, payload)).rejects.toMatchObject({
+      responseStatus,
+    });
+    expect(mocks.delete).not.toHaveBeenCalled();
+    expect(mocks.update).toHaveBeenCalledWith({ status: 'uncertain' });
+    expect(mocks.json).toHaveBeenCalledTimes(1);
+  }
+);
+it('retains the fence when acceptance was confirmed but the receipt write failed', async () => {
+  mocks.mutation.mockReturnValueOnce({ error: { message: 'Write failed' } });
+  await expect(sendConnectedMessage(account, payload)).rejects.toThrow(
+    'record provider send receipt'
+  );
+  expect(mocks.delete).not.toHaveBeenCalled();
+  expect(mocks.update).toHaveBeenCalledWith({ status: 'uncertain' });
+  expect(mocks.json).toHaveBeenCalledTimes(1);
+});
+it('does not claim a retry is available when conditional unsent-claim release matched no row', async () => {
+  mocks.json.mockRejectedValueOnce(
+    new ConnectedMailError(409, 'Reconnect this mail account')
+  );
+  mocks.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+  await expect(sendConnectedMessage(account, payload)).rejects.toThrow(
+    'release unsent mail claim'
+  );
+  expect(mocks.json).toHaveBeenCalledTimes(1);
+});
+it('never submits a concurrently in-flight identical request again', async () => {
+  const { createHash } = await import('node:crypto');
+  mocks.insert.mockResolvedValueOnce({ error: { code: '23505' } });
+  mocks.receipt.mockResolvedValueOnce({
+    data: {
+      status: 'sending',
+      payload_hash: createHash('sha256')
+        .update(JSON.stringify(payload))
+        .digest('hex'),
+    },
+    error: null,
+  });
+  await expect(sendConnectedMessage(account, payload)).rejects.toMatchObject({
+    status: 409,
+  });
+  expect(mocks.json).not.toHaveBeenCalled();
+  expect(mocks.delete).not.toHaveBeenCalled();
+});
+it('releases an Outlook draft claim when the readonly precheck proves it cannot send', async () => {
+  const { sendProviderDraft } = await import('./send');
+  mocks.json.mockResolvedValueOnce({ isDraft: false });
+  await expect(
+    sendProviderDraft(
+      { ...account, provider: 'microsoft' },
+      'draft',
+      payload.requestId
+    )
+  ).rejects.toMatchObject({ status: 409 });
+  expect(mocks.delete).toHaveBeenCalledTimes(1);
+  expect(mocks.request).not.toHaveBeenCalled();
+});
+it('does not mistake a public 4xx error after submission for a proven provider rejection', async () => {
+  mocks.json.mockImplementationOnce(
+    async (_account, _path, _init, started?: () => void) => {
+      started?.();
+      throw new ConnectedMailError(409, 'Local validation after submit');
+    }
+  );
+  await expect(sendConnectedMessage(account, payload)).rejects.toMatchObject({
+    status: 409,
+  });
+  expect(mocks.delete).not.toHaveBeenCalled();
+  expect(mocks.update).toHaveBeenCalledWith({ status: 'uncertain' });
+});
+it('keeps the acceptance fence even when a post-acceptance operation throws a provider-shaped 4xx', async () => {
+  mocks.update.mockImplementationOnce(() => {
+    throw new MailProviderResponseError(429);
+  });
+  await expect(sendConnectedMessage(account, payload)).rejects.toMatchObject({
+    responseStatus: 429,
+  });
+  expect(mocks.delete).not.toHaveBeenCalled();
+  expect(mocks.update).toHaveBeenCalledWith({ status: 'uncertain' });
+  expect(mocks.json).toHaveBeenCalledTimes(1);
 });

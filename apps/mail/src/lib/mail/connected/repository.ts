@@ -84,7 +84,16 @@ export async function exchangeToken(
       'Mail consent did not provide offline access'
     );
   if (token.scope) {
-    const granted = new Set(token.scope.toLowerCase().split(' '));
+    const granted = new Set(
+      String(token.scope)
+        .toLowerCase()
+        .split(/\s+/u)
+        .map((scope) =>
+          provider === 'microsoft'
+            ? scope.replace(/^https:\/\/graph\.microsoft\.com\//u, '')
+            : scope
+        )
+    );
     const required = scopes[provider].filter(
       (scope) => scope !== 'offline_access'
     );

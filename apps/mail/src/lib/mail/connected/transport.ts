@@ -1,10 +1,22 @@
 import { ConnectedMailError } from './config';
 import { accessToken, type ConnectedAccount } from './repository';
 
+export class MailProviderResponseError extends ConnectedMailError {
+  constructor(public readonly responseStatus: number) {
+    super(
+      responseStatus === 401 ? 409 : responseStatus === 429 ? 429 : 502,
+      responseStatus === 401
+        ? 'Reconnect this mail account'
+        : 'Mail provider request failed'
+    );
+  }
+}
+
 export async function providerRequest(
   account: ConnectedAccount,
   path: string,
-  init: RequestInit = {}
+  init: RequestInit = {},
+  onSubmissionStarted?: () => void
 ) {
   const base =
     account.provider === 'google'
@@ -17,6 +29,7 @@ export async function providerRequest(
   headers.set('Authorization', `Bearer ${await accessToken(account)}`);
   if (account.provider === 'microsoft')
     headers.set('Prefer', 'IdType="ImmutableId"');
+  onSubmissionStarted?.();
   let response = await fetch(`${base}${path}`, {
     ...init,
     headers,
@@ -35,21 +48,22 @@ export async function providerRequest(
     });
   }
   if (!response.ok) {
-    throw new ConnectedMailError(
-      response.status === 401 ? 409 : response.status === 429 ? 429 : 502,
-      response.status === 401
-        ? 'Reconnect this mail account'
-        : 'Mail provider request failed'
-    );
+    throw new MailProviderResponseError(response.status);
   }
   return response;
 }
 export async function providerJson(
   account: ConnectedAccount,
   path: string,
-  init: RequestInit = {}
+  init: RequestInit = {},
+  onSubmissionStarted?: () => void
 ) {
-  const response = await providerRequest(account, path, init);
+  const response = await providerRequest(
+    account,
+    path,
+    init,
+    onSubmissionStarted
+  );
   return response.status === 204 || response.status === 202
     ? null
     : response.json();

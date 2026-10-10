@@ -1047,9 +1047,9 @@ replayed. Disconnect removes local access and encrypted credentials without
 changing provider messages. Provider-side application consent can be revoked in
 Google/Microsoft account settings.
 
-Sends reserve a persisted account/request claim. Provider acceptance records a
-receipt; repeated completed requests acknowledge it without resending. An in-flight
-or uncertain result requires checking provider Sent rather than automatic replay.
+Sends reserve an account/request claim; acceptance records a receipt. Proven pre-send
+failures or explicit provider rejections release only their matching sending claim for user retry.
+Completed requests acknowledge without resending; in-flight, unknown or post-acceptance failures require provider Sent checks.
 Provider acceptance is not a delivery receipt. Test only with disposable mail and
 meeting fixtures unless real-account actions have been explicitly authorized.
 

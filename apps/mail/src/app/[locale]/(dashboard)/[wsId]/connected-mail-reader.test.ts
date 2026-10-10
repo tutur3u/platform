@@ -10,6 +10,8 @@ vi.mock('@tuturuuu/internal-api', () => ({
   connectedMailPath: () => '/authorized-attachment',
 }));
 
+import { sanitizeMailHtml } from '@/lib/mail/html';
+
 import { ConnectedMailReader } from './connected-mail-reader';
 
 it('keeps HTML email in an isolated frame that cannot run scripts or load remote resources', () => {
@@ -20,7 +22,9 @@ it('keeps HTML email in an isolated frame that cannot run scripts or load remote
     date: '',
     unread: false,
     starred: false,
-    html: '<p>Safe content</p>',
+    html: sanitizeMailHtml(
+      '<p>Safe content</p><a href="https://example.test/verify">Verify</a><script>alert(1)</script>'
+    ),
     to: ['me@example.test'],
   };
   render(
@@ -40,7 +44,18 @@ it('keeps HTML email in an isolated frame that cannot run scripts or load remote
     )
   );
   const frame = screen.getByTitle('connected_body');
-  expect(frame.getAttribute('sandbox')).toBe('');
+  expect(frame.getAttribute('sandbox')).toBe(
+    'allow-popups allow-popups-to-escape-sandbox'
+  );
+  for (const permission of [
+    'allow-scripts',
+    'allow-forms',
+    'allow-same-origin',
+  ])
+    expect(frame.getAttribute('sandbox')).not.toContain(permission);
+  expect(frame.getAttribute('srcdoc')).toContain('target="_blank"');
+  expect(frame.getAttribute('srcdoc')).toContain('rel="noopener noreferrer"');
+  expect(frame.getAttribute('srcdoc')).not.toContain('<script>');
   expect(frame.getAttribute('referrerpolicy')).toBe('no-referrer');
   expect(frame.getAttribute('srcdoc')).toContain("default-src 'none'");
   expect(frame.getAttribute('srcdoc')).toContain('img-src data:');

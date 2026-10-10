@@ -3,9 +3,33 @@ import { type CalendarResponse, calendarReply } from '../calendar-invitation';
 import { attachmentBytes } from './attachment-bytes';
 import { ConnectedMailError } from './config';
 import { readMessage } from './messages';
-import { buildMime, type ComposePayload, type MimeAttachment } from './mime';
+import {
+  buildMime,
+  type ComposePayload,
+  composeSchema,
+  type MimeAttachment,
+} from './mime';
 import { type ConnectedAccount, table } from './repository';
-import { jsonBody, providerJson, providerRequest } from './transport';
+import {
+  jsonBody,
+  MailProviderResponseError,
+  providerJson,
+  providerRequest,
+} from './transport';
+
+function providerMessageId(value: string | undefined) {
+  const parsed = composeSchema.shape.inReplyTo.safeParse(value);
+  return parsed.success ? parsed.data : undefined;
+}
+function providerReferences(values: string[]) {
+  return [
+    ...new Set(
+      values
+        .map(providerMessageId)
+        .filter((value): value is string => value !== undefined)
+    ),
+  ].slice(-100);
+}
 
 async function composeMime(account: ConnectedAccount, input: ComposePayload) {
   const payload = { ...input };
@@ -33,19 +57,17 @@ async function composeMime(account: ConnectedAccount, input: ComposePayload) {
     )
       threadId = source.providerThreadId;
     if (payload.draftId) {
-      payload.inReplyTo = source.originalInReplyTo;
-      payload.references = source.detail.references ?? [];
+      payload.inReplyTo = providerMessageId(source.originalInReplyTo);
+      payload.references = providerReferences(source.detail.references ?? []);
       if (payload.html !== undefined && payload.text === source.detail.text)
         payload.html = source.originalHtml;
     }
     if (payload.mode === 'reply' || payload.mode === 'reply_all') {
-      payload.inReplyTo = source.detail.internetMessageId;
-      payload.references = [
-        ...new Set([
-          ...(source.detail.references ?? []),
-          ...(payload.inReplyTo ? [payload.inReplyTo] : []),
-        ]),
-      ].slice(-100);
+      payload.inReplyTo = providerMessageId(source.detail.internetMessageId);
+      payload.references = providerReferences([
+        ...(source.detail.references ?? []),
+        ...(payload.inReplyTo ? [payload.inReplyTo] : []),
+      ]);
     }
     for (const id of payload.attachmentIds) {
       const file = source.files[Number(id)];
@@ -131,27 +153,38 @@ export async function sendConnectedMessage(
   const payloadHash = createHash('sha256')
     .update(semanticHash ?? JSON.stringify(payload))
     .digest('hex');
-  return claimedSend(account, payload.requestId, payloadHash, async () => {
-    if (account.provider === 'google')
-      await providerJson(
-        account,
-        '/messages/send',
-        jsonBody({ raw: raw.toString('base64url'), threadId })
-      );
-    else
-      await providerRequest(account, '/sendMail', {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: raw.toString('base64'),
-      });
-  });
+  return claimedSend(
+    account,
+    payload.requestId,
+    payloadHash,
+    async (onSubmissionStarted) => {
+      if (account.provider === 'google')
+        await providerJson(
+          account,
+          '/messages/send',
+          jsonBody({ raw: raw.toString('base64url'), threadId }),
+          onSubmissionStarted
+        );
+      else
+        await providerRequest(
+          account,
+          '/sendMail',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: raw.toString('base64'),
+          },
+          onSubmissionStarted
+        );
+    }
+  );
 }
 
 async function claimedSend(
   account: ConnectedAccount,
   requestId: string,
   payloadHash: string,
-  submit: () => Promise<void>
+  submit: (onSubmissionStarted: () => void) => Promise<void>
 ) {
   const sends = await table('mail_connected_sends');
   const { error: claimError } = await sends.insert({
@@ -180,8 +213,13 @@ async function claimedSend(
       );
     return { status: 'sent' };
   }
+  let submissionStarted = false;
+  let submissionAccepted = false;
   try {
-    await submit();
+    await submit(() => {
+      submissionStarted = true;
+    });
+    submissionAccepted = true;
     const { error } = await (await table('mail_connected_sends'))
       .update({ status: 'sent' })
       .eq('account_id', account.id)
@@ -189,10 +227,35 @@ async function claimedSend(
     if (error) throw new Error('Failed to record provider send receipt');
     return { status: 'sent' };
   } catch (error) {
-    await (await table('mail_connected_sends'))
-      .update({ status: 'uncertain' })
-      .eq('account_id', account.id)
-      .eq('request_id', requestId);
+    // Only a pre-submission failure or a concrete rejecting provider response
+    // can release a claim. Timeouts/unknown results and post-acceptance errors
+    // retain the duplicate-send fence. No automatic submission retry occurs.
+    const rejected =
+      error instanceof MailProviderResponseError &&
+      [400, 401, 403, 404, 405, 409, 410, 413, 415, 422, 429].includes(
+        error.responseStatus
+      );
+    if (!submissionAccepted && (!submissionStarted || rejected)) {
+      const { data, error: releaseError } = await (
+        await table('mail_connected_sends')
+      )
+        .delete()
+        .eq('account_id', account.id)
+        .eq('request_id', requestId)
+        .eq('payload_hash', payloadHash)
+        .eq('status', 'sending')
+        .select('request_id')
+        .maybeSingle();
+      if (releaseError || !data)
+        throw new Error('Failed to release unsent mail claim');
+    } else {
+      await (await table('mail_connected_sends'))
+        .update({ status: 'uncertain' })
+        .eq('account_id', account.id)
+        .eq('request_id', requestId)
+        .eq('payload_hash', payloadHash)
+        .eq('status', 'sending');
+    }
     throw error;
   }
 }
@@ -242,21 +305,35 @@ export async function sendProviderDraft(
   const payloadHash = createHash('sha256')
     .update(`draft:${draftId}`)
     .digest('hex');
-  return claimedSend(account, requestId, payloadHash, async () => {
-    if (account.provider === 'google')
-      await providerJson(account, '/drafts/send', jsonBody({ id: draftId }));
-    else {
-      const draft = await providerJson(
-        account,
-        `/messages/${encodeURIComponent(draftId)}?$select=isDraft`
-      );
-      if (!draft?.isDraft)
-        throw new ConnectedMailError(409, 'This message is no longer a draft');
-      await providerRequest(
-        account,
-        `/messages/${encodeURIComponent(draftId)}/send`,
-        { method: 'POST' }
-      );
+  return claimedSend(
+    account,
+    requestId,
+    payloadHash,
+    async (onSubmissionStarted) => {
+      if (account.provider === 'google')
+        await providerJson(
+          account,
+          '/drafts/send',
+          jsonBody({ id: draftId }),
+          onSubmissionStarted
+        );
+      else {
+        const draft = await providerJson(
+          account,
+          `/messages/${encodeURIComponent(draftId)}?$select=isDraft`
+        );
+        if (!draft?.isDraft)
+          throw new ConnectedMailError(
+            409,
+            'This message is no longer a draft'
+          );
+        await providerRequest(
+          account,
+          `/messages/${encodeURIComponent(draftId)}/send`,
+          { method: 'POST' },
+          onSubmissionStarted
+        );
+      }
     }
-  });
+  );
 }
