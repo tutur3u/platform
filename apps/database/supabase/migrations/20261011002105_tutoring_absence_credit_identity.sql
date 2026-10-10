@@ -132,8 +132,15 @@ begin
       or not exists(select 1 from public.workspace_user_groups_users where group_id=c.group_id and user_id=c.student_user_id)
       or (old.session_id is not null and not exists(select 1 from private.workspace_user_group_sessions where id=old.session_id));
     if tg_op='DELETE' and parent_removed then
-      if c.state='RESERVED' then
-        update private.tutoring_absence_credits set state='RELEASED',revision=revision+1,
+      -- Required scope FKs already own deletion when their parent is gone.
+      -- Updating that doomed credit here would recheck the vanished parent.
+      if c.state='RESERVED'
+        and exists(select 1 from public.workspaces where id=c.ws_id)
+        and exists(select 1 from public.workspace_user_groups where id=c.group_id and ws_id=c.ws_id)
+        and exists(select 1 from public.workspace_users where id=c.student_user_id and ws_id=c.ws_id) then
+        update private.tutoring_absence_credits credit set state='RELEASED',revision=revision+1,
+          class_session_id=case when exists(select 1 from private.workspace_user_group_sessions where id=credit.class_session_id)
+            then credit.class_session_id else null end,
           updated_at=clock_timestamp(),history=history||jsonb_build_array(jsonb_build_object('operation','PARENT_REMOVED')) where id=c.id;
       end if;
       continue;

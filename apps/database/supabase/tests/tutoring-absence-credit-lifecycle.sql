@@ -125,9 +125,16 @@ select ok(exists(select 1 from private.tutoring_absence_credits where original_a
  'deleted occurrence retains credited identity and snapshot');
 -- A fresh reservation is released by deletion of its actual occurrence parent.
 select pg_temp.create_credit(92751,92777);
+create temp table pending_occurrence_snapshot as select id,revision,history,original_class_session_id
+ from private.tutoring_absence_credits where original_attendance_id=pg_temp.fid(92751) and state='RESERVED';
 select lives_ok($q$delete from private.workspace_user_group_sessions where id=pg_temp.fid(92741)$q$,'occurrence deletion releases pending source');
 select ok(not exists(select 1 from private.tutoring_absence_credits where original_attendance_id=pg_temp.fid(92751) and state='RESERVED'),
  'no stranded reservation after occurrence cascade');
+select ok(exists(select 1 from private.tutoring_absence_credits c join pending_occurrence_snapshot b using(id)
+ where c.state='RELEASED' and c.revision=b.revision+1 and c.class_session_id is null and c.attendance_id is null
+ and c.original_class_session_id=b.original_class_session_id
+ and c.history=b.history||jsonb_build_array(jsonb_build_object('operation','PARENT_REMOVED'))),
+ 'occurrence cascade releases once, clears live pointers and preserves original snapshot');
 select is(pg_temp.create_credit(92751,92777)->>'createdCount','1','replay survives actual source deletion without second write');
 -- A real teacher parent rekey/delete is permitted; a caller rewrite is not.
 select throws_ok($q$update public.workspace_users set id=pg_temp.fid(92724) where id=pg_temp.fid(92722)$q$,'23503',null,'existing teacher enrollment FK still restricts parent rekey');
@@ -144,8 +151,13 @@ select ok(not exists(select 1 from private.workspace_tutoring_sessions where ws_
 insert into private.workspace_tutoring_sessions(id,ws_id,group_id,student_user_id,session_date,start_time,reason_type)
  values(pg_temp.fid(92781),pg_temp.fid(92711),pg_temp.fid(92731),pg_temp.fid(92721),'2030-01-04','14:00','ABSENT_RECOVERY');
 select lives_ok($q$update private.workspace_tutoring_sessions set attendance_status='CANCELLED' where id=pg_temp.fid(92781)$q$,'unlinked historical writer behavior unchanged');
-select lives_ok($q$delete from public.workspace_user_groups_users where group_id=pg_temp.fid(92731) and user_id=pg_temp.fid(92721)$q$,'existing membership cascade remains valid');
-select ok(not exists(select 1 from public.user_group_attendance where group_id=pg_temp.fid(92731) and user_id=pg_temp.fid(92721)),'membership teardown deletes attendance normally');
+-- Current schema deliberately preserves attendance after membership departure.
+create temp table attendance_before_departure as select jsonb_agg(to_jsonb(a) order by id) snapshot
+ from public.user_group_attendance a where group_id=pg_temp.fid(92731) and user_id=pg_temp.fid(92721);
+select lives_ok($q$delete from public.workspace_user_groups_users where group_id=pg_temp.fid(92731) and user_id=pg_temp.fid(92721)$q$,'existing membership departure remains valid');
+select is((select jsonb_agg(to_jsonb(a) order by id) from public.user_group_attendance a
+ where group_id=pg_temp.fid(92731) and user_id=pg_temp.fid(92721)),
+ (select snapshot from attendance_before_departure),'membership departure preserves exact attendance history');
 select ok(exists(select 1 from private.tutoring_absence_credits where original_attendance_id=pg_temp.fid(92752) and state='CREDITED' and attendance_id is null),'teardown retains DONE original source snapshot');
 select is(pg_temp.create_credit(92755,92772)->>'createdCount','1','original replay survives membership departure');
 select is(pg_temp.change_credit(92755,92778,'2','CANCELLED')->>'state','RELEASED','tenant-authorized release survives missing enrollment/source');
@@ -172,6 +184,10 @@ select pg_temp.set_actor_membership('MEMBER');
 -- Creation attribution follows actual parent rekey/SET NULL, never direct writes.
 select throws_ok($q$update public.users set id=pg_temp.fid(92704) where id=pg_temp.fid(92701)$q$,'23503',null,'existing actor membership FK still restricts parent rekey');
 delete from public.workspace_members where user_id=pg_temp.fid(92701);
+select throws_ok($q$update public.users set id=pg_temp.fid(92704) where id=pg_temp.fid(92701)$q$,
+ '23503',null,'existing private-details FK also restricts unsupported user rekey');
+-- Isolate the intended created_by RI action, without changing shared FK policy.
+delete from public.user_private_details where user_id=pg_temp.fid(92701);
 select lives_ok($q$update public.users set id=pg_temp.fid(92704) where id=pg_temp.fid(92701)$q$,'creator rekey preserves historical linked sessions');
 select ok(not exists(select 1 from private.workspace_tutoring_sessions where ws_id=pg_temp.fid(92711) and created_by=pg_temp.fid(92701)),
  'creator rekey cascades live attribution without rewriting credit history');
@@ -180,6 +196,9 @@ select lives_ok($q$delete from public.users where id=pg_temp.fid(92704)$q$,'crea
 select ok(not exists(select 1 from private.workspace_tutoring_sessions where ws_id=pg_temp.fid(92711) and created_by is not null),
  'creator deletion retains sessions and clears only live attribution');
 select lives_ok($q$delete from public.workspace_user_groups where id=pg_temp.fid(92731)$q$,'group cascade can delete linked sessions and scoped ledger');
+select ok(not exists(select 1 from private.tutoring_absence_credits where group_id=pg_temp.fid(92731))
+ and not exists(select 1 from private.workspace_tutoring_sessions where group_id=pg_temp.fid(92731)),
+ 'group deletion leaves no scoped credits or linked sessions');
 select lives_ok($q$delete from public.workspaces where id=pg_temp.fid(92711)$q$,'workspace teardown preserves existing cleanup');
 select * from finish();
 rollback;
