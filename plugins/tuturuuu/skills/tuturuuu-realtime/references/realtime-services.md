@@ -130,6 +130,13 @@ stubbed provider failures from hosted alarm delivery and actual Drive saves.
 This offline bound does not certify live retry, media cleanup or account spending.
 
 
+The framework-independent `@tuturuuu/realtime/core/retry-budget` planner owns
+finite attempt/deadline decisions; the Worker persists reservations before I/O
+and retains authorization and recovery. Invalid durable retry state stops without
+resetting the job or deleting documents. See
+`apps/docs/build/devops/programming-realtime-runbook.mdx#portable-offline-retry-planning`
+for the adapter contract and planner, counted-handler and SQLite regressions.
+
 ## Offline channel checkpoint reservations
 
 Channel rooms persist a finite three-attempt, two-minute offline job before
