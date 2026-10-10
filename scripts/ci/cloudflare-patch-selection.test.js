@@ -175,3 +175,23 @@ for (const workflow of [
     );
   });
 }
+
+const candidateSpec = require('../../apps/parley/package.json').devDependencies[
+  '@opennextjs/cloudflare'
+];
+const parleyCandidatePatch =
+  require('../../package.json').patchedDependencies[
+    `@opennextjs/cloudflare@${candidateSpec}`
+  ];
+test('the pinned Parley candidate patch selects only its Cloudflare owner', () => {
+  for (const app of consumers) {
+    assert.equal(
+      decide(`${app}-cloudflare.yaml`, [parleyCandidatePatch]).shouldRun,
+      app === 'parley'
+    );
+  }
+  assert.equal(
+    decide('vercel-production-meet.yaml', [parleyCandidatePatch]).shouldRun,
+    false
+  );
+});
