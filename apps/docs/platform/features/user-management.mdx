@@ -294,3 +294,38 @@ Public creator names link to the canonical platform profile when a username exis
 Regression evidence: `apps/web/src/lib/public-user-profile.test.ts` checks the
 query and response allowlists, invalid/unknown usernames, failures, and artwork;
 `public-paths.test.ts` checks anonymous localized access.
+
+### Profile discovery across apps
+
+The platform account menu and the shared Next satellite account menu offer Public
+profile for signed-in accounts with a canonical username. The destination is the
+central `/u/[username]` page, using the satellite's configured central origin.
+Links open in a new tab so the current task and unsaved work remain available.
+Accounts without a username have no public-profile link; private profile settings
+remain available. No profile content or workspace data is copied across apps.
+Framework adapters without a canonical username omit the optional menu item.
+Regression coverage: `public-profile-url.test.ts` checks legacy usernames,
+configured origins, and rejected paths; `satellite-user-menu-items.test.tsx`
+checks signed-in, signed-out, and missing-profile menu behavior.
+
+
+### Explicit public link copying
+
+The public `/u/[username]` page offers an explicit copy-link control using the
+canonical `https://tuturuuu.com/u/[username]` address. It copies only that routing
+URL, never biography text, account metadata, private fields, workspace identifiers
+or tracking query values. Default public fields remain avatar, banner, display
+name and biography; additional details still require explicit owner sharing.
+The control is an action for a visitor, not a new profile data field or a grant.
+It does not send messages, create notifications or publish anything automatically.
+
+The shared `PublicLinkButton` accepts only the canonical public-profile and
+published-notebook route shapes. The owning surface must first provide an
+already-public projection; URL validation is not authorization. It writes to the
+clipboard only after a click, announces success, and offers a read-only selectable
+URL after clipboard denial/unavailability. Duplicate clicks are fenced and old
+completion is suppressed when the destination changes or the control unmounts.
+App-provided English/Vietnamese labels keep the shared component free of implicit
+translation namespace requirements. Regression coverage: `public-content-link.test.ts`,
+`public-link-button.test.tsx` and profile page/projection tests. Hosted clipboard
+permissions and exact-head app/shared-package CI remain separate evidence gates.

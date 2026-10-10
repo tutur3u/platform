@@ -33,6 +33,11 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./auth-errors": {
+      "types": "./dist/auth-errors.d.ts",
+      "bun": "./src/auth-errors.ts",
+      "default": "./dist/auth-errors.js"
+    },
     "./next/client": {
       "types": "./dist/next/client.d.ts",
       "bun": "./src/next/client.ts",
