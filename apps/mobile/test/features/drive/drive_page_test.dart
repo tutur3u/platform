@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show CheckedState;
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -27,12 +28,15 @@ class _Auth extends MockCubit<AuthState> implements AuthCubit {}
 class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
 class _Permissions extends Fake implements WorkspacePermissionsRepository {
+  _Permissions({this.canManageDrive = true});
+
+  final bool canManageDrive;
   @override
   Future<WorkspacePermissions> getPermissions({
     required String wsId,
     String? userId,
-  }) async => const WorkspacePermissions(
-    permissions: {'manage_drive'},
+  }) async => WorkspacePermissions(
+    permissions: {if (canManageDrive) 'manage_drive'},
     isCreator: false,
   );
 }
@@ -102,10 +106,14 @@ void main() {
     await workspace.close();
     await actions.close();
   });
-  Future<void> mount(WidgetTester tester) async {
+  Future<void> mount(
+    WidgetTester tester, {
+    bool canManageDrive = true,
+    Size size = const Size(430, 844),
+  }) async {
     tester.view
       ..devicePixelRatio = 1
-      ..physicalSize = const Size(430, 844);
+      ..physicalSize = size;
     addTearDown(() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
@@ -129,7 +137,7 @@ void main() {
           builder: ShadcnMaterialBridge.appBuilder,
           home: DrivePage(
             repository: repository,
-            permissionsRepository: _Permissions(),
+            permissionsRepository: _Permissions(canManageDrive: canManageDrive),
           ),
         ),
       ),
@@ -140,6 +148,101 @@ void main() {
   ShellActionSpec search() => actions.state
       .resolveForLocation(Routes.drive)
       .firstWhere((action) => action.id == 'drive-search');
+  for (final grid in [false, true]) {
+    for (final canManageDrive in [false, true]) {
+      testWidgets(
+        '${grid ? 'grid' : 'list'} selection identifies each entry with '
+        '${canManageDrive ? 'management' : 'read-only'} permission',
+        (tester) async {
+          final semantics = tester.ensureSemantics();
+          try {
+            repository.load = (ws, offset, query) async =>
+                result(['First folder', 'Second folder']);
+            await mount(
+              tester,
+              canManageDrive: canManageDrive,
+              size: Size(grid ? 600 : 430, 844),
+            );
+            if (grid) {
+              actions.state
+                  .resolveForLocation(Routes.drive)
+                  .firstWhere((action) => action.id == 'drive-view')
+                  .onPressed!();
+              await pump(tester);
+            }
+            final first = find.bySemanticsLabel('First folder');
+            final second = find.bySemanticsLabel('Second folder');
+            expect(first, findsOneWidget);
+            expect(second, findsOneWidget);
+            expect(find.byType(Checkbox), findsNWidgets(2));
+            expect(
+              tester
+                  .getSemantics(first)
+                  .getSemanticsData()
+                  .flagsCollection
+                  .isChecked,
+              CheckedState.isFalse,
+            );
+            expect(
+              tester
+                  .getSemantics(second)
+                  .getSemanticsData()
+                  .flagsCollection
+                  .isChecked,
+              CheckedState.isFalse,
+            );
+            await tester.tap(second);
+            await pump(tester);
+            expect(
+              tester
+                  .getSemantics(first)
+                  .getSemanticsData()
+                  .flagsCollection
+                  .isChecked,
+              CheckedState.isFalse,
+            );
+            expect(
+              tester
+                  .getSemantics(second)
+                  .getSemanticsData()
+                  .flagsCollection
+                  .isChecked,
+              CheckedState.isTrue,
+            );
+            final deletes = actions.state
+                .resolveForLocation(Routes.drive)
+                .where((action) => action.id == 'drive-delete-selected');
+            if (canManageDrive) {
+              expect(deletes.single.tooltip, 'Delete selected (1)');
+              expect(deletes.single.enabled, isTrue);
+            } else {
+              expect(deletes, isEmpty);
+            }
+            await tester.tap(second);
+            await pump(tester);
+            expect(
+              tester
+                  .getSemantics(second)
+                  .getSemanticsData()
+                  .flagsCollection
+                  .isChecked,
+              CheckedState.isFalse,
+            );
+            if (canManageDrive) {
+              final clearSelection = actions.state
+                  .resolveForLocation(Routes.drive)
+                  .firstWhere((action) => action.id == 'drive-delete-selected');
+              expect(clearSelection.tooltip, 'Delete selected (0)');
+              expect(clearSelection.enabled, isFalse);
+            }
+            expect(tester.takeException(), isNull);
+          } finally {
+            semantics.dispose();
+          }
+        },
+      );
+    }
+  }
   testWidgets('search is registered with the shared dock and closes cleanly', (
     tester,
   ) async {

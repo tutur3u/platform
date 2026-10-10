@@ -153,9 +153,9 @@ Active-session registry renewal has a separate privacy lease. It starts at the
 recorded renewal; at that boundary the helper throws after attempting registration.
 These age checks do not reserve attempts: repeated reconstructed calls before the
 boundary still each perform a registry RPC. Successful renewal suppresses later
-calls only when its timestamp survives persistence. A future recorded timestamp
-can also suppress renewal past the original lease, so a replacement must validate
-clock state and finite future deadlines rather than trusting timestamp subtraction.
+calls only when its timestamp survives persistence. Invalid or future recorded timestamps
+now fail closed before registration, as described in the clock-integrity contract
+below. This clock fence does not reserve finite retry attempts.
 If Stop arrives during registration, the helper attempts compensating removal;
 removal failure must remain recoverable without authorizing an unlimited retry job.
 
@@ -207,6 +207,27 @@ completion stops later helper work. It does not establish finite retries,
 reschedule-race safety, billing bounds or hosted alarm behavior. Keep those gates
 explicit until their implementation and evidence exist. Billing alerts and
 per-invocation CPU limits do not establish a total-spend cap.
+
+## Registry lease clock integrity
+
+Active Live sessions require nonnegative safe-integer start and renewal timestamps.
+A renewal must lie between session start and the current server clock. Corrupt,
+nonfinite or future timestamps fail before a registry request; the session tick
+uses its existing `session_unavailable` stop path to end capture and retain billing,
+room-release and privacy cleanup obligations. A server clock rollback can therefore
+end an active session instead of silently extending privacy discoverability.
+
+This applies to personal and room Live sessions. Valid leases retain the twelve-hour
+renewal and twenty-three-hour retryable-failure boundaries. Ended sessions still
+attempt registry removal even when their lease timestamps are invalid. These checks
+do not introduce finite compensation attempts, authenticated background Stop or a
+spending cap. Count those independent obligations separately.
+
+Regression coverage: `registry-heartbeat.test.ts` exercises invalid timestamps,
+reconstruction without registration I/O, exact lease boundaries, duplicate renewal
+and ended-session removal. `session-cleanup.test.ts` checks independent compensation.
+These helper tests use controlled namespaces; real SQLite persistence, hosted
+privacy revocation and the complete stop/reschedule path remain release gates.
 
 ## Deployment and verification
 

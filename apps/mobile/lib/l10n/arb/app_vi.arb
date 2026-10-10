@@ -4518,5 +4518,17 @@
   "assistantMemorySaveChanges": "Lưu thay đổi của tôi",
   "notificationsReadCleanupUnavailable": "Đã tiếp nhận thao tác đọc. Không thể xóa một số thông báo hệ thống.",
   "notificationsReadRefreshUnavailable": "Đã tiếp nhận thao tác đọc. Không thể làm mới hộp thư. Kéo để làm mới.",
-  "notificationsReadError": "Không thể tiếp nhận thao tác đọc. Vui lòng thử lại."
+  "notificationsReadError": "Không thể tiếp nhận thao tác đọc. Vui lòng thử lại.",
+  "notesLocalAiTitle": "Tóm tắt trên thiết bị",
+  "notesLocalAiDescription": "Dùng mô hình đã cài để tóm tắt ngắn trên thiết bị. Xem lại trước khi thêm vào ghi chú. Nội dung không được gửi tới dịch vụ AI.",
+  "notesLocalAiModel": "Mô hình đã cài",
+  "notesLocalAiMissingModel": "Hãy cài hoặc nhập mô hình này trong cài đặt Mira trước.",
+  "notesLocalAiUnsupported": "Thiết bị này không hỗ trợ suy luận tại chỗ.",
+  "notesLocalAiInput": "Chọn ghi chú có nội dung và tối đa 5.000 ký tự.",
+  "notesLocalAiEngine": "Không thể tạo tóm tắt tại chỗ. Không có dịch vụ từ xa nào được sử dụng.",
+  "notesLocalAiSaveError": "Không thể xác nhận thêm tóm tắt. Kiểm tra ghi chú trước khi lưu lại.",
+  "notesLocalAiStop": "Dừng",
+  "notesLocalAiGenerate": "Tạo trên thiết bị",
+  "notesLocalAiAppend": "Thêm tóm tắt",
+  "notesLocalAiDiscard": "Bỏ bản xem trước"
 }

@@ -54,6 +54,7 @@ import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet.
 import 'package:mobile/features/assistant/widgets/assistant_header_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_history_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
+import 'package:mobile/features/assistant/widgets/assistant_live_haptic_feedback.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_info_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_mode_view.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_primary_action.dart';
@@ -227,6 +228,7 @@ class _AssistantPageState extends State<AssistantPage>
   Future<void> _workspaceDisconnect = Future<void>.value();
   Future<void> _liveBrowsingPreferenceLoad = Future<void>.value();
   final _liveStartGate = AssistantLiveStartGate();
+  final _liveHaptics = AssistantLiveHapticFeedback();
   bool get _liveStartPending =>
       _liveStartGate.pendingFor(_voiceActorScopeEpoch);
   bool _lifecycleDisconnectPending = false;
@@ -251,6 +253,7 @@ class _AssistantPageState extends State<AssistantPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) _liveHaptics.suspend();
     if (state == AppLifecycleState.resumed) {
       _appIsForeground = true;
       _resumeLocal();
@@ -287,6 +290,7 @@ class _AssistantPageState extends State<AssistantPage>
     if (TickerMode.valuesOf(context).enabled) {
       _resumeLocal();
     } else {
+      _liveHaptics.suspend();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || TickerMode.valuesOf(context).enabled) return;
         unawaited(_voiceCapture.cancel());
@@ -306,6 +310,7 @@ class _AssistantPageState extends State<AssistantPage>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _liveHaptics.dispose();
     _scrollController.removeListener(_handleScroll);
     _inputFocusNode.removeListener(_handleInputFocusChange);
     _inputController.dispose();
