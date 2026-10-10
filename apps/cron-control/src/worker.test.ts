@@ -11,6 +11,8 @@ const originalFetch = globalThis.fetch;
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
+  vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 it('skips the Vercel processor when no immediate batches remain', async () => {
@@ -105,4 +107,109 @@ it('does not invoke delivery if stale-batch recovery fails', async () => {
     'Push batch recovery failed: 503'
   );
   expect(fetchMock).toHaveBeenCalledTimes(1);
+});
+
+it.each(['requeue', 'lookup'] as const)(
+  'aborts a stalled %s phase without starting subsequent requests',
+  async (phase) => {
+    vi.useFakeTimers();
+    vi.spyOn(AbortSignal, 'timeout').mockImplementation((milliseconds) => {
+      const controller = new AbortController();
+      setTimeout(
+        () => controller.abort(new DOMException('Deadline', 'TimeoutError')),
+        milliseconds
+      );
+      return controller.signal;
+    });
+    const paths: string[] = [];
+    globalThis.fetch = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = new URL(String(input)).pathname;
+        paths.push(path);
+        if (phase === 'lookup' && path.endsWith('requeue_mail_push_batches'))
+          return Response.json(null);
+        return new Promise<Response>((_resolve, reject) => {
+          const signal = init?.signal;
+          if (!signal) throw new Error('Missing deadline');
+          signal.addEventListener('abort', () => reject(signal.reason), {
+            once: true,
+          });
+        });
+      }
+    ) as typeof fetch;
+    const pending = processImmediateNotifications(env);
+    const rejected = expect(pending).rejects.toThrow('Deadline');
+    await vi.advanceTimersByTimeAsync(29_999);
+    expect(paths).toHaveLength(phase === 'requeue' ? 1 : 2);
+    await vi.advanceTimersByTimeAsync(1);
+    await rejected;
+    expect(paths).toHaveLength(phase === 'requeue' ? 1 : 2);
+    expect(paths).not.toContain('/api/notifications/send-immediate');
+  }
+);
+
+it.each(['requeue', 'lookup'] as const)(
+  'rejects a %s redirect without starting subsequent requests',
+  async (phase) => {
+    const calls: { path: string; redirect: RequestRedirect | undefined }[] = [];
+    globalThis.fetch = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = new URL(String(input)).pathname;
+        calls.push({ path, redirect: init?.redirect });
+        if (phase === 'lookup' && path.endsWith('requeue_mail_push_batches'))
+          return Response.json(null);
+        return new Response(null, {
+          status: 302,
+          headers: { Location: 'https://other.example.test/' },
+        });
+      }
+    ) as typeof fetch;
+    await expect(processImmediateNotifications(env)).rejects.toThrow(
+      'failed: 302'
+    );
+    expect(calls).toHaveLength(phase === 'requeue' ? 1 : 2);
+    expect(calls.every((call) => call.redirect === 'manual')).toBe(true);
+    expect(
+      calls.some((call) => call.path === '/api/notifications/send-immediate')
+    ).toBe(false);
+  }
+);
+
+it('keeps lookup-body consumption attached to its request deadline', async () => {
+  vi.useFakeTimers();
+  vi.spyOn(AbortSignal, 'timeout').mockImplementation((milliseconds) => {
+    const controller = new AbortController();
+    setTimeout(
+      () => controller.abort(new DOMException('Body deadline', 'TimeoutError')),
+      milliseconds
+    );
+    return controller.signal;
+  });
+  const paths: string[] = [];
+  globalThis.fetch = vi.fn(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = new URL(String(input)).pathname;
+      paths.push(path);
+      if (path.endsWith('requeue_mail_push_batches'))
+        return Response.json(null);
+      return new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode('['));
+            init?.signal?.addEventListener(
+              'abort',
+              () => controller.error(init.signal?.reason),
+              { once: true }
+            );
+          },
+        })
+      );
+    }
+  ) as typeof fetch;
+  const rejected = expect(processImmediateNotifications(env)).rejects.toThrow(
+    'Body deadline'
+  );
+  await vi.advanceTimersByTimeAsync(30_000);
+  await rejected;
+  expect(paths).toHaveLength(2);
 });
