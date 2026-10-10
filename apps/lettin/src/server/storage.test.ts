@@ -2,11 +2,12 @@ import { readFile } from 'node:fs/promises';
 import type { LettinDraft } from '@tuturuuu/internal-api/lettin';
 import { convertV4MiniflareOptions, Miniflare } from 'miniflare';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { quickNoteDraft } from '../components/quick-note-model';
 import { type Actor, LettinError, type Store, worldRole } from './context';
 import { getMedia, uploadMedia } from './media';
 import { cleanupMedia } from './media-cleanup';
 import { mutate } from './mutations';
-import { readOverview, readPublic } from './queries';
+import { readOverview, readPublic, readWorld } from './queries';
 
 let mf: Miniflare;
 let db: Store;
@@ -185,6 +186,38 @@ describe('D1 authorization and publishing', () => {
     );
     await mutate(db, owner, { action: 'unpublishWorld', worldId, version: 3 });
     expect(await readPublic(db, worldId)).toEqual([]);
+  });
+  it('keeps notice revisions private until republished, including catalogue cards', async () => {
+    await mutate(db, owner, {
+      action: 'saveWorld',
+      worldId,
+      version: 1,
+      draft: { ...draft, contentNotice: 'Published spoilers' },
+    });
+    await mutate(db, owner, { action: 'publishWorld', worldId, version: 2 });
+    await mutate(db, owner, {
+      action: 'saveWorld',
+      worldId,
+      version: 3,
+      draft: { ...draft, contentNotice: 'Private revision' },
+    });
+    expect((await readPublic(db, worldId))[0]?.published.contentNotice).toBe(
+      'Published spoilers'
+    );
+    expect((await readPublic(db))[0]?.published.contentNotice).toBe(
+      'Published spoilers'
+    );
+    await mutate(db, owner, {
+      action: 'saveWorld',
+      worldId,
+      version: 4,
+      draft: { ...draft, contentNotice: '' },
+    });
+    expect((await readPublic(db, worldId))[0]?.published.contentNotice).toBe(
+      'Published spoilers'
+    );
+    await mutate(db, owner, { action: 'publishWorld', worldId, version: 5 });
+    expect((await readPublic(db))[0]?.published.contentNotice).toBe('');
   });
   it('filters unpublished relationships and rejects cross-world links', async () => {
     const a = (
@@ -629,3 +662,34 @@ describe('Wiki graph and inline artwork', () => {
     ).rejects.toMatchObject({ status: 404 });
   });
 });
+
+it.each(['page', 'character', 'story'] as const)(
+  'keeps quick-captured %s entries unpublished with live notebook and workspace access checks',
+  async (kind) => {
+    const note = quickNoteDraft('Idea', 'Private thought', kind)!;
+    const entryId = (
+      await mutate(db, editor, { action: 'createEntry', worldId, draft: note })
+    ).id;
+    const entry = (await readWorld(db, owner, worldId)).entries.find(
+      (e) => e.id === entryId
+    )!;
+    expect(entry.draft).toEqual(note);
+    expect(entry.published).toBeNull();
+    await mutate(db, owner, { action: 'publishWorld', worldId, version: 1 });
+    expect((await readPublic(db, worldId))[0]!.entries).toEqual([]);
+    await expect(
+      mutate(
+        db,
+        { ...owner, wsId: 'other' },
+        { action: 'createEntry', worldId, draft: note }
+      )
+    ).rejects.toMatchObject({ status: 403 });
+    await db
+      .prepare('DELETE FROM collaborators WHERE world_id = ? AND user_id = ?')
+      .bind(worldId, editor.id)
+      .run();
+    await expect(
+      mutate(db, editor, { action: 'createEntry', worldId, draft: note })
+    ).rejects.toMatchObject({ status: 403 });
+  }
+);

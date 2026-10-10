@@ -75,3 +75,89 @@ it('labels legacy approval as pending and keeps successful tests distinct from r
   expect(screen.queryByText('not_sent')).not.toBeInTheDocument();
   expect(screen.getByText('test_send')).toBeInTheDocument();
 });
+
+it.each([
+  ['Recipient is unsubscribed or blocked.', 'category_suppression'],
+  ['Subject profile email is missing.', 'category_missing_email'],
+  [
+    'Email delivery outcome is unknown. Check provider logs before retrying.',
+    'category_unknown',
+  ],
+  ['Delivery gate blocked: sender_not_configured', 'category_infrastructure'],
+])(
+  'shows %s without an unsafe send or Retry action',
+  (last_delivery_error, category) => {
+    render(
+      <PeriodicReportRow
+        report={
+          {
+            id: 'blocked',
+            title: 'Monthly report',
+            user_id: 'user',
+            user_name: 'Recipient',
+            user_email: 'recipient@example.com',
+            report_approval_status: 'APPROVED',
+            delivery_status: 'blocked',
+            generation_status: 'ready',
+            last_delivery_error,
+          } as PeriodicReport
+        }
+        wsId="workspace"
+        permissions={{ canApproveReports: false, canSendReports: true }}
+        approvalPending={false}
+        generationPending={false}
+        onApprove={vi.fn()}
+        onGenerate={vi.fn()}
+        onPreview={vi.fn()}
+        onEmailPreview={vi.fn()}
+        onDeliveryIntent={vi.fn()}
+      />
+    );
+    expect(screen.getByText(category)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'send' })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'retry_delivery' })
+    ).not.toBeInTheDocument();
+  }
+);
+it('offers permitted inline remediation without sending or approving', () => {
+  const edit = vi.fn();
+  const delivery = vi.fn();
+  render(
+    <PeriodicReportRow
+      report={
+        {
+          id: 'missing',
+          title: 'Monthly report',
+          user_id: 'user',
+          user_name: 'Recipient',
+          user_email: null,
+          report_approval_status: 'APPROVED',
+          delivery_status: 'draft',
+          generation_status: 'ready',
+          last_delivery_error: null,
+        } as PeriodicReport
+      }
+      wsId="workspace"
+      permissions={{
+        canApproveReports: false,
+        canSendReports: true,
+        canUpdateUsers: true,
+      }}
+      approvalPending={false}
+      generationPending={false}
+      onApprove={vi.fn()}
+      onGenerate={vi.fn()}
+      onPreview={vi.fn()}
+      onEmailPreview={vi.fn()}
+      onDeliveryIntent={delivery}
+      onEditRecipient={edit}
+    />
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'edit_recipient' }));
+  expect(edit).toHaveBeenCalledOnce();
+  expect(delivery).not.toHaveBeenCalled();
+  expect(screen.getByRole('checkbox')).toBeDisabled();
+});

@@ -9,6 +9,18 @@ import {
   getInternalApiClient,
   type InternalApiClientOptions,
 } from './client';
+import {
+  type PeriodicReportDeliveryBatchControls,
+  queuePeriodicReportDeliveryBatch,
+} from './reports-delivery-batch';
+
+export {
+  MAX_PERIODIC_DELIVERY_BATCH_SIZE,
+  type PeriodicReportDeliveryBatchControls,
+  type PeriodicReportDeliveryBatchItem,
+  type PeriodicReportDeliveryBatchProgress,
+  type PeriodicReportDeliveryBatchResult,
+} from './reports-delivery-batch';
 
 export interface CreateReportUploadUrlPayload {
   filename: string;
@@ -99,6 +111,17 @@ export type PeriodicReportCadence =
   | 'monthly'
   | 'quarterly'
   | 'yearly';
+export const PERIODIC_DELIVERY_CATEGORIES = [
+  'missing_email',
+  'suppression',
+  'infrastructure',
+  'unknown',
+  'approval',
+  'failure',
+] as const;
+export type PeriodicReportDeliveryCategory =
+  (typeof PERIODIC_DELIVERY_CATEGORIES)[number];
+
 export type PeriodicReportGenerationMode = 'manual' | 'ai';
 export type PeriodicReportDeliveryStatus =
   | 'draft'
@@ -172,7 +195,8 @@ export interface ListPeriodicReportsParams {
   approvalStatus?: 'UNAPPROVED' | 'PENDING' | 'APPROVED' | 'REJECTED';
   periodStart?: string;
   periodEnd?: string;
-  cadence?: PeriodicReportCadence;
+  cadence?: PeriodicReportCadence | 'all';
+  category?: PeriodicReportDeliveryCategory;
   deliveryStatus?: PeriodicReportDeliveryStatus;
   page?: number;
   pageSize?: number;
@@ -182,6 +206,7 @@ export interface ListPeriodicReportsParams {
 }
 
 export interface ListPeriodicReportsResponse {
+  categoryCounts: Record<PeriodicReportDeliveryCategory, number>;
   counts: PeriodicReportCounts;
   data: PeriodicReport[];
   page: number;
@@ -394,6 +419,7 @@ export async function listPeriodicReports(
         periodStart: params.periodStart,
         periodEnd: params.periodEnd,
         cadence: params.cadence,
+        category: params.category,
         generationStatus: params.generationStatus,
         deliveryStatus: params.deliveryStatus,
         stage: params.stage,
@@ -483,6 +509,21 @@ export async function requestPeriodicReportDelivery(
       body: JSON.stringify({ action }),
       cache: 'no-store',
     }
+  );
+}
+
+export function requestPeriodicReportDeliveryBatch(
+  workspaceId: string,
+  reportIds: readonly string[],
+  controls: PeriodicReportDeliveryBatchControls,
+  options?: InternalApiClientOptions
+) {
+  return queuePeriodicReportDeliveryBatch(
+    workspaceId,
+    reportIds,
+    controls,
+    (reportId) =>
+      requestPeriodicReportDelivery(workspaceId, reportId, 'send', options)
   );
 }
 

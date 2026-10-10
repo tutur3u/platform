@@ -108,6 +108,30 @@ describe('owned list and detail handlers', () => {
     expect(d.list).not.toHaveBeenCalled();
     expect(d.detail).not.toHaveBeenCalled();
   });
+  it('flag faults return a private unavailable response without leaking or reading stores', async () => {
+    const log = vi.spyOn(console, 'error');
+    const enabled = vi.fn(() => {
+      throw new Error('PRIVATE_FLAG_BODY');
+    });
+    const d = deps({ enabled });
+    try {
+      for (const handler of [
+        () => createStaffListHandler(d, policy)(request('?limit=bad')),
+        () => createStaffDetailHandler(d, policy)(request(), 'bad-id'),
+      ]) {
+        const body = await privateResponse(await handler(), 503);
+        expect(body).toEqual({ error: { code: 'feedback_unavailable' } });
+        expect(JSON.stringify(body)).not.toContain('PRIVATE_FLAG_BODY');
+      }
+      expect(d.actor).toHaveBeenCalledTimes(2);
+      expect(enabled).toHaveBeenCalledTimes(2);
+      expect(d.list).not.toHaveBeenCalled();
+      expect(d.detail).not.toHaveBeenCalled();
+      expect(log).not.toHaveBeenCalled();
+    } finally {
+      log.mockRestore();
+    }
+  });
   it.each(['pending', 'provisioned', 'missing', 'mismatch', 'deactivated'])(
     'final SQL denial %s is preserved, including detail',
     async () => {
