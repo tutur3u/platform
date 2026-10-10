@@ -319,6 +319,7 @@
     "@typescript/typescript-win32-x64": "7.0.2"
   },
   "patchedDependencies": {
-    "@opennextjs/cloudflare@1.20.6": "patches/@opennextjs%2Fcloudflare@1.20.6.patch"
+    "@opennextjs/cloudflare@1.20.6": "patches/@opennextjs%2Fcloudflare@1.20.6.patch",
+    "@opennextjs/cloudflare@https://registry.npmjs.org/@opennextjs/cloudflare/-/cloudflare-1.20.6.tgz": "patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch"
   }
 }

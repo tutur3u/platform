@@ -107,6 +107,14 @@ describe('strict frame and weekly window validation', () => {
       expect(() => validateHoursFrame({ timeZone, confirmed: true })).toThrow();
     }
   );
+  it.each(['Asia/Ho_Chi_Minh', 'America/New_York', 'UTC', 'Etc/GMT+7'])(
+    'accepts confirmed DB-supported frame %s',
+    (timeZone) => {
+      expect(() =>
+        validateHoursFrame({ timeZone, confirmed: true })
+      ).not.toThrow();
+    }
+  );
   it('rejects unconfirmed valid timezone', () => {
     expect(() =>
       validateHoursFrame({ timeZone: 'UTC', confirmed: false } as never)
@@ -142,6 +150,20 @@ describe('strict frame and weekly window validation', () => {
         ],
       })
     ).not.toThrow();
+  });
+});
+
+describe('strict storage window parity', () => {
+  it('rejects extra untyped properties, null blocks and numeric clocks', () => {
+    expect(() =>
+      validateHoursWeek({
+        1: [{ start: '09:00', end: '10:00', extra: 'untyped' }],
+      } as never)
+    ).toThrow();
+    expect(() => validateHoursWeek({ 1: [null] } as never)).toThrow();
+    expect(() =>
+      validateHoursWeek({ 1: [{ start: 9, end: '10:00' }] } as never)
+    ).toThrow();
   });
 });
 

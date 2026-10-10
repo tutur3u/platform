@@ -1,18 +1,18 @@
 //! Handler for `GET /api/v1/workspaces/:wsId/templates/:templateId/background-url`.
 //!
-//! Ports the legacy Next.js route at
+//! Mirrors the first-class Next.js route at
 //! `apps/web/src/app/api/v1/workspaces/[wsId]/templates/[templateId]/background-url/route.ts`.
 //!
 //! ## Auth and access model
 //!
-//! The legacy route:
+//! The live Next.js route:
 //!
 //! 1. Resolves the authenticated session user from the request cookie/token.
 //! 2. Normalises the workspace ID (handles `personal`, `internal`, and UUID literals).
 //! 3. Verifies the caller is a `MEMBER` of the workspace.
 //! 4. Fetches `board_templates` filtered by `id = templateId` AND `ws_id = resolvedWsId`
 //!    using the admin (service-role) client.
-//! 5. Returns `{ "signedUrl": null }` when `background_path` is absent.
+//! 5. Allows explicit public/workspace visibility or the private creator, then returns `{ "signedUrl": null }` when `background_path` is absent.
 //! 6. Otherwise creates a signed URL for the `workspaces` bucket valid for 3600 s.
 //!
 //! ## Behavior gaps vs. legacy
@@ -73,6 +73,22 @@ struct WorkspaceMembershipRow {
 #[derive(Deserialize)]
 struct BoardTemplateBackgroundRow {
     background_path: Option<String>,
+    created_by: Option<String>,
+    visibility: Option<String>,
+}
+
+impl BoardTemplateBackgroundRow {
+    fn readable_by(&self, user_id: &str) -> bool {
+        let Some(creator) = self
+            .created_by
+            .as_deref()
+            .filter(|id| !id.trim().is_empty())
+        else {
+            return false;
+        };
+        matches!(self.visibility.as_deref(), Some("public" | "workspace"))
+            || (self.visibility.as_deref() == Some("private") && creator == user_id)
+    }
 }
 
 #[derive(Deserialize)]
@@ -155,7 +171,11 @@ async fn background_url_response(
             Err(()) => return error_response(500, "Failed to load template"),
         };
 
-    // If no background path, return null.
+    if !template.readable_by(&user_id) {
+        return error_response(404, "Template not found or access denied");
+    }
+
+    // If no background path, return null after authorization.
     let Some(background_path) = template
         .background_path
         .as_deref()
@@ -188,7 +208,7 @@ async fn fetch_template_background(
         .rest_url(
             "board_templates",
             &[
-                ("select", "background_path".to_owned()),
+                ("select", "background_path,created_by,visibility".to_owned()),
                 ("id", format!("eq.{template_id}")),
                 ("ws_id", format!("eq.{ws_id}")),
                 ("limit", "1".to_owned()),
@@ -561,104 +581,4 @@ fn extract_path_params(path: &str) -> Option<(&str, &str)> {
 // ---------------------------------------------------------------------------
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_extract_path_params_valid() {
-        let ws_id = "11111111-1111-1111-1111-111111111111";
-        let tmpl_id = "22222222-2222-2222-2222-222222222222";
-        let path = format!("/api/v1/workspaces/{ws_id}/templates/{tmpl_id}/background-url");
-        let result = extract_path_params(&path);
-        assert_eq!(result, Some((ws_id, tmpl_id)));
-    }
-
-    #[test]
-    fn test_extract_path_params_wrong_suffix() {
-        let path = "/api/v1/workspaces/ws1/templates/t1/other";
-        assert!(extract_path_params(path).is_none());
-    }
-
-    #[test]
-    fn test_extract_path_params_missing_template_segment() {
-        let path = "/api/v1/workspaces/ws1/background-url";
-        assert!(extract_path_params(path).is_none());
-    }
-
-    #[test]
-    fn test_extract_path_params_empty_ws_id() {
-        let path = "/api/v1/workspaces//templates/t1/background-url";
-        assert!(extract_path_params(path).is_none());
-    }
-
-    #[test]
-    fn test_extract_path_params_extra_segment() {
-        // Extra slash inside template_id should fail.
-        let path = "/api/v1/workspaces/ws1/templates/t1/extra/background-url";
-        assert!(extract_path_params(path).is_none());
-    }
-
-    #[test]
-    fn test_extract_path_params_personal_workspace() {
-        let path = "/api/v1/workspaces/personal/templates/22222222-2222-2222-2222-222222222222/background-url";
-        let result = extract_path_params(path);
-        assert_eq!(
-            result,
-            Some(("personal", "22222222-2222-2222-2222-222222222222"))
-        );
-    }
-
-    #[test]
-    fn test_is_uuid_valid() {
-        assert!(is_uuid("550e8400-e29b-41d4-a716-446655440000"));
-    }
-
-    #[test]
-    fn test_is_uuid_too_short() {
-        assert!(!is_uuid("550e8400-e29b-41d4-a716-44665544000"));
-    }
-
-    #[test]
-    fn test_is_uuid_invalid_chars() {
-        assert!(!is_uuid("550e8400-e29b-41d4-a716-44665544000z"));
-    }
-
-    #[test]
-    fn test_is_uuid_no_dashes() {
-        assert!(!is_uuid("550e8400xe29b41d4a716446655440000"));
-    }
-
-    #[test]
-    fn test_resolve_workspace_id_internal() {
-        assert_eq!(resolve_workspace_id("internal"), ROOT_WORKSPACE_ID);
-        assert_eq!(resolve_workspace_id("INTERNAL"), ROOT_WORKSPACE_ID);
-    }
-
-    #[test]
-    fn test_resolve_workspace_id_passthrough() {
-        let id = "some-other-value";
-        assert_eq!(resolve_workspace_id(id), id);
-    }
-
-    #[test]
-    fn test_is_workspace_handle_valid() {
-        assert!(is_workspace_handle("my-workspace"));
-        assert!(is_workspace_handle("myworkspace123"));
-        assert!(is_workspace_handle("a"));
-    }
-
-    #[test]
-    fn test_is_workspace_handle_leading_dash() {
-        assert!(!is_workspace_handle("-bad"));
-        assert!(!is_workspace_handle("bad-"));
-    }
-
-    #[test]
-    fn test_storage_origin_from_rest_url() {
-        // Verify the storage_origin logic by parsing a representative URL.
-        let input = "https://example.supabase.co/rest/v1/__origin__";
-        let origin = input.split("/rest/v1/").next().unwrap_or("");
-        let storage = format!("{origin}/storage/v1");
-        assert_eq!(storage, "https://example.supabase.co/storage/v1");
-    }
-}
+mod tests;
