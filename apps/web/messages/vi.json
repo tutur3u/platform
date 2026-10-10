@@ -5258,6 +5258,7 @@
     "project_name": "Tên dự án",
     "projects": "Dự án",
     "public_document": "Tài liệu công khai",
+    "public_profile": "Hồ sơ công khai",
     "published": "Đã xuất bản",
     "purple": "Tím",
     "qr_code": "Mã QR",
@@ -11559,6 +11560,7 @@
     "types": {
       "account_update": "Cập nhật tài khoản",
       "deadline_reminder": "Nhắc nhở hạn chót",
+      "mail_received": "Nhận được thư",
       "security_alert": "Cảnh báo bảo mật",
       "system_announcement": "Thông báo hệ thống",
       "task_assigned": "Nhiệm vụ được giao",
@@ -15075,6 +15077,10 @@
     "id": "Mã số",
     "name": "Tên",
     "value": "Giá trị"
+  },
+  "public_profile": {
+    "description": "Hồ sơ công khai trên Tuturuuu.",
+    "title": "Hồ sơ Tuturuuu"
   },
   "qr": {
     "image_upload": {
@@ -22814,6 +22820,7 @@
       "wallet_id": "Ví",
       "warehouse_id": "Kho"
     },
+    "history_load_failed": "Không thể tải lịch sử hóa đơn. Vui lòng thử lại.",
     "invalid_subscription_inventory": "Sản phẩm hoặc đơn vị tính liên kết không khả dụng. Kiểm tra sản phẩm liên kết của lớp trước khi tạo hóa đơn.",
     "inventory_fallback_used": "Kho lưu trữ không được chỉ định nên một kho mặc định đã được chọn",
     "invoice_configuration": "Thông tin hóa đơn",

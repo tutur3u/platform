@@ -1024,6 +1024,7 @@
     "products": "Products",
     "profile": "My Profile",
     "public_document": "Public document",
+    "public_profile": "Public profile",
     "published": "Published",
     "purple": "Purple",
     "qr_code": "QR Code",
@@ -4555,6 +4556,7 @@
       "wallet_id": "Wallet",
       "warehouse_id": "Warehouse"
     },
+    "history_load_failed": "Invoice history could not be loaded. Try again.",
     "invalid_subscription_inventory": "A linked product or billing unit is unavailable. Review the class’s linked products before creating this invoice.",
     "loading": "Loading invoices…",
     "new_invoice": "New invoice",

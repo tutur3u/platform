@@ -9,10 +9,16 @@ const wsId = '00000000-0000-4000-8000-000000000001';
 const seriesId = '00000000-0000-4000-8000-000000000301';
 
 function query(data: unknown) {
-  const result = Promise.resolve({ data, error: null });
+  const result = Promise.resolve({
+    data,
+    error: null,
+    count: Array.isArray(data) ? data.length : 0,
+  });
   const builder = {
     eq: vi.fn(() => builder),
     gte: vi.fn(() => builder),
+    gt: vi.fn(() => builder),
+    range: vi.fn(() => builder),
     in: vi.fn(() => builder),
     lte: vi.fn(() => builder),
     order: vi.fn(() => builder),

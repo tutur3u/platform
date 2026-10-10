@@ -61,13 +61,6 @@ class _SecretsHeroPanel extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l10n.settingsWorkspaceSecretsTitle,
-                      style: theme.typography.large.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const shad.Gap(6),
-                    Text(
                       l10n.settingsWorkspaceSecretsPageDescription(
                         workspaceName,
                       ),

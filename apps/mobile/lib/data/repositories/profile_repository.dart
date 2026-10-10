@@ -338,15 +338,39 @@ class ProfileRepository {
     await prefs.remove(_cachedProfileFetchedAtKey);
   }
 
-  /// Removes avatar.
-  Future<({bool success, String? error})> removeAvatar() async {
+  /// Removes avatar using the same actor-bound admission as avatar uploads.
+  Future<({bool success, String? error})> removeAvatar() async =>
+      (await removeAvatarResult()).legacy;
+
+  Future<ProfileMediaResult> removeAvatarResult() async {
     try {
-      await _writeProfile('DELETE', ProfileEndpoints.avatar);
-      return (success: true, error: null);
-    } on ApiException catch (e) {
-      return (success: false, error: e.message);
-    } on Exception catch (e) {
-      return (success: false, error: e.toString());
+      final actor = getCurrentUserIdSync();
+      if (actor == null) {
+        throw const ApiException(
+          message: 'Profile actor is unavailable',
+          statusCode: 401,
+        );
+      }
+      await queueOrSendVoid(
+        feature: 'profile',
+        method: 'DELETE',
+        path: ProfileEndpoints.avatar,
+        workspaceId: 'personal',
+        entityId: actor,
+        expectedUserId: actor,
+        queue: _avatarMutationQueue,
+        send: () => ApiClient.runForUser(actor, () async {
+          await _apiClient.deleteJson(ProfileEndpoints.avatar);
+        }),
+      );
+      return const ProfileMediaResult.success();
+    } on ApiException catch (error) {
+      return ProfileMediaResult.failure(error);
+    } on Exception catch (error) {
+      return ProfileMediaResult.failure(error);
+    } on Object catch (error) {
+      if (error is! StateError) rethrow;
+      return ProfileMediaResult.failure(error);
     }
   }
 

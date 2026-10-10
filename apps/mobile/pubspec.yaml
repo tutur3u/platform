@@ -110,6 +110,7 @@ flutter:
     - CHANGELOG.md
     - assets/release_history.json
     - assets/logos/light.png
+    - assets/logos/dark.png
     - assets/mermaid/mermaid.min.js
     - assets/logos/nova-transparent.png
     - assets/logos/transparent.png

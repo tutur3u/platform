@@ -192,4 +192,80 @@ void main() {
     semantics.dispose();
     expect(tester.takeException(), isNull);
   });
+  for (final alignEnd in [false, true]) {
+    testWidgets('both message roles have themed content surfaces $alignEnd', (
+      tester,
+    ) async {
+      await tester.pumpApp(
+        Scaffold(
+          body: AssistantTranscriptBubble(
+            label: 'Role',
+            alignEnd: alignEnd,
+            text: 'Themed content',
+            transcript: '',
+            attachments: const [],
+            timestamp: null,
+            toolNames: const [],
+          ),
+        ),
+      );
+      final surface = find.byKey(const ValueKey('assistant-message-content'));
+      expect(surface, findsOneWidget);
+      final decoration =
+          tester.widget<AnimatedContainer>(surface).decoration!
+              as BoxDecoration;
+      expect(decoration.color, isNotNull);
+      expect(decoration.borderRadius, BorderRadius.circular(22));
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final reduced in [false, true]) {
+    testWidgets('long press selection clears on dismissal reduced=$reduced', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(320, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpApp(
+        MediaQuery(
+          data: MediaQueryData(
+            disableAnimations: reduced,
+            size: const Size(320, 800),
+          ),
+          child: const Scaffold(
+            body: AssistantTranscriptBubble(
+              label: 'Role',
+              alignEnd: false,
+              text: 'Selected content',
+              transcript: '',
+              attachments: [],
+              timestamp: null,
+              toolNames: [],
+            ),
+          ),
+        ),
+      );
+      await tester.longPress(find.text('Selected content'));
+      await tester.pumpAndSettle();
+      final scale = find.descendant(
+        of: find.byType(AssistantTranscriptBubble),
+        matching: find.byType(AnimatedScale),
+        skipOffstage: false,
+      );
+      expect(tester.widget<AnimatedScale>(scale).scale, reduced ? 1 : 1.015);
+      final selected = find.byWidgetPredicate(
+        (w) => w is Semantics && w.properties.label == 'Role',
+        skipOffstage: false,
+      );
+      expect(tester.widget<Semantics>(selected).properties.selected, isTrue);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(tester.widget<AnimatedScale>(scale).scale, 1);
+      expect(tester.widget<Semantics>(selected).properties.selected, isFalse);
+      expect(find.text('Selected content'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
 }

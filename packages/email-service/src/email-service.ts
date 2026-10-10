@@ -446,6 +446,7 @@ export class EmailService {
     }
 
     return {
+      deliveryOutcome: providerResult.deliveryOutcome,
       success: providerResult.success,
       messageId: providerResult.messageId,
       auditId: auditId || undefined,
@@ -585,7 +586,6 @@ export class EmailService {
       };
     }
 
-    // Send via provider
     const formattedSource = `"${source.name}" <${source.email}>`;
 
     const providerResult = await this.provider.send({
@@ -594,7 +594,6 @@ export class EmailService {
       content: params.content,
     });
 
-    // Update audit record
     if (auditId) {
       if (providerResult.success) {
         await updateAuditRecord(
@@ -615,6 +614,7 @@ export class EmailService {
     }
 
     return {
+      deliveryOutcome: providerResult.deliveryOutcome,
       success: providerResult.success,
       messageId: providerResult.messageId,
       auditId: auditId || undefined,

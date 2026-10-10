@@ -311,7 +311,7 @@ export async function getReportData({
       user_ws_id: _userWsId,
       ...rest
     } = rowData;
-    return rest as UserReport;
+    return rest satisfies UserReport;
   });
 
   return { data, count: count ?? 0 };

@@ -32,7 +32,13 @@ WorkspaceState _workspace(String id) => WorkspaceState(
 );
 
 class _SettingsHarness {
-  _SettingsHarness({String initial = Routes.settings}) {
+  _SettingsHarness({
+    String initial = Routes.settings,
+    GoRouterWidgetBuilder? settingsBuilder,
+    this.assistantPageBuilder,
+    this.assistantSettingsRepository,
+    GoRouterWidgetBuilder? workspaceSecretsBuilder,
+  }) {
     whenListen(auth, accounts.stream, initialState: _account('user'));
     whenListen(workspaces, scopes.stream, initialState: _workspace('ws'));
     whenListen(
@@ -84,25 +90,40 @@ class _SettingsHarness {
           builder: (context, state, child) => ShellPage(
             matchedLocation: state.uri.path,
             enableDebugLogs: false,
+            assistantPageBuilder: assistantPageBuilder,
             child: child,
           ),
           routes: [
+            if (assistantPageBuilder != null)
+              GoRoute(
+                path: Routes.assistant,
+                builder: (_, _) => const SizedBox.shrink(),
+              ),
             GoRoute(
               path: Routes.settings,
-              builder: (_, _) =>
-                  SettingsPage(permissionsRepository: permissions),
+              builder:
+                  settingsBuilder ??
+                  (_, _) => SettingsPage(permissionsRepository: permissions),
             ),
             GoRoute(
               path: Routes.settingsPreferences,
               redirect: (_, _) => Routes.settings,
             ),
             ...settingsRoutes().where(
-              (route) => !{
-                Routes.settingsPreferences,
-                Routes.settingsWorkspace,
-                Routes.settingsAbout,
-              }.contains((route as GoRoute).path),
+              (route) =>
+                  !{
+                    Routes.settingsPreferences,
+                    Routes.settingsWorkspace,
+                    Routes.settingsAbout,
+                  }.contains((route as GoRoute).path) &&
+                  (workspaceSecretsBuilder == null ||
+                      route.path != Routes.settingsWorkspaceSecrets),
             ),
+            if (workspaceSecretsBuilder != null)
+              GoRoute(
+                path: Routes.settingsWorkspaceSecrets,
+                builder: workspaceSecretsBuilder,
+              ),
             GoRoute(
               path: Routes.settingsWorkspace,
               builder: (_, _) => const SettingsWorkspacePage(),
@@ -129,6 +150,8 @@ class _SettingsHarness {
       ],
     );
   }
+  final Widget Function(int)? assistantPageBuilder;
+  final AssistantPersonalSettingsRepository? assistantSettingsRepository;
   bool allowed = false;
   final auth = _Auth();
   final workspaces = _Workspaces();
@@ -144,10 +167,13 @@ class _SettingsHarness {
   late final finance = FinancePreferencesCubit(settingsRepository: settings);
   late final theme = ThemeCubit(settingsRepository: settings);
   late final locale = LocaleCubit(settingsRepository: settings);
+  final actions = ShellChromeActionsCubit();
+  late final experiments = ExperimentalAppsCubit(settingsRepository: settings);
   late final GoRouter router;
 
   Future<void> pump(WidgetTester tester, {double scale = 1}) async {
     await apps.recordAppOrigin(Routes.apps);
+    if (assistantPageBuilder != null) await experiments.load();
     await tester.pumpWidget(
       MultiBlocProvider(
         providers: [
@@ -160,30 +186,37 @@ class _SettingsHarness {
           BlocProvider.value(value: finance),
           BlocProvider.value(value: theme),
           BlocProvider.value(value: locale),
+          if (assistantPageBuilder != null) ...[
+            BlocProvider.value(value: actions),
+            BlocProvider.value(value: experiments),
+          ],
           BlocProvider(create: (_) => ShellMiniNavCubit()),
           BlocProvider(create: (_) => ShellTitleOverrideCubit()),
           BlocProvider(create: (_) => AssistantChromeCubit()),
         ],
-        child: shad.ShadcnApp.router(
-          theme: MobileShadTheme.light,
-          darkTheme: MobileShadTheme.dark,
-          themeMode: theme.state.themeMode,
-          locale: locale.state.locale,
-          localizationsDelegates: const [
-            ...AppLocalizations.localizationsDelegates,
-            AppShadcnLocalizationsDelegate(),
-          ],
-          supportedLocales: AppLocalizations.supportedLocales,
-          routerConfig: router,
-          builder: (context, child) => ShadcnMaterialBridge.appBuilder(
-            context,
-            MediaQuery(
-              data: MediaQuery.of(
-                context,
-              ).copyWith(textScaler: TextScaler.linear(scale)),
-              child: RepaintBoundary(
-                key: const ValueKey('synthetic-settings-render'),
-                child: child,
+        child: RepositoryProvider<AssistantPersonalSettingsRepository?>.value(
+          value: assistantSettingsRepository,
+          child: shad.ShadcnApp.router(
+            theme: MobileShadTheme.light,
+            darkTheme: MobileShadTheme.dark,
+            themeMode: theme.state.themeMode,
+            locale: locale.state.locale,
+            localizationsDelegates: const [
+              ...AppLocalizations.localizationsDelegates,
+              AppShadcnLocalizationsDelegate(),
+            ],
+            supportedLocales: AppLocalizations.supportedLocales,
+            routerConfig: router,
+            builder: (context, child) => ShadcnMaterialBridge.appBuilder(
+              context,
+              MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: TextScaler.linear(scale)),
+                child: RepaintBoundary(
+                  key: const ValueKey('synthetic-settings-render'),
+                  child: child,
+                ),
               ),
             ),
           ),
@@ -207,6 +240,8 @@ class _SettingsHarness {
     await finance.close();
     await theme.close();
     await locale.close();
+    await actions.close();
+    if (assistantPageBuilder != null) await experiments.close();
   }
 }
 

@@ -78,6 +78,32 @@ fully green, then complete any authorized production sync and verification
 before removing only that completed worktree and its local branch. Never clean blocked, dirty, unmerged,
 user-owned, or other-agent-owned lanes.
 
+## Stale Merged-Parent Catalog Recovery
+
+If native rebase starts replaying unrelated landed commits, abort it and inspect
+all affected refs/worktrees; fetches can survive an abort. Recover GitHub's native
+membership and preserve old heads and local catalog boundaries. Check ancestry
+for both the tracked merged parent and saved child base, then compare the attempted
+replay with the child range against fetched trunk and GitHub's layer diff. Passing
+ancestry checks does not prove that the replay chose the correct range. Require
+that the parent is merged and the actual remaining range contains only owned
+changes before recovery; record observed facts without claiming an unproven cause.
+Do not resolve unrelated conflicts to force that replay through.
+
+After coordinating clean, idle owners, a proven incorrect local replay range can be
+rebuilt with `gh stack unstack --local` and
+`gh stack init --base main <remaining-bottom> ... <top>`. Keep the remote native
+group intact. Inspect the rebuilt catalog, rebase and push through native
+commands, then verify server membership, bases, heads and source scope. Rerun
+focused regressions and every exact-head merge gate. This local metadata recovery
+does not authorize remote unstacking, ordinary admin merges of native layers,
+rewriting other owners' work or bypassing any contiguous-prefix requirement.
+
+See the diagnostic steps in
+`apps/docs/build/development-tools/stacked-pull-requests.mdx` under
+“Recover unexpected replay after a parent merge”. Record exact old/new heads and any
+partial failure privately in the coordination handoff rather than public docs.
+
 ## Watcher Scripts
 
 Prefer the bundled scripts for long waits. They print only changed summaries,

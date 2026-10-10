@@ -3,6 +3,95 @@
 Load this reference when changing root scripts, CI workflows, plugin validation,
 formatting behavior, or repo-wide verification.
 
+## Incremental Oxc and Worker adoption
+
+Use root-pinned Oxlint/Oxfmt through `bun oxc:lint`, `bun oxc:format` and
+`bun oxc:write` with explicit owned-file paths. Read-only commands are the default;
+format writes are intentional. Existing Biome CI/editor/generator ownership remains
+until a workspace records rule coverage, formatting deltas and compensating
+validators. Do not run global formatters or the root-wide Vite+ migrator for a
+single workspace. Run `node --test scripts/oxc.test.js` to exercise file scope,
+symlink rejection, dialog linting and read-only formatting behavior.
+
+Gradual Cloudflare adoption preserves request/session, API, storage, consent and
+localization contracts. Domain modules and portable React components use injected
+adapters rather than framework/runtime globals. Keep framework imports in explicit
+adapter entrypoints and protect portability with import-boundary regressions.
+Vite+ tooling does not convert Next.js routes/actions; paused TanStack Start remains
+paused. See [adoption guidance](../../../../../apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx)
+for parity and Worker acceptance gates; builds stay in exact-commit CI.
+
+## cf CLI migration boundaries
+
+Prefer cf for operations with demonstrated parity, beginning with bounded read-only
+inventory/observability and a Vite-native Worker pilot. Pin dependencies through
+package-manager commands; verify cf authentication/account independently of Wrangler.
+Review typed configuration and Vite mode resolution against existing resource
+identities, routes, bindings, Durable Object migrations, triggers and secret names.
+Keep one authoritative configuration per scope. Replace development, type generation,
+CI artifact production, tail/version inspection and release/rollback separately;
+retain Wrangler for unsupported operations. Exact-commit CI and real emitted-artifact
+acceptance remain required. Do not run global migration or deployment as part of
+planning. Follow the phased plan in the adoption guidance above and recheck
+[upstream coverage](https://blog.cloudflare.com/cloudflare-cf-cli-launch/) before edits.
+
+Execute cf with Node22.18+ even when Bun installs dependencies; typed-config
+commands are not supported on Bun. Discover a reviewed exact version from private
+scratch outside app config/.env ancestry before adding it to a workspace. Use
+anonymous operation-only search queries, then focused command help/schema.
+Require `cf auth whoami` JSON `authenticated === true`, not process exit0:
+unauthenticated results can exit successfully. cf credentials are separate from
+Wrangler. Stop authenticated parity work when access is absent; do not copy tokens
+or login files. Account selection may write project cache, so verify identity and
+local files. See [cf prerequisites](https://developers.cloudflare.com/cf/get-started/).
+
+## Cloudflare runaway-work review
+
+For added or amplified background work, review alarm/queue/cron feedback paths and
+cost units before migration acceptance. Require durable attempt/age or lease bounds,
+finite future deadlines, bounded operations per wake, no reschedule after terminal
+state, idempotent progress and an authenticated persisted stop fence that covers
+racing callbacks. Exercise duplicates, restart, no progress, repeated downstream
+failure and shutdown with operation-count assertions in fixtures and real local
+Workers; build and emitted-artifact checks stay in CI. Batch writes only with
+verified billing semantics. Record cost assumptions, applicable alert delivery and
+an independent operator response. Alerts and CPU limits do not cap total spend.
+Do not copy upstream examples that deliberately retry forever into finite jobs.
+See the adoption guidance's runaway-work acceptance table; live settings are
+separate evidence, never implied by documentation or build success.
+
+## Codex plugin native parallel pilot
+
+`codex-plugin.yaml` has one native `parallel` group containing only the MCP and
+orchestration-evidence unittest suites after Python setup, plugin validation and
+the unchanged hash-locked dependency install. Preserve their discovery commands,
+five-minute timeouts, 1 GiB per-process virtual memory ceilings and the implicit
+failure-propagating wait. Keep docs JSON validation after the group and retain
+the fifteen-minute job limit, read-only permissions, triggers and switchboard.
+GitHub documents this syntax in its June 25, 2026 changelog and workflow syntax;
+see the linked sources in the Codex plugin docs' CI Coverage section.
+
+Run `node --test scripts/ci/codex-plugin-parallel-workflow.test.js` for structural
+regression coverage. Qualification also needs automatic exact-head hosted suite
+intervals proving overlap and completion. Local process concurrency is not proof
+of native runner semantics. Do not claim speed without comparable measurements,
+extend this pilot to deployment workflows, or replace the shared local resource
+broker with shell fan-out. Revert the group to sequential children for rollback.
+
+## Inactive runtimes until further notice
+
+Docker setup, Rust, and TanStack Start are paused; the Docker cron runner is
+retired. Keep `docker-setup-check.yaml`, Docker-backed E2E jobs, Rust/TanStack
+workflows and direct deploy jobs disabled, including manual dispatch. Retain
+policy tests but exclude inactive implementation suites from default discovery.
+Root commands fail visibly rather than starting or refreshing those runtimes.
+`bun update-all` explicitly targets maintained workspaces; Renovate ignores
+paused app/Docker sources and broad lockfile maintenance stays disabled.
+Shared lock resolutions still need review when active dependencies change.
+Do not regenerate migration manifests as a condition of live Next.js work.
+Resumption must restore commands, tests, CI, dependency policy and docs together.
+See `apps/docs/build/devops/active-runtime.mdx`.
+
 ## File Size Ceiling
 
 - Keep every new authored source file at or below the hard **700-LOC ceiling** in
@@ -428,3 +517,129 @@ formatting behavior, or repo-wide verification.
   not from the platform checkout, so the install telemetry indexes the public
   source without rewriting local project skills.
 - Run `python3 plugins/tuturuuu/scripts/validate_plugin.py` after plugin edits.
+
+Release Please excludes the inactive TanStack Start package from release generation;
+its historical manifest version remains frozen. Renovate also ignores the inactive
+runtime and Docker workflow files, in addition to the paused source/Dockerfiles.
+Policy tests guard these exclusions. Do not reactivate them indirectly during
+ordinary active-package release maintenance.
+
+## Cron Control native Worker toolchain
+
+Use the owning Cron Control workspace and Node 24 for Vite+/Oxc commands.
+Its independent unit config must not start the Cloudflare Vite development plugin.
+Runtime health fixtures do not dispatch scheduled work or contact production;
+repeat them against the CI-emitted configuration and verify identity, compatibility,
+trigger, vars and secret names. Deploy only the immutable artifact qualified by
+that CI run, using its emitted Wrangler config; preserve source config for named
+secret provisioning. See `apps/docs/build/devops/cloudflare-cron-control.mdx` for
+commands and the distinct downstream delivery/cost/stop acceptance boundaries.
+
+For Cron recovery cost review, count the requeue RPC and pending lookup even when
+there is no delivery. Each database phase uses a 30-second signal; web delivery
+uses a separate 180-second signal. A one-row lookup parameter does not
+bound full response consumption or requeue database work. Count repeated failed
+invocations separately and require durable recurring authority/progress and stop
+fences before certifying the schedule. See the recovery request envelope in the
+Cron Control runbook; mocked HTTP counts are not billed-row or hosted-stop proof.
+
+Cron Control database recovery and lookup each carry a 30-second AbortSignal and
+reject redirects with `redirect: 'manual'`. Keep body consumption attached to the
+lookup signal and preserve failure short-circuiting before later phases. Timeouts
+can leave ambiguous remote outcomes; retain pending recovery state and idempotent
+RPC behavior, without adding immediate re-enqueue feedback. These deadlines do
+not cap recurring invocation counts, billed rows, response bytes or total spend.
+See the database request deadline section in the Cron Control runbook for controlled
+unit evidence versus hosted scheduling and independent-stop release gates.
+
+## Native Meet realtime toolchain
+
+For the native Meet realtime Vite+ workspace, keep the original production Wrangler
+entry and migration history intact while CI qualifies `dist/worker/wrangler.json`.
+Run emitted-config identity/binding checks and real SQLite routing probes after the
+native CI build, alongside the existing lifecycle/protocol integration gates. The
+initial configuration type-check and entry lint scope do not certify all retained
+service source. See the programming realtime runbook for fixture commands and
+hosted-media/cost/cutover boundaries.
+
+For native Worker workspaces tested with explicit Node scripts, provide a separate
+Vitest config with an empty include list. Root Vitest discovers all project configs
+before file filtering; loading the Cloudflare Vite plugin can start an unrelated
+Worker and fail collection on unbuilt imports or missing secrets. Preserve the
+explicit protocol and real Worker gates in the owning CI workflow.
+
+## Vite+ native service Worker boundary
+
+Give an adopted native Worker an owning private workspace, pinned Vite+/Cloudflare
+plugin and a matching `vite` core alias when plugin peer types require it. Keep
+Cloudflare dev/build configuration separate from unit-test configuration so root
+Vitest discovery does not start Worker development servers. Use explicit scoped
+JSON Oxc configuration; retain existing Biome gates during parity work. Generate
+Worker types before checking source/config TypeScript. Build only in exact-commit
+CI and test the emitted Wrangler configuration in addition to source fixtures;
+dry-run and authorized deployment consume that same emitted target. Preserve
+bindings, migrations, routes, secret names and active identity/protocol policies.
+Assert each service's source compatibility flags rather than copying another
+Worker's flags; Devbox Control intentionally has none.
+Devbox Control's runtime script demonstrates disposable-credential denial tests;
+those do not prove hosted Supabase, runner or WebSocket success. Follow the owning
+runbook for commands and remaining acceptance, and keep local validation serialized.
+
+Put native Worker test worker/pool defaults in `vitest.config.ts`, not the package
+script. Shared sharded CI appends `--maxWorkers=2`; repeating that option in a
+`vp test` script fails CLI parsing before collection. Validate new workspace test
+scripts with `bun run test --maxWorkers=2` under Node 24 as well as their owning CI.
+
+Vite+ 1.1.0 bundles Vitest 5.0.3. Align the root Vitest dependency, its override,
+and coverage-v8 provider to that exact version with Bun commands. Updating only
+the provider while a root override forces an older runner still mixes versions.
+Validate the forwarded coverage command too: `bun run test --maxWorkers=2 --coverage`
+under Node 24. Do not disable Vite+'s provider-version guard to unblock CI.
+
+## Owning Next app build evidence
+
+A green shared-dependency workflow does not prove a changed satellite compiled
+unless its app is included in that workflow's build matrix. Route changes require
+an actual build of the owning app at the immutable PR head. The nondeployment
+`programming-app-builds.yaml` matrix includes Tasks and its source path trigger
+alongside Web, Learn, Infrastructure, Mail and Contacts. Keep placeholder build
+environment values, bounded Turbo concurrency, exact-source checkout and
+read-only permissions; preview or production dispatch is not a substitute for
+this PR gate.
+
+### Vitest temporary module collection failures
+
+If a Vitest 5 suite fails collection with `ENOENT` for a temporary transformed
+module under `/tmp/.../ssr` or `/tmp/.../client`, retain the failed log and distinguish
+collection from failed assertions. Focused auth and Colab suites reproduced this
+in the fork pool on 5.0.0 and 5.0.3 and passed with `--pool=threads`, retaining
+per-file isolation and every test. Run that comparison through the resource broker
+with at most two workers before changing configuration. `--no-cache` disables
+result caching; it does not prevent the fork pool from using temporary module
+files. A single worker and Node 24 alone did not resolve the observed failure.
+Apply a pool change only to a validated scope; packages using native or runtime
+fixtures need their own compatibility evidence. Do not rewrite global runner
+configuration or claim a universal cause from these focused results.
+
+When temporary-file writes also fail with `Disk quota exceeded` despite free
+space reported by `df`, or Miniflare D1 startup reports `SQLITE_IOERR_WRITE`,
+use one bounded direct validation attempt, pointing the child payload
+`TMPDIR` to a verified private writable directory under the owning program only
+after resource-broker admission. Do not set `TMPDIR` before `bun check`: its
+`os.tmpdir()`-based check queue would relocate shared state. Verify the destination
+quota and preserve the original failure, unknown files and live queue owners. A thread
+pool alone passed focused module-loading suites but did not resolve the observed
+D1 fixture write failure; private temporary storage did. Record the tested
+boundary without claiming an unproven universal cause or changing global config.
+
+### Coordination alarm qualification
+
+Use the App Coordination page's Worker operation envelope when qualifying the
+Coordination toolchain. Audit `object.ts` transactions, lease expiry, fingerprint
+retention and alarm rescheduling together. Count SQL statements, rows changed/read
+and set/delete alarm calls separately, including reconstruction's schema setup.
+Test early/duplicate/due callbacks, busy retries, lost alarm persistence and a
+release racing an outstanding reschedule. Local SQLite with mocked alarms can
+expose residual wake behavior but cannot certify hosted alarm retry/clock behavior
+or authenticated emergency-stop fencing. Preserve meeting fingerprint retention
+and owner/lease checks; finite per-row retention is not an ingress/account cap.

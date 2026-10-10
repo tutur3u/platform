@@ -9,8 +9,13 @@ import {
   fetchAllPaginatedRows,
 } from '@/lib/notifications/cron-helpers';
 import type { PushDeviceRegistration } from '@/lib/notifications/push-delivery';
-
+import { MAX_IMMEDIATE_BATCHES_PER_REQUEST } from './immediate-selection';
 import { isPersonalMailPush } from './mail-push';
+
+export type { NotificationBatchRow } from './immediate-selection';
+export { fetchPendingImmediateBatches } from './immediate-selection';
+
+import type { NotificationBatchRow } from './immediate-selection';
 export const PROCESSING_DEADLINE_MS = 165_000;
 
 import {
@@ -24,7 +29,10 @@ export function getPrivateNotificationClient(sbAdmin: any) {
 
 export const RequestBodySchema = z.object({
   batch_id: z.string().max(MAX_NAME_LENGTH).optional(),
-  batch_ids: z.array(z.string()).optional(),
+  batch_ids: z
+    .array(z.string().max(MAX_NAME_LENGTH))
+    .max(MAX_IMMEDIATE_BATCHES_PER_REQUEST)
+    .optional(),
 });
 
 export type EmailTemplateType =
@@ -69,15 +77,6 @@ export interface EmailConfigData {
   email_subject_template: string | null;
   email_template: string | null;
   notification_type: string;
-}
-
-export interface NotificationBatchRow {
-  channel: string;
-  email: string | null;
-  id: string;
-  user_id: string | null;
-  window_end: string;
-  ws_id: string | null;
 }
 
 export interface DeliveryLogWithNotification {
@@ -373,28 +372,6 @@ export async function renderEmailTemplate(
     default:
       throw new Error(`Unknown template type: ${templateType}`);
   }
-}
-
-export async function fetchPendingImmediateBatches(
-  sbAdmin: any,
-  batchIds: string[]
-): Promise<NotificationBatchRow[]> {
-  return fetchAllPaginatedRows<NotificationBatchRow>((from, to) => {
-    let query = getPrivateNotificationClient(sbAdmin)
-      .from('notification_batches')
-      .select('*')
-      .eq('status', 'pending')
-      .eq('delivery_mode', 'immediate');
-
-    if (batchIds.length > 0) {
-      query = query.in('id', batchIds);
-    }
-
-    return query
-      .order('window_end', { ascending: true })
-      .order('id', { ascending: true })
-      .range(from, to);
-  });
 }
 
 export async function filterRootScopedBatches(

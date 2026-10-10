@@ -21,6 +21,7 @@ import {
   readRecord,
   toAiChatUiMessages,
 } from './ai-message-shared';
+import { AiStreamError } from './ai-stream-error';
 
 export async function sendAiChatMessage({
   attachments,
@@ -160,9 +161,8 @@ export async function sendAiChatMessage({
   });
 
   if (!aiResponse.ok) {
-    const errorText = await aiResponse.text().catch(() => '');
     return NextResponse.json(
-      { message: errorText || 'Failed to send AI chat message' },
+      { message: new AiStreamError().message },
       { status: aiResponse.status }
     );
   }
@@ -182,12 +182,14 @@ export async function sendAiChatMessage({
     });
   }
 
+  let upstreamError: AiStreamError | undefined;
   try {
     await consumeAiResponseTextDeltas(aiResponse);
   } catch (error) {
+    upstreamError = error instanceof AiStreamError ? error : undefined;
     console.error('Failed to consume AI chat response', {
       chatId: chat.id,
-      error,
+      code: upstreamError?.code ?? 'stream_read_failed',
     });
   }
 
@@ -202,7 +204,7 @@ export async function sendAiChatMessage({
 
   if (!message) {
     return NextResponse.json(
-      { message: 'AI response was not saved' },
+      { message: upstreamError?.message ?? 'AI response was not saved' },
       { status: 500 }
     );
   }
@@ -355,11 +357,17 @@ function streamAiChatMessageResponse({
       };
 
       try {
-        await consumeAiResponseTextDeltas(
-          aiResponse,
-          (delta) => write({ delta, type: 'assistant_delta' }),
-          (part) => write({ part, type: 'assistant_part' })
-        );
+        let upstreamError: AiStreamError | undefined;
+        try {
+          await consumeAiResponseTextDeltas(
+            aiResponse,
+            (delta) => write({ delta, type: 'assistant_delta' }),
+            (part) => write({ part, type: 'assistant_part' })
+          );
+        } catch (error) {
+          if (!(error instanceof AiStreamError)) throw error;
+          upstreamError = error;
+        }
 
         const requestMessages = await listRequestMessages({
           auth,
@@ -374,7 +382,10 @@ function streamAiChatMessageResponse({
         }
 
         if (!requestMessages.some((message) => message.kind === 'assistant')) {
-          write({ message: 'AI response was not saved', type: 'error' });
+          write({
+            message: upstreamError?.message ?? 'AI response was not saved',
+            type: 'error',
+          });
           write({ type: 'done' });
           return;
         }
@@ -391,9 +402,11 @@ function streamAiChatMessageResponse({
         write({ messages: requestMessages, type: 'messages' });
         write({ type: 'done' });
       } catch (error) {
+        const upstreamError =
+          error instanceof AiStreamError ? error : undefined;
         console.error('Failed to stream AI chat response', {
           conversationId,
-          error,
+          code: upstreamError?.code ?? 'stream_read_failed',
         });
         const requestMessages = await listRequestMessages({
           auth,
@@ -408,7 +421,13 @@ function streamAiChatMessageResponse({
             return;
           }
         }
-        write({ message: 'Failed to send AI chat message', type: 'error' });
+        write({
+          message:
+            requestMessages instanceof NextResponse
+              ? 'Failed to send AI chat message'
+              : (upstreamError?.message ?? 'Failed to send AI chat message'),
+          type: 'error',
+        });
         write({ type: 'done' });
       } finally {
         controller.close();

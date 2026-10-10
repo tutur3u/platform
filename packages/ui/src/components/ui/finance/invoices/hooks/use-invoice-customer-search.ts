@@ -1,9 +1,11 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { useWorkspaceActor } from '../../../../../hooks/use-workspace-visibility';
 import {
   getWorkspaceUserWithInternalApi,
   listWorkspaceUsersWithInternalApi,
 } from '../internal-api';
+import { invoiceActorLifetimeKey } from './invoice-actor-lifetime-key';
 
 const INVOICE_CUSTOMER_PAGE_SIZE = 25;
 
@@ -39,19 +41,59 @@ async function fetchWorkspaceUserById(
   return getWorkspaceUserWithInternalApi(wsId, userId);
 }
 
+async function readInActorScope<T>(
+  actor: ReturnType<typeof useWorkspaceActor>,
+  read: () => Promise<T>
+): Promise<T> {
+  if (!actor) throw new Error('Workspace account unavailable');
+  actor.assertActive();
+  try {
+    const result = await read();
+    actor.assertActive();
+    return result;
+  } catch (error) {
+    actor.assertActive();
+    throw error;
+  }
+}
+
 export function useInvoiceCustomerSearch(
   wsId: string,
   searchQuery: string,
   selectedUserId: string
 ) {
+  const actor = useWorkspaceActor();
+  const lifetime = actor ? invoiceActorLifetimeKey(actor.lifetime) : null;
   const normalizedSearchQuery = searchQuery.trim();
 
   const usersQuery = useInfiniteQuery({
-    queryKey: ['invoice-customer-search', wsId, normalizedSearchQuery],
+    queryKey: [
+      'invoice-customer-search',
+      wsId,
+      normalizedSearchQuery,
+      actor?.actorId ?? null,
+      lifetime,
+    ],
     queryFn: async ({ pageParam = 0 }) =>
-      fetchInvoiceCustomerPage(wsId, normalizedSearchQuery, pageParam),
+      readInActorScope(actor, () =>
+        fetchInvoiceCustomerPage(wsId, normalizedSearchQuery, pageParam)
+      ),
     initialPageParam: 0,
-    placeholderData: (previousData) => previousData,
+    placeholderData: (previousData, previousQuery) => {
+      if (
+        !actor ||
+        previousQuery?.queryKey[1] !== wsId ||
+        previousQuery.queryKey[3] !== actor.actorId ||
+        previousQuery.queryKey[4] !== lifetime
+      )
+        return undefined;
+      try {
+        actor.assertActive();
+        return previousData;
+      } catch {
+        return undefined;
+      }
+    },
     getNextPageParam: (lastPage, allPages) => {
       const loadedCount = allPages.reduce(
         (total, page) => total + page.data.length,
@@ -61,7 +103,7 @@ export function useInvoiceCustomerSearch(
         ? loadedCount
         : undefined;
     },
-    enabled: !!wsId,
+    enabled: !!actor && !!wsId,
     retry: false,
     staleTime: 30 * 1000,
     gcTime: 5 * 60 * 1000,
@@ -71,12 +113,22 @@ export function useInvoiceCustomerSearch(
   const loadedCustomers =
     usersQuery.data?.pages.flatMap((page) => page.data) ?? [];
   const needsSelectedUser =
+    !!actor &&
     !!wsId &&
     !!selectedUserId &&
     !loadedCustomers.some((user) => user.id === selectedUserId);
   const selectedUserQuery = useQuery({
-    queryKey: ['invoice-customer', wsId, selectedUserId],
-    queryFn: async () => fetchWorkspaceUserById(wsId, selectedUserId),
+    queryKey: [
+      'invoice-customer',
+      wsId,
+      selectedUserId,
+      actor?.actorId ?? null,
+      lifetime,
+    ],
+    queryFn: async () =>
+      readInActorScope(actor, () =>
+        fetchWorkspaceUserById(wsId, selectedUserId)
+      ),
     enabled: needsSelectedUser,
     retry: false,
     staleTime: 30 * 1000,

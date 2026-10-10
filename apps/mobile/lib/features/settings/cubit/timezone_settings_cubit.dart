@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
+import 'package:mobile/core/observability/mobile_observability.dart';
+import 'package:mobile/core/observability/operational_error_reporter.dart';
 import 'package:mobile/data/repositories/timezone_settings_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/safe_error_diagnostics.dart';
@@ -50,8 +52,13 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
     required this.deviceLoader,
     this.loadTimeout = const Duration(seconds: 15),
     DateTime Function()? clock,
-  }) : _clock = clock ?? DateTime.now,
+    OperationalErrorReporter? operationalReporter,
+  }) : _operationalReporter =
+           operationalReporter ??
+           MobileObservability.instance.operationalReporter,
+       _clock = clock ?? DateTime.now,
        super(const TimezoneSettingsState());
+  final OperationalErrorReporter _operationalReporter;
   final DateTime Function() _clock;
   DateTime? _retryAt;
   final Duration loadTimeout;
@@ -220,6 +227,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
     } on Object catch (error) {
       if (!isClosed && generation == _generation) {
         final failure = rateLimit ?? error;
+        _operationalReporter.report(OperationalPhase.timezoneRead, failure);
         if (failure is ApiException && failure.statusCode == 429) {
           _retryAt = _clock().add(
             TimezoneSettingsRepository.rateLimitDelay(failure),
@@ -345,6 +353,12 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
           (personal != 'auto' ||
               (workspaceKnown &&
                   (workspaceZone != 'auto' || device.isNotEmpty)));
+      if (!resolved && personalKnown && workspaceKnown) {
+        _operationalReporter.report(
+          OperationalPhase.timezoneResolve,
+          deviceError ?? StateError('device_timezone_unavailable'),
+        );
+      }
       emit(
         TimezoneSettingsState(
           personal: personal,
@@ -367,6 +381,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
       );
     } on Exception catch (error) {
       if (!isClosed && generation == _generation) {
+        _operationalReporter.report(OperationalPhase.timezoneWrite, error);
         if (error is ApiException && error.statusCode == 429) {
           _retryAt = _clock().add(
             TimezoneSettingsRepository.rateLimitDelay(error),

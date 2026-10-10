@@ -3,6 +3,15 @@
 Load this reference for Supabase, protected-table, storage, migration, or
 workspace-scoped API work.
 
+## Declarative adoption preparation
+
+For declarative readiness, baseline qualification, diff-engine distinctions, and
+imperative exceptions, read `declarative-schema-adoption.md`. Run the read-only
+`node apps/database/scripts/declarative-schema-readiness.js --json`; exit 2
+means adoption is held. Do not add partial schema trees or change the engine
+until complete disposable replay, ledger coverage, no-op diff, and independent
+review prove baseline equivalence. Existing migration history stays immutable.
+
 ## Schema And Typegen
 
 - Prepare migrations; do not push production Supabase changes from Codex.
@@ -69,3 +78,8 @@ workspace-scoped API work.
   reads.
 - For JSON columns, transform parsed Zod payloads into the repo `Json` shape so
   typed Supabase builders accept them.
+
+- Use distinct PL/pgSQL variable names and qualified table columns in trigger
+  permit lookups. A name shared by a variable and a column can raise SQLSTATE
+  `42702` before the intended admission error. Retain pgTAP assertions for the
+  rejected mutation's exact error and unchanged state.
