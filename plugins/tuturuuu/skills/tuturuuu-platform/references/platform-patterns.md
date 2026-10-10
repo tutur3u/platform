@@ -579,6 +579,19 @@ pagination: capping its oldest window before rollout filtering can starve later
 eligible deliveries. Add durable rollout-aware progress before bounding that path.
 A request bound does not cap logs, devices, automatic prefetch or total spend.
 See the Cron Control runbook and immediate-selection/request-budget regressions.
+## Colab expiry runtime regression
+
+Colab stores its completed expiry deadline in private state row3, atomically with
+room/audit writes. Keep schedule extensions independent and preserve existing room
+modes/end events. Use `apps/colab/src/server/room-alarm.test.ts` for bounded-operation,
+duplicate/restart/deadline regressions and
+`node --test apps/colab/scripts/verify-expiry-runtime.mjs` for the real local Worker
+and SQLite transaction behavior. Queue local execution with `ttr resources run`;
+use a private writable TMPDIR when shared temporary storage rejects writes. The
+fixture uses isolated configuration, loopback requests and no production bindings;
+its harness closes after tests. RPC handler invocation does not prove hosted alarm
+delivery or automatic retry semantics. See the Colab feature page for cost units
+and remaining acceptance evidence; release builds stay in CI.
 
 ## Typed quick capture
 
