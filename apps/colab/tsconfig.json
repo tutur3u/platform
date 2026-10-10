@@ -16,7 +16,7 @@
     "noEmit": true,
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
-    "types": ["@cloudflare/workers-types", "vite/client"]
+    "types": ["@cloudflare/workers-types", "vite-plus/client"]
   },
   "include": ["src", "vite.config.ts"]
 }

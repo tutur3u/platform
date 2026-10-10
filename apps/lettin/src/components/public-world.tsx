@@ -118,7 +118,11 @@ export function PublicWorld({
             onSelect={select}
           />
         ) : (
-          <DocumentView draft={draft} />
+          <DocumentView
+            draft={draft}
+            showOutline
+            outlineScope={`lettin-${world.id}-${entry?.id ?? 'notebook'}`}
+          />
         )}
         {relationships.length > 0 && !browse && (
           <section className="wiki-reading-links mt-8">

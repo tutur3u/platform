@@ -270,7 +270,8 @@
       "status": "Checklist status",
       "unchecked": "To do"
     },
-    "hide_sidebar": "Hide sidebar"
+    "hide_sidebar": "Hide sidebar",
+    "public_profile": "Public profile"
   },
   "dashboard": {
     "description": "Build a shared voxel world, configure LLM NPCs, and run manual agent decision experiments.",
