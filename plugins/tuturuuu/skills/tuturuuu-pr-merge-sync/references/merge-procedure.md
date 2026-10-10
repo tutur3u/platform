@@ -78,6 +78,29 @@ fully green, then complete any authorized production sync and verification
 before removing only that completed worktree and its local branch. Never clean blocked, dirty, unmerged,
 user-owned, or other-agent-owned lanes.
 
+## Stale Merged-Parent Catalog Recovery
+
+If native rebase starts replaying unrelated landed commits, abort it and inspect
+all affected refs/worktrees; fetches can survive an abort. Recover GitHub's native
+membership and preserve old heads and local catalog boundaries. Confirm that the
+tracked merged parent tip is not an ancestor of the child, while the child range
+against fetched trunk contains only the owned remaining changes. Do not resolve
+unrelated conflicts to force that replay through.
+
+After coordinating clean, idle owners, a proven stale local boundary can be
+rebuilt with `gh stack unstack --local` and
+`gh stack init --base main <remaining-bottom> ... <top>`. Keep the remote native
+group intact. Inspect the rebuilt catalog, rebase and push through native
+commands, then verify server membership, bases, heads and source scope. Rerun
+focused regressions and every exact-head merge gate. This local metadata recovery
+does not authorize remote unstacking, ordinary admin merges of native layers,
+rewriting other owners' work or bypassing any contiguous-prefix requirement.
+
+See the diagnostic steps in
+`apps/docs/build/development-tools/stacked-pull-requests.mdx` under
+“Recover a stale merged-parent boundary”. Record exact old/new heads and any
+partial failure privately in the coordination handoff rather than public docs.
+
 ## Watcher Scripts
 
 Prefer the bundled scripts for long waits. They print only changed summaries,
