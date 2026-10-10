@@ -534,3 +534,11 @@ trigger, vars and secret names. Deploy only the immutable artifact qualified by
 that CI run, using its emitted Wrangler config; preserve source config for named
 secret provisioning. See `apps/docs/build/devops/cloudflare-cron-control.mdx` for
 commands and the distinct downstream delivery/cost/stop acceptance boundaries.
+
+For Cron recovery cost review, count the requeue RPC and pending lookup even when
+there is no delivery. Database phases currently lack explicit request deadlines;
+only web delivery uses the 180-second signal. A one-row lookup parameter does not
+bound full response consumption or requeue database work. Count repeated failed
+invocations separately and require durable recurring authority/progress and stop
+fences before certifying the schedule. See the recovery request envelope in the
+Cron Control runbook; mocked HTTP counts are not billed-row or hosted-stop proof.

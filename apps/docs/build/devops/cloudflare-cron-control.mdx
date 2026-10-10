@@ -112,3 +112,27 @@ automatic pagination. Request-budget and existing send-immediate route tests cov
 validation and provider replay safeguards. The bound does not cap logs per batch,
 devices, provider messages, automatic prefetch or recurring spend. Hosted delivery,
 row accounting, durable cancellation and independent-stop evidence remain follow-up.
+
+## Recovery request envelope
+
+One idle recovery invocation still sends two database requests: stale-batch
+requeue followed by the pending-batch lookup. A pending result adds one web delivery
+request. At the configured five-minute cadence, 288 distinct invocations therefore
+mean 576 database requests on an idle day, or 864 total requests when every lookup
+finds work. These are request counts under those assumptions, not billed rows or a
+hard daily cap; duplicate execution and downstream delivery fanout add work.
+
+A failed requeue stops before lookup. A failed delivery occurs after both database
+requests, so 24 independently retried calls perform 72 requests. The Worker has no
+persistent retry reservation or recurring lease expiry. Its 180-second AbortSignal
+currently covers web delivery only; database recovery and lookup have no explicit
+request deadlines. The lookup asks for one row but consumes the complete JSON
+response, so that query parameter does not prove a response-byte or storage-work cap.
+
+Before bounding this path, verify actual database recovery rows and downstream
+messages, reserve durable progress, bound every network phase and response read,
+and preserve pending batch recovery across failures. Test duplicate schedules,
+clock and stop/reschedule races rather than treating sequential helper calls as
+hosted alarm evidence. Controlled fetch probes establish request ordering/counts;
+real scheduled Worker, database, provider, authenticated independent-stop and alert
+acceptance remain separate gates.
