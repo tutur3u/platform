@@ -225,6 +225,16 @@ twenty-three-hour failure boundaries, and verify them in `registry-heartbeat.tes
 alongside reconstruction, duplicate suppression and invalid-clock removal. This
 clock fence does not replace finite compensation budgets or hosted stop evidence.
 
+## RunnerWake notification fanout
+
+RunnerWake has no alarm retry loop, but each accepted notification enumerates every
+retained socket again. Count send and close attempts separately; duplicate requests
+and object reconstruction do not persist deduplication progress. Keep Worker token
+and runner-auth checks before forwarding. A per-request operation count is not a
+socket-retention, ingress or account-spend cap. See the RunnerWake envelope in the
+GitHub Actions runbook and `apps/devbox-control/src/wake.test.ts` before changing
+fanout, socket leases or authenticated stop behavior.
+
 ## Coordination ingress read budget
 
 Authenticated `/v1/coordinate` requests keep the existing 2 KiB body limit and
