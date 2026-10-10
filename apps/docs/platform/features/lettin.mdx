@@ -1073,8 +1073,8 @@ and entry IDs, and validated document fields. Published exports omit unpublished
 entries and filter structured links/relationships to included entry IDs. Exports
 omit actor/workspace IDs, collaboration grants, profiles and saved-reader data.
 They contain artwork URLs rather than image bytes; managed URLs retain their
-existing access and retirement behavior. No import/restore or offline artwork
-availability is implied. Downloaded files are controlled by the person who
+existing access and retirement behavior. Offline artwork availability is not
+implied; the reviewed import below creates private copies without artwork. Downloaded files are controlled by the person who
 explicitly exports them; original records and publication permissions are unchanged.
 
 Exports are limited to 1,000 entries and 10 MiB. Each document comes from a saved
@@ -1083,3 +1083,39 @@ draft schema projects known fields, so newly integrated document fields must ret
 export regression coverage. Regression evidence: `notebook-export.test.ts`, export
 route tests and `notebook-export.test.tsx`. Exact app CI and hosted download/account
 switch verification remain separate delivery gates.
+
+
+
+### Reviewed notebook JSON import
+
+Approved creators with workspace document-management permission can import a
+version-one `lettin-notebook` JSON file from the workspace Studio. The creator
+chooses a new title and explicitly confirms permission to copy all included
+content into the selected workspace, including private material. A stored,
+actor/workspace-bound preview expires after fifteen minutes; its entry list must
+be reviewed before a separate apply action. Account changes, mismatched preview
+owners, expired previews and revoked creator access stop the operation.
+
+Import always creates a new private notebook and new private entries, with fresh
+IDs and revision one. It never changes originals, restores publication, creates
+collaborators or imports reader/profile/moderation data. Structured links and wiki
+relationships are remapped only between included entries; missing targets are
+removed. Source notebook ID, export scope/time and entry IDs remain private preview
+provenance, not permission claims. File claims are untrusted and grant no access.
+
+Files contain artwork URLs rather than bytes. This importer removes cover, gallery
+and inline images and hyperlink targets, retaining inline-image alternative text,
+document text and document credits. It performs no remote fetch or media permission transfer. The review
+explains this intentional limitation; creators can add authorized artwork later.
+Unknown identity/grant fields are discarded through the active document schema.
+Source files are limited to 10 MiB and 1,000 entries; the sanitized preview plan
+is additionally limited to 1 MiB because it occupies one D1 row; malformed formats, duplicate IDs,
+executable nodes and excessive nesting are rejected. Applying the same preview is
+idempotent and commits the new drafts in one D1 transaction. Import is a copy
+workflow, not an in-place restore or full-fidelity offline backup.
+
+Regression evidence: `notebook-import.test.ts`, the import route tests and
+`notebook-import.test.tsx`, including D1 creation, ownership/expiry fences,
+relationship remapping, media stripping, source consent, duplicate submissions
+and stale actor/dialog completion. Exact-head CI and hosted file/account switching
+acceptance remain separate from focused fixture verification.

@@ -436,3 +436,29 @@ export function setLettinCreatorSaved(
     body: JSON.stringify({ creatorId, saved, expectedActor }),
   });
 }
+
+export function previewLettinNotebookImport(
+  wsId: string,
+  input: {
+    expectedActor: string;
+    title: string;
+    payload: unknown;
+    consent: true;
+  }
+) {
+  return client().json<LettinImportPreview>(`${path(wsId)}/import`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'preview', ...input }),
+  });
+}
+export function applyLettinNotebookImport(
+  wsId: string,
+  input: { expectedActor: string; previewId: string; consent: true }
+) {
+  return client().json<{ id: string }>(`${path(wsId)}/import`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'apply', ...input }),
+  });
+}
