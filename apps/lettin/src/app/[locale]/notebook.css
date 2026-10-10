@@ -320,4 +320,12 @@
   .lettin-reader-controls {
     display: none;
   }
+
+  .lettin-reader-presentation[data-reader-size] .lettin-prose {
+    font-size: 1.03rem;
+  }
+
+  .lettin-reader-presentation[data-reader-spacing] .lettin-prose {
+    line-height: 1.8;
+  }
 }

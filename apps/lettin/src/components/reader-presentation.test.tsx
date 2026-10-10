@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { act, type ComponentProps } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, expect, it, vi } from 'vitest';
@@ -7,6 +9,11 @@ import vietnamese from '../../messages/vi.json';
 import { DocumentView } from './document-view';
 import { ReaderPresentation } from './reader-presentation';
 import { createStarterDraft } from './starter-drafts';
+
+const notebookCss = readFileSync(
+  resolve(process.cwd(), 'src/app/[locale]/notebook.css'),
+  'utf8'
+);
 
 const language = vi.hoisted(() => ({ value: 'en' }));
 vi.mock('next-intl', () => ({
@@ -156,3 +163,85 @@ it('keeps a private DocumentView preview outside the reader controls and wrapper
     await act(() => root.unmount());
   }
 });
+
+// CSSOM parses the shipped stylesheet; this checks its cascade, not page geometry.
+function winningDeclaration(
+  rules: CSSStyleRule[],
+  element: Element,
+  property: string
+) {
+  const applicable = rules.flatMap((rule, order) => {
+    const value = rule.style.getPropertyValue(property);
+    if (!value) return [];
+    return rule.selectorText.split(',').flatMap((selector) => {
+      if (!element.matches(selector)) return [];
+      // Relevant prose rules use only classes, attributes and descendants.
+      // Reject unsupported selector syntax rather than guessing specificity.
+      const simple = selector.match(/\.[\w-]+|\[[^\]]+\]/g) ?? [];
+      expect(selector.replace(/\.[\w-]+|\[[^\]]+\]/g, '').trim()).toBe('');
+      expect(rule.style.getPropertyPriority(property)).toBe('');
+      return [{ value, specificity: simple.length, order }];
+    });
+  });
+  applicable.sort((a, b) => a.specificity - b.specificity || a.order - b.order);
+  expect(applicable.length).toBeGreaterThan(0);
+  return applicable.at(-1)!.value;
+}
+
+it.each([
+  ['default', 'default', '1.03rem', '1.8'],
+  ['default', 'relaxed', '1.03rem', '2.1'],
+  ['large', 'default', '1.2rem', '1.8'],
+  ['large', 'relaxed', '1.2rem', '2.1'],
+  ['largest', 'default', '1.4rem', '1.8'],
+  ['largest', 'relaxed', '1.4rem', '2.1'],
+])(
+  'prints default prose metrics for %s size and %s spacing while preserving screen choices',
+  async (size, spacing, screenSize, screenSpacing) => {
+    const style = document.createElement('style');
+    style.textContent = notebookCss;
+    document.head.append(style);
+    try {
+      const rules = Array.from(style.sheet!.cssRules);
+      const screen = rules.filter(
+        (rule): rule is CSSStyleRule => rule.type === CSSRule.STYLE_RULE
+      );
+      const print = rules.flatMap((rule) => {
+        if (rule.type === CSSRule.STYLE_RULE) return [rule as CSSStyleRule];
+        if (rule.type !== CSSRule.MEDIA_RULE) return [];
+        const media = rule as CSSMediaRule;
+        return media.conditionText === 'print'
+          ? Array.from(media.cssRules).map((item) => item as CSSStyleRule)
+          : [];
+      });
+      const { container } = await mount();
+      const selects = container.querySelectorAll('select');
+      await choose(selects[0]!, size!);
+      await choose(selects[1]!, spacing!);
+      const prose = container.querySelector('article')!;
+      expect(winningDeclaration(screen, prose, 'font-size')).toBe(screenSize);
+      expect(winningDeclaration(screen, prose, 'line-height')).toBe(
+        screenSpacing
+      );
+      const defaults = screen.find(
+        (rule) => rule.selectorText === '.lettin-prose'
+      )!;
+      for (const property of ['font-size', 'line-height']) {
+        expect(winningDeclaration(print, prose, property)).toBe(
+          defaults.style.getPropertyValue(property)
+        );
+      }
+      expect(
+        winningDeclaration(
+          print,
+          container.querySelector('.lettin-reader-controls')!,
+          'display'
+        )
+      ).toBe('none');
+      expect(selects[0]!.value).toBe(size);
+      expect(selects[1]!.value).toBe(spacing);
+    } finally {
+      style.remove();
+    }
+  }
+);
