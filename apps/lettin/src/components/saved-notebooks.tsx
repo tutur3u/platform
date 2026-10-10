@@ -8,7 +8,16 @@ import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
 import { Link } from '@/i18n/navigation';
+import {
+  matchesSavedLibrary,
+  SavedLibraryFilterControls,
+  useSavedLibraryFilters,
+} from './saved-library-filters';
 export function SavedNotebooks({ actorId }: { actorId: string }) {
+  return <SavedNotebooksList key={actorId} actorId={actorId} />;
+}
+function SavedNotebooksList({ actorId }: { actorId: string }) {
+  const [filters, setFilters] = useSavedLibraryFilters();
   const t = useTranslations('lettin'),
     client = useQueryClient();
   const fence = useRef(false);
@@ -25,6 +34,9 @@ export function SavedNotebooks({ actorId }: { actorId: string }) {
       await client.invalidateQueries({ queryKey: ['lettin-reader', actorId] });
     },
   });
+  const visible = query.data?.filter((item) =>
+    matchesSavedLibrary(filters, item.notebook?.title ?? null, !!item.notebook)
+  );
   return (
     <main className="mx-auto max-w-5xl space-y-6 px-5 py-10">
       <h1 className="text-4xl">{t('savedNotebooks')}</h1>
@@ -37,8 +49,14 @@ export function SavedNotebooks({ actorId }: { actorId: string }) {
         </div>
       )}
       {query.data?.length === 0 && <p>{t('noSavedNotebooks')}</p>}
+      {query.data && query.data.length > 0 && (
+        <SavedLibraryFilterControls filters={filters} onChange={setFilters} />
+      )}
+      {query.data && query.data.length > 0 && visible?.length === 0 && (
+        <p role="status">{t('savedLibraryNoMatches')}</p>
+      )}
       <ul className="space-y-4">
-        {query.data?.map((item) => (
+        {visible?.map((item) => (
           <li
             key={item.worldId}
             className="space-y-3 rounded-lg border border-border p-4"
