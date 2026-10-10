@@ -149,6 +149,7 @@ fn contact_data_config_from_worker_env(env: &Env) -> super::contact::ContactData
         first_var(env, &super::contact::SUPABASE_URL_KEYS),
         first_var(env, &super::contact::SUPABASE_SERVICE_ROLE_KEY_KEYS),
     )
+    .with_public_storage_origin(var(env, "SUPABASE_PUBLIC_STORAGE_ORIGIN", ""))
 }
 
 fn first_var(env: &Env, keys: &[&str]) -> String {

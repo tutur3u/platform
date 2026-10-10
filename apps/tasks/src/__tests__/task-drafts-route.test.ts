@@ -1,8 +1,12 @@
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const WORKSPACE_ID = '11111111-1111-4111-8111-111111111111';
+
 const mocks = vi.hoisted(() => {
   const membershipSingle = vi.fn();
+  const workspaceMaybeSingle = vi.fn();
+  const handleEq = vi.fn(() => ({ maybeSingle: workspaceMaybeSingle }));
   const taskDraftsEq = vi.fn();
   const taskDraftsOr = vi.fn();
   const taskDraftsOrder = vi.fn();
@@ -20,6 +24,10 @@ const mocks = vi.hoisted(() => {
       getUser: vi.fn(),
     },
     from: vi.fn((table: string) => {
+      if (table === 'workspaces') {
+        return { select: vi.fn(() => ({ eq: handleEq })) };
+      }
+
       if (table === 'workspace_members') {
         return {
           select: vi.fn().mockReturnValue({
@@ -55,6 +63,8 @@ const mocks = vi.hoisted(() => {
   return {
     adminSupabase,
     membershipSingle,
+    workspaceMaybeSingle,
+    handleEq,
     resolveAuthenticatedSessionUser: vi.fn(),
     sessionSupabase,
     taskDraftsEq,
@@ -78,6 +88,10 @@ describe('task drafts route', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    mocks.workspaceMaybeSingle.mockResolvedValue({
+      data: { id: WORKSPACE_ID },
+      error: null,
+    });
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
       authError: null,
       user: { id: 'user-1' },
@@ -104,6 +118,10 @@ describe('task drafts route', () => {
       }
     );
 
+    expect(mocks.handleEq).toHaveBeenCalledWith('handle', 'ws-1');
+    expect(mocks.taskDraftsEq).toHaveBeenCalledWith('ws_id', WORKSPACE_ID);
+    expect(mocks.taskDraftsEq).toHaveBeenCalledWith('creator_id', 'user-1');
+    expect(mocks.sessionSupabase.from).not.toHaveBeenCalledWith('task_drafts');
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
       data: [{ id: 'draft-1', name: 'Draft' }],
@@ -136,6 +154,10 @@ describe('task drafts route', () => {
       }
     );
 
+    expect(mocks.handleEq).toHaveBeenCalledWith('handle', 'ws-1');
+    expect(mocks.taskDraftsEq).toHaveBeenCalledWith('ws_id', WORKSPACE_ID);
+    expect(mocks.taskDraftsEq).toHaveBeenCalledWith('creator_id', 'user-1');
+    expect(mocks.sessionSupabase.from).not.toHaveBeenCalledWith('task_drafts');
     expect(response.status).toBe(200);
     expect(mocks.taskDraftsOr).toHaveBeenCalledWith(
       'board_id.eq.board-1,board_id.is.null'
@@ -147,4 +169,29 @@ describe('task drafts route', () => {
       ],
     });
   });
+  it.each([
+    [null, 403, 'Forbidden'],
+    [
+      { message: 'Membership lookup unavailable' },
+      500,
+      'Failed to verify workspace access',
+    ],
+  ])(
+    'denies draft reads before admin query when membership returns %s',
+    async (error, status, message) => {
+      mocks.membershipSingle.mockResolvedValue({ data: null, error });
+      const { GET } = await import(
+        '@/app/api/v1/workspaces/[wsId]/task-drafts/route'
+      );
+      const response = await GET(
+        new NextRequest('http://localhost/api/v1/workspaces/ws-1/task-drafts'),
+        { params: Promise.resolve({ wsId: 'ws-1' }) }
+      );
+      expect(response.status).toBe(status);
+      await expect(response.json()).resolves.toEqual({ error: message });
+      expect(mocks.handleEq).toHaveBeenCalledWith('handle', 'ws-1');
+      expect(mocks.adminSupabase.from).not.toHaveBeenCalledWith('task_drafts');
+      expect(mocks.taskDraftsOrder).not.toHaveBeenCalled();
+    }
+  );
 });

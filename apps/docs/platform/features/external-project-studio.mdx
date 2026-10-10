@@ -178,6 +178,21 @@ quota and falls through to Next for fully configured R2 providers and unported
 methods. Rust is not deployed; satellite-session and rate-limit parity remain
 tracked prerequisites for a future cutover.
 
+### Database contract gate
+
+`external-project-storage-analytics-contract.yaml` checks the exact PR head with
+all tracked Supabase schema inputs. Its verifier requires the reviewed migration
+body under the root-reserved forward filename, runs all 15 strict SQL assertions,
+generates actual public/private/storage types, and closes its owned disposable
+stack. A skipped wrapper or local source test does not establish this DB gate.
+After the 15-assertion sequential fixture, the gate uses distinct bounded psql
+sessions for first-cache-row refresh versus insert/update. It observes the
+contender waiting on the actual workspace advisory lock (namespace 73007), then
+requires invalidation and exact recalculation after both sessions complete.
+Authored Node wiring tests do not establish that race; its actual hosted receipt
+is required before merge. Linux's shared rootful Docker daemon is not a
+qualified contained executor; do not run this verifier there to bypass that gate.
+
 ## Team Guidance
 
 - Link into the CMS-native route map directly.

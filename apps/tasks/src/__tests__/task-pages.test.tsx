@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   myTasksPage: vi.fn(),
   connection: vi.fn(),
   redirect: vi.fn(),
+  notFound: vi.fn(),
   taskBoardLoadingState: vi.fn(),
   taskBoardServerPage: vi.fn(),
   taskProgressPage: vi.fn(),
@@ -93,6 +94,8 @@ vi.mock('next-intl/server', () => ({
 }));
 
 vi.mock('next/navigation', () => ({
+  notFound: (...args: Parameters<typeof mocks.notFound>) =>
+    mocks.notFound(...args),
   redirect: (...args: Parameters<typeof mocks.redirect>) =>
     mocks.redirect(...args),
 }));
@@ -143,6 +146,13 @@ describe('tasks app task pages', () => {
         { id: 'list-done', name: 'Done' },
         { id: 'list-closed', name: 'Closed' },
       ],
+    });
+    mocks.notFound.mockImplementation(() => {
+      const error = new Error('NEXT_HTTP_ERROR_FALLBACK;404') as Error & {
+        digest: string;
+      };
+      error.digest = 'NEXT_HTTP_ERROR_FALLBACK;404';
+      throw error;
     });
     mocks.redirect.mockImplementation((href: string) => {
       const error = new Error('NEXT_REDIRECT') as Error & { href: string };
@@ -435,7 +445,7 @@ describe('tasks app task pages', () => {
 
     const links = await getNavigationLinks({ personalOrWsId: 'workspace-1' });
 
-    expect(links).toHaveLength(6);
+    expect(links).toHaveLength(9);
     expect(links[0]).toMatchObject({
       href: '/workspace-1/tasks',
       aliases: [
@@ -443,23 +453,28 @@ describe('tasks app task pages', () => {
         '/workspace-1/boards',
         '/workspace-1/boards/*',
       ],
+      children: [{ href: '/workspace-1/tasks/new' }],
     });
-    expect(links[1]).toBeNull();
-    expect(links[2]).toMatchObject({
-      href: '/workspace-1/progress',
-      aliases: ['/workspace-1/progress/*'],
+    expect(links[1]).toMatchObject({
+      href: '/workspace-1/calendar',
+      aliases: ['/workspace-1/calendar/*'],
     });
-    expect(links[3]).toMatchObject({
-      href: '/workspace-1/goals',
-      aliases: ['/workspace-1/goals/*'],
-    });
-    expect(links[4]).toMatchObject({
-      href: '/workspace-1/analytics',
-      aliases: ['/workspace-1/analytics/*'],
-    });
-    expect(links[5]).toMatchObject({
-      href: '/workspace-1/leaderboard',
-      aliases: ['/workspace-1/leaderboard/*'],
+    expect(links[2]).toBeNull();
+    for (const [index, route] of [
+      [3, 'progress'],
+      [4, 'goals'],
+      [5, 'analytics'],
+      [6, 'leaderboard'],
+    ] as const) {
+      expect(links[index]).toMatchObject({
+        href: `/workspace-1/${route}`,
+        aliases: [`/workspace-1/${route}/*`],
+      });
+    }
+    expect(links[7]).toBeNull();
+    expect(links[8]).toMatchObject({
+      id: 'workspace-members-settings',
+      openSettingsDialog: { tab: 'workspace_members' },
     });
   });
 
@@ -505,7 +520,7 @@ describe('tasks app task pages', () => {
     });
   });
 
-  it('redirects inaccessible workspaces before resolving boards', async () => {
+  it('returns notFound for a missing workspace before resolving boards', async () => {
     mocks.getWorkspace.mockResolvedValue(null);
 
     const { default: Page } = await import(
@@ -515,8 +530,26 @@ describe('tasks app task pages', () => {
     await expect(
       Page({ params: Promise.resolve({ wsId: 'workspace-1' }) })
     ).rejects.toMatchObject({
-      href: '/onboarding',
+      digest: 'NEXT_HTTP_ERROR_FALLBACK;404',
     });
+    expect(mocks.notFound).toHaveBeenCalledTimes(1);
+    expect(mocks.redirect).not.toHaveBeenCalled();
+    expect(mocks.listWorkspaceTaskBoards).not.toHaveBeenCalled();
+  });
+  it('redirects an existing unjoined workspace without resolving boards', async () => {
+    mocks.getWorkspace.mockResolvedValue({
+      id: 'workspace-1',
+      joined: false,
+      personal: false,
+    });
+    const { default: Page } = await import(
+      '@/app/[locale]/(dashboard)/[wsId]/tasks/page'
+    );
+    await expect(
+      Page({ params: Promise.resolve({ wsId: 'workspace-1' }) })
+    ).rejects.toMatchObject({ href: '/' });
+    expect(mocks.notFound).not.toHaveBeenCalled();
+    expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith('/');
     expect(mocks.listWorkspaceTaskBoards).not.toHaveBeenCalled();
   });
 });

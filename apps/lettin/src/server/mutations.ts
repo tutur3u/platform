@@ -7,6 +7,7 @@ import {
   worldRole,
   writeAccess,
 } from './context';
+import { duplicateEntry } from './duplicate-entry';
 import { mutateInvitation } from './invitations';
 import { draftArtwork, referenceIds } from './wiki-references';
 
@@ -90,6 +91,8 @@ export async function mutate(
   ].includes(command.action);
   if (publishing && role === 'editor') throw new LettinError(403);
   const access = writeAccess(actor, command.worldId, publishing);
+  if (command.action === 'duplicateEntry')
+    return duplicateEntry(db, actor, command);
   if (command.action === 'createEntry') {
     const id = crypto.randomUUID();
     const image = draftArtwork(command.draft, command.worldId);
@@ -119,7 +122,7 @@ export async function mutate(
   const now = new Date().toISOString();
   const assignments = saving
     ? 'draft=?'
-    : `published=${publish ? 'draft' : 'NULL'},published_at=?`;
+    : `published=${publish ? "json_remove(draft,'$.workProgress')" : 'NULL'},published_at=?`;
   const value = saving ? JSON.stringify(command.draft) : publish ? now : null;
   // Reject cross-world link IDs inside the same atomic write as the revision check.
   const links = saving ? referenceIds(command.draft) : [];

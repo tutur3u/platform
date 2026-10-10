@@ -54,6 +54,7 @@ import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet.
 import 'package:mobile/features/assistant/widgets/assistant_header_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_history_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
+import 'package:mobile/features/assistant/widgets/assistant_live_haptic_feedback.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_info_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_mode_view.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_primary_action.dart';
@@ -64,6 +65,7 @@ import 'package:mobile/features/assistant/widgets/assistant_starter_prompts.dart
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
@@ -120,6 +122,7 @@ class _AssistantPageState extends State<AssistantPage>
   Object? _chromeActionsKey;
   List<ShellActionSpec>? _chromeActions;
   final _inputController = TextEditingController();
+  double? _composerHeight;
   final _inputFocusNode = FocusNode();
   final _scrollController = ScrollController();
   static const _assistantScrollPhysics = AlwaysScrollableScrollPhysics(
@@ -139,6 +142,18 @@ class _AssistantPageState extends State<AssistantPage>
     onWorkspaceContextChanged: (workspaceContextId) =>
         _shellCubit.setWorkspaceContextId(workspaceContextId),
     onSoulRefreshRequested: _shellCubit.refreshSoul,
+    onThemeRequested: (theme, isCurrent) async {
+      if (!mounted || !isCurrent()) return;
+      final mode = switch (theme) {
+        'light' => shad.ThemeMode.light,
+        'dark' => shad.ThemeMode.dark,
+        _ => shad.ThemeMode.system,
+      };
+      await context.read<ThemeCubit>().setThemeMode(
+        mode,
+        isCurrent: () => mounted && isCurrent(),
+      );
+    },
     onSoulRefreshFailed: (_) {
       if (!mounted) return;
       final message = context.l10n.assistantSettingsRefreshFailed;
@@ -213,6 +228,7 @@ class _AssistantPageState extends State<AssistantPage>
   Future<void> _workspaceDisconnect = Future<void>.value();
   Future<void> _liveBrowsingPreferenceLoad = Future<void>.value();
   final _liveStartGate = AssistantLiveStartGate();
+  final _liveHaptics = AssistantLiveHapticFeedback();
   bool get _liveStartPending =>
       _liveStartGate.pendingFor(_voiceActorScopeEpoch);
   bool _lifecycleDisconnectPending = false;
@@ -237,6 +253,7 @@ class _AssistantPageState extends State<AssistantPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) _liveHaptics.suspend();
     if (state == AppLifecycleState.resumed) {
       _appIsForeground = true;
       _resumeLocal();
@@ -273,6 +290,7 @@ class _AssistantPageState extends State<AssistantPage>
     if (TickerMode.valuesOf(context).enabled) {
       _resumeLocal();
     } else {
+      _liveHaptics.suspend();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || TickerMode.valuesOf(context).enabled) return;
         unawaited(_voiceCapture.cancel());
@@ -292,6 +310,7 @@ class _AssistantPageState extends State<AssistantPage>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _liveHaptics.dispose();
     _scrollController.removeListener(_handleScroll);
     _inputFocusNode.removeListener(_handleInputFocusChange);
     _inputController.dispose();
@@ -552,7 +571,14 @@ class _AssistantPageState extends State<AssistantPage>
     return assistantTranscriptBottomClearance(
       context,
       composerVisible: isComposerVisible,
+      composerHeight: _composerHeight,
     );
+  }
+
+  void _setComposerHeight(double height) {
+    if (mounted && _composerHeight != height) {
+      setState(() => _composerHeight = height);
+    }
   }
 
   void _maybeResetEmptyStateScroll({
