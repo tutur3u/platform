@@ -10,6 +10,7 @@ import { AccessPanel } from './access-panel';
 import { CreateWorld } from './create-world';
 import { CreativeSpaces } from './creative-spaces';
 import { ExocorpseImport } from './exocorpse-import';
+import { NotebookImport } from './notebook-import';
 import { SpaceArtwork } from './space-artwork';
 import { belongsToSpace, type CreativeSpace } from './spaces';
 import { useLettinMutation } from './use-lettin';
@@ -70,6 +71,7 @@ export function Studio({
         </div>
         <div className="flex flex-wrap gap-2">
           {data.canImportExocorpse && <ExocorpseImport wsId={wsId} />}
+          {data.canCreate && <NotebookImport key={wsId} wsId={wsId} />}
           {data.canCreate && <CreateWorld wsId={wsId} initialStarter={space} />}
         </div>
       </div>

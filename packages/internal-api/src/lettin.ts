@@ -294,6 +294,34 @@ export function setLettinNotebookSaved(
   });
 }
 
+export type LettinNotebookExport = {
+  format: 'lettin-notebook';
+  version: 1;
+  scope: 'published' | 'draft';
+  exportedAt: string;
+  world: { id: string; document: LettinDraft };
+  entries: { id: string; document: LettinDraft }[];
+};
+export function exportLettinNotebook(
+  wsId: string,
+  options: {
+    worldId: string;
+    scope: 'published' | 'draft';
+    privateConsent: boolean;
+    expectedActor: string;
+  }
+) {
+  return client().json<LettinNotebookExport>(`${path(wsId)}/export`, {
+    cache: 'no-store',
+    query: {
+      worldId: options.worldId,
+      scope: options.scope,
+      privateConsent: options.privateConsent ? '1' : '0',
+      expectedActor: options.expectedActor,
+    },
+  });
+}
+
 export const EXOCORPSE_WORKSPACE_ID = '3385bd92-3d5e-42f6-b3ad-0d1394af3509';
 export const exocorpseWikiCollections = [
   'stories',
@@ -412,5 +440,31 @@ export function setLettinCreatorSaved(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ creatorId, saved, expectedActor }),
+  });
+}
+
+export function previewLettinNotebookImport(
+  wsId: string,
+  input: {
+    expectedActor: string;
+    title: string;
+    payload: unknown;
+    consent: true;
+  }
+) {
+  return client().json<LettinImportPreview>(`${path(wsId)}/import`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'preview', ...input }),
+  });
+}
+export function applyLettinNotebookImport(
+  wsId: string,
+  input: { expectedActor: string; previewId: string; consent: true }
+) {
+  return client().json<{ id: string }>(`${path(wsId)}/import`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'apply', ...input }),
   });
 }

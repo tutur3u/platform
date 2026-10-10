@@ -685,6 +685,40 @@ share a parent. Workspace/notebook IDs alone collide between sibling quick-note
 and Calendar controls. Lettin's Studio browsing regression checks key warnings,
 state retention across section changes and reset on notebook changes.
 
+## Scoped document export
+
+Use explicit publication scope and affirmative owner consent for bulk private
+exports, rather than assuming ordinary collaborator reading permission implies
+private portability consent. Project through the active document schema, omit
+identity/grant metadata, and filter structured references against included IDs.
+Bound entry counts and encoded bytes before large reads, then recheck notebook
+permissions before response. On the client, reuse the server-verified workspace
+actor lifetime and an intent lease to suppress stale downloads after account
+change, dialog closure or unmount. State clearly when URLs rather than asset bytes
+are exported and when saved reads do not form an atomic database snapshot.
+
+
+For portable file imports, treat source IDs and export provenance as untrusted
+context. Use a schema-projected, actor/workspace-bound expiring preview followed
+by explicit apply; allocate fresh IDs and remap only included references. Source
+consent never grants access to referenced media. If asset bytes and transfer
+permission are absent, remove image and hyperlink targets and explain the loss
+before apply. Reuse the private D1 import transaction and fence preview source so
+one importer cannot apply another importer's privileged plan. Keep consent,
+publication and creator revocation regression evidence separate from hosted CI.
+
+## Explicit public routing links
+
+Public copy/share controls must derive destinations from an already-public server
+projection, not `window.location`, arbitrary search values or private workspace
+routes. A canonical route helper validates shape but does not grant source access.
+Copy only the public routing URL and whitelist supported query keys; avoid actor,
+tracking, draft and profile metadata. Do not freeze publication by copying a link.
+Use explicit visitor intent, clipboard failure/manual selection recovery, duplicate
+submission fences and keyed destination lifetimes to suppress stale completion.
+Shared components can receive localized labels from owning apps instead of adding
+implicit shared translation keys to unrelated app bundles.
+
 ## Private creator workflow metadata
 
 Treat internal drafting labels as distinct from publication status and access
