@@ -679,3 +679,15 @@ fence prevents duplicate clicks before mutation state rerenders. Reset controls
 on context changes. Recipient acceptance is a distinct workflow; do not claim
 an owner confirmation establishes recipient consent. Lettin's collaborator DOM
 and D1 role/revocation regressions cover these boundaries.
+
+### Scoped published section links
+
+Build heading links from the rendered published projection, rather than the raw
+query selection. Preserve the owning route/locale and keep only the published
+entry parameter plus a bounded rendered-heading fragment. Scope fragment lookup
+to the current article and validate it against its outline before opening folds
+and focusing; malformed or removed headings must not select a fallback target.
+Private previews use local outline navigation. Preserve browser modified-click
+behavior and history state; explain that node-position anchors can move after
+republishing. Cover actual rendered folds, reload fragments, query omission and
+private projection boundaries with document-outline-navigation regressions.

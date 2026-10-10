@@ -942,6 +942,29 @@ selection, explicit commands, reset, failure and blocked controls, and the local
 and revoked collaborator access. Exact-head builds and hosted dialog acceptance
 remain independent delivery gates.
 
+### Published heading links
+
+Public notebook outlines expose section links for the displayed published entry
+or notebook. Links retain the current route and locale, include only the known
+published entry identifier when applicable, and omit unrelated query parameters.
+Notebook links clear any entry selection. Private previews retain local outline
+navigation and do not opt into these public links. No content, actor details,
+access grants or publication changes are included.
+
+Opening a section link, or changing its fragment, opens enclosing folded sections
+and focuses only a rendered heading in the current article. Plain clicks preserve
+that focus and scroll behavior while updating the address; modified clicks retain
+ordinary browser link behavior. Missing, malformed, out-of-scope and removed
+headings do not focus another article. Links address the current published text;
+heading node positions can change after later edits or republication. The existing
+100-heading outline bound and two-heading display threshold remain in effect.
+
+Regression evidence: `document-outline-navigation.test.tsx` covers direct reload,
+fragment changes, folded content, query omission, locale/path preservation,
+modified clicks and publication/private boundaries; existing outline/search and
+public-world tests preserve local navigation and published-only selection.
+Exact-head builds and hosted browser acceptance remain separate gates.
+
 ## Private saved-library filters
 
 The authenticated saved-library page lets readers filter their saved notebook

@@ -845,6 +845,7 @@
     "openNotebook": "Open your studio",
     "openPlanningCalendar": "Open Calendar for this day",
     "openQuickNote": "Open saved note",
+    "outlinePublishedLinksHint": "Section links open the current published text. Later edits may move the section.",
     "outlineSearch": "Find a heading",
     "outlineSearchClear": "Clear heading search",
     "outlineSearchEmpty": "No headings match in this outline.",
