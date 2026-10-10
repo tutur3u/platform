@@ -1,7 +1,7 @@
 ---
 title: "Layering Patterns in Architecture"
 description: "Comprehensive comparison of N-tier, layer-based, and microservices architectural patterns in Tuturuuu"
-updatedAt: "2026-06-21"
+updatedAt: '2026-10-08'
 ---
 
 Understanding how to structure code within services is critical for maintainability and testability. This document compares traditional N-Tier architecture with modern layer-based patterns, and explains how layering works within microservices.
@@ -23,13 +23,11 @@ codebase. The "Tuturuuu's Implementation" section near the end describes the
 **actual** layout.
 </Warning>
 
-<Info>
-**Active migration.** `apps/web` (Next.js, port `7803`) is being replaced by
-`apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust, port `7820`).
-Backend layering increasingly lives in the Rust service. See
-[TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration)
-for the migration contract.
-</Info>
+The maintained runtime is Next.js Web and its satellite apps. Rust
+(`apps/backend`) and TanStack Start (`apps/tanstack-web`) are paused and not in
+use. Docker setup is inactive and the Docker cron runner is retired. Retained
+migration designs describe a possible future, not live traffic or a current
+setup requirement. See the [active runtime map](/build/devops/active-runtime).
 
 <Info>
 For a comprehensive comparison of all architectural patterns with detailed pros and cons, see [Architectural Patterns Comparison](/platform/architecture/system-design/architectural-patterns-comparison).

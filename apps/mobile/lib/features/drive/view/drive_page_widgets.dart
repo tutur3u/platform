@@ -137,7 +137,11 @@ class _DriveListTile extends StatelessWidget {
               ),
               Column(
                 children: [
-                  Checkbox(value: selected, onChanged: (_) => onLongPress()),
+                  Checkbox(
+                    semanticLabel: entry.name,
+                    value: selected,
+                    onChanged: (_) => onLongPress(),
+                  ),
                   PopupMenuButton<String>(
                     onSelected: (value) {
                       if (value == 'rename') {

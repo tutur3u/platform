@@ -84,7 +84,7 @@ stack for every edit.
   broad deletion as a substitute for branch/worktree lifecycle checks.
 - Format touched files with the repo-preferred command.
 - Run focused tests for changed behavior.
-- Run `bun check` for TypeScript, JavaScript, root script, or repo config changes.
+- Run focused non-build checks locally and require applicable exact-commit CI lint, type-check, tests, and real app builds. Do not run local builds or `bun check`.
 - Update `apps/docs` for durable workflow, deployment, architecture, debugging, or operations knowledge.
 - Update the Tuturuuu plugin when agent-facing CLI, validation, setup, or workflow knowledge changes.
 - Keep release-please annotations on platform version lines intact; the
@@ -100,3 +100,7 @@ stack for every edit.
 - Stage only paths you intentionally changed. Do not fix, format, or stage
   unrelated dirty files owned by a human or another agent.
 - Use Conventional Commit style if asked to commit.
+
+- Keep Docker setup, the retired Docker cron runner, Rust, and TanStack Start
+  inactive: no implementation tests, builds, migration refreshes, or dependency
+  updates until explicitly resumed. Validate the pause via policy tests only.

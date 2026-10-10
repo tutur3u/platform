@@ -9,11 +9,8 @@ import {
 } from './employee-creation-orchestration';
 
 vi.mock('server-only', () => ({}));
-vi.mock('node:crypto', async (original) => {
-  const actual = await original<typeof import('node:crypto')>();
-  return { ...actual, randomUUID: vi.fn(() => targetId) };
-});
-const targetId = '00000000-0000-4000-8000-000000000001';
+const fixtureId = '00000000-0000-4000-8000-000000000001';
+let targetId = fixtureId;
 const otherId = '00000000-0000-4000-8000-000000000002';
 const now = Date.parse('2026-01-01T00:00:00Z');
 const secret = 'synthetic-password-sentinel';
@@ -28,7 +25,7 @@ type ProviderReply = Awaited<
 >;
 type ProviderUser = NonNullable<ProviderReply['data']['user']>;
 const pendingUser: ProviderUser = {
-  id: targetId,
+  id: fixtureId,
   email: input.email,
   email_confirmed_at: '2026-01-01',
   banned_until: '2126-01-01',
@@ -39,18 +36,26 @@ const pendingUser: ProviderUser = {
 };
 const activeUser: ProviderUser = { ...pendingUser, banned_until: undefined };
 const account = {
-  id: targetId,
+  get id() {
+    return targetId;
+  },
   email: input.email,
   displayName: input.displayName,
 };
 const tuple = {
   actorUserId: input.actorUserId,
-  userId: targetId,
+  get userId() {
+    return targetId;
+  },
   email: input.email,
   displayName: input.displayName,
 };
 const ok = (user: ProviderUser): ProviderReply => ({
-  data: { user },
+  data: {
+    get user() {
+      return user.id === fixtureId ? { ...user, id: targetId } : user;
+    },
+  },
   error: null,
 });
 const failure = (code = 'unexpected_failure'): ProviderReply => ({
@@ -66,12 +71,36 @@ const unknownPending = {
   code: 'account_creation_outcome_unknown',
 };
 
+// Native Node crypto bindings are not mocked by this configured runner. Keep
+// synthetic replies bound to the actual preflight reservation, while explicit
+// other-id faults stay invalid. Read the id when the operation executes.
+function replyForReservedId(reply: unknown): unknown {
+  if (
+    typeof reply !== 'object' ||
+    reply === null ||
+    !Object.hasOwn(reply, 'data')
+  )
+    return reply;
+  const data = (reply as { data: unknown }).data;
+  if (
+    typeof data !== 'object' ||
+    data === null ||
+    !Object.hasOwn(data, 'id') ||
+    (data as { id: unknown }).id !== fixtureId
+  )
+    return reply;
+  return { ...reply, data: { ...data, id: targetId } };
+}
+
 function fixture() {
   const order: string[] = [];
-  const preflight = vi.fn<EmployeeCreationOperations['preflight']>(async () => {
-    order.push('preflight');
-    return { data: true, error: null };
-  });
+  const preflight = vi.fn<EmployeeCreationOperations['preflight']>(
+    async (args) => {
+      targetId = args.userId;
+      order.push('preflight');
+      return { data: true, error: null };
+    }
+  );
   const finalize = vi.fn<EmployeeCreationOperations['finalize']>(async () => {
     order.push('finalize');
     return { data: { ...account, status: 'pending' }, error: null };
@@ -196,6 +225,7 @@ const tupleFaults = [
 
 describe('unwired employee creation orchestration', () => {
   beforeEach(() => {
+    targetId = fixtureId;
     vi.clearAllMocks();
     vi.spyOn(Date, 'now').mockReturnValue(now);
     vi.spyOn(console, 'log');
@@ -353,7 +383,7 @@ describe('unwired employee creation orchestration', () => {
     { data: { ...account, status: 'created' }, error: null },
   ])('retains unknown finalize %# and never activates', async (reply) => {
     const f = fixture();
-    f.finalize.mockResolvedValueOnce(reply);
+    f.finalize.mockImplementationOnce(async () => replyForReservedId(reply));
     await pendingResult(f, [1, 1, 1, 0, 0, 0]);
   });
   it('retains lost finalize without activation or retry', async () => {
@@ -423,7 +453,9 @@ describe('unwired employee creation orchestration', () => {
     'never reports created without exact SQL confirmation %#',
     async (reply) => {
       const f = fixture();
-      f.confirmActivation.mockResolvedValueOnce(reply);
+      f.confirmActivation.mockImplementationOnce(async () =>
+        replyForReservedId(reply)
+      );
       await pendingResult(f, [1, 1, 1, 1, 1, 1]);
     }
   );

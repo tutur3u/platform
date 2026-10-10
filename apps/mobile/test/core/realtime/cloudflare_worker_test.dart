@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/realtime/cloudflare_channel.dart';
 
+import 'fixture_presence_wait.dart';
+
 void main() {
   final fixture = Platform.environment['TUTURUUU_REALTIME_TEST_FIXTURE'];
   test(
@@ -65,8 +67,13 @@ void main() {
         );
         expect(session['cursor'], {'x': 0.25, 'y': 0.75});
         await channel.close();
-        await Future<void>.delayed(const Duration(milliseconds: 100));
-        final left = await read('/observed');
+        // Two seconds is below the renewed native ticket's expiry; expiry
+        // must not stand in for a correctly propagated close.
+        final left = await waitForNativeDeparture(
+          () => read('/observed'),
+          observed['nativeId'] as String,
+        );
+        expect((left['webStatuses'] as List<dynamic>).last, 'SUBSCRIBED');
         expect(
           (left['presence'] as Map<String, dynamic>)[observed['nativeId']],
           isNull,

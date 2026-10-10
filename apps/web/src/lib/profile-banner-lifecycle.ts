@@ -1,3 +1,6 @@
+import { ProfileUploadError } from '@tuturuuu/storage-core/profile-upload-error';
+import { publicStorageUrl } from './profile-media-public-url';
+
 interface BannerLifecycleResult {
   data?: unknown;
   error: unknown;
@@ -47,10 +50,30 @@ function isRetirementRow(value: unknown): value is BannerRetirementRow {
 export function bannerStorageOrigin() {
   const configured = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!configured) throw new Error('Storage configuration is unavailable');
-  const url = new URL(configured);
-  if (!['https:', 'http:'].includes(url.protocol))
-    throw new Error('Invalid Storage configuration');
-  return url.origin;
+  try {
+    const internal = new URL(configured);
+    if (
+      !['https:', 'http:'].includes(internal.protocol) ||
+      internal.username ||
+      internal.password ||
+      internal.pathname !== '/' ||
+      internal.search ||
+      internal.hash
+    )
+      throw new Error('Invalid Storage configuration');
+    const url = new URL(publicStorageUrl(configured));
+    if (
+      url.username ||
+      url.password ||
+      url.pathname !== '/' ||
+      url.search ||
+      url.hash
+    )
+      throw new Error('Invalid Storage configuration');
+    return url.origin;
+  } catch {
+    throw new ProfileUploadError('Invalid Storage configuration', 503);
+  }
 }
 
 export function ownedBannerPath(url: string, actor: string, origin: string) {

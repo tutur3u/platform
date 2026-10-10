@@ -5258,6 +5258,7 @@
     "project_name": "Project Name",
     "projects": "Projects",
     "public_document": "Public document",
+    "public_profile": "Public profile",
     "published": "Published",
     "purple": "Purple",
     "qr_code": "QR Code",
@@ -11559,6 +11560,7 @@
     "types": {
       "account_update": "Account Update",
       "deadline_reminder": "Deadline Reminder",
+      "mail_received": "Mail received",
       "security_alert": "Security Alert",
       "system_announcement": "System Announcement",
       "task_assigned": "Task Assigned",
@@ -15068,6 +15070,10 @@
     "id": "ID",
     "name": "Name",
     "value": "Value"
+  },
+  "public_profile": {
+    "description": "Public Tuturuuu profile.",
+    "title": "Tuturuuu profile"
   },
   "qr": {
     "image_upload": {

@@ -7,7 +7,9 @@ describe('useMiraMessageQueue', () => {
   it('preserves a queued prompt when the model disconnects before the debounce flush', async () => {
     vi.useFakeTimers();
     try {
-      const createChat = vi.fn(async () => {});
+      const createChat = vi.fn(
+        async (_prompt: string, _current?: () => boolean) => {}
+      );
       const clearAttachedFiles = vi.fn();
       const { result, rerender } = renderHook(
         ({ disabled }) =>
@@ -31,11 +33,19 @@ describe('useMiraMessageQueue', () => {
       expect(clearAttachedFiles).not.toHaveBeenCalled();
       expect(result.current.queuedText).toBe('Keep this prompt');
       await act(async () => rerender({ disabled: false }));
-      expect(createChat).toHaveBeenCalledExactlyOnceWith('Keep this prompt');
+      expect(createChat).toHaveBeenCalledExactlyOnceWith(
+        'Keep this prompt',
+        expect.any(Function),
+        expect.any(Function)
+      );
+      const current = createChat.mock.calls[0]?.[1];
+      expect(current?.()).toBe(true);
       expect(clearAttachedFiles).toHaveBeenCalledOnce();
       expect(result.current.queuedText).toBeNull();
       await act(async () => rerender({ disabled: false }));
       expect(createChat).toHaveBeenCalledOnce();
+      act(() => result.current.resetQueue());
+      expect(current?.()).toBe(false);
     } finally {
       vi.useRealTimers();
     }

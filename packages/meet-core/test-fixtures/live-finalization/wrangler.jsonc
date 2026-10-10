@@ -1,0 +1,21 @@
+{
+  "name": "live-finalization-local-fixture",
+  "main": "worker.ts",
+  "compatibility_date": "2026-06-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "tsconfig": "tsconfig.json",
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "FIXTURE",
+        "class_name": "FinalizationFixture"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["FinalizationFixture"]
+    }
+  ]
+}

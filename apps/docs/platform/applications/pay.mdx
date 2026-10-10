@@ -1,0 +1,39 @@
+---
+title: "Pay"
+description: "Workspace subscription billing, invoice views, seats, and billing return flows."
+updatedAt: '2026-10-08'
+---
+
+Pay (`pay.tuturuuu.com`, `apps/pay`) is the private workspace billing surface.
+It is distinct from Finance's financial records and Inventory/Storefront's
+customer purchases.
+
+## Open billing
+
+The app entry resolves a workspace through its dashboard flow, including
+pending invitations. The workspace destination is `/{wsId}/billing`; the
+provider return flow uses `/{wsId}/billing/success`. Central sign-in and the
+Pay app session establish the actor before billing access is checked.
+
+Billing surfaces can include subscriptions, seats, invoices, and provider
+payment methods according to the configured provider and workspace permissions.
+Use [Commercial controls](/platform/features/commercial-controls) and
+[Account benefits](/platform/features/account-benefits) for entitlement and
+commercial rules. An app directory link does not grant billing administration.
+
+## Read payment evidence correctly
+
+A browser return or success URL is part of navigation. Provider state,
+subscription records, authorized webhook processing, and the application's
+billing reconciliation determine the actual result. Avoid repeating a checkout
+simply because a return view is still loading; inspect the current provider and
+workspace state first.
+
+Billing pages, provider returns, invoices, and payment methods are noindex and
+excluded from public sitemaps. Public pricing/product information belongs on
+Web. See [Search indexing](/platform/features/search-indexing).
+
+[Pay routes](/reference/repository/routes/pay),
+[Finance](/platform/applications/finance), and
+[Storefront](/platform/applications/storefront) explain the separate ownership
+boundaries.

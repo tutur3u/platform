@@ -1,6 +1,7 @@
 import {
   BarChart3,
   CalendarDays,
+  Plus,
   Target,
   TrendingUp,
   Trophy,
@@ -25,6 +26,13 @@ export async function getNavigationLinks({
       title: t('sidebar_tabs.tasks'),
       href: `/${personalOrWsId}/tasks`,
       icon: createElement(UserStar, { className: 'h-4 w-4' }),
+      children: [
+        {
+          title: t('task-plan.title'),
+          href: `/${personalOrWsId}/tasks/new`,
+          icon: createElement(Plus, { className: 'h-4 w-4' }),
+        },
+      ],
       aliases: [
         `/${personalOrWsId}/tasks/*`,
         `/${personalOrWsId}/boards`,
