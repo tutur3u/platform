@@ -7,6 +7,16 @@ vi.mock('cloudflare:workers', () => ({
 }));
 const { RunnerWake } = await import('./wake');
 const notify = () => new Request('https://wake.invalid/', { method: 'POST' });
+const environment: ConstructorParameters<typeof RunnerWake>[1] = {
+  SUPABASE_URL: 'https://database.invalid',
+  SUPABASE_SECRET_KEY: 'disposable-test-key',
+  DEVBOX_CONTROL_INTERNAL_TOKEN: 'disposable-test-token',
+  RUNNER_WAKE: {
+    getByName: () => {
+      throw new Error('Unexpected namespace access');
+    },
+  } as never,
+};
 
 it('counts complete fanout again after duplicate notifications and reconstruction', async () => {
   const send = vi.fn();
@@ -15,7 +25,7 @@ it('counts complete fanout again after duplicate notifications and reconstructio
   const sockets = Array.from({ length: 4096 }, () => ({ send }));
   const context = { getWebSockets: () => sockets, storage: { put, setAlarm } };
   for (let attempt = 0; attempt < 24; attempt++) {
-    const wake = new RunnerWake(context as never, {});
+    const wake = new RunnerWake(context as never, environment);
     expect((await wake.fetch(notify())).status).toBe(204);
   }
   expect(send).toHaveBeenCalledTimes(98_304);
@@ -32,7 +42,7 @@ it('closes failed sockets while continuing notification delivery', async () => {
     {
       getWebSockets: () => Array.from({ length: 128 }, () => ({ send, close })),
     } as never,
-    {}
+    environment
   );
   expect((await wake.fetch(notify())).status).toBe(204);
   expect(send).toHaveBeenCalledTimes(128);
@@ -55,7 +65,7 @@ it('reports a close failure instead of acknowledging incomplete fanout', async (
         { send: later },
       ],
     } as never,
-    {}
+    environment
   );
   await expect(wake.fetch(notify())).rejects.toThrow('close');
   expect(later).not.toHaveBeenCalled();
