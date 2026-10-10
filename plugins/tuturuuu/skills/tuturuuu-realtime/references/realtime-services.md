@@ -163,3 +163,23 @@ registry removal bypasses the active lease check. Keep the twelve-hour renewal a
 twenty-three-hour failure boundaries, and verify them in `registry-heartbeat.test.ts`
 alongside reconstruction, duplicate suppression and invalid-clock removal. This
 clock fence does not replace finite compensation budgets or hosted stop evidence.
+
+## Coordination ingress read budget
+
+Authenticated `/v1/coordinate` requests keep the existing 2 KiB body limit and
+now stop after at most 256 reader calls or five seconds, including empty chunks
+and stalled reads. Deadline equality rejects. Failed reads or parsing return the
+existing invalid-request response before schema dispatch or Durable Object work.
+Cancellation is attempted once without awaiting an unresponsive stream source;
+its failure cannot hide the original read error. Authentication still precedes
+reading. Coordination leases, fingerprints, owner checks and cleanup are unchanged.
+
+`apps/coordination/src/request-body.test.mjs` counts reads and cancellation across
+24 reconstructions, exact deadline boundaries, byte overflow, malformed JSON and
+failed or stalled cancellation. `worker.test.mjs` exercises the real local Worker
+and SQLite coordination contracts. Reader tests use controlled sources and clocks,
+not hosted ingress or billed-operation measurement. The per-request bound does
+not cap request volume, total spending or Durable Object alarms, and does not
+provide an independent durable authenticated stop fence. Applicable account alerts
+and an independent stop remain unverified; no production billing configuration is
+changed by this implementation.

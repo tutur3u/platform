@@ -472,3 +472,23 @@ isolated real Worker/SQLite fixture under
 `apps/meet-realtime/test-fixtures/collaboration-retry`. Verify adapter operation
 counts and retained data in addition to planner decisions; hosted alarm delivery
 and actual Drive saves remain separate acceptance boundaries.
+
+## Coordination ingress read budget
+
+Authenticated `/v1/coordinate` requests keep the existing 2 KiB body limit and
+now stop after at most 256 reader calls or five seconds, including empty chunks
+and stalled reads. Deadline equality rejects. Failed reads or parsing return the
+existing invalid-request response before schema dispatch or Durable Object work.
+Cancellation is attempted once without awaiting an unresponsive stream source;
+its failure cannot hide the original read error. Authentication still precedes
+reading. Coordination leases, fingerprints, owner checks and cleanup are unchanged.
+
+`apps/coordination/src/request-body.test.mjs` counts reads and cancellation across
+24 reconstructions, exact deadline boundaries, byte overflow, malformed JSON and
+failed or stalled cancellation. `worker.test.mjs` exercises the real local Worker
+and SQLite coordination contracts. Reader tests use controlled sources and clocks,
+not hosted ingress or billed-operation measurement. The per-request bound does
+not cap request volume, total spending or Durable Object alarms, and does not
+provide an independent durable authenticated stop fence. Applicable account alerts
+and an independent stop remain unverified; no production billing configuration is
+changed by this implementation.
