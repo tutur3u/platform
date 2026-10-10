@@ -288,3 +288,36 @@ test('Learn problem persistence failures retain the same finite offline bound', 
     f.restore();
   }
 });
+
+test('corrupt durable budgets stop without writes, alarms or provider work', async () => {
+  for (const checkpointRetry of [
+    null,
+    { attempts: -1, nextAt: Date.now(), expiresAt: Date.now() + 120_000 },
+    { attempts: 0, nextAt: Number.NaN, expiresAt: Number.POSITIVE_INFINITY },
+    {
+      attempts: 0,
+      nextAt: Date.now() + 120_001,
+      expiresAt: Date.now() + 120_000,
+    },
+  ]) {
+    const f = fixture();
+    try {
+      f.values.set('metadata', { ...metadata, checkpointRetry });
+      const retained = structuredClone(f.values.get('programming-document'));
+      for (let restart = 0; restart < 10; restart++) await f.room().alarm();
+      assert.deepEqual(f.operations, {
+        reads: 20,
+        writes: 0,
+        alarms: 0,
+        provider: 0,
+      });
+      assert.deepEqual(f.values.get('programming-document'), retained);
+      assert.deepEqual(f.values.get('metadata'), {
+        ...metadata,
+        checkpointRetry,
+      });
+    } finally {
+      f.restore();
+    }
+  }
+});

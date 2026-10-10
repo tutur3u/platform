@@ -457,3 +457,26 @@ identity-route failures from incomplete page responses; neither a retained artif
 nor successful compilation qualifies the candidate. Reproduce the pinned artifact
 through the resource broker before changing runtime behavior. Deployment still
 requires successful validation and separately authorized production promotion.
+
+## Portable offline retry planning
+
+`@tuturuuu/realtime/core/retry-budget` plans finite retry reservations without
+React, framework, request-global or Cloudflare dependencies. Callers inject the
+clock and policy, retain the returned attempt count and fixed expiry across
+reconstruction, and persist a reservation before downstream I/O. Early duplicate
+delivery waits without consuming another attempt. Exhausted, expired or invalid
+persisted state stops; it never silently creates a replacement job.
+
+The programming room uses this core for its existing three-attempt, two-minute,
+30-second offline checkpoint policy. Storage, owner authorization, recovery,
+provider calls and join/expiry races remain in the Worker adapter. Stopping keeps
+unresolved documents; it does not grant viewers recovery access or certify live
+retries, media cleanup or total spending. The pure planner performs no storage or
+network operations and cannot make a failed reservation durable itself.
+
+Regression coverage is `packages/realtime/src/core/retry-budget.test.ts`, the
+counted `apps/meet-realtime/src/collaboration-retry-budget.test.ts`, and the
+isolated real Worker/SQLite fixture under
+`apps/meet-realtime/test-fixtures/collaboration-retry`. Verify adapter operation
+counts and retained data in addition to planner decisions; hosted alarm delivery
+and actual Drive saves remain separate acceptance boundaries.
