@@ -6,6 +6,14 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Private Studio membership facets use only roles returned in the current
+  authorized overview. Combine them with existing search/publication facets,
+  clear every facet together, and key the local state boundary by workspace so
+  navigating between workspaces cannot carry a hidden filter. Do not discover
+  additional membership or change access from a browse control. See the
+  [Studio membership decision](../../../../../apps/docs/platform/features/lettin.mdx)
+  and `studio-membership-filter.test.tsx`.
+
 - Private saved-reference filters should operate only on the current authorized
   projection. Do not recover withdrawn titles from identifiers or historical
   caches. Keep filters ephemeral and reset their component boundary on actor
