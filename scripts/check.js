@@ -20,6 +20,10 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { sourceSizeCheck } = require('./check-source-size.js');
+const {
+  assertCheckCliAllowed,
+  createCheckChildEnvironment,
+} = require('./check-child-temp.js');
 const { publicSeoCheck } = require('./generate-public-seo-routes.js');
 const ROOT_DIR = path.resolve(__dirname, '..');
 const CHECK_QUEUE_ROOT = path.join(os.tmpdir(), 'tuturuuu-bun-check');
@@ -983,9 +987,6 @@ async function acquireCheckQueueLock(options = {}) {
   }
 }
 
-/**
- * Run a single check and capture output
- */
 function runCheck(check, options = {}) {
   return new Promise((resolve) => {
     const startTime = Date.now();
@@ -995,11 +996,7 @@ function runCheck(check, options = {}) {
 
     const proc = spawn(check.command, check.args, {
       cwd: process.cwd(),
-      env: {
-        ...process.env,
-        FORCE_COLOR: '1',
-        CHECK_DETAILS: showDetails ? '1' : '0',
-      },
+      env: createCheckChildEnvironment(showDetails),
     });
     activeCheckProcess = proc;
 
@@ -1344,6 +1341,7 @@ async function main(options = {}) {
 }
 
 if (require.main === module) {
+  assertCheckCliAllowed();
   main()
     .then((exitCode) => {
       process.exit(exitCode);

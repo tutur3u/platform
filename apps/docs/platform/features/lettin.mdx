@@ -1055,3 +1055,31 @@ review, cancel, failed retry, duplicate/pending suppression and context/eligibil
 changes. `server/storage.test.ts` exercises local D1 editor/publisher boundaries,
 workspace eligibility and access revocation. Hosted app-session/browser acceptance
 and exact-head CI remain separate delivery gates.
+
+### Scoped notebook JSON export
+
+The notebook studio offers an explicit JSON document export, using published
+documents by default. The notebook owner may instead export saved private drafts
+after affirmative confirmation; collaborators cannot bulk-export private drafts.
+Unsaved editor changes block export. The server verifies the app-session actor,
+workspace/notebook permissions and chosen scope, then rechecks notebook access
+before returning the file. Published scope also rechecks that the notebook and
+all included entries remain published, rejecting a concurrent unpublish. Actor lifetime and dialog intent fences suppress
+deferred downloads after account departure, closing the dialog or leaving the
+studio. Nothing is exported automatically on opening the dialog.
+
+Format `lettin-notebook`, version one, includes scope, export time, source notebook
+and entry IDs, and validated document fields. Published exports omit unpublished
+entries and filter structured links/relationships to included entry IDs. Exports
+omit actor/workspace IDs, collaboration grants, profiles and saved-reader data.
+They contain artwork URLs rather than image bytes; managed URLs retain their
+existing access and retirement behavior. No import/restore or offline artwork
+availability is implied. Downloaded files are controlled by the person who
+explicitly exports them; original records and publication permissions are unchanged.
+
+Exports are limited to 1,000 entries and 10 MiB. Each document comes from a saved
+server read; this is not an atomic multi-document database snapshot. The active
+draft schema projects known fields, so newly integrated document fields must retain
+export regression coverage. Regression evidence: `notebook-export.test.ts`, export
+route tests and `notebook-export.test.tsx`. Exact app CI and hosted download/account
+switch verification remain separate delivery gates.
