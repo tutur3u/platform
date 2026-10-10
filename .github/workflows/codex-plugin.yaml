@@ -15,6 +15,7 @@ jobs:
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
@@ -36,11 +37,20 @@ jobs:
       - name: Install local MCP test dependency
         run: python3 -m pip install --require-hashes -r plugins/tuturuuu/mcp/requirements.lock
 
-      - name: Test local MCP boundaries and stdio contract
-        run: python3 -m unittest discover -s plugins/tuturuuu/mcp -p 'test_*.py'
+      - parallel:
+          - name: Test local MCP boundaries and stdio contract
+            shell: bash
+            timeout-minutes: 5
+            run: |
+              ulimit -v 1048576
+              python3 -m unittest discover -s plugins/tuturuuu/mcp -p 'test_*.py'
 
-      - name: Test orchestration evidence boundaries
-        run: python3 -m unittest discover -s plugins/tuturuuu/scripts -p 'test_program*.py'
+          - name: Test orchestration evidence boundaries
+            shell: bash
+            timeout-minutes: 5
+            run: |
+              ulimit -v 1048576
+              python3 -m unittest discover -s plugins/tuturuuu/scripts -p 'test_program*.py'
 
       - name: Validate docs navigation JSON
         run: python3 -m json.tool apps/docs/docs.json > /dev/null

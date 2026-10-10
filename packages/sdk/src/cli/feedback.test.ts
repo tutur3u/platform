@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TuturuuuUserClient } from '../platform';
+import type { FlagValue } from './args';
 import {
   feedbackTerminalText,
   runFeedbackCommand,
@@ -98,6 +99,40 @@ describe('feedback private output', () => {
       );
     }
   );
+  it.each([true, false])(
+    'ignores inherited private-body opt-in (json=%s)',
+    async (json) => {
+      const { client, fetch } = clientFor(item);
+      const write = stdout();
+      await runFeedbackCommand({
+        client,
+        flags: Object.create({ 'include-content': true }),
+        json,
+        positionals: ['feedback', 'show', id],
+      });
+      expect(String(write.mock.calls[0]?.[0])).not.toContain(
+        'PRIVATE_BODY_SENTINEL'
+      );
+      expect(fetch).toHaveBeenCalledOnce();
+    }
+  );
+  it('rejects a mismatched detail identity without private output', async () => {
+    const { client, fetch } = clientFor({
+      ...item,
+      id: '12345678-1234-4234-8234-123456789abd',
+    });
+    const write = stdout();
+    await expect(
+      runFeedbackCommand({
+        client,
+        flags: { 'include-content': true },
+        json: true,
+        positionals: ['feedback', 'show', id],
+      })
+    ).rejects.toThrow('feedback_unavailable (503)');
+    expect(write).not.toHaveBeenCalled();
+    expect(fetch).toHaveBeenCalledOnce();
+  });
   it('list returns exactly metadata and one explicit cursor, never private extras', async () => {
     const { client, fetch } = clientFor({
       items: [{ ...item, reporter: 'PRIVATE_REPORTER' }],
@@ -223,7 +258,7 @@ describe('feedback private output', () => {
 });
 
 describe('feedback validation', () => {
-  it.each([
+  it.each<Record<string, FlagValue>>([
     { watch: true },
     { all: true },
     { workspace: 'foreign' },

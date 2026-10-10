@@ -78,6 +78,8 @@ env:
 
 jobs:
   relevance:
+    # Docker-backed E2E setup is inactive until explicitly resumed.
+    if: ${{ false }}
     name: Check E2E relevance
     runs-on: ubuntu-latest
     outputs:
@@ -120,9 +122,10 @@ jobs:
         run: node scripts/ci/e2e-result-plan.js
 
   prepare-e2e-images:
+    # Docker-backed E2E setup is inactive until explicitly resumed.
     name: Prepare E2E image bundle
     needs: relevance
-    if: github.ref != 'refs/heads/production' && needs.relevance.outputs.run_e2e == 'true' && needs.relevance.outputs.run_web == 'true'
+    if: ${{ false }}
     continue-on-error: true
     timeout-minutes: 45
     runs-on: ubuntu-latest
@@ -229,9 +232,10 @@ jobs:
         run: rm -f "$RUNNER_TEMP/turbo-team" "$RUNNER_TEMP/turbo-token"
 
   e2e:
+    # Docker-backed E2E setup is inactive until explicitly resumed.
     name: Playwright E2E (${{ matrix.label }})
     needs: [relevance, prepare-e2e-images]
-    if: ${{ always() && !cancelled() && github.ref != 'refs/heads/production' && needs.relevance.outputs.run_e2e == 'true' && needs.relevance.outputs.run_web == 'true' }}
+    if: ${{ false }}
     timeout-minutes: 45
     runs-on: ubuntu-latest
     permissions:
@@ -435,9 +439,10 @@ jobs:
           key: ${{ matrix.cache_key }}
 
   inventory-storefront-cache-e2e:
+    # Docker-backed E2E setup is inactive until explicitly resumed.
     name: Inventory / Storefront cache contract
     needs: relevance
-    if: github.ref != 'refs/heads/production' && needs.relevance.outputs.run_e2e == 'true' && needs.relevance.outputs.run_inventory == 'true'
+    if: ${{ false }}
     timeout-minutes: 30
     runs-on: ubuntu-latest
     permissions:
@@ -689,7 +694,7 @@ jobs:
   cleanup-e2e-images:
     name: Clean up E2E image bundle
     needs: [relevance, prepare-e2e-images, e2e, migration-e2e]
-    if: ${{ always() && github.ref != 'refs/heads/production' && needs.relevance.outputs.run_e2e == 'true' && needs.relevance.outputs.run_web == 'true' }}
+    if: ${{ false }} # Docker E2E infrastructure is paused.
     timeout-minutes: 10
     runs-on: ubuntu-latest
     permissions:

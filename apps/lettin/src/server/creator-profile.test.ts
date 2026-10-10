@@ -59,3 +59,14 @@ it('fails closed on other errors or malformed banner responses', async () => {
     'Unable to read creator banner'
   );
 });
+it('includes biography but never forwards unexpected private fields', async () => {
+  mocks.read.mockReset();
+  mocks.read.mockResolvedValueOnce({
+    data: { ...identity, bio: 'Public bio', email: 'private@example.com' },
+    error: null,
+  });
+  mocks.read.mockResolvedValueOnce({ data: { banner_url: null }, error: null });
+  const result = await readCreatorIdentity('creator');
+  expect(result?.bio).toBe('Public bio');
+  expect(result).not.toHaveProperty('email');
+});

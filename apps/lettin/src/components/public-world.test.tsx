@@ -60,3 +60,65 @@ it('renders published links and backlinks without relying on private draft field
     await act(() => root.unmount());
   }
 });
+
+it('searches published body text without indexing extra private draft data', async () => {
+  const published = createStarterDraft('Public entry', 'blank', (key) => key);
+  published.content = {
+    type: 'doc',
+    content: [
+      {
+        type: 'paragraph',
+        content: [{ type: 'text', text: 'Visible reader words' }],
+      },
+    ],
+  };
+  const source = {
+    id: 'entry',
+    published,
+    draft: {
+      ...published,
+      content: {
+        type: 'doc',
+        content: [{ type: 'text', text: 'Private hidden words' }],
+      },
+    },
+  };
+  const world: LettinPublicWorld = {
+    id: 'world',
+    creatorId: 'creator',
+    published: createStarterDraft('World', 'blank', (key) => key),
+    entries: [source],
+  };
+  const container = document.createElement('div');
+  document.body.append(container);
+  const root = createRoot(container);
+  try {
+    await act(() => root.render(<PublicWorld world={world} />));
+    const input = container.querySelector('input')!;
+    const search = async (value: string) => {
+      await act(() => {
+        Object.getOwnPropertyDescriptor(
+          HTMLInputElement.prototype,
+          'value'
+        )!.set!.call(input, value);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    };
+    await search('visible reader');
+    expect(container.querySelector('nav')!.textContent).toContain(
+      'Public entry'
+    );
+    await search('private hidden');
+    expect(container.querySelector('nav')!.textContent).not.toContain(
+      'Public entry'
+    );
+    expect(container.textContent).not.toContain('Private hidden words');
+    await search('');
+    expect(container.querySelector('nav')!.textContent).toContain(
+      'Public entry'
+    );
+  } finally {
+    await act(() => root.unmount());
+    container.remove();
+  }
+});

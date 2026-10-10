@@ -1,7 +1,7 @@
 ---
 title: "Event-Driven Architecture"
 description: "Asynchronous, event-driven patterns in Tuturuuu: advantages, drawbacks, and how background work actually runs on Trigger.dev v4"
-updatedAt: "2026-06-21"
+updatedAt: '2026-10-08'
 ---
 
 Event-Driven Architecture (EDA) is a useful lens for the asynchronous,
@@ -21,14 +21,11 @@ tasks.
   code). Treat any capability not shown in real code as illustrative.
 </Note>
 
-<Info>
-  **Active migration.** `apps/web` (Next.js, port `7803`) is being replaced by
-  `apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust, port `7820`).
-  Background-job ownership may shift during this transition — some asynchronous
-  work that runs as a Trigger.dev task today may move into the Rust backend. See
-  [TanStack + Rust Migration](/platform/architecture/tanstack-rust-migration).
-  Nothing in this page is a permanent architectural commitment.
-</Info>
+The maintained runtime is Next.js Web and its satellite apps. Rust
+(`apps/backend`) and TanStack Start (`apps/tanstack-web`) are paused and not in
+use. Docker setup is inactive and the Docker cron runner is retired. Retained
+migration designs describe a possible future, not live traffic or a current
+setup requirement. See the [active runtime map](/build/devops/active-runtime).
 
 ## Overview
 

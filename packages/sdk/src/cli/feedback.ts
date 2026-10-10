@@ -94,7 +94,9 @@ export function validateFeedbackCommand(
     return {
       action: 'show' as const,
       id: positionals[2]!.toLowerCase(),
-      includeContent: flags['include-content'] === true,
+      includeContent:
+        Object.hasOwn(flags, 'include-content') &&
+        flags['include-content'] === true,
     };
   }
   if (positionals.length > 2) throw invalid();

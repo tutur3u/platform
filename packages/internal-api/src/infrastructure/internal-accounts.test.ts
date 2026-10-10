@@ -1,12 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  createInternalEmployee,
   listInternalAccounts,
   resetAccountPassword,
   updateInternalAccount,
 } from './internal-accounts';
 
-function jsonResponse(body: unknown) {
+function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
+    status,
     headers: { 'Content-Type': 'application/json' },
   });
 }
@@ -102,3 +104,60 @@ describe('internal account API helpers', () => {
     );
   });
 });
+
+it('creates an employee with the existing action header and an unchanged password', async () => {
+  const response = {
+    account: { id: 'staff', email: 'staff@tuturuuu.com', displayName: 'Staff' },
+    status: 'created',
+  };
+  const fetchMock = vi.fn().mockResolvedValue(jsonResponse(response, 201));
+  const payload = {
+    email: 'staff@tuturuuu.com',
+    displayName: 'Staff',
+    temporaryPassword: '  safe-password-123  ',
+  };
+  expect(
+    await createInternalEmployee(payload, {
+      baseUrl: 'https://infra.test',
+      fetch: fetchMock as unknown as typeof fetch,
+    })
+  ).toEqual(response);
+  const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+  expect(url).toBe(
+    'https://infra.test/api/v1/infrastructure/internal-accounts/employees'
+  );
+  expect(init.method).toBe('POST');
+  expect(init.cache).toBe('no-store');
+  expect(JSON.parse(init.body as string).temporaryPassword).toBe(
+    payload.temporaryPassword
+  );
+  expect(new Headers(init.headers).get('x-tuturuuu-account-action')).toBe('1');
+});
+
+it.each([
+  'account_creation_outcome_unknown',
+  'employee_provisioning_pending',
+] as const)(
+  'preserves HTTP 202 pending outcome %s without retry',
+  async (code) => {
+    const response = {
+      status: 'pending',
+      code,
+      message: 'Provisioning is pending.',
+    };
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(response, 202));
+    const result = await createInternalEmployee(
+      {
+        email: 'staff@tuturuuu.com',
+        displayName: 'Staff',
+        temporaryPassword: 'safe-password-123',
+      },
+      {
+        baseUrl: 'https://infra.test',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+    expect(result).toEqual(response);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  }
+);

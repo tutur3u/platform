@@ -8,6 +8,7 @@ on:
       - 'packages/utils/src/devbox-control.ts'
       - '.github/workflows/devbox-control-cloudflare.yaml'
       - 'bun.lock'
+      - 'package.json'
       - 'tuturuuu.ts'
   push:
     branches: [main]
@@ -18,6 +19,7 @@ on:
       - 'packages/utils/src/devbox-control.ts'
       - '.github/workflows/devbox-control-cloudflare.yaml'
       - 'bun.lock'
+      - 'package.json'
       - 'tuturuuu.ts'
   workflow_dispatch:
   workflow_call:
@@ -51,10 +53,25 @@ jobs:
         with:
           node-version: 24
       - run: bun install --frozen-lockfile
-      - run: bun x --no-install wrangler types --env-interface DevboxControlEnv apps/devbox-control/worker-configuration.d.ts -c apps/devbox-control/wrangler.jsonc
+      - run: bun x --no-install wrangler types --env-interface DevboxControlEnv worker-configuration.d.ts -c wrangler.jsonc
+        working-directory: apps/devbox-control
       - run: bun x --no-install tsc --project apps/devbox-control/tsconfig.json
-      - run: bun x --no-install vitest run apps/devbox-control/src/worker.test.ts
-      - run: bun x --no-install wrangler deploy --dry-run -c apps/devbox-control/wrangler.jsonc
+      - name: Validate scoped Oxc rules
+        run: bun run lint
+        working-directory: apps/devbox-control
+      - run: bun run test
+        working-directory: apps/devbox-control
+      - name: Verify the source Worker with disposable credentials
+        run: node --test apps/devbox-control/scripts/verify-worker-runtime.mjs
+      - name: Build the Vite-native Worker
+        run: bun run build
+        working-directory: apps/devbox-control
+      - name: Verify the emitted Worker with disposable credentials
+        env:
+          DEVBOX_TEST_CONFIG: ${{ github.workspace }}/apps/devbox-control/dist/worker/wrangler.json
+        run: node --test apps/devbox-control/scripts/verify-worker-runtime.mjs
+      - run: bun x --no-install wrangler deploy --dry-run -c dist/worker/wrangler.json
+        working-directory: apps/devbox-control
   deploy:
     needs: validate
     if: github.ref == 'refs/heads/production'
@@ -76,7 +93,11 @@ jobs:
         with:
           node-version: 24
       - run: bun install --frozen-lockfile
+      - name: Build the Vite-native Worker
+        run: bun run build
+        working-directory: apps/devbox-control
       - name: Require provisioned secrets
+        working-directory: apps/devbox-control
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
           SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
@@ -86,8 +107,9 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare deployment credential'; exit 1; }
           test -n "$SUPABASE_URL" && test -n "$SUPABASE_SECRET_KEY" && test -n "$DEVBOX_CONTROL_INTERNAL_TOKEN" || { echo 'Missing Worker runtime secret'; exit 1; }
           node -e 'const fs = require("node:fs"); const names = ["SUPABASE_URL", "SUPABASE_SECRET_KEY", "DEVBOX_CONTROL_INTERNAL_TOKEN"]; fs.writeFileSync(process.env.RUNNER_TEMP + "/devbox-control-secrets.json", JSON.stringify(Object.fromEntries(names.map((name) => [name, process.env[name]]))), { mode: 0o600 });'
-          bun x --no-install wrangler secret bulk "$RUNNER_TEMP/devbox-control-secrets.json" -c apps/devbox-control/wrangler.jsonc
-      - run: bun x --no-install wrangler deploy -c apps/devbox-control/wrangler.jsonc --message "$GITHUB_SHA"
+          bun x --no-install wrangler secret bulk "$RUNNER_TEMP/devbox-control-secrets.json" -c wrangler.jsonc
+      - run: bun x --no-install wrangler deploy -c dist/worker/wrangler.json --message "$GITHUB_SHA"
+        working-directory: apps/devbox-control
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
       - name: Record successful Cloudflare deployment
