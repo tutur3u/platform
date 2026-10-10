@@ -684,3 +684,15 @@ Context-reset keys must include the control's identity when stateful components
 share a parent. Workspace/notebook IDs alone collide between sibling quick-note
 and Calendar controls. Lettin's Studio browsing regression checks key warnings,
 state retention across section changes and reset on notebook changes.
+
+## Scoped document export
+
+Use explicit publication scope and affirmative owner consent for bulk private
+exports, rather than assuming ordinary collaborator reading permission implies
+private portability consent. Project through the active document schema, omit
+identity/grant metadata, and filter structured references against included IDs.
+Bound entry counts and encoded bytes before large reads, then recheck notebook
+permissions before response. On the client, reuse the server-verified workspace
+actor lifetime and an intent lease to suppress stale downloads after account
+change, dialog closure or unmount. State clearly when URLs rather than asset bytes
+are exported and when saved reads do not form an atomic database snapshot.
