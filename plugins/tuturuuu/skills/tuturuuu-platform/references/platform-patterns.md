@@ -904,3 +904,35 @@ Private previews use local outline navigation. Preserve browser modified-click
 behavior and history state; explain that node-position anchors can move after
 republishing. Cover actual rendered folds, reload fragments, query omission and
 private projection boundaries with document-outline-navigation regressions.
+
+### Scoped notebook copies into Drive
+
+Use the canonical workspace storage client for explicit bounded JSON-copy actions.
+Keep source-export consent separate from unchecked destination-sharing consent,
+unique generic filenames and overwrite disabled. Guard each injected transport
+stage against actor/context changes, including signed PUT and finalization; omit
+progress/XHR paths when they would bypass that guard. Preserve successful, partial
+finalization and uncertain results rather than equating upload with saved metadata.
+The canonical storage client retries a failed signed PUT without Content-Type.
+Fence transport admission to one PUT per explicit action when this copy contract
+forbids retries; a context guard alone does not prevent that fallback.
+No automatic retry or deletion; previously admitted writes may finish, and source
+retirement does not retract separately authorized copies. Keep default downloads
+and their local-only behavior intact. Coverage: notebook-drive-copy and
+notebook-export-drive tests; hosted access acceptance is independent.
+
+
+### Scoped Lettin-to-Drive authentication
+
+Notebook copies use dedicated first-class web upload and finalization endpoints
+under `workspaces/:wsId/lettin/drive-copy`. They accept a verified Lettin app
+session, recheck the expected actor and workspace membership, and require Drive
+management permission. Generic Drive routes retain their existing Drive/Finance
+session audiences. Copy endpoints restrict uploads to non-overwriting, uniquely
+named JSON objects in the Lettin directory, bounded to 10 MiB. Finalization
+rechecks the workspace provider and actual object metadata; a provider change or
+unconfirmed object does not report success. No source permission, publication,
+automatic retry, rollback, or runtime migration is inferred from this boundary.
+Signed-session route fixtures use the production token verifier, with workspace
+and provider adapters isolated. Hosted authorization and upload acceptance remain
+separate gates.

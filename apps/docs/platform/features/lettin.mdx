@@ -1575,3 +1575,57 @@ fragment changes, folded content, query omission, locale/path preservation,
 modified clicks and publication/private boundaries; existing outline/search and
 public-world tests preserve local navigation and published-only selection.
 Exact-head builds and hosted browser acceptance remain separate gates.
+
+### Explicit scoped JSON copies in workspace Drive
+
+Notebook export defaults to the existing local JSON download. Creators can
+explicitly choose the same workspace's Drive and must separately agree to the
+destination's access and independent-copy boundary. Published exports retain
+their existing projection; saved drafts still require notebook ownership and
+the separate unchecked private-source consent. Choosing Drive does not imply
+source consent, and private-source consent does not imply Drive sharing. Closing
+or reopening the export, changing source scope/destination or replacing actor,
+workspace or notebook resets the relevant consent and result state.
+
+The explicit command exports through Lettin's actor-bound source API, then uploads
+one JSON file of at most 10 MiB through the canonical workspace storage client to
+the Lettin directory, with a unique generic filename and overwrite disabled. Drive
+independently enforces actor/workspace permissions, directory rules and quotas.
+Actor/context and dirty/owner eligibility are checked before export and each
+transport stage, including signed upload and finalization. No public URL, source
+grant, source write, publication or background synchronization is created. Copies
+are separately stored snapshots: source retirement, revocation or deletion does
+not delete a previously admitted copy; users manage it through Drive permissions.
+
+Only successful upload and finalization is reported as saved. Failed finalization
+is reported as an uploaded file awaiting indexing; other interrupted upload
+attempts are unconfirmed and may have left a file. There is no automatic retry,
+overwrite, rollback or deletion. Destination consent resets after an attempt,
+requiring another explicit confirmation before retry. Requests admitted before
+a context/permission change may finish; the guard stops subsequent stages and
+stale result display, and cannot retract an already completed storage write.
+
+Regression evidence: `notebook-drive-copy.test.ts` exercises the real canonical
+client with isolated transport responses, size/format limits, unique non-overwrite
+names, permission denial, stage guards and partial finalization.
+`notebook-export-drive.test.tsx` covers explicit separate consents, scope/context
+resets, duplicate/pending fences, dirty/owner changes and truthful copy states.
+Existing export tests preserve the default download. Fixtures perform no hosted
+Drive writes; exact-head builds and authenticated cross-app storage acceptance
+remain separate delivery gates.
+
+
+### Scoped Lettin-to-Drive authentication
+
+Notebook copies use dedicated first-class web upload and finalization endpoints
+under `workspaces/:wsId/lettin/drive-copy`. They accept a verified Lettin app
+session, recheck the expected actor and workspace membership, and require Drive
+management permission. Generic Drive routes retain their existing Drive/Finance
+session audiences. Copy endpoints restrict uploads to non-overwriting, uniquely
+named JSON objects in the Lettin directory, bounded to 10 MiB. Finalization
+rechecks the workspace provider and actual object metadata; a provider change or
+unconfirmed object does not report success. No source permission, publication,
+automatic retry, rollback, or runtime migration is inferred from this boundary.
+Signed-session route fixtures use the production token verifier, with workspace
+and provider adapters isolated. Hosted authorization and upload acceptance remain
+separate gates.
