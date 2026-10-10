@@ -771,3 +771,14 @@ source content or granting source access. Preserve public projection filtering
 so unavailable source references remain omitted. Clear inherited graph references and
 retain the existing same-notebook, artwork and atomic write fences. Test the
 private copy and later published projection independently with real local D1.
+
+## Private document statistics
+
+Derive writing metrics from the current authorized editor buffer without storing
+new fields or enriching public projections. Join adjacent inline text but preserve
+block boundaries; exclude attributes and ignored leaf children. Use Unicode word
+and grapheme segmentation and state the whitespace rule. Label bounded partial
+results and unapplied source-mode exclusions explicitly. Count depth-clipped nodes
+against the same traversal budget so a wide rejected frontier remains bounded. Memoize against the
+content object so metadata edits do not traverse the document again. Lettin's
+writing-statistics model and bilingual DOM regressions cover these boundaries.

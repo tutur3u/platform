@@ -1258,3 +1258,23 @@ workspace fences, and separate editor/publisher permissions.
 `duplicate-entry.test.tsx` covers explicit consent, reopening, failure and both
 language labels. Cross-notebook variants and canonical-context management remain
 outside this same-notebook reference workflow.
+
+## Private writing statistics
+
+The notebook and entry editors show word and character counts for the current
+rich-text body, including unsaved edits. Counts are computed locally and are not
+stored or exposed on public readers, profiles or catalogue cards. Titles,
+descriptions, credits, image metadata and link destinations are excluded.
+Whitespace is excluded from character counts; composed Unicode characters count
+as one character. Words use Unicode word segmentation, so punctuation is not a
+word and Vietnamese space-separated units count separately. These are writing
+statistics, not a reading-time or language-proficiency measure.
+
+Unapplied Markdown source is excluded, with an explicit notice until it is
+applied. Save, discard and publication keep their existing permission and revision
+boundaries. Traversal is bounded to 20,000 attempted nodes, including depth-clipped nodes,
+and depth 25; incomplete counts
+are visibly labeled partial. Regression coverage: `writing-statistics-model.test.ts`
+checks rich-text boundaries, metadata exclusion, Unicode and traversal limits;
+`writing-statistics.test.tsx` checks both languages and changing document buffers;
+`entry-editor.test.tsx` preserves save/discard behavior.
