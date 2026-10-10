@@ -66,11 +66,11 @@ jobs:
           cd apps/web
           bun x --no-install playwright install --with-deps chromium
       - name: Check fixture lifecycle contract
-        run: node --test scripts/ci/mail-profile-runtime.test.mjs
+        run: node --test scripts/ci/mail-profile-runtime.test.mjs scripts/ci/mail-profile-runtime-setup.test.mjs
       - name: Normal setup through the shared resource queue
         run: |
           bun packages/sdk/src/cli/resources-entry.ts status --json
-          bun packages/sdk/src/cli/resources-entry.ts run -- bun setup
+          bun packages/sdk/src/cli/resources-entry.ts run -- node scripts/ci/mail-profile-runtime-setup.mjs
       - name: Run exact profile and independent browser transport contract
         run: |
           bun packages/sdk/src/cli/resources-entry.ts status --json

@@ -553,7 +553,7 @@ project. Do not put those values, `TURBO_TOKEN` or `TURBO_TEAM` into workflow en
 use `vercel pull`. `apps/mail/vercel.json` disables Vercel Git integration.
 
 The dedicated `mail-profile-runtime-contract.yaml` checks out the exact PR head,
-uses normal setup through the resource queue, and runs the unchanged named
+uses frozen normal setup through the resource queue and unchanged named tests:
 Lettin profile upload/save/reload and independent Chromium session transport tests.
 Its exclusive disposable hosted VM owns a complete-schema Supabase project at
 safe local API port 8001, including Auth/REST/Storage, local D1 fixtures and Next apps.
