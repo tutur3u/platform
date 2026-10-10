@@ -57,7 +57,7 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
   },
   {
     name: 'nova',
-    url: 'https://nova.ai.vn',
+    url: 'https://nova.tuturuuu.com',
   },
   {
     name: 'mira',
@@ -65,7 +65,7 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
   },
   {
     name: 'rewise',
-    url: 'https://rewise.me',
+    url: 'https://rewise.tuturuuu.com',
   },
   {
     name: 'tasks',

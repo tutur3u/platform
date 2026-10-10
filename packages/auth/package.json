@@ -17,7 +17,8 @@
     "./cross-app/token-verifier": "./src/cross-app/token-verifier.tsx",
     "./mfa-mobile-approval": "./src/mfa-mobile-approval.ts",
     "./identity-linking": "./src/identity-linking.ts",
-    "./api-keys": "./src/api-keys.ts"
+    "./api-keys": "./src/api-keys.ts",
+    "./app-session-core": "./src/app-session-core.ts"
   },
   "license": "MIT",
   "scripts": {
@@ -30,7 +31,7 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "next": "^16.3.5",
+    "next": "^16.4.0",
     "react": "^19.2.8",
     "zod": "^4.6.2"
   },

@@ -411,7 +411,6 @@ async fn default_permissions(
 }
 
 // --- Pending approval counts (private schema, service-role, count=exact) ---
-
 async fn pending_reports_count(
     contact_data: &contact::ContactDataConfig,
     outbound: &impl OutboundHttpClient,
@@ -422,6 +421,7 @@ async fn pending_reports_count(
         &[
             ("select", "id".to_owned()),
             ("user_ws_id", format!("eq.{ws_id}")),
+            ("group_ws_id", format!("eq.{ws_id}")),
             ("report_approval_status", "eq.PENDING".to_owned()),
         ],
     ) else {

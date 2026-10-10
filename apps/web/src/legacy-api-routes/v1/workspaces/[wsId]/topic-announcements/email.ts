@@ -1,3 +1,11 @@
+import { getContactVerificationStatuses } from '@tuturuuu/users-core/routes/topic-announcements';
+import {
+  hasUnavailableTopicAnnouncementRecipient,
+  isTopicAnnouncementSendingEnabled,
+} from '@/lib/topic-announcement-send-admission';
+
+export { getContactVerificationStatuses } from '@tuturuuu/users-core/routes/topic-announcements';
+
 import {
   type EmailAttachment,
   type EmailAttachmentAuditMetadata,
@@ -93,54 +101,6 @@ export function renderAnnouncementEmail({
   });
 }
 
-export async function getContactVerificationStatuses(
-  sbAdmin: TopicAnnouncementsSupabaseClient,
-  contactIds: string[]
-) {
-  const uniqueIds = [...new Set(contactIds)];
-  const statuses = new Map<
-    string,
-    'linked_confirmed_account' | 'verified' | 'pending' | 'needs_verification'
-  >();
-
-  for (const contactId of uniqueIds) {
-    statuses.set(contactId, 'needs_verification');
-  }
-  if (uniqueIds.length === 0) return statuses;
-
-  const now = new Date().toISOString();
-  const { data: verifications, error } = await sbAdmin
-    .from('topic_announcement_contact_verifications')
-    .select('contact_id,status,expires_at')
-    .in('contact_id', uniqueIds)
-    .in('status', ['pending', 'verified'])
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-
-  for (const row of verifications ?? []) {
-    if (row.status === 'verified') {
-      statuses.set(row.contact_id, 'verified');
-    } else if (
-      statuses.get(row.contact_id) === 'needs_verification' &&
-      row.expires_at > now
-    ) {
-      statuses.set(row.contact_id, 'pending');
-    }
-  }
-
-  for (const contactId of uniqueIds) {
-    const { data, error: rpcError } = await sbAdmin.rpc(
-      'topic_announcement_contact_has_linked_verified_email',
-      { p_contact_id: contactId }
-    );
-    if (rpcError) throw rpcError;
-    if (data) statuses.set(contactId, 'linked_confirmed_account');
-  }
-
-  return statuses;
-}
-
 export async function sendTopicAnnouncement({
   actorUserId,
   announcementId,
@@ -169,12 +129,24 @@ export async function sendTopicAnnouncement({
     return { error: 'ALREADY_SENT', status: 409 };
   }
 
+  if (!(await isTopicAnnouncementSendingEnabled(normalizedWsId))) {
+    return { error: 'TOPIC_ANNOUNCEMENTS_DISABLED', status: 409 };
+  }
+
   const { data: recipientRows, error: recipientsError } = await sbAdmin
     .from('topic_announcement_recipients')
     .select('contact_id, contact:topic_announcement_contacts(*)')
     .eq('announcement_id', announcementId);
 
   if (recipientsError) throw recipientsError;
+  if (
+    hasUnavailableTopicAnnouncementRecipient(
+      recipientRows ?? [],
+      normalizedWsId
+    )
+  ) {
+    return { error: 'RECIPIENTS_UNAVAILABLE', status: 409 };
+  }
 
   const contacts = (recipientRows ?? [])
     .map((row: any) => row.contact)

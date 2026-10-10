@@ -28,6 +28,24 @@ function logoUrl(value: string | undefined) {
   }
 }
 
+/** The future transport envelope and HTML heading must use the same title. */
+export function resolveReportEmailTitle(
+  report: Pick<ReportEmailData, 'title'>,
+  configs: Record<string, string>
+) {
+  const vietnamese = /[ăâđêôơư]|THÁNG/i.test(
+    Object.values(configs).join(' ') + report.title
+  );
+  return (
+    report.title?.trim() ||
+    [configs.REPORT_TITLE_PREFIX, configs.REPORT_TITLE_SUFFIX]
+      .map((part) => part?.trim())
+      .filter(Boolean)
+      .join(' ') ||
+    (vietnamese ? 'Báo cáo học tập' : 'Progress report')
+  );
+}
+
 export function renderReportEmail(
   report: ReportEmailData,
   configs: Record<string, string>
@@ -75,12 +93,7 @@ export function renderReportEmail(
   ) =>
     `<tr><td style="padding:0 0 20px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid ${border};border-radius:24px;background:${background}"><tr><td style="padding:24px">${heading(label)}<div style="font-size:15px;line-height:1.85;overflow-wrap:anywhere">${body}</div></td></tr></table></td></tr>`;
   const logo = logoUrl(configs.BRAND_LOGO_URL);
-  const title =
-    report.title?.trim() ||
-    [configs.REPORT_TITLE_PREFIX, configs.REPORT_TITLE_SUFFIX]
-      .filter(Boolean)
-      .join(' ') ||
-    labels.report;
+  const title = resolveReportEmailTitle(report, configs);
   const contentLabel = configs.REPORT_CONTENT_TEXT?.trim() || labels.content;
   const scoreLabel = configs.REPORT_SCORE_TEXT?.trim() || labels.score;
   const feedbackLabel = configs.REPORT_FEEDBACK_TEXT?.trim() || labels.feedback;

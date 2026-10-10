@@ -19,6 +19,7 @@ import type {
   SESCredentials,
 } from '../types';
 import { BaseEmailProvider } from './base';
+import { sesFailureOutcome, sesResponseOutcome } from './ses-delivery-outcome';
 
 function chunkBase64(value: string) {
   return value.match(/.{1,76}/g)?.join('\r\n') ?? '';
@@ -183,22 +184,27 @@ function buildRawMimeMessage({
 export class SESEmailProvider extends BaseEmailProvider {
   name = 'ses';
   private client: SESClient;
+  private sendClient: SESClient;
 
   constructor(credentials: SESCredentials) {
     super();
-    this.client = new SESClient({
+    const config = {
       region: credentials.region || SES_DEFAULT_REGION,
       credentials: {
         accessKeyId: credentials.accessKeyId,
         secretAccessKey: credentials.secretAccessKey,
       },
-    });
+    };
+    this.client = new SESClient(config);
+    // Quota validation retains its SDK retry policy; sends never retry internally.
+    this.sendClient = new SESClient({ ...config, maxAttempts: 1 });
   }
 
   /**
    * Send an email via AWS SES.
    */
   async send(params: ProviderSendParams): Promise<ProviderSendResult> {
+    let dispatched = false;
     try {
       // Sanitize HTML content
       const sanitizedHtml = await this.sanitizeHtml(params.content.html);
@@ -223,23 +229,8 @@ export class SESEmailProvider extends BaseEmailProvider {
             Data: rawMessage.message,
           },
         });
-        const response = await this.client.send(command);
-        const success = response.$metadata.httpStatusCode === 200;
-
-        if (success) {
-          console.log('[SESEmailProvider] Raw email sent successfully:', {
-            messageId: response.MessageId,
-            to: params.recipients.to,
-            subject: params.content.subject,
-          });
-        }
-
-        return {
-          success,
-          messageId: response.MessageId,
-          httpStatus: response.$metadata.httpStatusCode,
-          rawResponse: response,
-        };
+        dispatched = true;
+        return sesResponseOutcome(await this.sendClient.send(command));
       }
 
       // Build the SES command
@@ -276,63 +267,15 @@ export class SESEmailProvider extends BaseEmailProvider {
         ReplyToAddresses: params.content.replyTo,
       });
 
-      // Send the email
-      const response = await this.client.send(command);
-
-      const success = response.$metadata.httpStatusCode === 200;
-
-      if (success) {
-        console.log('[SESEmailProvider] Email sent successfully:', {
-          messageId: response.MessageId,
-          to: params.recipients.to,
-          subject: params.content.subject,
-        });
-      }
-
-      return {
-        success,
-        messageId: response.MessageId,
-        httpStatus: response.$metadata.httpStatusCode,
-        rawResponse: response,
-      };
+      dispatched = true;
+      return sesResponseOutcome(await this.sendClient.send(command));
     } catch (error) {
-      console.error('[SESEmailProvider] Error sending email:', error);
-
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown SES error';
-
-      // Check for specific SES errors
-      if (error instanceof Error) {
-        if (error.name === 'MessageRejected') {
-          return {
-            success: false,
-            error: `Email rejected: ${errorMessage}`,
-          };
-        }
-        if (error.name === 'MailFromDomainNotVerifiedException') {
-          return {
-            success: false,
-            error: 'Sender domain not verified in SES',
-          };
-        }
-        if (error.name === 'ConfigurationSetDoesNotExistException') {
-          return {
-            success: false,
-            error: 'SES configuration set not found',
-          };
-        }
-        if (error.name === 'AccountSendingPausedException') {
-          return {
-            success: false,
-            error: 'SES account sending is paused',
-          };
-        }
-      }
-
-      return {
-        success: false,
-        error: errorMessage,
-      };
+      const result = sesFailureOutcome(error, dispatched);
+      console.error('[SESEmailProvider] Email dispatch failed', {
+        deliveryOutcome: result.deliveryOutcome,
+        httpStatus: result.httpStatus,
+      });
+      return result;
     }
   }
 

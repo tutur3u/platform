@@ -17,6 +17,8 @@ import {
 import { TutoringQueueQuerySchema } from '@/legacy-api-routes/v1/workspaces/[wsId]/tutoring/shared';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 
+import { unmatchedAbsenceDates } from './absence-credits';
+
 interface Params {
   params: Promise<{ wsId: string }>;
 }
@@ -236,7 +238,7 @@ async function getTutoringData(request: Request, { params }: Params) {
     }
   }
 
-  const reservedCountMap = new Map<string, number>();
+  const reservedDatesMap = new Map<string, string[]>();
   const scheduledFeedbackIds = new Set<string>();
   const completedFeedbackDays = new Map<string, number>();
   for (const row of reservedRows ?? []) {
@@ -245,7 +247,10 @@ async function getTutoringData(request: Request, { params }: Params) {
       row.reason_type === 'ABSENT_RECOVERY' &&
       row.session_date >= absenceCutoff
     )
-      reservedCountMap.set(key, (reservedCountMap.get(key) ?? 0) + 1);
+      reservedDatesMap.set(key, [
+        ...(reservedDatesMap.get(key) ?? []),
+        row.session_date,
+      ]);
     if (row.attendance_status === 'PENDING' && row.source_feedback_id)
       scheduledFeedbackIds.add(row.source_feedback_id);
     if (
@@ -313,10 +318,11 @@ async function getTutoringData(request: Request, { params }: Params) {
     studentId: string,
     key: string
   ): QueueItem | null => {
-    const deficit = Math.max(
-      0,
-      (absenceCountMap.get(key) ?? 0) - (reservedCountMap.get(key) ?? 0)
+    const remainingDates = unmatchedAbsenceDates(
+      missedClassDatesMap.get(key) ?? [],
+      reservedDatesMap.get(key) ?? []
     );
+    const deficit = remainingDates.length;
     const feedback = latestFeedbackMap.get(key);
     const groupName = groupNameMap.get(groupId) ?? 'Unknown group';
     const hasAbsent =
@@ -356,9 +362,7 @@ async function getTutoringData(request: Request, { params }: Params) {
       student_name: studentNameMap.get(studentId) ?? studentId,
       reason_type: reasonType,
       absence_deficit: hasAbsent ? deficit : 0,
-      missed_class_dates: hasAbsent
-        ? (missedClassDatesMap.get(key) ?? []).sort().slice(-deficit)
-        : [],
+      missed_class_dates: hasAbsent ? remainingDates : [],
       feedback_content:
         hasWeak || contentReviewDue ? (feedback?.content ?? '') : '',
       feedback_created_at:

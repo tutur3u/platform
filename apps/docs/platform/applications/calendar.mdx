@@ -1049,9 +1049,9 @@ widget checks require device gesture verification after delivery.
 Day, three-day, and week timelines support smooth two-finger pinch zoom from
 65% to 250%, defaulting to 100%. The fractional time under the pinch stays under
 the fingers; shell-owned Timeline zoom controls offer accessible zoom in, zoom
-out, and reset actions with the same anchored geometry. One-finger scrolling,
-date swipes and snapping, event taps, and long-press creation keep their existing
-behavior. Event timestamps, durations, and all-day/date column widths do not change.
+out, and reset actions with the same anchored geometry. Reduced motion applies
+control zoom and initial time positioning immediately, preserving the time/date anchor.
+One-finger scrolling, date snapping, event taps, timestamps and column widths retain their behavior.
 
 Completed zoom is stored in the existing account/workspace-scoped Calendar cache
 and reused across timeline modes and dates. Workspace/account switches cancel
@@ -1060,8 +1060,8 @@ scope and logout races; unavailable preference storage leaves zoom usable locall
 Month, year, and agenda views retain their existing layout. Shared minimum card
 height remains part of both painting and overlap grouping at every zoom level.
 `calendar_timeline_zoom_test.dart`, `calendar_zoom_lifecycle_test.dart`, and
-`calendar_timeline_zoom_state_test.dart` cover gesture coexistence, focal anchors,
-bounds, accessible controls, and scoped preference restoration.
+`calendar_timeline_zoom_state_test.dart` cover gestures, anchors and scoped restoration;
+`calendar_reduced_motion_test.dart` covers immediate positioning and interrupted animation.
 
 ## Day highlighting, all-day spans and past events
 
@@ -1086,3 +1086,23 @@ interaction, previews and pending optimistic writes remain exceptions. Mobile
 keeps its existing past-event presentation. Regression coverage is
 `calendar_day_identity_test.dart`, `calendar_viewport_test.dart`,
 `all-day-event-layout.test.ts` and `past-event-treatment.test.ts`.
+
+## Mobile selected-view reset
+
+Tapping the selected floating Calendar view item resets its date and scroll
+position without changing the exact view mode. Day and three-day views start at
+today. Week starts at the current week's boundary using the effective first-day
+preference (personal, workspace, then locale); it does not force today into the
+first column. Timed views restore the current-time viewport. Agenda returns to
+today, month to the current month, and year to the current year.
+
+The reset and Today action use Calendar's projected timezone clock for both date
+selection and range loading. Repeated taps while already at today still reset
+scroll position. Reduced-motion settings use immediate scroll positioning.
+Other apps retain the shell's existing scroll-first and section-reset behavior;
+Calendar's existing explicit section reset still restores its default view.
+
+Coverage: `calendar_view_reselect_test.dart` exercises the real Calendar page and
+shared floating shell; `calendar_scroll_reset_test.dart` covers repeated resets,
+week preferences, timezone/year boundaries, reduced motion, and disposal. These
+source checks do not establish native-device or deployed runtime verification.

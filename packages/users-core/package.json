@@ -22,6 +22,7 @@
   "dependencies": {
     "@tuturuuu/apis": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
+    "@tuturuuu/email-service": "workspace:*",
     "@tuturuuu/finance-core": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/inventory-core": "workspace:*",
@@ -31,7 +32,7 @@
     "@tuturuuu/utils": "workspace:*",
     "date-fns": "^4.4.0",
     "dayjs": "^1.11.23",
-    "next": "^16.3.5",
+    "next": "^16.4.0",
     "react": "^19.2.8",
     "server-only": "^0.0.1",
     "zod": "^4.6.2"

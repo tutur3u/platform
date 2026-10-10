@@ -18,26 +18,43 @@ import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
+import 'package:mobile/data/repositories/workspace_secrets_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
+import 'package:mobile/features/assistant/data/assistant_personal_settings_repository.dart';
+import 'package:mobile/features/assistant/data/assistant_preferences.dart';
+import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dart';
+import 'package:mobile/features/assistant/local/assistant_local_preferences.dart';
+import 'package:mobile/features/assistant/view/assistant_page.dart';
+import 'package:mobile/features/assistant/view/assistant_settings_hub.dart';
+import 'package:mobile/features/assistant/widgets/assistant_memory_editor.dart';
+import 'package:mobile/features/assistant/widgets/assistant_personality_field_editor.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
+import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 import 'package:mobile/features/settings/view/offline_module_page.dart';
 import 'package:mobile/features/settings/view/offline_page.dart';
+import 'package:mobile/features/settings/view/product_settings_registry.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
+import 'package:mobile/features/settings/view/settings_route_frame.dart';
+import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/settings/view/settings_workspace_page.dart';
+import 'package:mobile/features/settings/view/settings_workspace_secrets_page.dart';
 import 'package:mobile/features/settings/view/timezone_settings_tile.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
+import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
+import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -51,12 +68,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 import '../../../helpers/helpers.dart';
+import '../../assistant/assistant_personal_settings_harness.dart' as personal;
+import '../../assistant/local/assistant_local_chat_harness.dart';
+import '../../assistant/view/background_reply_harness.dart';
 
 part 'settings_compact_harness.dart';
 part 'settings_hidden_recovery_checks.dart';
 part 'settings_detail_shell_checks.dart';
 part 'settings_product_editor_checks.dart';
 part 'settings_design_checks.dart';
+part 'settings_assistant_shell_checks.dart';
+part 'settings_assistant_entrypoint_checks.dart';
+part 'settings_secrets_shell_checks.dart';
 
 void main() {
   tearDown(() => GoRouter.optionURLReflectsImperativeAPIs = false);
@@ -64,6 +87,9 @@ void main() {
   registerSettingsDetailShellChecks();
   registerProductEditorChecks();
   registerSettingsDesignChecks();
+  registerSettingsAssistantShellChecks();
+  registerSettingsAssistantEntrypointChecks();
+  registerSettingsSecretsShellChecks();
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await supa.Supabase.initialize(

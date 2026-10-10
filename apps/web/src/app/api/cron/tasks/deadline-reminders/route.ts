@@ -252,8 +252,13 @@ async function handleGET(req: NextRequest) {
       // Get workspace-specific intervals or use defaults
       const settings = settingsMap.get(wsId);
       if (settings?.enabled === false) continue;
-      const intervals: string[] =
-        settings?.reminder_intervals || DEFAULT_INTERVALS;
+      const intervals = [
+        ...new Set(
+          (settings?.reminder_intervals || DEFAULT_INTERVALS).map((interval) =>
+            interval === '24h' ? '1d' : interval
+          )
+        ),
+      ];
 
       let taskNotifications = 0;
 
@@ -271,22 +276,32 @@ async function handleGET(req: NextRequest) {
           for (const watcher of watchers) {
             // A changed due date should receive a fresh reminder at its new time.
             const receiptKey = `${interval}:${task.end_date}`;
-            const { data: reminderAlreadySent, error: reminderCheckError } =
-              await sbAdmin.rpc('task_reminder_already_sent', {
-                p_task_id: task.id,
-                p_user_id: watcher.user_id,
-                p_reminder_interval: receiptKey,
-              });
-
-            if (reminderCheckError) {
-              console.error(
-                `Error checking reminder tracking for task ${task.id}:`,
-                reminderCheckError
-              );
-              continue;
+            let reminderAlreadySent = false;
+            let reminderCheckFailed = false;
+            // Older settings may have recorded the equivalent 24h interval.
+            const receiptIntervals =
+              interval === '1d' ? ['1d', '24h'] : [interval];
+            for (const receiptInterval of receiptIntervals) {
+              const { data: alreadySent, error: reminderCheckError } =
+                await sbAdmin.rpc('task_reminder_already_sent', {
+                  p_task_id: task.id,
+                  p_user_id: watcher.user_id,
+                  p_reminder_interval: `${receiptInterval}:${task.end_date}`,
+                });
+              if (reminderCheckError) {
+                console.error(
+                  `Error checking reminder tracking for task ${task.id}:`,
+                  reminderCheckError
+                );
+                reminderCheckFailed = true;
+                break;
+              }
+              if (alreadySent) {
+                reminderAlreadySent = true;
+                break;
+              }
             }
-
-            if (reminderAlreadySent) continue;
+            if (reminderAlreadySent || reminderCheckFailed) continue;
 
             // Build task URL
             const baseUrl =

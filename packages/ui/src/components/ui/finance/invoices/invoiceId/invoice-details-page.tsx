@@ -153,6 +153,7 @@ export default async function InvoiceDetailsPage({
           </div>
 
           <InvoiceCard
+            wsId={wsId}
             lang={locale}
             configs={configs}
             invoice={{

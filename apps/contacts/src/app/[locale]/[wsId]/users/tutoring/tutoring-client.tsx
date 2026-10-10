@@ -9,7 +9,6 @@ import {
 } from '@tanstack/react-query';
 import { CalendarClock, LifeBuoy, Settings2 } from '@tuturuuu/icons';
 import {
-  createTutoringSession,
   listAllWorkspaceUserGroups,
   listTutoringSessions,
   listWorkspaceUserGroupSessions,
@@ -40,11 +39,8 @@ import { TutoringOverview } from './tutoring-overview';
 import { TutoringPolicyCard } from './tutoring-policy-card';
 import { TutoringQueueCard } from './tutoring-queue-card';
 import { TutoringSessionsCard } from './tutoring-sessions-card';
-import {
-  DEFAULT_FORM,
-  findSessionSlotConflicts,
-  type TutoringFormValues,
-} from './tutoring-types';
+import { DEFAULT_FORM, type TutoringFormValues } from './tutoring-types';
+import { useTutoringCreate } from './use-tutoring-create';
 import { oldestMissedDate, useTutoringHandoff } from './use-tutoring-handoff';
 
 interface Props {
@@ -247,58 +243,13 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
     }
   };
 
-  const createMutation = useMutation({
-    mutationFn: async () => {
-      if (
-        !form.groupId ||
-        !form.studentUserId ||
-        form.sessionSlots.length < 1
-      ) {
-        throw new Error(t('missing_required'));
-      }
-
-      for (const slot of form.sessionSlots) {
-        if (!(slot.sessionDate && slot.startTime)) {
-          throw new Error(t('missing_required'));
-        }
-        if (slot.durationMinutes < 1 || slot.durationMinutes > 480) {
-          throw new Error(t('invalid_duration'));
-        }
-      }
-
-      const conflict = findSessionSlotConflicts(form)[0];
-      if (conflict) {
-        const slotA = conflict.firstIndex + 1;
-        const slotB = conflict.secondIndex + 1;
-        throw new Error(
-          conflict.conflictType === 'teacher'
-            ? t('conflict_teacher_slots', { slotA, slotB })
-            : t('conflict_student_slots', { slotA, slotB })
-        );
-      }
-
-      return createTutoringSession(wsId, {
-        content: form.content,
-        groupId: form.groupId,
-        reasonDetail: form.reasonDetail,
-        reasonType: form.reasonType,
-        sessions: form.sessionSlots,
-        sourceFeedbackId: form.sourceFeedbackId ?? null,
-        studentUserId: form.studentUserId,
-      });
-    },
-    onSuccess: ({ createdCount }) => {
-      toast.success(
-        createdCount > 1
-          ? t('created_multiple', { count: createdCount })
-          : t('created')
-      );
+  const createMutation = useTutoringCreate({
+    form,
+    handoff,
+    onSaved: () => {
       setForm(DEFAULT_FORM);
       setCreateDialogOpen(false);
       invalidateTutoring();
-    },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : t('create_failed'));
     },
   });
 
@@ -407,7 +358,7 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
         durationMinutes:
           suggestions[index]?.durationMinutes ?? policy.durationMinutes,
         sessionDate: suggestions[index]?.sessionDate ?? '',
-        startTime: suggestions[index]?.startTime ?? '18:00',
+        startTime: suggestions[index]?.startTime ?? '',
         teacherUserId,
       })),
       sourceFeedbackId: item.source_feedback_id,
@@ -464,7 +415,7 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
         <TabsContent className="space-y-4" value="sessions">
           <TutoringSessionsCard
             actions={{
-              onCreate: () => createMutation.mutate(),
+              onCreate: createMutation.submit,
               onCreateDialogOpenChange: changeDialogOpen,
               onCreateFormChange: changeForm,
               onFiltersChange: (next) => {

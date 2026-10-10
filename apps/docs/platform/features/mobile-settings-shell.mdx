@@ -31,6 +31,21 @@ new keeps its description and installed version without repeating the shell
 heading. Account removal confirmations and queued profile writes are unchanged.
 These defaults apply to both languages, light/dark themes and enlarged text.
 
+Avatar removal in Settings → You captures the authenticated account when its
+confirmation opens. An account switch or logout invalidates that confirmation,
+even if the original account returns before confirmation. Removal uses the
+existing avatar DELETE and offline queue contracts, with the original actor
+bound through queue admission and HTTP dispatch. Denied removals show localized
+media recovery; only an explicit Remove avatar action retries. A confirmed
+removal reloads the profile and persists the returned avatar state. Banner
+upload/removal and storage policy retain their existing contracts.
+
+`profile_avatar_removal_test.dart` covers confirmation lifetime, cleared-avatar
+reload/persistence, and EN/VI recovery. `profile_media_actor_race_test.dart`
+covers queue/cache actor changes and HTTP failures without automatic retry.
+These tests use synthetic actors and storage; authenticated device and real
+storage verification remain separate gates.
+
 Licenses, onboarding replay and explicit admin edit forms intentionally open
 above the shell on the root navigator with their own full-screen chrome. Sheet
 editors retain their existing modal presentation. They never stack a second
@@ -135,6 +150,24 @@ Mail's nested editor uses the shell title, bottom navigation/actions and inherit
 background. A scoped route is cancelled on any account/workspace transition;
 request completion cannot replace an editor opened for another scope.
 
+### Assistant settings layout
+
+Mira quick settings and the central Assistant settings editor retain one branded
+header with the localized Assistant settings title and floating bottom Back
+control. Embedded live preferences, personal settings and local-model settings
+use consistent 16px horizontal gutters; the standalone quick-settings sheet
+keeps its modal padding. The route frame consumes the physical safe area and
+reserves the navigation boundary, while the settings list remains scrollable.
+This applies to English and Vietnamese, including enlarged text. Preference
+writes, memory consent, model selection, downloads and Live calls retain their
+existing semantics.
+
+`assistant_settings_layout_test.dart` covers 320px, 390px and 430px widths at
+normal and 200% text scale, header/safe-area geometry and scrolling the final
+model control above the floating navigation. `assistant_settings_hub_test.dart`
+retains save confirmation and retry coverage. Native acceptance requires an
+authenticated device running the exact CI-built artifact.
+
 ## Native text editing and keyboard dismissal
 
 Across mobile routes and modal forms, editable fields keep their native copy,
@@ -229,3 +262,23 @@ use the same shell and row vocabulary.
 production localization fallback and explicit theme/locale. Widget renders are
 bounded evidence; exact-build device safe-area, keyboard and visual checks remain
 required.
+
+## Handled timezone operational failures
+
+Mobile timezone diagnostics distinguish preference load (`timezoneRead`), API
+write (`timezoneWrite`) and unresolved native timezone after a successful write
+(`timezoneResolve`). A genuine handled HTTP 429 records its status and bounded
+Retry-After bucket once, while preserving the existing cooldown, failed edit and
+explicit retry. A cooldown-blocked tap, logout, closed cubit or superseded ABA
+request does not create an incident. Native lookup that is unnecessary for a
+named preference also creates no incident.
+
+The production Crashlytics boundary follows the fixed-field privacy and bounded
+dedup defaults documented in [mobile chat](/platform/features/mobile-chat#handled-assistant-operational-failures).
+It excludes timezone values and actor/workspace identifiers. Tests can inject a
+sink without Firebase. Sink rejection leaves existing UI failure and retry
+behavior intact. `timezone_operational_reporting_test.dart` exercises genuine
+HTTP 429 responses through the authenticated API client and repository with
+synthetic credentials, separate read/write phases, cooldown/recovery, stale
+requests and sink failure. Native authenticated provider/device evidence remains
+pending; this does not identify the cause of any customer's 429.

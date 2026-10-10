@@ -97,7 +97,7 @@ export async function PUT(request: Request, context: Params) {
     const [existing, configResult] = await Promise.all([
       privateDb
         .from('external_user_monthly_reports_workspace_view')
-        .select('id, generation_mode')
+        .select('id, user_id, group_id, generation_mode')
         .eq('id', reportId)
         .eq('user_ws_id', wsId)
         .maybeSingle(),
@@ -129,7 +129,14 @@ export async function PUT(request: Request, context: Params) {
       parsed.data.title !== undefined ||
       parsed.data.content !== undefined ||
       parsed.data.feedback !== undefined ||
-      parsed.data.generation_status === 'ready';
+      parsed.data.manager_instruction !== undefined ||
+      parsed.data.score !== undefined ||
+      parsed.data.scores !== undefined ||
+      parsed.data.cadence !== undefined ||
+      parsed.data.period_start !== undefined ||
+      parsed.data.period_end !== undefined ||
+      parsed.data.generation_mode !== undefined ||
+      parsed.data.generation_status !== undefined;
     const isAiReport =
       parsed.data.generation_mode === 'ai' ||
       existing.data.generation_mode === 'ai';
@@ -152,7 +159,7 @@ export async function PUT(request: Request, context: Params) {
       });
     }
     let reviewActorId: string | null = null;
-    if (approvalTouched || reviewTransition === 'approved') {
+    if (approvalTouched) {
       const actorAuthUid = await resolveRequestActorAuthUid(request);
       const actorLink = actorAuthUid
         ? await getWorkspaceUserLinkForUser(wsId, actorAuthUid, {
@@ -166,16 +173,6 @@ export async function PUT(request: Request, context: Params) {
         );
       }
       reviewActorId = actorLink.virtual_user_id;
-      if (reviewTransition === 'approved') {
-        Object.assign(updatePayload, {
-          report_approval_status: 'APPROVED',
-          approved_by: reviewActorId,
-          approved_at: new Date().toISOString(),
-          rejected_by: null,
-          rejected_at: null,
-          rejection_reason: null,
-        });
-      }
     }
     if (approvalTouched) {
       if (
@@ -191,7 +188,7 @@ export async function PUT(request: Request, context: Params) {
       if (parsed.data.report_approval_status === 'APPROVED') {
         Object.assign(updatePayload, {
           approved_by: reviewActorId,
-          approved_at: parsed.data.approved_at ?? now,
+          approved_at: now,
           rejected_by: null,
           rejected_at: null,
           rejection_reason: null,
@@ -199,7 +196,7 @@ export async function PUT(request: Request, context: Params) {
       } else if (parsed.data.report_approval_status === 'REJECTED') {
         Object.assign(updatePayload, {
           rejected_by: reviewActorId,
-          rejected_at: parsed.data.rejected_at ?? now,
+          rejected_at: now,
           approved_by: null,
           approved_at: null,
         });
@@ -214,11 +211,48 @@ export async function PUT(request: Request, context: Params) {
       }
     }
 
-    const result = await privateDb
+    const mutation = privateDb
       .from('external_user_monthly_reports')
       .update(updatePayload)
       .eq('id', reportId);
-    if (result.error) throw result.error;
+    if (!approvalTouched) {
+      const { user_id: userId, group_id: groupId } = existing.data;
+      if (
+        existing.data.id !== reportId ||
+        typeof userId !== 'string' ||
+        !userId ||
+        typeof groupId !== 'string' ||
+        !groupId
+      ) {
+        return NextResponse.json(
+          { message: 'Report save was not acknowledged' },
+          { status: 409 }
+        );
+      }
+      const result = await mutation
+        .eq('user_id', userId)
+        .eq('group_id', groupId)
+        .select('id, user_id, group_id');
+      if (result.error) throw result.error;
+      const saved =
+        Array.isArray(result.data) && result.data.length === 1
+          ? result.data[0]
+          : null;
+      if (
+        !saved ||
+        saved.id !== reportId ||
+        saved.user_id !== userId ||
+        saved.group_id !== groupId
+      ) {
+        return NextResponse.json(
+          { message: 'Report save was not acknowledged' },
+          { status: 409 }
+        );
+      }
+    } else {
+      const result = await mutation;
+      if (result.error) throw result.error;
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     if (isReportDeliveryLocked(error))

@@ -13,6 +13,17 @@ import {
   resolveUserGroupRouteWorkspaceId,
 } from '../../../lib/user-groups/route-helpers';
 import {
+  DELIVERY_CATEGORIES,
+  periodicDeliveryCategory,
+} from './report-delivery-category';
+import {
+  collectReportList,
+  MAX_REPORT_LIST_ROWS,
+  ReportListLimitError,
+  sortReportList,
+  summarizeReportList,
+} from './report-list-query';
+import {
   buildPeriodicReportFallbackFilter,
   isMissingReportSearchRpc,
 } from './report-search';
@@ -42,6 +53,7 @@ const CreateReportSchema = z.object({
 
 const ListReportsSchema = z.object({
   stage: z.enum(PERIODIC_REPORT_STAGES).optional(),
+  category: z.enum(DELIVERY_CATEGORIES).optional(),
   generationStatus: z
     .enum(['draft', 'generating', 'ready', 'failed'])
     .optional(),
@@ -51,7 +63,7 @@ const ListReportsSchema = z.object({
   periodStart: z.iso.date().optional(),
   periodEnd: z.iso.date().optional(),
   cadence: z
-    .enum(['weekly', 'monthly', 'quarterly', 'yearly'])
+    .enum(['all', 'weekly', 'monthly', 'quarterly', 'yearly'])
     .default('monthly'),
   deliveryStatus: z
     .enum([
@@ -124,6 +136,9 @@ export async function GET(request: Request, { params }: Params) {
           pendingReview: 0,
           total: 0,
         },
+        categoryCounts: Object.fromEntries(
+          DELIVERY_CATEGORIES.map((category) => [category, 0])
+        ),
         data: [],
         page: parsed.data.page,
         pageSize: parsed.data.pageSize,
@@ -135,9 +150,14 @@ export async function GET(request: Request, { params }: Params) {
     const sbAdmin = await createAdminClient();
     const privateDb = sbAdmin.schema('private');
     const from = (parsed.data.page - 1) * parsed.data.pageSize;
-    const to = from + parsed.data.pageSize - 1;
+
     const sortColumn = getPeriodicReportSortColumn(parsed.data.sortBy);
-    const buildListQuery = (useSmartSearch: boolean) => {
+    const buildListQuery = (
+      useSmartSearch: boolean,
+      offset: number,
+      limit: number,
+      cadence = parsed.data.cadence
+    ) => {
       const fallbackSource = privateDb.from(
         'external_user_monthly_reports_workspace_view'
       );
@@ -157,7 +177,7 @@ export async function GET(request: Request, { params }: Params) {
             )(
               'search_periodic_reports',
               {
-                p_cadence: parsed.data.cadence,
+                p_cadence: cadence,
                 p_group_ids: accessibleGroupIds,
                 p_search: parsed.data.q,
                 p_ws_id: wsId,
@@ -174,10 +194,13 @@ export async function GET(request: Request, { params }: Params) {
         })
         .order('created_at', {
           ascending: parsed.data.sortDirection === 'asc',
+          nullsFirst: false,
         })
-        .range(from, to);
+        .order('id', { ascending: true })
+        .range(offset, offset + limit - 1);
       if (!useSmartSearch) {
-        query = query.eq('user_ws_id', wsId).eq('cadence', parsed.data.cadence);
+        query = query.eq('user_ws_id', wsId);
+        if (cadence !== 'all') query = query.eq('cadence', cadence);
         if (accessibleGroupIds) {
           query = query.in('group_id', accessibleGroupIds);
         }
@@ -207,49 +230,59 @@ export async function GET(request: Request, { params }: Params) {
       return query;
     };
 
-    const stageCountsPromise = privateDb.rpc(
-      'get_periodic_report_stage_counts',
-      {
-        p_ws_id: wsId,
-        p_cadence: parsed.data.cadence,
-        p_group_ids: accessibleGroupIds ?? undefined,
-        p_period_start: parsed.data.periodStart,
-        p_period_end: parsed.data.periodEnd,
-      }
-    );
     const workspacePromise = sbAdmin
       .from('workspaces')
       .select('id, timezone')
       .eq('id', wsId)
       .single();
-    const [initialListResult, workspaceResult, stageCounts] = await Promise.all(
-      [
-        buildListQuery(Boolean(parsed.data.q)),
-        workspacePromise,
-        stageCountsPromise,
-      ]
-    );
-    let listResult = initialListResult;
-    if (
-      listResult.error &&
-      parsed.data.q &&
-      isMissingReportSearchRpc(listResult.error)
-    ) {
-      listResult = await buildListQuery(false);
-    }
-    if (listResult.error) throw listResult.error;
+    const smartSearch = Boolean(parsed.data.q);
+    const collect = async (useSmartSearch: boolean) => {
+      if (!useSmartSearch || parsed.data.cadence !== 'all') {
+        return collectReportList((offset, limit) =>
+          buildListQuery(useSmartSearch, offset, limit)
+        );
+      }
+      // The deployed search RPC accepts one cadence. All uses the same RPC
+      // predicate for every cadence; never replace it with phrase-only search.
+      const cadences = ['weekly', 'monthly', 'quarterly', 'yearly'] as const;
+      const rows: NonNullable<
+        Awaited<ReturnType<typeof buildListQuery>>['data']
+      > = [];
+      for (const cadence of cadences) {
+        rows.push(
+          ...(await collectReportList(
+            (offset, limit) => buildListQuery(true, offset, limit, cadence),
+            MAX_REPORT_LIST_ROWS - rows.length
+          ))
+        );
+      }
+      if (new Set(rows.map((row) => row.id)).size !== rows.length) {
+        throw new Error('Report scope changed. Refresh reports.');
+      }
+      return sortReportList(
+        rows,
+        sortColumn,
+        parsed.data.sortDirection === 'asc'
+      );
+    };
+    const rowsPromise = collect(smartSearch).catch((error: unknown) => {
+      if (smartSearch && isMissingReportSearchRpc(error)) return collect(false);
+      throw error;
+    });
+    const [allRows, workspaceResult] = await Promise.all([
+      rowsPromise,
+      workspacePromise,
+    ]);
     if (workspaceResult.error) throw workspaceResult.error;
-
-    if (stageCounts.error) throw stageCounts.error;
-    const stages = normalizeReportStages(stageCounts.data);
-    const counts = {
-      total: Object.values(stages).reduce((sum, n) => sum + n, 0),
-      draft: stages.draft,
-      pendingReview: stages.pending,
-      approved: stages.approved,
-      blocked: stages.blocked,
-      failed: stages.failed,
-      delivered: stages.sent,
+    const filteredRows = parsed.data.category
+      ? allRows.filter(
+          (row) => periodicDeliveryCategory(row) === parsed.data.category
+        )
+      : allRows;
+    const { counts, categoryCounts } = summarizeReportList(filteredRows);
+    const listResult = {
+      data: filteredRows.slice(from, from + parsed.data.pageSize),
+      count: filteredRows.length,
     };
 
     const reportIds = (listResult.data ?? []).flatMap((row) =>
@@ -280,14 +313,18 @@ export async function GET(request: Request, { params }: Params) {
     }));
 
     return NextResponse.json({
-      counts: { ...counts, stages },
+      counts,
+      categoryCounts,
       data,
       page: parsed.data.page,
       pageSize: parsed.data.pageSize,
-      total: listResult.count ?? 0,
+      total: listResult.count,
       workspace: workspaceResult.data,
     });
   } catch (error) {
+    if (error instanceof ReportListLimitError) {
+      return NextResponse.json({ message: error.message }, { status: 422 });
+    }
     console.error('Error in reports GET:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
@@ -331,19 +368,6 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     const privateDb = sbAdmin.schema('private');
-    const configResult = await sbAdmin
-      .from('workspace_configs')
-      .select('value')
-      .eq('ws_id', wsId)
-      .eq('id', 'ENABLE_REPORT_APPROVAL')
-      .maybeSingle();
-    if (configResult.error) {
-      return NextResponse.json(
-        { message: 'Error resolving report approval settings' },
-        { status: 500 }
-      );
-    }
-
     let existingQuery = privateDb
       .from('external_user_monthly_reports')
       .select('id')
@@ -365,9 +389,6 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     const now = new Date().toISOString();
-    const approvalEnabled = (configResult.data?.value ?? 'true') === 'true';
-    const requiresApproval =
-      approvalEnabled || parsed.data.generation_mode === 'ai';
     const result = await privateDb
       .from('external_user_monthly_reports')
       .insert({
@@ -378,13 +399,7 @@ export async function POST(request: Request, { params }: Params) {
         updated_by: actorLink.virtual_user_id,
         created_at: now,
         updated_at: now,
-        ...(requiresApproval
-          ? {}
-          : {
-              report_approval_status: 'APPROVED' as const,
-              approved_by: actorLink.virtual_user_id,
-              approved_at: now,
-            }),
+        report_approval_status: 'PENDING',
       })
       .select('id')
       .single();
