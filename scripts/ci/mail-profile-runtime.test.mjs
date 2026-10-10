@@ -8,7 +8,9 @@ import {
   PROFILE_TITLE,
   playwrightConfig,
   profilePreflight,
+  safeFixtureFailure,
   stopOwnedChildren,
+  storageProxyFailure,
   TRANSPORT_TITLE,
 } from './mail-profile-runtime.mjs';
 
@@ -215,4 +217,58 @@ test('receipt write failure retains the primary preflight failure without retry'
       error.errors[1] === receipt
   );
   assert.equal(attempts, 1);
+});
+
+test('storage proxy failure preserves headers and ends only unsent responses', () => {
+  for (const headersSent of [false, true]) {
+    const calls = [];
+    const response = {
+      headersSent,
+      writeHead(status) {
+        assert.equal(
+          headersSent,
+          false,
+          'cannot write forwarded headers twice'
+        );
+        calls.push(['writeHead', status]);
+      },
+      end() {
+        calls.push(['end']);
+      },
+      destroy() {
+        calls.push(['destroy']);
+      },
+    };
+    storageProxyFailure(response);
+    assert.deepEqual(
+      calls,
+      headersSent ? [['destroy']] : [['writeHead', 502], ['end']]
+    );
+  }
+});
+
+test('fixture diagnostics classify expected failures without leaking errors', () => {
+  assert.equal(
+    safeFixtureFailure(new Error('Owned command failed (1)')),
+    'owned-command-exit'
+  );
+  assert.equal(
+    safeFixtureFailure(new Error('Owned command exceeded its deadline')),
+    'owned-command-deadline'
+  );
+  assert.equal(
+    safeFixtureFailure(new Error('token=private-value response=private-body')),
+    'unclassified-fixture-failure'
+  );
+  assert.equal(
+    safeFixtureFailure({
+      message: 'Owned cleanup failed',
+      secret: 'private-value',
+    }),
+    'unclassified-fixture-failure'
+  );
+  assert.equal(
+    safeFixtureFailure(new Error('Owned cleanup failed')),
+    'owned-cleanup-failed'
+  );
 });

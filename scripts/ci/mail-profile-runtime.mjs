@@ -319,6 +319,29 @@ async function certificates(directory) {
   return { ca, key, cert, nss };
 }
 
+export function storageProxyFailure(response) {
+  if (response.headersSent) {
+    response.destroy();
+    return;
+  }
+  response.writeHead(502);
+  response.end();
+}
+
+export function safeFixtureFailure(error) {
+  const message = error instanceof Error ? error.message : '';
+  if (/^Owned command failed \((?:\d+|SIG[A-Z]+)\)$/u.test(message))
+    return 'owned-command-exit';
+  const reasons = new Map([
+    ['Owned command exceeded its deadline', 'owned-command-deadline'],
+    ['Owned app readiness deadline exceeded', 'app-readiness-deadline'],
+    ['Full fixture or scoped Supabase stop failed', 'fixture-or-stop-failed'],
+    ['Owned cleanup failed', 'owned-cleanup-failed'],
+    ['Preflight and receipt failed', 'preflight-receipt-failed'],
+  ]);
+  return reasons.get(message) ?? 'unclassified-fixture-failure';
+}
+
 async function storageProxy(tls) {
   const server = https.createServer(
     { key: await fs.readFile(tls.key), cert: await fs.readFile(tls.cert) },
@@ -345,10 +368,7 @@ async function storageProxy(tls) {
         }
       );
       upstream.setTimeout(30000, () => upstream.destroy());
-      upstream.on('error', () => {
-        response.writeHead(502);
-        response.end();
-      });
+      upstream.on('error', () => storageProxyFailure(response));
       request.pipe(upstream);
     }
   );
@@ -410,6 +430,7 @@ export async function main() {
   let proxy;
   let tls;
   let primary = 1;
+  let failureReason;
   let metadata;
   const isolated = await import(
     '../../apps/database/scripts/run-supabase-isolated.js'
@@ -580,6 +601,9 @@ export async function main() {
       indexHash
     );
     primary = 0;
+  } catch (error) {
+    failureReason = safeFixtureFailure(error);
+    throw error;
   } finally {
     if (!appCleanup.attempted) {
       try {
@@ -618,6 +642,9 @@ export async function main() {
       indexHash,
       primary,
       cleanupFailures,
+      failureReason:
+        failureReason ??
+        (cleanupFailures.length ? 'owned-cleanup-failed' : null),
       appStopAttempted: appCleanup.attempted,
       outcome: primary === 0 && cleanupFailures.length === 0 ? 'PASS' : 'FAIL',
       profile: PROFILE_TITLE,
@@ -648,9 +675,10 @@ if (
   process.argv[1] &&
   path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 ) {
-  main().catch(() => {
+  main().catch((error) => {
     console.error(
-      'Mail profile fixture failed; inspect scoped terminal receipt'
+      'Mail profile fixture failed; inspect scoped terminal receipt:',
+      safeFixtureFailure(error)
     );
     process.exitCode = 1;
   });

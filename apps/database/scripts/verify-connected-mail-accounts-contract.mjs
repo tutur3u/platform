@@ -16,7 +16,7 @@ import {
 
 export const connectedMailFixture = 'connected-mail-accounts.sql';
 export const connectedMailMigration =
-  'apps/database/supabase/migrations/20261011002104_connected_mail_accounts.sql';
+  'apps/database/supabase/migrations/20261011002106_connected_mail_accounts.sql';
 export const connectedMailAssertionCount = 10;
 
 export function validateConnectedMailTrackedFiles(trackedFiles) {

@@ -543,7 +543,7 @@ deployment precedes the migration.
 ## CI and deployment
 
 Mail preview and production use `.github/workflows/vercel-preview-mail.yaml`
-and `vercel-production-mail.yaml`, registered in `tuturuuu.ts` through
+and `vercel-production-mail.yaml`, registered in `tuturuuu.ci.ts` through
 `ci-check.yml`. Preview builds prebuilt Vercel CLI artifacts. Production uses
 concurrency to prevent stale deployment; manual dispatch requires `refs/heads/production`.
 Credentials belong to the corresponding `vercel-preview-mail` or
@@ -556,7 +556,7 @@ The dedicated `mail-profile-runtime-contract.yaml` checks out the exact PR head,
 uses normal setup through the resource queue, and runs the unchanged named
 Lettin profile upload/save/reload and independent Chromium session transport tests.
 Its exclusive disposable hosted VM owns a complete-schema Supabase project at
-safe local API8001, including Auth/REST/Storage, local D1 fixtures and Next apps.
+safe local API port 8001, including Auth/REST/Storage, local D1 fixtures and Next apps.
 Storage uses an owned HTTPS proxy and one-day CA trusted by Node/Chromium with
 normal certificate verification and browser sandboxing. No provider credentials,
 raw traces or private CA key are published. Missing/skipped/retried tests and
