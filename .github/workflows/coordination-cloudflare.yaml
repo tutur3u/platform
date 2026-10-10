@@ -49,6 +49,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun x --no-install wrangler types --env-interface CoordinationEnv apps/coordination/worker-configuration.d.ts -c apps/coordination/wrangler.jsonc
       - run: bun x --no-install tsc --project apps/coordination/tsconfig.json
+      - run: node --test apps/coordination/src/request-body.test.mjs
       - run: node --test apps/coordination/src/worker.test.mjs
       - run: bun x --no-install wrangler deploy --dry-run -c apps/coordination/wrangler.jsonc
   deploy:

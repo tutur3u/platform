@@ -628,3 +628,35 @@ articles and retain disabled private-preview defaults. Clear/empty recovery must
 keep heading navigation and enclosing-fold focus behavior. Do not search source
 IDs, omitted content, drafts or unavailable projections, or persist reader queries.
 Coverage: `document-outline-search.test.tsx`.
+
+### Public profile projections
+
+Public profile reads must use explicit query and response allowlists, independent
+of authenticated current-user DTOs. The default visible identity is avatar,
+banner, display name, and biography. Saving or publishing a notebook does not
+consent to sharing other profile details. Owning app surfaces must persist an
+explicit sharing choice, default legacy records to private, and enforce it on
+server reads and metadata. Lettin About sharing is separate from canonical
+account identity; see the profile decisions in the Lettin and user-management
+feature docs and their projection/privacy regression tests.
+
+## Date-only creator planning handoffs
+
+For navigation-only ecosystem integrations, use registered app origins and carry
+only the minimal explicitly chosen navigation value. Validate Gregorian day
+strings without rollover or server timezone conversion; keep notebook IDs and
+private text out of a date-only Calendar handoff. Destination session/workspace
+permissions remain authoritative. Block navigation during unresolved editor
+changes and reset context-local selections together with their owning context.
+See the Lettin Calendar decision and URL/rendered regressions.
+
+## Reviewing collaborator capabilities
+
+Stage owner access changes with immutable member IDs and workspace/notebook
+context. Describe edit/publication capabilities explicitly before confirmation;
+recheck current eligibility and ownership without treating UI checks as authority.
+Cancel sends no command, failure preserves review, and a synchronous submission
+fence prevents duplicate clicks before mutation state rerenders. Reset controls
+on context changes. Recipient acceptance is a distinct workflow; do not claim
+an owner confirmation establishes recipient consent. Lettin's collaborator DOM
+and D1 role/revocation regressions cover these boundaries.

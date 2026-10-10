@@ -15077,6 +15077,10 @@
     "name": "Tên",
     "value": "Giá trị"
   },
+  "public_profile": {
+    "description": "Hồ sơ công khai trên Tuturuuu.",
+    "title": "Hồ sơ Tuturuuu"
+  },
   "qr": {
     "image_upload": {
       "browse": "duyệt tệp",

@@ -153,6 +153,25 @@ not just batched put calls. This finite offline budget does not certify hosted a
 delivery, live lease renewal, independent stop or total account spend. Follow the
 channel reservation verification section in the programming realtime runbook.
 
+## Completed Live finalization receipts
+
+Completed Live finalization must confirm its persisted session receipt and recheck
+current obligations after the read; in-memory completion does not acknowledge a
+failed write. Keep independent registry/room cleanup and incomplete billing/context
+retries. See the counted regressions and operation envelope in
+`apps/docs/build/devops/programming-realtime-runbook.mdx#completed-live-finalization-receipts`.
+
+## Active Live alarm audit
+
+Read the active-session alarm scope in the Meet Live feature page before changing
+its recurring schedule. Pause does not skip tick-level registry, room and billing
+work. Successful registry renewal extends discoverability; the 23-hour outage
+boundary is not a fixed session lifetime. Count public settlement, review expiry,
+room commands, primary settlement/usage, renewal reservations and reconnects
+separately. Source-path inventory is not counted runtime evidence. Require explicit
+recurring lease expiry and durable authenticated Stop/reschedule tests without
+losing quota coverage, privacy discoverability or unresolved obligations.
+
 ## Meet Live compensation after termination
 
 Read the ended-session compensation section in
@@ -176,9 +195,12 @@ not a finite job budget or hosted shutdown guarantee. Keep that limitation visib
 For Live context erasure, count the128-key page ceiling and each deleted archive
 key rather than treating a batch delete as one billed key. Full pages schedule a
 confirmation wake; failed deletion preserves the archive and can retry. Finalization
-also writes session state in its public-settlement and final steps after erasure
-completes. Count duplicate completion writes and require durable completion proof
-before optimizing them away; memory-only flags may follow a failed durable write.
+still writes session state in its public-settlement and final steps when its
+completion receipt is absent or incomplete; erasure alone cannot skip those steps.
+The completed-receipt guard above skips finalization writes only after matching
+durable/current completion and rechecking obligations after the read. Count the
+receipt read and independent registry/room cleanup separately. Memory-only flags
+may follow a failed durable write and must never acknowledge completion.
 
 Public Live billing currently scans the complete saved map. Include quota settlement,
 share completion, usage reporting, per-record writes and the final map write in the
@@ -211,6 +233,15 @@ cleanup marked in flight. Test stalled fetch/body, oversized response, clock
 boundaries and ambiguous completion before accepting a deadline repair. Preserve
 absence confirmation and fail-closed progress persistence; cancellation alone
 cannot establish remote media shutdown.
+Use `sfu-cost.test.ts` for counted actual-client/helper transport fixtures: stalled
+fetch and success/error bodies remain pending after one simulated hour; 1 MiB
+error content is consumed before 300-character display truncation. Two known-mid
+sessions across 24 failed reconstructions produce 48 close and 48 inventory calls,
+zero progress writes and preserved obligations. Failed durable progress replays
+24 acknowledged closes/writes; a saved completion receipt prevents subsequent
+provider calls. A timeout alone can amplify caller retries: pair it with persistent
+finite attempts/age, per-wake operation bounds and durable stop/reschedule fences.
+These tests characterize retained behavior; they do not implement those bounds.
 Controlled helper counts exclude surrounding room storage/alarm operations and
 do not prove hosted SFU shutdown or account-wide billing safety.
 
@@ -224,3 +255,33 @@ registry removal bypasses the active lease check. Keep the twelve-hour renewal a
 twenty-three-hour failure boundaries, and verify them in `registry-heartbeat.test.ts`
 alongside reconstruction, duplicate suppression and invalid-clock removal. This
 clock fence does not replace finite compensation budgets or hosted stop evidence.
+
+## RunnerWake notification fanout
+
+RunnerWake has no alarm retry loop, but each accepted notification enumerates every
+retained socket again. Count send and close attempts separately; duplicate requests
+and object reconstruction do not persist deduplication progress. Keep Worker token
+and runner-auth checks before forwarding. A per-request operation count is not a
+socket-retention, ingress or account-spend cap. See the RunnerWake envelope in the
+GitHub Actions runbook and `apps/devbox-control/src/wake.test.ts` before changing
+fanout, socket leases or authenticated stop behavior.
+
+## Coordination ingress read budget
+
+Authenticated `/v1/coordinate` requests keep the existing 2 KiB body limit and
+now stop after at most 256 reader calls or five seconds, including empty chunks
+and stalled reads. Deadline equality rejects. Failed reads or parsing return the
+existing invalid-request response before schema dispatch or Durable Object work.
+Cancellation is attempted once without awaiting an unresponsive stream source;
+its failure cannot hide the original read error. Authentication still precedes
+reading. Coordination leases, fingerprints, owner checks and cleanup are unchanged.
+
+`apps/coordination/src/request-body.test.mjs` counts reads and cancellation across
+24 reconstructions, exact deadline boundaries, byte overflow, malformed JSON and
+failed or stalled cancellation. `worker.test.mjs` exercises the real local Worker
+and SQLite coordination contracts. Reader tests use controlled sources and clocks,
+not hosted ingress or billed-operation measurement. The per-request bound does
+not cap request volume, total spending or Durable Object alarms, and does not
+provide an independent durable authenticated stop fence. Applicable account alerts
+and an independent stop remain unverified; no production billing configuration is
+changed by this implementation.

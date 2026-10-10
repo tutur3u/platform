@@ -265,8 +265,10 @@ Public catalogues use 24-card pages with server-side search and creator filters;
 Tulletin uses Tuturuuu's canonical `users.display_name`, `avatar_url`, `bio`,
 `handle`, and additive `banner_url` fields. A username is globally reserved in
 `handles`; renaming retains earlier reservations. Existing legacy usernames
-remain readable. Public creator surfaces select only public fields and require
-published notebooks; they never expose email or private account details.
+remain readable. Public creator surfaces require published notebooks and display
+only avatar, banner, display name, and biography by default. Creator names link to
+the platform
+`/u/[username]` profile when a username exists.
 
 `update_public_user_profile` is a service-role-only transaction. The API must
 resolve the authenticated actor before calling it. A conflicting username or
@@ -404,8 +406,15 @@ access to private task or workspace data.
 Canonical identity is available to workspace members. Approved creators with
 `manage_documents` can additionally edit their About profile: creative headline,
 pronouns, location, interests, portfolio links, and rich biography. About data is
-owned by the creator in Lettin D1; public creator pages require a published
-notebook and never select private account fields. Paper is the default palette;
+owned by the creator in Lettin D1 and defaults to private, including existing
+records without a sharing choice. Owners explicitly opt in with Share my About
+profile publicly and save. Turning it off and saving revokes future public reads.
+The opt-in shares the entire About section (headline, pronouns, location,
+interests, links, rich biography, and theme), only on a creator page backed by a
+published notebook. It does not share private workspace data. Private About content is retained for editing and preview.
+Regression coverage: `creator-about-privacy.test.ts` verifies legacy privacy,
+explicit boolean consent, and revocation; `creator-profile.test.ts` verifies the
+public identity allowlist. Paper is the default palette;
 forest, midnight, and rose are alternatives, with clean or editorial typography.
 World and About themes save with their content. Reduced motion respects user
 preference and the saved theme setting.
@@ -983,3 +992,48 @@ access or source ownership. English and Vietnamese controls cover both surfaces.
 Regression coverage: `lettin-task-reference.test.ts`, `task-plan-composer.test.tsx`
 and the Tasks composer page tests cover safe links, explicit sharing and session
 and workspace boundaries.
+
+### Plan creator work in Calendar
+
+The authorized notebook studio lets creators choose a calendar day and explicitly
+open Calendar for the same workspace. Only the day is included in the query;
+notebook and entry identifiers, titles, draft text and profile details are never
+copied. The link uses Calendar's canonical production origin or its registered
+Portless origin in development. No event is created by this action.
+
+Calendar independently authenticates the actor, resolves the workspace and checks
+`manage_calendar`; the link grants no access. Creators plan or create events in
+Calendar through its normal controls. Invalid dates/workspaces/locales produce no
+link. Unsaved studio edits block day selection and navigation until resolved;
+the selected day remains available afterward. Workspace/notebook context changes
+reset the local day selection. This workflow is day navigation, with no calendar
+sync or transfer of source content.
+
+Regression evidence: `calendar-day-url.test.ts` checks exact date-only URLs,
+production/Portless origins, leap days and rejected input; bilingual rendered
+`creator-calendar-plan.test.tsx` covers explicit selection, source-free queries,
+dirty blocking and context resets. Calendar's existing workspace route retains
+its session and permission checks. Exact-head Lettin builds and authenticated
+cross-app browser acceptance remain independent delivery gates.
+
+## Explicit collaborator access review
+
+Notebook owners review the selected member and capabilities before adding or
+changing an editor/publisher role or removing collaborator access. Editors can
+read and edit private drafts; publishers can additionally publish and unpublish
+content. Existing workspace membership, creator eligibility, document permission
+and owner-only server checks still apply. This step is an owner confirmation,
+not a new recipient invitation or acceptance system.
+
+Cancel sends no command. Failed requests retain the selected action for retry,
+and pending submissions suppress duplicates. Staged actions bind the workspace,
+notebook and member ID; changed context, lost owner status or unavailable members
+disable confirmation. Switching notebook/workspace resets the owner controls.
+Removing collaborator access does not remove workspace membership or unpublish
+existing content. The existing server remains authoritative for access.
+
+Regression coverage: `collaborators.test.tsx` covers English/Vietnamese capability
+review, cancel, failed retry, duplicate/pending suppression and context/eligibility
+changes. `server/storage.test.ts` exercises local D1 editor/publisher boundaries,
+workspace eligibility and access revocation. Hosted app-session/browser acceptance
+and exact-head CI remain separate delivery gates.

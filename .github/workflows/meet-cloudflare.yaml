@@ -136,6 +136,10 @@ jobs:
         timeout-minutes: 2
         run: node --test verify.mjs
         working-directory: apps/meet-realtime/test-fixtures/channel-retry
+      - name: Verify completed Live finalization in real SQLite
+        timeout-minutes: 2
+        run: node --test verify.mjs
+        working-directory: packages/meet-core/test-fixtures/live-finalization
       - name: Verify real local Durable Objects and collaboration protocols
         timeout-minutes: 5
         run: bun apps/meet-realtime/tests/local-check.ts
