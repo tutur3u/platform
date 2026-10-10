@@ -1,0 +1,85 @@
+name: Mail profile application runtime contract
+on:
+  pull_request:
+    paths:
+      - "apps/mail/**"
+      - "apps/lettin/**"
+      - "apps/web/src/lib/profile-media*"
+      - "apps/web/src/app/api/v1/users/me/**"
+      - "apps/web/e2e/lettin-wiki.noauth.spec.ts"
+      - "apps/web/e2e/lettin-session-transport.noauth.spec.ts"
+      - "apps/web/e2e/helpers/**"
+      - "apps/database/supabase/**"
+      - "apps/database/scripts/run-supabase*.js"
+      - "packages/auth/**"
+      - "packages/satellite/**"
+      - "packages/storage-core/**"
+      - "packages/supabase/**"
+      - "scripts/ci/mail-profile-runtime*"
+      - "bun.lock"
+      - "tuturuuu.ci.ts"
+      - ".github/workflows/mail-profile-runtime-contract.yaml"
+permissions:
+  contents: read
+concurrency:
+  group: mail-profile-runtime-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  check-ci:
+    permissions:
+      contents: read
+      deployments: read
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: mail-profile-runtime-contract.yaml
+  runtime:
+    needs: check-ci
+    if: always() && needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      PROFILE_EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+      SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
+      TURBO_CONCURRENCY: "2"
+    steps:
+      - name: Require an enabled runtime contract
+        env:
+          CONTRACT_ENABLED: ${{ needs.check-ci.outputs.should_run }}
+        run: test "$CONTRACT_ENABLED" = true
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Install frozen dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Install local certificate tooling and sandboxed Chromium
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3-tools
+          cd apps/web
+          bun x --no-install playwright install --with-deps chromium
+      - name: Check fixture lifecycle contract
+        run: node --test scripts/ci/mail-profile-runtime.test.mjs
+      - name: Normal setup through the shared resource queue
+        run: |
+          bun ttr resources status --json
+          bun ttr resources run -- bun setup
+      - name: Run exact profile and independent browser transport contract
+        run: |
+          bun ttr resources status --json
+          bun ttr resources run -- node scripts/ci/mail-profile-runtime.mjs "$PROFILE_EXPECTED_HEAD"
+      - name: Retain scoped terminal evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: mail-profile-runtime-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/mail-profile-${{ github.run_id }}/terminal.json
+          if-no-files-found: error
+          retention-days: 3

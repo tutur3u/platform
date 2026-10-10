@@ -542,33 +542,30 @@ deployment precedes the migration.
 
 ## CI and deployment
 
-Mail has dedicated Vercel workflows:
+Mail preview and production use `.github/workflows/vercel-preview-mail.yaml`
+and `vercel-production-mail.yaml`, registered in `tuturuuu.ts` through
+`ci-check.yml`. Preview builds prebuilt Vercel CLI artifacts. Production uses
+concurrency to prevent stale deployment; manual dispatch requires `refs/heads/production`.
+Credentials belong to the corresponding `vercel-preview-mail` or
+`vercel-production-mail` GitHub Environment: `VERCEL_TOKEN`, `VERCEL_ORG_ID`,
+and `VERCEL_MAIL_PROJECT_ID`. Keep production Supabase/SES values in the Vercel
+project. Do not put those values, `TURBO_TOKEN` or `TURBO_TEAM` into workflow env;
+use `vercel pull`. `apps/mail/vercel.json` disables Vercel Git integration.
 
-- `.github/workflows/vercel-preview-mail.yaml`
-- `.github/workflows/vercel-production-mail.yaml`
-
-Both workflows are registered in `tuturuuu.ts` and use the shared
-`ci-check.yml` switchboard. They require environment-scoped Vercel credentials
-plus `VERCEL_MAIL_PROJECT_ID`; production Supabase and SES values should live in
-the Vercel project environment rather than GitHub Actions.
-
-The preview workflow builds and deploys prebuilt artifacts through Vercel CLI.
-The production workflow also uses workflow concurrency so stale production runs
-are canceled instead of deploying after a newer production commit is pushed.
-
-Deployment credentials must stay environment-scoped in GitHub Actions. The
-preview job is bound to the `vercel-preview-mail` GitHub Environment, and the
-production job is bound to `vercel-production-mail`. Store `VERCEL_TOKEN`,
-`VERCEL_ORG_ID`, and `VERCEL_MAIL_PROJECT_ID` in those environments instead of
-repository-wide or organization-wide secrets. Do not add `TURBO_TOKEN`,
-`TURBO_TEAM`, production Supabase service keys, or SES credentials to
-workflow-level `env`; Mail deploys should rely on Vercel project environment
-variables pulled by `vercel pull`. Manual production dispatch is only valid from
-`refs/heads/production`.
-
-`apps/mail/vercel.json` disables Vercel Git deployments and GitHub integration
-so preview and production deploys only happen through the CI workflows.
-
+The dedicated `mail-profile-runtime-contract.yaml` checks out the exact PR head,
+uses normal setup through the resource queue, and runs the unchanged named
+Lettin profile upload/save/reload and independent Chromium session transport tests.
+Its exclusive disposable hosted VM owns a complete-schema Supabase project at
+safe local API8001, including Auth/REST/Storage, local D1 fixtures and Next apps.
+Storage uses an owned HTTPS proxy and one-day CA trusted by Node/Chromium with
+normal certificate verification and browser sandboxing. No provider credentials,
+raw traces or private CA key are published. Missing/skipped/retried tests and
+failed cleanup fail the gate. Fixtures delete only their own synthetic IDs/media;
+finally stops only the recorded project and owned app/proxy processes.
+The disabled broad E2E pipeline stays disabled. The terminal artifact records
+source, actual results and cleanup. This proves local profile/session behavior,
+not Cloudflare Worker/provider/production/customer delivery; pgTAP/schema types
+remain separate gates.
 
 ## Mail client navigation and recovery
 
