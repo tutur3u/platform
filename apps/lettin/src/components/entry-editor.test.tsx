@@ -531,3 +531,100 @@ it('blocks staging until all overlapping inline and gallery artwork uploads sett
   expect(restore().disabled).toBe(false);
   expect(mutateAsync).not.toHaveBeenCalled();
 });
+
+it('changes private work progress only through an explicit revision-aware save', async () => {
+  mutateAsync.mockResolvedValueOnce({ id: 'world' });
+  const onDirty = vi.fn();
+  await act(async () =>
+    root.render(
+      <EntryEditor
+        wsId="workspace"
+        worldId="world"
+        record={record}
+        worldRole="owner"
+        isWorld
+        entries={[]}
+        onDirty={onDirty}
+      />
+    )
+  );
+  const control = [...container.querySelectorAll('select')].find((el) =>
+    el.parentElement?.textContent?.includes('workProgressHint')
+  )!;
+  expect(control.value).toBe('unstarted');
+  await act(async () => {
+    control.value = 'ready';
+    control.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  expect(onDirty).toHaveBeenLastCalledWith(true);
+  expect(mutateAsync).not.toHaveBeenCalled();
+  await click('saveDraft');
+  expect(mutateAsync).toHaveBeenCalledTimes(1);
+  expect(mutateAsync.mock.calls[0]?.[0]).toMatchObject({
+    action: 'saveWorld',
+    version: 1,
+    draft: { workProgress: 'ready' },
+  });
+});
+
+it.each([
+  [true, undefined],
+  [false, undefined],
+  [true, 'ready'],
+  [false, 'ready'],
+] as const)(
+  'retains current private progress when restoring authored content (notebook=%s, historical=%s)',
+  async (isWorld, historicalProgress) => {
+    const published = {
+      ...record.draft,
+      title: 'Published authored text',
+      workProgress: historicalProgress,
+    };
+    const initial = {
+      ...record,
+      published,
+      published_at: '2026-10-10',
+      draft: {
+        ...record.draft,
+        title: 'Private changed text',
+        workProgress: 'revising' as const,
+        contentNotice: 'Private changed notice',
+      },
+    };
+    const onDirty = vi.fn();
+    await act(() =>
+      root.render(
+        <EntryEditor
+          wsId="workspace"
+          worldId="world"
+          record={initial}
+          worldRole="owner"
+          isWorld={isWorld}
+          entries={[]}
+          onDirty={onDirty}
+        />
+      )
+    );
+    await click('stagePublishedDraft');
+    expect(mutateAsync).not.toHaveBeenCalled();
+    expect(onDirty).toHaveBeenLastCalledWith(true);
+    expect(container.querySelector('input')?.value).toBe(
+      'Published authored text'
+    );
+    const progress = [...container.querySelectorAll('select')].find((el) =>
+      el.parentElement?.textContent?.includes('workProgressHint')
+    )!;
+    expect(progress.value).toBe('revising');
+    mutateAsync.mockResolvedValueOnce({ id: 'world' });
+    await click('saveDraft');
+    expect(mutateAsync).toHaveBeenCalledOnce();
+    expect(mutateAsync.mock.calls[0]![0]).toMatchObject({
+      action: isWorld ? 'saveWorld' : 'saveEntry',
+      version: 1,
+      draft: { title: 'Published authored text', workProgress: 'revising' },
+    });
+    expect(mutateAsync.mock.calls[0]![0].draft).not.toHaveProperty(
+      'contentNotice'
+    );
+  }
+);
