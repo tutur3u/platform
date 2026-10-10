@@ -1,0 +1,13 @@
+{
+  "name": "collaboration-retry-isolated-fixture",
+  "main": "worker.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "tsconfig": "tsconfig.json",
+  "durable_objects": {
+    "bindings": [{ "name": "RETRY_FIXTURE", "class_name": "RetryFixture" }]
+  },
+  "migrations": [
+    { "tag": "fixture-v1", "new_sqlite_classes": ["RetryFixture"] }
+  ]
+}

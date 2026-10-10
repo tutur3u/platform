@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { answerSections, sectionTitle } from './answer-sections';
 
 describe('readable agent deliverables', () => {

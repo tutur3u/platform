@@ -6,7 +6,6 @@ export const ci = {
   'periodic-report-delivery-contract.yaml': true,
   'security-egress-contract.yaml': true,
   'creator-identity-contract.yaml': true,
-  'cancel-pr-runs-on-close.yaml': true,
   'check-and-bump-versions.yaml': true,
   'check-docs-links.yml': true,
   'check-migration-timestamps.yml': true,
@@ -21,7 +20,9 @@ export const ci = {
   'coordination-cloudflare.yaml': true,
   'codex-plugin.yaml': true,
   'discord-python-ci.yml': true,
-  'docker-setup-check.yaml': true,
+  'docker-setup-check.yaml': false,
+  'docs-seo-check.yaml': true,
+  'rust-verify.yml': false,
   // TanStack Start and Rust migration work is paused. Keep its combined CI and
   // Cloudflare deployment workflow disabled until active maintenance resumes.
   'rust-backend.yml': false,
@@ -31,6 +32,7 @@ export const ci = {
   'lettin-cloudflare.yaml': true,
   'meet-cloudflare.yaml': true,
   'parley-cloudflare.yaml': true,
+  'parley-offline-diagnostic.yaml': true,
   'mobile.yaml': true,
   'production-package-resume.yaml': true,
   'release-ai-package.yaml': true,

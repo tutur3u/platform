@@ -31,6 +31,11 @@ import {
   RequestBodySchema,
   renderEmailTemplate,
 } from '@/lib/notifications/immediate-helpers';
+import {
+  ImmediateRequestTimeoutError,
+  ImmediateRequestTooLargeError,
+  readImmediateRequestBody,
+} from '@/lib/notifications/immediate-request-body';
 import { getMailPushSkipReason } from '@/lib/notifications/mail-push';
 import { sendPushNotificationBatch } from '@/lib/notifications/push-delivery';
 export async function POST(req: NextRequest) {
@@ -50,7 +55,21 @@ export async function POST(req: NextRequest) {
 
     let batchIds: string[] = [];
 
-    const bodyText = await req.text();
+    let bodyText: string;
+    try {
+      bodyText = await readImmediateRequestBody(req);
+    } catch (error) {
+      if (error instanceof ImmediateRequestTimeoutError) {
+        return NextResponse.json({ error: 'Request timeout' }, { status: 408 });
+      }
+      if (error instanceof ImmediateRequestTooLargeError) {
+        return NextResponse.json(
+          { error: 'Payload too large' },
+          { status: 413 }
+        );
+      }
+      throw error;
+    }
     if (bodyText) {
       let parsedBody: unknown;
       try {
@@ -218,6 +237,7 @@ export async function POST(req: NextRequest) {
             mailSkipReason ??
             (await getNotificationSkipReason(sbAdmin, {
               blockedEmailCache,
+              channel: batch.channel,
               membershipCache,
               notification: logNotification,
             }));
@@ -333,6 +353,7 @@ export async function POST(req: NextRequest) {
 
           const preSendSkipReason = await getNotificationSkipReason(sbAdmin, {
             blockedEmailCache,
+            channel: batch.channel,
             membershipCache,
             notification: deliverableNotification,
             recipientEmail: userEmail || null,

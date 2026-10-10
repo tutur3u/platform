@@ -1,10 +1,16 @@
-import { randomUUID } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EmployeeManagementError } from './employee-restoration-boundary';
 import {
   type EmployeeRestorationAuthorizer,
   makeEmployeeRestorationHandlers,
 } from './employee-restoration-http';
+import {
+  body,
+  context,
+  pending,
+  request,
+  response,
+} from './employee-restoration-http-test-harness';
 import {
   ack,
   actor,
@@ -21,17 +27,11 @@ import {
   restoredReceipt,
 } from './employee-restoration-test-fixture';
 
-import {
-  body,
-  context,
-  pending,
-  request,
-  response,
-} from './employee-restoration-http-test-harness';
-
 vi.mock('server-only', () => ({}));
-vi.mock('node:crypto', () => ({ randomUUID: vi.fn() }));
 let f: ReturnType<typeof makeFixture>;
+function beginOperationId() {
+  return f.operations.begin.mock.calls[0]?.[0].operationId ?? op;
+}
 let authorize: ReturnType<typeof vi.fn<EmployeeRestorationAuthorizer>>;
 let handlers: ReturnType<typeof makeEmployeeRestorationHandlers>;
 let logs: ReturnType<typeof vi.spyOn>[];
@@ -40,17 +40,14 @@ function noEffects() {
   expect(f.updateUserById).not.toHaveBeenCalled();
   for (const callback of Object.values(f.operations))
     expect(callback).not.toHaveBeenCalled();
-  expect(randomUUID).not.toHaveBeenCalled();
 }
 function noRelaunch() {
   expect(f.operations.begin).not.toHaveBeenCalled();
   expect(f.operations.markAttempt).not.toHaveBeenCalled();
   expect(f.operations.confirm).not.toHaveBeenCalled();
   expect(f.updateUserById).not.toHaveBeenCalled();
-  expect(randomUUID).not.toHaveBeenCalled();
 }
 beforeEach(() => {
-  vi.mocked(randomUUID).mockReset().mockReturnValue(op);
   vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-08'));
   logs = [
     vi.spyOn(console, 'log'),
@@ -87,7 +84,7 @@ describe('actual restoration orchestration through HTTP', () => {
       {
         status: 'restored',
         account: { id, email, displayName: 'Fixture' },
-        operationId: op,
+        operationId: beginOperationId(),
         revision: 8,
       }
     );
@@ -106,14 +103,13 @@ describe('actual restoration orchestration through HTTP', () => {
       targetUserId: id,
       email,
       expectedRevision: 7,
-      operationId: op,
+      operationId: beginOperationId(),
     };
     for (const step of ['begin', 'markAttempt', 'confirm'] as const)
       expect(f.operations[step]).toHaveBeenCalledExactlyOnceWith(tuple);
     expect(f.updateUserById).toHaveBeenCalledExactlyOnceWith(id, {
       ban_duration: 'none',
     });
-    expect(randomUUID).toHaveBeenCalledTimes(1);
     expect(f.operations.reconcile).not.toHaveBeenCalled();
   });
   it('accepts explicit native absent Origin/site without normalizing the tuple', async () => {
@@ -138,14 +134,17 @@ describe('actual restoration orchestration through HTTP', () => {
       400
     );
     expect(f.operations.begin).not.toHaveBeenCalled();
-    expect(randomUUID).not.toHaveBeenCalled();
     expect(f.updateUserById).not.toHaveBeenCalled();
   });
   it('freshly authorizes each request and passes only its current actor', async () => {
     await response(await handlers.restore(request(), context()), 200);
+    const firstOperationId = beginOperationId();
     f = makeFixture();
     f.administrator.id = otherOp;
-    f.getUserById.mockImplementation(async function (target) {
+    f.getUserById.mockImplementation(async function (
+      this: typeof f.provider,
+      target
+    ) {
       expect(this).toBe(f.provider);
       return readReply(
         target === otherOp
@@ -164,6 +163,7 @@ describe('actual restoration orchestration through HTTP', () => {
       },
     });
     await response(await handlers.restore(request(), context()), 200);
+    expect(beginOperationId()).not.toBe(firstOperationId);
     expect(authorize).toHaveBeenCalledTimes(2);
     expect(f.getUserById.mock.calls[0]).toEqual([otherOp]);
     expect(f.operations.begin.mock.calls[0]?.[0].actorUserId).toBe(otherOp);
@@ -198,7 +198,7 @@ describe('actual restoration orchestration through HTTP', () => {
       );
       expect(
         await response(await handlers.restore(request(), context()), 202)
-      ).toEqual(pending());
+      ).toEqual(pending(true, beginOperationId()));
       expect(f.operations[stage]).toHaveBeenCalledTimes(1);
       expect(f.updateUserById).toHaveBeenCalledTimes(
         stage === 'confirm' ? 1 : 0
@@ -215,7 +215,7 @@ describe('actual restoration orchestration through HTTP', () => {
       f.operations.begin.mockResolvedValue(value);
       expect(
         await response(await handlers.restore(request(), context()), 202)
-      ).toEqual(pending());
+      ).toEqual(pending(true, beginOperationId()));
       expect(f.updateUserById).not.toHaveBeenCalled();
       expect(f.operations.markAttempt).not.toHaveBeenCalled();
     }
@@ -224,7 +224,7 @@ describe('actual restoration orchestration through HTTP', () => {
     f.updateUserById.mockResolvedValue(providerError());
     expect(
       await response(await handlers.restore(request(), context()), 202)
-    ).toEqual(pending());
+    ).toEqual(pending(true, beginOperationId()));
     expect(f.updateUserById).toHaveBeenCalledTimes(1);
     expect(f.operations.confirm).not.toHaveBeenCalled();
   });
@@ -236,44 +236,33 @@ describe('actual restoration orchestration through HTTP', () => {
     });
     expect(
       await response(await handlers.restore(request(), context()), 202)
-    ).toEqual(pending(false));
+    ).toEqual(pending(false, beginOperationId()));
     expect(f.updateUserById).toHaveBeenCalledTimes(1);
     expect(f.operations.confirm).not.toHaveBeenCalled();
   });
   it('R1 getter receipt and mismatched name remain pending after one write', async () => {
-    for (const value of [
-      Object.defineProperty(
-        restoredReceipt({
-          actorUserId: actor,
-          targetUserId: id,
-          email,
-          expectedRevision: 0,
-          operationId: op,
-        }),
-        'revision',
-        {
-          get() {
-            throw Error('synthetic private receipt getter');
-          },
-        }
-      ),
-      {
-        ...restoredReceipt({
-          actorUserId: actor,
-          targetUserId: id,
-          email,
-          expectedRevision: 0,
-          operationId: op,
-        }),
-        displayName: 'Wrong',
-      },
-    ]) {
+    for (const fault of ['getter', 'name'] as const) {
       f = makeFixture();
-      f.operations.confirm.mockResolvedValue(ack(value));
+      f.operations.confirm.mockImplementation(async function (
+        this: typeof f.operations,
+        input
+      ) {
+        expect(this).toBe(f.operations);
+        const value = restoredReceipt(input);
+        if (fault === 'getter')
+          Object.defineProperty(value, 'revision', {
+            get() {
+              throw Error('synthetic private receipt getter');
+            },
+          });
+        else value.displayName = 'Wrong';
+        return ack(value);
+      });
       expect(
         await response(await handlers.restore(request(), context()), 202)
-      ).toEqual(pending());
+      ).toEqual(pending(true, beginOperationId()));
       expect(f.updateUserById).toHaveBeenCalledTimes(1);
+      expect(f.operations.confirm).toHaveBeenCalledTimes(1);
     }
   });
 });

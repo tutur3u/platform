@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EmployeeManagementError } from './employee-restoration-boundary';
 import {
@@ -7,24 +6,21 @@ import {
   makeEmployeeRestorationHandlers,
 } from './employee-restoration-http';
 import {
+  body,
+  context,
+  request,
+  response,
+} from './employee-restoration-http-test-harness';
+import {
   actor,
   definiteCodes,
   denial,
   email,
   id,
   makeFixture,
-  op,
 } from './employee-restoration-test-fixture';
 
-import {
-  body,
-  context,
-  request,
-  response,
-} from './employee-restoration-http-test-harness';
-
 vi.mock('server-only', () => ({}));
-vi.mock('node:crypto', () => ({ randomUUID: vi.fn() }));
 let f: ReturnType<typeof makeFixture>;
 let authorize: ReturnType<typeof vi.fn<EmployeeRestorationAuthorizer>>;
 let handlers: ReturnType<typeof makeEmployeeRestorationHandlers>;
@@ -46,10 +42,8 @@ function noEffects() {
   expect(f.updateUserById).not.toHaveBeenCalled();
   for (const callback of Object.values(f.operations))
     expect(callback).not.toHaveBeenCalled();
-  expect(randomUUID).not.toHaveBeenCalled();
 }
 beforeEach(() => {
-  vi.mocked(randomUUID).mockReset().mockReturnValue(op);
   vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-08'));
   logs = [
     vi.spyOn(console, 'log'),

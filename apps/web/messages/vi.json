@@ -5258,6 +5258,7 @@
     "project_name": "Tên dự án",
     "projects": "Dự án",
     "public_document": "Tài liệu công khai",
+    "public_profile": "Hồ sơ công khai",
     "published": "Đã xuất bản",
     "purple": "Tím",
     "qr_code": "Mã QR",
@@ -11559,6 +11560,7 @@
     "types": {
       "account_update": "Cập nhật tài khoản",
       "deadline_reminder": "Nhắc nhở hạn chót",
+      "mail_received": "Nhận được thư",
       "security_alert": "Cảnh báo bảo mật",
       "system_announcement": "Thông báo hệ thống",
       "task_assigned": "Nhiệm vụ được giao",
@@ -15075,6 +15077,10 @@
     "id": "Mã số",
     "name": "Tên",
     "value": "Giá trị"
+  },
+  "public_profile": {
+    "description": "Hồ sơ công khai trên Tuturuuu.",
+    "title": "Hồ sơ Tuturuuu"
   },
   "qr": {
     "image_upload": {

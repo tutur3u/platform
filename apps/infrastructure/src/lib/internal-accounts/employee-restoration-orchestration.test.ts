@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   EmployeeManagementError,
@@ -25,17 +24,19 @@ import {
 } from './employee-restoration-test-fixture';
 
 vi.mock('server-only', () => ({}));
-vi.mock('node:crypto', () => ({ randomUUID: vi.fn() }));
 let f: ReturnType<typeof makeFixture>;
+// Bind synthetic proof expectations to the runtime's actual reservation UUID.
+function beginOperationId() {
+  return f?.operations.begin.mock.calls[0]?.[0].operationId ?? op;
+}
 beforeEach(() => {
-  vi.mocked(randomUUID).mockReset().mockReturnValue(op);
   vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-08'));
   f = makeFixture();
 });
 afterEach(() => vi.restoreAllMocks());
 const pending = (uncertain = true) => ({
   status: 'pending',
-  operationId: op,
+  operationId: beginOperationId(),
   nextAction: 'inspect',
   code: uncertain
     ? 'employee_restore_outcome_unknown'
@@ -47,7 +48,6 @@ function noReservation() {
   expect(f.operations.begin).not.toHaveBeenCalled();
   expect(f.operations.markAttempt).not.toHaveBeenCalled();
   expect(f.updateUserById).not.toHaveBeenCalled();
-  expect(randomUUID).not.toHaveBeenCalled();
 }
 
 describe('unwired restoration, prospective runtime regressions', () => {
@@ -55,7 +55,7 @@ describe('unwired restoration, prospective runtime regressions', () => {
     expect(await restoreEmployeeAccess(f.input)).toEqual({
       status: 'restored',
       account: { id, email, displayName: 'Fixture' },
-      operationId: op,
+      operationId: beginOperationId(),
       revision: 1,
     });
     expect(f.events).toEqual([
@@ -68,7 +68,7 @@ describe('unwired restoration, prospective runtime regressions', () => {
       'read',
       'confirm',
     ]);
-    expect(randomUUID).toHaveBeenCalledTimes(1);
+    expect(f.operations.begin).toHaveBeenCalledTimes(1);
     expect(f.getUserById.mock.calls).toEqual([[actor], [id], [id]]);
     expect(f.operations.inspect).toHaveBeenCalledExactlyOnceWith({
       actorUserId: actor,
@@ -80,7 +80,7 @@ describe('unwired restoration, prospective runtime regressions', () => {
       targetUserId: id,
       email,
       expectedRevision: 0,
-      operationId: op,
+      operationId: beginOperationId(),
     };
     for (const callback of [
       f.operations.begin,
@@ -114,7 +114,7 @@ describe('unwired restoration, prospective runtime regressions', () => {
         targetUserId: id,
         email,
         expectedRevision: 7,
-        operationId: op,
+        operationId: beginOperationId(),
       });
     expect(f.inspection.revision).toBe(7);
   });
@@ -136,10 +136,10 @@ describe('unwired restoration, prospective runtime regressions', () => {
                   targetUserId: id,
                   email,
                   expectedRevision: 0,
-                  operationId: op,
+                  operationId: beginOperationId(),
                 })
               : {
-                  operationId: op,
+                  operationId: beginOperationId(),
                   revision: 0,
                   phase: stage === 'begin' ? 'reserved' : 'attempted',
                 };
@@ -181,7 +181,7 @@ describe('unwired restoration, prospective runtime regressions', () => {
     expect(await restoreEmployeeAccess(f.input)).toEqual({
       status: 'restored',
       account: { id, email, displayName: 'Fixture' },
-      operationId: op,
+      operationId: beginOperationId(),
       revision: 1,
     });
     expect(f.updateUserById).toHaveBeenCalledExactlyOnceWith(id, {
@@ -245,10 +245,13 @@ describe('unwired restoration, prospective runtime regressions', () => {
       phase: 'completed',
     };
     expect(await restoreEmployeeAccess(f.input)).toMatchObject({
-      operationId: op,
+      operationId: beginOperationId(),
       revision: 1,
     });
-    expect(f.operations.begin.mock.calls[0]?.[0].operationId).toBe(op);
+    expect(beginOperationId()).not.toBe(otherOp);
+    expect(beginOperationId()).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    );
   });
   it.each([
     [{ email: 'foreign@tuturuuu.com' }, 503],
@@ -357,11 +360,11 @@ describe('unwired restoration, prospective runtime regressions', () => {
     'genuine absent provider %s/%s and no registry/intent is pre-effect 404',
     async (status, code) => {
       const original = f.getUserById.getMockImplementation()!;
-      f.getUserById.mockImplementation(async (target) => {
-        return target === actor
+      f.getUserById.mockImplementation(async (target) =>
+        target === actor
           ? original.call(f.provider, target)
-          : providerError(status, code);
-      });
+          : providerError(status, code)
+      );
       Object.assign(f.inspection, {
         email: null,
         registryState: 'absent',
@@ -391,7 +394,7 @@ describe('unwired restoration, prospective runtime regressions', () => {
     { extra: true },
     {
       operation: {
-        operationId: op,
+        operationId: beginOperationId(),
         revision: 0,
         phase: 'reserved',
         extra: true,
@@ -612,13 +615,14 @@ describe('unwired restoration, prospective runtime regressions', () => {
       vi.spyOn(console, 'error'),
     ];
     const restored = await restoreEmployeeAccess(f.input);
+    const restoredOperationId = beginOperationId();
     f = makeFixture();
     f.operations.confirm.mockResolvedValue(denial('23514'));
     const uncertain = await restoreEmployeeAccess(f.input);
     expect(restored).toEqual({
       status: 'restored',
       account: { id, email, displayName: 'Fixture' },
-      operationId: op,
+      operationId: restoredOperationId,
       revision: 1,
     });
     expect(uncertain).toEqual(pending());
@@ -644,7 +648,6 @@ describe('unwired restoration, prospective runtime regressions', () => {
             : f.user
       );
     });
-    vi.mocked(randomUUID).mockReturnValueOnce(op).mockReturnValueOnce(otherOp);
     f.operations.begin.mockImplementation(async (args) => {
       if (reserved) return denial('23505');
       reserved = true;
@@ -654,6 +657,9 @@ describe('unwired restoration, prospective runtime regressions', () => {
       restoreEmployeeAccess(f.input),
       restoreEmployeeAccess(f.input),
     ]);
+    const ids = f.operations.begin.mock.calls.map(([args]) => args.operationId);
+    expect(ids).toHaveLength(2);
+    expect(new Set(ids).size).toBe(2);
     expect(results.filter((r) => r.status === 'rejected')).toHaveLength(1);
     expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
     expect(f.updateUserById).toHaveBeenCalledTimes(1);

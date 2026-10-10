@@ -185,7 +185,12 @@ optional overrides. Every key is optional, and an empty string or `false` means
 - `image` — `{ storagePath, url, alt }` for the social card
 - `keywords` — `text[]`, replaces the derived list
 - `canonicalUrl` — points crawlers at a different canonical
-- `noIndex` — emits `noindex,nofollow`
+- `noIndex` — true emits `noindex,nofollow`; false permits indexing of an
+  accessible anonymous snapshot. Public form metadata explicitly overrides the
+  private root layout. Protected, unavailable, and closed forms remain noindex.
+  The landing page is indexable; studio, responses, and embed wrappers are not.
+  Regression: `shared-form-data.test.ts`, `shared-form-loader.test.ts`, and the
+  cross-app policy in `packages/utils/src/seo.test.ts`.
 
 It is a single `jsonb` column, matching the existing `settings` and `theme`
 columns on the same table, so adding a field later needs no migration.

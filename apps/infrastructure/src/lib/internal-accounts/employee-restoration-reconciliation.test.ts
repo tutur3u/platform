@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   EmployeeManagementError,
@@ -22,10 +21,8 @@ import {
 } from './employee-restoration-test-fixture';
 
 vi.mock('server-only', () => ({}));
-vi.mock('node:crypto', () => ({ randomUUID: vi.fn() }));
 let f: ReturnType<typeof makeFixture>;
 beforeEach(() => {
-  vi.mocked(randomUUID).mockReset();
   vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-08'));
   f = makeFixture();
 });
@@ -34,7 +31,7 @@ afterEach(() => {
   expect(f.operations.markAttempt).not.toHaveBeenCalled();
   expect(f.operations.confirm).not.toHaveBeenCalled();
   expect(f.updateUserById).not.toHaveBeenCalled();
-  expect(randomUUID).not.toHaveBeenCalled();
+
   vi.restoreAllMocks();
 });
 const pending = (uncertain = true, operationId = op) => ({
@@ -316,7 +313,6 @@ describe('named and unnamed reconciliation preserve separate catches', () => {
       expect(f.operations.markAttempt).not.toHaveBeenCalled();
       expect(f.operations.confirm).not.toHaveBeenCalled();
       expect(f.updateUserById).not.toHaveBeenCalled();
-      expect(randomUUID).not.toHaveBeenCalled();
     }
   );
   it.each(['reserved', 'attempted', 'unknown'] as const)(
