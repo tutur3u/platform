@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, ArrowUpRight } from '@tuturuuu/icons';
 import { getLettinWorld } from '@tuturuuu/internal-api/lettin';
 import { Button } from '@tuturuuu/ui/button';
-import { useTranslations } from 'next-intl';
+import { getLettinTaskPlanUrl } from '@tuturuuu/utils/lettin-task-reference';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { Collaborators } from './collaborators';
@@ -28,6 +29,7 @@ export function WorldStudio({
   initialEntry?: string;
 }) {
   const t = useTranslations('lettin');
+  const locale = useLocale();
   const [selected, setSelected] = useState<string | null>(initialEntry ?? null);
   const [filters, setFilters] = useState(initialWikiFilters);
   const { dirty, setDirty } = useNavigationGuard();
@@ -63,6 +65,12 @@ export function WorldStudio({
     selected === worldId
       ? data.world
       : data.entries.find((entry) => entry.id === selected);
+  const taskPlanUrl = getLettinTaskPlanUrl({
+    workspaceId: wsId,
+    worldId,
+    locale,
+    entryId: record && record.id !== worldId ? record.id : undefined,
+  });
   const related = record ? wikiOf(record.draft).relationships : [];
   const backlinks = record
     ? data.entries.filter(
@@ -96,6 +104,16 @@ export function WorldStudio({
           <h1>{data.world.draft.title}</h1>
           <p>{data.world.draft.description || t('worldWikiHint')}</p>
         </div>
+        {taskPlanUrl && (
+          <a
+            href={taskPlanUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="wiki-public-link"
+          >
+            {t('planTask')} <ArrowUpRight size={16} />
+          </a>
+        )}
         {data.world.published_at && (
           <Link
             href={`/worlds/${worldId}`}
