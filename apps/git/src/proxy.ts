@@ -170,7 +170,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
 export const config = {
   // Repository paths legitimately contain dots (for example SECURITY.md and
-  // turbo.json), so only framework assets and the app favicon bypass locale
-  // routing.
-  matcher: ['/((?!_next|favicon\\.svg).*)'],
+  // turbo.json). Only framework assets, the app favicon, and root metadata
+  // bypass locale routing; nested repository files still need it.
+  matcher: ['/((?!_next|favicon\\.svg|sitemap\\.xml$|robots\\.txt$).*)'],
 };
