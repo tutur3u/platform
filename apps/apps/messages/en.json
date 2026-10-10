@@ -243,7 +243,8 @@
       "status": "Checklist status",
       "unchecked": "To do"
     },
-    "hide_sidebar": "Hide sidebar"
+    "hide_sidebar": "Hide sidebar",
+    "public_profile": "Public profile"
   },
   "finance": {
     "new_debt": "New debt",

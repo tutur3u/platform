@@ -19,6 +19,11 @@ vi.mock('@tuturuuu/ui/button', () => ({
 vi.mock('@tuturuuu/ui/input', () => ({
   Input: (props: ComponentProps<'input'>) => <input {...props} />,
 }));
+vi.mock('@tuturuuu/ui/public-link-button', () => ({
+  PublicLinkButton: ({ url }: { url: string | null }) => (
+    <output data-public-link={url ?? ''} />
+  ),
+}));
 vi.mock('./document-view', () => ({ DocumentView: () => <article /> }));
 vi.mock('./wiki-browser', () => ({ WikiBrowser: () => <section /> }));
 
@@ -120,6 +125,44 @@ it('searches published body text without indexing extra private draft data', asy
   } finally {
     await act(() => root.unmount());
     container.remove();
+  }
+});
+
+it('copies only notebook or known published-entry URLs, ignoring arbitrary query-selected IDs', async () => {
+  const worldId = '00000000-0000-4000-8000-000000000001',
+    entryId = '00000000-0000-4000-8000-000000000002';
+  const world: LettinPublicWorld = {
+    id: worldId,
+    creatorId: 'creator',
+    published: createStarterDraft('World', 'blank', (key) => key),
+    entries: [
+      {
+        id: entryId,
+        published: createStarterDraft('Public entry', 'blank', (key) => key),
+      },
+    ],
+  };
+  const container = document.createElement('div'),
+    root = createRoot(container);
+  try {
+    await act(() =>
+      root.render(
+        <PublicWorld world={world} initialEntry="unavailable-private" />
+      )
+    );
+    expect(
+      container.querySelector('output')!.getAttribute('data-public-link')
+    ).toBe(`https://lettin.tuturuuu.com/worlds/${worldId}`);
+    await act(() =>
+      root.render(
+        <PublicWorld key="known" world={world} initialEntry={entryId} />
+      )
+    );
+    expect(
+      container.querySelector('output')!.getAttribute('data-public-link')
+    ).toBe(`https://lettin.tuturuuu.com/worlds/${worldId}?entry=${entryId}`);
+  } finally {
+    await act(() => root.unmount());
   }
 });
 

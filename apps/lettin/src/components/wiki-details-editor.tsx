@@ -7,6 +7,7 @@ import type {
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
+import { WikiFactsEditor } from './wiki-facts-editor';
 import { wikiOf } from './wiki-model';
 import { WikiRelationshipsEditor } from './wiki-relationships-editor';
 
@@ -44,56 +45,11 @@ export function WikiDetailsEditor({
           {t('aliasesHint')}
         </span>
       </label>
-      <fieldset className="wiki-fieldset">
-        <legend>{t('facts')}</legend>
-        {wiki.facts.map((fact, index) => (
-          <div className="wiki-property-row" key={index}>
-            <Input
-              aria-label={t('factLabel')}
-              maxLength={80}
-              value={fact.label}
-              onChange={(e) =>
-                patch({
-                  facts: wiki.facts.map((v, i) =>
-                    i === index ? { ...v, label: e.target.value } : v
-                  ),
-                })
-              }
-            />
-            <Input
-              aria-label={t('factValue')}
-              maxLength={1000}
-              value={fact.value}
-              onChange={(e) =>
-                patch({
-                  facts: wiki.facts.map((v, i) =>
-                    i === index ? { ...v, value: e.target.value } : v
-                  ),
-                })
-              }
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() =>
-                patch({ facts: wiki.facts.filter((_, i) => i !== index) })
-              }
-            >
-              {t('remove')}
-            </Button>
-          </div>
-        ))}
-        <Button
-          type="button"
-          variant="outline"
-          disabled={wiki.facts.length >= 40}
-          onClick={() =>
-            patch({ facts: [...wiki.facts, { label: '', value: '' }] })
-          }
-        >
-          {t('addFact')}
-        </Button>
-      </fieldset>
+      <WikiFactsEditor
+        kind={draft.kind}
+        facts={wiki.facts}
+        onChange={(facts) => patch({ facts })}
+      />
       <fieldset className="wiki-fieldset">
         <legend>{t('chronology')}</legend>
         <p className="mb-3 text-muted-foreground text-sm">
