@@ -117,13 +117,11 @@ test('bun check always includes mobile iOS project settings validation', () => {
   ]);
 });
 
-test('bun check always includes TanStack protected API access validation', () => {
+test('bun check omits paused TanStack implementation validation', () => {
   const activeChecks = getActiveChecks({
     changedFiles: ['apps/tanstack-web/src/routes/index.tsx'],
   });
-  assertCheckBeforeScriptTests(activeChecks, 'tanstack-api-access', [
-    'scripts/check-tanstack-api-access.js',
-  ]);
+  assert.ok(!activeChecks.find(({ name }) => name === 'tanstack-api-access'));
 });
 
 test('bun check includes platform release sync validation for release-please files only', () => {

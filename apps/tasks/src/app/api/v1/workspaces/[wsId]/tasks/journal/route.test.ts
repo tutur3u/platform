@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getUser = vi.fn();
+const resolveSession = vi.fn();
 const workspaceMemberMaybeSingle = vi.fn();
 const listMaybeSingle = vi.fn();
 const firstTaskMaybeSingle = vi.fn();
@@ -131,6 +132,12 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: vi.fn(() => Promise.resolve(userClient)),
 }));
 
+vi.mock('@/lib/app-session-user', () => ({
+  resolveAuthenticatedSessionUser: (
+    ...args: Parameters<typeof resolveSession>
+  ) => resolveSession(...args),
+}));
+
 vi.mock('@tuturuuu/utils/workspace-helper', async (importOriginal) => {
   const actual =
     await importOriginal<typeof import('@tuturuuu/utils/workspace-helper')>();
@@ -177,6 +184,7 @@ vi.mock('ai', () => {
 describe('task journal route', () => {
   beforeEach(() => {
     getUser.mockReset();
+    resolveSession.mockReset();
     workspaceMemberMaybeSingle.mockReset();
     listMaybeSingle.mockReset();
     firstTaskMaybeSingle.mockReset();
@@ -211,9 +219,10 @@ describe('task journal route', () => {
 
   it('rejects task creation before list lookup when the user lacks workspace access', async () => {
     normalizeWorkspaceId.mockResolvedValue('ws-1');
-    getUser.mockResolvedValue({
-      data: { user: { id: 'user-1', email: 'dev@example.com' } },
-      error: null,
+    resolveSession.mockResolvedValue({
+      user: { id: 'user-1', email: 'dev@example.com' },
+      authError: null,
+      supabase: userClient,
     });
     workspaceMemberMaybeSingle.mockResolvedValue({
       data: null,
@@ -250,14 +259,25 @@ describe('task journal route', () => {
     await expect(response.json()).resolves.toEqual({
       error: 'Workspace access denied',
     });
-    expect(adminClient.from).not.toHaveBeenCalledWith('task_lists');
+    expect(resolveSession).toHaveBeenCalledWith(userClient);
+    expect(getUser).not.toHaveBeenCalled();
+    expect(adminClient.from).not.toHaveBeenCalled();
+    expect(listMaybeSingle).not.toHaveBeenCalled();
+    expect(tasksInsert).not.toHaveBeenCalled();
+    expect(taskLabelsInsert).not.toHaveBeenCalled();
+    expect(taskProjectTasksInsert).not.toHaveBeenCalled();
+    expect(taskAssigneesInsert).not.toHaveBeenCalled();
+    expect(resolvePlanModel).not.toHaveBeenCalled();
+    expect(checkAiCredits).not.toHaveBeenCalled();
+    expect(generateObject).not.toHaveBeenCalled();
   });
 
   it('saves reviewed tasks without re-running AI resolution or credit checks', async () => {
     normalizeWorkspaceId.mockResolvedValue('ws-1');
-    getUser.mockResolvedValue({
-      data: { user: { id: 'user-1', email: 'dev@example.com' } },
-      error: null,
+    resolveSession.mockResolvedValue({
+      user: { id: 'user-1', email: 'dev@example.com' },
+      authError: null,
+      supabase: userClient,
     });
     workspaceMemberMaybeSingle.mockResolvedValue({
       data: { type: 'MEMBER' as const },
@@ -377,9 +397,10 @@ describe('task journal route', () => {
     },
   ])('$name', async ({ labelIds, labels }) => {
     normalizeWorkspaceId.mockResolvedValue('ws-1');
-    getUser.mockResolvedValue({
-      data: { user: { id: 'user-1', email: 'dev@example.com' } },
-      error: null,
+    resolveSession.mockResolvedValue({
+      user: { id: 'user-1', email: 'dev@example.com' },
+      authError: null,
+      supabase: userClient,
     });
     workspaceMemberMaybeSingle.mockResolvedValue({
       data: { type: 'MEMBER' as const },
@@ -438,9 +459,10 @@ describe('task journal route', () => {
 
   it('loads workspace projects through the admin client after workspace access passes', async () => {
     normalizeWorkspaceId.mockResolvedValue('ws-1');
-    getUser.mockResolvedValue({
-      data: { user: { id: 'user-1', email: 'dev@example.com' } },
-      error: null,
+    resolveSession.mockResolvedValue({
+      user: { id: 'user-1', email: 'dev@example.com' },
+      authError: null,
+      supabase: userClient,
     });
     workspaceMemberMaybeSingle.mockResolvedValue({
       data: { type: 'MEMBER' as const },
@@ -524,9 +546,10 @@ describe('task journal route', () => {
 
   it('normalizes personal workspace aliases before verifying list access', async () => {
     normalizeWorkspaceId.mockResolvedValue('ws-1');
-    getUser.mockResolvedValue({
-      data: { user: { id: 'user-1', email: 'dev@example.com' } },
-      error: null,
+    resolveSession.mockResolvedValue({
+      user: { id: 'user-1', email: 'dev@example.com' },
+      authError: null,
+      supabase: userClient,
     });
     workspaceMemberMaybeSingle.mockResolvedValue({
       data: { type: 'MEMBER' as const },
@@ -578,6 +601,43 @@ describe('task journal route', () => {
       { params: Promise.resolve({ wsId: 'personal' }) }
     );
 
+    expect(resolveSession).toHaveBeenCalledWith(userClient);
+    expect(getUser).not.toHaveBeenCalled();
     expect(normalizeWorkspaceId).toHaveBeenCalledWith('personal', userClient);
   });
+  it.each([
+    { user: null, authError: null },
+    { user: { id: 'user-1' }, authError: new Error('Invalid session') },
+  ])(
+    'rejects invalid session resolution before workspace access: %s',
+    async (resolution) => {
+      resolveSession.mockResolvedValue({ ...resolution, supabase: userClient });
+      const { POST } = await import(
+        '@/app/api/v1/workspaces/[wsId]/tasks/journal/route'
+      );
+      const response = await POST(
+        new Request('http://localhost/api/v1/workspaces/ws-1/tasks/journal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ entry: 'Draft', listId: 'list-1', tasks: [] }),
+        }),
+        { params: Promise.resolve({ wsId: 'ws-1' }) }
+      );
+      expect(response.status).toBe(401);
+      expect(resolveSession).toHaveBeenCalledWith(userClient);
+      expect(getUser).not.toHaveBeenCalled();
+      expect(normalizeWorkspaceId).not.toHaveBeenCalled();
+      expect(workspaceMemberMaybeSingle).not.toHaveBeenCalled();
+      expect(userClient.from).not.toHaveBeenCalled();
+      expect(adminClient.from).not.toHaveBeenCalled();
+      expect(listMaybeSingle).not.toHaveBeenCalled();
+      expect(tasksInsert).not.toHaveBeenCalled();
+      expect(taskLabelsInsert).not.toHaveBeenCalled();
+      expect(taskProjectTasksInsert).not.toHaveBeenCalled();
+      expect(taskAssigneesInsert).not.toHaveBeenCalled();
+      expect(resolvePlanModel).not.toHaveBeenCalled();
+      expect(checkAiCredits).not.toHaveBeenCalled();
+      expect(generateObject).not.toHaveBeenCalled();
+    }
+  );
 });

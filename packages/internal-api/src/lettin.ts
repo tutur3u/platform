@@ -46,7 +46,27 @@ export type LettinTheme = {
   typography: 'editorial' | 'clean';
   motion: 'full' | 'reduced';
 };
+export type LettinArtwork = {
+  image: string;
+  alt: string;
+  caption: string;
+  credit: string;
+};
+export type LettinCreationGuidance = {
+  credits: string;
+  usageNotes: string;
+  collaboration: 'unspecified' | 'ask-first' | 'open' | 'closed';
+};
+export type LettinWorkProgress =
+  | 'unstarted'
+  | 'drafting'
+  | 'revising'
+  | 'ready';
 export type LettinDraft = {
+  workProgress?: LettinWorkProgress;
+  gallery?: LettinArtwork[];
+  creationGuidance?: LettinCreationGuidance;
+  contentNotice?: string;
   theme?: LettinTheme;
   title: string;
   description: string;
@@ -101,6 +121,15 @@ export type LettinPublicWorld = {
 export type LettinCommand =
   | { action: 'createWorld'; draft: LettinDraft }
   | { action: 'createEntry'; worldId: string; draft: LettinDraft }
+  | {
+      action: 'duplicateEntry';
+      worldId: string;
+      entryId: string;
+      version: number;
+      title: string;
+      linkSource?: boolean;
+      contextFact?: { label: string; value: string };
+    }
   | {
       action: 'saveWorld';
       worldId: string;
@@ -233,6 +262,68 @@ export function applyLettinExocorpseImport(wsId: string, previewId: string) {
   });
 }
 
+export type LettinSavedNotebook = {
+  worldId: string;
+  savedAt: string;
+  notebook: {
+    title: string;
+    description: string;
+    image: string;
+    credit: string;
+  } | null;
+};
+export function getLettinSavedNotebooks(expectedActor: string) {
+  return client().json<LettinSavedNotebook[]>('/api/v1/lettin/bookmarks', {
+    query: { expectedActor },
+    cache: 'no-store',
+  });
+}
+export function getLettinNotebookSaved(worldId: string, expectedActor: string) {
+  return client().json<{ saved: boolean }>('/api/v1/lettin/bookmarks', {
+    cache: 'no-store',
+    query: { worldId, expectedActor },
+  });
+}
+export function setLettinNotebookSaved(
+  worldId: string,
+  saved: boolean,
+  expectedActor: string
+) {
+  return client().json<{ saved: boolean }>('/api/v1/lettin/bookmarks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ worldId, saved, expectedActor }),
+  });
+}
+
+export type LettinNotebookExport = {
+  format: 'lettin-notebook';
+  version: 1;
+  scope: 'published' | 'draft';
+  exportedAt: string;
+  world: { id: string; document: LettinDraft };
+  entries: { id: string; document: LettinDraft }[];
+};
+export function exportLettinNotebook(
+  wsId: string,
+  options: {
+    worldId: string;
+    scope: 'published' | 'draft';
+    privateConsent: boolean;
+    expectedActor: string;
+  }
+) {
+  return client().json<LettinNotebookExport>(`${path(wsId)}/export`, {
+    cache: 'no-store',
+    query: {
+      worldId: options.worldId,
+      scope: options.scope,
+      privateConsent: options.privateConsent ? '1' : '0',
+      expectedActor: options.expectedActor,
+    },
+  });
+}
+
 export const EXOCORPSE_WORKSPACE_ID = '3385bd92-3d5e-42f6-b3ad-0d1394af3509';
 export const exocorpseWikiCollections = [
   'stories',
@@ -297,6 +388,7 @@ export function mutateLettinBlacklist(
 }
 
 export type LettinCreatorAbout = {
+  shared?: boolean;
   headline: string;
   pronouns: string;
   location: string;
@@ -318,5 +410,63 @@ export function saveLettinCreatorAbout(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(details),
+  });
+}
+
+export type LettinSavedCreator = {
+  creatorId: string;
+  savedAt: string;
+  notebookTitle: string | null;
+};
+export function getLettinSavedCreators(expectedActor: string) {
+  return client().json<LettinSavedCreator[]>(
+    `/api/v1/lettin/creator-bookmarks?${new URLSearchParams({ expectedActor })}`,
+    { cache: 'no-store' }
+  );
+}
+export function getLettinCreatorSaved(
+  creatorId: string,
+  expectedActor: string
+) {
+  return client().json<{ saved: boolean }>(
+    `/api/v1/lettin/creator-bookmarks?${new URLSearchParams({ creatorId, expectedActor })}`,
+    { cache: 'no-store' }
+  );
+}
+export function setLettinCreatorSaved(
+  creatorId: string,
+  saved: boolean,
+  expectedActor: string
+) {
+  return client().json<{ saved: boolean }>('/api/v1/lettin/creator-bookmarks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ creatorId, saved, expectedActor }),
+  });
+}
+
+export function previewLettinNotebookImport(
+  wsId: string,
+  input: {
+    expectedActor: string;
+    title: string;
+    payload: unknown;
+    consent: true;
+  }
+) {
+  return client().json<LettinImportPreview>(`${path(wsId)}/import`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'preview', ...input }),
+  });
+}
+export function applyLettinNotebookImport(
+  wsId: string,
+  input: { expectedActor: string; previewId: string; consent: true }
+) {
+  return client().json<{ id: string }>(`${path(wsId)}/import`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'apply', ...input }),
   });
 }

@@ -1,6 +1,10 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalPassThroughEnv": [
+    "TMPDIR",
+    "TMP",
+    "TEMP",
+    "TUTURUUU_CHECK_CHILD_TEMP_ACTIVE",
     "VITEST_MAX_WORKERS",
     "BASE_REF",
     "CHANGED_FILES",
