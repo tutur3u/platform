@@ -534,3 +534,31 @@ trigger, vars and secret names. Deploy only the immutable artifact qualified by
 that CI run, using its emitted Wrangler config; preserve source config for named
 secret provisioning. See `apps/docs/build/devops/cloudflare-cron-control.mdx` for
 commands and the distinct downstream delivery/cost/stop acceptance boundaries.
+
+## Vite+ native service Worker boundary
+
+Give an adopted native Worker an owning private workspace, pinned Vite+/Cloudflare
+plugin and a matching `vite` core alias when plugin peer types require it. Keep
+Cloudflare dev/build configuration separate from unit-test configuration so root
+Vitest discovery does not start Worker development servers. Use explicit scoped
+JSON Oxc configuration; retain existing Biome gates during parity work. Generate
+Worker types before checking source/config TypeScript. Build only in exact-commit
+CI and test the emitted Wrangler configuration in addition to source fixtures;
+dry-run and authorized deployment consume that same emitted target. Preserve
+bindings, migrations, routes, secret names and active identity/protocol policies.
+Assert each service's source compatibility flags rather than copying another
+Worker's flags; Devbox Control intentionally has none.
+Devbox Control's runtime script demonstrates disposable-credential denial tests;
+those do not prove hosted Supabase, runner or WebSocket success. Follow the owning
+runbook for commands and remaining acceptance, and keep local validation serialized.
+
+Put native Worker test worker/pool defaults in `vitest.config.ts`, not the package
+script. Shared sharded CI appends `--maxWorkers=2`; repeating that option in a
+`vp test` script fails CLI parsing before collection. Validate new workspace test
+scripts with `bun run test --maxWorkers=2` under Node 24 as well as their owning CI.
+
+Vite+ 1.1.0 bundles Vitest 5.0.3. Align the root Vitest dependency, its override,
+and coverage-v8 provider to that exact version with Bun commands. Updating only
+the provider while a root override forces an older runner still mixes versions.
+Validate the forwarded coverage command too: `bun run test --maxWorkers=2 --coverage`
+under Node 24. Do not disable Vite+'s provider-version guard to unblock CI.
