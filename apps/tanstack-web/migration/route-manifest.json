@@ -2834,7 +2834,8 @@
       "id": "api:/api/v1/users/me/avatar/upload:apps/web/src/app/api/v1/users/me/avatar/upload/route.ts",
       "kind": "api",
       "methods": [
-        "PUT"
+        "PUT",
+        "OPTIONS"
       ],
       "routePath": "/api/v1/users/me/avatar/upload",
       "sourceFile": "apps/web/src/app/api/v1/users/me/avatar/upload/route.ts",
@@ -2867,7 +2868,8 @@
       "id": "api:/api/v1/users/me/banner/upload:apps/web/src/app/api/v1/users/me/banner/upload/route.ts",
       "kind": "api",
       "methods": [
-        "PUT"
+        "PUT",
+        "OPTIONS"
       ],
       "routePath": "/api/v1/users/me/banner/upload",
       "sourceFile": "apps/web/src/app/api/v1/users/me/banner/upload/route.ts",
@@ -5812,13 +5814,14 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/templates/:templateId/background-url:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/templates/[templateId]/background-url/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/templates/:templateId/background-url:apps/web/src/app/api/v1/workspaces/[wsId]/templates/[templateId]/background-url/route.ts",
       "kind": "api",
       "methods": [
-        "GET"
+        "GET",
+        "HEAD"
       ],
       "routePath": "/api/v1/workspaces/:wsId/templates/:templateId/background-url",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/templates/[templateId]/background-url/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/templates/[templateId]/background-url/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -7197,13 +7200,13 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/users/reports/:reportId/generate:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/[reportId]/generate/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/users/reports/:reportId/generate:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/generate/route.ts",
       "kind": "api",
       "methods": [
         "POST"
       ],
       "routePath": "/api/v1/workspaces/:wsId/users/reports/:reportId/generate",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/[reportId]/generate/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/generate/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -9953,12 +9956,12 @@
     "routeHandlers": 648,
     "methodCounts": {
       "GET": 327,
-      "HEAD": 18,
+      "HEAD": 19,
       "POST": 320,
       "PUT": 60,
       "PATCH": 65,
       "DELETE": 102,
-      "OPTIONS": 24
+      "OPTIONS": 26
     },
     "total": 876
   }

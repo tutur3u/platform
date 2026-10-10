@@ -38,6 +38,26 @@ merge, or production evidence only when that delivery is authorized.
   Reference environment variables by name only.
 - Do not manually edit `package.json` to add or update dependencies. Use the
   package manager command for the owning workspace.
+- Gradually adopt Oxlint/Oxfmt through explicit owned-file paths with
+  `bun oxc:lint`, `bun oxc:format`, and `bun oxc:write`. Retain Biome gates until
+  each scope records rule/formatting parity and migrates CI, editors and generators
+  together. Do not run global formatters or Vite+ monorepo migrators for scoped
+  work. See [adoption guidance](apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx).
+- Plan cf CLI adoption over Wrangler per verified operation. Preserve existing
+  commands/configuration until authentication, target identity, bindings/migrations,
+  emitted artifacts and rollback parity are established; retain Wrangler for gaps.
+  Do not run global configuration migration or infer production authorization from
+  CLI adoption. See the adoption guidance linked above.
+- For Cloudflare work that adds or amplifies billable operations, require bounded
+  work/retries, idempotent progress, terminal-state scheduling and a tested durable
+  stop fence. Verify operation-count and failure/restart regressions; ingress rate
+  limits, billing alerts and per-invocation CPU caps are not total-spend caps.
+  Record service-specific cost/stop evidence in the adoption guidance.
+- Maintain first-party domain/service libraries independently of React frameworks.
+  Inject request identity, storage, navigation and localization at framework
+  adapters; keep portable entrypoints free of Next.js/React Router/Cloudflare
+  runtime imports and request globals. Preserve public exports and enforce these
+  boundaries with focused tests when extracting shared modules.
 - Do not use native browser dialogs, emojis in UI code, hard-coded hue classes,
   client-side raw app API fetches, or `useEffect` for data fetching.
 - Do not add `export const dynamic` / `export const revalidate` route segment
@@ -149,39 +169,31 @@ merge, or production evidence only when that delivery is authorized.
   UI and run `bun i18n:sort`.
 - Add new dashboard routes to the relevant `navigation.tsx` aliases, children,
   icons, and permissions.
-- Migration-aware changes (the `apps/web` → `apps/backend` (Rust) + `apps/web` →
-  `apps/tanstack-web` switch is in progress — do not add debt while it is
-  pending): treat `apps/web`, `apps/backend`, and `apps/tanstack-web` as one
-  system, not three independent apps.
-  `apps/backend` is a future migration target only: it is not deployed and does
-  not serve current production traffic. `apps/web` remains the live API source
-  of truth until an explicitly approved cutover.
-  - When you ADD or CHANGE an `apps/web` API route (any method), also keep the
-    Rust port in step: if `apps/backend` already owns that path, update the Rust
-    handler in the same change; if it does not yet, register/refresh the route in
-    `apps/tanstack-web/migration/route-overrides.json` and run
-    `bun migration:tanstack:manifest` so the route is tracked as backlog instead
-    of becoming invisible debt. Never silently diverge web behavior from a route
-    Rust already serves.
-  - Web API routes you add or substantially rework must be FIRST-CLASS route
-    handlers under `apps/web/src/app/api/**`, never new or reworked
-    implementations inside `apps/web/src/legacy-api-routes/**` (that tree is being
-    drained; only untouched routes stay behind its generated wrappers). When you
-    move a route out, `git mv` its colocated test too, delete the legacy file so
-    `bun web:api-routes:check` stops generating a wrapper for it, update the
-    matching key in `apps/tanstack-web/migration/route-overrides.json` (the
-    override id embeds `sourceFile`), and re-run
-    `bun migration:tanstack:manifest`.
-  - When you ADD or CHANGE a dashboard page/route, mirror the same registration
-    so `apps/tanstack-web` migration tracking stays accurate, and route shared
-    data access through `packages/internal-api` (which both frontends use)
-    rather than app-local fetchers.
-  - When porting a backend route to Rust, migrate GET first if mutations are not
-    ready, return `None` (not `405`) for un-ported methods so they fall through
-    to the still-live Next.js route, and verify with the runtime coverage probe
-    documented in `apps/backend/AGENTS.md`. Keep behavior, status codes, and
-    cache headers faithful to the legacy route. A Rust handler being marked
-    migrated means source parity is implemented, not that traffic has moved.
+- Active runtime policy: Docker setup, `apps/backend` (Rust), and
+  `apps/tanstack-web` (TanStack Start) are not in use until explicitly resumed.
+  The Docker cron runner is retired. Do not run, update dependencies for, or
+  require implementation tests/builds/CI for these inactive runtimes. Do not
+  refresh their route trees, migration manifests, or runtime/version docs during
+  ordinary active-app work. Preserve their retained source. The pause is enforced
+  by root command guards, test discovery, CI job/switchboard gates, and dependency
+  policy; see `apps/docs/build/devops/active-runtime.mdx`.
+  - Live API/page behavior belongs to `apps/web` and the owning Next.js satellite.
+    Keep shared data access in `packages/internal-api` and preserve active app
+    contracts; TanStack Query remains the active client library.
+  - The long-term target is Vite+ + Cloudflare hosting + Oxc for every active app,
+    delivered incrementally alongside the product backlog. The first wave covers
+    every active Worker-backed
+    app and service, including Meet, Parley, Lettin and native service Workers. Preserve satellite sessions, API ownership,
+    bilingual routes, storage and consent. This does not resume the paused TanStack
+    app or authorize canonical traffic changes. Require exact-commit CI, Worker
+    runtime acceptance and a scoped promotion/rollback plan before cutover.
+  - New or substantially reworked Web API handlers belong under
+    `apps/web/src/app/api/**`, not `legacy-api-routes/**`. Move colocated tests
+    with the implementation and remove obsolete generated wrappers. Inactive
+    Rust/TanStack tracking does not block the active change.
+  - Use the local Mintlify CLI for docs (`bun dev:docs`); routine setup and
+    focused validation must not require a Docker stack. Database/container
+    integration fixtures need a separately appropriate isolated environment.
 - Keep every new authored source file at or below the hard 700-LOC ceiling.
   Already-oversized authored files are grandfathered only while they do not grow
   and should shrink when substantially edited. Tests and migrations are authored

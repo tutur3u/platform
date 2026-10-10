@@ -9,6 +9,7 @@ const withNextIntl = createNextIntlPlugin();
 const WEB_APP_URL = resolveTuturuuuWebAppUrl();
 
 const nextConfig = createTuturuuuNextConfig({
+  seoApp: 'finance',
   transpilePackages: [
     '@tuturuuu/ai',
     '@tuturuuu/apis',

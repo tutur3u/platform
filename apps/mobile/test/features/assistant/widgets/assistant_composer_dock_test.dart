@@ -23,7 +23,7 @@ const _attachment = AssistantAttachment(
   type: 'application/pdf',
 );
 
-Widget _app({
+Widget composerTestApp({
   required TextEditingController controller,
   required FocusNode focus,
   AssistantChatState chat = const AssistantChatState(fallbackChatId: 'draft'),
@@ -152,7 +152,7 @@ void main() {
       var sends = 0;
       var navigation = 0;
       await tester.pumpWidget(
-        _app(
+        composerTestApp(
           controller: controller,
           focus: focus,
           capture: capture,
@@ -209,7 +209,7 @@ void main() {
       var sent = 0;
       var stopped = 0;
       await tester.pumpWidget(
-        _app(
+        composerTestApp(
           controller: controller,
           focus: focus,
           onSend: () async {
@@ -219,7 +219,7 @@ void main() {
       );
       final dock = tester.element(find.byType(AssistantComposerDock));
       await tester.pumpWidget(
-        _app(
+        composerTestApp(
           controller: controller,
           focus: focus,
           localOnly: true,
@@ -240,7 +240,7 @@ void main() {
       expect(sent, 0);
       controller.clear();
       await tester.pumpWidget(
-        _app(controller: controller, focus: focus, localOnly: true),
+        composerTestApp(controller: controller, focus: focus, localOnly: true),
       );
       expect(
         tester
@@ -263,7 +263,7 @@ void main() {
       addTearDown(focus.dispose);
       var opened = 0;
       await tester.pumpWidget(
-        _app(
+        composerTestApp(
           controller: controller,
           focus: focus,
           localOnly: true,
@@ -300,7 +300,7 @@ void main() {
       var attach = 0;
       var send = 0;
       await tester.pumpWidget(
-        _app(
+        composerTestApp(
           controller: controller,
           focus: focus,
           capture: capture,
@@ -353,7 +353,7 @@ void main() {
       addTearDown(focus.dispose);
       var sends = 0;
       await tester.pumpWidget(
-        _app(
+        composerTestApp(
           controller: controller,
           focus: focus,
           chat: const AssistantChatState(
@@ -373,7 +373,7 @@ void main() {
       expect(sends, 0);
       expect(controller.text, 'My unsent draft');
       await tester.pumpWidget(
-        _app(
+        composerTestApp(
           controller: controller,
           focus: focus,
           onSend: () async {
@@ -403,7 +403,7 @@ void main() {
           var nav = 0;
           var mic = 0;
           await tester.pumpWidget(
-            _app(
+            composerTestApp(
               controller: controller,
               focus: focus,
               scale: scale,
@@ -417,7 +417,7 @@ void main() {
               },
             ),
           );
-          expect(tester.widget<TextField>(find.byType(TextField)).maxLines, 1);
+          expect(tester.widget<TextField>(find.byType(TextField)).maxLines, 5);
           expect(find.byIcon(Icons.fullscreen_rounded), findsNothing);
           for (final key in [
             'assistant-composer-options',
@@ -461,7 +461,7 @@ void main() {
     var closes = 0;
     AssistantThinkingMode? mode;
     await tester.pumpWidget(
-      _app(
+      composerTestApp(
         controller: controller,
         focus: focus,
         onAttach: () async {
@@ -517,7 +517,7 @@ void main() {
       String? removed;
       var sends = 0;
       await tester.pumpWidget(
-        _app(
+        composerTestApp(
           controller: controller,
           focus: focus,
           chat: const AssistantChatState(
@@ -557,7 +557,9 @@ void main() {
       final focus = FocusNode();
       addTearDown(controller.dispose);
       addTearDown(focus.dispose);
-      await tester.pumpWidget(_app(controller: controller, focus: focus));
+      await tester.pumpWidget(
+        composerTestApp(controller: controller, focus: focus),
+      );
       await tester.tap(find.byType(TextField));
       await tester.pump();
       expect(focus.hasFocus, isTrue);
@@ -590,7 +592,7 @@ void main() {
     addTearDown(focus.dispose);
     var sends = 0;
     await tester.pumpWidget(
-      _app(
+      composerTestApp(
         controller: controller,
         focus: focus,
         onSend: () async {
@@ -598,7 +600,8 @@ void main() {
         },
       ),
     );
-    tester.widget<TextField>(find.byType(TextField)).onSubmitted!('');
+    await tester.tap(find.byType(TextField));
+    await tester.testTextInput.receiveAction(TextInputAction.send);
     expect(sends, 0);
   });
 }

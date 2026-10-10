@@ -5,7 +5,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { emptyDraft, useLettinMutation } from './use-lettin';
+import { createEntryDraft } from './entry-starters';
+import { useLettinMutation } from './use-lettin';
 import { entryKinds } from './wiki-model';
 export function WikiCreateEntry({
   wsId,
@@ -22,6 +23,7 @@ export function WikiCreateEntry({
 }) {
   const t = useTranslations('lettin');
   const [title, setTitle] = useState('');
+  const [structured, setStructured] = useState(false);
   const [kind, setKind] = useState<LettinKind>(defaultKind ?? 'page');
   const mutation = useLettinMutation(wsId);
   return (
@@ -34,11 +36,7 @@ export function WikiCreateEntry({
           const result = await mutation.mutateAsync({
             action: 'createEntry',
             worldId,
-            draft: {
-              ...emptyDraft(title.trim()),
-              kind,
-              wiki: { aliases: [], facts: [], relationships: [] },
-            },
+            draft: createEntryDraft(title.trim(), kind, structured, t),
           });
           setTitle('');
           onCreated(result.id);
@@ -69,6 +67,20 @@ export function WikiCreateEntry({
           </option>
         ))}
       </select>
+      <label className="space-y-2 text-sm">
+        <span>{t('entryStarter')}</span>
+        <select
+          value={structured ? 'structured' : 'blank'}
+          onChange={(e) => setStructured(e.target.value === 'structured')}
+          disabled={disabled || mutation.isPending}
+        >
+          <option value="blank">{t('entryStarterBlank')}</option>
+          <option value="structured">{t('entryStarterStructured')}</option>
+        </select>
+        <span className="block text-muted-foreground text-xs">
+          {t('entryStarterHint')}
+        </span>
+      </label>
       <Button
         type="submit"
         variant="outline"

@@ -64,6 +64,7 @@ export default async function ReportsPage({
               canSendReports: permissions.containsPermission(
                 'send_user_group_report_emails'
               ),
+              canUpdateUsers: permissions.containsPermission('update_users'),
               canUpdateReports: permissions.containsPermission(
                 'update_user_groups_reports'
               ),

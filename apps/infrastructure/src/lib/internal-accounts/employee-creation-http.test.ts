@@ -12,11 +12,8 @@ import {
 } from './employee-creation-orchestration';
 
 vi.mock('server-only', () => ({}));
-vi.mock('node:crypto', async (original) => ({
-  ...(await original<typeof import('node:crypto')>()),
-  randomUUID: vi.fn(() => targetId),
-}));
-const targetId = '00000000-0000-4000-8000-000000000001';
+const fixtureId = '00000000-0000-4000-8000-000000000001';
+let targetId: string = fixtureId;
 const actorId = '00000000-0000-4000-8000-000000000002';
 const nextActorId = '00000000-0000-4000-8000-000000000003';
 const secret = ' synthetic-password-sentinel ';
@@ -27,7 +24,9 @@ const body = {
   temporaryPassword: secret,
 };
 const account = {
-  id: targetId,
+  get id() {
+    return targetId;
+  },
   email: 'staff@tuturuuu.com',
   displayName: 'Staff',
 };
@@ -38,7 +37,7 @@ type UpdateReply = Awaited<
 type ReadReply = Awaited<ReturnType<EmployeeCreationProvider['getUserById']>>;
 type ProviderUser = NonNullable<CreateReply['data']['user']>;
 const banned: ProviderUser = {
-  id: targetId,
+  id: fixtureId,
   email: account.email,
   email_confirmed_at: '2026-01-01',
   banned_until: '2126-01-01',
@@ -49,24 +48,41 @@ const banned: ProviderUser = {
 };
 const active: ProviderUser = { ...banned, banned_until: undefined };
 const createOK = (user: ProviderUser): CreateReply => ({
-  data: { user },
+  data: {
+    get user() {
+      return user.id === fixtureId ? { ...user, id: targetId } : user;
+    },
+  },
   error: null,
 });
 const updateOK = (user: ProviderUser): UpdateReply => ({
-  data: { user },
+  data: {
+    get user() {
+      return user.id === fixtureId ? { ...user, id: targetId } : user;
+    },
+  },
   error: null,
 });
 const readOK = (user: ProviderUser): ReadReply => ({
-  data: { user },
+  data: {
+    get user() {
+      return user.id === fixtureId ? { ...user, id: targetId } : user;
+    },
+  },
   error: null,
 });
 
 function fixture() {
   const order: string[] = [];
-  const preflight = vi.fn<EmployeeCreationOperations['preflight']>(async () => {
-    order.push('preflight');
-    return { data: true, error: null };
-  });
+  // Native crypto is not mocked by the configured runner. Bind synthetic
+  // acknowledgements to the actual reservation made for each fresh request.
+  const preflight = vi.fn<EmployeeCreationOperations['preflight']>(
+    async (args) => {
+      targetId = args.userId;
+      order.push('preflight');
+      return { data: true, error: null };
+    }
+  );
   const finalize = vi.fn<EmployeeCreationOperations['finalize']>(async () => {
     order.push('finalize');
     return { data: { ...account, status: 'pending', diagnostic }, error: null };
@@ -194,6 +210,7 @@ async function safeResponse(response: Response, status: number) {
 }
 
 beforeEach(() => {
+  targetId = fixtureId;
   vi.useFakeTimers();
   vi.setSystemTime(new Date('2026-01-01'));
   vi.spyOn(console, 'log');
@@ -448,6 +465,14 @@ describe('unwired employee creation HTTP boundary through the actual service', (
     await safeResponse(await handle(one), 201);
     await safeResponse(await handle(two), 201);
     expect(authorize.mock.calls).toEqual([[one], [two]]);
+    const reservations = [first, second].map(
+      (f) => f.preflight.mock.calls[0]?.[0].userId
+    );
+    for (const id of reservations)
+      expect(id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+      );
+    expect(reservations[0]).not.toBe(reservations[1]);
     const actors: [Fixture, string][] = [
       [first, actorId],
       [second, nextActorId],
@@ -539,10 +564,10 @@ describe('unwired employee creation HTTP boundary through the actual service', (
     expect(pre.createUser).not.toHaveBeenCalled();
     expect(pre.finalize).not.toHaveBeenCalled();
     const post = fixture();
-    post.finalize.mockResolvedValue({
+    post.finalize.mockImplementation(async () => ({
       data: { ...account, status: 'pending', displayName: 'Wrong' },
       error: null,
-    });
+    }));
     await safeResponse(await post.handle(request()), 202);
     expect(post.updateUserById).not.toHaveBeenCalled();
     expect(post.getUserById).not.toHaveBeenCalled();
@@ -569,7 +594,7 @@ describe('unwired employee creation HTTP boundary through the actual service', (
     await safeResponse(await f.handle(request()), 202);
     expect(f.confirmActivation).not.toHaveBeenCalled();
     const wrong = fixture();
-    wrong.confirmActivation.mockResolvedValue({
+    wrong.confirmActivation.mockImplementation(async () => ({
       data: {
         ...account,
         status: 'created',
@@ -577,7 +602,7 @@ describe('unwired employee creation HTTP boundary through the actual service', (
         diagnostic,
       },
       error: null,
-    });
+    }));
     await safeResponse(await wrong.handle(request()), 202);
     expect(wrong.createUser).toHaveBeenCalledTimes(1);
     expect(wrong.updateUserById).toHaveBeenCalledTimes(1);

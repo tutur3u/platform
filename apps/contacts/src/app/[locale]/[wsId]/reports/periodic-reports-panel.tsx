@@ -11,6 +11,7 @@ import { InternalApiError } from '@tuturuuu/internal-api';
 import {
   listPeriodicReports,
   type PeriodicReport,
+  type PeriodicReportCadence,
   requestPeriodicReportDelivery,
   requestPeriodicReportGeneration,
 } from '@tuturuuu/internal-api/reports';
@@ -28,13 +29,27 @@ import { useWorkspaceActor } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useQueryStates } from 'nuqs';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import GroupReportsSelector from '../users/reports/group-reports-selector';
+import {
+  type PeriodicBatchIntent,
+  PeriodicDeliveryBatchDialog,
+} from './periodic-delivery-batch-dialog';
+import type { DeliveryCategory } from './periodic-delivery-category';
 import {
   PeriodicDeliveryConfirmation,
   type PeriodicDeliveryIntent,
 } from './periodic-delivery-confirmation';
+import {
+  canSelectPeriodicDelivery,
+  MAX_SELECTED_DELIVERIES,
+} from './periodic-delivery-selection';
+import { PeriodicDeliveryWorklist } from './periodic-delivery-worklist';
 import { PeriodicEmailReadiness } from './periodic-email-readiness';
+import {
+  type PeriodicRecipientIntent,
+  PeriodicRecipientRemediation,
+} from './periodic-recipient-remediation';
 import {
   normalizePeriodicReportPeriod,
   periodicReportFilterKeys,
@@ -61,6 +76,7 @@ import {
 export default function PeriodicReportsPanel({
   permissions,
   wsId,
+  cadence: controlledCadence,
 }: {
   permissions: {
     canApproveReports: boolean;
@@ -69,8 +85,10 @@ export default function PeriodicReportsPanel({
     canDeleteReports: boolean;
     canSendReports: boolean;
     canUpdateReports: boolean;
+    canUpdateUsers?: boolean;
   };
   wsId: string;
+  cadence?: PeriodicReportCadence | 'all';
 }) {
   const t = useTranslations('reports-hub');
   const queryClient = useQueryClient();
@@ -80,7 +98,7 @@ export default function PeriodicReportsPanel({
   });
   const {
     stage: requestedStage,
-    cadence,
+    cadence: urlCadence,
     query,
     approval: approvalStatus,
     delivery: deliveryStatus,
@@ -90,6 +108,7 @@ export default function PeriodicReportsPanel({
     start: rawPeriodStart,
     end: rawPeriodEnd,
   } = filters;
+  const cadence = controlledCadence ?? urlCadence;
   const stage =
     approvalStatus !== 'all' ||
     deliveryStatus !== 'all' ||
@@ -103,19 +122,68 @@ export default function PeriodicReportsPanel({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [debouncedQuery] = useDebounce(query.trim(), 300);
   const actor = useWorkspaceActor();
+  const [queryInstance] = useState(() => crypto.randomUUID());
+  const actorLease = useRef({ actor, epoch: 0 });
+  if (actorLease.current.actor !== actor)
+    actorLease.current = { actor, epoch: actorLease.current.epoch + 1 };
+  const actorEpoch = actorLease.current.epoch;
+  const queryScope = JSON.stringify([wsId, queryInstance, actorEpoch]);
+  const privateQueryKey = ['periodic-reports', wsId, queryInstance, actorEpoch];
+  useEffect(
+    () => () => {
+      queryClient.removeQueries({
+        queryKey: ['periodic-reports', wsId, queryInstance, actorEpoch],
+      });
+    },
+    [queryClient, wsId, queryInstance, actorEpoch]
+  );
+  const [categoryFilter, setCategoryFilter] = useState<DeliveryCategory | null>(
+    null
+  );
+  const scope = JSON.stringify([
+    wsId,
+    filters,
+    cadence,
+    categoryFilter,
+    permissions.canSendReports,
+    permissions.canUpdateUsers,
+  ]);
+  const scopeLease = useRef({ actor, scope, epoch: 0 });
+  const scopeChanged =
+    scopeLease.current.actor !== actor || scopeLease.current.scope !== scope;
+  if (scopeChanged) {
+    scopeLease.current = { actor, scope, epoch: scopeLease.current.epoch + 1 };
+  }
+  const epoch = scopeLease.current.epoch;
+  const [selection, setSelection] = useState<{ epoch: number; ids: string[] }>({
+    epoch,
+    ids: [],
+  });
+  const [batchIntent, setBatchIntent] = useState<PeriodicBatchIntent | null>(
+    null
+  );
+  const [recipientIntent, setRecipientIntent] =
+    useState<PeriodicRecipientIntent | null>(null);
   const [deliveryIntent, setDeliveryIntent] =
     useState<PeriodicDeliveryIntent | null>(null);
   const [previewSelection, setPreviewSelection] = useState<{
     emailPreview?: PeriodicEmailPreview | null;
     report: PeriodicReport;
   } | null>(null);
+  if (scopeChanged) {
+    if (deliveryIntent) setDeliveryIntent(null);
+    if (previewSelection) setPreviewSelection(null);
+    if (recipientIntent) setRecipientIntent(null);
+    if (batchIntent) setBatchIntent(null);
+    if (selection.ids.length) setSelection({ epoch, ids: [] });
+  }
 
   const reportsQuery = useInfiniteQuery({
     initialPageParam: 1,
     queryKey: [
-      'periodic-reports',
-      wsId,
+      ...privateQueryKey,
       stage,
+      categoryFilter,
       generationStatus,
       cadence,
       debouncedQuery,
@@ -126,9 +194,13 @@ export default function PeriodicReportsPanel({
       periodStart,
       periodEnd,
     ],
-    queryFn: ({ pageParam }) =>
-      listPeriodicReports(wsId, {
+    enabled: Boolean(actor),
+    queryFn: async ({ pageParam }) => {
+      actor?.assertActive();
+      if (!actor) throw new Error('Workspace account unavailable');
+      const page = await listPeriodicReports(wsId, {
         stage: stage === 'all' ? undefined : stage,
+        category: categoryFilter ?? undefined,
         approvalStatus: approvalStatus === 'all' ? undefined : approvalStatus,
         cadence,
         periodStart: periodStart || undefined,
@@ -137,11 +209,14 @@ export default function PeriodicReportsPanel({
           generationStatus === 'all' ? undefined : generationStatus,
         deliveryStatus: deliveryStatus === 'all' ? undefined : deliveryStatus,
         page: pageParam,
-        pageSize: 20,
+        pageSize: MAX_SELECTED_DELIVERIES,
         query: debouncedQuery || undefined,
         sortBy,
         sortDirection,
-      }),
+      });
+      actor.assertActive();
+      return { ...page, queryScope };
+    },
     getNextPageParam: (lastPage) => {
       const loaded = lastPage.page * lastPage.pageSize;
       return loaded < lastPage.total ? lastPage.page + 1 : undefined;
@@ -150,9 +225,55 @@ export default function PeriodicReportsPanel({
     staleTime: 30_000,
     refetchInterval: 15_000,
   });
-  const reports = reportsQuery.data?.pages.flatMap((page) => page.data) ?? [];
-  const counts = reportsQuery.data?.pages[0]?.counts;
-  const totalReports = reportsQuery.data?.pages[0]?.total ?? 0;
+  const accessLost =
+    !actor ||
+    (reportsQuery.error instanceof InternalApiError &&
+      [401, 403].includes(reportsQuery.error.status));
+  if (accessLost) {
+    if (previewSelection) setPreviewSelection(null);
+    if (deliveryIntent) setDeliveryIntent(null);
+    if (batchIntent) setBatchIntent(null);
+    if (recipientIntent) setRecipientIntent(null);
+    if (selection.ids.length) setSelection({ epoch, ids: [] });
+  }
+  const ownedData =
+    !accessLost &&
+    reportsQuery.data?.pages.every((page) => page.queryScope === queryScope)
+      ? reportsQuery.data
+      : undefined;
+  const currentRows =
+    Boolean(ownedData) &&
+    !reportsQuery.isPlaceholderData &&
+    !reportsQuery.isError &&
+    query.trim() === debouncedQuery;
+  const reports = currentRows
+    ? (ownedData?.pages.flatMap((page) => page.data) ?? [])
+    : [];
+  const visibleReports = reports;
+  const eligible =
+    permissions.canSendReports && actor && currentRows
+      ? visibleReports.filter(canSelectPeriodicDelivery)
+      : [];
+  const selected =
+    selection.epoch === epoch
+      ? eligible.filter((report) => selection.ids.includes(report.id))
+      : [];
+  const toggleSelection = (reportId: string) => {
+    const ids = selected.map((report) => report.id);
+    setSelection({
+      epoch,
+      ids: ids.includes(reportId)
+        ? ids.filter((id) => id !== reportId)
+        : ids.length < MAX_SELECTED_DELIVERIES
+          ? [...ids, reportId]
+          : ids,
+    });
+  };
+  const counts = currentRows ? ownedData?.pages[0]?.counts : undefined;
+  const categoryCounts = currentRows
+    ? ownedData?.pages[0]?.categoryCounts
+    : undefined;
+  const totalReports = currentRows ? ownedData?.pages[0]?.total : undefined;
   const numberFormatter = new Intl.NumberFormat();
   const invalidate = () =>
     Promise.all([
@@ -194,8 +315,29 @@ export default function PeriodicReportsPanel({
     }: {
       action: 'preview' | PeriodicDeliveryAction;
       reportId: string;
-    }) => requestPeriodicReportDelivery(wsId, reportId, action),
-    onSuccess: async (result, variables) => {
+    }) => {
+      if (!actor) throw new Error('Workspace account unavailable');
+      actor.assertActive();
+      const owner = actor;
+      const ownerScope = scope;
+      return requestPeriodicReportDelivery(wsId, reportId, action).then(
+        (result) => {
+          owner.assertActive();
+          return { result, owner, ownerScope };
+        }
+      );
+    },
+    onSuccess: async ({ result, owner, ownerScope }, variables) => {
+      if (
+        scopeLease.current.actor !== owner ||
+        scopeLease.current.scope !== ownerScope
+      )
+        return;
+      try {
+        owner.assertActive();
+      } catch {
+        return;
+      }
       toast.success(result.message);
       if (result.preview) {
         const report = reports.find((item) => item.id === variables.reportId);
@@ -248,8 +390,11 @@ export default function PeriodicReportsPanel({
                   : t('all_periods')}
               </p>
               <Button
-                size="sm"
+                size="icon"
+                className="size-8"
                 variant="ghost"
+                aria-label={t('refresh')}
+                title={t('refresh')}
                 disabled={isRefreshing}
                 onClick={async () => {
                   setIsRefreshing(true);
@@ -263,7 +408,6 @@ export default function PeriodicReportsPanel({
                 <RefreshCw
                   className={`size-3.5 ${isRefreshing ? 'animate-spin' : ''}`}
                 />
-                {t('refresh')}
               </Button>
             </div>
 
@@ -277,6 +421,7 @@ export default function PeriodicReportsPanel({
               generationStatus={generationStatus}
               approvalStatus={approvalStatus}
               cadence={cadence}
+              hideCadence={controlledCadence !== undefined}
               deliveryStatus={deliveryStatus}
               onApprovalStatusChange={(approval) =>
                 void setFilters({ approval, stage: 'all' })
@@ -334,11 +479,58 @@ export default function PeriodicReportsPanel({
         </AccordionItem>
       </Accordion>
 
+      <PeriodicDeliveryWorklist
+        reports={reports}
+        total={totalReports}
+        categoryCounts={categoryCounts}
+        eligibleCount={eligible.length}
+        selectedCount={selected.length}
+        canSend={permissions.canSendReports}
+        currentRows={currentRows}
+        pending={deliveryMutation.isPending}
+        categoryFilter={categoryFilter}
+        onCategoryChange={setCategoryFilter}
+        onSelectAll={() =>
+          setSelection({
+            epoch,
+            ids: eligible
+              .slice(0, MAX_SELECTED_DELIVERIES)
+              .map((report) => report.id),
+          })
+        }
+        onClear={() => setSelection({ epoch, ids: [] })}
+        onReview={() =>
+          actor &&
+          setBatchIntent({
+            actor,
+            wsId,
+            epoch,
+            reports: selected.map((report) => ({ ...report })),
+          })
+        }
+      />
+      {reportsQuery.isPlaceholderData && (
+        <p role="status" className="text-muted-foreground text-xs">
+          {t('updating_results')}
+        </p>
+      )}
+      {reportsQuery.isError && reports.length > 0 && (
+        <p role="alert" className="text-destructive text-xs">
+          {t('stale_results')}
+        </p>
+      )}
       <div className="overflow-hidden rounded-xl border border-border/60 bg-background">
         {reportsQuery.isError ? (
           <Card>
             <CardContent className="flex min-h-36 flex-col items-center justify-center gap-3 p-4 text-center">
-              <p>{t('load_error')}</p>
+              <p>
+                {t(
+                  reportsQuery.error instanceof InternalApiError &&
+                    reportsQuery.error.status === 422
+                    ? 'narrow_scope'
+                    : 'load_error'
+                )}
+              </p>
               <Button
                 variant="outline"
                 onClick={() => void reportsQuery.refetch()}
@@ -347,7 +539,9 @@ export default function PeriodicReportsPanel({
               </Button>
             </CardContent>
           </Card>
-        ) : reports.length === 0 ? (
+        ) : !currentRows ? (
+          <PeriodicReportsRowsLoading />
+        ) : visibleReports.length === 0 ? (
           <Card>
             <CardContent className="flex min-h-40 flex-col items-center justify-center gap-2 p-4 text-center">
               <p className="font-medium">{t('no_periodic')}</p>
@@ -357,7 +551,8 @@ export default function PeriodicReportsPanel({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() =>
+                onClick={() => {
+                  setCategoryFilter(null);
                   void setFilters({
                     stage: 'all',
                     approval: 'all',
@@ -366,20 +561,36 @@ export default function PeriodicReportsPanel({
                     query: '',
                     start: '',
                     end: '',
-                  })
-                }
+                  });
+                }}
               >
                 {t('show_all_reports')}
               </Button>
             </CardContent>
           </Card>
         ) : (
-          reports.map((report) => (
+          visibleReports.map((report) => (
             <PeriodicReportRow
               key={report.id}
               report={report}
               wsId={wsId}
               permissions={permissions}
+              selectable={eligible.some(
+                (candidate) => candidate.id === report.id
+              )}
+              selected={selected.some(
+                (candidate) => candidate.id === report.id
+              )}
+              onToggleSelection={() => toggleSelection(report.id)}
+              onEditRecipient={() =>
+                actor &&
+                setRecipientIntent({
+                  actor,
+                  wsId,
+                  userId: report.user_id,
+                  epoch,
+                })
+              }
               generationPending={generationMutation.isPending}
               approvalPending={approvalMutation.isPending}
               onGenerate={() => generationMutation.mutate(report.id)}
@@ -401,7 +612,7 @@ export default function PeriodicReportsPanel({
 
       {reportsQuery.isFetchingNextPage ? (
         <PeriodicReportsRowsLoading />
-      ) : reportsQuery.hasNextPage ? (
+      ) : currentRows && reportsQuery.hasNextPage ? (
         <Button
           className="w-full"
           variant="outline"
@@ -410,7 +621,7 @@ export default function PeriodicReportsPanel({
           {t('load_more')}
         </Button>
       ) : null}
-      {reports.length > 0 ? (
+      {reports.length > 0 && totalReports !== undefined ? (
         <p className="text-center text-muted-foreground text-xs">
           {t('showing_periodic', {
             loaded: numberFormatter.format(reports.length),
@@ -419,14 +630,41 @@ export default function PeriodicReportsPanel({
         </p>
       ) : null}
 
+      <PeriodicRecipientRemediation
+        intent={recipientIntent}
+        wsId={wsId}
+        epoch={epoch}
+        canUpdateUsers={Boolean(permissions.canUpdateUsers)}
+        onClose={() => setRecipientIntent(null)}
+        onSaved={() => {
+          setRecipientIntent(null);
+          void invalidate();
+        }}
+      />
+      <PeriodicDeliveryBatchDialog
+        intent={batchIntent}
+        reports={currentRows ? reports : []}
+        wsId={wsId}
+        epoch={epoch}
+        canSend={permissions.canSendReports && currentRows}
+        onClose={() => {
+          setBatchIntent(null);
+          setSelection({ epoch, ids: [] });
+        }}
+        onQueued={() => {
+          setSelection({ epoch, ids: [] });
+          void invalidate();
+        }}
+      />
       <PeriodicDeliveryConfirmation
         intent={deliveryIntent}
         wsId={wsId}
-        canSend={permissions.canSendReports}
+        canSend={permissions.canSendReports && currentRows}
         isPending={deliveryMutation.isPending}
         onCancel={() => setDeliveryIntent(null)}
         onConfirm={() => {
-          if (deliveryIntent) {
+          if (deliveryIntent && currentRows) {
+            actor?.assertActive();
             deliveryMutation.mutate({
               action: deliveryIntent.action,
               reportId: deliveryIntent.report.id,

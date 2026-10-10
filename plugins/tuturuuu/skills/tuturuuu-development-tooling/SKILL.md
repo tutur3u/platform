@@ -11,7 +11,7 @@ page. Keep root AGENTS.md for cross-cutting constraints, not a growing incident 
 
 For skill changes, make descriptions concise and discriminating. Keep the entrypoint
 focused on decisions and route substantial conditional detail to references. Preserve
-security, ownership, migration parity, and delivery boundaries. Remove generic
+security, ownership, active runtime policy, and delivery boundaries. Remove generic
 encouragement, duplicate recipes, arbitrary approval pauses, and unsupported tool
 requirements. Do not turn a model-specific preference into a universal policy.
 
