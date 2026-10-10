@@ -210,3 +210,101 @@ it('does not turn a collaboration preference into actor access or publishing aut
     mutate(db, editor, { action: 'saveWorld', worldId, version: 2, draft })
   ).rejects.toMatchObject({ status: 403 });
 });
+
+it.each([true, false])(
+  'saving a staged public version only changes the authorized private draft (notebook=%s)',
+  async (isWorld) => {
+    const original = {
+      ...draft,
+      title: 'Published source',
+      creationGuidance: guidance,
+    };
+    const entryId = isWorld
+      ? worldId
+      : (
+          await mutate(db, owner, {
+            action: 'createEntry',
+            worldId,
+            draft: original,
+          })
+        ).id;
+    if (isWorld)
+      await mutate(db, owner, {
+        action: 'saveWorld',
+        worldId,
+        version: 1,
+        draft: original,
+      });
+    const beforeVersion = isWorld ? 2 : 1;
+    await mutate(
+      db,
+      owner,
+      isWorld
+        ? { action: 'publishWorld', worldId, version: beforeVersion }
+        : { action: 'publishEntry', worldId, entryId, version: beforeVersion }
+    );
+    if (!isWorld)
+      await mutate(db, owner, { action: 'publishWorld', worldId, version: 1 });
+    const publishedVersion = beforeVersion + 1;
+    const changed = {
+      ...original,
+      title: 'New private text',
+      contentNotice: 'Private notice',
+    };
+    await mutate(
+      db,
+      owner,
+      isWorld
+        ? {
+            action: 'saveWorld',
+            worldId,
+            version: publishedVersion,
+            draft: changed,
+          }
+        : {
+            action: 'saveEntry',
+            worldId,
+            entryId,
+            version: publishedVersion,
+            draft: changed,
+          }
+    );
+    const view = await readWorld(db, owner, worldId);
+    const source = isWorld
+      ? view.world
+      : view.entries.find((e) => e.id === entryId)!;
+    const beforePublic = await readPublic(db, worldId);
+    const restore = isWorld
+      ? {
+          action: 'saveWorld' as const,
+          worldId,
+          version: source.version,
+          draft: structuredClone(source.published!),
+        }
+      : {
+          action: 'saveEntry' as const,
+          worldId,
+          entryId,
+          version: source.version,
+          draft: structuredClone(source.published!),
+        };
+    await expect(
+      mutate(db, { ...owner, wsId: 'other-workspace' }, restore)
+    ).rejects.toMatchObject({ status: 403 });
+    await expect(
+      mutate(db, owner, { ...restore, version: source.version - 1 })
+    ).rejects.toMatchObject({ status: 409 });
+    expect((await readWorld(db, owner, worldId)).world.version).toBe(
+      view.world.version
+    );
+    await mutate(db, owner, restore);
+    const after = await readWorld(db, owner, worldId);
+    const saved = isWorld
+      ? after.world
+      : after.entries.find((e) => e.id === entryId)!;
+    expect(saved.draft).toEqual(original);
+    expect(saved.draft).not.toHaveProperty('contentNotice');
+    expect(saved.version).toBe(source.version + 1);
+    expect(await readPublic(db, worldId)).toEqual(beforePublic);
+  }
+);

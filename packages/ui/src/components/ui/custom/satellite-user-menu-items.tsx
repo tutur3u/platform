@@ -22,6 +22,9 @@ import {
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import type { ReactNode } from 'react';
+import { PublicProfileMenuItem } from './public-profile-menu-item';
+
+export { PublicProfileMenuItem } from './public-profile-menu-item';
 
 export type SidebarBehavior = 'expanded' | 'collapsed' | 'hover' | 'hidden';
 
@@ -35,6 +38,7 @@ export function SatelliteUserMenuItems({
   accountItems,
   workspaceSelect,
   signedIn,
+  publicProfile,
   onReport,
   onLogout,
 }: {
@@ -61,6 +65,7 @@ export function SatelliteUserMenuItems({
   accountItems: ReactNode;
   workspaceSelect?: ReactNode;
   signedIn: boolean;
+  publicProfile?: { href: string; label: string };
   onReport: () => void;
   onLogout: () => void;
 }) {
@@ -75,6 +80,9 @@ export function SatelliteUserMenuItems({
         </>
       ) : null}
       <DropdownMenuGroup>
+        {signedIn && publicProfile && (
+          <PublicProfileMenuItem {...publicProfile} />
+        )}
         <DropdownMenuItem asChild>
           <a
             href={centralUrl}
