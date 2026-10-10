@@ -14,6 +14,8 @@ import {
 
 const seams = vi.hoisted(() => ({
   session: vi.fn(),
+  request: vi.fn(),
+  sessionUser: vi.fn(),
   admin: vi.fn(),
   app: vi.fn(),
   hasApp: vi.fn(),
@@ -23,6 +25,12 @@ vi.mock('@tuturuuu/auth/supabase-session-user', () => ({
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: seams.admin,
+}));
+vi.mock('@tuturuuu/supabase/request/server', () => ({
+  createRequestClient: seams.request,
+}));
+vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
+  resolveAuthenticatedSessionUser: seams.sessionUser,
 }));
 vi.mock('@tuturuuu/auth/app-session', () => ({
   getAppSessionUserFromRequest: seams.app,
@@ -102,6 +110,8 @@ async function finish(f: ReturnType<typeof fixture>) {
 beforeEach(() => {
   vi.clearAllMocks();
   seams.hasApp.mockReturnValue(null);
+  seams.request.mockResolvedValue({ auth: { synthetic: true } });
+  seams.sessionUser.mockResolvedValue({ user: { id: actor }, authError: null });
   seams.session.mockResolvedValue({
     user: { id: actor },
     authError: null,
@@ -110,7 +120,7 @@ beforeEach(() => {
 });
 
 describe('new resolver lifetime seam controls only', () => {
-  it('actual default session calls shared helper with EXACT ONE argument and current with SDK id only', async () => {
+  it('scoped defaults compose request/helper fetch and current with SDK id only', async () => {
     const f = fixture('Bearer synthetic');
     const getUserById = vi.fn(async () => ({
       data: { user: identity },
@@ -118,16 +128,27 @@ describe('new resolver lifetime seam controls only', () => {
     }));
     seams.admin.mockResolvedValue({ auth: { admin: { getUserById } } });
     expect(await resolveStaffActor(f.request, f.operation)).toBe(actor);
-    expect(seams.session).toHaveBeenCalledOnce();
-    const isolated = seams.session.mock.calls[0]![0];
-    expect(seams.session).toHaveBeenCalledExactlyOnceWith(isolated);
-    expect(seams.session.mock.calls[0]).toHaveLength(1);
+    expect(seams.session).not.toHaveBeenCalled();
+    const isolated = seams.request.mock.calls[0]![0];
+    expect(seams.request).toHaveBeenCalledExactlyOnceWith(isolated, {
+      fetch: expect.any(Function),
+    });
+    expect(seams.sessionUser).toHaveBeenCalledExactlyOnceWith(
+      await seams.request.mock.results[0]!.value,
+      { check: expect.any(Function) }
+    );
     expect(isolated.headers.get('cookie')).toBeNull();
     expect(isolated.headers.get('authorization')).toBe('Bearer synthetic');
     expect(isolated.signal.aborted).toBe(false);
     f.controller.abort();
     expect(isolated.signal.aborted).toBe(true);
-    expect(seams.admin).toHaveBeenCalledExactlyOnceWith({ noCookie: true });
+    expect(seams.admin).toHaveBeenCalledExactlyOnceWith({
+      noCookie: true,
+      fetch: expect.any(Function),
+    });
+    expect(seams.admin.mock.calls[0]![0].fetch).not.toBe(
+      seams.request.mock.calls[0]![1].fetch
+    );
     expect(getUserById).toHaveBeenCalledExactlyOnceWith(actor);
     await finish(f);
   });
@@ -149,6 +170,9 @@ describe('new resolver lifetime seam controls only', () => {
     expect(await response.json()).toEqual({ eligible: true });
     expect(resolver).toHaveBeenCalledExactlyOnceWith(request);
     expect(seams.session).toHaveBeenCalledExactlyOnceWith(request);
+    expect(seams.request).not.toHaveBeenCalled();
+    expect(seams.sessionUser).not.toHaveBeenCalled();
+    expect(seams.admin).toHaveBeenCalledExactlyOnceWith({ noCookie: true });
     expect(getUserById).toHaveBeenCalledExactlyOnceWith(actor);
     expect(check).toHaveBeenCalledExactlyOnceWith(actor);
   });
@@ -213,18 +237,24 @@ describe('new resolver lifetime seam controls only', () => {
     }
   );
   it.each(['fulfill', 'reject'] as const)(
-    'default shared session %s after stop prevents admin allocation',
+    'default scoped session %s after stop prevents admin allocation',
     async (outcome) => {
       const f = fixture('Bearer synthetic');
       const pending = deferred<unknown>();
-      seams.session.mockReturnValue(pending.promise);
+      const started = deferred<void>();
+      seams.sessionUser.mockImplementation(() => {
+        started.resolve();
+        return pending.promise;
+      });
       const result = resolveStaffActor(f.request, f.operation);
+      await started.promise;
       f.expire();
       if (outcome === 'fulfill')
         pending.resolve({ user: { id: actor }, authError: null });
       else pending.reject(new StaffReadError(401));
       await expect(result).rejects.toMatchObject({ status: 503 });
-      expect(seams.session.mock.calls[0]).toHaveLength(1);
+      expect(seams.sessionUser.mock.calls[0]).toHaveLength(2);
+      expect(seams.session).not.toHaveBeenCalled();
       expect(seams.admin).not.toHaveBeenCalled();
       await finish(f);
     }
@@ -268,6 +298,173 @@ describe('new resolver lifetime seam controls only', () => {
     ).rejects.toMatchObject({ status: 503 });
     expect(a.current).not.toHaveBeenCalled();
     expect(a.session).not.toHaveBeenCalled();
+    await finish(f);
+  });
+});
+
+describe('actual scoped default construction and inspection boundaries', () => {
+  it.each(['fulfill', 'reject'] as const)(
+    'request client allocation %s after stop never enters authoritative helper',
+    async (outcome) => {
+      const f = fixture('Bearer synthetic');
+      const pending = deferred<unknown>();
+      const started = deferred<void>();
+      seams.request.mockImplementation(() => {
+        started.resolve();
+        return pending.promise;
+      });
+      const result = resolveStaffActor(f.request, f.operation);
+      const rejected = expect(result).rejects.toMatchObject({ status: 503 });
+      await started.promise;
+      f.controller.abort();
+      if (outcome === 'fulfill') pending.resolve({ auth: {} });
+      else pending.reject(new StaffReadError(401));
+      await rejected;
+      expect(seams.sessionUser).not.toHaveBeenCalled();
+      expect(seams.session).not.toHaveBeenCalled();
+      expect(seams.admin).not.toHaveBeenCalled();
+      await finish(f);
+    }
+  );
+  it.each(['session', 'current'] as const)(
+    'late private %s getters are not inspected after stop',
+    async (phase) => {
+      const f = fixture('Bearer synthetic');
+      const started = deferred<void>();
+      const pending = deferred<unknown>();
+      const privateRead = vi.fn(() => {
+        throw new Error('PRIVATE synthetic value');
+      });
+      const late = Object.defineProperties(
+        {},
+        {
+          user: { get: privateRead },
+          authError: { get: privateRead },
+          data: { get: privateRead },
+          error: { get: privateRead },
+        }
+      );
+      const getUserById = vi.fn(() => {
+        started.resolve();
+        return pending.promise;
+      });
+      seams.admin.mockResolvedValue({ auth: { admin: { getUserById } } });
+      if (phase === 'session')
+        seams.sessionUser.mockImplementation(() => {
+          started.resolve();
+          return pending.promise;
+        });
+      const result = resolveStaffActor(f.request, f.operation);
+      const rejected = expect(result).rejects.toMatchObject({ status: 503 });
+      await started.promise;
+      f.expire();
+      pending.resolve(late);
+      await rejected;
+      expect(privateRead).not.toHaveBeenCalled();
+      if (phase === 'session') expect(seams.admin).not.toHaveBeenCalled();
+      else expect(getUserById).toHaveBeenCalledExactlyOnceWith(actor);
+      await finish(f);
+    }
+  );
+  it('platform-app actor skips session and still constructs scoped fresh current', async () => {
+    const f = fixture('Bearer ttr_app_synthetic');
+    seams.app.mockReturnValue({ id: actor });
+    const getUserById = vi.fn(async () => ({
+      data: { user: identity },
+      error: null,
+    }));
+    seams.admin.mockResolvedValue({ auth: { admin: { getUserById } } });
+    expect(await resolveStaffActor(f.request, f.operation)).toBe(actor);
+    expect(seams.app).toHaveBeenCalledExactlyOnceWith(expect.any(Request), {
+      targetApp: 'platform',
+    });
+    expect(seams.request).not.toHaveBeenCalled();
+    expect(seams.sessionUser).not.toHaveBeenCalled();
+    expect(seams.session).not.toHaveBeenCalled();
+    expect(seams.admin).toHaveBeenCalledExactlyOnceWith({
+      noCookie: true,
+      fetch: expect.any(Function),
+    });
+    expect(getUserById).toHaveBeenCalledExactlyOnceWith(actor);
+    expect((await finish(f)).status).toBe(200);
+  });
+  it('context-free explicit bearer retains one-argument shared resolver and cookie stripping', async () => {
+    const f = fixture('Bearer synthetic');
+    const getUserById = vi.fn(async () => ({
+      data: { user: identity },
+      error: null,
+    }));
+    seams.admin.mockResolvedValue({ auth: { admin: { getUserById } } });
+    expect(await resolveStaffActor(f.request)).toBe(actor);
+    const isolated = seams.session.mock.calls[0]![0];
+    expect(seams.session).toHaveBeenCalledExactlyOnceWith(isolated);
+    expect(isolated.headers.get('cookie')).toBeNull();
+    expect(seams.request).not.toHaveBeenCalled();
+    expect(seams.sessionUser).not.toHaveBeenCalled();
+    expect(seams.admin).toHaveBeenCalledExactlyOnceWith({ noCookie: true });
+    expect(getUserById).toHaveBeenCalledExactlyOnceWith(actor);
+    await finish(f);
+  });
+  it('A/B wrappers stay distinct and cancelling A does not abort B dispatch', async () => {
+    const a = fixture('Bearer synthetic-a');
+    const b = fixture('Bearer synthetic-b');
+    const clientA = { auth: { synthetic: 'a' } };
+    const clientB = { auth: { synthetic: 'b' } };
+    seams.request.mockResolvedValueOnce(clientA).mockResolvedValueOnce(clientB);
+    const getUserById = vi.fn(async () => ({
+      data: { user: identity },
+      error: null,
+    }));
+    seams.admin.mockResolvedValue({ auth: { admin: { getUserById } } });
+    const answers = await Promise.all([
+      resolveStaffActor(a.request, a.operation),
+      resolveStaffActor(b.request, b.operation),
+    ]);
+    expect(answers).toEqual([actor, actor]);
+    expect(seams.sessionUser.mock.calls.map((call) => call[0])).toEqual([
+      clientA,
+      clientB,
+    ]);
+    const fetchA: typeof fetch = seams.request.mock.calls[0]![1].fetch;
+    const fetchB: typeof fetch = seams.request.mock.calls[1]![1].fetch;
+    expect(fetchA).not.toBe(fetchB);
+    const started = deferred<void>();
+    const pending = deferred<Response>();
+    let signal: AbortSignal | null | undefined;
+    const network = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation((_input, init) => {
+        signal = init?.signal;
+        started.resolve();
+        return pending.promise;
+      });
+    // Wrappers capture fetch at construction, so create a new B callback here.
+    try {
+      await resolveStaffActor(b.request, b.operation);
+      const selected: typeof fetch = seams.request.mock.calls[2]![1].fetch;
+      const response = selected('https://synthetic.invalid/auth/v1/user');
+      await started.promise;
+      a.controller.abort();
+      expect(signal?.aborted).toBe(false);
+      pending.resolve(new Response(null, { status: 204 }));
+      expect((await response).status).toBe(204);
+      expect((await finish(a)).status).toBe(503);
+      expect((await finish(b)).status).toBe(200);
+    } finally {
+      network.mockRestore();
+    }
+  });
+  it('scoped helper check remains live before any SDK dispatch', async () => {
+    const f = fixture('Bearer synthetic');
+    seams.sessionUser.mockImplementation(async (_client, options) => {
+      f.controller.abort();
+      options.check();
+      throw new Error('unreachable');
+    });
+    await expect(
+      resolveStaffActor(f.request, f.operation)
+    ).rejects.toMatchObject({ status: 503 });
+    expect(seams.admin).not.toHaveBeenCalled();
     await finish(f);
   });
 });
