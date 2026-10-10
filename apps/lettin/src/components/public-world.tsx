@@ -121,6 +121,7 @@ export function PublicWorld({
           <DocumentView
             draft={draft}
             showOutline
+            showReadingStatistics
             outlineScope={`lettin-${world.id}-${entry?.id ?? 'notebook'}`}
           />
         )}

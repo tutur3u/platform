@@ -697,3 +697,14 @@ Use the existing keyed editor lifetime to reset local state on source changes.
 Count current body content through the bounded Unicode statistics helper; withhold
 completion claims while source edits are unapplied or traversal is partial.
 Document session-only retention and avoid interpreting a reached target as a save.
+
+
+### Published reading counts
+
+Public reader indicators must derive from the selected `published.content` only.
+Reuse Lettin's bounded writing-statistics model for body length; opt in explicitly
+from PublicWorld so private DocumentView previews keep their existing behavior.
+Count expandable body text, exclude metadata/marks/media, and retain the partial
+warning at traversal limits. Do not imply reading time or draft publication from
+these counts. Regression: `published-reading-statistics.test.tsx` and
+`writing-statistics-model.test.ts`.
