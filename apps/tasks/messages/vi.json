@@ -8436,6 +8436,8 @@
     "name": "Tên công việc",
     "noBoards": "Không có bảng nào trong không gian làm việc này.",
     "noProjects": "Không có dự án nào. Bỏ chọn liên kết dự án để tiếp tục.",
+    "notes": "Ghi chú lập kế hoạch (không bắt buộc)",
+    "notesHint": "Thêm tối đa 2.000 ký tự cho những người có thể xem công việc đích. Chia sẻ liên kết sổ ghi chép là lựa chọn riêng.",
     "openBoards": "Mở bảng công việc",
     "openTask": "Mở công việc",
     "priority": "Mức độ ưu tiên",

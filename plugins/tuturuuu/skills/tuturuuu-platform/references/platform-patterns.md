@@ -28,7 +28,9 @@ shared-package changes.
   deriving values from private source content. Load optional destination choices
   only after opt-in, validate selection against the current read, and let users
   explicitly omit the optional association when that read fails. Canonical API
-  authorization remains the final write boundary. See the
+  authorization remains the final write boundary. Optional authored destination
+  notes start empty, use bounded literal text, and keep source-link consent separate.
+  Preserve them in an unconfirmed-create recovery state without automatic retries. See the
   [Lettin product decision](../../../../../apps/docs/platform/features/lettin.mdx).
 
 - For a customer-facing behavior fix that spans apps, trace the setting from its
