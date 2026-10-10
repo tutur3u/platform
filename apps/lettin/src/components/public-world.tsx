@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { DocumentView } from './document-view';
+import { ReaderPresentation } from './reader-presentation';
 import { WikiBrowser } from './wiki-browser';
 import {
   filterWiki,
@@ -109,22 +110,24 @@ export function PublicWorld({
         >
           {t('creatorWorlds')}
         </Link>
-        {browse ? (
-          <WikiBrowser
-            entries={section === 'relationships' ? records : visible}
-            search={search}
-            section={section}
-            disabled={false}
-            onSelect={select}
-          />
-        ) : (
-          <DocumentView
-            draft={draft}
-            showOutline
-            showReadingStatistics
-            outlineScope={`lettin-${world.id}-${entry?.id ?? 'notebook'}`}
-          />
-        )}
+        <ReaderPresentation key={world.id} active={!browse}>
+          {browse ? (
+            <WikiBrowser
+              entries={section === 'relationships' ? records : visible}
+              search={search}
+              section={section}
+              disabled={false}
+              onSelect={select}
+            />
+          ) : (
+            <DocumentView
+              draft={draft}
+              showOutline
+              showReadingStatistics
+              outlineScope={`lettin-${world.id}-${entry?.id ?? 'notebook'}`}
+            />
+          )}
+        </ReaderPresentation>
         {relationships.length > 0 && !browse && (
           <section className="wiki-reading-links mt-8">
             <h2>{t('relationships')}</h2>

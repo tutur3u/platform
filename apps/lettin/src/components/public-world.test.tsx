@@ -122,3 +122,55 @@ it('searches published body text without indexing extra private draft data', asy
     container.remove();
   }
 });
+
+it('retains reader appearance when navigating between published entries in one notebook', async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  const first = createStarterDraft(
+    'First published entry',
+    'blank',
+    (key) => key
+  );
+  const second = createStarterDraft(
+    'Second published entry',
+    'blank',
+    (key) => key
+  );
+  const world: LettinPublicWorld = {
+    id: 'reader-world',
+    creatorId: 'creator',
+    published: first,
+    entries: [
+      { id: 'first', published: first },
+      { id: 'second', published: second },
+    ],
+  };
+  const original = JSON.stringify(world);
+  const container = document.createElement('div');
+  const root = createRoot(container);
+  try {
+    await act(() =>
+      root.render(<PublicWorld world={world} initialEntry="first" />)
+    );
+    const size = [...container.querySelectorAll('label')]
+      .find((label) => label.textContent?.includes('readerTextSize'))
+      ?.querySelector('select');
+    expect(size).toBeDefined();
+    await act(() => {
+      size!.value = 'large';
+      size!.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    const entry = [...container.querySelectorAll('nav button')].find(
+      (button) => button.textContent === 'Second published entry'
+    );
+    expect(entry).toBeDefined();
+    await act(() => (entry as HTMLButtonElement).click());
+    expect(
+      container
+        .querySelector('.lettin-reader-presentation')
+        ?.getAttribute('data-reader-size')
+    ).toBe('large');
+    expect(JSON.stringify(world)).toBe(original);
+  } finally {
+    await act(() => root.unmount());
+  }
+});
