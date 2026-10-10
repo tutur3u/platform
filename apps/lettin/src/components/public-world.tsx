@@ -2,6 +2,8 @@
 import type { LettinPublicWorld } from '@tuturuuu/internal-api/lettin';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
+import { PublicLinkButton } from '@tuturuuu/ui/public-link-button';
+import { getPublicContentLink } from '@tuturuuu/utils/public-content-link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
@@ -42,7 +44,7 @@ export function PublicWorld({
   const relationships = wikiOf(
     entry?.published ?? world.published
   ).relationships;
-  const browse = !entry && ['timeline', 'relationships'].includes(section);
+  const browse = !entry && section !== 'overview';
   const draft = entry?.published ?? world.published;
   const links = entry
     ? world.entries.filter((e) => draft.links.includes(e.id))
@@ -86,6 +88,28 @@ export function PublicWorld({
             ))}
           </select>
         </label>
+        {section !== 'relationships' && (
+          <p role="status" className="text-muted-foreground text-sm">
+            {t('readingEntryCount', { count: visible.length })}
+          </p>
+        )}
+        {section !== 'relationships' && !visible.length && (
+          <p className="text-muted-foreground text-sm">
+            {t('noReadingMatches')}
+          </p>
+        )}
+        {(search || section !== 'overview') && (
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSearch('');
+              setSection('overview');
+              select('');
+            }}
+          >
+            {t('clearReadingFilters')}
+          </Button>
+        )}
         <nav
           className="max-h-72 space-y-1 overflow-y-auto md:max-h-[65vh]"
           aria-label={t('entries')}
@@ -109,14 +133,32 @@ export function PublicWorld({
         >
           {t('creatorWorlds')}
         </Link>
-        {browse ? (
-          <WikiBrowser
-            entries={section === 'relationships' ? records : visible}
-            search={search}
-            section={section}
-            disabled={false}
-            onSelect={select}
+        <div className="mb-6">
+          <PublicLinkButton
+            url={getPublicContentLink({
+              type: 'notebook',
+              worldId: world.id,
+              entryId: entry?.id,
+            })}
+            label={t(entry ? 'copyPublicEntryLink' : 'copyPublicNotebookLink')}
+            copiedLabel={t('publicLinkCopied')}
+            errorLabel={t('publicLinkCopyFailed')}
+            manualCopyLabel={t('publicLinkManualCopy')}
           />
+        </div>
+        {browse ? (
+          <>
+            {!['timeline', 'relationships'].includes(section) && (
+              <h1 className="mb-6 text-3xl">{t(`section${section}`)}</h1>
+            )}
+            <WikiBrowser
+              entries={section === 'relationships' ? records : visible}
+              search={search}
+              section={section}
+              disabled={false}
+              onSelect={select}
+            />
+          </>
         ) : (
           <DocumentView
             draft={draft}
