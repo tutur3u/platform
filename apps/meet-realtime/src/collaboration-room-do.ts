@@ -10,6 +10,10 @@ import {
   Y,
 } from '../../../packages/realtime/src/collaboration';
 import {
+  planRetryReservation,
+  type RetryBudget,
+} from '../../../packages/realtime/src/core/retry-budget';
+import {
   signRealtimePayload,
   verifyRealtimePayload,
 } from '../../../packages/realtime/src/core/token';
@@ -43,8 +47,14 @@ type Metadata = {
   runnerId?: string;
   runnerHashes?: Record<string, string>;
   runnerNeedsAck?: boolean;
+  checkpointRetry?: RetryBudget;
 };
 const KEY = 'programming-document';
+const OFFLINE_RETRY_POLICY = {
+  maxAttempts: 3,
+  maxAgeMs: 120_000,
+  delayMs: 30_000,
+};
 function encoded(bytes: Uint8Array) {
   return Buffer.from(bytes).toString('base64');
 }
@@ -58,7 +68,7 @@ export class CollaborationRoomDurableObject implements DurableObject {
   private persisting: Promise<void> | null = null;
   private dirty = false;
   private checkpointing: Promise<void> | null = null;
-  private saveFailures = 0;
+  private alarmInFlight: Promise<void> | null = null;
   private runnerIngestion: Promise<unknown> = Promise.resolve();
   constructor(
     private state: DurableObjectState,
@@ -443,7 +453,13 @@ export class CollaborationRoomDurableObject implements DurableObject {
     socket.close();
     this.broadcastPresence();
   }
-  async alarm() {
+  alarm() {
+    this.alarmInFlight ??= this.runAlarm().finally(() => {
+      this.alarmInFlight = null;
+    });
+    return this.alarmInFlight;
+  }
+  private async runAlarm() {
     await this.ready;
     for (const socket of this.state.getWebSockets()) {
       if (
@@ -452,19 +468,55 @@ export class CollaborationRoomDurableObject implements DurableObject {
       )
         socket.close(1008, 'Ticket expired');
     }
+    const connected = this.state
+      .getWebSockets()
+      .some(
+        (socket) =>
+          (socket.deserializeAttachment() as Attachment).ticket.exp * 1000 >
+          Date.now()
+      );
+    if (this.dirty && !connected && this.metadata) {
+      const plan = planRetryReservation(
+        this.metadata.checkpointRetry,
+        Date.now(),
+        OFFLINE_RETRY_POLICY
+      );
+      if (plan.kind === 'stop') return;
+      if (plan.kind === 'wait') {
+        await this.state.storage.setAlarm(plan.at);
+        return;
+      }
+      // Persist before provider I/O: reconstruction cannot replenish this job.
+      this.metadata.checkpointRetry = plan.reservation;
+      await this.state.storage.put('metadata', this.metadata);
+    }
     if (this.dirty)
       try {
         await this.checkpoint();
-        this.saveFailures = 0;
       } catch {
-        this.saveFailures++;
         this.broadcast({ type: 'save-error' });
       }
+    // A join can arrive while checkpoint I/O is pending. Preserve its live
+    // expiry sweep even when the offline attempt just exhausted its budget.
+    const stillConnected = this.state
+      .getWebSockets()
+      .some(
+        (socket) =>
+          (socket.deserializeAttachment() as Attachment).ticket.exp * 1000 >
+          Date.now()
+      );
+    const retry = this.metadata?.checkpointRetry;
     if (
-      this.state.getWebSockets().length ||
-      (this.dirty && this.saveFailures < 3)
+      stillConnected ||
+      (this.dirty &&
+        planRetryReservation(retry, Date.now(), OFFLINE_RETRY_POLICY).kind !==
+          'stop')
     )
-      await this.state.storage.setAlarm(Date.now() + 30_000);
+      await this.state.storage.setAlarm(
+        stillConnected || !retry
+          ? Date.now() + 30_000
+          : Math.max(Date.now() + 1, retry.nextAt)
+      );
   }
   private checkpoint() {
     this.checkpointing ??= this.doCheckpoint().finally(() => {
@@ -526,6 +578,7 @@ export class CollaborationRoomDurableObject implements DurableObject {
     this.metadata.revision = saved.revision;
     this.metadata.checkpointHash = digest;
     this.metadata.fileHashes = hashes;
+    delete this.metadata.checkpointRetry;
     // New updates arriving during network I/O must schedule another checkpoint.
     this.dirty =
       JSON.stringify(snapshot) !==

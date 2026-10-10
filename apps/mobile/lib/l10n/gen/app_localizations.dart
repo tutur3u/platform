@@ -97,6 +97,42 @@ abstract class AppLocalizations {
     Locale('vi')
   ];
 
+  /// No description provided for @assistantDownloadPhasePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get assistantDownloadPhasePending;
+
+  /// No description provided for @assistantDownloadPhaseQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued'**
+  String get assistantDownloadPhaseQueued;
+
+  /// No description provided for @assistantDownloadPhaseTransferring.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading'**
+  String get assistantDownloadPhaseTransferring;
+
+  /// No description provided for @assistantDownloadPhaseRetryWait.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to retry'**
+  String get assistantDownloadPhaseRetryWait;
+
+  /// No description provided for @assistantDownloadPhasePaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get assistantDownloadPhasePaused;
+
+  /// No description provided for @assistantDownloadPhaseVerifying.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying download'**
+  String get assistantDownloadPhaseVerifying;
+
   /// No description provided for @adminAccountsActive.
   ///
   /// In en, this message translates to:
@@ -20094,6 +20130,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not accept the read action. Try again.'**
   String get notificationsReadError;
+
+  /// No description provided for @notesLocalAiTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Summarize on device'**
+  String get notesLocalAiTitle;
+
+  /// No description provided for @notesLocalAiDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Use an installed model for a short local summary. Review before adding to your note. No note text is sent to an AI service.'**
+  String get notesLocalAiDescription;
+
+  /// No description provided for @notesLocalAiModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed model'**
+  String get notesLocalAiModel;
+
+  /// No description provided for @notesLocalAiMissingModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Install or import this model in Mira settings first.'**
+  String get notesLocalAiMissingModel;
+
+  /// No description provided for @notesLocalAiUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Local inference is unavailable on this device.'**
+  String get notesLocalAiUnsupported;
+
+  /// No description provided for @notesLocalAiInput.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a nonempty note with at most 5,000 characters.'**
+  String get notesLocalAiInput;
+
+  /// No description provided for @notesLocalAiEngine.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not generate a local summary. No remote service was used.'**
+  String get notesLocalAiEngine;
+
+  /// No description provided for @notesLocalAiSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not confirm adding the summary. Check your note before saving again.'**
+  String get notesLocalAiSaveError;
+
+  /// No description provided for @notesLocalAiStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get notesLocalAiStop;
+
+  /// No description provided for @notesLocalAiGenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate locally'**
+  String get notesLocalAiGenerate;
+
+  /// No description provided for @notesLocalAiAppend.
+  ///
+  /// In en, this message translates to:
+  /// **'Append summary'**
+  String get notesLocalAiAppend;
+
+  /// No description provided for @notesLocalAiDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard preview'**
+  String get notesLocalAiDiscard;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -7,6 +7,7 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin();
 export default withNextIntl(
   createTuturuuuNextConfig({
+    seoApp: 'parley',
     env: { NEXT_PUBLIC_MEETING_APP: 'parley' },
     async rewrites() {
       return {

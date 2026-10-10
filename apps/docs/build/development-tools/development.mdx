@@ -6,7 +6,7 @@ updatedAt: '2026-08-21'
 
 <Info>
   **Prerequisite**: You should have installed [Node.js](https://nodejs.org)
-  (version 22 or higher, matching the repo's `engines.node` of `>=22`).
+  (matching the repository floor of `>=22.13.0`).
 </Info>
 
 ## Installation
@@ -25,36 +25,22 @@ curl -fsSL https://bun.sh/install | bash
 powershell -c "irm bun.sh/install.ps1 | iex"
 ```
 
-## Why Bun?
+## Install the repository dependencies
 
-We chose bun as our runtime and package manager based on its [design goals](https://bun.sh/docs#design-goals), which align perfectly with our platform's needs:
+Use the Bun version pinned by the root `packageManager` field. The
+[version reference](/reference/repository/versions) is generated from repository
+manifests and lockfiles, so it records the current pins without relying on
+outdated prose or a globally installed CLI.
 
-- **4x Faster Startup**: Bun processes start significantly faster than Node.js, improving development experience and CI/CD performance
-- **Built-in TypeScript & JSX Support**: No need for additional transpilation setup - bun natively executes `.ts`, `.tsx`, and `.jsx` files
-- **All-in-One Toolkit**: Combines runtime, package manager, bundler, test runner, and script runner in a single executable
-- **Web Standards Compatibility**: Implements modern Web APIs like `fetch`, `WebSocket`, and `ReadableStream` out of the box
-- **Node.js Compatibility**: Drop-in replacement for Node.js with full compatibility for existing projects
-- **Better Performance**: Powered by JavaScriptCore engine with reduced memory usage and faster execution
-
-These benefits make bun an ideal choice for our monorepo architecture and development workflow.
-
-Step 2. **Configure Tiptap Pro Registry:**
-
-<Warning>This step is no longer needed.</Warning>
-
-Step 3. After configuring Tiptap Pro registry, you can install all dependencies by running the following command:
-
-<CodeGroup>
-
-```bash standard
-bun install
+```bash
+bun install --frozen-lockfile
 ```
 
-```bash short-hand
-bun i
-```
-
-</CodeGroup>
+The Tiptap Pro registry step is retired; no private registry setup is required.
+`bun setup` is not a minimal installation command: it can build packages and
+probe services. Use [development without Docker](/build/development-tools/without-docker)
+for the supported minimal Next.js path. Rust and TanStack Start are not in use
+and are not required to work on the active web apps.
 
 This repository's Bun configuration enforces a minimum release age of 1 day for
 new npm package versions. If Bun skips a just-published release during install,
@@ -159,31 +145,13 @@ cross-app auth can still use the `*.tuturuuu.localhost` URL. Pass `--force` or
 app workspaces. Force mode starts the package `dev --force` path so Portless can
 take over the matching route instead of leaving a stale static alias in place.
 
-`bun dev:tanstack-web` starts the TanStack Start migration frontend at
-`https://tanstack.tuturuuu.localhost`, with fallback port `7824`. It is the
-dedicated frontend for the Next.js-to-TanStack migration and should call
-Rust-owned APIs through `packages/internal-api` helpers instead of direct
-browser access to protected `apps/web` routes. See
-`platform/architecture/tanstack-rust-migration` for the route manifest, Docker,
-E2E, benchmark gates, and Cloudflare Workers preparation.
+### Inactive migration tooling
 
-For the Cloudflare-compatible preview shape, start the Worker entrypoints
-instead of the normal Portless dev wrapper:
-
-```bash
-bun wrangler dev --config apps/backend/wrangler.jsonc
-bun --cwd apps/tanstack-web run preview:cloudflare
-```
-
-Use the same environment variable names as deployment:
-`BACKEND_INTERNAL_TOKEN`, `BACKEND_PUBLIC_ORIGIN`, and
-`BACKEND_INTERNAL_URL`. Keep values in your shell or ignored local env files;
-do not add literal tokens or account-specific origins to docs, Wrangler config,
-package manifests, or source. After deploying preview Workers, run
-`bun smoke:cloudflare` with `BACKEND_WORKER_ORIGIN`,
-`TANSTACK_WEB_WORKER_ORIGIN`, and `BACKEND_INTERNAL_TOKEN` to verify backend
-health/readiness, protected migration status, missing/invalid token rejection,
-and the TanStack root shell.
+Rust (`apps/backend`) and TanStack Start (`apps/tanstack-web`) are paused and
+not in use. Retained commands and Worker entrypoints are future-resumption
+references, not steps in the current Next.js setup. Do not start these services
+or require their migration gates for routine app development. See the
+[active runtime map](/build/devops/active-runtime).
 
 `bun dev:web` is intentionally lean: by default it starts only `apps/web` and
 does not start the `@tuturuuu/types` or `@tuturuuu/supabase` package watch

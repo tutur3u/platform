@@ -10,6 +10,7 @@ const WEB_APP_URL = resolveTuturuuuWebAppUrl({
 });
 
 const nextConfig = createTuturuuuNextConfig({
+  seoApp: 'learn',
   async rewrites() {
     return {
       beforeFiles: [],
