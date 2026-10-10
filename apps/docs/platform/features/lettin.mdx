@@ -685,6 +685,10 @@ Regression coverage: `public-tag-discovery.test.tsx` checks independent tag link
 filter preservation and empty results; `public-catalogue-filters.test.ts` checks
 bounds; the public worlds API tests cover rejected filters; `public-catalogue-storage.test.ts`
 checks actual local D1 filtering, pagination and published snapshot isolation.
+The pagination dataset uses one set-based D1 seed with an asserted 30-row count;
+separate real create/save/publish mutations retain snapshot-boundary coverage.
+Keep fixture setup bounded so timed-out sequential writes cannot contaminate the
+next regression.
 
 ### Searchable relationship authoring
 
@@ -941,6 +945,25 @@ selection, explicit commands, reset, failure and blocked controls, and the local
 `storage.test.ts` covers page, character and story privacy, cross-workspace denial
 and revoked collaborator access. Exact-head builds and hosted dialog acceptance
 remain independent delivery gates.
+
+### Copying published notebook and entry links
+
+Public notebook readers can explicitly copy the canonical Lettin notebook URL or
+the selected published-entry URL. Only an entry present in the current published
+projection is included as `?entry=...`; unavailable or arbitrary query-selected
+IDs fall back to the notebook URL. Source notebook and entry IDs are routing
+identifiers, not access grants. A later unpublish/retirement may make a copied link
+unavailable; copying does not freeze content or bypass publication checks.
+
+The shared control copies only a validated public URL. It does not include private
+workspace paths, actor identifiers, draft text, titles, profile details, tracking
+values or permissions. Clipboard denial exposes a manually selectable URL and a
+retry action. Copying never sends a message, notifies a creator, publishes content
+or records a reader interaction. Regression evidence: `public-world.test.tsx`,
+`public-content-link.test.ts` and `public-link-button.test.tsx` cover published-entry
+selection, route fences, explicit intent, failure recovery and stale completion.
+Exact-head CI and hosted browser clipboard acceptance remain separate gates.
+
 ## Private saved-library filters
 
 The authenticated saved-library page lets readers filter their saved notebook
@@ -1058,3 +1081,122 @@ cards and counts, notice/alias context, empty recovery, entry links, snapshot
 isolation, chronology and relationship endpoints. `storage.test.ts` retains actual
 D1 private/public and workspace/revocation coverage. Exact-head app builds and
 hosted browser acceptance remain separate delivery gates.
+## Compare draft and published previews
+
+The private notebook and entry editors open **Preview** on the current local
+draft, including unsaved edits. The creator can switch to **Published snapshot**
+to inspect the saved publication with the same document renderer, notices,
+credits and creation guidance. These controls never save, publish, copy content
+to another app or change access. Closing and reopening starts on the current draft.
+
+The published choice is disabled when the record is unpublished. A saved snapshot
+is not proof that an entry is currently available to readers: its notebook must
+also be published, and existing reader and media permissions still apply. Saving
+draft edits leaves the published snapshot unchanged until explicit publication.
+The preview reads only the snapshots already authorized for the private editor;
+it does not fetch a public URL or broaden profile visibility.
+
+English and Vietnamese controls name the selected version and explain these
+boundaries. Regression coverage: `publication-preview.test.tsx` exercises local
+edits versus saved content, credits/notices, unpublished records, refreshed and
+revoked snapshots, accessible selection and reset on reopening. Existing
+`entry-editor.test.tsx` and local D1 `storage.test.ts` preserve pending-save,
+revision-conflict and publication isolation coverage.
+
+Preview version guidance describes the selected version neutrally in both English
+and Vietnamese. It must not identify the published snapshot as the draft. The
+bilingual `publication-preview.test.tsx` regression checks the dialog description
+before and after switching versions as well as the version-specific status.
+### Scoped notebook JSON export
+
+The notebook studio offers an explicit JSON document export, using published
+documents by default. The notebook owner may instead export saved private drafts
+after affirmative confirmation; collaborators cannot bulk-export private drafts.
+Unsaved editor changes block export. The server verifies the app-session actor,
+workspace/notebook permissions and chosen scope, then rechecks notebook access
+before returning the file. Published scope also rechecks that the notebook and
+all included entries remain published, rejecting a concurrent unpublish. Actor lifetime and dialog intent fences suppress
+deferred downloads after account departure, closing the dialog or leaving the
+studio. Nothing is exported automatically on opening the dialog.
+
+Format `lettin-notebook`, version one, includes scope, export time, source notebook
+and entry IDs, and validated document fields. Published exports omit unpublished
+entries and filter structured links/relationships to included entry IDs. Exports
+omit actor/workspace IDs, collaboration grants, profiles and saved-reader data.
+They contain artwork URLs rather than image bytes; managed URLs retain their
+existing access and retirement behavior. Offline artwork availability is not
+implied; the reviewed import below creates private copies without artwork. Downloaded files are controlled by the person who
+explicitly exports them; original records and publication permissions are unchanged.
+
+Exports are limited to 1,000 entries and 10 MiB. Each document comes from a saved
+server read; this is not an atomic multi-document database snapshot. The active
+draft schema projects known fields, so newly integrated document fields must retain
+export regression coverage. Regression evidence: `notebook-export.test.ts`, export
+route tests and `notebook-export.test.tsx`. Exact app CI and hosted download/account
+switch verification remain separate delivery gates.
+
+
+
+### Reviewed notebook JSON import
+
+Approved creators with workspace document-management permission can import a
+version-one `lettin-notebook` JSON file from the workspace Studio. The creator
+chooses a new title and explicitly confirms permission to copy all included
+content into the selected workspace, including private material. A stored,
+actor/workspace-bound preview expires after fifteen minutes; its entry list must
+be reviewed before a separate apply action. Account changes, mismatched preview
+owners, expired previews and revoked creator access stop the operation.
+
+Import always creates a new private notebook and new private entries, with fresh
+IDs and revision one. It never changes originals, restores publication, creates
+collaborators or imports reader/profile/moderation data. Structured links and wiki
+relationships are remapped only between included entries; missing targets are
+removed. Source notebook ID, export scope/time and entry IDs remain private preview
+provenance, not permission claims. File claims are untrusted and grant no access.
+
+Files contain artwork URLs rather than bytes. This importer removes cover, gallery
+and inline images and hyperlink targets, retaining inline-image alternative text,
+document text and document credits. It performs no remote fetch or media permission transfer. The review
+explains this intentional limitation; creators can add authorized artwork later.
+Unknown identity/grant fields are discarded through the active document schema.
+Source files are limited to 10 MiB and 1,000 entries; the sanitized preview plan
+is additionally limited to 1 MiB because it occupies one D1 row; malformed formats, duplicate IDs,
+executable nodes and excessive nesting are rejected. Applying the same preview is
+idempotent and commits the new drafts in one D1 transaction. Import is a copy
+workflow, not an in-place restore or full-fidelity offline backup.
+
+Regression evidence: `notebook-import.test.ts`, the import route tests and
+`notebook-import.test.tsx`, including D1 creation, ownership/expiry fences,
+relationship remapping, media stripping, source consent, duplicate submissions
+and stale actor/dialog completion. Exact-head CI and hosted file/account switching
+acceptance remain separate from focused fixture verification.
+
+## Private work progress
+
+Notebook owners and existing collaborators can label saved notebook and entry
+work as **Unstarted**, **Drafting**, **Revising**, or **Ready** in the studio.
+Historical drafts without a label behave as Unstarted. Labels are shared within
+the authorized notebook studio, rather than an actor's personal store. Existing
+revision checks, collaborator roles, workspace access and revocation still apply.
+Ready is advisory and does not publish content or grant publishing permission.
+
+The editor marks changes unsaved until the creator explicitly saves. The studio
+progress filter composes with the existing saved-entry search and section. It
+filters saved records rather than unsaved editor buffers; relationship views
+require both endpoints to remain in the filtered set. Clearing the filter restores
+all saved entries. This is a scoped organizational workflow; dedicated quick-note
+capture remains separate.
+
+Progress labels are always private from readers. Publication strips the label
+from the snapshot while retaining it in the saved draft. Public notebook,
+entry, catalogue and published-only JSON exports also remove it from historical
+published JSON. Owner-consented saved-draft exports preserve the private label. Saving
+or clearing a label does not publish, unpublish, or change a reader's content.
+Private saved-entry copies retain the source's saved label. Public profile sharing
+is unaffected. No new migration or external transfer is required.
+
+Regression evidence: `work-progress.test.ts` uses local D1 for publication,
+historical projections, copies, revisions, workspace boundaries and revocation;
+`world-studio-progress.test.tsx` exercises real studio filtering and opening;
+`entry-editor.test.tsx` verifies explicit save. These fixtures are separate from
+exact-head app builds and hosted browser acceptance.

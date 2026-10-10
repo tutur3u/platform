@@ -2,6 +2,8 @@
 import type { LettinPublicWorld } from '@tuturuuu/internal-api/lettin';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
+import { PublicLinkButton } from '@tuturuuu/ui/public-link-button';
+import { getPublicContentLink } from '@tuturuuu/utils/public-content-link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
@@ -131,6 +133,19 @@ export function PublicWorld({
         >
           {t('creatorWorlds')}
         </Link>
+        <div className="mb-6">
+          <PublicLinkButton
+            url={getPublicContentLink({
+              type: 'notebook',
+              worldId: world.id,
+              entryId: entry?.id,
+            })}
+            label={t(entry ? 'copyPublicEntryLink' : 'copyPublicNotebookLink')}
+            copiedLabel={t('publicLinkCopied')}
+            errorLabel={t('publicLinkCopyFailed')}
+            manualCopyLabel={t('publicLinkManualCopy')}
+          />
+        </div>
         {browse ? (
           <>
             {!['timeline', 'relationships'].includes(section) && (
