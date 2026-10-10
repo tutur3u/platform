@@ -9,16 +9,14 @@ export const useLocalStorage = <T>(
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    // Retrieve from localStorage
-    const item = window.localStorage.getItem(key);
-    if (item) {
-      try {
-        setStoredValue(JSON.parse(item));
-      } catch (error) {
-        console.error(error);
-      }
+    try {
+      const item = window.localStorage.getItem(key);
+      if (item) setStoredValue(JSON.parse(item));
+    } catch {
+      console.error('Unable to read browser preferences.');
+    } finally {
+      setInitialized(true);
     }
-    setInitialized(true);
   }, [key]);
 
   const setValue = useCallback(
@@ -29,8 +27,8 @@ export const useLocalStorage = <T>(
         // Save to localStorage
         try {
           window.localStorage.setItem(key, JSON.stringify(valueToStore));
-        } catch (error) {
-          console.error(error);
+        } catch {
+          console.error('Unable to save browser preferences.');
         }
         return valueToStore;
       });

@@ -9,10 +9,16 @@ const wsId = '00000000-0000-4000-8000-000000000001';
 const seriesId = '00000000-0000-4000-8000-000000000301';
 
 function query(data: unknown) {
-  const result = Promise.resolve({ data, error: null });
+  const result = Promise.resolve({
+    data,
+    error: null,
+    count: Array.isArray(data) ? data.length : 0,
+  });
   const builder = {
     eq: vi.fn(() => builder),
     gte: vi.fn(() => builder),
+    gt: vi.fn(() => builder),
+    range: vi.fn(() => builder),
     in: vi.fn(() => builder),
     lte: vi.fn(() => builder),
     order: vi.fn(() => builder),
@@ -106,4 +112,165 @@ describe('planned group session dates', () => {
     ]);
     expect(privateDb.from).toHaveBeenCalledTimes(4);
   });
+});
+
+type CalendarCase = {
+  date: string;
+  startsAt: string;
+  endsAt: string;
+  startTime: string;
+  endTime: string;
+  seriesTimezone: string;
+  workspaceTimezone: string;
+  billingDate: string;
+};
+const calendarCases: CalendarCase[] = [
+  {
+    date: '2026-09-30',
+    startsAt: '2026-09-30T23:30:00.000Z',
+    endsAt: '2026-10-01T00:30:00.000Z',
+    startTime: '23:30:00',
+    endTime: '00:30:00',
+    seriesTimezone: 'UTC',
+    workspaceTimezone: 'Asia/Ho_Chi_Minh',
+    billingDate: '2026-10-01',
+  },
+  {
+    date: '2026-12-31',
+    startsAt: '2027-01-01T02:00:00.000Z',
+    endsAt: '2027-01-01T03:00:00.000Z',
+    startTime: '18:00:00',
+    endTime: '19:00:00',
+    seriesTimezone: 'America/Los_Angeles',
+    workspaceTimezone: 'Asia/Ho_Chi_Minh',
+    billingDate: '2027-01-01',
+  },
+  {
+    date: '2026-03-08',
+    startsAt: '2026-03-08T06:30:00.000Z',
+    endsAt: '2026-03-08T07:30:00.000Z',
+    startTime: '01:30:00',
+    endTime: '03:30:00',
+    seriesTimezone: 'America/New_York',
+    workspaceTimezone: 'America/Los_Angeles',
+    billingDate: '2026-03-07',
+  },
+];
+function calendarFixture(
+  value: CalendarCase,
+  state: 'projected' | 'materialized' | 'cancelled',
+  extraStartsAt?: string
+) {
+  const instance = {
+    end_timezone: value.seriesTimezone,
+    ends_at: value.endsAt,
+    group_id: groupId,
+    id: '00000000-0000-4000-8000-000000000211',
+    recurrence_instance_date: value.date,
+    series_id: seriesId,
+    start_timezone: value.seriesTimezone,
+    starts_at: value.startsAt,
+    title: null,
+  };
+  const extra = extraStartsAt
+    ? [
+        {
+          ...instance,
+          id: '00000000-0000-4000-8000-000000000212',
+          series_id: null,
+          recurrence_instance_date: null,
+          starts_at: extraStartsAt,
+        },
+      ]
+    : [];
+  const scheduled = [...(state === 'materialized' ? [instance] : []), ...extra];
+  let sessionReads = 0;
+  const privateDb = {
+    from: vi.fn((table: string) => {
+      if (table === 'workspace_user_group_session_series')
+        return query([
+          {
+            days_of_week: [new Date(`${value.date}T12:00:00Z`).getUTCDay()],
+            description: null,
+            description_json: null,
+            end_time: value.endTime,
+            end_timezone: value.seriesTimezone,
+            group_id: groupId,
+            id: seriesId,
+            interval_weeks: 1,
+            source: null,
+            start_date: value.date,
+            start_time: value.startTime,
+            start_timezone: value.seriesTimezone,
+            title: null,
+            until_date: value.date,
+            ws_id: wsId,
+          },
+        ]);
+      if (table !== 'workspace_user_group_sessions')
+        throw new Error(`Unexpected table ${table}`);
+      sessionReads += 1;
+      // The real helper first reads materialized dates, then recurrence identity,
+      // then scheduled reconciliation candidates. No write method is provided.
+      return query(
+        sessionReads === 2
+          ? state === 'projected'
+            ? []
+            : [instance]
+          : scheduled
+      );
+    }),
+  };
+  const supabase = {
+    from: vi.fn((table: string) => {
+      if (table !== 'workspace_user_groups')
+        throw new Error(`Unexpected table ${table}`);
+      return query([{ id: groupId, name: 'Synthetic class' }]);
+    }),
+    schema: vi.fn(() => privateDb),
+  };
+  return { supabase, privateDb };
+}
+async function calendarDates(
+  value: CalendarCase,
+  state: 'projected' | 'materialized' | 'cancelled',
+  extraStartsAt?: string
+) {
+  const fixture = calendarFixture(value, state, extraStartsAt);
+  const dates = await listPlannedUserGroupSessionDatesByGroupIds({
+    from: new Date(Date.parse(value.startsAt) - 86_400_000).toISOString(),
+    groupIds: [groupId],
+    supabase: fixture.supabase as never,
+    timezone: value.workspaceTimezone,
+    to: new Date(Date.parse(value.endsAt) + 86_400_000).toISOString(),
+    wsId,
+  });
+  expect(fixture.privateDb.from).toHaveBeenCalledTimes(4);
+  expect(fixture.supabase.from).toHaveBeenCalledWith('workspace_user_groups');
+  return dates.get(groupId);
+}
+describe('invoice civil dates remain stable across materialization', () => {
+  it.each(calendarCases)(
+    'uses workspace date $billingDate for series date $date ($seriesTimezone)',
+    async (value) => {
+      const materialized = await calendarDates(value, 'materialized');
+      expect(materialized).toEqual([value.billingDate]);
+      expect(await calendarDates(value, 'projected')).toEqual(materialized);
+    }
+  );
+  it('deduplicates projected and materialized classes on one workspace billing date', async () => {
+    expect(
+      await calendarDates(
+        calendarCases[0]!,
+        'projected',
+        '2026-10-01T03:00:00.000Z'
+      )
+    ).toEqual(['2026-10-01']);
+  });
+  it.each(calendarCases)(
+    'preserves cancelled series identity across timezone boundary $date',
+    async (value) => {
+      expect(await calendarDates(value, 'cancelled')).toEqual([]);
+    }
+  );
 });

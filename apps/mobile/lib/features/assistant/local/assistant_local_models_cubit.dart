@@ -5,6 +5,7 @@ import 'package:mobile/features/assistant/local/assistant_local_capability.dart'
 import 'package:mobile/features/assistant/local/assistant_local_model.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model_store.dart';
 import 'package:mobile/features/assistant/local/assistant_local_preferences.dart';
+import 'package:mobile/features/assistant/local/assistant_model_downloads.dart';
 
 enum LocalModelsOperation {
   idle,
@@ -27,6 +28,7 @@ class AssistantLocalModelsState {
     this.total = 0,
     this.error,
     this.paused = false,
+    this.downloadPhase = ModelDownloadPhase.pending,
   });
   final bool supported;
   final bool loaded;
@@ -38,6 +40,7 @@ class AssistantLocalModelsState {
   final int total;
   final LocalModelFailure? error;
   final bool paused;
+  final ModelDownloadPhase downloadPhase;
   bool get busy => operation != LocalModelsOperation.idle;
 }
 
@@ -193,6 +196,7 @@ class AssistantLocalModelsCubit extends Cubit<AssistantLocalModelsState> {
             .bytes,
         error: job.failure == LocalModelFailure.cancelled ? null : job.failure,
         paused: job.paused,
+        downloadPhase: job.phase,
       ),
     );
   }
@@ -275,6 +279,9 @@ class AssistantLocalModelsCubit extends Cubit<AssistantLocalModelsState> {
     total: total,
     error: error,
     paused: paused,
+    downloadPhase: operation == LocalModelsOperation.idle
+        ? ModelDownloadPhase.pending
+        : state.downloadPhase,
   );
 
   @override

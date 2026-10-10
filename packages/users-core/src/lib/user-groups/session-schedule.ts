@@ -12,6 +12,7 @@ import type {
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import dayjs from 'dayjs';
 import '../dayjs-setup';
+import { completeSessionRead } from './session-complete-read';
 import {
   addDays,
   assertGroupInWorkspace,
@@ -749,17 +750,14 @@ export async function listMissingUserGroupSessionOccurrences({
   if (!from || !to) return [];
 
   const privateDb = privateClient(supabase);
-  let seriesQuery = privateDb
-    .from('workspace_user_group_session_series')
-    .select('*')
-    .eq('ws_id', wsId)
-    .order('start_date');
-
-  if (groupId) seriesQuery = seriesQuery.eq('group_id', groupId);
-
-  const { data: seriesData, error: seriesError } = await seriesQuery;
-  if (seriesError) throw seriesError;
-
+  const { data: seriesData } = await completeSessionRead<SeriesRow>(() => {
+    let query = privateDb
+      .from('workspace_user_group_session_series')
+      .select('*', { count: 'exact' })
+      .eq('ws_id', wsId);
+    if (groupId) query = query.eq('group_id', groupId);
+    return query;
+  });
   const seriesRows = (seriesData ?? []) as SeriesRow[];
   if (seriesRows.length === 0) return [];
 
@@ -769,37 +767,37 @@ export async function listMissingUserGroupSessionOccurrences({
   );
   const fromDate = dayjs(from).subtract(2, 'day').format('YYYY-MM-DD');
   const toDate = dayjs(to).add(2, 'day').format('YYYY-MM-DD');
-  const [
-    { data: recurrenceData, error: recurrenceError },
-    { data: scheduledData, error: scheduledError },
-    groupMap,
-  ] = await Promise.all([
-    privateDb
-      .from('workspace_user_group_sessions')
-      .select(
-        'id, group_id, series_id, recurrence_instance_date, start_timezone, end_timezone, starts_at, ends_at, title'
-      )
-      .eq('ws_id', wsId)
-      .in('series_id', seriesIds)
-      .gte('recurrence_instance_date', fromDate)
-      .lte('recurrence_instance_date', toDate),
-    privateDb
-      .from('workspace_user_group_sessions')
-      .select(
-        'id, group_id, series_id, recurrence_instance_date, start_timezone, end_timezone, starts_at, ends_at, title'
-      )
-      .eq('ws_id', wsId)
-      .eq('status', 'scheduled')
-      .in('group_id', groupIds)
-      .gte('starts_at', from)
-      .lte('starts_at', to),
-    fetchAllGroups(supabase, wsId).then(
-      (groups) => new Map(groups.map((group) => [group.id, group]))
-    ),
-  ]);
-
-  if (recurrenceError) throw recurrenceError;
-  if (scheduledError) throw scheduledError;
+  const [{ data: recurrenceData }, { data: scheduledData }, groupMap] =
+    await Promise.all([
+      completeSessionRead<ReconciliationCandidateRow>(() =>
+        privateDb
+          .from('workspace_user_group_sessions')
+          .select(
+            'id, group_id, series_id, recurrence_instance_date, start_timezone, end_timezone, starts_at, ends_at, title',
+            { count: 'exact' }
+          )
+          .eq('ws_id', wsId)
+          .in('series_id', seriesIds)
+          .gte('recurrence_instance_date', fromDate)
+          .lte('recurrence_instance_date', toDate)
+      ),
+      completeSessionRead<ReconciliationCandidateRow>(() =>
+        privateDb
+          .from('workspace_user_group_sessions')
+          .select(
+            'id, group_id, series_id, recurrence_instance_date, start_timezone, end_timezone, starts_at, ends_at, title',
+            { count: 'exact' }
+          )
+          .eq('ws_id', wsId)
+          .eq('status', 'scheduled')
+          .in('group_id', groupIds)
+          .gte('starts_at', from)
+          .lte('starts_at', to)
+      ),
+      fetchAllGroups(supabase, wsId).then(
+        (groups) => new Map(groups.map((group) => [group.id, group]))
+      ),
+    ]);
 
   const seriesById = new Map(seriesRows.map((series) => [series.id, series]));
   const existingKeys = new Set<string>();

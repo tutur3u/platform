@@ -113,7 +113,7 @@ for (const [name, aggregate, checkName, shardName] of [
       });
       assert.equal(
         workflow.concurrency.group,
-        `${expression('github.workflow')}-${expression('github.ref')}-${expression("(github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')) && github.sha || 'latest'")}`
+        `${expression('github.workflow')}-${expression('github.ref')}-${expression("(github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')) && format('{0}-{1}-{2}', github.sha, github.event_name, github.run_id) || 'latest'")}`
       );
       assert.equal(
         workflow.concurrency['cancel-in-progress'],

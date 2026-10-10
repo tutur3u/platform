@@ -36,6 +36,9 @@ import UserNotifications
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "DeliveredInboxNotificationsPlugin") {
+      DeliveredInboxNotificationsPlugin.register(with: registrar)
+    }
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "MeetNotificationSound") {
       let channel = FlutterMethodChannel(name: "mobile/meet_screen_share", binaryMessenger: registrar.messenger())
       if meetNoticeSound == 0 {

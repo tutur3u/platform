@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useFinanceHref } from '../../finance-route-context';
 import { FinanceDisplayAmount } from '../../shared/finance-display-amount';
 import { useInfiniteUserInvoices } from '../hooks';
+import { InvoiceHistoryRecovery } from './invoice-history-recovery';
 
 interface Props {
   wsId: string;
@@ -32,12 +33,20 @@ export function InvoiceUserHistoryAccordion({
   const t = useTranslations();
   const locale = useLocale();
   const financeHref = useFinanceHref();
-  const formatDate = (value: string) =>
-    new Intl.DateTimeFormat(locale).format(new Date(value));
+  const formatDate = (value: string) => {
+    const date = new Date(value);
+    return Number.isFinite(date.getTime())
+      ? new Intl.DateTimeFormat(locale).format(date)
+      : t('ws-invoices.no_date');
+  };
 
   const {
     data: userInvoicesData,
     isLoading,
+    isError,
+    isFetching,
+    isFetchNextPageError,
+    refetch,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -50,7 +59,13 @@ export function InvoiceUserHistoryAccordion({
   const invoices = userInvoicesData?.pages.flatMap((page) => page.data) || [];
 
   useEffect(() => {
-    if (!isOpen || !loadMoreRef.current || !hasNextPage || isFetchingNextPage)
+    if (
+      !isOpen ||
+      !loadMoreRef.current ||
+      !hasNextPage ||
+      isFetchingNextPage ||
+      isError
+    )
       return;
 
     const scrollViewport = scrollAreaWrapperRef.current?.querySelector(
@@ -59,9 +74,10 @@ export function InvoiceUserHistoryAccordion({
 
     if (!scrollViewport) return;
 
+    let active = true;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) {
+        if (active && entries[0]?.isIntersecting) {
           fetchNextPage();
         }
       },
@@ -70,12 +86,25 @@ export function InvoiceUserHistoryAccordion({
 
     observer.observe(loadMoreRef.current);
 
-    return () => observer.disconnect();
-  }, [isOpen, hasNextPage, isFetchingNextPage, fetchNextPage]);
+    return () => {
+      active = false;
+      observer.disconnect();
+    };
+  }, [isOpen, hasNextPage, isFetchingNextPage, fetchNextPage, isError]);
+
+  const recovery = (
+    <InvoiceHistoryRecovery
+      key={JSON.stringify([wsId, userId])}
+      failed={isError}
+      fetching={isFetching}
+      retry={() => (isFetchNextPageError ? fetchNextPage() : refetch())}
+    />
+  );
 
   if (isLoading) {
     return (
       <div className="py-4 text-center">
+        {recovery}
         <p className="text-muted-foreground text-sm">
           {t('ws-invoices.loading_user_history')}
         </p>
@@ -86,15 +115,19 @@ export function InvoiceUserHistoryAccordion({
   if (invoices.length === 0) {
     return (
       <div className="py-4 text-center">
-        <p className="text-muted-foreground text-sm">
-          {t('ws-invoices.no_transaction_or_invoice_history')}
-        </p>
+        {recovery}
+        {!isError && (
+          <p className="text-muted-foreground text-sm">
+            {t('ws-invoices.no_transaction_or_invoice_history')}
+          </p>
+        )}
       </div>
     );
   }
 
   return (
     <div className="mt-4">
+      {recovery}
       <Accordion
         type="single"
         collapsible
@@ -194,7 +227,7 @@ export function InvoiceUserHistoryAccordion({
                   ))}
 
                   <div ref={loadMoreRef} className="py-2">
-                    {hasNextPage && (
+                    {hasNextPage && !isError && (
                       <Button
                         variant="ghost"
                         size="sm"

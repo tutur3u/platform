@@ -351,10 +351,25 @@ silently in the browser/class timezone. Gap/fold endpoints and slots crossing
 DST transitions are conservatively rejected rather than assigned an offset.
 Unknown coverage stays unknown; any known closed portion denies coverage.
 
-Regression coverage in `tutoring-teacher-hours.test.ts` exercises the actual
-Calendar default factory and Temporal compatible gap conversion as unsuitable
-inputs, inheritance/replacement, lossless reset receipts, adjacency, midnight,
-weekly wrapping and DST. This is pure source evidence, not persisted availability
+Regression coverage in `tutoring-teacher-hours.test.ts` keeps unconfirmed teacher
+hours unknown and exercises Temporal compatible gap conversion as an unsuitable
+input, inheritance/replacement, lossless reset receipts, adjacency, midnight,
+weekly wrapping and DST. The actual Calendar default factory is tested separately
+in Calendar’s `hour-settings-shared.test.ts`; utils tests stay within their package
+source boundary. This is pure source evidence, not persisted availability
 or production scheduling proof. API/schema/authenticated editor, atomic revision
 storage, staff-default/teacher-role permissions, outside-hours exceptions and
 planner consumption remain separate reviewed packets.
+
+
+### Create completion ownership
+
+Contacts captures the exact actor/workspace lifetime and draft revision before a
+make-up create request. Only that still-current intent may close its draft, announce
+success/failure, or invalidate its scoped queries. Replacing the draft or leaving
+and returning to an actor/workspace permanently invalidates old completion effects.
+A new scope remains usable while an old admitted write is pending. This does not
+cancel or undo a server write: current-scope success and failure remain visible,
+and synchronous duplicate submission is suppressed. The mounted Client/CreateCard
+regressions in `tutoring-create-scope.test.tsx` cover these boundaries with held
+synthetic transports; they are not customer or production-write evidence.

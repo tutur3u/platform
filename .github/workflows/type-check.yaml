@@ -4,6 +4,12 @@ on:
   push:
   workflow_dispatch:
 
+# Only obsolete ordinary branch pushes supersede validation. Canonical/release
+# evidence and explicit manual attempts keep independent immutable groups.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ (github.event_name != 'push' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')) && format('{0}-{1}-{2}', github.sha, github.event_name, github.run_id) || 'latest' }}
+  cancel-in-progress: ${{ github.event_name == 'push' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--') }}
+
 jobs:
   type-check:
     name: Type Check

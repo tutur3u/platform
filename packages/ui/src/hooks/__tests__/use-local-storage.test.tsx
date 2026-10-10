@@ -147,6 +147,48 @@ describe('useLocalStorage', () => {
   });
 
   describe('error handling', () => {
+    it('completes initialization with defaults when getItem is denied', () => {
+      vi.spyOn(window.localStorage, 'getItem').mockImplementation(() => {
+        throw new DOMException('Synthetic denied read', 'SecurityError');
+      });
+      const { result } = renderHook(() =>
+        useLocalStorage('invoice-compact-view', false)
+      );
+      expect(result.current).toEqual([false, expect.any(Function), true]);
+      expect(console.error).toHaveBeenCalledWith(
+        'Unable to read browser preferences.'
+      );
+      act(() => result.current[1](true));
+      expect(result.current[0]).toBe(true);
+    });
+
+    it('completes initialization when the storage getter itself is denied', () => {
+      const storage = window.localStorage;
+      Object.defineProperty(window, 'localStorage', {
+        configurable: true,
+        get() {
+          throw new DOMException('Synthetic denied getter', 'SecurityError');
+        },
+      });
+      try {
+        const { result } = renderHook(() =>
+          useLocalStorage('printAfterCreate', true)
+        );
+        expect(result.current).toEqual([true, expect.any(Function), true]);
+        act(() => result.current[1](false));
+        expect(result.current[0]).toBe(false);
+        expect(console.error).toHaveBeenLastCalledWith(
+          'Unable to save browser preferences.'
+        );
+      } finally {
+        Object.defineProperty(window, 'localStorage', {
+          configurable: true,
+          writable: true,
+          value: storage,
+        });
+      }
+    });
+
     it('should handle invalid JSON in localStorage gracefully', () => {
       window.localStorage.setItem(TEST_KEY, 'invalid-json');
 

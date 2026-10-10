@@ -1,0 +1,42 @@
+---
+title: "Meet"
+description: "Meeting plans, collaboration rooms, calls, transcription, assistants, and follow-up review."
+updatedAt: '2026-10-08'
+---
+
+Meet (`meet.tuturuuu.com`, `apps/meet`) combines meeting planning and live
+collaboration. Public product explanations live on the main site; operational
+rooms, plans, and workspace meeting records are excluded from search indexing.
+
+## Choose the meeting surface
+
+| Surface | Purpose | Details |
+| --- | --- | --- |
+| Workspace meetings | Find and manage workspace meeting records | `/{wsId}/meetings` |
+| Plans | Plan availability and coordination | `/{wsId}/plans`, [Meet Together](/platform/features/meet-together) |
+| Calls | Audio/video and session collaboration | [Calls](/platform/features/meet-calls) |
+| Solo mode | Individual session workflow | [Solo mode](/platform/features/meet-solo-mode) |
+| Live assistants | Session-specific assistant behavior | [Live assistants](/platform/features/meet-live-assistants) |
+| Follow-ups | Review proposed tasks and calendar events | [Follow-ups](/platform/features/meet-followups) |
+| Native collaboration | App/native collaboration boundary | [Meet route reference](/reference/repository/routes/meet) |
+
+## Before, during, and after a session
+
+Before joining, verify the correct workspace/plan, participant access, and the
+configured meeting provider. During the call, recording, transcription, and
+assistant behavior follow the documented session controls and provider state.
+Afterward, review notes and proposed follow-ups before writing to Tasks or
+Calendar. A proposal is not an executed action, and a room URL is not broad
+workspace authority.
+
+## Runtime boundaries
+
+Meet shares behavior through `packages/meet-core` and `packages/meet-ui`.
+Realtime, signaling, provider connectivity, and hosted SFU/TURN are separate
+boundaries. A local Worker fixture does not establish hosted media-network
+success. The [Meet runbook](/build/devops/overview) and linked call feature guide
+identify the owning deployment and verification path.
+
+[Mobile workspace tools](/platform/features/mobile-workspace-tools) documents
+native availability and opt-in defaults. Rooms and plan share links stay noindex
+even when participants can join without browsing an entire workspace.
