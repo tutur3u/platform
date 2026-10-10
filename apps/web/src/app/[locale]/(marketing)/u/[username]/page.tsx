@@ -1,4 +1,6 @@
 import { UserRound } from '@tuturuuu/icons';
+import { PublicLinkButton } from '@tuturuuu/ui/public-link-button';
+import { getPublicContentLink } from '@tuturuuu/utils/public-content-link';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
@@ -71,6 +73,13 @@ async function Profile({ params }: Props) {
               {profile.bio}
             </p>
           )}
+          <PublicLinkButton
+            url={getPublicContentLink({ type: 'profile', username })}
+            label={t('copyLink')}
+            copiedLabel={t('linkCopied')}
+            errorLabel={t('copyFailed')}
+            manualCopyLabel={t('manualCopyLink')}
+          />
         </div>
       </article>
     </main>

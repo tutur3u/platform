@@ -270,7 +270,8 @@
       "status": "Trạng thái mục",
       "unchecked": "Cần làm"
     },
-    "hide_sidebar": "Ẩn thanh bên"
+    "hide_sidebar": "Ẩn thanh bên",
+    "public_profile": "Hồ sơ công khai"
   },
   "dashboard": {
     "description": "Xây dựng thế giới voxel dùng chung, cấu hình NPC dùng LLM và chạy thí nghiệm quyết định agent thủ công.",
