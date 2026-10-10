@@ -458,6 +458,40 @@ nor successful compilation qualifies the candidate. Reproduce the pinned artifac
 through the resource broker before changing runtime behavior. Deployment still
 requires successful validation and separately authorized production promotion.
 
+### Completed Live finalization receipts
+
+Duplicate ended-session finalization checks its persisted session receipt before
+skipping work. Both current and durable state must confirm context erasure, no
+remaining public billing and completed primary billing/accounting for the same
+session and owner; pending usage prevents the shortcut. Recheck current state
+after the receipt read so a newly added obligation is not skipped. In-memory
+completion flags alone cannot acknowledge a failed final write.
+
+A confirmed terminal invocation costs one session-key read and zero finalization
+writes, archive operations, downstream calls or alarms. Registry/room cleanup
+remains independent; unresolved billing and erasure retain their existing retries.
+This reduces completed duplicate work, without bounding failed compensation or
+certifying total spend. `finalize-terminal.test.ts` covers counted reconstruction,
+lost receipts, receipt-read failure, concurrent new obligations and incomplete
+context/billing; existing finalization and erasure regressions remain required.
+
+
+The disposable SQLite probe runs from its configuration directory:
+
+```sh
+cd packages/meet-core/test-fixtures/live-finalization
+ttr resources run -- node --test verify.mjs
+```
+
+It initializes one synthetic receipt, then reconstructs 24 snapshots from the
+real SQLite namespace. Counted work is 48 reads (24 reconstruction reads plus
+24 receipt checks), zero finalization writes/deletes/list operations/provider
+calls/alarms. Initial fixture seeding and the final evidence read are separate
+setup/inspection operations. The harness closes automatically, uses no remote
+credentials and rejects downstream fetches. It exercises the finalization helper
+against real storage, not the hosted Live provider or authenticated Stop flow.
+
+
 ## Meeting media cleanup cost envelope
 
 `MeetRoom.alarm()` invokes `closeBudgetPublications` for pending provider tracks
@@ -493,8 +527,28 @@ complete body; successful responses likewise await the complete JSON body. A
 stalled fetch or body prevents cleanup from reaching failure deferral. In the
 standalone server, it also retains that room in `cleanupInFlight`, so subsequent
 interval sweeps skip provider cleanup for the room until the promise settles.
-These are source-audit findings; existing SFU request tests do not exercise stalled
-requests, stalled bodies, oversized responses or deadline clock boundaries.
+`packages/realtime/src/meet/sfu-cost.test.ts` now exercises the actual SFU client
+and cleanup helper through controlled fetch/response streams. A pending fetch,
+HTTP 200 body and HTTP 503 body each remain unresolved after one simulated hour,
+with one transport invocation and no supplied abort signal. The fixtures then
+finish their own streams so the tests leave no pending work. The client performs
+no automatic retry. A 1 MiB error response (256 chunks of 4 KiB) is fully consumed
+before the displayed detail is truncated to 300 characters.
+
+For two known-mid sessions, 24 helper reconstructions with repeated failed closes
+and confirmed-present inventories issue 48 close requests and 48 inventory
+requests, with zero progress-write attempts and both obligations retained. For
+one session whose close succeeds but progress persistence fails, 24 reconstructions
+issue 24 acknowledged close requests and 24 failed write attempts. Once progress
+is durably saved, another 24 reconstructions issue no provider calls or writes.
+These count calls to the real client/helper, with fixture transport and storage
+callbacks; they do not measure hosted billing, room alarm/storage operations,
+provider redirect hops or remote media completion.
+
+A timeout-only repair could let the existing caller retry previously stalled work
+and increase provider traffic. Introduce deadlines together with persistent finite
+job attempts/age, bounded per-wake operations and stop/reschedule fences. Deadline
+clock boundaries and real Worker/provider acceptance remain unverified.
 
 Provider ambiguity retains unresolved tracks. The helper confirms absence after
 failed closure and persists confirmed progress per session; a failed progress
@@ -530,3 +584,23 @@ isolated real Worker/SQLite fixture under
 `apps/meet-realtime/test-fixtures/collaboration-retry`. Verify adapter operation
 counts and retained data in addition to planner decisions; hosted alarm delivery
 and actual Drive saves remain separate acceptance boundaries.
+
+## Coordination ingress read budget
+
+Authenticated `/v1/coordinate` requests keep the existing 2 KiB body limit and
+now stop after at most 256 reader calls or five seconds, including empty chunks
+and stalled reads. Deadline equality rejects. Failed reads or parsing return the
+existing invalid-request response before schema dispatch or Durable Object work.
+Cancellation is attempted once without awaiting an unresponsive stream source;
+its failure cannot hide the original read error. Authentication still precedes
+reading. Coordination leases, fingerprints, owner checks and cleanup are unchanged.
+
+`apps/coordination/src/request-body.test.mjs` counts reads and cancellation across
+24 reconstructions, exact deadline boundaries, byte overflow, malformed JSON and
+failed or stalled cancellation. `worker.test.mjs` exercises the real local Worker
+and SQLite coordination contracts. Reader tests use controlled sources and clocks,
+not hosted ingress or billed-operation measurement. The per-request bound does
+not cap request volume, total spending or Durable Object alarms, and does not
+provide an independent durable authenticated stop fence. Applicable account alerts
+and an independent stop remain unverified; no production billing configuration is
+changed by this implementation.

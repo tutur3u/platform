@@ -1603,6 +1603,31 @@ This tooling unit adds no alarm, queue, retry chain, storage operation or schedu
 Review background-work and operation-cost bounds separately when those paths change;
 health and build success do not establish a spending cap or production promotion.
 
+#### RunnerWake notification operation envelope
+
+The current RunnerWake class performs no alarm, queue or cron rescheduling. A
+successful internal POST enumerates all retained WebSockets and sends one wake to
+each. For `S` retained sockets and `N` duplicate notifications, count `N × S` send
+attempts; failed sends also attempt a close. No durable progress receipt suppresses
+later duplicate fanout. A throwing close aborts remaining delivery and propagates
+failure rather than returning a complete acknowledgement.
+
+The public notify route authenticates the internal token before one run lookup,
+an optional lease lookup and one Durable Object POST. Connect authenticates the
+runner before forwarding the WebSocket upgrade. The object trusts these forwarding
+boundaries; it does not establish an independent durable stop fence or socket lease.
+These per-request counts do not bound retained sockets, repeated ingress, billed
+messages, downstream query rows or total account spend.
+
+`apps/devbox-control/src/wake.test.ts` counts 98,304 sends for 4,096 synthetic sockets
+and 24 duplicate/reconstructed notifications, then checks failed-send closure and
+incomplete fanout on a throwing close. These tests use the actual class with a
+mocked Durable Object base and sockets. They do not verify hosted WebSocket delivery,
+provider billing, authenticated Stop or real persisted leases. Before amplifying
+this path, require bounded per-wake work, an expiring recurring authority and a
+durable authenticated stop fence, preserving recovery and notification semantics.
+
+
 ### Native Vite+ test and coverage version alignment
 
 Vite+ 1.1.0 requires Vitest and coverage-v8 5.0.3 together. Pin the root dependency,
