@@ -605,3 +605,13 @@ do not introduce optimizer caches, download endpoints or permission changes.
 In jsdom, assert the rendered referrer-policy attribute and allow the shared
 Radix focus scope's deferred unmount callback to settle before asserting focus
 return; keep the actual dialog interaction rather than replacing it with a mock.
+
+### Published outline search
+
+Filter only the current bounded displayed heading labels, with Unicode/case
+normalization and a bounded ephemeral query. Keep full content and truncation
+feedback intact. Reset local search when labels or scoped targets change; isolate
+articles and retain disabled private-preview defaults. Clear/empty recovery must
+keep heading navigation and enclosing-fold focus behavior. Do not search source
+IDs, omitted content, drafts or unavailable projections, or persist reader queries.
+Coverage: `document-outline-search.test.tsx`.
