@@ -449,3 +449,96 @@ The harness closes its Worker and clears its own scheduled alarms. Hosted alarm
 redelivery, actual workspace saves, live editor lease renewal and an independent
 operational stop remain separate acceptance boundaries. Do not deploy this fixture
 or claim a platform-wide cost cap from these tests.
+
+## Meeting media cleanup cost envelope
+
+`MeetRoom.alarm()` invokes `closeBudgetPublications` for pending provider tracks
+once `nextCleanupAt` is due. The helper groups the complete pending list by
+provider session; it has no per-wake session page. For S unresolved sessions with
+legacy tracks whose mids need lookup, one attempted sweep can dispatch up to 3S
+provider calls: inventory lookup, close, then absence confirmation after a failed
+close. Known mids omit the first lookup and can dispatch up to 2S calls. Count
+tracks sent to the provider separately from HTTP requests; batching is not a
+proof of reduced media billing or per-track operations.
+
+A controlled audit of the actual helper with 32 legacy sessions and 24
+reconstructed failed sweeps counted 768 close calls and 1,536 inventory calls,
+with no progress-persistence callbacks and all 32 obligations retained. With
+known mids, one failed sweep counted 32 close and 32 confirmation calls. A
+successful close followed by a failed durable write repeated the close and failed
+write on each of 24 reconstructions. Conversely, confirmed progress for 32
+sessions required 32 close calls and 32 progress-persistence callbacks; 24 later reconstructed
+helper calls dispatched no additional close or progress-persistence callback. These counts
+exclude the surrounding room's persistence, alarm reads/writes and billing
+settlement. They use controlled provider/storage callbacks, not hosted SFU or
+real Durable Object storage; existing `room-provider-cleanup.test.ts` covers the
+progress and ambiguous-close recovery contracts.
+
+`deferBudgetCleanup` caps the stored counter at 32 and the exponential delay at
+one hour. This is a backoff ceiling, not a finite attempt or lifetime limit:
+100 reconstructed deferrals still produce future deadlines and retain pending
+tracks. A new publication obligation can reset the retry counter and deadline.
+`CloudflareSfuClient.request` performs one fetch per call without an explicit
+AbortSignal, request/body deadline, response byte limit or redirect policy. Its
+300-character error detail limit applies after `response.text()` has consumed the
+complete body; successful responses likewise await the complete JSON body. A
+stalled fetch or body prevents cleanup from reaching failure deferral. In the
+standalone server, it also retains that room in `cleanupInFlight`, so subsequent
+interval sweeps skip provider cleanup for the room until the promise settles.
+These are source-audit findings; existing SFU request tests do not exercise stalled
+requests, stalled bodies, oversized responses or deadline clock boundaries.
+
+Provider ambiguity retains unresolved tracks. The helper confirms absence after
+failed closure and persists confirmed progress per session; a failed progress
+write aborts instead of reporting that progress as durable. Future deadline/body
+bounds must preserve this recovery contract, including ambiguous remote completion
+after local cancellation. An aborted request does not prove the provider stopped
+media or cancelled its operation.
+
+Do not certify this path as bounded autonomous cleanup or an account-spend cap. A repair must retain
+unresolved media obligations while adding durable pre-I/O attempts/age, a finite
+operation envelope, authenticated recovery and stop/reschedule fences. Never
+clear pending tracks merely because retries or provider confirmation failed.
+
+## Portable offline retry planning
+
+`@tuturuuu/realtime/core/retry-budget` plans finite retry reservations without
+React, framework, request-global or Cloudflare dependencies. Callers inject the
+clock and policy, retain the returned attempt count and fixed expiry across
+reconstruction, and persist a reservation before downstream I/O. Early duplicate
+delivery waits without consuming another attempt. Exhausted, expired or invalid
+persisted state stops; it never silently creates a replacement job.
+
+The programming room uses this core for its existing three-attempt, two-minute,
+30-second offline checkpoint policy. Storage, owner authorization, recovery,
+provider calls and join/expiry races remain in the Worker adapter. Stopping keeps
+unresolved documents; it does not grant viewers recovery access or certify live
+retries, media cleanup or total spending. The pure planner performs no storage or
+network operations and cannot make a failed reservation durable itself.
+
+Regression coverage is `packages/realtime/src/core/retry-budget.test.ts`, the
+counted `apps/meet-realtime/src/collaboration-retry-budget.test.ts`, and the
+isolated real Worker/SQLite fixture under
+`apps/meet-realtime/test-fixtures/collaboration-retry`. Verify adapter operation
+counts and retained data in addition to planner decisions; hosted alarm delivery
+and actual Drive saves remain separate acceptance boundaries.
+
+## Coordination ingress read budget
+
+Authenticated `/v1/coordinate` requests keep the existing 2 KiB body limit and
+now stop after at most 256 reader calls or five seconds, including empty chunks
+and stalled reads. Deadline equality rejects. Failed reads or parsing return the
+existing invalid-request response before schema dispatch or Durable Object work.
+Cancellation is attempted once without awaiting an unresponsive stream source;
+its failure cannot hide the original read error. Authentication still precedes
+reading. Coordination leases, fingerprints, owner checks and cleanup are unchanged.
+
+`apps/coordination/src/request-body.test.mjs` counts reads and cancellation across
+24 reconstructions, exact deadline boundaries, byte overflow, malformed JSON and
+failed or stalled cancellation. `worker.test.mjs` exercises the real local Worker
+and SQLite coordination contracts. Reader tests use controlled sources and clocks,
+not hosted ingress or billed-operation measurement. The per-request bound does
+not cap request volume, total spending or Durable Object alarms, and does not
+provide an independent durable authenticated stop fence. Applicable account alerts
+and an independent stop remain unverified; no production billing configuration is
+changed by this implementation.

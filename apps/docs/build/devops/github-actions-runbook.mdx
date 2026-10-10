@@ -38,7 +38,7 @@ so workspace-owned test runs read the same files as root runs.
 - Record immutable head and tree, commands, results, and workflow/run/job IDs.
   A manual preview workflow may report the workflow branch SHA rather than its
   input: verify the decoded checkout matches the requested head. Predecessor green
-  builds do not prove a corrected head. New findings or commits require new gates. `programming-app-builds.yaml` runs nondeployment Next/Turbo builds for Web, Learn, Infrastructure, Mail and Contacts on relevant pull requests, including shared dependencies; each Mail/Contacts result must name the immutable checked-out head and does not authorize deployment or certify a different parent SHA.
+  builds do not prove a corrected head. New findings or commits require new gates. `programming-app-builds.yaml` runs nondeployment Next/Turbo builds for Web, Learn, Infrastructure, Mail, Contacts and Tasks on relevant pull requests, including shared dependencies; each app result must name the immutable checked-out head and does not authorize deployment or certify a different parent SHA.
 - Develop independent scopes in parallel, each with its own worktree and owner.
   Admit heavy local validation through the shared `ttr resources` FIFO after a
   resource preflight; serialize permitted local installs and tests. Require
@@ -152,29 +152,16 @@ commits and manual recovery dispatches must not cancel the active deployment.
 `bun.lock`-only changes intentionally run all Vercel app deploys because ownership
 is ambiguous without a manifest or source path.
 
-## Pull Request Close Cancellation
+## Pull Request Run Lifecycle
 
-`cancel-pr-runs-on-close.yaml` runs on the `pull_request_target` `closed` event
-and cancels active GitHub Actions runs that still belong to the closed pull
-request. It exists to stop queued or long-running checks after a PR is closed
-without adding `closed` triggers to every CI workflow.
+Closing or merging a pull request does not trigger a workflow that cancels its
+checks or deletes its caches. Existing workflow concurrency remains responsible
+for replacing superseded runs on the same branch. It does not cancel a run merely
+because the pull request closed.
 
-Because `pull_request_target` runs with base-repository privileges, keep this
-workflow narrow:
-
-- Do not checkout or execute pull request head code.
-- Checkout only the trusted default branch, with persisted credentials disabled.
-- Pin GitHub-owned actions to full commit SHAs.
-- Grant only `actions: write` and `contents: read` to the cancellation job.
-- Do not pass repository secrets other than the short-lived `GITHUB_TOKEN`.
-
-The cancellation script lists active runs by the closed PR head SHA. It cancels
-matching PR workflow runs and same-repository branch push runs for the PR branch,
-but never cancels `main` or `production` push runs. Runs in contributor forks are
-outside the base repository token's authority and are not cancelled by this
-workflow. The same trusted job paginates through Actions cache entries and
-deletes only entries whose ref equals the closed pull request's merge ref
-(`refs/pull/<number>/merge`). It never deletes default-branch cache entries.
+Inspect the actual conclusion of each run when reporting validation. A cancelled
+run is not a successful check and does not by itself establish a repository
+failure. Cache retention continues to follow GitHub Actions retention settings.
 
 ## Authorized CI Queue Cleanup
 

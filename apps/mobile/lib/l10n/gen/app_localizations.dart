@@ -97,6 +97,42 @@ abstract class AppLocalizations {
     Locale('vi')
   ];
 
+  /// No description provided for @assistantDownloadPhasePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get assistantDownloadPhasePending;
+
+  /// No description provided for @assistantDownloadPhaseQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued'**
+  String get assistantDownloadPhaseQueued;
+
+  /// No description provided for @assistantDownloadPhaseTransferring.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading'**
+  String get assistantDownloadPhaseTransferring;
+
+  /// No description provided for @assistantDownloadPhaseRetryWait.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to retry'**
+  String get assistantDownloadPhaseRetryWait;
+
+  /// No description provided for @assistantDownloadPhasePaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get assistantDownloadPhasePaused;
+
+  /// No description provided for @assistantDownloadPhaseVerifying.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying download'**
+  String get assistantDownloadPhaseVerifying;
+
   /// No description provided for @adminAccountsActive.
   ///
   /// In en, this message translates to:

@@ -6,6 +6,7 @@ import 'package:mobile/features/assistant/local/assistant_local_preferences.dart
 import 'package:mobile/features/assistant/view/assistant_settings_hub.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -92,7 +93,13 @@ void main() {
             );
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
-        final finalControl = find.text('License').last;
+        expect(find.text('License'), findsNothing);
+        final finalControl = find.text(
+          tester
+              .element(find.byType(AssistantSettingsHub))
+              .l10n
+              .assistantLocalHistoryNotice,
+        );
         expect(finalControl, findsOneWidget);
         expect(tester.getRect(finalControl).bottom, lessThan(dock.top));
         await tester.pumpWidget(const SizedBox.shrink());
