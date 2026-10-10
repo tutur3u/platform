@@ -352,6 +352,7 @@ export function mutateLettinBlacklist(
 }
 
 export type LettinCreatorAbout = {
+  shared?: boolean;
   headline: string;
   pronouns: string;
   location: string;

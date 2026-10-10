@@ -628,3 +628,14 @@ articles and retain disabled private-preview defaults. Clear/empty recovery must
 keep heading navigation and enclosing-fold focus behavior. Do not search source
 IDs, omitted content, drafts or unavailable projections, or persist reader queries.
 Coverage: `document-outline-search.test.tsx`.
+
+### Public profile projections
+
+Public profile reads must use explicit query and response allowlists, independent
+of authenticated current-user DTOs. The default visible identity is avatar,
+banner, display name, and biography. Saving or publishing a notebook does not
+consent to sharing other profile details. Owning app surfaces must persist an
+explicit sharing choice, default legacy records to private, and enforce it on
+server reads and metadata. Lettin About sharing is separate from canonical
+account identity; see the profile decisions in the Lettin and user-management
+feature docs and their projection/privacy regression tests.

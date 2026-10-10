@@ -265,8 +265,10 @@ Public catalogues use 24-card pages with server-side search and creator filters;
 Tulletin uses Tuturuuu's canonical `users.display_name`, `avatar_url`, `bio`,
 `handle`, and additive `banner_url` fields. A username is globally reserved in
 `handles`; renaming retains earlier reservations. Existing legacy usernames
-remain readable. Public creator surfaces select only public fields and require
-published notebooks; they never expose email or private account details.
+remain readable. Public creator surfaces require published notebooks and display
+only avatar, banner, display name, and biography by default. Creator names link to
+the platform
+`/u/[username]` profile when a username exists.
 
 `update_public_user_profile` is a service-role-only transaction. The API must
 resolve the authenticated actor before calling it. A conflicting username or
@@ -404,8 +406,15 @@ access to private task or workspace data.
 Canonical identity is available to workspace members. Approved creators with
 `manage_documents` can additionally edit their About profile: creative headline,
 pronouns, location, interests, portfolio links, and rich biography. About data is
-owned by the creator in Lettin D1; public creator pages require a published
-notebook and never select private account fields. Paper is the default palette;
+owned by the creator in Lettin D1 and defaults to private, including existing
+records without a sharing choice. Owners explicitly opt in with Share my About
+profile publicly and save. Turning it off and saving revokes future public reads.
+The opt-in shares the entire About section (headline, pronouns, location,
+interests, links, rich biography, and theme), only on a creator page backed by a
+published notebook. It does not share private workspace data. Private About content is retained for editing and preview.
+Regression coverage: `creator-about-privacy.test.ts` verifies legacy privacy,
+explicit boolean consent, and revocation; `creator-profile.test.ts` verifies the
+public identity allowlist. Paper is the default palette;
 forest, midnight, and rose are alternatives, with clean or editorial typography.
 World and About themes save with their content. Reduced motion respects user
 preference and the saved theme setting.
