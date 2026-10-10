@@ -844,3 +844,11 @@ or private studio drafts. Keep suggestions bounded while permitting exact manual
 input. Apply tag admission before sidebar/collection/sequence and relationship
 endpoint filtering; retain selected-document reading without stale neighbor links.
 Clear all local reader filters together and test combined search/kind/tag behavior.
+
+## Scoped public catalogue recovery
+
+Check public creator eligibility with an unfiltered published catalogue, separate
+from search/tag/page results. Empty filtered lists need scoped clear-filter links,
+not an identity 404 or a switch to global discovery. Reuse public filter validation
+and first-page results, preserve owner-sharing projection rules, and cover
+malformed parameters plus unpublished creators before accepting empty recovery.
