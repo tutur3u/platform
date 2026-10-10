@@ -25,7 +25,6 @@ const MEETING_ID = crypto.randomUUID();
 const HOST_ID = '9b5c036d-d38d-4c12-b8e8-2e0b2b4a2691';
 const GUEST_ID = '4b320da6-6c8a-43fe-b1bf-09fbe77303f9';
 const SECRET = process.env.MEET_REALTIME_TOKEN_SECRET || 'integration-secret';
-// biome-ignore lint/suspicious/noUndeclaredEnvVars: standalone verification harness, never a cached Turbo task.
 const REMOTE_URL = process.env.MEET_CHECK_REALTIME_URL;
 const ROOM_URL = validateMeetCheckEndpoint(
   REMOTE_URL || `ws://127.0.0.1:${PORT}/realtime`

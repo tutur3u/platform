@@ -102,6 +102,45 @@ files unchanged so source tracking remains accurate:
   Git ancestry. Preserve old boundary SHAs and deliberately reorder/rebase the
   commits first, then rebuild membership and rerun every affected gate.
 
+### Recover unexpected replay after a parent merge
+
+A remaining child can have a valid scoped diff while the local catalog still
+tracks a merged parent. A cascading rebase can unexpectedly replay already landed
+commits and report conflicts in unrelated features. A stale parent tip is one
+possible boundary problem, but passing ancestry checks alone does not prove that
+the replay selected the correct range. Stop that replay rather than resolving
+those unrelated files into the child.
+
+1. Abort the native rebase. Inspect every affected worktree and branch ref;
+   completed fetches can remain after the abort.
+2. Recover the authoritative GitHub stack membership and base chain. Preserve
+   the pre-operation heads and local catalog boundaries. Check whether the
+   tracked parent tip and saved child base are ancestors of the child with
+   `git merge-base --is-ancestor <boundary> <child-head>`. Also inspect
+   `git log origin/main..<child-head>` and its diff, and compare the attempted
+   replay with GitHub's actual layer diff. Both boundaries can be ancestors while
+   the attempted replay still includes unrelated landed commits. Confirm the
+   parent is merged and the remaining range contains only owned unmerged changes;
+   record the observed boundary mismatch without inventing a root cause.
+3. Coordinate every affected owner and require clean, idle worktrees. When that
+   incorrect local replay range is confirmed, run `gh stack unstack --local` and rebuild
+   local tracking with `gh stack init --base main <remaining-bottom> ... <top>`
+   in bottom-up order. This changes the local catalog; preserve the remote native
+   group and its merge requirements. Do not remove server membership or rebuild
+   ancestry as a shortcut around a native gate.
+4. Inspect `gh stack view`, then use the normal native rebase and push. Review
+   only the intended conflicts, compare the resulting source with the preserved
+   heads, and rerun focused regressions.
+5. Read GitHub membership, bases and immutable heads again. Reconcile any partial
+   push and rerun exact-head CI, reviews, the quiet window and contiguous-prefix
+   gates before merging.
+
+This recovery applies after a parent merge when the preserved child range and
+GitHub diff prove that the attempted replay includes unrelated landed commits.
+An unexpected conflict alone does not establish that diagnosis. Unknown ownership,
+dirty worktrees, unmerged parents or unexplained source differences block the
+metadata repair until their cause is understood.
+
 ## Create and submit a native stack
 
 Create dependent branches in their owning worktrees, then adopt them in bottom-up

@@ -1,10 +1,32 @@
 ---
 title: "Authentication Patterns"
 description: "Authentication implementation patterns in the Tuturuuu platform"
-updatedAt: "2026-10-01"
+updatedAt: "2026-10-09"
 ---
 
 The Tuturuuu platform uses Supabase Auth for user authentication with support for email/password, OAuth providers, multi-factor authentication (MFA), and cross-app token authentication.
+
+## Framework-independent session core
+
+`@tuturuuu/auth/app-session-core` owns app-session token creation, target/scope
+verification and credential extraction from standard `Request`/`Headers`. It
+loads no Next.js runtime or Supabase client. The existing
+`@tuturuuu/auth/app-session` entrypoint retains its exports and owns the Next.js
+cookie/response/logout adapter and Supabase user projection.
+
+A new framework adapter should pass the expected app audience, current clock and
+configured signing secret explicitly. The shared token implementation still uses
+Node crypto (Cloudflare Node compatibility is required) and retains its existing
+secret-resolution fallback for compatibility; this extraction does not establish
+arbitrary edge-runtime support or change identity policy. Fresh allowlist,
+workspace, MFA and consent checks remain the owning route/service's responsibility.
+Do not equate verified token claims with complete resource authorization.
+
+Focused coverage in `app-session-core.test.ts` exercises the public export with
+standard requests, denies Next runtime loading, and checks target/signature/expiry
+and refresh/access separation. Existing `app-session.test.ts` retains adapter
+cookie/logout regressions. Require applicable exact-head CI and consumer builds
+before migrating a host app's session adapter.
 
 ## Managed review and external accounts
 

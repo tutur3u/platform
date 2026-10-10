@@ -129,6 +129,129 @@ Project-wide free allowances and Cloudflare Live Worker duration, storage, and
 requests are not fully allocated to individual meetings. Missing usage stays
 marked incomplete; these estimates do not replace provider invoices.
 
+## Active-session alarm scope
+
+A successful active Live tick schedules the next alarm for twenty seconds later.
+The tick first settles pending public billing and expires reviews, then maintains
+registry discoverability, sends the room heartbeat or personal context command,
+and performs primary quota settlement and usage reporting when billing exists.
+Renewal can add settlement, usage and reservation work; reconnect and queued tool
+responses add separate provider operations. Count those calls and persisted keys
+separately from the alarm itself.
+
+Pause suppresses provider input; it does not skip this alarm's registry, room or
+billing work. The registry lease renews after successful registration. Its
+23-hour failure boundary limits tolerated registry outages, not the lifetime of
+an otherwise healthy session. A future recurring-work bound must preserve active
+consent, quota coverage and privacy discoverability, with explicit expiry and
+an authenticated durable stop checked before dispatch and rescheduling.
+These are source-path findings, not measured billed-operation or hosted shutdown
+evidence; duplicate/restart, slow downstream, no-progress and Stop-race probes
+remain required before certifying a cost envelope.
+
+## Ended-session compensation and retry safety
+
+Ending Live stops capture and provider output, but unresolved server obligations
+can still require work. The session retains registry removal, room release,
+quota settlement, usage reporting and private-context erasure independently.
+`cleanupEndedLiveSession` handles registry/room compensation while
+`finalizeSessionBilling` handles billing and context. The session alarm can invoke
+both after `ended` is persisted. A completed flag for one obligation does not
+prove completion of the others.
+
+The current registry/room helper arms a future alarm before I/O and persists
+completion flags afterward. It does not reserve a finite attempt count or job
+expiry before the registry call. Repeated registry failure can therefore keep
+scheduling work; a successful external operation followed by a failed progress
+write can replay after reconstruction. Persisted session termination alone is
+not an independent stop fence for this background work. The nominal one-minute
+retry interval is not a hard operation or spending cap: billing retries, duplicate
+invocations and restarts must be counted separately.
+
+Active-session registry renewal has a separate privacy lease. It starts at the
+12-hour boundary, and retryable failure is tolerated until 23 hours since the last
+recorded renewal; at that boundary the helper throws after attempting registration.
+These age checks do not reserve attempts: repeated reconstructed calls before the
+boundary still each perform a registry RPC. Successful renewal suppresses later
+calls only when its timestamp survives persistence. Invalid or future recorded timestamps
+now fail closed before registration, as described in the clock-integrity contract
+below. This clock fence does not reserve finite retry attempts.
+If Stop arrives during registration, the helper attempts compensating removal;
+removal failure must remain recoverable without authorizing an unlimited retry job.
+
+Context erasure separately lists at most 128 archived turns per wake and deletes
+those keys in a batch; each deleted key remains part of the storage envelope.
+A full batch schedules a confirmation wake to discover any remaining turns.
+Deletion failure retains the archive and schedules another attempt. Session
+finalization persists state from both public-billing settlement and its final
+step when the persisted completion receipt is absent, incomplete or inconsistent
+with current obligations. Context erasure alone does not establish completion.
+The completed-receipt guard described in the runbook performs one session-key
+read and skips finalization writes only when durable and current completion agree
+for the same session and owner, with no pending usage or public billing. It
+rechecks obligations after the read. An in-memory flag alone cannot establish that
+a prior progress write succeeded; registry and room compensation remain separate.
+
+Public-billing settlement currently iterates the entire saved billing map in one
+invocation. A record needing quota settlement, share completion and usage reporting
+can perform three downstream requests and two session-state writes, followed by
+one write for the map. Successful quota settlement is persisted before usage
+reporting, so a usage failure can retry reporting without re-settling quota.
+However, each failed record requests retry scheduling separately, and a failed
+final map write can replay reporting after reconstruction. Count those scheduler
+calls separately from delivered wakes: repeated scheduling can overwrite one alarm.
+A bounded replacement needs a durable cursor and per-record progress; truncating
+the map or dropping acknowledged-but-unpersisted obligations loses recovery state.
+
+This is an operating limitation, not permission to discard unresolved work.
+Approved memories, private-context deletion obligations, quota reservations and
+billing receipts must remain distinguishable and durable. Do not mark cleanup
+complete, delete recovery state or settle unknown usage as zero to stop retries.
+
+Before changing this path, require a joint compensation contract:
+
+- Reserve attempts and a finite job deadline durably before downstream work.
+  Persist each obligation's idempotent progress and stop automatic scheduling on
+  terminal completion or exhaustion while retaining unresolved obligations.
+- Bound downstream calls, response consumption and storage keys/rows per wake.
+  Include registry/room cleanup and independently scheduled billing/context work
+  in the operation envelope; an outer alarm cap alone is insufficient.
+- Provide authenticated recovery for pending obligations and a durable stop fence
+  checked before dispatch and rescheduling. Concurrent Stop, privacy revocation,
+  queued callbacks and billing retries must not replenish or bypass the budget.
+- Test duplicate alarms, reconstruction, clock boundaries, no progress, repeated
+  downstream failure, reservation-write failure and successful downstream work
+  followed by failed persistence. Count actual downstream calls and written keys,
+  and exercise the corresponding real Worker/SQLite storage boundaries.
+
+`packages/meet-core/src/features/live-assistant/session-cleanup.test.ts` verifies
+that registry failure does not prevent independent room cleanup and that confirmed
+completion stops later helper work. It does not establish finite retries,
+reschedule-race safety, billing bounds or hosted alarm behavior. Keep those gates
+explicit until their implementation and evidence exist. Billing alerts and
+per-invocation CPU limits do not establish a total-spend cap.
+
+## Registry lease clock integrity
+
+Active Live sessions require nonnegative safe-integer start and renewal timestamps.
+A renewal must lie between session start and the current server clock. Corrupt,
+nonfinite or future timestamps fail before a registry request; the session tick
+uses its existing `session_unavailable` stop path to end capture and retain billing,
+room-release and privacy cleanup obligations. A server clock rollback can therefore
+end an active session instead of silently extending privacy discoverability.
+
+This applies to personal and room Live sessions. Valid leases retain the twelve-hour
+renewal and twenty-three-hour retryable-failure boundaries. Ended sessions still
+attempt registry removal even when their lease timestamps are invalid. These checks
+do not introduce finite compensation attempts, authenticated background Stop or a
+spending cap. Count those independent obligations separately.
+
+Regression coverage: `registry-heartbeat.test.ts` exercises invalid timestamps,
+reconstruction without registration I/O, exact lease boundaries, duplicate renewal
+and ended-session removal. `session-cleanup.test.ts` checks independent compensation.
+These helper tests use controlled namespaces; real SQLite persistence, hosted
+privacy revocation and the complete stop/reschedule path remain release gates.
+
 ## Deployment and verification
 
 Apply the additive `meet_private_ai_memory` migration through the repository's

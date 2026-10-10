@@ -79,6 +79,7 @@ class _DriveGrid extends StatelessWidget {
                       ),
                       const Spacer(),
                       Checkbox(
+                        semanticLabel: entry.name,
                         value: selected,
                         onChanged: (_) => onToggleSelection(entry),
                       ),
