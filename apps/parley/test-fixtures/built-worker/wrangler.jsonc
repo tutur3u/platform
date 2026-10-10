@@ -1,0 +1,26 @@
+{
+  "name": "parley-built-worker-fixture",
+  "main": "worker.ts",
+  "compatibility_date": "2026-09-06",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": "../../.open-next/assets", "binding": "ASSETS" },
+  "r2_buckets": [
+    { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "fixture-cache" }
+  ],
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "parley-built-worker-fixture"
+    }
+  ],
+  "images": { "binding": "IMAGES" },
+  "vars": {
+    "NEXT_PUBLIC_MEETING_APP": "parley",
+    "NEXT_PUBLIC_APP_URL": "https://parley.tuturuuu.com",
+    "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://fixture.invalid",
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "fixture-publishable",
+    "SUPABASE_SECRET_KEY": "fixture-secret",
+    "MEET_REALTIME_TOKEN_SECRET": "fixture-token"
+  }
+}

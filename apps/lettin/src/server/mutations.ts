@@ -122,7 +122,7 @@ export async function mutate(
   const now = new Date().toISOString();
   const assignments = saving
     ? 'draft=?'
-    : `published=${publish ? 'draft' : 'NULL'},published_at=?`;
+    : `published=${publish ? "json_remove(draft,'$.workProgress')" : 'NULL'},published_at=?`;
   const value = saving ? JSON.stringify(command.draft) : publish ? now : null;
   // Reject cross-world link IDs inside the same atomic write as the revision check.
   const links = saving ? referenceIds(command.draft) : [];
