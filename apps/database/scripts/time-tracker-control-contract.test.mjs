@@ -4,7 +4,9 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   controlRaceScripts,
+  normalizedApprovalScript,
   openFixtureSession,
+  replacementRaceScripts,
 } from './time-tracker-control-concurrency.mjs';
 
 function child() {
@@ -154,4 +156,104 @@ test('actual emitted holder and competitor stdin retain psql metacommands', asyn
     competingLines.includes('\\echo FIXTURE_READY'),
     'competitor must emit a real psql echo'
   );
+});
+
+test('replacement race emits real bounded psql admission and release commands', async () => {
+  const scripts = replacementRaceScripts('select 101;', 'select 102;');
+  const a = child(),
+    b = child();
+  const first = openFixtureSession(a),
+    second = openFixtureSession(b);
+  first.write(scripts.holder);
+  second.end(scripts.competitor);
+  a.stdout.emit('data', 'FIXTURE_READY');
+  b.stdout.emit('data', 'FIXTURE_READY');
+  await Promise.all([first.marker, second.marker]);
+  first.end(scripts.release);
+  a.emit('close', 0);
+  b.emit('close', 0);
+  await Promise.all([first.done, second.done]);
+  assert(a.writes[0].split('\n').includes('\\echo FIXTURE_READY'));
+  assert.equal(b.ends[0].split('\n')[0], '\\set VERBOSITY verbose');
+  assert.match(a.writes[0], /select 101;/u);
+  assert.match(b.ends[0], /select 102;/u);
+  assert.match(a.ends[0], /ttr-replace-competitor/u);
+  assert.match(a.ends[0], /wait_event_type='Lock'/u);
+  assert.match(a.ends[0], /clock_timestamp\(\)>deadline/u);
+  assert.match(a.ends[0], /commit;$/u);
+});
+
+test('all OFF replacement proofs run in the same exact-schema CI fixture', () => {
+  const verifier = readFileSync(
+    new URL('./verify-time-tracker-control-contract.mjs', import.meta.url),
+    'utf8'
+  );
+  const workflow = readFileSync(
+    new URL(
+      '../../../.github/workflows/time-tracker-control-contract.yaml',
+      import.meta.url
+    ),
+    'utf8'
+  );
+  for (const fixture of [
+    'time-tracker-writer-catalog.sql',
+    'time-tracker-replace-running.sql',
+  ]) {
+    assert(verifier.includes(fixture));
+    assert.equal(
+      workflow.split(fixture).length - 1,
+      2,
+      'both PR and protected push filters'
+    );
+  }
+  assert.match(
+    verifier,
+    /await runTimeTrackerReplacementConcurrency\(metadata\)/u
+  );
+});
+
+test('normalized approval contention emits the real reviewer RPC after scope and row locks', async () => {
+  const linked = '00000000-0000-4000-8000-000000090899';
+  const scripts = replacementRaceScripts(
+    normalizedApprovalScript(linked),
+    'select 102;'
+  );
+  const a = child(),
+    first = openFixtureSession(a);
+  first.write(scripts.holder);
+  a.stdout.emit('data', 'FIXTURE_READY');
+  await first.marker;
+  first.end(scripts.release);
+  a.emit('close', 0);
+  await first.done;
+  const emitted = a.writes[0];
+  const locks = [
+    'pg_advisory_xact_lock',
+    'from private.time_tracker_controls',
+    'from private.time_tracker_operation_scopes',
+    'from private.time_tracking_requests',
+    'from public.time_tracking_sessions',
+    'from public.time_tracking_breaks',
+  ];
+  let previous = -1;
+  for (const lock of locks) {
+    const position = emitted.indexOf(lock);
+    assert(
+      position > previous,
+      'declared lock order must be emitted before actual approval'
+    );
+    previous = position;
+  }
+  const rpc = emitted.indexOf('select private.update_time_tracking_request(');
+  assert(
+    rpc > previous,
+    'actual approval and nested triggers execute before readiness'
+  );
+  assert(rpc < emitted.indexOf('\\echo FIXTURE_READY'));
+  assert(emitted.includes("'approve'"));
+  assert(
+    emitted.includes("'00000000-0000-4000-8000-000000090802'"),
+    'synthetic reviewer differs from session owner'
+  );
+  assert(emitted.includes(linked));
 });
