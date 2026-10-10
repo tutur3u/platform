@@ -882,3 +882,13 @@ callback through the panel so Clear filters resets every facet together. Keep th
 standalone controls' default reset, current section/selection and dirty-state
 disabling. Do not clear editor drafts or persist browsing state. Regression:
 `world-studio-progress.test.tsx` covers work-stage and standard-facet recovery.
+
+### Character card fact previews
+
+Use the card's existing authorized draft projection: public readers must replace
+private draft fields with published snapshots before rendering previews. Show a
+bounded number of escaped nonempty facts in authored order, with Unicode-safe
+text bounds and full values retained in the entry reader. Do not infer profile
+fields or add source reads/publication commands for presentation. Keep content
+notices first and preserve the card's single explicit selection control. Coverage:
+`character-card-facts.test.tsx`.

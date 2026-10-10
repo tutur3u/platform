@@ -1534,3 +1534,21 @@ breaks, independent link composition and serialized size bounds;
 notes without source/project sharing, source removal, oversized input rejection and
 uncertain creation recovery. Hosted task creation and the exact-head Tasks build
 remain separate delivery gates.
+
+### Compact character facts on entry cards
+
+Character entry cards show the first three authored facts whose labels and values
+are nonempty, preserving their saved order. Labels are capped at 80 Unicode code
+points and values at 160, with an ellipsis for longer text; opening the full entry
+retains the complete authored facts. Non-character cards and characters without
+usable facts omit the preview. Text is escaped and creates no links or controls.
+
+The private studio uses its already-authorized saved drafts. Published collections
+use only the selected notebook's published entry projections, including for fact
+previews; private or unavailable entries and unsaved editor buffers are excluded.
+Facts are authored notebook content, not inferred public profile fields. No new
+profile defaults, source reads/writes, permissions, publication actions or stored
+preferences are introduced. Existing content notices remain ahead of artwork and
+previews. `character-card-facts.test.tsx` covers bounds, ordering, languages,
+escaping, card selection and published-versus-private snapshot isolation. Exact
+head builds and hosted card layout/accessibility acceptance remain separate gates.

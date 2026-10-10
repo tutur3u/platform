@@ -622,6 +622,7 @@
     "characterFact_personality": "Personality",
     "characterFactAdd": "Add character fact",
     "characterFactChoose": "Choose a label",
+    "characterFactsPreview": "Character facts preview",
     "characterFactStarter": "Character fact label",
     "characterFactStarterHint": "Adds one label with an empty value. Existing facts are unchanged.",
     "charactersFeature": "People worth knowing",
