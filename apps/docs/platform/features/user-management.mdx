@@ -294,3 +294,16 @@ Public creator names link to the canonical platform profile when a username exis
 Regression evidence: `apps/web/src/lib/public-user-profile.test.ts` checks the
 query and response allowlists, invalid/unknown usernames, failures, and artwork;
 `public-paths.test.ts` checks anonymous localized access.
+
+### Profile discovery across apps
+
+The platform account menu and the shared Next satellite account menu offer Public
+profile for signed-in accounts with a canonical username. The destination is the
+central `/u/[username]` page, using the satellite's configured central origin.
+Links open in a new tab so the current task and unsaved work remain available.
+Accounts without a username have no public-profile link; private profile settings
+remain available. No profile content or workspace data is copied across apps.
+Framework adapters without a canonical username omit the optional menu item.
+Regression coverage: `public-profile-url.test.ts` checks legacy usernames,
+configured origins, and rejected paths; `satellite-user-menu-items.test.tsx`
+checks signed-in, signed-out, and missing-profile menu behavior.
