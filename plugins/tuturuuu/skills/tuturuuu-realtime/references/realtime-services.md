@@ -114,6 +114,28 @@ track is insufficient. The fixture neither tests hosted SFU nor replaces native
 WebView acceptance. See the runbook before installing/driving its exact-commit
 artifact. Use T3 Device so verification remains visible to the user.
 
+## Parley Cache Components candidate acceptance
+
+Parley's isolated stable-tarball adapter candidate backports upstream PR 1318 and
+must retain the real Node middleware bundler alongside both the scheduler and
+request-scoped module-loading patches, plus the repository's PPR name and preview
+manifest fixes. Its static default/remote cache-handler registration returns
+before the compiled Next custom-handler loader can reuse removed minified aliases.
+Verify URL-keyed Bun patch isolation from Meet/Lettin; a preview
+that rejects Node middleware cannot be repaired by simply removing its guard.
+When changing the candidate dependency, update both workflow path filters and
+`tuturuuu.ts` selection to its active patch. Selection regressions must derive the
+patch from the app manifest and root patchedDependencies rather than an obsolete
+filename copied into the test.
+
+Run the actual installed Next AST compatibility tests before the
+CI build; moved source shapes must fail closed. After CI builds, use the isolated
+`apps/parley/test-fixtures/built-worker` harness with canonical URL/Host, local
+bindings and blocked outbound fetch. Require exact source SHA and complete bilingual
+pages across sequential and concurrent requests. This tests the anonymous built-page
+boundary, not authenticated product flows or hosted recovery. See the
+[Cloudflare validation runbook](/build/devops/github-actions-runbook#meet-lettin-and-parley-cloudflare-validation).
+
 ## Offline programming checkpoint retries
 
 Persist the offline retry reservation before checkpoint I/O; never keep its
@@ -128,6 +150,7 @@ failure/recovery coverage and the isolated Worker/SQLite fixture documented in
 `programming-realtime-runbook.mdx`. Distinguish explicit handler invocation and
 stubbed provider failures from hosted alarm delivery and actual Drive saves.
 This offline bound does not certify live retry, media cleanup or account spending.
+
 
 
 The framework-independent `@tuturuuu/realtime/core/retry-budget` planner owns
@@ -153,6 +176,18 @@ not just batched put calls. This finite offline budget does not certify hosted a
 delivery, live lease renewal, independent stop or total account spend. Follow the
 channel reservation verification section in the programming realtime runbook.
 
+## Failed Parley candidate evidence
+
+Retain successful CI-built Parley artifacts even when subsequent fixture validation
+fails, with bounded error-body diagnostics. A failed identity probe blocks page
+acceptance; retained artifacts are diagnostic evidence, not qualified releases.
+See the programming realtime runbook for pinned replay and delivery boundaries.
+Inspect structured harness logs for a generic identity-route HTTP 500; cache
+initialization may fail before the handler runs. Distinguish CI-absolute WASM/data
+imports that prevent downloaded-artifact replay from the original runtime failure.
+Preserve original files and asset bytes when using private relocation mappings;
+that diagnostic replay does not qualify the canonical artifact.
+
 ## Completed Live finalization receipts
 
 Completed Live finalization must confirm its persisted session receipt and recheck
@@ -171,6 +206,7 @@ room commands, primary settlement/usage, renewal reservations and reconnects
 separately. Source-path inventory is not counted runtime evidence. Require explicit
 recurring lease expiry and durable authenticated Stop/reschedule tests without
 losing quota coverage, privacy discoverability or unresolved obligations.
+
 
 ## Meet Live compensation after termination
 
@@ -285,3 +321,8 @@ not cap request volume, total spending or Durable Object alarms, and does not
 provide an independent durable authenticated stop fence. Applicable account alerts
 and an independent stop remain unverified; no production billing configuration is
 changed by this implementation.
+
+Parley uses `localePrefix: never`: built-Worker bilingual probes request the
+canonical `/access-denied` URL with an explicit `Accept-Language: en` or `vi`.
+A prefixed `/vi/access-denied` request redirects and sets a locale cookie; a
+fetch client without a cookie jar must not infer Vietnamese from that prefix.

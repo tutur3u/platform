@@ -279,8 +279,8 @@ order of precedence:
      package only triggers the apps that actually depend on it.
 
 Cloudflare Meet also watches its signaling Worker and meeting API paths.
-Coordination has no workspace package manifest, so its worker and coordination
-utility paths are explicit.
+Coordination is a Vite+ workspace. Its worker and coordination utility paths
+remain explicit so source-level shared contracts also trigger validation.
 
 If nothing matches, the decision is `should_run = false` and the heavy job is
 skipped.

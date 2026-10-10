@@ -31,6 +31,7 @@ export function DuplicateEntry({
   const mutation = useLettinMutation(wsId);
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
+  const [linkSource, setLinkSource] = useState(false);
   const [createdId, setCreatedId] = useState<string | null>(null);
   const submitting = useRef(false);
   return (
@@ -41,6 +42,7 @@ export function DuplicateEntry({
           if (submitting.current) return;
           if (value) {
             setTitle('');
+            setLinkSource(false);
             mutation.reset();
           }
           setOpen(value);
@@ -69,6 +71,7 @@ export function DuplicateEntry({
                   entryId: record.id,
                   version: record.version,
                   title: title.trim(),
+                  ...(linkSource ? { linkSource: true } : {}),
                 });
                 setOpen(false);
                 setCreatedId(result.id);
@@ -88,6 +91,20 @@ export function DuplicateEntry({
               maxLength={160}
               disabled={disabled || mutation.isPending}
             />
+            <label className="flex items-start gap-3 text-sm">
+              <input
+                type="checkbox"
+                checked={linkSource}
+                disabled={disabled || mutation.isPending}
+                onChange={(event) => setLinkSource(event.target.checked)}
+              />
+              <span>
+                {t('copyLinkSource')}
+                <span className="mt-1 block text-muted-foreground text-xs">
+                  {t('copyLinkSourceHint')}
+                </span>
+              </span>
+            </label>
             <Button
               type="submit"
               disabled={disabled || mutation.isPending || !title.trim()}

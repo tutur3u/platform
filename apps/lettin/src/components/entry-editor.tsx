@@ -29,6 +29,8 @@ import { useLettinMutation } from './use-lettin';
 import { WikiDetailsEditor } from './wiki-details-editor';
 import { entryKinds, validWiki } from './wiki-model';
 import { WikiThemeEditor } from './wiki-theme-editor';
+import { WorkProgressControl } from './work-progress-control';
+import { WritingStatistics } from './writing-statistics';
 export function EntryEditor({
   wsId,
   worldId,
@@ -249,6 +251,10 @@ export function EntryEditor({
           onChange={(theme) => update({ theme })}
         />
       )}
+      <WorkProgressControl
+        value={draft.workProgress ?? 'unstarted'}
+        onChange={(workProgress) => update({ workProgress })}
+      />
       <WikiDetailsEditor
         draft={draft}
         entries={entries}
@@ -271,6 +277,10 @@ export function EntryEditor({
         }}
         value={draft.content}
         onChange={(content) => update({ content })}
+      />
+      <WritingStatistics
+        content={draft.content}
+        sourcePending={markdownEditing}
       />
       {!isWorld && (
         <fieldset className="rounded-lg border border-border p-4">
@@ -329,7 +339,7 @@ export function EntryEditor({
             }
             onRestore={(published) => {
               editGeneration.current += 1;
-              setDraft(published);
+              setDraft({ ...published, workProgress: draft.workProgress });
               setTagsText((published.tags ?? []).join(', '));
               setEditorKey((key) => key + 1);
               setMarkdownEditing(false);

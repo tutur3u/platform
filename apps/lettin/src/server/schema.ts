@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { collaborationPreferences } from '../creation-guidance';
+import { workProgressOptions } from '../work-progress';
 
 const id = z.guid();
 const version = z.number().int().positive();
@@ -9,6 +10,7 @@ import { richTextNodeSchema } from './rich-text-schema';
 import { wikiKinds, wikiSchema } from './wiki-schema';
 
 export const lettinDraftSchema = z.object({
+  workProgress: z.enum(workProgressOptions).optional(),
   creationGuidance: z
     .object({
       credits: z.string().trim().max(1000),
@@ -69,6 +71,7 @@ export const lettinCommandSchema = z.discriminatedUnion('action', [
     entryId: id,
     version,
     title: z.string().trim().min(1).max(160),
+    linkSource: z.boolean().optional(),
   }),
   z.object({
     action: z.literal('saveWorld'),
