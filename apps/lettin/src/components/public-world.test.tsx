@@ -165,3 +165,61 @@ it('copies only notebook or known published-entry URLs, ignoring arbitrary query
     await act(() => root.unmount());
   }
 });
+
+it('uses the filtered published sidebar order for sequence navigation and entry URLs', async () => {
+  const make = (title: string, kind: 'character' | 'location') => ({
+    ...createStarterDraft(title, 'blank', (key) => key),
+    kind,
+  });
+  const world: LettinPublicWorld = {
+    id: 'world',
+    creatorId: 'creator',
+    published: make('Notebook', 'location'),
+    entries: [
+      { id: 'first', published: make('First character', 'character') },
+      { id: 'location', published: make('Other location', 'location') },
+      { id: 'last', published: make('Last character', 'character') },
+    ],
+  };
+  window.history.replaceState(null, '', '/worlds/world?entry=first&keep=value');
+  const container = document.createElement('div');
+  const root = createRoot(container);
+  try {
+    await act(() =>
+      root.render(<PublicWorld world={world} initialEntry="first" />)
+    );
+    const select = container.querySelector('select')!;
+    await act(() => {
+      select.value = 'characters';
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    expect(
+      container.querySelector('nav[aria-label="readingSequence"]')
+    ).toBeNull();
+    const sidebar = container.querySelector('nav[aria-label="entries"]')!;
+    await act(() =>
+      sidebar.querySelector<HTMLButtonElement>('button')!.click()
+    );
+    const sequence = container.querySelector(
+      'nav[aria-label="readingSequence"]'
+    )!;
+    expect(sequence.textContent).toContain('Last character');
+    expect(sequence.textContent).not.toContain('Other location');
+    await act(() =>
+      sequence.querySelectorAll<HTMLButtonElement>('button')[1]!.click()
+    );
+    expect(new URL(window.location.href).searchParams.get('entry')).toBe(
+      'last'
+    );
+    expect(new URL(window.location.href).searchParams.get('keep')).toBe(
+      'value'
+    );
+    expect(
+      container.querySelectorAll<HTMLButtonElement>(
+        'nav[aria-label="readingSequence"] button'
+      )[1]?.disabled
+    ).toBe(true);
+  } finally {
+    await act(() => root.unmount());
+  }
+});
