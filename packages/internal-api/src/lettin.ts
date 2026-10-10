@@ -128,6 +128,7 @@ export type LettinCommand =
       version: number;
       title: string;
       linkSource?: boolean;
+      contextFact?: { label: string; value: string };
     }
   | {
       action: 'saveWorld';
