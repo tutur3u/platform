@@ -620,3 +620,26 @@ files. A single worker and Node 24 alone did not resolve the observed failure.
 Apply a pool change only to a validated scope; packages using native or runtime
 fixtures need their own compatibility evidence. Do not rewrite global runner
 configuration or claim a universal cause from these focused results.
+
+When temporary-file writes also fail with `Disk quota exceeded` despite free
+space reported by `df`, or Miniflare D1 startup reports `SQLITE_IOERR_WRITE`,
+use one bounded direct validation attempt, pointing the child payload
+`TMPDIR` to a verified private writable directory under the owning program only
+after resource-broker admission. Do not set `TMPDIR` before `bun check`: its
+`os.tmpdir()`-based check queue would relocate shared state. Verify the destination
+quota and preserve the original failure, unknown files and live queue owners. A thread
+pool alone passed focused module-loading suites but did not resolve the observed
+D1 fixture write failure; private temporary storage did. Record the tested
+boundary without claiming an unproven universal cause or changing global config.
+
+### Coordination alarm qualification
+
+Use the App Coordination page's Worker operation envelope when qualifying the
+Coordination toolchain. Audit `object.ts` transactions, lease expiry, fingerprint
+retention and alarm rescheduling together. Count SQL statements, rows changed/read
+and set/delete alarm calls separately, including reconstruction's schema setup.
+Test early/duplicate/due callbacks, busy retries, lost alarm persistence and a
+release racing an outstanding reschedule. Local SQLite with mocked alarms can
+expose residual wake behavior but cannot certify hosted alarm retry/clock behavior
+or authenticated emergency-stop fencing. Preserve meeting fingerprint retention
+and owner/lease checks; finite per-row retention is not an ingress/account cap.

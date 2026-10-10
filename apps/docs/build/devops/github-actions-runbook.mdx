@@ -152,6 +152,45 @@ commits and manual recovery dispatches must not cancel the active deployment.
 `bun.lock`-only changes intentionally run all Vercel app deploys because ownership
 is ambiguous without a manifest or source path.
 
+## Coordination native Worker toolchain
+
+Coordination is a Vite+ workspace using the Cloudflare Vite plugin. The input
+`apps/coordination/wrangler.jsonc` remains the identity and binding authority;
+Vite writes the deployable configuration to `apps/coordination/dist/worker/wrangler.json`.
+The production workflow builds that artifact and deploys its generated config.
+Do not change the Worker name, `CoordinationObject` export, `COORDINATION` binding,
+or retained Durable Object migrations during a toolchain migration.
+
+Validation first runs the existing `node:test`/Wrangler lease regression suite
+against source. It then runs Vite+ lint and a real Worker build in CI, repeats
+that same suite with `COORDINATION_TEST_CONFIG` pointing to the generated config,
+and validates the artifact with Wrangler's deployment dry run. The fixture injects
+a disposable server token and uses local Durable Object storage. It verifies
+credentials, concurrent acquisition, fencing, replay and expiry behavior without
+production requests. The source and artifact runs must both pass on the exact head.
+
+For focused local runtime verification, run `node --test
+apps/coordination/src/worker.test.mjs` from the root through `ttr resources run`.
+It also works as `bun run test` inside the app. Run builds in CI or on an
+authorized verified devbox through the shared resource queue with aggregate
+memory, CPU and process caps. Vite+ development uses loopback port 8798 and disables
+remote bindings and the inspector by default. Only start it for requested
+runtime verification. Node 24 satisfies the pinned Vite+ runtime requirement.
+The root Vitest project discovers future TypeScript unit tests separately from
+this real Worker fixture; the Node suite stays a mandatory workflow gate.
+
+If temporary transformed modules fail collection or Miniflare reports
+`SQLITE_IOERR_WRITE`, check for actual temporary-file write failures before
+changing product tests. `df` can show free space while an individual `/tmp`
+write fails with `Disk quota exceeded`. A private writable `TMPDIR` under the
+owning program directory can isolate direct validation from that failure. Set
+`TMPDIR` only in the child payload after resource-broker admission. Do not set it
+before `bun check`: its `os.tmpdir()`-based check queue would move shared state.
+Verify the destination quota and retain the original failure before one bounded
+validation attempt. Preserve unknown files and active jobs. Thread-pool retries passed focused Vitest suites,
+but a private `TMPDIR` was also needed for the observed D1 fixture failure;
+neither result establishes a universal runtime cause.
+
 ## Pull Request Run Lifecycle
 
 Closing or merging a pull request does not trigger a workflow that cancels its
