@@ -28,7 +28,7 @@ export async function duplicateEntry(
   const parsed = lettinDraftSchema.safeParse({
     ...saved,
     title: command.title,
-    links: [],
+    links: command.linkSource ? [command.entryId] : [],
     ...(saved.wiki ? { wiki: { ...saved.wiki, relationships: [] } } : {}),
   });
   if (!parsed.success) throw new LettinError(400, 'Invalid saved draft');

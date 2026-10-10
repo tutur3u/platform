@@ -739,3 +739,14 @@ publication plus historical JSON, revocation and workspace fences. Compose studi
 filters over saved authorized records, preserve search, and explicitly document
 whether relationship filters require both endpoints. Never infer publication from
 a readiness label or add it to public profiles.
+
+### Explicit source references on copies
+
+Keep source references optional when copying saved creative records. Derive the
+source ID from the already-authorized, revision-fenced record instead of accepting
+an arbitrary target. Default the choice off, clear it on reopening, and explain
+that later publishing the copy retains the reference ID without publishing
+source content or granting source access. Preserve public projection filtering
+so unavailable source references remain omitted. Clear inherited graph references and
+retain the existing same-notebook, artwork and atomic write fences. Test the
+private copy and later published projection independently with real local D1.
