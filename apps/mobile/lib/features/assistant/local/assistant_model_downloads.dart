@@ -10,17 +10,28 @@ import 'package:mobile/features/assistant/local/assistant_model_download_failure
 import 'package:mobile/features/assistant/local/assistant_model_transfer.dart';
 import 'package:path_provider/path_provider.dart';
 
+enum ModelDownloadPhase {
+  pending,
+  queued,
+  transferring,
+  retryWait,
+  paused,
+  verifying,
+}
+
 @immutable
 class ModelDownloadState {
   const ModelDownloadState(
     this.modelId, {
     this.progress = 0,
+    this.phase = ModelDownloadPhase.pending,
     this.paused = false,
     this.complete = false,
     this.failure,
   });
   final String modelId;
   final double progress;
+  final ModelDownloadPhase phase;
   final bool paused;
   final bool complete;
   final LocalModelFailure? failure;
@@ -144,6 +155,14 @@ class AssistantModelDownloads {
       model.id,
       progress: transfer.progress.value?.clamp(0, 1) ?? 0,
       paused: transfer.status.value == ModelTransferStatus.paused,
+      phase: switch (transfer.status.value) {
+        ModelTransferStatus.queued => ModelDownloadPhase.queued,
+        ModelTransferStatus.downloading => ModelDownloadPhase.transferring,
+        ModelTransferStatus.retryWait => ModelDownloadPhase.retryWait,
+        ModelTransferStatus.paused => ModelDownloadPhase.paused,
+        ModelTransferStatus.complete => ModelDownloadPhase.verifying,
+        _ => ModelDownloadPhase.pending,
+      },
     );
     transfer.progress.addListener(publish);
     transfer.status.addListener(publish);
@@ -153,6 +172,14 @@ class AssistantModelDownloads {
     Object? primaryFailure;
     try {
       source = await transfer.file;
+      // Native completion only establishes transfer completion, not integrity.
+      transfer.progress.removeListener(publish);
+      transfer.status.removeListener(publish);
+      state.value = ModelDownloadState(
+        model.id,
+        progress: 1,
+        phase: ModelDownloadPhase.verifying,
+      );
       if (_cancelled) {
         throw const LocalModelException(LocalModelFailure.cancelled);
       }

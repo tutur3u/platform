@@ -1254,7 +1254,7 @@
     "api:/api/v1/users/me/avatar/upload:apps/web/src/app/api/v1/users/me/avatar/upload/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Native/offline PUT compatibility retained. Rust parity pending."
+      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Explicit side-effect-free OPTIONS permits PUT/Content-Type for literal registered internal and exact configured external origins without credentials. Every trusted-origin PUT response varies on Origin; native/offline capability behavior retained. Rust parity pending."
     },
     "api:/api/v1/users/me/banner/upload-url:apps/web/src/app/api/v1/users/me/banner/upload-url/route.ts": {
       "status": "legacy-next",
@@ -1264,7 +1264,7 @@
     "api:/api/v1/users/me/banner/upload:apps/web/src/app/api/v1/users/me/banner/upload/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Native/offline PUT compatibility retained. Rust parity pending."
+      "note": "Budgeted short-lived single-use signed profile image upload with bounded server-side WebP optimization and strict post-optimization limits. Explicit side-effect-free OPTIONS permits PUT/Content-Type for literal registered internal and exact configured external origins without credentials. Every trusted-origin PUT response varies on Origin; native/offline capability behavior retained. Rust parity pending."
     },
     "api:/api/v1/users/me/default-workspace:apps/web/src/legacy-api-routes/v1/users/me/default-workspace/route.ts": {
       "status": "migrated",
@@ -1749,7 +1749,7 @@
     "api:/api/v1/workspaces/:wsId/users/reports/:reportId:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Report edit and delete return 409 while the delivery snapshot is locked by an active worker. First-class Next.js route; Rust parity pending."
+      "note": "Ordinary draft PUT binds the original report/user/group tuple and requires exactly one matching returned identity; missing or malformed acknowledgements return 409, and query errors retain existing error handling. Explicit approve/reject behavior is unchanged. Report edit and delete return 409 while the delivery snapshot is locked by an active worker. First-class Next.js route; Rust parity pending."
     },
     "api:/api/v1/workspaces/:wsId/users/reports/schedules:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/schedules/route.ts": {
       "status": "legacy-next",
@@ -1848,7 +1848,7 @@
     "cron:/api/cron/tasks/deadline-reminders:apps/web/src/app/api/cron/tasks/deadline-reminders/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Scheduled deadline reminders run in the deployed web app, honor each workspace's task reminder intervals and channel preferences, and queue mobile push across workspaces. Rust parity pending."
+      "note": "Scheduled deadline reminders run in the deployed web app, honor each workspace's task reminder intervals and channel preferences, normalize equivalent 24h/1d intervals while honoring both historical receipt keys, and queue mobile push across workspaces. Rust parity pending."
     },
     "error:/:locale:apps/web/src/app/[locale]/error.tsx": {
       "status": "migrated",
