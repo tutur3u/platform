@@ -782,3 +782,12 @@ results and unapplied source-mode exclusions explicitly. Count depth-clipped nod
 against the same traversal budget so a wide rejected frontier remains bounded. Memoize against the
 content object so metadata edits do not traverse the document again. Lettin's
 writing-statistics model and bilingual DOM regressions cover these boundaries.
+
+## Ordered creator properties
+
+Reorder authored array properties in the existing private editor buffer, preserving
+values and unrelated metadata. Duplicate labels need position-specific accessible
+controls; disable boundary moves and keep keyboard focus with the moved item.
+Saving and publishing remain distinct existing revision/permission operations.
+Lettin's fact editor DOM and real D1 snapshot tests cover order persistence and
+private revisions without introducing storage fields or access grants.
