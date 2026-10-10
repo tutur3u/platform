@@ -150,9 +150,25 @@ select ok(exists(select 1 from private.tutoring_absence_credits where original_a
 select is(pg_temp.create_credit(92755,92772)->>'createdCount','1','original replay survives membership departure');
 select is(pg_temp.change_credit(92755,92778,'2','CANCELLED')->>'state','RELEASED','tenant-authorized release survives missing enrollment/source');
 select throws_ok($q$select pg_temp.change_credit(92755,92779,'3','PENDING')$q$,'22023','Tutoring credit scope unavailable','new reservation still requires enrollment');
-update public.workspace_members set type='GUEST' where ws_id=pg_temp.fid(92711) and user_id=pg_temp.fid(92701);
+-- Revoke a noncreator through authorized maintenance; creator protection remains intact.
+update public.workspaces set creator_id=pg_temp.fid(92703) where id=pg_temp.fid(92711);
+create function pg_temp.set_actor_membership(member_type public.workspace_member_type) returns void
+language plpgsql as $$
+declare saved_role text:=current_setting('request.jwt.claim.role',true);
+  saved_claims text:=current_setting('request.jwt.claims',true);
+begin
+  perform set_config('request.jwt.claim.role','service_role',true);
+  perform set_config('request.jwt.claims','{"role":"service_role"}',true);
+  update public.workspace_members set type=member_type
+    where ws_id=pg_temp.fid(92711) and user_id=pg_temp.fid(92701);
+  perform set_config('request.jwt.claim.role',coalesce(saved_role,''),true);
+  perform set_config('request.jwt.claims',coalesce(saved_claims,''),true);
+end; $$;
+select pg_temp.set_actor_membership('GUEST');
+select is((select type::text from public.workspace_members where ws_id=pg_temp.fid(92711) and user_id=pg_temp.fid(92703)),
+ 'MEMBER','separate workspace creator remains MEMBER during actor revocation');
 select throws_ok($q$select pg_temp.create_credit(92755,92772)$q$,'42501','Tutoring credit forbidden','revoked actor cannot replay retained receipt');
-update public.workspace_members set type='MEMBER' where ws_id=pg_temp.fid(92711) and user_id=pg_temp.fid(92701);
+select pg_temp.set_actor_membership('MEMBER');
 -- Creation attribution follows actual parent rekey/SET NULL, never direct writes.
 select throws_ok($q$update public.users set id=pg_temp.fid(92704) where id=pg_temp.fid(92701)$q$,'23503',null,'existing actor membership FK still restricts parent rekey');
 delete from public.workspace_members where user_id=pg_temp.fid(92701);

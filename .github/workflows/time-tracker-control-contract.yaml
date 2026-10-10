@@ -4,6 +4,8 @@ on:
     paths:
       - "apps/database/supabase/migrations/**"
       - "apps/database/supabase/tests/time-tracker-control.sql"
+      - "apps/database/supabase/tests/time-tracker-writer-catalog.sql"
+      - "apps/database/supabase/tests/time-tracker-replace-running.sql"
       - "apps/database/scripts/verify-time-tracker-control-contract.mjs"
       - "apps/database/scripts/run-supabase*.js"
       - "apps/database/scripts/programming-database-tap.mjs"
@@ -17,6 +19,8 @@ on:
     paths:
       - "apps/database/supabase/migrations/**"
       - "apps/database/supabase/tests/time-tracker-control.sql"
+      - "apps/database/supabase/tests/time-tracker-writer-catalog.sql"
+      - "apps/database/supabase/tests/time-tracker-replace-running.sql"
       - "apps/database/scripts/verify-time-tracker-control-contract.mjs"
       - "apps/database/scripts/run-supabase*.js"
       - "apps/database/scripts/programming-database-tap.mjs"

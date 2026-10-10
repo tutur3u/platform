@@ -362,6 +362,43 @@ storage, staff-default/teacher-role permissions, outside-hours exceptions and
 planner consumption remain separate reviewed packets.
 
 
+### Private teacher-hours storage foundation
+
+The additive storage foundation keeps confirmed staff defaults and teacher
+weekday overrides in private tables behind service-only, scoped RPCs. It remains
+inert: no current API, settings UI or Create action consumes these tables.
+Reads never initialize defaults. Account actors require explicit workspace
+MEMBER status plus `view_user_groups` for reads or `manage_workspace_settings`
+for writes; teacher IDs are separate workspace-user identities. Current
+same-workspace TEACHER membership is checked and locked for override writes.
+This proves current admission, not a historical role remove/readd epoch.
+
+All writes lock the workspace hours anchor, default and override in that order.
+Default and override revisions are positive bigint values exposed only as
+full-precision decimal text. Absent creation requires a null revision; updates,
+same-content saves and resets advance the revision. Override writes also compare
+the captured default revision. Reset stores a revisioned empty override instead
+of deleting it, so old absent/create or pre-reset drafts cannot silently revive.
+Unknown, explicitly closed and inherited weekdays retain the pure-model contract.
+The SQL window validator also rejects extra untyped interval properties.
+
+Revision-only audit receipts use canonical `audit.to_record_id` table/key identity
+and explicit account actor, without copying hours content. Audit insertion and
+hours mutation share one transaction; an audit failure rolls the write back.
+A transport timeout is still an unknown receipt, not proof of rollback: future
+clients must refetch and review rather than blindly replay a stale revision.
+No cross-request idempotency or automatic provider operation is promised.
+
+`tutoring-teacher-hours-contract.yaml` applies the complete schema in an owned
+CI disposable database, runs strict pgTAP and actual two-connection create,
+default-change and save/reset races, then generates an exact-schema type artifact.
+Node wiring tests and pure model tests are source checks; only successful exact
+CI supplies database evidence. The foundation requires that proof before merge.
+Outside-hours exceptions, API/Rust migration tracking, authenticated editing,
+teacher-hour consumer integration and atomic tutoring reservations remain separate
+reviewed work. Existing tutoring policy, workspace timezone and staff Create
+permissions are unchanged.
+
 ### Selected-absence identity foundation (unwired)
 
 The additive foundation is service-only and has no Contacts/API activation. Existing

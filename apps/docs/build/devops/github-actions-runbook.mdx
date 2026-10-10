@@ -621,6 +621,42 @@ Workflow contracts use Bun's built-in YAML parser via `workflow-yaml-test-helper
 not undeclared transitive YAML packages. The dependency-free snapshot checks ordering,
 identity and caching. Run `node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js`.
 
+Parley's candidate pins the official OpenNext `1.20.6` registry tarball as a
+Parley-only URL dependency. Its URL-keyed Bun patch backports the Cache Components
+scheduler and request-scoped module-loading changes from upstream PR 1318 at
+`6b783939aefa8f9a19d4f002f68bc57c62879098`. The older upstream preview rejects Node
+middleware; removing that guard does not supply a middleware bundler. Retain the
+stable adapter's real `bundleNodeMiddleware` path and apply the Cache Components
+middleware patch after that bundle. Preserve component names, preview manifests,
+and Next 16.4's `CacheSignal(null)` constructor arguments.
+
+Keep the registry integrity in `bun.lock`; Meet and Lettin retain their separate
+stable-version patch. Bun's path-based patch command can select the package version
+instead of the URL: verify the generated `patchedDependencies` key and restore the
+stable patch before installing. Set the URL-keyed entry through `bun pm pkg set`
+with JSON input, then verify a frozen install and installed package isolation.
+A prepared directory left by `bun patch` can shadow dependency symlinks; preserve
+that owned directory outside the resolver and reinstall before testing.
+
+When changing the candidate dependency, update both workflow path filters and
+`tuturuuu.ts` selection to its active patch. Selection regressions must derive the
+patch from the app manifest and root patchedDependencies rather than an obsolete
+filename copied into the test.
+
+Run `node --test apps/parley/scripts/opennext-candidate.test.mjs` for actual installed
+Next CJS/ESM AST-patch compatibility and fail-closed source-shape checks. After the
+real CI OpenNext build, Parley runs `node --test verify.mjs` from
+`apps/parley/test-fixtures/built-worker`. The fixture preserves production compatibility
+flags and forwards through the production entry with canonical URL/Host, local assets,
+local R2/self bindings and dummy credentials. Global outbound fetch throws; no provider,
+production Durable Object or account binding is configured. It requires exact build-info
+SHA plus four sequential and four concurrent English/Vietnamese invitation pages,
+translated content and complete HTML within bounded deadlines, then closes the harness.
+Only hashes and lengths are logged. No release build runs locally. A green fixture
+qualifies the anonymous built-page boundary only: authenticated invitation, session,
+Live/provider and hosted concurrency acceptance remain required before recovery claims.
+Never ship private minified diagnostic patches or infer recovery from HTTP 200 alone.
+
 `parley-offline-diagnostic.yaml` is manual-only from trusted `main`, with no deployment
 or production secrets. It replays retained artifact 11583133658 from run 37853687763,
 fixed to SHA `387caf4872a59cc4944b16324a2554062393d7d1` and its published archive digest.

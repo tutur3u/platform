@@ -1,31 +1,53 @@
 'use client';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   type DocumentOutlineItem,
   outlineLimit,
 } from './document-outline-model';
 import {
+  decodedOutlineFragment,
+  focusOutlineHeading,
+  outlineHeadingHref,
+} from './document-outline-navigation';
+import {
   filterOutlineItems,
   outlineSearchLimit,
 } from './document-outline-search';
 
-type OutlineProps = { items: DocumentOutlineItem[]; truncated: boolean };
+type OutlineProps = {
+  items: DocumentOutlineItem[];
+  truncated: boolean;
+  publicEntryId?: string | null;
+};
 export function DocumentOutline(props: OutlineProps) {
   return (
     <SearchableOutline
-      key={JSON.stringify([props.items, props.truncated])}
+      key={JSON.stringify([props.items, props.truncated, props.publicEntryId])}
       {...props}
     />
   );
 }
-function SearchableOutline({ items, truncated }: OutlineProps) {
+function SearchableOutline({ items, truncated, publicEntryId }: OutlineProps) {
   const t = useTranslations('lettin');
   const [search, setSearch] = useState('');
+  const navigation = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (publicEntryId === undefined) return;
+    const navigate = () => {
+      const id = decodedOutlineFragment(window.location.hash);
+      if (items.some((item) => item.id === id))
+        focusOutlineHeading(navigation.current?.closest('article') ?? null, id);
+    };
+    navigate();
+    window.addEventListener('hashchange', navigate);
+    return () => window.removeEventListener('hashchange', navigate);
+  }, [items, publicEntryId]);
   const visible = filterOutlineItems(items, search);
   if (items.length < 2) return null;
   return (
     <nav
+      ref={navigation}
       aria-label={t('documentOutline')}
       className="my-6 rounded border border-border bg-muted/40 p-4"
     >
@@ -58,12 +80,17 @@ function SearchableOutline({ items, truncated }: OutlineProps) {
           {t('outlineSearchEmpty')}
         </p>
       )}
+      {publicEntryId !== undefined && (
+        <p className="mb-3 text-muted-foreground text-sm">
+          {t('outlinePublishedLinksHint')}
+        </p>
+      )}
       <ol className="max-h-72 space-y-2 overflow-y-auto text-sm">
         {visible.map((item) => (
           <li key={item.id} className={item.level > 2 ? 'ms-4' : ''}>
             <a
               className="underline underline-offset-4"
-              href={`#${item.id}`}
+              href={outlineHeadingHref(item.id, publicEntryId)}
               onClick={(event) => {
                 if (
                   event.defaultPrevented ||
@@ -75,22 +102,14 @@ function SearchableOutline({ items, truncated }: OutlineProps) {
                 )
                   return;
                 const article = event.currentTarget.closest('article');
-                const target = [
-                  ...(article?.querySelectorAll<HTMLElement>(
-                    '[data-lettin-heading]'
-                  ) ?? []),
-                ].find((heading) => heading.id === item.id);
-                if (!target) return;
+                if (!focusOutlineHeading(article, item.id)) return;
                 event.preventDefault();
-                for (
-                  let parent = target.parentElement;
-                  parent && parent !== article;
-                  parent = parent.parentElement
-                ) {
-                  if (parent instanceof HTMLDetailsElement) parent.open = true;
-                }
-                target.focus({ preventScroll: true });
-                target.scrollIntoView({ block: 'start', behavior: 'auto' });
+                if (publicEntryId !== undefined)
+                  window.history.replaceState(
+                    window.history.state,
+                    '',
+                    outlineHeadingHref(item.id, publicEntryId)
+                  );
               }}
             >
               {item.label}

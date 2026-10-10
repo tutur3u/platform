@@ -79,6 +79,15 @@ review prove baseline equivalence. Existing migration history stays immutable.
 - For JSON columns, transform parsed Zod payloads into the repo `Json` shape so
   typed Supabase builders accept them.
 
+- Full-schema SQL fixtures must account for trigger-created rows. Workspace
+  insertion creates its creator membership through `add_ws_creator`; reuse and
+  assert that membership rather than inserting it again in later scenarios.
+  Keep an explicit assertion when membership is part of permission admission.
+
+- Full-schema admission fixtures must assert membership in the target workspace.
+  Auth bootstrap can independently create a personal workspace for a synthetic
+  user; that membership does not admit them to another workspace.
+
 - Use distinct PL/pgSQL variable names and qualified table columns in trigger
   permit lookups. A name shared by a variable and a column can raise SQLSTATE
   `42702` before the intended admission error. Retain pgTAP assertions for the
