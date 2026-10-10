@@ -562,3 +562,14 @@ and coverage-v8 provider to that exact version with Bun commands. Updating only
 the provider while a root override forces an older runner still mixes versions.
 Validate the forwarded coverage command too: `bun run test --maxWorkers=2 --coverage`
 under Node 24. Do not disable Vite+'s provider-version guard to unblock CI.
+
+## Owning Next app build evidence
+
+A green shared-dependency workflow does not prove a changed satellite compiled
+unless its app is included in that workflow's build matrix. Route changes require
+an actual build of the owning app at the immutable PR head. The nondeployment
+`programming-app-builds.yaml` matrix includes Tasks and its source path trigger
+alongside Web, Learn, Infrastructure, Mail and Contacts. Keep placeholder build
+environment values, bounded Turbo concurrency, exact-source checkout and
+read-only permissions; preview or production dispatch is not a substitute for
+this PR gate.

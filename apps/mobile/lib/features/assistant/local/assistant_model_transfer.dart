@@ -6,7 +6,27 @@ import 'package:flutter/foundation.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model.dart';
 import 'package:mobile/features/assistant/local/assistant_model_download_failure.dart';
 
-enum ModelTransferStatus { downloading, paused, complete, failed, cancelled }
+enum ModelTransferStatus {
+  pending,
+  queued,
+  downloading,
+  retryWait,
+  paused,
+  complete,
+  failed,
+  cancelled,
+}
+
+@visibleForTesting
+ModelTransferStatus modelTransferStatus(TaskStatus status) => switch (status) {
+  TaskStatus.enqueued => ModelTransferStatus.queued,
+  TaskStatus.running => ModelTransferStatus.downloading,
+  TaskStatus.waitingToRetry => ModelTransferStatus.retryWait,
+  TaskStatus.paused => ModelTransferStatus.paused,
+  TaskStatus.complete => ModelTransferStatus.complete,
+  TaskStatus.failed || TaskStatus.notFound => ModelTransferStatus.failed,
+  TaskStatus.canceled => ModelTransferStatus.cancelled,
+};
 
 abstract interface class ModelTransfer {
   ValueListenable<double?> get progress;
@@ -82,16 +102,10 @@ class _NativeModelTransfer implements ModelTransfer {
   }
   final Transfer transfer;
   final ValueNotifier<ModelTransferStatus> _status = ValueNotifier(
-    ModelTransferStatus.downloading,
+    ModelTransferStatus.pending,
   );
   void _update() {
-    _status.value = switch (transfer.status) {
-      TaskStatus.paused => ModelTransferStatus.paused,
-      TaskStatus.complete => ModelTransferStatus.complete,
-      TaskStatus.failed || TaskStatus.notFound => ModelTransferStatus.failed,
-      TaskStatus.canceled => ModelTransferStatus.cancelled,
-      _ => ModelTransferStatus.downloading,
-    };
+    _status.value = modelTransferStatus(transfer.status);
     if (transfer.status.isFinalState) {
       transfer.statusNotifier.removeListener(_update);
     }

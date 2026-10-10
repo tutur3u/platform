@@ -761,6 +761,18 @@ stable section-permalink or immutable-snapshot guarantees: future publication ca
 change heading positions. A copied public link still observes source publication
 and retirement boundaries.
 
+Readers can explicitly search the current outline's displayed heading labels.
+Search starts empty, normalizes Unicode and letter case, and accepts at most 100
+characters. It filters only the bounded outline; full document content and the
+truncation notice remain visible. Empty results include a clear-search action.
+Each article keeps its own ephemeral search, reset when heading labels or scoped
+targets change. Private previews retain their disabled-outline default. Queries
+are never stored, sent to an API or added to the URL; IDs, description text,
+private drafts and omitted headings are not searchable through this control.
+`document-outline-search.test.tsx` covers bilingual controls, normalization,
+bounds, clear/empty recovery, current-document resets, isolation and retained
+fold-opening focus behavior.
+
 Regression evidence: `document-outline-model.test.ts` and `document-outline.test.tsx`
 cover repeated/empty/nested headings, bounds and escaping,
 matching renderer IDs, fold opening/focus, article isolation, private preview and
@@ -946,3 +958,28 @@ changes, failed removal, Unicode matching and both shipped language bundles.
 Existing reader/creator library and bookmark API/D1 tests retain their boundary
 coverage. Fixture translations and APIs are doubled; exact-head Lettin builds
 and repository CI remain separate delivery evidence.
+
+## Plan work in Tasks
+
+Private notebook and wiki studios offer **Plan a task**, opening the Tasks
+composer in the same workspace. The handoff carries only notebook and optional
+entry IDs; it does not include draft text, artwork, profile details or task names.
+Tasks authenticates its own app session and checks workspace membership. The
+creator enters a task name and explicitly chooses a board and non-archived list.
+Existing task creation APIs enforce destination workspace/list access.
+
+Attaching the canonical private Lettin reference is optional and **off by default**.
+The composer explains that attaching it makes the link visible to people with
+access to the destination task. It neither grants source access nor fetches or
+copies notebook content. The creator can review the source before opting in.
+Creating the task requires explicit submission and does not publish the notebook.
+Opening the composer itself creates no task or board.
+
+The first handoff supports task planning and references only. Automatic content
+transfer, ongoing synchronization and integrations with other tools remain
+outside this workflow. Deleted or inaccessible sources continue to be governed
+by Lettin access rules. Malformed source IDs are rejected; IDs alone do not prove
+access or source ownership. English and Vietnamese controls cover both surfaces.
+Regression coverage: `lettin-task-reference.test.ts`, `task-plan-composer.test.tsx`
+and the Tasks composer page tests cover safe links, explicit sharing and session
+and workspace boundaries.

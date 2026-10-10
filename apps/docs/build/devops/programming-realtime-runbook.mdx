@@ -483,6 +483,56 @@ setup/inspection operations. The harness closes automatically, uses no remote
 credentials and rejects downstream fetches. It exercises the finalization helper
 against real storage, not the hosted Live provider or authenticated Stop flow.
 
+## Meeting media cleanup cost envelope
+
+`MeetRoom.alarm()` invokes `closeBudgetPublications` for pending provider tracks
+once `nextCleanupAt` is due. The helper groups the complete pending list by
+provider session; it has no per-wake session page. For S unresolved sessions with
+legacy tracks whose mids need lookup, one attempted sweep can dispatch up to 3S
+provider calls: inventory lookup, close, then absence confirmation after a failed
+close. Known mids omit the first lookup and can dispatch up to 2S calls. Count
+tracks sent to the provider separately from HTTP requests; batching is not a
+proof of reduced media billing or per-track operations.
+
+A controlled audit of the actual helper with 32 legacy sessions and 24
+reconstructed failed sweeps counted 768 close calls and 1,536 inventory calls,
+with no progress-persistence callbacks and all 32 obligations retained. With
+known mids, one failed sweep counted 32 close and 32 confirmation calls. A
+successful close followed by a failed durable write repeated the close and failed
+write on each of 24 reconstructions. Conversely, confirmed progress for 32
+sessions required 32 close calls and 32 progress-persistence callbacks; 24 later reconstructed
+helper calls dispatched no additional close or progress-persistence callback. These counts
+exclude the surrounding room's persistence, alarm reads/writes and billing
+settlement. They use controlled provider/storage callbacks, not hosted SFU or
+real Durable Object storage; existing `room-provider-cleanup.test.ts` covers the
+progress and ambiguous-close recovery contracts.
+
+`deferBudgetCleanup` caps the stored counter at 32 and the exponential delay at
+one hour. This is a backoff ceiling, not a finite attempt or lifetime limit:
+100 reconstructed deferrals still produce future deadlines and retain pending
+tracks. A new publication obligation can reset the retry counter and deadline.
+`CloudflareSfuClient.request` performs one fetch per call without an explicit
+AbortSignal, request/body deadline, response byte limit or redirect policy. Its
+300-character error detail limit applies after `response.text()` has consumed the
+complete body; successful responses likewise await the complete JSON body. A
+stalled fetch or body prevents cleanup from reaching failure deferral. In the
+standalone server, it also retains that room in `cleanupInFlight`, so subsequent
+interval sweeps skip provider cleanup for the room until the promise settles.
+These are source-audit findings; existing SFU request tests do not exercise stalled
+requests, stalled bodies, oversized responses or deadline clock boundaries.
+
+Provider ambiguity retains unresolved tracks. The helper confirms absence after
+failed closure and persists confirmed progress per session; a failed progress
+write aborts instead of reporting that progress as durable. Future deadline/body
+bounds must preserve this recovery contract, including ambiguous remote completion
+after local cancellation. An aborted request does not prove the provider stopped
+media or cancelled its operation.
+
+Do not certify this path as bounded autonomous cleanup or an account-spend cap. A repair must retain
+unresolved media obligations while adding durable pre-I/O attempts/age, a finite
+operation envelope, authenticated recovery and stop/reschedule fences. Never
+clear pending tracks merely because retries or provider confirmation failed.
+
 ## Portable offline retry planning
 
 `@tuturuuu/realtime/core/retry-budget` plans finite retry reservations without
