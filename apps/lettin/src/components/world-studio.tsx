@@ -22,6 +22,7 @@ import { WikiCreateEntry } from './wiki-create-entry';
 import { sectionKind, type WikiSection, wikiOf } from './wiki-model';
 import { WikiSidebar } from './wiki-sidebar';
 import { WorkProgressControl } from './work-progress-control';
+import { WorkProgressSummary } from './work-progress-summary';
 export function WorldStudio({
   wsId,
   worldId,
@@ -237,6 +238,7 @@ export function WorldStudio({
             </>
           ) : (
             <>
+              <WorkProgressSummary entries={data.entries} />
               <WorkProgressControl
                 value={progress}
                 includeAll
