@@ -70,7 +70,7 @@ export function useNotebookCopy({
     if (
       !actor ||
       !receiptKey ||
-      !!readCopyReceipt(receiptKey) ||
+      readCopyReceipt(receiptKey) ||
       disabled ||
       busy.current ||
       !consent ||
