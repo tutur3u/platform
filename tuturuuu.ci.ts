@@ -14,6 +14,7 @@ export const ci = {
   'time-tracker-control-contract.yaml': true,
   'topic-delivery-foundation-contract.yaml': true,
   'tutoring-teacher-hours-contract.yaml': true,
+  'external-project-storage-analytics-contract.yaml': true,
   'report-review-receipts-contract.yaml': true,
   'programming-app-builds.yaml': true,
   'playground-runtime-acceptance.yaml': true,
