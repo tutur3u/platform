@@ -21,14 +21,16 @@ import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { ArtworkGalleryEditor } from './artwork-gallery-editor';
 import { CreationGuidanceEditor } from './creation-guidance-editor';
-import { DocumentView } from './document-view';
 import { validGallery } from './gallery-model';
+import { PublicationPreview } from './publication-preview';
+import { PublishedDraftRestore } from './published-draft-restore';
 import { RichEditor } from './rich-editor';
 import { useLettinMutation } from './use-lettin';
 import { WikiDetailsEditor } from './wiki-details-editor';
 import { entryKinds, validWiki } from './wiki-model';
 import { WikiThemeEditor } from './wiki-theme-editor';
 import { WorkProgressControl } from './work-progress-control';
+import { WritingStatistics } from './writing-statistics';
 export function EntryEditor({
   wsId,
   worldId,
@@ -60,6 +62,7 @@ export function EntryEditor({
   const [discardOpen, setDiscardOpen] = useState(false);
   const [savedDraft, setSavedDraft] = useState(record.draft);
   const [saved, setSaved] = useState(false);
+  const [inlineUploads, setInlineUploads] = useState(0);
   const editGeneration = useRef(0);
   const update = (patch: Partial<LettinDraft>) => {
     editGeneration.current += 1;
@@ -125,18 +128,11 @@ export function EntryEditor({
           {t(isWorld ? 'worldDetails' : 'entry')} ·{' '}
           {t(record.published_at ? 'published' : 'draft')}
         </p>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline">{t('preview')}</Button>
-          </DialogTrigger>
-          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>{t('privatePreview')}</DialogTitle>
-              <DialogDescription>{t('previewHint')}</DialogDescription>
-            </DialogHeader>
-            <DocumentView draft={draft} />
-          </DialogContent>
-        </Dialog>
+        <PublicationPreview
+          entries={entries}
+          draft={draft}
+          published={record.published_at ? record.published : null}
+        />
       </div>
       <label className="block space-y-2 text-sm">
         {t('title')}
@@ -271,11 +267,20 @@ export function EntryEditor({
           setMarkdownEditing(editing);
           if (editing) update({});
         }}
-        onImageUpload={async (file) =>
-          (await uploadLettinArtwork(wsId, worldId, file)).image
-        }
+        onImageUpload={async (file) => {
+          setInlineUploads((count) => count + 1);
+          try {
+            return (await uploadLettinArtwork(wsId, worldId, file)).image;
+          } finally {
+            setInlineUploads((count) => count - 1);
+          }
+        }}
         value={draft.content}
         onChange={(content) => update({ content })}
+      />
+      <WritingStatistics
+        content={draft.content}
+        sourcePending={markdownEditing}
       />
       {!isWorld && (
         <fieldset className="rounded-lg border border-border p-4">
@@ -323,6 +328,26 @@ export function EntryEditor({
           >
             {t('saveDraft')}
           </Button>
+          <PublishedDraftRestore
+            published={record.published_at ? record.published : null}
+            disabled={
+              mutation.isPending ||
+              upload.isPending ||
+              galleryUploading ||
+              inlineUploads > 0 ||
+              markdownEditing
+            }
+            onRestore={(published) => {
+              editGeneration.current += 1;
+              setDraft({ ...published, workProgress: draft.workProgress });
+              setTagsText((published.tags ?? []).join(', '));
+              setEditorKey((key) => key + 1);
+              setMarkdownEditing(false);
+              setDirty(true);
+              setSaved(false);
+              onDirty(true);
+            }}
+          />
           {dirty && (
             <Dialog open={discardOpen} onOpenChange={setDiscardOpen}>
               <DialogTrigger asChild>

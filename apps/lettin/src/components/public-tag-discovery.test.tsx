@@ -86,3 +86,31 @@ it('keeps historical empty tags free of empty navigation', () => {
     )
   ).toBeNull();
 });
+
+it('keeps empty creator filters scoped and offers recovery for empty later pages', () => {
+  for (const filters of [
+    { search: 'no-match' },
+    { tag: 'Magic' },
+    { page: 3 },
+  ]) {
+    const host = document.createElement('div');
+    host.innerHTML = renderToStaticMarkup(
+      <PublicExplorer
+        worlds={[]}
+        clearHref="/creators/canonical-id"
+        {...filters}
+      />
+    );
+    expect(host.textContent).toContain('noResults');
+    const clear = [...host.querySelectorAll('a')].find((link) =>
+      link.textContent?.includes('clearFilters')
+    )!;
+    expect(clear.getAttribute('href')).toBe('/creators/canonical-id');
+  }
+  const global = render([], { page: 3 });
+  expect(
+    [...global.querySelectorAll('a')]
+      .find((link) => link.textContent?.includes('clearFilters'))
+      ?.getAttribute('href')
+  ).toBe('/worlds');
+});
