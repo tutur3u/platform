@@ -690,6 +690,15 @@ on context changes. Recipient acceptance is a distinct workflow; do not claim
 an owner confirmation establishes recipient consent. Lettin's collaborator DOM
 and D1 role/revocation regressions cover these boundaries.
 
+## Published notebook collections
+
+Use only the public snapshot payload when composing reader collections and search.
+Keep overview documents, selected-entry URLs, chronological ordering and
+relationship-label/endpoint search distinct. Count entries only where that count
+matches the displayed collection; do not present entry counts as connection
+counts. Empty-filter recovery should reset the visible controls together. Reuse
+cards so content notices and published context remain visible before entry
+selection. See the Lettin decision and public-entry collection regression.
 Context-reset keys must include the control's identity when stateful components
 share a parent. Workspace/notebook IDs alone collide between sibling quick-note
 and Calendar controls. Lettin's Studio browsing regression checks key warnings,

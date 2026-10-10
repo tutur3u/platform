@@ -44,7 +44,7 @@ export function PublicWorld({
   const relationships = wikiOf(
     entry?.published ?? world.published
   ).relationships;
-  const browse = !entry && ['timeline', 'relationships'].includes(section);
+  const browse = !entry && section !== 'overview';
   const draft = entry?.published ?? world.published;
   const links = entry
     ? world.entries.filter((e) => draft.links.includes(e.id))
@@ -88,6 +88,28 @@ export function PublicWorld({
             ))}
           </select>
         </label>
+        {section !== 'relationships' && (
+          <p role="status" className="text-muted-foreground text-sm">
+            {t('readingEntryCount', { count: visible.length })}
+          </p>
+        )}
+        {section !== 'relationships' && !visible.length && (
+          <p className="text-muted-foreground text-sm">
+            {t('noReadingMatches')}
+          </p>
+        )}
+        {(search || section !== 'overview') && (
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSearch('');
+              setSection('overview');
+              select('');
+            }}
+          >
+            {t('clearReadingFilters')}
+          </Button>
+        )}
         <nav
           className="max-h-72 space-y-1 overflow-y-auto md:max-h-[65vh]"
           aria-label={t('entries')}
@@ -125,13 +147,18 @@ export function PublicWorld({
           />
         </div>
         {browse ? (
-          <WikiBrowser
-            entries={section === 'relationships' ? records : visible}
-            search={search}
-            section={section}
-            disabled={false}
-            onSelect={select}
-          />
+          <>
+            {!['timeline', 'relationships'].includes(section) && (
+              <h1 className="mb-6 text-3xl">{t(`section${section}`)}</h1>
+            )}
+            <WikiBrowser
+              entries={section === 'relationships' ? records : visible}
+              search={search}
+              section={section}
+              disabled={false}
+              onSelect={select}
+            />
+          </>
         ) : (
           <DocumentView
             draft={draft}
