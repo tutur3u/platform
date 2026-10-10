@@ -5258,6 +5258,7 @@
     "project_name": "Project Name",
     "projects": "Projects",
     "public_document": "Public document",
+    "public_profile": "Public profile",
     "published": "Published",
     "purple": "Purple",
     "qr_code": "QR Code",
@@ -15069,6 +15070,14 @@
     "id": "ID",
     "name": "Name",
     "value": "Value"
+  },
+  "public_profile": {
+    "copyFailed": "The link could not be copied. Select it below to copy manually.",
+    "copyLink": "Copy public profile link",
+    "description": "Public Tuturuuu profile.",
+    "linkCopied": "Public link copied.",
+    "manualCopyLink": "Public profile link",
+    "title": "Tuturuuu profile"
   },
   "qr": {
     "image_upload": {

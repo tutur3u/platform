@@ -1,5 +1,10 @@
 {
   "routes": {
+    "api:/api/v1/workspaces/:wsId/users/reports/:reportId/generate:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/generate/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class authenticated POST generation uses an immutable report snapshot, acknowledged conditional writes and full scoped human-feedback provenance. Rust generation parity and authoritative runtime coverage probe remain pending."
+    },
     "api:/api/v1/notifications/account-preferences:apps/web/src/app/api/v1/notifications/account-preferences/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
@@ -1843,7 +1848,7 @@
     "cron:/api/cron/tasks/deadline-reminders:apps/web/src/app/api/cron/tasks/deadline-reminders/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Scheduled deadline reminders run in the deployed web app, honor each workspace's task reminder intervals and channel preferences, and queue mobile push across workspaces. Rust parity pending."
+      "note": "Scheduled deadline reminders run in the deployed web app, honor each workspace's task reminder intervals and channel preferences, normalize equivalent 24h/1d intervals while honoring both historical receipt keys, and queue mobile push across workspaces. Rust parity pending."
     },
     "error:/:locale:apps/web/src/app/[locale]/error.tsx": {
       "status": "migrated",

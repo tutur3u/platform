@@ -58,7 +58,7 @@ class AssistantTranscriptSection extends StatelessWidget {
               transcript: _messageTranscript(message),
               attachments:
                   chatState.attachmentsByMessageId[message.id] ?? const [],
-              timestamp: message.createdAt,
+              timestamp: message.role == 'user' ? message.createdAt : null,
               toolParts: toolParts,
               orderedParts: message.role == 'user' ? const [] : message.parts,
               toolNames: toolParts.isEmpty

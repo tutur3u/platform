@@ -5258,6 +5258,7 @@
     "project_name": "Tên dự án",
     "projects": "Dự án",
     "public_document": "Tài liệu công khai",
+    "public_profile": "Hồ sơ công khai",
     "published": "Đã xuất bản",
     "purple": "Tím",
     "qr_code": "Mã QR",
@@ -15076,6 +15077,14 @@
     "id": "Mã số",
     "name": "Tên",
     "value": "Giá trị"
+  },
+  "public_profile": {
+    "copyFailed": "Không thể sao chép liên kết. Chọn liên kết bên dưới để sao chép thủ công.",
+    "copyLink": "Sao chép liên kết hồ sơ công khai",
+    "description": "Hồ sơ công khai trên Tuturuuu.",
+    "linkCopied": "Đã sao chép liên kết công khai.",
+    "manualCopyLink": "Liên kết hồ sơ công khai",
+    "title": "Hồ sơ Tuturuuu"
   },
   "qr": {
     "image_upload": {

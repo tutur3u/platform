@@ -29,7 +29,21 @@ export async function maintainLiveRegistry(
 ) {
   if (saved.ended) return removeLiveRegistry(env, saved.claims);
   const last = saved.registryUpdatedAt ?? saved.startedAt;
-  if (Date.now() - last < 12 * 60 * 60_000) return;
+  const now = Date.now();
+  // Durable lease timestamps must not postpone privacy discoverability checks
+  // after corruption or a clock rollback. The caller stops active sessions on
+  // this error while retaining their independent cleanup obligations.
+  if (
+    !Number.isSafeInteger(now) ||
+    !Number.isSafeInteger(saved.startedAt) ||
+    saved.startedAt < 0 ||
+    saved.startedAt > now ||
+    !Number.isSafeInteger(last) ||
+    last < saved.startedAt ||
+    last > now
+  )
+    throw new LiveRegistryError(409);
+  if (now - last < 12 * 60 * 60_000) return;
   try {
     await refreshLiveRegistry(env, saved.claims);
     saved.registryUpdatedAt = Date.now();

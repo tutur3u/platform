@@ -6,7 +6,7 @@
     "@lingual/i18n-check": "0.9.5",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^26.5.1",
-    "@vitest/coverage-v8": "^5.0.0",
+    "@vitest/coverage-v8": "5.0.3",
     "acorn": "8.18.0",
     "lucide-static": "^1.45.0",
     "oxfmt": "0.72.0",
@@ -15,7 +15,7 @@
     "turbo": "^2.10.12",
     "typescript": "7.0.2",
     "vite": "^8.3.0",
-    "vitest": "5.0.0",
+    "vitest": "5.0.3",
     "wrangler": "^4.131.1"
   },
   "engines": {
@@ -25,7 +25,7 @@
     "google-auth-library": "11.0.2",
     "@polar-sh/sdk": "0.49.0",
     "lodash": "4.18.1",
-    "vitest": "5.0.0",
+    "vitest": "5.0.3",
     "@polar-sh/checkout": "0.4.1",
     "next": "16.4.0",
     "typescript": "7.0.2",
@@ -319,6 +319,7 @@
     "@typescript/typescript-win32-x64": "7.0.2"
   },
   "patchedDependencies": {
-    "@opennextjs/cloudflare@1.20.6": "patches/@opennextjs%2Fcloudflare@1.20.6.patch"
+    "@opennextjs/cloudflare@1.20.6": "patches/@opennextjs%2Fcloudflare@1.20.6.patch",
+    "@opennextjs/cloudflare@https://registry.npmjs.org/@opennextjs/cloudflare/-/cloudflare-1.20.6.tgz": "patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch"
   }
 }

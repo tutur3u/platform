@@ -120,3 +120,11 @@ release only an unpublished project's quota; existing projects are retained.
 Regression evidence: `runner-files.test.ts`, the local programming Worker probe,
 `playground-service.test.ts`, `programming-collaboration.test.ts`, and the
 hosted-playgrounds pgTAP suite.
+
+
+The framework-independent `@tuturuuu/realtime/core/retry-budget` planner owns
+finite attempt/deadline decisions; the Worker persists reservations before I/O
+and retains authorization and recovery. Invalid durable retry state stops without
+resetting the job or deleting documents. See
+`apps/docs/build/devops/programming-realtime-runbook.mdx#portable-offline-retry-planning`
+for the adapter contract and planner, counted-handler and SQLite regressions.

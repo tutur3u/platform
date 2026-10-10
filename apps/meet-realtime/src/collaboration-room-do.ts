@@ -10,6 +10,10 @@ import {
   Y,
 } from '../../../packages/realtime/src/collaboration';
 import {
+  planRetryReservation,
+  type RetryBudget,
+} from '../../../packages/realtime/src/core/retry-budget';
+import {
   signRealtimePayload,
   verifyRealtimePayload,
 } from '../../../packages/realtime/src/core/token';
@@ -43,9 +47,14 @@ type Metadata = {
   runnerId?: string;
   runnerHashes?: Record<string, string>;
   runnerNeedsAck?: boolean;
-  checkpointRetry?: { attempts: number; nextAt: number; expiresAt: number };
+  checkpointRetry?: RetryBudget;
 };
 const KEY = 'programming-document';
+const OFFLINE_RETRY_POLICY = {
+  maxAttempts: 3,
+  maxAgeMs: 120_000,
+  delayMs: 30_000,
+};
 function encoded(bytes: Uint8Array) {
   return Buffer.from(bytes).toString('base64');
 }
@@ -467,24 +476,18 @@ export class CollaborationRoomDurableObject implements DurableObject {
           Date.now()
       );
     if (this.dirty && !connected && this.metadata) {
-      const now = Date.now();
-      const retry = this.metadata.checkpointRetry ?? {
-        attempts: 0,
-        nextAt: now,
-        expiresAt: now + 120_000,
-      };
-      if (retry.attempts >= 3 || now >= retry.expiresAt) return;
-      if (now < retry.nextAt) {
-        await this.state.storage.setAlarm(retry.nextAt);
+      const plan = planRetryReservation(
+        this.metadata.checkpointRetry,
+        Date.now(),
+        OFFLINE_RETRY_POLICY
+      );
+      if (plan.kind === 'stop') return;
+      if (plan.kind === 'wait') {
+        await this.state.storage.setAlarm(plan.at);
         return;
       }
-      // Reserve durably before any provider call. Restarts and duplicate delivery
-      // cannot replenish the finite offline budget or lose the retained document.
-      this.metadata.checkpointRetry = {
-        ...retry,
-        attempts: retry.attempts + 1,
-        nextAt: Math.min(now + 30_000, retry.expiresAt),
-      };
+      // Persist before provider I/O: reconstruction cannot replenish this job.
+      this.metadata.checkpointRetry = plan.reservation;
       await this.state.storage.put('metadata', this.metadata);
     }
     if (this.dirty)
@@ -506,7 +509,8 @@ export class CollaborationRoomDurableObject implements DurableObject {
     if (
       stillConnected ||
       (this.dirty &&
-        (!retry || (retry.attempts < 3 && Date.now() < retry.expiresAt)))
+        planRetryReservation(retry, Date.now(), OFFLINE_RETRY_POLICY).kind !==
+          'stop')
     )
       await this.state.storage.setAlarm(
         stillConnected || !retry
