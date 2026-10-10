@@ -145,3 +145,14 @@ uses real SQLite and controlled callback/completion failures. Record written key
 not just batched put calls. This finite offline budget does not certify hosted alarm
 delivery, live lease renewal, independent stop or total account spend. Follow the
 channel reservation verification section in the programming realtime runbook.
+
+## Live registry clock integrity
+
+Active Live renewal rejects nonfinite, negative, unsafe or future persisted clock
+values before registration; renewal may not predate session admission. Preserve
+this fail-closed behavior during clock rollback and route errors through the existing
+session stop path without dropping cleanup or billing obligations. Ended-session
+registry removal bypasses the active lease check. Keep the twelve-hour renewal and
+twenty-three-hour failure boundaries, and verify them in `registry-heartbeat.test.ts`
+alongside reconstruction, duplicate suppression and invalid-clock removal. This
+clock fence does not replace finite compensation budgets or hosted stop evidence.
