@@ -153,6 +153,25 @@ not just batched put calls. This finite offline budget does not certify hosted a
 delivery, live lease renewal, independent stop or total account spend. Follow the
 channel reservation verification section in the programming realtime runbook.
 
+## Completed Live finalization receipts
+
+Completed Live finalization must confirm its persisted session receipt and recheck
+current obligations after the read; in-memory completion does not acknowledge a
+failed write. Keep independent registry/room cleanup and incomplete billing/context
+retries. See the counted regressions and operation envelope in
+`apps/docs/build/devops/programming-realtime-runbook.mdx#completed-live-finalization-receipts`.
+
+## Active Live alarm audit
+
+Read the active-session alarm scope in the Meet Live feature page before changing
+its recurring schedule. Pause does not skip tick-level registry, room and billing
+work. Successful registry renewal extends discoverability; the 23-hour outage
+boundary is not a fixed session lifetime. Count public settlement, review expiry,
+room commands, primary settlement/usage, renewal reservations and reconnects
+separately. Source-path inventory is not counted runtime evidence. Require explicit
+recurring lease expiry and durable authenticated Stop/reschedule tests without
+losing quota coverage, privacy discoverability or unresolved obligations.
+
 ## Meet Live compensation after termination
 
 Read the ended-session compensation section in
@@ -176,9 +195,12 @@ not a finite job budget or hosted shutdown guarantee. Keep that limitation visib
 For Live context erasure, count the128-key page ceiling and each deleted archive
 key rather than treating a batch delete as one billed key. Full pages schedule a
 confirmation wake; failed deletion preserves the archive and can retry. Finalization
-also writes session state in its public-settlement and final steps after erasure
-completes. Count duplicate completion writes and require durable completion proof
-before optimizing them away; memory-only flags may follow a failed durable write.
+still writes session state in its public-settlement and final steps when its
+completion receipt is absent or incomplete; erasure alone cannot skip those steps.
+The completed-receipt guard above skips finalization writes only after matching
+durable/current completion and rechecking obligations after the read. Count the
+receipt read and independent registry/room cleanup separately. Memory-only flags
+may follow a failed durable write and must never acknowledge completion.
 
 Public Live billing currently scans the complete saved map. Include quota settlement,
 share completion, usage reporting, per-record writes and the final map write in the
