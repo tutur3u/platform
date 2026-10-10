@@ -25,7 +25,13 @@ vi.mock('@tuturuuu/ui/public-link-button', () => ({
   ),
 }));
 vi.mock('./document-view', () => ({ DocumentView: () => <article /> }));
-vi.mock('./wiki-browser', () => ({ WikiBrowser: () => <section /> }));
+vi.mock('./wiki-browser', () => ({
+  WikiBrowser: ({ entries }: { entries: { draft: { title: string } }[] }) => (
+    <section data-browser>
+      {entries.map(({ draft }) => draft.title).join(' · ')}
+    </section>
+  ),
+}));
 
 it('renders published links and backlinks without relying on private draft fields', async () => {
   const makeDraft = (title: string, links: string[]) => ({
@@ -219,6 +225,105 @@ it('uses the filtered published sidebar order for sequence navigation and entry 
         'nav[aria-label="readingSequence"] button'
       )[1]?.disabled
     ).toBe(true);
+  } finally {
+    await act(() => root.unmount());
+  }
+});
+
+it('combines exact published tags with kind/search, removes stale sequence links and clears all filters', async () => {
+  const make = (
+    title: string,
+    kind: 'character' | 'location',
+    tags: string[]
+  ) => ({ ...createStarterDraft(title, 'blank', (key) => key), kind, tags });
+  const world: LettinPublicWorld = {
+    id: 'world',
+    creatorId: 'creator',
+    published: make('Notebook', 'location', ['Notebook-only']),
+    entries: [
+      { id: 'first', published: make('First mage', 'character', ['Magic']) },
+      { id: 'last', published: make('Last mage', 'character', ['Magic']) },
+      { id: 'place', published: make('Mage tower', 'location', ['Magic']) },
+      { id: 'other', published: make('Other hero', 'character', ['Other']) },
+    ],
+  };
+  const host = document.createElement('div');
+  const root = createRoot(host);
+  const input = async (field: HTMLInputElement, value: string) => {
+    await act(() => {
+      field.value = value;
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  };
+  try {
+    await act(() =>
+      root.render(<PublicWorld world={world} initialEntry="first" />)
+    );
+    const tag = host.querySelector<HTMLInputElement>('input[list]')!;
+    expect(host.querySelector('option[value="Notebook-only"]')).toBeNull();
+    await input(tag, ' Magic ');
+    expect(
+      host.querySelector('nav[aria-label="entries"]')?.textContent
+    ).not.toContain('Other hero');
+    expect(
+      host.querySelector('nav[aria-label="entries"]')?.textContent
+    ).toContain('Mage tower');
+    const kind = host.querySelector('select')!;
+    await act(() => {
+      kind.value = 'characters';
+      kind.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    expect(
+      host.querySelector('nav[aria-label="entries"]')?.textContent
+    ).not.toContain('Mage tower');
+    expect(host.querySelector('[data-browser]')?.textContent).toBe(
+      'First mage · Last mage'
+    );
+    await act(() =>
+      host
+        .querySelector<HTMLButtonElement>('nav[aria-label="entries"] button')!
+        .click()
+    );
+    expect(
+      host.querySelector('nav[aria-label="readingSequence"]')?.textContent
+    ).toContain('Last mage');
+    const search = host.querySelector<HTMLInputElement>('input:not([list])')!;
+    await act(() => {
+      Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        'value'
+      )!.set!.call(search, 'First');
+      search.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    expect(host.querySelector('nav[aria-label="entries"]')?.textContent).toBe(
+      'First mage'
+    );
+    expect(host.querySelector('nav[aria-label="readingSequence"]')).toBeNull();
+    await input(tag, 'magic');
+    expect(host.querySelector('nav[aria-label="entries"]')?.textContent).toBe(
+      ''
+    );
+    expect(host.querySelector('nav[aria-label="readingSequence"]')).toBeNull();
+    expect(host.textContent).toContain('noReadingMatches');
+    const clear = [...host.querySelectorAll('button')].find(
+      (button) => button.textContent === 'clearReadingFilters'
+    )!;
+    await act(() => clear.click());
+    expect(tag.value).toBe('');
+    expect(search.value).toBe('');
+    expect(kind.value).toBe('overview');
+    expect(
+      host.querySelectorAll('nav[aria-label="entries"] button')
+    ).toHaveLength(4);
+    expect(host.querySelector('nav[aria-label="readingSequence"]')).toBeNull();
+    await act(() => {
+      kind.value = 'relationships';
+      kind.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    await input(tag, 'Other');
+    expect(host.querySelector('[data-browser]')?.textContent).toBe(
+      'Other hero'
+    );
   } finally {
     await act(() => root.unmount());
   }

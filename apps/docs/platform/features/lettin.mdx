@@ -1398,3 +1398,20 @@ are available. Reaching a target does not save or publish the document. English
 and Vietnamese controls share the same bounds. Regression evidence:
 `writing-goal.test.tsx`, `writing-statistics.test.tsx` and the bounded Unicode
 counting cases in `writing-statistics-model.test.ts`.
+
+### Published entry tag filters
+
+The public notebook reader can filter entries by an exact published entry tag.
+The filter starts empty, combines with text search and entry kind, and trims
+outer input spaces without changing the authored tag's case. Suggestions come
+only from published entry metadata, are deduplicated and sorted, and show at
+most 100 distinct tags; readers can enter any exact tag manually. Notebook tags
+do not become entry tags. No private metadata is fetched.
+
+The sidebar, collection browser and previous/next sequence use the filtered
+entries. The relationships browser keeps only tagged endpoints before its own
+search. An already selected entry remains readable when excluded by a filter,
+but loses sequence controls. Clear reading filters removes tag, search and kind
+filters together and returns to the notebook overview. These local reading
+filters do not publish, grant access or persist preferences. EN/VI regressions:
+`reading-tag-filter.test.tsx` and `public-world.test.tsx`.

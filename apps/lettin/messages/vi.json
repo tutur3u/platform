@@ -959,6 +959,8 @@
     "quickNoteSaved": "Đã lưu ghi chú riêng tư. Mở ghi chú khi trình soạn thảo hiện tại không còn thay đổi chưa lưu.",
     "quote": "Trích dẫn",
     "readingEntryCount": "{count} mục phù hợp",
+    "readingEntryTag": "Thẻ của mục",
+    "readingEntryTagHint": "Khớp chính xác với một thẻ của mục đã xuất bản, hoặc để trống để xem tất cả các thẻ.",
     "readingSequence": "Thứ tự đọc",
     "redo": "Làm lại",
     "referenceReviewHint": "Trạng thái dựa trên các mục hiện tại của sổ tay. Tham chiếu riêng tư hoặc không còn khả dụng sẽ bị ẩn với độc giả. Xuất bản mục này không xuất bản các mục được tham chiếu; sổ tay cũng phải được xuất bản.",
